@@ -101,7 +101,7 @@ public class MakeWindowAlwaysOnTop
         Util.waitForIdle(r);
 
 
-        Color c = r.getPixelColor(p.x + f.getWidth() / 2, p.y + f.getHeight() / 2);
+        Color c = r.getPixelColor(p.x + f.getWidth() / 2-10, p.y + f.getHeight() / 2-10);
         System.out.println("Color = " + c);
 
         String exceptionMessage = null;
