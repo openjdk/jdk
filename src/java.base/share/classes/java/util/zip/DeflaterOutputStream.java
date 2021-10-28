@@ -235,16 +235,16 @@ public class DeflaterOutputStream extends FilterOutputStream {
     public void close() throws IOException {
         try {
             if (!closed) {
-              finish();
-              if (usesDefaultDeflater)
-                 def.end();
-              out.close();
-              closed = true;
+                finish();
+                if (usesDefaultDeflater)
+                    def.end();
+                out.close();
+                closed = true;
            }
         } catch(IOException e) {
-               if (usesDefaultDeflater)
-                 def.end();
-               throw e;
+            if (usesDefaultDeflater)
+                def.end();
+            throw e;
         }
     }
 
