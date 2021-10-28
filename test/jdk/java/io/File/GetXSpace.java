@@ -51,6 +51,7 @@ import jdk.test.lib.Platform;
 import static java.lang.System.err;
 import static java.lang.System.out;
 
+@SuppressWarnings("removal")
 public class GetXSpace {
 
     private static SecurityManager [] sma = { null, new Allow(), new DenyFSA(),
