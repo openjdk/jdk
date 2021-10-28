@@ -40,22 +40,32 @@ namespace metaspace {
 class Metachunk;
 class FreeChunkListVector;
 
-// VirtualSpaceList manages a single (if its non-expandable) or
-//  a series of (if its expandable) virtual memory regions used
+// VirtualSpaceList manages a series of virtual memory regions used
 //  for metaspace.
 //
 // Internally it holds a list of nodes (VirtualSpaceNode) each
 //  managing a single contiguous memory region. The first node of
 //  this list is the current node and used for allocation of new
 //  root chunks.
+//
+// The list will only ever grow, never shrink. It will be immortal,
+//  never to be destroyed.
+//
+// The list will only be modified under lock protection, but may be
+//  read concurrently without lock.
+//
+// The list may be prevented from expanding beyond a single node -
+//  in that case it degenerates to a one-node-list (used for
+//  class space).
+//
 
 class VirtualSpaceList : public CHeapObj<mtClass> {
 
   // Name
   const char* const _name;
 
-  // Head of the list.
-  VirtualSpaceNode* _first_node;
+  // Head of the list (last added).
+  VirtualSpaceNode* volatile _first_node;
 
   // Number of nodes (kept for statistics only).
   IntCounter _nodes_counter;
