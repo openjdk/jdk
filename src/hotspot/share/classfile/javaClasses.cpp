@@ -1377,10 +1377,11 @@ void java_lang_Class::fixup_module_field(Klass* k, Handle module) {
   java_lang_Class::set_module(k->java_mirror(), module());
 }
 
-void java_lang_Class::set_oop_size(HeapWord* java_class, int size) {
+void java_lang_Class::set_oop_size(HeapWord* java_class, size_t size) {
   assert(_oop_size_offset != 0, "must be set");
-  assert(size > 0, "Oop size must be greater than zero, not %d", size);
-  *(int*)(((char*)java_class) + _oop_size_offset) = size;
+  assert(size > 0, "Oop size must be greater than zero, not " SIZE_FORMAT, size);
+  assert(size <= INT_MAX, "Lossy conversion: " SIZE_FORMAT, size);
+  *(int*)(((char*)java_class) + _oop_size_offset) = (int)size;
 }
 
 int  java_lang_Class::static_oop_field_count(oop java_class) {

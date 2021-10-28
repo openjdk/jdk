@@ -712,6 +712,7 @@
     __ stxp(r4, zr, zr, r5);                           //       stxp    w4, xzr, xzr, [x5]
     __ stxpw(r6, zr, zr, sp);                          //       stxp    w6, wzr, wzr, [sp]
     __ dup(v0, __ T16B, zr);                           //       dup     v0.16b, wzr
+    __ dup(v0, __ S, v1);                              //       dup     s0, v1.s[0]
     __ mov(v1, __ T1D, 0, zr);                         //       mov     v1.d[0], xzr
     __ mov(v1, __ T2S, 1, zr);                         //       mov     v1.s[1], wzr
     __ mov(v1, __ T4H, 2, zr);                         //       mov     v1.h[2], wzr
@@ -725,6 +726,7 @@
     __ umov(r0, v1, __ B, 3);                          //       umov    w0, v1.b[3]
     __ fmovhid(r0, v1);                                //       fmov    x0, v1.d[1]
     __ ld1(v31, v0, __ T2D, Address(__ post(r1, r0))); //       ld1     {v31.2d, v0.2d}, [x1], x0
+    __ fcvtzs(v0, __ T4S, v1);                         //       fcvtzs  v0.4s, v1.4s
     __ sve_cpy(z0, __ S, p0, v1);                      //       mov     z0.s, p0/m, s1
     __ sve_cpy(z0, __ B, p0, 127, true);               //       mov     z0.b, p0/m, 127
     __ sve_cpy(z1, __ H, p0, -128, true);              //       mov     z1.h, p0/m, -128

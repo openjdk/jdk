@@ -75,7 +75,7 @@ public:
 
   virtual uint32_t hash_oop(oop obj) const;
 
-  virtual oop array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS);
+  virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
   virtual HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
   virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                        size_t size,

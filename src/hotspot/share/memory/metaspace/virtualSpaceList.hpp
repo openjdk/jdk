@@ -40,8 +40,7 @@ namespace metaspace {
 class Metachunk;
 class FreeChunkListVector;
 
-// VirtualSpaceList manages a single (if its non-expandable) or
-//  a series of (if its expandable) virtual memory regions used
+// VirtualSpaceList manages a series of virtual memory regions used
 //  for metaspace.
 //
 // Internally it holds a list of nodes (VirtualSpaceNode) each
@@ -49,17 +48,24 @@ class FreeChunkListVector;
 //  this list is the current node and used for allocation of new
 //  root chunks.
 //
-// Beyond access to those nodes and the ability to grow new nodes
-//  (if expandable) it allows for purging: purging this list means
-//  removing and unmapping all memory regions which are unused.
+// The list will only ever grow, never shrink. It will be immortal,
+//  never to be destroyed.
+//
+// The list will only be modified under lock protection, but may be
+//  read concurrently without lock.
+//
+// The list may be prevented from expanding beyond a single node -
+//  in that case it degenerates to a one-node-list (used for
+//  class space).
+//
 
 class VirtualSpaceList : public CHeapObj<mtClass> {
 
   // Name
   const char* const _name;
 
-  // Head of the list.
-  VirtualSpaceNode* _first_node;
+  // Head of the list (last added).
+  VirtualSpaceNode* volatile _first_node;
 
   // Number of nodes (kept for statistics only).
   IntCounter _nodes_counter;
@@ -100,11 +106,6 @@ public:
   // May return NULL if vslist would need to be expanded to hold the new root node but
   // the list cannot be expanded (in practice this means we reached CompressedClassSpaceSize).
   Metachunk* allocate_root_chunk();
-
-  // Attempts to purge nodes. This will remove and delete nodes which only contain free chunks.
-  // The free chunks are removed from the freelists before the nodes are deleted.
-  // Return number of purged nodes.
-  int purge(FreeChunkListVector* freelists);
 
   //// Statistics ////
 

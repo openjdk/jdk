@@ -527,6 +527,39 @@ public abstract class Charset
         throw new UnsupportedCharsetException(charsetName);
     }
 
+    /**
+     * Returns a charset object for the named charset. If the charset object
+     * for the named charset is not available or {@code charsetName} is not a
+     * legal charset name, then {@code fallback} is returned.
+     *
+     * @param  charsetName
+     *         The name of the requested charset; may be either
+     *         a canonical name or an alias
+     *
+     * @param  fallback
+     *         fallback charset in case the charset object for the named
+     *         charset is not available or {@code charsetName} is not a legal
+     *         charset name. May be {@code null}
+     *
+     * @return  A charset object for the named charset, or {@code fallback}
+     *          in case the charset object for the named charset is not
+     *          available or {@code charsetName} is not a legal charset name
+     *
+     * @throws  IllegalArgumentException
+     *          If the given {@code charsetName} is {@code null}
+     *
+     * @since 18
+     */
+    public static Charset forName(String charsetName,
+                                  Charset fallback) {
+        try {
+            Charset cs = lookup(charsetName);
+            return cs != null ? cs : fallback;
+        } catch (IllegalCharsetNameException icne) {
+            return fallback;
+        }
+    }
+
     // Fold charsets from the given iterator into the given map, ignoring
     // charsets whose names already have entries in the map.
     //
