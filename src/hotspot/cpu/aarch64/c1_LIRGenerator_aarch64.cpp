@@ -228,14 +228,14 @@ LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
   LIR_Opr r;
   if (type == T_LONG) {
     r = LIR_OprFact::longConst(x);
-    if (!Assembler::operand_valid_for_logical_immediate(BitsPerLong, x)) {
+    if (!Assembler::operand_valid_for_logical_immediate(false, x)) {
       LIR_Opr tmp = new_register(type);
       __ move(r, tmp);
       return tmp;
     }
   } else if (type == T_INT) {
     r = LIR_OprFact::intConst(x);
-    if (!Assembler::operand_valid_for_logical_immediate(BitsPerInt, x)) {
+    if (!Assembler::operand_valid_for_logical_immediate(true, x)) {
       // This is all rather nasty.  We don't know whether our constant
       // is required for a logical or an arithmetic operation, wo we
       // don't know what the range of valid values is!!
@@ -675,11 +675,11 @@ void LIRGenerator::do_LogicOp(LogicOp* x) {
   left.load_item();
 
   rlock_result(x);
-  if (right.is_constant() &&
-      ((right.type()->tag() == intTag &&
-        Assembler::operand_valid_for_logical_immediate(BitsPerInt, right.get_jint_constant())) ||
-       (right.type()->tag() == longTag &&
-        Assembler::operand_valid_for_logical_immediate(BitsPerLong, right.get_jlong_constant()))))  {
+  if (right.is_constant()
+      && ((right.type()->tag() == intTag
+           && Assembler::operand_valid_for_logical_immediate(true, right.get_jint_constant()))
+          || (right.type()->tag() == longTag
+              && Assembler::operand_valid_for_logical_immediate(false, right.get_jlong_constant()))))  {
     right.dont_load_item();
   } else {
     right.load_item();

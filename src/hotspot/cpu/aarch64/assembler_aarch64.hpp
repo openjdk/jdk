@@ -158,7 +158,8 @@ REGISTER_DECLARATION(PRegister, ptrue, p7);
 #define assert_cond(ARG1) assert(ARG1, #ARG1)
 
 namespace asm_util {
-  uint32_t encode_logical_immediate(unsigned elembits, uint64_t imm);
+  uint32_t encode_logical_immediate(bool is32, uint64_t imm);
+  uint32_t encode_sve_logical_immediate(unsigned elembits, uint64_t imm);
   bool operand_valid_for_immediate_bits(int64_t imm, unsigned nbits);
 };
 
@@ -770,33 +771,33 @@ public:
 #undef INSN
 
  // Logical (immediate)
-#define INSN(NAME, decode, elembits)                            \
+#define INSN(NAME, decode, is32)                                \
   void NAME(Register Rd, Register Rn, uint64_t imm) {           \
     starti;                                                     \
-    uint32_t val = encode_logical_immediate(elembits, imm);     \
+    uint32_t val = encode_logical_immediate(is32, imm);         \
     f(decode, 31, 29), f(0b100100, 28, 23), f(val, 22, 10);     \
     srf(Rd, 0), zrf(Rn, 5);                                     \
   }
 
-  INSN(andw, 0b000, 32);
-  INSN(orrw, 0b001, 32);
-  INSN(eorw, 0b010, 32);
-  INSN(andr, 0b100, 64);
-  INSN(orr,  0b101, 64);
-  INSN(eor,  0b110, 64);
+  INSN(andw, 0b000, true);
+  INSN(orrw, 0b001, true);
+  INSN(eorw, 0b010, true);
+  INSN(andr,  0b100, false);
+  INSN(orr,  0b101, false);
+  INSN(eor,  0b110, false);
 
 #undef INSN
 
-#define INSN(NAME, decode, elembits)                            \
+#define INSN(NAME, decode, is32)                                \
   void NAME(Register Rd, Register Rn, uint64_t imm) {           \
     starti;                                                     \
-    uint32_t val = encode_logical_immediate(elembits, imm);     \
+    uint32_t val = encode_logical_immediate(is32, imm);         \
     f(decode, 31, 29), f(0b100100, 28, 23), f(val, 22, 10);     \
     zrf(Rd, 0), zrf(Rn, 5);                                     \
   }
 
-  INSN(ands,  0b111, 64);
-  INSN(andsw, 0b011, 32);
+  INSN(ands, 0b111, false);
+  INSN(andsw, 0b011, true);
 
 #undef INSN
 
@@ -3094,7 +3095,7 @@ public:
   void NAME(FloatRegister Zd, SIMD_RegVariant T, uint64_t imm) {             \
     starti;                                                                  \
     unsigned elembits = regVariant_to_elemBits(T);                           \
-    uint32_t val = encode_logical_immediate(elembits, imm);                  \
+    uint32_t val = encode_sve_logical_immediate(elembits, imm);              \
     f(0b00000101, 31, 24), f(opc, 23, 22), f(0b0000, 21, 18);                \
     f(val, 17, 5), rf(Zd, 0);                                                \
   }
@@ -3578,7 +3579,8 @@ void sve_cmp(Condition cond, PRegister Pd, SIMD_RegVariant T,
   // Stack overflow checking
   virtual void bang_stack_with_offset(int offset);
 
-  static bool operand_valid_for_logical_immediate(unsigned elembits, uint64_t imm);
+  static bool operand_valid_for_logical_immediate(bool is32, uint64_t imm);
+  static bool operand_valid_for_sve_logical_immediate(unsigned elembits, uint64_t imm);
   static bool operand_valid_for_add_sub_immediate(int64_t imm);
   static bool operand_valid_for_sve_add_sub_immediate(int64_t imm);
   static bool operand_valid_for_float_immediate(double imm);

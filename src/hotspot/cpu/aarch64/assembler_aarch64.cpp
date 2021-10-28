@@ -350,8 +350,12 @@ bool Assembler::operand_valid_for_sve_add_sub_immediate(int64_t imm) {
   return operand_valid_for_immediate_bits(imm, 8);
 }
 
-bool Assembler::operand_valid_for_logical_immediate(unsigned elembits, uint64_t imm) {
-  return encode_logical_immediate(elembits, imm) != 0xffffffff;
+bool Assembler::operand_valid_for_logical_immediate(bool is32, uint64_t imm) {
+  return encode_logical_immediate(is32, imm) != 0xffffffff;
+}
+
+bool Assembler::operand_valid_for_sve_logical_immediate(unsigned elembits, uint64_t imm) {
+  return encode_sve_logical_immediate(elembits, imm) != 0xffffffff;
 }
 
 static uint64_t doubleTo64Bits(jdouble d) {
@@ -398,8 +402,23 @@ bool asm_util::operand_valid_for_immediate_bits(int64_t imm, unsigned nbits) {
 // above encode and decode functions
 
 uint32_t
-asm_util::encode_logical_immediate(unsigned elembits, uint64_t imm)
+asm_util::encode_logical_immediate(bool is32, uint64_t imm)
 {
+  if (is32) {
+    /* Allow all zeros or all ones in top 32-bits, so that
+       constant expressions like ~1 are permitted. */
+    if (imm >> 32 != 0 && imm >> 32 != 0xffffffff)
+      return 0xffffffff;
+    /* Replicate the 32 lower bits to the 32 upper bits.  */
+    imm &= 0xffffffff;
+    imm |= imm << 32;
+  }
+
+  return encoding_for_logical_immediate(imm);
+}
+
+uint32_t
+asm_util::encode_sve_logical_immediate(unsigned elembits, uint64_t imm) {
   guarantee(elembits == 8 || elembits == 16 ||
             elembits == 32 || elembits == 64, "unsupported element size");
   uint64_t upper = UCONST64(-1) << (elembits/2) << (elembits/2);

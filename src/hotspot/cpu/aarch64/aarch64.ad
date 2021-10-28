@@ -2644,18 +2644,22 @@ bool can_combine_with_imm(Node* binary_node, Node* replicate_node) {
     return false;
   }
   Node* imm_node = replicate_node->in(1);
-  if (!imm_node->is_Con() ||
-      !(imm_node->bottom_type()->isa_int() || imm_node->bottom_type()->isa_long())) {
+  if (!imm_node->is_Con()) {
     return false;
   }
+
+  const Type* t = imm_node->bottom_type();
+  if (!(t->isa_int() || t->isa_long())) {
+    return false;
+  }
+
   switch (binary_node->Opcode()) {
   case Op_AndV:
   case Op_OrV:
   case Op_XorV: {
     Assembler::SIMD_RegVariant T = Assembler::elemType_to_regVariant(Matcher::vector_element_basic_type(binary_node));
-    uint64_t value = imm_node->bottom_type()->isa_long() ? (uint64_t)imm_node->get_long()
-                                                         : (uint64_t)imm_node->get_int();
-    return Assembler::operand_valid_for_logical_immediate(Assembler::regVariant_to_elemBits(T), value);
+    uint64_t value = t->isa_long() ? (uint64_t)imm_node->get_long() : (uint64_t)imm_node->get_int();
+    return Assembler::operand_valid_for_sve_logical_immediate(Assembler::regVariant_to_elemBits(T), value);
   }
   case Op_AddVB:
     return (imm_node->get_int() <= 255 && imm_node->get_int() >= -255);
@@ -4616,7 +4620,6 @@ operand immIAddSub()
 %{
   predicate(Assembler::operand_valid_for_add_sub_immediate((int64_t)n->get_int()));
   match(ConI);
-
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -4637,7 +4640,7 @@ operand immIAddSubV()
 
 operand immBLog()
 %{
-  predicate(Assembler::operand_valid_for_logical_immediate(BitsPerByte, (uint64_t)n->get_int()));
+  predicate(Assembler::operand_valid_for_sve_logical_immediate(BitsPerByte, (uint64_t)n->get_int()));
   match(ConI);
 
   op_cost(0);
@@ -4647,7 +4650,7 @@ operand immBLog()
 
 operand immSLog()
 %{
-  predicate(Assembler::operand_valid_for_logical_immediate(BitsPerShort, (uint64_t)n->get_int()));
+  predicate(Assembler::operand_valid_for_sve_logical_immediate(BitsPerShort, (uint64_t)n->get_int()));
   match(ConI);
 
   op_cost(0);
@@ -4657,7 +4660,7 @@ operand immSLog()
 
 operand immILog()
 %{
-  predicate(Assembler::operand_valid_for_logical_immediate(BitsPerInt, (uint64_t)n->get_int()));
+  predicate(Assembler::operand_valid_for_logical_immediate(/*is32*/true, (uint64_t)n->get_int()));
   match(ConI);
 
   op_cost(0);
@@ -4727,7 +4730,6 @@ operand immLAddSub()
 %{
   predicate(Assembler::operand_valid_for_add_sub_immediate(n->get_long()));
   match(ConL);
-
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -4747,9 +4749,8 @@ operand immLAddSubV()
 // 64 bit integer valid for logical immediate
 operand immLLog()
 %{
-  predicate(Assembler::operand_valid_for_logical_immediate(BitsPerLong, (uint64_t)n->get_long()));
+  predicate(Assembler::operand_valid_for_logical_immediate(/*is32*/false, (uint64_t)n->get_long()));
   match(ConL);
-
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -4760,7 +4761,6 @@ operand immL_32bits()
 %{
   predicate(n->get_long() == 0xFFFFFFFFL);
   match(ConL);
-
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -16187,7 +16187,8 @@ instruct far_cmpI_branch_bit(cmpOpEqNe cmp, iRegIorL2I op1, immI op2, immI0 op3,
 
 instruct cmpL_and(cmpOp cmp, iRegL op1, immL op2, immL0 op3, rFlagsReg cr) %{
   match(Set cr (CmpL (AndL op1 op2) op3));
-  predicate(Assembler::operand_valid_for_logical_immediate(BitsPerLong, n->in(1)->in(2)->get_long()));
+  predicate(Assembler::operand_valid_for_logical_immediate
+            (/*is_32*/false, n->in(1)->in(2)->get_long()));
 
   ins_cost(INSN_COST);
   format %{ "tst $op1, $op2 # long" %}
@@ -16199,7 +16200,8 @@ instruct cmpL_and(cmpOp cmp, iRegL op1, immL op2, immL0 op3, rFlagsReg cr) %{
 
 instruct cmpI_and(cmpOp cmp, iRegIorL2I op1, immI op2, immI0 op3, rFlagsReg cr) %{
   match(Set cr (CmpI (AndI op1 op2) op3));
-  predicate(Assembler::operand_valid_for_logical_immediate(BitsPerInt, n->in(1)->in(2)->get_int()));
+  predicate(Assembler::operand_valid_for_logical_immediate
+            (/*is_32*/true, n->in(1)->in(2)->get_int()));
 
   ins_cost(INSN_COST);
   format %{ "tst $op1, $op2 # int" %}
