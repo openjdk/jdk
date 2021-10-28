@@ -49,6 +49,7 @@ import javax.security.auth.x500.X500Principal;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import static sun.security.ssl.NamedGroup.NamedGroupSpec.*;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
+import sun.security.util.Cache;
 
 abstract class HandshakeContext implements ConnectionContext {
     // System properties
@@ -69,6 +70,12 @@ abstract class HandshakeContext implements ConnectionContext {
     static final boolean allowLegacyHelloMessages =
             Utilities.getBooleanProperty(
                     "sun.security.ssl.allowLegacyHelloMessages", true);
+
+    static Cache<Double, HandshakeContextCacheItem> handshakeContextCache;
+
+    static {
+        handshakeContextCache = Cache.newHardMemoryCache(50);
+    }
 
     // registered handshake message actors
     LinkedHashMap<Byte, SSLConsumer>  handshakeConsumers;
@@ -166,14 +173,38 @@ abstract class HandshakeContext implements ConnectionContext {
 
         this.algorithmConstraints = new SSLAlgorithmConstraints(
                 sslConfig.userSpecifiedAlgorithmConstraints);
-        this.activeProtocols = getActiveProtocols(sslConfig.enabledProtocols,
-                sslConfig.enabledCipherSuites, algorithmConstraints);
-        if (activeProtocols.isEmpty()) {
-            throw new SSLHandshakeException(
-                "No appropriate protocol (protocol is disabled or " +
-                "cipher suites are inappropriate)");
+        double hashCode = getHashCode(
+                sslConfig.enabledProtocols,
+                sslConfig.enabledCipherSuites,
+                sslConfig.userSpecifiedAlgorithmConstraints);
+        HandshakeContextCacheItem cacheItem;
+        if ((cacheItem = handshakeContextCache.get(hashCode)) != null &&
+                cacheItem.enabledProtocolVersions == sslConfig.enabledProtocols &&
+                cacheItem.enabledCipherSuites == sslConfig.enabledCipherSuites &&
+                cacheItem.constraints == sslConfig.userSpecifiedAlgorithmConstraints) {
+            this.activeProtocols = cacheItem.protocolVersions;
+            this.activeCipherSuites = cacheItem.cipherSuites;
+        } else {
+            this.activeProtocols = getActiveProtocols(sslConfig.enabledProtocols,
+                    sslConfig.enabledCipherSuites, algorithmConstraints);
+            if (activeProtocols.isEmpty()) {
+                throw new SSLHandshakeException(
+                        "No appropriate protocol (protocol is disabled or " +
+                                "cipher suites are inappropriate)");
+            }
+            this.activeCipherSuites = getActiveCipherSuites(this.activeProtocols,
+                    sslConfig.enabledCipherSuites, algorithmConstraints);
+            if (activeCipherSuites.isEmpty()) {
+                throw new SSLHandshakeException("No appropriate cipher suite");
+            }
+            handshakeContextCache.put(hashCode,
+                    new HandshakeContextCacheItem(
+                            this.activeProtocols,
+                            this.activeCipherSuites,
+                            sslConfig.enabledProtocols,
+                            sslConfig.enabledCipherSuites,
+                            sslConfig.userSpecifiedAlgorithmConstraints));
         }
-
         ProtocolVersion maximumVersion = ProtocolVersion.NONE;
         for (ProtocolVersion pv : this.activeProtocols) {
             if (maximumVersion == ProtocolVersion.NONE ||
@@ -182,12 +213,6 @@ abstract class HandshakeContext implements ConnectionContext {
             }
         }
         this.maximumActiveProtocol = maximumVersion;
-        this.activeCipherSuites = getActiveCipherSuites(this.activeProtocols,
-                sslConfig.enabledCipherSuites, algorithmConstraints);
-        if (activeCipherSuites.isEmpty()) {
-            throw new SSLHandshakeException("No appropriate cipher suite");
-        }
-
         this.handshakeConsumers = new LinkedHashMap<>();
         this.handshakeProducers = new HashMap<>();
         this.handshakeHash = conContext.inputRecord.handshakeHash;
@@ -589,6 +614,37 @@ abstract class HandshakeContext implements ConnectionContext {
             return Collections.emptyList();
         }
         return requestedServerNames;
+    }
+
+    static double getHashCode(List<ProtocolVersion> protocolVersions,
+                           List<CipherSuite> cipherSuites,
+                           AlgorithmConstraints constraints) {
+        int a = protocolVersions.hashCode();
+        int b = cipherSuites.hashCode();
+        int c = constraints.hashCode();
+        double cantor = 0.5 * (a + b) * (a + b + 1) + a;
+        cantor = 0.5 * ( cantor + c) * (cantor + c + 1) + cantor;
+        return cantor;
+    }
+
+    static class HandshakeContextCacheItem {
+        List<ProtocolVersion> protocolVersions;
+        List<CipherSuite> cipherSuites;
+        List<ProtocolVersion> enabledProtocolVersions;
+        List<CipherSuite> enabledCipherSuites;
+        AlgorithmConstraints constraints;
+
+        HandshakeContextCacheItem(List<ProtocolVersion> protocolVersions,
+                                  List<CipherSuite> cipherSuites,
+                                  List<ProtocolVersion> enabledProtocolVersions,
+                                  List<CipherSuite> enabledCipherSuites,
+                                  AlgorithmConstraints constraints) {
+            this.cipherSuites = cipherSuites;
+            this.protocolVersions = protocolVersions;
+            this.enabledProtocolVersions = enabledProtocolVersions;
+            this.enabledCipherSuites = enabledCipherSuites;
+            this.constraints = constraints;
+        }
     }
 }
 
