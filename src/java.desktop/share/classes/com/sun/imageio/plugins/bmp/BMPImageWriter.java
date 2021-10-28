@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteOrder;
 import java.util.Iterator;
 
+import javax.imageio.IIOException;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageTypeSpecifier;
@@ -655,30 +656,34 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
                 }
 
                 if (compressionType == BI_RGB || compressionType == BI_BITFIELDS){
-                    switch(dataType) {
-                    case DataBuffer.TYPE_BYTE:
-                        byte[] bdata =
-                            ((DataBufferByte)src.getDataBuffer()).getData();
-                        stream.write(bdata, pos, destScanlineLength);
-                        break;
+                    try {
+                        switch(dataType) {
+                            case DataBuffer.TYPE_BYTE:
+                                byte[] bdata =
+                                    ((DataBufferByte)src.getDataBuffer()).getData();
+                                stream.write(bdata, pos, destScanlineLength);
+                                break;
 
-                    case DataBuffer.TYPE_SHORT:
-                        short[] sdata =
-                            ((DataBufferShort)src.getDataBuffer()).getData();
-                        stream.writeShorts(sdata, pos, destScanlineLength);
-                        break;
+                            case DataBuffer.TYPE_SHORT:
+                                short[] sdata =
+                                    ((DataBufferShort)src.getDataBuffer()).getData();
+                                stream.writeShorts(sdata, pos, destScanlineLength);
+                                break;
 
-                    case DataBuffer.TYPE_USHORT:
-                        short[] usdata =
-                            ((DataBufferUShort)src.getDataBuffer()).getData();
-                        stream.writeShorts(usdata, pos, destScanlineLength);
-                        break;
+                            case DataBuffer.TYPE_USHORT:
+                                short[] usdata =
+                                    ((DataBufferUShort)src.getDataBuffer()).getData();
+                                stream.writeShorts(usdata, pos, destScanlineLength);
+                                break;
 
-                    case DataBuffer.TYPE_INT:
-                        int[] idata =
-                            ((DataBufferInt)src.getDataBuffer()).getData();
-                        stream.writeInts(idata, pos, destScanlineLength);
-                        break;
+                            case DataBuffer.TYPE_INT:
+                                int[] idata =
+                                    ((DataBufferInt)src.getDataBuffer()).getData();
+                                stream.writeInts(idata, pos, destScanlineLength);
+                                break;
+                            }
+                    } catch (IndexOutOfBoundsException e) {
+                        throw new IIOException("Invalid buffer length", e);
                     }
 
                     for(int k=0; k<padding; k++) {
