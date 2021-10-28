@@ -270,9 +270,15 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     // Retrieve IPv4 addresses with the IP Helper API
     curr = *netifPP;
     ret = lookupIPAddrTable(env, &tableP);
-    if (ret < 0) {
+    if (ret == -1) {
       free_netif(*netifPP);
       return -1;
+    } else if (ret == -2) {
+        // Clear the exception and continue.
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+        }
+        tableP = NULL;
     }
     while (curr != NULL) {
         netaddr *netaddrP;

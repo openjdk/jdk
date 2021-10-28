@@ -521,7 +521,7 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP) {
     int count;
     int ret = lookupIPAddrTable(env, &tableP);
     if (ret < 0) {
-      return -1;
+      return ret;
     }
     count = enumAddresses_win_ipaddrtable(env, netifP, netaddrPP, tableP);
     free(tableP);
