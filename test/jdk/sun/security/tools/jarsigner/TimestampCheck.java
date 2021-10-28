@@ -680,7 +680,7 @@ public class TimestampCheck {
         // Must call keytool the command, otherwise doPrintCert() might not
         // be able to reset "jdk.certpath.disabledAlgorithms".
         String sout = SecurityTools.keytool("-printcert -jarfile " + file)
-                .stderrShouldContain("The TSA certificate of signer #1 uses a 512-bit RSA key" +
+                .stderrShouldContain("The TSA certificate uses a 512-bit RSA key" +
                         " which is considered a security risk and is disabled.")
                 .getStdout();
         if (sout.indexOf("disabled", sout.indexOf("Timestamp:")) < 0) {

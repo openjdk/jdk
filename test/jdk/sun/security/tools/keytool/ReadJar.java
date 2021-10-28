@@ -106,24 +106,41 @@ public class ReadJar {
     }
 
     private static void testCertOutput() throws Throwable {
+        kt("-genkeypair -keyalg rsa -alias e0 -dname CN=E0 " +
+                "-keysize 512", "ks");
+        JarUtils.createJarFile(Path.of("a0.jar"), Path.of("."), Path.of("ks"));
+        // sign a0.jar file
+        SecurityTools.jarsigner("-keystore ks -storepass changeit " +
+                " a0.jar e0")
+                .shouldHaveExitValue(0);
+
+        SecurityTools.keytool("-printcert -jarfile a0.jar")
+                .shouldNotContain("Signature:")
+                .shouldContain("Signer #1:")
+                .shouldContain("Certificate #1:")
+                .shouldNotContain("Certificate #2:")
+                .shouldNotContain("Signer #2:")
+                .shouldMatch("The certificate uses a 512-bit RSA key.*is disabled")
+                .shouldHaveExitValue(0);
+
         kt("-genkeypair -keyalg rsa -alias ca1 -dname CN=CA1 -ext bc:c " +
                 "-keysize 512", "ks");
         kt("-genkeypair -keyalg rsa -alias e1 -dname CN=E1", "ks");
         gencert("e1", "-alias ca1 -ext san=dns:e1");
 
-        JarUtils.createJarFile(Path.of("a.jar"), Path.of("."), Path.of("ks"));
-        // sign the JAR file
+        JarUtils.createJarFile(Path.of("a1.jar"), Path.of("."), Path.of("ks"));
+        // sign a1.jar file
         SecurityTools.jarsigner("-keystore ks -storepass changeit " +
-                " a.jar e1")
+                " a1.jar e1")
                 .shouldHaveExitValue(0);
 
-        SecurityTools.keytool("-printcert -jarfile a.jar")
+        SecurityTools.keytool("-printcert -jarfile a1.jar")
                 .shouldNotContain("Signature:")
                 .shouldContain("Signer #1:")
                 .shouldContain("Certificate #1:")
                 .shouldContain("Certificate #2:")
                 .shouldNotContain("Signer #2:")
-                .shouldMatch("The certificate #2 of 2 of signer #1 uses a 512-bit RSA key.*is disabled")
+                .shouldMatch("The certificate #2 uses a 512-bit RSA key.*is disabled")
                 .shouldHaveExitValue(0);
 
         kt("-genkeypair -keyalg rsa -alias ca2 -dname CN=CA2 -ext bc:c " +
@@ -131,19 +148,43 @@ public class ReadJar {
         kt("-genkeypair -keyalg rsa -alias e2 -dname CN=E2", "ks");
         gencert("e2", "-alias ca2 -ext san=dns:e2");
 
-        // sign the JAR file again with different signer
+        // sign a1.jar file again with different signer
         SecurityTools.jarsigner("-keystore ks -storepass changeit " +
-                " a.jar e2")
+                " a1.jar e2")
                 .shouldHaveExitValue(0);
 
-        SecurityTools.keytool("-printcert -jarfile a.jar")
+        SecurityTools.keytool("-printcert -jarfile a1.jar")
                 .shouldNotContain("Signature:")
                 .shouldContain("Signer #1:")
                 .shouldContain("Certificate #1:")
                 .shouldContain("Certificate #2:")
                 .shouldContain("Signer #2:")
-                .shouldMatch("The certificate #2 of 2 of signer #1 uses the SHA1withRSA.*will be disabled")
-                .shouldMatch("The certificate #2 of 2 of signer #2 uses a 512-bit RSA key.*is disabled")
+                .shouldMatch("The certificate #.* of signer #.*" + "uses the SHA1withRSA.*will be disabled")
+                .shouldMatch("The certificate #.* of signer #.*" + "uses a 512-bit RSA key.*is disabled")
+                .shouldHaveExitValue(0);
+
+        kt("-genkeypair -keyalg rsa -alias e3 -dname CN=E3",
+                "ks");
+        JarUtils.createJarFile(Path.of("a2.jar"), Path.of("."), Path.of("ks"));
+        // sign a2.jar file
+        SecurityTools.jarsigner("-keystore ks -storepass changeit " +
+                " a2.jar e3")
+                .shouldHaveExitValue(0);
+
+        kt("-genkeypair -keyalg rsa -alias e4 -dname CN=E4 " +
+                "-keysize 1024", "ks");
+        // sign a2.jar file again with different signer
+        SecurityTools.jarsigner("-keystore ks -storepass changeit " +
+                " a2.jar e4")
+                .shouldHaveExitValue(0);
+
+        SecurityTools.keytool("-printcert -jarfile a2.jar")
+                .shouldNotContain("Signature:")
+                .shouldContain("Signer #1:")
+                .shouldContain("Certificate #1:")
+                .shouldNotContain("Certificate #2:")
+                .shouldContain("Signer #2:")
+                .shouldMatch("The certificate of signer #.*" + "uses a 1024-bit RSA key.*will be disabled")
                 .shouldHaveExitValue(0);
     }
 }
