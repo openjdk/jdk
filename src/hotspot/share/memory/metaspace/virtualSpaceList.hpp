@@ -52,7 +52,7 @@ class FreeChunkListVector;
 //  never to be destroyed.
 //
 // The list will only be modified under lock protection, but may be
-//  read asynchronously without lock.
+//  read concurrently without lock.
 //
 // The list may be prevented from expanding beyond a single node -
 //  in that case it degenerates to a one-node-list (used for
