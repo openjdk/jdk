@@ -30,6 +30,7 @@ import java.io.File;
  * @summary auth.login.LoginContext needs to be updated to work with modules
  * @comment shows that the SecondLoginModule is still needed even if it's not in the JAAS login config file
  * @build FirstLoginModule
+ * @clean SecondLoginModule
  * @run main/othervm/fail Loader
  * @build SecondLoginModule
  * @run main/othervm Loader
