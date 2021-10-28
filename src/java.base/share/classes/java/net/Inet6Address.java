@@ -120,8 +120,7 @@ import java.util.Arrays;
  *
  * <blockquote>
  * <dl>
- *   <dt style="vertical-align:top; padding-right:2px"><b><i>IPv4-mapped address</i></b></dt>
- *
+ *   <dt>IPv4-mapped address</dt>
  *         <dd>Of the form ::ffff:w.x.y.z, this IPv6 address is used to
  *         represent an IPv4 address. It allows the native program to
  *         use the same address data structure and also the same
@@ -133,7 +132,8 @@ import java.util.Arrays;
  *         IPv4-mapped address as input, both in byte array and text
  *         representation. However, it will be converted into an IPv4
  *         address.</dd>
- * </dl></blockquote>
+ * </dl>
+ * </blockquote>
  *
  * <h3><a id="scoped">Textual representation of IPv6 scoped addresses</a></h3>
  *
