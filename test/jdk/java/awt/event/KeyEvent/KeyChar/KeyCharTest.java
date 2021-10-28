@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import javax.swing.SwingUtilities;
 import java.awt.AWTEvent;
 import java.awt.Frame;
 import java.awt.Robot;
@@ -34,18 +35,17 @@ import java.util.Locale;
  * @key headful
  * @bug 8022401 8160623
  * @summary Wrong key char
- * @author Alexandr Scherbatiy
  * @run main KeyCharTest
  */
 public class KeyCharTest {
 
     private static volatile int eventsCount = 0;
+    private static Frame frame;
 
     static {
         Locale.setDefault(Locale.ENGLISH);
 
         Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
-
             @Override
             public void eventDispatched(AWTEvent event) {
                 eventsCount++;
@@ -58,21 +58,24 @@ public class KeyCharTest {
     }
 
     public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            frame = new Frame();
+            frame.setSize(300, 300);
+            frame.setVisible(true);
+            frame.toFront();
+            frame.requestFocus();
+        });
 
-
-        Frame frame = new Frame();
-        frame.setSize(300, 300);
-        frame.setVisible(true);
         Robot robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
+        robot.delay(1000);
         robot.waitForIdle();
-
 
         robot.keyPress(KeyEvent.VK_DELETE);
         robot.keyRelease(KeyEvent.VK_DELETE);
         robot.waitForIdle();
 
-        frame.dispose();
+        if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
 
         if (eventsCount != 3) {
             throw new RuntimeException("Wrong number of key events: " + eventsCount);
