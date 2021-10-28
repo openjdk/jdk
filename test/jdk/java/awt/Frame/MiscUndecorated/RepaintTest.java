@@ -111,7 +111,6 @@ public class RepaintTest {
 
         frame.setBackground(Color.green);
         frame.setVisible(true);
-        frame.toFront();
     }
     private Component createButton(boolean swingControl, String txt) {
         if(swingControl) {
@@ -222,7 +221,6 @@ public class RepaintTest {
             Toolkit.getDefaultToolkit().getSystemEventQueue().invokeAndWait(new Runnable() {
                 public void run() {
                     frame.setExtendedState(Frame.NORMAL);
-                    frame.toFront();
                 }
             });
         } catch (Exception e) {
