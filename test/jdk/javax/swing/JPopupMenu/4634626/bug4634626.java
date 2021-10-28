@@ -52,14 +52,14 @@ public class bug4634626 {
     public volatile boolean passed = true;
     public volatile boolean done = false;
 
-    public static JFrame mainFrame = new JFrame("Bug4634626");
-    public JPanel contentPane = new JPanel();
-    public JButton nopButton = new JButton("No popup button");
-    public JTextArea someText = new JTextArea("Some text here", 20, 10);
-    public JButton popButton = new JButton("Button with the popup");
+    public static JFrame mainFrame;
+    public JPanel contentPane;
+    public JButton nopButton;
+    public JTextArea someText;
+    public JButton popButton;
 
-    public JPopupMenu btnPopup = new JPopupMenu();
-    public JPopupMenu commonPopup = new JPopupMenu();
+    public JPopupMenu btnPopup;
+    public JPopupMenu commonPopup;
     static public Error toBeThrown = null;
     static int popTrig = MouseEvent.BUTTON3_MASK;
     static boolean popt = false;
@@ -106,35 +106,44 @@ public class bug4634626 {
     }
 
     public void init() throws Exception {
-        try {
-            popButton.setComponentPopupMenu(null);
-            popButton.setComponentPopupMenu(null);
+        SwingUtilities.invokeLater(() -> {
+            mainFrame = new JFrame("Bug4634626");
+            contentPane = new JPanel();
+            nopButton = new JButton("No popup button");
+            someText = new JTextArea("Some text here", 20, 10);
+            popButton = new JButton("Button with the popup");
+
+            btnPopup = new JPopupMenu();
+            commonPopup = new JPopupMenu();
+
+            try {
+                popButton.setComponentPopupMenu(null);
+                popButton.setComponentPopupMenu(null);
+                popButton.setComponentPopupMenu(btnPopup);
+                popButton.setComponentPopupMenu(null);
+            } catch (Exception ex) {
+                System.err.println("Unexpected exception was thrown by " +
+                        "setComponentPopupMenu() method: " + ex);
+            }
+            btnPopup.add("Button 1");
+            btnPopup.add("Button 2");
+            btnPopup.add("Button 3");
             popButton.setComponentPopupMenu(btnPopup);
-            popButton.setComponentPopupMenu(null);
-        } catch(Exception ex) {
-            System.err.println("Unexpected exception was thrown by " +
-                               "setComponentPopupMenu() method: " + ex);
-        }
-        btnPopup.add("Button 1");
-        btnPopup.add("Button 2");
-        btnPopup.add("Button 3");
-        popButton.setComponentPopupMenu(btnPopup);
-        popButton.addMouseListener(mouser);
-        commonPopup.add("One");
-        commonPopup.add("Two");
-        commonPopup.add("Three");
+            popButton.addMouseListener(mouser);
+            commonPopup.add("One");
+            commonPopup.add("Two");
+            commonPopup.add("Three");
 
-        contentPane.setLayout(new BorderLayout());
-        contentPane.setComponentPopupMenu(commonPopup);
-        contentPane.addMouseListener(mouser);
-        contentPane.add(nopButton, BorderLayout.NORTH);
-        nopButton.addMouseListener(mouser);
-        contentPane.add(popButton, BorderLayout.SOUTH);
-        someText.addMouseListener(mouser);
-        contentPane.add(someText, BorderLayout.CENTER);
-        mainFrame.setContentPane(contentPane);
+            contentPane.setLayout(new BorderLayout());
+            contentPane.setComponentPopupMenu(commonPopup);
+            contentPane.addMouseListener(mouser);
+            contentPane.add(nopButton, BorderLayout.NORTH);
+            nopButton.addMouseListener(mouser);
+            contentPane.add(popButton, BorderLayout.SOUTH);
+            someText.addMouseListener(mouser);
+            contentPane.add(someText, BorderLayout.CENTER);
+            mainFrame.setContentPane(contentPane);
 
-        SwingUtilities.invokeAndWait(() -> {
             mainFrame.pack();
             mainFrame.setLocation(50, 50);
             mainFrame.addWindowListener(new TestStateListener());
