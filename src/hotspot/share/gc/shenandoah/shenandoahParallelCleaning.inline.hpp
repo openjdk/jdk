@@ -38,7 +38,7 @@ ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::ShenandoahParallelW
                                                                                                      IsAlive* is_alive,
                                                                                                      KeepAlive* keep_alive,
                                                                                                      uint num_workers) :
-  AbstractGangTask("Shenandoah Weak Root Cleaning"),
+  WorkerTask("Shenandoah Weak Root Cleaning"),
   _phase(phase),
   _weak_processing_task(num_workers),
   _is_alive(is_alive),

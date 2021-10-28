@@ -1107,6 +1107,7 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
   bool is_int = gvn.type(a)->isa_int();
   assert(is_int || gvn.type(a)->isa_long(), "int or long inputs");
   assert(is_int == (gvn.type(b)->isa_int() != NULL), "inconsistent inputs");
+  BasicType bt = is_int ? T_INT: T_LONG;
   Node* hook = NULL;
   if (gvn.is_IterGVN()) {
     // Make sure a and b are not destroyed
@@ -1115,48 +1116,23 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
     hook->init_req(1, b);
   }
   Node* res = NULL;
-  if (!is_unsigned) {
+  if (is_int && !is_unsigned) {
     if (is_max) {
-      if (is_int) {
-        res =  gvn.transform(new MaxINode(a, b));
-        assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
-      } else {
-        Node* cmp = gvn.transform(new CmpLNode(a, b));
-        Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-        res = gvn.transform(new CMoveLNode(bol, a, b, t->is_long()));
-      }
+      res =  gvn.transform(new MaxINode(a, b));
+      assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
     } else {
-      if (is_int) {
-        Node* res =  gvn.transform(new MinINode(a, b));
-        assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
-      } else {
-        Node* cmp = gvn.transform(new CmpLNode(b, a));
-        Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-        res = gvn.transform(new CMoveLNode(bol, a, b, t->is_long()));
-      }
+      Node* res =  gvn.transform(new MinINode(a, b));
+      assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
     }
   } else {
+    Node* cmp = NULL;
     if (is_max) {
-      if (is_int) {
-        Node* cmp = gvn.transform(new CmpUNode(a, b));
-        Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-        res = gvn.transform(new CMoveINode(bol, a, b, t->is_int()));
-      } else {
-        Node* cmp = gvn.transform(new CmpULNode(a, b));
-        Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-        res = gvn.transform(new CMoveLNode(bol, a, b, t->is_long()));
-      }
+      cmp = gvn.transform(CmpNode::make(a, b, bt, is_unsigned));
     } else {
-      if (is_int) {
-        Node* cmp = gvn.transform(new CmpUNode(b, a));
-        Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-        res = gvn.transform(new CMoveINode(bol, a, b, t->is_int()));
-      } else {
-        Node* cmp = gvn.transform(new CmpULNode(b, a));
-        Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-        res = gvn.transform(new CMoveLNode(bol, a, b, t->is_long()));
-      }
+      cmp = gvn.transform(CmpNode::make(b, a, bt, is_unsigned));
     }
+    Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
+    res = gvn.transform(CMoveNode::make(NULL, bol, a, b, t));
   }
   if (hook != NULL) {
     hook->destruct(&gvn);
@@ -1168,12 +1144,8 @@ Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const
   bool is_int = gvn.type(a)->isa_int();
   assert(is_int || gvn.type(a)->isa_long(), "int or long inputs");
   assert(is_int == (gvn.type(b)->isa_int() != NULL), "inconsistent inputs");
-  Node* zero = NULL;
-  if (is_int) {
-    zero = gvn.intcon(0);
-  } else {
-    zero = gvn.longcon(0);
-  }
+  BasicType bt = is_int ? T_INT: T_LONG;
+  Node* zero = gvn.integercon(0, bt);
   Node* hook = NULL;
   if (gvn.is_IterGVN()) {
     // Make sure a and b are not destroyed
@@ -1181,32 +1153,15 @@ Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const
     hook->init_req(0, a);
     hook->init_req(1, b);
   }
-  Node* res = NULL;
+  Node* cmp = NULL;
   if (is_max) {
-    if (is_int) {
-      Node* cmp = gvn.transform(new CmpINode(a, b));
-      Node* sub = gvn.transform(new SubINode(a, b));
-      Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-      res = gvn.transform(new CMoveINode(bol, sub, zero, t->is_int()));
-    } else {
-      Node* cmp = gvn.transform(new CmpLNode(a, b));
-      Node* sub = gvn.transform(new SubLNode(a, b));
-      Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-      res = gvn.transform(new CMoveLNode(bol, sub, zero, t->is_long()));
-    }
+    cmp = gvn.transform(CmpNode::make(a, b, bt, false));
   } else {
-    if (is_int) {
-      Node* cmp = gvn.transform(new CmpINode(b, a));
-      Node* sub = gvn.transform(new SubINode(a, b));
-      Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-      res = gvn.transform(new CMoveINode(bol, sub, zero, t->is_int()));
-    } else {
-      Node* cmp = gvn.transform(new CmpLNode(b, a));
-      Node* sub = gvn.transform(new SubLNode(a, b));
-      Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-      res = gvn.transform(new CMoveLNode(bol, sub, zero, t->is_long()));
-    }
+    cmp = gvn.transform(CmpNode::make(b, a, bt, false));
   }
+  Node* sub = gvn.transform(SubNode::make(a, b, bt));
+  Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
+  Node* res = gvn.transform(CMoveNode::make(NULL, bol, sub, zero, t));
   if (hook != NULL) {
     hook->destruct(&gvn);
   }

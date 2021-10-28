@@ -1305,6 +1305,7 @@ public:
   void evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
                int comparison, bool is_signed, int vector_len, Register scratch_reg);
 
+  void evpbroadcast(BasicType type, XMMRegister dst, Register src, int vector_len);
 
   // Emit comparison instruction for the specified comparison predicate.
   void vpcmpCCW(XMMRegister dst, XMMRegister nds, XMMRegister src, ComparisonPredicate cond, Width width, int vector_len, Register scratch_reg);
@@ -1838,17 +1839,20 @@ public:
   void byte_array_inflate(Register src, Register dst, Register len,
                           XMMRegister tmp1, Register tmp2, KRegister mask = knoreg);
 
-  void fill64_masked_avx(uint shift, Register dst, int disp,
+  void fill_masked(BasicType bt, Address dst, XMMRegister xmm, KRegister mask,
+                   Register length, Register temp, int vec_enc);
+
+  void fill64_masked(uint shift, Register dst, int disp,
                          XMMRegister xmm, KRegister mask, Register length,
                          Register temp, bool use64byteVector = false);
 
-  void fill32_masked_avx(uint shift, Register dst, int disp,
+  void fill32_masked(uint shift, Register dst, int disp,
                          XMMRegister xmm, KRegister mask, Register length,
                          Register temp);
 
-  void fill32_avx(Register dst, int disp, XMMRegister xmm);
+  void fill32(Register dst, int disp, XMMRegister xmm);
 
-  void fill64_avx(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
+  void fill64(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
 
 #ifdef _LP64
   void convert_f2i(Register dst, XMMRegister src);
@@ -1885,6 +1889,10 @@ public:
   void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
+
+  void generate_fill_avx3(BasicType type, Register to, Register value,
+                          Register count, Register rtmp, XMMRegister xtmp);
+
 #endif // COMPILER2_OR_JVMCI
 
 #endif // _LP64
