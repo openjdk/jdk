@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,20 @@
             " move the pointer between B to C.",
  */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Window;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 import test.java.awt.regtesthelpers.Util;
-import javax.swing.*;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
 
 public class SpuriousExitEnter_3 {
     static JFrame frame = new JFrame("SpuriousExitEnter_3_LW");
@@ -75,6 +85,9 @@ public class SpuriousExitEnter_3 {
         w.add(comp, BorderLayout.NORTH);
         w.setLocationRelativeTo(null);
         w.setVisible(true);
+
+        r.waitForIdle();
+        r.delay(1000);
 
         Point centerA = new Point(comp.getLocationOnScreen().x + comp.getWidth() / 2,
                                   comp.getLocationOnScreen().y + comp.getHeight() / 2);
