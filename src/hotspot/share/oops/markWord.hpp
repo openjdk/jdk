@@ -246,7 +246,10 @@ class markWord {
   inline void* decode_pointer() const { return (void*)clear_lock_bits().value(); }
 
   inline bool is_forwarded() const { return is_marked(); }
-  inline oop forwardee() const { return cast_to_oop(decode_pointer()); }
+  inline oop forwardee() const {
+    assert(is_forwarded(), "only decode when actually forwarded");
+    return cast_to_oop(decode_pointer());
+  }
 };
 
 // Support atomic operations.
