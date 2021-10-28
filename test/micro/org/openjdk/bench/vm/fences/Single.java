@@ -48,22 +48,22 @@ public class Single {
     }
 
     @Benchmark
-    public void storeStoreFence() {
+    public void storeStore() {
         VarHandle.storeStoreFence();
     }
 
     @Benchmark
-    public void acquireFence() {
+    public void acquire() {
         VarHandle.acquireFence();
     }
 
     @Benchmark
-    public void releaseFence() {
+    public void release() {
         VarHandle.releaseFence();
     }
 
     @Benchmark
-    public void fullFence() {
+    public void full() {
         VarHandle.fullFence();
     }
 
