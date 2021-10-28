@@ -203,13 +203,6 @@ public class GetXSpace {
     }
 
     private static void compare(Space s) {
-        // On macOS the total size of /dev can vary over time
-        // so this test is skipped for /dev
-        if (Platform.isOSX() && s.name().equals("/dev")) {
-            out.println("/dev:\n  Skipping size comparison for /dev on macOS");
-            return;
-        }
-
         File f = new File(s.name());
         long ts = f.getTotalSpace();
         long fs = f.getFreeSpace();
@@ -220,8 +213,9 @@ public class GetXSpace {
         out.format(fmt, "df", s.total(), 0, s.free());
         out.format(fmt, "getX", ts, fs, us);
 
-        // if the file system can dynamically change size, this check will fail
-        if (ts != s.total()) {
+        // If the file system can dynamically change size, this check will fail.
+        // This can happen on macOS for the /dev files system.
+        if (ts != s.total() && (!Platform.isOSX() || !s.name().equals("/dev"))) {
             long blockSize = 1;
             long numBlocks = 0;
             try {
