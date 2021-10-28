@@ -1445,7 +1445,7 @@ bool G1Policy::preventive_collection_required(uint alloc_region_count) {
   uint required_regions = (uint)(get_num_regions_adjust_for_plab_waste(total_young_predicted_surviving_bytes) +
                                 get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old));
 
-  if (required_regions > _g1h->num_free_regions() - alloc_region_count) {
+  if (required_regions > _g1h->num_free_or_available_regions() - alloc_region_count) {
     log_debug(gc, ergo, cset)("Preventive GC, insufficient free regions. Predicted need %u. Curr Eden %u (Pred %u). Curr Survivor %u (Pred %u). Curr Old %u (Pred %u) Free %u Alloc %u",
             required_regions,
             eden_count,
