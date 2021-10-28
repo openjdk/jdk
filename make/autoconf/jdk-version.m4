@@ -239,10 +239,19 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
-      # Default is to calculate a string like this 'adhoc.<username>.<base dir name>'
+      # Default is to calculate a string like this:
+      # 'adhoc.<username>.<base dir name>[.<git branch>]'
       # Outer [ ] to quote m4.
       [ basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'` ]
-      VERSION_OPT="adhoc.$USERNAME.$basedirname"
+      if test x$GIT != x; then
+        git_output=`cd $TOPDIR && $GIT rev-parse --abbrev-ref HEAD 2>/dev/null`
+        if test x$git_output != xmaster; then
+          git_branch=".$git_output"
+        else
+          git_branch=
+        fi
+      fi
+      VERSION_OPT="adhoc.$USERNAME.$basedirname$git_branch"
     fi
   fi
 
@@ -265,8 +274,6 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is to not have a build number.
       VERSION_BUILD=""
-      # FIXME: Until all code can cope with an empty VERSION_BUILD, set it to 0.
-      VERSION_BUILD=0
     fi
   fi
 
@@ -439,13 +446,20 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   for i in 1 2 3 4 5 6 ; do stripped_version_number=${stripped_version_number%.0} ; done
   VERSION_NUMBER=$stripped_version_number
 
-  # The complete version string, with additional build information
-  if test "x$VERSION_BUILD$VERSION_OPT" = x; then
-    VERSION_STRING=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}
-  else
-    # If either build or opt is set, we need a + separator
-    VERSION_STRING=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}+$VERSION_BUILD${VERSION_OPT:+-$VERSION_OPT}
+  # A build number of "0" is interpreted as "no build number".
+  if test "x$VERSION_BUILD" = x0; then
+    VERSION_BUILD=
   fi
+
+  # Compute the complete version string, with additional build information
+  version_with_pre=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}
+  if test "x$VERSION_BUILD" != x || ( test "x$VERSION_OPT" != x && test "x$VERSION_PRE" = x ); then
+    # As per JEP 223, if build is set, or if opt is set but not pre, we need a + separator
+    version_with_build=$version_with_pre+$VERSION_BUILD
+  else
+    version_with_build=$version_with_pre
+  fi
+  VERSION_STRING=$version_with_build${VERSION_OPT:+-$VERSION_OPT}
 
   # The short version string, just VERSION_NUMBER and PRE, if present.
   VERSION_SHORT=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}

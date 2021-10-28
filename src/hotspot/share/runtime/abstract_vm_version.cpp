@@ -63,7 +63,7 @@ VirtualizationType Abstract_VM_Version::_detected_virtualization = NoDetectedVir
   #error VERSION_PATCH must be defined
 #endif
 #ifndef VERSION_BUILD
-  #error VERSION_BUILD must be defined
+  #define VERSION_BUILD 0
 #endif
 
 #ifndef VERSION_STRING
