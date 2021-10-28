@@ -445,8 +445,10 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
 
   # Compute the complete version string, with additional build information
   version_with_pre=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}
-  if test "x$VERSION_BUILD" != x || ( test "x$VERSION_OPT" != x && test "x$VERSION_PRE" = x ); then
-    # As per JEP 223, if build is set, or if opt is set but not pre, we need a + separator
+  if test "x$VERSION_BUILD" != x || \
+      ( test "x$VERSION_OPT" != x && test "x$VERSION_PRE" = x ); then
+    # As per JEP 223, if build is set, or if opt is set but not pre,
+    # we need a + separator
     version_with_build=$version_with_pre+$VERSION_BUILD
   else
     version_with_build=$version_with_pre
