@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -1375,6 +1376,16 @@ class HandshakeForDeflation : public HandshakeClosure {
   }
 };
 
+class VM_RendezvousGCThreads : public VM_Operation {
+public:
+  bool evaluate_at_safepoint() const override { return false; }
+  VMOp_Type type() const override { return VMOp_RendezvousGCThreads; }
+  void doit() override {
+    SuspendibleThreadSet::synchronize();
+    SuspendibleThreadSet::desynchronize();
+  };
+};
+
 // This function is called by the MonitorDeflationThread to deflate
 // ObjectMonitors. It is also called via do_final_audit_and_print_stats()
 // by the VMThread.
@@ -1427,8 +1438,13 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
       // A JavaThread needs to handshake in order to safely free the
       // ObjectMonitors that were deflated in this cycle.
+      // Also, we sync and desync GC threads around the handshake, so that they can
+      // safely read the mark-word and look-through to the object-monitor, without
+      // being afraid that the object-monitor is going away.
       HandshakeForDeflation hfd_hc;
       Handshake::execute(&hfd_hc);
+      VM_RendezvousGCThreads sync_gc;
+      VMThread::execute(&sync_gc);
 
       if (ls != NULL) {
         ls->print_cr("after handshaking: in_use_list stats: ceiling="
