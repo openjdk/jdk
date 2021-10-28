@@ -43,34 +43,33 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class DeoptStats {
 
-  static class Value {
-    int i;
-  }
-
-  static int f(Value v) {
-    return v.i;
-  }
-
-  public static void verify(String[] logFiles) throws Exception {
-    for (String logFile : logFiles) {
-      OutputAnalyzer oa = new OutputAnalyzer(Paths.get(logFile));
-      oa.shouldMatchByLine("<statistics type='deoptimization'>", // Start from this line
-                           "</statistics>",                      // Match until this line
-                           "(Deoptimization traps recorded:)|( .+)");
+    static class Value {
+        int i;
     }
-  }
 
-  public static void main(String[] args) throws Exception {
-    if (args.length > 0) {
-      verify(args);
+    static int f(Value v) {
+        return v.i;
     }
-    else {
-      for (int i = 0; i < 20_000; i++) {
-        try {
-          f(null);
+
+    public static void verify(String[] logFiles) throws Exception {
+        for (String logFile : logFiles) {
+            OutputAnalyzer oa = new OutputAnalyzer(Paths.get(logFile));
+            oa.shouldMatchByLine("<statistics type='deoptimization'>", // Start from this line
+                                 "</statistics>",                      // Match until this line
+                                 "(Deoptimization traps recorded:)|( .+)");
         }
-        catch (NullPointerException npe) { }
-      }
     }
-  }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length > 0) {
+            verify(args);
+        } else {
+            for (int i = 0; i < 20_000; i++) {
+                try {
+                    f(null);
+                }
+                catch (NullPointerException npe) { }
+            }
+        }
+    }
 }

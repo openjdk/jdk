@@ -351,7 +351,7 @@ void print_statistics() {
     CompileBroker::print_times();
   }
 
-#if defined(COMPILER2) || defined(INCLUDE_JVMCI)
+#ifdef COMPILER2_OR_JVMCI
   if ((LogVMOutput || LogCompilation) && UseCompiler) {
     // Only print the statistics to the log file
     FlagSetting fs(DisplayVMOutput, false);
