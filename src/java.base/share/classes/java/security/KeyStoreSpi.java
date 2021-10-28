@@ -448,8 +448,19 @@ public abstract class KeyStoreSpi {
     /**
      * Retrieves the attributes associated with the given alias.
      *
+     * @implSpec
+     * The default implementation returns an empty {@code Set}.
+     *
      * @param alias the alias name
      * @return an unmodifiable {@code Set} of attributes, possibly empty
+     *      if the given alias does not exist, or there is no
+     *      attributes associated with it. For a {@code PrivateKeyEntry}
+     *      or {@code SecretKeyEntry}, some attributes may be protected
+     *      and they should be populated into the entry returned by
+     *      {@link #engineGetEntry}.
+     *
+     * @throws KeyStoreException if the keystore has not been initialized
+     * (loaded).
      *
      * @since 18
      */

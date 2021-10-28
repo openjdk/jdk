@@ -1029,12 +1029,14 @@ public class KeyStore {
      * @param alias the alias name
      * @return an unmodifiable {@code Set} of attributes, possibly empty
      *      if the given alias does not exist, or there is no
-     *      attributes associated with it, or the attributes are
-     *      not extractable (For example, if the attributes is encrypted
-     *      in a private key entry or a secret key entry).
+     *      attributes associated with it. For a {@code PrivateKeyEntry}
+     *      or {@code SecretKeyEntry}, some attributes may be protected
+     *      and only available through the {@link Entry#getAttributes}
+     *      method after the entry is extracted.
      *
-     * @throws    KeyStoreException if the keystore has not been initialized
+     * @throws KeyStoreException if the keystore has not been initialized
      * (loaded).
+     * @throws NullPointerException if {@code alias} is {@code null}
      *
      * @since 18
      */
@@ -1043,7 +1045,7 @@ public class KeyStore {
         if (!initialized) {
             throw new KeyStoreException("Uninitialized keystore");
         }
-        return keyStoreSpi.engineGetAttributes(alias);
+        return keyStoreSpi.engineGetAttributes(Objects.requireNonNull(alias));
     }
 
     /**
