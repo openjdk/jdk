@@ -25,9 +25,7 @@
 
 package sun.nio.fs;
 
-import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.*;
 import java.nio.file.*;
 import java.nio.charset.Charset;
@@ -40,17 +38,9 @@ import sun.security.action.GetPropertyAction;
 class Util {
     private Util() { }
 
-    private static final Charset jnuEncoding;
-    static {
-        Charset cs;
-        try {
-            cs = Charset.forName(
-                    GetPropertyAction.privilegedGetProperty("sun.jnu.encoding"));
-        } catch (IllegalCharsetNameException | UnsupportedCharsetException ignore) {
-            cs = StandardCharsets.UTF_8;
-        }
-        jnuEncoding = cs;
-    }
+    private static final Charset jnuEncoding =
+        Charset.forName(GetPropertyAction.privilegedGetProperty("sun.jnu.encoding"),
+                        StandardCharsets.UTF_8);
 
     /**
      * Returns {@code Charset} corresponding to the sun.jnu.encoding property

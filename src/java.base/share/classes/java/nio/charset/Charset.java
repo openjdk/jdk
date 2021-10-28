@@ -27,6 +27,7 @@ package java.nio.charset;
 
 import jdk.internal.misc.VM;
 import sun.nio.cs.ThreadLocalCoders;
+import sun.nio.cs.UTF_8;
 import sun.security.action.GetPropertyAction;
 
 import java.nio.ByteBuffer;
@@ -642,17 +643,10 @@ public abstract class Charset
     public static Charset defaultCharset() {
         if (defaultCharset == null) {
             synchronized (Charset.class) {
-                try {
-                    String csn = GetPropertyAction
-                            .privilegedGetProperty("file.encoding");
-                    Charset cs = lookup(csn);
-                    if (cs != null)
-                        defaultCharset = cs;
-                    else
-                        defaultCharset = sun.nio.cs.UTF_8.INSTANCE;
-                } catch (Throwable t) {
-                    defaultCharset = sun.nio.cs.UTF_8.INSTANCE;
-                }
+                String csn = GetPropertyAction
+                        .privilegedGetProperty("file.encoding");
+                defaultCharset = csn != null ?
+                    forName(csn, UTF_8.INSTANCE) : UTF_8.INSTANCE;
             }
         }
         return defaultCharset;

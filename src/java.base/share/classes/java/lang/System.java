@@ -33,7 +33,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -45,9 +44,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URL;
-import java.nio.charset.*;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSource;
@@ -2016,14 +2017,9 @@ public final class System {
      * Create PrintStream for stdout/err based on encoding.
      */
     private static PrintStream newPrintStream(FileOutputStream fos, String enc) {
-       if (enc != null) {
-            Charset cs;
-            try {
-                cs = Charset.forName(enc);
-            } catch (IllegalCharsetNameException | UnsupportedCharsetException unused) {
-                cs = StandardCharsets.UTF_8;
-            }
-            return new PrintStream(new BufferedOutputStream(fos, 128), true, cs);
+        if (enc != null) {
+            return new PrintStream(new BufferedOutputStream(fos, 128), true,
+                                   Charset.forName(enc, StandardCharsets.UTF_8));
         }
         return new PrintStream(new BufferedOutputStream(fos, 128), true);
     }
