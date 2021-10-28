@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,68 +26,68 @@
   @key headful
   @bug 4140484
   @summary Heavyweight components inside invisible lightweight containers still show
-  @author Your Name: art@sparc.spb.su
   @run main NativeInLightShow
 */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Container;
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
 
 
 // The test verifies that the mixing code correctly handles COMPONENT_SHOWN events
 // while the top-level container is invisible.
 
-public class NativeInLightShow
-{
+public class NativeInLightShow {
     //Declare things used in the test, like buttons and labels here
-    static boolean buttonPressed = false;
-    public static void main(String args[]) throws Exception {
-        Frame f = new Frame("Test");
+    static volatile boolean buttonPressed = false;
 
-        Robot robot = null;
-        robot = new Robot();
-        robot.setAutoDelay(50);
+    public static void main(String[] args) throws Exception {
+        Frame frame = new Frame("Test");
 
-        Container c = new Container();
-        c.setLayout(new BorderLayout());
-        Button b = new Button("I'm should be visible!");
-        b.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e) {
-                System.out.println("Test PASSED");
-                buttonPressed = true;
-            }
+        Robot robot = new Robot();
+
+        Container container = new Container();
+        container.setLayout(new BorderLayout());
+        Button button = new Button("I'm should be visible!");
+        button.addActionListener(e -> {
+            System.out.println("Test PASSED");
+            buttonPressed = true;
         });
-        c.add(b);
 
-        f.add(c);
+        container.add(button);
+        frame.add(container);
+        frame.pack();
 
-        f.pack();
-
-        c.setVisible(false);
-        c.setVisible(true);
+        container.setVisible(false);
+        container.setVisible(true);
 
         // Wait for a while for COMPONENT_SHOW event to be dispatched
         robot.waitForIdle();
 
-        f.setVisible(true);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
 
         robot.waitForIdle();
+        robot.delay(1000);
 
-        Point buttonLocation = b.getLocationOnScreen();
+        Point buttonLocation = button.getLocationOnScreen();
 
         robot.mouseMove(buttonLocation.x + 5, buttonLocation.y + 5);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         // Wait for a while for ACTION event to be dispatched
         robot.waitForIdle();
-        robot.delay(100);
+        robot.delay(500);
 
+        frame.dispose();
         if (!buttonPressed) {
             System.out.println("Test FAILED");
             throw new RuntimeException("Button was not pressed");
         }
     }
-
 }
