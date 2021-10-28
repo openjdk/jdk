@@ -352,7 +352,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
   // this started.  If it is the same (i.e., no forwarding
   // pointer has been installed), then this thread owns
   // it.
-  if (obj->forward_to_atomic(obj, obj_mark)) {
+  if (obj->forward_to_atomic(obj, obj_mark) == NULL) {
     // We won any races, we "own" this object.
     assert(obj == obj->forwardee(), "Sanity");
 
