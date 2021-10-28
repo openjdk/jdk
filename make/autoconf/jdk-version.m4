@@ -240,18 +240,10 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is to calculate a string like this:
-      # 'adhoc.<username>.<base dir name>[.<git branch>]'
+      # 'adhoc.<username>.<base dir name>'
       # Outer [ ] to quote m4.
       [ basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'` ]
-      if test x$GIT != x; then
-        git_output=`cd $TOPDIR && $GIT rev-parse --abbrev-ref HEAD 2>/dev/null`
-        if test x$git_output != xmaster; then
-          git_branch=".$git_output"
-        else
-          git_branch=
-        fi
-      fi
-      VERSION_OPT="adhoc.$USERNAME.$basedirname$git_branch"
+      VERSION_OPT="adhoc.$USERNAME.$basedirname"
     fi
   fi
 
