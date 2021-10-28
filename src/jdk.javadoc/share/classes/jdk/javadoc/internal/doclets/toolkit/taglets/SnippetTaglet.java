@@ -261,7 +261,21 @@ public class SnippetTaglet extends BaseTaglet {
         assert inlineSnippet != null || externalSnippet != null;
         StyledText text = inlineSnippet != null ? inlineSnippet : externalSnippet;
 
-        return writer.snippetTagOutput(holder, snippetTag, text);
+        String lang = null;
+        AttributeTree langAttr = attributes.get("lang");
+        if (langAttr != null && langAttr.getValueKind() != AttributeTree.ValueKind.EMPTY) {
+            lang = stringOf(langAttr.getValue());
+        } else if (containsClass) {
+            lang = "java";
+        } else if (containsFile) {
+            lang = languageFromFileName(fileObject.getName());
+        }
+        AttributeTree idAttr = attributes.get("id");
+        String id = idAttr == null || idAttr.getValueKind() == AttributeTree.ValueKind.EMPTY
+                        ? null
+                        : stringOf(idAttr.getValue());
+
+        return writer.snippetTagOutput(holder, snippetTag, text, id, lang);
     }
 
     /*
@@ -296,6 +310,32 @@ public class SnippetTaglet extends BaseTaglet {
             // ErroneousTree is a subtype of TextTree
             .map(t -> ((TextTree) t).getBody())
             .collect(Collectors.joining());
+    }
+
+    private String languageFromFileName(String fileName) {
+        int lastDot = fileName.lastIndexOf('.');
+        if (lastDot == -1) {
+            return null;
+        }
+        return switch (fileName.substring(lastDot).toLowerCase()) {
+            // TODO: this list could probably be expanded
+            case ".bat"                              -> "batch";
+            case ".c", ".h"                          -> "c";
+            case ".clj", ".cljs", ".cljc"            -> "clojure";
+            case ".cpp", ".hpp"                      -> "cpp";
+            case ".groovy", ".gvy", ".gy", ".gsh"    -> "groovy";
+            case ".java"                             -> "java";
+            case ".js"                               -> "javascript";
+            case ".json"                             -> "json";
+            case ".kt", ".ktm", ".kts"               -> "kotlin";
+            case ".properties"                       -> "properties";
+            case ".py"                               -> "python";
+            case ".rb"                               -> "ruby";
+            case ".scala", ".sc"                     -> "scala";
+            case ".sh"                               -> "bash";
+            case ".tex"                              -> "latex";
+            default                                  -> null;
+        };
     }
 
     private void error(TagletWriter writer, Element holder, DocTree tag, String key, Object... args) {
