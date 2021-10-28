@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@
 #include "memory/padded.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/oopForwarding.hpp"
 #include "oops/compressedOops.inline.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
@@ -316,11 +315,11 @@ void PSPromotionManager::process_array_chunk(PartialArrayScanTask task) {
 
   oop old = task.to_source_array();
   assert(old->is_objArray(), "invariant");
-  assert(OopForwarding(old).is_forwarded(), "invariant");
+  assert(old->is_forwarded(), "invariant");
 
   TASKQUEUE_STATS_ONLY(++_array_chunks_processed);
 
-  oop const obj = OopForwarding(old).forwardee();
+  oop const obj = old->forwardee();
 
   int start;
   int const end = arrayOop(old)->length();
@@ -345,7 +344,7 @@ void PSPromotionManager::process_array_chunk(PartialArrayScanTask task) {
   }
 }
 
-oop PSPromotionManager::oop_promotion_failed(oop obj, const OopForwarding& fwd) {
+oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
   assert(_old_gen_is_full || PromotionFailureALot, "Sanity");
 
   // Attempt to CAS in the header.
@@ -353,22 +352,21 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, const OopForwarding& fwd) 
   // this started.  If it is the same (i.e., no forwarding
   // pointer has been installed), then this thread owns
   // it.
-  oop forwardee = fwd.forward_to_atomic(obj);
-  if (forwardee== NULL) {
+  if (obj->forward_to_atomic(obj, obj_mark)) {
     // We won any races, we "own" this object.
-    assert(obj == OopForwarding(obj).forwardee(), "Sanity");
+    assert(obj == obj->forwardee(), "Sanity");
 
     _promotion_failed_info.register_copy_failure(obj->size());
 
     push_contents(obj);
 
-    _preserved_marks->push_if_necessary(obj, fwd.mark());
+    _preserved_marks->push_if_necessary(obj, obj_mark);
   }  else {
     // We lost, someone else "owns" this object
-    guarantee(OopForwarding(obj).is_forwarded(), "Object must be forwarded if the cas failed.");
+    guarantee(obj->is_forwarded(), "Object must be forwarded if the cas failed.");
 
     // No unallocation to worry about.
-    obj = forwardee;
+    obj = obj->forwardee();
   }
 
   return obj;

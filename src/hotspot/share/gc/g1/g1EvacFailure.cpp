@@ -36,7 +36,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopForwarding.hpp"
 
 class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
   G1CollectedHeap* _g1h;
@@ -71,8 +70,7 @@ public:
     HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
     assert(_hr->is_in(obj_addr), "sanity");
 
-    OopForwarding fwd(obj);
-    if (fwd.is_forwarded() && fwd.forwardee() == obj) {
+    if (obj->is_forwarded() && obj->forwardee() == obj) {
       // The object failed to move.
 
       zap_dead_objects(_last_forwarded_object_end, obj_addr);

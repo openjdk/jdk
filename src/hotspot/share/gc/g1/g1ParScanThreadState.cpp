@@ -40,7 +40,6 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopForwarding.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -204,11 +203,11 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
     return;
   }
 
-  OopForwarding fwd(obj);
-  if (fwd.is_forwarded()) {
-    obj = fwd.forwardee();
+  markWord m = obj->mark();
+  if (m.is_forwarded()) {
+    obj = m.forwardee();
   } else {
-    obj = do_copy_to_survivor_space(region_attr, obj, fwd);
+    obj = do_copy_to_survivor_space(region_attr, obj, m);
   }
   RawAccess<IS_NOT_NULL>::oop_store(p, obj);
 
@@ -221,10 +220,9 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
 
   assert(_g1h->is_in_reserved(from_obj), "must be in heap.");
   assert(from_obj->is_objArray(), "must be obj array");
-  OopForwarding fwd(from_obj);
-  assert(fwd.is_forwarded(), "must be forwarded");
+  assert(from_obj->is_forwarded(), "must be forwarded");
 
-  oop to_obj = fwd.forwardee();
+  oop to_obj = from_obj->forwardee();
   assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
   assert(to_obj->is_objArray(), "must be obj array");
   objArrayOop to_array = objArrayOop(to_obj);
@@ -252,8 +250,8 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                                   oop from_obj,
                                                   oop to_obj) {
   assert(from_obj->is_objArray(), "precondition");
-  assert(OopForwarding(from_obj).is_forwarded(), "precondition");
-  assert(OopForwarding(from_obj).forwardee() == to_obj, "precondition");
+  assert(from_obj->is_forwarded(), "precondition");
+  assert(from_obj->forwardee() == to_obj, "precondition");
   assert(from_obj != to_obj, "should not be scanning self-forwarded objects");
   assert(to_obj->is_objArray(), "precondition");
 
@@ -441,7 +439,7 @@ void G1ParScanThreadState::undo_allocation(G1HeapRegionAttr dest_attr,
 MAYBE_INLINE_EVACUATION
 oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const region_attr,
                                                     oop const old,
-                                                    const OopForwarding& fwd) {
+                                                    markWord const old_mark) {
   assert(region_attr.is_in_cset(),
          "Unexpected region attr type: %s", region_attr.get_type_str());
 
@@ -451,7 +449,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   const size_t word_sz = old->size_given_klass(klass);
 
   uint age = 0;
-  G1HeapRegionAttr dest_attr = next_region_attr(region_attr, fwd.mark(), age);
+  G1HeapRegionAttr dest_attr = next_region_attr(region_attr, old_mark, age);
   HeapRegion* const from_region = _g1h->heap_region_containing(old);
   uint node_index = from_region->node_index();
 
@@ -464,7 +462,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     if (obj_ptr == NULL) {
       // This will either forward-to-self, or detect that someone else has
       // installed a forwarding pointer.
-      return handle_evacuation_failure_par(old, fwd, word_sz);
+      return handle_evacuation_failure_par(old, old_mark, word_sz);
     }
   }
 
@@ -476,7 +474,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
     undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
-    return handle_evacuation_failure_par(old, fwd, word_sz);
+    return handle_evacuation_failure_par(old, old_mark, word_sz);
   }
 
   // We're going to allocate linearly, so might as well prefetch ahead.
@@ -484,7 +482,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), obj_ptr, word_sz);
 
   const oop obj = cast_to_oop(obj_ptr);
-  const oop forward_ptr = fwd.forward_to_atomic(obj, memory_order_relaxed);
+  const oop forward_ptr = old->forward_to_atomic(obj, old_mark, memory_order_relaxed);
   if (forward_ptr == NULL) {
 
     {
@@ -544,8 +542,8 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
 ATTRIBUTE_FLATTEN
 oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr region_attr,
                                                  oop old,
-                                                 const OopForwarding& fwd) {
-  return do_copy_to_survivor_space(region_attr, old, fwd);
+                                                 markWord old_mark) {
+  return do_copy_to_survivor_space(region_attr, old, old_mark);
 }
 
 G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) {
@@ -602,10 +600,10 @@ void G1ParScanThreadStateSet::record_unused_optional_region(HeapRegion* hr) {
 }
 
 NOINLINE
-oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, const OopForwarding& fwd, size_t word_sz) {
+oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, size_t word_sz) {
   assert(_g1h->is_in_cset(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
 
-  oop forward_ptr = fwd.forward_to_atomic(old, memory_order_relaxed);
+  oop forward_ptr = old->forward_to_atomic(old, m, memory_order_relaxed);
   if (forward_ptr == NULL) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
@@ -614,7 +612,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, const OopForwar
       _g1h->hr_printer()->evac_failure(r);
     }
 
-    _preserved_marks->push_if_necessary(old, fwd.mark());
+    _preserved_marks->push_if_necessary(old, m);
     _evacuation_failed_info.register_copy_failure(word_sz);
 
     // For iterating objects that failed evacuation currently we can reuse the

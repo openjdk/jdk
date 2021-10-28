@@ -190,7 +190,7 @@ int oopDesc::size_given_klass(Klass* klass)  {
       // disjunct below to fail if the two comparands are computed across such
       // a concurrent change.
       assert((s == klass->oop_size(this)) ||
-             (Universe::is_gc_active() && is_objArray() && mark().is_marked() && (get_UseParallelGC() || get_UseG1GC())),
+             (Universe::is_gc_active() && is_objArray() && is_forwarded() && (get_UseParallelGC() || get_UseG1GC())),
              "wrong array object size");
     } else {
       // Must be zero, so bite the bullet and take the virtual call.
@@ -256,6 +256,40 @@ bool oopDesc::is_unlocked() const {
 // Used only for markSweep, scavenging
 bool oopDesc::is_gc_marked() const {
   return mark().is_marked();
+}
+
+// Used by scavengers
+bool oopDesc::is_forwarded() const {
+  // The extra heap check is needed since the obj might be locked, in which case the
+  // mark would point to a stack location and have the sentinel bit cleared
+  return mark().is_marked();
+}
+
+// Used by scavengers
+void oopDesc::forward_to(oop p) {
+  verify_forwardee(p);
+  markWord m = markWord::encode_pointer_as_mark(p);
+  assert(m.decode_pointer() == p, "encoding must be reversable");
+  set_mark(m);
+}
+
+oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
+  verify_forwardee(p);
+  markWord m = markWord::encode_pointer_as_mark(p);
+  assert(m.decode_pointer() == p, "encoding must be reversable");
+  markWord old_mark = cas_set_mark(m, compare, order);
+  if (old_mark == compare) {
+    return NULL;
+  } else {
+    return cast_to_oop(old_mark.decode_pointer());
+  }
+}
+
+// Note that the forwardee is not the same thing as the displaced_mark.
+// The forwardee is used when copying during scavenge and mark-sweep.
+// It does need to clear the low two locking- and GC-related bits.
+oop oopDesc::forwardee() const {
+  return cast_to_oop(mark().decode_pointer());
 }
 
 // The following method needs to be MT safe.

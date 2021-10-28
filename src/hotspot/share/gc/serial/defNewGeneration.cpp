@@ -53,7 +53,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopForwarding.hpp"
 #include "runtime/java.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/thread.inline.hpp"
@@ -72,7 +71,7 @@ DefNewGeneration::IsAliveClosure::IsAliveClosure(Generation* young_gen) : _young
 }
 
 bool DefNewGeneration::IsAliveClosure::do_object_b(oop p) {
-  return cast_from_oop<HeapWord*>(p) >= _young_gen->reserved().end() || OopForwarding(p).is_forwarded();
+  return cast_from_oop<HeapWord*>(p) >= _young_gen->reserved().end() || p->is_forwarded();
 }
 
 DefNewGeneration::KeepAliveClosure::
@@ -687,7 +686,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
   _promotion_failed_info.register_copy_failure(old->size());
   _preserved_marks_set.get()->push_if_necessary(old, old->mark());
   // forward to self
-  OopForwarding::forward_to(old,old);
+  old->forward_to(old);
 
   _promo_failure_scan_stack.push(old);
 
@@ -700,7 +699,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
 }
 
 oop DefNewGeneration::copy_to_survivor_space(oop old) {
-  assert(is_in_reserved(old) && !OopForwarding(old).is_forwarded(),
+  assert(is_in_reserved(old) && !old->is_forwarded(),
          "shouldn't be scavenging this oop");
   size_t s = old->size();
   oop obj = NULL;
@@ -733,7 +732,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   }
 
   // Done, insert forward pointer to obj in this header
-  OopForwarding::forward_to(old,obj);
+  old->forward_to(obj);
 
   if (SerialStringDedup::is_candidate_from_evacuation(obj, new_obj_is_tenured)) {
     // Record old; request adds a new weak reference, which reference

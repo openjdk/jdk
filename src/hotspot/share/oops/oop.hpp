@@ -246,6 +246,21 @@ class oopDesc {
   // garbage collection
   inline bool is_gc_marked() const;
 
+  // Forward pointer operations for scavenge
+  inline bool is_forwarded() const;
+
+  void verify_forwardee(oop forwardee) NOT_DEBUG_RETURN;
+
+  inline void forward_to(oop p);
+
+  // Like "forward_to", but inserts the forwarding pointer atomically.
+  // Exactly one thread succeeds in inserting the forwarding pointer, and
+  // this call returns "NULL" for that thread; any other thread has the
+  // value of the forwarding pointer returned and does not modify "this".
+  inline oop forward_to_atomic(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
+
+  inline oop forwardee() const;
+
   // Age of object during scavenge
   inline uint age() const;
   inline void incr_age();

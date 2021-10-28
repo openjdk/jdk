@@ -43,7 +43,6 @@ class G1EvacuationRootClosures;
 class G1OopStarChunkedList;
 class G1PLABAllocator;
 class HeapRegion;
-class OopForwarding;
 class PreservedMarks;
 class PreservedMarksSet;
 class outputStream;
@@ -171,7 +170,7 @@ private:
 
   oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
                                 oop obj,
-                                const OopForwarding& fwd);
+                                markWord old_mark);
 
   // This method is applied to the fields of the objects that have just been copied.
   template <class T> void do_oop_evac(T* p);
@@ -205,7 +204,7 @@ private:
   inline void update_numa_stats(uint node_index);
 
 public:
-  oop copy_to_survivor_space(G1HeapRegionAttr region_attr, oop obj, const OopForwarding& fwd);
+  oop copy_to_survivor_space(G1HeapRegionAttr region_attr, oop obj, markWord old_mark);
 
   inline void trim_queue();
   inline void trim_queue_partially();
@@ -215,7 +214,7 @@ public:
   void reset_trim_ticks();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(oop obj, const OopForwarding& fwd, size_t word_sz);
+  oop handle_evacuation_failure_par(oop obj, markWord m, size_t word_sz);
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);

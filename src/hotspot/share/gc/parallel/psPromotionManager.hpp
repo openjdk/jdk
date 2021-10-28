@@ -47,7 +47,6 @@
 //
 
 class MutableSpace;
-class OopForwarding;
 class PSOldGen;
 class ParCompactionManager;
 
@@ -114,7 +113,7 @@ class PSPromotionManager {
   static PSScannerTasksQueueSet* stack_array_depth() { return _stack_array_depth; }
 
   template<bool promote_immediately>
-  oop copy_unmarked_to_survivor_space(oop o, const OopForwarding& fwd);
+  oop copy_unmarked_to_survivor_space(oop o, markWord m);
 
  public:
   // Static
@@ -142,7 +141,7 @@ class PSPromotionManager {
 
   // Promotion methods
   template<bool promote_immediately> oop copy_to_survivor_space(oop o);
-  oop oop_promotion_failed(oop obj, const OopForwarding& fwd);
+  oop oop_promotion_failed(oop obj, markWord obj_mark);
 
   void reset();
   void register_preserved_marks(PreservedMarks* preserved_marks);

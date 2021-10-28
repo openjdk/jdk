@@ -28,7 +28,6 @@
 #include "gc/shared/workerUtils.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oopForwarding.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
@@ -47,9 +46,8 @@ void PreservedMarks::adjust_during_full_gc() {
     OopAndMarkWord* elem = iter.next_addr();
 
     oop obj = elem->get_oop();
-    OopForwarding fwd(obj);
-    if (fwd.is_forwarded()) {
-      elem->set_oop(fwd.forwardee());
+    if (obj->is_forwarded()) {
+      elem->set_oop(obj->forwardee());
     }
   }
 }
@@ -74,7 +72,7 @@ void PreservedMarks::assert_empty() {
 #endif // ndef PRODUCT
 
 void RemoveForwardedPointerClosure::do_object(oop obj) {
-  if (OopForwarding(obj).is_forwarded()) {
+  if (obj->is_forwarded()) {
     PreservedMarks::init_forwarded_mark(obj);
   }
 }

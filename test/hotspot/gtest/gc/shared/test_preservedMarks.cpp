@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
-#include "oops/oopForwarding.hpp"
 #include "oops/oop.inline.hpp"
 #include "unittest.hpp"
 
@@ -75,8 +74,8 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
   // Fake a move from o1->o3 and o2->o4.
   o1.forward_to(o3.get_oop());
   o2.forward_to(o4.get_oop());
-  ASSERT_EQ(OopForwarding(o1.get_oop()).forwardee(), o3.get_oop());
-  ASSERT_EQ(OopForwarding(o2.get_oop()).forwardee(), o4.get_oop());
+  ASSERT_EQ(o1.get_oop()->forwardee(), o3.get_oop());
+  ASSERT_EQ(o2.get_oop()->forwardee(), o4.get_oop());
   // Adjust will update the PreservedMarks stack to
   // make sure the mark is updated at the new location.
   pm.adjust_during_full_gc();

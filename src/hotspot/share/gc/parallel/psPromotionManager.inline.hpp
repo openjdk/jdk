@@ -38,7 +38,6 @@
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/oopForwarding.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -137,16 +136,16 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   // NOTE! We must be very careful with any methods that access the mark
   // in o. There may be multiple threads racing on it, and it may be forwarded
   // at any time.
-  OopForwarding fwd(o);
-  if (!fwd.is_forwarded()) {
-    return copy_unmarked_to_survivor_space<promote_immediately>(o, fwd);
+  markWord m = o->mark();
+  if (!m.is_forwarded()) {
+    return copy_unmarked_to_survivor_space<promote_immediately>(o, m);
   } else {
     // Ensure any loads from the forwardee follow all changes that precede
     // the release-cmpxchg that performed the forwarding, possibly in some
     // other thread.
     OrderAccess::acquire();
     // Return the already installed forwardee.
-    return fwd.forwardee();
+    return cast_to_oop(m.forwardee());
   }
 }
 
@@ -157,7 +156,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
 //
 template<bool promote_immediately>
 inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
-                                                               const OopForwarding& fwd) {
+                                                               markWord test_mark) {
   assert(should_scavenge(&o), "Sanity");
 
   oop new_obj = NULL;
@@ -165,7 +164,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   size_t new_obj_size = o->size();
 
   // Find the objects age, MT safe.
-  markWord test_mark = fwd.mark();
   uint age = (test_mark.has_displaced_mark_helper() /* o->has_displaced_mark() */) ?
       test_mark.displaced_mark_helper().age() : test_mark.age();
 
@@ -201,7 +199,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   if (new_obj == NULL) {
 #ifndef PRODUCT
     if (ParallelScavengeHeap::heap()->promotion_should_fail()) {
-      return oop_promotion_failed(o, fwd);
+      return oop_promotion_failed(o, test_mark);
     }
 #endif  // #ifndef PRODUCT
 
@@ -244,7 +242,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
 
       if (new_obj == NULL) {
         _old_gen_is_full = true;
-        return oop_promotion_failed(o, fwd);
+        return oop_promotion_failed(o, test_mark);
       }
     }
   }
@@ -256,10 +254,10 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
 
   // Now we have to CAS in the header.
   // Make copy visible to threads reading the forwardee.
-  oop forwardee = fwd.forward_to_atomic(new_obj, memory_order_release);
+  oop forwardee = o->forward_to_atomic(new_obj, test_mark, memory_order_release);
   if (forwardee == NULL) {  // forwardee is NULL when forwarding is successful
     // We won any races, we "own" this object.
-    assert(new_obj == OopForwarding(o).forwardee(), "Sanity");
+    assert(new_obj == o->forwardee(), "Sanity");
 
     // Increment age if obj still in new generation. Now that
     // we're dealing with a markWord that cannot change, it is
@@ -296,8 +294,8 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     // release-cmpxchg that performed the forwarding in another thread.
     OrderAccess::acquire();
 
-    assert(OopForwarding(o).is_forwarded(), "Object must be forwarded if the cas failed.");
-    assert(OopForwarding(o).forwardee() == forwardee, "invariant");
+    assert(o->is_forwarded(), "Object must be forwarded if the cas failed.");
+    assert(o->forwardee() == forwardee, "invariant");
 
     // Try to deallocate the space.  If it was directly allocated we cannot
     // deallocate it, so we have to test.  If the deallocation fails,

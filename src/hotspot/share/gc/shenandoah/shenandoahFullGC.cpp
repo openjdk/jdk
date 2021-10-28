@@ -53,7 +53,6 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/oopForwarding.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/thread.hpp"
@@ -359,7 +358,7 @@ public:
     assert(_compact_point + obj_size <= _to_region->end(), "must fit");
     shenandoah_assert_not_forwarded(NULL, p);
     _preserved_marks->push_if_necessary(p, p->mark());
-    OopForwarding::forward_to(p, cast_to_oop(_compact_point));
+    p->forward_to(cast_to_oop(_compact_point));
     _compact_point += obj_size;
   }
 };
@@ -467,7 +466,7 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
       if (start >= to_begin && start != r->index()) {
         // Fits into current window, and the move is non-trivial. Record the move then, and continue scan.
         _preserved_marks->get(0)->push_if_necessary(old_obj, old_obj->mark());
-        OopForwarding::forward_to(old_obj, cast_to_oop(heap->get_region(start)->bottom()));
+        old_obj->forward_to(cast_to_oop(heap->get_region(start)->bottom()));
         to_end = start;
         continue;
       }
@@ -727,9 +726,8 @@ private:
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       assert(_ctx->is_marked(obj), "must be marked");
-      OopForwarding fwd(obj);
-      if (fwd.is_forwarded()) {
-        oop forw = fwd.forwardee();
+      if (obj->is_forwarded()) {
+        oop forw = obj->forwardee();
         RawAccess<IS_NOT_NULL>::oop_store(p, forw);
       }
     }
@@ -837,10 +835,9 @@ public:
   void do_object(oop p) {
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
     size_t size = (size_t)p->size();
-    OopForwarding fwd(p);
-    if (fwd.is_forwarded()) {
+    if (p->is_forwarded()) {
       HeapWord* compact_from = cast_from_oop<HeapWord*>(p);
-      HeapWord* compact_to = cast_from_oop<HeapWord*>(fwd.forwardee());
+      HeapWord* compact_to = cast_from_oop<HeapWord*>(p->forwardee());
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = cast_to_oop(compact_to);
       new_obj->init_mark();
@@ -940,8 +937,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
     ShenandoahHeapRegion* r = heap->get_region(c - 1);
     if (r->is_humongous_start()) {
       oop old_obj = cast_to_oop(r->bottom());
-      OopForwarding fwd(old_obj);
-      if (!fwd.is_forwarded()) {
+      if (!old_obj->is_forwarded()) {
         // No need to move the object, it stays at the same slot
         continue;
       }
@@ -950,7 +946,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
 
       size_t old_start = r->index();
       size_t old_end   = old_start + num_regions - 1;
-      size_t new_start = heap->heap_region_index_containing(fwd.forwardee());
+      size_t new_start = heap->heap_region_index_containing(old_obj->forwardee());
       size_t new_end   = new_start + num_regions - 1;
       assert(old_start != new_start, "must be real move");
       assert(r->is_stw_move_allowed(), "Region " SIZE_FORMAT " should be movable", r->index());

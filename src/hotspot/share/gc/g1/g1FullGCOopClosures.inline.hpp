@@ -36,7 +36,6 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/oopForwarding.hpp"
 #include "oops/oop.inline.hpp"
 
 template <typename T>
@@ -78,9 +77,8 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
     return;
   }
 
-  OopForwarding fwd(obj);
-  if (fwd.is_forwarded()) {
-    oop forwardee = fwd.forwardee();
+  if (obj->is_forwarded()) {
+    oop forwardee = obj->forwardee();
     // Forwarded, just update.
     assert(G1CollectedHeap::heap()->is_in_reserved(forwardee), "should be in object space");
     RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);

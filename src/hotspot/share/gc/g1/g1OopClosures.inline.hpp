@@ -36,7 +36,6 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/oopForwarding.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -56,7 +55,8 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
   // problems before we go into push_on_queue to know where the
   // problem is coming from
   assert((obj == RawAccess<>::oop_load(p)) ||
-         (OopForwarding(obj).forwardee() == RawAccess<>::oop_load(p)),
+         (obj->is_forwarded() &&
+         obj->forwardee() == RawAccess<>::oop_load(p)),
          "p should still be pointing to obj or to its forwardee");
 
   _par_scan_state->push_on_queue(ScannerTask(p));
@@ -232,11 +232,11 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
   const G1HeapRegionAttr state = _g1h->region_attr(obj);
   if (state.is_in_cset()) {
     oop forwardee;
-    OopForwarding fwd = OopForwarding(obj);
-    if (fwd.is_forwarded()) {
-      forwardee = fwd.forwardee();
+    markWord m = obj->mark();
+    if (m.is_forwarded()) {
+      forwardee = m.forwardee();
     } else {
-      forwardee = _par_scan_state->copy_to_survivor_space(state, obj, fwd);
+      forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }
     assert(forwardee != NULL, "forwardee should not be NULL");
     RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
