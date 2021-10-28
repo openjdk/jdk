@@ -319,7 +319,7 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
     // Handle the case when the allocation input to VectorBoxNode is a phi
     // but the vector input is not, which can definitely be the case if the
     // vector input has been value-numbered. It seems to be safe to do by
-    // construction because VectorBoxNode and VectorBoxAllocation come in a
+    // construction because VectorBoxNode and VectorBoxAllocate come in a
     // specific order as a result of expanding an intrinsic call. After that, if
     // any of the inputs to VectorBoxNode are value-numbered they can only
     // move up and are guaranteed to dominate.
