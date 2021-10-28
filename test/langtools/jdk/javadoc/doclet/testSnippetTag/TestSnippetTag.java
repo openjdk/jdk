@@ -1841,7 +1841,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testRedundantFileNotFound(Path base) throws Exception {
+    public void testHybridFileNotFound(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1866,7 +1866,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testRedundantRegionNotFound(Path base) throws Exception {
+    public void testHybridRegionNotFound(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1897,7 +1897,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testRedundantMismatch(Path base) throws Exception {
+    public void testHybridMismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1926,7 +1926,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testRedundantRegionRegionMismatch(Path base) throws Exception {
+    public void testHybridRegionRegionMismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1966,7 +1966,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testRedundantRegion1Mismatch(Path base) throws Exception {
+    public void testHybridRegion1Mismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -2000,7 +2000,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testRedundantRegion2Mismatch(Path base) throws Exception {
+    public void testHybridRegion2Mismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -2037,7 +2037,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testRedundant(Path base) throws Exception {
+    public void testHybrid(Path base) throws Exception {
         record TestCase(Snippet snippet, String expectedOutput) { }
         final var testCases = List.of(
                 new TestCase(newSnippetBuilder()
