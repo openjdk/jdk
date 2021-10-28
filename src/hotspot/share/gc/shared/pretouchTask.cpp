@@ -29,6 +29,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
 
 PretouchTask::PretouchTask(const char* task_name,
                            char* start_address,
@@ -67,6 +68,9 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
   // Chunk size should be at least (unmodified) page size as using multiple threads
   // pretouch on a single page can decrease performance.
   size_t chunk_size = MAX2(PretouchTask::chunk_size(), page_size);
+  // Page-align the chunk size, so if start_address is also page-aligned (as
+  // is common) then there won't be any pages shared by multiple chunks.
+  chunk_size = align_down(chunk_size, page_size);
 #ifdef LINUX
   // When using THP we need to always pre-touch using small pages as the OS will
   // initially always use small pages.
