@@ -377,8 +377,11 @@ public final class Subject implements java.io.Serializable {
      * Subject.doAs(subject, altAction)} which stores the subject in
      * a new {@code AccessControlContext}, where {@code altAction.run()}
      * is equivalent to {@code action.call()} and the exception thrown is
-     * modified to match the specification of this method.
-     * If the system property {@code jdk.security.auth.subject.useTL}
+     * modified to match the specification of this method. This preserves
+     * compatibility with code that may still be calling
+     * {@code getSubject(AccessControlContext)} which retrieves the subject
+     * from an {@code AccessControlContext}. However,
+     * if the system property {@code jdk.security.auth.subject.useTL}
      * is set to {@code true}, the current subject will be stored in an inheritable
      * {@code ThreadLocal} object. This behavior is subject to change in a
      * future version.
@@ -390,7 +393,7 @@ public final class Subject implements java.io.Serializable {
      * @param <T> the type of value returned by the {@code call} method
      *            of {@code action}
      * @return the value returned by the {@code call} method of {@code action}
-     * @throws NullPointerException if {@code code} is {@code null}
+     * @throws NullPointerException if {@code action} is {@code null}
      * @throws CompletionException if {@code action.call()} throws an exception.
      *      The cause of the {@code CompletionException} is set to the exception
      *      thrown by {@code action.call()}.
@@ -462,10 +465,10 @@ public final class Subject implements java.io.Serializable {
      * @deprecated This method depends on {@link AccessControlContext}
      *       which, in conjunction with
      *       {@linkplain SecurityManager the Security Manager}, is deprecated
-     *       and subject to removal in a future release. Instead, users can
-     *       call {@link #callAs} to perform the same work, which is based on
-     *       {@link #doAs(Subject, PrivilegedExceptionAction)}
-     *       by default in this implementation.
+     *       and subject to removal in a future release. However, performing
+     *       work as a Subject is useful independent of the Security Manager.
+     *       Thus, a replacement API named {@link #callAs} has been added
+     *       which can be used to perform the same work.
      */
     @SuppressWarnings("removal")
     @Deprecated(since="18", forRemoval=true)
@@ -534,9 +537,10 @@ public final class Subject implements java.io.Serializable {
      * @deprecated This method depends on {@link AccessControlContext}
      *       which, in conjunction with
      *       {@linkplain SecurityManager the Security Manager}, is deprecated
-     *       and subject to removal in a future release. Instead, users can
-     *       call {@link #callAs} to perform the same work, which is based on
-     *       this method by default in this implementation.
+     *       and subject to removal in a future release. However, performing
+     *       work as a Subject is useful independent of the Security Manager.
+     *       Thus, a replacement API named {@link #callAs} has been added
+     *       which can be used to perform the same work.
      */
     @SuppressWarnings("removal")
     @Deprecated(since="18", forRemoval=true)
