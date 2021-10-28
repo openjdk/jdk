@@ -135,10 +135,10 @@ public final class FullScreenInsets {
             for (int x = 0; x < bi.getWidth(); x++) {
                 Color col = new Color(bi.getRGB(x,y));
 
-		if ((Math.abs(col.getAlpha()-color.getAlpha()) > tolerance) ||
-		    (Math.abs(col.getRed()-color.getRed()) > tolerance) ||
-		    (Math.abs(col.getBlue()-color.getBlue()) > tolerance) ||
-		    (Math.abs(col.getGreen()-color.getGreen()) > tolerance)) {
+                if ((Math.abs(col.getAlpha()-color.getAlpha()) > tolerance) ||
+                    (Math.abs(col.getRed()-color.getRed()) > tolerance) ||
+                    (Math.abs(col.getBlue()-color.getBlue()) > tolerance) ||
+                    (Math.abs(col.getGreen()-color.getGreen()) > tolerance)) {
                     System.err.println(
                             "Incorrect pixel at " + x + "x" + y + " : " +
                             Integer.toHexString(bi.getRGB(x, y)) +
