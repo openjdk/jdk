@@ -34,9 +34,12 @@ import java.awt.*;
 public class MultiPaintEventTest extends Canvas {
 
     private int count = 0;
+    private final Object lock = new Object();
 
     public void paint(Graphics g) {
-        count++;
+        synchronized(lock) {
+            count++;
+        }
 
         int w = getWidth();
         int h = getHeight();
@@ -51,7 +54,9 @@ public class MultiPaintEventTest extends Canvas {
     }
 
     public int getCount() {
-        return count;
+        synchronized(lock) {
+            return count;
+        }
     }
 
     public Dimension getPreferredSize() {
@@ -73,6 +78,7 @@ public class MultiPaintEventTest extends Canvas {
                 throw new RuntimeException("Processed unnecessary paint().");
             }
         } catch (InterruptedException ex) {
+            throw new RuntimeException("Failed: Interrupted");
         } finally {
             frame.dispose();
         }
