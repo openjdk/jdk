@@ -567,7 +567,7 @@ javax/management/monitor/DerivedGaugeMonitorTest.java         8042211 generic-al
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
-java/io/File/createTempFile/SpecialTempFile.java                8275650 windows-11
+java/io/File/createTempFile/SpecialTempFile.java                8275650 windows11
 
 ############################################################################
 
