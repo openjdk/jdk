@@ -76,12 +76,16 @@ public class bug6276188 {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
 
-            Color color = robot.getPixelColor(p.x-10, p.y-10);
+            Color color = robot.getPixelColor(p.x, p.y);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
             boolean red = color.getRed() > 0 && color.getGreen() == 0 && color.getBlue() == 0;
-            if (!red) {
                 System.err.println("Red: " + color.getRed() + "; Green: " + color.getGreen() + "; Blue: " + color.getBlue());
+            if (!red) {
+                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
+                BufferedImage img = robot.createScreenCapture(screen);
+                javax.imageio.ImageIO.write(img, "png", new java.io.File("image.png"));
                 throw new RuntimeException("Synth ButtonUI does not handle PRESSED & MOUSE_OVER state");
             }
         } finally {

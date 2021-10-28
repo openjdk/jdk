@@ -84,7 +84,7 @@ public class PressedIconTest {
         robot.waitForIdle();
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
-        Color color = robot.getPixelColor(centerX-10, centerY-10);
+        Color color = robot.getPixelColor(centerX, centerY);
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
