@@ -3445,8 +3445,7 @@ public final class Unsafe {
      */
     @IntrinsicCandidate
     public final void storeStoreFence() {
-        // Without the special intrinsic, default to a stronger storeFence,
-        // which is already intrinsified.
+        // If storeStoreFence intrinsic is not available, fall back to storeFence.
         storeFence();
     }
 
