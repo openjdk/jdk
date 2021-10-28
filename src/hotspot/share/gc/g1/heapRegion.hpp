@@ -202,6 +202,10 @@ public:
     _bot_part.update();
   }
 
+  void update_bot_threshold() {
+    _bot_part.set_threshold(top());
+  }
+
 private:
   // The remembered set for this region.
   HeapRegionRemSet* _rem_set;

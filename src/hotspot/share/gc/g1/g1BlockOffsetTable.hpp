@@ -208,6 +208,11 @@ public:
   // updated.
   HeapWord* threshold() const { return _next_offset_threshold; }
 
+  // Sets the threshold explicitly to keep it consistent with what has been
+  // updated. This needs to be done when the threshold is not used for updating
+  // the bot, for example when promoting to old in young collections.
+  void set_threshold(HeapWord* threshold) { _next_offset_threshold = threshold; }
+
   // These must be guaranteed to work properly (i.e., do nothing)
   // when "blk_start" ("blk" for second version) is "NULL".  In this
   // implementation, that's true because NULL is represented as 0, and thus
