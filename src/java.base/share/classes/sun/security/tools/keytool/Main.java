@@ -2872,7 +2872,7 @@ public final class Main {
 
             JarFile jf = new JarFile(jarfile, true);
             Enumeration<JarEntry> entries = jf.entries();
-            Set<CodeSigner> ss = new HashSet<>();
+            LinkedHashSet<CodeSigner> ss = new LinkedHashSet<>();
             byte[] buffer = new byte[8192];
             int pos = 0;
             while (entries.hasMoreElements()) {
