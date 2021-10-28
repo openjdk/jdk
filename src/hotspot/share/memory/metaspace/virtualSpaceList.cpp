@@ -34,6 +34,7 @@
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
 namespace metaspace {
@@ -74,8 +75,10 @@ VirtualSpaceList::VirtualSpaceList(const char* name, ReservedSpace rs, CommitLim
 
 VirtualSpaceList::~VirtualSpaceList() {
   assert_lock_strong(Metaspace_lock);
-  // Note: normally, there is no reason ever to delete a vslist since they are
-  // global objects, but for gtests it makes sense to allow this.
+  // Delete every single mapping in this list.
+  // Please note that this only gets executed during gtests under controlled
+  // circumstances, so we do not have any concurrency issues here. The "real"
+  // lists in metaspace are immortal.
   VirtualSpaceNode* vsn = _first_node;
   VirtualSpaceNode* vsn2 = vsn;
   while (vsn != NULL) {
@@ -96,7 +99,7 @@ void VirtualSpaceList::create_new_node() {
                                                         _commit_limiter,
                                                         &_reserved_words_counter, &_committed_words_counter);
   vsn->set_next(_first_node);
-  _first_node = vsn;
+  Atomic::release_store(&_first_node, vsn);
   _nodes_counter.increment();
 }
 
@@ -186,7 +189,8 @@ void VirtualSpaceList::verify() const {
 
 // Returns true if this pointer is contained in one of our nodes.
 bool VirtualSpaceList::contains(const MetaWord* p) const {
-  const VirtualSpaceNode* vsn = _first_node;
+  // Note: needs to work without locks.
+  const VirtualSpaceNode* vsn = Atomic::load_acquire(&_first_node);
   while (vsn != NULL) {
     if (vsn->contains(p)) {
       return true;
