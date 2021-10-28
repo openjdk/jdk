@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,18 @@
  * questions.
  */
 
+import javax.imageio.ImageIO;
 import java.awt.AWTEvent;
 import java.awt.Frame;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Point;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.AWTEventListener;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.Locale;
 
 /*
@@ -34,7 +40,6 @@ import java.util.Locale;
  * @key headful
  * @bug 8022401 8160623
  * @summary Wrong key char
- * @author Alexandr Scherbatiy
  * @run main KeyCharTest
  */
 public class KeyCharTest {
@@ -45,7 +50,6 @@ public class KeyCharTest {
         Locale.setDefault(Locale.ENGLISH);
 
         Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
-
             @Override
             public void eventDispatched(AWTEvent event) {
                 eventsCount++;
@@ -58,21 +62,38 @@ public class KeyCharTest {
     }
 
     public static void main(String[] args) throws Exception {
-
-
         Frame frame = new Frame();
         frame.setSize(300, 300);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
-        robot.waitForIdle();
+        frame.toFront();
+        frame.requestFocus();
 
+        Robot robot = new Robot();
+        robot.setAutoDelay(100);
+        robot.waitForIdle();
+        robot.delay(1000);
 
         robot.keyPress(KeyEvent.VK_DELETE);
         robot.keyRelease(KeyEvent.VK_DELETE);
         robot.waitForIdle();
+        robot.delay(1000);
 
-        frame.dispose();
+        if (eventsCount != 3) {
+            // We are going to fail
+            Point loc = frame.getLocationOnScreen();
+            GraphicsDevice gds[] = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
+            for (GraphicsDevice gd : gds) {
+                if (gd.getDefaultConfiguration().getBounds().contains(loc)) {
+                    BufferedImage capture = robot.createScreenCapture(gd.getDefaultConfiguration().getBounds());
+                    File captureFile = new File("capture.png");
+                    ImageIO.write(capture, "png", captureFile);
+                    break;
+                }
+            }
+        }
+
+        if (frame != null) frame.dispose();
 
         if (eventsCount != 3) {
             throw new RuntimeException("Wrong number of key events: " + eventsCount);
