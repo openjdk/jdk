@@ -24,39 +24,50 @@
 /*
  * @test
  * @bug 8274848
- * @run main InvokeSpecialMethodTest
+ * @run testng InvokeSpecialMethodTest
  * @summary ensure REF_invokeSpecial on a non-private implementation method
  *          behaves as if `super::m` is invoked regardless of its access flag
  */
+
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
+
 import static java.lang.invoke.MethodType.methodType;
 
 public class InvokeSpecialMethodTest {
-    static class Test {
+    static class MethodTest {
         static final Lookup LOOKUP = MethodHandles.lookup();
 
         public String m_public() {
             return "test_public";
         }
+
         protected String m_protected() {
             return "test_protected";
         }
+
         private String m_private() {
             return "test_private";
         }
 
-        public static class SubClass extends Test {
+        public static class SubClass extends MethodTest {
+            @Override
             public String m_public() {
                 return "subclass_public";
             }
+
+            @Override
             public String m_protected() {
                 return "subclass_protected";
             }
+
             public String m_private() {
                 return "subclass_private";
             }
@@ -68,48 +79,55 @@ public class InvokeSpecialMethodTest {
          */
         static MethodHandle mh(String name) {
             try {
-                return LOOKUP.findSpecial(Test.class, name, methodType(String.class), Test.class);
+                return LOOKUP.findSpecial(MethodTest.class, name, methodType(String.class), MethodTest.class);
             } catch (NoSuchMethodException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
         }
+
         static final MethodHandle M_PUBLIC = mh("m_public");
         static final MethodHandle M_PROTECTED = mh("m_protected");
         static final MethodHandle M_PRIVATE = mh("m_private");
     }
+
+    @FunctionalInterface
     interface StringFactory {
         String get();
     }
 
-    public static void main(String... args) throws Throwable {
-        test(Test.M_PUBLIC, "test_public");
-        test(Test.M_PROTECTED, "test_protected");
-        test(Test.M_PRIVATE, "test_private");
+    @DataProvider
+    public Object[][] methodProvider() {
+        return new Object[][]{
+                {MethodTest.M_PUBLIC, "test_public"},
+                {MethodTest.M_PROTECTED, "test_protected"},
+                {MethodTest.M_PRIVATE, "test_private"}
+        };
     }
 
-    static void test(MethodHandle implMethod, String expected) throws Throwable {
+    @Test(dataProvider = "methodProvider")
+    void test(MethodHandle implMethod, String expected) throws Throwable {
         testMetafactory(implMethod, expected);
         testAltMetafactory(implMethod, expected);
     }
 
     static void testMetafactory(MethodHandle implMethod, String expected) throws Throwable {
-        CallSite cs = LambdaMetafactory.metafactory(Test.LOOKUP, "get",
-                                                    methodType(StringFactory.class, Test.class),
+        CallSite cs = LambdaMetafactory.metafactory(MethodTest.LOOKUP, "get",
+                                                    methodType(StringFactory.class, MethodTest.class),
                                                     methodType(String.class), implMethod, methodType(String.class));
-        Test o = new Test.SubClass();
+        MethodTest o = new MethodTest.SubClass();
         StringFactory factory = (StringFactory) cs.dynamicInvoker().invokeExact(o);
         String actual = factory.get();
-        if (!expected.equals(actual)) throw new AssertionError("Unexpected result: " + actual);
+        Assert.assertEquals(actual, expected);
     }
 
     static void testAltMetafactory(MethodHandle implMethod, String expected) throws Throwable {
-        CallSite cs = LambdaMetafactory.altMetafactory(Test.LOOKUP, "get",
-                                                       methodType(StringFactory.class, Test.class),
+        CallSite cs = LambdaMetafactory.altMetafactory(MethodTest.LOOKUP, "get",
+                                                       methodType(StringFactory.class, MethodTest.class),
                                                        methodType(String.class), implMethod, methodType(String.class),
                                                        LambdaMetafactory.FLAG_SERIALIZABLE);
-        Test o = new Test.SubClass();
+        MethodTest o = new MethodTest.SubClass();
         StringFactory factory = (StringFactory) cs.dynamicInvoker().invokeExact(o);
         String actual = factory.get();
-        if (!expected.equals(actual)) throw new AssertionError("Unexpected result: " + actual);
+        Assert.assertEquals(actual, expected);
     }
 }
