@@ -53,7 +53,7 @@ import test.java.awt.regtesthelpers.Util;
  *          java.desktop/java.awt.peer
  * @build java.desktop/java.awt.Helper
  * @build Util
- * @run main JMenuBarOverlapping
+ * @run main/timeout=180 JMenuBarOverlapping
  */
 public class JMenuBarOverlapping extends OverlappingTestBase {
 
@@ -141,6 +141,8 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
             e.printStackTrace();
             throw new RuntimeException("Where is separator?");
         }
+
+        if(currentAwtControl == null) { System.out.println("t"); }
         sepLoc.translate(20, 1);
         clickAndBlink(robot, sepLoc, false);
 
