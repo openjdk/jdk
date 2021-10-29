@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,14 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8172999
- * @summary Verify no crash loading font metrics instance.
- * @run main/othervm FontCrash
- */
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Toolkit;
+class Initializer {
+    static void fieldAccess() throws Throwable {
+        Class<?> testedClass = Class.forName("Test", false, Initializer.class.getClassLoader());
+        testedClass.getDeclaredField("field").set(testedClass, 1);
+    }
 
-public class FontCrash {
-
-    public static void main(String[] args) {
-        System.setProperty("java2d.font.usePlatformFont", "true");
-        Font f = new Font(Font.DIALOG,Font.PLAIN,12);
-        Toolkit tk = Toolkit.getDefaultToolkit();
-        tk.getFontMetrics(f);
+    static void execMethod() throws Throwable {
+        Class<?> testedClass = Class.forName("Test", false, Initializer.class.getClassLoader());
+        testedClass.getDeclaredMethod("method").invoke(null);
     }
 }

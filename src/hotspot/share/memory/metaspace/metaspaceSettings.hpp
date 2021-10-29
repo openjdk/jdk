@@ -69,14 +69,6 @@ class Settings : public AllStatic {
   // If true, metablock allocations are guarded and periodically checked.
   DEBUG_ONLY(static bool _use_allocation_guard;)
 
-  // This enables or disables premature deallocation of metaspace allocated blocks. Using
-  //  Metaspace::deallocate(), blocks can be returned prematurely (before the associated
-  //  Arena dies, e.g. after class unloading) and can be reused by the arena.
-  //  If disabled, those blocks will not be reused until the Arena dies.
-  // Note that premature deallocation is rare under normal circumstances.
-  // By default deallocation handling is enabled.
-  DEBUG_ONLY(static bool _handle_deallocations;)
-
 public:
 
   static size_t commit_granule_bytes()                        { return _commit_granule_bytes; }
@@ -87,7 +79,6 @@ public:
   static bool enlarge_chunks_in_place()                       { return _enlarge_chunks_in_place; }
   static bool uncommit_free_chunks()                          { return _uncommit_free_chunks; }
   static bool use_allocation_guard()                          { return DEBUG_ONLY(_use_allocation_guard) NOT_DEBUG(false); }
-  static bool handle_deallocations()                          { return DEBUG_ONLY(_handle_deallocations) NOT_DEBUG(true); }
 
   static void ergo_initialize();
 

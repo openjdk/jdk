@@ -59,40 +59,33 @@ public class MetaspaceTestWithThreads {
 
     void destroyArenasAndPurgeSpace() {
 
+        // This deletes the arenas, which will cause them to return all their accumulated
+        // metaspace chunks into the context' chunk manager (freelist) before vanishing.
+        // It then purges the context.
+        // We may return memory to the operating system:
+        // - with -XX:MetaspaceReclaimPolicy=balanced|aggressive (balanced is the default),
+        //   we will scourge the freelist for chunks larger than a commit granule, and uncommit
+        //   their backing memory. Note that since we deleted all arenas, all their chunks are
+        //   in the freelist, should have been maximally folded by the buddy allocator, and
+        //   therefore should all be eligible for uncommitting. Meaning the context should
+        //   retain no memory at all, its committed counter should be zero.
+        // - with -XX:MetaspaceReclaimPolicy=none, we omit the purging and retain memory in the
+        //   metaspace allocator, so the context should retain its memory.
+
         for (RandomAllocatorThread t: threads) {
             if (t.allocator.arena.isLive()) {
                 context.destroyArena(t.allocator.arena);
             }
         }
+        context.purge();
 
         context.checkStatistics();
 
-        // After deleting all arenas, we should have no committed space left: all arena chunks have been returned to
-        // the freelist amd should have been maximally merged to a bunch of root chunks, which should be uncommitted
-        // in one go.
-        // Exception: if reclamation policy is none.
         if (Settings.settings().doesReclaim()) {
             if (context.committedWords() > 0) {
                 throw new RuntimeException("Expected no committed words after purging empty metaspace context (was: " + context.committedWords() + ")");
             }
         }
-
-        context.purge();
-
-        context.checkStatistics();
-
-        // After purging - if all arenas had been deleted before - we should have no committed space left even in
-        //   recmalation=none mode:
-        // purging deletes all nodes with only free chunks, and in this case no node should still house in-use chunks,
-        //  so all nodes would have been unmapped.
-        // This is independent on reclamation policy. Only one exception: if the area was created with a reserve limit
-        // (mimicking compressed class space), the underlying virtual space list cannot be purged.
-        if (context.reserveLimit == 0) {
-            if (context.committedWords() > 0) {
-                throw new RuntimeException("Expected no committed words after purging empty metaspace context (was: " + context.committedWords() + ")");
-            }
-        }
-
     }
 
     @Override

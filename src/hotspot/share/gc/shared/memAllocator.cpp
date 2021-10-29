@@ -423,6 +423,6 @@ oop ClassAllocator::initialize(HeapWord* mem) const {
   // concurrent GC.
   assert(_word_size > 0, "oop_size must be positive.");
   mem_clear(mem);
-  java_lang_Class::set_oop_size(mem, (int)_word_size);
+  java_lang_Class::set_oop_size(mem, _word_size);
   return finish(mem);
 }

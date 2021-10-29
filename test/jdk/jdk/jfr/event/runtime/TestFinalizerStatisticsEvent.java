@@ -99,7 +99,6 @@ public final class TestFinalizerStatisticsEvent {
                   break;
               }
               case TEST_CLASS_UNLOAD_NAME: {
-                  Asserts.assertTrue(event.getString("codeSource").startsWith("file://"));
                   foundTestClassUnloadName = true;
                   break;
               }
