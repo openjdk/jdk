@@ -676,16 +676,12 @@ newSizedStringJava(JNIEnv *env, const char *str, const int len)
                                        String_init_ID, bytes, jnuEncoding);
         } else {
             /*If the encoding specified in sun.jnu.encoding is not endorsed
-              by "Charset.isSupported" we have to fall back to use String(byte[])
-              explicitly here without specifying the encoding name, in which the
-              StringCoding class will pickup the iso-8859-1 as the fallback
-              converter for us.
+              by "Charset.isSupported" we have to fall back to use UTF-8
              */
-            jmethodID mid = (*env)->GetMethodID(env, strClazz,
-                                                "<init>", "([B)V");
-            if (mid != NULL) {
-                result = (*env)->NewObject(env, strClazz, mid, bytes);
-            }
+            jstring utf8 = (*env)->NewStringUTF(env, "UTF-8");
+            result = (*env)->NewObject(env, strClazz,
+                                       String_init_ID, bytes, utf8);
+            (*env)->DeleteLocalRef(env, utf8);
         }
         (*env)->DeleteLocalRef(env, bytes);
         return result;

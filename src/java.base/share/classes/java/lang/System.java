@@ -48,7 +48,6 @@ import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSource;
@@ -84,6 +83,7 @@ import jdk.internal.vm.annotation.Stable;
 import sun.nio.fs.DefaultFileSystemProvider;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
+import sun.nio.cs.UTF_8;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -2019,7 +2019,7 @@ public final class System {
     private static PrintStream newPrintStream(FileOutputStream fos, String enc) {
         if (enc != null) {
             return new PrintStream(new BufferedOutputStream(fos, 128), true,
-                                   Charset.forName(enc, StandardCharsets.UTF_8));
+                                   Charset.forName(enc, UTF_8.INSTANCE));
         }
         return new PrintStream(new BufferedOutputStream(fos, 128), true);
     }

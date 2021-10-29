@@ -25,7 +25,6 @@
 
 package sun.nio.fs;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.nio.file.*;
 import java.nio.charset.Charset;
@@ -39,8 +38,9 @@ class Util {
     private Util() { }
 
     private static final Charset jnuEncoding =
-        Charset.forName(GetPropertyAction.privilegedGetProperty("sun.jnu.encoding"),
-                        StandardCharsets.UTF_8);
+        Charset.forName(
+            GetPropertyAction.privilegedGetProperty("sun.jnu.encoding"),
+            sun.nio.cs.UTF_8.INSTANCE);
 
     /**
      * Returns {@code Charset} corresponding to the sun.jnu.encoding property
