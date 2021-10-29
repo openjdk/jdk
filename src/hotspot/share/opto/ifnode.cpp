@@ -1623,9 +1623,6 @@ Node* IfNode::simple_subsuming(PhaseIterGVN* igvn) {
   if (!dom->is_If()) {
     return NULL;
   }
-  if (is_LongCountedLoopEnd()) {
-    return NULL;
-  }
   Node* bol = in(1);
   if (!bol->is_Bool()) {
     return NULL;
@@ -1724,6 +1721,14 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
        // will cause this node to be reprocessed once the dead branch is killed.
        in(0)->outcnt() == 1))) {
     // IfNode control
+    if (in(0)->is_BaseCountedLoopEnd()) {
+      Node* head = unique_ctrl_out();
+      if (head != NULL && head->is_BaseCountedLoop() && head->in(LoopNode::LoopBackControl) == this) {
+        Node* new_head = new LoopNode(head->in(LoopNode::EntryControl), this);
+        phase->is_IterGVN()->register_new_node_with_optimizer(new_head);
+        phase->is_IterGVN()->replace_node(head, new_head);
+      }
+    }
     return in(0)->in(0);
   }
   // no progress
