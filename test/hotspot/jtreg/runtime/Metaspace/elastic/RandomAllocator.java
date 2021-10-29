@@ -59,7 +59,7 @@ public class RandomAllocator {
 
     // Allocate a random amount from the arena. If dice hits right, add this to the deallocation list.
     void allocateRandomly() {
-        breatheTicks ++;
+        breatheTicks++;
         long word_size = profile.randomAllocationSize();
         Allocation a = arena.allocate(word_size);
         if (a != null) {
