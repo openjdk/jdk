@@ -41,7 +41,7 @@
  */
 
 /*
- * @test id=debugdefault
+ * @test id=debug-default
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -58,7 +58,7 @@
  */
 
 /*
- * @test id=debugnone
+ * @test id=debug-none
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -76,7 +76,7 @@
  */
 
 /*
- * @test id=debugaggressive
+ * @test id=debug-aggressive
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -94,7 +94,7 @@
  */
 
 /*
- * @test id=debugguard
+ * @test id=debug-guard
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -112,7 +112,7 @@
  */
 
 /*
- * @test id=ndebugdefault
+ * @test id=ndebug-default
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -128,7 +128,7 @@
  */
 
 /*
- * @test id=ndebugnone
+ * @test id=ndebug-none
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -145,7 +145,7 @@
  */
 
 /*
- * @test id=ndebugaggressive
+ * @test id=ndebug-aggressive
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
