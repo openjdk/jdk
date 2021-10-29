@@ -421,8 +421,8 @@ public abstract class Collator
      * The returned array represents the union of locales supported
      * by the Java runtime and by installed
      * {@link java.text.spi.CollatorProvider CollatorProvider} implementations.
-     * It must contain at least a Locale instance equal to
-     * {@link java.util.Locale#US Locale.US}.
+     * It must contain at least two {@code Locale} instances equal to {@link Locale#ROOT
+     * Locale.ROOT} and {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
      *         {@code Collator} instances are available.
