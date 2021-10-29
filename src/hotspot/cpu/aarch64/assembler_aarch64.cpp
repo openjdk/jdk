@@ -83,6 +83,7 @@ Assembler::SIMD_RegVariant Assembler::elemType_to_regVariant(BasicType bt) {
 }
 
 unsigned Assembler::regVariant_to_elemBits(Assembler::SIMD_RegVariant T){
+  guarantee(T != Q, "Invalid register variant");
   return 1 << (T + 3);
 }
 
@@ -388,6 +389,7 @@ int AbstractAssembler::code_fill_byte() {
 void Assembler::bang_stack_with_offset(int offset) { Unimplemented(); }
 
 bool asm_util::operand_valid_for_immediate_bits(int64_t imm, unsigned nbits) {
+  guarantee(nbits == 8 || nbits == 12, "invalid nbits value");
   uint64_t uimm = (uint64_t)uabs((jlong)imm);
   if (uimm < (UCONST64(1) << nbits))
     return true;
