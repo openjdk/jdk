@@ -154,10 +154,6 @@ public class TestPostParseCallDevirtualization {
 
     @Test
     @IR(failOn = {IRNode.STATIC_CALL_OF_METHOD, "invokeBasic"},
-        applyIf = {"TieredCompilation", "true"},
-        counts = {IRNode.STATIC_CALL_OF_METHOD, "invokeStatic", "= 1"})
-    @IR(failOn = {IRNode.STATIC_CALL_OF_METHOD, "invokeBasic"},
-        applyIfAnd = {"TieredCompilation", "false", "CompileThresholdScaling", "<0.14"},
         counts = {IRNode.STATIC_CALL_OF_METHOD, "invokeStatic", "= 1"})
     public int testMethodHandleCallWithLoop() throws Throwable {
         MethodHandle mh = mh1;
@@ -173,16 +169,13 @@ public class TestPostParseCallDevirtualization {
     }
 
     @Run(test = "testMethodHandleCallWithLoop")
+    @Warmup(5000)
     public void checkTestMethodHandleCallWithLoop() throws Throwable {
-        Asserts.assertEquals(testMethodHandleCallWithLoop(), 42);
+        Asserts.assertEquals( (int)mh2.invokeExact(), 42);
     }
 
     @Test
     @IR(failOn = {IRNode.STATIC_CALL_OF_METHOD, "invokeBasic"},
-        applyIf = {"TieredCompilation", "true"},
-        counts = {IRNode.STATIC_CALL_OF_METHOD, "invokeStatic", "= 1"})
-    @IR(failOn = {IRNode.STATIC_CALL_OF_METHOD, "invokeBasic"},
-        applyIfAnd = {"TieredCompilation", "false", "CompileThresholdScaling", "<0.14"},
         counts = {IRNode.STATIC_CALL_OF_METHOD, "invokeStatic", "= 1"})
     public int testMethodHandleCallWithCCP() throws Throwable {
         MethodHandle mh = mh1;
@@ -202,7 +195,8 @@ public class TestPostParseCallDevirtualization {
     }
 
     @Run(test = "testMethodHandleCallWithCCP")
+    @Warmup(5000)
     public void checkTestMethodHandleCallWithCCP() throws Throwable {
-        Asserts.assertEquals(testMethodHandleCallWithCCP(), 42);
+        Asserts.assertEquals( (int)mh2.invokeExact(), 42);
     }
 }
