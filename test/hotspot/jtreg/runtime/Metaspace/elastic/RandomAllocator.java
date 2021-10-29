@@ -75,7 +75,7 @@ public class RandomAllocator {
 
     // Randomly choose one of the allocated in the deallocation list and deallocate it
     void deallocateRandomly() {
-        breatheTicks ++;
+        breatheTicks++;
         if (to_dealloc.size() == 0) {
             return;
         }
