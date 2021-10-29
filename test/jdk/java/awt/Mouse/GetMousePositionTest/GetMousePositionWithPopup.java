@@ -27,7 +27,6 @@ import javax.swing.SwingUtilities;
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 
@@ -85,6 +84,9 @@ public class GetMousePositionWithPopup {
         frame1.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
+                if (frame2 != null) {
+                    return;
+                }
                 frame2 = new Frame();
                 frame2.setBounds(120, 120, 120, 120);
                 frame2.setVisible(true);
