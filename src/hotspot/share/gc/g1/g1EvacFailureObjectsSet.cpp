@@ -52,7 +52,7 @@ G1EvacFailureObjectsSet::OffsetInRegion G1EvacFailureObjectsSet::cast_to_offset(
   const HeapWord* o = cast_from_oop<const HeapWord*>(obj);
   size_t offset = pointer_delta(o, _bottom);
   assert_is_valid_offset(offset);
-  assert(obj == from_offset(offset), "must be");
+  assert(obj == from_offset(static_cast<OffsetInRegion>(offset)), "must be");
   return static_cast<OffsetInRegion>(offset);
 }
 
