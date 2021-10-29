@@ -317,7 +317,7 @@ public class SnippetTaglet extends BaseTaglet {
         if (lastDot == -1) {
             return null;
         }
-        return switch (fileName.substring(lastDot).toLowerCase()) {
+        return switch (Utils.toLowerCase(fileName.substring(lastDot))) {
             // TODO: this list could probably be expanded
             case ".bat"                              -> "batch";
             case ".c", ".h"                          -> "c";

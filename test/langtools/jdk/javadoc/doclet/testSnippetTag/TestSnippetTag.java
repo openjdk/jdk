@@ -134,7 +134,7 @@ public class TestSnippetTag extends JavadocTester {
 // terminator.
 //                new SnippetAttributes("""
 //                    {@snippet id=foo6:
-//                        Hello, SnippetAttributes!
+//                        Hello, Snippet!
 //                    }
 //                    """, "foo6", null),
 
