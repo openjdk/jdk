@@ -96,11 +96,6 @@ public class ModuleDescriptorHashCodeTest {
                 throw new RuntimeException("ModuleDescriptor loaded from boot layer and " +
                         "one created from module-info.class unexpectedly returned the same instance: " + bootMD);
             }
-            // TODO: Enable this check once JDK-8275731 is fixed. Right now this check fails when CDS is enabled.
-            //if (!bootMD.equals(mdFromBuilder)) {
-            //    throw new RuntimeException("Expected " + bootMD + " and " + mdFromBuilder
-            //            + " to be equal, but they aren't");
-            //}
             final int hashCode = mdFromBuilder.hashCode();
             if (expectedHashCode != hashCode) {
                 throw new RuntimeException("Expected hashCode " + expectedHashCode + " but got " + hashCode
