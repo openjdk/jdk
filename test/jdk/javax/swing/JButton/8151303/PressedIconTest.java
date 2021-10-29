@@ -59,6 +59,9 @@ public class PressedIconTest {
     private static volatile int centerX;
     private static volatile int centerY;
     private static volatile Point location;
+    // move away from cursor
+    private final static int OFFSET_X = -20;
+    private final static int OFFSET_Y = -20;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
@@ -84,7 +87,7 @@ public class PressedIconTest {
         robot.waitForIdle();
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
-        Color color = robot.getPixelColor(centerX, centerY);
+        Color color = robot.getPixelColor(centerX - OFFSET_X, centerY - OFFSET_Y);
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
@@ -97,11 +100,11 @@ public class PressedIconTest {
         SwingUtilities.invokeAndWait(() -> frame.dispose());
 
         if (scale == 1 && !similar(color, COLOR_1X)) {
-            System.out.println("color " + color + " COLOR_1X" + COLOR_1X);
+            System.out.println("color " + color + " COLOR_1X " + COLOR_1X);
             throw new RuntimeException("Colors is different for scale=1!");
         }
         if (scale == 2 && !similar(color, COLOR_2X)) {
-            System.out.println("color " + color + " COLOR_2X" + COLOR_2X);
+            System.out.println("color " + color + " COLOR_2X " + COLOR_2X);
             throw new RuntimeException("Colors is different for scale=2!");
         }
         System.out.println("Test Passed");

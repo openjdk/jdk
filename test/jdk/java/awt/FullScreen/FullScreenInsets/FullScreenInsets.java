@@ -122,7 +122,6 @@ public final class FullScreenInsets {
 
     private static void testColor(final Window w, final Color color) {
         final Robot r;
-        int tolerance = 5;
         try {
             r = new Robot(w.getGraphicsConfiguration().getDevice());
         } catch (AWTException e) {
@@ -133,12 +132,7 @@ public final class FullScreenInsets {
         final BufferedImage bi = r.createScreenCapture(w.getBounds());
         for (int y = 0; y < bi.getHeight(); y++) {
             for (int x = 0; x < bi.getWidth(); x++) {
-                Color col = new Color(bi.getRGB(x,y));
-
-                if ((Math.abs(col.getAlpha()-color.getAlpha()) > tolerance) ||
-                    (Math.abs(col.getRed()-color.getRed()) > tolerance) ||
-                    (Math.abs(col.getBlue()-color.getBlue()) > tolerance) ||
-                    (Math.abs(col.getGreen()-color.getGreen()) > tolerance)) {
+                if (bi.getRGB(x, y) != color.getRGB()) {
                     System.err.println(
                             "Incorrect pixel at " + x + "x" + y + " : " +
                             Integer.toHexString(bi.getRGB(x, y)) +

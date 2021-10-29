@@ -43,6 +43,10 @@ public class bug6276188 {
     private static Point p;
     private static JFrame testFrame;
 
+     // move away from cursor
+    private final static int OFFSET_X = -20;
+    private final static int OFFSET_Y = -20;
+
     public static void main(String[] args) throws Throwable {
         try {
             Robot robot = new Robot();
@@ -76,12 +80,12 @@ public class bug6276188 {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
 
-            Color color = robot.getPixelColor(p.x, p.y);
+            Color color = robot.getPixelColor(p.x - OFFSET_X, p.y - OFFSET_y);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
             boolean red = color.getRed() > 0 && color.getGreen() == 0 && color.getBlue() == 0;
-                System.err.println("Red: " + color.getRed() + "; Green: " + color.getGreen() + "; Blue: " + color.getBlue());
             if (!red) {
+                System.err.println("Red: " + color.getRed() + "; Green: " + color.getGreen() + "; Blue: " + color.getBlue());
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
                 BufferedImage img = robot.createScreenCapture(screen);

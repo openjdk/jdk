@@ -55,6 +55,10 @@ public class bug8069348 {
     private static final Color DESKTOPPANE_COLOR = Color.YELLOW;
     private static final Color FRAME_COLOR = Color.ORANGE;
 
+     // move away from cursor
+    private final static int OFFSET_X = -20;
+    private final static int OFFSET_Y = -20;
+
     private static JFrame frame;
     private static JInternalFrame internalFrame;
 
@@ -92,11 +96,12 @@ public class bug8069348 {
 
             robot.mouseMove(cx, cy);
             robot.waitForIdle();
-            Color color = robot.getPixelColor(cx, cy);
+            Color color = robot.getPixelColor(cx - OFFSET_X, cy - OFFSET_Y);
+
+            if (!FRAME_COLOR.equals(color)) {
                 System.out.println("cx " + cx + " cy " + cy);
                 System.err.println("FRAME_COLOR Red: " + FRAME_COLOR.getRed() + "; Green: " + FRAME_COLOR.getGreen() + "; Blue: " + FRAME_COLOR.getBlue());
                 System.err.println("Pixel color Red: " + color.getRed() + "; Green: " + color.getGreen() + "; Blue: " + color.getBlue());
-            if (!FRAME_COLOR.equals(color)) {
 
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
