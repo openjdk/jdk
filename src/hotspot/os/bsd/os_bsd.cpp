@@ -2512,23 +2512,44 @@ bool os::start_debugging(char *buf, int buflen) {
   int len = (int)strlen(buf);
   char *p = &buf[len];
 
+#if defined(__APPLE__)
+  #define TOOL "lldb"
+  #define TOOL_CMD "lldb -p %d"
+#else
+  #define TOOL "gdb"
+  #define TOOL_CMD  "gdb /proc/%d/exe %d"
+#endif
+
   jio_snprintf(p, buflen-len,
              "\n\n"
              "Do you want to debug the problem?\n\n"
-             "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread " INTX_FORMAT " (" INTPTR_FORMAT ")\n"
-             "Enter 'yes' to launch gdb automatically (PATH must include gdb)\n"
+             "To debug, run '" TOOL_CMD "'; then switch to thread " INTX_FORMAT " (" INTPTR_FORMAT ")\n"
+             "Enter 'yes' to launch %s automatically (PATH must include %s)\n"
              "Otherwise, press RETURN to abort...",
-             os::current_process_id(), os::current_process_id(),
-             os::current_thread_id(), os::current_thread_id());
+             os::current_process_id(),
+#if !defined(__APPLE__)
+             os::current_process_id(),
+#endif
+             os::current_thread_id(), os::current_thread_id(),
+             TOOL, TOOL);
 
   bool yes = os::message_box("Unexpected Error", buf);
 
   if (yes) {
     // yes, user asked VM to launch debugger
-    jio_snprintf(buf, sizeof(buf), "gdb /proc/%d/exe %d",
-                     os::current_process_id(), os::current_process_id());
+    jio_snprintf(buf, buflen, TOOL_CMD,
+#if !defined(__APPLE__)
+             os::current_process_id(),
+#endif
+             os::current_process_id());
 
-    os::fork_and_exec(buf);
+    int sleep_time = 0;
+#ifdef __APPLE__
+    // give fork_and_exec chance to launch debugger and to give it the time to attach
+    sleep_time = 5;
+#endif
+
+    int err = os::fork_and_exec(buf, false, sleep_time);
     yes = false;
   }
   return yes;

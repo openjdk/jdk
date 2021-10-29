@@ -71,6 +71,7 @@
 
 #ifdef __APPLE__
   #include <crt_externs.h>
+  #include <spawn.h>
 #endif
 
 #define ROOT_UID 0
@@ -1955,21 +1956,18 @@ char** os::get_environ() { return environ; }
 //         doesn't block SIGINT et al.
 //        -this function is unsafe to use in non-error situations, mainly
 //         because the child process will inherit all parent descriptors.
-int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
+int os::fork_and_exec(const char* cmd, bool prefer_vfork, int sleep_time) {
   const char * argv[4] = {"sh", "-c", cmd, NULL};
-
-  pid_t pid ;
-
   char** env = os::get_environ();
 
   // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
   // Otherwise leave it up to the caller.
   AIX_ONLY(prefer_vfork = true;)
-  #ifdef __APPLE__
-  pid = ::fork();
-  #else
-  pid = prefer_vfork ? ::vfork() : ::fork();
-  #endif
+#ifdef __APPLE__
+  pid_t pid = ::fork();
+#else
+  pid_t pid = prefer_vfork ? ::vfork() : ::fork();
+#endif
 
   if (pid < 0) {
     // fork failed
@@ -1978,16 +1976,25 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
   } else if (pid == 0) {
     // child process
 
-    ::execve("/bin/sh", (char* const*)argv, env);
+#ifdef __APPLE__
+    int status = ::posix_spawn(NULL, "/bin/sh", NULL, NULL, (char* const*)argv, env);
+#else
+    int status = ::execve("/bin/sh", (char* const*)argv, env);
+#endif
 
     // execve failed
-    ::_exit(-1);
+    ::_exit(status);
 
   } else  {
+    if (sleep_time > 0) {
+      sleep(sleep_time);
+    }
+
     // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
     // care about the actual exit code, for now.
 
-    int status;
+    int status = 0;
+    errno = 0;
 
     // Wait for the child process to exit.  This returns immediately if
     // the child has already exited. */
