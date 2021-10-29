@@ -557,10 +557,10 @@ public:
 
   // Update the region state after a failed evacuation.
   void handle_evacuation_failure();
-  // Records evac failure objs during evaucation, this will help speed up iteration
-  // of these objs later in *remove self forward* phase of post evacuation.
+  // Record an object that failed evacuation within this region.
   void record_evac_failure_obj(oop obj);
-  // Iterates evac failure objs which are recorded during evcauation.
+  // Applies the given closure to all previously recorded objects
+  // that failed evacuation in ascending address order.
   void iterate_evac_failure_objs(ObjectClosure* closure);
 
   // Iterate over the objects overlapping the given memory region, applying cl

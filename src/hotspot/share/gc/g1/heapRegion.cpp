@@ -106,10 +106,6 @@ void HeapRegion::handle_evacuation_failure() {
   _next_marked_bytes = 0;
 }
 
-void HeapRegion::record_evac_failure_obj(oop obj) {
-  _evac_failure_objs.record(obj);
-}
-
 void HeapRegion::iterate_evac_failure_objs(ObjectClosure* closure) {
   _evac_failure_objs.iterate(closure);
 }

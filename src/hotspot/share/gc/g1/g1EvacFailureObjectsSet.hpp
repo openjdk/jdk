@@ -29,14 +29,14 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.hpp"
 
-class G1EvacFailureObjectsIterator;
+class G1EvacFailureObjectsIterationHelper;
 
 // This class collects addresses of objects that failed evacuation in a specific
 // heap region.
 // Provides sorted iteration of these elements for processing during the remove
 // self forwards phase.
 class G1EvacFailureObjectsSet {
-  friend class G1EvacFailureObjectsIterator;
+  friend class G1EvacFailureObjectsIterationHelper;
 
 public:
   // Storage type of an object that failed evacuation within a region. Given
@@ -64,11 +64,10 @@ private:
   void assert_is_valid_offset(size_t offset) const NOT_DEBUG_RETURN;
   // Converts between an offset within a region and an oop address.
   oop from_offset(OffsetInRegion offset) const;
-  OffsetInRegion cast_to_offset(oop obj) const;
+  OffsetInRegion to_offset(oop obj) const;
 
 public:
   G1EvacFailureObjectsSet(uint region_idx, HeapWord* bottom);
-  ~G1EvacFailureObjectsSet() { }
 
   // Record an object that failed evacuation.
   void record(oop obj);

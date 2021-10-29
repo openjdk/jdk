@@ -48,10 +48,9 @@ oop G1EvacFailureObjectsSet::from_offset(OffsetInRegion offset) const {
   return cast_to_oop(_bottom + offset);
 }
 
-G1EvacFailureObjectsSet::OffsetInRegion G1EvacFailureObjectsSet::cast_to_offset(oop obj) const {
+G1EvacFailureObjectsSet::OffsetInRegion G1EvacFailureObjectsSet::to_offset(oop obj) const {
   const HeapWord* o = cast_from_oop<const HeapWord*>(obj);
   size_t offset = pointer_delta(o, _bottom);
-  assert_is_valid_offset(offset);
   assert(obj == from_offset(static_cast<OffsetInRegion>(offset)), "must be");
   return static_cast<OffsetInRegion>(offset);
 }
@@ -59,7 +58,7 @@ G1EvacFailureObjectsSet::OffsetInRegion G1EvacFailureObjectsSet::cast_to_offset(
 G1EvacFailureObjectsSet::G1EvacFailureObjectsSet(uint region_idx, HeapWord* bottom) :
   DEBUG_ONLY(_region_idx(region_idx) COMMA)
   _bottom(bottom),
-  _offsets("", &_alloc_options, &_free_buffer_list)  {
+  _offsets(&_alloc_options, &_free_buffer_list)  {
   assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
 }
 
@@ -67,17 +66,15 @@ void G1EvacFailureObjectsSet::record(oop obj) {
   assert(obj != NULL, "must be");
   assert(_region_idx == G1CollectedHeap::heap()->heap_region_containing(obj)->hrm_index(), "must be");
   OffsetInRegion* e = _offsets.allocate();
-  *e = cast_to_offset(obj);
+  *e = to_offset(obj);
 }
 
 // Helper class to join, sort and iterate over the previously collected segmented
 // array of objects that failed evacuation.
-class G1EvacFailureObjectsIterator {
+class G1EvacFailureObjectsIterationHelper {
   typedef G1EvacFailureObjectsSet::OffsetInRegion OffsetInRegion;
-  friend class G1SegmentedArray<OffsetInRegion, mtGC>;
-  friend class G1SegmentedArrayBuffer<mtGC>;
 
-  G1EvacFailureObjectsSet* _collector;
+  G1EvacFailureObjectsSet* _objects_set;
   const G1SegmentedArray<OffsetInRegion, mtGC>* _segments;
   OffsetInRegion* _offset_array;
   uint _array_length;
@@ -98,52 +95,37 @@ class G1EvacFailureObjectsIterator {
 
   void iterate_internal(ObjectClosure* closure) {
     for (uint i = 0; i < _array_length; i++) {
-      _collector->assert_is_valid_offset(_offset_array[i]);
-      oop cur = _collector->from_offset(_offset_array[i]);
+      oop cur = _objects_set->from_offset(_offset_array[i]);
       closure->do_object(cur);
     }
 
     FREE_C_HEAP_ARRAY(OffsetInRegion, _offset_array);
   }
 
-  // Callback of G1SegmentedArray::iterate_nodes
-  void visit_buffer(G1SegmentedArrayBuffer<mtGC>* node, uint length) {
-    node->copy_to(&_offset_array[_array_length]);
-    _array_length += length;
-
-    // Verify elements in the node
-    DEBUG_ONLY(node->iterate_elems(*this));
-  }
-
-#ifdef ASSERT
-  // Callback of G1SegmentedArrayBuffer::iterate_elems
-  // Verify a single element in a segment node
-  void visit_elem(void* elem) {
-    uint* ptr = (uint*)elem;
-    _collector->assert_is_valid_offset(*ptr);
-  }
-#endif
-
 public:
-  G1EvacFailureObjectsIterator(G1EvacFailureObjectsSet* collector) :
-    _collector(collector),
-    _segments(&_collector->_offsets),
+  G1EvacFailureObjectsIterationHelper(G1EvacFailureObjectsSet* collector) :
+    _objects_set(collector),
+    _segments(&_objects_set->_offsets),
     _offset_array(nullptr),
     _array_length(0) { }
-
-  ~G1EvacFailureObjectsIterator() { }
 
   void iterate(ObjectClosure* closure) {
     join_and_sort();
     iterate_internal(closure);
+  }
+
+  // Callback of G1SegmentedArray::iterate_nodes
+  void do_buffer(G1SegmentedArrayBuffer<mtGC>* node, uint length) {
+    node->copy_to(&_offset_array[_array_length]);
+    _array_length += length;
   }
 };
 
 void G1EvacFailureObjectsSet::iterate(ObjectClosure* closure) {
   assert_at_safepoint();
 
-  G1EvacFailureObjectsIterator iterator(this);
-  iterator.iterate(closure);
+  G1EvacFailureObjectsIterationHelper helper(this);
+  helper.iterate(closure);
 
   _offsets.drop_all();
 }

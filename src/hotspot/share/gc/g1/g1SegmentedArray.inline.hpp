@@ -56,15 +56,6 @@ void* G1SegmentedArrayBuffer<flag>::get_new_buffer_elem() {
 }
 
 template<MEMFLAGS flag>
-template<typename Visitor>
-void G1SegmentedArrayBuffer<flag>::iterate_elems(Visitor& v) const {
-  for (uint i = 0; i < length(); i++) {
-    void* ptr = _buffer + i * _elem_size;
-    v.visit_elem(ptr);
-  }
-}
-
-template<MEMFLAGS flag>
 void G1SegmentedArrayBufferList<flag>::bulk_add(G1SegmentedArrayBuffer<flag>& first,
                                                 G1SegmentedArrayBuffer<flag>& last,
                                                 size_t num,
@@ -248,11 +239,11 @@ inline uint G1SegmentedArray<Elem, flag>::num_buffers() const {
 
 #ifdef ASSERT
 template <MEMFLAGS flag>
-class LengthVisitor {
+class LengthClosure {
   uint _total;
 public:
-  LengthVisitor() : _total(0) {}
-  void visit_buffer(G1SegmentedArrayBuffer<flag>* node, uint limit) {
+  LengthClosure() : _total(0) {}
+  void do_buffer(G1SegmentedArrayBuffer<flag>* node, uint limit) {
     _total += limit;
   }
   uint length() const {
@@ -262,22 +253,22 @@ public:
 
 template <class Elem, MEMFLAGS flag>
 uint G1SegmentedArray<Elem, flag>::calculate_length() const {
-  LengthVisitor<flag> v;
-  iterate_nodes(v);
-  return v.length();
+  LengthClosure<flag> closure;
+  iterate_nodes(closure);
+  return closure.length();
 }
 #endif
 
 template <class Elem, MEMFLAGS flag>
-template <typename Visitor>
-void G1SegmentedArray<Elem, flag>::iterate_nodes(Visitor& v) const {
+template <typename BufferClosure>
+void G1SegmentedArray<Elem, flag>::iterate_nodes(BufferClosure& cloure) const {
   G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
 
   assert((cur != nullptr) == (_last != nullptr),
          "If there is at least one element, there must be a last one");
 
   while (cur != nullptr) {
-    v.visit_buffer(cur, cur->length());
+    cloure.do_buffer(cur, cur->length());
     cur = cur->next();
   }
 }

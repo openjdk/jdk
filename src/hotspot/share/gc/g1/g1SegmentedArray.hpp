@@ -84,9 +84,6 @@ public:
     ::memcpy(dest, _buffer, length() * _elem_size);
   }
 
-  template<typename Visitor>
-  void iterate_elems(Visitor& v) const;
-
   bool is_full() const { return _next_allocate >= _num_elems; }
 };
 
@@ -230,8 +227,8 @@ public:
 
   inline uint num_buffers() const;
 
-  template<typename Visitor>
-  void iterate_nodes(Visitor& v) const;
+  template<typename BufferClosure>
+  void iterate_nodes(BufferClosure& closure) const;
 };
 
 #endif //SHARE_GC_G1_G1SEGMENTEDARRAY_HPP

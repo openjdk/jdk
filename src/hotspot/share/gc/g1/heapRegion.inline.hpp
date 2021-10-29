@@ -451,4 +451,8 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
 }
 
+inline void HeapRegion::record_evac_failure_obj(oop obj) {
+  _evac_failure_objs.record(obj);
+}
+
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP
