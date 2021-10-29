@@ -221,9 +221,7 @@ public:
   G1SegmentedArray(const char* name,
                    const G1SegmentedArrayAllocOptions* buffer_options,
                    G1SegmentedArrayBufferList<flag>* free_buffer_list);
-  ~G1SegmentedArray() {
-    drop_all();
-  }
+  ~G1SegmentedArray();
 
   // Deallocate all buffers to the free buffer list and reset this allocator. Must
   // be called in a globally synchronized area.

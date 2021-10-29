@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 
 #include "gc/g1/g1CardSetMemory.inline.hpp"
+#include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -44,6 +45,11 @@ G1CardSetAllocator<Elem>::G1CardSetAllocator(const char* name,
 {
   uint elem_size = _segmented_array.elem_size();
   assert(elem_size >= sizeof(G1CardSetContainer), "Element instance size %u for allocator %s too small", elem_size, name);
+}
+
+template <class Elem>
+G1CardSetAllocator<Elem>::~G1CardSetAllocator() {
+  drop_all();
 }
 
 template <class Elem>

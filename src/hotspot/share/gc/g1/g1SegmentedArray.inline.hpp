@@ -178,6 +178,11 @@ G1SegmentedArray<Elem, flag>::G1SegmentedArray(const char* name,
 }
 
 template <class Elem, MEMFLAGS flag>
+G1SegmentedArray<Elem, flag>::~G1SegmentedArray() {
+  drop_all();
+}
+
+template <class Elem, MEMFLAGS flag>
 void G1SegmentedArray<Elem, flag>::drop_all() {
   G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
 
