@@ -254,7 +254,7 @@ public class TestSnippetTag extends JavadocTester {
                 {@snippet file="user.properties" id="snippet8" lang="none"}
                 {@snippet file="user.properties" id="snippet9" lang=""}
                 """);
-        addSnippetFile(srcDir, "com.example", "Snippets.java", """                
+        addSnippetFile(srcDir, "com.example", "Snippets.java", """
                 public class Snippets {
                     public static void printMessage(String msg) {
                         // @start region="code"
@@ -277,35 +277,35 @@ public class TestSnippetTag extends JavadocTester {
                     <pre class="snippet" id="snippet1"><code class="language-java">
                     System.out.println(msg);
                     </code></pre>
-                                        
+
                     <pre class="snippet" id="snippet2"><code class="language-java">
                     System.out.println(msg);
                     </code></pre>
-                                        
+
                     <pre class="snippet" id="snippet3"><code class="language-none">
                     System.out.println(msg);
                     </code></pre>
-                                        
+
                     <pre class="snippet" id="snippet4"><code class="language-none">
                     System.out.println(msg);
                     </code></pre>
-                                        
+
                     <pre class="snippet" id="snippet5"><code>
                     System.out.println(msg);
                     </code></pre>
-                                        
+
                     <pre class="snippet" id="snippet6"><code>
                     System.out.println(msg);
                     </code></pre>
-                                        
+
                     <pre class="snippet" id="snippet7"><code class="language-properties">user=jane
                     home=/home/jane
                     </code></pre>
-                                        
+
                     <pre class="snippet" id="snippet8"><code class="language-none">user=jane
                     home=/home/jane
                     </code></pre>
-                                        
+
                     <pre class="snippet" id="snippet9"><code>user=jane
                     home=/home/jane
                     </code></pre>
