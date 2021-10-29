@@ -47,8 +47,10 @@ public class RandomAllocator {
 
     long ticks = 0;
 
+    // Allocate (breathe in) until arena is full, then - to test the arena deallocator - deallocate some allocations
+    // and breathe in again until full.
     boolean breatheIn = true;
-    int breatheTicks = 0;
+    int breatheOutTicks = 0;
 
     Random localRandom;
 
@@ -59,7 +61,6 @@ public class RandomAllocator {
 
     // Allocate a random amount from the arena. If dice hits right, add this to the deallocation list.
     void allocateRandomly() {
-        breatheTicks++;
         long word_size = profile.randomAllocationSize();
         Allocation a = arena.allocate(word_size);
         if (a != null) {
@@ -69,13 +70,12 @@ public class RandomAllocator {
         } else {
             // On allocation error, breathe out a bit
             breatheIn = false;
-            breatheTicks = 0;
+            breatheOutTicks = 0;
         }
     }
 
     // Randomly choose one of the allocated in the deallocation list and deallocate it
     void deallocateRandomly() {
-        breatheTicks++;
         if (to_dealloc.size() == 0) {
             return;
         }
@@ -85,24 +85,20 @@ public class RandomAllocator {
     }
 
     public void tick() {
-
         if (breatheIn) {
+            // allocate until we hit the ceiling
             allocateRandomly();
             if (rollDice(profile.randomDeallocProbability)) {
                deallocateRandomly();
             }
         } else {
-            deallocateRandomly();
-            if (breatheTicks > 100) {
-                // After allocation error, breathe out a bit. Stop after 100 deallocations
-                // to breathe in again (should cause us to float just below the ceiling).
+            if (++breatheOutTicks < 100) {
+                deallocateRandomly();
+            } else {
                 breatheIn = true;
-                breatheTicks = 0;
             }
         }
-
         ticks ++;
-
     }
 
     public RandomAllocator(MetaspaceTestArena arena) {
