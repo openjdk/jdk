@@ -276,6 +276,28 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             throw new RuntimeException("Shared archive " + modBaseName + " should not automatically be generated");
         }
 
+        // 15 Create an archive with only dynamic magic (size of 4)
+        print("15 Create an archive with only dynamic magic (size of 4)");
+        String magicOnly = startNewArchive("magic-only");
+        copiedJsa = CDSArchiveUtils.createMagicOnlyFile(magicOnly, false/*dynamic*/);
+        ft1 = Files.getLastModifiedTime(Paths.get(magicOnly));
+        run(magicOnly,
+            "-Xshare:auto",
+            "-XX:+AutoCreateSharedArchive",
+            "-Xlog:cds",
+            "-Xlog:cds+dynamic=info",
+            "-cp", appJar,
+            mainAppClass)
+            .assertAbnormalExit(output -> {
+                output.shouldHaveExitValue(1);
+                output.shouldContain("Unable to read generic CDS file map header from shared archive");
+                output.shouldNotContain("Dumping shared data to file:");
+                });
+        ft2 = Files.getLastModifiedTime(Paths.get(magicOnly));
+        if (!ft1.equals(ft2)) {
+            throw new RuntimeException("Shared archive " + modBaseName + " should not automatically be generated");
+        }
+
         // delete top archive
         if (archiveFile.exists()) {
             archiveFile.delete();
@@ -371,6 +393,26 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
         ft2 = Files.getLastModifiedTime(Paths.get(TOP_NAME));
         if (!ft1.equals(ft2)) {
             throw new RuntimeException("Shared archive " + TOP_NAME + " should not be created at exit");
+        }
+
+        // 23 create an archive like in 15
+        print("23 create an archive with dynamic magic number only");
+        copiedJsa = CDSArchiveUtils.createMagicOnlyFile(magicOnly, false /*dynamic*/);
+        ft1 = Files.getLastModifiedTime(Paths.get(magicOnly));
+        run2(BASE_NAME, magicOnly,
+             "-Xshare:auto",
+             "-XX:+AutoCreateSharedArchive",
+             "-Xlog:cds",
+             "-Xlog:cds+dynamic=info",
+             "-cp", appJar,
+             mainAppClass)
+             .assertAbnormalExit(output -> {
+                 output.shouldContain("Unable to read generic CDS file map header from shared archive")
+                       .shouldNotContain("Dumping shared data to file:");
+             });
+        ft2 = Files.getLastModifiedTime(Paths.get(magicOnly));
+        if (!ft1.equals(ft2)) {
+            throw new RuntimeException("Shared archive " + magicOnly + " should not be created at exit");
         }
     }
 }
