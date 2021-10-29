@@ -68,6 +68,7 @@ public:
   // dead too) already.
   void do_object(oop obj) {
     HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
+    assert(_last_forwarded_object_end <= obj_addr, "should iterate in ascending address order");
     assert(_hr->is_in(obj_addr), "sanity");
 
     // The object failed to move.

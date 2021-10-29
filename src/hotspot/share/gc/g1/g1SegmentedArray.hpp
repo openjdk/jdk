@@ -74,11 +74,12 @@ public:
   size_t mem_size() const { return sizeof(*this) + (size_t)_num_elems * _elem_size; }
 
   uint length() const {
-    // _next_allocate might grow greater than _num_elems in multi-thread env,
-    // so, here we need to return the adjusted real length value.
-    return _next_allocate > _num_elems ? _num_elems : _next_allocate;
+    // _next_allocate might grow larger than _num_elems in multi-thread environments
+    // due to races.
+    return MIN2(_next_allocate, _num_elems);
   }
 
+  // Copies the (valid) contents of this buffer into the destination.
   void copy_to(void* dest) const {
     ::memcpy(dest, _buffer, length() * _elem_size);
   }

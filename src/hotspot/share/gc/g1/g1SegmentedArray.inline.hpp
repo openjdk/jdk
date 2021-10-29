@@ -269,15 +269,12 @@ template <typename Visitor>
 void G1SegmentedArray<Elem, flag>::iterate_nodes(Visitor& v) const {
   G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
 
-  if (cur != nullptr) {
-    assert(_last != nullptr, "If there is at least one element, there must be a last one.");
+  assert((cur != nullptr) == (_last != nullptr),
+         "If there is at least one element, there must be a last one");
 
-    while (cur != nullptr) {
-      uint limit = cur->length();
-      v.visit_buffer(cur, limit);
-
-      cur = cur->next();
-    }
+  while (cur != nullptr) {
+    v.visit_buffer(cur, cur->length());
+    cur = cur->next();
   }
 }
 

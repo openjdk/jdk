@@ -29,65 +29,53 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.hpp"
 
-// This class
-//   1. records the objects per region which have failed to evacuate.
-//   2. speeds up removing self forwarded ptrs in post evacuation phase.
-//
-class G1EvacFailureObjsInHR {
+class G1EvacFailureObjectsIterator;
+
+// This class collects addresses of objects that failed evacuation in a specific
+// heap region.
+// Provides sorted iteration of these elements for processing during the remove
+// self forwards phase.
+class G1EvacFailureObjectsSet {
+  friend class G1EvacFailureObjectsIterator;
 
 public:
-  typedef uint Elem;
+  // Storage type of an object that failed evacuation within a region. Given
+  // heap region size and possible object locations within a region, it is
+  // sufficient to use an uint here to save some space instead of full pointers.
+  typedef uint OffsetInRegion;
 
 private:
   static const uint BufferLength = 256;
-  static const uint MaxBufferLength;
   static const uint Alignment = 4;
 
   static const G1SegmentedArrayAllocOptions _alloc_options;
+
   // This free list is shared among evacuation failure process in all regions.
   static G1SegmentedArrayBufferList<mtGC> _free_buffer_list;
 
-  const Elem _max_offset;
-  const uint _region_idx;
+  DEBUG_ONLY(const uint _region_idx;)
+
+  // Region bottom
   const HeapWord* _bottom;
 
-  // To improve space efficiency, elements are offset rather than raw addr
-  G1SegmentedArray<Elem, mtGC> _nodes_array;
-  // Local array contains the _nodes_array data in flat layout
-  Elem* _offset_array;
-  uint _objs_num;
+  // Offsets within region containing objects that failed evacuation.
+  G1SegmentedArray<OffsetInRegion, mtGC> _offsets;
 
-private:
-  oop cast_from_offset(Elem offset) {
-    return cast_to_oop(_bottom + offset);
-  }
-  Elem cast_from_oop_addr(oop obj) {
-    const HeapWord* o = cast_from_oop<const HeapWord*>(obj);
-    size_t offset = pointer_delta(o, _bottom);
-    return static_cast<Elem>(offset);
-  }
-
-  // Copy buffers' data to local array, must be called at safepoint
-  void compact();
-  void sort();
-  void clear_array();
-  // Iterate through evac failure objects in local array
-  void iterate_internal(ObjectClosure* closure);
+  void assert_is_valid_offset(size_t offset) const NOT_DEBUG_RETURN;
+  // Converts between an offset within a region and an oop address.
+  oop from_offset(OffsetInRegion offset) const;
+  OffsetInRegion cast_to_offset(oop obj) const;
 
 public:
-  G1EvacFailureObjsInHR(uint region_idx, HeapWord* bottom);
-  ~G1EvacFailureObjsInHR();
+  G1EvacFailureObjectsSet(uint region_idx, HeapWord* bottom);
+  ~G1EvacFailureObjectsSet() { }
 
-  // Record an evac failure object
+  // Record an object that failed evacuation.
   void record(oop obj);
-  // Iterate through evac failure objects
+
+  // Apply the given ObjectClosure to all objects that failed evacuation. Objects
+  // are passed in increasing address order.
   void iterate(ObjectClosure* closure);
-
-  // Copy a buffer data to local array
-  void visit_buffer(G1SegmentedArrayBuffer<mtGC>* node, uint limit);
-
-  // Verify elements in the buffer
-  void visit_elem(void* elem);
 };
 
 
