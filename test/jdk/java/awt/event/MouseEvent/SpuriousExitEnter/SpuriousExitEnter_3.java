@@ -73,9 +73,14 @@ public class SpuriousExitEnter_3 {
     static Frame frame1;
     static Button button1;
 
-    static EnterExitAdapter frameAdapter;
-    static EnterExitAdapter buttonAdapter;
     static final Robot r = Util.createRobot();
+
+    static volatile EnterExitAdapter frameAdapter;
+    static volatile EnterExitAdapter buttonAdapter;
+    static volatile Point centerA;
+    static volatile Point centerB;
+    static volatile Point centerC_1 ;
+    static volatile Point centerC_2;
 
     public static void testCase(Window w, Component comp) throws InterruptedException, InvocationTargetException {
         EventQueue.invokeAndWait(()-> {
@@ -94,17 +99,20 @@ public class SpuriousExitEnter_3 {
         r.waitForIdle();
         r.delay(1000);
 
-        Point centerA = new Point(comp.getLocationOnScreen().x + comp.getWidth() / 2,
-                                  comp.getLocationOnScreen().y + comp.getHeight() / 2);
-        Point centerB = new Point(w.getLocationOnScreen().x + w.getWidth() / 2,
-                                  w.getLocationOnScreen().y + w.getHeight() / 2);
-        //for moving from A outside: don't cross the A area. Move straight to the right.
-        Point centerC_1 = new Point(w.getLocationOnScreen().x + w.getWidth() + 20,  //go right off the border
-                                    comp.getLocationOnScreen().y + comp.getHeight() / 2); //don't cross the A area!
+        EventQueue.invokeAndWait(()-> {
+            centerA = new Point(comp.getLocationOnScreen().x + comp.getWidth() / 2,
+                    comp.getLocationOnScreen().y + comp.getHeight() / 2);
+            centerB = new Point(w.getLocationOnScreen().x + w.getWidth() / 2,
+                    w.getLocationOnScreen().y + w.getHeight() / 2);
+            //for moving from A outside: don't cross the A area. Move straight to the right.
+            centerC_1 = new Point(w.getLocationOnScreen().x + w.getWidth() + 20,  //go right off the border
+                    comp.getLocationOnScreen().y + comp.getHeight() / 2); //don't cross the A area!
 
-        //for moving from B outside: don't cross the B area. Move straight to the bottom.
-        Point centerC_2 = new Point(w.getLocationOnScreen().x + w.getWidth() / 2,
-                                    w.getLocationOnScreen().y + w.getHeight() + 20); //go below the bottom border
+            //for moving from B outside: don't cross the B area. Move straight to the bottom.
+            centerC_2 = new Point(w.getLocationOnScreen().x + w.getWidth() / 2,
+                    w.getLocationOnScreen().y + w.getHeight() + 20); //go below the bottom border
+        });
+
         //A and B areas
         Util.pointOnComp(comp, r);
         Util.waitForIdle(r);
