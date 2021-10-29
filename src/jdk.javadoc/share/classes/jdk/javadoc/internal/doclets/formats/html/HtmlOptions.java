@@ -514,10 +514,10 @@ public class HtmlOptions extends BaseOptions {
             }
         }
         // check if additional scripts exists
-        for (String sscript : additionalScripts) {
-            DocFile ssfile = DocFile.createFileForInput(config, sscript);
-            if (!ssfile.exists()) {
-                messages.error("doclet.File_not_found", sscript);
+        for (String script : additionalScripts) {
+            DocFile sfile = DocFile.createFileForInput(config, script);
+            if (!sfile.exists()) {
+                messages.error("doclet.File_not_found", script);
                 return false;
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,8 +225,8 @@ class APITest {
             "pkg/package-tree.html",
             "resources/glass.png",
             "resources/x.png",
-            "script-dir/script.js",
-            "script-dir/search.js",
+            "script.js",
+            "search.js",
             "jquery-ui.overrides.css",
             "stylesheet.css",
             "tag-search-index.js",
@@ -234,10 +234,11 @@ class APITest {
     ));
 
     protected static Set<String> noIndexFiles = standardExpectFiles.stream()
-            .filter(s -> (!s.startsWith("script-dir") || s.equals("script-dir/script.js"))
+            .filter(s ->    !s.startsWith("script-dir")
                          && !s.startsWith("resources")
                          && !s.endsWith("-search-index.js")
                          && !s.equals("index-all.html")
+                         && !s.equals("search.js")
                          && !s.equals("jquery-ui.overrides.css")
                          && !s.equals("allclasses-index.html")
                          && !s.equals("allpackages-index.html")

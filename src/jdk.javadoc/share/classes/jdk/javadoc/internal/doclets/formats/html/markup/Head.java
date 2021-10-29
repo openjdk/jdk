@@ -341,7 +341,7 @@ public class Head extends Content {
 
     private void addScripts(HtmlTree tree) {
         if (addDefaultScript) {
-            addScriptElement(tree, DocPaths.JAVASCRIPT);
+            tree.add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath()));
         }
         if (index) {
             if (pathToRoot != null && mainBodyScript != null) {

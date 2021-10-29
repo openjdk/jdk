@@ -223,13 +223,13 @@ public class HtmlDoclet extends AbstractDoclet {
             return;
         }
         boolean nodeprecated = options.noDeprecated();
-        performCopy(options.helpFile(), false);
-        performCopy(options.stylesheetFile(), false);
+        performCopy(options.helpFile(), DocPath.empty);
+        performCopy(options.stylesheetFile(), DocPath.empty);
         for (String stylesheet : options.additionalStylesheets()) {
-            performCopy(stylesheet, false);
+            performCopy(stylesheet, DocPath.empty);
         }
         for (String script : options.additionalScripts()) {
-            performCopy(script, true);
+            performCopy(script, DocPaths.SCRIPT_DIR);
         }
         // do early to reduce memory footprint
         if (options.classUse()) {
@@ -289,10 +289,10 @@ public class HtmlDoclet extends AbstractDoclet {
             f = DocFile.createFileForOutput(configuration, DocPaths.STYLESHEET);
             f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.STYLESHEET), true, true);
         }
-        f = DocFile.createFileForOutput(configuration, DocPaths.SCRIPT_DIR.resolve(DocPaths.JAVASCRIPT));
+        f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
         if (options.createIndex()) {
-            f = DocFile.createFileForOutput(configuration, DocPaths.SCRIPT_DIR.resolve(DocPaths.SEARCH_JS));
+            f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS_TEMPLATE), configuration.docResources);
 
             f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCES.resolve(DocPaths.GLASS_IMG));
@@ -427,16 +427,13 @@ public class HtmlDoclet extends AbstractDoclet {
         return configuration.getOptions().getSupportedOptions();
     }
 
-    private void performCopy(String filename, boolean isScript) throws DocFileIOException {
+    private void performCopy(String filename, DocPath targetPath) throws DocFileIOException {
         if (filename.isEmpty()) {
             return;
         }
 
         DocFile fromfile = DocFile.createFileForInput(configuration, filename);
-        DocPath path = DocPath.create(fromfile.getName());
-        if (isScript) {
-            path = DocPaths.SCRIPT_DIR.resolve(path);
-        }
+        DocPath path = targetPath.resolve(fromfile.getName());
         DocFile toFile = DocFile.createFileForOutput(configuration, path);
         if (toFile.isSameFile(fromfile)) {
             return;

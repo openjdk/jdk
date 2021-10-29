@@ -467,6 +467,7 @@ public class HtmlDocletWriter {
                 .setAdditionalScripts(configuration.getAdditionalScripts())
                 .setIndex(options.createIndex(), mainBodyScript)
                 .addContent(extraHeadContent);
+
         HtmlDocument htmlDocument = new HtmlDocument(
                 HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body));
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
