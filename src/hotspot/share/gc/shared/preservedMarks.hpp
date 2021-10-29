@@ -30,9 +30,9 @@
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
-class AbstractGangTask;
+class WorkerTask;
 class PreservedMarksSet;
-class WorkGang;
+class WorkerThreads;
 
 class PreservedMarks {
 private:
@@ -110,11 +110,11 @@ public:
   void init(uint num);
 
   // Iterate over all stacks, restore all preserved marks, and reclaim
-  // the memory taken up by the stack segments using the given WorkGang. If the WorkGang
+  // the memory taken up by the stack segments using the given WorkerThreads. If the WorkerThreads
   // is NULL, perform the work serially in the current thread.
-  void restore(WorkGang* workers);
+  void restore(WorkerThreads* workers);
 
-  AbstractGangTask* create_task();
+  WorkerTask* create_task();
 
   // Reclaim stack array.
   void reclaim();

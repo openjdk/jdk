@@ -410,8 +410,8 @@ static void merge_ranges(SwitchRange* ranges, int& rp) {
 void Parse::do_tableswitch() {
   // Get information about tableswitch
   int default_dest = iter().get_dest_table(0);
-  int lo_index     = iter().get_int_table(1);
-  int hi_index     = iter().get_int_table(2);
+  jint lo_index    = iter().get_int_table(1);
+  jint hi_index    = iter().get_int_table(2);
   int len          = hi_index - lo_index + 1;
 
   if (len < 1) {
@@ -438,9 +438,9 @@ void Parse::do_tableswitch() {
   SwitchRange* ranges = NEW_RESOURCE_ARRAY(SwitchRange, rnum);
   int rp = -1;
   if (lo_index != min_jint) {
-    uint cnt = 1;
+    float cnt = 1.0F;
     if (profile != NULL) {
-      cnt = profile->default_count() / (hi_index != max_jint ? 2 : 1);
+      cnt = (float)profile->default_count() / (hi_index != max_jint ? 2.0F : 1.0F);
     }
     ranges[++rp].setRange(min_jint, lo_index-1, default_dest, cnt);
   }
@@ -448,9 +448,9 @@ void Parse::do_tableswitch() {
     jint match_int = lo_index+j;
     int  dest      = iter().get_dest_table(j+3);
     makes_backward_branch |= (dest <= bci());
-    uint cnt = 1;
+    float cnt = 1.0F;
     if (profile != NULL) {
-      cnt = profile->count_at(j);
+      cnt = (float)profile->count_at(j);
     }
     if (rp < 0 || !ranges[rp].adjoin(match_int, dest, cnt, trim_ranges)) {
       ranges[++rp].set(match_int, dest, cnt);
@@ -459,9 +459,9 @@ void Parse::do_tableswitch() {
   jint highest = lo_index+(len-1);
   assert(ranges[rp].hi() == highest, "");
   if (highest != max_jint) {
-    uint cnt = 1;
+    float cnt = 1.0F;
     if (profile != NULL) {
-      cnt = profile->default_count() / (lo_index != min_jint ? 2 : 1);
+      cnt = (float)profile->default_count() / (lo_index != min_jint ? 2.0F : 1.0F);
     }
     if (!ranges[rp].adjoinRange(highest+1, max_jint, default_dest, cnt, trim_ranges)) {
       ranges[++rp].setRange(highest+1, max_jint, default_dest, cnt);
@@ -487,7 +487,7 @@ void Parse::do_tableswitch() {
 void Parse::do_lookupswitch() {
   // Get information about lookupswitch
   int default_dest = iter().get_dest_table(0);
-  int len          = iter().get_int_table(1);
+  jint len          = iter().get_int_table(1);
 
   if (len < 1) {    // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
@@ -513,26 +513,15 @@ void Parse::do_lookupswitch() {
       table[3*j+0] = iter().get_int_table(2+2*j);
       table[3*j+1] = iter().get_dest_table(2+2*j+1);
       // Handle overflow when converting from uint to jint
-      table[3*j+2] = (profile == NULL) ? 1 : MIN2<uint>(max_jint, profile->count_at(j));
+      table[3*j+2] = (profile == NULL) ? 1 : (jint)MIN2<uint>((uint)max_jint, profile->count_at(j));
     }
     qsort(table, len, 3*sizeof(table[0]), jint_cmp);
   }
 
-  float defaults = 0;
-  jint prev = min_jint;
-  for (int j = 0; j < len; j++) {
-    jint match_int = table[3*j+0];
-    if (match_int != prev) {
-      defaults += (float)match_int - prev;
-    }
-    prev = match_int+1;
-  }
-  if (prev != min_jint) {
-    defaults += (float)max_jint - prev + 1;
-  }
-  float default_cnt = 1;
+  float default_cnt = 1.0F;
   if (profile != NULL) {
-    default_cnt = profile->default_count()/defaults;
+    juint defaults = max_juint - len;
+    default_cnt = (float)profile->default_count()/(float)defaults;
   }
 
   int rnum = len*2+1;
@@ -541,25 +530,25 @@ void Parse::do_lookupswitch() {
   int rp = -1;
   for (int j = 0; j < len; j++) {
     jint match_int   = table[3*j+0];
-    int  dest        = table[3*j+1];
-    int  cnt         = table[3*j+2];
-    int  next_lo     = rp < 0 ? min_jint : ranges[rp].hi()+1;
+    jint  dest        = table[3*j+1];
+    jint  cnt         = table[3*j+2];
+    jint  next_lo     = rp < 0 ? min_jint : ranges[rp].hi()+1;
     makes_backward_branch |= (dest <= bci());
-    float c = default_cnt * ((float)match_int - next_lo);
+    float c = default_cnt * ((float)match_int - (float)next_lo);
     if (match_int != next_lo && (rp < 0 || !ranges[rp].adjoinRange(next_lo, match_int-1, default_dest, c, trim_ranges))) {
       assert(default_dest != never_reached, "sentinel value for dead destinations");
       ranges[++rp].setRange(next_lo, match_int-1, default_dest, c);
     }
-    if (rp < 0 || !ranges[rp].adjoin(match_int, dest, cnt, trim_ranges)) {
+    if (rp < 0 || !ranges[rp].adjoin(match_int, dest, (float)cnt, trim_ranges)) {
       assert(dest != never_reached, "sentinel value for dead destinations");
-      ranges[++rp].set(match_int, dest, cnt);
+      ranges[++rp].set(match_int, dest,  (float)cnt);
     }
   }
   jint highest = table[3*(len-1)];
   assert(ranges[rp].hi() == highest, "");
   if (highest != max_jint &&
-      !ranges[rp].adjoinRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - highest), trim_ranges)) {
-    ranges[++rp].setRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - highest));
+      !ranges[rp].adjoinRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - (float)highest), trim_ranges)) {
+    ranges[++rp].setRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - (float)highest));
   }
   assert(rp < rnum, "not too many ranges");
 

@@ -216,6 +216,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_copyMemory:
     if (StubRoutines::unsafe_arraycopy() == NULL) return false;
     break;
+  case vmIntrinsics::_encodeAsciiArray:
+    if (!Matcher::match_rule_supported(Op_EncodeISOArray) || !Matcher::supports_encode_ascii_array) return false;
+    break;
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
     if (!Matcher::match_rule_supported(Op_EncodeISOArray)) return false;
@@ -422,6 +425,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     break;
   case vmIntrinsics::_multiplyHigh:
     if (!Matcher::match_rule_supported(Op_MulHiL)) return false;
+    break;
+  case vmIntrinsics::_unsignedMultiplyHigh:
+    if (!Matcher::match_rule_supported(Op_UMulHiL)) return false;
     break;
   case vmIntrinsics::_getCallerClass:
     if (vmClasses::reflect_CallerSensitive_klass() == NULL) return false;

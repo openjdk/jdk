@@ -527,6 +527,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+  { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -3531,9 +3532,8 @@ bool Arguments::init_shared_archive_paths() {
       }
       if (archives == 1) {
         char* temp_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
-        int name_size;
         bool success =
-          FileMapInfo::get_base_archive_name_from_header(temp_archive_path, &name_size, &SharedArchivePath);
+          FileMapInfo::get_base_archive_name_from_header(temp_archive_path, &SharedArchivePath);
         if (!success) {
           SharedArchivePath = temp_archive_path;
         } else {

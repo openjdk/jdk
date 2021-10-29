@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8262891 8269146
+ * @bug 8262891 8269146 8269113
  * @summary Verify errors related to pattern switches.
  * @compile/fail/ref=SwitchErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
@@ -220,6 +220,12 @@ public class SwitchErrors {
     void exhaustiveAndNull(String s) {
         switch (s) {
             case null: break;
+        }
+    }
+    void referenceTypeTotalForNull() {
+        switch (null) {
+            case String s: break;
+            case CharSequence cs: break;
         }
     }
 }

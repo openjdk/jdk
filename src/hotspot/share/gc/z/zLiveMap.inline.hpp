@@ -98,9 +98,9 @@ inline BitMap::idx_t ZLiveMap::index_to_segment(BitMap::idx_t index) const {
 
 inline bool ZLiveMap::get(size_t index) const {
   BitMap::idx_t segment = index_to_segment(index);
-  return is_marked() &&              // Page is marked
-         is_segment_live(segment) && // Segment is marked
-         _bitmap.at(index);          // Object is marked
+  return is_marked() &&                               // Page is marked
+         is_segment_live(segment) &&                  // Segment is marked
+         _bitmap.par_at(index, memory_order_relaxed); // Object is marked
 }
 
 inline bool ZLiveMap::set(size_t index, bool finalizable, bool& inc_live) {
