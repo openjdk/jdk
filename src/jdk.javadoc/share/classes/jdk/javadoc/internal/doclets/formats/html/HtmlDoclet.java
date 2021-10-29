@@ -26,8 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Writer;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -215,7 +213,7 @@ public class HtmlDoclet extends AbstractDoclet {
         super.generateOtherFiles(classtree);
         HtmlOptions options = configuration.getOptions();
         if (options.linkSource()) {
-            SourceToHTMLConverter.convertRoot(configuration,DocPaths.SOURCE_OUTPUT);
+            SourceToHTMLConverter.convertRoot(configuration, DocPaths.SOURCE_OUTPUT);
         }
         // Modules with no documented classes may be specified on the
         // command line to specify a service provider, allow these.
@@ -225,10 +223,13 @@ public class HtmlDoclet extends AbstractDoclet {
             return;
         }
         boolean nodeprecated = options.noDeprecated();
-        performCopy(options.helpFile());
-        performCopy(options.stylesheetFile());
+        performCopy(options.helpFile(), false);
+        performCopy(options.stylesheetFile(), false);
         for (String stylesheet : options.additionalStylesheets()) {
-            performCopy(stylesheet);
+            performCopy(stylesheet, false);
+        }
+        for (String script : options.additionalScripts()) {
+            performCopy(script, true);
         }
         // do early to reduce memory footprint
         if (options.classUse()) {
@@ -288,10 +289,10 @@ public class HtmlDoclet extends AbstractDoclet {
             f = DocFile.createFileForOutput(configuration, DocPaths.STYLESHEET);
             f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.STYLESHEET), true, true);
         }
-        f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
+        f = DocFile.createFileForOutput(configuration, DocPaths.SCRIPT_DIR.resolve(DocPaths.JAVASCRIPT));
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
         if (options.createIndex()) {
-            f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
+            f = DocFile.createFileForOutput(configuration, DocPaths.SCRIPT_DIR.resolve(DocPaths.SEARCH_JS));
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS_TEMPLATE), configuration.docResources);
 
             f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCES.resolve(DocPaths.GLASS_IMG));
@@ -327,7 +328,7 @@ public class HtmlDoclet extends AbstractDoclet {
                 "images/ui-bg_glass_75_e6e6e6_1x400.png");
         DocFile f;
         for (String file : files) {
-            DocPath filePath = DocPaths.JQUERY_FILES.resolve(file);
+            DocPath filePath = DocPaths.SCRIPT_DIR.resolve(file);
             f = DocFile.createFileForOutput(configuration, filePath);
             f.copyResource(DOCLET_RESOURCES.resolve(filePath), true, false);
         }
@@ -426,18 +427,23 @@ public class HtmlDoclet extends AbstractDoclet {
         return configuration.getOptions().getSupportedOptions();
     }
 
-    private void performCopy(String filename) throws DocFileIOException {
-        if (filename.isEmpty())
+    private void performCopy(String filename, boolean isScript) throws DocFileIOException {
+        if (filename.isEmpty()) {
             return;
+        }
 
         DocFile fromfile = DocFile.createFileForInput(configuration, filename);
         DocPath path = DocPath.create(fromfile.getName());
+        if (isScript) {
+            path = DocPaths.SCRIPT_DIR.resolve(path);
+        }
         DocFile toFile = DocFile.createFileForOutput(configuration, path);
-        if (toFile.isSameFile(fromfile))
+        if (toFile.isSameFile(fromfile)) {
             return;
+        }
 
         messages.notice("doclet.Copying_File_0_To_File_1",
-                fromfile.toString(), path.getPath());
+                fromfile.getPath(), path.getPath());
         toFile.copyFile(fromfile);
     }
 }

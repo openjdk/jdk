@@ -682,7 +682,7 @@ public class TestSearch extends JavadocTester {
 
     void checkJqueryAndImageFiles(boolean expectedOutput) {
         checkFiles(expectedOutput,
-                "search.js",
+                "script-dir/search.js",
                 "jquery-ui.overrides.css",
                 "script-dir/jquery-3.5.1.min.js",
                 "script-dir/jquery-ui.min.js",
@@ -705,10 +705,10 @@ public class TestSearch extends JavadocTester {
 
     void checkSearchJS() {
         // ensure all resource keys were resolved
-        checkOutput("search.js", false,
+        checkOutput("script-dir/search.js", false,
                 "##REPLACE:");
 
-        checkOutput("search.js", true,
+        checkOutput("script-dir/search.js", true,
                 "function searchIndexWithMatcher(indexArray, matcher, category, nameFunc) {",
                 """
                     function getURLPrefix(ui) {
@@ -733,7 +733,7 @@ public class TestSearch extends JavadocTester {
                     }""",
                 "url += ui.item.l;");
 
-        checkCssClasses("search.js", "stylesheet.css");
+        checkCssClasses("script-dir/search.js", "stylesheet.css");
     }
 
     void checkCssClasses(String jsFile, String cssFile) {
