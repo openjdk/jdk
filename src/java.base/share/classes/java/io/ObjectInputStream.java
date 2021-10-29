@@ -2660,7 +2660,8 @@ public class ObjectInputStream
                 handles.markDependency(passHandle, objHandle);
                 ClassNotFoundException ex = handles.lookupException(objHandle);
                 if (ex != null) {
-                    // Wrap the exception so it can be handled in GetField.get(String, Object)
+                    // Wrap the exception to be caught in readSerialData when
+                    // invokeReadObject is called.
                     throw new IOException(ex);
                 }
                 return objValues[off];
