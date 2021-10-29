@@ -836,10 +836,11 @@ public class InetAddress implements java.io.Serializable {
                 host = addr.getHostAddress();
                 return host;
             }
-        // 'resolver.lookupByAddress' and 'InetAddress.getAllByName0' delegate to the system-wide resolver,
-        // which could be a custom one. At that point we treat any unexpected RuntimeException thrown by
-        // the resolver as we would treat an UnknownHostException or an unmatched host name.
         } catch (RuntimeException | UnknownHostException e) {
+            // 'resolver.lookupByAddress' and 'InetAddress.getAllByName0' delegate to
+            // the system-wide resolver, which could be a custom one. At that point we
+            // treat any unexpected RuntimeException thrown by the resolver as we would
+            // treat an UnknownHostException or an unmatched host name.
             host = addr.getHostAddress();
         }
         return host;
@@ -1304,7 +1305,7 @@ public class InetAddress implements java.io.Serializable {
 
     /**
      * Creates an InetAddress based on the provided host name and IP address.
-     * System {@linkplain InetAddressResolver resolver} is not used to check
+     * The system-wide {@linkplain InetAddressResolver resolver} is not used to check
      * the validity of the address.
      *
      * <p> The host name can either be a machine name, such as
