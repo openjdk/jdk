@@ -28,11 +28,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.Pipe;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -78,6 +82,12 @@ public class TransferTo {
         return new Object[][] {
             // tests FileChannel.transferTo(FileChannel) optimized case
             { fileChannelInput(), fileChannelOutput() },
+
+            // tests FileChannel.transferTo(SelectableChannelOutput) optimized case
+            { fileChannelInput(), selectableChannelOutput() },
+
+            // tests FileChannel.transferTo(WritableChannelOutput) optimized case
+            { fileChannelInput(), writableByteChannelOutput() },
 
             // tests InputStream.transferTo(OutputStream) default case
             { readableByteChannelInput(), defaultOutput() }
@@ -282,4 +292,39 @@ public class TransferTo {
         };
     }
 
+    private static OutputStreamProvider selectableChannelOutput() throws IOException {
+        return new OutputStreamProvider() {
+            public OutputStream output(Consumer<Supplier<byte[]>> spy) throws Exception {
+                Pipe pipe = Pipe.open();
+                Future<byte[]> bytes = CompletableFuture.supplyAsync(() -> {
+                    try {
+                        InputStream is = Channels.newInputStream(pipe.source());
+                        return is.readAllBytes();
+                    } catch (IOException e) {
+                        throw new AssertionError("Exception while asserting content", e);
+                    }
+                });
+                final OutputStream os = Channels.newOutputStream(pipe.sink());
+                spy.accept(() -> {
+                    try {
+                        os.close();
+                        return bytes.get();
+                    } catch (IOException | InterruptedException | ExecutionException e) {
+                        throw new AssertionError("Exception while asserting content", e);
+                    }
+                });
+                return os;
+            }
+        };
+    }
+
+    private static OutputStreamProvider writableByteChannelOutput() {
+        return new OutputStreamProvider() {
+            public OutputStream output(Consumer<Supplier<byte[]>> spy) throws Exception {
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                spy.accept(outputStream::toByteArray);
+                return Channels.newOutputStream(Channels.newChannel(outputStream));
+            }
+        };
+    }
 }
