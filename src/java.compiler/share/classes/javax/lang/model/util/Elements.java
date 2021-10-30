@@ -773,8 +773,8 @@ public interface Elements {
      * object returned for the element representing {@code Foo} would
      * be for the source file and <em>not</em> for the class file.
      *
-     * <p>An implementation may choose to not support the functionality
-     * of this method, in which case {@link
+     * <p>An implementation may choose to not support the
+     * functionality of this method, in which case {@link
      * UnsupportedOperationException} is thrown.
      *
      * <p>In the context of annotation processing, a non-{@code null}
@@ -796,14 +796,15 @@ public interface Elements {
      * be a {@code module-info} file.
      *
      * <p>For other kinds of elements, if they have a file object, the
-     * file object will be the object associated with the outermost
-     * class or interface of the element. For top-level classes and
-     * interfaces, the name of the file object will commonly contain
-     * the name of the top-level class or interface. For example, for
-     * class {@code Foo}, its file name could contain "{@code
-     * Foo.java}". Note however that a single source file can contain
-     * multiple top-level files so this pattern so this relationship
-     * does not always hold.
+     * file object will be the object associated with the {@linkplain
+     * #getOutermostTypeElement(Element) outermost class or interface
+     * of the element}. For top-level classes and interfaces, the name
+     * of the file object will commonly contain the name of the
+     * top-level class or interface. For example, for class {@code
+     * Foo}, its file name could contain "{@code Foo.java}". Note
+     * however that a single source file can contain multiple
+     * top-level files so this pattern so this relationship does not
+     * always hold.
      *
      * @implSpec The default implementation unconditionally throws
      * {@link UnsupportedOperationException}.
@@ -814,10 +815,6 @@ public interface Elements {
      * @since 18
      */
     default javax.tools.JavaFileObject getFileObjectOf(Element e) {
-        // Note to reviewers: if this work is done after 8140442: "Add
-        // getOutermostTypeElement to javax.lang.model utility class",
-        // the operational specs can be rephrased in terms of that
-        // method.
         throw new UnsupportedOperationException();
     }
 }
