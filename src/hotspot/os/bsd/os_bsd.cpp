@@ -878,7 +878,9 @@ bool os::address_is_in_vm(address addr) {
 }
 
 
+#if defined(__APPLE__)
 #define MACH_MAXSYMLEN 256
+#endif
 
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset,
@@ -887,9 +889,18 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   assert(buf != NULL, "sanity check");
 
   Dl_info dlinfo;
-  char localbuf[MACH_MAXSYMLEN];
 
   if (dladdr((void*)addr, &dlinfo) != 0) {
+#if defined(__APPLE__)
+    if (addr == (address)(intptr_t)-1) {
+      // dladdr() in macOS12/Monterey returns success for -1, but that addr
+      // value should not be allowed to work to avoid confusion.
+      buf[0] = '\0';
+      if (offset) *offset = -1;
+      return false;
+    }
+#endif
+
     // see if we have a matching symbol
     if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
       if (!(demangle && Decoder::demangle(dlinfo.dli_sname, buf, buflen))) {
@@ -898,6 +909,14 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
       return true;
     }
+
+#if !defined(__APPLE__)
+    // The 6-parameter Decoder::decode() function is not implemented on macOS.
+    // The Mach-O binary format does not contain a "list of files" with address
+    // ranges like ELF. That makes sense since Mach-O can contain binaries for
+    // than one instruction set so there can be more than one address range for
+    // each "file".
+
     // no matching symbol so try for just file info
     if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
       if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
@@ -905,7 +924,10 @@ bool os::dll_address_to_function_name(address addr, char *buf,
         return true;
       }
     }
+#endif
 
+#if defined(__APPLE__)
+    char localbuf[MACH_MAXSYMLEN];
     // Handle non-dynamic manually:
     if (dlinfo.dli_fbase != NULL &&
         Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset,
@@ -916,6 +938,8 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       return true;
     }
   }
+#endif
+
   buf[0] = '\0';
   if (offset != NULL) *offset = -1;
   return false;
@@ -930,6 +954,16 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   Dl_info dlinfo;
 
   if (dladdr((void*)addr, &dlinfo) != 0) {
+#if defined(__APPLE__)
+    if (addr == (address)(intptr_t)-1) {
+      // dladdr() in macOS12/Monterey returns success for -1, but that addr
+      // value should not be allowed to work to avoid confusion.
+      buf[0] = '\0';
+      if (offset) *offset = -1;
+      return false;
+    }
+#endif
+
     if (dlinfo.dli_fname != NULL) {
       jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
     }
