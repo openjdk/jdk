@@ -64,6 +64,10 @@ public class TransferTo {
 
     private static final int ITERATIONS = 10;
 
+    private static final int NUM_WRITES = 3 * 1024;
+    private static final int BYTES_PER_WRITE = 1024 * 1024;
+    private static final long BYTES_WRITTEN = (long) NUM_WRITES * BYTES_PER_WRITE;
+
     private static final Random RND = RandomFactory.getRandom();
 
     /*
@@ -139,8 +143,6 @@ public class TransferTo {
         Path targetFile = Files.createTempFile(null, null);
 
         // writing 3 GB of random bytes into source file
-        int NUM_WRITES = 3 * 1024;
-        int BYTES_PER_WRITE = 1024 * 1024;
         for (int i = 0; i < NUM_WRITES; i++)
             Files.write(sourceFile, createRandomBytes(BYTES_PER_WRITE, 0), StandardOpenOption.APPEND);
 
@@ -152,7 +154,7 @@ public class TransferTo {
         }
 
         // comparing reported transferred bytes, must be 3 GB
-        assertEquals(count, (long) NUM_WRITES * BYTES_PER_WRITE);
+        assertEquals(count, BYTES_WRITTEN);
 
         // comparing content of both files, failing in case of any difference
         assertEquals(Files.mismatch(sourceFile, targetFile), -1);
