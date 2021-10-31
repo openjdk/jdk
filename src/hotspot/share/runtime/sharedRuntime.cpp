@@ -1009,7 +1009,7 @@ int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o) {
   return dtrace_object_alloc_base(thread, o, o->size());
 }
 
-int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o, int size) {
+int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o, size_t size) {
   assert(DTraceAllocProbes, "wrong call");
   Klass* klass = o->klass();
   Symbol* name = klass->name();

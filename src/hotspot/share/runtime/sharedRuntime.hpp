@@ -273,7 +273,7 @@ class SharedRuntime: AllStatic {
   // dtrace notifications
   static int dtrace_object_alloc(oopDesc* o);
   static int dtrace_object_alloc_base(Thread* thread, oopDesc* o);
-  static int dtrace_object_alloc_base(Thread* thread, oopDesc* o, int size);
+  static int dtrace_object_alloc_base(Thread* thread, oopDesc* o, size_t size);
   static int dtrace_method_entry(JavaThread* thread, Method* m);
   static int dtrace_method_exit(JavaThread* thread, Method* m);
 
