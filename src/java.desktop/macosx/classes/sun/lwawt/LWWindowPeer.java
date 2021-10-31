@@ -1150,6 +1150,7 @@ public class LWWindowPeer
             if (!isMaximizedBoundsSet()) {
                 setPlatformMaximizedBounds(getDefaultMaximizedBounds());
             }
+            updateIconImages();
         }
         // Replace surface unconditionally, because internal state of the
         // GraphicsDevice could be changed.

@@ -724,6 +724,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             public void run() {
                 AWTAccessor.getComponentAccessor().
                     setGraphicsConfiguration(target, gc);
+                updateIconImages();
             }
         };
         SunToolkit.executeOnEventHandlerThread(target, dc);
