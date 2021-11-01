@@ -78,8 +78,7 @@ public class ModuleDescriptorHashCodeTest {
      * Then uses the {@link ModuleDescriptor.Builder} to construct a module descriptor for the
      * same module and verifies that it too has the same hash code.
      */
-    private static void realMain(String[] args) throws Exception {
-        int expectedHashCode = Integer.parseInt(args[0]);
+    private static void assertExpectedHashCode(int expectedHashCode) throws Exception {
         Module bootModule = javaSQLModuleFromBootLayer();
         ModuleDescriptor bootMD = bootModule.getDescriptor();
         int actualHashCode = bootMD.hashCode();
@@ -112,7 +111,7 @@ public class ModuleDescriptorHashCodeTest {
 
     private static class HashCodeChecker {
         public static void main(String[] args) throws Exception {
-            ModuleDescriptorHashCodeTest.realMain(args);
+            ModuleDescriptorHashCodeTest.assertExpectedHashCode(Integer.parseInt(args[0]));
         }
     }
 
