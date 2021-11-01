@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 6646411
  * @summary Tests that full screen window and its children receive resize
             event when display mode changes
- * @author Dmitri.Trembovetski@sun.com: area=Graphics
  * @run main/othervm NoResizeEventOnDMChangeTest
  * @run main/othervm -Dsun.java2d.d3d=false NoResizeEventOnDMChangeTest
  */
@@ -40,11 +39,14 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NoResizeEventOnDMChangeTest {
     public static void main(String[] args) {
@@ -102,6 +104,7 @@ public class NoResizeEventOnDMChangeTest {
                                      final Window fsWin)
     {
         System.out.println("Testing FS window: "+fsWin);
+        final AtomicBoolean skipTest = new AtomicBoolean(false);
         Component c = new Canvas() {
             @Override
             public void paint(Graphics g) {
@@ -152,6 +155,13 @@ public class NoResizeEventOnDMChangeTest {
                                               dm1.getWidth(), dm1.getHeight());
                             try {
                                 gd.setDisplayMode(dm1);
+                                // Check if window is placed on this gd
+                                Rectangle screenBounds = gd.getDefaultConfiguration().getBounds();
+                                Rectangle windowBounds = fsWin.getBounds();
+                                if (!screenBounds.contains(new Point(windowBounds.x, windowBounds.y))) {
+                                    System.out.println("Window got moved to another screen, test not valid");
+                                    skipTest.set(true);
+                                }
                                 r1.incDmChanges();
                                 r2.incDmChanges();
                             } catch (IllegalArgumentException iae) {}
@@ -166,6 +176,7 @@ public class NoResizeEventOnDMChangeTest {
             fsWin.removeComponentListener(r1);
             c.removeComponentListener(r2);
         }
+
         try {
            EventQueue.invokeAndWait(new Runnable() {
                public void run() {
@@ -178,6 +189,10 @@ public class NoResizeEventOnDMChangeTest {
             });
         } catch (Exception ex) {}
 
+        if (skipTest.get()) {
+            // Skipping test because graphics driver switched window to another screen
+            return;
+        }
         System.out.printf("FS Window: resizes=%d, dm changes=%d\n",
                            r1.getResizes(), r1.getDmChanges());
         System.out.printf("Component: resizes=%d, dm changes=%d\n",
@@ -191,10 +206,14 @@ public class NoResizeEventOnDMChangeTest {
     }
 
     static void sleep(long ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException ex) {}
+        long targetTime = System.currentTimeMillis() + ms;
+        do {
+            try {
+                Thread.sleep(targetTime - System.currentTimeMillis());
+            } catch (InterruptedException ex) {}
+        } while (System.currentTimeMillis() < targetTime);
     }
+
     static class ResizeEventChecker extends ComponentAdapter {
         int dmChanges;
         int resizes;
