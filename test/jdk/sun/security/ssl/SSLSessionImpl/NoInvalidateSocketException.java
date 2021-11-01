@@ -33,7 +33,8 @@
  * @bug 8274736
  * @summary Concurrent read/close of SSLSockets causes SSLSessions to be invalidated unnecessarily
  * @library /javax/net/ssl/templates
- * @run main/othervm NoInvalidateSocketException
+ * @run main/othervm NoInvalidateSocketException TLSv1.3
+ * @run main/othervm NoInvalidateSocketException TLSv1.2
  */
 
 import java.io.*;
@@ -60,6 +61,7 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
     private static String theSSLSocketHashCode;
     private static SSLSession lastSSLSession;
     private static final List<SSLSocket> serverCleanupList = new ArrayList<>();
+    private static String tlsVersion = null;
 
     private static int invalidSessCount = 0;
     private static volatile boolean readFromSocket = false;
@@ -68,6 +70,10 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
     public static void main(String[] args) throws Exception {
         if (System.getProperty("javax.net.debug") == null) {
             System.setProperty("javax.net.debug", "session");
+        }
+
+        if (args != null && args.length >= 1) {
+            tlsVersion = args[0];
         }
 
         new NoInvalidateSocketException(true).run();
@@ -189,6 +195,9 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
         }
         theSSLSocket = (SSLSocket)ctx.getSocketFactory().
                 createSocket(serverAddress, serverPort);
+        if (tlsVersion != null) {
+            theSSLSocket.setEnabledProtocols(new String[] { tlsVersion });
+        }
         theSSLSocketHashCode = String.format("%08x", theSSLSocket.hashCode());
         logToConsole("Opened SSLSocket@" + theSSLSocketHashCode);
     }
