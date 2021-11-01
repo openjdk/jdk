@@ -142,7 +142,9 @@ abstract class OutputRecord
     abstract void encodeChangeCipherSpec() throws IOException;
 
     // SSLEngine and SSLSocket
-    abstract void disposeWriteCipher();
+    void disposeWriteCipher() {
+        throw new UnsupportedOperationException();
+    }
 
     // apply to SSLEngine only
     Ciphertext encode(
