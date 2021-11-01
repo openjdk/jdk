@@ -355,6 +355,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
  -runtime/cds/appcds/ExtraSymbols.java \
+ -runtime/cds/appcds/LambdaContainsOldInf.java \
  -runtime/cds/appcds/LambdaEagerInit.java \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/LambdaVerificationFailedDuringDump.java \
@@ -367,8 +368,9 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/SharedArchiveConsistency.java \
  -runtime/cds/appcds/StaticArchiveWithLambda.java \
  -runtime/cds/appcds/TestCombinedCompressedFlags.java \
- -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
+ -runtime/cds/appcds/TestSerialGCWithCDS.java \
+ -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \
  -runtime/cds/appcds/VerifierTest_1B.java
 

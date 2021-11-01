@@ -395,7 +395,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #validate
      * @see #invalidate
      */
-    private volatile boolean valid = false;
+    private volatile boolean valid;
 
     /**
      * The {@code DropTarget} associated with this component.
@@ -3177,17 +3177,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since     1.0
      */
     public FontMetrics getFontMetrics(Font font) {
-        // This is an unsupported hack, but left in for a customer.
-        // Do not remove.
-        FontManager fm = FontManagerFactory.getInstance();
-        if (fm instanceof SunFontManager
-            && ((SunFontManager) fm).usePlatformFontMetrics()) {
-
-            if (peer != null &&
-                !(peer instanceof LightweightPeer)) {
-                return peer.getFontMetrics(font);
-            }
-        }
         return sun.font.FontDesignMetrics.getMetrics(font);
     }
 
@@ -9340,7 +9329,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * to add/remove ComponentListener and FocusListener to track
          * target Component's state.
          */
-        private transient volatile int propertyListenersCount = 0;
+        private transient volatile int propertyListenersCount;
 
         /**
          * A component listener to track show/hide/resize events

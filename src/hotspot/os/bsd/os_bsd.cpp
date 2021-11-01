@@ -1163,22 +1163,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 }
 #endif // !__APPLE__
 
-void* os::get_default_process_handle() {
-#ifdef __APPLE__
-  // MacOS X needs to use RTLD_FIRST instead of RTLD_LAZY
-  // to avoid finding unexpected symbols on second (or later)
-  // loads of a library.
-  return (void*)::dlopen(NULL, RTLD_FIRST);
-#else
-  return (void*)::dlopen(NULL, RTLD_LAZY);
-#endif
-}
-
-// XXX: Do we need a lock around this as per Linux?
-void* os::dll_lookup(void* handle, const char* name) {
-  return dlsym(handle, name);
-}
-
 int _print_dll_info_cb(const char * name, address base_address, address top_address, void * param) {
   outputStream * out = (outputStream *) param;
   out->print_cr(INTPTR_FORMAT " \t%s", (intptr_t)base_address, name);
@@ -1327,13 +1311,17 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
       strncpy(machine, "", sizeof(machine));
   }
 
-  const char* emulated = "";
 #if defined(__APPLE__) && !defined(ZERO)
   if (VM_Version::is_cpu_emulated()) {
-    emulated = " (EMULATED)";
+    snprintf(buf, buflen, "\"%s\" %s (EMULATED) %d MHz", model, machine, mhz);
+  } else {
+    NOT_AARCH64(snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz));
+    // aarch64 CPU doesn't report its speed
+    AARCH64_ONLY(snprintf(buf, buflen, "\"%s\" %s", model, machine));
   }
+#else
+  snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz);
 #endif
-  snprintf(buf, buflen, "\"%s\" %s%s %d MHz", model, machine, emulated, mhz);
 }
 
 void os::print_memory_info(outputStream* st) {

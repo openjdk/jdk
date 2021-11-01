@@ -636,7 +636,9 @@ public interface ObjectInputFilter {
                     filter = createFilter(filterString);
                 } catch (RuntimeException re) {
                     configLog.log(ERROR,
-                            "Error configuring filter: {0}", re);
+                            "Error configuring filter: {0}", (Object) re);
+                    // Do not continue if configuration not initialized
+                    throw re;
                 }
             }
             serialFilter = filter;

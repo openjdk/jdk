@@ -44,7 +44,6 @@ import java.util.Properties;
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
-import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
 
@@ -210,12 +209,8 @@ public class ReflectionFactory {
                                method.getExceptionTypes(),
                                method.getModifiers());
         } else {
-            NativeMethodAccessorImpl acc =
-                new NativeMethodAccessorImpl(method);
-            DelegatingMethodAccessorImpl res =
-                new DelegatingMethodAccessorImpl(acc);
-            acc.setParent(res);
-            return res;
+            NativeMethodAccessorImpl acc = new NativeMethodAccessorImpl(method);
+            return acc.getParent();
         }
     }
 
@@ -252,12 +247,8 @@ public class ReflectionFactory {
                                     c.getExceptionTypes(),
                                     c.getModifiers());
         } else {
-            NativeConstructorAccessorImpl acc =
-                new NativeConstructorAccessorImpl(c);
-            DelegatingConstructorAccessorImpl res =
-                new DelegatingConstructorAccessorImpl(acc);
-            acc.setParent(res);
-            return res;
+            NativeConstructorAccessorImpl acc = new NativeConstructorAccessorImpl(c);
+            return acc.getParent();
         }
     }
 
@@ -487,7 +478,7 @@ public class ReflectionFactory {
     }
 
     public final MethodHandle readObjectNoDataForSerialization(Class<?> cl) {
-        return findReadWriteObjectForSerialization(cl, "readObjectNoData", ObjectInputStream.class);
+        return findReadWriteObjectForSerialization(cl, "readObjectNoData", null);
     }
 
     public final MethodHandle writeObjectForSerialization(Class<?> cl) {
@@ -502,7 +493,8 @@ public class ReflectionFactory {
         }
 
         try {
-            Method meth = cl.getDeclaredMethod(methodName, streamClass);
+            Method meth = streamClass == null ? cl.getDeclaredMethod(methodName)
+                    : cl.getDeclaredMethod(methodName, streamClass);
             int mods = meth.getModifiers();
             if (meth.getReturnType() != Void.TYPE ||
                     Modifier.isStatic(mods) ||

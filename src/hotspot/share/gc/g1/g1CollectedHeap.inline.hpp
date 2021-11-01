@@ -184,8 +184,12 @@ void G1CollectedHeap::register_humongous_region_with_region_attr(uint index) {
   _region_attr.set_humongous(index, region_at(index)->rem_set()->is_tracked());
 }
 
+void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* r) {
+  _region_attr.set_new_survivor_region(r->hrm_index());
+}
+
 void G1CollectedHeap::register_region_with_region_attr(HeapRegion* r) {
-  _region_attr.set_has_remset(r->hrm_index(), r->rem_set()->is_tracked());
+  _region_attr.set_remset_is_tracked(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
 void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {
@@ -195,10 +199,6 @@ void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {
 
 void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
-}
-
-bool G1CollectedHeap::evacuation_failed() const {
-  return _evac_failure_regions.num_regions_failed_evacuation() > 0;
 }
 
 inline bool G1CollectedHeap::is_in_young(const oop obj) {

@@ -465,6 +465,12 @@ final class Obj {
                     // Empty content
                     refAddrList[posn] = new StringRefAddr(type, null);
                 } else if (val.charAt(start) == separator) {
+                    // Check if deserialization of binary RefAddr is allowed from
+                    // 'javaReferenceAddress' LDAP attribute.
+                    if (!VersionHelper.isSerialDataAllowed()) {
+                        throw new NamingException("Object deserialization is not allowed");
+                    }
+
                     // Double separators indicate a non-StringRefAddr
                     // Content is a Base64-encoded serialized RefAddr
 

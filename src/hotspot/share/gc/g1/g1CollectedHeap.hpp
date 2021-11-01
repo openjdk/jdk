@@ -34,7 +34,6 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
-#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
@@ -65,7 +64,7 @@
 // Forward declarations
 class G1Allocator;
 class G1ArchiveAllocator;
-class G1BatchedGangTask;
+class G1BatchedTask;
 class G1CardTableEntryClosure;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
@@ -84,7 +83,7 @@ class MemoryPool;
 class nmethod;
 class ReferenceProcessor;
 class STWGCTimer;
-class WorkGang;
+class WorkerThreads;
 
 typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
@@ -146,7 +145,7 @@ private:
   G1ServiceTask* _periodic_gc_task;
   G1CardSetFreeMemoryTask* _free_card_set_memory_task;
 
-  WorkGang* _workers;
+  WorkerThreads* _workers;
   G1CardTable* _card_table;
 
   Ticks _collection_pause_end;
@@ -539,10 +538,10 @@ public:
 
   G1ServiceThread* service_thread() const { return _service_thread; }
 
-  WorkGang* workers() const { return _workers; }
+  WorkerThreads* workers() const { return _workers; }
 
-  // Run the given batch task using the work gang.
-  void run_batch_task(G1BatchedGangTask* cl);
+  // Run the given batch task using the workers.
+  void run_batch_task(G1BatchedTask* cl);
 
   G1Allocator* allocator() {
     return _allocator;
@@ -573,7 +572,7 @@ public:
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.
   // (Rounds up to a HeapRegion boundary.)
-  bool expand(size_t expand_bytes, WorkGang* pretouch_workers = NULL, double* expand_time_ms = NULL);
+  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers = NULL, double* expand_time_ms = NULL);
   bool expand_single_region(uint node_index);
 
   // Returns the PLAB statistics for a given destination.
@@ -606,6 +605,7 @@ public:
   void register_young_region_with_region_attr(HeapRegion* r) {
     _region_attr.set_in_young(r->hrm_index());
   }
+  inline void register_new_survivor_region_with_region_attr(HeapRegion* r);
   inline void register_region_with_region_attr(HeapRegion* r);
   inline void register_old_region_with_region_attr(HeapRegion* r);
   inline void register_optional_region_with_region_attr(HeapRegion* r);
@@ -620,7 +620,7 @@ public:
 
   // Verify that the G1RegionAttr remset tracking corresponds to actual remset tracking
   // for all regions.
-  void verify_region_attr_remset_update() PRODUCT_RETURN;
+  void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
 
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 
@@ -814,8 +814,6 @@ public:
 
   // The parallel task queues
   G1ScannerTasksQueueSet *_task_queues;
-
-  G1EvacFailureRegions _evac_failure_regions;
 
   // ("Weak") Reference processing support.
   //
@@ -1033,9 +1031,6 @@ public:
   bool try_collect(GCCause::Cause cause, const G1GCCounters& counters_before);
 
   void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
-
-  // True iff an evacuation has failed in the most-recent collection.
-  inline bool evacuation_failed() const;
 
   void remove_from_old_gen_sets(const uint old_regions_removed,
                                 const uint archive_regions_removed,
@@ -1282,7 +1277,7 @@ public:
 
   // Recalculate amount of used memory after GC. Must be called after all allocation
   // has finished.
-  void update_used_after_gc();
+  void update_used_after_gc(bool evacuation_failed);
   // Reset and re-enable the hot card cache.
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.
@@ -1322,7 +1317,7 @@ public:
   // WhiteBox testing support.
   virtual bool supports_concurrent_gc_breakpoints() const;
 
-  virtual WorkGang* safepoint_workers() { return _workers; }
+  virtual WorkerThreads* safepoint_workers() { return _workers; }
 
   virtual bool is_archived_object(oop object) const;
 
