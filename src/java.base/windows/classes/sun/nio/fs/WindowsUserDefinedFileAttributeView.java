@@ -57,8 +57,10 @@ class WindowsUserDefinedFileAttributeView
             throw new NullPointerException("'name' is null");
         WindowsFileSystem wfs = file.getFileSystem();
         WindowsPath namePath = WindowsPath.parse(wfs, name);
-        if (namePath.isAbsolute())
+        if (namePath.getRoot() != null)
             throw new IllegalArgumentException("'name' is not relative");
+        if (namePath.getNameCount() != 1)
+            throw new IllegalArgumentException("'name' has more than one element");
         String path = join(file.getPathForWin32Calls(), name);
         WindowsPath wp = WindowsPath.createFromNormalizedPath(wfs, path);
         return wp.getPathForWin32Calls();
