@@ -68,6 +68,7 @@ import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
 import jdk.internal.util.jar.JarIndex;
+import com.sun.tools.javac.util.Log;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.jar.JarFile.MANIFEST_NAME;
@@ -213,23 +214,8 @@ public class Main {
         return MessageFormat.format(msg, (Object[]) args);
     }
 
-    private final static Charset nativeCharset;
-    static {
-        Charset cs;
-        Console cons;
-        if ((cons = System.console()) != null) {
-            cs = cons.charset();
-        } else {
-            try {
-                cs = Charset.forName(System.getProperty("native.encoding"));
-            } catch (Exception e) {
-                cs = Charset.defaultCharset();
-            }
-        }
-        nativeCharset = cs;
-    }
-
     public Main(PrintStream out, PrintStream err, String program) {
+        Charset nativeCharset = Log.getNativeCharset();
         this.out = new PrintWriter(out, true, nativeCharset);
         this.err = new PrintWriter(err, true, nativeCharset);
         this.program = program;

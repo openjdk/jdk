@@ -28,7 +28,6 @@ package jdk.jpackage.main;
 import jdk.jpackage.internal.Arguments;
 import jdk.jpackage.internal.Log;
 import jdk.jpackage.internal.CLIHelp;
-import java.io.Console;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.ResourceBundle;
@@ -41,22 +40,6 @@ public class Main {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.jpackage.internal.resources.MainResources");
 
-    private final static Charset nativeCharset;
-    static {
-        Charset cs;
-        Console cons;
-        if ((cons = System.console()) != null) {
-            cs = cons.charset();
-        } else {
-            try {
-                cs = Charset.forName(System.getProperty("native.encoding"));
-            } catch (Exception e) {
-                cs = Charset.defaultCharset();
-            }
-        }
-        nativeCharset = cs;
-    }
-
     /**
      * main(String... args)
      * This is the entry point for the jpackage tool.
@@ -65,6 +48,7 @@ public class Main {
      */
     public static void main(String... args) throws Exception {
 
+        Charset nativeCharset = com.sun.tools.javac.util.Log.getNativeCharset();
         PrintWriter out = new PrintWriter(System.out, true, nativeCharset);
         PrintWriter err = new PrintWriter(System.err, true, nativeCharset);
         int status = new jdk.jpackage.main.Main().execute(out, err, args);

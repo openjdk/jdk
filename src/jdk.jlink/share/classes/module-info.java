@@ -51,6 +51,7 @@
 module jdk.jlink {
     requires jdk.internal.opt;
     requires jdk.jdeps;
+    requires transitive jdk.compiler;
 
     uses jdk.tools.jlink.plugin.Plugin;
 

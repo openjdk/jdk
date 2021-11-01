@@ -25,7 +25,6 @@
 
 package com.sun.tools.javap;
 
-import java.io.Console;
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.FilterInputStream;
@@ -70,6 +69,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.classfile.*;
+import com.sun.tools.javac.util.Log;
 
 /**
  *  "Main" class for javap, normally accessed from the command line
@@ -398,23 +398,8 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         setLog(getPrintWriterForStream(s));
     }
 
-    private final static Charset nativeCharset;
-    static {
-        Charset cs;
-        Console cons;
-        if ((cons = System.console()) != null) {
-            cs = cons.charset();
-        } else {
-            try {
-                cs = Charset.forName(System.getProperty("native.encoding"));
-            } catch (Exception e) {
-                cs = Charset.defaultCharset();
-            }
-        }
-        nativeCharset = cs;
-    }
-
     private static PrintWriter getPrintWriterForStream(OutputStream s) {
+        Charset nativeCharset = Log.getNativeCharset();
         if (s == null) {
             return new PrintWriter(System.err, true, nativeCharset);
         } else {

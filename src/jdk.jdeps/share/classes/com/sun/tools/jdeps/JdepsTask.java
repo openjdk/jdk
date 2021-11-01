@@ -30,11 +30,9 @@ import static com.sun.tools.jdeps.Analyzer.Type.*;
 import static com.sun.tools.jdeps.JdepsWriter.*;
 import static java.util.stream.Collectors.*;
 
-import java.io.Console;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.module.ResolutionException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,6 +40,7 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
+import com.sun.tools.javac.util.Log;
 
 /**
  * Implementation for the jdeps tool for static class dependency analysis.
@@ -505,25 +504,9 @@ class JdepsTask {
                      EXIT_SYSERR = 3,   // System error or resource exhaustion.
                      EXIT_ABNORMAL = 4; // terminated abnormally
 
-    private final static Charset nativeCharset;
-    static {
-        Charset cs;
-        Console cons;
-        if ((cons = System.console()) != null) {
-            cs = cons.charset();
-        } else {
-            try {
-                cs = Charset.forName(System.getProperty("native.encoding"));
-            } catch (Exception e) {
-                cs = Charset.defaultCharset();
-            }
-        }
-        nativeCharset = cs;
-    }
-
     int run(String... args) {
         if (log == null) {
-            log = new PrintWriter(System.out, true, nativeCharset);
+            log = new PrintWriter(System.out, true, Log.getNativeCharset());
         }
         try {
             handleOptions(args);

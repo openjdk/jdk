@@ -28,25 +28,11 @@ package jdk.tools.jlink.internal;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.spi.ToolProvider;
+import com.sun.tools.javac.util.Log;
 
 public class Main {
-    private final static Charset nativeCharset;
-    static {
-        Charset cs;
-        Console cons;
-        if ((cons = System.console()) != null) {
-            cs = cons.charset();
-        } else {
-            try {
-                cs = Charset.forName(System.getProperty("native.encoding"));
-            } catch (Exception e) {
-                cs = Charset.defaultCharset();
-            }
-        }
-        nativeCharset = cs;
-    }
-
     public static void main(String... args) throws Exception {
+        Charset nativeCharset = Log.getNativeCharset();
         System.exit(run(new PrintWriter(System.out, true, nativeCharset),
                         new PrintWriter(System.err, true, nativeCharset),
                         args));

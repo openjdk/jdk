@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,8 +109,12 @@ module jdk.compiler {
         jdk.javadoc,
         jdk.jshell;
     exports com.sun.tools.javac.util to
+        jdk.internal.le,
+        jdk.jartool,
         jdk.jdeps,
         jdk.javadoc,
+        jdk.jlink,
+        jdk.jpackage,
         jdk.jshell;
     exports jdk.internal.shellsupport.doc to
         jdk.jshell;

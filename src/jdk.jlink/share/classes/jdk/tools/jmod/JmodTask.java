@@ -27,7 +27,6 @@ package jdk.tools.jmod;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,7 +46,6 @@ import java.lang.module.ModuleReference;
 import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.MessageFormat;
@@ -84,6 +82,7 @@ import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
 import jdk.internal.module.Resources;
 import jdk.tools.jlink.internal.Utils;
+import com.sun.tools.javac.util.Log;
 
 import static java.util.stream.Collectors.joining;
 
@@ -120,22 +119,7 @@ public class JmodTask {
     private static final Path CWD = Paths.get("");
 
     private Options options;
-    private final static Charset nativeCharset;
-    static {
-        Charset cs;
-        Console cons;
-        if ((cons = System.console()) != null) {
-            cs = cons.charset();
-        } else {
-            try {
-                cs = Charset.forName(System.getProperty("native.encoding"));
-            } catch (Exception e) {
-                cs = Charset.defaultCharset();
-            }
-        }
-        nativeCharset = cs;
-    }
-    private PrintWriter out = new PrintWriter(System.out, true, nativeCharset);
+    private PrintWriter out = new PrintWriter(System.out, true, Log.getNativeCharset());
     void setLog(PrintWriter out, PrintWriter err) {
         this.out = out;
     }

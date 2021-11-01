@@ -248,6 +248,9 @@ public class Log extends AbstractLog {
         }
         nativeCharset = cs;
     }
+    public static Charset getNativeCharset() {
+        return nativeCharset;
+    }
 
     /** Get the Log instance for this context. */
     public static Log instance(Context context) {

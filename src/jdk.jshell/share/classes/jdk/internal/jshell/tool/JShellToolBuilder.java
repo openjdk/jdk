@@ -25,7 +25,6 @@
 
 package jdk.internal.jshell.tool;
 
-import java.io.Console;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
@@ -38,6 +37,7 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import jdk.internal.org.jline.utils.WriterOutputStream;
 import jdk.jshell.tool.JavaShellToolBuilder;
+import com.sun.tools.javac.util.Log;
 
 /**
  * Builder for programmatically building the jshell tool.
@@ -58,27 +58,18 @@ public class JShellToolBuilder implements JavaShellToolBuilder {
     private boolean interactiveTerminal;
     private boolean capturePrompt = false;
 
-    static final Charset NATIVE_CHARSET;
-
-    static {
-        Console console = System.console();
-        if (console != null) {
-            NATIVE_CHARSET = console.charset();
-        } else {
-            String nativeEncoding = System.getProperty("native.encoding", "UTF-8");
-            NATIVE_CHARSET = Charset.forName(nativeEncoding);
-        }
-    }
-
     /**
-     *
+     * Use JLine's WriterOutputStream class if defaul charset is not same as
+     * native charset for terminal
      */
     static PrintStream derivePrintStream(PrintStream ps) {
-        if (Charset.defaultCharset().equals(NATIVE_CHARSET)) {
+        Charset nativeCharset = Log.getNativeCharset();
+        if (Charset.defaultCharset().equals(nativeCharset)) {
             return ps;
         } else {
             return new PrintStream(new WriterOutputStream(
-                new OutputStreamWriter(ps, NATIVE_CHARSET), Charset.defaultCharset()));
+                new OutputStreamWriter(ps, nativeCharset),
+                Charset.defaultCharset()));
         }
     }
 
