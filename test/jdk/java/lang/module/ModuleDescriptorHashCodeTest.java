@@ -34,6 +34,7 @@ import java.util.Optional;
  * @bug 8275509
  * @library /test/lib
  * @run driver ModuleDescriptorHashCodeTest
+ * @modules java.sql
  * @summary Tests that the ModuleDescriptor.hashCode() method returns the same hash code
  * across multiple JVM runs, for the same module descriptor.
  */
@@ -46,7 +47,7 @@ public class ModuleDescriptorHashCodeTest {
      * will generate the exact same hash code for the module descriptor of the same module.
      */
     public static void main(final String[] args) throws Exception {
-        final ModuleDescriptor md = fromBootLayer().getDescriptor();
+        final ModuleDescriptor md = javaSQLModuleFromBootLayer().getDescriptor();
         assertTestPrerequisite(md);
         final int expectedHashCode = md.hashCode();
         int numProcesses = 50;
@@ -81,7 +82,7 @@ public class ModuleDescriptorHashCodeTest {
          */
         public static void main(final String[] args) throws Exception {
             final int expectedHashCode = Integer.parseInt(args[0]);
-            final Module bootModule = fromBootLayer();
+            final Module bootModule = javaSQLModuleFromBootLayer();
             final ModuleDescriptor bootMD = bootModule.getDescriptor();
             final int actualHashCode = bootMD.hashCode();
             if (actualHashCode != expectedHashCode) {
@@ -128,7 +129,7 @@ public class ModuleDescriptorHashCodeTest {
     }
 
     // Finds and returns the java.sql module from the boot layer
-    private static Module fromBootLayer() {
+    private static Module javaSQLModuleFromBootLayer() {
         // we use "java.sql" as the module of choice because its module definition has
         // at least one "requires" with a "modifier":
         //  requires transitive java.logging;
