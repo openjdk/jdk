@@ -228,7 +228,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
   }
   ~ThreadBlockInVMPreprocess() {
     assert(_thread->thread_state() == _thread_blocked, "coming from wrong thread state");
-    // Change to transition state and ensure it is seen by the VM thread.
+    // Change back to _thread_in_vm and ensure it is seen by the VM thread.
     _thread->set_thread_state_fence(_thread_in_vm);
 
     if (SafepointMechanism::should_process(_thread, _allow_suspend)) {
