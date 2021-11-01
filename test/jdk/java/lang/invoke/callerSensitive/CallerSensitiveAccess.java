@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8196830 8235351
+ * @bug 8196830 8235351 8257874
  * @modules java.base/jdk.internal.reflect
  * @run testng/othervm CallerSensitiveAccess
  * @summary Check Lookup findVirtual, findStatic and unreflect behavior with
@@ -355,6 +355,40 @@ public class CallerSensitiveAccess {
         mh.invoke(inaccessibleField(), true);  // should throw ClassCastException
     }
 
+    /**
+     * Field::getInt and Field::setInt are caller-sensitive methods.
+     * Test access to private field.
+     */
+    private static int privateField = 0;
+    @Test
+    public void testPrivateField() throws Throwable {
+        Field f = CallerSensitiveAccess.class.getDeclaredField("privateField");
+        // Field::setInt
+        MethodType mtype = MethodType.methodType(void.class, Object.class, int.class);
+        MethodHandle mh = MethodHandles.lookup().findVirtual(Field.class, "setInt", mtype);
+        mh.invokeExact(f, (Object)null, 5);
+        // Field::getInt
+        mh = MethodHandles.lookup().findVirtual(Field.class, "getInt", MethodType.methodType(int.class, Object.class));
+        int value = (int)mh.invokeExact(f, (Object)null);
+        assertTrue(value == 5);
+    }
+
+    private static class Inner {
+        private static boolean privateField = false;
+    }
+
+    @Test
+    public void testInnerPrivateField() throws Throwable {
+        Field f = Inner.class.getDeclaredField("privateField");
+        // Field::setInt
+        MethodType mtype = MethodType.methodType(void.class, Object.class, boolean.class);
+        MethodHandle mh = MethodHandles.lookup().findVirtual(Field.class, "setBoolean", mtype);
+        mh.invokeExact(f, (Object)null, true);
+        // Field::getInt
+        mh = MethodHandles.lookup().findVirtual(Field.class, "getBoolean", MethodType.methodType(boolean.class, Object.class));
+        boolean value = (boolean)mh.invokeExact(f, (Object)null);
+        assertTrue(value);
+    }
 
     // -- supporting methods --
 

@@ -97,7 +97,7 @@ inline void PSParallelCompact::check_new_location(HeapWord* old_addr, HeapWord* 
 #endif // ASSERT
 
 inline bool PSParallelCompact::mark_obj(oop obj) {
-  const int obj_size = obj->size();
+  const size_t obj_size = obj->size();
   if (mark_bitmap()->mark_obj(obj, obj_size)) {
     _summary_data.add_obj(obj, obj_size);
     return true;

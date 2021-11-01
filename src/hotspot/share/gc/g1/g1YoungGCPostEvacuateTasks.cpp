@@ -204,7 +204,7 @@ public:
 
     log_debug(gc, humongous)("Reclaimed humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ")",
                              region_idx,
-                             (size_t)obj->size() * HeapWordSize,
+                             obj->size() * HeapWordSize,
                              p2i(r->bottom())
                             );
 

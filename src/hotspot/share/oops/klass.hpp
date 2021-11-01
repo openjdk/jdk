@@ -549,8 +549,8 @@ protected:
   // ALL FUNCTIONS BELOW THIS POINT ARE DISPATCHED FROM AN OOP
   // These functions describe behavior for the oop not the KLASS.
 
-  // actual oop size of obj in memory
-  virtual int oop_size(oop obj) const = 0;
+  // actual oop size of obj in memory in word size.
+  virtual size_t oop_size(oop obj) const = 0;
 
   // Size of klass in word size.
   virtual int size() const = 0;
@@ -661,7 +661,7 @@ protected:
   Symbol* name() const                   { return _name; }
   void set_name(Symbol* n);
 
-  virtual void release_C_heap_structures();
+  virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
   virtual jint compute_modifier_flags() const = 0;

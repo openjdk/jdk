@@ -179,7 +179,7 @@ public final class FilePermission extends Permission implements Serializable {
     private static final char WILD_CHAR = '*';
 
 //    public String toString() {
-//        StringBuffer sb = new StringBuffer();
+//        StringBuilder sb = new StringBuilder();
 //        sb.append("*** FilePermission on " + getName() + " ***");
 //        for (Field f : FilePermission.class.getDeclaredFields()) {
 //            if (!Modifier.isStatic(f.getModifiers())) {
