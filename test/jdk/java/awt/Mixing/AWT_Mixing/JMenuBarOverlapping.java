@@ -142,7 +142,6 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
             throw new RuntimeException("Where is separator?");
         }
 
-        if(currentAwtControl == null) { System.out.println("t"); }
         sepLoc.translate(20, 1);
         clickAndBlink(robot, sepLoc, false);
 
