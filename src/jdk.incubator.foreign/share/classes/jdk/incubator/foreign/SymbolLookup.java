@@ -26,6 +26,7 @@ package jdk.incubator.foreign;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.ResourceScopeImpl;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -55,7 +56,9 @@ public interface SymbolLookup {
 
     /**
      * Obtains a symbol lookup suitable to find symbols in native libraries associated with the caller's classloader
-     * (that is, libraries loaded using {@link System#loadLibrary} or {@link System#load}).
+     * (that is, libraries loaded using {@link System#loadLibrary} or {@link System#load}). The returned lookup
+     * returns native symbols backed by a <em>loader scope</em>, a non-closeable, shared scope which keeps the
+     * caller's classloader <a href="../../../java/lang/ref/package.html#reachability">reachable</a>.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
@@ -72,11 +75,12 @@ public interface SymbolLookup {
         Class<?> caller = Reflection.getCallerClass();
         Reflection.ensureNativeAccess(caller);
         ClassLoader loader = Objects.requireNonNull(caller.getClassLoader());
+        ResourceScope loaderScope = ResourceScopeImpl.heapScope(loader);
         return name -> {
             Objects.requireNonNull(name);
             JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
             MemoryAddress addr = MemoryAddress.ofLong(javaLangAccess.findNative(loader, name));
-            return addr == MemoryAddress.NULL? Optional.empty() : Optional.of(NativeSymbol.ofAddress(name, addr, ResourceScope.globalScope()));
+            return addr == MemoryAddress.NULL? Optional.empty() : Optional.of(NativeSymbol.ofAddress(name, addr, loaderScope));
         };
     }
 
