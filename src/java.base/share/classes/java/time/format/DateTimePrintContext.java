@@ -98,11 +98,11 @@ final class DateTimePrintContext {
     /**
      * The temporal being output.
      */
-    private TemporalAccessor temporal;
+    private final TemporalAccessor temporal;
     /**
      * The formatter, not null.
      */
-    private DateTimeFormatter formatter;
+    private final DateTimeFormatter formatter;
     /**
      * Whether the current formatter is optional.
      */
