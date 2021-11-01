@@ -57,8 +57,8 @@ public interface SymbolLookup {
     /**
      * Obtains a symbol lookup suitable to find symbols in native libraries associated with the caller's classloader
      * (that is, libraries loaded using {@link System#loadLibrary} or {@link System#load}). The returned lookup
-     * returns native symbols backed by a <em>loader scope</em>, a non-closeable, shared scope which keeps the
-     * caller's classloader <a href="../../../java/lang/ref/package.html#reachability">reachable</a>.
+     * returns native symbols backed by a non-closeable, shared scope which keeps the caller's classloader
+     * <a href="../../../java/lang/ref/package.html#reachability">reachable</a>.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
