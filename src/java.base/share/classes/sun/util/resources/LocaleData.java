@@ -254,7 +254,7 @@ public class LocaleData {
 
         /*
          * This method overrides the default implementation to search
-         * from a prebaked locale string list to determin the candidate
+         * from a prebaked locale string list to determine the candidate
          * locale list.
          *
          * @param baseName the resource bundle base name.
@@ -333,7 +333,7 @@ public class LocaleData {
 
         @Override
         public List<Locale> getCandidateLocales(String baseName, Locale locale) {
-            // Specifiy only the given locale
+            // Specify only the given locale
             return Arrays.asList(locale);
         }
 
