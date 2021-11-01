@@ -417,8 +417,7 @@ public class HtmlIds {
             case INTERFACE -> "interface";
             case CLASS -> "class";
             case ENUM -> "enum-class";
-            case EXCEPTION -> "exception";
-            case ERROR -> "error";
+            case EXCEPTION_CLASS -> "exception-class";
             case ANNOTATION_TYPE -> "annotation-interface";
             case FIELD -> "field";
             case METHOD -> "method";

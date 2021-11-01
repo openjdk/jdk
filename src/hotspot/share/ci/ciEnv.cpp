@@ -636,8 +636,15 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
   }
 
   // It is known to be accessible, since it was found in the constant pool.
+  ciKlass* ciKlass = get_klass(klass);
   is_accessible = true;
-  return get_klass(klass);
+#ifndef PRODUCT
+  if (ReplayCompiles && ciKlass == _unloaded_ciinstance_klass) {
+    // Klass was unresolved at replay dump time and therefore not accessible.
+    is_accessible = false;
+  }
+#endif
+  return ciKlass;
 }
 
 // ------------------------------------------------------------------
@@ -1639,6 +1646,9 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
 
   GrowableArray<ciMetadata*>* objects = _factory->get_ci_metadata();
   out->print_cr("# %d ciObject found", objects->length());
+  // The very first entry is the InstanceKlass of the root method of the current compilation in order to get the right
+  // protection domain to load subsequent classes during replay compilation.
+  out->print_cr("instanceKlass %s", CURRENT_ENV->replay_name(task()->method()->method_holder()));
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }

@@ -245,7 +245,8 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
 /**
  * Adds `value` to `list` iff it's not already present and there is sufficient
  * capacity (i.e. length(list) < `list_capacity`). The length of the list
- * is the index of the first nullptr entry.
+ * is the index of the first nullptr entry or `list_capacity` if there are
+ * no nullptr entries.
  *
  * @ return true if the value was added, false otherwise
  */
@@ -910,25 +911,44 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing code blobs if possible")
 
      if (_verbose && _context) {
-       if (!_print_native_stack_used) {
-         // Only try print code of the crashing frame since
-         // we cannot walk the native stack using next_frame.
-         const int printed_capacity = 1;
-         address printed_singleton = nullptr;
-         address* printed = &printed_singleton;
-         print_code(st, _thread, _pc, true, printed, 1);
-       } else {
-         // Print up to the first 5 unique code units on the stack
-         const int printed_capacity = 5;
-         address printed[printed_capacity];
-         printed[0] = nullptr; // length(list) == index of first nullptr
-
-         frame fr = os::fetch_frame_from_context(_context);
-         for (int count = 0; count < printed_capacity && fr.pc() != nullptr; ) {
-           if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_capacity)) {
-             count++;
+       const int printed_capacity = max_error_log_print_code;
+       address printed[printed_capacity];
+       printed[0] = nullptr;
+       int printed_len = 0;
+       // Even though ErrorLogPrintCodeLimit is ranged checked
+       // during argument parsing, there's no way to prevent it
+       // subsequently (i.e., after parsing) being set to a
+       // value outside the range.
+       int limit = MIN2(ErrorLogPrintCodeLimit, printed_capacity);
+       if (limit > 0) {
+         // Scan the native stack
+         if (!_print_native_stack_used) {
+           // Only try to print code of the crashing frame since
+           // the native stack cannot be walked with next_frame.
+           if (print_code(st, _thread, _pc, true, printed, printed_capacity)) {
+             printed_len++;
            }
-           fr = next_frame(fr, _thread);
+         } else {
+           frame fr = os::fetch_frame_from_context(_context);
+           while (printed_len < limit && fr.pc() != nullptr) {
+             if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_capacity)) {
+               printed_len++;
+             }
+             fr = next_frame(fr, _thread);
+           }
+         }
+
+         // Scan the Java stack
+         if (_thread != nullptr && _thread->is_Java_thread()) {
+           JavaThread* jt = JavaThread::cast(_thread);
+           if (jt->has_last_Java_frame()) {
+             for (StackFrameStream sfs(jt, true /* update */, true /* process_frames */); printed_len < limit && !sfs.is_done(); sfs.next()) {
+               address pc = sfs.current()->pc();
+               if (print_code(st, _thread, pc, pc == _pc, printed, printed_capacity)) {
+                 printed_len++;
+               }
+             }
+           }
          }
        }
      }
@@ -1768,7 +1788,7 @@ void VM_ReportJavaOutOfMemory::doit() {
 #endif
     tty->print_cr("\"%s\"...", cmd);
 
-    if (os::fork_and_exec(cmd, true) < 0) {
+    if (os::fork_and_exec(cmd) < 0) {
       tty->print_cr("os::fork_and_exec failed: %s (%s=%d)",
                      os::strerror(errno), os::errno_name(errno), errno);
     }

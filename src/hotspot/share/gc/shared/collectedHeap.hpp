@@ -44,7 +44,7 @@
 // class defines the functions that a heap must implement, and contains
 // infrastructure common to all heaps.
 
-class AbstractGangTask;
+class WorkerTask;
 class AdaptiveSizePolicy;
 class BarrierSet;
 class GCHeapLog;
@@ -59,7 +59,7 @@ class SoftRefPolicy;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
-class WorkGang;
+class WorkerThreads;
 class nmethod;
 
 class ParallelObjectIterator : public CHeapObj<mtGC> {
@@ -249,9 +249,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   void set_gc_cause(GCCause::Cause v);
   GCCause::Cause gc_cause() { return _gc_cause; }
 
-  oop obj_allocate(Klass* klass, int size, TRAPS);
-  virtual oop array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS);
-  oop class_allocate(Klass* klass, int size, TRAPS);
+  oop obj_allocate(Klass* klass, size_t size, TRAPS);
+  virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
+  oop class_allocate(Klass* klass, size_t size, TRAPS);
 
   // Utilities for turning raw memory into filler objects.
   //
@@ -469,7 +469,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // concurrent marking) for an intermittent non-GC safepoint.
   // If this method returns NULL, SafepointSynchronize will
   // perform cleanup tasks serially in the VMThread.
-  virtual WorkGang* safepoint_workers() { return NULL; }
+  virtual WorkerThreads* safepoint_workers() { return NULL; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
   // and Release*Critical() family of functions. If supported, the GC

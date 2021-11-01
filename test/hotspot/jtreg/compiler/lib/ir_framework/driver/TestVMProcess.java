@@ -153,6 +153,8 @@ public class TestVMProcess {
         } catch (Exception e) {
             throw new TestFrameworkException("Error while executing Test VM", e);
         }
+
+        process.command().add(1, "-DReproduce=true"); // Add after "/path/to/bin/java" in order to rerun the test VM directly
         commandLine = "Command Line:" + System.lineSeparator() + String.join(" ", process.command())
                       + System.lineSeparator();
         hotspotPidFileName = String.format("hotspot_pid%d.log", oa.pid());

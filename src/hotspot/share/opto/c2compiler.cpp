@@ -426,6 +426,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_multiplyHigh:
     if (!Matcher::match_rule_supported(Op_MulHiL)) return false;
     break;
+  case vmIntrinsics::_unsignedMultiplyHigh:
+    if (!Matcher::match_rule_supported(Op_UMulHiL)) return false;
+    break;
   case vmIntrinsics::_getCallerClass:
     if (vmClasses::reflect_CallerSensitive_klass() == NULL) return false;
     break;
