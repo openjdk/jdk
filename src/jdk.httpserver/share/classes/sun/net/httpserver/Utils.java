@@ -73,7 +73,7 @@ public class Utils {
     /*
      * Validates an RFC 7230 quoted-string.
      */
-    public static boolean isQuotedString(String token) {
+    public static boolean isQuotedStringContent(String token) {
         for (int i = 0; i < token.length(); i++) {
             char c = token.charAt(i);
             if (c > 255) {
