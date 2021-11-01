@@ -70,11 +70,15 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
             System.setProperty("javax.net.debug", "session");
         }
 
-        new NoInvalidateSocketException().run();
+        new NoInvalidateSocketException(true).run();
         if (invalidSessCount > 0) {
             throw new RuntimeException("One or more sessions were improperly " +
                     "invalidated.");
         }
+    }
+
+    public NoInvalidateSocketException(boolean sepSrvThread) {
+        super(sepSrvThread);
     }
 
     @Override
@@ -84,7 +88,7 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
 
     @Override
     public void runClientApplication(int serverPort) {
-        Thread.currentThread().setName("  Main Client Thread");
+        Thread.currentThread().setName("Main Client Thread");
 
         // Create the reader thread
         ReaderThread readerThread = new ReaderThread();
@@ -254,7 +258,8 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
                 (SSLServerSocket)sslssf.createServerSocket(serverPort)
                 : (SSLServerSocket)sslssf.createServerSocket();
         if (serverAddress != null) {
-            sslServerSocket.bind(new InetSocketAddress(serverAddress, serverPort));
+            sslServerSocket.bind(new InetSocketAddress(serverAddress,
+                    serverPort));
         }
         configureServerSocket(sslServerSocket);
         serverPort = sslServerSocket.getLocalPort();
@@ -301,7 +306,7 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
                     if (finished) {
                         return;
                     } else if (timeoutCount >= 3) {
-                        System.out.println("Server accept timeout exceeded");
+                        logToConsole("Server accept timeout exceeded");
                         throw ste;
                     }
                 }
@@ -325,6 +330,7 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
 
     @Override
     public void runServerApplication(SSLSocket sslSocket) {
+        Thread.currentThread().setName("Server Thread");
         SSLSocket sock = null;
         sock = sslSocket;
         try {
@@ -336,7 +342,8 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
             // Only handle a single burst of data
             char[] buf = new char[1024];
             int dataRead = is.read(buf);
-            System.out.format("Received: %d bytes of data\n", dataRead);
+            logToConsole(String.format("Received: %d bytes of data\n",
+                    dataRead));
 
             os.println("Received connection from client");
             os.flush();
