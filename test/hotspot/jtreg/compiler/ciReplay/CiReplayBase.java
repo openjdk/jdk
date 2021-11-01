@@ -252,13 +252,17 @@ public abstract class CiReplayBase {
     }
 
     public int getCompLevelFromReplay() {
-        try(BufferedReader br = new BufferedReader(new FileReader(REPLAY_FILE_NAME))) {
+        return getCompLevelFromReplay(REPLAY_FILE_NAME);
+    }
+
+    public int getCompLevelFromReplay(String replayFile) {
+        try (BufferedReader br = new BufferedReader(new FileReader(replayFile))) {
             return br.lines()
-                    .filter(s -> s.startsWith("compile "))
-                    .map(s -> s.split("\\s+")[5])
-                    .map(Integer::parseInt)
-                    .findAny()
-                    .get();
+                     .filter(s -> s.startsWith("compile "))
+                     .map(s -> s.split("\\s+")[5])
+                     .map(Integer::parseInt)
+                     .findAny()
+                     .orElseThrow();
         } catch (IOException ioe) {
             throw new Error("Failed to read replay data: " + ioe, ioe);
         }
