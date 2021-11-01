@@ -71,6 +71,7 @@ public class XRCompositeManager {
     int gradCachePicture;
 
     boolean xorEnabled = false;
+    int eargb;
     int validatedPixel = 0;
     Composite validatedComp;
     Paint validatedPaint;
@@ -173,7 +174,8 @@ public class XRCompositeManager {
             validatedComp = comp;
         }
 
-        if (sg2d != null && (validatedPixel != sg2d.pixel  || updatePaint)) {
+        if (sg2d != null && (eargb != sg2d.eargb  || updatePaint)) {
+            eargb = sg2d.eargb;
             validatedPixel = PixelConverter.ArgbPre.instance
                                            .rgbToPixel(sg2d.eargb, null);
             setForeground(validatedPixel);
