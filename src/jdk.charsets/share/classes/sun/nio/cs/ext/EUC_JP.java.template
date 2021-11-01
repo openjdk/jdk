@@ -25,6 +25,9 @@
 
 package $PACKAGE$;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -43,6 +46,8 @@ public class EUC_JP
     extends Charset
     implements HistoricallyNamedCharset
 {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     public EUC_JP() {
         super("EUC-JP",  $ALIASES$);
     }
@@ -303,6 +308,11 @@ public class EUC_JP
             byte[]  tmpBuf = new byte[3];
 
             try {
+                if (enc0201.isASCIICompatible()) {
+                    int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                    sp += n;
+                    dp += n;
+                }
                 while (sp < sl) {
                     outputByte = tmpBuf;
                     char c = sa[sp];
