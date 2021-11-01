@@ -42,7 +42,6 @@ package sun.util.resources;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -246,7 +245,7 @@ public class LocaleData {
     private static class LocaleDataStrategy implements Bundles.Strategy {
         private static final LocaleDataStrategy INSTANCE = new LocaleDataStrategy();
         // TODO: avoid hard-coded Locales
-        private static Set<Locale> JAVA_BASE_LOCALES
+        private final static Set<Locale> JAVA_BASE_LOCALES
             = Set.of(Locale.ROOT, Locale.ENGLISH, Locale.US, new Locale("en", "US", "POSIX"));
 
         private LocaleDataStrategy() {
@@ -325,7 +324,7 @@ public class LocaleData {
         private static final SupplementaryStrategy INSTANCE
                 = new SupplementaryStrategy();
         // TODO: avoid hard-coded Locales
-        private static Set<Locale> JAVA_BASE_LOCALES
+        private final static Set<Locale> JAVA_BASE_LOCALES
             = Set.of(Locale.ROOT, Locale.ENGLISH, Locale.US);
 
         private SupplementaryStrategy() {
@@ -334,7 +333,7 @@ public class LocaleData {
         @Override
         public List<Locale> getCandidateLocales(String baseName, Locale locale) {
             // Specify only the given locale
-            return Arrays.asList(locale);
+            return List.of(locale);
         }
 
         @Override
