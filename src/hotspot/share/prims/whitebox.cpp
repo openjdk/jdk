@@ -2070,13 +2070,13 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
   };
 
   ReadMonitorsClosure rmc;
-  oop thread_oop = JNIHandles::resolve(thread_handle);
-  if (thread_oop != NULL) {
+  if (thread_handle != NULL) {
     ThreadsListHandle tlh;
-    JavaThread* target = java_lang_Thread::thread(thread_oop);
-    // Sometimes 'target' is NULL and this test code expects
-    // Handshake::execute(HandshakeClosure,...) to handle it.
-    Handshake::execute(&rmc, &tlh, target);
+    JavaThread* target = nullptr;
+    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, NULL);
+    if (is_alive) {
+      Handshake::execute(&rmc, &tlh, target);
+    }
   }
   return rmc.executed();
 WB_END
@@ -2104,13 +2104,11 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
 
   if (all_threads) {
     Handshake::execute(&tsc);
-  } else {
-    oop thread_oop = JNIHandles::resolve(thread_handle);
-    if (thread_oop != NULL) {
-      ThreadsListHandle tlh;
-      JavaThread* target = java_lang_Thread::thread(thread_oop);
-      // Sometimes 'target' is NULL and this test code expects
-      // Handshake::execute(HandshakeClosure,...) to handle it.
+  } else if (thread_handle != NULL) {
+    ThreadsListHandle tlh;
+    JavaThread* target = nullptr;
+    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, NULL);
+    if (is_alive) {
       Handshake::execute(&tsc, &tlh, target);
     }
   }
@@ -2135,14 +2133,14 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
   public:
     TraceSelfClosure(JavaThread* self_target) : AsyncHandshakeClosure("WB_TraceSelf"), _self(self_target) {}
   };
-  oop thread_oop = JNIHandles::resolve(thread_handle);
-  if (thread_oop != NULL) {
+  if (thread_handle != NULL) {
     ThreadsListHandle tlh;
-    JavaThread* target = java_lang_Thread::thread(thread_oop);
-    // Sometimes 'target' is NULL and this test code expects
-    // Handshake::execute(AsyncHandshakeClosure,...) to handle it.
-    TraceSelfClosure* tsc = new TraceSelfClosure(target);
-    Handshake::execute(tsc, target);
+    JavaThread* target = nullptr;
+    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, NULL);
+    if (is_alive) {
+      TraceSelfClosure* tsc = new TraceSelfClosure(target);
+      Handshake::execute(tsc, target);
+    }
   }
 WB_END
 

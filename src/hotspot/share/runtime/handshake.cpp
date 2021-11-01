@@ -353,21 +353,14 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh_p, JavaT
 
   jlong start_time_ns = os::javaTimeNanos();
 
-  bool target_is_dead = false;
-  if (target == nullptr) {
-    target_is_dead = true;
+  guarantee(target != nullptr, "must be");
+  if (tlh_p == nullptr) {
+    guarantee(Thread::is_JavaThread_protected(target, /* checkTLHOnly */ true),
+              "missing ThreadsListHandle in calling context.");
+    target->handshake_state()->add_operation(&op);
+  } else if (tlh_p->includes(target)) {
+    target->handshake_state()->add_operation(&op);
   } else {
-    if (tlh_p == nullptr) {
-      guarantee(Thread::is_JavaThread_protected_by_my_ThreadsList(target),
-                "missing ThreadsListHandle in calling context.");
-      target->handshake_state()->add_operation(&op);
-    } else if (tlh_p->includes(target)) {
-      target->handshake_state()->add_operation(&op);
-    } else {
-      target_is_dead = true;
-    }
-  }
-  if (target_is_dead) {
     char buf[128];
     jio_snprintf(buf, sizeof(buf),  "(thread= " INTPTR_FORMAT " dead)", p2i(target));
     log_handshake_info(start_time_ns, op.name(), 0, 0, buf);
@@ -413,18 +406,13 @@ void Handshake::execute(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
   jlong start_time_ns = os::javaTimeNanos();
   AsyncHandshakeOperation* op = new AsyncHandshakeOperation(hs_cl, target, start_time_ns);
 
-  if (target == nullptr) {
-    // Stress test that calls WB_AsyncHandshakeWalkStack() can get here:
-    log_handshake_info(start_time_ns, op->name(), 0, 0, "(thread dead)");
-    delete op;
-    return;
-  }
+  guarantee(target != nullptr, "must be");
 
   Thread* current = Thread::current();
   if (current != target) {
     // Another thread is handling the request and it must be protecting
     // the target.
-    guarantee(Thread::is_JavaThread_protected_by_my_ThreadsList(target),
+    guarantee(Thread::is_JavaThread_protected(target, /* checkTLHOnly */ true),
               "missing ThreadsListHandle in calling context.");
   }
   // Implied else:
