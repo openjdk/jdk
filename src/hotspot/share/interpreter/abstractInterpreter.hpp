@@ -149,6 +149,7 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dtan  : // fall thru
       case vmIntrinsics::_dabs  : // fall thru
       case vmIntrinsics::_dsqrt : // fall thru
+      case vmIntrinsics::_dsqrt_strict : // fall thru
       case vmIntrinsics::_dlog  : // fall thru
       case vmIntrinsics::_dlog10: // fall thru
       case vmIntrinsics::_dpow  : // fall thru

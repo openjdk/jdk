@@ -261,6 +261,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_labs:
   case vmIntrinsics::_datan2:
   case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
@@ -1598,7 +1599,9 @@ bool LibraryCallKit::inline_double_math(vmIntrinsics::ID id) {
   Node* n = NULL;
   switch (id) {
   case vmIntrinsics::_dabs:   n = new AbsDNode(                arg);  break;
-  case vmIntrinsics::_dsqrt:  n = new SqrtDNode(C, control(),  arg);  break;
+  case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
+                              n = new SqrtDNode(C, control(),  arg);  break;
   case vmIntrinsics::_ceil:   n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_ceil); break;
   case vmIntrinsics::_floor:  n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_floor); break;
   case vmIntrinsics::_rint:   n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_rint); break;
@@ -1741,7 +1744,9 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_ceil:
   case vmIntrinsics::_floor:
   case vmIntrinsics::_rint:   return Matcher::match_rule_supported(Op_RoundDoubleMode) ? inline_double_math(id) : false;
-  case vmIntrinsics::_dsqrt:  return Matcher::match_rule_supported(Op_SqrtD) ? inline_double_math(id) : false;
+  case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
+                              return Matcher::match_rule_supported(Op_SqrtD) ? inline_double_math(id) : false;
   case vmIntrinsics::_dabs:   return Matcher::has_match_rule(Op_AbsD)   ? inline_double_math(id) : false;
   case vmIntrinsics::_fabs:   return Matcher::match_rule_supported(Op_AbsF)   ? inline_math(id) : false;
   case vmIntrinsics::_iabs:   return Matcher::match_rule_supported(Op_AbsI)   ? inline_math(id) : false;
