@@ -149,7 +149,8 @@ public class TransferTo {
         // performing actual transfer, effectively by multiple invocations of Filechannel.transferTo(FileChannel)
         long count;
         try (InputStream inputStream = Channels.newInputStream(FileChannel.open(sourceFile));
-        OutputStream outputStream = Channels.newOutputStream(FileChannel.open(targetFile, StandardOpenOption.WRITE))) {
+                OutputStream outputStream = Channels
+                        .newOutputStream(FileChannel.open(targetFile, StandardOpenOption.WRITE))) {
             count = inputStream.transferTo(outputStream);
         }
 
