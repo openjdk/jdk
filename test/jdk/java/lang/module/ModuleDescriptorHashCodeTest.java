@@ -48,7 +48,7 @@ public class ModuleDescriptorHashCodeTest {
      */
     public static void main(String[] args) throws Exception {
         ModuleDescriptor md = javaSQLModuleFromBootLayer().getDescriptor();
-        assertTestPrerequisite(md);
+        assertRequiresHasModifier(md);
         int expectedHashCode = md.hashCode();
         int numProcesses = 50;
         for (int i = 0; i < numProcesses; i++) {
@@ -113,7 +113,7 @@ public class ModuleDescriptorHashCodeTest {
         }
     }
 
-    private static void assertTestPrerequisite(ModuleDescriptor moduleDescriptor) {
+    private static void assertRequiresHasModifier(ModuleDescriptor moduleDescriptor) {
         // The test case needs a module whose descriptor has at least one "requires" with a "modifier"
         // set. This is to ensure that the hashCode tests that we run in this test case,
         // do indeed trigger the hashCode() calls against the "modifier" enums.
