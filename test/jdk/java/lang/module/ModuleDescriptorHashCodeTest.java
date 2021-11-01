@@ -68,48 +68,57 @@ public class ModuleDescriptorHashCodeTest {
             OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(processBuilder);
             System.out.println("Process " + outputAnalyzer.pid() + " completed in "
                     + (System.currentTimeMillis() - start) + " milli seconds");
-            outputAnalyzer.shouldHaveExitValue(0);
+            try {
+                outputAnalyzer.shouldHaveExitValue(0);
+            } catch (RuntimeException e) {
+                // print out diagnostics from the launched process, that failed, for easy debugging
+                System.err.println("Diagnostic summary for failed process " + outputAnalyzer.pid() + ":");
+                outputAnalyzer.reportDiagnosticSummary();
+            }
+        }
+    }
+
+    /**
+     * Loads the java.sql module from boot layer and compares the hashCode of that module's
+     * descriptor with the expected hash code (which is passed as an argument).
+     * Then uses the {@link ModuleDescriptor.Builder} to construct a module descriptor for the
+     * same module and verifies that it too has the same hash code.
+     */
+    private static void realMain(String[] args) throws Exception {
+        int expectedHashCode = Integer.parseInt(args[0]);
+        Module bootModule = javaSQLModuleFromBootLayer();
+        ModuleDescriptor bootMD = bootModule.getDescriptor();
+        int actualHashCode = bootMD.hashCode();
+        if (actualHashCode != expectedHashCode) {
+            throw new RuntimeException("Expected hashCode " + expectedHashCode + " but got " + actualHashCode
+                    + " from boot module descriptor " + bootMD);
+        }
+        System.out.println("Got expected hashCode of " + expectedHashCode + " for boot module descriptor " + bootMD);
+        ModuleDescriptor mdFromBuilder = fromModuleInfoClass(bootModule);
+        // verify that this object is indeed a different object instance than the boot module descriptor
+        // to prevent any artificial passing of the test
+        if (bootMD == mdFromBuilder) {
+            throw new RuntimeException("ModuleDescriptor loaded from boot layer and " +
+                    "one created from module-info.class unexpectedly returned the same instance: " + bootMD);
+        }
+        int hashCode = mdFromBuilder.hashCode();
+        if (expectedHashCode != hashCode) {
+            throw new RuntimeException("Expected hashCode " + expectedHashCode + " but got " + hashCode
+                    + " from module descriptor " + mdFromBuilder);
+        }
+        // invoke a few times to make sure the hashCode doesn't change within the same JVM run
+        for (int i = 0; i < 5; i++) {
+            int h = mdFromBuilder.hashCode();
+            if (expectedHashCode != h) {
+                throw new RuntimeException("Expected hashCode " + expectedHashCode + " but got " + h
+                        + " from module descriptor " + mdFromBuilder);
+            }
         }
     }
 
     private static class HashCodeChecker {
-
-        /**
-         * Loads the java.sql module from boot layer and compares the hashCode of that module's
-         * descriptor with the expected hash code (which is passed as an argument to the program).
-         * Then uses the {@link ModuleDescriptor.Builder} to construct a module descriptor for the
-         * same module and verifies that it too has the same hash code.
-         */
         public static void main(String[] args) throws Exception {
-            int expectedHashCode = Integer.parseInt(args[0]);
-            Module bootModule = javaSQLModuleFromBootLayer();
-            ModuleDescriptor bootMD = bootModule.getDescriptor();
-            int actualHashCode = bootMD.hashCode();
-            if (actualHashCode != expectedHashCode) {
-                throw new RuntimeException("Expected hashCode " + expectedHashCode + " but got " + actualHashCode
-                        + " from boot module descriptor " + bootMD);
-            }
-            System.out.println("Got expected hashCode of " + expectedHashCode + " for boot module descriptor " + bootMD);
-            ModuleDescriptor mdFromBuilder = fromModuleInfoClass(bootModule);
-            // verify that this object is indeed a different object instance than the boot module descriptor
-            // to prevent any artificial passing of the test
-            if (bootMD == mdFromBuilder) {
-                throw new RuntimeException("ModuleDescriptor loaded from boot layer and " +
-                        "one created from module-info.class unexpectedly returned the same instance: " + bootMD);
-            }
-            int hashCode = mdFromBuilder.hashCode();
-            if (expectedHashCode != hashCode) {
-                throw new RuntimeException("Expected hashCode " + expectedHashCode + " but got " + hashCode
-                        + " from module descriptor " + mdFromBuilder);
-            }
-            // invoke a few times to make sure the hashCode doesn't change within the same JVM run
-            for (int i = 0; i < 5; i++) {
-                int h = mdFromBuilder.hashCode();
-                if (expectedHashCode != h) {
-                    throw new RuntimeException("Expected hashCode " + expectedHashCode + " but got " + h
-                            + " from module descriptor " + mdFromBuilder);
-                }
-            }
+            ModuleDescriptorHashCodeTest.realMain(args);
         }
     }
 
