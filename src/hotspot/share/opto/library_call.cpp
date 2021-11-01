@@ -271,9 +271,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_dsignum:
   case vmIntrinsics::_fsignum:                  return inline_math_native(intrinsic_id());
 
-  case vmIntrinsics::_min:
-  case vmIntrinsics::_max:                      return inline_min_max(intrinsic_id());
-
   case vmIntrinsics::_notify:
   case vmIntrinsics::_notifyAll:
     return inline_notify(intrinsic_id());
@@ -632,11 +629,21 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isWhitespace:
     return inline_character_compare(intrinsic_id());
 
+  case vmIntrinsics::_min:
+  case vmIntrinsics::_max:
+  case vmIntrinsics::_min_strict:
+  case vmIntrinsics::_max_strict:
+    return inline_min_max(intrinsic_id());
+
   case vmIntrinsics::_maxF:
   case vmIntrinsics::_minF:
   case vmIntrinsics::_maxD:
   case vmIntrinsics::_minD:
-    return inline_fp_min_max(intrinsic_id());
+  case vmIntrinsics::_maxF_strict:
+  case vmIntrinsics::_minF_strict:
+  case vmIntrinsics::_maxD_strict:
+  case vmIntrinsics::_minD_strict:
+      return inline_fp_min_max(intrinsic_id());
 
   case vmIntrinsics::_VectorUnaryOp:
     return inline_vector_nary_operation(1);
@@ -1888,7 +1895,7 @@ LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
     return xvalue;
   }
 
-  bool want_max = (id == vmIntrinsics::_max);
+  bool want_max = (id == vmIntrinsics::_max || id == vmIntrinsics::_max_strict);
 
   const TypeInt* txvalue = _gvn.type(xvalue)->isa_int();
   const TypeInt* tyvalue = _gvn.type(yvalue)->isa_int();
@@ -7062,12 +7069,16 @@ bool LibraryCallKit::inline_fp_min_max(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_maxF:
   case vmIntrinsics::_minF:
+  case vmIntrinsics::_maxF_strict:
+  case vmIntrinsics::_minF_strict:
     assert(callee()->signature()->size() == 2, "minF/maxF has 2 parameters of size 1 each.");
     a = argument(0);
     b = argument(1);
     break;
   case vmIntrinsics::_maxD:
   case vmIntrinsics::_minD:
+  case vmIntrinsics::_maxD_strict:
+  case vmIntrinsics::_minD_strict:
     assert(callee()->signature()->size() == 4, "minD/maxD has 2 parameters of size 2 each.");
     a = round_double_node(argument(0));
     b = round_double_node(argument(2));
@@ -7077,11 +7088,25 @@ bool LibraryCallKit::inline_fp_min_max(vmIntrinsics::ID id) {
     break;
   }
   switch (id) {
-  case vmIntrinsics::_maxF:  n = new MaxFNode(a, b);  break;
-  case vmIntrinsics::_minF:  n = new MinFNode(a, b);  break;
-  case vmIntrinsics::_maxD:  n = new MaxDNode(a, b);  break;
-  case vmIntrinsics::_minD:  n = new MinDNode(a, b);  break;
-  default:  fatal_unexpected_iid(id);  break;
+  case vmIntrinsics::_maxF:
+  case vmIntrinsics::_maxF_strict:
+    n = new MaxFNode(a, b);
+    break;
+  case vmIntrinsics::_minF:
+  case vmIntrinsics::_minF_strict:
+    n = new MinFNode(a, b);
+    break;
+  case vmIntrinsics::_maxD:
+  case vmIntrinsics::_maxD_strict:
+    n = new MaxDNode(a, b);
+    break;
+  case vmIntrinsics::_minD:
+  case vmIntrinsics::_minD_strict:
+    n = new MinDNode(a, b);
+    break;
+  default:
+    fatal_unexpected_iid(id);
+    break;
   }
   set_result(_gvn.transform(n));
   return true;
