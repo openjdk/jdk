@@ -5244,6 +5244,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_compare_long_strings() {
+    if (UseSVE == 0) {
       StubRoutines::aarch64::_compare_long_string_LL
           = generate_compare_long_string_same_encoding(true);
       StubRoutines::aarch64::_compare_long_string_UU
@@ -5252,6 +5253,16 @@ class StubGenerator: public StubCodeGenerator {
           = generate_compare_long_string_different_encoding(true);
       StubRoutines::aarch64::_compare_long_string_UL
           = generate_compare_long_string_different_encoding(false);
+    } else {
+      StubRoutines::aarch64::_compare_long_string_LL
+          = generate_compare_long_string_sve(LL);
+      StubRoutines::aarch64::_compare_long_string_UU
+          = generate_compare_long_string_sve(UU);
+      StubRoutines::aarch64::_compare_long_string_LU
+          = generate_compare_long_string_sve(LU);
+      StubRoutines::aarch64::_compare_long_string_UL
+          = generate_compare_long_string_sve(UL);
+    }
   }
 
   // R0 = result
