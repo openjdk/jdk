@@ -28,8 +28,8 @@ package jdk.internal.reflect;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-/** Generator for sun.reflect.MethodAccessor and
-    sun.reflect.ConstructorAccessor objects using bytecodes to
+/** Generator for jdk.internal.reflect.MethodAccessor and
+    jdk.internal.reflect.ConstructorAccessor objects using bytecodes to
     implement reflection. A java.lang.reflect.Method or
     java.lang.reflect.Constructor object can delegate its invoke or
     newInstance method to an accessor using native code or to one

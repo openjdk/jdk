@@ -61,7 +61,6 @@ public class Credentials {
     HostAddresses cAddr;
     AuthorizationData authzData;
     private static boolean DEBUG = Krb5.DEBUG;
-    private static CredentialsCache cache;
     static boolean alreadyLoaded = false;
     private static boolean alreadyTried = false;
 
@@ -416,9 +415,8 @@ public class Credentials {
     public static synchronized Credentials acquireDefaultCreds() {
         Credentials result = null;
 
-        if (cache == null) {
-            cache = CredentialsCache.getInstance();
-        }
+        CredentialsCache cache = CredentialsCache.getInstance();
+
         if (cache != null) {
             Credentials temp = cache.getInitialCreds();
             if (temp != null) {
@@ -503,10 +501,6 @@ public class Credentials {
         throws KrbException, IOException {
         return CredentialsUtil.acquireS4U2proxyCreds(
                 service, second, client, ccreds);
-    }
-
-    public CredentialsCache getCache() {
-        return cache;
     }
 
     /*

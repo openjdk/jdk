@@ -48,9 +48,6 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[rw]
 
-    // Cached array base offset
-    private static final long ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset($type$[].class);
-
     // Cached unaligned-access capability
     protected static final boolean UNALIGNED = Bits.unaligned();
 

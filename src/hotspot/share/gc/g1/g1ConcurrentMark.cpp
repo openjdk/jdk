@@ -27,7 +27,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1BatchedGangTask.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -432,7 +432,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _num_concurrent_workers = ConcGCThreads;
   _max_concurrent_workers = _num_concurrent_workers;
 
-  _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers);
+  _concurrent_workers = new WorkerThreads("G1 Conc", _max_concurrent_workers);
   _concurrent_workers->initialize_workers();
 
   if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
@@ -580,7 +580,7 @@ G1ConcurrentMark::~G1ConcurrentMark() {
   ShouldNotReachHere();
 }
 
-class G1ClearBitMapTask : public AbstractGangTask {
+class G1ClearBitMapTask : public WorkerTask {
 public:
   static size_t chunk_size() { return M; }
 
@@ -674,7 +674,7 @@ private:
 
 public:
   G1ClearBitMapTask(G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
-    AbstractGangTask("G1 Clear Bitmap"),
+    WorkerTask("G1 Clear Bitmap"),
     _cl(cm, suspendible),
     _hr_claimer(n_workers),
     _suspendible(suspendible)
@@ -690,7 +690,7 @@ public:
   }
 };
 
-void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers, bool may_yield) {
+void G1ConcurrentMark::clear_next_bitmap(WorkerThreads* workers, bool may_yield) {
   assert(may_yield || SafepointSynchronize::is_at_safepoint(), "Non-yielding bitmap clear only allowed at safepoint.");
 
   size_t const num_bytes_to_clear = (HeapRegion::GrainBytes * _g1h->num_regions()) / G1CMBitMap::heap_map_factor();
@@ -723,17 +723,17 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
   guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
 }
 
-void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers) {
+void G1ConcurrentMark::clear_next_bitmap(WorkerThreads* workers) {
   assert_at_safepoint_on_vm_thread();
   // To avoid fragmentation the full collection requesting to clear the bitmap
   // might use fewer workers than available. To ensure the bitmap is cleared
   // as efficiently as possible the number of active workers are temporarily
   // increased to include all currently created workers.
-  WithUpdatedActiveWorkers update(workers, workers->created_workers());
+  WithActiveWorkers update(workers, workers->created_workers());
   clear_next_bitmap(workers, false);
 }
 
-class G1PreConcurrentStartTask : public G1BatchedGangTask {
+class G1PreConcurrentStartTask : public G1BatchedTask {
   // Concurrent start needs claim bits to keep track of the marked-through CLDs.
   class CLDClearClaimedMarksTask;
   // Reset marking state.
@@ -805,7 +805,7 @@ void G1PreConcurrentStartTask::NoteStartOfMarkTask::set_max_workers(uint max_wor
 }
 
 G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1ConcurrentMark* cm) :
-  G1BatchedGangTask("Pre Concurrent Start", G1CollectedHeap::heap()->phase_times()) {
+  G1BatchedTask("Pre Concurrent Start", G1CollectedHeap::heap()->phase_times()) {
   add_serial_task(new CLDClearClaimedMarksTask());
   add_serial_task(new ResetMarkingStateTask(cm));
   add_parallel_task(new NoteStartOfMarkTask());
@@ -889,7 +889,7 @@ void G1ConcurrentMark::enter_second_sync_barrier(uint worker_id) {
   // at this point everything should be re-initialized and ready to go
 }
 
-class G1CMConcurrentMarkingTask : public AbstractGangTask {
+class G1CMConcurrentMarkingTask : public WorkerTask {
   G1ConcurrentMark*     _cm;
 
 public:
@@ -923,7 +923,7 @@ public:
   }
 
   G1CMConcurrentMarkingTask(G1ConcurrentMark* cm) :
-      AbstractGangTask("Concurrent Mark"), _cm(cm) { }
+      WorkerTask("Concurrent Mark"), _cm(cm) { }
 
   ~G1CMConcurrentMarkingTask() { }
 };
@@ -965,17 +965,17 @@ void G1ConcurrentMark::scan_root_region(const MemRegion* region, uint worker_id)
   while (curr < end) {
     Prefetch::read(curr, interval);
     oop obj = cast_to_oop(curr);
-    int size = obj->oop_iterate_size(&cl);
+    size_t size = obj->oop_iterate_size(&cl);
     assert(size == obj->size(), "sanity");
     curr += size;
   }
 }
 
-class G1CMRootRegionScanTask : public AbstractGangTask {
+class G1CMRootRegionScanTask : public WorkerTask {
   G1ConcurrentMark* _cm;
 public:
   G1CMRootRegionScanTask(G1ConcurrentMark* cm) :
-    AbstractGangTask("G1 Root Region Scan"), _cm(cm) { }
+    WorkerTask("G1 Root Region Scan"), _cm(cm) { }
 
   void work(uint worker_id) {
     G1CMRootMemRegions* root_regions = _cm->root_regions();
@@ -1046,8 +1046,8 @@ void G1ConcurrentMark::mark_from_roots() {
   // Setting active workers is not guaranteed since fewer
   // worker threads may currently exist and more may not be
   // available.
-  active_workers = _concurrent_workers->update_active_workers(active_workers);
-  log_info(gc, task)("Using %u workers of %u for marking", active_workers, _concurrent_workers->total_workers());
+  active_workers = _concurrent_workers->set_active_workers(active_workers);
+  log_info(gc, task)("Using %u workers of %u for marking", active_workers, _concurrent_workers->max_workers());
 
   // Parallel task terminator is set in "set_concurrency_and_phase()"
   set_concurrency_and_phase(active_workers, true /* concurrent */);
@@ -1075,7 +1075,7 @@ void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type, Ve
   verifier->check_bitmaps(caller);
 }
 
-class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
+class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   HeapRegionClaimer _hrclaimer;
@@ -1176,7 +1176,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
 
 public:
   G1UpdateRemSetTrackingBeforeRebuildTask(G1CollectedHeap* g1h, G1ConcurrentMark* cm, uint num_workers) :
-    AbstractGangTask("G1 Update RemSet Tracking Before Rebuild"),
+    WorkerTask("G1 Update RemSet Tracking Before Rebuild"),
     _g1h(g1h), _cm(cm), _hrclaimer(num_workers), _total_selected_for_rebuild(0), _cl("Post-Marking") { }
 
   virtual void work(uint worker_id) {
@@ -1307,7 +1307,7 @@ void G1ConcurrentMark::remark() {
   policy->record_concurrent_mark_remark_end();
 }
 
-class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
+class G1ReclaimEmptyRegionsTask : public WorkerTask {
   // Per-region work during the Cleanup pause.
   class G1ReclaimEmptyRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
@@ -1362,7 +1362,7 @@ class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
 
 public:
   G1ReclaimEmptyRegionsTask(G1CollectedHeap* g1h, FreeRegionList* cleanup_list, uint n_workers) :
-    AbstractGangTask("G1 Cleanup"),
+    WorkerTask("G1 Cleanup"),
     _g1h(g1h),
     _cleanup_list(cleanup_list),
     _hrclaimer(n_workers) {
@@ -1389,7 +1389,7 @@ public:
 };
 
 void G1ConcurrentMark::reclaim_empty_regions() {
-  WorkGang* workers = _g1h->workers();
+  WorkerThreads* workers = _g1h->workers();
   FreeRegionList empty_regions_list("Empty Regions After Mark List");
 
   G1ReclaimEmptyRegionsTask cl(_g1h, &empty_regions_list, workers->active_workers());
@@ -1613,7 +1613,7 @@ void G1ConcurrentMark::weak_refs_work() {
 
     // We need at least one active thread. If reference processing
     // is not multi-threaded we use the current (VMThread) thread,
-    // otherwise we use the work gang from the G1CollectedHeap and
+    // otherwise we use the workers from the G1CollectedHeap and
     // we utilize all the worker threads we can.
     uint active_workers = (ParallelRefProcEnabled ? _g1h->workers()->active_workers() : 1U);
     active_workers = clamp(active_workers, 1u, _max_num_tasks);
@@ -1645,9 +1645,6 @@ void G1ConcurrentMark::weak_refs_work() {
            "Mark stack should be empty (unless it has overflown)");
 
     assert(rp->num_queues() == active_workers, "why not");
-
-    rp->verify_no_references_recorded();
-    assert(!rp->discovery_enabled(), "Post condition");
   }
 
   if (has_overflown()) {
@@ -1695,9 +1692,7 @@ void G1ConcurrentMark::preclean() {
 
   SuspendibleThreadSetJoiner joiner;
 
-  G1CMKeepAliveAndDrainClosure keep_alive(this, task(0), true /* is_serial */);
   BarrierEnqueueDiscoveredFieldClosure enqueue;
-  G1CMDrainMarkingStackClosure drain_mark_stack(this, task(0), true /* is_serial */);
 
   set_concurrency_and_phase(1, true);
 
@@ -1707,9 +1702,7 @@ void G1ConcurrentMark::preclean() {
   // Precleaning is single threaded. Temporarily disable MT discovery.
   ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(rp, false);
   rp->preclean_discovered_references(rp->is_alive_non_header(),
-                                     &keep_alive,
                                      &enqueue,
-                                     &drain_mark_stack,
                                      &yield_cl,
                                      _gc_timer_cm);
 }
@@ -1802,7 +1795,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
   }
 };
 
-class G1CMRemarkTask : public AbstractGangTask {
+class G1CMRemarkTask : public WorkerTask {
   G1ConcurrentMark* _cm;
 public:
   void work(uint worker_id) {
@@ -1826,7 +1819,7 @@ public:
   }
 
   G1CMRemarkTask(G1ConcurrentMark* cm, uint active_workers) :
-    AbstractGangTask("Par Remark"), _cm(cm) {
+    WorkerTask("Par Remark"), _cm(cm) {
     _cm->terminator()->reset_for_reuse(active_workers);
   }
 };
@@ -1842,7 +1835,7 @@ void G1ConcurrentMark::finalize_marking() {
   // Leave _parallel_marking_threads at it's
   // value originally calculated in the G1ConcurrentMark
   // constructor and pass values of the active workers
-  // through the gang in the task.
+  // through the task.
 
   {
     StrongRootsScope srs(active_workers);
@@ -2561,7 +2554,7 @@ bool G1ConcurrentMark::try_stealing(uint worker_id, G1TaskQueueEntry& task_entry
     processing closures.
 
     The value of is_serial must be false when do_marking_step is
-    being called by any of the worker threads in a work gang.
+    being called by any of the worker threads.
     Examples include the concurrent marking code (CMMarkingTask),
     the MT remark code, and the MT reference processing closures.
 

@@ -286,6 +286,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_multiplyExactI:           return inline_math_multiplyExactI();
   case vmIntrinsics::_multiplyExactL:           return inline_math_multiplyExactL();
   case vmIntrinsics::_multiplyHigh:             return inline_math_multiplyHigh();
+  case vmIntrinsics::_unsignedMultiplyHigh:     return inline_math_unsignedMultiplyHigh();
   case vmIntrinsics::_negateExactI:             return inline_math_negateExactI();
   case vmIntrinsics::_negateExactL:             return inline_math_negateExactL();
   case vmIntrinsics::_subtractExactI:           return inline_math_subtractExactI(false /* subtract */);
@@ -1864,6 +1865,11 @@ bool LibraryCallKit::inline_math_multiplyExactL() {
 
 bool LibraryCallKit::inline_math_multiplyHigh() {
   set_result(_gvn.transform(new MulHiLNode(argument(0), argument(2))));
+  return true;
+}
+
+bool LibraryCallKit::inline_math_unsignedMultiplyHigh() {
+  set_result(_gvn.transform(new UMulHiLNode(argument(0), argument(2))));
   return true;
 }
 

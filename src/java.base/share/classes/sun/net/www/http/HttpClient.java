@@ -307,7 +307,7 @@ public class HttpClient extends NetworkClient {
             ret = kac.get(url, null);
             if (ret != null && httpuc != null &&
                 httpuc.streaming() &&
-                httpuc.getRequestMethod() == "POST") {
+                "POST".equals(httpuc.getRequestMethod())) {
                 if (!ret.available()) {
                     ret.inCache = false;
                     ret.closeServer();

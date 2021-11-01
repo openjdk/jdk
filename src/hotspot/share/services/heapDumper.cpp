@@ -32,7 +32,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -1853,7 +1853,7 @@ class DumperController : public CHeapObj<mtInternal> {
 };
 
 // The VM operation that performs the heap dump
-class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
+class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
  private:
   static VM_HeapDumper*   _global_dumper;
   static DumpWriter*      _global_writer;
@@ -1973,7 +1973,7 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
                     GCCause::_heap_dump /* GC Cause */,
                     0 /* total full collections, dummy, ignored */,
                     gc_before_heap_dump),
-    AbstractGangTask("dump heap") {
+    WorkerTask("dump heap") {
     _local_writer = writer;
     _gc_before_heap_dump = gc_before_heap_dump;
     _klass_map = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);
@@ -2248,16 +2248,16 @@ void VM_HeapDumper::doit() {
   set_global_dumper();
   set_global_writer();
 
-  WorkGang* gang = ch->safepoint_workers();
+  WorkerThreads* workers = ch->safepoint_workers();
 
-  if (gang == NULL) {
+  if (workers == NULL) {
     // Use serial dump, set dumper threads and writer threads number to 1.
     _num_dumper_threads=1;
     _num_writer_threads=1;
     work(0);
   } else {
-    prepare_parallel_dump(gang->active_workers());
-    gang->run_task(this);
+    prepare_parallel_dump(workers->active_workers());
+    workers->run_task(this);
     finish_parallel_dump();
   }
 

@@ -32,7 +32,7 @@
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1BatchedGangTask.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CardSetFreeMemoryTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -138,7 +138,7 @@ void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_region
   reset_from_card_cache(start_idx, num_regions);
 }
 
-void G1CollectedHeap::run_batch_task(G1BatchedGangTask* cl) {
+void G1CollectedHeap::run_batch_task(G1BatchedTask* cl) {
   uint num_workers = MAX2(1u, MIN2(cl->num_workers_estimate(), workers()->active_workers()));
   cl->set_max_workers(num_workers);
   workers()->run_task(cl, num_workers);
@@ -1273,7 +1273,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   return NULL;
 }
 
-bool G1CollectedHeap::expand(size_t expand_bytes, WorkGang* pretouch_workers, double* expand_time_ms) {
+bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_workers, double* expand_time_ms) {
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_up(aligned_expand_bytes,
                                        HeapRegion::GrainBytes);
@@ -1310,7 +1310,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkGang* pretouch_workers, do
       vm_exit_out_of_memory(aligned_expand_bytes, OOM_MMAP_ERROR, "G1 heap expansion");
     }
   }
-  return regions_to_expand > 0;
+  return expanded_by > 0;
 }
 
 bool G1CollectedHeap::expand_single_region(uint node_index) {
@@ -1671,6 +1671,8 @@ jint G1CollectedHeap::initialize() {
   guarantee(HeapRegion::CardsPerRegion < max_cards_per_region,
             "too many cards per region");
 
+  HeapRegionRemSet::initialize(_reserved);
+
   FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
   _bot = new G1BlockOffsetTable(reserved(), bot_storage);
@@ -1682,7 +1684,7 @@ jint G1CollectedHeap::initialize() {
     _humongous_reclaim_candidates.initialize(reserved(), granularity);
   }
 
-  _workers = new WorkGang("GC Thread", ParallelGCThreads);
+  _workers = new WorkerThreads("GC Thread", ParallelGCThreads);
   if (_workers == NULL) {
     return JNI_ENOMEM;
   }
@@ -2691,15 +2693,15 @@ bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const 
 }
 
 #ifndef PRODUCT
-void G1CollectedHeap::verify_region_attr_remset_update() {
+void G1CollectedHeap::verify_region_attr_remset_is_tracked() {
   class VerifyRegionAttrRemSet : public HeapRegionClosure {
   public:
     virtual bool do_heap_region(HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
-      bool const needs_remset_update = g1h->region_attr(r->bottom()).needs_remset_update();
-      assert(r->rem_set()->is_tracked() == needs_remset_update,
+      bool const remset_is_tracked = g1h->region_attr(r->bottom()).remset_is_tracked();
+      assert(r->rem_set()->is_tracked() == remset_is_tracked,
              "Region %u remset tracking status (%s) different to region attribute (%s)",
-             r->hrm_index(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(needs_remset_update));
+             r->hrm_index(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(remset_is_tracked));
       return false;
     }
   } cl;

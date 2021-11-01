@@ -32,6 +32,7 @@ import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.ValueConversions;
@@ -63,7 +64,9 @@ import java.util.stream.Stream;
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
 import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
+import static java.lang.invoke.MethodHandleStatics.newInternalError;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -117,14 +120,15 @@ public class MethodHandles {
     }
 
     /**
-     * This reflected$lookup method is the alternate implementation of
-     * the lookup method when being invoked by reflection.
+     * This lookup method is the alternate implementation of
+     * the lookup method with a leading caller class argument which is
+     * non-caller-sensitive.  This method is only invoked by reflection
+     * and method handle.
      */
-    @CallerSensitive
-    private static Lookup reflected$lookup() {
-        Class<?> caller = Reflection.getCallerClass();
+    @CallerSensitiveAdapter
+    private static Lookup lookup(Class<?> caller) {
         if (caller.getClassLoader() == null) {
-            throw newIllegalArgumentException("illegal lookupClass: "+caller);
+            throw newInternalError("calling lookup() reflectively is not supported: "+caller);
         }
         return new Lookup(caller);
     }
@@ -329,7 +333,7 @@ public class MethodHandles {
              throw new IllegalAccessException(caller + " does not have ORIGINAL access");
          }
 
-         Object classdata = MethodHandleNatives.classData(caller.lookupClass());
+         Object classdata = classData(caller.lookupClass());
          if (classdata == null) return null;
 
          try {
@@ -339,6 +343,17 @@ public class MethodHandles {
          } catch (Throwable e) {
              throw new InternalError(e);
          }
+    }
+
+    /*
+     * Returns the class data set by the VM in the Class::classData field.
+     *
+     * This is also invoked by LambdaForms as it cannot use condy via
+     * MethodHandles::classData due to bootstrapping issue.
+     */
+    static Object classData(Class<?> c) {
+        UNSAFE.ensureClassInitialized(c);
+        return SharedSecrets.getJavaLangAccess().classData(c);
     }
 
     /**
@@ -2359,15 +2374,16 @@ public class MethodHandles {
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
-         * from the given bytes.  No package name check on the given name.
+         * from the given bytes and the given options.  No package name check on the given name.
          *
          * @param name    fully-qualified name that specifies the prefix of the hidden class
          * @param bytes   class bytes
-         * @return ClassDefiner that defines a hidden class of the given bytes.
+         * @param options class options
+         * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes) {
+        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options) {
             // skip name and access flags validation
-            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), Set.of(), false);
+            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), options, false);
         }
 
         /**

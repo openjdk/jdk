@@ -55,8 +55,8 @@ typedef const ModuleEntry* ModPtr;
 typedef const ClassLoaderData* CldPtr;
 typedef const Method* MethodPtr;
 typedef const Symbol* SymbolPtr;
-typedef const JfrSymbolId::SymbolEntry* SymbolEntryPtr;
-typedef const JfrSymbolId::CStringEntry* CStringEntryPtr;
+typedef const JfrSymbolTable::SymbolEntry* SymbolEntryPtr;
+typedef const JfrSymbolTable::StringEntry* StringEntryPtr;
 
 static JfrCheckpointWriter* _writer = NULL;
 static JfrCheckpointWriter* _leakp_writer = NULL;
@@ -64,18 +64,7 @@ static JfrArtifactSet* _artifacts = NULL;
 static JfrArtifactClosure* _subsystem_callback = NULL;
 static bool _class_unload = false;
 static bool _flushpoint = false;
-static bool _clear_artifacts = false;
-
-// incremented on each rotation
-static u8 checkpoint_id = 1;
-
-// creates a unique id by combining a checkpoint relative symbol id (2^24)
-// with the current checkpoint id (2^40)
-#define CREATE_SYMBOL_ID(sym_id) (((u8)((checkpoint_id << 24) | sym_id)))
-
-static traceid create_symbol_id(traceid artifact_id) {
-  return artifact_id != 0 ? CREATE_SYMBOL_ID(artifact_id) : 0;
-}
+static bool _initial_type_set = true;
 
 static bool current_epoch() {
   return _class_unload || _flushpoint;
@@ -86,7 +75,7 @@ static bool previous_epoch() {
 }
 
 static bool is_initial_typeset_for_chunk() {
-  return _clear_artifacts && !_class_unload;
+  return _initial_type_set && !_class_unload;
 }
 
 static bool is_complete() {
@@ -94,15 +83,15 @@ static bool is_complete() {
 }
 
 static traceid mark_symbol(KlassPtr klass, bool leakp) {
-  return klass != NULL ? create_symbol_id(_artifacts->mark(klass, leakp)) : 0;
+  return klass != NULL ? _artifacts->mark(klass, leakp) : 0;
 }
 
 static traceid mark_symbol(Symbol* symbol, bool leakp) {
-  return symbol != NULL ? create_symbol_id(_artifacts->mark(symbol, leakp)) : 0;
+  return symbol != NULL ? _artifacts->mark(symbol, leakp) : 0;
 }
 
 static traceid get_bootstrap_name(bool leakp) {
-  return create_symbol_id(_artifacts->bootstrap_name(leakp));
+  return _artifacts->bootstrap_name(leakp);
 }
 
 static const char* primitive_name(KlassPtr type_array_klass) {
@@ -924,14 +913,14 @@ static void write_methods() {
 }
 
 template <>
-void set_serialized<JfrSymbolId::SymbolEntry>(SymbolEntryPtr ptr) {
+void set_serialized<JfrSymbolTable::SymbolEntry>(SymbolEntryPtr ptr) {
   assert(ptr != NULL, "invariant");
   ptr->set_serialized();
   assert(ptr->is_serialized(), "invariant");
 }
 
 template <>
-void set_serialized<JfrSymbolId::CStringEntry>(CStringEntryPtr ptr) {
+void set_serialized<JfrSymbolTable::StringEntry>(StringEntryPtr ptr) {
   assert(ptr != NULL, "invariant");
   ptr->set_serialized();
   assert(ptr->is_serialized(), "invariant");
@@ -941,7 +930,7 @@ static int write_symbol(JfrCheckpointWriter* writer, SymbolEntryPtr entry, bool 
   assert(writer != NULL, "invariant");
   assert(entry != NULL, "invariant");
   ResourceMark rm;
-  writer->write(create_symbol_id(entry->id()));
+  writer->write(entry->id());
   writer->write(entry->value()->as_C_string());
   return 1;
 }
@@ -959,42 +948,42 @@ int write__symbol__leakp(JfrCheckpointWriter* writer, const void* e) {
   return write_symbol(writer, entry, true);
 }
 
-static int write_cstring(JfrCheckpointWriter* writer, CStringEntryPtr entry, bool leakp) {
+static int write_string(JfrCheckpointWriter* writer, StringEntryPtr entry, bool leakp) {
   assert(writer != NULL, "invariant");
   assert(entry != NULL, "invariant");
-  writer->write(create_symbol_id(entry->id()));
+  writer->write(entry->id());
   writer->write(entry->value());
   return 1;
 }
 
-int write__cstring(JfrCheckpointWriter* writer, const void* e) {
+int write__string(JfrCheckpointWriter* writer, const void* e) {
   assert(e != NULL, "invariant");
-  CStringEntryPtr entry = (CStringEntryPtr)e;
+  StringEntryPtr entry = (StringEntryPtr)e;
   set_serialized(entry);
-  return write_cstring(writer, entry, false);
+  return write_string(writer, entry, false);
 }
 
-int write__cstring__leakp(JfrCheckpointWriter* writer, const void* e) {
+int write__string__leakp(JfrCheckpointWriter* writer, const void* e) {
   assert(e != NULL, "invariant");
-  CStringEntryPtr entry = (CStringEntryPtr)e;
-  return write_cstring(writer, entry, true);
+  StringEntryPtr entry = (StringEntryPtr)e;
+  return write_string(writer, entry, true);
 }
 
 typedef SymbolPredicate<SymbolEntryPtr, false> SymPredicate;
 typedef JfrPredicatedTypeWriterImplHost<SymbolEntryPtr, SymPredicate, write__symbol> SymbolEntryWriterImpl;
 typedef JfrTypeWriterHost<SymbolEntryWriterImpl, TYPE_SYMBOL> SymbolEntryWriter;
-typedef SymbolPredicate<CStringEntryPtr, false> CStringPredicate;
-typedef JfrPredicatedTypeWriterImplHost<CStringEntryPtr, CStringPredicate, write__cstring> CStringEntryWriterImpl;
-typedef JfrTypeWriterHost<CStringEntryWriterImpl, TYPE_SYMBOL> CStringEntryWriter;
+typedef SymbolPredicate<StringEntryPtr, false> StringPredicate;
+typedef JfrPredicatedTypeWriterImplHost<StringEntryPtr, StringPredicate, write__string> StringEntryWriterImpl;
+typedef JfrTypeWriterHost<StringEntryWriterImpl, TYPE_SYMBOL> StringEntryWriter;
 
 typedef SymbolPredicate<SymbolEntryPtr, true> LeakSymPredicate;
 typedef JfrPredicatedTypeWriterImplHost<SymbolEntryPtr, LeakSymPredicate, write__symbol__leakp> LeakSymbolEntryWriterImpl;
 typedef JfrTypeWriterHost<LeakSymbolEntryWriterImpl, TYPE_SYMBOL> LeakSymbolEntryWriter;
 typedef CompositeFunctor<SymbolEntryPtr, LeakSymbolEntryWriter, SymbolEntryWriter> CompositeSymbolWriter;
-typedef SymbolPredicate<CStringEntryPtr, true> LeakCStringPredicate;
-typedef JfrPredicatedTypeWriterImplHost<CStringEntryPtr, LeakCStringPredicate, write__cstring__leakp> LeakCStringEntryWriterImpl;
-typedef JfrTypeWriterHost<LeakCStringEntryWriterImpl, TYPE_SYMBOL> LeakCStringEntryWriter;
-typedef CompositeFunctor<CStringEntryPtr, LeakCStringEntryWriter, CStringEntryWriter> CompositeCStringWriter;
+typedef SymbolPredicate<StringEntryPtr, true> LeakStringPredicate;
+typedef JfrPredicatedTypeWriterImplHost<StringEntryPtr, LeakStringPredicate, write__string__leakp> LeakStringEntryWriterImpl;
+typedef JfrTypeWriterHost<LeakStringEntryWriterImpl, TYPE_SYMBOL> LeakStringEntryWriter;
+typedef CompositeFunctor<StringEntryPtr, LeakStringEntryWriter, StringEntryWriter> CompositeStringWriter;
 
 static void write_symbols_with_leakp() {
   assert(_leakp_writer != NULL, "invariant");
@@ -1002,12 +991,12 @@ static void write_symbols_with_leakp() {
   LeakSymbolEntryWriter lsw(_leakp_writer, _class_unload);
   CompositeSymbolWriter csw(&lsw, &sw);
   _artifacts->iterate_symbols(csw);
-  CStringEntryWriter ccsw(_writer, _class_unload, true); // skip header
-  LeakCStringEntryWriter lccsw(_leakp_writer, _class_unload, true); // skip header
-  CompositeCStringWriter cccsw(&lccsw, &ccsw);
-  _artifacts->iterate_cstrings(cccsw);
-  sw.add(ccsw.count());
-  lsw.add(lccsw.count());
+  StringEntryWriter sew(_writer, _class_unload, true); // skip header
+  LeakStringEntryWriter lsew(_leakp_writer, _class_unload, true); // skip header
+  CompositeStringWriter csew(&lsew, &sew);
+  _artifacts->iterate_strings(csew);
+  sw.add(sew.count());
+  lsw.add(lsew.count());
   _artifacts->tally(sw);
 }
 
@@ -1019,9 +1008,9 @@ static void write_symbols() {
   }
   SymbolEntryWriter sw(_writer, _class_unload);
   _artifacts->iterate_symbols(sw);
-  CStringEntryWriter csw(_writer, _class_unload, true); // skip header
-  _artifacts->iterate_cstrings(csw);
-  sw.add(csw.count());
+  StringEntryWriter sew(_writer, _class_unload, true); // skip header
+  _artifacts->iterate_strings(sew);
+  sw.add(sew.count());
   _artifacts->tally(sw);
 }
 
@@ -1040,10 +1029,10 @@ static size_t teardown() {
   if (previous_epoch()) {
     clear_klasses_and_methods();
     JfrKlassUnloading::clear();
-    _clear_artifacts = true;
-    ++checkpoint_id;
+    _artifacts->increment_checkpoint_id();
+    _initial_type_set = true;
   } else {
-    _clear_artifacts = false;
+    _initial_type_set = false;
   }
   return total_count;
 }
@@ -1056,7 +1045,7 @@ static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer
   if (_artifacts == NULL) {
     _artifacts = new JfrArtifactSet(class_unload);
   } else {
-    _artifacts->initialize(class_unload, _clear_artifacts);
+    _artifacts->initialize(class_unload);
   }
   if (!_class_unload) {
     JfrKlassUnloading::sort(previous_epoch());
@@ -1091,7 +1080,9 @@ size_t JfrTypeSet::serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* l
 void JfrTypeSet::clear() {
   ResourceMark rm;
   JfrKlassUnloading::clear();
-  _clear_artifacts = true;
+  if (_artifacts != NULL) {
+    _artifacts->clear();
+  }
   setup(NULL, NULL, false, false);
   register_klasses();
   clear_packages();
