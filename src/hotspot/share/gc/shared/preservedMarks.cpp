@@ -24,7 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -92,7 +93,7 @@ void PreservedMarksSet::init(uint num) {
   assert_empty();
 }
 
-class RestorePreservedMarksTask : public AbstractGangTask {
+class RestorePreservedMarksTask : public WorkerTask {
   PreservedMarksSet* const _preserved_marks_set;
   SequentialSubTasksDone _sub_tasks;
   volatile size_t _total_size;
@@ -109,7 +110,7 @@ public:
   }
 
   RestorePreservedMarksTask(PreservedMarksSet* preserved_marks_set)
-    : AbstractGangTask("Restore Preserved Marks"),
+    : WorkerTask("Restore Preserved Marks"),
       _preserved_marks_set(preserved_marks_set),
       _sub_tasks(preserved_marks_set->num()),
       _total_size(0)
@@ -129,7 +130,7 @@ public:
   }
 };
 
-void PreservedMarksSet::restore(WorkGang* workers) {
+void PreservedMarksSet::restore(WorkerThreads* workers) {
   {
     RestorePreservedMarksTask cl(this);
     if (workers == nullptr) {
@@ -142,7 +143,7 @@ void PreservedMarksSet::restore(WorkGang* workers) {
   assert_empty();
 }
 
-AbstractGangTask* PreservedMarksSet::create_task() {
+WorkerTask* PreservedMarksSet::create_task() {
   return new RestorePreservedMarksTask(this);
 }
 

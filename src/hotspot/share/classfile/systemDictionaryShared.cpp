@@ -430,6 +430,7 @@ class UnregisteredClassesTable : public ResourceHashtable<
 
 static UnregisteredClassesTable* _unregistered_classes_table = NULL;
 
+// true == class was successfully added; false == a duplicated class (with the same name) already exists.
 bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKlass* klass) {
   // We don't allow duplicated unregistered classes with the same name.
   // We only archive the first class with that name that succeeds putting
@@ -446,18 +447,6 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
     name->increment_refcount();
   }
   return (klass == *v);
-}
-
-// true == class was successfully added; false == a duplicated class (with the same name) already exists.
-bool SystemDictionaryShared::add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k) {
-  assert(DumpSharedSpaces, "only when dumping");
-  if (add_unregistered_class(current, k)) {
-    MutexLocker mu_r(current, Compile_lock); // add_to_hierarchy asserts this.
-    SystemDictionary::add_to_hierarchy(k);
-    return true;
-  } else {
-    return false;
-  }
 }
 
 // This function is called to lookup the super/interfaces of shared classes for
@@ -1607,6 +1596,28 @@ void SystemDictionaryShared::restore_dumptime_tables() {
   delete _dumptime_lambda_proxy_class_dictionary;
   _dumptime_lambda_proxy_class_dictionary = _cloned_dumptime_lambda_proxy_class_dictionary;
   _cloned_dumptime_lambda_proxy_class_dictionary = NULL;
+}
+
+class CleanupDumpTimeLambdaProxyClassTable: StackObj {
+ public:
+  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+    assert_lock_strong(DumpTimeTable_lock);
+    for (int i = 0; i < info._proxy_klasses->length(); i++) {
+      InstanceKlass* ik = info._proxy_klasses->at(i);
+      if (!ik->can_be_verified_at_dumptime()) {
+        info._proxy_klasses->remove_at(i);
+      }
+    }
+    return info._proxy_klasses->length() == 0 ? true /* delete the node*/ : false;
+  }
+};
+
+void SystemDictionaryShared::cleanup_lambda_proxy_class_dictionary() {
+  assert_lock_strong(DumpTimeTable_lock);
+  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
+    CleanupDumpTimeLambdaProxyClassTable cleanup_proxy_classes;
+    _dumptime_lambda_proxy_class_dictionary->unlink(&cleanup_proxy_classes);
+  }
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

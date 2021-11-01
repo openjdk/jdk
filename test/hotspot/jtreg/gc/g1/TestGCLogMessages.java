@@ -90,6 +90,17 @@ public class TestGCLogMessages {
         }
     }
 
+    private class LogMessageWithJFROnly extends LogMessageWithLevel {
+        public LogMessageWithJFROnly(String message, Level level) {
+            super(message, level);
+        }
+
+        public boolean isAvailable() {
+            sun.hotspot.WhiteBox WB = sun.hotspot.WhiteBox.getWhiteBox();
+            return WB.isJFRIncluded();
+        }
+    }
+
     private LogMessageWithLevel allLogMessages[] = new LogMessageWithLevel[] {
         new LogMessageWithLevel("Pre Evacuate Collection Set", Level.INFO),
         new LogMessageWithLevel("Evacuate Collection Set", Level.INFO),
@@ -153,7 +164,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("JVMTI Tag Weak OopStorage", Level.DEBUG),
         new LogMessageWithLevel("StringTable Weak", Level.DEBUG),
         new LogMessageWithLevel("ResolvedMethodTable Weak", Level.DEBUG),
-        new LogMessageWithLevel("Weak JFR Old Object Samples", Level.DEBUG),
+        new LogMessageWithJFROnly("Weak JFR Old Object Samples", Level.DEBUG),
         new LogMessageWithLevel("JNI Weak", Level.DEBUG),
 
         // Post Evacuate Cleanup 1

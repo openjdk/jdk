@@ -660,7 +660,7 @@ class GraphKit : public Phase {
                               Node* ctrl = NULL);
 
   // Return a load of array element at idx.
-  Node* load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAryPtr* arytype);
+  Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);
 
   //---------------- Dtrace support --------------------
   void make_dtrace_method_entry_exit(ciMethod* method, bool is_entry);
@@ -802,7 +802,8 @@ class GraphKit : public Phase {
                           Node* parm0 = NULL, Node* parm1 = NULL,
                           Node* parm2 = NULL, Node* parm3 = NULL,
                           Node* parm4 = NULL, Node* parm5 = NULL,
-                          Node* parm6 = NULL, Node* parm7 = NULL);
+                          Node* parm6 = NULL, Node* parm7 = NULL,
+                          Node* parm8 = NULL);
 
   Node* sign_extend_byte(Node* in);
   Node* sign_extend_short(Node* in);

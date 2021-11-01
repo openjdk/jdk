@@ -104,7 +104,7 @@ inline HeapWord* HeapRegion::par_allocate(size_t word_size) {
 inline HeapWord* HeapRegion::par_allocate(size_t min_word_size,
                                           size_t desired_word_size,
                                           size_t* actual_size) {
-  MutexLocker x(&_par_alloc_lock);
+  MutexLocker x(&_par_alloc_lock, Mutex::_no_safepoint_check_flag);
   return allocate(min_word_size, desired_word_size, actual_size);
 }
 
@@ -327,7 +327,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
     // If obj is not an objArray and mr contains the start of the
     // obj, then this could be an imprecise mark, and we need to
     // process the entire object.
-    int size = obj->oop_iterate_size(cl);
+    size_t size = obj->oop_iterate_size(cl);
     // We have scanned to the end of the object, but since there can be no objects
     // after this humongous object in the region, we can return the end of the
     // region if it is greater.

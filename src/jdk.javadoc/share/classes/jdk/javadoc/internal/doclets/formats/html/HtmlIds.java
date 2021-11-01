@@ -89,6 +89,8 @@ public class HtmlIds {
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
     static final HtmlId MODULES = HtmlId.of("modules-summary");
     static final HtmlId MODULE_DESCRIPTION = HtmlId.of("module-description");
+    static final HtmlId NAVBAR_SUB_LIST = HtmlId.of("navbar-sub-list");
+    static final HtmlId NAVBAR_TOGGLE_BUTTON = HtmlId.of("navbar-toggle-button");
     static final HtmlId NAVBAR_TOP = HtmlId.of("navbar-top");
     static final HtmlId NAVBAR_TOP_FIRSTROW = HtmlId.of("navbar-top-firstrow");
     static final HtmlId NESTED_CLASS_SUMMARY = HtmlId.of("nested-class-summary");
@@ -415,8 +417,7 @@ public class HtmlIds {
             case INTERFACE -> "interface";
             case CLASS -> "class";
             case ENUM -> "enum-class";
-            case EXCEPTION -> "exception";
-            case ERROR -> "error";
+            case EXCEPTION_CLASS -> "exception-class";
             case ANNOTATION_TYPE -> "annotation-interface";
             case FIELD -> "field";
             case METHOD -> "method";

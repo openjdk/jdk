@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,8 @@ class CAccessible extends CFRetainedResource implements Accessible {
     private static native void menuItemSelected(long ptr);
     private static native void treeNodeExpanded(long ptr);
     private static native void treeNodeCollapsed(long ptr);
+    private static native void selectedCellsChanged(long ptr);
+    private static native void tableContentCacheClear(long ptr);
 
     private Accessible accessible;
 
@@ -115,19 +117,39 @@ class CAccessible extends CFRetainedResource implements Accessible {
             if ( ptr != 0 ) {
                 Object newValue = e.getNewValue();
                 Object oldValue = e.getOldValue();
-                if (name.compareTo(ACCESSIBLE_CARET_PROPERTY) == 0) {
+                if (name.equals(ACCESSIBLE_CARET_PROPERTY)) {
                     selectedTextChanged(ptr);
-                } else if (name.compareTo(ACCESSIBLE_TEXT_PROPERTY) == 0) {
+                } else if (name.equals(ACCESSIBLE_TEXT_PROPERTY)) {
                     valueChanged(ptr);
-                } else if (name.compareTo(ACCESSIBLE_SELECTION_PROPERTY) == 0) {
+                } else if (name.equals(ACCESSIBLE_SELECTION_PROPERTY)) {
                     selectionChanged(ptr);
-                } else if (name.compareTo(ACCESSIBLE_TABLE_MODEL_CHANGED) == 0) {
+                } else if (name.equals(ACCESSIBLE_TABLE_MODEL_CHANGED)) {
                     valueChanged(ptr);
-                } else if (name.compareTo(ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY) == 0 ) {
+                    if (CAccessible.getSwingAccessible(CAccessible.this) != null) {
+                        Accessible a = CAccessible.getSwingAccessible(CAccessible.this);
+                        AccessibleContext ac = a.getAccessibleContext();
+                        if ((ac != null) && (ac.getAccessibleRole() == AccessibleRole.TABLE)) {
+                            tableContentCacheClear(ptr);
+                        }
+                    }
+                } else if (name.equals(ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY)) {
                     if (newValue instanceof AccessibleContext) {
                         activeDescendant = (AccessibleContext)newValue;
+                        if (newValue instanceof Accessible) {
+                            Accessible a = (Accessible)newValue;
+                            AccessibleContext ac = a.getAccessibleContext();
+                            if (ac !=  null) {
+                                Accessible p = ac.getAccessibleParent();
+                                if (p != null) {
+                                    AccessibleContext pac = p.getAccessibleContext();
+                                    if ((pac != null) && (pac.getAccessibleRole() == AccessibleRole.TABLE)) {
+                                        selectedCellsChanged(ptr);
+                                    }
+                                }
+                            }
+                        }
                     }
-                } else if (name.compareTo(ACCESSIBLE_STATE_PROPERTY) == 0) {
+                } else if (name.equals(ACCESSIBLE_STATE_PROPERTY)) {
                     AccessibleContext thisAC = accessible.getAccessibleContext();
                     AccessibleRole thisRole = thisAC.getAccessibleRole();
                     Accessible parentAccessible = thisAC.getAccessibleParent();
@@ -167,12 +189,12 @@ class CAccessible extends CFRetainedResource implements Accessible {
                     if (thisRole == AccessibleRole.CHECK_BOX) {
                         valueChanged(ptr);
                     }
-                } else if (name.compareTo(ACCESSIBLE_NAME_PROPERTY) == 0) {
+                } else if (name.equals(ACCESSIBLE_NAME_PROPERTY)) {
                     //for now trigger only for JTabbedPane.
                     if (e.getSource() instanceof JTabbedPane) {
                         titleChanged(ptr);
                     }
-                } else if (name.compareTo(ACCESSIBLE_VALUE_PROPERTY) == 0) {
+                } else if (name.equals(ACCESSIBLE_VALUE_PROPERTY)) {
                     AccessibleRole thisRole = accessible.getAccessibleContext()
                                                         .getAccessibleRole();
                     if (thisRole == AccessibleRole.SLIDER ||

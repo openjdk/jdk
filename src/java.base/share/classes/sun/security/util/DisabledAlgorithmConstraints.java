@@ -39,7 +39,6 @@ import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -305,10 +304,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     /**
      * Key and Certificate Constraints
      *
-     * The complete disabling of an algorithm is not handled by Constraints or
-     * Constraint classes.  That is addressed with
-     *   permit(Set<CryptoPrimitive>, String, AlgorithmParameters)
-     *
      * When passing a Key to permit(), the boolean return values follow the
      * same as the interface class AlgorithmConstraints.permit().  This is to
      * maintain compatibility:
@@ -319,7 +314,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * will be thrown on a failure to better identify why the operation was
      * disallowed.
      */
-
     private static class Constraints {
         private Map<String, List<Constraint>> constraintsMap = new HashMap<>();
 
@@ -342,9 +336,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // Check if constraint is a complete disabling of an
                 // algorithm or has conditions.
                 int space = constraintEntry.indexOf(' ');
-                String algorithm = AlgorithmDecomposer.hashName(
-                        ((space > 0 ? constraintEntry.substring(0, space) :
-                                constraintEntry)));
+                String algorithm = AlgorithmDecomposer.decomposeDigestName(
+                        space > 0 ? constraintEntry.substring(0, space) :
+                                constraintEntry);
                 List<Constraint> constraintList =
                         constraintsMap.getOrDefault(
                                 algorithm.toUpperCase(Locale.ENGLISH),
@@ -498,7 +492,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             // Get all signature algorithms to check for constraints
             Set<String> algorithms = new HashSet<>();
             if (algorithm != null) {
-                algorithms.addAll(AlgorithmDecomposer.decomposeOneHash(algorithm));
+                algorithms.addAll(AlgorithmDecomposer.decomposeName(algorithm));
                 algorithms.add(algorithm);
             }
 
@@ -688,8 +682,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      */
     private static class DenyAfterConstraint extends Constraint {
         private Date denyAfterDate;
-        private static final SimpleDateFormat dateFormat =
-                new SimpleDateFormat("EEE, MMM d HH:mm:ss z yyyy");
 
         DenyAfterConstraint(String algo, int year, int month, int day) {
             Calendar c;
@@ -723,7 +715,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             denyAfterDate = c.getTime();
             if (debug != null) {
                 debug.println("DenyAfterConstraint date set to: " +
-                        dateFormat.format(denyAfterDate));
+                        denyAfterDate);
             }
         }
 
@@ -754,8 +746,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 throw new CertPathValidatorException(
                         "denyAfter constraint check failed: " + algorithm +
                         " used with Constraint date: " +
-                        dateFormat.format(denyAfterDate) + "; params date: " +
-                        dateFormat.format(currentDate) + cp.extendedExceptionMsg(),
+                        denyAfterDate + "; params date: " +
+                        currentDate + cp.extendedExceptionMsg(),
                         null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
             }
         }
