@@ -165,10 +165,11 @@ public class KrbAsReq extends KrbKdcReq {
         asReqMessg = new ASReq(
                          paData,
                          kdc_req_body);
+        obuf = asReqMessg.asn1Encode();
     }
 
-    @Override
-    public KDCReq getMessage() {
+    // Used by KrbAsRep to validate AS-REP
+    ASReq getMessage() {
         return asReqMessg;
     }
 }

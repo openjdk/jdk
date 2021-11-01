@@ -48,7 +48,7 @@ public class KrbTgsRep extends KrbKdcRep {
     KrbTgsRep(byte[] ibuf, KrbTgsReq tgsReq)
         throws KrbException, IOException {
         DerValue ref = new DerValue(ibuf);
-        KDCReq req = tgsReq.getMessage();
+        TGSReq req = tgsReq.getMessage();
         TGSRep rep = null;
         try {
             rep = new TGSRep(ref);

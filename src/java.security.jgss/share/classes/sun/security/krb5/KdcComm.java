@@ -193,7 +193,7 @@ public final class KdcComm {
         int udpPrefLimit = getRealmSpecificValue(
                 realm, "udp_preference_limit", defaultUdpPrefLimit);
 
-        byte[] obuf = req.getMessage().asn1Encode();
+        byte[] obuf = req.encoding();
         boolean useTCP = (udpPrefLimit > 0 &&
              (obuf != null && obuf.length > udpPrefLimit));
 
@@ -344,7 +344,7 @@ public final class KdcComm {
                 port = tempPort;
         }
 
-        byte[] obuf = req.getMessage().asn1Encode();
+        byte[] obuf = req.encoding();
         if (DEBUG) {
             System.out.println(">>> KrbKdcReq send: kdc=" + kdc
                                + (useTCP ? " TCP:":" UDP:")

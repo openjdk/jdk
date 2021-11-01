@@ -155,7 +155,7 @@ class KrbAsRep extends KrbKdcRep {
         EncASRepPart enc_part = new EncASRepPart(encoding);
         rep.encKDCRepPart = enc_part;
 
-        KDCReq req = asReq.getMessage();
+        ASReq req = asReq.getMessage();
         check(true, req, rep, dkey);
 
         PrincipalName clientAlias = cname;

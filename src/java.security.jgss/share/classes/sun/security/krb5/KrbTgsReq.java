@@ -54,8 +54,6 @@ public class KrbTgsReq extends KrbKdcReq {
     private boolean useSubkey = false;
     EncryptionKey tgsReqKey;
 
-    private byte[] ibuf;
-
     // Used in CredentialsUtil
     public KrbTgsReq(KDCOptions options, Credentials asCreds,
             PrincipalName cname, PrincipalName clientAlias,
@@ -189,6 +187,7 @@ public class KrbTgsReq extends KrbKdcReq {
                 additionalCreds,
                 subKey,
                 extraPAs);
+        obuf = tgsReqMessg.asn1Encode();
 
         // XXX We need to revisit this to see if can't move it
         // up such that FORWARDED flag set in the options
@@ -205,38 +204,15 @@ public class KrbTgsReq extends KrbKdcReq {
     }
 
     /**
-     * Sends a TGS request to the realm of the target.
-     * @throws KrbException
-     * @throws IOException
-     */
-    public void send() throws IOException, KrbException {
-        String realmStr = null;
-        if (servName != null)
-            realmStr = servName.getRealmString();
-        KdcComm comm = new KdcComm(realmStr);
-        ibuf = comm.send(this);
-    }
-
-    @Override
-    public KDCReq getMessage() {
-        return tgsReqMessg;
-    }
-
-    public KrbTgsRep getReply()
-        throws KrbException, IOException {
-        return new KrbTgsRep(ibuf, this);
-    }
-
-    /**
      * Sends the request, waits for a reply, and returns the Credentials.
      * Used in Credentials, KrbCred, and internal/CredentialsUtil.
      */
     public Credentials sendAndGetCreds() throws IOException, KrbException {
-        KrbTgsRep tgs_rep = null;
-        String kdc = null;
-        send();
-        tgs_rep = getReply();
-        return tgs_rep.getCreds();
+        String realmStr = servName != null
+                ? servName.getRealmString()
+                : null;
+        KdcComm comm = new KdcComm(realmStr);
+        return new KrbTgsRep(comm.send(this), this).getCreds();
     }
 
     KerberosTime getCtime() {
@@ -346,6 +322,10 @@ public class KrbTgsReq extends KrbKdcReq {
             pa = new PAData[] {tgsPAData};
         }
         return new TGSReq(pa, reqBody);
+    }
+
+    TGSReq getMessage() {
+        return tgsReqMessg;
     }
 
     Credentials getAdditionalCreds() {
