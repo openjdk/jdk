@@ -68,13 +68,7 @@ public class ModuleDescriptorHashCodeTest {
             OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(processBuilder);
             System.out.println("Process " + outputAnalyzer.pid() + " completed in "
                     + (System.currentTimeMillis() - start) + " milli seconds");
-            try {
-                outputAnalyzer.shouldHaveExitValue(0);
-            } catch (RuntimeException e) {
-                // print out diagnostics from the launched process, that failed, for easy debugging
-                System.err.println("Diagnostic summary for failed process " + outputAnalyzer.pid() + ":");
-                outputAnalyzer.reportDiagnosticSummary();
-            }
+            outputAnalyzer.shouldHaveExitValue(0);
         }
     }
 
