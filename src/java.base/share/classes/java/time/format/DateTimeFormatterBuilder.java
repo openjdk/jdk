@@ -719,16 +719,6 @@ public final class DateTimeFormatterBuilder {
         return this;
     }
 
-    private DateTimeFormatterBuilder appendNanos(int minWidth, int maxWidth, boolean decimalPoint) {
-        if (minWidth == maxWidth && decimalPoint == false) {
-            // adjacent parsing
-            appendValue(new NanosPrinterParser(minWidth, maxWidth, decimalPoint));
-        } else {
-            appendInternal(new NanosPrinterParser(minWidth, maxWidth, decimalPoint));
-        }
-        return this;
-    }
-
     //-----------------------------------------------------------------------
     /**
      * Appends the text of a date-time field to the formatter using the full
