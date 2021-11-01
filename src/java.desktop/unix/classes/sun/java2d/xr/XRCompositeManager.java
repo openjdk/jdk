@@ -174,10 +174,10 @@ public class XRCompositeManager {
             validatedComp = comp;
         }
 
-        if (sg2d != null && (eargb != sg2d.eargb  || updatePaint)) {
+        if (sg2d != null && (eargb != sg2d.eargb || updatePaint)) {
             eargb = sg2d.eargb;
             validatedPixel = PixelConverter.ArgbPre.instance
-                                           .rgbToPixel(sg2d.eargb, null);
+                                           .rgbToPixel(eargb, null);
             setForeground(validatedPixel);
         }
 
