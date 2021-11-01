@@ -153,20 +153,17 @@ public class LayoutPath {
     }
 
     public VarHandle dereferenceHandle() {
-        if (!(layout instanceof ValueLayout)) {
+        if (!(layout instanceof ValueLayout valueLayout)) {
             throw new IllegalArgumentException("Path does not select a value layout");
         }
         checkAlignment(this);
-
-        Class<?> carrier = ((ValueLayout)layout).carrier();
 
         List<Class<?>> expectedCoordinates = new ArrayList<>();
         Deque<Integer> perms = new ArrayDeque<>();
         perms.addFirst(0);
         expectedCoordinates.add(MemorySegment.class);
 
-        VarHandle handle = Utils.makeMemoryAccessVarHandle(carrier, true, layout.byteAlignment() - 1,
-                ((ValueLayout)layout).order());
+        VarHandle handle = Utils.makeMemoryAccessVarHandle(valueLayout, true);
 
         for (int i = 0 ; i < strides.length ; i++) {
             expectedCoordinates.add(long.class);

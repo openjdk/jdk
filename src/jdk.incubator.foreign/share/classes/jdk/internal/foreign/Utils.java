@@ -35,7 +35,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
@@ -104,34 +105,43 @@ public final class Utils {
         }
     }
 
-    public static VarHandle makeMemoryAccessVarHandle(Class<?> carrier, boolean skipAlignmentCheck, long alignmentMask, ByteOrder order) {
-        Class<?> baseCarrier = carrier;
-        if (carrier == MemoryAddress.class) {
+    public static VarHandle makeMemoryAccessVarHandle(ValueLayout layout, boolean skipAlignmentCheck) {
+        class VarHandleCache {
+            private static final Map<ValueLayout, VarHandle> handleMap = new ConcurrentHashMap<>();
+            private static final Map<ValueLayout, VarHandle> handleMapNoAlignCheck = new ConcurrentHashMap<>();
+
+            static VarHandle put(ValueLayout layout, VarHandle handle, boolean skipAlignmentCheck) {
+                VarHandle prev = (skipAlignmentCheck ? handleMapNoAlignCheck : handleMap).putIfAbsent(layout, handle);
+                return prev != null ? prev : handle;
+            }
+        }
+        Class<?> baseCarrier = layout.carrier();
+        if (layout.carrier() == MemoryAddress.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
                 case 8 -> long.class;
                 case 4 -> int.class;
                 default -> throw new UnsupportedOperationException("Unsupported address layout");
             };
-        } else if (carrier == boolean.class) {
+        } else if (layout.carrier() == boolean.class) {
             baseCarrier = byte.class;
         }
 
-        VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memoryAccessVarHandle(baseCarrier, skipAlignmentCheck, alignmentMask, order);
+        VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memoryAccessVarHandle(baseCarrier, skipAlignmentCheck,
+                layout.byteAlignment() - 1, layout.order());
 
         // This adaptation is required, otherwise the memory access var handle will have type MemorySegmentProxy,
         // and not MemorySegment (which the user expects), which causes performance issues with asType() adaptations.
         handle = SHOULD_ADAPT_HANDLES
             ? MemoryHandles.filterCoordinates(handle, 0, SEGMENT_FILTER)
             : handle;
-        if (carrier == boolean.class) {
-            return MemoryHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
-        } else if (carrier == MemoryAddress.class) {
-            return MemoryHandles.filterValue(handle,
+        if (layout.carrier() == boolean.class) {
+            handle = MemoryHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
+        } else if (layout.carrier() == MemoryAddress.class) {
+            handle = MemoryHandles.filterValue(handle,
                     MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemoryAddress.class)),
                     MethodHandles.explicitCastArguments(LONG_TO_ADDRESS, MethodType.methodType(MemoryAddress.class, baseCarrier)));
-        } else {
-            return handle;
         }
+        return VarHandleCache.put(layout, handle, skipAlignmentCheck);
     }
 
     private static MemorySegmentProxy filterSegment(MemorySegment segment) {
