@@ -145,7 +145,7 @@ Node* ConvD2LNode::Identity(PhaseGVN* phase) {
 // If converting to an int type, skip any rounding nodes
 Node *ConvD2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(1)->Opcode() == Op_RoundDouble) {
-    set_req(1,in(1)->in(1));
+    set_req(1, in(1)->in(1));
     return this;
   }
   return NULL;
