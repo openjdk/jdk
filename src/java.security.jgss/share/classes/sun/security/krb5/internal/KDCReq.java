@@ -63,6 +63,8 @@ public class KDCReq {
     private int pvno;
     private int msgType;
 
+    private byte[] encoding;
+
     public KDCReq(PAData[] new_pAData, KDCReqBody new_reqBody,
             int req_type) throws IOException {
         pvno = Krb5.PVNO;
@@ -163,6 +165,13 @@ public class KDCReq {
      *
      */
     public byte[] asn1Encode() throws Asn1Exception, IOException {
+        if (encoding == null) {
+            encoding = asn1EncodeInternal();
+        }
+        return encoding;
+    }
+
+    private byte[] asn1EncodeInternal() throws Asn1Exception, IOException {
         DerOutputStream temp, bytes, out;
         temp = new DerOutputStream();
         temp.putInteger(BigInteger.valueOf(pvno));
@@ -191,9 +200,5 @@ public class KDCReq {
         out.write(DerValue.createTag(DerValue.TAG_APPLICATION,
                 true, (byte) msgType), bytes);
         return out.toByteArray();
-    }
-
-    public byte[] asn1EncodeReqBody() throws Asn1Exception, IOException {
-        return reqBody.asn1Encode(msgType);
     }
 }

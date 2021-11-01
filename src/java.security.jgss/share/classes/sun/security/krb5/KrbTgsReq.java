@@ -50,18 +50,17 @@ public class KrbTgsReq extends KrbKdcReq {
     private PrincipalName serverAlias;
     private TGSReq tgsReqMessg;
     private KerberosTime ctime;
-    private Credentials second = null;
+    private Credentials additionalCreds = null;
     private boolean useSubkey = false;
     EncryptionKey tgsReqKey;
 
-    private byte[] obuf;
     private byte[] ibuf;
 
     // Used in CredentialsUtil
     public KrbTgsReq(KDCOptions options, Credentials asCreds,
             PrincipalName cname, PrincipalName clientAlias,
             PrincipalName sname, PrincipalName serverAlias,
-            Credentials second, PAData[] extraPAs)
+            Credentials additionalCreds, PAData[] extraPAs)
             throws KrbException, IOException {
         this(options,
                 asCreds,
@@ -75,7 +74,7 @@ public class KrbTgsReq extends KrbKdcReq {
                 null, // int[] eTypes
                 null, // HostAddresses addresses
                 null, // AuthorizationData authorizationData
-                second,
+                additionalCreds,
                 null, // EncryptionKey subKey
                 extraPAs);
     }
@@ -92,11 +91,11 @@ public class KrbTgsReq extends KrbKdcReq {
             int[] eTypes,
             HostAddresses addresses,
             AuthorizationData authorizationData,
-            Credentials second,
+            Credentials additionalCreds,
             EncryptionKey subKey) throws KrbException, IOException {
         this(options, asCreds, asCreds.getClient(), asCreds.getClientAlias(),
                 sname, serverAlias, from, till, rtime, eTypes,
-                addresses, authorizationData, second, subKey, null);
+                addresses, authorizationData, additionalCreds, subKey, null);
     }
 
     private KrbTgsReq(
@@ -112,7 +111,7 @@ public class KrbTgsReq extends KrbKdcReq {
             int[] eTypes,
             HostAddresses addresses,
             AuthorizationData authorizationData,
-            Credentials second,
+            Credentials additionalCreds,
             EncryptionKey subKey,
             PAData[] extraPAs) throws KrbException, IOException {
 
@@ -163,15 +162,15 @@ public class KrbTgsReq extends KrbKdcReq {
             if (rtime != null) rtime = null;
         }
         if (options.get(KDCOptions.ENC_TKT_IN_SKEY) || options.get(KDCOptions.CNAME_IN_ADDL_TKT)) {
-            if (second == null)
+            if (additionalCreds == null)
                 throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
             // in TGS_REQ there could be more than one additional
             // tickets,  but in file-based credential cache,
             // there is only one additional ticket field.
-            this.second = second;
+            this.additionalCreds = additionalCreds;
         } else {
-            if (second != null)
-                second = null;
+            if (additionalCreds != null)
+                additionalCreds = null;
         }
 
         tgsReqMessg = createRequest(
@@ -187,10 +186,9 @@ public class KrbTgsReq extends KrbKdcReq {
                 eTypes,
                 addresses,
                 authorizationData,
-                second,
+                additionalCreds,
                 subKey,
                 extraPAs);
-        obuf = tgsReqMessg.asn1Encode();
 
         // XXX We need to revisit this to see if can't move it
         // up such that FORWARDED flag set in the options
@@ -220,8 +218,8 @@ public class KrbTgsReq extends KrbKdcReq {
     }
 
     @Override
-    public byte[] encoding() {
-        return obuf;
+    public KDCReq getMessage() {
+        return tgsReqMessg;
     }
 
     public KrbTgsRep getReply()
@@ -258,7 +256,7 @@ public class KrbTgsReq extends KrbKdcReq {
                          int[] eTypes,
                          HostAddresses addresses,
                          AuthorizationData authorizationData,
-                         Credentials second,
+                         Credentials additionalCreds,
                          EncryptionKey subKey,
                          PAData[] extraPAs)
         throws IOException, KrbException, UnknownHostException {
@@ -307,8 +305,8 @@ public class KrbTgsReq extends KrbKdcReq {
                     KeyUsage.KU_TGS_REQ_AUTH_DATA_SESSKEY);
         }
 
-        Ticket[] additionalTickets = second == null ? null
-                : new Ticket[] { second.getTicket()};
+        Ticket[] additionalTickets = additionalCreds == null ? null
+                : new Ticket[] { additionalCreds.getTicket() };
         KDCReqBody reqBody = new KDCReqBody(
                                             kdc_options,
                                             cname,
@@ -350,12 +348,8 @@ public class KrbTgsReq extends KrbKdcReq {
         return new TGSReq(pa, reqBody);
     }
 
-    TGSReq getMessage() {
-        return tgsReqMessg;
-    }
-
-    Credentials getSecondCredentials() {
-        return second;
+    Credentials getAdditionalCreds() {
+        return additionalCreds;
     }
 
     PrincipalName getClientAlias() {

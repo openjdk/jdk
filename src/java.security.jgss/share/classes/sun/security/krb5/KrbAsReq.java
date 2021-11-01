@@ -44,7 +44,6 @@ import java.util.Arrays;
  */
 public class KrbAsReq extends KrbKdcReq {
     private ASReq asReqMessg;
-    private byte[] obuf;
 
     private boolean DEBUG = Krb5.DEBUG;
 
@@ -166,16 +165,10 @@ public class KrbAsReq extends KrbKdcReq {
         asReqMessg = new ASReq(
                          paData,
                          kdc_req_body);
-        obuf = asReqMessg.asn1Encode();
     }
 
     @Override
-    public byte[] encoding() {
-        return obuf;
-    }
-
-    // Used by KrbAsRep to validate AS-REP
-    ASReq getMessage() {
+    public KDCReq getMessage() {
         return asReqMessg;
     }
 }

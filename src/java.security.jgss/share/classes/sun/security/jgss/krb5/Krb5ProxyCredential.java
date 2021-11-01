@@ -49,23 +49,23 @@ public class Krb5ProxyCredential
     implements Krb5CredElement {
 
     public final Krb5InitCredential self;   // the middle server
-    private final Krb5NameElement client;     // the client
+    private final Krb5NameElement user;     // the user
 
-    // The creds with cname=client and sname=self. The ticket inside can
+    // The creds with cname=user and sname=self. The ticket inside can
     // be either a normal service ticket or an S4U2self ticket.
-    public final Credentials cred;
+    public final Credentials userCreds;
 
-    Krb5ProxyCredential(Krb5InitCredential self, Krb5NameElement client,
-            Credentials cred) {
+    Krb5ProxyCredential(Krb5InitCredential self, Krb5NameElement user,
+            Credentials userCreds) {
         this.self = self;
-        this.cred = cred;
-        this.client = client;
+        this.userCreds = userCreds;
+        this.user = user;
     }
 
-    // The client name behind the proxy
+    // The user name behind the proxy
     @Override
     public final Krb5NameElement getName() throws GSSException {
-        return client;
+        return user;
     }
 
     @Override

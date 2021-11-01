@@ -25,7 +25,9 @@
 
 package sun.security.krb5;
 
+import sun.security.krb5.internal.KDCReq;
+
 abstract class KrbKdcReq {
 
-    public abstract byte[] encoding();
+    public abstract KDCReq getMessage();
 }

@@ -43,12 +43,12 @@ import java.io.IOException;
 public class KrbTgsRep extends KrbKdcRep {
     private TGSRep rep;
     private Credentials creds;
-    private Credentials second;
+    private Credentials additionalCreds;
 
     KrbTgsRep(byte[] ibuf, KrbTgsReq tgsReq)
         throws KrbException, IOException {
         DerValue ref = new DerValue(ibuf);
-        TGSReq req = tgsReq.getMessage();
+        KDCReq req = tgsReq.getMessage();
         TGSRep rep = null;
         try {
             rep = new TGSRep(ref);
@@ -115,7 +115,7 @@ public class KrbTgsRep extends KrbKdcRep {
                                 enc_part.caddr
                                 );
         this.rep = rep;
-        this.second = tgsReq.getSecondCredentials();
+        this.additionalCreds = tgsReq.getAdditionalCreds();
     }
 
     /**
@@ -127,7 +127,7 @@ public class KrbTgsRep extends KrbKdcRep {
 
     sun.security.krb5.internal.ccache.Credentials setCredentials() {
         return new sun.security.krb5.internal.ccache.Credentials(
-                rep, second == null ? null : second.ticket);
+                rep, additionalCreds == null ? null : additionalCreds.ticket);
     }
 
     private static boolean isReferralSname(PrincipalName sname) {

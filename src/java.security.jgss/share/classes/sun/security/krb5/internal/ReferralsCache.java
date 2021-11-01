@@ -112,10 +112,10 @@ final class ReferralsCache {
      * REALM-1.COM -> REALM-2.COM referral entry is removed from the cache.
      */
     static synchronized void put(PrincipalName cname, PrincipalName service,
-            PrincipalName user, Credentials second, String fromRealm,
+            PrincipalName user, Credentials additionalCreds, String fromRealm,
             String toRealm, Credentials creds) {
-        Ticket userSvcTicket = (second != null ?
-                second.getTicket() : null);
+        Ticket userSvcTicket = (additionalCreds != null ?
+                additionalCreds.getTicket() : null);
         ReferralCacheKey k = new ReferralCacheKey(cname, service,
                 user, userSvcTicket);
         pruneExpired(k);
@@ -152,9 +152,9 @@ final class ReferralsCache {
      */
     static synchronized ReferralCacheEntry get(PrincipalName cname,
             PrincipalName service, PrincipalName user,
-            Credentials second, String fromRealm) {
-        Ticket userSvcTicket = (second != null ?
-                second.getTicket() : null);
+            Credentials additionalCreds, String fromRealm) {
+        Ticket userSvcTicket = (additionalCreds != null ?
+                additionalCreds.getTicket() : null);
         ReferralCacheKey k = new ReferralCacheKey(cname, service,
                 user, userSvcTicket);
         pruneExpired(k);

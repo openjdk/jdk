@@ -622,13 +622,13 @@ class Krb5Context implements GSSContextSpi {
                                            "No TGT available");
                     }
                     myName = (Krb5NameElement) myCred.getName();
-                    final Krb5ProxyCredential second;
+                    final Krb5ProxyCredential proxyCreds;
                     if (myCred instanceof Krb5InitCredential) {
-                        second = null;
+                        proxyCreds = null;
                         tgt = ((Krb5InitCredential) myCred).getKrb5Credentials();
                     } else {
-                        second = (Krb5ProxyCredential) myCred;
-                        tgt = second.self.getKrb5Credentials();
+                        proxyCreds = (Krb5ProxyCredential) myCred;
+                        tgt = proxyCreds.self.getKrb5Credentials();
                     }
 
                     checkPermission(peerName.getKrb5PrincipalName().getName(),
@@ -660,9 +660,9 @@ class Krb5Context implements GSSContextSpi {
                                         GSSCaller.CALLER_UNKNOWN,
                                         // since it's useSubjectCredsOnly here,
                                         // don't worry about the null
-                                        second == null ?
+                                        proxyCreds == null ?
                                             myName.getKrb5PrincipalName().getName():
-                                            second.getName().getKrb5PrincipalName().getName(),
+                                            proxyCreds.getName().getKrb5PrincipalName().getName(),
                                         peerName.getKrb5PrincipalName().getName(),
                                         acc);
                                 }});
@@ -694,15 +694,15 @@ class Krb5Context implements GSSContextSpi {
                                                "the subject");
                         }
                         // Get Service ticket using the Kerberos protocols
-                        if (second == null) {
+                        if (proxyCreds == null) {
                             serviceCreds = Credentials.acquireServiceCreds(
                                      peerName.getKrb5PrincipalName().getName(),
                                      tgt);
                         } else {
                             serviceCreds = Credentials.acquireS4U2proxyCreds(
                                     peerName.getKrb5PrincipalName().getName(),
-                                    second.cred,
-                                    second.getName().getKrb5PrincipalName(),
+                                    proxyCreds.userCreds,
+                                    proxyCreds.getName().getKrb5PrincipalName(),
                                     tgt);
                         }
                         if (GSSUtil.useSubjectCredsOnly(caller)) {

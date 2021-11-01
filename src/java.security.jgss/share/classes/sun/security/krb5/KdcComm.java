@@ -193,7 +193,7 @@ public final class KdcComm {
         int udpPrefLimit = getRealmSpecificValue(
                 realm, "udp_preference_limit", defaultUdpPrefLimit);
 
-        byte[] obuf = req.encoding();
+        byte[] obuf = req.getMessage().asn1Encode();
         boolean useTCP = (udpPrefLimit > 0 &&
              (obuf != null && obuf.length > udpPrefLimit));
 
@@ -266,8 +266,8 @@ public final class KdcComm {
                     throw new KrbException("A service is not available");
                 } else if (ke.getErrorCode() == Krb5.KDC_ERR_BADOPTION) {
                     if (req instanceof KrbTgsReq tgsReq) {
-                        Credentials t = tgsReq.getSecondCredentials();
-                        if (t != null && !t.isForwardable()) {
+                        Credentials extra = tgsReq.getAdditionalCreds();
+                        if (extra != null && extra.isS4U2self() && !extra.isForwardable()) {
                             throw new KrbException("S4U2Proxy with non-forwardable ticket");
                         }
                     }
@@ -344,7 +344,7 @@ public final class KdcComm {
                 port = tempPort;
         }
 
-        byte[] obuf = req.encoding();
+        byte[] obuf = req.getMessage().asn1Encode();
         if (DEBUG) {
             System.out.println(">>> KrbKdcReq send: kdc=" + kdc
                                + (useTCP ? " TCP:":" UDP:")
