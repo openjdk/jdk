@@ -81,7 +81,7 @@ ShenandoahOldGC::ShenandoahOldGC(ShenandoahGeneration* generation, ShenandoahSha
   _coalesce_and_fill_region_array = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, ShenandoahHeap::heap()->num_regions(), mtGC);
 }
 
-void ShenandoahOldGC::entry_old_evacuations() {
+void ShenandoahOldGC::start_old_evacuations() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
   old_heuristics->start_old_evacuations();
@@ -191,9 +191,6 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
     return false;
   }
 
-  // Prepare for old evacuations (actual evacuations will happen on subsequent young collects).
-  entry_old_evacuations();
-
   assert(!heap->is_concurrent_strong_root_in_progress(), "No evacuations during old gc.");
 
   vmop_entry_final_roots();
@@ -214,6 +211,10 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
       SpinPause();
     }
   }
+  // Prepare for old evacuations (actual evacuations will happen on subsequent young collects).  This cannot
+  // begin until after we have completed coalesce-and-fill.
+  start_old_evacuations();
+
   return true;
 }
 

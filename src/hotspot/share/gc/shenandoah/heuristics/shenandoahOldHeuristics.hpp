@@ -92,6 +92,9 @@ public:
   // How many old-collection candidates have not yet been processed?
   uint unprocessed_old_collection_candidates();
 
+  // How many old or hidden collection candidates have not yet been processed?
+  uint unprocessed_old_or_hidden_collection_candidates();
+
   // Return the next old-collection candidate in order of decreasing amounts of garbage.  (We process most-garbage regions
   // first.)  This does not consume the candidate.  If the candidate is selected for inclusion in a collection set, then
   // the candidate is consumed by invoking consume_old_collection_candidate().

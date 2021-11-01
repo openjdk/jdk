@@ -433,7 +433,7 @@ bool ShenandoahHeapRegion::oop_fill_and_coalesce() {
 
   assert(!is_humongous(), "No need to fill or coalesce humongous regions");
   if (!is_active()) {
-    finish_coalesce_and_fill();
+    end_preemptible_coalesce_and_fill();
     return true;
   }
 
@@ -473,7 +473,7 @@ bool ShenandoahHeapRegion::oop_fill_and_coalesce() {
     }
   }
   // Mark that this region has been coalesced and filled
-  finish_coalesce_and_fill();
+  end_preemptible_coalesce_and_fill();
   return true;
 }
 

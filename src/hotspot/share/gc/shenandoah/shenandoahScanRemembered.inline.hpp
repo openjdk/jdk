@@ -504,7 +504,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahMarkingContext* ctx;
 
-  if (heap->doing_mixed_evacuations()) {
+  if (heap->doing_mixed_evacuations() || heap->is_concurrent_prep_for_mixed_evacuation_in_progress()) {
     ctx = heap->marking_context();
   } else {
     ctx = nullptr;

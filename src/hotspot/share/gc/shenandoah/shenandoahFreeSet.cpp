@@ -178,7 +178,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // old-gen concurrent mark (i.e. this region is allocated following the start of old-gen concurrent mark but before
     // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
     // coalesce-and-fill processing.  This code is only necessary if req.affiliation() is OLD, but harmless if not.
-    r->finish_coalesce_and_fill();
+    r->end_preemptible_coalesce_and_fill();
     ctx->capture_top_at_mark_start(r);
 
     assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");

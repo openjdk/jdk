@@ -372,11 +372,11 @@ public:
 
   void recycle();
 
-  inline void reset_coalesce_and_fill_boundary() {
+  inline void begin_preemptible_coalesce_and_fill() {
     _coalesce_and_fill_boundary = _bottom;
   }
 
-  inline void finish_coalesce_and_fill() {
+  inline void end_preemptible_coalesce_and_fill() {
     _coalesce_and_fill_boundary = _end;
   }
 
@@ -386,10 +386,6 @@ public:
 
   inline HeapWord* resume_coalesce_and_fill() {
     return _coalesce_and_fill_boundary;
-  }
-
-  inline bool coalesce_and_fill_is_done() {
-    return _coalesce_and_fill_boundary >= _top;
   }
 
   // Coalesce contiguous spans of garbage objects by filling header and reregistering start locations with remembered set.
