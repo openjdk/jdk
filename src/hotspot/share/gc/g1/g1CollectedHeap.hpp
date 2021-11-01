@@ -620,7 +620,7 @@ public:
 
   // Verify that the G1RegionAttr remset tracking corresponds to actual remset tracking
   // for all regions.
-  void verify_region_attr_remset_update() PRODUCT_RETURN;
+  void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
 
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 

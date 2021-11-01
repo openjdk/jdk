@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,69 @@
 
 package boot;
 
+import static java.lang.System.out;
+
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 public class GetCallerClass {
-    @jdk.internal.reflect.CallerSensitive
-    public ClassLoader getCallerLoader() {
-        Class<?> c = jdk.internal.reflect.Reflection.getCallerClass();
-        return c.getClassLoader();
+
+    public Class<?> missingCallerSensitiveAnnotation() {
+        return jdk.internal.reflect.Reflection.getCallerClass();
     }
 
-    public ClassLoader missingCallerSensitiveAnnotation() {
-        Class<?> c = jdk.internal.reflect.Reflection.getCallerClass();
-        return c.getClassLoader();
+    @jdk.internal.reflect.CallerSensitive
+    public Class<?> getCallerClass() {
+        var caller = jdk.internal.reflect.Reflection.getCallerClass();
+        out.println("caller: " + caller);
+        out.println(StackWalker.getInstance(StackWalker.Option.SHOW_HIDDEN_FRAMES).walk(toStackTrace()));
+        return caller;
+    }
+
+    private Class<?> getCallerClass(Class<?> caller) {
+        out.println("caller: " + caller);
+        out.println(StackWalker.getInstance(StackWalker.Option.SHOW_HIDDEN_FRAMES).walk(toStackTrace()));
+        return caller;
+    }
+
+    @jdk.internal.reflect.CallerSensitive
+    public static Class<?> getCallerClassStatic() {
+        var caller = jdk.internal.reflect.Reflection.getCallerClass();
+        out.println("caller: " + caller);
+        out.println(StackWalker.getInstance(StackWalker.Option.SHOW_HIDDEN_FRAMES).walk(toStackTrace()));
+        return caller;
+    }
+
+    private static Class<?> getCallerClassStatic(Class<?> caller) {
+        out.println("caller: " + caller);
+        out.println(StackWalker.getInstance(StackWalker.Option.SHOW_HIDDEN_FRAMES).walk(toStackTrace()));
+        return caller;
+    }
+
+    @jdk.internal.reflect.CallerSensitive
+    public Class<?> getCallerClassNoAlt() {
+        var caller = jdk.internal.reflect.Reflection.getCallerClass();
+        out.println("caller: " + caller);
+        out.println(StackWalker.getInstance(StackWalker.Option.SHOW_HIDDEN_FRAMES).walk(toStackTrace()));
+        return caller;
+    }
+
+    @jdk.internal.reflect.CallerSensitive
+    public static Class<?> getCallerClassStaticNoAlt() {
+        var caller = jdk.internal.reflect.Reflection.getCallerClass();
+        out.println("caller: " + caller);
+        out.println(StackWalker.getInstance(StackWalker.Option.SHOW_HIDDEN_FRAMES).walk(toStackTrace()));
+        return caller;
+    }
+
+    private static Function<Stream<StackWalker.StackFrame>, String> toStackTrace() {
+        return frames -> frames
+            .takeWhile(
+                frame -> !frame.getClassName().equals("GetCallerClassTest") ||
+                         !frame.getMethodName().equals("main"))
+            .map(Object::toString)
+            .collect(Collectors.joining("\n  ", "  ", "\n"));
     }
 }
+

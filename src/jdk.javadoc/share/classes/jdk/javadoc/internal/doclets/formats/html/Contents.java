@@ -92,10 +92,8 @@ public class Contents {
     public final Content enumConstantSummary;
     public final Content enum_;
     public final Content enums;
-    public final Content error;
-    public final Content errors;
-    public final Content exception;
-    public final Content exceptions;
+    public final Content exceptionClass;
+    public final Content exceptionClasses;
     public final Content exportedTo;
     public final Content fieldLabel;
     public final Content fieldDetailsLabel;
@@ -238,10 +236,8 @@ public class Contents {
         enumConstantSummary = getContent("doclet.Enum_Constant_Summary");
         enum_ = getContent("doclet.Enum");
         enums = getContent("doclet.Enums");
-        error = getContent("doclet.Error");
-        errors = getContent("doclet.Errors");
-        exception = getContent("doclet.Exception");
-        exceptions = getContent("doclet.Exceptions");
+        exceptionClass = getContent("doclet.ExceptionClass");
+        exceptionClasses = getContent("doclet.ExceptionClasses");
         exportedTo = getContent("doclet.ExportedTo");
         fieldDetailsLabel = getContent("doclet.Field_Detail");
         fieldSummaryLabel = getContent("doclet.Field_Summary");

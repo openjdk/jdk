@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,27 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8172999
- * @summary Verify no crash loading font metrics instance.
- * @run main/othervm FontCrash
- */
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Toolkit;
+package nsk.jdb.repeat.repeat001;
 
-public class FontCrash {
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
+
+import java.io.PrintStream;
+
+
+/* This is debuggee application */
+public class repeat001a {
+    static repeat001a _repeat001a = new repeat001a();
 
     public static void main(String[] args) {
-        System.setProperty("java2d.font.usePlatformFont", "true");
-        Font f = new Font(Font.DIALOG,Font.PLAIN,12);
-        Toolkit tk = Toolkit.getDefaultToolkit();
-        tk.getFontMetrics(f);
+       System.exit(repeat001.JCK_STATUS_BASE + _repeat001a.runIt(args, System.out));
+    }
+
+    public int runIt(String[] args, PrintStream out) {
+        JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
+        Log log = new Log(out, argumentHandler);
+
+        log.display("Debuggee PASSED");
+        return repeat001.PASSED;
     }
 }

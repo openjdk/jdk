@@ -330,9 +330,9 @@ public class TestHtmlTableTags extends JavadocTester {
                     class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
                     ('class-summary', 'class-summary-tab3', 2)" class="table-tab">Enum Classes</butt\
                     on>\
-                    <button id="class-summary-tab7" role="tab" aria-selected="false" aria-controls="\
+                    <button id="class-summary-tab6" role="tab" aria-selected="false" aria-controls="\
                     class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
-                    ('class-summary', 'class-summary-tab7', 2)" class="table-tab">Annotation Interfa\
+                    ('class-summary', 'class-summary-tab6', 2)" class="table-tab">Annotation Interfa\
                     ces</button></div>""");
 
         // Class documentation
@@ -592,9 +592,9 @@ public class TestHtmlTableTags extends JavadocTester {
                     <div class="block">A sample enum.</div>
                     </div>""",
                 """
-                    <div class="col-first even-row-color class-summary class-summary-tab7"><a\
+                    <div class="col-first even-row-color class-summary class-summary-tab6"><a\
                      href="C3.html" title="annotation interface in pkg2">C3</a></div>
-                    <div class="col-last even-row-color class-summary class-summary-tab7">
+                    <div class="col-last even-row-color class-summary class-summary-tab6">
                     <div class="block">Test Annotation class.</div>
                     </div>""");
 
@@ -754,9 +754,9 @@ public class TestHtmlTableTags extends JavadocTester {
                     e</a></div>
                     <div class="col-last odd-row-color class-summary class-summary-tab3"></div>""",
                 """
-                    <div class="col-first even-row-color class-summary class-summary-tab7"><a\
+                    <div class="col-first even-row-color class-summary class-summary-tab6"><a\
                      href="C3.html" title="annotation interface in pkg2">C3</a></div>
-                    <div class="col-last even-row-color class-summary class-summary-tab7"></div>""");
+                    <div class="col-last even-row-color class-summary class-summary-tab6"></div>""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,

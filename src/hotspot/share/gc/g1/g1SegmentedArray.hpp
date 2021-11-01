@@ -198,8 +198,7 @@ public:
 
   inline uint elem_size() const;
 
-  G1SegmentedArray(const char* name,
-                   const G1SegmentedArrayAllocOptions* buffer_options,
+  G1SegmentedArray(const G1SegmentedArrayAllocOptions* buffer_options,
                    G1SegmentedArrayBufferList<flag>* free_buffer_list);
   ~G1SegmentedArray() {
     drop_all();
