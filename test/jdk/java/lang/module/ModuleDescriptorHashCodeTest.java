@@ -119,8 +119,8 @@ public class ModuleDescriptorHashCodeTest {
         // At the time of writing this test, the test does indeed use such a boot module which satisfies
         // that criteria. However, we want to be sure that any future
         // changes to that module definition don't create artificial success of the test case.
-        for (ModuleDescriptor.Requires requirement : moduleDescriptor.requires()) {
-            if (!requirement.modifiers().isEmpty()) {
+        for (ModuleDescriptor.Requires requires : moduleDescriptor.requires()) {
+            if (!requires.modifiers().isEmpty()) {
                 return;
             }
         }
