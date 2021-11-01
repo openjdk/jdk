@@ -44,7 +44,7 @@ import java.text.Normalizer;
  * <code>normalize</code> transforms Unicode text into an equivalent composed or
  * decomposed form, allowing for easier sorting and searching of text.
  * <code>normalize</code> supports the standard normalization forms described in
- * <a href="http://www.unicode.org/reports/tr15/" target="unicode">
+ * <a href="https://www.unicode.org/reports/tr15/" target="unicode">
  * Unicode Standard Annex #15 &mdash; Unicode Normalization Forms</a>.
  *
  * Characters with accents or other adornments can be encoded in

@@ -43,7 +43,7 @@ import jdk.internal.icu.impl.Norm2AllModes;
  * The primary functions are to produce a normalized string and to detect whether
  * a string is already normalized.
  * The most commonly used normalization forms are those defined in
- * <a href="http://www.unicode.org/reports/tr15/">Unicode Standard Annex #15:
+ * <a href="https://www.unicode.org/reports/tr15/">Unicode Standard Annex #15:
  * Unicode Normalization Forms</a>.
  * However, this API supports additional normalization forms for specialized purposes.
  * For example, NFKC_Casefold is provided via getInstance("nfkc_cf", COMPOSE)

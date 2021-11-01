@@ -67,9 +67,9 @@ import jdk.internal.icu.util.VersionInfo;
  *     <li> Unassigned Table: Contains code points that are unassigned
  *          in the Unicode Version supported by StringPrep. Currently
  *          RFC 3454 supports Unicode 3.2. </li>
- *     <li> Prohibited Table: Contains code points that are prohibted from
+ *     <li> Prohibited Table: Contains code points that are prohibited from
  *          the output of the StringPrep processing function. </li>
- *     <li> Mapping Table: Contains code ponts that are deleted from the output or case mapped. </li>
+ *     <li> Mapping Table: Contains code points that are deleted from the output or case mapped. </li>
  * </ul>
  *
  * The procedure for preparing Unicode strings:
@@ -226,8 +226,8 @@ public final class StringPrep {
         sprepUniVer   = getVersionInfo(reader.getUnicodeVersion());
         normCorrVer   = getVersionInfo(indexes[NORM_CORRECTNS_LAST_UNI_VERSION]);
         VersionInfo normUniVer = UCharacter.getUnicodeVersion();
-        if(normUniVer.compareTo(sprepUniVer) < 0 && /* the Unicode version of SPREP file must be less than the Unicode Vesion of the normalization data */
-           normUniVer.compareTo(normCorrVer) < 0 && /* the Unicode version of the NormalizationCorrections.txt file should be less than the Unicode Vesion of the normalization data */
+        if(normUniVer.compareTo(sprepUniVer) < 0 && /* the Unicode version of SPREP file must be less than the Unicode Version of the normalization data */
+           normUniVer.compareTo(normCorrVer) < 0 && /* the Unicode version of the NormalizationCorrections.txt file should be less than the Unicode Version of the normalization data */
            ((indexes[OPTIONS] & NORMALIZATION_ON) > 0) /* normalization turned on*/
            ){
             throw new IOException("Normalization Correction version not supported");

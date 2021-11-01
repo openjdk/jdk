@@ -135,8 +135,8 @@ import jdk.internal.icu.util.VersionInfo;
  * "[:Lu:]" and the Perl-like syntax "\p{Lu}" are recognized.  For a
  * complete list of supported property patterns, see the User's Guide
  * for UnicodeSet at
- * <a href="http://www.icu-project.org/userguide/unicodeSet.html">
- * http://www.icu-project.org/userguide/unicodeSet.html</a>.
+ * <a href="https://unicode-org.github.io/icu/userguide/strings/unicodeset">
+ * https://unicode-org.github.io/icu/userguide/strings/unicodeset</a>.
  * Actual determination of property data is defined by the underlying
  * Unicode database as implemented by UCharacter.
  *
@@ -146,6 +146,13 @@ import jdk.internal.icu.util.VersionInfo;
  * after the opening '['.  Property patterns are inverted by modifying
  * their delimiters; "[:^foo]" and "\P{foo}".  In any other location,
  * '^' has no special meaning.
+ *
+ * <p>Since ICU 70, "[^...]", "[:^foo]", "\P{foo}", and "[:binaryProperty=No:]"
+ * perform a "code point complement" (all code points minus the original set),
+ * removing all multicharacter strings,
+ * equivalent to .{@link #complement()}.{@link #removeAllStrings()} .
+ * The {@link #complement()} API function continues to perform a
+ * symmetric difference with all code points and thus retains all multicharacter strings.
  *
  * <p>Ranges are indicated by placing two a '-' between two
  * characters, as in "a-z".  This specifies the range of all
@@ -228,9 +235,8 @@ import jdk.internal.icu.util.VersionInfo;
  *     </tr>
  *     <tr align="top">
  *       <td nowrap valign="top" align="right"><code>hex :=&nbsp; </code></td>
- *       <td valign="top"><em>any character for which
- *       </em><code>Character.digit(c, 16)</code><em>
- *       returns a non-negative result</em></td>
+ *       <td style="vertical-align: top;"><code>'0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' |<br>
+ *       &nbsp;&nbsp;&nbsp;&nbsp;'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'</code></td>
  *     </tr>
  *     <tr>
  *       <td nowrap valign="top" align="right"><code>property :=&nbsp; </code></td>
