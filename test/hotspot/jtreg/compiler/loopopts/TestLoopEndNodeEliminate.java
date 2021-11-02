@@ -27,7 +27,7 @@
  * @summary Crashes in PhaseIdealLoop::transform_long_counted_loop
  * @requires vm.compiler2.enabled
  *
- * @run main -Xbatch -XX:CompileCommand=compileonly,TestLoopEndNodeEliminate::lMeth TestLoopEndNodeEliminate
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,TestLoopEndNodeEliminate::lMeth TestLoopEndNodeEliminate
  *
  */
 
