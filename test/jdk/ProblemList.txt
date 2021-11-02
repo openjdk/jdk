@@ -121,7 +121,7 @@ java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 gen
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
 java/awt/Focus/UnaccessibleChoice/AccessibleChoiceTest.java 8239801 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
-java/awt/Frame/FrameLocation/FrameLocation.java 8233703 linux-all
+java/awt/Frame/FrameLocation/FrameLocation.java 8238436 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
@@ -189,7 +189,7 @@ java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
 java/awt/Toolkit/ScreenInsetsTest/ScreenInsetsTest.java 6829250 windows-all
 java/awt/Toolkit/RealSync/Test.java 6849383 linux-all
 java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252 windows-all
-java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 8203047 macosx-all
+java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 8072110 macosx-all
 java/awt/EventDispatchThread/LoopRobustness/LoopRobustness.java 8073636 macosx-all
 java/awt/FullScreen/FullScreenInsets/FullScreenInsets.java 7019055,8266245 windows-all,linux-all,macosx-aarch64
 java/awt/Focus/8013611/JDK8013611.java 8175366 windows-all,macosx-all
@@ -204,7 +204,6 @@ java/awt/event/MouseEvent/MouseButtonsAndKeyMasksTest/MouseButtonsAndKeyMasksTes
 
 java/awt/dnd/URIListToFileListBetweenJVMsTest/URIListToFileListBetweenJVMsTest.java 8194947 generic-all
 java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
-java/awt/GridLayout/LayoutExtraGaps/LayoutExtraGaps.java 8000171 windows-all
 java/awt/Scrollbar/ScrollbarMouseWheelTest/ScrollbarMouseWheelTest.java 8196018 windows-all,linux-all
 java/awt/TrayIcon/ActionCommand/ActionCommand.java 8150540 windows-all
 java/awt/TrayIcon/ActionEventMask/ActionEventMask.java 8150540 windows-all
@@ -255,7 +254,7 @@ java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469,8273618
 java/awt/FullScreen/UninitializedDisplayModeChangeTest/UninitializedDisplayModeChangeTest.java 8273617 macosx-all
 java/awt/print/PrinterJob/PSQuestionMark.java 7003378 generic-all
 java/awt/print/PrinterJob/GlyphPositions.java 7003378 generic-all
-java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 7100044 macosx-all,linux-all
+java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 6849371 macosx-all,linux-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java 8165863 macosx-all
 java/awt/Clipboard/HTMLTransferTest/HTMLTransferTest.java 8017454 macosx-all
@@ -463,7 +462,6 @@ java/awt/Modal/OnTop/OnTopTKModal4Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopTKModal5Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopTKModal6Test.java 8198666 macosx-all
 java/awt/List/SingleModeDeselect/SingleModeDeselect.java 8196367 windows-all
-java/awt/SplashScreen/MultiResolutionSplash/MultiResolutionSplashTest.java 8061235 macosx-all
 javax/print/PrintSEUmlauts/PrintSEUmlauts.java 8135174 generic-all
 java/awt/font/TextLayout/LigatureCaretTest.java 8266312  generic-all
 java/awt/image/VolatileImage/CustomCompositeTest.java 8199002 windows-all,linux-all
@@ -502,7 +500,6 @@ java/awt/event/MouseEvent/MultipleMouseButtonsTest/MultipleMouseButtonsTest.java
 java/awt/event/MouseEvent/ClickDuringKeypress/ClickDuringKeypress.java 8233568 macosx-all
 java/awt/event/KeyEvent/DeadKey/DeadKeyMacOSXInputText.java 8233568 macosx-all
 java/awt/event/KeyEvent/DeadKey/deadKeyMacOSX.java 8233568 macosx-all
-java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.java 7185258 macosx-all
 java/awt/TrayIcon/RightClickWhenBalloonDisplayed/RightClickWhenBalloonDisplayed.java 8238720 windows-all
 java/awt/PopupMenu/PopupMenuLocation.java 8238720 windows-all
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720 windows-all
