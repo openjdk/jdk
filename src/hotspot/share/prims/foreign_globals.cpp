@@ -77,6 +77,10 @@ ForeignGlobals::ForeignGlobals() {
   ABI.volatileStorage_offset = field_offset(k_ABI, "volatileStorage", symVMSArrayArray);
   ABI.stackAlignment_offset = field_offset(k_ABI, "stackAlignment", vmSymbols::int_signature());
   ABI.shadowSpace_offset = field_offset(k_ABI, "shadowSpace", vmSymbols::int_signature());
+  const char* strVMS = "L" FOREIGN_ABI "VMStorage;";
+  Symbol* symVMS = SymbolTable::new_symbol(strVMS);
+  ABI.targetAddrStorage_offset = field_offset(k_ABI, "targetAddrStorage", symVMS);
+  ABI.retBufAddrStorage_offset = field_offset(k_ABI, "retBufAddrStorage", symVMS);
 
   // VMStorage
   InstanceKlass* k_VMS = find_InstanceKlass(FOREIGN_ABI "VMStorage", current_thread);
@@ -100,35 +104,10 @@ ForeignGlobals::ForeignGlobals() {
   CallConvOffsets.ret_regs_offset = field_offset(k_CC, "retRegs", symVMSArray);
 }
 
-int CallRegs::calling_convention(BasicType* sig_bt, VMRegPair *regs, int num_args) const {
-  int src_pos = 0;
-  for (int i = 0; i < num_args; i++) {
-    switch (sig_bt[i]) {
-      case T_BOOLEAN:
-      case T_CHAR:
-      case T_BYTE:
-      case T_SHORT:
-      case T_INT:
-      case T_FLOAT:
-        assert(src_pos < _args_length, "oob");
-        regs[i].set1(_arg_regs[src_pos++]);
-        break;
-      case T_LONG:
-      case T_DOUBLE:
-        assert((i + 1) < num_args && sig_bt[i + 1] == T_VOID, "expecting half");
-        assert(src_pos < _args_length, "oob");
-        regs[i].set2(_arg_regs[src_pos++]);
-        break;
-      case T_VOID: // Halves of longs and doubles
-        assert(i != 0 && (sig_bt[i - 1] == T_LONG || sig_bt[i - 1] == T_DOUBLE), "expecting half");
-        regs[i].set_bad();
-        break;
-      default:
-        ShouldNotReachHere();
-        break;
-    }
-  }
-  return 0; // assumed unused
+VMReg ForeignGlobals::parse_vmstorage(oop storage) const {
+  jint index = storage->int_field(VMS.index_offset);
+  jint type = storage->int_field(VMS.type_offset);
+  return vmstorage_to_vmreg(type, index);
 }
 
 int RegSpiller::compute_spill_area(const VMReg* regs, int num_regs) {
@@ -140,6 +119,7 @@ int RegSpiller::compute_spill_area(const VMReg* regs, int num_regs) {
 }
 
 void RegSpiller::generate(MacroAssembler* masm, int rsp_offset, bool spill) const {
+  assert(rsp_offset != -1, "rsp_offset should be set");
   int offset = rsp_offset;
   for (int i = 0; i < _num_regs; i++) {
     VMReg reg = _regs[i];
@@ -174,13 +154,10 @@ void ArgumentShuffle::print_on(outputStream* os) const {
   os->print_cr("}");
 }
 
-int DowncallNativeCallConv::calling_convention(BasicType* sig_bt, VMRegPair* out_regs, int num_args) const {
-  out_regs[0].set2(_input_addr_reg); // address
-  out_regs[1].set_bad(); // upper half
-
+int NativeCallConv::calling_convention(BasicType* sig_bt, VMRegPair* out_regs, int num_args) const {
   int src_pos = 0;
   int stk_slots = 0;
-  for (int i = 2; i < num_args; i++) { // skip address (2)
+  for (int i = 0; i < num_args; i++) {
     switch (sig_bt[i]) {
       case T_BOOLEAN:
       case T_CHAR:
@@ -188,7 +165,8 @@ int DowncallNativeCallConv::calling_convention(BasicType* sig_bt, VMRegPair* out
       case T_SHORT:
       case T_INT:
       case T_FLOAT: {
-        VMReg reg = _input_regs.at(src_pos++);
+        assert(src_pos < _input_regs_length, "oob");
+        VMReg reg = _input_regs[src_pos++];
         out_regs[i].set1(reg);
         if (reg->is_stack())
           stk_slots += 2;
@@ -197,9 +175,9 @@ int DowncallNativeCallConv::calling_convention(BasicType* sig_bt, VMRegPair* out
       case T_LONG:
       case T_DOUBLE: {
         assert((i + 1) < num_args && sig_bt[i + 1] == T_VOID, "expecting half");
-        VMReg reg = _input_regs.at(src_pos);
+        assert(src_pos < _input_regs_length, "oob");
+        VMReg reg = _input_regs[src_pos++];
         out_regs[i].set2(reg);
-        src_pos += 2; // skip BAD as well
         if (reg->is_stack())
           stk_slots += 2;
         break;

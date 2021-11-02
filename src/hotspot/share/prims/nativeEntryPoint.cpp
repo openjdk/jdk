@@ -38,60 +38,43 @@ JNI_LEAF(jlong, NEP_vmStorageToVMReg(JNIEnv* env, jclass _unused, jint type, jin
   return ForeignGlobals::vmstorage_to_vmreg(type, index)->value();
 JNI_END
 
-JNI_ENTRY(jlong, NEP_makeInvoker(JNIEnv* env, jclass _unused, jobject method_type, jint shadow_space_bytes,
-                                 jlongArray arg_moves, jlongArray ret_moves))
+JNI_ENTRY(jlong, NEP_makeInvoker(JNIEnv* env, jclass _unused, jobject method_type, jobject jabi,
+                                 jlongArray arg_moves, jlongArray ret_moves, jboolean needs_return_buffer))
   ResourceMark rm;
-
-  // Note: the method_type's first param is the target address, but we don't have
-  // and entry for that in the arg_moves array.
-  // we need an entry for that in the basic type at least, so we can later
-  // generate the right argument shuffle
+  const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
 
   oop type = JNIHandles::resolve(method_type);
-  // does not contain entry for address:
   typeArrayOop arg_moves_oop = oop_cast<typeArrayOop>(JNIHandles::resolve(arg_moves));
   typeArrayOop ret_moves_oop = oop_cast<typeArrayOop>(JNIHandles::resolve(ret_moves));
-  // contains address:
   int pcount = java_lang_invoke_MethodType::ptype_count(type);
   int pslots = java_lang_invoke_MethodType::ptype_slot_count(type);
-  // contains address:
   BasicType* basic_type = NEW_RESOURCE_ARRAY(BasicType, pslots);
-  // address
-  basic_type[0] = T_LONG;
-  basic_type[1] = T_VOID;
 
-  // does not contain entry for address:
-  GrowableArray<VMReg> input_regs(pslots);
-
-  int num_args = 2;
-  for (int i = 1; i < pcount; i++) { // skip addr
+  GrowableArray<VMReg> input_regs(pcount);
+  for (int i = 0, bt_idx = 0; i < pcount; i++) {
     oop type_oop = java_lang_invoke_MethodType::ptype(type, i);
     assert(java_lang_Class::is_primitive(type_oop), "Only primitives expected");
     BasicType bt = java_lang_Class::primitive_type(type_oop);
-    basic_type[num_args] = bt;
-    input_regs.push(VMRegImpl::as_VMReg(arg_moves_oop->long_at(i - 1))); // address missing in moves
-    num_args++;
+    basic_type[bt_idx++] = bt;
+    input_regs.push(VMRegImpl::as_VMReg(arg_moves_oop->long_at(i)));
 
     if (bt == BasicType::T_DOUBLE || bt == BasicType::T_LONG) {
-      basic_type[num_args] = T_VOID;
-      input_regs.push(VMRegImpl::Bad()); // half of double/long
-      num_args++;
+      basic_type[bt_idx++] = T_VOID;
+      // we only need these in the basic type
+      // NativeCallConv ignores them, but they are needed
+      // for JavaCallConv
     }
   }
 
-  GrowableArray<VMReg> output_regs(pslots);
 
   jint outs = ret_moves_oop->length();
-  assert(outs <= 1, "No multi-reg returns");
-  BasicType ret_bt = T_VOID;
-  if (outs == 1) {
-    oop type_oop = java_lang_invoke_MethodType::rtype(type);
-    ret_bt = java_lang_Class::primitive_type(type_oop);
-
-    output_regs.push(VMRegImpl::as_VMReg(ret_moves_oop->long_at(0)));
-    if (ret_bt == BasicType::T_DOUBLE || ret_bt == BasicType::T_LONG) {
-      output_regs.push(VMRegImpl::Bad()); // half of double/long
-    }
+  GrowableArray<VMReg> output_regs(outs);
+  oop type_oop = java_lang_invoke_MethodType::rtype(type);
+  BasicType  ret_bt = java_lang_Class::primitive_type(type_oop);
+  for (int i = 0; i < outs; i++) {
+    // note that we don't care about long/double upper halfs here:
+    // we are NOT moving Java values, we are moving register-sized values
+    output_regs.push(VMRegImpl::as_VMReg(ret_moves_oop->long_at(i)));
   }
 
 #ifdef ASSERT
@@ -101,11 +84,11 @@ JNI_ENTRY(jlong, NEP_makeInvoker(JNIEnv* env, jclass _unused, jobject method_typ
     LogStream ls(lt);
     ls.print_cr("Generating native invoker {");
     ls.print("BasicType { ");
-    for (int i = 0; i < num_args; i++) {
+    for (int i = 0; i < pslots; i++) {
       ls.print("%s, ", null_safe_string(type2name(basic_type[i])));
     }
     ls.print_cr("}");
-    ls.print_cr("shadow_space_bytes = %d", shadow_space_bytes);
+    ls.print_cr("shadow_space_bytes = %d", abi._shadow_space_bytes);
     ls.print("input_registers { ");
     for (int i = 0; i < input_regs.length(); i++) {
       VMReg reg = input_regs.at(i);
@@ -123,7 +106,7 @@ JNI_ENTRY(jlong, NEP_makeInvoker(JNIEnv* env, jclass _unused, jobject method_typ
 #endif
 
   return (jlong) ProgrammableInvoker::make_native_invoker(
-    basic_type, num_args, ret_bt, shadow_space_bytes, input_regs, output_regs)->code_begin();
+    basic_type, pslots, ret_bt, abi, input_regs, output_regs, needs_return_buffer)->code_begin();
 JNI_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
@@ -131,7 +114,7 @@ JNI_END
 
 static JNINativeMethod NEP_methods[] = {
   {CC "vmStorageToVMReg", CC "(II)J", FN_PTR(NEP_vmStorageToVMReg)},
-  {CC "makeInvoker", CC "(Ljava/lang/invoke/MethodType;I[J[J)J", FN_PTR(NEP_makeInvoker)},
+  {CC "makeInvoker", CC "(Ljava/lang/invoke/MethodType;Ljdk/internal/invoke/ABIDescriptorProxy;[J[JZ)J", FN_PTR(NEP_makeInvoker)},
 };
 
 JNI_ENTRY(void, JVM_RegisterNativeEntryPointMethods(JNIEnv *env, jclass NEP_class))

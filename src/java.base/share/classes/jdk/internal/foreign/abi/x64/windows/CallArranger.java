@@ -67,7 +67,9 @@ public class CallArranger {
         new VMStorage[] { rax, r10, r11 },
         new VMStorage[] { xmm4, xmm5 },
         16,
-        32
+        32,
+        r10, // target addr reg
+        r11  // imr addr reg
     );
 
     // record
@@ -83,7 +85,7 @@ public class CallArranger {
 
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
         class CallingSequenceBuilderHelper {
-            final CallingSequenceBuilder csb = new CallingSequenceBuilder(forUpcall);
+            final CallingSequenceBuilder csb = new CallingSequenceBuilder(CWindows, forUpcall);
             final BindingCalculator argCalc =
                 forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
             final BindingCalculator retCalc =

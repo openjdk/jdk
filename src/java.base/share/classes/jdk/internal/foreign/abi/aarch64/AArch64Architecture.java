@@ -148,7 +148,8 @@ public class AArch64Architecture implements Architecture {
                                        VMStorage[] volatileIntRegs,
                                        VMStorage[] volatileVectorRegs,
                                        int stackAlignment,
-                                       int shadowSpace) {
+                                       int shadowSpace,
+                                       VMStorage targetAddrStorage, VMStorage retBufAddrStorage) {
         return new ABIDescriptor(
             INSTANCE,
             new VMStorage[][] {
@@ -164,8 +165,8 @@ public class AArch64Architecture implements Architecture {
                 volatileVectorRegs,
             },
             stackAlignment,
-            shadowSpace
-        );
+            shadowSpace,
+                targetAddrStorage, retBufAddrStorage);
     }
 
 }

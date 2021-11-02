@@ -66,6 +66,9 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) cons
   abi._stack_alignment_bytes = abi_oop->int_field(ABI.stackAlignment_offset);
   abi._shadow_space_bytes = abi_oop->int_field(ABI.shadowSpace_offset);
 
+  abi._target_addr_reg = parse_vmstorage(abi_oop->obj_field(ABI.targetAddrStorage_offset))->as_Register();
+  abi._ret_buf_addr_reg = parse_vmstorage(abi_oop->obj_field(ABI.retBufAddrStorage_offset))->as_Register();
+
   return abi;
 }
 

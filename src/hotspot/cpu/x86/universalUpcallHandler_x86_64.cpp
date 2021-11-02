@@ -315,7 +315,8 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   Register shuffle_reg = rbx;
   JavaCallConv out_conv;
-  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &call_regs, &out_conv, shuffle_reg->as_VMReg());
+  NativeCallConv in_conv(call_regs._arg_regs, call_regs._args_length);
+  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg->as_VMReg());
   int stack_slots = SharedRuntime::out_preserve_stack_slots() + arg_shuffle.out_arg_stack_slots();
   int out_arg_area = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
 

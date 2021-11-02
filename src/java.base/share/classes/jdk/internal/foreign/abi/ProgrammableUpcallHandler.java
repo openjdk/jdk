@@ -102,16 +102,15 @@ public class ProgrammableUpcallHandler {
         MethodType llType = MethodType.methodType(llReturn, llParams);
 
         MethodHandle doBindings;
-        long bufferCopySize = SharedUtils.bufferCopySize(callingSequence);
         if (USE_SPEC && isSimple) {
-            doBindings = specializedBindingHandle(target, callingSequence, llReturn, bufferCopySize);
+            doBindings = specializedBindingHandle(target, callingSequence, llReturn, callingSequence.allocationSize());
             assert doBindings.type() == llType;
         } else {
             Map<VMStorage, Integer> argIndices = SharedUtils.indexMap(argMoves);
             Map<VMStorage, Integer> retIndices = SharedUtils.indexMap(retMoves);
             target = target.asSpreader(Object[].class, callingSequence.methodType().parameterCount());
             doBindings = insertArguments(MH_invokeInterpBindings, 1, target, argIndices, retIndices, callingSequence,
-                    bufferCopySize);
+                    callingSequence.allocationSize());
             doBindings = doBindings.asCollector(Object[].class, llType.parameterCount());
             doBindings = doBindings.asType(llType);
         }
@@ -158,7 +157,7 @@ public class ProgrammableUpcallHandler {
     }
 
     private static MethodHandle specializedBindingHandle(MethodHandle target, CallingSequence callingSequence,
-                                                         Class<?> llReturn, long bufferCopySize) {
+                                                         Class<?> llReturn, long allocationSize) {
         MethodType highLevelType = callingSequence.methodType();
 
         MethodHandle specializedHandle = target; // initial
@@ -194,7 +193,7 @@ public class ProgrammableUpcallHandler {
             specializedHandle = filterReturnValue(specializedHandle, filter);
         }
 
-        specializedHandle = SharedUtils.wrapWithAllocator(specializedHandle, argAllocatorPos, bufferCopySize, true);
+        specializedHandle = SharedUtils.wrapWithAllocator(specializedHandle, argAllocatorPos, allocationSize, true);
 
         return specializedHandle;
     }
@@ -253,9 +252,9 @@ public class ProgrammableUpcallHandler {
                                                Map<VMStorage, Integer> argIndexMap,
                                                Map<VMStorage, Integer> retIndexMap,
                                                CallingSequence callingSequence,
-                                               long bufferCopySize) throws Throwable {
-        Binding.Context allocator = bufferCopySize != 0
-                ? Binding.Context.ofBoundedAllocator(bufferCopySize)
+                                               long allocationSize) throws Throwable {
+        Binding.Context allocator = allocationSize != 0
+                ? Binding.Context.ofBoundedAllocator(allocationSize)
                 : Binding.Context.ofScope();
         try (allocator) {
             /// Invoke interpreter, got array of high-level arguments back

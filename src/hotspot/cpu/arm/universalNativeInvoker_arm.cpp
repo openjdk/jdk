@@ -25,21 +25,13 @@
 #include "prims/universalNativeInvoker.hpp"
 #include "utilities/debug.hpp"
 
-address ProgrammableInvoker::generate_adapter(jobject jabi, jobject jlayout) {
-  Unimplemented();
-  return nullptr;
-}
-
 RuntimeStub* ProgrammableInvoker::make_native_invoker(BasicType* signature,
                                                       int num_args,
                                                       BasicType ret_bt,
-                                                      int shadow_space_bytes,
+                                                      const ABIDescriptor& abi,
                                                       const GrowableArray<VMReg>& input_registers,
-                                                      const GrowableArray<VMReg>& output_registers) {
+                                                      const GrowableArray<VMReg>& output_registers,
+                                                      bool needs_return_buffer) {
   Unimplemented();
   return nullptr;
-}
-
-bool ProgrammableInvoker::supports_native_invoker() {
-  return false;
 }

@@ -75,10 +75,7 @@ public final class Windowsx64Linker implements Linker {
         Objects.requireNonNull(function);
         MethodType type = SharedUtils.inferMethodType(function, false);
         MethodHandle handle = CallArranger.arrangeDowncall(type, function);
-        if (!type.returnType().equals(MemorySegment.class)) {
-            // not returning segment, just insert a throwing allocator
-            handle = MethodHandles.insertArguments(handle, 1, SharedUtils.THROWING_ALLOCATOR);
-        }
+        handle = SharedUtils.maybeInsertAllocator(handle);
         return SharedUtils.wrapDowncall(handle, function);
     }
 

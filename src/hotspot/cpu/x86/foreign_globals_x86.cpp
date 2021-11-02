@@ -65,6 +65,9 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) cons
   abi._stack_alignment_bytes = abi_oop->int_field(ABI.stackAlignment_offset);
   abi._shadow_space_bytes = abi_oop->int_field(ABI.shadowSpace_offset);
 
+  abi._target_addr_reg = parse_vmstorage(abi_oop->obj_field(ABI.targetAddrStorage_offset))->as_Register();
+  abi._ret_buf_addr_reg = parse_vmstorage(abi_oop->obj_field(ABI.retBufAddrStorage_offset))->as_Register();
+
   return abi;
 }
 
@@ -103,17 +106,11 @@ const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
   result._ret_regs = NEW_RESOURCE_ARRAY(VMReg, result._rets_length);
 
   for (int i = 0; i < result._args_length; i++) {
-    oop storage = arg_regs_oop->obj_at(i);
-    jint index = storage->int_field(VMS.index_offset);
-    jint type = storage->int_field(VMS.type_offset);
-    result._arg_regs[i] = vmstorage_to_vmreg(type, index);
+    result._arg_regs[i] = parse_vmstorage(arg_regs_oop->obj_at(i));
   }
 
   for (int i = 0; i < result._rets_length; i++) {
-    oop storage = ret_regs_oop->obj_at(i);
-    jint index = storage->int_field(VMS.index_offset);
-    jint type = storage->int_field(VMS.type_offset);
-    result._ret_regs[i] = vmstorage_to_vmreg(type, index);
+    result._ret_regs[i] = parse_vmstorage(ret_regs_oop->obj_at(i));
   }
 
   return result;

@@ -37,14 +37,12 @@ public:
   virtual int calling_convention(BasicType* sig_bt, VMRegPair* regs, int num_args) const = 0;
 };
 
-struct CallRegs : public CallConvClosure {
+struct CallRegs {
   VMReg* _arg_regs;
   int _args_length;
 
   VMReg* _ret_regs;
   int _rets_length;
-
-  int calling_convention(BasicType* sig_bt, VMRegPair* regs, int num_args) const override;
 };
 
 class ForeignGlobals {
@@ -55,6 +53,8 @@ private:
     int volatileStorage_offset;
     int stackAlignment_offset;
     int shadowSpace_offset;
+    int targetAddrStorage_offset;
+    int retBufAddrStorage_offset;
   } ABI;
 
   struct {
@@ -86,6 +86,8 @@ private:
   const ABIDescriptor parse_abi_descriptor_impl(jobject jabi) const;
   const BufferLayout parse_buffer_layout_impl(jobject jlayout) const;
   const CallRegs parse_call_regs_impl(jobject jconv) const;
+
+  VMReg parse_vmstorage(oop storage) const;
 public:
   static const ABIDescriptor parse_abi_descriptor(jobject jabi);
   static const BufferLayout parse_buffer_layout(jobject jlayout);
@@ -103,13 +105,16 @@ public:
   }
 };
 
-class DowncallNativeCallConv : public CallConvClosure {
-  const GrowableArray<VMReg>& _input_regs;
-  VMReg _input_addr_reg;
+class NativeCallConv : public CallConvClosure {
+  const VMReg* _input_regs;
+  int _input_regs_length;
 public:
-  DowncallNativeCallConv(const GrowableArray<VMReg>& input_regs, VMReg input_addr_reg)
-   : _input_regs(input_regs),
-   _input_addr_reg(input_addr_reg) {}
+  NativeCallConv(const VMReg* input_regs, int input_regs_length) :
+    _input_regs(input_regs),
+    _input_regs_length(input_regs_length) {
+  }
+  NativeCallConv(const GrowableArray<VMReg>& input_regs)
+   : NativeCallConv(input_regs.data(), input_regs.length()) {}
 
   int calling_convention(BasicType* sig_bt, VMRegPair* out_regs, int num_args) const override;
 };

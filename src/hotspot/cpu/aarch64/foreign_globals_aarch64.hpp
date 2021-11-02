@@ -42,6 +42,9 @@ struct ABIDescriptor {
   int32_t _stack_alignment_bytes;
   int32_t _shadow_space_bytes;
 
+  Register _target_addr_reg;
+  Register _ret_buf_addr_reg;
+
   bool is_volatile_reg(Register reg) const;
   bool is_volatile_reg(FloatRegister reg) const;
 };
