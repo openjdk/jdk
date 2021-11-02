@@ -3154,6 +3154,9 @@ public final class DateTimeFormatterBuilder {
     static final class NanosPrinterParser extends NumberPrinterParser {
         private final boolean decimalPoint;
 
+        // only instantiated and used if there's ever a value outside the allowed range
+        private FractionPrinterParser fallback;
+
         /**
          * Constructor.
          *
@@ -3256,7 +3259,15 @@ public final class DateTimeFormatterBuilder {
             if (value == null) {
                 return false;
             }
-            int val = value.intValue(); // NANO_OF_SECOND must fit in an int and can't be negative
+            // While values of ChronoField.NANO_OF_SECOND should be in the range
+            // [0-999999999], we can't assume that holds for any custom Temporal
+            if (!field.range().isValidIntValue(value)) {
+                if (fallback == null) {
+                    fallback = new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint, subsequentWidth);
+                }
+                return fallback.format(context, buf);
+            }
+            int val = value.intValue();
             DecimalStyle decimalStyle = context.getDecimalStyle();
             int stringSize = stringSize(val);
             char zero = decimalStyle.getZeroDigit();
