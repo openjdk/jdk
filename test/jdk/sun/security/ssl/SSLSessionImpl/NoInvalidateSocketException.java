@@ -41,6 +41,7 @@ import java.io.*;
 import javax.net.ssl.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
@@ -260,6 +261,7 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
 
     @Override
     public void doServerSide() throws Exception {
+        Thread.currentThread().setName("Server Listener Thread");
         SSLContext context = createServerSSLContext();
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
         InetAddress serverAddress = this.serverAddress;
@@ -272,6 +274,7 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
         }
         configureServerSocket(sslServerSocket);
         serverPort = sslServerSocket.getLocalPort();
+        logToConsole("Listening on " + sslServerSocket.getLocalSocketAddress());
 
         // Signal the client, the server is ready to accept connection.
         serverCondition.countDown();
@@ -285,9 +288,10 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
         try {
             do {
                 try {
-                    sslServerSocket.setSoTimeout(5000);
                     sslSocket = (SSLSocket) sslServerSocket.accept();
                     timeoutCount = 0;   // Reset the timeout counter;
+                    logToConsole("Accepted connection from " +
+                            sslSocket.getRemoteSocketAddress());
 
                     // Add the socket to the cleanup list so it can get
                     // closed at the end of the test
@@ -338,8 +342,19 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
     }
 
     @Override
+    public void configureServerSocket(SSLServerSocket socket) {
+        try {
+            socket.setReuseAddress(true);
+            socket.setSoTimeout(5000);
+        } catch (SocketException se) {
+            // Rethrow as unchecked to satisfy the override signature
+            throw new RuntimeException(se);
+        }
+    }
+
+    @Override
     public void runServerApplication(SSLSocket sslSocket) {
-        Thread.currentThread().setName("Server Thread");
+        Thread.currentThread().setName("Server Reader Thread");
         SSLSocket sock = null;
         sock = sslSocket;
         try {
