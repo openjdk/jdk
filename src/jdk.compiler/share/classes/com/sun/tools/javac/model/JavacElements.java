@@ -728,16 +728,21 @@ public class JavacElements implements Elements {
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
-    public javax.tools.JavaFileObject getFileObjectOf(Element e) {
-        return switch(e.getKind()) {
-            case PACKAGE -> ((PackageSymbol)e).sourcefile;
-            // TODO: ModuleSymbol doesn't directly have a JavaFileObject field at present.
-            case MODULE  -> null;
-            // TODO: this is likely not quite right for nested types
-            // that have already been compiled; their class file
-            // should be their own class file rather than the class
-            // file for the outermost class.
-            default      -> ((Symbol)e).outermostClass().classfile;
+    public JavaFileObject getFileObjectOf(Element e) {
+        Symbol sym = (Symbol) e;
+        return switch(sym.kind) {
+            case PCK -> {
+                if (((PackageSymbol) sym).package_info == null) {
+                    yield null;
+                }
+                yield ((PackageSymbol) sym).package_info.classfile;
+            }
+            case MDL -> {
+                ModuleSymbol msym = (ModuleSymbol) sym;
+                yield msym.module_info.classfile;
+            }
+            case TYP -> ((ClassSymbol) sym).classfile;
+            default -> sym.enclClass().classfile;
         };
     }
 
