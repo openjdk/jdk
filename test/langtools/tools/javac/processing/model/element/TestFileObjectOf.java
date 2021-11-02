@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 9999999
- * @summary XXX
+ * @bug 8224922
+ * @summary Verify the behavior of the Elements.getFileObjectOf
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main

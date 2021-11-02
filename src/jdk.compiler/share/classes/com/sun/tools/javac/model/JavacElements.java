@@ -735,21 +735,16 @@ public class JavacElements implements Elements {
                 if (((PackageSymbol) sym).package_info == null) {
                     yield null;
                 }
-                yield getFileObjectOf(((PackageSymbol) sym).package_info);
+                yield ((PackageSymbol) sym).package_info.classfile;
             }
             case MDL -> {
                 ModuleSymbol msym = (ModuleSymbol) sym;
-                yield getFileObjectOf(msym.module_info);
+                yield msym.module_info.classfile;
             }
-            case TYP -> getFileObjectOf((ClassSymbol) sym);
-            default -> getFileObjectOf(sym.enclClass());
+            case TYP -> ((ClassSymbol) sym).classfile;
+            default -> sym.enclClass().classfile;
         };
     }
-    //where:
-        private static JavaFileObject getFileObjectOf(ClassSymbol sym) {
-            return sym.classfile != null ? sym.classfile
-                                         : sym.sourcefile;
-        }
 
     /**
      * Returns the tree node and compilation unit corresponding to this
