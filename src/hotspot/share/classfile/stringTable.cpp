@@ -766,7 +766,7 @@ void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_
   assert(HeapShared::can_write(), "must be");
 
   _shared_table.reset();
-  CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
+  CompactHashtableWriter writer((int)_items_count, ArchiveBuilder::string_stats());
 
   // Copy the interned strings into the "string space" within the java heap
   CopyToArchive copier(&writer);
