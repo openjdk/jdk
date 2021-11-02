@@ -24,12 +24,14 @@
 /**
  * @test
  * @bug 8193682
- * @summary Test DeflatorOutputStream for infinite loop while writing on closed stream
+ * @summary Test DeflatorOutputStream for infinite loop while writing on closed GZipOutputStream and ZipOutputStream.
  * @run testng GZipLoopTest
  */
 import java.io.*;
 import java.util.Random;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipOutputStream;
+import java.util.zip.ZipEntry;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
@@ -53,11 +55,13 @@ public class GZipLoopTest {
         @Override
         public void write(int b) throws IOException {}
     };
-    private static byte[] b = new byte[INPUT_LENGTH];
+    private static byte[] inputBytes = new byte[INPUT_LENGTH];
     private static Random rand = new Random();
 
-    @DataProvider(name = "testinput")
+    @DataProvider(name = "testgzipinput")
       public Object[][] testInput() {
+       //testGZip will close the GZipOutputStream using close() method when the boolean  
+       //useCloseMethod is set to true and finish() method if the value is set to false
        return new Object[][] {
         { GZIPOutputStream.class, true },
         { GZIPOutputStream.class, false },
@@ -67,14 +71,16 @@ public class GZipLoopTest {
     @BeforeTest
     public void before_test()
     {
-       rand.nextBytes(b);
+       //add inputBytes array with random bytes to write into Zip
+       rand.nextBytes(inputBytes);
     }
 
-    @Test(dataProvider = "testinput")
+    //Test for infinite loop by writing bytes to closed GZIPOutputStream
+    @Test(dataProvider = "testgzipinput")
     public void testGZip(Class<?> type, boolean useCloseMethod) throws IOException {
         GZIPOutputStream zip = new GZIPOutputStream(outStream);
         try {
-            zip.write(b, 0, INPUT_LENGTH);
+            zip.write(inputBytes, 0, INPUT_LENGTH);
             //close zip
             if(useCloseMethod) {
                zip.close();
@@ -86,7 +92,35 @@ public class GZipLoopTest {
         }
         for (int i = 0; i < 3; i++) {
             try {
-                zip.write(b, 0, INPUT_LENGTH);
+                //write on a closed GZIPOutputStream
+                zip.write(inputBytes, 0, INPUT_LENGTH);
+                fail("Deflater closed exception not thrown");
+            } catch (NullPointerException e) {
+                //expected , Deflater has been closed exception
+            }
+        }
+    }
+
+    //Test for infinite loop by writing bytes to closed ZipOutputStream
+    @Test
+    public void testZipCloseEntry() throws IOException {
+        ZipOutputStream zip = new ZipOutputStream(outStream);
+        try {
+            zip.putNextEntry(new ZipEntry(""));
+        } catch (IOException e) {
+            //expected
+        }
+        try {
+            zip.write(inputBytes, 0, INPUT_LENGTH);
+            //close zip entry
+            zip.closeEntry();
+        } catch (IOException e) {
+            //expected
+        }
+        for (int i = 0; i < 3; i++) {
+            try {
+                //write on a closed ZipOutputStream
+                zip.write(inputBytes, 0, INPUT_LENGTH);
                 fail("Deflater closed exception not thrown");
             } catch (NullPointerException e) {
                 //expected , Deflater has been closed exception
