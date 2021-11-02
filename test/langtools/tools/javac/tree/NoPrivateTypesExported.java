@@ -90,7 +90,7 @@ public class NoPrivateTypesExported extends JavacTestingAbstractProcessor {
             "java.util.",
             "javax.lang.model.",
             "javax.annotation.processing.SupportedSourceVersion",
-            "javax.tools"
+            "javax.tools.JavaFileObject"
         ));
         Set<String> javaxToolsProcessingAcceptableTemp = new HashSet<>();
         javaxToolsProcessingAcceptableTemp.addAll(javaxLangModelAcceptable);
