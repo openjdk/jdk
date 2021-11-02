@@ -60,7 +60,7 @@ public class GZipLoopTest {
 
     @DataProvider(name = "testgzipinput")
       public Object[][] testInput() {
-       //testGZip will close the GZipOutputStream using close() method when the boolean  
+       //testGZip will close the GZipOutputStream using close() method when the boolean
        //useCloseMethod is set to true and finish() method if the value is set to false
        return new Object[][] {
         { GZIPOutputStream.class, true },
@@ -108,7 +108,7 @@ public class GZipLoopTest {
         try {
             zip.putNextEntry(new ZipEntry(""));
         } catch (IOException e) {
-            //expected
+            //expected to throw IOException since putNextEntry calls write method
         }
         try {
             zip.write(inputBytes, 0, INPUT_LENGTH);
