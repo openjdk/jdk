@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ public class LinkChecker extends HtmlChecker {
 
         void addReference(String name, Path from, int line) {
             if (checked) {
-                if (name != null) {
+                if (name != null && !name.isEmpty()) {
                     ID id = map.get(name);
                     if (id == null || !id.declared) {
                         error(from, line, "id not found: " + this.name + "#" + name);
@@ -368,7 +368,7 @@ public class LinkChecker extends HtmlChecker {
 
         void check() {
             map.forEach((name, id) -> {
-                if (name != null && !id.declared) {
+                if (name != null && !name.isEmpty() && !id.declared) {
                     //log.error(currFile, 0, "id not declared: " + name);
                     for (Position ref : id.references) {
                         error(ref.path, ref.line, "id not found: " + this.name + "#" + name);

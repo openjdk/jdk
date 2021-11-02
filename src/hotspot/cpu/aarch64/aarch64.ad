@@ -8547,6 +8547,7 @@ instruct membar_release() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "MEMBAR-store-store" %}

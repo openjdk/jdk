@@ -1443,9 +1443,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, MetaspaceGuardAllocations, false,                           \
           "Metapace allocations are guarded.")                              \
                                                                             \
-  develop(bool, MetaspaceHandleDeallocations, true,                         \
-          "Switch off Metapace deallocation handling.")                     \
-                                                                            \
   product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \
           "The minimum percentage of heap free after GC to avoid expansion."\
           " For most GCs this applies to the old generation. In G1 and"     \

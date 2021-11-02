@@ -72,7 +72,7 @@ public abstract class CiReplayBase {
         REPLAY_FILE_OPTION};
     private static final String[] REPLAY_OPTIONS = new String[]{DISABLE_COREDUMP_ON_CRASH,
         "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222",
-        "-XX:+ReplayCompiles", REPLAY_FILE_OPTION};
+        "-XX:+ReplayCompiles"};
     protected final Optional<Boolean> runServer;
     private static int dummy;
 
@@ -152,12 +152,16 @@ public abstract class CiReplayBase {
                 .forEach(File::delete);
     }
 
-    public static void cleanup() {
+    public void cleanup() {
         removeFromCurrentDirectoryStartingWith("core");
         removeFromCurrentDirectoryStartingWith("replay");
         removeFromCurrentDirectoryStartingWith(HS_ERR_NAME);
         remove(TEST_CORE_FILE_NAME);
         remove(REPLAY_FILE_NAME);
+    }
+
+    public String getReplayFileName() {
+        return REPLAY_FILE_NAME;
     }
 
     public boolean generateReplay(boolean needCoreDump, String... vmopts) {
@@ -170,13 +174,13 @@ public abstract class CiReplayBase {
             options.add(needCoreDump ? ENABLE_COREDUMP_ON_CRASH : DISABLE_COREDUMP_ON_CRASH);
             if (needCoreDump) {
                 // CiReplayBase$TestMain needs to be quoted because of shell eval
-                options.add("-XX:CompileOnly='" + getTestClass() + "::test'");
+                options.add("-XX:CompileOnly='" + getTestClass() + "::" + getTestMethod() + "'");
                 options.add("'" + getTestClass() + "'");
                 crashOut = ProcessTools.executeProcess(
                         CoreUtils.addCoreUlimitCommand(
                                 ProcessTools.createTestJvm(options.toArray(new String[0]))));
             } else {
-                options.add("-XX:CompileOnly=" + getTestClass() + "::test");
+                options.add("-XX:CompileOnly=" + getTestClass() + "::" + getTestMethod());
                 options.add(getTestClass());
                 crashOut = ProcessTools.executeProcess(ProcessTools.createTestJvm(options));
             }
@@ -204,6 +208,10 @@ public abstract class CiReplayBase {
         return TestMain.class.getName();
     }
 
+    public String getTestMethod() {
+        return "test";
+    }
+
     public void commonTests() {
         positiveTest();
         if (Platform.isTieredSupported()) {
@@ -215,6 +223,7 @@ public abstract class CiReplayBase {
         try {
             List<String> allAdditionalOpts = new ArrayList<>();
             allAdditionalOpts.addAll(Arrays.asList(REPLAY_OPTIONS));
+            allAdditionalOpts.add("-XX:ReplayDataFile=" + getReplayFileName());
             allAdditionalOpts.addAll(Arrays.asList(additionalVmOpts));
             OutputAnalyzer oa = ProcessTools.executeProcess(getTestJvmCommandlineWithPrefix(
                     RUN_SHELL_ZERO_LIMIT, allAdditionalOpts.toArray(new String[0])));

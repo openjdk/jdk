@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,11 @@ import java.util.Objects;
 
 class DelegatingMethodAccessorImpl extends MethodAccessorImpl {
     // initial non-null delegate
-    @Stable private final MethodAccessorImpl initialDelegate;
+    private final MethodAccessorImpl initialDelegate;
     // alternative delegate: starts as null;
     // only single change from null -> non-null is guaranteed
-    @Stable private  MethodAccessorImpl altDelegate;
+    @Stable
+    private MethodAccessorImpl altDelegate;
 
     DelegatingMethodAccessorImpl(MethodAccessorImpl delegate) {
         initialDelegate = Objects.requireNonNull(delegate);
@@ -49,6 +50,13 @@ class DelegatingMethodAccessorImpl extends MethodAccessorImpl {
         throws IllegalArgumentException, InvocationTargetException
     {
         return delegate().invoke(obj, args);
+    }
+
+    @Override
+    public Object invoke(Object obj, Object[] args, Class<?> caller)
+            throws IllegalArgumentException, InvocationTargetException
+    {
+        return delegate().invoke(obj, args, caller);
     }
 
     private MethodAccessorImpl delegate() {
