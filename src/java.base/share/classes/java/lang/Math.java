@@ -1392,7 +1392,6 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static long unsignedMultiplyHigh(long x, long y) {
-        // Compute via multiplyHigh() to leverage the intrinsic
         long result = Math.multiplyHigh(x, y);
         result += (y & (x >> 63)); // equivalent to `if (x < 0) result += y;`
         result += (x & (y >> 63)); // equivalent to `if (y < 0) result += x;`
