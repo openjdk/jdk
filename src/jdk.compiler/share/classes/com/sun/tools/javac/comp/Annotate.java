@@ -672,6 +672,13 @@ public class Annotate {
             log.error(tree.pos(), Errors.AttributeValueMustBeConstant);
             return new Attribute.Error(expectedElementType);
         }
+
+        // Scan the annotation element value and then attribute
+        // the internal annotations to prevent the compiler from crashing
+        if (tree.type != null && tree.type.tsym != null) {
+            queueScanTreeAndTypeAnnotate(tree, env, tree.type.tsym, tree.pos());
+        }
+
         result = cfolder.coerce(result, expectedElementType);
         return new Attribute.Constant(expectedElementType, result.constValue());
     }
