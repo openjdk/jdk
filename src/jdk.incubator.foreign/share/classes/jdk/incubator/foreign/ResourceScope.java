@@ -205,7 +205,7 @@ public sealed interface ResourceScope extends AutoCloseable permits ResourceScop
      * @return a new confined scope.
      */
     static ResourceScope newConfinedScope() {
-        return ResourceScopeImpl.createConfined( Thread.currentThread(), null);
+        return ResourceScopeImpl.createConfined(Thread.currentThread(), null);
     }
 
     /**

@@ -68,6 +68,8 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
     private final Class<?> carrier;
     private final ByteOrder order;
 
+    private final static int ADDRESS_SIZE_BITS = Unsafe.ADDRESS_SIZE * 8;
+
     ValueLayout(Class<?> carrier, ByteOrder order, long size) {
         this(carrier, order, size, size, Optional.empty());
     }
@@ -169,19 +171,19 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
         if (!isValidCarrier(carrier)) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
-        if (carrier == void.class) return;
-        if (carrier == MemoryAddress.class && size != (Unsafe.ADDRESS_SIZE * 8)) {
-            throw new IllegalArgumentException("Address size mismatch: " + (Unsafe.ADDRESS_SIZE * 8) + " != " + size);
+        if (carrier == MemoryAddress.class && size != ADDRESS_SIZE_BITS) {
+            throw new IllegalArgumentException("Address size mismatch: " + ADDRESS_SIZE_BITS + " != " + size);
         }
-        if (carrier.isPrimitive() && Wrapper.forPrimitiveType(carrier).bitWidth() != size &&
-                carrier != boolean.class && size != 8) {
-            throw new IllegalArgumentException("Carrier size mismatch: " + carrier.getName() + " != " + size);
+        if (carrier.isPrimitive()) {
+            int expectedSize =  carrier == boolean.class ? 8 : Wrapper.forPrimitiveType(carrier).bitWidth();
+            if (size != expectedSize) {
+                throw new IllegalArgumentException("Carrier size mismatch: " + carrier.getName() + " != " + size);
+            }
         }
     }
 
     static boolean isValidCarrier(Class<?> carrier) {
-        return carrier == void.class
-                || carrier == boolean.class
+        return carrier == boolean.class
                 || carrier == byte.class
                 || carrier == short.class
                 || carrier == char.class
@@ -481,7 +483,7 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
      */
     public static final class OfAddress extends ValueLayout {
         OfAddress(ByteOrder order) {
-            super(MemoryAddress.class, order, Unsafe.ADDRESS_SIZE * 8);
+            super(MemoryAddress.class, order, ADDRESS_SIZE_BITS);
         }
 
         OfAddress(ByteOrder order, long size, long alignment, Optional<String> name) {

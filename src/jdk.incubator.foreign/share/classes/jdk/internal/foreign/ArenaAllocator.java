@@ -35,11 +35,11 @@ public final class ArenaAllocator implements SegmentAllocator {
 
     MemorySegment segment;
 
-    long sp = 0L;
-    long size = 0;
-    final long blockSize;
-    final long arenaSize;
-    final ResourceScope scope;
+    private long sp = 0L;
+    private long size = 0;
+    private final long blockSize;
+    private final long arenaSize;
+    private final ResourceScope scope;
 
     public ArenaAllocator(long blockSize, long arenaSize, ResourceScope scope) {
         this.blockSize = blockSize;
@@ -70,6 +70,9 @@ public final class ArenaAllocator implements SegmentAllocator {
 
     @Override
     public MemorySegment allocate(long bytesSize, long bytesAlignment) {
+        if (size > arenaSize) {
+            throw new OutOfMemoryError();
+        }
         long prevSp = sp;
         long allocatedSize = 0L;
         try {
@@ -83,9 +86,6 @@ public final class ArenaAllocator implements SegmentAllocator {
                 if (maxPossibleAllocationSize > blockSize) {
                     // too big
                     allocatedSize = Utils.alignUp(bytesSize, bytesAlignment);
-                    if (size > arenaSize) {
-                        throw new OutOfMemoryError();
-                    }
                     return newSegment(bytesSize, bytesAlignment);
                 } else {
                     // allocate a new segment and slice from there

@@ -98,12 +98,12 @@ class SharedScope extends ResourceScopeImpl {
     public void release0() {
         int value;
         do {
-            value = (int) STATE.getVolatile(jdk.internal.foreign.SharedScope.this);
+            value = (int) STATE.getVolatile(this);
             if (value <= ALIVE) {
                 //cannot get here - we can't close segment twice
                 throw new IllegalStateException("Already closed");
             }
-        } while (!STATE.compareAndSet(jdk.internal.foreign.SharedScope.this, value, value - 1));
+        } while (!STATE.compareAndSet(this, value, value - 1));
     }
 
     void justClose() {

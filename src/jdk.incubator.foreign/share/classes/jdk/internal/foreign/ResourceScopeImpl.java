@@ -114,6 +114,7 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Seg
 
     @Override
     public void keepAlive(ResourceScope target) {
+        Objects.requireNonNull(target);
         if (target == this) {
             throw new IllegalArgumentException("Invalid target scope.");
         }
