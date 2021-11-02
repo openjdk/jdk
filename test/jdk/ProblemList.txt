@@ -608,8 +608,6 @@ java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
-java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
-
 ############################################################################
 
 # jdk_rmi
