@@ -2603,7 +2603,6 @@ public final class LdapCtx extends ComponentDirContext
 
         Vector<Vector<String>> referrals = new Vector<>(urlCount);
         int iURL;
-        int i = 0;
 
         separator = refString.indexOf('\n');
         iURL = separator + 1;

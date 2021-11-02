@@ -2823,6 +2823,16 @@ public:
     f(0b000001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
 
+  // Advanced SIMD scalar copy
+  void dup(FloatRegister Vd, SIMD_RegVariant T, FloatRegister Vn, int index = 0)
+  {
+    starti;
+    assert(T != Q, "invalid size");
+    f(0b01011110000, 31, 21);
+    f((1 << T) | (index << (T + 1)), 20, 16);
+    f(0b000001, 15, 10), rf(Vn, 5), rf(Vd, 0);
+  }
+
   // AdvSIMD ZIP/UZP/TRN
 #define INSN(NAME, opcode)                                              \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
@@ -2901,6 +2911,7 @@ public:
   INSN(frintn, 0, 0b00, 0b01, 0b11000);
   INSN(frintm, 0, 0b00, 0b01, 0b11001);
   INSN(frintp, 0, 0b10, 0b01, 0b11000);
+  INSN(fcvtzs, 0, 0b10, 0b01, 0b11011);
 #undef ASSERTION
 
 #define ASSERTION (T == T8B || T == T16B || T == T4H || T == T8H || T == T2S || T == T4S)

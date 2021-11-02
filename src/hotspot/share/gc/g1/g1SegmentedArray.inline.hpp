@@ -154,8 +154,7 @@ uint G1SegmentedArray<Elem, flag>::elem_size() const {
 }
 
 template <class Elem, MEMFLAGS flag>
-G1SegmentedArray<Elem, flag>::G1SegmentedArray(const char* name,
-                                               const G1SegmentedArrayAllocOptions* buffer_options,
+G1SegmentedArray<Elem, flag>::G1SegmentedArray(const G1SegmentedArrayAllocOptions* buffer_options,
                                                G1SegmentedArrayBufferList<flag>* free_buffer_list) :
      _alloc_options(buffer_options),
      _first(nullptr),

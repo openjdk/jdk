@@ -145,22 +145,21 @@ inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_el
   _data[0] = card_in_region;
 }
 
-inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType volatile* value) :
-  _value(value),
-  _success(false) {
+inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType volatile* num_entries_addr) :
+  _num_entries_addr(num_entries_addr) {
   SpinYield s;
-  EntryCountType original_value = (*_value) & EntryMask;
+  EntryCountType num_entries = Atomic::load(_num_entries_addr) & EntryMask;
   while (true) {
-    EntryCountType old_value = Atomic::cmpxchg(_value,
-                                               original_value,
-                                               (EntryCountType)(original_value | LockBitMask));
-    if (old_value == original_value) {
+    EntryCountType old_value = Atomic::cmpxchg(_num_entries_addr,
+                                               num_entries,
+                                               (EntryCountType)(num_entries | LockBitMask));
+    if (old_value == num_entries) {
       // Succeeded locking the array.
-      _original_value = original_value;
+      _local_num_entries = num_entries;
       break;
     }
     // Failed. Retry (with the lock bit stripped again).
-    original_value = old_value & EntryMask;
+    num_entries = old_value & EntryMask;
     s.wait();
   }
 }

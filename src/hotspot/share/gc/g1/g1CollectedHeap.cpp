@@ -1310,7 +1310,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
       vm_exit_out_of_memory(aligned_expand_bytes, OOM_MMAP_ERROR, "G1 heap expansion");
     }
   }
-  return regions_to_expand > 0;
+  return expanded_by > 0;
 }
 
 bool G1CollectedHeap::expand_single_region(uint node_index) {

@@ -295,7 +295,7 @@ void ZPhysicalMemoryManager::alloc(ZPhysicalMemory& pmem, size_t size) {
   // Allocate segments
   while (size > 0) {
     size_t allocated = 0;
-    const uintptr_t start = _manager.alloc_from_front_at_most(size, &allocated);
+    const uintptr_t start = _manager.alloc_low_address_at_most(size, &allocated);
     assert(start != UINTPTR_MAX, "Allocation should never fail");
     pmem.add_segment(ZPhysicalMemorySegment(start, allocated, false /* committed */));
     size -= allocated;
