@@ -22,6 +22,7 @@
  */
 
 import java.awt.AlphaComposite;
+import java.awt.Frame;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -33,8 +34,6 @@ import java.awt.image.DataBufferInt;
 import java.awt.image.DirectColorModel;
 import java.awt.image.WritableRaster;
 import java.util.Arrays;
-
-import javax.swing.JFrame;
 
 /**
  * @test
@@ -55,7 +54,7 @@ public final class DrawCustomColorModel {
     }
 
     private static void test(GraphicsConfiguration gc) {
-        JFrame frame = new JFrame(gc);
+        Frame frame = new Frame(gc);
         frame.setUndecorated(true);
         frame.pack();
         frame.setSize(15, 15);
