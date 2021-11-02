@@ -272,7 +272,7 @@ public class TestFileObjectOf extends TestRunner {
             Trees trees = Trees.instance(processingEnv);
             Queue<Element> q = new ArrayDeque<>();
             q.add(elements.getModuleElement("m"));
-            
+
             while (!q.isEmpty()) {
                 Element currentElement = q.remove();
 
