@@ -187,13 +187,18 @@ Address LIR_Assembler::as_Address(LIR_Address* addr, Register tmp) {
       default:
         ShouldNotReachHere();
       }
-  } else  {
-    intptr_t addr_offset = intptr_t(addr->disp());
-    if (Address::offset_ok_for_immed(addr_offset, addr->scale()))
-      return Address(base, addr_offset, Address::lsl(addr->scale()));
-    else {
-      __ mov(tmp, addr_offset);
-      return Address(base, tmp, Address::lsl(addr->scale()));
+  } else {
+    assert(addr->scale() == 0,
+           "expected for immediate operand, was: %d", addr->scale());
+    ptrdiff_t offset = ptrdiff_t(addr->disp());
+    // FIXME: Assuming worst case, 8 byte datum, since operand size is unknown.
+    //        NOTE: Not expecting 16 byte vector access.
+    const uint log2size = 3;
+    if (Address::offset_ok_for_immed(offset, log2size)) {
+      return Address(base, offset);
+    } else {
+      __ mov(tmp, offset);
+      return Address(base, tmp);
     }
   }
   return Address();
