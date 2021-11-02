@@ -137,11 +137,11 @@ public class repeat001 extends JdbTest {
 
         // Verify that repeated commands are repeatable
         // (`up' just prints `End of stack.' since we're stopped in `main')
-        reply = jdb.receiveReplyFor("2 2 " + JdbCommand.up);
+        reply = jdb.receiveReplyFor("2 2 " + JdbCommand.up, true, 4);
         if (reply.length != 5 || !isPrompt(reply[4])) {
             failure("Unexpected output");
         }
-        if (!Arrays.equals(reply, jdb.receiveReplyFor(""))) {
+        if (!Arrays.equals(reply, jdb.receiveReplyFor("", true, 4))) {
             failure("Repeated command didn't repeat correctly");
         }
     }
