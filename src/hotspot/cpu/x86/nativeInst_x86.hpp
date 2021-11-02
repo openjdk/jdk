@@ -175,6 +175,7 @@ class NativeCall: public NativeInstruction {
 #endif // AMD64
     set_int_at(displacement_offset, dest - return_address());
   }
+  bool  is_displacement_aligned();
   void  set_destination_mt_safe(address dest);
 
   void  verify_alignment() { assert((intptr_t)addr_at(displacement_offset) % BytesPerInt == 0, "must be aligned"); }
