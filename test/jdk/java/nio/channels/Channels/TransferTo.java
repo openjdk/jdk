@@ -64,6 +64,10 @@ public class TransferTo {
 
     private static final int ITERATIONS = 10;
 
+    private static final int NUM_WRITES = 3 * 1024;
+    private static final int BYTES_PER_WRITE = 1024 * 1024;
+    private static final long BYTES_WRITTEN = (long) NUM_WRITES * BYTES_PER_WRITE;
+
     private static final Random RND = RandomFactory.getRandom();
 
     /*
@@ -124,6 +128,37 @@ public class TransferTo {
 
         // tests writing beyond target EOF (must extend output stream)
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 0, 4096);
+    }
+
+    /*
+     * Special test for file-to-file transfer of more than two GB.
+     * This test covers multiple iterations of FileChannel.transerTo(FileChannel),
+     * which ChannelInputStream.transferTo() only applies in this particular case,
+     * and cannot get tested using a single byte[] due to size limitation of arrays.
+     */
+    @Test
+    public void testMoreThanTwoGB() throws IOException {
+        // preparing two temporary files which will be compared at the end of the test
+        Path sourceFile = Files.createTempFile(null, null);
+        Path targetFile = Files.createTempFile(null, null);
+
+        // writing 3 GB of random bytes into source file
+        for (int i = 0; i < NUM_WRITES; i++)
+            Files.write(sourceFile, createRandomBytes(BYTES_PER_WRITE, 0), StandardOpenOption.APPEND);
+
+        // performing actual transfer, effectively by multiple invocations of Filechannel.transferTo(FileChannel)
+        long count;
+        try (InputStream inputStream = Channels.newInputStream(FileChannel.open(sourceFile));
+                OutputStream outputStream = Channels
+                        .newOutputStream(FileChannel.open(targetFile, StandardOpenOption.WRITE))) {
+            count = inputStream.transferTo(outputStream);
+        }
+
+        // comparing reported transferred bytes, must be 3 GB
+        assertEquals(count, BYTES_WRITTEN);
+
+        // comparing content of both files, failing in case of any difference
+        assertEquals(Files.mismatch(sourceFile, targetFile), -1);
     }
 
     /*
