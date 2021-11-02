@@ -280,10 +280,10 @@ oop HeapShared::archive_object(oop obj) {
     return ao;
   }
 
-  int len = obj->size();
+  int len = (int)obj->size();
   if (G1CollectedHeap::heap()->is_archive_alloc_too_large(len)) {
     log_debug(cds, heap)("Cannot archive, object (" PTR_FORMAT ") is too large: " SIZE_FORMAT,
-                         p2i(obj), (size_t)obj->size());
+                         p2i(obj), obj->size());
     return NULL;
   }
 
