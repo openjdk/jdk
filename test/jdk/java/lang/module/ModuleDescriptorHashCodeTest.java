@@ -28,13 +28,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.module.ModuleDescriptor;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @test
  * @bug 8275509
  * @library /test/lib
  * @run driver ModuleDescriptorHashCodeTest
- * @modules java.sql
  * @summary Tests that the ModuleDescriptor.hashCode() method returns the same hash code
  * across multiple JVM runs, for the same module descriptor.
  */
@@ -47,47 +47,56 @@ public class ModuleDescriptorHashCodeTest {
      * will generate the exact same hash code for the module descriptor of the same module.
      */
     public static void main(String[] args) throws Exception {
-        ModuleDescriptor md = javaSQLModuleFromBootLayer().getDescriptor();
-        assertRequiresHasModifier(md);
-        int expectedHashCode = md.hashCode();
-        int numProcesses = 50;
-        for (int i = 0; i < numProcesses; i++) {
-            // run some with CDS enabled and some with CDS disabled
-            boolean disableCDS = (i % 2 == 0);
-            String[] processArgs;
-            if (disableCDS) {
-                processArgs = new String[]{"-Xshare:off",
-                        HashCodeChecker.class.getName(),
-                        String.valueOf(expectedHashCode)};
-            } else {
-                processArgs = new String[]{HashCodeChecker.class.getName(),
-                        String.valueOf(expectedHashCode)};
+        Set<Module> bootModules = ModuleLayer.boot().modules();
+        for (Module bootModule : bootModules) {
+            ModuleDescriptor md = bootModule.getDescriptor();
+            int expectedHashCode = md.hashCode();
+            System.out.println("Expected ModuleDescriptor.hashCode() of boot module "
+                    + bootModule.getName() + " is " + expectedHashCode);
+            int numProcesses = 2;
+            for (int i = 0; i < numProcesses; i++) {
+                // run some with CDS enabled and some with CDS disabled
+                boolean disableCDS = (i % 2 == 0);
+                String[] processArgs;
+                if (disableCDS) {
+                    processArgs = new String[]{"-Xshare:off",
+                            HashCodeChecker.class.getName(),
+                            bootModule.getName(),
+                            String.valueOf(expectedHashCode)};
+                } else {
+                    processArgs = new String[]{HashCodeChecker.class.getName(),
+                            bootModule.getName(),
+                            String.valueOf(expectedHashCode)};
+                }
+                ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(processArgs);
+                long start = System.currentTimeMillis();
+                OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(processBuilder);
+                System.out.println("Process " + outputAnalyzer.pid() + " completed in "
+                        + (System.currentTimeMillis() - start) + " milli seconds");
+                outputAnalyzer.shouldHaveExitValue(0);
             }
-            ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(processArgs);
-            long start = System.currentTimeMillis();
-            OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(processBuilder);
-            System.out.println("Process " + outputAnalyzer.pid() + " completed in "
-                    + (System.currentTimeMillis() - start) + " milli seconds");
-            outputAnalyzer.shouldHaveExitValue(0);
         }
     }
 
     /**
-     * Loads the java.sql module from boot layer and compares the hashCode of that module's
+     * Loads the passed module from the boot layer and compares the hashCode of that module's
      * descriptor with the expected hash code (which is passed as an argument).
      * Then uses the {@link ModuleDescriptor.Builder} to construct a module descriptor for the
      * same module and verifies that it too has the same hash code.
      */
-    private static void assertExpectedHashCode(int expectedHashCode) throws Exception {
-        Module bootModule = javaSQLModuleFromBootLayer();
-        ModuleDescriptor bootMD = bootModule.getDescriptor();
+    private static void assertExpectedHashCode(String moduleName, int expectedHashCode) throws Exception {
+        Optional<Module> bootModule = ModuleLayer.boot().findModule(moduleName);
+        if (bootModule.isEmpty()) {
+            throw new RuntimeException("Boot module " + moduleName + " is missing");
+        }
+        ModuleDescriptor bootMD = bootModule.get().getDescriptor();
         int actualHashCode = bootMD.hashCode();
         if (actualHashCode != expectedHashCode) {
             throw new RuntimeException("Expected hashCode " + expectedHashCode + " but got " + actualHashCode
                     + " from boot module descriptor " + bootMD);
         }
         System.out.println("Got expected hashCode of " + expectedHashCode + " for boot module descriptor " + bootMD);
-        ModuleDescriptor mdFromBuilder = fromModuleInfoClass(bootModule);
+        ModuleDescriptor mdFromBuilder = fromModuleInfoClass(bootModule.get());
         // verify that this object is indeed a different object instance than the boot module descriptor
         // to prevent any artificial passing of the test
         if (bootMD == mdFromBuilder) {
@@ -111,38 +120,10 @@ public class ModuleDescriptorHashCodeTest {
 
     private static class HashCodeChecker {
         public static void main(String[] args) throws Exception {
-            ModuleDescriptorHashCodeTest.assertExpectedHashCode(Integer.parseInt(args[0]));
+            // args[0] is module name
+            // args[1] is the expected hash code of that module descriptor
+            ModuleDescriptorHashCodeTest.assertExpectedHashCode(args[0], Integer.parseInt(args[1]));
         }
-    }
-
-    private static void assertRequiresHasModifier(ModuleDescriptor moduleDescriptor) {
-        // The test case needs a module whose descriptor has at least one "requires" with a "modifier"
-        // set. This is to ensure that the hashCode tests that we run in this test case,
-        // do indeed trigger the hashCode() calls against the "modifier" enums.
-        // At the time of writing this test, the test does indeed use such a boot module which satisfies
-        // that criteria. However, we want to be sure that any future
-        // changes to that module definition don't create artificial success of the test case.
-        for (ModuleDescriptor.Requires requires : moduleDescriptor.requires()) {
-            if (!requires.modifiers().isEmpty()) {
-                return;
-            }
-        }
-        throw new RuntimeException(moduleDescriptor + " doesn't have a \"requires\" with a \"modifier\"");
-    }
-
-    // Finds and returns the java.sql module from the boot layer
-    private static Module javaSQLModuleFromBootLayer() {
-        // we use "java.sql" as the module of choice because its module definition has
-        // at least one "requires" with a "modifier":
-        //  requires transitive java.logging;
-        //  requires transitive java.transaction.xa;
-        //  requires transitive java.xml;
-        String moduleName = "java.sql";
-        Optional<Module> bootModule = ModuleLayer.boot().findModule(moduleName);
-        if (bootModule.isEmpty()) {
-            throw new RuntimeException(moduleName + " module is missing in boot layer");
-        }
-        return bootModule.get();
     }
 
     // Returns a ModuleDescriptor parsed out of the module-info.class of the passed Module
