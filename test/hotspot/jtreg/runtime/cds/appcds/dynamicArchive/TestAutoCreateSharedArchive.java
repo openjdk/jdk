@@ -61,6 +61,9 @@
  * 14 Read base archive from top archive failed
  *    If stored base archive name is not correct, it will lead the archive opened as static and no shared in runtime,
  *    also no shared archive created at exit.
+ * 15 Create an archive with only dynamic magic value(size of 4)
+ *    This created archive file contains only dynamic magic value, size of the file is 4 bytes.
+ *    Run with this archive with default base archive failed due to fail to read file header.
  *
  * 20 (case B)
  *
@@ -72,6 +75,8 @@
  *    regenerated at exit.
  * 22 if base archive is not with correct version, both base and top archives will not be shared.
  *    At exit, there is no shared archive created automatically.
+ * 23 create an archive with dynamic magic value only like in 15
+ *    Run with the base archive created in step 20.1 will exit abnormal due to fail to read file header.
  */
 
 import java.io.IOException;
