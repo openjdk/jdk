@@ -313,29 +313,13 @@ public class SnippetTaglet extends BaseTaglet {
     }
 
     private String languageFromFileName(String fileName) {
-        int lastDot = fileName.lastIndexOf('.');
-        if (lastDot == -1) {
-            return null;
+        // TODO: find a way to extend/customize the list of recognized file name extensions
+        if (fileName.endsWith(".java")) {
+            return "java";
+        } else if (fileName.endsWith(".properties")) {
+            return "properties";
         }
-        return switch (Utils.toLowerCase(fileName.substring(lastDot))) {
-            // TODO: this list could probably be expanded
-            case ".bat"                              -> "batch";
-            case ".c", ".h"                          -> "c";
-            case ".clj", ".cljs", ".cljc"            -> "clojure";
-            case ".cpp", ".hpp"                      -> "cpp";
-            case ".groovy", ".gvy", ".gy", ".gsh"    -> "groovy";
-            case ".java"                             -> "java";
-            case ".js"                               -> "javascript";
-            case ".json"                             -> "json";
-            case ".kt", ".ktm", ".kts"               -> "kotlin";
-            case ".properties"                       -> "properties";
-            case ".py"                               -> "python";
-            case ".rb"                               -> "ruby";
-            case ".scala", ".sc"                     -> "scala";
-            case ".sh"                               -> "bash";
-            case ".tex"                              -> "latex";
-            default                                  -> null;
-        };
+        return null;
     }
 
     private void error(TagletWriter writer, Element holder, DocTree tag, String key, Object... args) {
