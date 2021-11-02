@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,12 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 public class ArraysFill {
 
-    @Param({"10", "266", "2048"})
+    @Param({"10", "16", "31", "59", "89", "126", "250", "266", "511", "1021", "2047", "2048", "4095", "8195"})
     public int size;
 
     public byte[] testByteArray;
