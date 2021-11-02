@@ -369,4 +369,55 @@ public abstract class XPathFactory {
     * @return New instance of an <code>XPath</code>.
     */
     public abstract XPath newXPath();
+
+    /**
+     * Sets a property for this {@code XPathFactory} and {@code XPath}
+     * created by this factory.
+     *
+     * @implSpec
+     * The default implementation in the XPath API throws
+     * {@link java.lang.UnsupportedOperationException}.
+     *
+     * @param name the property name
+     * @param value the value for the property
+     *
+     * @throws XPathFactoryConfigurationException if the property name is not
+     * recognized, or the value can not be assigned
+     * @throws UnsupportedOperationException if the implementation does not
+     * support the method
+     * @throws NullPointerException if the {@code name} is {@code null}.
+     */
+    public void setProperty(String name, String value)
+        throws XPathFactoryConfigurationException {
+
+        if (name == null) {
+            throw new NullPointerException("the name parameter is null");
+        }
+        throw new UnsupportedOperationException("not implemented");
+    }
+
+    /**
+     * Returns the value of the specified property.
+     *
+     * @implSpec
+     * The default implementation in the XPath API throws
+     * {@link java.lang.UnsupportedOperationException}.
+     *
+     * @param name the property name
+     * @return the value of the property.
+     *
+     * @throws XPathFactoryConfigurationException if the property name is not
+     * recognized
+     * @throws UnsupportedOperationException if the implementation does not
+     * support the method
+     * @throws NullPointerException if the {@code name} is {@code null}.
+     */
+    public String getProperty(String name)
+        throws XPathFactoryConfigurationException {
+
+        if (name == null) {
+            throw new NullPointerException("the name parameter is null");
+        }
+        throw new UnsupportedOperationException("not implemented");
+    }
 }
