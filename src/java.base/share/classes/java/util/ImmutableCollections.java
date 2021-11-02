@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ class ImmutableCollections {
     static UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
 
     @jdk.internal.ValueBased
-    static abstract class AbstractImmutableCollection<E> extends AbstractCollection<E> {
+    abstract static class AbstractImmutableCollection<E> extends AbstractCollection<E> {
         // all mutating methods throw UnsupportedOperationException
         @Override public boolean add(E e) { throw uoe(); }
         @Override public boolean addAll(Collection<? extends E> c) { throw uoe(); }
@@ -249,7 +249,7 @@ class ImmutableCollections {
     // ---------- List Implementations ----------
 
     @jdk.internal.ValueBased
-    static abstract class AbstractImmutableList<E> extends AbstractImmutableCollection<E>
+    abstract static class AbstractImmutableList<E> extends AbstractImmutableCollection<E>
             implements List<E>, RandomAccess {
 
         // all mutating methods throw UnsupportedOperationException
@@ -742,7 +742,7 @@ class ImmutableCollections {
     // ---------- Set Implementations ----------
 
     @jdk.internal.ValueBased
-    static abstract class AbstractImmutableSet<E> extends AbstractImmutableCollection<E>
+    abstract static class AbstractImmutableSet<E> extends AbstractImmutableCollection<E>
             implements Set<E> {
 
         @Override
