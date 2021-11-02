@@ -137,13 +137,6 @@ public interface JavaLangInvokeAccess {
     MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback);
 
     /**
-     * Ensure given method handle is customized
-     *
-     * @param mh the method handle
-     */
-    void ensureCustomized(MethodHandle mh);
-
-    /**
      * Produces a method handle unreflecting from a {@code Constructor} with
      * the trusted lookup
      */

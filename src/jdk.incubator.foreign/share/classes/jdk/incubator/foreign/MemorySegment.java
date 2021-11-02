@@ -384,7 +384,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
     MemorySegment fill(byte value);
 
     /**
-     * Performs an element-wise bulk copy from given source segment to this segment. More specifically, the bytes at
+     * Performs a bulk copy from given source segment to this segment. More specifically, the bytes at
      * offset {@code 0} through {@code src.byteSize() - 1} in the source segment are copied into this segment
      * at offset {@code 0} through {@code src.byteSize() - 1}.
      * <p>
@@ -394,10 +394,6 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * }</pre></blockquote>
      * @param src the source segment.
      * @throws IndexOutOfBoundsException if {@code src.byteSize() > this.byteSize()}.
-     * @throws IllegalArgumentException if the element layouts have different sizes, if the source segment size is not
-     * a multiple of the source element layout size, if the source segment is incompatible with the alignment constraints
-     * in the source element layout, or if this segment is incompatible with the alignment constraints
-     * in the destination element layout.
      * @throws IllegalStateException if either the scope associated with the source segment or the scope associated
      * with this segment have been already closed, or if access occurs from a thread other than the thread owning either
      * scopes.
@@ -630,9 +626,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * sequences with this charset's default replacement string.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
-     * @return a Java UTF-8 string containing all the bytes read from the given starting address up to (but not including)
+     * @return a Java string constructed from the bytes read from the given starting address up to (but not including)
      * the first {@code '\0'} terminator character (assuming one is found).
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      * @throws IllegalStateException if the size of the native string is greater than the size of this segment,
@@ -649,7 +645,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * sequences with this charset's default replacement string.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @param str the Java string to be written into this segment.
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
@@ -759,14 +755,14 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
 
     /**
-     * Creates a new native memory segment with given size and resource scope, and whose base address is this address.
+     * Creates a new native memory segment with given size and resource scope, and whose base address is the given address.
      * This method can be useful when interacting with custom
      * native memory sources (e.g. custom allocators), where an address to some
      * underlying memory region is typically obtained from native code (often as a plain {@code long} value).
      * The returned segment is not read-only (see {@link MemorySegment#isReadOnly()}), and is associated with the
      * provided resource scope.
      * <p>
-     * Clients should ensure that the address and bounds refers to a valid region of memory that is accessible for reading and,
+     * Clients should ensure that the address and bounds refer to a valid region of memory that is accessible for reading and,
      * if appropriate, writing; an attempt to access an invalid memory location from Java code will either return an arbitrary value,
      * have no visible effect, or cause an unspecified exception to be thrown.
      * <p>
@@ -1032,7 +1028,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a byte from this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be read.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @return a byte value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1049,7 +1045,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a byte to this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be written.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @param value the byte value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1065,7 +1061,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a boolean from this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be read.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @return a boolean value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1082,9 +1078,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a boolean to this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be written.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
-     * @param value the byte value to be written.
+     * @param value the boolean value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1098,7 +1094,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a char from this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be read.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @return a char value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1115,9 +1111,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a char to this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be written.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
-     * @param value the byte value to be written.
+     * @param value the char value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1131,7 +1127,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a short from this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be read.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @return a short value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1148,9 +1144,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a short to this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be written.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
-     * @param value the byte value to be written.
+     * @param value the short value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1164,7 +1160,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads an int from this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be read.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @return an int value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1181,9 +1177,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes an int to this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be written.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
-     * @param value the byte value to be written.
+     * @param value the int value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1197,7 +1193,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a float from this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be read.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @return a float value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1214,9 +1210,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a float to this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be written.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
-     * @param value the byte value to be written.
+     * @param value the float value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1230,7 +1226,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a long from this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be read.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @return a long value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1247,9 +1243,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a long to this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be written.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
-     * @param value the byte value to be written.
+     * @param value the long value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1263,7 +1259,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a double from this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be read.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @return a double value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1280,9 +1276,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a double to this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be written.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
-     * @param value the byte value to be written.
+     * @param value the double value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1296,7 +1292,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads an address from this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be read.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @return an address value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1313,9 +1309,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes an address to this segment and offset with given layout.
      *
      * @param layout the layout of the memory region to be written.
-     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
-     * @param value the byte value to be written.
+     * @param value the address value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1329,7 +1325,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a char from this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be read.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
      * @return a char value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1346,9 +1342,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a char to this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be written.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
-     * @param value the byte value to be written.
+     * @param value the char value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1362,7 +1358,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a short from this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be read.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
      * @return a short value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1379,9 +1375,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a short to this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be written.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
-     * @param value the byte value to be written.
+     * @param value the short value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1395,7 +1391,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads an int from this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be read.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
      * @return an int value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1412,9 +1408,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes an int to this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be written.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
-     * @param value the byte value to be written.
+     * @param value the int value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1428,7 +1424,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a float from this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be read.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
      * @return a float value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1445,9 +1441,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a float to this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be written.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
-     * @param value the byte value to be written.
+     * @param value the float value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1461,7 +1457,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a long from this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be read.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
      * @return a long value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1478,9 +1474,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a long to this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be written.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
-     * @param value the byte value to be written.
+     * @param value the long value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1494,7 +1490,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads a double from this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be read.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
      * @return a double value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1511,9 +1507,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes a double to this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be written.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
-     * @param value the byte value to be written.
+     * @param value the double value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1527,7 +1523,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Reads an address from this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be read.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
      * @return an address value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
@@ -1544,9 +1540,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Writes an address to this segment and index, scaled by given layout size.
      *
      * @param layout the layout of the memory region to be written.
-     * @param index index (relative to this segment). For instance, if this segment is a {@link #isNative()} segment,
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
-     * @param value the byte value to be written.
+     * @param value the address value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
@@ -1560,7 +1556,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
     /**
      * Copies a number of elements from a source segment to a destination array,
      * starting at a given segment offset (expressed in bytes), and a given array index, using the given source element layout.
-     * Supported array types are {@code byte[]}, {@code char[]},{@code short[]},{@code int[]},{@code float[]},{@code long[]} and {@code double[]}.
+     * Supported array types are {@code byte[]}, {@code char[]}, {@code short[]}, {@code int[]}, {@code float[]}, {@code long[]} and {@code double[]}.
      * @param srcSegment the source segment.
      * @param srcLayout the source element layout. If the byte order associated with the layout is
      * different from the native order, a byte swap operation will be performed on each array element.
@@ -1601,7 +1597,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
     /**
      * Copies a number of elements from a source array to a destination segment,
      * starting at a given array index, and a given segment offset (expressed in bytes), using the given destination element layout.
-     * Supported array types are {@code byte[]}, {@code char[]},{@code short[]},{@code int[]},{@code float[]},{@code long[]} and {@code double[]}.
+     * Supported array types are {@code byte[]}, {@code char[]}, {@code short[]}, {@code int[]}, {@code float[]}, {@code long[]} and {@code double[]}.
      * @param srcArray the source array.
      * @param srcIndex the starting index of the source array.
      * @param dstSegment the destination segment.

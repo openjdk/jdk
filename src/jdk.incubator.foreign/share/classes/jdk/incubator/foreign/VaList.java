@@ -129,7 +129,7 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
 
     /**
      * Copies this variable argument list at its current position into a new variable argument list associated
-     * with the same scope as this variable argument list. using the segment provided allocator. Copying is useful to
+     * with the same scope as this variable argument list. Copying is useful to
      * traverse the variable argument list elements, starting from the current position, without affecting the state
      * of the original variable argument list, essentially allowing the elements to be traversed multiple times.
      *
