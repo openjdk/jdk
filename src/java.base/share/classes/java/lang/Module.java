@@ -110,8 +110,7 @@ public final class Module implements AnnotatedElement {
     // the module descriptor
     private final ModuleDescriptor descriptor;
 
-    // true, if this module allows restricted native access; @Stable makes sure that modules that allow native
-    // access capture this property as a constant.
+    // true, if this module allows restricted native access
     @Stable
     private boolean enableNativeAccess;
 
