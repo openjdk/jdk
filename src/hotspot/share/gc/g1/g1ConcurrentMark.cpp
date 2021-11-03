@@ -965,7 +965,7 @@ void G1ConcurrentMark::scan_root_region(const MemRegion* region, uint worker_id)
   while (curr < end) {
     Prefetch::read(curr, interval);
     oop obj = cast_to_oop(curr);
-    int size = obj->oop_iterate_size(&cl);
+    size_t size = obj->oop_iterate_size(&cl);
     assert(size == obj->size(), "sanity");
     curr += size;
   }
@@ -1645,9 +1645,6 @@ void G1ConcurrentMark::weak_refs_work() {
            "Mark stack should be empty (unless it has overflown)");
 
     assert(rp->num_queues() == active_workers, "why not");
-
-    rp->verify_no_references_recorded();
-    assert(!rp->discovery_enabled(), "Post condition");
   }
 
   if (has_overflown()) {
@@ -1695,9 +1692,7 @@ void G1ConcurrentMark::preclean() {
 
   SuspendibleThreadSetJoiner joiner;
 
-  G1CMKeepAliveAndDrainClosure keep_alive(this, task(0), true /* is_serial */);
   BarrierEnqueueDiscoveredFieldClosure enqueue;
-  G1CMDrainMarkingStackClosure drain_mark_stack(this, task(0), true /* is_serial */);
 
   set_concurrency_and_phase(1, true);
 
@@ -1707,9 +1702,7 @@ void G1ConcurrentMark::preclean() {
   // Precleaning is single threaded. Temporarily disable MT discovery.
   ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(rp, false);
   rp->preclean_discovered_references(rp->is_alive_non_header(),
-                                     &keep_alive,
                                      &enqueue,
-                                     &drain_mark_stack,
                                      &yield_cl,
                                      _gc_timer_cm);
 }

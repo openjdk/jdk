@@ -112,6 +112,7 @@ public:
     // Block concurrent class unloading from changing the _dumptime_table
     MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
     SystemDictionaryShared::check_excluded_classes();
+    SystemDictionaryShared::cleanup_lambda_proxy_class_dictionary();
 
     // save dumptime tables
     SystemDictionaryShared::clone_dumptime_tables();

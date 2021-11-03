@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,8 @@
 
 package jdk.jfr.internal;
 
-import java.io.IOException;
-
-import jdk.jfr.internal.LogLevel;
-import jdk.jfr.internal.LogTag;
-import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.internal.misc.Unsafe;
-
-import static java.nio.file.LinkOption.*;
 
 /**
  * Options that control Flight Recorder.
@@ -55,7 +48,7 @@ public final class Options {
     private static final int DEFAULT_STACK_DEPTH = 64;
     private static final boolean DEFAULT_SAMPLE_THREADS = true;
     private static final long DEFAULT_MAX_CHUNK_SIZE = 12 * 1024 * 1024;
-    private static final SafePath DEFAULT_DUMP_PATH = new SafePath(".");
+    private static final SafePath DEFAULT_DUMP_PATH = SecuritySupport.USER_HOME;
 
     private static long memorySize;
     private static long globalBufferSize;
@@ -64,6 +57,7 @@ public final class Options {
     private static int stackDepth;
     private static boolean sampleThreads;
     private static long maxChunkSize;
+    private static SafePath dumpPath;
 
     static {
         final long pageSize = Unsafe.getUnsafe().pageSize();
@@ -120,23 +114,11 @@ public final class Options {
     }
 
     public static synchronized void setDumpPath(SafePath path) {
-        if (path.toFile().canWrite()) {
-            try {
-                jvm.setDumpPath(path.toPath().toRealPath(NOFOLLOW_LINKS).toString());
-            } catch (IOException e) {
-                if (Logger.shouldLog(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN)) {
-                    Logger.log(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN, "Error occurred in path resolution: " + e.toString());
-                }
-            }
-        } else {
-            if (Logger.shouldLog(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN)) {
-                Logger.log(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN, "Cannot write JFR emergency dump to " + path.toString());
-            }
-        }
+        dumpPath = path;
     }
 
     public static synchronized SafePath getDumpPath() {
-        return new SafePath(jvm.getDumpPath());
+        return dumpPath;
     }
 
     public static synchronized void setStackDepth(Integer stackTraceDepth) {

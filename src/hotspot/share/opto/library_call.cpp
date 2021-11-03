@@ -286,6 +286,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_multiplyExactI:           return inline_math_multiplyExactI();
   case vmIntrinsics::_multiplyExactL:           return inline_math_multiplyExactL();
   case vmIntrinsics::_multiplyHigh:             return inline_math_multiplyHigh();
+  case vmIntrinsics::_unsignedMultiplyHigh:     return inline_math_unsignedMultiplyHigh();
   case vmIntrinsics::_negateExactI:             return inline_math_negateExactI();
   case vmIntrinsics::_negateExactL:             return inline_math_negateExactL();
   case vmIntrinsics::_subtractExactI:           return inline_math_subtractExactI(false /* subtract */);
@@ -466,6 +467,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
+  case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:                return inline_unsafe_fence(intrinsic_id());
 
   case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
@@ -1867,6 +1869,11 @@ bool LibraryCallKit::inline_math_multiplyHigh() {
   return true;
 }
 
+bool LibraryCallKit::inline_math_unsignedMultiplyHigh() {
+  set_result(_gvn.transform(new UMulHiLNode(argument(0), argument(2))));
+  return true;
+}
+
 Node*
 LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
   // These are the candidate return value:
@@ -2688,6 +2695,9 @@ bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
       return true;
     case vmIntrinsics::_storeFence:
       insert_mem_bar(Op_StoreFence);
+      return true;
+    case vmIntrinsics::_storeStoreFence:
+      insert_mem_bar(Op_StoreStoreFence);
       return true;
     case vmIntrinsics::_fullFence:
       insert_mem_bar(Op_MemBarVolatile);

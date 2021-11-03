@@ -153,22 +153,6 @@ class KlassInfoHisto : public StackObj {
   void print_elements(outputStream* st) const;
   bool is_selected(const char *col_name);
 
-  template <class T> static int count_bytes(T* x) {
-    return (HeapWordSize * ((x) ? (x)->size() : 0));
-  }
-
-  template <class T> static int count_bytes_array(T* x) {
-    if (x == NULL) {
-      return 0;
-    }
-    if (x->length() == 0) {
-      // This is a shared array, e.g., Universe::the_empty_int_array(). Don't
-      // count it to avoid double-counting.
-      return 0;
-    }
-    return HeapWordSize * x->size();
-  }
-
   static void print_julong(outputStream* st, int width, julong n) {
     int num_spaces = width - julong_width(n);
     if (num_spaces > 0) {

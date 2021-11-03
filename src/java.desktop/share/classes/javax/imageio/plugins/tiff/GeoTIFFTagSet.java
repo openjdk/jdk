@@ -138,7 +138,7 @@ public final class GeoTIFFTagSet extends TIFFTagSet {
      *
      * @return a {@code GeoTIFFTagSet} instance.
      */
-    public synchronized static GeoTIFFTagSet getInstance() {
+    public static synchronized GeoTIFFTagSet getInstance() {
         if (theInstance == null) {
             initTags();
             theInstance = new GeoTIFFTagSet();
