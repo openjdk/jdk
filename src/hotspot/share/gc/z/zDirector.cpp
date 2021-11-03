@@ -385,7 +385,7 @@ static ZDriverRequest rule_major_allocation_rate() {
   const double young_parallelizable_gc_time = young_collector->stat_cycle()->parallelizable_time().davg() + (young_collector->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
   // Calculate GC duration given number of GC workers needed.
-  const double young_gc_duration = young_serial_gc_time + (young_parallelizable_gc_time / ConcGCThreads);
+  const double young_gc_duration = young_serial_gc_time + young_parallelizable_gc_time;
 
   // Calculate max serial/parallel times of an old GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
@@ -393,7 +393,7 @@ static ZDriverRequest rule_major_allocation_rate() {
   const double old_parallelizable_gc_time = old_collector->stat_cycle()->parallelizable_time().davg() + (old_collector->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
   // Calculate GC duration given number of GC workers needed.
-  const double old_gc_duration = old_serial_gc_time + (old_parallelizable_gc_time / ConcGCThreads);
+  const double old_gc_duration = old_serial_gc_time + old_parallelizable_gc_time;
 
   const double current_young_gc_seconds_per_bytes_freed = double(young_gc_duration) / double(young_freeable_per_cycle);
   const double potential_young_gc_seconds_per_bytes_freed = double(young_gc_duration) / double(young_freeable_per_cycle + old_garbage);
@@ -500,7 +500,6 @@ static ZDriverRequest make_major_gc_decision() {
     rule_major_allocation_stall,
     rule_major_warmup,
     rule_major_timer,
-    rule_major_allocation_rate,
     rule_major_high_usage,
     rule_major_proactive,
   };
@@ -530,9 +529,16 @@ static void make_gc_decision() {
   }
 
   if (!ZCollectedHeap::heap()->driver_minor()->is_busy()) {
-    const ZDriverRequest request = make_minor_gc_decision();
-    if (request.cause() != GCCause::_no_gc) {
-      ZCollectedHeap::heap()->driver_minor()->collect(request);
+    const ZDriverRequest minor_request = make_minor_gc_decision();
+    const ZDriverRequest major_request = rule_major_allocation_rate();
+    if (minor_request.cause() != GCCause::_no_gc) {
+      if (major_request.cause() == GCCause::_z_major_allocation_rate) {
+        // Try merging major allocation rate GCs with another minor GC.
+        const ZDriverRequest merged_request(GCCause::_z_major_allocation_rate, minor_request.nworkers());
+        ZCollectedHeap::heap()->driver_major()->collect(merged_request);
+      } else {
+        ZCollectedHeap::heap()->driver_minor()->collect(minor_request);
+      }
     }
   }
 }

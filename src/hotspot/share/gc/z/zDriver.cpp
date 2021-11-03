@@ -202,15 +202,12 @@ public:
   }
 };
 
-static uint select_active_worker_threads_dynamic(const ZDriverRequest& request) {
+static uint select_active_worker_threads_dynamic(GCCause::Cause cause, uint nworkers) {
   // Use requested number of worker threads
-  return request.nworkers();
+  return nworkers;
 }
 
-static uint select_active_worker_threads_static(const ZDriverRequest& request) {
-  const GCCause::Cause cause = request.cause();
-  const uint nworkers = request.nworkers();
-
+static uint select_active_worker_threads_static(GCCause::Cause cause, uint nworkers) {
   // Boost number of worker threads if implied by the GC cause
   if (cause == GCCause::_wb_full_gc ||
       cause == GCCause::_java_lang_system_gc ||
@@ -225,11 +222,19 @@ static uint select_active_worker_threads_static(const ZDriverRequest& request) {
   return nworkers;
 }
 
-static uint select_active_worker_threads(const ZDriverRequest& request) {
+static uint select_active_young_worker_threads(const ZDriverRequest& request) {
   if (UseDynamicNumberOfGCThreads) {
-    return select_active_worker_threads_dynamic(request);
+    return select_active_worker_threads_dynamic(request.cause(), request.nworkers());
   } else {
-    return select_active_worker_threads_static(request);
+    return select_active_worker_threads_static(request.cause(), request.nworkers());
+  }
+}
+
+static uint select_active_old_worker_threads(const ZDriverRequest& request) {
+  if (UseDynamicNumberOfGCThreads) {
+    return select_active_worker_threads_dynamic(request.cause(), ConcGCThreads);
+  } else {
+    return select_active_worker_threads_static(request.cause(), ConcGCThreads);
   }
 }
 
@@ -367,7 +372,7 @@ void ZDriverMinor::pause_mark_start(const ZDriverRequest& request) {
   }
 
   // Select number of worker threads to use
-  const uint nworkers = select_active_worker_threads(request);
+  const uint nworkers = select_active_young_worker_threads(request);
   collector->set_active_workers(nworkers);
 
   pause<VM_ZYoungMarkStart>();
@@ -544,10 +549,6 @@ public:
 
     old_collector->mark_start();
 
-    // Active workers is expected to be set in mark_start. It isn't set yet,
-    // but will be set to ConcGCThreads. We set it explicitly now to match
-    // the expectations.
-    young_collector->set_active_workers(ConcGCThreads);
     young_collector->mark_start();
     young_collector->skip_mark_start();
     return true;
@@ -811,10 +812,6 @@ public:
     // Set up soft reference policy
     const bool clear = should_clear_soft_references(request);
     collector->set_soft_reference_policy(clear);
-
-    // Select number of worker threads to use
-    const uint nworkers = select_active_worker_threads(request);
-    collector->set_active_workers(nworkers);
   }
 
   ~ZDriverMajorGCScope() {
@@ -841,10 +838,21 @@ public:
       _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
       _timer(ZPhaseOldCycle),
       _tracer(ZCollectorId::old) {
-    ZOldCollector* const collector = ZHeap::heap()->old_collector();
+    ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
+    ZOldCollector* const old_collector = ZHeap::heap()->old_collector();
+
+    // Active workers is expected to be set in mark_start. It isn't set yet,
+    // but will be set to ConcGCThreads. We set it explicitly now to match
+    // the expectations.
+    const uint young_nworkers = select_active_young_worker_threads(request);
+    young_collector->set_active_workers(young_nworkers);
+
+    // Select number of old worker threads to use
+    const uint old_nworkers = select_active_old_worker_threads(request);
+    old_collector->set_active_workers(old_nworkers);
 
     // Update statistics
-    collector->set_at_generation_collection_start();
+    old_collector->set_at_generation_collection_start();
   }
 
   ~ZDriverOldGCScope() {
