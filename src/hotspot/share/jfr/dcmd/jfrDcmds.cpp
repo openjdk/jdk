@@ -178,7 +178,7 @@ void JfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
   HandleMark hm(THREAD);
   JNIHandleMark jni_handle_management(THREAD);
 
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(_thread));
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
 
   const oop dcmd = construct_dcmd_instance(&constructor_args, CHECK);
 
