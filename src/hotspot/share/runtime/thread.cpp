@@ -528,6 +528,28 @@ bool Thread::claim_par_threads_do(uintx claim_token) {
   return false;
 }
 
+// Push on a new block of JNI handles.
+void Thread::push_jni_handle_block() {
+  // Allocate a new block for JNI handles.
+  // Inlined code from jni_PushLocalFrame()
+  JNIHandleBlock* old_handles = active_handles();
+  JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(this);
+  assert(old_handles != NULL && new_handles != NULL, "should not be NULL");
+  new_handles->set_pop_frame_link(old_handles);  // make sure java handles get gc'd.
+  set_active_handles(new_handles);
+}
+
+// Pop off the current block of JNI handles.
+void Thread::pop_jni_handle_block() {
+  // Release our JNI handle block
+  JNIHandleBlock* old_handles = active_handles();
+  JNIHandleBlock* new_handles = old_handles->pop_frame_link();
+  assert(new_handles != nullptr, "should never set active handles to null");
+  set_active_handles(new_handles);
+  old_handles->set_pop_frame_link(NULL);
+  JNIHandleBlock::release_block(old_handles, this);
+}
+
 void Thread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   if (active_handles() != NULL) {
     active_handles()->oops_do(f);

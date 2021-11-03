@@ -420,6 +420,9 @@ class Thread: public ThreadShadow {
   JNIHandleBlock* free_handle_block() const      { return _free_handle_block; }
   void set_free_handle_block(JNIHandleBlock* block) { _free_handle_block = block; }
 
+  void push_jni_handle_block();
+  void pop_jni_handle_block();
+
   // Internal handle support
   HandleArea* handle_area() const                { return _handle_area; }
   void set_handle_area(HandleArea* area)         { _handle_area = area; }
@@ -1741,6 +1744,15 @@ class UnlockFlagSaver {
     ~UnlockFlagSaver() {
       _thread->set_do_not_unlock_if_synchronized(_do_not_unlock);
     }
+};
+
+class JNIHandleMark : public StackObj {
+  Thread* _thread;
+ public:
+  JNIHandleMark(Thread* thread) : _thread(thread) {
+    thread->push_jni_handle_block();
+  }
+  ~JNIHandleMark() { _thread->pop_jni_handle_block(); }
 };
 
 #endif // SHARE_RUNTIME_THREAD_HPP
