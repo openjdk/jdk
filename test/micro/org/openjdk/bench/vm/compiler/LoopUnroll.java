@@ -34,55 +34,55 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Fork(value=1)
 public class LoopUnroll {
-  @Param({"16", "32", "64", "128", "256", "512", "1024"})
-  private int VECLEN;
+    @Param({"16", "32", "64", "128", "256", "512", "1024"})
+    private int VECLEN;
 
-  private byte[][] a;
-  private byte[][] b;
-  private byte[][] c;
+    private byte[][] a;
+    private byte[][] b;
+    private byte[][] c;
 
-  @Setup
-  public void init() {
-    a = new byte[VECLEN][VECLEN];
-    b = new byte[VECLEN][VECLEN];
-    c = new byte[VECLEN][VECLEN];
-  }
-
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-  private int run_workload1(int count, byte[][] a , byte[][] b, byte[][] c) {
-    for(int i = 0; i < a.length; i++) {
-      for (int j = 0; j < a[0].length; j++) {
-        a[i][j] = (byte)(b[i][j] + c[i][j]);
-      }
+    @Setup
+    public void init() {
+        a = new byte[VECLEN][VECLEN];
+        b = new byte[VECLEN][VECLEN];
+        c = new byte[VECLEN][VECLEN];
     }
-    return a[count][count];
-  }
 
-  @Benchmark
-  public void workload1_caller(Blackhole bh) {
-    int r = 0;
-    for(int i = 0 ; i < 100; i++) {
-      r += run_workload1(i % a.length, a, b, c);
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    private int run_workload1(int count, byte[][] a , byte[][] b, byte[][] c) {
+        for(int i = 0; i < a.length; i++) {
+            for (int j = 0; j < a[0].length; j++) {
+                a[i][j] = (byte)(b[i][j] + c[i][j]);
+            }
+        }
+        return a[count][count];
     }
-    bh.consume(r);
-  }
 
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-  private int run_workload2(int count, byte[][] a , byte[][] b) {
-    for(int i = 0; i < b.length; i++) {
-      for (int j = 0; j < b[0].length; j++) {
-        a[i][j] = b[i][j];
-      }
+    @Benchmark
+    public void workload1_caller(Blackhole bh) {
+        int r = 0;
+        for(int i = 0 ; i < 100; i++) {
+            r += run_workload1(i % a.length, a, b, c);
+        }
+        bh.consume(r);
     }
-    return a[count][count];
-  }
 
-  @Benchmark
-  public void workload2_caller(Blackhole bh) {
-    int r = 0;
-    for(int i = 0 ; i < 100; i++) {
-      r += run_workload2(i % a.length, a, b);
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    private int run_workload2(int count, byte[][] a , byte[][] b) {
+        for(int i = 0; i < b.length; i++) {
+            for (int j = 0; j < b[0].length; j++) {
+                a[i][j] = b[i][j];
+            }
+        }
+        return a[count][count];
     }
-    bh.consume(r);
-  }
+
+    @Benchmark
+    public void workload2_caller(Blackhole bh) {
+        int r = 0;
+        for(int i = 0 ; i < 100; i++) {
+            r += run_workload2(i % a.length, a, b);
+        }
+        bh.consume(r);
+    }
 }
