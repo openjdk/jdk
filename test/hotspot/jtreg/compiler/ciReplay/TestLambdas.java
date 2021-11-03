@@ -69,8 +69,7 @@ class Test {
         String source = "0123456789abcdefgABCDEFG";
         String result = "";
 
-        int max = 0x100;
-        max = 10;
+        int max = 10;
         for (int cp = 0; cp < max; ++cp) {
             String regex = new String(Character.toChars(cp));
             result =  source.substring(0, 3) + regex
