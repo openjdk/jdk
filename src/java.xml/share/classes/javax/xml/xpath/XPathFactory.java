@@ -386,6 +386,8 @@ public abstract class XPathFactory {
      * @throws UnsupportedOperationException if the implementation does not
      * support the method
      * @throws NullPointerException if the {@code name} is {@code null}.
+     *
+     * @since 18
      */
     public void setProperty(String name, String value)
         throws XPathFactoryConfigurationException {
@@ -411,6 +413,8 @@ public abstract class XPathFactory {
      * @throws UnsupportedOperationException if the implementation does not
      * support the method
      * @throws NullPointerException if the {@code name} is {@code null}.
+     *
+     * @since 18
      */
     public String getProperty(String name)
         throws XPathFactoryConfigurationException {
