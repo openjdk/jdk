@@ -2515,7 +2515,7 @@ public class ObjectStreamClass implements Serializable {
         }
 
         // a key composed of ObjectStreamField[] names and types
-        static abstract class Key {
+        abstract static class Key {
             abstract int length();
             abstract String fieldName(int i);
             abstract Class<?> fieldType(int i);
