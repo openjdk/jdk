@@ -363,7 +363,7 @@ void LIRGenerator::set_card(LIR_Opr value, LIR_Address* card_addr) {
   }
 }
 
-void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base) {
+void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_Opr addr, LIR_Const* card_table_base) {
   assert(addr->is_register(), "must be a register at this point");
 
   LIR_Opr tmp = FrameMap::LR_ptr_opr;
