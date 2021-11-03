@@ -59,9 +59,7 @@
  */
 package test.java.time.format;
 
-import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
-import static java.time.temporal.ChronoField.NANO_OF_SECOND;
-import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+import static java.time.temporal.ChronoField.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
@@ -69,6 +67,7 @@ import java.text.ParsePosition;
 import java.time.DateTimeException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 
@@ -77,7 +76,7 @@ import org.testng.annotations.Test;
 import test.java.time.temporal.MockFieldValue;
 
 /**
- * Test FractionPrinterParser.
+ * Test formatters obtained with DateTimeFormatterBuilder.appendFraction (FractionPrinterParser, NanosPrinterParser)
  *
  * @bug 8230136 8276220
  */
@@ -114,10 +113,34 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(NANO_OF_SECOND, value), buf);
     }
 
+    @DataProvider(name="OOB_Micros")
+    Object[][] provider_oob_micros() {
+        return new Object[][]{
+                {-1},
+                {1_000_000},
+                {Integer.MIN_VALUE},
+                {Integer.MAX_VALUE},
+                {Integer.MAX_VALUE + 1L},
+                {Long.MAX_VALUE},
+                {Long.MIN_VALUE},
+        };
+    }
+
+    @Test(dataProvider="OOB_Micros", expectedExceptions=DateTimeException.class)
+    public void test_print_oob_micros(long value) throws Exception {
+        getFormatter(MICRO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf);
+    }
+
     public void test_print_append() throws Exception {
         buf.append("EXISTING");
         getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(LocalTime.of(12, 30, 40, 3), buf);
         assertEquals(buf.toString(), "EXISTING.000000003");
+    }
+
+    public void test_print_append_micros() throws Exception {
+        buf.append("EXISTING");
+        getFormatter(MICRO_OF_SECOND, 0, 6, true).formatTo(LocalTime.of(12, 30, 40, 3000), buf);
+        assertEquals(buf.toString(), "EXISTING.000003");
     }
 
     //-----------------------------------------------------------------------
@@ -255,6 +278,82 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
     @Test(dataProvider="Nanos")
     public void test_print_nanos_noDecimalPoint(int minWidth, int maxWidth, int value, String result) throws Exception {
         getFormatter(NANO_OF_SECOND,  minWidth, maxWidth, false).formatTo(new MockFieldValue(NANO_OF_SECOND, value), buf);
+        if (result == null) {
+            fail("Expected exception");
+        }
+        assertEquals(buf.toString(), (result.startsWith(".") ? result.substring(1) : result));
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="Micros")
+    Object[][] provider_micros() {
+        return new Object[][] {
+                {0, 6, 0,           ""},
+                {0, 6, 2,           ".000002"},
+                {0, 6, 20,          ".00002"},
+                {0, 6, 200,         ".0002"},
+                {0, 6, 2000,        ".002"},
+                {0, 6, 20000,       ".02"},
+                {0, 6, 200000,      ".2"},
+                {0, 6, 1,           ".000001"},
+                {0, 6, 12,          ".000012"},
+                {0, 6, 123,         ".000123"},
+                {0, 6, 1234,        ".001234"},
+                {0, 6, 12345,       ".012345"},
+                {0, 6, 123456,      ".123456"},
+                {0, 6, 9,           ".000009"},
+                {0, 6, 99,          ".000099"},
+                {0, 6, 999,         ".000999"},
+                {0, 6, 9999,        ".009999"},
+                {0, 6, 99999,       ".099999"},
+                {0, 6, 999999,      ".999999"},
+                {0, 5, 9,           ".00000"},
+                {0, 4, 99,          ".0000"},
+                {0, 3, 999,         ".000"},
+                {0, 2, 9999,        ".00"},
+                {0, 1, 99999,       ".0"},
+                {0, 5, 1,           ".00000"},
+                {0, 4, 11,          ".0000"},
+                {0, 3, 111,         ".000"},
+                {0, 2, 1111,        ".00"},
+                {0, 1, 11111,       ".0"},
+
+                {1, 6, 0,           ".0"},
+                {1, 6, 2,           ".000002"},
+                {1, 6, 20,          ".00002"},
+                {1, 6, 200,         ".0002"},
+                {1, 6, 2000,        ".002"},
+                {1, 6, 20000,       ".02"},
+                {1, 6, 200000,      ".2"},
+
+                {2, 3, 0,           ".00"},
+                {2, 3, 2,           ".000"},
+                {2, 3, 20,          ".000"},
+                {2, 3, 200,         ".000"},
+                {2, 3, 2000,        ".002"},
+                {2, 3, 20000,       ".02"},
+                {2, 3, 200000,      ".20"},
+                {2, 3, 1,           ".000"},
+                {2, 3, 12,          ".000"},
+                {2, 3, 123,         ".000"},
+                {2, 3, 1234,        ".001"},
+                {2, 3, 12345,       ".012"},
+                {2, 3, 123456,      ".123"},
+        };
+    }
+
+    @Test(dataProvider="Micros")
+    public void test_print_micros(int minWidth, int maxWidth, int value, String result) throws Exception {
+        getFormatter(MICRO_OF_SECOND,  minWidth, maxWidth, true).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf);
+        if (result == null) {
+            fail("Expected exception");
+        }
+        assertEquals(buf.toString(), result);
+    }
+
+    @Test(dataProvider="Micros")
+    public void test_print_micros_noDecimalPoint(int minWidth, int maxWidth, int value, String result) throws Exception {
+        getFormatter(MICRO_OF_SECOND,  minWidth, maxWidth, false).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf);
         if (result == null) {
             fail("Expected exception");
         }
