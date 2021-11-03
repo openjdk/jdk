@@ -65,20 +65,16 @@ public final class ArenaAllocator implements SegmentAllocator {
     }
 
     private MemorySegment newSegment(long bytesSize, long bytesAlignment) {
-        size += Utils.alignUp(bytesSize, bytesAlignment);
-        checkSize();
-        return MemorySegment.allocateNative(bytesSize, bytesAlignment, scope);
-    }
-
-    private void checkSize() {
-        if (size > arenaSize) {
+        long allocatedSize = Utils.alignUp(bytesSize, bytesAlignment);
+        if (size + allocatedSize > arenaSize) {
             throw new OutOfMemoryError();
         }
+        size += allocatedSize;
+        return MemorySegment.allocateNative(bytesSize, bytesAlignment, scope);
     }
 
     @Override
     public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        checkSize();
         // try to slice from current segment first...
         MemorySegment slice = trySlice(bytesSize, bytesAlignment);
         if (slice != null) {

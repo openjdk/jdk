@@ -116,11 +116,12 @@ public class TestSegmentAllocators {
         }
     }
 
-    @Test(expectedExceptions = OutOfMemoryError.class)
+    @Test
     public void testTooBigForBoundedArena() {
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
             SegmentAllocator allocator = SegmentAllocator.newNativeArena(10, scope);
-            allocator.allocate(12);
+            assertThrows(OutOfMemoryError.class, () -> allocator.allocate(12));
+            allocator.allocate(5); // ok
         }
     }
 
