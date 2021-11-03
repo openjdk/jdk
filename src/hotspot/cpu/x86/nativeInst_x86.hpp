@@ -177,7 +177,7 @@ class NativeCall: public NativeInstruction {
   bool  is_displacement_aligned();
   void  set_destination_mt_safe(address dest);
 
-  void  verify_alignment() { assert(is_displacement_aligned(), "displacement of call is not aligned", p2i()); }
+  void  verify_alignment() { assert(is_displacement_aligned(), "displacement of call is not aligned"); }
   void  verify();
   void  print();
 
