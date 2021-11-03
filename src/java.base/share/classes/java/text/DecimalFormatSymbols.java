@@ -122,9 +122,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * The returned array represents the union of locales supported by the Java
      * runtime and by installed
      * {@link java.text.spi.DecimalFormatSymbolsProvider DecimalFormatSymbolsProvider}
-     * implementations. It must contain at least two {@code Locale}
-     * instances equal to {@link Locale#ROOT Locale.ROOT} and
-     * {@link Locale#US Locale.US}.
+     * implementations. At a minimum, the returned array must contain a
+     * {@code Locale} instance equal to {@link Locale#ROOT Locale.ROOT} and
+     * a {@code Locale} instance equal to {@link Locale#US Locale.US}.
      *
      * @return an array of locales for which localized
      *         {@code DecimalFormatSymbols} instances are available.

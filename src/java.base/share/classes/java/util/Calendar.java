@@ -1730,8 +1730,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Returns an array of all locales for which the {@code getInstance}
      * methods of this class can return localized instances.
-     * The array returned must contain at least two {@code Locale}
-     * instances equal to {@link Locale#ROOT Locale.ROOT} and
+     * At a minimum, the returned array must contain a {@code Locale} instance equal to
+     * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
      * {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized

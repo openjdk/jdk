@@ -1126,8 +1126,9 @@ public final class Locale implements Cloneable, Serializable {
      * The returned array represents the union of locales supported
      * by the Java runtime environment and by installed
      * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
-     * implementations.  It must contain at least two {@code Locale}
-     * instances equal to {@link #ROOT Locale.ROOT} and {@link #US Locale.US}.
+     * implementations. At a minimum, the returned array must contain a
+     * {@code Locale} instance equal to {@link Locale#ROOT Locale.ROOT} and
+     * a {@code Locale} instance equal to {@link Locale#US Locale.US}.
      *
      * @return An array of installed locales.
      */
