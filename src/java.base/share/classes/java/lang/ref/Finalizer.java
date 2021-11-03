@@ -61,9 +61,22 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         return queue;
     }
 
+    static class Holder {
+        static final boolean enabled;
+        static {
+            boolean e = true;
+            try {
+                String p = System.getProperty("jdk.finalization");
+                e = ! "disabled".equals(p);
+            } catch (Exception ignored) { }
+            enabled = e;
+        }
+    }
+
     /* Invoked by VM */
     static void register(Object finalizee) {
-        new Finalizer(finalizee);
+        if (Holder.enabled)
+            new Finalizer(finalizee);
     }
 
     private void runFinalizer(JavaLangAccess jla) {
