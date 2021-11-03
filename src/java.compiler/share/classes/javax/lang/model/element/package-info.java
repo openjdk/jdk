@@ -36,7 +36,7 @@
  * appearing inside method bodies, such as local variables and
  * anonymous classes.
  *
- * <p>When used in the context of annotation processing, an accurate
+ * <p><a id="accurate_model">When used in the context of annotation processing, an accurate
  * model of the element being represented must be returned.  As this
  * is a language model, the source code provides the fiducial
  * (reference) representation of the construct in question rather than
@@ -48,7 +48,7 @@
  * {@linkplain java.lang.annotation.RetentionPolicy#SOURCE source}
  * {@linkplain java.lang.annotation.Retention retention} cannot be
  * recovered from class files and class files might not be able to
- * provide source position information.
+ * provide source position information.</a>
  *
  * Names of {@linkplain
  * javax.lang.model.element.ExecutableElement#getParameters()

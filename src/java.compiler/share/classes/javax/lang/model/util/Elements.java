@@ -766,7 +766,7 @@ public interface Elements {
      * {@return the file object for this element or {@code null} if
      * there is no such file object}
      *
-     * <p>The returned file object is for the reference representation
+     * <p>The returned file object is for the <a href="../element/package-summary.html#accurate_model">reference representation</a>
      * of the information used to construct the element. For example,
      * if during compilation or annotation processing, a source file
      * for class {@code Foo} is compiled into a class file, the file
@@ -780,8 +780,8 @@ public interface Elements {
      * <p>In the context of annotation processing, a non-{@code null}
      * value is returned if the element was included as part of the
      * initial inputs or the containing file was created during the
-     * run of the annotation processing tool. Otherwise, {@code null}
-     * is returned. In annotation processing, if a {@linkplain
+     * run of the annotation processing tool. Otherwise, a {@code null}
+     * may be returned. In annotation processing, if a {@linkplain
      * javax.annotation.processing.Filer#createClassFile class file is
      * created}, that class file can serve as the reference
      * representation for elements.
