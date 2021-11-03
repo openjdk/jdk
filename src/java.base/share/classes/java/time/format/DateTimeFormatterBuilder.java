@@ -3262,10 +3262,12 @@ public final class DateTimeFormatterBuilder {
             // While values of ChronoField.NANO_OF_SECOND should be in the range
             // [0-999999999], we can't assume that holds for any custom Temporal
             if (!field.range().isValidIntValue(value)) {
-                if (fallback == null) {
-                    fallback = new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint, subsequentWidth);
+                var fallbackFormatter = fallback;
+                if (fallbackFormatter == null) {
+                    fallbackFormatter = new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint, subsequentWidth);
+                    fallback = fallbackFormatter;
                 }
-                return fallback.format(context, buf);
+                return fallbackFormatter.format(context, buf);
             }
             int val = value.intValue();
             DecimalStyle decimalStyle = context.getDecimalStyle();
