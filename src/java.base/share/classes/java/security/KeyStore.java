@@ -1027,12 +1027,13 @@ public class KeyStore {
      * The default implementation returns an empty {@code Set}.
      *
      * @param alias the alias name
-     * @return an unmodifiable {@code Set} of attributes, possibly empty
-     *      if the given alias does not exist, or there is no
-     *      attributes associated with it. For a {@code PrivateKeyEntry}
-     *      or {@code SecretKeyEntry}, some attributes may be protected
-     *      and only available through the {@link Entry#getAttributes}
-     *      method after the entry is extracted.
+     * @return an unmodifiable {@code Set} of attributes. This set is
+     *      empty if the given alias does not exist or there are no
+     *      attributes associated with the alias. This set may also be
+     *      empty for {@code PrivateKeyEntry} or {@code SecretKeyEntry}
+     *      entries that contain protected attributes and are only available
+     *      through the {@link Entry#getAttributes} method after the entry
+     *      is extracted.
      *
      * @throws KeyStoreException if the keystore has not been initialized
      * (loaded).

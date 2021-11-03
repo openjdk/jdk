@@ -452,12 +452,15 @@ public abstract class KeyStoreSpi {
      * The default implementation returns an empty {@code Set}.
      *
      * @param alias the alias name
-     * @return an unmodifiable {@code Set} of attributes, possibly empty
-     *      if the given alias does not exist, or there is no
-     *      attributes associated with it. For a {@code PrivateKeyEntry}
-     *      or {@code SecretKeyEntry}, some attributes may be protected
-     *      and they should be populated into the entry returned by
-     *      {@link #engineGetEntry}.
+     * @return an unmodifiable {@code Set} of attributes. This set is
+     *      empty if the given alias does not exist or there are no
+     *      attributes associated with the alias. This set may also be
+     *      empty for {@code PrivateKeyEntry} or {@code SecretKeyEntry}
+     *      entries that contain protected attributes. These protected
+     *      attributes should be populated into the result returned by
+     *      {@link #engineGetEntry} and therefore available through
+     *      the {@link Entry#getAttributes} method after the entry
+     *      is extracted.
      *
      * @throws KeyStoreException if the keystore has not been initialized
      * (loaded).
