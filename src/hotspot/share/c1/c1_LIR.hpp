@@ -286,7 +286,6 @@ class LIR_Opr {
  public:
   LIR_Opr() : _value(0) {}
   LIR_Opr(intptr_t val) : _value(val) {}
-  LIR_Opr(int val) : _value(val) {}
   LIR_Opr(LIR_OprPtr *val) : _value(reinterpret_cast<intptr_t>(val)) {}
   bool operator==(const LIR_Opr &other) const { return _value == other._value; }
   bool operator!=(const LIR_Opr &other) const { return _value != other._value; }
