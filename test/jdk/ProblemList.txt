@@ -608,6 +608,8 @@ java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
+java/nio/channels/FileChannel/LargeGatheringWrite.java          8276199 windows-x64
+
 ############################################################################
 
 # jdk_rmi
