@@ -113,7 +113,7 @@ class SummaryTab extends Tab {
 
     StringBuilder buf;
 
-    @SuppressWarnings({"removal", "deprecation"})
+    @SuppressWarnings("deprecation")
     synchronized Result formatSummary() {
         Result result = new Result();
         ProxyClient proxyClient = vmPanel.getProxyClient();
@@ -216,7 +216,6 @@ class SummaryTab extends Tab {
                 append(Messages.COMMITTED_MEMORY,  strings2[0]);
                 append(Messages.SUMMARY_TAB_PENDING_FINALIZATION_LABEL,
                        Resources.format(Messages.SUMMARY_TAB_PENDING_FINALIZATION_VALUE,
-// fix me - deprecated
                                         memoryBean.getObjectPendingFinalizationCount()));
                 append(endTable);
 
