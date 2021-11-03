@@ -42,7 +42,6 @@ package sun.util.resources;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -205,7 +204,7 @@ public class LocaleData {
         });
     }
 
-    private static abstract class LocaleDataResourceBundleProvider
+    private abstract static class LocaleDataResourceBundleProvider
                                             implements ResourceBundleProvider {
         /**
          * Changes baseName to its module dependent package name and
@@ -231,14 +230,14 @@ public class LocaleData {
      * A ResourceBundleProvider implementation for loading locale data
      * resource bundles except for the java.time supplementary data.
      */
-    public static abstract class CommonResourceBundleProvider extends LocaleDataResourceBundleProvider {
+    public abstract static class CommonResourceBundleProvider extends LocaleDataResourceBundleProvider {
     }
 
     /**
      * A ResourceBundleProvider implementation for loading supplementary
      * resource bundles for java.time.
      */
-    public static abstract class SupplementaryResourceBundleProvider extends LocaleDataResourceBundleProvider {
+    public abstract static class SupplementaryResourceBundleProvider extends LocaleDataResourceBundleProvider {
     }
 
     // Bundles.Strategy implementations
@@ -246,7 +245,7 @@ public class LocaleData {
     private static class LocaleDataStrategy implements Bundles.Strategy {
         private static final LocaleDataStrategy INSTANCE = new LocaleDataStrategy();
         // TODO: avoid hard-coded Locales
-        private static Set<Locale> JAVA_BASE_LOCALES
+        private static final Set<Locale> JAVA_BASE_LOCALES
             = Set.of(Locale.ROOT, Locale.ENGLISH, Locale.US, new Locale("en", "US", "POSIX"));
 
         private LocaleDataStrategy() {
@@ -254,7 +253,7 @@ public class LocaleData {
 
         /*
          * This method overrides the default implementation to search
-         * from a prebaked locale string list to determin the candidate
+         * from a prebaked locale string list to determine the candidate
          * locale list.
          *
          * @param baseName the resource bundle base name.
@@ -325,7 +324,7 @@ public class LocaleData {
         private static final SupplementaryStrategy INSTANCE
                 = new SupplementaryStrategy();
         // TODO: avoid hard-coded Locales
-        private static Set<Locale> JAVA_BASE_LOCALES
+        private static final Set<Locale> JAVA_BASE_LOCALES
             = Set.of(Locale.ROOT, Locale.ENGLISH, Locale.US);
 
         private SupplementaryStrategy() {
@@ -333,8 +332,8 @@ public class LocaleData {
 
         @Override
         public List<Locale> getCandidateLocales(String baseName, Locale locale) {
-            // Specifiy only the given locale
-            return Arrays.asList(locale);
+            // Specify only the given locale
+            return List.of(locale);
         }
 
         @Override

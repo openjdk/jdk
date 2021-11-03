@@ -35,7 +35,7 @@ template <class Elem>
 G1CardSetAllocator<Elem>::G1CardSetAllocator(const char* name,
                                              const G1CardSetAllocOptions* buffer_options,
                                              G1CardSetBufferList* free_buffer_list) :
-  _segmented_array(name, buffer_options, free_buffer_list),
+  _segmented_array(buffer_options, free_buffer_list),
   _transfer_lock(false),
   _free_nodes_list(),
   _pending_nodes_list(),
