@@ -188,11 +188,11 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, JVMCIObject hotspot_met
       break;
     }
     default:
-      JVMCI_ERROR("invalid _next_call_type value");
+      JVMCI_ERROR("invalid _next_call_type value: %d", _next_call_type);
       return;
   }
-  if (os::is_MP() && !call->is_displacement_aligned()) {
-    JVMCI_ERROR("unaligned call displacement for call at offset %d", pc_offset);
+  if (!call->is_displacement_aligned()) {
+    JVMCI_ERROR("unaligned displacement for call at offset %d", pc_offset);
   }
 }
 

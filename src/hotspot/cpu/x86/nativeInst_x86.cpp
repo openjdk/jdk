@@ -261,8 +261,7 @@ void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
 }
 
 bool NativeCall::is_displacement_aligned() {
-  return ((uintptr_t)displacement_address() + 0) / cache_line_size ==
-         ((uintptr_t)displacement_address() + 3) / cache_line_size;
+  return (uintptr_t) displacement_address() % 4 == 0;
 }
 
 // Similar to replace_mt_safe, but just changes the destination.  The
