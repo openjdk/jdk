@@ -84,11 +84,7 @@ class G1EvacFailureObjectsIterationHelper {
   }
 
   void join_and_sort() {
-    uint num = _segments->num_allocated_nodes();
-    _offset_array = NEW_C_HEAP_ARRAY(OffsetInRegion, num, mtGC);
-
     _segments->iterate_nodes(*this);
-    assert(_array_length == num, "must be %u, %u", _array_length, num);
 
     QuickSort::sort(_offset_array, _array_length, order_oop, true);
   }
@@ -98,8 +94,6 @@ class G1EvacFailureObjectsIterationHelper {
       oop cur = _objects_set->from_offset(_offset_array[i]);
       closure->do_object(cur);
     }
-
-    FREE_C_HEAP_ARRAY(OffsetInRegion, _offset_array);
   }
 
 public:
@@ -110,8 +104,14 @@ public:
     _array_length(0) { }
 
   void iterate(ObjectClosure* closure) {
+    uint num = _segments->num_allocated_nodes();
+    _offset_array = NEW_C_HEAP_ARRAY(OffsetInRegion, num, mtGC);
+
     join_and_sort();
+    assert(_array_length == num, "must be %u, %u", _array_length, num);
     iterate_internal(closure);
+
+    FREE_C_HEAP_ARRAY(OffsetInRegion, _offset_array);
   }
 
   // Callback of G1SegmentedArray::iterate_nodes
