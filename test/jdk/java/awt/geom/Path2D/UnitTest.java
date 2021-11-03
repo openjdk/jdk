@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4172661
+ * @bug 4172661 8176501
  * @summary Tests all public methods of Path2D classes on all 3 variants
  *          Path2D.Float, Path2D.Double, and GeneralPath.
  *          REMIND: Note that the hit testing tests will fail
@@ -132,6 +132,16 @@ public class UnitTest {
             makeGeneralPath(WIND_EVEN_ODD, 1.0),
             makeGeneralPath(WIND_NON_ZERO, -1.0),
             makeGeneralPath(WIND_EVEN_ODD, -1.0),
+            makeJDK8176501(),
+
+            // this shape has a special property: some coefficients to the t^3 term
+            // are *nearly* zero. And analytically they should be zero, but machine
+            // error prevented it. In these cases cubic polynomials should degenerate
+            // into quadratic polynomials, but because the coefficient is not exactly
+            // zero that may not always be handled correctly:
+            AffineTransform.getRotateInstance(Math.PI / 4).createTransformedShape(
+                    new Ellipse2D.Float(0, 0, 100, 100))
+
         };
 
         int types[] = new int[100];
@@ -191,6 +201,20 @@ public class UnitTest {
                    (float) (sign * rpc()), (float) (sign * rpc()));
         gp.closePath();
         return gp;
+    }
+
+    /**
+     * JDK-8176501 focused on a shape whose bounds included a lot of dead space.
+     * This recreates that shape, and the unit test testGetBounds2D checks the
+     * accuracy of {@link Shape#getBounds2D()}
+     */
+    public static Path2D makeJDK8176501() {
+        Path2D.Double path = new Path2D.Double();
+        path.moveTo(40, 140);
+        path.curveTo(40, 60, 160, 60, 160, 140);
+        path.curveTo(160, 220, 40, 220, 40, 140);
+        path.closePath();
+        return path;
     }
 
     // Due to odd issues with the sizes of errors when the values
@@ -538,33 +562,11 @@ public class UnitTest {
             return testshape;
         }
 
-        private Rectangle2D cachedBounds;
-        public Rectangle2D getCachedBounds2D() {
-            if (cachedBounds == null) {
-                double xmin, ymin, xmax, ymax;
-                int ci = 0;
-                xmin = xmax = theCoords[ci++];
-                ymin = ymax = theCoords[ci++];
-                while (ci < numCoords) {
-                    double c = theCoords[ci++];
-                    if (xmin > c) xmin = c;
-                    if (xmax < c) xmax = c;
-                    c = theCoords[ci++];
-                    if (ymin > c) ymin = c;
-                    if (ymax < c) ymax = c;
-                }
-                cachedBounds = new Rectangle2D.Double(xmin, ymin,
-                                                      xmax - xmin,
-                                                      ymax - ymin);
-            }
-            return cachedBounds;
-        }
-
         public Rectangle getBounds() {
-            return getCachedBounds2D().getBounds();
+            return getBounds2D().getBounds();
         }
         public Rectangle2D getBounds2D() {
-            return getCachedBounds2D().getBounds2D();
+            return getTestShape().getBounds2D();
         }
         public boolean contains(double x, double y) {
             return getTestShape().contains(x, y);
@@ -1297,6 +1299,7 @@ public class UnitTest {
             if (verbose) System.out.println("bounds testing "+sref);
             Shape stest = c.makePath(sref);
             checkBounds(c.makePath(sref), sref);
+            testGetBounds2D(stest);
         }
         testBounds(c, ShortSampleNonZero);
         testBounds(c, ShortSampleEvenOdd);
@@ -1310,6 +1313,93 @@ public class UnitTest {
             checkBounds(ref.makeFloatPath(c), ref);
         }
         checkBounds(ref.makeDoublePath(c), ref);
+    }
+
+    /**
+     * Make sure the {@link Shape#getBounds2D()} returns a Rectangle2D that tightly fits the
+     * shape data. It shouldn't contain lots of dead space (see JDK 8176501), and it shouldn't
+     * leave out any shape path. This test relies on the accuracy of
+     * {@link Shape#intersects(double, double, double, double)}
+     */
+    public static void testGetBounds2D(Shape shape) {
+        // first: make sure the shape is actually close to the perimeter of shape.getBounds2D().
+        // this is the crux of JDK 8176501:
+
+        Rectangle2D r = shape.getBounds2D();
+
+        if (r.getWidth() == 0 || r.getHeight() == 0) {
+            // this can happen for completely empty paths, which are part of our
+            // edge test cases in this class.
+            return;
+        }
+
+        if (verbose) System.out.println("testGetBounds2D "+shape+", "+r);
+
+        double xminInterior = r.getMinX() + .000001;
+        double yminInterior = r.getMinY() + .000001;
+        double xmaxInterior = r.getMaxX() - .000001;
+        double ymaxInterior = r.getMaxY() - .000001;
+
+        Rectangle2D topStrip = new Rectangle2D.Double(r.getMinX(), r.getMinY(), r.getWidth(), yminInterior - r.getMinY());
+        Rectangle2D leftStrip = new Rectangle2D.Double(r.getMinX(), r.getMinY(), xminInterior - r.getMinX(), r.getHeight());
+        Rectangle2D bottomStrip = new Rectangle2D.Double(r.getMinX(), ymaxInterior, r.getWidth(), r.getMaxY() - ymaxInterior);
+        Rectangle2D rightStrip = new Rectangle2D.Double(xmaxInterior, r.getMinY(), r.getMaxX() - xmaxInterior, r.getHeight());
+        if (!shape.intersects(topStrip)) {
+            if (verbose)
+                System.out.println("topStrip = "+topStrip);
+            throw new RuntimeException("the shape must intersect the top strip of its bounds");
+        }
+        if (!shape.intersects(leftStrip)) {
+            if (verbose)
+                System.out.println("leftStrip = " + leftStrip);
+            throw new RuntimeException("the shape must intersect the left strip of its bounds");
+        }
+        if (!shape.intersects(bottomStrip)) {
+            if (verbose)
+                System.out.println("bottomStrip = " + bottomStrip);
+            throw new RuntimeException("the shape must intersect the bottom strip of its bounds");
+        }
+        if (!shape.intersects(rightStrip)) {
+            if (verbose)
+                System.out.println("rightStrip = " + rightStrip);
+            throw new RuntimeException("the shape must intersect the right strip of bounds");
+        }
+
+        // Similarly: make sure our shape doesn't exist OUTSIDE of r, either. To my knowledge this has never
+        // been a problem, but if it did happen this would be an even more serious breach of contract than
+        // the former case.
+
+        double xminExterior = r.getMinX() - .000001;
+        double yminExterior = r.getMinY() - .000001;
+        double xmaxExterior = r.getMaxX() + .000001;
+        double ymaxExterior = r.getMaxY() + .000001;
+
+        // k is simply meant to mean "a large number, functionally similar to infinity for this test"
+        double k = 10000.0;
+        leftStrip = new Rectangle2D.Double(xminExterior - k, -k, k, 3 * k);
+        rightStrip = new Rectangle2D.Double(xmaxExterior, -k, k, 3 * k);
+        topStrip = new Rectangle2D.Double(-k, yminExterior - k, 3 * k, k);
+        bottomStrip = new Rectangle2D.Double(-k, ymaxExterior, 3 * k, k);
+        if (shape.intersects(leftStrip)) {
+            if (verbose)
+                System.out.println("leftStrip = " + leftStrip);
+            throw new RuntimeException("the shape must not intersect anything to the left of its bounds");
+        }
+        if (shape.intersects(rightStrip)) {
+            if (verbose)
+                System.out.println("rightStrip = " + rightStrip);
+            throw new RuntimeException("the shape must not intersect anything to the right of its bounds");
+        }
+        if (shape.intersects(topStrip)) {
+            if (verbose)
+                System.out.println("topStrip = " + topStrip);
+            throw new RuntimeException("the shape must not intersect anything above its bounds");
+        }
+        if (shape.intersects(bottomStrip)) {
+            if (verbose)
+                System.out.println("bottomStrip = " + bottomStrip);
+            throw new RuntimeException("the shape must not intersect anything below its bounds");
+        }
     }
 
     public static void testHits(Creator c) {

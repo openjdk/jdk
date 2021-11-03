@@ -797,30 +797,6 @@ public abstract class Path2D implements Shape, Cloneable {
 
         /**
          * {@inheritDoc}
-         * @since 1.6
-         */
-        public final synchronized Rectangle2D getBounds2D() {
-            float x1, y1, x2, y2;
-            int i = numCoords;
-            if (i > 0) {
-                y1 = y2 = floatCoords[--i];
-                x1 = x2 = floatCoords[--i];
-                while (i > 0) {
-                    float y = floatCoords[--i];
-                    float x = floatCoords[--i];
-                    if (x < x1) x1 = x;
-                    if (y < y1) y1 = y;
-                    if (x > x2) x2 = x;
-                    if (y > y2) y2 = y;
-                }
-            } else {
-                x1 = y1 = x2 = y2 = 0.0f;
-            }
-            return new Rectangle2D.Float(x1, y1, x2 - x1, y2 - y1);
-        }
-
-        /**
-         * {@inheritDoc}
          * <p>
          * The iterator for this class is not multi-threaded safe,
          * which means that the {@code Path2D} class does not
@@ -1589,30 +1565,6 @@ public abstract class Path2D implements Shape, Cloneable {
 
         /**
          * {@inheritDoc}
-         * @since 1.6
-         */
-        public final synchronized Rectangle2D getBounds2D() {
-            double x1, y1, x2, y2;
-            int i = numCoords;
-            if (i > 0) {
-                y1 = y2 = doubleCoords[--i];
-                x1 = x2 = doubleCoords[--i];
-                while (i > 0) {
-                    double y = doubleCoords[--i];
-                    double x = doubleCoords[--i];
-                    if (x < x1) x1 = x;
-                    if (y < y1) y1 = y;
-                    if (x > x2) x2 = x;
-                    if (y > y2) y2 = y;
-                }
-            } else {
-                x1 = y1 = x2 = y2 = 0.0;
-            }
-            return new Rectangle2D.Double(x1, y1, x2 - x1, y2 - y1);
-        }
-
-        /**
-         * {@inheritDoc}
          * <p>
          * The iterator for this class is not multi-threaded safe,
          * which means that the {@code Path2D} class does not
@@ -2127,6 +2079,136 @@ public abstract class Path2D implements Shape, Cloneable {
      */
     public final Rectangle getBounds() {
         return getBounds2D().getBounds();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.6
+     */
+    public Rectangle2D getBounds2D() {
+        return getBounds2D(getPathIterator(null));
+    }
+
+    /**
+     * Returns a high precision bounding box of the specified PathIterator.
+     * <p>
+     * This method provides a basic facility for implementors of the {@link Shape} interface to
+     * implement support for the {@link Shape#getBounds2D()} method.
+     * </p>
+     * @return an instance of {@code Rectangle2D} that is a high-precision bounding box of the
+         *         {@code PathIterator}.
+     * @see Shape#getBounds2D()
+     */
+    public static Rectangle2D getBounds2D(PathIterator pi) {
+        // define x and y parametric coefficients where:
+        // x(t) = x_coeff[0] + x_coeff[1] * t + x_coeff[2] * t^2 + x_coeff[3] * t^3
+        double[] x_coeff = new double[4];
+        double[] y_coeff = new double[4];
+
+        double[] coords = new double[6];
+        double[] tExtrema = new double[3];
+        boolean isEmpty = true;
+        double leftX = 0;
+        double rightX = 0;
+        double topY = 0;
+        double bottomY = 0;
+        double lastX = 0;
+        double lastY = 0;
+
+        pathIteratorLoop : while (!pi.isDone()) {
+            int type = pi.currentSegment(coords);
+            pi.next();
+            double endX, endY;
+            switch (type) {
+                case PathIterator.SEG_MOVETO, PathIterator.SEG_LINETO:
+                    endX = coords[0];
+                    endY = coords[1];
+                    break;
+                case PathIterator.SEG_QUADTO:
+                    endX = coords[2];
+                    endY = coords[3];
+                    break;
+                case PathIterator.SEG_CUBICTO:
+                    endX = coords[4];
+                    endY = coords[5];
+                    break;
+                default:
+                    continue pathIteratorLoop;
+            }
+
+            if (isEmpty) {
+                // we're seeding our bounds for the first time:
+                isEmpty = false;
+                leftX = rightX = endX;
+                topY = bottomY = endY;
+            } else {
+                // extend our rectangle to cover the point at t = 1:
+                leftX = endX < leftX ? endX : leftX;
+                rightX = endX > rightX ? endX : rightX;
+                topY = endY < topY ? endY : topY;
+                bottomY = endY > bottomY ? endY : bottomY;
+            }
+
+            // here's the slightly trickier part: examine quadratic and cubic
+            // segments for extrema where t is between (0, 1):
+
+            boolean definedParametricEquations;
+            if (type == PathIterator.SEG_QUADTO) {
+                definedParametricEquations = true;
+
+                x_coeff[3] = 0;
+                x_coeff[2] = lastX - 2 * coords[0] + coords[2];
+                x_coeff[1] = -2 * lastX + 2 * coords[0];
+                x_coeff[0] = lastX;
+
+                y_coeff[3] = 0;
+                y_coeff[2] = lastY - 2 * coords[1] + coords[3];
+                y_coeff[1] = -2 * lastY + 2 * coords[1];
+                y_coeff[0] = lastY;
+            } else if (type == PathIterator.SEG_CUBICTO) {
+                definedParametricEquations = true;
+
+                x_coeff[3] = -lastX + 3 * coords[0] - 3 * coords[2] + coords[4];
+                x_coeff[2] = 3 * lastX - 6 * coords[0] + 3 * coords[2];
+                x_coeff[1] = -3 * lastX + 3 * coords[0];
+                x_coeff[0] = lastX;
+
+                y_coeff[3] = -lastY + 3 * coords[1] - 3 * coords[3] + coords[5];
+                y_coeff[2] = 3 * lastY - 6 * coords[1] + 3 * coords[3];
+                y_coeff[1] = -3 * lastY + 3 * coords[1];
+                y_coeff[0] = lastY;
+            } else {
+                definedParametricEquations = false;
+            }
+
+            if (definedParametricEquations) {
+                int tExtremaCount = Curve.getPossibleExtremaInCubicEquation(x_coeff, tExtrema);
+                for(int i = 0; i < tExtremaCount; i++) {
+                    double t = tExtrema[i];
+                    double x = x_coeff[0] + x_coeff[1] * t + x_coeff[2] * t * t + x_coeff[3] * t * t * t;
+                    leftX = x < leftX ? x : leftX;
+                    rightX = x > rightX ? x : rightX;
+                }
+
+                tExtremaCount = Curve.getPossibleExtremaInCubicEquation(y_coeff, tExtrema);
+                for(int i = 0; i < tExtremaCount; i++) {
+                    double t = tExtrema[i];
+                    double y = y_coeff[0] + y_coeff[1] * t + y_coeff[2] * t * t + y_coeff[3] * t * t * t;
+                    topY = y < topY ? y : topY;
+                    bottomY = y > bottomY ? y : bottomY;
+                }
+            }
+
+            lastX = endX;
+            lastY = endY;
+        }
+        if (!isEmpty) {
+            return new Rectangle2D.Double(leftX, topY, rightX - leftX, bottomY - topY);
+        }
+
+        // there's room to debate what should happen here, but historically we return a zeroed
+        // out rectangle here. So for backwards compatibility let's keep doing that:
+        return new Rectangle2D.Double();
     }
 
     /**
