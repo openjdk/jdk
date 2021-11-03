@@ -260,7 +260,7 @@ void LIRGenerator::increment_counter(address counter, BasicType type, int step) 
 
 
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
-  LIR_Opr imm = NULL;
+  LIR_Opr imm;
   switch(addr->type()) {
   case T_INT:
     imm = LIR_OprFact::intConst(step);
