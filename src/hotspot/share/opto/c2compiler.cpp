@@ -104,7 +104,8 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
 
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
-    Compile C(env, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing, do_locks_coarsening, install_code, directive);
+    Options options(subsume_loads, do_escape_analysis, eliminate_boxing, do_locks_coarsening, install_code);
+    Compile C(env, target, entry_bci, options, directive);
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != NULL) {
