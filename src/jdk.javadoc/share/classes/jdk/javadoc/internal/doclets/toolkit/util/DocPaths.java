@@ -97,6 +97,9 @@ public class DocPaths {
     /** The name of the default javascript file. */
     public static final DocPath JAVASCRIPT = DocPath.create("script.js");
 
+    /** The name of the copy-to-clipboard icon file. */
+    public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
+
     /** The name of the stylesheet file overriding jQuery UI stylesheet. */
     public static final DocPath JQUERY_OVERRIDES_CSS = DocPath.create("jquery-ui.overrides.css");
 

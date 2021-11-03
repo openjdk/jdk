@@ -211,6 +211,9 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
+                        <div class="snippet-container"><a href="#" class="snippet-copy" onclick="cop\
+                        ySnippet(this)" aria-label="Copy" data-copied="Copied!"><img src="../copy.sv\
+                        g" alt="Copy"></a>
                         <pre class="snippet">
                             Hello, Snippet!
                         </pre>
@@ -852,6 +855,9 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
+                        <div class="snippet-container"><a href="#" class="snippet-copy" onclick="cop\
+                        ySnippet(this)" aria-label="Copy" data-copied="Copied!"><img src="../copy.sv\
+                        g" alt="Copy"></a>
                         <pre class="snippet">
                         %s</pre>
                         </div>""".formatted(id, t.expectedOutput()));
@@ -946,6 +952,9 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
+                        <div class="snippet-container"><a href="#" class="snippet-copy" onclick="cop\
+                        ySnippet(this)" aria-label="Copy" data-copied="Copied!"><img src="../copy.sv\
+                        g" alt="Copy"></a>
                         <pre class="snippet">
                         %s</pre>
                         </div>""".formatted(index, expectedOutput));
@@ -1505,6 +1514,9 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
+                        <div class="snippet-container"><a href="#" class="snippet-copy" onclick="cop\
+                        ySnippet(this)" aria-label="Copy" data-copied="Copied!"><img src="../copy.sv\
+                        g" alt="Copy"></a>
                         <pre class="snippet">
                         %s</pre>
                         </div>""".formatted(index, t.expectedOutput()));
@@ -1620,6 +1632,9 @@ public class TestSnippetTag extends JavadocTester {
                     """
                     <span class="element-name">case0</span>()</div>
                     <div class="block">
+                    <div class="snippet-container"><a href="#" class="snippet-copy" onclick="copySni\
+                    ppet(this)" aria-label="Copy" data-copied="Copied!"><img src="../copy.svg" alt="\
+                    Copy"></a>
                     <pre class="snippet">
                     </pre>
                     </div>""");
@@ -1627,6 +1642,9 @@ public class TestSnippetTag extends JavadocTester {
                     """
                     <span class="element-name">case1</span>()</div>
                     <div class="block">
+                    <div class="snippet-container"><a href="#" class="snippet-copy" onclick="copySni\
+                    ppet(this)" aria-label="Copy" data-copied="Copied!"><img src="../copy.svg" alt="\
+                    Copy"></a>
                     <pre class="snippet">
                     </pre>
                     </div>""");
@@ -1726,6 +1744,9 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
+                        <div class="snippet-container"><a href="#" class="snippet-copy" onclick="cop\
+                        ySnippet(this)" aria-label="Copy" data-copied="Copied!"><img src="../copy.sv\
+                        g" alt="Copy"></a>
                         <pre class="snippet">
                         2</pre>
                         </div>
@@ -1808,6 +1829,9 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
+                        <div class="snippet-container"><a href="#" class="snippet-copy" onclick="cop\
+                        ySnippet(this)" aria-label="Copy" data-copied="Copied!"><img src="../copy.sv\
+                        g" alt="Copy"></a>
                         <pre class="snippet">
                         %s</pre>
                         </div>""".formatted(index, t.expectedOutput()));
@@ -2138,6 +2162,9 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
+                        <div class="snippet-container"><a href="#" class="snippet-copy" onclick="cop\
+                        ySnippet(this)" aria-label="Copy" data-copied="Copied!"><img src="../copy.sv\
+                        g" alt="Copy"></a>
                         <pre class="snippet">
                         %s</pre>
                         </div>""".formatted(index, t.expectedOutput()));
