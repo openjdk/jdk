@@ -712,6 +712,96 @@ public abstract class Curve {
         return crossings;
     }
 
+    /**
+     * Return the x values between (0,1) that correspond to possible extrema in a given cubic function.
+     * <p>
+     * If the coefficient of the x^3 is large then the polynomial is a cubic and up to
+     * two values may be returned. If that coefficient is zero then the polynomial
+     * is a quadratic and up to one value may be returned. But if that coefficient is
+     * small then this method considers the possibility it could be either, so in that
+     * scenario this method may return up to three values. For ex: if the leading
+     * coefficient is .000001 that might be because the polynomial really is a cubic, or
+     * it might be because of rounding error and the polynomial is basically a quadratic.
+     * </p>
+     *
+     * @param coefficients four coefficients for a cubic polynomial equation. The nth element in this array is
+     *                     the coefficient for (x^n).
+     * @param dest an array to store the x values in. This must be at least 3 elements.
+     * @return the number of x-values that were stored in dest. This will be between 0-3.
+     */
+    public static int getPossibleExtremaInCubicEquation(double[] coefficients, double[] dest) {
+
+        int returnValue = 0;
+
+        if (coefficients[3] != 0) {
+            // evaluate this as a cubic, where:
+
+            // y = c[3] * x^3 + c[2] * x^2 + c[1] * x + c[0]
+            // dy/dx = 3 * c[3] * t^2 + 2 * c[2] * t + c[1]
+
+            // so we'll apply the quadratic formula:
+            // x = [-B +- sqrt(B^2 - 4*A*C)] / (2A)
+
+            // ... where:
+            // A = 3 * c[3]
+            // B = 2 * c[2]
+            // C = c[1]
+
+            // so we end up with:
+            // x = (-2 * c[2] +- sqrt(2 * 2 * c[2] * c[2] - 4 * 3 * c[3] * c[1])]/(2 * 3 * c[3])
+
+            double determinant = (4 * coefficients[2] * coefficients[2]
+                    - 12 * coefficients[3] * coefficients[1]);
+            if (determinant < 0) {
+                // there are no solutions
+                return 0;
+            }
+
+            if (determinant == 0) {
+                // there is 1 solution
+                double x = -coefficients[2] / (3 * coefficients[3]);
+                if (x > 0 && x < 1) {
+                    dest[returnValue++] = x;
+                }
+            } else {
+                // there are 2 solutions:
+                determinant = Math.sqrt(determinant);
+                double x = (-2 * coefficients[2] + determinant) / (6 * coefficients[3]);
+                if (x > 0 && x < 1) {
+                    dest[returnValue++] = x;
+                }
+
+                x = (-2 * coefficients[2] - determinant) / (6 * coefficients[3]);
+                if (x > 0 && x < 1) {
+                    dest[returnValue++] = x;
+                }
+            }
+        }
+
+        if (coefficients[3] > -.01 && coefficients[3] < .01 && coefficients[2] != 0) {
+            // evaluate this as if it's a quadratic, where:
+
+            // y = c[2] * x^2 + c[1] * x + c[0]
+
+            // this only really makes sense if coefficients[3] is close to zero.
+            // We chose "less than .01" as the threshold for "close to zero". It's
+            // a very generous threshold, but it should be harmless to err on the
+            // side of a generously high threshold in this case. The worst-case
+            // scenario is: we return an extra x-value that isn't really an extrema.
+
+            // dy/dx = 2 * c[2] * x + c[1]
+
+            // so our only extrema is at:
+            // x = -c[1] / (2*c[2])
+
+            double x = -coefficients[1] / (2 * coefficients[2]);
+            if (x > 0 && x < 1) {
+                dest[returnValue++] = x;
+            }
+        }
+        return returnValue;
+    }
+
     public Curve(int direction) {
         this.direction = direction;
     }
