@@ -1761,10 +1761,6 @@ bool JavaThread::java_suspend() {
 bool JavaThread::java_resume() {
   guarantee(Thread::is_JavaThread_protected(this, /* checkTLHOnly */ true),
             "missing ThreadsListHandle in calling context.");
-  if (is_exiting()) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " is exiting, nothing to resume", p2i(this));
-    return false;
-  }
   return this->handshake_state()->resume();
 }
 

@@ -342,23 +342,23 @@ void Handshake::execute(HandshakeClosure* hs_cl) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
-  // tlh_p == nullptr means we rely on a ThreadsListHandle somewhere
+  // tlh == nullptr means we rely on a ThreadsListHandle somewhere
   // in the caller's context (and we sanity check for that).
   Handshake::execute(hs_cl, nullptr, target);
 }
 
-void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh_p, JavaThread* target) {
+void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThread* target) {
   JavaThread* self = JavaThread::current();
   HandshakeOperation op(hs_cl, target, Thread::current());
 
   jlong start_time_ns = os::javaTimeNanos();
 
   guarantee(target != nullptr, "must be");
-  if (tlh_p == nullptr) {
+  if (tlh == nullptr) {
     guarantee(Thread::is_JavaThread_protected(target, /* checkTLHOnly */ true),
               "missing ThreadsListHandle in calling context.");
     target->handshake_state()->add_operation(&op);
-  } else if (tlh_p->includes(target)) {
+  } else if (tlh->includes(target)) {
     target->handshake_state()->add_operation(&op);
   } else {
     char buf[128];
