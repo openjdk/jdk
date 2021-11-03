@@ -113,7 +113,7 @@ public class ClientSocketCloseHang implements SSLContextTemplate {
                         if (clientSocket != null) {
                             clientSocket.close();
                         }
-                    } catch(Exception ex) {
+                    } catch (Exception ex) {
                     }
                 }
             };
@@ -124,7 +124,7 @@ public class ClientSocketCloseHang implements SSLContextTemplate {
             } catch (InterruptedException ex) {
                 return;
             }
- 
+
             if (t.isAlive()) {
                 throw new RuntimeException("SSL Client hangs on close");
             }
