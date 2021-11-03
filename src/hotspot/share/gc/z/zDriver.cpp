@@ -697,14 +697,6 @@ void ZDriverMajor::concurrent_mark() {
   ZBreakpoint::at_after_marking_started();
   ZHeap::heap()->old_collector()->mark_roots();
   ZHeap::heap()->old_collector()->mark_follow();
-  // The roots into the old generation are produced by the young GC.
-  // Therefore, we might run out of work before the young GC has terminated.
-  // To ensure we get all roots, we await the completion of the young GC.
-  minor_await();
-  // After waiting for the initial young collection to have finished,
-  // it is not unlikely that more work has been produced. So we call
-  // mark_follow again to make sure we have terminated marking properly.
-  ZHeap::heap()->old_collector()->mark_follow();
   ZBreakpoint::at_before_marking_completed();
 }
 
@@ -884,6 +876,7 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
   pause_mark_start();
 
   minor_start();
+  minor_await();
 
   // Phase 2: Concurrent Mark
   abortable(concurrent_mark);
