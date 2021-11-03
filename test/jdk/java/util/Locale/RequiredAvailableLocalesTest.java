@@ -62,12 +62,12 @@ public class RequiredAvailableLocalesTest {
     }
 
     @Test (dataProvider = "availableLocalesClasses")
-    public void checkRequiredLocales(Class c, MethodType mt) throws Throwable {
+    public void checkRequiredLocales(Class<?> c, MethodType mt) throws Throwable {
         var ret = MethodHandles.lookup().findStatic(c, "getAvailableLocales", mt).invoke();
 
         if (ret instanceof Locale[] a) {
             assertTrue(Arrays.asList(a).containsAll(REQUIRED_LOCALES));
-        } else if (ret instanceof Set s) {
+        } else if (ret instanceof Set<?> s) {
             assertTrue(s.containsAll(REQUIRED_LOCALES));
         } else {
             throw new RuntimeException("return type mismatch");
