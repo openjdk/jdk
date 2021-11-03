@@ -272,6 +272,7 @@ G1CardSetFreePool::~G1CardSetFreePool() {
 
 G1CardSetMemoryStats G1CardSetFreePool::memory_sizes() const {
   G1CardSetMemoryStats free_list_stats;
+  assert(free_list_stats.num_pools() == num_free_lists(), "must be");
   for (uint i = 0; i < num_free_lists(); i++) {
     free_list_stats._num_mem_sizes[i] = _free_lists[i].mem_size();
     free_list_stats._num_buffers[i] = _free_lists[i].num_buffers();

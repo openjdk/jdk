@@ -168,7 +168,7 @@ class G1CardSetFreePool {
   // The global free pool.
   static G1CardSetFreePool _freelist_pool;
 
-  uint _num_free_lists;
+  const uint _num_free_lists;
   G1CardSetBufferList* _free_lists;
 
 public:
