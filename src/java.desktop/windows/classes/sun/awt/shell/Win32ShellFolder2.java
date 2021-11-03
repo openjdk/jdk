@@ -85,7 +85,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     static final int LARGE_ICON_SIZE = 32;
     static final int MIN_QUALITY_ICON = 16;
     static final int MAX_QUALITY_ICON = 256;
-    private final static int[] ICON_RESOLUTIONS
+    private static final int[] ICON_RESOLUTIONS
             = {16, 24, 32, 48, 64, 72, 96, 128, 256};
 
     static final int FILE_ICON_ID = 1;

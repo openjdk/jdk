@@ -158,6 +158,7 @@ vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.ja
 vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/SuspendThread/suspendthrd003/TestDescription.java 8264605 generic-all
 vmTestbase/nsk/jvmti/PopFrame/popframe011/TestDescription.java 8266593 generic-all
+vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineWithoutBytecodeCorruption/TestDescription.java 8272800 generic-all
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
 
