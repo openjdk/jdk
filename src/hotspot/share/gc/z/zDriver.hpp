@@ -67,7 +67,7 @@ private:
 
   void check_out_of_memory();
 
-  void gc(const ZDriverRequest& request);
+  bool gc(const ZDriverRequest& request);
 
 protected:
   virtual void run_service();
