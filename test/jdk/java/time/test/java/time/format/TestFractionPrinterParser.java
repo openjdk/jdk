@@ -96,6 +96,24 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(EMPTY_DTA, buf);
     }
 
+    @DataProvider(name="OOB_Nanos")
+    Object[][] provider_oob_nanos() {
+        return new Object[][]{
+            {-1},
+            {1_000_000_000},
+            {Integer.MIN_VALUE},
+            {Integer.MAX_VALUE},
+            {Integer.MAX_VALUE + 1L},
+            {Long.MAX_VALUE},
+            {Long.MIN_VALUE},
+        };
+    }
+
+    @Test(dataProvider="OOB_Nanos", expectedExceptions=DateTimeException.class)
+    public void test_print_oob_nanos(long value) throws Exception {
+        getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(NANO_OF_SECOND, value), buf);
+    }
+
     public void test_print_append() throws Exception {
         buf.append("EXISTING");
         getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(LocalTime.of(12, 30, 40, 3), buf);
