@@ -340,6 +340,7 @@ private:
 
   Unique_Node_List ideal_nodes; // Used by CG construction and types splitting.
 
+  int              _invocation; // Current number of analysis invocation
   int        _build_iterations; // Number of iterations took to build graph
   double           _build_time; // Time (sec) took to build graph
 
@@ -569,7 +570,7 @@ private:
   bool compute_escape();
 
 public:
-  ConnectionGraph(Compile *C, PhaseIterGVN *igvn);
+  ConnectionGraph(Compile *C, PhaseIterGVN *igvn, int iteration);
 
   // Check for non-escaping candidates
   static bool has_candidates(Compile *C);
