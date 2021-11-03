@@ -33,7 +33,7 @@ public final class ArenaAllocator implements SegmentAllocator {
 
     public static final long DEFAULT_BLOCK_SIZE = 4 * 1024;
 
-    MemorySegment segment;
+    private MemorySegment segment;
 
     private long sp = 0L;
     private long size = 0;
@@ -64,43 +64,36 @@ public final class ArenaAllocator implements SegmentAllocator {
         return scope;
     }
 
-    private MemorySegment newSegment(long size, long align) {
-        return MemorySegment.allocateNative(size, align, scope);
+    private MemorySegment newSegment(long bytesSize, long bytesAlignment) {
+        size += Utils.alignUp(bytesSize, bytesAlignment);
+        checkSize();
+        return MemorySegment.allocateNative(bytesSize, bytesAlignment, scope);
+    }
+
+    private void checkSize() {
+        if (size > arenaSize) {
+            throw new OutOfMemoryError();
+        }
     }
 
     @Override
     public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        if (size > arenaSize) {
-            throw new OutOfMemoryError();
-        }
-        long prevSp = sp;
-        long allocatedSize = 0L;
-        try {
-            // try to slice from current segment first...
-            MemorySegment slice = trySlice(bytesSize, bytesAlignment);
-            if (slice != null) {
-                allocatedSize = sp - prevSp;
-                return slice;
+        checkSize();
+        // try to slice from current segment first...
+        MemorySegment slice = trySlice(bytesSize, bytesAlignment);
+        if (slice != null) {
+            return slice;
+        } else {
+            long maxPossibleAllocationSize = bytesSize + bytesAlignment - 1;
+            if (maxPossibleAllocationSize > blockSize) {
+                // too big
+                return newSegment(bytesSize, bytesAlignment);
             } else {
-                long maxPossibleAllocationSize = bytesSize + bytesAlignment - 1;
-                if (maxPossibleAllocationSize > blockSize) {
-                    // too big
-                    allocatedSize = Utils.alignUp(bytesSize, bytesAlignment);
-                    return newSegment(bytesSize, bytesAlignment);
-                } else {
-                    // allocate a new segment and slice from there
-                    allocatedSize += segment.byteSize() - sp;
-                    sp = 0L;
-                    segment = newSegment(blockSize, 1L);
-                    slice = trySlice(bytesSize, bytesAlignment);
-                    allocatedSize += sp;
-                    return slice;
-                }
-            }
-        } finally {
-            size += allocatedSize;
-            if (size > arenaSize) {
-                throw new OutOfMemoryError();
+                // allocate a new segment and slice from there
+                sp = 0L;
+                segment = newSegment(blockSize, 1L);
+                slice = trySlice(bytesSize, bytesAlignment);
+                return slice;
             }
         }
     }
