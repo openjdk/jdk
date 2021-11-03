@@ -121,7 +121,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.internal.vm.annotation.Stable;
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -2376,7 +2375,6 @@ public final class DateTimeFormatterBuilder {
      * Composite printer and parser.
      */
     static final class CompositePrinterParser implements DateTimePrinterParser {
-        @Stable
         private final DateTimePrinterParser[] printerParsers;
         private final boolean optional;
 
