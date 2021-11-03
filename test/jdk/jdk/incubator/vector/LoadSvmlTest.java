@@ -24,13 +24,13 @@
 /*
  * @test
  * @bug 8269335
- * @summary Tests SVML shared library is loaded successfully.
+ * @summary Tests JSVML shared library is loaded successfully.
  * @modules jdk.incubator.vector
  * @requires vm.compiler2.enabled
  * @requires os.arch == "x86_64" | os.arch == "amd64"
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
- * @run main LoadSvmlTest
+ * @run main LoadJsvmlTest
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -42,7 +42,7 @@ import jdk.incubator.vector.Vector;
 import jdk.incubator.vector.VectorSpecies;
 
 
-public class LoadSvmlTest {
+public class LoadJsvmlTest {
 
     private static class VectorTest {
 
@@ -67,6 +67,6 @@ public class LoadSvmlTest {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-        output.shouldMatch("Loaded library .*svml");
+        output.shouldMatch("Loaded library .*jsvml");
     }
 }
