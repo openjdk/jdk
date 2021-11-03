@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,11 +111,6 @@ class JNIHandles : AllStatic {
   static size_t global_handle_memory_usage();
   static size_t weak_global_handle_memory_usage();
 
-#ifndef PRODUCT
-  // Is handle from any local block of any thread?
-  static bool is_local_handle(jobject handle);
-#endif
-
   // precondition: handle != NULL.
   static jobjectRefType handle_type(Thread* thread, jobject handle);
 
@@ -156,13 +151,6 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
 
   // Check JNI, "planned capacity" for current frame (or push/ensure)
   size_t          _planned_capacity;
-
-  #ifndef PRODUCT
-  JNIHandleBlock* _block_list_link;             // Link for list below
-  static JNIHandleBlock* _block_list;           // List of all allocated blocks (for debugging only)
-  #endif
-
-  static JNIHandleBlock* _block_free_list;      // Free list of currently unused blocks
   static int      _blocks_allocated;            // For debugging/printing
 
   // Fill block with bad_handle values
@@ -203,10 +191,6 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   bool contains(jobject handle) const;          // Does this block contain handle
   size_t length() const;                        // Length of chain starting with this block
   size_t memory_usage() const;
-  #ifndef PRODUCT
-  static bool any_contains(jobject handle);     // Does any block currently in use contain handle
-  static void print_statistics();
-  #endif
 };
 
 #endif // SHARE_RUNTIME_JNIHANDLES_HPP
