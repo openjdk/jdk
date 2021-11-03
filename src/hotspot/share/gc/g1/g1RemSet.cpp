@@ -374,11 +374,6 @@ public:
     for (uint i = 0; i < num_chunks; i++) {
       _region_scan_chunks[chunk_idx++] = true;
     }
-    // checking
-    for (size_t i = 0; i < card_length; i++) {
-      size_t cidx = (region_card_idx + i) >> _scan_chunks_shift;
-      assert(_region_scan_chunks[cidx], "must have been set for %zu %zu but isn't", region_card_idx, i);
-    }
   }
 
   void set_chunk_dirty(size_t const card_idx) {
