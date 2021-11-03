@@ -84,8 +84,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
     private final BodyContents bodyContents = new BodyContents();
 
     // Maximum number of subpackages and sibling packages to list in related packages table
-    private final static int MAX_SUBPACKAGES = 20;
-    private final static int MAX_SIBLING_PACKAGES = 5;
+    private static final int MAX_SUBPACKAGES = 20;
+    private static final int MAX_SIBLING_PACKAGES = 5;
 
 
     /**

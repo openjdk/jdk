@@ -83,7 +83,7 @@ public /* sealed */ abstract class Attribute {
      * SinglyQuoted or Unquoted to form a (sealed) hierarchy. In that case,
      * `Valued` should become abstract similarly to `Attribute`.
      */
-    final static class Valued extends Attribute {
+    static final class Valued extends Attribute {
 
         private final String value;
 
@@ -104,7 +104,7 @@ public /* sealed */ abstract class Attribute {
         }
     }
 
-    final static class Valueless extends Attribute {
+    static final class Valueless extends Attribute {
 
         Valueless(String name, int nameStartPosition) {
             super(name, nameStartPosition);
