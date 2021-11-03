@@ -433,7 +433,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
         }
 
         void queueUpCipherDispose() {
-            RecordMemo lastMemo = handshakeMemos.getLast();
+            RecordMemo lastMemo = handshakeMemos.peekLast();
             if (lastMemo != null) {
                 lastMemo.disposeCipher = true;
             } else {
