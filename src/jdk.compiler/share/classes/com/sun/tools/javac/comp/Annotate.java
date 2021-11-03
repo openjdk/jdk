@@ -673,8 +673,7 @@ public class Annotate {
             return new Attribute.Error(expectedElementType);
         }
 
-        // Scan the annotation element value and then attribute
-        // the internal annotations to prevent the compiler from crashing
+        // Scan the annotation element value and then attribute nested annotations if present
         if (tree.type != null && tree.type.tsym != null) {
             queueScanTreeAndTypeAnnotate(tree, env, tree.type.tsym, tree.pos());
         }
