@@ -134,7 +134,7 @@ inline HeapWord* G1PLABAllocator::allocate(G1HeapRegionAttr dest,
 }
 
 inline void G1PLABAllocator::calculate_new_bot_threshold(G1HeapRegionAttr attr, HeapWord* addr) {
-  if (!attr.is_old()) {
+  if (!attr.needs_bot_update()) {
     // BOT updates are only done for old generation.
     return;
   }
@@ -151,7 +151,7 @@ inline void G1PLABAllocator::calculate_new_bot_threshold(G1HeapRegionAttr attr, 
 }
 
 inline void G1PLABAllocator::update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size) {
-  if (!attr.is_old()) {
+  if (!attr.needs_bot_update()) {
     // BOT updates are only done for old generation.
     return;
   }

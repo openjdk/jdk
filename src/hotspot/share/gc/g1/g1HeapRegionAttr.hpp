@@ -103,6 +103,7 @@ public:
   bool is_young() const                { return type() == Young; }
   bool is_old() const                  { return type() == Old; }
   bool is_optional() const             { return type() == Optional; }
+  bool needs_bot_update() const        { return is_old(); }
 
 #ifdef ASSERT
   bool is_default() const              { return type() == NotInCSet; }
