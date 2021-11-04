@@ -76,7 +76,7 @@ abstract class Key {
      * They are keyed off at least the name.  They may be Modified/Replaced
      * with new input.
      */
-    static abstract class PersistentKey extends Key {
+    abstract static class PersistentKey extends Key {
 
         private final String name;
 
@@ -95,7 +95,7 @@ abstract class Key {
     /**
      * Grouping for snippets which reference declarations
      */
-    static abstract class DeclarationKey extends PersistentKey {
+    abstract static class DeclarationKey extends PersistentKey {
 
         DeclarationKey(JShell state, String name) {
             super(state, name);
@@ -201,7 +201,7 @@ abstract class Key {
      * exactly same entry is made again. The referenced snippets are thus
      * unmodifiable.
      */
-    static abstract class UniqueKey extends Key {
+    abstract static class UniqueKey extends Key {
 
         UniqueKey(JShell state) {
             super(state);

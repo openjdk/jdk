@@ -73,7 +73,7 @@ class MemoryFileManager implements JavaFileManager {
         return this.stdFileManager.getLocationAsPaths(loc);
     }
 
-    static abstract class MemoryJavaFileObject extends SimpleJavaFileObject {
+    abstract static class MemoryJavaFileObject extends SimpleJavaFileObject {
 
         public MemoryJavaFileObject(String name, JavaFileObject.Kind kind) {
             super(URI.create("string:///" + name.replace('.', '/')
