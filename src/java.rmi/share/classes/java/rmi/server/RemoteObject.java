@@ -45,7 +45,7 @@ import sun.rmi.server.Util;
 public abstract class RemoteObject implements Remote, java.io.Serializable {
 
     /** The object's remote reference. */
-    transient protected RemoteRef ref;
+    protected transient RemoteRef ref;
 
     /** indicate compatibility with JDK 1.1.x version of class */
     @java.io.Serial
