@@ -353,7 +353,7 @@ public final class Subject implements java.io.Serializable {
      * which installs the subject in an {@code AccessControlContext}. However,
      * if the system property {@systemProperty jdk.security.auth.subject.useTL}
      * is set to {@code true}, the subject is retrieved from an inheritable
-     * {@code ThreadLocal} object. This implementation behavior is subject to
+     * {@code ThreadLocal} object. This behavior is subject to
      * change in a future version.
      *
      * @return the current subject, or {@code null} if a current subject is
