@@ -123,7 +123,7 @@ public class KeyTab implements KeyTabConstants {
      * @param s file name of keytab, must not be null
      * @return the keytab object, can be invalid, but never null.
      */
-    private synchronized static KeyTab getInstance0(String s) {
+    private static synchronized KeyTab getInstance0(String s) {
         long lm = new File(s).lastModified();
         KeyTab old = map.get(s);
         if (old != null && old.isValid() && old.lastModified == lm) {
@@ -429,7 +429,7 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Creates a new default key table.
      */
-    public synchronized static KeyTab create()
+    public static synchronized KeyTab create()
         throws IOException, RealmException {
         String dname = getDefaultTabName();
         return create(dname);
@@ -438,7 +438,7 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Creates a new default key table.
      */
-    public synchronized static KeyTab create(String name)
+    public static synchronized KeyTab create(String name)
         throws IOException, RealmException {
 
         try (KeyTabOutputStream kos =

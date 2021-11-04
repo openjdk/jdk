@@ -147,7 +147,7 @@ public class TokenTracker {
      * (This analysis leaves out the possibility that expectedNumber passes
      * initNumber after wrapping around. That may be added later.)
      */
-    synchronized public final void getProps(int number, MessageProp prop) {
+    public final synchronized void getProps(int number, MessageProp prop) {
 
         boolean gap = false;
         boolean old = false;

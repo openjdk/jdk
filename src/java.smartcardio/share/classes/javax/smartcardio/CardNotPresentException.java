@@ -35,7 +35,7 @@ package javax.smartcardio;
  */
 public class CardNotPresentException extends CardException {
 
-    private final static long serialVersionUID = 1346879911706545215L;
+    private static final long serialVersionUID = 1346879911706545215L;
 
     /**
      * Constructs a new CardNotPresentException with the specified detail message.
