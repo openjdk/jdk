@@ -2301,20 +2301,29 @@ instruct vcvtFtoX_narrow(vReg dst, vReg src, vReg tmp)
   ins_pipe(pipe_slow);
 %}
 
-instruct vcvtFtoX_extend(vReg dst, vReg src)
+instruct vcvtFtoI(vReg dst, vReg src)
 %{
   predicate(UseSVE > 0 &&
-            (n->bottom_type()->is_vect()->element_basic_type() == T_INT ||
-             n->bottom_type()->is_vect()->element_basic_type() == T_LONG));
+            (n->bottom_type()->is_vect()->element_basic_type() == T_INT));
   match(Set dst (VectorCastF2X src));
   ins_cost(SVE_COST);
-  format %{ "sve_vectorcast_f2x  $dst, $src\t# convert F to I/L vector" %}
+  format %{ "sve_vectorcast_f2x  $dst, $src\t# convert F to I vector" %}
   ins_encode %{
-    BasicType to_bt = Matcher::vector_element_basic_type(this);
     __ sve_fcvtzs(as_FloatRegister($dst$$reg), __ S, ptrue, as_FloatRegister($src$$reg), __ S);
-    if (to_bt == T_LONG) {
-      __ sve_vector_extend(as_FloatRegister($dst$$reg), __ D, as_FloatRegister($dst$$reg), __ S);
-    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcvtFtoL(vReg dst, vReg src)
+%{
+  predicate(UseSVE > 0 &&
+            (n->bottom_type()->is_vect()->element_basic_type() == T_LONG));
+  match(Set dst (VectorCastF2X src));
+  ins_cost(SVE_COST * 2);
+  format %{ "sve_vectorcast_f2x  $dst, $src\t# convert F to L vector" %}
+  ins_encode %{
+    __ sve_sunpklo(as_FloatRegister($dst$$reg), __ D, as_FloatRegister($src$$reg));
+    __ sve_fcvtzs(as_FloatRegister($dst$$reg), __ D, ptrue, as_FloatRegister($dst$$reg), __ S);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2346,7 +2355,7 @@ instruct vcvtDtoX_narrow(vReg dst, vReg src, vReg tmp)
   ins_encode %{
     BasicType to_bt = Matcher::vector_element_basic_type(this);
     Assembler::SIMD_RegVariant to_size = __ elemType_to_regVariant(to_bt);
-    __ sve_fcvtzs(as_FloatRegister($dst$$reg), __ D, ptrue, as_FloatRegister($src$$reg), __ D);
+    __ sve_fcvtzs(as_FloatRegister($dst$$reg), __ S, ptrue, as_FloatRegister($src$$reg), __ D);
     __ sve_vector_narrow(as_FloatRegister($dst$$reg), to_size,
                          as_FloatRegister($dst$$reg), __ D, as_FloatRegister($tmp$$reg));
   %}
