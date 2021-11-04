@@ -29,7 +29,7 @@ import sun.jvm.hotspot.debugger.Address;
 /** A DefaultMetadataVisitor implements basic no-op MetadataVisitor
     functionality except that the setObj() and getObj() methods are
     implemented properly. */
-abstract public class DefaultMetadataVisitor implements MetadataVisitor {
+public abstract class DefaultMetadataVisitor implements MetadataVisitor {
   private Metadata obj;
 
   public void prologue()                        {}
@@ -46,7 +46,7 @@ abstract public class DefaultMetadataVisitor implements MetadataVisitor {
   }
 
   // Callback methods for each field type in an object
-  abstract public void doMetadata(MetadataField field, boolean isVMField);
+  public abstract void doMetadata(MetadataField field, boolean isVMField);
   public void doOop(OopField field, boolean isVMField)         {}
   public void doOop(NarrowOopField field, boolean isVMField)   {}
   public void doByte(ByteField field, boolean isVMField)       {}

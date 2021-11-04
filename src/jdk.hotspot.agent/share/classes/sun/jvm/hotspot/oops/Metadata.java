@@ -34,7 +34,7 @@ import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-abstract public class Metadata extends VMObject {
+public abstract class Metadata extends VMObject {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -86,7 +86,7 @@ abstract public class Metadata extends VMObject {
   void iterateFields(MetadataVisitor visitor) {
   }
 
-  abstract public void printValueOn(PrintStream tty);
+  public abstract void printValueOn(PrintStream tty);
   public void dumpReplayData(PrintStream out) {
       out.println("# Unknown Metadata");
   }

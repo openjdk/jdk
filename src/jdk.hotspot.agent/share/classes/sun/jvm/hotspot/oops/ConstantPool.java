@@ -477,7 +477,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return values;
   }
 
-  final private static String[] nameForTag = new String[] {
+  private static final String[] nameForTag = new String[] {
   };
 
   private String nameForTag(int tag) {

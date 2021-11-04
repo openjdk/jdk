@@ -41,7 +41,7 @@ import sun.jvm.hotspot.types.TypeDataBase;
 
 public class HeapRegionManager extends VMObject {
     // G1HeapRegionTable _regions
-    static private long regionsFieldOffset;
+    private static long regionsFieldOffset;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -51,7 +51,7 @@ public class HeapRegionManager extends VMObject {
             });
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("HeapRegionManager");
 
         regionsFieldOffset = type.getField("_regions").getOffset();

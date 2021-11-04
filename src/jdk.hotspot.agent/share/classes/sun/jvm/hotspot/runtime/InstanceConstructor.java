@@ -36,13 +36,13 @@ import sun.jvm.hotspot.HotSpotTypeDataBase;
  Various subclasses provide different mechanisms for identifying the
  appropriate wrapper. */
 
-abstract public class InstanceConstructor<T> {
+public abstract class InstanceConstructor<T> {
   /** Instantiate the most-precisely typed wrapper object available
       for the type of the given Address. If no type in the mapping
       matched the type of the Address, throws a WrongTypeException.
       Returns null for a null address (similar behavior to
       VMObjectFactory). */
-  abstract public T instantiateWrapperFor(Address addr) throws WrongTypeException;
+  public abstract T instantiateWrapperFor(Address addr) throws WrongTypeException;
 
   protected WrongTypeException newWrongTypeException(Address addr) {
     String message = "No suitable match for type of address " + addr;

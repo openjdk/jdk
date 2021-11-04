@@ -30,7 +30,7 @@ import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 import sun.jvm.hotspot.debugger.x86.*;
 
-final public class BsdX86CFrame extends BasicCFrame {
+public final class BsdX86CFrame extends BasicCFrame {
    // package/class internals only
    public BsdX86CFrame(BsdDebugger dbg, Address ebp, Address pc) {
       super(dbg.getCDebugger());

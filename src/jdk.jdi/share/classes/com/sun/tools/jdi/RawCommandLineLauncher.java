@@ -38,9 +38,9 @@ import com.sun.jdi.connect.spi.TransportService;
 
 public class RawCommandLineLauncher extends AbstractLauncher {
 
-    static private final String ARG_COMMAND = "command";
-    static private final String ARG_ADDRESS = "address";
-    static private final String ARG_QUOTE   = "quote";
+    private static final String ARG_COMMAND = "command";
+    private static final String ARG_ADDRESS = "address";
+    private static final String ARG_QUOTE   = "quote";
 
     TransportService transportService;
     Transport transport;

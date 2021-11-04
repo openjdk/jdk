@@ -63,7 +63,7 @@ public class ParametersTypeData<K,M> extends ArrayData {
     return parameters.type(i);
   }
 
-  static public int typeIndex(int i) {
+  public static int typeIndex(int i) {
     return typeLocalOffset(i);
   }
 

@@ -35,7 +35,7 @@ import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-abstract public class GenCollectedHeap extends CollectedHeap {
+public abstract class GenCollectedHeap extends CollectedHeap {
   private static AddressField youngGenField;
   private static AddressField oldGenField;
 

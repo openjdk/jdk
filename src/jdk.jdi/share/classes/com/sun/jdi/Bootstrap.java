@@ -56,7 +56,7 @@ public class Bootstrap extends Object {
      * ("{@code virtualMachineManager}") or other unspecified
      * permissions required by the implementation.
      */
-    static public synchronized VirtualMachineManager virtualMachineManager() {
+    public static synchronized VirtualMachineManager virtualMachineManager() {
         return VirtualMachineManagerImpl.virtualMachineManager();
     }
 }

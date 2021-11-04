@@ -48,7 +48,7 @@ public class CallStaticJavaNode extends CallJavaNode {
     nameField    = type.getAddressField("_name");
   }
 
-  static private AddressField nameField;
+  private static AddressField nameField;
 
   public String name() {
     return CStringUtilities.getString(nameField.getValue(getAddress()));

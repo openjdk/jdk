@@ -30,7 +30,7 @@ import sun.jvm.hotspot.debugger.linux.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 
-final public class LinuxAMD64CFrame extends BasicCFrame {
+public final class LinuxAMD64CFrame extends BasicCFrame {
 
    public static LinuxAMD64CFrame getTopFrame(LinuxDebugger dbg, Address rip, ThreadContext context) {
       Address libptr = dbg.findLibPtrByAddress(rip);

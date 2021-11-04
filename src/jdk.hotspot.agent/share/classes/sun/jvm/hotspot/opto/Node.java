@@ -74,11 +74,11 @@ public class Node extends VMObject {
 
   static HashMap constructors = new HashMap();
 
-  static abstract class Instantiator {
+  abstract static class Instantiator {
     abstract Node create(Address addr);
   }
 
-  static public Node create(Address addr) {
+  public static Node create(Address addr) {
     if (addr == null) return null;
     Node result = nodes.get(addr);
     if (result == null) {

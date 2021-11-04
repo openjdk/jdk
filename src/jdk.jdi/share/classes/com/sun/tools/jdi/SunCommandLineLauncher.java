@@ -40,12 +40,12 @@ import com.sun.jdi.connect.spi.TransportService;
 
 public class SunCommandLineLauncher extends AbstractLauncher {
 
-    static private final String ARG_HOME = "home";
-    static private final String ARG_OPTIONS = "options";
-    static private final String ARG_MAIN = "main";
-    static private final String ARG_INIT_SUSPEND = "suspend";
-    static private final String ARG_QUOTE = "quote";
-    static private final String ARG_VM_EXEC = "vmexec";
+    private static final String ARG_HOME = "home";
+    private static final String ARG_OPTIONS = "options";
+    private static final String ARG_MAIN = "main";
+    private static final String ARG_INIT_SUSPEND = "suspend";
+    private static final String ARG_QUOTE = "quote";
+    private static final String ARG_VM_EXEC = "vmexec";
 
     TransportService transportService;
     Transport transport;

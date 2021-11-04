@@ -74,7 +74,7 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
         });
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ShenandoahHeapRegion");
         RegionSizeBytesField = type.getCIntegerField("RegionSizeBytes");
         RegionStateField = type.getField("_state");

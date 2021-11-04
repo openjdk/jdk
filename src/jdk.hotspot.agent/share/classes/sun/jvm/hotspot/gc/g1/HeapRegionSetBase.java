@@ -42,7 +42,7 @@ import sun.jvm.hotspot.types.TypeDataBase;
 public class HeapRegionSetBase extends VMObject {
 
     // uint _length
-    static private CIntegerField lengthField;
+    private static CIntegerField lengthField;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -52,7 +52,7 @@ public class HeapRegionSetBase extends VMObject {
             });
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("HeapRegionSetBase");
 
         lengthField = type.getCIntegerField("_length");

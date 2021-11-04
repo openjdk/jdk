@@ -30,7 +30,7 @@ import sun.jvm.hotspot.debugger.linux.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 
-final public class LinuxPPC64CFrame extends BasicCFrame {
+public final class LinuxPPC64CFrame extends BasicCFrame {
   // package/class internals only
 
   public LinuxPPC64CFrame(LinuxDebugger dbg, Address sp, Address pc, int address_size) {

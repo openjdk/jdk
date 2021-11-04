@@ -89,7 +89,7 @@ public class MXBeanProxy {
         }
     }
 
-    private static abstract class Handler {
+    private abstract static class Handler {
         Handler(String name, ConvertingMethod cm) {
             this.name = name;
             this.convertingMethod = cm;

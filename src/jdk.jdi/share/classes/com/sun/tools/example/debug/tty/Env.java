@@ -110,7 +110,7 @@ class Env {
         return sourceMapper.getSourcePath();
     }
 
-    static private List<String> excludes() {
+    private static List<String> excludes() {
         if (excludes == null) {
             setExcludes("java.*, javax.*, sun.*, com.sun.*, jdk.*");
         }

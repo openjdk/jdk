@@ -101,7 +101,7 @@ public abstract class TransportService {
     /**
      * The transport service capabilities.
      */
-    public static abstract class Capabilities {
+    public abstract static class Capabilities {
         /**
          * Constructor for subclasses to call.
          */
@@ -236,7 +236,7 @@ public abstract class TransportService {
      * #stopListening stopListening} to stop the transport
      * service from listening on an address.
      */
-    public static abstract class ListenKey {
+    public abstract static class ListenKey {
         /**
          * Constructor for subclasses to call.
          */

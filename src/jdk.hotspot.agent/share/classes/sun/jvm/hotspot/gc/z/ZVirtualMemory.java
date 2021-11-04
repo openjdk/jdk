@@ -39,7 +39,7 @@ public class ZVirtualMemory extends VMObject {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ZVirtualMemory");
 
         startField = type.getCIntegerField("_start");

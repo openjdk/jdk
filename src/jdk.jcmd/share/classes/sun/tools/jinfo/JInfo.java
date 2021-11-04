@@ -40,7 +40,7 @@ import sun.tools.common.PrintStreamPrinter;
  * and decides if the command should be satisfied using the VM attach mechanism
  * or an SA tool.
  */
-final public class JInfo {
+public final class JInfo {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {

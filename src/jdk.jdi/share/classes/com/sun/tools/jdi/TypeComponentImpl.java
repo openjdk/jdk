@@ -29,7 +29,7 @@ import com.sun.jdi.ReferenceType;
 import com.sun.jdi.TypeComponent;
 import com.sun.jdi.VirtualMachine;
 
-abstract public class TypeComponentImpl extends MirrorImpl
+public abstract class TypeComponentImpl extends MirrorImpl
     implements TypeComponent
 {
     protected final long ref;

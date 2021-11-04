@@ -68,7 +68,7 @@ class ClassLoadingImpl implements ClassLoadingMXBean {
 
         setVerboseClass(value);
     }
-    native static void setVerboseClass(boolean value);
+    static native void setVerboseClass(boolean value);
 
     public ObjectName getObjectName() {
         return Util.newObjectName(ManagementFactory.CLASS_LOADING_MXBEAN_NAME);

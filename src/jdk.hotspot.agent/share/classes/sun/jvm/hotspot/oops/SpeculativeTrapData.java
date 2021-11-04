@@ -57,7 +57,7 @@ public class SpeculativeTrapData<K, M> extends ProfileData {
     return methodData.getMethodAtAddress(addressAt(speculativeTrapMethod));
   }
 
-  static public int methodIndex() {
+  public static int methodIndex() {
     return speculativeTrapMethod;
   }
 

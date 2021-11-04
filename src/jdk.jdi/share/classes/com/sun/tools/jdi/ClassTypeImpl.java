@@ -42,11 +42,11 @@ import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
 
-final public class ClassTypeImpl extends InvokableTypeImpl
+public final class ClassTypeImpl extends InvokableTypeImpl
                                  implements ClassType
 {
     private static class IResult implements InvocationResult {
-        final private JDWP.ClassType.InvokeMethod rslt;
+        private final JDWP.ClassType.InvokeMethod rslt;
 
         public IResult(JDWP.ClassType.InvokeMethod rslt) {
             this.rslt = rslt;

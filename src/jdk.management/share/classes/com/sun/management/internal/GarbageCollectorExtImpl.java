@@ -70,10 +70,10 @@ public class GarbageCollectorExtImpl extends GarbageCollectorImpl
         return info;
     }
 
-    private final static String notifName =
+    private static final String notifName =
         "javax.management.Notification";
 
-    private final static String[] gcNotifTypes = {
+    private static final String[] gcNotifTypes = {
         GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION
     };
 

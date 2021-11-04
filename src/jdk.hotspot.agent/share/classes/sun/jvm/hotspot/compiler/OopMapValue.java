@@ -77,7 +77,7 @@ public class OopMapValue {
     DERIVED_OOP_VALUE      = db.lookupIntConstant("OopMapValue::derived_oop_value").intValue();
   }
 
-  public static abstract class OopTypes {
+  public abstract static class OopTypes {
     public static final OopTypes OOP_VALUE          = new OopTypes() { int getValue() { return OopMapValue.OOP_VALUE;          }};
     public static final OopTypes NARROWOOP_VALUE    = new OopTypes() { int getValue() { return OopMapValue.NARROWOOP_VALUE;         }};
     public static final OopTypes CALLEE_SAVED_VALUE = new OopTypes() { int getValue() { return OopMapValue.CALLEE_SAVED_VALUE; }};
