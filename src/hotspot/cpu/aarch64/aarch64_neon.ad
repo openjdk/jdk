@@ -515,7 +515,8 @@ instruct vcvt2Dto2I(vecD dst, vecX src)
   %}
   ins_encode %{
     __ ins(as_FloatRegister($dst$$reg), __ D, as_FloatRegister($src$$reg), 0, 1);
-    // Converting from double to int directly follows Java specification.
+    // We can't use fcvtzs(vector, integer) instruction here because we need
+    // saturation arithmetic. See JDK-8276151.
     __ fcvtzdw(rscratch1, as_FloatRegister($src$$reg));
     __ fcvtzdw(rscratch2, as_FloatRegister($dst$$reg));
     __ fmovs(as_FloatRegister($dst$$reg), rscratch1);
