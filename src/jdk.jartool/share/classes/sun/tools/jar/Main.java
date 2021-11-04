@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,21 @@ public class Main {
             rsrc = ResourceBundle.getBundle("sun.tools.jar.resources.jar");
         } catch (MissingResourceException e) {
             throw new Error("Fatal: Resource for jar is missing");
+        }
+    }
+
+    /* Cache SOURCE_DATE_EPOCH if set for reproducible Jar content */
+    private static long sourceDateEpochMillis = -1;
+    static {
+        String env = System.getenv("SOURCE_DATE_EPOCH");
+        if (env != null) {
+            try {
+                long value = Long.parseLong(env);
+                // SOURCE_DATE_EPOCH is in seconds
+                sourceDateEpochMillis = value*1000;
+            } catch(NumberFormatException e) {
+                sourceDateEpochMillis = -1;
+            }
         }
     }
 
@@ -775,6 +790,9 @@ public class Main {
         if (files == null)
             return;
 
+        // Ensure files list is sorted for reproducible jar content
+        Arrays.sort(files);
+
         for (int i = 0; i < files.length; i++) {
             File f;
             if (dir == null)
@@ -846,12 +864,12 @@ public class Main {
                     output(getMsg("out.added.manifest"));
                 }
                 ZipEntry e = new ZipEntry(MANIFEST_DIR);
-                e.setTime(System.currentTimeMillis());
+                e.setTime(getCurrentTimeMillis());
                 e.setSize(0);
                 e.setCrc(0);
                 zos.putNextEntry(e);
                 e = new ZipEntry(MANIFEST_NAME);
-                e.setTime(System.currentTimeMillis());
+                e.setTime(getCurrentTimeMillis());
                 if (flag0) {
                     crc32Manifest(e, manifest);
                 }
@@ -1017,7 +1035,7 @@ public class Main {
         throws IOException
     {
         ZipEntry e = new ZipEntry(INDEX_NAME);
-        e.setTime(System.currentTimeMillis());
+        e.setTime(getCurrentTimeMillis());
         if (flag0) {
             CRC32OutputStream os = new CRC32OutputStream();
             index.write(os);
@@ -1036,7 +1054,7 @@ public class Main {
             String name = mi.getKey();
             byte[] bytes = mi.getValue();
             ZipEntry e = new ZipEntry(name);
-            e.setTime(System.currentTimeMillis());
+            e.setTime(getCurrentTimeMillis());
             if (flag0) {
                 crc32ModuleInfo(e, bytes);
             }
@@ -1061,7 +1079,7 @@ public class Main {
             addMultiRelease(m);
         }
         ZipEntry e = new ZipEntry(MANIFEST_NAME);
-        e.setTime(System.currentTimeMillis());
+        e.setTime(getCurrentTimeMillis());
         if (flag0) {
             crc32Manifest(e, m);
         }
@@ -1182,7 +1200,12 @@ public class Main {
             out.print(formatMsg("out.adding", name));
         }
         ZipEntry e = new ZipEntry(name);
-        e.setTime(file.lastModified());
+        // If we are adding a new entry and SOURCE_DATE_EPOCH is set then use that time
+        if (sourceDateEpochMillis != -1) {
+            e.setTime(sourceDateEpochMillis);
+        } else {
+            e.setTime(file.lastModified());
+        }
         if (size == 0) {
             e.setMethod(ZipEntry.STORED);
             e.setSize(0);
@@ -2261,4 +2284,12 @@ public class Main {
     static Comparator<ZipEntry> ENTRY_COMPARATOR =
         Comparator.comparing(ZipEntry::getName, ENTRYNAME_COMPARATOR);
 
+    // Support SOURCE_DATE_EPOCH env for new entry times
+    private static long getCurrentTimeMillis() {
+        if (sourceDateEpochMillis != -1) {
+          return sourceDateEpochMillis;
+        } else {
+          return System.currentTimeMillis();
+        }
+    }
 }

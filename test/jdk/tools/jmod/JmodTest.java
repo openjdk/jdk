@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8142968 8166568 8166286 8170618 8168149 8240910
+ * @bug 8142968 8166568 8166286 8170618 8168149 8240910 8276400
  * @summary Basic test for jmod
  * @library /test/lib
  * @modules jdk.compiler
@@ -74,6 +74,8 @@ public class JmodTest {
     static final String CMDS_PREFIX = "bin/";
     static final String LIBS_PREFIX = "lib/";
     static final String CONFIGS_PREFIX = "conf/";
+
+    static final long SOURCE_DATE_EPOCH = 1647302400; // 15/03/2022
 
     @BeforeTest
     public void buildExplodedModules() throws IOException {
@@ -197,7 +199,45 @@ public class JmodTest {
                 assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/Foo.class");
                 assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/internal/Message.class");
                 assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/resources/foo.properties");
+
+                // JDK-8276400: Ensure the sort order is deterministic for reproducible jmod content
+                // module-info, followed by <sorted classes>
+                int mod_info_i = r.output.indexOf(CLASSES_PREFIX + "module-info.class");
+                int foo_cls_i  = r.output.indexOf(CLASSES_PREFIX + "jdk/test/foo/Foo.class");
+                int msg_i      = r.output.indexOf(CLASSES_PREFIX + "jdk/test/foo/internal/Message.class");
+                int res_i      = r.output.indexOf(CLASSES_PREFIX + "jdk/test/foo/resources/foo.properties");
+                System.out.println("jmod classes sort order check:\n"+r.output);
+                assertTrue(mod_info_i < foo_cls_i);
+                assertTrue(foo_cls_i < msg_i);
+                assertTrue(msg_i < res_i);
             });
+    }
+
+    // JDK-8276400: Ensure deterministic reproducible identical jmods
+    @Test
+    public void testReproducible() throws IOException {
+        String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
+        Path jmod1 = MODS_DIR.resolve("foo1.jmod");
+        Path jmod2 = MODS_DIR.resolve("foo2.jmod");
+        FileUtils.deleteFileIfExistsWithRetry(jmod1);
+        FileUtils.deleteFileIfExistsWithRetry(jmod2);
+
+        assertEquals(reproducibleJmod("create", "--class-path", cp, jmod1.toString()), 0);
+        assertTrue(Files.exists(jmod1));
+
+        try {
+            // Sleep 5 seconds to ensure zip timestamps might be different if they could be
+            Thread.sleep(5000);
+        } catch(InterruptedException ex) {}
+
+        assertEquals(reproducibleJmod("create", "--class-path", cp, jmod2.toString()), 0);
+        assertTrue(Files.exists(jmod2));
+
+        // Compare file byte content to see if they are identical
+        assertSameContent(jmod1, jmod2);
+
+        Files.delete(jmod1);
+        Files.delete(jmod2);
     }
 
     @Test
@@ -760,6 +800,31 @@ public class JmodTest {
         System.out.println("jmod " + Arrays.asList(args));
         int ec = JMOD_TOOL.run(ps, ps, args);
         return new JmodResult(ec, new String(baos.toByteArray(), UTF_8));
+    }
+
+    static int reproducibleJmod(String... args) throws IOException {
+        String javaHome = System.getProperty("java.home");
+        String jmodCmd = javaHome + File.separator + "bin" + File.separator + "jmod";
+
+        List<String> argsList = new ArrayList<String>();
+        argsList.add(jmodCmd);
+        argsList.addAll(Arrays.asList(args));
+
+        List<String> envList = new ArrayList<String>();
+        for (Map.Entry<String,String> env : (new ProcessBuilder().environment()).entrySet()) {
+            envList.add(env.getKey()+"="+env.getValue());
+        }
+        envList.add("SOURCE_DATE_EPOCH="+SOURCE_DATE_EPOCH);
+
+        Process p = Runtime.getRuntime().exec(argsList.toArray(new String[0]), envList.toArray(new String[0]));
+        int ec = -1;
+        if (p != null) {
+            try {
+                ec = p.waitFor();
+            } catch(InterruptedException ex) {}
+        }
+
+        return ec;
     }
 
     static class JmodResult {

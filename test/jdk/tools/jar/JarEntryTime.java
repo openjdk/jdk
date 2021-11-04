@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4225317 6969651
+ * @bug 4225317 6969651 8276400
  * @modules jdk.jartool
  * @summary Check extracted files have date as per those in the .jar file
  */
@@ -34,6 +34,9 @@ import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.spi.ToolProvider;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
 
 public class JarEntryTime {
     static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
@@ -48,6 +51,7 @@ public class JarEntryTime {
 
     static final TimeZone TZ = TimeZone.getDefault();
     static final boolean DST = TZ.inDaylightTime(new Date());
+    static final long SOURCE_DATE_EPOCH = 1647302400; // 15/03/2022
 
     static boolean cleanup(File dir) throws Throwable {
         boolean rc = true;
@@ -58,6 +62,29 @@ public class JarEntryTime {
             }
         }
         return rc & dir.delete();
+    }
+
+    static void createJar(File jarFile, File dir, boolean useSourceDateEpoch) throws Throwable {
+        String javahome = System.getProperty("java.home");
+        String jarcmd = javahome + File.separator + "bin" + File.separator + "jar";
+        String[] args = new String[] {
+                jarcmd,
+                "cf",
+                jarFile.getName(),
+                dir.getName() };
+
+        List<String> envList = new ArrayList<String>();
+        for (Map.Entry<String,String> env : (new ProcessBuilder().environment()).entrySet()) {
+            envList.add(env.getKey()+"="+env.getValue());
+        }
+
+        if (useSourceDateEpoch) {
+            envList.add("SOURCE_DATE_EPOCH="+SOURCE_DATE_EPOCH);
+        }
+
+        String[] env = envList.toArray(new String[0]);
+        Process p = Runtime.getRuntime().exec(args, env);
+        check(p != null && (p.waitFor() == 0));
     }
 
     static void extractJar(File jarFile, boolean useExtractionTime) throws Throwable {
@@ -85,6 +112,7 @@ public class JarEntryTime {
         File dirOuter = new File("outer");
         File dirInner = new File(dirOuter, "inner");
         File jarFile = new File("JarEntryTime.jar");
+        File jarFileSourceDateEpoch = new File("JarEntryTimeSourceDateEpoch.jar");
         File testFile = new File("JarEntryTimeTest.txt");
 
         // Remove any leftovers from prior run
@@ -119,9 +147,12 @@ public class JarEntryTime {
         check(fileInner.setLastModified(earlier));
 
         // Make a jar file from that directory structure
-        check(JAR_TOOL.run(System.out, System.err,
-                           "cf", jarFile.getName(), dirOuter.getName()) == 0);
+        createJar(jarFile, dirOuter, false);
         check(jarFile.exists());
+
+        // Make a jar file from that directory structure with SOURCE_DATE_EPOCH set
+        createJar(jarFileSourceDateEpoch, dirOuter, true);
+        check(jarFileSourceDateEpoch.exists());
 
         check(cleanup(dirInner));
         check(cleanup(dirOuter));
@@ -162,7 +193,21 @@ public class JarEntryTime {
         check(cleanup(dirInner));
         check(cleanup(dirOuter));
 
+        // Extract jarFileSourceDateEpoch and check last modified values are the epoch value
+        long epochMillis = SOURCE_DATE_EPOCH * 1000L;
+        extractJar(jarFileSourceDateEpoch, false);
+        check(dirOuter.exists());
+        check(dirInner.exists());
+        check(fileInner.exists());
+        checkFileTime(dirOuter.lastModified(), epochMillis);
+        checkFileTime(dirInner.lastModified(), epochMillis);
+        checkFileTime(fileInner.lastModified(), epochMillis);
+
+        check(cleanup(dirInner));
+        check(cleanup(dirOuter));
+
         check(jarFile.delete());
+        check(jarFileSourceDateEpoch.delete());
         check(testFile.delete());
     }
 

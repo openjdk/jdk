@@ -34,6 +34,8 @@ import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
 import sun.nio.cs.UTF_8;
 import sun.security.action.GetPropertyAction;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * This class implements an output stream filter for writing files in the
@@ -79,6 +81,33 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     private boolean closed = false;
 
     private final ZipCoder zc;
+
+    /* Cache SOURCE_DATE_EPOCH if set for reproducible Zip content */
+    private static final long sourceDateEpochMillis = getSourceDateEpochMillis();
+
+    @SuppressWarnings("removal")
+    private static long getSourceDateEpochMillis() {
+        long sourceDateEpoch = AccessController.doPrivileged(
+            new PrivilegedAction<Long> () {
+                public Long run() {
+                    long value;
+                    String env = System.getenv("SOURCE_DATE_EPOCH");
+                    if (env != null) {
+                        try {
+                            value = Long.parseLong(env);
+                            // SOURCE_DATE_EPOCH is in seconds
+                            value *= 1000;
+                        } catch(NumberFormatException e) {
+                            value = -1;
+                        }
+                    } else {
+                        value = -1;
+                    }
+                    return new Long(value);
+                }
+            }).longValue();
+        return sourceDateEpoch;
+    }
 
     private static int version(ZipEntry e) throws ZipException {
         return switch (e.method) {
@@ -200,7 +229,13 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         if (e.xdostime == -1) {
             // by default, do NOT use extended timestamps in extra
             // data, for now.
-            e.setTime(System.currentTimeMillis());
+            if (sourceDateEpochMillis != -1) {
+                // sourceDateEpochMillis is set so use as new entry time
+                e.setTime(sourceDateEpochMillis);
+            } else {
+                // set ZipEntry time to current time
+                e.setTime(System.currentTimeMillis());
+            }
         }
         if (e.method == -1) {
             e.method = method;  // use default method

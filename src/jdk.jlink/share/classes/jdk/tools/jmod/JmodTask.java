@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -767,6 +767,10 @@ public class JmodTask {
         void processSection(JmodOutputStream out, Section section, Path path)
             throws IOException
         {
+            // Keep a sorted Set of files to be processed, so that the Jmod is reproducible
+            // as Files.walkFileTree order is not defined
+            SortedMap<String, Path> filesToProcess  = new TreeMap<String, Path>();
+
             Files.walkFileTree(path, Set.of(FileVisitOption.FOLLOW_LINKS),
                 Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
                     @Override
@@ -782,14 +786,23 @@ public class JmodTask {
                             if (out.contains(section, name)) {
                                 warning("warn.ignore.duplicate.entry", name, section);
                             } else {
-                                try (InputStream in = Files.newInputStream(file)) {
-                                    out.writeEntry(in, section, name);
-                                }
+                                filesToProcess.put(name, file);
                             }
                         }
                         return FileVisitResult.CONTINUE;
                     }
                 });
+
+            // Process files in sorted order
+            Iterator<Map.Entry<String, Path>> itr = filesToProcess.entrySet().iterator();
+            while(itr.hasNext()) {
+                Map.Entry<String, Path> entry = itr.next();
+                String name = entry.getKey();
+                Path   file = entry.getValue();
+                try (InputStream in = Files.newInputStream(file)) {
+                    out.writeEntry(in, section, name);
+                }
+            }
         }
 
         boolean matches(Path path, List<PathMatcher> matchers) {
