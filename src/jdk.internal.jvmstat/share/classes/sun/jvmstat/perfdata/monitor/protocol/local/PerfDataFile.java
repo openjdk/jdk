@@ -56,6 +56,29 @@ public class PerfDataFile {
     public static final String dirNamePrefix = "hsperfdata_";
 
     /**
+     * The directory name pattern for the user directories.
+     */
+    public static final String userDirNamePattern = "hsperfdata_\\S*";
+
+    /**
+     * The file name pattern for PerfData shared memory files.
+     * <p>
+     * This pattern must be kept in synch with the file name pattern
+     * used by the 1.4.2 and later HotSpot JVM.
+     */
+    public static final String fileNamePattern = "^[0-9]+$";
+
+    /**
+     * The file name pattern for 1.4.1 PerfData shared memory files.
+     * <p>
+     * This pattern must be kept in synch with the file name pattern
+     * used by the 1.4.1 HotSpot JVM.
+     */
+    public static final String tmpFileNamePattern =
+            "^hsperfdata_[0-9]+(_[1-2]+)?$";
+
+
+    /**
      * Platform Specific methods for looking up temporary directories
      * and process IDs.
      */

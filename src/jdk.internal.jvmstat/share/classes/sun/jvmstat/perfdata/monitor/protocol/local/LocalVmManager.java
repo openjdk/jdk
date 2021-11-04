@@ -56,14 +56,14 @@ public class LocalVmManager {
      */
     public LocalVmManager() {
         // 1.4.2 and later: The files are in {tmpdir}/hsperfdata_{any_user_name}/[0-9]+
-        Pattern userDirPattern = Pattern.compile("hsperfdata_\\S*");
+        Pattern userDirPattern = Pattern.compile(PerfDataFile.userDirNamePattern);
         userDirFilter = new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return userDirPattern.matcher(name).lookingAt();
             }
         };
 
-        Pattern userDirFilePattern = Pattern.compile("^[0-9]+$");
+        Pattern userDirFilePattern = Pattern.compile(PerfDataFile.fileNamePattern);
         userDirFileFilter = new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return userDirFilePattern.matcher(name).matches();
@@ -72,7 +72,7 @@ public class LocalVmManager {
 
         // 1.4.1 (or earlier?): the files are stored directly under {tmpdir}/ with
         // the following pattern.
-        Pattern oldtmpFilePattern = Pattern.compile("^hsperfdata_[0-9]+(_[1-2]+)?$");
+        Pattern oldtmpFilePattern = Pattern.compile(PerfDataFile.tmpFileNamePattern);
         oldtmpFileFilter = new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return oldtmpFilePattern.matcher(name).matches();
@@ -102,7 +102,7 @@ public class LocalVmManager {
             }
 
 
-            // 1.4.2 and later: Look for the files {tmpdir}/hsperfdata_{any_user_name}/[0-0]+
+            // 1.4.2 and later: Look for the files {tmpdir}/hsperfdata_{any_user_name}/[0-9]+
             // that are readable by the current user.
             File[] dirs = tmpdir.listFiles(userDirFilter);
             for (int i = 0 ; i < dirs.length; i ++) {
