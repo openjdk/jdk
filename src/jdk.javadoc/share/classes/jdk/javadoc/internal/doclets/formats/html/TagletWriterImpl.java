@@ -381,24 +381,22 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
-    protected Content snippetTagOutput(Element element, SnippetTree tag, StyledText content) {
-        String copyText = resources.getText("doclet.Copy_snippet_to_clipboard");
-        String copiedText = resources.getText("doclet.Copied_snippet_to_clipboard");
-        HtmlTree copy = HtmlTree.DIV(HtmlStyle.snippetContainer,
-                HtmlTree.A("#", new HtmlTree(TagName.IMG)
-                                .put(HtmlAttr.SRC, htmlWriter.pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
-                                .put(HtmlAttr.ALT, copyText))
-                        .addStyle(HtmlStyle.snippetCopy)
-                        .put(HtmlAttr.ONCLICK, "copySnippet(this)")
-                        .put(HtmlAttr.ARIA_LABEL, copyText)
-                        .put(HtmlAttr.DATA_COPIED, copiedText));
-        HtmlTree pre = new HtmlTree(TagName.PRE)
-                .setStyle(HtmlStyle.snippet);
-        pre.add(Text.of(utils.normalizeNewlines("\n")));
+    protected Content snippetTagOutput(Element element, SnippetTree tag, StyledText content,
+                                       String id, String lang) {
+        HtmlTree pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
+        if (id != null && !id.isBlank()) {
+            pre.put(HtmlAttr.ID, id);
+        }
+        HtmlTree code = new HtmlTree(TagName.CODE)
+                .add(HtmlTree.EMPTY); // Make sure the element is always rendered
+        if (lang != null && !lang.isBlank()) {
+            code.addStyle("language-" + lang);
+        }
+
         content.consumeBy((styles, sequence) -> {
             CharSequence text = utils.normalizeNewlines(sequence);
             if (styles.isEmpty()) {
-                pre.add(text);
+                code.add(text);
             } else {
                 Element e = null;
                 String t = null;
@@ -443,10 +441,20 @@ public class TagletWriterImpl extends TagletWriter {
                     c = HtmlTree.SPAN(Text.of(sequence));
                     classes.forEach(((HtmlTree) c)::addStyle);
                 }
-                pre.add(c);
+                code.add(c);
             }
         });
-        return copy.add(pre);
+        String copyText = resources.getText("doclet.Copy_snippet_to_clipboard");
+        String copiedText = resources.getText("doclet.Copied_snippet_to_clipboard");
+        HtmlTree snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
+                HtmlTree.A("#", new HtmlTree(TagName.IMG)
+                                .put(HtmlAttr.SRC, htmlWriter.pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
+                                .put(HtmlAttr.ALT, copyText))
+                        .addStyle(HtmlStyle.snippetCopy)
+                        .put(HtmlAttr.ONCLICK, "copySnippet(this)")
+                        .put(HtmlAttr.ARIA_LABEL, copyText)
+                        .put(HtmlAttr.DATA_COPIED, copiedText));
+        return snippetContainer.add(pre.add(code));
     }
 
     /*
