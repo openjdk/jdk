@@ -73,6 +73,8 @@ class CAccessible extends CFRetainedResource implements Accessible {
     private static native void menuItemSelected(long ptr);
     private static native void treeNodeExpanded(long ptr);
     private static native void treeNodeCollapsed(long ptr);
+    private static native void selectedCellsChanged(long ptr);
+    private static native void tableContentCacheClear(long ptr);
 
     private Accessible accessible;
 
@@ -123,9 +125,29 @@ class CAccessible extends CFRetainedResource implements Accessible {
                     selectionChanged(ptr);
                 } else if (name.equals(ACCESSIBLE_TABLE_MODEL_CHANGED)) {
                     valueChanged(ptr);
+                    if (CAccessible.getSwingAccessible(CAccessible.this) != null) {
+                        Accessible a = CAccessible.getSwingAccessible(CAccessible.this);
+                        AccessibleContext ac = a.getAccessibleContext();
+                        if ((ac != null) && (ac.getAccessibleRole() == AccessibleRole.TABLE)) {
+                            tableContentCacheClear(ptr);
+                        }
+                    }
                 } else if (name.equals(ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY)) {
                     if (newValue instanceof AccessibleContext) {
                         activeDescendant = (AccessibleContext)newValue;
+                        if (newValue instanceof Accessible) {
+                            Accessible a = (Accessible)newValue;
+                            AccessibleContext ac = a.getAccessibleContext();
+                            if (ac !=  null) {
+                                Accessible p = ac.getAccessibleParent();
+                                if (p != null) {
+                                    AccessibleContext pac = p.getAccessibleContext();
+                                    if ((pac != null) && (pac.getAccessibleRole() == AccessibleRole.TABLE)) {
+                                        selectedCellsChanged(ptr);
+                                    }
+                                }
+                            }
+                        }
                     }
                 } else if (name.equals(ACCESSIBLE_STATE_PROPERTY)) {
                     AccessibleContext thisAC = accessible.getAccessibleContext();

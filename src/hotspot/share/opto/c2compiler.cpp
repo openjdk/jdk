@@ -426,6 +426,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_multiplyHigh:
     if (!Matcher::match_rule_supported(Op_MulHiL)) return false;
     break;
+  case vmIntrinsics::_unsignedMultiplyHigh:
+    if (!Matcher::match_rule_supported(Op_UMulHiL)) return false;
+    break;
   case vmIntrinsics::_getCallerClass:
     if (vmClasses::reflect_CallerSensitive_klass() == NULL) return false;
     break;
@@ -601,6 +604,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_putLongUnaligned:
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
+  case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:
   case vmIntrinsics::_currentThread:
 #ifdef JFR_HAVE_INTRINSICS

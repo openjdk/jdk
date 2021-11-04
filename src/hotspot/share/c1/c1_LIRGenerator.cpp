@@ -2984,6 +2984,9 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_storeFence:
     __ membar_release();
     break;
+  case vmIntrinsics::_storeStoreFence:
+    __ membar_storestore();
+    break;
   case vmIntrinsics::_fullFence :
     __ membar();
     break;

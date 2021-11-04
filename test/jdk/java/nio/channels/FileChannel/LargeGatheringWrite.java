@@ -25,6 +25,7 @@
  * @test
  * @bug 8274548
  * @summary Test gathering write of more than INT_MAX bytes
+ * @requires vm.bits == 64
  * @library ..
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory

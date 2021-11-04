@@ -28,7 +28,8 @@ java/rmi/Naming java/util/prefs sun/management/jmxremote \
 sun/tools/jstatd sun/tools/jcmd \
 sun/tools/jinfo sun/tools/jmap sun/tools/jps sun/tools/jstack sun/tools/jstat \
 com/sun/tools/attach sun/security/mscapi java/util/Arrays/largeMemory \
-java/util/BitSet/stream javax/rmi java/net/httpclient/websocket
+java/util/BitSet/stream javax/rmi java/net/httpclient/websocket \
+com/sun/net/httpserver/simpleserver
 
 # Group definitions
 groups=TEST.groups
@@ -67,7 +68,7 @@ requires.properties= \
     jdk.containerized
 
 # Minimum jtreg version
-requiredVersion=6+1
+requiredVersion=6.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

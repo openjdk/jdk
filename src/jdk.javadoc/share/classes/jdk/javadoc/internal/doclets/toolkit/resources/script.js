@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,21 @@ function indexFilesLoaded() {
         && typeSearchIndex
         && memberSearchIndex
         && tagSearchIndex;
+}
+
+function copySnippet(link) {
+    var textarea = document.createElement("textarea");
+    textarea.style.height = 0;
+    document.body.appendChild(textarea);
+    textarea.value = link.nextElementSibling.innerText;
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    link.classList.add("copied");
+    var parent = link.parentElement;
+    parent.onmouseleave = parent.ontouchend = function() {
+        link.classList.remove("copied");
+    };
 }
 
 // Workaround for scroll position not being included in browser history (8249133)

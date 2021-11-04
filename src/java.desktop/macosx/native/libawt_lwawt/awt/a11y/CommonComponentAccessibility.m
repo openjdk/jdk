@@ -218,9 +218,9 @@ static jobject sAccessibilityClass = NULL;
 
 /*
  * If new implementation of the accessible component peer for the given role exists
- * return the allocated class otherwise return nil to let old implementation being initialized
+ * return the component's class otherwise return CommonComponentAccessibility
  */
-+ (CommonComponentAccessibility *) getComponentAccessibility:(NSString *)role
++ (Class) getComponentAccessibilityClass:(NSString *)role
 {
     AWT_ASSERT_APPKIT_THREAD;
     if (rolesMap == nil) {
@@ -229,12 +229,12 @@ static jobject sAccessibilityClass = NULL;
 
     NSString *className = [rolesMap objectForKey:role];
     if (className != nil) {
-        return [NSClassFromString(className) alloc];
+        return NSClassFromString(className);
     }
-    return [CommonComponentAccessibility alloc];
+    return [CommonComponentAccessibility class];
 }
 
-+ (CommonComponentAccessibility *) getComponentAccessibility:(NSString *)role andParent:(CommonComponentAccessibility *)parent
++ (Class) getComponentAccessibilityClass:(NSString *)role andParent:(CommonComponentAccessibility *)parent
 {
     AWT_ASSERT_APPKIT_THREAD;
     if (rolesMap == nil) {
@@ -242,9 +242,9 @@ static jobject sAccessibilityClass = NULL;
     }
     NSString *className = [rowRolesMapForParent objectForKey:[[parent class] className]];
     if (className == nil) {
-        return [CommonComponentAccessibility getComponentAccessibility:role];
+        return [CommonComponentAccessibility getComponentAccessibilityClass:role];
     }
-    return [NSClassFromString(className) alloc];
+    return NSClassFromString(className);
 }
 
 - (id)initWithParent:(NSObject *)parent withEnv:(JNIEnv *)env withAccessible:(jobject)accessible withIndex:(jint)index withView:(NSView *)view withJavaRole:(NSString *)javaRole
@@ -378,6 +378,12 @@ static jobject sAccessibilityClass = NULL;
     NSAccessibilityPostNotification([[self accessibilitySelectedRows] firstObject], NSAccessibilityRowCollapsedNotification);
 }
 
+- (void)postSelectedCellsChanged
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    NSAccessibilityPostNotification(self, NSAccessibilitySelectedCellsChangedNotification);
+}
+
 - (BOOL)isEqual:(id)anObject
 {
     if (![anObject isKindOfClass:[self class]]) return NO;
@@ -413,13 +419,20 @@ static jobject sAccessibilityClass = NULL;
     GET_CACCESSIBLE_CLASS_RETURN(NULL);
     DECLARE_STATIC_METHOD_RETURN(sjm_getCAccessible, sjc_CAccessible, "getCAccessible",
                                 "(Ljavax/accessibility/Accessible;)Lsun/lwawt/macosx/CAccessible;", NULL);
-    if ((*env)->IsInstanceOf(env, jaccessible, sjc_CAccessible)) {
-        return jaccessible;
-    } else if ((*env)->IsInstanceOf(env, jaccessible, sjc_Accessible)) {
-        jobject o = (*env)->CallStaticObjectMethod(env, sjc_CAccessible,  sjm_getCAccessible, jaccessible);
+
+    // jaccessible is a weak ref, check it's still alive
+    jobject jaccessibleLocal = (*env)->NewLocalRef(env, jaccessible);
+    if ((*env)->IsSameObject(env, jaccessibleLocal, NULL)) return NULL;
+
+    if ((*env)->IsInstanceOf(env, jaccessibleLocal, sjc_CAccessible)) {
+        return jaccessibleLocal; // delete in the caller
+    } else if ((*env)->IsInstanceOf(env, jaccessibleLocal, sjc_Accessible)) {
+        jobject jCAX = (*env)->CallStaticObjectMethod(env, sjc_CAccessible,  sjm_getCAccessible, jaccessibleLocal);
         CHECK_EXCEPTION();
-        return o;
+        (*env)->DeleteLocalRef(env, jaccessibleLocal);
+        return jCAX; // delete in the caller
     }
+    (*env)->DeleteLocalRef(env, jaccessibleLocal);
     return NULL;
 }
 
@@ -519,29 +532,25 @@ static jobject sAccessibilityClass = NULL;
 
 + (CommonComponentAccessibility *) createWithParent:(CommonComponentAccessibility *)parent accessible:(jobject)jaccessible role:(NSString *)javaRole index:(jint)index withEnv:(JNIEnv *)env withView:(NSView *)view
 {
-    return [CommonComponentAccessibility createWithParent:parent accessible:jaccessible role:javaRole index:index withEnv:env withView:view isWrapped:NO];
+    Class classType = [self getComponentAccessibilityClass:javaRole andParent:parent];
+    return [CommonComponentAccessibility createWithParent:parent withClass:classType accessible:jaccessible role:javaRole index:index withEnv:env withView:view];
 }
 
-+ (CommonComponentAccessibility *) createWithParent:(CommonComponentAccessibility *)parent accessible:(jobject)jaccessible role:(NSString *)javaRole index:(jint)index withEnv:(JNIEnv *)env withView:(NSView *)view isWrapped:(BOOL)wrapped
++ (CommonComponentAccessibility *) createWithParent:(CommonComponentAccessibility *)parent withClass:(Class)classType accessible:(jobject)jaccessible role:(NSString *)javaRole index:(jint)index withEnv:(JNIEnv *)env withView:(NSView *)view
 {
     GET_CACCESSIBLE_CLASS_RETURN(NULL);
     DECLARE_FIELD_RETURN(jf_ptr, sjc_CAccessible, "ptr", "J", NULL);
     // try to fetch the jCAX from Java, and return autoreleased
     jobject jCAX = [CommonComponentAccessibility getCAccessible:jaccessible withEnv:env];
     if (jCAX == NULL) return nil;
-    if (!wrapped) { // If wrapped is true, then you don't need to get an existing instance, you need to create a new one
-        CommonComponentAccessibility *value = (CommonComponentAccessibility *) jlong_to_ptr((*env)->GetLongField(env, jCAX, jf_ptr));
-        if (value != nil) {
-            (*env)->DeleteLocalRef(env, jCAX);
-            return [[value retain] autorelease];
-        }
+    CommonComponentAccessibility *value = (CommonComponentAccessibility *) jlong_to_ptr((*env)->GetLongField(env, jCAX, jf_ptr));
+    if (value != nil) {
+        (*env)->DeleteLocalRef(env, jCAX);
+        return [[value retain] autorelease];
     }
 
-    // otherwise, create a new instance
-    CommonComponentAccessibility *newChild = [CommonComponentAccessibility getComponentAccessibility:javaRole andParent:parent];
-
-    // must init freshly -alloc'd object
-    [newChild initWithParent:parent withEnv:env withAccessible:jCAX withIndex:index withView:view withJavaRole:javaRole]; // must init new instance
+    CommonComponentAccessibility *newChild =
+        [[classType alloc] initWithParent:parent withEnv:env withAccessible:jCAX withIndex:index withView:view withJavaRole:javaRole];
 
     // If creating a JPopupMenu (not a combobox popup list) need to fire menuOpened.
     // This is the only way to know if the menu is opening; visible state change
@@ -555,10 +564,7 @@ static jobject sAccessibilityClass = NULL;
     [newChild retain];
     (*env)->SetLongField(env, jCAX, jf_ptr, ptr_to_jlong(newChild));
 
-    // the link is removed in the wrapper
-    if (!wrapped) {
-        (*env)->DeleteLocalRef(env, jCAX);
-    }
+    (*env)->DeleteLocalRef(env, jCAX);
 
     // return autoreleased instance
     return [newChild autorelease];
@@ -1226,6 +1232,22 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_treeNodeCollapsed
 {
     JNI_COCOA_ENTER(env);
         [ThreadUtilities performOnMainThread:@selector(postTreeNodeCollapsed)
+                         on:(CommonComponentAccessibility *)jlong_to_ptr(element)
+                         withObject:nil
+                         waitUntilDone:NO];
+    JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    selectedCellsChanged
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_selectedCellsChanged
+  (JNIEnv *env, jclass jklass, jlong element)
+{
+    JNI_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThread:@selector(postSelectedCellsChanged)
                          on:(CommonComponentAccessibility *)jlong_to_ptr(element)
                          withObject:nil
                          waitUntilDone:NO];

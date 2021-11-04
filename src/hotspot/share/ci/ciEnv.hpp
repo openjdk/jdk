@@ -27,6 +27,7 @@
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciObjectFactory.hpp"
+#include "ci/ciReplay.hpp"
 #include "classfile/vmClassMacros.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/dependencies.hpp"
@@ -187,6 +188,15 @@ private:
     if (o == NULL) {
       return NULL;
     } else {
+#ifndef PRODUCT
+      if (ReplayCompiles && o->is_klass()) {
+        Klass* k = (Klass*)o;
+        if (k->is_instance_klass() && ciReplay::is_klass_unresolved((InstanceKlass*)k)) {
+          // Klass was unresolved at replay dump time. Simulate this case.
+          return ciEnv::_unloaded_ciinstance_klass;
+        }
+      }
+#endif
       return _factory->get_metadata(o);
     }
   }

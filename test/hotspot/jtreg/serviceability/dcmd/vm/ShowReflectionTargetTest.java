@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary Test that various diagnostic commands which can show core reflection
  *          invocation targets do so correctly (See: JDK-8203343).
  * @library /test/lib
- * @run testng/othervm -Dsun.reflect.noInflation=true ShowReflectionTargetTest
+ * @run testng/othervm -Dsun.reflect.noInflation=true -Djdk.reflect.useDirectMethodHandle=false ShowReflectionTargetTest
  * @author stuefe
  */
 
