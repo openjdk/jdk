@@ -874,6 +874,12 @@ class CompileReplay : public StackObj {
   void process_instanceKlass(TRAPS) {
     // just load the referenced class
     Klass* k = parse_klass(CHECK);
+    if (_protection_domain() == NULL) {
+      // The first entry is the holder class of the method for which a replay compilation is requested.
+      // Use the same protection domain to load all subsequent classes in order to resolve all classes
+      // in signatures of inlinees. This ensures that inlining can be done as stated in the replay file.
+      _protection_domain = Handle(_thread, k->protection_domain());
+    }
     if (k == NULL) {
       return;
     }
