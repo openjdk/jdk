@@ -28,7 +28,9 @@
  * @library /test/lib
  * @compile -XDignore.symbol.file S4U2selfNotF.java
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
- * @run main/othervm -Djdk.net.hosts.file=TestHosts S4U2selfNotF
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts
+ *                   -Djdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket=true
+ *                   S4U2selfNotF
  */
 
 import java.nio.charset.StandardCharsets;

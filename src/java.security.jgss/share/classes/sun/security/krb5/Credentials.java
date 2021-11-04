@@ -31,6 +31,7 @@
 
 package sun.security.krb5;
 
+import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.CredentialsCache;
@@ -64,8 +65,11 @@ public class Credentials {
     static boolean alreadyLoaded = false;
     private static boolean alreadyTried = false;
 
+    public final static boolean S4U2PROXY_ACCEPT_NON_FORWARDABLE
+            = GetBooleanAction.privilegedGetProperty(
+                    "jdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket");
+
     private Credentials proxy = null;
-    private int s4u2type = 0; // 1 - self, 2 - proxy
 
     public Credentials getProxy() {
         return proxy;
@@ -74,24 +78,6 @@ public class Credentials {
     public Credentials setProxy(Credentials proxy) {
         this.proxy = proxy;
         return this;
-    }
-
-    public Credentials setS4U2self() {
-        this.s4u2type = 1;
-        return this;
-    }
-
-    public Credentials setS4U2proxy() {
-        this.s4u2type = 2;
-        return this;
-    }
-
-    public boolean isS4U2self() {
-        return s4u2type == 1;
-    }
-
-    public boolean isS4U2proxy() {
-        return s4u2type == 2;
     }
 
     // Read native ticket with session key type in the given list
@@ -511,8 +497,8 @@ public class Credentials {
     }
 
     public static Credentials acquireS4U2selfCreds(PrincipalName user,
-            Credentials ccreds) throws KrbException, IOException {
-        return CredentialsUtil.acquireS4U2selfCreds(user, ccreds);
+            Credentials middleTGT) throws KrbException, IOException {
+        return CredentialsUtil.acquireS4U2selfCreds(user, middleTGT);
     }
 
     public static Credentials acquireS4U2proxyCreds(String service,
