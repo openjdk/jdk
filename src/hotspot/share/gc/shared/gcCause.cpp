@@ -126,6 +126,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _z_minor_allocation_rate:
       return "Minor Allocation Rate";
 
+    case _z_minor_high_usage:
+      return "Minor High Usage";
+
     case _z_major_young_preclean:
       return "Major Young Preclean";
 
@@ -149,9 +152,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _z_major_proactive:
       return "Major Proactive";
-
-    case _z_major_high_usage:
-      return "Major High Usage";
 
     case _last_gc_cause:
       return "ILLEGAL VALUE - last gc cause - ILLEGAL VALUE";

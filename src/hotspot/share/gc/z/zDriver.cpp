@@ -333,6 +333,7 @@ void ZDriverMinor::collect(const ZDriverRequest& request) {
     _port.send_async(request);
     break;
 
+  case GCCause::_z_minor_high_usage:
   case GCCause::_z_major_young_preclean:
     // Start synchronous GC
     _port.send_sync(request);
@@ -653,7 +654,6 @@ void ZDriverMajor::collect(const ZDriverRequest& request) {
   case GCCause::_z_major_allocation_rate:
   case GCCause::_z_major_allocation_stall:
   case GCCause::_z_major_proactive:
-  case GCCause::_z_major_high_usage:
   case GCCause::_metadata_GC_threshold:
     // Start asynchronous GC
     _port.send_async(request);
@@ -930,8 +930,7 @@ bool ZDriverMajor::should_collect_young_before_major(GCCause::Cause cause) {
       cause != GCCause::_z_major_timer &&
       cause != GCCause::_z_major_warmup &&
       cause != GCCause::_z_major_allocation_rate &&
-      cause != GCCause::_z_major_proactive &&
-      cause != GCCause::_z_major_high_usage) {
+      cause != GCCause::_z_major_proactive) {
     // Cause is not relaxed to skip young preclean before major
     return true;
   }

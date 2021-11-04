@@ -269,6 +269,35 @@ static ZDriverRequest rule_minor_allocation_rate() {
   }
 }
 
+static ZDriverRequest rule_minor_high_usage() {
+  if (ZCollectedHeap::heap()->driver_minor()->is_busy()) {
+    // If there is already an ongoing GC, then let's leave it
+    return GCCause::_no_gc;
+  }
+  // Perform GC if the amount of free memory is 5% or less. This is a preventive
+  // meassure in the case where the application has a very low allocation rate,
+  // such that the allocation rate rule doesn't trigger, but the amount of free
+  // memory is still slowly but surely heading towards zero. In this situation,
+  // we start a GC cycle to avoid a potential allocation stall later.
+
+  // Calculate amount of free memory available. Note that we take the
+  // relocation headroom into account to avoid in-place relocation.
+  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
+  const size_t used = ZHeap::heap()->used();
+  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
+  const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
+  const double free_percent = percent_of(free, soft_max_capacity);
+
+  log_debug(gc, director)("Rule Minor: High Usage, Free: " SIZE_FORMAT "MB(%.1f%%)",
+                          free / M, free_percent);
+
+  if (free_percent > 5.0) {
+    return GCCause::_no_gc;
+  }
+
+  return GCCause::_z_minor_high_usage;
+}
+
 // Major GC rules
 
 static ZDriverRequest rule_major_timer() {
@@ -325,31 +354,6 @@ static ZDriverRequest rule_major_warmup() {
   }
 
   return GCCause::_z_major_warmup;
-}
-
-static ZDriverRequest rule_major_high_usage() {
-  // Perform GC if the amount of free memory is 5% or less. This is a preventive
-  // meassure in the case where the application has a very low allocation rate,
-  // such that the allocation rate rule doesn't trigger, but the amount of free
-  // memory is still slowly but surely heading towards zero. In this situation,
-  // we start a GC cycle to avoid a potential allocation stall later.
-
-  // Calculate amount of free memory available. Note that we take the
-  // relocation headroom into account to avoid in-place relocation.
-  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
-  const size_t used = ZHeap::heap()->used();
-  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
-  const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
-  const double free_percent = percent_of(free, soft_max_capacity);
-
-  log_debug(gc, director)("Rule Major: High Usage, Free: " SIZE_FORMAT "MB(%.1f%%)",
-                          free / M, free_percent);
-
-  if (free_percent > 5.0) {
-    return GCCause::_no_gc;
-  }
-
-  return GCCause::_z_major_high_usage;
 }
 
 static ZDriverRequest rule_major_allocation_rate() {
@@ -476,7 +480,8 @@ static ZDriverRequest make_minor_gc_decision() {
   using ZDirectorRule = ZDriverRequest (*)();
   const ZDirectorRule rules[] = {
     rule_minor_timer,
-    rule_minor_allocation_rate
+    rule_minor_allocation_rate,
+    rule_minor_high_usage
   };
 
   // Execute rules
@@ -500,7 +505,6 @@ static ZDriverRequest make_major_gc_decision() {
     rule_major_allocation_stall,
     rule_major_warmup,
     rule_major_timer,
-    rule_major_high_usage,
     rule_major_proactive,
   };
 

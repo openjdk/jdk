@@ -85,6 +85,7 @@ class GCCause : public AllStatic {
 
     _z_minor_timer,
     _z_minor_allocation_rate,
+    _z_minor_high_usage,
 
     _z_major_young_preclean,
     _z_major_young,
@@ -95,7 +96,6 @@ class GCCause : public AllStatic {
     _z_major_allocation_rate,
     _z_major_allocation_stall,
     _z_major_proactive,
-    _z_major_high_usage,
 
     _last_gc_cause
   };
