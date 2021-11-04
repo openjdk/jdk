@@ -77,6 +77,8 @@
  *    At exit, there is no shared archive created automatically.
  * 23 create an archive with dynamic magic value only like in 15
  *    Run with the base archive created in step 20.1 will exit abnormal due to fail to read file header.
+ * 24 Run -Xshare:auto -XX:SharedArchiveFile=base (created in 20.1) -XX:+AutoCreateSharedArchive
+ *    Warning for not a dynamic archive, run with static archive. Not dynamic archive is created at exit.
  */
 
 import java.io.IOException;
@@ -418,6 +420,27 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
         ft2 = Files.getLastModifiedTime(Paths.get(magicOnly));
         if (!ft1.equals(ft2)) {
             throw new RuntimeException("Shared archive " + magicOnly + " should not be created at exit");
+        }
+
+        // 24 Run -Xshare:auto -XX:SharedArchiveFile=base (created in 20.1) -XX:+AutoCreateSharedArchive
+        //    Warning for not a dynamic archive, run with static archive. No dynamic archive is created at exit.
+        print("24 Run -Xshare:auto -XX:SharedArchiveFile=base (created in 20.1) -XX:+AutoCreateSharedArchive");
+        ft1 = Files.getLastModifiedTime(Paths.get(BASE_NAME));
+        run(BASE_NAME,
+            "-Xshare:auto",
+            "-XX:+AutoCreateSharedArchive",
+            "-Xlog:cds",
+            "-Xlog:cds+dynamic=info",
+            "-cp", appJar,
+            mainAppClass)
+            .assertNormalExit(output -> {
+                output.shouldHaveExitValue(0);
+                output.shouldContain("VM warning: Not a dynmaic archive");
+                output.shouldNotContain("Dumping shared data to file");
+                });
+        ft2 = Files.getLastModifiedTime(Paths.get(BASE_NAME));
+        if (!ft1.equals(ft2)) {
+            throw new RuntimeException("Shared archive " + BASE_NAME + " should not be created at exit");
         }
     }
 }

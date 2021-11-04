@@ -1113,6 +1113,8 @@ public:
     return &_header;
   }
 
+  // This function is call from FileMapInfo::get_base_archive_name, and could happen in very early
+  // vm stage and the log is not available yet. Do not use log in his function.
   char* read_base_archive_name() {
     assert(_fd != -1, "Archive should be open");
     size_t name_size = (size_t)_header._base_archive_name_size;
@@ -1121,17 +1123,17 @@ public:
     lseek(_fd, _header._base_archive_path_offset, SEEK_SET); // position to correct offset.
     size_t n = os::read(_fd, base_name, (unsigned int)name_size);
     if (n != name_size) {
-      log_info(cds)("Unable to read base archive name from archive");
+      warning("Unable to read base archive name from archive");
       FREE_C_HEAP_ARRAY(char, base_name);
       return nullptr;
     }
     if (*(base_name + name_size - 1) != '\0' || strlen(base_name) != name_size - 1) {
-      log_info(cds)("Base archive name is damaged");
+      warning("Base archive name is damaged");
       FREE_C_HEAP_ARRAY(char, base_name);
       return nullptr;
     }
     if (!os::file_exists(base_name)) {
-      log_info(cds)("Base archive %s does not exist", base_name);
+      warning("Base archive %s does not exist", base_name);
       FREE_C_HEAP_ARRAY(char, base_name);
       return nullptr;
     }
@@ -1139,6 +1141,7 @@ public:
   }
 };
 
+// See comment for get_base_archive_name.
 bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
   FileHeaderHelper file_helper;
   if (!file_helper.initialize(archive_name)) {
@@ -1155,8 +1158,8 @@ bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
       return false;
     }
     if (header->_base_archive_path_offset != 0) {
-      log_info(cds)("_base_archive_path_offset should be 0");
-      log_info(cds)("_base_archive_path_offset = " UINT32_FORMAT, header->_base_archive_path_offset);
+      warning("_base_archive_path_offset should be 0");
+      warning("_base_archive_path_offset = " UINT32_FORMAT, header->_base_archive_path_offset);
       return false;
     }
   } else {
@@ -1171,10 +1174,10 @@ bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
     unsigned int header_size = header->_header_size;
     if (name_size != 0 && path_offset != 0) {
       if (path_offset + name_size != header_size) {
-        log_info(cds)("_header_size should be equal to _base_archive_path_offset plus _base_archive_name_size");
-        log_info(cds)("  _base_archive_name_size   = " UINT32_FORMAT, name_size);
-        log_info(cds)("  _base_archive_path_offset = " UINT32_FORMAT, path_offset);
-        log_info(cds)("  _header_size              = " UINT32_FORMAT, header_size);
+        warning("_header_size should be equal to _base_archive_path_offset plus _base_archive_name_size");
+        warning("  _base_archive_name_size   = " UINT32_FORMAT, name_size);
+        warning("  _base_archive_path_offset = " UINT32_FORMAT, path_offset);
+        warning("  _header_size              = " UINT32_FORMAT, header_size);
         return false;
       }
       char* base_name = file_helper.read_base_archive_name();
@@ -1184,7 +1187,7 @@ bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
       FREE_C_HEAP_ARRAY(char, base_name);
     } else {
       if (name_size != 0 || path_offset != 0) {
-        log_info(cds)("_base_archive_name_size and _base_archive_path_offset must be 0 at same time");
+        warning("_base_archive_name_size and _base_archive_path_offset must be 0 at same time");
         return false;
       }
     }
@@ -1192,6 +1195,8 @@ bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
   return true;
 }
 
+// Since fail_continue calls log function and this function can be called in very early vm stage
+// when log is not available yet so do not call fail_continue or do logging in this function.
 bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
                                                     char** base_archive_name) {
   FileHeaderHelper file_helper;
@@ -1201,12 +1206,13 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
   GenericCDSFileMapHeader* header = file_helper.get_generic_file_header();
   if (header->_magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
     // Not a dynamic header, no need to proceed further.
+    warning("Not a dynmaic archive");
     return false;
   }
 
   if ((header->_base_archive_name_size == 0 && header->_base_archive_path_offset != 0) ||
       (header->_base_archive_name_size != 0 && header->_base_archive_path_offset == 0)) {
-    fail_continue("Default base archive not set correct");
+    warning("Default base archive not set correct");
     return false;
   }
   if (header->_base_archive_name_size == 0 &&
