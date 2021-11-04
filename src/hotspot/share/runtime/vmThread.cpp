@@ -152,10 +152,10 @@ static VM_None halt_op("Halt");
 void VMThread::run() {
   assert(this == vm_thread(), "check");
 
-  // Notify_lock wait checks on active_handles() to rewait in
+  // Notify_lock wait checks on is_running() to rewait in
   // case of spurious wakeup, it should wait on the last
   // value set prior to the notify
-  this->set_active_handles(JNIHandleBlock::allocate_block());
+  Atomic::store(&_is_running, true);
 
   {
     MutexLocker ml(Notify_lock);
