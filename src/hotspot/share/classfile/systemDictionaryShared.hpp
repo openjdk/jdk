@@ -175,7 +175,6 @@ private:
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
   static bool is_jfr_event_class(InstanceKlass *k);
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
-  static bool check_for_exclusion_impl(InstanceKlass* k);
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
 
@@ -188,6 +187,8 @@ private:
                        outputStream* st) NOT_CDS_RETURN;
 
 public:
+  static bool check_for_exclusion_impl(InstanceKlass* k, bool silent);
+  static void reset_registered_lambda_proxy_class(InstanceKlass* ik);
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static InstanceKlass* find_builtin_class(Symbol* class_name);
@@ -283,7 +284,7 @@ public:
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);
   static void set_excluded_locked(InstanceKlass* k);
-  static bool warn_excluded(InstanceKlass* k, const char* reason);
+  static bool warn_excluded(InstanceKlass* k, const char* reason, bool silent);
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static size_t estimate_size_for_archive();
   static void write_to_archive(bool is_static_archive = true);

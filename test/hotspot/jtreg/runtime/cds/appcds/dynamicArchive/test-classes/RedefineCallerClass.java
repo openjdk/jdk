@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,24 @@
  *
  */
 
-public class Hello {
-  public static void main(String args[]) {
-    System.out.println("Hello World");
-    System.out.println(getRunnable());
-  }
+class SimpleLambda {
+    public static Runnable getRunnable() {
+      return () -> {};
+    }
+}
 
-  public static Runnable getRunnable() {
-    return () -> {};
-  }
+public class RedefineCallerClass {
+
+    public static String newClass = 
+        " class SimpleLambda { " +
+        "     public static Runnable getRunnable() { " +
+        "         return () -> {}; " +
+        "     } " +
+        " } ";
+
+    public static void main(String args[]) throws Exception {
+      SimpleLambda s = new SimpleLambda();
+      System.out.println(s.getRunnable());
+      RedefineClassHelper.redefineClass(s.getClass(), newClass);
+    }
 }
