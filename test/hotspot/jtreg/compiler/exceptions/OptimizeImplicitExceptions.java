@@ -23,8 +23,9 @@
 
  /*
  * @test
- * @bug 8275908
+ * @bug 8275908 8273563
  * @summary Record null_check traps for calls and array_check traps in the interpreter
+ *          Test -XX:+/-OmitStackTraceInFastThrow and -XX:+/-OptimizeImplicitExceptions
  *
  * @requires vm.compiler2.enabled & vm.compMode != "Xcomp"
  *
@@ -65,11 +66,12 @@ public class OptimizeImplicitExceptions {
             return reason;
         }
     }
-    // TestMode represents a specific combination of the OmitStackTraceInFastThrow command line options.
-    // They will be set up in 'setFlags(TestMode testMode)' before a new test run starts.
+    // TestMode represents a specific combination of the OmitStackTraceInFastThrow/OptimizeImplicitExceptions
+    // command line options. They will be set up in 'setFlags(TestMode testMode)' before a new test run starts.
     public enum TestMode {
         OMIT_STACKTRACES_IN_FASTTHROW,
-        STACKTRACES_IN_FASTTHROW
+        STACKTRACES_IN_FASTTHROW,
+        STACKTRACES_IN_FASTTHROW_OPTIMIZED
     }
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -129,10 +131,16 @@ public class OptimizeImplicitExceptions {
         } else {
             WB.setBooleanVMFlag("OmitStackTraceInFastThrow", false);
         }
+        if (testMode == TestMode.STACKTRACES_IN_FASTTHROW_OPTIMIZED) {
+            WB.setBooleanVMFlag("OptimizeImplicitExceptions", true);
+        } else {
+            WB.setBooleanVMFlag("OptimizeImplicitExceptions", false);
+        }
 
         System.out.println("==========================================================");
         System.out.println("testMode=" + testMode +
-                           " OmitStackTraceInFastThrow=" + WB.getBooleanVMFlag("OmitStackTraceInFastThrow"));
+                           " OmitStackTraceInFastThrow=" + WB.getBooleanVMFlag("OmitStackTraceInFastThrow") +
+                           " OptimizeImplicitExceptions=" + WB.getBooleanVMFlag("OptimizeImplicitExceptions"));
         System.out.println("==========================================================");
     }
 
@@ -170,14 +178,21 @@ public class OptimizeImplicitExceptions {
         Asserts.assertEQ(WB.getMethodCompilationLevel(throwImplicitException_m), 4, "Method should be compiled at level 4.");
         int deoptCount = WB.getDeoptCount();
         int deoptCountReason = WB.getDeoptCount(impExcp.getReason(), null/*action*/);
-        if (testMode == TestMode.OMIT_STACKTRACES_IN_FASTTHROW) {
-            // No deoptimizations for '-XX:+OmitStackTraceInFastThrow'
+        if (testMode == TestMode.OMIT_STACKTRACES_IN_FASTTHROW || testMode == TestMode.STACKTRACES_IN_FASTTHROW_OPTIMIZED) {
+            // No deoptimizations for '-XX:+OmitStackTraceInFastThrow' and '-XX:-OmitStackTraceInFastThrow -XX:+OptimizeImplicitExceptions'
             Asserts.assertEQ(oldDeoptCount, deoptCount, "Wrong number of deoptimizations.");
             Asserts.assertEQ(oldDeoptCountReason.get(impExcp.getReason()), deoptCountReason, "Wrong number of deoptimizations.");
             // '-XX:+OmitStackTraceInFastThrow' never has message because it is using a global singleton exception.
-            Asserts.assertNull(ex.getMessage(), "Optimized exceptions have no message.");
+            // '-XX:-OmitStackTraceInFastThrow -XX:+OptimizeImplicitExceptions' has no message except for
+            // NullPointerExceptions which are handled differently due to "JEP 358: Helpful NullPointerExceptions".
+            if (testMode == TestMode.STACKTRACES_IN_FASTTHROW_OPTIMIZED &&
+                (impExcp == ImplicitException.NULL_POINTER_EXCEPTION || impExcp == ImplicitException.INVOKE_NULL_POINTER_EXCEPTION)) {
+                Asserts.assertNotNull(ex.getMessage(), "NullPointerExceptions always have a message.");
+            } else {
+                Asserts.assertNull(ex.getMessage(), "Optimized exceptions have no message.");
+            }
         } else if (testMode == TestMode.STACKTRACES_IN_FASTTHROW) {
-            // We always deoptimize for '-XX:-OmitStackTraceInFastThrow
+            // We always deoptimize for '-XX:-OmitStackTraceInFastThrow -XX:-OptimizeImplicitExceptions'
             Asserts.assertEQ(oldDeoptCount + invocations, deoptCount, "Wrong number of deoptimizations.");
             Asserts.assertEQ(oldDeoptCountReason.get(impExcp.getReason()) + invocations, deoptCountReason, "Wrong number of deoptimizations.");
             Asserts.assertNotNull(ex.getMessage(), "Exceptions thrown in the interpreter should have a message.");

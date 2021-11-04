@@ -1143,7 +1143,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     // If we've created an implicit NPE for an invoke* bytecode due to
     // -XX:+OptimizeImplicitExceptions we have to adjust the bytecode to
     // invokespecial here because we're actually invoking the exceptions
-    // constructor here.
+    // constructor.
     bc = Bytecodes::_invokespecial;
   }
 

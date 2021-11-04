@@ -402,7 +402,7 @@ public:
   VM_CLASSES_DO(VM_CLASS_FUNC)
 #undef VM_CLASS_FUNC
 
-  ciInstanceKlass* exception_instanceKlass_for_reason(Deoptimization::DeoptReason reason, bool is_aastore);
+  ciInstanceKlass* exception_instanceKlass_for_reason(Deoptimization::DeoptReason reason);
 
   ciInstance* NullPointerException_instance() {
     assert(_NullPointerException_instance != NULL, "initialization problem");

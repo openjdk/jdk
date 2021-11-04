@@ -620,8 +620,7 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
   }
 
   if (treat_throw_as_hot && OptimizeImplicitExceptions) {
-    ciInstanceKlass* ex_ciInstKlass =
-      env()->exception_instanceKlass_for_reason(reason, java_bc() == Bytecodes::_aastore);
+    ciInstanceKlass* ex_ciInstKlass = env()->exception_instanceKlass_for_reason(reason);
     if (ex_ciInstKlass != NULL) {
       const TypeKlassPtr *ex_type = TypeKlassPtr::make(ex_ciInstKlass);
       kill_dead_locals();
