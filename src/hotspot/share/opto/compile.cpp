@@ -487,7 +487,7 @@ CompileWrapper::~CompileWrapper() {
 void Compile::print_compile_messages() {
 #ifndef PRODUCT
   // Check if recompiling
-  if ((subsume_loads() == false) && PrintOpto) {
+  if (!subsume_loads() && PrintOpto) {
     // Recompiling without allowing machine instructions to subsume loads
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without subsuming loads          **");
@@ -841,9 +841,7 @@ Compile::Compile( ciEnv* ci_env,
                   DirectiveSet* directive)
   : Phase(Compiler),
     _compile_id(0),
-    _options(Options(true  /*subsume_loads*/, false /*do_escape_analysis*/,
-                     false /*eliminate_boxing*/, false /*do_locks_coarsening*/,
-                     true  /*install_code*/)),
+    _options(Options()),
     _method(NULL),
     _entry_bci(InvocationEntryBci),
     _stub_function(stub_function),
