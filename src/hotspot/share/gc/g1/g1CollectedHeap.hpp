@@ -934,6 +934,8 @@ public:
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
 
+  virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
+
   // Try to minimize the remembered set.
   void scrub_rem_set();
 

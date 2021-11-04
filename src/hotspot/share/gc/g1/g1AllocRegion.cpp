@@ -50,12 +50,6 @@ void G1AllocRegion::setup(G1CollectedHeap* g1h, HeapRegion* dummy_region) {
   _dummy_region = dummy_region;
 }
 
-void G1AllocRegion::update_bot_for_region_waste(HeapWord* addr, size_t size) {
-  assert(_alloc_region != NULL, "invariant");
-  assert(_bot_updates, "must only be called for regions doing BOT updates");
-  _alloc_region->update_bot_at(addr, size);
-}
-
 size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
   assert(alloc_region != NULL && alloc_region != _dummy_region,
          "pre-condition");
@@ -80,14 +74,11 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
   while (free_word_size >= min_word_size_to_fill) {
     HeapWord* dummy = par_allocate(alloc_region, free_word_size);
     if (dummy != NULL) {
-      // If the allocation was successful we should fill in the space.
-      CollectedHeap::fill_with_object(dummy, free_word_size);
+      // If the allocation was successful we should fill in the space. For G1
+      // this will also do any necessary BOT updates caused by this allocation.
+      alloc_region->fill_with_dummy_object(dummy, free_word_size);
       alloc_region->set_pre_dummy_top(dummy);
       result += free_word_size * HeapWordSize;
-      // Update BOT if this is an old region requiring BOT updates.
-      if (_bot_updates) {
-        update_bot_for_region_waste(dummy, free_word_size);
-      }
       break;
     }
 
@@ -263,7 +254,6 @@ G1AllocRegion::G1AllocRegion(const char* name,
   : _alloc_region(NULL),
     _count(0),
     _used_bytes_before(0),
-    _bot_updates(bot_updates),
     _name(name),
     _node_index(node_index)
  { }
@@ -396,8 +386,7 @@ HeapRegion* OldGCAllocRegion::release() {
       // original problem cannot occur.
       if (to_allocate_words >= G1CollectedHeap::min_fill_size()) {
         HeapWord* dummy = attempt_allocation(to_allocate_words);
-        CollectedHeap::fill_with_object(dummy, to_allocate_words);
-        update_bot_for_region_waste(dummy, to_allocate_words);
+        cur->fill_with_dummy_object(dummy, to_allocate_words);
       }
     }
   }

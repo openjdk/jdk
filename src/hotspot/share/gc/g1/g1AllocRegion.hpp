@@ -68,9 +68,6 @@ private:
   // we allocated in it.
   size_t _used_bytes_before;
 
-  // When true, indicates that allocate calls should do BOT updates.
-  const bool _bot_updates;
-
   // Useful for debugging and tracing.
   const char* _name;
 
@@ -125,9 +122,6 @@ protected:
   // else can allocate out of it.
   // Returns the number of bytes that have been filled up during retire.
   virtual size_t retire(bool fill_up);
-
-  // Update the BOT for the filler object allocated at the given address.
-  void update_bot_for_region_waste(HeapWord* addr, size_t size);
 
   size_t retire_internal(HeapRegion* alloc_region, bool fill_up);
 

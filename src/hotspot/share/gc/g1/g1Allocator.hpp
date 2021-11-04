@@ -183,7 +183,6 @@ private:
 
   // Helpers to do explicit BOT updates for allocations in old generation regions.
   void update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size);
-  void update_bot_for_plab_waste(G1HeapRegionAttr dest, G1PLAB* plab);
   // When a new PLAB is allocated a new threshold needs to be calculated and
   // possibly also the current region where BOT updates should be done.
   void calculate_new_bot_threshold(G1HeapRegionAttr attr, HeapWord* addr);

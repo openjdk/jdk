@@ -3446,3 +3446,8 @@ GrowableArray<GCMemoryManager*> G1CollectedHeap::memory_managers() {
 GrowableArray<MemoryPool*> G1CollectedHeap::memory_pools() {
   return _monitoring_support->memory_pools();
 }
+
+void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
+  HeapRegion* region = heap_region_containing(start);
+  region->fill_with_dummy_object(start, pointer_delta(end, start), zap);
+}

@@ -133,18 +133,6 @@ inline HeapWord* G1PLABAllocator::allocate(G1HeapRegionAttr dest,
   return allocate_direct_or_new_plab(dest, word_sz, refill_failed, node_index);
 }
 
-inline void G1PLABAllocator::update_bot_for_plab_waste(G1HeapRegionAttr attr, G1PLAB* plab) {
-  if (!attr.is_old()) {
-    // BOT updates are only done for old generation.
-    return;
-  }
-
-  if (!plab->is_allocated()) {
-    return;
-  }
-  update_bot_for_object(plab->get_filler(), plab->get_filler_size());
-}
-
 inline void G1PLABAllocator::calculate_new_bot_threshold(G1HeapRegionAttr attr, HeapWord* addr) {
   if (!attr.is_old()) {
     // BOT updates are only done for old generation.

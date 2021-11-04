@@ -814,3 +814,12 @@ void HeapRegion::object_iterate(ObjectClosure* blk) {
     p += block_size(p);
   }
 }
+
+void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap) {
+  // Keep the BOT in sync for old generation regions.
+  if (is_old()) {
+    update_bot_at(address, word_size);
+  }
+  // Fill in the object.
+  CollectedHeap::fill_with_object(address, word_size, zap);
+}

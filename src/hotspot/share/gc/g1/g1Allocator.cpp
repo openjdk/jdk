@@ -347,7 +347,6 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
     may_throw_away_buffer(required_in_plab, plab_word_size)) {
 
     G1PLAB* alloc_buf = alloc_buffer(dest, node_index);
-    update_bot_for_plab_waste(dest, alloc_buf);
     alloc_buf->retire();
 
     size_t actual_plab_size = 0;
@@ -393,7 +392,6 @@ void G1PLABAllocator::flush_and_retire_stats() {
     for (uint node_index = 0; node_index < alloc_buffers_length(state); node_index++) {
       G1PLAB* const buf = alloc_buffer(state, node_index);
       if (buf != NULL) {
-        update_bot_for_plab_waste(state, buf);
         buf->flush_and_retire_stats(stats);
       }
     }
