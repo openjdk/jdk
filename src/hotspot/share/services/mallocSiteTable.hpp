@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,20 +119,20 @@ class MallocSiteTable : AllStatic {
   // once exclusive access (exclusiveLock) is requested, all shared accesses are
   // rejected forever.
   class AccessLock : public StackObj {
+   private:
     enum LockState {
       NoLock,
       SharedLock,
       ExclusiveLock
     };
 
-   private:
     // A very large negative number. The only possibility to "overflow"
     // this number is when there are more than -min_jint threads in
     // this process, which is not going to happen in foreseeable future.
     const static int _MAGIC_ = min_jint;
 
-    LockState      _lock_state;
-    volatile int*  _lock;
+    LockState           _lock_state;
+    volatile int* const _lock;
    public:
     AccessLock(volatile int* lock) :
       _lock_state(NoLock), _lock(lock) {
@@ -140,15 +140,15 @@ class MallocSiteTable : AllStatic {
 
     ~AccessLock() {
       if (_lock_state == SharedLock) {
-        Atomic::dec(_lock);
+        Atomic::dec(_lock, memory_order_relaxed);
       }
     }
     // Acquire shared lock.
     // Return true if shared access is granted.
     inline bool sharedLock() {
-      jint res = Atomic::add(_lock, 1);
+      jint res = Atomic::add(_lock, 1, memory_order_relaxed);
       if (res < 0) {
-        Atomic::dec(_lock);
+        Atomic::dec(_lock, memory_order_relaxed);
         return false;
       }
       _lock_state = SharedLock;
