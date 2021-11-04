@@ -838,6 +838,17 @@ int os::current_process_id() {
 
 const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
 
+static int local_dladdr(const void* addr, Dl_info* info) {
+#ifdef __APPLE__
+  if (addr == (void*)-1) {
+    // dladdr() in macOS12/Monterey returns success for -1, but that addr
+    // value should not be allowed to work to avoid confusion.
+    return 0;
+  }
+#endif
+  return dladdr(addr, info);
+}
+
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.
 #ifdef __APPLE__
@@ -877,11 +888,6 @@ bool os::address_is_in_vm(address addr) {
   return false;
 }
 
-
-#if defined(__APPLE__)
-#define MACH_MAXSYMLEN 256
-#endif
-
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset,
                                       bool demangle) {
@@ -890,17 +896,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
 
   Dl_info dlinfo;
 
-  if (dladdr((void*)addr, &dlinfo) != 0) {
-#if defined(__APPLE__)
-    if (addr == (address)(intptr_t)-1) {
-      // dladdr() in macOS12/Monterey returns success for -1, but that addr
-      // value should not be allowed to work to avoid confusion.
-      buf[0] = '\0';
-      if (offset) *offset = -1;
-      return false;
-    }
-#endif
-
+  if (local_dladdr((void*)addr, &dlinfo) != 0) {
     // see if we have a matching symbol
     if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
       if (!(demangle && Decoder::demangle(dlinfo.dli_sname, buf, buflen))) {
@@ -910,7 +906,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       return true;
     }
 
-#if !defined(__APPLE__)
+#ifndef __APPLE__
     // The 6-parameter Decoder::decode() function is not implemented on macOS.
     // The Mach-O binary format does not contain a "list of files" with address
     // ranges like ELF. That makes sense since Mach-O can contain binaries for
@@ -924,9 +920,10 @@ bool os::dll_address_to_function_name(address addr, char *buf,
         return true;
       }
     }
-#endif
 
-#if defined(__APPLE__)
+#else  // __APPLE__
+    #define MACH_MAXSYMLEN 256
+
     char localbuf[MACH_MAXSYMLEN];
     // Handle non-dynamic manually:
     if (dlinfo.dli_fbase != NULL &&
@@ -937,9 +934,10 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       }
       return true;
     }
-  }
-#endif
 
+    #undef MACH_MAXSYMLEN
+#endif  // __APPLE__
+  }
   buf[0] = '\0';
   if (offset != NULL) *offset = -1;
   return false;
@@ -953,17 +951,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 
   Dl_info dlinfo;
 
-  if (dladdr((void*)addr, &dlinfo) != 0) {
-#if defined(__APPLE__)
-    if (addr == (address)(intptr_t)-1) {
-      // dladdr() in macOS12/Monterey returns success for -1, but that addr
-      // value should not be allowed to work to avoid confusion.
-      buf[0] = '\0';
-      if (offset) *offset = -1;
-      return false;
-    }
-#endif
-
+  if (local_dladdr((void*)addr, &dlinfo) != 0) {
     if (dlinfo.dli_fname != NULL) {
       jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
     }
