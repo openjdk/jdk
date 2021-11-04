@@ -378,7 +378,7 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
 
     // <editor-fold defaultstate="collapsed" desc="DeclScanner">
 
-    static abstract class DeclScanner extends TreePathScanner<Void, Void> {
+    abstract static class DeclScanner extends TreePathScanner<Void, Void> {
         final Env env;
 
         public DeclScanner(Env env) {
