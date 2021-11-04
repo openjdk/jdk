@@ -153,7 +153,7 @@ public:
   void object_iterate(ObjectClosure* blk);
 
   // At the given address create an object with the given size. If the region
-  // is old the BOT will be updated if the object spas a threshold.
+  // is old the BOT will be updated if the object spans a threshold.
   void fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap = true);
 
   // All allocations are done without updating the BOT. The BOT

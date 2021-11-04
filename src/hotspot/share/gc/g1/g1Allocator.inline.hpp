@@ -86,7 +86,7 @@ inline HeapWord* G1Allocator::attempt_allocation_force(size_t word_size) {
   return mutator_alloc_region(node_index)->attempt_allocation_force(word_size);
 }
 
-inline G1PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest, uint node_index) const {
+inline PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest, uint node_index) const {
   assert(dest.is_valid(),
          "Allocation buffer index out of bounds: %s", dest.get_type_str());
   assert(_alloc_buffers[dest.type()] != NULL,
@@ -94,7 +94,7 @@ inline G1PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest, uint node_in
   return alloc_buffer(dest.type(), node_index);
 }
 
-inline G1PLAB* G1PLABAllocator::alloc_buffer(region_type_t dest, uint node_index) const {
+inline PLAB* G1PLABAllocator::alloc_buffer(region_type_t dest, uint node_index) const {
   assert(dest < G1HeapRegionAttr::Num,
          "Allocation buffer index out of bounds: %u", dest);
 
@@ -133,23 +133,6 @@ inline HeapWord* G1PLABAllocator::allocate(G1HeapRegionAttr dest,
   return allocate_direct_or_new_plab(dest, word_sz, refill_failed, node_index);
 }
 
-inline void G1PLABAllocator::calculate_new_bot_threshold(G1HeapRegionAttr attr, HeapWord* addr) {
-  if (!attr.needs_bot_update()) {
-    // BOT updates are only done for old generation.
-    return;
-  }
-
-  _bot_plab_region = _g1h->heap_region_containing(addr);
-  _bot_plab_threshold = _bot_plab_region->bot_threshold_for_addr(addr);
-
-  assert(_bot_plab_threshold >= addr,
-         "threshold must be at or after PLAB start. " PTR_FORMAT " >= " PTR_FORMAT,
-         p2i(_bot_plab_threshold), p2i(addr));
-  assert(_bot_plab_region->is_old(),
-         "Updating BOT threshold for non-old region. addr: " PTR_FORMAT " region:" HR_FORMAT,
-         p2i(addr), HR_FORMAT_PARAMS(_bot_plab_region));
-}
-
 inline void G1PLABAllocator::update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size) {
   if (!attr.needs_bot_update()) {
     // BOT updates are only done for old generation.
@@ -161,20 +144,35 @@ inline void G1PLABAllocator::update_bot_for_direct_allocation(G1HeapRegionAttr a
   region->update_bot_at(addr, size);
 }
 
-inline void G1PLABAllocator::update_bot_for_object(HeapWord* obj_start, size_t obj_size) {
-  HeapWord* obj_end = obj_start + obj_size;
-  if (obj_end <= _bot_plab_threshold) {
-    // Not crossing the threshold.
+inline void G1PLABAllocator::update_bot_for_allocation(G1HeapRegionAttr dest, size_t word_sz, uint node_index) {
+  assert(dest.needs_bot_update(), "Wrong destination: %s", dest.get_type_str());
+  G1BotUpdatingPLAB* plab = static_cast<G1BotUpdatingPLAB*>(alloc_buffer(dest, node_index));
+  plab->update_bot(word_sz);
+}
+
+inline void G1BotUpdatingPLAB::set_buf(HeapWord* buf, size_t word_sz) {
+  PLAB::set_buf(buf, word_sz);
+  // Update the region and threshold to allow efficient BOT updates.
+  _region = G1CollectedHeap::heap()->heap_region_containing(buf);
+  _next_bot_threshold = _region->bot_threshold_for_addr(buf);
+}
+
+inline void G1BotUpdatingPLAB::update_bot(size_t word_sz) {
+  // The last object end is at _top, if it did not cross the
+  // threshold, there is nothing to do.
+  if (_top <= _next_bot_threshold) {
     return;
   }
 
-  if (!alloc_buffer(G1HeapRegionAttr::Old, 0)->contains(obj_start)) {
-    // Out of PLAB allocation, BOT already updated.
-    return;
-  }
+  HeapWord* obj_start = _top - word_sz;
+  assert(contains(obj_start),
+         "Object start outside PLAB. bottom: " PTR_FORMAT " object: " PTR_FORMAT,
+         p2i(_bottom), p2i(obj_start));
+  assert(obj_start <= _next_bot_threshold,
+         "Object start not below or at threshold. threshold: " PTR_FORMAT " object: " PTR_FORMAT,
+         p2i(_next_bot_threshold), p2i(obj_start));
 
-  // Update the BOT. The threshold also gets updated to the next threshold by this call.
-  _bot_plab_region->update_bot_crossing_threshold(&_bot_plab_threshold, obj_start, obj_end);
+  _region->update_bot_crossing_threshold(&_next_bot_threshold, obj_start, _top);
 }
 
 #endif // SHARE_GC_G1_G1ALLOCATOR_INLINE_HPP

@@ -74,8 +74,8 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
   while (free_word_size >= min_word_size_to_fill) {
     HeapWord* dummy = par_allocate(alloc_region, free_word_size);
     if (dummy != NULL) {
-      // If the allocation was successful we should fill in the space. For G1
-      // this will also do any necessary BOT updates caused by this allocation.
+      // If the allocation was successful we should fill in the space. If the
+      // allocation was in old any necessary BOT updates will be done.
       alloc_region->fill_with_dummy_object(dummy, free_word_size);
       alloc_region->set_pre_dummy_top(dummy);
       result += free_word_size * HeapWordSize;

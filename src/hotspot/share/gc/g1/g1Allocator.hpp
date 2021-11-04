@@ -145,14 +145,20 @@ public:
                                    uint node_index);
 };
 
-// Helper class to get the information needed to do
-// BOT updates for the end of the PLAB.
-class G1PLAB : public PLAB {
+// Specialized PLAB for old generation promotions. For old regions the
+// BOT needs to be updated and the relevant data to do this efficiently
+// is stored in the PLAB.
+class G1BotUpdatingPLAB : public PLAB {
+  // An object spanning this threshold will cause a BOT update.
+  HeapWord* _next_bot_threshold;
+  // The region in which the PLAB resides.
+  HeapRegion* _region;
 public:
-  G1PLAB(size_t word_sz);
-  bool is_allocated();
-  HeapWord* get_filler();
-  size_t get_filler_size();
+  G1BotUpdatingPLAB(size_t word_sz) : PLAB(word_sz) { }
+  // Sets the new PLAB buffer as well as updates the threshold and region.
+  virtual void set_buf(HeapWord* buf, size_t word_sz);
+  // Updates the BOT if the last allocation crossed the threshold.
+  inline void update_bot(size_t word_sz);
 };
 
 // Manages the PLABs used during garbage collection. Interface for allocation from PLABs.
@@ -166,26 +172,17 @@ private:
   G1CollectedHeap* _g1h;
   G1Allocator* _allocator;
 
-  // Region where the current old generation PLAB is allocated. Used to do BOT updates.
-  HeapRegion* _bot_plab_region;
-  // Current BOT threshold, a PLAB allocation crossing this threshold will cause a BOT
-  // update.
-  HeapWord* _bot_plab_threshold;
-
-  G1PLAB** _alloc_buffers[G1HeapRegionAttr::Num];
+  PLAB** _alloc_buffers[G1HeapRegionAttr::Num];
 
   // Number of words allocated directly (not counting PLAB allocation).
   size_t _direct_allocated[G1HeapRegionAttr::Num];
 
   void flush_and_retire_stats();
-  inline G1PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;
-  inline G1PLAB* alloc_buffer(region_type_t dest, uint node_index) const;
+  inline PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;
+  inline PLAB* alloc_buffer(region_type_t dest, uint node_index) const;
 
   // Helpers to do explicit BOT updates for allocations in old generation regions.
   void update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size);
-  // When a new PLAB is allocated a new threshold needs to be calculated and
-  // possibly also the current region where BOT updates should be done.
-  void calculate_new_bot_threshold(G1HeapRegionAttr attr, HeapWord* addr);
 
   // Returns the number of allocation buffers for the given dest.
   // There is only 1 buffer for Old while Young may have multiple buffers depending on
@@ -220,10 +217,10 @@ public:
                             bool* refill_failed,
                             uint node_index);
 
-  void undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size_t word_sz, uint node_index);
+  // Update the BOT for the last PLAB allocation.
+  inline void update_bot_for_allocation(G1HeapRegionAttr dest, size_t word_sz, uint node_index);
 
-  // Update the BOT for an allocation inside an old PLAB.
-  void update_bot_for_object(HeapWord* obj_start, size_t obj_size);
+  void undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size_t word_sz, uint node_index);
 };
 
 // G1ArchiveAllocator is used to allocate memory in archive
