@@ -438,11 +438,11 @@ public:
   do {                                \
     concurrent_##f();                 \
     if (should_terminate()) {         \
-      return false;                   \
+      return;                         \
     }                                 \
   } while (false)
 
-bool ZDriver::gc(const ZDriverRequest& request) {
+void ZDriver::gc(const ZDriverRequest& request) {
   ZDriverGCScope scope(request);
 
   // Phase 1: Pause Mark Start
@@ -477,8 +477,6 @@ bool ZDriver::gc(const ZDriverRequest& request) {
 
   // Phase 10: Concurrent Relocate
   concurrent(relocate);
-
-  return true;
 }
 
 void ZDriver::run_service() {
@@ -493,7 +491,10 @@ void ZDriver::run_service() {
     ZBreakpoint::at_before_gc();
 
     // Run GC
-    if (!gc(request)) {
+    gc(request);
+
+    if (should_terminate()) {
+      // Abort
       break;
     }
 
