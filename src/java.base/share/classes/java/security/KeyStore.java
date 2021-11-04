@@ -1023,14 +1023,13 @@ public class KeyStore {
     /**
      * Retrieves the attributes associated with the given alias.
      *
-     * @implSpec
-     * The default implementation returns an empty {@code Set}.
-     *
      * @param alias the alias name
      * @return an unmodifiable {@code Set} of attributes. This set is
-     *      empty if the given alias does not exist or there are no
-     *      attributes associated with the alias. This set may also be
-     *      empty for {@code PrivateKeyEntry} or {@code SecretKeyEntry}
+     *      empty if the underlying implementation has not overridden
+     *      {@link KeyStoreSpi#engineGetAttributes(String)}, or the given
+     *      alias does not exist, or there are no attributes associated
+     *      with the alias. This set may also be empty for
+     *      {@code PrivateKeyEntry} or {@code SecretKeyEntry}
      *      entries that contain protected attributes and are only available
      *      through the {@link Entry#getAttributes} method after the entry
      *      is extracted.
