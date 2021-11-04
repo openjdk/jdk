@@ -30,7 +30,7 @@ class SimpleLambda {
 
 public class RedefineCallerClass {
 
-    public static String newClass = 
+    public static String newClass =
         " class SimpleLambda { " +
         "     public static Runnable getRunnable() { " +
         "         return () -> {}; " +
