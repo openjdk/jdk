@@ -543,18 +543,13 @@ public class Object {
      *     }
      * }</pre>
      *
-     * @deprecated The finalization mechanism is inherently problematic, and
-     * will be removed in a future release.  At that time, finalize() will no
-     * longer be called by the garbage collector.
-     *
-     * Finalization can lead to performance issues, deadlocks, and hangs.
-     * Errors in finalizers can lead to resource leaks; there is no way to cancel
-     * finalization if it is no longer necessary; and no ordering is specified
-     * among calls to {@code finalize} methods of different objects.
-     * Furthermore, there are no guarantees regarding the timing of finalization.
-     * The {@code finalize} method might be called on a finalizable object
-     * only after an indefinite delay, if at all.
-     *
+     * @deprecated Finalization has been deprecated for removal in a future
+     * release. See <a href="https://openjdk.java.net/jeps/421">JEP 421</a> for
+     * discussion and alternatives.
+     * 
+     * When running in a JVM in which finalization has been disabled or removed,
+     * the garbage collector will never schedule {@code finalize()} to be called.
+     * 
      * Classes whose instances hold non-heap resources should provide a method
      * to enable explicit release of those resources, and they should also
      * implement {@link AutoCloseable} if appropriate.

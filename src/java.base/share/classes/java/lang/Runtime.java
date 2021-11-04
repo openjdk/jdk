@@ -707,9 +707,9 @@ public class Runtime {
      * The method {@link System#runFinalization()} is the conventional
      * and convenient means of invoking this method.
      *
-     * @deprecated The finalization mechanism is inherently problematic, and
-     * will be removed in a future release.  See {@link java.lang.Object#finalize}
-     * for details.
+     * @deprecated Finalization has been deprecated for removal.  See
+     * {@link java.lang.Object#finalize} for background information and details
+     * about migration options.
      * 
      * @see     java.lang.Object#finalize()
      */

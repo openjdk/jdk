@@ -1162,18 +1162,10 @@ public abstract class Graphics {
     /**
      * Disposes of this graphics context once it is no longer referenced.
      *
-     * @deprecated The finalization mechanism is inherently problematic, and
-     *     will be removed in a future release.  See {@link java.lang.Object#finalize}
-     *     for details.
+     * @deprecated Finalization has been deprecated for removal.  See
+     * {@link java.lang.Object#finalize} for background information and details
+     * about migration options.
      * 
-     *     The {@code finalize} method has been deprecated.
-     *     Subclasses that override {@code finalize} in order to perform cleanup
-     *     should be modified to use alternative cleanup mechanisms and
-     *     to remove the overriding {@code finalize} method.
-     *     When overriding the {@code finalize} method, its implementation must explicitly
-     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
-     *     See the specification for {@link Object#finalize()} for further
-     *     information about migration options.
      * @see #dispose
      */
     @Deprecated(since="9", forRemoval=true)

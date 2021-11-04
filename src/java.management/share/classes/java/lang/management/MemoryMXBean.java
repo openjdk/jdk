@@ -207,12 +207,13 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * Returns the approximate number of objects for which
      * finalization is pending.
      *
-     * @deprecated The finalization mechanism is inherently problematic, and
-     * will be removed in a future release.  See {@link java.lang.Object#finalize}
-     * for details.
+     * @deprecated Finalization has been deprecated for removal.  See
+     * {@link java.lang.Object#finalize} for details.
      * 
      * @return the approximate number objects for which finalization
-     * is pending.
+     * is pending. If this MemoryMXBean contains information about a JVM in
+     * which finalization has been disabled or removed, this method always
+     * returns zero.
      */
     @Deprecated(since="18")
     public int getObjectPendingFinalizationCount();
