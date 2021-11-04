@@ -841,7 +841,7 @@ Compile::Compile( ciEnv* ci_env,
                   DirectiveSet* directive)
   : Phase(Compiler),
     _compile_id(0),
-    _options(Options()),
+    _options(Options::for_runtime_stub()),
     _method(NULL),
     _entry_bci(InvocationEntryBci),
     _stub_function(stub_function),

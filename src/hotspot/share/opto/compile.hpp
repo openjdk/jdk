@@ -182,12 +182,14 @@ class Options {
           _install_code(install_code) {
   }
 
-  Options() : // Used for runtime stubs compilation
-          _subsume_loads(true),
-          _do_escape_analysis(false),
-          _eliminate_boxing(false),
-          _do_locks_coarsening(false),
-          _install_code(true) {
+  static Options for_runtime_stub() {
+    return Options(
+       /* subsume_loads = */ true,
+       /* do_escape_analysis = */ false,
+       /* eliminate_boxing = */ false,
+       /* do_lock_coarsening = */ false,
+       /* install_code = */ true
+    );
   }
 };
 
