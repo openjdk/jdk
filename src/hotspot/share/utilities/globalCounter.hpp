@@ -35,22 +35,23 @@ class Thread;
 // critical_section_begin before reading the volatile data and
 // critical_section_end afterwards. Such read-side critical sections may
 // be properly nested. The write side must call write_synchronize
-// before reclaming the memory. The read-path only does an uncontended store
+// before reclaiming the memory. The read-path only does an uncontended store
 // to a thread-local-storage and fence to stop any loads from floating up, thus
 // light weight and wait-free. The write-side is more heavy since it must check
 // all readers and wait until they have left the generation. (a system memory
 // barrier can be used on write-side to remove fence in read-side,
 // not implemented).
 class GlobalCounter : public AllStatic {
- private:
+ public:
   // Since do not know what we will end up next to in BSS, we make sure the
-  // counter is on a seperate cacheline.
+  // counter is on a separate cacheline.
   struct PaddedCounter {
     DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
     volatile uintx _counter;
     DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile uintx));
   };
 
+ private:
   // The global counter
   static PaddedCounter _global_counter;
 

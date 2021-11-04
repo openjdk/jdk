@@ -49,6 +49,7 @@
 #include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/globalCounter.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrThreadExtension.hpp"
@@ -250,10 +251,10 @@ class Thread: public ThreadShadow {
 
   // Support for GlobalCounter
  private:
-  volatile uintx _rcu_counter;
+  GlobalCounter::PaddedCounter _rcu_counter;
  public:
   volatile uintx* get_rcu_counter() {
-    return &_rcu_counter;
+    return &_rcu_counter._counter;
   }
 
  public:
