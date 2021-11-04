@@ -562,6 +562,7 @@ javax/management/monitor/DerivedGaugeMonitorTest.java         8042211 generic-al
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
+java/io/File/createTempFile/SpecialTempFile.java                8274122 windows11
 
 ############################################################################
 
@@ -607,8 +608,6 @@ java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc6
 java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-all
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
-
-java/nio/channels/FileChannel/LargeGatheringWrite.java          8276199 windows-x64
 
 ############################################################################
 
