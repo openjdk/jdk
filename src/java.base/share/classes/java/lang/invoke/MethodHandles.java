@@ -875,40 +875,20 @@ public class MethodHandles {
      * with all public types that are accessible to {@code M0}. {@code M0}
      * reads {@code M1} and hence the set of accessible types includes:
      *
-     * <table class="striped">
-     * <caption style="display:none">
-     * Public types in the following packages are accessible to the
-     * lookup class and the previous lookup class.
-     * </caption>
-     * <thead>
-     * <tr>
-     * <th scope="col">Equally accessible types to {@code M0} and {@code M1}</th>
-     * </tr>
-     * </thead>
-     * <tbody>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from {@code M1}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from {@code M0} if {@code M1} reads {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from a third module {@code M2}
-     * if both {@code M0} and {@code M1} read {@code M2}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from {@code M1} to {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from {@code M0} to {@code M1}
-     * if {@code M1} reads {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from a third module {@code M2} to
-     * both {@code M0} and {@code M1} if both {@code M0} and {@code M1} read {@code M2}</th>
-     * </tr>
-     * </tbody>
-     * </table>
+     * <ul>
+     * <li>unconditional-exported packages from {@code M1}</li>
+     * <li>unconditional-exported packages from {@code M0} if {@code M1} reads {@code M0}</li>
+     * <li>
+     *     unconditional-exported packages from a third module {@code M2}if both {@code M0}
+     *     and {@code M1} read {@code M2}
+     * </li>
+     * <li>qualified-exported packages from {@code M1} to {@code M0}</li>
+     * <li>qualified-exported packages from {@code M0} to {@code M1} if {@code M1} reads {@code M0}</li>
+     * <li>
+     *     qualified-exported packages from a third module {@code M2} to both {@code M0} and
+     *     {@code M1} if both {@code M0} and {@code M1} read {@code M2}
+     * </li>
+     * </ul>
      *
      * <h2><a id="access-modes"></a>Access modes</h2>
      *
