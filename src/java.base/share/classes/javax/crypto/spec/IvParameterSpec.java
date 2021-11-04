@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,12 +76,15 @@ public class IvParameterSpec implements AlgorithmParameterSpec {
         if (iv == null) {
             throw new IllegalArgumentException("IV missing");
         }
-        if (iv.length - offset < len) {
-            throw new IllegalArgumentException
-                ("IV buffer too short for given offset/length combination");
+        if (offset < 0) {
+            throw new ArrayIndexOutOfBoundsException("offset is negative");
         }
         if (len < 0) {
             throw new ArrayIndexOutOfBoundsException("len is negative");
+        }
+        if (iv.length - offset < len) {
+            throw new IllegalArgumentException
+                ("IV buffer too short for given offset/length combination");
         }
         this.iv = new byte[len];
         System.arraycopy(iv, offset, this.iv, 0, len);

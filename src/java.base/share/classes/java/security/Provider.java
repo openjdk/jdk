@@ -820,7 +820,7 @@ public abstract class Provider extends Properties {
     // legacy properties changed since last call to any services method?
     private transient boolean legacyChanged;
     // serviceMap changed since last call to getServices()
-    private volatile transient boolean servicesChanged;
+    private transient volatile boolean servicesChanged;
 
     // Map<String,String> used to keep track of legacy registration
     private transient Map<String,String> legacyStrings;

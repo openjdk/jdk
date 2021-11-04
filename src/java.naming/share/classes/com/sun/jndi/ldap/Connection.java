@@ -689,7 +689,7 @@ public final class Connection implements Runnable {
     // "synchronize" might lead to deadlock so don't synchronize method
     // Use streamLock instead for synchronizing update to stream
 
-    synchronized public void replaceStreams(InputStream newIn, OutputStream newOut) {
+    public synchronized void replaceStreams(InputStream newIn, OutputStream newOut) {
         if (debug) {
             System.err.println("Replacing " + inStream + " with: " + newIn);
             System.err.println("Replacing " + outStream + " with: " + newOut);
@@ -712,7 +712,7 @@ public final class Connection implements Runnable {
     /*
      * Replace streams and set isUpdradedToStartTls flag to the provided value
      */
-    synchronized public void replaceStreams(InputStream newIn, OutputStream newOut, boolean isStartTls) {
+    public synchronized void replaceStreams(InputStream newIn, OutputStream newOut, boolean isStartTls) {
         synchronized (startTlsLock) {
             replaceStreams(newIn, newOut);
             isUpgradedToStartTls = isStartTls;
@@ -731,7 +731,7 @@ public final class Connection implements Runnable {
      * This ensures that there is no contention between the main thread
      * and the Connection thread when the main thread updates inStream.
      */
-    synchronized private InputStream getInputStream() {
+    private synchronized InputStream getInputStream() {
         return inStream;
     }
 
@@ -1043,7 +1043,7 @@ public final class Connection implements Runnable {
      */
     private volatile HandshakeListener tlsHandshakeListener;
 
-    synchronized public void setHandshakeCompletedListener(SSLSocket sslSocket) {
+    public synchronized void setHandshakeCompletedListener(SSLSocket sslSocket) {
         if (tlsHandshakeListener != null)
             tlsHandshakeListener.tlsHandshakeCompleted.cancel(false);
 

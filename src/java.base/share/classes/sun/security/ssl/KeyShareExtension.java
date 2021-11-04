@@ -27,6 +27,7 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.Collections;
@@ -349,7 +350,8 @@ final class KeyShareExtension {
                 NamedGroup ng = NamedGroup.valueOf(entry.namedGroupId);
                 if (ng == null || !SupportedGroups.isActivatable(
                         shc.algorithmConstraints, ng)) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                                 "Ignore unsupported named group: " +
                                 NamedGroup.nameOf(entry.namedGroupId));
@@ -359,16 +361,33 @@ final class KeyShareExtension {
 
                 try {
                     SSLCredentials kaCred =
-                        ng.decodeCredentials(entry.keyExchange,
-                        shc.algorithmConstraints,
-                        s -> SSLLogger.warning(s));
+                        ng.decodeCredentials(entry.keyExchange);
+                    if (shc.algorithmConstraints != null &&
+                            kaCred instanceof
+                                NamedGroupCredentials namedGroupCredentials) {
+                        if (!shc.algorithmConstraints.permits(
+                                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                                namedGroupCredentials.getPublicKey())) {
+                            if (SSLLogger.isOn &&
+                                    SSLLogger.isOn("ssl,handshake")) {
+                                SSLLogger.warning(
+                                    "key share entry of " + ng + " does not " +
+                                    " comply with algorithm constraints");
+                            }
+
+                            kaCred = null;
+                        }
+                    }
+
                     if (kaCred != null) {
                         credentials.add(kaCred);
                     }
                 } catch (GeneralSecurityException ex) {
-                    SSLLogger.warning(
-                        "Cannot decode named group: " +
-                        NamedGroup.nameOf(entry.namedGroupId));
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.warning(
+                                "Cannot decode named group: " +
+                                NamedGroup.nameOf(entry.namedGroupId));
+                    }
                 }
             }
 
@@ -646,9 +665,20 @@ final class KeyShareExtension {
 
             SSLCredentials credentials = null;
             try {
-                SSLCredentials kaCred = ng.decodeCredentials(
-                    keyShare.keyExchange, chc.algorithmConstraints,
-                    s -> chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, s));
+                SSLCredentials kaCred =
+                        ng.decodeCredentials(keyShare.keyExchange);
+                if (chc.algorithmConstraints != null &&
+                        kaCred instanceof
+                                NamedGroupCredentials namedGroupCredentials) {
+                    if (!chc.algorithmConstraints.permits(
+                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                            namedGroupCredentials.getPublicKey())) {
+                        chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
+                            "key share entry of " + ng + " does not " +
+                            " comply with algorithm constraints");
+                    }
+                }
+
                 if (kaCred != null) {
                     credentials = kaCred;
                 }

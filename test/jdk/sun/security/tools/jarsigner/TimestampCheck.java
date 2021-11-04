@@ -722,51 +722,6 @@ public class TimestampCheck {
                 .shouldMatch("Signature algorithm: .*key.*(disabled)");
     }
 
-    static void checkWeak(String file) throws Exception {
-        verify(file)
-                .shouldHaveExitValue(0)
-                .shouldNotContain("treated as unsigned");
-        verify(file, "-verbose")
-                .shouldHaveExitValue(0)
-                .shouldNotContain("treated as unsigned")
-                .shouldMatch("Digest algorithm: .*(weak)")
-                .shouldMatch("Signature algorithm: .*(weak)")
-                .shouldMatch("Timestamp digest algorithm: .*(weak)")
-                .shouldNotMatch("Timestamp signature algorithm: .*(weak).*(weak)")
-                .shouldMatch("Timestamp signature algorithm: .*key.*(weak)");
-        verify(file, "-J-Djava.security.debug=jar")
-                .shouldHaveExitValue(0)
-                .shouldNotMatch("SignatureException:.*disabled");
-
-        // keytool should print out warnings when reading or
-        // generating cert/cert req using legacy algorithms.
-        String sout = SecurityTools.keytool("-printcert -jarfile " + file)
-                .stderrShouldContain("The TSA certificate uses a 1024-bit RSA key" +
-                        " which is considered a security risk." +
-                        " This key size will be disabled in a future update.")
-                .getStdout();
-        if (sout.indexOf("weak", sout.indexOf("Timestamp:")) < 0) {
-            throw new RuntimeException("timestamp not weak: " + sout);
-        }
-    }
-
-    static void checkHalfWeak(String file) throws Exception {
-        verify(file)
-                .shouldHaveExitValue(0)
-                .shouldNotContain("treated as unsigned");
-        verify(file, "-verbose")
-                .shouldHaveExitValue(0)
-                .shouldNotContain("treated as unsigned")
-                .shouldMatch("Digest algorithm: .*(weak)")
-                .shouldNotMatch("Signature algorithm: .*(weak)")
-                .shouldNotMatch("Signature algorithm: .*(disabled)")
-                .shouldNotMatch("Timestamp digest algorithm: .*(weak)")
-                .shouldNotMatch("Timestamp signature algorithm: .*(weak).*(weak)")
-                .shouldNotMatch("Timestamp signature algorithm: .*(disabled).*(disabled)")
-                .shouldNotMatch("Timestamp signature algorithm: .*key.*(weak)")
-                .shouldNotMatch("Timestamp signature algorithm: .*key.*(disabled)");
-    }
-
     static void checkMultipleWeak(String file) throws Exception {
         verify(file)
                 .shouldHaveExitValue(0)

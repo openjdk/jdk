@@ -97,7 +97,6 @@ public:
   ~G1SegmentedArrayBufferList() { free_all(); }
 
   void bulk_add(G1SegmentedArrayBuffer<flag>& first, G1SegmentedArrayBuffer<flag>& last, size_t num, size_t mem_size);
-  void add(G1SegmentedArrayBuffer<flag>& elem) { _list.prepend(elem); }
 
   G1SegmentedArrayBuffer<flag>* get();
   G1SegmentedArrayBuffer<flag>* get_all(size_t& num_buffers, size_t& mem_size);
@@ -115,15 +114,11 @@ public:
 class G1SegmentedArrayAllocOptions {
 
 protected:
-  uint _elem_size;
-  uint _initial_num_elems;
+  const uint _elem_size;
+  const uint _initial_num_elems;
   // Defines a limit to the number of elements in the buffer
-  uint _max_num_elems;
-  uint _alignment;
-
-  static const uint BufferAlignment = 4;
-  static const uint MinimumBufferSize = 8;
-  static const uint MaximumBufferSize =  UINT_MAX / 2;
+  const uint _max_num_elems;
+  const uint _alignment;
 
 public:
   G1SegmentedArrayAllocOptions(uint elem_size, uint initial_num_elems, uint max_num_elems, uint alignment) :
@@ -131,6 +126,10 @@ public:
     _initial_num_elems(initial_num_elems),
     _max_num_elems(max_num_elems),
     _alignment(alignment) {
+    assert(_elem_size > 0, "Must be");
+    assert(_initial_num_elems > 0, "Must be");
+    assert(_max_num_elems > 0, "Must be");
+    assert(_alignment > 0, "Must be");
   }
 
   virtual uint next_num_elems(uint prev_num_elems) const {
@@ -198,8 +197,7 @@ public:
 
   inline uint elem_size() const;
 
-  G1SegmentedArray(const char* name,
-                   const G1SegmentedArrayAllocOptions* buffer_options,
+  G1SegmentedArray(const G1SegmentedArrayAllocOptions* buffer_options,
                    G1SegmentedArrayBufferList<flag>* free_buffer_list);
   ~G1SegmentedArray() {
     drop_all();

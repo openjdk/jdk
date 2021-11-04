@@ -26,7 +26,7 @@
 # Versions and download locations for dependencies used by pre-submit testing.
 
 BOOT_JDK_VERSION=17
-JTREG_VERSION=6
+JTREG_VERSION=6.1
 JTREG_BUILD=1
 GTEST_VERSION=1.8.1
 
