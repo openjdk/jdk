@@ -221,20 +221,20 @@ inline void HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarke
   assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
-inline HeapWord* HeapRegion::par_allocate_no_bot_updates(size_t min_word_size,
-                                                         size_t desired_word_size,
-                                                         size_t* actual_word_size) {
+inline HeapWord* HeapRegion::par_allocate(size_t min_word_size,
+                                          size_t desired_word_size,
+                                          size_t* actual_word_size) {
   return par_allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline HeapWord* HeapRegion::allocate_no_bot_updates(size_t word_size) {
+inline HeapWord* HeapRegion::allocate(size_t word_size) {
   size_t temp;
-  return allocate_no_bot_updates(word_size, word_size, &temp);
+  return allocate(word_size, word_size, &temp);
 }
 
-inline HeapWord* HeapRegion::allocate_no_bot_updates(size_t min_word_size,
-                                                     size_t desired_word_size,
-                                                     size_t* actual_word_size) {
+inline HeapWord* HeapRegion::allocate(size_t min_word_size,
+                                      size_t desired_word_size,
+                                      size_t* actual_word_size) {
   return allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 

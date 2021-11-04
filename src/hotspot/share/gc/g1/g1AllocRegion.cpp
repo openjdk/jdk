@@ -44,7 +44,7 @@ void G1AllocRegion::setup(G1CollectedHeap* g1h, HeapRegion* dummy_region) {
   // Make sure that any allocation attempt on this region will fail
   // and will not trigger any asserts.
   DEBUG_ONLY(size_t assert_tmp);
-  assert(dummy_region->par_allocate_no_bot_updates(1, 1, &assert_tmp) == NULL, "should fail");
+  assert(dummy_region->par_allocate(1, 1, &assert_tmp) == NULL, "should fail");
 
   _g1h = g1h;
   _dummy_region = dummy_region;

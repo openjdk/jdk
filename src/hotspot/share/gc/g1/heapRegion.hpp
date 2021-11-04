@@ -159,9 +159,9 @@ public:
   // All allocations are done without updating the BOT. The BOT
   // needs to be kept in sync for old generation regions and
   // this is done by explicit updates when crossing thresholds.
-  inline HeapWord* par_allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* word_size);
-  inline HeapWord* allocate_no_bot_updates(size_t word_size);
-  inline HeapWord* allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
+  inline HeapWord* par_allocate(size_t min_word_size, size_t desired_word_size, size_t* word_size);
+  inline HeapWord* allocate(size_t word_size);
+  inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
   // Update the BOT for the given address if it crosses the next
   // BOT threshold at or after obj_start.

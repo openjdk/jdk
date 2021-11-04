@@ -45,7 +45,7 @@ inline HeapWord* G1AllocRegion::allocate(HeapRegion* alloc_region,
                                          size_t word_size) {
   assert(alloc_region != NULL, "pre-condition");
 
-  return alloc_region->allocate_no_bot_updates(word_size);
+  return alloc_region->allocate(word_size);
 }
 
 inline HeapWord* G1AllocRegion::par_allocate(HeapRegion* alloc_region, size_t word_size) {
@@ -60,7 +60,7 @@ inline HeapWord* G1AllocRegion::par_allocate(HeapRegion* alloc_region,
   assert(alloc_region != NULL, "pre-condition");
   assert(!alloc_region->is_empty(), "pre-condition");
 
-  return alloc_region->par_allocate_no_bot_updates(min_word_size, desired_word_size, actual_word_size);
+  return alloc_region->par_allocate(min_word_size, desired_word_size, actual_word_size);
 }
 
 inline HeapWord* G1AllocRegion::attempt_allocation(size_t word_size) {
