@@ -327,7 +327,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = name.hashCode() * 43 + ordinalHashCode(mods);
+            int hash = name.hashCode() * 43 + modsHashCode(mods);
             if (compiledVersion != null)
                 hash = hash * 43 + compiledVersion.hashCode();
             if (rawCompiledVersion != null)
@@ -505,7 +505,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = ordinalHashCode(mods);
+            int hash = modsHashCode(mods);
             hash = hash * 43 + source.hashCode();
             return hash * 43 + targets.hashCode();
         }
@@ -708,7 +708,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = ordinalHashCode(mods);
+            int hash = modsHashCode(mods);
             hash = hash * 43 + source.hashCode();
             return hash * 43 + targets.hashCode();
         }
@@ -2261,7 +2261,7 @@ public class ModuleDescriptor
         int hc = hash;
         if (hc == 0) {
             hc = name.hashCode();
-            hc = hc * 43 + ordinalHashCode(modifiers);
+            hc = hc * 43 + modsHashCode(modifiers);
             hc = hc * 43 + requires.hashCode();
             hc = hc * 43 + Objects.hashCode(packages);
             hc = hc * 43 + exports.hashCode();
@@ -2548,12 +2548,12 @@ public class ModuleDescriptor
 
     /**
      * Generates and returns a hashcode for the enum instances. The returned hashcode
-     * is a sum of each of the enum instances' {@link Enum#ordinal() ordinal} value.
+     * is a value based on the {@link Enum#name() name} of each enum instance.
      */
-    private static int ordinalHashCode(Iterable<? extends Enum<?>> enums) {
+    private static int modsHashCode(Iterable<? extends Enum<?>> enums) {
         int h = 0;
         for (Enum<?> e : enums) {
-            h += e.ordinal();
+            h = h * 43 + Objects.hashCode(e.name());
         }
         return h;
     }
