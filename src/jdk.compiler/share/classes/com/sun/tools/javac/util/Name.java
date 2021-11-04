@@ -205,7 +205,7 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
 
     /** An abstraction for the hash table used to create unique Name instances.
      */
-    public static abstract class Table {
+    public abstract static class Table {
         /** Standard name table.
          */
         public final Names names;

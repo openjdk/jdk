@@ -239,7 +239,7 @@ class GNUStyleOptions {
         OptionType(String name) { this.name = name; }
     }
 
-    static abstract class Option {
+    abstract static class Option {
         final boolean hasArg;
         final boolean argIsOptional;
         final String[] aliases;

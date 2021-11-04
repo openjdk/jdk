@@ -254,7 +254,7 @@ public abstract class StringConcat {
     /**
      * Base class for indified concatenation bytecode flavors.
      */
-    private static abstract class Indy extends StringConcat {
+    private abstract static class Indy extends StringConcat {
         public Indy(Context context) {
             super(context);
         }

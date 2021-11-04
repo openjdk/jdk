@@ -89,7 +89,7 @@ public interface Diagnostic<S> {
     /**
      * Used to signal that no position is available.
      */
-    public final static long NOPOS = -1;
+    public static final long NOPOS = -1;
 
     /**
      * Returns the kind of this diagnostic, for example, error or
