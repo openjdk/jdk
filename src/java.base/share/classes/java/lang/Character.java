@@ -75,27 +75,27 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  *     <th scope="col">Unicode version</th></tr>
  * </thead>
  * <tbody>
- * <tr><td>Java SE 15</td>
+ * <tr><th scope="row" style="text-align:left">Java SE 15</th>
  *     <td>Unicode 13.0</td></tr>
- * <tr><td>Java SE 13</td>
+ * <tr><th scope="row" style="text-align:left">Java SE 13</th>
  *     <td>Unicode 12.1</td></tr>
- * <tr><td>Java SE 12</td>
+ * <tr><th scope="row" style="text-align:left">Java SE 12</th>
  *     <td>Unicode 11.0</td></tr>
- * <tr><td>Java SE 11</td>
+ * <tr><th scope="row" style="text-align:left">Java SE 11</th>
  *     <td>Unicode 10.0</td></tr>
- * <tr><td>Java SE 9</td>
+ * <tr><th scope="row" style="text-align:left">Java SE 9</th>
  *     <td>Unicode 8.0</td></tr>
- * <tr><td>Java SE 8</td>
+ * <tr><th scope="row" style="text-align:left">Java SE 8</th>
  *     <td>Unicode 6.2</td></tr>
- * <tr><td>Java SE 7</td>
+ * <tr><th scope="row" style="text-align:left">Java SE 7</th>
  *     <td>Unicode 6.0</td></tr>
- * <tr><td>Java SE 5.0</td>
+ * <tr><th scope="row" style="text-align:left">Java SE 5.0</th>
  *     <td>Unicode 4.0</td></tr>
- * <tr><td>Java SE 1.4</td>
+ * <tr><th scope="row" style="text-align:left">Java SE 1.4</th>
  *     <td>Unicode 3.0</td></tr>
- * <tr><td>JDK 1.1</td>
+ * <tr><th scope="row" style="text-align:left">JDK 1.1</th>
  *     <td>Unicode 2.0</td></tr>
- * <tr><td>JDK 1.0.2</td>
+ * <tr><th scope="row" style="text-align:left">JDK 1.0.2</th>
  *     <td>Unicode 1.1.5</td></tr>
  * </tbody>
  * </table>
