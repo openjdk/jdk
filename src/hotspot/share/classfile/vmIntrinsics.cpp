@@ -81,6 +81,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_iabs:
   case vmIntrinsics::_labs:
   case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
@@ -127,6 +128,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_iabs:
   case vmIntrinsics::_labs:
   case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
@@ -265,6 +267,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_iabs:
   case vmIntrinsics::_labs:
   case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
@@ -273,14 +276,20 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_dpow:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_datan2:
-  case vmIntrinsics::_min:
-  case vmIntrinsics::_max:
   case vmIntrinsics::_floatToIntBits:
   case vmIntrinsics::_doubleToLongBits:
+  case vmIntrinsics::_min:
+  case vmIntrinsics::_max:
   case vmIntrinsics::_maxF:
   case vmIntrinsics::_minF:
   case vmIntrinsics::_maxD:
   case vmIntrinsics::_minD:
+  case vmIntrinsics::_min_strict:
+  case vmIntrinsics::_max_strict:
+  case vmIntrinsics::_maxF_strict:
+  case vmIntrinsics::_minF_strict:
+  case vmIntrinsics::_maxD_strict:
+  case vmIntrinsics::_minD_strict:
     if (!InlineMathNatives) return true;
     break;
   case vmIntrinsics::_fmaD:
