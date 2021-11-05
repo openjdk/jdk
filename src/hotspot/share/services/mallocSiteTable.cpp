@@ -226,16 +226,16 @@ void MallocSiteTable::AccessLock::exclusiveLock() {
   int val;
 
   assert(_lock_state != ExclusiveLock, "Can only call once");
-  assert(*_lock >= 0, "Can not content exclusive lock");
+  assert(Atomic::load(_lock) >= 0, "Can not content exclusive lock");
 
   // make counter negative to block out shared locks
   do {
     val = Atomic::load(_lock);
     target = _MAGIC_ + val;
-  } while (Atomic::cmpxchg(_lock, val, target, memory_order_relaxed) != val);
+  } while (Atomic::cmpxchg(_lock, val, target, memory_order_acquire) != val);
 
   // wait for all readers to exit
-  while (*_lock != _MAGIC_) {
+  while (Atomic::load(_lock) != _MAGIC_) {
 #ifdef _WINDOWS
     os::naked_short_sleep(1);
 #else

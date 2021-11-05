@@ -140,13 +140,13 @@ class MallocSiteTable : AllStatic {
 
     ~AccessLock() {
       if (_lock_state == SharedLock) {
-        Atomic::dec(_lock, memory_order_relaxed);
+        Atomic::dec(_lock, memory_order_release);
       }
     }
     // Acquire shared lock.
     // Return true if shared access is granted.
     inline bool sharedLock() {
-      jint res = Atomic::add(_lock, 1, memory_order_relaxed);
+      jint res = Atomic::add(_lock, 1, memory_order_acquire);
       if (res < 0) {
         Atomic::dec(_lock, memory_order_relaxed);
         return false;
