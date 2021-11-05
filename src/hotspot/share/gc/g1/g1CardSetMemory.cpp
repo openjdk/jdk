@@ -140,13 +140,6 @@ G1CardSetMemoryStats::G1CardSetMemoryStats() {
   clear();
 }
 
-G1CardSetMemoryStats::G1CardSetMemoryStats(void(*fn)(const void*,uint,size_t&,size_t&), const void* context) {
-  clear();
-  for (uint i = 0; i < num_pools(); i++) {
-    fn(context, i, _num_mem_sizes[i], _num_buffers[i]);
-  }
-}
-
 void G1CardSetMemoryStats::clear() {
   for (uint i = 0; i < num_pools(); i++) {
     _num_mem_sizes[i] = 0;
@@ -277,17 +270,14 @@ G1CardSetFreePool::~G1CardSetFreePool() {
   FREE_C_HEAP_ARRAY(mtGC, _free_lists);
 }
 
-static void collect_mem_sizes(const void* context, uint i, size_t& mem_size, size_t& num_buffers) {
-  ((G1CardSetFreePool*)context)->get_size(i, mem_size, num_buffers);
-}
-
-void G1CardSetFreePool::get_size(uint i, size_t& mem_size, size_t& num_buffers) const {
-  mem_size = _free_lists[i].mem_size();
-  num_buffers = _free_lists[i].num_buffers();
-}
-
 G1CardSetMemoryStats G1CardSetFreePool::memory_sizes() const {
-  return G1CardSetMemoryStats(collect_mem_sizes, this);
+  G1CardSetMemoryStats free_list_stats;
+  assert(free_list_stats.num_pools() == num_free_lists(), "must be");
+  for (uint i = 0; i < num_free_lists(); i++) {
+    free_list_stats._num_mem_sizes[i] = _free_lists[i].mem_size();
+    free_list_stats._num_buffers[i] = _free_lists[i].num_buffers();
+  }
+  return free_list_stats;
 }
 
 size_t G1CardSetFreePool::mem_size() const {
