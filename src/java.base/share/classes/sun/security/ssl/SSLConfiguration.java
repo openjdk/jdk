@@ -79,6 +79,7 @@ final class SSLConfiguration implements Cloneable {
     BiFunction<SSLSocket, List<String>, String> socketAPSelector;
     BiFunction<SSLEngine, List<String>, String> engineAPSelector;
 
+    @SuppressWarnings("removal")
     HashMap<HandshakeCompletedListener, AccessControlContext>
                                 handshakeListeners;
 
@@ -266,6 +267,7 @@ final class SSLConfiguration implements Cloneable {
     }
 
     // SSLSocket only
+    @SuppressWarnings("removal")
     void addHandshakeCompletedListener(
             HandshakeCompletedListener listener) {
 
@@ -408,7 +410,7 @@ final class SSLConfiguration implements Cloneable {
     }
 
     @Override
-    @SuppressWarnings({"unchecked", "CloneDeclaresCloneNotSupported"})
+    @SuppressWarnings({"removal","unchecked", "CloneDeclaresCloneNotSupported"})
     public Object clone() {
         // Note that only references to the configurations are copied.
         try {

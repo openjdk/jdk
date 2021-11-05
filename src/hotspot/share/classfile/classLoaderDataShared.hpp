@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ class MetaspaceClosure;
 class SerializeClosure;
 
 class ClassLoaderDataShared : AllStatic {
+  static bool _full_module_graph_loaded;
 public:
   static void allocate_archived_tables();
   static void iterate_symbols(MetaspaceClosure* closure);
@@ -43,6 +44,7 @@ public:
   static oop  restore_archived_oops_for_null_class_loader_data();
   static void restore_java_platform_loader_from_archive(ClassLoaderData* loader_data);
   static void restore_java_system_loader_from_archive(ClassLoaderData* loader_data);
+  static bool is_full_module_graph_loaded() { return _full_module_graph_loaded; }
 };
 
 #endif // SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP

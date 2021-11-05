@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
@@ -62,8 +62,8 @@ uint64_t AltHashing::compute_seed() {
   uint64_t nanos = os::javaTimeNanos();
   uint64_t now = os::javaTimeMillis();
   uint32_t SEED_MATERIAL[8] = {
-            (uint32_t) object_hash(SystemDictionary::String_klass()),
-            (uint32_t) object_hash(SystemDictionary::System_klass()),
+            (uint32_t) object_hash(vmClasses::String_klass()),
+            (uint32_t) object_hash(vmClasses::System_klass()),
             (uint32_t) os::random(),  // current thread isn't a java thread
             (uint32_t) (((uint64_t)nanos) >> 32),
             (uint32_t) nanos,

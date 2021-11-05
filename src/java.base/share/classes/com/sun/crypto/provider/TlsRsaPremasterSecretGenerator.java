@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
@@ -87,7 +88,11 @@ public final class TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
         b[0] = (byte)spec.getMajorVersion();
         b[1] = (byte)spec.getMinorVersion();
 
-        return new SecretKeySpec(b, "TlsRsaPremasterSecret");
+        try {
+            return new SecretKeySpec(b, "TlsRsaPremasterSecret");
+        } finally {
+            Arrays.fill(b, (byte)0);
+        }
     }
 
 }

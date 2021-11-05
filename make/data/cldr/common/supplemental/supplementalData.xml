@@ -1978,6 +1978,7 @@ XXX Code for transations where no currency is involved
 		<language type="nmg" scripts="Latn"/>
 		<language type="nn" scripts="Latn" territories="NO"/>
 		<language type="nnh" scripts="Latn"/>
+		<language type="no" scripts="Latn" territories="NO SJ"/>
 		<language type="nod" scripts="Lana"/>
 		<language type="nod" territories="TH" alt="secondary"/>
 		<language type="noe" scripts="Deva"/>
@@ -4299,7 +4300,7 @@ XXX Code for transations where no currency is involved
 		<territory type="ZZ" gdp="0" literacyPercent="0" population="0">	<!--Unknown Region-->
 		</territory>
 	</territoryInfo>
-    <!-- End of Generated Data: see http://unicode.org/cldr/data/tools/java/org/unicode/cldr/tool/package.html -->
+    <!-- End of Generated Data: see http://sites.google.com/site/cldr/Home/updating-codes -->
     <calendarData>
         <calendar type="gregorian">
            <calendarSystem type="solar" />
@@ -4744,7 +4745,7 @@ XXX Code for transations where no currency is involved
 
 		<weekOfPreference ordering="weekOfYear" locales="und"/>
 		<weekOfPreference ordering="weekOfYear weekOfMonth" locales="am az bs cs cy da el et hi ky lt mk sk ta th"/>
-		<weekOfPreference ordering="weekOfYear weekOfMonth weekOfInterval" locales="is mn no sv vi"/>
+		<weekOfPreference ordering="weekOfYear weekOfMonth weekOfInterval" locales="is mn nb no sv vi"/>
 		<weekOfPreference ordering="weekOfYear weekOfDate weekOfMonth" locales="fi zh_TW"/>
 		<weekOfPreference ordering="weekOfYear weekOfInterval" locales="zu"/>
 		<weekOfPreference ordering="weekOfDate" locales="ca es fr gl"/>
@@ -5309,6 +5310,7 @@ XXX Code for transations where no currency is involved
 		<parentLocale parent="en_001" locales="en_150 en_AG en_AI en_AU en_BB en_BM en_BS en_BW en_BZ en_CA en_CC en_CK en_CM en_CX en_CY en_DG en_DM en_ER en_FJ en_FK en_FM en_GB en_GD en_GG en_GH en_GI en_GM en_GY en_HK en_IE en_IL en_IM en_IN en_IO en_JE en_JM en_KE en_KI en_KN en_KY en_LC en_LR en_LS en_MG en_MO en_MS en_MT en_MU en_MW en_MY en_NA en_NF en_NG en_NR en_NU en_NZ en_PG en_PH en_PK en_PN en_PW en_RW en_SB en_SC en_SD en_SG en_SH en_SL en_SS en_SX en_SZ en_TC en_TK en_TO en_TT en_TV en_TZ en_UG en_VC en_VG en_VU en_WS en_ZA en_ZM en_ZW"/>
 		<parentLocale parent="en_150" locales="en_AT en_BE en_CH en_DE en_DK en_FI en_NL en_SE en_SI"/>
 		<parentLocale parent="es_419" locales="es_AR es_BO es_BR es_BZ es_CL es_CO es_CR es_CU es_DO es_EC es_GT es_HN es_MX es_NI es_PA es_PE es_PR es_PY es_SV es_US es_UY es_VE"/>
+		<parentLocale parent="no" locales="nb nn"/>
 		<parentLocale parent="pt_PT" locales="pt_AO pt_CH pt_CV pt_FR pt_GQ pt_GW pt_LU pt_MO pt_MZ pt_ST pt_TL"/>
 		<parentLocale parent="zh_Hant_HK" locales="zh_Hant_MO"/>
 	</parentLocales>

@@ -51,6 +51,10 @@ class VMError : public AllStatic {
   static void*       _context;          // ContextRecord on Windows,
                                         // ucontext_t on Solaris/Linux
 
+  // records if VMError::print_native_stack was used to
+  // print the native stack instead of os::platform_print_native_stack
+  static bool        _print_native_stack_used;
+
   // additional info for VM internal errors
   static const char* _filename;
   static int         _lineno;
@@ -109,6 +113,10 @@ class VMError : public AllStatic {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
   }
 
+  static bool should_submit_bug_report(unsigned int id) {
+    return should_report_bug(id) && (id != OOM_JAVA_HEAP_FATAL);
+  }
+
   // Write a hint to the stream in case siginfo relates to a segv/bus error
   // and the offending address points into CDS store.
   static void check_failing_cds_access(outputStream* st, const void* siginfo);
@@ -160,14 +168,6 @@ public:
   // reporting OutOfMemoryError
   static void report_java_out_of_memory(const char* message);
 
-  // returns original flags for signal, if it was resetted, or -1 if
-  // signal was not changed by error reporter
-  static int get_resetted_sigflags(int sig);
-
-  // returns original handler for signal, if it was resetted, or NULL if
-  // signal was not changed by error reporter
-  static address get_resetted_sighandler(int sig);
-
   // Called by the WatcherThread to check if error reporting has timed-out.
   //  Returns true if error reporting has not completed within the ErrorLogTimeout limit.
   static bool check_timeout();
@@ -184,6 +184,17 @@ public:
   // Address which is guaranteed to generate a fault on read, for test purposes,
   // which is not NULL and contains bits in every word.
   static const intptr_t segfault_address = LP64_ONLY(0xABC0000000000ABCULL) NOT_LP64(0x00000ABC);
+
+  // Max value for the ErrorLogPrintCodeLimit flag.
+  static const int max_error_log_print_code = 10;
+
+  // Needed when printing signal handlers.
+  NOT_WINDOWS(static const void* crash_handler_address;)
+
+  // Construct file name for a log file and return it's file descriptor.
+  // Name and location depends on pattern, default_pattern params and access
+  // permissions.
+  static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
 
 };
 #endif // SHARE_UTILITIES_VMERROR_HPP

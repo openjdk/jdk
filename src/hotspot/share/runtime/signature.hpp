@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,10 +382,14 @@ class NativeSignatureIterator: public SignatureIterator {
   void do_type(BasicType type) {
     switch (type) {
     case T_BYTE:
-    case T_SHORT:
-    case T_INT:
     case T_BOOLEAN:
+      pass_byte();  _jni_offset++; _offset++;
+      break;
     case T_CHAR:
+    case T_SHORT:
+      pass_short();  _jni_offset++; _offset++;
+      break;
+    case T_INT:
       pass_int();    _jni_offset++; _offset++;
       break;
     case T_FLOAT:
@@ -418,6 +423,8 @@ class NativeSignatureIterator: public SignatureIterator {
   virtual void pass_long()             = 0;
   virtual void pass_object()           = 0;  // objects, arrays, inlines
   virtual void pass_float()            = 0;
+  virtual void pass_byte()             { pass_int(); };
+  virtual void pass_short()            { pass_int(); };
 #ifdef _LP64
   virtual void pass_double()           = 0;
 #else
@@ -572,13 +579,13 @@ class ResolvingSignatureStream : public SignatureStream {
     _load_origin = load_origin;
     _handles_cached = (load_origin == NULL);
   }
-  void need_handles(TRAPS) {
+  void need_handles() {
     if (!_handles_cached) {
-      cache_handles(THREAD);
+      cache_handles();
       _handles_cached = true;
     }
   }
-  void cache_handles(TRAPS);
+  void cache_handles();
 
  public:
   ResolvingSignatureStream(Symbol* signature, Klass* load_origin, bool is_method = true);
@@ -586,19 +593,19 @@ class ResolvingSignatureStream : public SignatureStream {
   ResolvingSignatureStream(const Method* method);
   ResolvingSignatureStream(fieldDescriptor& field);
 
-  Klass* load_origin()            { return _load_origin; }
-  Handle class_loader(TRAPS)      { need_handles(THREAD); return _class_loader; }
-  Handle protection_domain(TRAPS) { need_handles(THREAD); return _protection_domain; }
+  Klass* load_origin()       { return _load_origin; }
+  Handle class_loader()      { need_handles(); return _class_loader; }
+  Handle protection_domain() { need_handles(); return _protection_domain; }
 
   Klass* as_klass_if_loaded(TRAPS);
   Klass* as_klass(FailureMode failure_mode, TRAPS) {
-    need_handles(THREAD);
+    need_handles();
     return SignatureStream::as_klass(_class_loader, _protection_domain,
                                      failure_mode, THREAD);
   }
   oop as_java_mirror(FailureMode failure_mode, TRAPS) {
     if (is_reference()) {
-      need_handles(THREAD);
+      need_handles();
     }
     return SignatureStream::as_java_mirror(_class_loader, _protection_domain,
                                            failure_mode, THREAD);

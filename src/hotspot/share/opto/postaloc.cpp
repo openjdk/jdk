@@ -460,7 +460,7 @@ int PhaseChaitin::possibly_merge_multidef(Node *n, uint k, Block *block, RegToDe
           if (use == n) {
             break;
           }
-          use->replace_edge(def, merge);
+          use->replace_edge(def, merge, NULL);
         }
       }
       if (merge->find_edge(n->in(k)) == -1) {

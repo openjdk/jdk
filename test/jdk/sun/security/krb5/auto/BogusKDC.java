@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import javax.security.auth.login.LoginException;
 /*
  * @test
  * @bug 4515853 8075297 8194486
- * @summary Checks that Kerberos client tries slave KDC
- *          if master KDC is not responding
+ * @summary Checks that Kerberos client tries replica KDC
+ *          if primary KDC is not responding
  * @library /test/lib
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
  * @run main/othervm -Djdk.net.hosts.file=TestHosts BogusKDC
@@ -80,8 +80,8 @@ public class BogusKDC {
         CallbackHandler handler = new Helper.UserPasswordHandler(
                 USER, USER_PASSWORD);
 
-        // create a krb5 config with non-existing host for master KDC,
-        // and wrong port for slave KDC
+        // create a krb5 config with non-existing host for primary KDC,
+        // and wrong port for replica KDC
         try (PrintWriter w = new PrintWriter(new FileWriter(KRB5_CONF))) {
             w.write(String.format(KRB5_CONF_TEMPLATE,
                     KDC.NOT_EXISTING_HOST, WRONG_KDC_PORT));
@@ -96,8 +96,8 @@ public class BogusKDC {
             System.out.println("Expected login failure: " + le);
         }
 
-        // create a krb5 config with non-existing host for master KDC,
-        // but correct port for slave KDC
+        // create a krb5 config with non-existing host for primary KDC,
+        // but correct port for replica KDC
         try (PrintWriter w = new PrintWriter(new FileWriter(KRB5_CONF))) {
             w.write(String.format(KRB5_CONF_TEMPLATE,
                     KDC.NOT_EXISTING_HOST, kdc.getPort()));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -64,7 +64,7 @@ import com.sun.org.apache.bcel.internal.generic.Type;
  * A helper class for BCELifier.
  *
  * @see BCELifier
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 class BCELFactory extends EmptyVisitor {
 
@@ -201,7 +201,7 @@ class BCELFactory extends EmptyVisitor {
                         + ", (short) " + dim + "));");
                 break;
             default:
-                throw new RuntimeException("Oops: " + opcode);
+                throw new IllegalArgumentException("Unhandled opcode: " + opcode);
         }
     }
 

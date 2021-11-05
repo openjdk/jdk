@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,21 @@ public final class OutputAnalyzer {
      */
     public OutputAnalyzer stderrShouldBeEmptyIgnoreVMWarnings() {
         if (!getStderr().replaceAll(jvmwarningmsg + "\\R", "").isEmpty()) {
+            reportDiagnosticSummary();
+            throw new RuntimeException("stderr was not empty");
+        }
+        return this;
+    }
+
+    /**
+     * Verify that the stderr contents of output buffer is empty,
+     * after filtering out all messages matching "warning" (case insensitive)
+     *
+     * @throws RuntimeException
+     *             If stderr was not empty
+     */
+    public OutputAnalyzer stderrShouldBeEmptyIgnoreWarnings() {
+        if (!getStderr().replaceAll("(?i).*warning.*\\R", "").isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stderr was not empty");
         }
@@ -564,6 +579,15 @@ public final class OutputAnalyzer {
      */
     public int getExitValue() {
         return buffer.getExitValue();
+    }
+
+    /**
+     * Get the process' pid
+     *
+     * @return pid
+     */
+    public long pid() {
+        return buffer.pid();
     }
 
     /**

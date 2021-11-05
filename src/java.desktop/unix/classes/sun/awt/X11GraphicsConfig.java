@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,18 +329,9 @@ public class X11GraphicsConfig extends GraphicsConfiguration
     }
 
     @Override
-    public Rectangle getBounds() {
-        Rectangle rect = pGetBounds(device.getScreen());
-        if (getScale() != 1) {
-            rect.x = scaleDown(rect.x);
-            rect.y = scaleDown(rect.y);
-            rect.width = scaleDown(rect.width);
-            rect.height = scaleDown(rect.height);
-        }
-        return rect;
+    public final Rectangle getBounds() {
+        return device.getBounds();
     }
-
-    private native Rectangle pGetBounds(int screenNum);
 
     private static class XDBECapabilities extends BufferCapabilities {
         public XDBECapabilities() {

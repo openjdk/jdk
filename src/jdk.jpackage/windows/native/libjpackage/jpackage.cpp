@@ -30,9 +30,7 @@
 #include "JniUtils.h"
 #include "MsiDb.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
     /*
      * Class:     jdk_jpackage_internal_ExecutableRebrander
@@ -159,6 +157,4 @@ extern "C" {
         return 1;
     }
 
-#ifdef __cplusplus
-}
-#endif
+} // extern "C"

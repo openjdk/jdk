@@ -76,7 +76,6 @@ public interface SSLSessionContext {
      * <code>SSLSessionContext</code>.
      * <p>Session contexts may not contain all sessions. For example,
      * stateless sessions are not stored in the session context.
-     * <p>
      *
      * @return an enumeration of all the Session id's
      */

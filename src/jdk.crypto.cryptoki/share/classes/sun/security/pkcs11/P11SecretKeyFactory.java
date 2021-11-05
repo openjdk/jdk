@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         addKeyType("DESede",   CKK_DES3);
         addKeyType("AES",      CKK_AES);
         addKeyType("Blowfish", CKK_BLOWFISH);
+        addKeyType("ChaCha20", CKK_CHACHA20);
 
         // we don't implement RC2 or IDEA, but we want to be able to generate
         // keys for those SSL/TLS ciphersuites.
@@ -237,6 +238,10 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                         P11KeyGenerator.checkKeySize(CKM_BLOWFISH_KEY_GEN, n,
                         token);
                     break;
+                case (int)CKK_CHACHA20:
+                    keyLength = P11KeyGenerator.checkKeySize(
+                        CKM_CHACHA20_KEY_GEN, n, token);
+                    break;
                 case (int)CKK_GENERIC_SECRET:
                 case (int)PCKK_TLSPREMASTER:
                 case (int)PCKK_TLSRSAPREMASTER:
@@ -341,11 +346,11 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             throw new InvalidKeySpecException
                 ("key and keySpec must not be null");
         }
-        if (SecretKeySpec.class.isAssignableFrom(keySpec)) {
+        if (keySpec.isAssignableFrom(SecretKeySpec.class)) {
             return new SecretKeySpec(getKeyBytes(key), algorithm);
         } else if (algorithm.equalsIgnoreCase("DES")) {
             try {
-                if (DESKeySpec.class.isAssignableFrom(keySpec)) {
+                if (keySpec.isAssignableFrom(DESKeySpec.class)) {
                     return new DESKeySpec(getKeyBytes(key));
                 }
             } catch (InvalidKeyException e) {
@@ -353,7 +358,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             }
         } else if (algorithm.equalsIgnoreCase("DESede")) {
             try {
-                if (DESedeKeySpec.class.isAssignableFrom(keySpec)) {
+                if (keySpec.isAssignableFrom(DESedeKeySpec.class)) {
                     return new DESedeKeySpec(getKeyBytes(key));
                 }
             } catch (InvalidKeyException e) {

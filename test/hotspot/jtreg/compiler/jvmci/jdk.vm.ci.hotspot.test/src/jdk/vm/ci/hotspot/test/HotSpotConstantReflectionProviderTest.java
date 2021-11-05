@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *          java.base/jdk.internal.misc
  * @library /test/lib /compiler/jvmci/jdk.vm.ci.hotspot.test/src
  * @build jdk.vm.ci.hotspot.test.DummyClass
- * @run driver ClassFileInstaller jdk.vm.ci.hotspot.test.DummyClass
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.vm.ci.hotspot.test.DummyClass
  * @run testng/othervm/timeout=300 -Xbootclasspath/a:.
  *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *      -XX:-UseJVMCICompiler jdk.vm.ci.hotspot.test.HotSpotConstantReflectionProviderTest

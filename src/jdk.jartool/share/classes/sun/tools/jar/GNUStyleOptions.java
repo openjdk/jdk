@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,14 +58,14 @@ class GNUStyleOptions {
             // Main operations
             new Option(false, OptionType.MAIN_OPERATION, "--create", "-c") {
                 void process(Main tool, String opt, String arg) throws BadArgs {
-                    if (tool.iflag || tool.tflag || tool.uflag || tool.xflag || tool.dflag)
+                    if (tool.iflag || tool.tflag || tool.uflag || tool.xflag || tool.dflag || tool.validate)
                         throw new BadArgs("error.multiple.main.operations").showUsage(true);
                     tool.cflag = true;
                 }
             },
             new Option(true, OptionType.MAIN_OPERATION, "--generate-index", "-i") {
                 void process(Main tool, String opt, String arg) throws BadArgs {
-                    if (tool.cflag || tool.tflag || tool.uflag || tool.xflag || tool.dflag)
+                    if (tool.cflag || tool.tflag || tool.uflag || tool.xflag || tool.dflag || tool.validate)
                         throw new BadArgs("error.multiple.main.operations").showUsage(true);
                     tool.iflag = true;
                     tool.rootjar = arg;
@@ -73,30 +73,37 @@ class GNUStyleOptions {
             },
             new Option(false, OptionType.MAIN_OPERATION, "--list", "-t") {
                 void process(Main tool, String opt, String arg) throws BadArgs {
-                    if (tool.cflag || tool.iflag || tool.uflag || tool.xflag || tool.dflag)
+                    if (tool.cflag || tool.iflag || tool.uflag || tool.xflag || tool.dflag || tool.validate)
                         throw new BadArgs("error.multiple.main.operations").showUsage(true);
                     tool.tflag = true;
                 }
             },
             new Option(false, OptionType.MAIN_OPERATION, "--update", "-u") {
                 void process(Main tool, String opt, String arg) throws BadArgs {
-                    if (tool.cflag || tool.iflag || tool.tflag || tool.xflag || tool.dflag)
+                    if (tool.cflag || tool.iflag || tool.tflag || tool.xflag || tool.dflag || tool.validate)
                         throw new BadArgs("error.multiple.main.operations").showUsage(true);
                     tool.uflag = true;
                 }
             },
             new Option(false, OptionType.MAIN_OPERATION, "--extract", "-x") {
                 void process(Main tool, String opt, String arg) throws BadArgs {
-                    if (tool.cflag || tool.iflag  || tool.tflag || tool.uflag || tool.dflag)
+                    if (tool.cflag || tool.iflag  || tool.tflag || tool.uflag || tool.dflag || tool.validate)
                         throw new BadArgs("error.multiple.main.operations").showUsage(true);
                     tool.xflag = true;
                 }
             },
             new Option(false, OptionType.MAIN_OPERATION, "--describe-module", "-d") {
                 void process(Main tool, String opt, String arg) throws BadArgs {
-                    if (tool.cflag || tool.iflag  || tool.tflag || tool.uflag || tool.xflag)
+                    if (tool.cflag || tool.iflag  || tool.tflag || tool.uflag || tool.xflag || tool.validate)
                         throw new BadArgs("error.multiple.main.operations").showUsage(true);
                     tool.dflag = true;
+                }
+            },
+            new Option(false, OptionType.MAIN_OPERATION, "--validate") {
+                void process(Main tool, String opt, String arg) throws BadArgs {
+                    if (tool.cflag || tool.iflag  || tool.tflag || tool.uflag || tool.xflag || tool.dflag)
+                        throw new BadArgs("error.multiple.main.operations").showUsage(true);
+                    tool.validate = true;
                 }
             },
 
@@ -232,7 +239,7 @@ class GNUStyleOptions {
         OptionType(String name) { this.name = name; }
     }
 
-    static abstract class Option {
+    abstract static class Option {
         final boolean hasArg;
         final boolean argIsOptional;
         final String[] aliases;

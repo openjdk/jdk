@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,17 +30,10 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/ostream.hpp"
 
 #include <stdlib.h> // for environment variables
-#ifdef __APPLE__
-#include <crt_externs.h>
-#define environ (*_NSGetEnviron())
-#endif
-
-#ifndef environ
-extern char** environ;
-#endif
 
 static JfrOSInterface* _instance = NULL;
 
@@ -280,14 +273,14 @@ const char* JfrOSInterface::virtualization_name() {
 }
 
 int JfrOSInterface::generate_initial_environment_variable_events() {
-  if (environ == NULL) {
+  if (os::get_environ() == NULL) {
     return OS_ERR;
   }
 
   if (EventInitialEnvironmentVariable::is_enabled()) {
     // One time stamp for all events, so they can be grouped together
     JfrTicks time_stamp = JfrTicks::now();
-    for (char** p = environ; *p != NULL; p++) {
+    for (char** p = os::get_environ(); *p != NULL; p++) {
       char* variable = *p;
       char* equal_sign = strchr(variable, '=');
       if (equal_sign != NULL) {

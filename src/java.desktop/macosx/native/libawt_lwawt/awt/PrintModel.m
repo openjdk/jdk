@@ -26,8 +26,6 @@
 
 #import "PrintModel.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "PrinterView.h"
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
@@ -53,7 +51,7 @@
 - (BOOL)runPageSetup {
     __block BOOL fResult = NO;
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         NSPageLayout* pageLayout = [NSPageLayout pageLayout];
         fResult = ([pageLayout runModalWithPrintInfo:fPrintInfo] == NSOKButton);
     }];
@@ -64,7 +62,7 @@
 - (BOOL)runJobSetup {
     __block BOOL fResult = NO;
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         NSPrintPanel* printPanel = [NSPrintPanel printPanel];
         fResult = ([printPanel runModalWithPrintInfo:fPrintInfo] == NSOKButton);
     }];
@@ -127,7 +125,7 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob__1safePrintLoop
 (JNIEnv *env, jclass clz, jlong target, jlong view)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     PrintModel *model = (PrintModel *)jlong_to_ptr(target);
     PrinterView *arg = (PrinterView *)jlong_to_ptr(view);
@@ -138,6 +136,6 @@ JNF_COCOA_ENTER(env);
     [model release];
     [arg release];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 

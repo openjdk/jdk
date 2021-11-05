@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,15 +334,9 @@ final class $vectortype$ extends $abstractvectortype$ {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<$Boxtype$> toShuffle() {
-        $type$[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate($shuffletype$.class); // specialize
     }
 
     // Specialized unary testing
@@ -393,14 +387,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @Override
     @ForceInline
     public $vectortype$ slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         $shuffletype$ Iota = iotaShuffle();
-         VectorMask<$Boxtype$> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return ($vectortype$) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -421,14 +408,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @Override
     @ForceInline
     public $vectortype$ unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         $shuffletype$ Iota = iotaShuffle();
-         VectorMask<$Boxtype$> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast(($type$)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return ($vectortype$) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -856,31 +836,43 @@ final class $vectortype$ extends $abstractvectortype$ {
             return ($vectortype$) super.toVectorTemplate();  // specialize
         }
 
-        @Override
+        /**
+         * Helper function for lane-wise mask conversions.
+         * This function kicks in after intrinsic failure.
+         */
         @ForceInline
-        public <E> VectorMask<E> cast(VectorSpecies<E> s) {
-            AbstractSpecies<E> species = (AbstractSpecies<E>) s;
-            if (length() != species.laneCount())
+        private final <E>
+        VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
+            if (length() != dsp.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte$bits$Vector.Byte$bits$Mask(maskArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short$bits$Vector.Short$bits$Mask(maskArray).check(species);
-            case LaneType.SK_INT:
-                return new Int$bits$Vector.Int$bits$Mask(maskArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long$bits$Vector.Long$bits$Mask(maskArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float$bits$Vector.Float$bits$Mask(maskArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double$bits$Vector.Double$bits$Mask(maskArray).check(species);
-            }
+            return  dsp.maskFactory(maskArray).check(dsp);
+        }
 
-            // Should not reach here.
-            throw new AssertionError(species);
+        @Override
+        @ForceInline
+        public <E> VectorMask<E> cast(VectorSpecies<E> dsp) {
+            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
+            if (length() != species.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
+            if (VSIZE == species.vectorBitSize()) {
+                Class<?> dtype = species.elementType();
+                Class<?> dmtype = species.maskType();
+                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
+                    this.getClass(), ETYPE, VLENGTH,
+                    dmtype, dtype, VLENGTH,
+                    this, species,
+                    $Type$$bits$Mask::defaultMaskCast);
+            }
+            return this.defaultMaskCast(species);
+        }
+
+        @Override
+        @ForceInline
+        public $masktype$ eq(VectorMask<$Boxtype$> mask) {
+            Objects.requireNonNull(mask);
+            $masktype$ m = ($masktype$)mask;
+            return xor(m.not());
         }
 
         // Unary operations
@@ -921,6 +913,29 @@ final class $vectortype$ extends $abstractvectortype$ {
             return VectorSupport.binaryOp(VECTOR_OP_XOR, $masktype$.class, $bitstype$.class, VLENGTH,
                                           this, m,
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+        }
+
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, $masktype$.class, $bitstype$.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper((($masktype$)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, $masktype$.class, $bitstype$.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper((($masktype$)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, $masktype$.class, $bitstype$.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper((($masktype$)m).getBits()));
         }
 
         // Reductions
@@ -1017,24 +1032,7 @@ final class $vectortype$ extends $abstractvectortype$ {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte$bits$Vector.Byte$bits$Shuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short$bits$Vector.Short$bits$Shuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new Int$bits$Vector.Int$bits$Shuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long$bits$Vector.Long$bits$Shuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float$bits$Vector.Float$bits$Shuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double$bits$Vector.Double$bits$Shuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
@@ -1062,6 +1060,24 @@ final class $vectortype$ extends $abstractvectortype$ {
     $abstractvectortype$ fromArray0($type$[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+#if[short]
+    @ForceInline
+    @Override
+    final
+    $abstractvectortype$ fromCharArray0(char[] a, int offset) {
+        return super.fromCharArray0Template(a, offset);  // specialize
+    }
+#end[short]
+
+#if[byte]
+    @ForceInline
+    @Override
+    final
+    $abstractvectortype$ fromBooleanArray0(boolean[] a, int offset) {
+        return super.fromBooleanArray0Template(a, offset);  // specialize
+    }
+#end[byte]
 
     @ForceInline
     @Override

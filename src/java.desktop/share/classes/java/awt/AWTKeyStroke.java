@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.awt;
 
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -64,7 +65,12 @@ import sun.swing.SwingAccessor;
  * @since 1.4
  */
 public class AWTKeyStroke implements Serializable {
-    static final long serialVersionUID = -6430539691155161871L;
+
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
+    @Serial
+    private static final long serialVersionUID = -6430539691155161871L;
 
     private static Map<String, Integer> modifierKeywords;
     /**
@@ -725,6 +731,7 @@ public class AWTKeyStroke implements Serializable {
      * @return a cached instance which is equal to this instance
      * @throws java.io.ObjectStreamException if a serialization problem occurs
      */
+    @Serial
     protected Object readResolve() throws java.io.ObjectStreamException {
         synchronized (AWTKeyStroke.class) {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import sun.nio.ch.ChannelInputStream;
+import sun.nio.ch.ChannelOutputStream;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
 
@@ -62,41 +63,6 @@ import sun.nio.cs.StreamEncoder;
 public final class Channels {
 
     private Channels() { throw new Error("no instances"); }
-
-    /**
-     * Write all remaining bytes in buffer to the given channel.
-     * If the channel is selectable then it must be configured blocking.
-     */
-    private static void writeFullyImpl(WritableByteChannel ch, ByteBuffer bb)
-        throws IOException
-    {
-        while (bb.remaining() > 0) {
-            int n = ch.write(bb);
-            if (n <= 0)
-                throw new RuntimeException("no bytes written");
-        }
-    }
-
-    /**
-     * Write all remaining bytes in buffer to the given channel.
-     *
-     * @throws  IllegalBlockingModeException
-     *          If the channel is selectable and configured non-blocking.
-     */
-    private static void writeFully(WritableByteChannel ch, ByteBuffer bb)
-        throws IOException
-    {
-        if (ch instanceof SelectableChannel) {
-            SelectableChannel sc = (SelectableChannel) ch;
-            synchronized (sc.blockingLock()) {
-                if (!sc.isBlocking())
-                    throw new IllegalBlockingModeException();
-                writeFullyImpl(ch, bb);
-            }
-        } else {
-            writeFullyImpl(ch, bb);
-        }
-    }
 
     // -- Byte streams from channels --
 
@@ -137,47 +103,7 @@ public final class Channels {
      */
     public static OutputStream newOutputStream(WritableByteChannel ch) {
         Objects.requireNonNull(ch, "ch");
-
-        return new OutputStream() {
-
-            private ByteBuffer bb;
-            private byte[] bs;       // Invoker's previous array
-            private byte[] b1;
-
-            @Override
-            public synchronized void write(int b) throws IOException {
-                if (b1 == null)
-                    b1 = new byte[1];
-                b1[0] = (byte) b;
-                this.write(b1);
-            }
-
-            @Override
-            public synchronized void write(byte[] bs, int off, int len)
-                    throws IOException
-            {
-                if ((off < 0) || (off > bs.length) || (len < 0) ||
-                    ((off + len) > bs.length) || ((off + len) < 0)) {
-                    throw new IndexOutOfBoundsException();
-                } else if (len == 0) {
-                    return;
-                }
-                ByteBuffer bb = ((this.bs == bs)
-                                 ? this.bb
-                                 : ByteBuffer.wrap(bs));
-                bb.limit(Math.min(off + len, bb.capacity()));
-                bb.position(off);
-                this.bb = bb;
-                this.bs = bs;
-                Channels.writeFully(ch, bb);
-            }
-
-            @Override
-            public void close() throws IOException {
-                ch.close();
-            }
-
-        };
+        return new ChannelOutputStream(ch);
     }
 
     /**
@@ -217,10 +143,8 @@ public final class Channels {
             public synchronized int read(byte[] bs, int off, int len)
                     throws IOException
             {
-                if ((off < 0) || (off > bs.length) || (len < 0) ||
-                    ((off + len) > bs.length) || ((off + len) < 0)) {
-                    throw new IndexOutOfBoundsException();
-                } else if (len == 0) {
+                Objects.checkFromIndexSize(off, len, bs.length);
+                if (len == 0) {
                     return 0;
                 }
 
@@ -370,6 +294,9 @@ public final class Channels {
         public int read(ByteBuffer dst) throws IOException {
             if (!isOpen()) {
                 throw new ClosedChannelException();
+            }
+            if (dst.isReadOnly()) {
+                throw new IllegalArgumentException();
             }
 
             int len = dst.remaining();

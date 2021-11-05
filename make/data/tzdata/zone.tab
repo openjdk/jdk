@@ -26,7 +26,7 @@
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 #
-# From Paul Eggert (2018-06-27):
+# From Paul Eggert (2021-09-20):
 # This file is intended as a backward-compatibility aid for older programs.
 # New programs should use zone1970.tab.  This file is like zone1970.tab (see
 # zone1970.tab's comments), but with the following additional restrictions:
@@ -38,6 +38,9 @@
 # of a region identified by a country code and of a timezone where civil
 # clocks have agreed since 1970; this is a narrower definition than
 # that of zone1970.tab.
+#
+# Unlike zone1970.tab, a row's third column can be a Link from
+# 'backward' instead of a Zone.
 #
 # This table is intended as an aid for users, to help them select timezones
 # appropriate for their practical needs.  It is not intended to take or
@@ -79,8 +82,7 @@ AS	-1416-17042	Pacific/Pago_Pago
 AT	+4813+01620	Europe/Vienna
 AU	-3133+15905	Australia/Lord_Howe	Lord Howe Island
 AU	-5430+15857	Antarctica/Macquarie	Macquarie Island
-AU	-4253+14719	Australia/Hobart	Tasmania (most areas)
-AU	-3956+14352	Australia/Currie	Tasmania (King Island)
+AU	-4253+14719	Australia/Hobart	Tasmania
 AU	-3749+14458	Australia/Melbourne	Victoria
 AU	-3352+15113	Australia/Sydney	New South Wales (most areas)
 AU	-3157+14127	Australia/Broken_Hill	New South Wales (Yancowinna)
@@ -153,9 +155,9 @@ CA	+682059-1334300	America/Inuvik	Mountain - NT (west)
 CA	+4906-11631	America/Creston	MST - BC (Creston)
 CA	+5946-12014	America/Dawson_Creek	MST - BC (Dawson Cr, Ft St John)
 CA	+5848-12242	America/Fort_Nelson	MST - BC (Ft Nelson)
+CA	+6043-13503	America/Whitehorse	MST - Yukon (east)
+CA	+6404-13925	America/Dawson	MST - Yukon (west)
 CA	+4916-12307	America/Vancouver	Pacific - BC (most areas)
-CA	+6043-13503	America/Whitehorse	Pacific - Yukon (east)
-CA	+6404-13925	America/Dawson	Pacific - Yukon (west)
 CC	-1210+09655	Indian/Cocos
 CD	-0418+01518	Africa/Kinshasa	Dem. Rep. of Congo (west)
 CD	-1140+02728	Africa/Lubumbashi	Dem. Rep. of Congo (east)
@@ -252,7 +254,7 @@ KE	-0117+03649	Africa/Nairobi
 KG	+4254+07436	Asia/Bishkek
 KH	+1133+10455	Asia/Phnom_Penh
 KI	+0125+17300	Pacific/Tarawa	Gilbert Islands
-KI	-0308-17105	Pacific/Enderbury	Phoenix Islands
+KI	-0247-17143	Pacific/Kanton	Phoenix Islands
 KI	+0152-15720	Pacific/Kiritimati	Line Islands
 KM	-1141+04316	Indian/Comoro
 KN	+1718-06243	America/St_Kitts
@@ -360,8 +362,8 @@ RU	+554521+0373704	Europe/Moscow	MSK+00 - Moscow area
 # Programs should use zone1970.tab instead; see above.
 UA	+4457+03406	Europe/Simferopol	Crimea
 RU	+5836+04939	Europe/Kirov	MSK+00 - Kirov
+RU	+4844+04425	Europe/Volgograd	MSK+00 - Volgograd
 RU	+4621+04803	Europe/Astrakhan	MSK+01 - Astrakhan
-RU	+4844+04425	Europe/Volgograd	MSK+01 - Volgograd
 RU	+5134+04602	Europe/Saratov	MSK+01 - Saratov
 RU	+5420+04824	Europe/Ulyanovsk	MSK+01 - Ulyanovsk
 RU	+5312+05009	Europe/Samara	MSK+01 - Samara, Udmurtia
@@ -415,7 +417,7 @@ TK	-0922-17114	Pacific/Fakaofo
 TL	-0833+12535	Asia/Dili
 TM	+3757+05823	Asia/Ashgabat
 TN	+3648+01011	Africa/Tunis
-TO	-2110-17510	Pacific/Tongatapu
+TO	-210800-1751200	Pacific/Tongatapu
 TR	+4101+02858	Europe/Istanbul
 TT	+1039-06131	America/Port_of_Spain
 TV	-0831+17913	Pacific/Funafuti

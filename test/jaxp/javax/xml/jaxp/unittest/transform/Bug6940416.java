@@ -46,7 +46,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6940416
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6940416
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6940416
  * @run testng/othervm transform.Bug6940416
  * @summary Test transforming correctly.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,10 +119,9 @@ import java.util.Arrays;
  * <h3> Special IPv6 address </h3>
  *
  * <blockquote>
- * <table class="borderless">
- * <caption style="display:none">Description of IPv4-mapped address</caption>
- * <tr><th style="vertical-align:top; padding-right:2px"><i>IPv4-mapped address</i></th>
- *         <td>Of the form ::ffff:w.x.y.z, this IPv6 address is used to
+ * <dl>
+ *   <dt>IPv4-mapped address</dt>
+ *         <dd>Of the form ::ffff:w.x.y.z, this IPv6 address is used to
  *         represent an IPv4 address. It allows the native program to
  *         use the same address data structure and also the same
  *         socket when communicating with both IPv4 and IPv6 nodes.
@@ -132,12 +131,13 @@ import java.util.Arrays;
  *         return an IPv4-mapped address.  These classes can take an
  *         IPv4-mapped address as input, both in byte array and text
  *         representation. However, it will be converted into an IPv4
- *         address.</td></tr>
- * </table></blockquote>
+ *         address.</dd>
+ * </dl>
+ * </blockquote>
  *
  * <h3><a id="scoped">Textual representation of IPv6 scoped addresses</a></h3>
  *
- * <p> The textual representation of IPv6 addresses as described above can be
+ * <p>The textual representation of IPv6 addresses as described above can be
  * extended to specify IPv6 scoped addresses. This extension to the basic
  * addressing architecture is described in [draft-ietf-ipngwg-scoping-arch-04.txt].
  *
@@ -176,7 +176,7 @@ public final
 class Inet6Address extends InetAddress {
     static final int INADDRSZ = 16;
 
-    private class Inet6AddressHolder {
+    private static class Inet6AddressHolder {
 
         private Inet6AddressHolder() {
             ipaddress = new byte[INADDRSZ];
@@ -223,13 +223,13 @@ class Inet6Address extends InetAddress {
          */
         boolean scope_ifname_set; // false;
 
-        void setAddr(byte addr[]) {
+        void setAddr(byte[] addr) {
             if (addr.length == INADDRSZ) { // normal IPv6 address
                 System.arraycopy(addr, 0, ipaddress, 0, INADDRSZ);
             }
         }
 
-        void init(byte addr[], int scope_id) {
+        void init(byte[] addr, int scope_id) {
             setAddr(addr);
 
             if (scope_id >= 0) {
@@ -238,7 +238,7 @@ class Inet6Address extends InetAddress {
             }
         }
 
-        void init(byte addr[], NetworkInterface nif)
+        void init(byte[] addr, NetworkInterface nif)
             throws UnknownHostException
         {
             setAddr(addr);
@@ -262,10 +262,9 @@ class Inet6Address extends InetAddress {
         }
 
         public boolean equals(Object o) {
-            if (! (o instanceof Inet6AddressHolder)) {
+            if (!(o instanceof Inet6AddressHolder that)) {
                 return false;
             }
-            Inet6AddressHolder that = (Inet6AddressHolder)o;
 
             return Arrays.equals(this.ipaddress, that.ipaddress);
         }
@@ -378,27 +377,27 @@ class Inet6Address extends InetAddress {
     /* checking of value for scope_id should be done by caller
      * scope_id must be >= 0, or -1 to indicate not being set
      */
-    Inet6Address(String hostName, byte addr[], int scope_id) {
+    Inet6Address(String hostName, byte[] addr, int scope_id) {
         holder.init(hostName, IPv6);
         holder6 = new Inet6AddressHolder();
         holder6.init(addr, scope_id);
     }
 
-    Inet6Address(String hostName, byte addr[]) {
+    Inet6Address(String hostName, byte[] addr) {
         holder6 = new Inet6AddressHolder();
         try {
             initif (hostName, addr, null);
         } catch (UnknownHostException e) {} /* cant happen if ifname is null */
     }
 
-    Inet6Address (String hostName, byte addr[], NetworkInterface nif)
+    Inet6Address (String hostName, byte[] addr, NetworkInterface nif)
         throws UnknownHostException
     {
         holder6 = new Inet6AddressHolder();
         initif (hostName, addr, nif);
     }
 
-    Inet6Address (String hostName, byte addr[], String ifname)
+    Inet6Address (String hostName, byte[] addr, String ifname)
         throws UnknownHostException
     {
         holder6 = new Inet6AddressHolder();
@@ -475,7 +474,7 @@ class Inet6Address extends InetAddress {
         throw new UnknownHostException("addr is of illegal length");
     }
 
-    private void initstr(String hostName, byte addr[], String ifname)
+    private void initstr(String hostName, byte[] addr, String ifname)
         throws UnknownHostException
     {
         try {
@@ -489,7 +488,7 @@ class Inet6Address extends InetAddress {
         }
     }
 
-    private void initif(String hostName, byte addr[], NetworkInterface nif)
+    private void initif(String hostName, byte[] addr, NetworkInterface nif)
         throws UnknownHostException
     {
         int family = -1;
@@ -525,10 +524,9 @@ class Inet6Address extends InetAddress {
         Enumeration<InetAddress> addresses = ifc.getInetAddresses();
         while (addresses.hasMoreElements()) {
             InetAddress addr = addresses.nextElement();
-            if (!(addr instanceof Inet6Address)) {
+            if (!(addr instanceof Inet6Address ia6_addr)) {
                 continue;
             }
-            Inet6Address ia6_addr = (Inet6Address)addr;
             /* check if site or link local prefixes match */
             if (!isDifferentLocalAddressType(thisAddr, ia6_addr.getAddress())){
                 /* type not the same, so carry on searching */
@@ -557,11 +555,15 @@ class Inet6Address extends InetAddress {
     }
 
     /**
-     * @serialField ipaddress byte[]
-     * @serialField scope_id int
-     * @serialField scope_id_set boolean
-     * @serialField scope_ifname_set boolean
-     * @serialField ifname String
+     * @serialField ipaddress byte[] holds a 128-bit (16 bytes) IPv6 address
+     * @serialField scope_id int the address scope id. {@code 0} if undefined
+     * @serialField scope_id_set boolean {@code true} when the scope_id field
+     *              contains  a valid integer scope_id
+     * @serialField scope_ifname_set boolean {@code true} if the object is
+     *              constructed with a scoped interface instead of a numeric
+     *              scope id
+     * @serialField ifname String the name of the scoped network interface.
+     *              {@code null} if undefined
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
@@ -578,9 +580,13 @@ class Inet6Address extends InetAddress {
                 Inet6Address.class, "holder6");
 
     /**
-     * restore the state of this object from stream
-     * including the scope information, only if the
-     * scoped interface name is valid on this system
+     * Restores the state of this object from the stream.
+     * This includes the scope information, but only if the
+     * scoped interface name is valid on this system.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream s)
@@ -642,9 +648,12 @@ class Inet6Address extends InetAddress {
     }
 
     /**
-     * default behavior is overridden in order to write the
-     * scope_ifname field as a String, rather than a NetworkInterface
-     * which is not serializable
+     * The default behavior of this method is overridden in order to
+     * write the scope_ifname field as a {@code String}, rather than a
+     * {@code NetworkInterface} which is not serializable.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private synchronized void writeObject(ObjectOutputStream s)
@@ -701,7 +710,7 @@ class Inet6Address extends InetAddress {
     }
 
     /**
-     * Utility routine to check if the InetAddress is an link local address.
+     * Utility routine to check if the InetAddress is a link local address.
      *
      * @return a {@code boolean} indicating if the InetAddress is a link local
      *         address; or false if address is not a link local unicast address.
@@ -878,12 +887,10 @@ class Inet6Address extends InetAddress {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof Inet6Address))
-            return false;
-
-        Inet6Address inetAddr = (Inet6Address)obj;
-
-        return holder6.equals(inetAddr.holder6);
+        if (obj instanceof Inet6Address inetAddr) {
+            return holder6.equals(inetAddr.holder6);
+        }
+        return false;
     }
 
     /**

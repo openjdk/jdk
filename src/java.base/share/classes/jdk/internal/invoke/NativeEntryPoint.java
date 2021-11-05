@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,6 @@ public class NativeEntryPoint {
         registerNatives();
     }
 
-    private final long addr;
-
     private final int shadowSpace;
 
     // encoded as VMRegImpl*
@@ -49,9 +47,8 @@ public class NativeEntryPoint {
     private final MethodType methodType; // C2 sees erased version (byte -> int), so need this explicitly
     private final String name;
 
-    private NativeEntryPoint(long addr, int shadowSpace, long[] argMoves, long[] returnMoves,
+    private NativeEntryPoint(int shadowSpace, long[] argMoves, long[] returnMoves,
                      boolean needTransition, MethodType methodType, String name) {
-        this.addr = addr;
         this.shadowSpace = shadowSpace;
         this.argMoves = Objects.requireNonNull(argMoves);
         this.returnMoves = Objects.requireNonNull(returnMoves);
@@ -60,14 +57,15 @@ public class NativeEntryPoint {
         this.name = name;
     }
 
-    public static NativeEntryPoint make(long addr, String name, ABIDescriptorProxy abi, VMStorageProxy[] argMoves, VMStorageProxy[] returnMoves,
+    public static NativeEntryPoint make(String name, ABIDescriptorProxy abi,
+                                        VMStorageProxy[] argMoves, VMStorageProxy[] returnMoves,
                                         boolean needTransition, MethodType methodType) {
         if (returnMoves.length > 1) {
             throw new IllegalArgumentException("Multiple register return not supported");
         }
 
-        return new NativeEntryPoint(
-            addr, abi.shadowSpaceBytes(), encodeVMStorages(argMoves), encodeVMStorages(returnMoves), needTransition, methodType, name);
+        return new NativeEntryPoint(abi.shadowSpaceBytes(), encodeVMStorages(argMoves), encodeVMStorages(returnMoves),
+                needTransition, methodType, name);
     }
 
     private static long[] encodeVMStorages(VMStorageProxy[] moves) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "code/compressedStream.hpp"
 #include "compiler/compilerDefinitions.hpp"
-#include "compiler/oopMap.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
@@ -76,6 +75,7 @@ class Method : public Metadata {
   ConstMethod*      _constMethod;                // Method read-only data.
   MethodData*       _method_data;
   MethodCounters*   _method_counters;
+  AdapterHandlerEntry* _adapter;
   AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
                                                  // note: can have vtables with >2**16 elements (because of inheritance)
@@ -88,17 +88,16 @@ class Method : public Metadata {
     _dont_inline           = 1 << 2,
     _hidden                = 1 << 3,
     _has_injected_profile  = 1 << 4,
-    _running_emcp          = 1 << 5,
-    _intrinsic_candidate   = 1 << 6,
-    _reserved_stack_access = 1 << 7,
-    _scoped                = 1 << 8
+    _intrinsic_candidate   = 1 << 5,
+    _reserved_stack_access = 1 << 6,
+    _scoped                = 1 << 7
   };
   mutable u2 _flags;
 
   JFR_ONLY(DEFINE_TRACE_FLAG;)
 
 #ifndef PRODUCT
-  int               _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
+  int64_t _compiled_invocation_count;
 #endif
   // Entry point for calling both from and to the interpreter.
   address _i2i_entry;           // All-args-on-stack calling convention
@@ -112,10 +111,6 @@ class Method : public Metadata {
   // NULL only at safepoints (because of a de-opt).
   CompiledMethod* volatile _code;                       // Points to the corresponding piece of native code
   volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
-
-#if INCLUDE_AOT && defined(TIERED)
-  CompiledMethod* _aot_code;
-#endif
 
   // Constructor
   Method(ConstMethod* xconst, AccessFlags access_flags);
@@ -227,7 +222,7 @@ class Method : public Metadata {
   void clear_all_breakpoints();
   // Tracking number of breakpoints, for fullspeed debugging.
   // Only mutated by VM thread.
-  u2   number_of_breakpoints()             const {
+  u2   number_of_breakpoints() const {
     MethodCounters* mcs = method_counters();
     if (mcs == NULL) {
       return 0;
@@ -235,20 +230,20 @@ class Method : public Metadata {
       return mcs->number_of_breakpoints();
     }
   }
-  void incr_number_of_breakpoints(TRAPS)         {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void incr_number_of_breakpoints(Thread* current) {
+    MethodCounters* mcs = get_method_counters(current);
     if (mcs != NULL) {
       mcs->incr_number_of_breakpoints();
     }
   }
-  void decr_number_of_breakpoints(TRAPS)         {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void decr_number_of_breakpoints(Thread* current) {
+    MethodCounters* mcs = get_method_counters(current);
     if (mcs != NULL) {
       mcs->decr_number_of_breakpoints();
     }
   }
   // Initialization only
-  void clear_number_of_breakpoints()             {
+  void clear_number_of_breakpoints() {
     MethodCounters* mcs = method_counters();
     if (mcs != NULL) {
       mcs->clear_number_of_breakpoints();
@@ -291,8 +286,8 @@ class Method : public Metadata {
 
 #if COMPILER2_OR_JVMCI
   // Count of times method was exited via exception while interpreting
-  void interpreter_throwout_increment(TRAPS) {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void interpreter_throwout_increment(Thread* current) {
+    MethodCounters* mcs = get_method_counters(current);
     if (mcs != NULL) {
       mcs->interpreter_throwout_increment();
     }
@@ -372,23 +367,17 @@ class Method : public Metadata {
 
   bool init_method_counters(MethodCounters* counters);
 
-#ifdef TIERED
-  // We are reusing interpreter_invocation_count as a holder for the previous event count!
-  // We can do that since interpreter_invocation_count is not used in tiered.
-  int prev_event_count() const                   {
-    if (method_counters() == NULL) {
-      return 0;
-    } else {
-      return method_counters()->interpreter_invocation_count();
-    }
+  int prev_event_count() const {
+    MethodCounters* mcs = method_counters();
+    return mcs == NULL ? 0 : mcs->prev_event_count();
   }
   void set_prev_event_count(int count) {
     MethodCounters* mcs = method_counters();
     if (mcs != NULL) {
-      mcs->set_interpreter_invocation_count(count);
+      mcs->set_prev_event_count(count);
     }
   }
-  jlong prev_time() const                        {
+  jlong prev_time() const {
     MethodCounters* mcs = method_counters();
     return mcs == NULL ? 0 : mcs->prev_time();
   }
@@ -398,7 +387,7 @@ class Method : public Metadata {
       mcs->set_prev_time(time);
     }
   }
-  float rate() const                             {
+  float rate() const {
     MethodCounters* mcs = method_counters();
     return mcs == NULL ? 0 : mcs->rate();
   }
@@ -409,19 +398,6 @@ class Method : public Metadata {
     }
   }
 
-#if INCLUDE_AOT
-  void set_aot_code(CompiledMethod* aot_code) {
-    _aot_code = aot_code;
-  }
-
-  CompiledMethod* aot_code() const {
-    return _aot_code;
-  }
-#else
-  CompiledMethod* aot_code() const { return NULL; }
-#endif // INCLUDE_AOT
-#endif // TIERED
-
   int nmethod_age() const {
     if (method_counters() == NULL) {
       return INT_MAX;
@@ -430,38 +406,24 @@ class Method : public Metadata {
     }
   }
 
-  int invocation_count();
-  int backedge_count();
+  int invocation_count() const;
+  int backedge_count() const;
 
   bool was_executed_more_than(int n);
-  bool was_never_executed()                      { return !was_executed_more_than(0); }
+  bool was_never_executed()                     { return !was_executed_more_than(0);  }
 
   static void build_interpreter_method_data(const methodHandle& method, TRAPS);
 
-  static MethodCounters* build_method_counters(Method* m, TRAPS);
+  static MethodCounters* build_method_counters(Thread* current, Method* m);
 
-  int interpreter_invocation_count() {
-    if (TieredCompilation) {
-      return invocation_count();
-    } else {
-      MethodCounters* mcs = method_counters();
-      return (mcs == NULL) ? 0 : mcs->interpreter_invocation_count();
-    }
-  }
-#if COMPILER2_OR_JVMCI
-  int increment_interpreter_invocation_count(TRAPS) {
-    if (TieredCompilation) ShouldNotReachHere();
-    MethodCounters* mcs = get_method_counters(CHECK_0);
-    return (mcs == NULL) ? 0 : mcs->increment_interpreter_invocation_count();
-  }
-#endif
+  int interpreter_invocation_count()            { return invocation_count();          }
 
 #ifndef PRODUCT
-  int  compiled_invocation_count() const         { return _compiled_invocation_count;  }
-  void set_compiled_invocation_count(int count)  { _compiled_invocation_count = count; }
+  int64_t  compiled_invocation_count() const    { return _compiled_invocation_count;}
+  void set_compiled_invocation_count(int count) { _compiled_invocation_count = (int64_t)count; }
 #else
   // for PrintMethodData in a product build
-  int  compiled_invocation_count() const         { return 0;  }
+  int64_t  compiled_invocation_count() const    { return 0; }
 #endif // not PRODUCT
 
   // Clear (non-shared space) pointers which could not be relevant
@@ -485,13 +447,7 @@ private:
 public:
   static void set_code(const methodHandle& mh, CompiledMethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
-    constMethod()->set_adapter_entry(adapter);
-  }
-  void set_adapter_trampoline(AdapterHandlerEntry** trampoline) {
-    constMethod()->set_adapter_trampoline(trampoline);
-  }
-  void update_adapter_trampoline(AdapterHandlerEntry* adapter) {
-    constMethod()->update_adapter_trampoline(adapter);
+    _adapter = adapter;
   }
   void set_from_compiled_entry(address entry) {
     _from_compiled_entry =  entry;
@@ -502,7 +458,7 @@ public:
   address get_c2i_unverified_entry();
   address get_c2i_no_clinit_check_entry();
   AdapterHandlerEntry* adapter() const {
-    return constMethod()->adapter();
+    return _adapter;
   }
   // setup entry points
   void link_method(const methodHandle& method, TRAPS);
@@ -537,8 +493,6 @@ public:
   address interpreter_entry() const              { return _i2i_entry; }
   // Only used when first initialize so we can set _i2i_entry and _from_interpreted_entry
   void set_interpreter_entry(address entry) {
-    assert(!is_shared(),
-           "shared method's interpreter entry should not be changed at run time");
     if (_i2i_entry != entry) {
       _i2i_entry = entry;
     }
@@ -627,7 +581,6 @@ public:
   bool is_synchronized() const                   { return access_flags().is_synchronized();}
   bool is_native() const                         { return access_flags().is_native();      }
   bool is_abstract() const                       { return access_flags().is_abstract();    }
-  bool is_strict() const                         { return access_flags().is_strict();      }
   bool is_synthetic() const                      { return access_flags().is_synthetic();   }
 
   // returns true if contains only return operation
@@ -703,10 +656,6 @@ public:
   // simultaneously. Use with caution.
   bool has_compiled_code() const;
 
-#ifdef TIERED
-  bool has_aot_code() const                      { return aot_code() != NULL; }
-#endif
-
   bool needs_clinit_barrier() const;
 
   // sizing
@@ -715,7 +664,7 @@ public:
   }
   static int size(bool is_native);
   int size() const                               { return method_size(); }
-  void log_touched(TRAPS);
+  void log_touched(Thread* current);
   static void print_touched_methods(outputStream* out);
 
   // interpreter support
@@ -792,20 +741,6 @@ public:
   bool is_deleted() const                           { return access_flags().is_deleted(); }
   void set_is_deleted()                             { _access_flags.set_is_deleted(); }
 
-  bool is_running_emcp() const {
-    // EMCP methods are old but not obsolete or deleted. Equivalent
-    // Modulo Constant Pool means the method is equivalent except
-    // the constant pool and instructions that access the constant
-    // pool might be different.
-    // If a breakpoint is set in a redefined method, its EMCP methods that are
-    // still running must have a breakpoint also.
-    return (_flags & _running_emcp) != 0;
-  }
-
-  void set_running_emcp(bool x) {
-    _flags = x ? (_flags | _running_emcp) : (_flags & ~_running_emcp);
-  }
-
   bool on_stack() const                             { return access_flags().on_stack(); }
   void set_on_stack(const bool value);
 
@@ -852,7 +787,7 @@ public:
 
   // Clear methods
   static void clear_jmethod_ids(ClassLoaderData* loader_data);
-  static void print_jmethod_ids(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
+  static void print_jmethod_ids_count(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist
   jmethodID jmethod_id();
@@ -869,7 +804,7 @@ public:
   void     set_intrinsic_id(vmIntrinsicID id) {                           _intrinsic_id = (u2) id; }
 
   // Helper routines for intrinsic_id() and vmIntrinsics::method().
-  void init_intrinsic_id();     // updates from _none if a match
+  void init_intrinsic_id(vmSymbolID klass_id);     // updates from _none if a match
   static vmSymbolID klass_id_for_intrinsics(const Klass* holder);
 
   bool caller_sensitive() {
@@ -974,9 +909,9 @@ public:
   void print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason);
 
  public:
-  MethodCounters* get_method_counters(TRAPS) {
+  MethodCounters* get_method_counters(Thread* current) {
     if (_method_counters == NULL) {
-      build_method_counters(this, CHECK_AND_CLEAR_NULL);
+      build_method_counters(current, this);
     }
     return _method_counters;
   }

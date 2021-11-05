@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "gc/shared/gcId.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -66,14 +67,16 @@ size_t GCId::print_prefix(char* buf, size_t len) {
   return 0;
 }
 
-GCIdMark::GCIdMark() : _previous_gc_id(currentNamedthread()->gc_id()) {
+GCIdMark::GCIdMark() {
+  assert(currentNamedthread()->gc_id() == GCId::undefined(), "nested");
   currentNamedthread()->set_gc_id(GCId::create());
 }
 
-GCIdMark::GCIdMark(uint gc_id) : _previous_gc_id(currentNamedthread()->gc_id()) {
+GCIdMark::GCIdMark(uint gc_id) {
+  assert(currentNamedthread()->gc_id() == GCId::undefined(), "nested");
   currentNamedthread()->set_gc_id(gc_id);
 }
 
 GCIdMark::~GCIdMark() {
-  currentNamedthread()->set_gc_id(_previous_gc_id);
+  currentNamedthread()->set_gc_id(GCId::undefined());
 }

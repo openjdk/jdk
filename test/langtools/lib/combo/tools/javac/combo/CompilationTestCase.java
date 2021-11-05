@@ -121,6 +121,10 @@ public class CompilationTestCase extends JavacTemplateTestBase {
         return assertCompile(expandMarkers(constructs), this::assertCompileSucceeded, generate);
     }
 
+    protected File assertOK(Consumer<Diagnostic<?>> diagConsumer, String... constructs) {
+        return assertCompile(expandMarkers(constructs), () -> assertCompileSucceeded(diagConsumer), false);
+    }
+
     protected void assertOKWithWarning(String warning, String... constructs) {
         assertCompile(expandMarkers(constructs), () -> assertCompileSucceededWithWarning(warning), false);
     }

@@ -83,11 +83,11 @@ import javax.security.sasl.*;
 
 final class NTLMServer implements SaslServer {
 
-    private final static String NTLM_VERSION =
+    private static final String NTLM_VERSION =
             "com.sun.security.sasl.ntlm.version";
-    private final static String NTLM_DOMAIN =
+    private static final String NTLM_DOMAIN =
             "com.sun.security.sasl.ntlm.domain";
-    private final static String NTLM_HOSTNAME =
+    private static final String NTLM_HOSTNAME =
             "com.sun.security.sasl.ntlm.hostname";
     private static final String NTLM_RANDOM =
             "com.sun.security.sasl.ntlm.random";

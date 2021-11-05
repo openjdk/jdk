@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -496,7 +496,11 @@ public class BasicScrollPaneUI
 
     /**
      * Listener for viewport events.
+     * This class exists only for backward compatibility.
+     * All its functionality has been moved into Handler.
+     * @deprecated
      */
+    @Deprecated(since = "17")
     public class ViewportChangeHandler implements ChangeListener
     {
         /**
@@ -526,7 +530,11 @@ public class BasicScrollPaneUI
 
     /**
      * Horizontal scrollbar listener.
+     * This class exists only for backward compatibility.
+     * All its functionality has been moved into Handler.
+     * @deprecated
      */
+    @Deprecated(since = "17")
     public class HSBChangeListener implements ChangeListener
     {
         /**
@@ -565,7 +573,11 @@ public class BasicScrollPaneUI
 
     /**
      * Vertical scrollbar listener.
+     * This class exists only for backward compatibility.
+     * All its functionality has been moved into Handler.
+     * @deprecated
      */
+    @Deprecated(since = "17")
     public class VSBChangeListener implements ChangeListener
     {
         /**
@@ -770,7 +782,11 @@ public class BasicScrollPaneUI
 
     /**
      * Property change handler.
+     * This class exists only for backward compatibility.
+     * All its functionality has been moved into Handler.
+     * @deprecated
      */
+    @Deprecated(since = "17")
     public class PropertyChangeHandler implements PropertyChangeListener
     {
         /**

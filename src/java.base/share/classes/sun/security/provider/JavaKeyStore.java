@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,6 +281,9 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
         if (!(key instanceof java.security.PrivateKey)) {
             throw new KeyStoreException("Cannot store non-PrivateKeys");
         }
+        if (password == null) {
+            throw new KeyStoreException("password can't be null");
+        }
         try {
             synchronized(entries) {
                 KeyEntry entry = new KeyEntry();
@@ -551,7 +554,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
              *     }
              *
              * ended by a keyed SHA1 hash (bytes only) of
-             *     { password + whitener + preceding body }
+             *     { password + extra data + preceding body }
              */
 
             // password is mandatory when storing
@@ -807,9 +810,9 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
                 if (!MessageDigest.isEqual(computed, actual)) {
                     Throwable t = new UnrecoverableKeyException
                             ("Password verification failed");
-                    throw (IOException) new IOException
+                    throw new IOException
                             ("Keystore was tampered with, or "
-                                    + "password was incorrect").initCause(t);
+                                    + "password was incorrect", t);
                 }
             }
         }
@@ -817,7 +820,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
 
     /**
      * To guard against tampering with the keystore, we append a keyed
-     * hash with a bit of whitener.
+     * hash with a bit of extra data.
      */
     private MessageDigest getPreKeyedHash(char[] password)
         throws NoSuchAlgorithmException

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ address StubRoutines::x86::_vector_short_to_byte_mask = NULL;
 address StubRoutines::x86::_vector_int_to_byte_mask = NULL;
 address StubRoutines::x86::_vector_int_to_short_mask = NULL;
 address StubRoutines::x86::_vector_all_bits_set = NULL;
+address StubRoutines::x86::_vector_byte_shuffle_mask = NULL;
 address StubRoutines::x86::_vector_short_shuffle_mask = NULL;
 address StubRoutines::x86::_vector_int_shuffle_mask = NULL;
 address StubRoutines::x86::_vector_long_shuffle_mask = NULL;
@@ -64,14 +65,22 @@ address StubRoutines::x86::_k256_W_adr = NULL;
 address StubRoutines::x86::_k512_W_addr = NULL;
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr_sha512 = NULL;
 // Base64 masks
-address StubRoutines::x86::_bswap_mask = NULL;
-address StubRoutines::x86::_base64_charset = NULL;
-address StubRoutines::x86::_gather_mask = NULL;
-address StubRoutines::x86::_right_shift_mask = NULL;
-address StubRoutines::x86::_left_shift_mask = NULL;
-address StubRoutines::x86::_and_mask = NULL;
-address StubRoutines::x86::_url_charset = NULL;
+address StubRoutines::x86::_encoding_table_base64 = NULL;
+address StubRoutines::x86::_shuffle_base64 = NULL;
+address StubRoutines::x86::_avx2_shuffle_base64 = NULL;
+address StubRoutines::x86::_avx2_input_mask_base64 = NULL;
+address StubRoutines::x86::_avx2_lut_base64 = NULL;
 address StubRoutines::x86::_counter_mask_addr = NULL;
+address StubRoutines::x86::_lookup_lo_base64 = NULL;
+address StubRoutines::x86::_lookup_hi_base64 = NULL;
+address StubRoutines::x86::_lookup_lo_base64url = NULL;
+address StubRoutines::x86::_lookup_hi_base64url = NULL;
+address StubRoutines::x86::_pack_vec_base64 = NULL;
+address StubRoutines::x86::_join_0_1_base64 = NULL;
+address StubRoutines::x86::_join_1_2_base64 = NULL;
+address StubRoutines::x86::_join_2_3_base64 = NULL;
+address StubRoutines::x86::_decoding_table_base64 = NULL;
+address StubRoutines::x86::_ghash_poly512_addr = NULL;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
 
@@ -223,6 +232,25 @@ juint StubRoutines::x86::_shuf_table_crc32_avx512[] =
     0x83828100UL, 0x87868584UL, 0x8b8a8988UL, 0x8f8e8d8cUL,
     0x03020100UL, 0x07060504UL, 0x0b0a0908UL, 0x000e0d0cUL
 };
+
+juint StubRoutines::x86::_adler32_ascale_table[] =
+{
+    0x00000000UL, 0x00000001UL, 0x00000002UL, 0x00000003UL,
+    0x00000004UL, 0x00000005UL, 0x00000006UL, 0x00000007UL
+};
+
+juint StubRoutines::x86::_adler32_shuf0_table[] =
+{
+    0xFFFFFF00UL, 0xFFFFFF01UL, 0xFFFFFF02UL, 0xFFFFFF03UL,
+    0xFFFFFF04UL, 0xFFFFFF05UL, 0xFFFFFF06UL, 0xFFFFFF07UL
+};
+
+juint StubRoutines::x86::_adler32_shuf1_table[] =
+{
+    0xFFFFFF08UL, 0xFFFFFF09, 0xFFFFFF0AUL, 0xFFFFFF0BUL,
+    0xFFFFFF0CUL, 0xFFFFFF0D, 0xFFFFFF0EUL, 0xFFFFFF0FUL
+};
+
 #endif // _LP64
 
 #define D 32

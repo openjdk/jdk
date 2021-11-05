@@ -108,6 +108,7 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
     /*
      * Try to get an InputStream based on the file we pass in.
      */
+    @SuppressWarnings("removal")
     private static FileInputStream getFileInputStream(final File file)
             throws Exception {
         return AccessController.doPrivileged(

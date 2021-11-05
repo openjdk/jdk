@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestResizeTLAB
+ * @test id=passive
  * @key randomness
  * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
  * @requires vm.gc.Shenandoah
@@ -59,7 +59,7 @@
  */
 
 /*
- * @test TestResizeTLAB
+ * @test id=aggressive
  * @key randomness
  * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
  * @requires vm.gc.Shenandoah
@@ -79,7 +79,7 @@
  */
 
 /*
- * @test TestResizeTLAB
+ * @test id=adaptive
  * @key randomness
  * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
  * @requires vm.gc.Shenandoah
@@ -99,7 +99,7 @@
  */
 
 /*
- * @test TestResizeTLAB
+ * @test id=static
  * @key randomness
  * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
  * @requires vm.gc.Shenandoah
@@ -119,7 +119,7 @@
  */
 
 /*
- * @test TestResizeTLAB
+ * @test id=compact
  * @key randomness
  * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
  * @requires vm.gc.Shenandoah
@@ -139,7 +139,7 @@
  */
 
 /*
- * @test TestResizeTLAB
+ * @test id=iu-aggressive
  * @key randomness
  * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
  * @requires vm.gc.Shenandoah
@@ -159,7 +159,7 @@
  */
 
 /*
- * @test TestResizeTLAB
+ * @test id=iu
  * @key randomness
  * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
  * @requires vm.gc.Shenandoah

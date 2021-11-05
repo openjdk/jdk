@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,10 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import javax.accessibility.Accessible;
@@ -1455,7 +1457,7 @@ public class JFileChooser extends JComponent implements Accessible {
         fileFilter = filter;
         if (filter != null) {
             if (isMultiSelectionEnabled() && selectedFiles != null && selectedFiles.length > 0) {
-                Vector<File> fList = new Vector<File>();
+                ArrayList<File> fList = new ArrayList<File>();
                 boolean failed = false;
                 for (File file : selectedFiles) {
                     if (filter.accept(file)) {
@@ -1871,6 +1873,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void readObject(java.io.ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = in.readFields();
@@ -1918,6 +1921,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         FileSystemView fsv = null;
 

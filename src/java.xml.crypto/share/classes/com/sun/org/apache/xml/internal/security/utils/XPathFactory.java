@@ -29,33 +29,28 @@ package com.sun.org.apache.xml.internal.security.utils;
  */
 public abstract class XPathFactory {
 
-    private static boolean xalanInstalled;
+    private static final boolean xalanInstalled;
 
     static {
+        boolean installed = false;
         try {
             Class<?> funcTableClass =
                 ClassLoaderUtils.loadClass("com.sun.org.apache.xpath.internal.compiler.FunctionTable", XPathFactory.class);
             if (funcTableClass != null) {
-                xalanInstalled = true;
+                installed = true;
             }
         } catch (Exception e) { //NOPMD
             //ignore
         }
-    }
-
-    protected static synchronized boolean isXalanInstalled() {
-        return xalanInstalled;
+        xalanInstalled = installed;
     }
 
     /**
      * Get a new XPathFactory instance
      */
     public static XPathFactory newInstance() {
-        if (!isXalanInstalled()) {
-            return new JDKXPathFactory();
-        }
         // Xalan is available
-        if (XalanXPathAPI.isInstalled()) {
+        if (xalanInstalled && XalanXPathAPI.isInstalled()) {
             return new XalanXPathFactory();
         }
         // Some problem was encountered in fixing up the Xalan FunctionTable so fall back to the

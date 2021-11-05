@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,9 +77,9 @@ public class TestJmapCore {
 
         // If we are going to force a core dump, apply "ulimit -c unlimited" if we can.
         pb = CoreUtils.addCoreUlimitCommand(pb);
-        OutputAnalyzer output =  ProcessTools.executeProcess(pb);
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
 
-        String coreFileName = CoreUtils.getCoreFileLocation(output.getStdout());
+        String coreFileName = CoreUtils.getCoreFileLocation(output.getStdout(), output.pid());
         File core = new File(coreFileName);
         File dumpFile = new File("heap.hprof");
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");

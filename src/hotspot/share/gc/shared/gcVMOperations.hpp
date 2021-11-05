@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,11 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "memory/heapInspection.hpp"
 #include "memory/metaspace.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/vmOperations.hpp"
+#include "runtime/vmOperation.hpp"
 
 // The following class hierarchy represents
 // a set of operations (VM_Operation) related to GC.
@@ -246,8 +244,6 @@ class VM_CollectForMetadataAllocation: public VM_GC_Operation {
   virtual VMOp_Type type() const { return VMOp_CollectForMetadataAllocation; }
   virtual void doit();
   MetaWord* result() const       { return _result; }
-
-  bool initiate_concurrent_GC();
 };
 
 class SvcGCMarker : public StackObj {

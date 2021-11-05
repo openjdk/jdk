@@ -518,7 +518,7 @@ public abstract class AbstractDrbg {
      * assumed to support prediction resistance and always contains
      * full-entropy.
      */
-    private final static EntropySource defaultES =
+    private static final EntropySource defaultES =
             (minE, minLen, maxLen, pr) -> {
         byte[] result = new byte[minLen];
         SeedGenerator.generateSeed(result);

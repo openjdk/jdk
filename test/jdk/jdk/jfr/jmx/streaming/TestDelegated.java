@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -27,6 +25,7 @@ package jdk.jfr.jmx.streaming;
 
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 
 import javax.management.MBeanServerConnection;
@@ -65,6 +64,8 @@ public class TestDelegated {
         testSetMaxAge();
         testAwaitTermination();
         testAwaitTerminationWithDuration();
+        testSetStartTime();
+        testSetEndTime();
     }
 
     private static void testSetMaxAge() throws Exception {
@@ -168,7 +169,6 @@ public class TestDelegated {
             e.commit();
             latch.await();
         }
-
     }
 
     private static void testOrdered() throws Exception {
@@ -198,6 +198,34 @@ public class TestDelegated {
             if (rs.remove(r2)) {
                 throw new Exception("Expected remove to return false");
             }
+        }
+    }
+
+    private static void testSetEndTime() throws Exception {
+        Instant t = Instant.now().plus(Duration.ofDays(1));
+        try (RemoteRecordingStream stream = new RemoteRecordingStream(CONNECTION)) {
+            stream.setEndTime(t);
+            stream.onEvent(e -> {
+                stream.close();
+            });
+            stream.startAsync();
+            TestDelegatedEvent e = new TestDelegatedEvent();
+            e.commit();
+            stream.awaitTermination();
+        }
+    }
+
+    private static void testSetStartTime() throws Exception {
+        Instant t = Instant.now().minus(Duration.ofDays(1));
+        try (RemoteRecordingStream stream = new RemoteRecordingStream(CONNECTION)) {
+            stream.setStartTime(t);
+            stream.onEvent(e -> {
+                stream.close();
+            });
+            stream.startAsync();
+            TestDelegatedEvent e = new TestDelegatedEvent();
+            e.commit();
+            stream.awaitTermination();
         }
     }
 }

@@ -72,7 +72,7 @@ public class MultiReleaseJarProperties {
 
     @BeforeClass
     public void initialize() throws Exception {
-        CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
+        CreateMultiReleaseTestJars creator = new CreateMultiReleaseTestJars();
         creator.compileEntries();
         creator.buildMultiReleaseJar();
         int RUNTIME_VERSION = Runtime.version().major();
@@ -99,7 +99,7 @@ public class MultiReleaseJarProperties {
 
     @AfterClass
     public void close() throws IOException {
-        ((URLClassLoader)cldr).close();
+        ((URLClassLoader) cldr).close();
         Files.delete(multirelease.toPath());
     }
 

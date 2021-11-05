@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,17 @@ package javax.swing.tree;
    // ISSUE: this class depends on nothing in AWT -- move to java.util?
 
 import java.beans.Transient;
-import java.io.*;
-import java.util.*;
-
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.EmptyStackException;
+import java.util.Enumeration;
+import java.util.NoSuchElementException;
+import java.util.Stack;
+import java.util.Vector;
 
 /**
  * A <code>DefaultMutableTreeNode</code> is a general-purpose node in a tree data
@@ -89,6 +97,10 @@ import java.util.*;
 public class DefaultMutableTreeNode implements Cloneable,
        MutableTreeNode, Serializable
 {
+    /**
+     * Use serialVersionUID from JDK 1.7 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = -4298474751201349152L;
 
     /**
@@ -1280,6 +1292,7 @@ public class DefaultMutableTreeNode implements Cloneable,
 
 
     // Serialization support.
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Object[]             tValues;
 
@@ -1295,6 +1308,7 @@ public class DefaultMutableTreeNode implements Cloneable,
         s.writeObject(tValues);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
 

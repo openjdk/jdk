@@ -514,12 +514,8 @@ public class Attributes implements Map<Object,Object>, Cloneable {
             if (this == o) {
                 return true;
             }
-            if (o instanceof Name) {
-                Name other = (Name)o;
-                return other.name.equalsIgnoreCase(name);
-            } else {
-                return false;
-            }
+            return o instanceof Name other
+                    && other.name.equalsIgnoreCase(name);
         }
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ public final class ExternalHashingTest {
         for (int i = 0; i < BATCH_SIZE; i++) {
             /* Add all of the results of this pass to the global list. */
             allObjects.add(hashedList[i]);
-            allHashes.add(new Integer(foundHashes[i]));
+            allHashes.add(Integer.valueOf(foundHashes[i]));
 
             /* Create even more garbage for the GC to find */
             garbageMonger[i] = new Object();

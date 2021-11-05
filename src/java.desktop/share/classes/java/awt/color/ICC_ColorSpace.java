@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 package java.awt.color;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serial;
 
 import sun.java2d.cmm.CMSManager;
 import sun.java2d.cmm.ColorTransform;
@@ -82,6 +84,7 @@ public class ICC_ColorSpace extends ColorSpace {
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 3455889114070431483L;
 
     /**
@@ -128,18 +131,18 @@ public class ICC_ColorSpace extends ColorSpace {
      * @throws IllegalArgumentException if profile is inappropriate for
      *         representing a {@code ColorSpace}
      */
-    public ICC_ColorSpace (ICC_Profile profile) {
-        super (profile.getColorSpaceType(), profile.getNumComponents());
+    public ICC_ColorSpace(ICC_Profile profile) {
+        super(profile.getColorSpaceType(), profile.getNumComponents());
 
         int profileClass = profile.getProfileClass();
 
         /* REMIND - is NAMEDCOLOR OK? */
-        if ((profileClass != ICC_Profile.CLASS_INPUT) &&
-            (profileClass != ICC_Profile.CLASS_DISPLAY) &&
-            (profileClass != ICC_Profile.CLASS_OUTPUT) &&
-            (profileClass != ICC_Profile.CLASS_COLORSPACECONVERSION) &&
-            (profileClass != ICC_Profile.CLASS_NAMEDCOLOR) &&
-            (profileClass != ICC_Profile.CLASS_ABSTRACT)) {
+        if (profileClass != ICC_Profile.CLASS_INPUT
+                && profileClass != ICC_Profile.CLASS_DISPLAY
+                && profileClass != ICC_Profile.CLASS_OUTPUT
+                && profileClass != ICC_Profile.CLASS_COLORSPACECONVERSION
+                && profileClass != ICC_Profile.CLASS_NAMEDCOLOR
+                && profileClass != ICC_Profile.CLASS_ABSTRACT) {
             throw new IllegalArgumentException("Invalid profile type");
         }
 
@@ -155,9 +158,9 @@ public class ICC_ColorSpace extends ColorSpace {
      *         not be found
      * @throws IOException if an I/O error occurs
      */
-    private void readObject(java.io.ObjectInputStream s)
-        throws ClassNotFoundException, java.io.IOException {
-
+    @Serial
+    private void readObject(ObjectInputStream s)
+            throws ClassNotFoundException, IOException {
         s.defaultReadObject();
         if (thisProfile == null) {
             thisProfile = ICC_Profile.getInstance(ColorSpace.CS_sRGB);
@@ -219,7 +222,7 @@ public class ICC_ColorSpace extends ColorSpace {
                 ((colorvalue[i] - minVal[i]) * invDiffMinMax[i] + 0.5f);
         }
         tmp = this2srgb.colorConvert(tmp, null);
-        float[] result = new float [3];
+        float[] result = new float[3];
         for (int i = 0; i < 3; i++) {
             result[i] = ((float) (tmp[i] & 0xffff)) / 65535.0f;
         }
@@ -270,7 +273,7 @@ public class ICC_ColorSpace extends ColorSpace {
         }
         tmp = srgb2this.colorConvert(tmp, null);
         int nc = this.getNumComponents();
-        float[] result = new float [nc];
+        float[] result = new float[nc];
         for (int i = 0; i < nc; i++) {
             result[i] = (((float) (tmp[i] & 0xffff)) / 65535.0f) *
                         diffMinMax[i] + minVal[i];
@@ -411,7 +414,7 @@ public class ICC_ColorSpace extends ColorSpace {
         tmp = this2xyz.colorConvert(tmp, null);
         float ALMOST_TWO = 1.0f + (32767.0f / 32768.0f);
         // For CIEXYZ, min = 0.0, max = ALMOST_TWO for all components
-        float[] result = new float [3];
+        float[] result = new float[3];
         for (int i = 0; i < 3; i++) {
             result[i] = (((float) (tmp[i] & 0xffff)) / 65535.0f) * ALMOST_TWO;
         }
@@ -551,7 +554,7 @@ public class ICC_ColorSpace extends ColorSpace {
         }
         tmp = xyz2this.colorConvert(tmp, null);
         int nc = this.getNumComponents();
-        float[] result = new float [nc];
+        float[] result = new float[nc];
         for (int i = 0; i < nc; i++) {
             result[i] = (((float) (tmp[i] & 0xffff)) / 65535.0f) *
                         diffMinMax[i] + minVal[i];
@@ -618,7 +621,7 @@ public class ICC_ColorSpace extends ColorSpace {
             maxVal[2] = 127.0f;
         } else if (type == ColorSpace.TYPE_XYZ) {
             minVal[0] = minVal[1] = minVal[2] = 0.0f; // X, Y, Z
-            maxVal[0] = maxVal[1] = maxVal[2] = 1.0f + (32767.0f/ 32768.0f);
+            maxVal[0] = maxVal[1] = maxVal[2] = 1.0f + (32767.0f / 32768.0f);
         } else {
             for (int i = 0; i < nc; i++) {
                 minVal[i] = 0.0f;
@@ -639,5 +642,4 @@ public class ICC_ColorSpace extends ColorSpace {
         }
         needScaleInit = false;
     }
-
 }

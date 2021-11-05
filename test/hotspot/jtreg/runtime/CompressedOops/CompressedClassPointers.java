@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
  * @requires vm.bits == 64 & !vm.graal.enabled
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -93,18 +94,42 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx30g",
-            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             logging_option,
             "-Xshare:off",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        if (testNarrowKlassBase() && !Platform.isAix()) {
-            // AIX: the heap cannot be placed below 32g. The first attempt to
-            // place the CCS behind the heap fails (luckily). Subsequently CCS
-            // is successfully placed below 32g. So we get 0x0 as narrow klass
-            // base.
+        if (testNarrowKlassBase() && !Platform.isPPC() && !Platform.isOSX()) {
+            // PPC: in most cases the heap cannot be placed below 32g so there
+            // is room for ccs and narrow klass base will be 0x0. Exception:
+            // Linux 4.1.42 or earlier (see ELF_ET_DYN_BASE in JDK-8244847).
+            // For simplicity we exclude PPC.
+            // OSX: similar.
             output.shouldNotContain("Narrow klass base: 0x0000000000000000");
             output.shouldContain("Narrow klass shift: 0");
+        }
+        output.shouldHaveExitValue(0);
+    }
+
+    // Settings as in largeHeapTest() except for max heap size. We make max heap
+    // size even larger such that it cannot fit into lower 32G but not too large
+    // for compressed oops.
+    // We expect a zerobased ccs.
+    public static void largeHeapAbove32GTest() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-Xmx31g",
+            logging_option,
+            "-Xshare:off",
+            "-XX:+VerifyBeforeGC", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        if (testNarrowKlassBase()) {
+            if (!(Platform.isAArch64() && Platform.isOSX())) { // see JDK-8262895
+                output.shouldContain("Narrow klass base: 0x0000000000000000");
+                if (!Platform.isAArch64() && !Platform.isOSX()) {
+                    output.shouldContain("Narrow klass shift: 0");
+                }
+            }
         }
         output.shouldHaveExitValue(0);
     }
@@ -213,7 +238,6 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx30g",
-            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             "-Xlog:gc+metaspace=trace",
             "-Xshare:off",
             "-Xlog:cds=trace",
@@ -297,6 +321,7 @@ public class CompressedClassPointers {
         smallHeapTest();
         smallHeapTestWith1G();
         largeHeapTest();
+        largeHeapAbove32GTest();
         largePagesForHeapTest();
         heapBaseMinAddressTest();
         sharingTest();

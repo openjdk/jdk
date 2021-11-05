@@ -200,13 +200,20 @@ bool JfrStackTrace::record_thread(JavaThread& thread, frame& frame) {
     } else {
       bci = st.bci();
     }
+
+    intptr_t* frame_id = st.frame_id();
+    st.samples_next();
+    if (type == JfrStackFrame::FRAME_JIT && !st.at_end() && frame_id == st.frame_id()) {
+      // This frame and the caller frame are both the same physical
+      // frame, so this frame is inlined into the caller.
+      type = JfrStackFrame::FRAME_INLINE;
+    }
+
     const int lineno = method->line_number_from_bci(bci);
-    // Can we determine if it's inlined?
     _hash = (_hash * 31) + mid;
     _hash = (_hash * 31) + bci;
     _hash = (_hash * 31) + type;
     _frames[count] = JfrStackFrame(mid, bci, type, lineno, method->method_holder());
-    st.samples_next();
     count++;
   }
 
@@ -259,11 +266,18 @@ bool JfrStackTrace::record_safe(JavaThread* thread, int skip) {
     else {
       bci = vfs.bci();
     }
+    intptr_t* frame_id = vfs.frame_id();
+    vfs.next();
+    if (type == JfrStackFrame::FRAME_JIT && !vfs.at_end() && frame_id == vfs.frame_id()) {
+      // This frame and the caller frame are both the same physical
+      // frame, so this frame is inlined into the caller.
+      type = JfrStackFrame::FRAME_INLINE;
+    }
+
     _hash = (_hash * 31) + mid;
     _hash = (_hash * 31) + bci;
     _hash = (_hash * 31) + type;
     _frames[count] = JfrStackFrame(mid, bci, type, method->method_holder());
-    vfs.next();
     count++;
   }
 

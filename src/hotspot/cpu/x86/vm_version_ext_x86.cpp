@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -739,7 +739,7 @@ const char* const VM_Version_Ext::_family_id_amd[ExtendedFamilyIdLength_AMD] = {
   "",
   "",
   "Opteron/Athlon64",
-  "Opteron QC/Phenom"  // Barcelona et.al.
+  "Opteron QC/Phenom",  // Barcelona et.al.
   "",
   "",
   "",
@@ -948,7 +948,7 @@ const char* const VM_Version_Ext::_feature_ecx_id[] = {
 
 const char* const VM_Version_Ext::_feature_extended_ecx_id[] = {
   "LAHF/SAHF instruction support",
-  "Core multi-processor leagacy mode",
+  "Core multi-processor legacy mode",
   "",
   "",
   "",

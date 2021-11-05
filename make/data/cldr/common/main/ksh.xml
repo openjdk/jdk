@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1395,9 +1395,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat type="daylight" draft="contributed">Summerzick vun {0}</regionFormat>
 			<regionFormat type="standard" draft="contributed">Schtandattzick vun {0}</regionFormat>
 			<fallbackFormat draft="contributed">{1} ({0})</fallbackFormat>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity draft="contributed">Honululu</exemplarCity>
-			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity draft="contributed">- weße mer nit -</exemplarCity>
 			</zone>
@@ -1623,6 +1620,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity draft="contributed">Saporischschja</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity draft="contributed">Honululu</exemplarCity>
 			</zone>
 			<zone type="America/Yakutat">
 				<exemplarCity draft="contributed">Jakutat</exemplarCity>

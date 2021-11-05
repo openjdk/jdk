@@ -28,7 +28,6 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/debug.hpp"

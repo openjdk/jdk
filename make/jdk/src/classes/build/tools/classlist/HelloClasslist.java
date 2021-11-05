@@ -116,6 +116,12 @@ public class HelloClasslist {
                 DateFormat.getDateInstance(DateFormat.DEFAULT, Locale.ROOT)
                         .format(new Date()));
 
+        // A selection of trivial and common reflection operations
+        var instance = HelloClasslist.class.getConstructor().newInstance();
+        HelloClasslist.class.getMethod("staticMethod_V").invoke(null);
+        var obj = HelloClasslist.class.getMethod("staticMethod_L_L", Object.class).invoke(null, instance);
+        HelloClasslist.class.getField("field").get(instance);
+
         // A selection of trivial and relatively common MH operations
         invoke(MethodHandles.identity(double.class), 1.0);
         invoke(MethodHandles.identity(int.class), 1);
@@ -126,7 +132,13 @@ public class HelloClasslist {
         LOGGER.log(Level.FINE, "New Date: " + newDate + " - old: " + oldDate);
     }
 
+    public HelloClasslist() {}
+
+    public String field = "someValue";
+
     public static void staticMethod_V() {}
+
+    public static Object staticMethod_L_L(Object o) { return o; }
 
     private static MethodHandle handle(String name, MethodType type) throws Throwable {
         return MethodHandles.lookup().findStatic(HelloClasslist.class, name, type);

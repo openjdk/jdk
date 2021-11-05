@@ -33,9 +33,7 @@ import javax.lang.model.element.VariableElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.EnumConstantWriter;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -71,7 +69,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     @Override
     public void addSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.constantsSummary,
-                SectionName.ENUM_CONSTANT_SUMMARY, summariesList, content);
+                HtmlIds.ENUM_CONSTANT_SUMMARY, summariesList, content);
     }
 
     @Override
@@ -90,10 +88,10 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
             Content enumConstantsDetailsTree) {
         Content enumConstantsTree = new ContentBuilder();
         HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
-                new StringContent(name(enumConstant)));
+                Text.of(name(enumConstant)));
         enumConstantsTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, enumConstantsTree)
-                .setId(name(enumConstant));
+                .setId(htmlIds.forMember(enumConstant));
     }
 
     @Override
@@ -129,7 +127,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
             Content enumConstantsDetailsTree) {
         return writer.getDetailsListItem(
                 HtmlTree.SECTION(HtmlStyle.constantDetails)
-                        .setId(SectionName.ENUM_CONSTANT_DETAIL.getName())
+                        .setId(HtmlIds.ENUM_CONSTANT_DETAIL)
                         .add(enumConstantsDetailsTreeHeader)
                         .add(enumConstantsDetailsTree));
     }
@@ -159,10 +157,10 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected void addSummaryLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element member,
-            Content tdSummary) {
-        Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                writer.getDocLink(context, member, name(member), false));
+    protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element member,
+                                  Content tdSummary) {
+        Content memberLink = writer.getDocLink(context, utils.getEnclosingTypeElement(member), member,
+                name(member), HtmlStyle.memberNameLink);
         Content code = HtmlTree.CODE(memberLink);
         tdSummary.add(code);
     }
@@ -179,7 +177,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     @Override
     protected Content getSummaryLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
-        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
+        return writer.getDocLink(HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
     }
 
     @Override

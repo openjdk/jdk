@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 #ifndef SHARE_GC_SHARED_CONCURRENTGCTHREAD_HPP
 #define SHARE_GC_SHARED_CONCURRENTGCTHREAD_HPP
 
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
 
 class ConcurrentGCThread: public NamedThread {
 private:
@@ -41,6 +43,11 @@ protected:
 public:
   ConcurrentGCThread();
 
+  static ConcurrentGCThread* cast(Thread* t) {
+    assert(t->is_ConcurrentGC_thread(), "incorrect cast to ConcurrentGCThread");
+    return static_cast<ConcurrentGCThread*>(t);
+  }
+
   virtual bool is_ConcurrentGC_thread() const { return true; }
 
   virtual void run();
@@ -48,6 +55,9 @@ public:
 
   bool should_terminate() const;
   bool has_terminated() const;
+
+  // Printing
+  const char* type_name() const { return "ConcurrentGCThread"; }
 };
 
 #endif // SHARE_GC_SHARED_CONCURRENTGCTHREAD_HPP

@@ -23,11 +23,12 @@
 package org.openjdk.bench.jdk.incubator.foreign.points.support;
 
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.CLinker;
+import jdk.incubator.foreign.ResourceScope;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
@@ -38,7 +39,7 @@ import static jdk.incubator.foreign.CLinker.*;
 
 public class PanamaPoint implements AutoCloseable {
 
-    public static final MemoryLayout LAYOUT = MemoryLayout.ofStruct(
+    public static final MemoryLayout LAYOUT = MemoryLayout.structLayout(
         C_INT.withName("x"),
         C_INT.withName("y")
     );
@@ -50,7 +51,8 @@ public class PanamaPoint implements AutoCloseable {
 
     static {
         CLinker abi = CLinker.getInstance();
-        LibraryLookup lookup = LibraryLookup.ofLibrary("Point");
+        System.loadLibrary("Point");
+        SymbolLookup lookup = SymbolLookup.loaderLookup();
         MH_distance = abi.downcallHandle(
             lookup.lookup("distance").get(),
             methodType(double.class, MemorySegment.class, MemorySegment.class),
@@ -66,7 +68,7 @@ public class PanamaPoint implements AutoCloseable {
     private final MemorySegment segment;
 
     public PanamaPoint(int x, int y) {
-        this(MemorySegment.allocateNative(LAYOUT), x, y);
+        this(MemorySegment.allocateNative(LAYOUT, ResourceScope.newConfinedScope()), x, y);
     }
 
     public PanamaPoint(MemorySegment segment, int x, int y) {
@@ -113,6 +115,6 @@ public class PanamaPoint implements AutoCloseable {
 
     @Override
     public void close() {
-        segment.close();
+        segment.scope().close();
     }
 }

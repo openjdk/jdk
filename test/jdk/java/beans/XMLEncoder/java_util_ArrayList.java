@@ -25,6 +25,7 @@
  * @test
  * @bug 4631471
  * @summary Tests ArrayList encoding
+ * @run main/othervm -Djava.security.manager=allow java_util_ArrayList
  * @author Sergey Malenkov
  */
 

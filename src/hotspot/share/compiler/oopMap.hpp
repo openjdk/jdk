@@ -45,6 +45,8 @@ class frame;
 class RegisterMap;
 class OopClosure;
 
+enum class derived_pointer : intptr_t {};
+
 class OopMapValue: public StackObj {
   friend class VMStructs;
 private:
@@ -229,8 +231,7 @@ class OopMapSet : public ResourceObj {
   // Iterates through frame for a compiled method for dead ones and values, too
   static void all_do(const frame* fr, const RegisterMap* reg_map,
                      OopClosure* oop_fn,
-                     void derived_oop_fn(oop* base, oop* derived, OopClosure* oop_fn),
-                     OopClosure* value_fn);
+                     void derived_oop_fn(oop* base, derived_pointer* derived, OopClosure* oop_fn));
 
   // Printing
   void print_on(outputStream* st) const;
@@ -413,12 +414,12 @@ class DerivedPointerTable : public AllStatic {
   friend class VMStructs;
  private:
   class Entry;
-  static bool _active;                      // do not record pointers for verify pass etc.
+  static bool _active;                                  // do not record pointers for verify pass etc.
 
  public:
-  static void clear();                       // Called before scavenge/GC
-  static void add(oop *derived, oop *base);  // Called during scavenge/GC
-  static void update_pointers();             // Called after  scavenge/GC
+  static void clear();                                  // Called before scavenge/GC
+  static void add(derived_pointer* derived, oop *base); // Called during scavenge/GC
+  static void update_pointers();                        // Called after  scavenge/GC
   static bool is_empty();
   static bool is_active()                    { return _active; }
   static void set_active(bool value)         { _active = value; }

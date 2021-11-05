@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ public class setvalues001 {
         // add new int values for array components
         for (int i = ARRAY_FIRST_INDEX; i < ARRAY_FIRST_INDEX + ARRAY_ITEMS_COUNT; i++) {
             int intValue = i * 100 + 1;
-            JDWP.UntaggedValue value = new JDWP.UntaggedValue(new Integer(intValue));
+            JDWP.UntaggedValue value = new JDWP.UntaggedValue(Integer.valueOf(intValue));
             log.display("  untagged_value: " + value);
             command.addUntaggedValue(value, JDWP.Tag.INT);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -100,6 +100,25 @@ class TypedMethodOptionMatcher;
 
 static TypedMethodOptionMatcher* option_list = NULL;
 static bool any_set = false;
+
+// A filter for quick lookup if an option is set
+static bool option_filter[static_cast<int>(CompileCommand::Unknown) + 1] = { 0 };
+
+void command_set_in_filter(enum CompileCommand option) {
+  assert(option != CompileCommand::Unknown, "sanity");
+  assert(option2type(option) != OptionType::Unknown, "sanity");
+
+  if ((option != CompileCommand::DontInline) &&
+      (option != CompileCommand::Inline) &&
+      (option != CompileCommand::Log)) {
+    any_set = true;
+  }
+  option_filter[static_cast<int>(option)] = true;
+}
+
+bool has_command(enum CompileCommand option) {
+  return option_filter[static_cast<int>(option)];
+}
 
 class TypedMethodOptionMatcher : public MethodMatcher {
  private:
@@ -287,14 +306,16 @@ static void register_command(TypedMethodOptionMatcher* matcher,
   }
   assert(CompilerOracle::option_matches_type(option, value), "Value must match option type");
 
+  if (option == CompileCommand::Blackhole && !UnlockExperimentalVMOptions) {
+    warning("Blackhole compile option is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions");
+    return;
+  }
+
   matcher->init(option, option_list);
   matcher->set_value<T>(value);
   option_list = matcher;
-  if ((option != CompileCommand::DontInline) &&
-      (option != CompileCommand::Inline) &&
-      (option != CompileCommand::Log)) {
-    any_set = true;
-  }
+  command_set_in_filter(option);
+
   if (!CompilerOracle::be_quiet()) {
     // Print out the successful registration of a compile command
     ttyLocker ttyl;
@@ -307,6 +328,9 @@ static void register_command(TypedMethodOptionMatcher* matcher,
 template<typename T>
 bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCommand option, T& value) {
   assert(option_matches_type(option, value), "Value must match option type");
+  if (!has_command(option)) {
+    return false;
+  }
   if (option_list != NULL) {
     TypedMethodOptionMatcher* m = option_list->match(method, option);
     if (m != NULL) {
@@ -317,22 +341,52 @@ bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCo
   return false;
 }
 
+static bool resolve_inlining_predicate(enum CompileCommand option, const methodHandle& method) {
+  assert(option == CompileCommand::Inline || option == CompileCommand::DontInline, "Sanity");
+  bool v1 = false;
+  bool v2 = false;
+  bool has_inline = CompilerOracle::has_option_value(method, CompileCommand::Inline, v1);
+  bool has_dnotinline = CompilerOracle::has_option_value(method, CompileCommand::DontInline, v2);
+  if (has_inline && has_dnotinline) {
+    if (v1 && v2) {
+      // Conflict options detected
+      // Find the last one for that method and return the predicate accordingly
+      // option_list lists options in reverse order. So the first option we find is the last which was specified.
+      enum CompileCommand last_one = CompileCommand::Unknown;
+      TypedMethodOptionMatcher* current = option_list;
+      while (current != NULL) {
+        last_one = current->option();
+        if (last_one == CompileCommand::Inline || last_one == CompileCommand::DontInline) {
+          if (current->matches(method)) {
+            return last_one == option;
+          }
+        }
+        current = current->next();
+      }
+      ShouldNotReachHere();
+      return false;
+    } else {
+      // No conflicts
+      return option == CompileCommand::Inline ? v1 : v2;
+    }
+  } else {
+    if (option == CompileCommand::Inline) {
+      return has_inline ? v1 : false;
+    } else {
+      return has_dnotinline ? v2 : false;
+    }
+  }
+}
+
 static bool check_predicate(enum CompileCommand option, const methodHandle& method) {
+  // Special handling for Inline and DontInline since conflict options may be specified
+  if (option == CompileCommand::Inline || option == CompileCommand::DontInline) {
+    return resolve_inlining_predicate(option, method);
+  }
+
   bool value = false;
   if (CompilerOracle::has_option_value(method, option, value)) {
     return value;
-  }
-  return false;
-}
-
-static bool has_command(enum CompileCommand option) {
-  TypedMethodOptionMatcher* m = option_list;
-  while (m != NULL) {
-    if (m->option() == option) {
-      return true;
-    } else {
-      m = m->next();
-    }
   }
   return false;
 }
@@ -410,13 +464,44 @@ bool CompilerOracle::should_break_at(const methodHandle& method) {
   return check_predicate(CompileCommand::Break, method);
 }
 
+void CompilerOracle::tag_blackhole_if_possible(const methodHandle& method) {
+  if (!check_predicate(CompileCommand::Blackhole, method)) {
+    return;
+  }
+  guarantee(UnlockExperimentalVMOptions, "Checked during initial parsing");
+  if (method->result_type() != T_VOID) {
+    warning("Blackhole compile option only works for methods with void type: %s",
+            method->name_and_sig_as_C_string());
+    return;
+  }
+  if (!method->is_empty_method()) {
+    warning("Blackhole compile option only works for empty methods: %s",
+            method->name_and_sig_as_C_string());
+    return;
+  }
+  if (!method->is_static()) {
+    warning("Blackhole compile option only works for static methods: %s",
+            method->name_and_sig_as_C_string());
+    return;
+  }
+  if (method->intrinsic_id() == vmIntrinsics::_blackhole) {
+    return;
+  }
+  if (method->intrinsic_id() != vmIntrinsics::_none) {
+    warning("Blackhole compile option only works for methods that do not have intrinsic set: %s, %s",
+            method->name_and_sig_as_C_string(), vmIntrinsics::name_at(method->intrinsic_id()));
+    return;
+  }
+  method->set_intrinsic_id(vmIntrinsics::_blackhole);
+}
+
 static enum CompileCommand match_option_name(const char* line, int* bytes_read, char* errorbuf, int bufsize) {
   assert(ARRAY_SIZE(option_names) == static_cast<int>(CompileCommand::Count), "option_names size mismatch");
 
   *bytes_read = 0;
   char option_buf[256];
   int matches = sscanf(line, "%255[a-zA-Z0-9]%n", option_buf, bytes_read);
-  if (matches > 0) {
+  if (matches > 0 && strcasecmp(option_buf, "unknown") != 0) {
     for (uint i = 0; i < ARRAY_SIZE(option_names); i++) {
       if (strcasecmp(option_buf, option_names[i]) == 0) {
         return static_cast<enum CompileCommand>(i);
@@ -781,7 +866,14 @@ void CompilerOracle::parse_from_line(char* line) {
           print_parse_error(error_buf, original.get());
           return;
         }
-        register_command(typed_matcher, option, true);
+        if (option2type(option) == OptionType::Bool) {
+          register_command(typed_matcher, option, true);
+        } else {
+          jio_snprintf(error_buf, sizeof(error_buf), "  Missing type '%s' before option '%s'",
+                       optiontype2name(option2type(option)), option2name(option));
+          print_parse_error(error_buf, original.get());
+          return;
+        }
       }
       assert(typed_matcher != NULL, "sanity");
       assert(*error_buf == '\0', "No error here");
@@ -897,9 +989,6 @@ void compilerOracle_init() {
   if (has_command(CompileCommand::Print)) {
     if (PrintAssembly) {
       warning("CompileCommand and/or %s file contains 'print' commands, but PrintAssembly is also enabled", default_cc_file);
-    } else if (FLAG_IS_DEFAULT(DebugNonSafepoints)) {
-      warning("printing of assembly code is enabled; turning on DebugNonSafepoints to gain additional output");
-      DebugNonSafepoints = true;
     }
   }
 }

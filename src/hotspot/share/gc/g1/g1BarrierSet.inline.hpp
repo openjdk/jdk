@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1BARRIERSET_INLINE_HPP
 
 #include "gc/g1/g1BarrierSet.hpp"
+
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "oops/access.inline.hpp"

@@ -37,6 +37,7 @@ import java.rmi.server.ObjID;
 import java.rmi.server.RemoteObjectInvocationHandler;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.Set;
 
 
@@ -85,8 +86,8 @@ public class NonLocalSkeletonTest {
 
         // Check if running the test on a local system; it only applies to remote
         String myHostName = InetAddress.getLocalHost().getHostName();
-        Set<InetAddress> myAddrs = Set.of(InetAddress.getAllByName(myHostName));
-        Set<InetAddress> hostAddrs = Set.of(InetAddress.getAllByName(host));
+        Set<InetAddress> myAddrs = Set.copyOf(Arrays.asList(InetAddress.getAllByName(myHostName)));
+        Set<InetAddress> hostAddrs = Set.copyOf(Arrays.asList(InetAddress.getAllByName(host)));
         boolean isLocal = (hostAddrs.stream().anyMatch(i -> myAddrs.contains(i))
                 || hostAddrs.stream().anyMatch(h -> h.isLoopbackAddress()));
 

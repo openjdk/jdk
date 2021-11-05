@@ -45,9 +45,9 @@ public abstract class NetClient implements AutoCloseable {
         }
     }
 
-    abstract public void send(byte[] data) throws IOException;
-    abstract public byte[] receive() throws IOException;
-    abstract public void close() throws IOException;
+    public abstract void send(byte[] data) throws IOException;
+    public abstract byte[] receive() throws IOException;
+    public abstract void close() throws IOException;
 }
 
 class TCPClient extends NetClient {

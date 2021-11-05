@@ -27,7 +27,10 @@ package jdk.internal.foreign;
 
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
+import jdk.incubator.foreign.ResourceScope;
 import java.util.Objects;
 
 /**
@@ -36,52 +39,75 @@ import java.util.Objects;
  */
 public final class MemoryAddressImpl implements MemoryAddress {
 
-    private final Object base;
+    private final AbstractMemorySegmentImpl segment;
     private final long offset;
 
-    public MemoryAddressImpl(Object base, long offset) {
-        this.base = base;
+    public MemoryAddressImpl(AbstractMemorySegmentImpl segment, long offset) {
+        this.segment = segment;
         this.offset = offset;
+    }
+
+    Object base() {
+        return segment != null ? segment.base() : null;
+    }
+
+    long offset() {
+        return segment != null ?
+                segment.min() + offset : offset;
     }
 
     // MemoryAddress methods
 
     @Override
+    public ResourceScope scope() {
+        return segment != null ?
+                segment.scope() : ResourceScope.globalScope();
+    }
+
+    @Override
+    public MemoryAddress addOffset(long offset) {
+        return new MemoryAddressImpl(segment, this.offset + offset);
+    }
+
+    @Override
     public long segmentOffset(MemorySegment segment) {
         Objects.requireNonNull(segment);
         AbstractMemorySegmentImpl segmentImpl = (AbstractMemorySegmentImpl)segment;
-        if (segmentImpl.base() != base) {
-            throw new IllegalArgumentException("Invalid segment: " + segment);
+        if (segmentImpl.base() != base()) {
+            throw new IllegalArgumentException("Incompatible segment: " + segment);
         }
-        return offset - segmentImpl.min();
+        return offset() - segmentImpl.min();
+    }
+
+    @Override
+    public boolean isNative() {
+        return base() == null;
     }
 
     @Override
     public long toRawLongValue() {
-        if (base != null) {
-            throw new UnsupportedOperationException("Not a native address");
+        if (segment != null) {
+            if (segment.base() != null) {
+                throw new UnsupportedOperationException("Not a native address");
+            }
+            segment.checkValidState();
         }
-        return offset;
-    }
-
-    @Override
-    public MemoryAddress addOffset(long bytes) {
-        return new MemoryAddressImpl(base, offset + bytes);
+        return offset();
     }
 
     // Object methods
 
     @Override
     public int hashCode() {
-        return Objects.hash(base, offset);
+        return Objects.hash(base(), offset());
     }
 
     @Override
     public boolean equals(Object that) {
         if (that instanceof MemoryAddressImpl) {
             MemoryAddressImpl addr = (MemoryAddressImpl)that;
-            return Objects.equals(base, addr.base) &&
-                    offset == addr.offset;
+            return Objects.equals(base(), addr.base()) &&
+                    offset() == addr.offset();
         } else {
             return false;
         }
@@ -89,23 +115,38 @@ public final class MemoryAddressImpl implements MemoryAddress {
 
     @Override
     public String toString() {
-        return "MemoryAddress{ base: " + base + " offset=0x" + Long.toHexString(offset) + " }";
+        return "MemoryAddress{ base: " + base() + " offset=0x" + Long.toHexString(offset()) + " }";
     }
 
     @Override
-    public MemorySegment asSegmentRestricted(long bytesSize, Runnable cleanupAction, Object attachment) {
-        Utils.checkRestrictedAccess("MemoryAddress.asSegmentRestricted");
+    @CallerSensitive
+    public final MemorySegment asSegment(long bytesSize, ResourceScope scope) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
+        return asSegment(bytesSize, null, scope);
+    }
+
+    @Override
+    @CallerSensitive
+    public final MemorySegment asSegment(long bytesSize, Runnable cleanupAction, ResourceScope scope) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
+        Objects.requireNonNull(scope);
         if (bytesSize <= 0) {
             throw new IllegalArgumentException("Invalid size : " + bytesSize);
         }
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(this, bytesSize, cleanupAction, attachment);
+        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(this, bytesSize,
+                cleanupAction,
+                (ResourceScopeImpl) scope);
     }
 
     public static MemorySegment ofLongUnchecked(long value) {
         return ofLongUnchecked(value, Long.MAX_VALUE);
     }
 
+    public static MemorySegment ofLongUnchecked(long value, long byteSize, ResourceScopeImpl resourceScope) {
+        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(MemoryAddress.ofLong(value), byteSize, null, resourceScope);
+    }
+
     public static MemorySegment ofLongUnchecked(long value, long byteSize) {
-        return MemoryAddress.ofLong(value).asSegmentRestricted(byteSize).share();
+        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(MemoryAddress.ofLong(value), byteSize, null, ResourceScopeImpl.GLOBAL);
     }
 }

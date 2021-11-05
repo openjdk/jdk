@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,12 @@ package p1;
  * Sub-test 5 Expect: <A HREF="../../out/p2/C2.html">../../out/p2/C2.html</A>
  * <p>
  *
- * Sub-test 6 Actual: <A HREF="{@docRoot}/p2/package-summary.html#package.description">{&#064;docRoot}/p2/package-summary.html#package.description</A> <br>
- * Sub-test 6 Expect: <A HREF="../p2/package-summary.html#package.description">../p2/package-summary.html#package.description</A>
+ * Sub-test 6 Actual: <A HREF="{@docRoot}/p2/package-summary.html#package-description">{&#064;docRoot}/p2/package-summary.html#package-description</A> <br>
+ * Sub-test 6 Expect: <A HREF="../p2/package-summary.html#package-description">../p2/package-summary.html#package-description</A>
  * <p>
  *
- * Sub-test 7 Actual: <A HREF="{@docRoot}/../out/p2/package-summary.html#package.description">{&#064;docRoot}/../out/p2/package-summary.html#package.description</A> <br>
- * Sub-test 7 Expect: <A HREF="../../out/p2/package-summary.html#package.description">../../out/p2/package-summary.html#package.description</A>
+ * Sub-test 7 Actual: <A HREF="{@docRoot}/../out/p2/package-summary.html#package-description">{&#064;docRoot}/../out/p2/package-summary.html#package-description</A> <br>
+ * Sub-test 7 Expect: <A HREF="../../out/p2/package-summary.html#package-description">../../out/p2/package-summary.html#package-description</A>
  *
  */
 public class C1 {

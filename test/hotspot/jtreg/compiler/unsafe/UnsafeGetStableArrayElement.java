@@ -25,15 +25,17 @@
  * @test
  * @summary tests on constant folding of unsafe get operations from stable arrays
  * @library /test/lib
- *
+ * @build sun.hotspot.WhiteBox
  * @requires vm.flavor == "server" & !vm.emulatedClient
  *
  * @modules java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
-
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -Xbatch -XX:-TieredCompilation
  *                   -XX:+FoldStableValues
+ *                   -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=dontinline,*Test::test*
  *                   compiler.unsafe.UnsafeGetStableArrayElement
  */
@@ -49,6 +51,8 @@ import java.util.concurrent.Callable;
 import static jdk.internal.misc.Unsafe.*;
 import static jdk.test.lib.Asserts.assertEQ;
 import static jdk.test.lib.Asserts.assertNE;
+
+import sun.hotspot.code.Compiler;
 
 public class UnsafeGetStableArrayElement {
     @Stable static final boolean[] STABLE_BOOLEAN_ARRAY = new boolean[16];
@@ -220,7 +224,16 @@ public class UnsafeGetStableArrayElement {
     }
 
     static void testMismatched(Callable<?> c, Runnable setDefaultAction) throws Exception {
-        run(c, null, setDefaultAction);
+        testMismatched(c, setDefaultAction, false);
+    }
+
+    static void testMismatched(Callable<?> c, Runnable setDefaultAction, boolean objectArray) throws Exception {
+        if (Compiler.isGraalEnabled() && !objectArray) {
+            // Graal will constant fold mismatched reads from primitive stable arrays
+            run(c, setDefaultAction, null);
+        } else {
+            run(c, null, setDefaultAction);
+        }
         Setter.reset();
     }
 
@@ -306,8 +319,8 @@ public class UnsafeGetStableArrayElement {
         testMatched(   Test::testD_D, Test::changeD);
 
         // Object[], aligned accesses
-        testMismatched(Test::testL_J, Test::changeL); // long & double are always as large as an OOP
-        testMismatched(Test::testL_D, Test::changeL);
+        testMismatched(Test::testL_J, Test::changeL, true); // long & double are always as large as an OOP
+        testMismatched(Test::testL_D, Test::changeL, true);
         testMatched(   Test::testL_L, Test::changeL);
 
         // Unaligned accesses

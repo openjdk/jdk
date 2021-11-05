@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public final class KeychainStore extends KeyStoreSpi {
     // If a key came from the keychain it has a SecKeyRef and one or more
     // SecCertificateRef.  When we delete the key we have to delete all of the corresponding
     // native objects.
-    class KeyEntry {
+    static class KeyEntry {
         Date date; // the creation date of this entry
         byte[] protectedPrivKey;
         char[] password;
@@ -63,7 +63,7 @@ public final class KeychainStore extends KeyStoreSpi {
     };
 
     // Trusted certificates
-    class TrustedCertEntry {
+    static class TrustedCertEntry {
         Date date; // the creation date of this entry
 
         Certificate cert;
@@ -110,6 +110,7 @@ public final class KeychainStore extends KeyStoreSpi {
     }
 
     private static void permissionCheck() {
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
 
         if (sec != null) {
@@ -815,8 +816,8 @@ public final class KeychainStore extends KeyStoreSpi {
      * Callback method from _scanKeychain.  If an identity is found, this method will be called to create Java certificate
      * and private key objects from the keychain data.
      */
-    private void createKeyEntry(String alias, long creationDate, long secKeyRef, long[] secCertificateRefs, byte[][] rawCertData)
-        throws IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
+    private void createKeyEntry(String alias, long creationDate, long secKeyRef,
+                                long[] secCertificateRefs, byte[][] rawCertData) {
         KeyEntry ke = new KeyEntry();
 
         // First, store off the private key information.  This is the easy part.
@@ -883,7 +884,7 @@ public final class KeychainStore extends KeyStoreSpi {
         entries.put(alias.toLowerCase(), ke);
     }
 
-    private class CertKeychainItemPair {
+    private static class CertKeychainItemPair {
         long mCertificateRef;
         Certificate mCert;
 

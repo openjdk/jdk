@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,36 +121,34 @@ void AbstractAssembler::bind(Label& L) {
 }
 
 void AbstractAssembler::generate_stack_overflow_check(int frame_size_in_bytes) {
-  if (UseStackBanging) {
-    // Each code entry causes one stack bang n pages down the stack where n
-    // is configurable by StackShadowPages.  The setting depends on the maximum
-    // depth of VM call stack or native before going back into java code,
-    // since only java code can raise a stack overflow exception using the
-    // stack banging mechanism.  The VM and native code does not detect stack
-    // overflow.
-    // The code in JavaCalls::call() checks that there is at least n pages
-    // available, so all entry code needs to do is bang once for the end of
-    // this shadow zone.
-    // The entry code may need to bang additional pages if the framesize
-    // is greater than a page.
+  // Each code entry causes one stack bang n pages down the stack where n
+  // is configurable by StackShadowPages.  The setting depends on the maximum
+  // depth of VM call stack or native before going back into java code,
+  // since only java code can raise a stack overflow exception using the
+  // stack banging mechanism.  The VM and native code does not detect stack
+  // overflow.
+  // The code in JavaCalls::call() checks that there is at least n pages
+  // available, so all entry code needs to do is bang once for the end of
+  // this shadow zone.
+  // The entry code may need to bang additional pages if the framesize
+  // is greater than a page.
 
-    const int page_size = os::vm_page_size();
-    int bang_end = (int)StackOverflow::stack_shadow_zone_size();
+  const int page_size = os::vm_page_size();
+  int bang_end = (int)StackOverflow::stack_shadow_zone_size();
 
-    // This is how far the previous frame's stack banging extended.
-    const int bang_end_safe = bang_end;
+  // This is how far the previous frame's stack banging extended.
+  const int bang_end_safe = bang_end;
 
-    if (frame_size_in_bytes > page_size) {
-      bang_end += frame_size_in_bytes;
-    }
+  if (frame_size_in_bytes > page_size) {
+    bang_end += frame_size_in_bytes;
+  }
 
-    int bang_offset = bang_end_safe;
-    while (bang_offset <= bang_end) {
-      // Need at least one stack bang at end of shadow zone.
-      bang_stack_with_offset(bang_offset);
-      bang_offset += page_size;
-    }
-  } // end (UseStackBanging)
+  int bang_offset = bang_end_safe;
+  while (bang_offset <= bang_end) {
+    // Need at least one stack bang at end of shadow zone.
+    bang_stack_with_offset(bang_offset);
+    bang_offset += page_size;
+  }
 }
 
 void Label::add_patch_at(CodeBuffer* cb, int branch_loc, const char* file, int line) {

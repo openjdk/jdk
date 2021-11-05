@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.awt.event;
 
 import java.awt.Window;
+import java.io.Serial;
 import java.lang.annotation.Native;
 
 import sun.awt.AppContext;
@@ -173,9 +174,10 @@ public class WindowEvent extends ComponentEvent {
      */
     int newState;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -1567959133147912127L;
 
 

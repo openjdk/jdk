@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -629,79 +629,79 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
         for (int i : new int[]{-1, Integer.MIN_VALUE, length, length + 1, Integer.MAX_VALUE}) {
             final int ci = i;
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 float x = (float) vh.get(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.set(array, ci, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 float x = (float) vh.getVolatile(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 float x = (float) vh.getAcquire(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 float x = (float) vh.getOpaque(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setVolatile(array, ci, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setRelease(array, ci, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 float r = (float) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 float r = (float) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 float r = (float) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 float o = (float) vh.getAndSet(array, ci, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 float o = (float) vh.getAndSetAcquire(array, ci, VALUE_1);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 float o = (float) vh.getAndSetRelease(array, ci, VALUE_1);
             });
 

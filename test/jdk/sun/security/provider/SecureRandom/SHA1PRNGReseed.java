@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@ import java.security.SecureRandom;
 
 /**
  * @test
- * @bug 8154523
+ * @bug 8154523 8247895
  * @summary SHA1PRNG output should change after setSeed
  */
 public class SHA1PRNGReseed {
 
     public static void main(String[] args) throws Exception {
         SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
-        sr.setSeed(0);
+        sr.setSeed(1);
         sr.nextInt();
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
@@ -45,7 +45,7 @@ public class SHA1PRNGReseed {
                 new ByteArrayInputStream(bout.toByteArray())).readObject();
 
         int i1 = sr.nextInt();
-        sr2.setSeed(1);
+        sr2.setSeed(2);
         int i2 = sr2.nextInt();
 
         if (i1 == i2) {

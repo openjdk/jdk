@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,23 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 6289149
- * @summary test config (1,1,0,0): inherited 2-arg and inherited 1-arg in agent class
- * @author Daniel D. Daugherty, Sun Microsystems
+ * @bug 6289149 8165276
+ * @summary test config (1,1,0,0): 2-arg and 1-arg premain methods in superclass of agent class must be rejected
  *
- * @run shell ../MakeJAR3.sh InheritAgent1100
- * @run main/othervm -javaagent:InheritAgent1100.jar DummyMain
+ * @library /test/lib
+ * @library /test
+ * @modules java.instrument
+ * @build jdk.java.lang.instrument.PremainClass.InheritAgent1100
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             InheritAgent1100 InheritAgent1100.jar
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner InheritAgent1100 NoSuchMethodException
  */
 
-import java.lang.instrument.*;
+import java.lang.instrument.Instrumentation;
 
-class InheritAgent1100 extends InheritAgent1100Super {
+public class InheritAgent1100 extends InheritAgent1100Super {
 
     // This agent does NOT have a single argument premain() method.
 
@@ -41,21 +45,15 @@ class InheritAgent1100 extends InheritAgent1100Super {
 }
 
 class InheritAgent1100Super {
-
-    //
-    // This agent has a single argument premain() method which
-    // is NOT the one that should be called.
-    //
+    // This agent class has a single argument premain() method which should NOT be called.
     public static void premain (String agentArgs) {
         System.out.println("Hello from Single-Arg InheritAgent1100Super!");
         throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
     }
 
-    //
-    // This agent has a double argument premain() method which
-    // is the one that should be called.
-    //
+    // This agent class has a double argument premain() method which should NOT be called.
     public static void premain (String agentArgs, Instrumentation instArg) {
         System.out.println("Hello from Double-Arg InheritAgent1100Super!");
+        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
     }
 }

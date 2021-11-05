@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestHumongousThreshold
+ * @test id=default
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @library /test/lib
@@ -69,7 +69,7 @@
  */
 
 /*
- * @test TestHumongousThreshold
+ * @test id=16b
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"

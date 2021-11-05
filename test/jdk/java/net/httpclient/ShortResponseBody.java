@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
+import org.testng.ITestResult;
+import org.testng.SkipException;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -107,10 +112,44 @@ public class ShortResponseBody {
     };
     final ExecutorService service = Executors.newCachedThreadPool(factory);
 
+    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
+    void checkSkip() {
+        var skip = skiptests.get();
+        if (skip != null) throw skip;
+    }
+    static String name(ITestResult result) {
+        var params = result.getParameters();
+        return result.getName()
+                + (params == null ? "()" : Arrays.toString(result.getParameters()));
+    }
+
     @BeforeMethod
     void beforeMethod(ITestContext context) {
         if (context.getFailedTests().size() > 0) {
-            throw new RuntimeException("some tests failed");
+            if (skiptests.get() == null) {
+                SkipException skip = new SkipException("some tests failed");
+                skip.setStackTrace(new StackTraceElement[0]);
+                skiptests.compareAndSet(null, skip);
+            }
+        }
+    }
+
+    @AfterClass
+    static final void printFailedTests(ITestContext context) {
+        out.println("\n=========================\n");
+        try {
+            var FAILURES = context.getFailedTests().getAllResults().stream()
+                    .collect(Collectors.toMap(r -> name(r), ITestResult::getThrowable));
+
+            if (FAILURES.isEmpty()) return;
+            out.println("Failed tests: ");
+            FAILURES.entrySet().forEach((e) -> {
+                out.printf("\t%s: %s%n", e.getKey(), e.getValue());
+                e.getValue().printStackTrace(out);
+                e.getValue().printStackTrace();
+            });
+         } finally {
+            out.println("\n=========================\n");
         }
     }
 
@@ -228,6 +267,7 @@ public class ShortResponseBody {
     void testSynchronousGET(String url, String expectedMsg, boolean sameClient)
         throws Exception
     {
+        checkSkip();
         out.print("---\n");
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
@@ -253,6 +293,7 @@ public class ShortResponseBody {
     void testAsynchronousGET(String url, String expectedMsg, boolean sameClient)
         throws Exception
     {
+        checkSkip();
         out.print("---\n");
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
@@ -335,6 +376,7 @@ public class ShortResponseBody {
     void testSynchronousPOST(String url, String expectedMsg, boolean sameClient)
         throws Exception
     {
+        checkSkip();
         out.print("---\n");
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
@@ -368,6 +410,7 @@ public class ShortResponseBody {
     void testAsynchronousPOST(String url, String expectedMsg, boolean sameClient)
         throws Exception
     {
+        checkSkip();
         out.print("---\n");
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {

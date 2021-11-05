@@ -67,7 +67,8 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, L
 #else
   LIR_Opr tmp = gen->new_pointer_register();
   if (TwoOperandLIRForm) {
-    __ move(addr, tmp);
+    LIR_Opr addr_opr = LIR_OprFact::address(new LIR_Address(addr, addr->type()));
+    __ leal(addr_opr, tmp);
     __ unsigned_shift_right(tmp, CardTable::card_shift, tmp);
   } else {
     __ unsigned_shift_right(addr, CardTable::card_shift, tmp);
@@ -83,9 +84,6 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, L
   LIR_Opr dirty = LIR_OprFact::intConst(CardTable::dirty_card_val());
   if (UseCondCardMark) {
     LIR_Opr cur_value = gen->new_register(T_INT);
-    if (ct->scanned_concurrently()) {
-      __ membar_storeload();
-    }
     __ move(card_addr, cur_value);
 
     LabelObj* L_already_dirty = new LabelObj();
@@ -94,9 +92,6 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, L
     __ move(dirty, card_addr);
     __ branch_destination(L_already_dirty->label());
   } else {
-    if (ct->scanned_concurrently()) {
-      __ membar_storestore();
-    }
     __ move(dirty, card_addr);
   }
 #endif

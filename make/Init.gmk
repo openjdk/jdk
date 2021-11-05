@@ -200,7 +200,7 @@ ifeq ($(HAS_SPEC),)
 	            COMPARE_BUILD="$(COMPARE_BUILD):NODRYRUN=true" main && \
 	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/Init.gmk \
 	            SPEC=$(spec) HAS_SPEC=true ACTUAL_TOPDIR=$(topdir) \
-	            COMPARE_BUILD="$(COMPARE_BUILD)" post-compare-build && \
+	            COMPARE_BUILD="$(COMPARE_BUILD):NODRYRUN=true" post-compare-build && \
 	    ) \
 	  ) true ) \
 	  $(eval TARGET_DONE=true) \

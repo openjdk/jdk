@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,18 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "runtime/handles.inline.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
+
+bool ClassLoaderDataShared::_full_module_graph_loaded = false;
 
 class ArchivedClassLoaderData {
   Array<PackageEntry*>* _packages;
@@ -42,7 +45,7 @@ class ArchivedClassLoaderData {
     // system loaders (e.g., if you create a custom JDK image with only java.base).
     if (loader_data != NULL) {
       assert(!loader_data->has_class_mirror_holder(),
-             "loaders for non-strong hidden classes or unsafe anonymous classes not supported");
+             "loaders for non-strong hidden classes not supported");
     }
   }
 public:
@@ -214,6 +217,7 @@ void ClassLoaderDataShared::restore_java_platform_loader_from_archive(ClassLoade
 void ClassLoaderDataShared::restore_java_system_loader_from_archive(ClassLoaderData* loader_data) {
   assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
   _archived_system_loader_data.restore(loader_data, true, true);
+  _full_module_graph_loaded = true;
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

@@ -30,39 +30,39 @@ import java.nio.*;
 
 class Prologue {
     // these constants should match their #define counterparts in vmdata.hpp
-    private final static byte PERFDATA_BIG_ENDIAN    = 0;
-    private final static byte PERFDATA_LITTLE_ENDIAN = 1;
-    private final static int  PERFDATA_MAGIC         = 0xcafec0c0;
+    private static final byte PERFDATA_BIG_ENDIAN    = 0;
+    private static final byte PERFDATA_LITTLE_ENDIAN = 1;
+    private static final int  PERFDATA_MAGIC         = 0xcafec0c0;
 
     private class PrologueFieldOffset {
-        private final static int SIZEOF_BYTE = 1;
-        private final static int SIZEOF_INT  = 4;
-        private final static int SIZEOF_LONG = 8;
+        private static final int SIZEOF_BYTE = 1;
+        private static final int SIZEOF_INT  = 4;
+        private static final int SIZEOF_LONG = 8;
 
-        private final static int MAGIC_SIZE            = SIZEOF_INT;
-        private final static int BYTE_ORDER_SIZE       = SIZEOF_BYTE;
-        private final static int MAJOR_SIZE            = SIZEOF_BYTE;
-        private final static int MINOR_SIZE            = SIZEOF_BYTE;
-        private final static int ACCESSIBLE_SIZE       = SIZEOF_BYTE;
-        private final static int USED_SIZE             = SIZEOF_INT;
-        private final static int OVERFLOW_SIZE         = SIZEOF_INT;
-        private final static int MOD_TIMESTAMP_SIZE    = SIZEOF_LONG;
-        private final static int ENTRY_OFFSET_SIZE     = SIZEOF_INT;
-        private final static int NUM_ENTRIES_SIZE      = SIZEOF_INT;
+        private static final int MAGIC_SIZE            = SIZEOF_INT;
+        private static final int BYTE_ORDER_SIZE       = SIZEOF_BYTE;
+        private static final int MAJOR_SIZE            = SIZEOF_BYTE;
+        private static final int MINOR_SIZE            = SIZEOF_BYTE;
+        private static final int ACCESSIBLE_SIZE       = SIZEOF_BYTE;
+        private static final int USED_SIZE             = SIZEOF_INT;
+        private static final int OVERFLOW_SIZE         = SIZEOF_INT;
+        private static final int MOD_TIMESTAMP_SIZE    = SIZEOF_LONG;
+        private static final int ENTRY_OFFSET_SIZE     = SIZEOF_INT;
+        private static final int NUM_ENTRIES_SIZE      = SIZEOF_INT;
 
         // these constants must match the field offsets and sizes
         // in the PerfDataPrologue structure in perfMemory.hpp
-        final static int MAGIC          = 0;
-        final static int BYTE_ORDER     = MAGIC + MAGIC_SIZE;
-        final static int MAJOR_VERSION  = BYTE_ORDER + BYTE_ORDER_SIZE;
-        final static int MINOR_VERSION  = MAJOR_VERSION + MAJOR_SIZE;
-        final static int ACCESSIBLE     = MINOR_VERSION + MINOR_SIZE;
-        final static int USED           = ACCESSIBLE + ACCESSIBLE_SIZE;
-        final static int OVERFLOW       = USED + USED_SIZE;
-        final static int MOD_TIMESTAMP  = OVERFLOW + OVERFLOW_SIZE;
-        final static int ENTRY_OFFSET   = MOD_TIMESTAMP + MOD_TIMESTAMP_SIZE;
-        final static int NUM_ENTRIES    = ENTRY_OFFSET + ENTRY_OFFSET_SIZE;
-        final static int PROLOGUE_2_0_SIZE = NUM_ENTRIES + NUM_ENTRIES_SIZE;
+        static final int MAGIC          = 0;
+        static final int BYTE_ORDER     = MAGIC + MAGIC_SIZE;
+        static final int MAJOR_VERSION  = BYTE_ORDER + BYTE_ORDER_SIZE;
+        static final int MINOR_VERSION  = MAJOR_VERSION + MAJOR_SIZE;
+        static final int ACCESSIBLE     = MINOR_VERSION + MINOR_SIZE;
+        static final int USED           = ACCESSIBLE + ACCESSIBLE_SIZE;
+        static final int OVERFLOW       = USED + USED_SIZE;
+        static final int MOD_TIMESTAMP  = OVERFLOW + OVERFLOW_SIZE;
+        static final int ENTRY_OFFSET   = MOD_TIMESTAMP + MOD_TIMESTAMP_SIZE;
+        static final int NUM_ENTRIES    = ENTRY_OFFSET + ENTRY_OFFSET_SIZE;
+        static final int PROLOGUE_2_0_SIZE = NUM_ENTRIES + NUM_ENTRIES_SIZE;
     }
 
 

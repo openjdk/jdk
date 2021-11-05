@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package jdk.jfr;
 
 import java.security.AccessControlContext;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -105,21 +104,21 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
         PrivateAccess.setPrivateAccess(new InternalAccess());
     }
 
-    private final static class InternalAccess extends PrivateAccess {
+    private static final class InternalAccess extends PrivateAccess {
 
         @Override
         public Type getType(Object o) {
-            if (o instanceof AnnotationElement) {
-                return ((AnnotationElement) o).getType();
+            if (o instanceof AnnotationElement ae) {
+                return ae.getType();
             }
-            if (o instanceof EventType) {
-                return ((EventType) o).getType();
+            if (o instanceof EventType et) {
+                return et.getType();
             }
-            if (o instanceof ValueDescriptor) {
-                return ((ValueDescriptor) o).getType();
+            if (o instanceof ValueDescriptor vd) {
+                return vd.getType();
             }
-            if (o instanceof SettingDescriptor) {
-                return ((SettingDescriptor) o).getType();
+            if (o instanceof SettingDescriptor sd) {
+                return sd.getType();
             }
             throw new Error("Unknown type " + o.getClass());
         }
@@ -176,7 +175,7 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
 
         @Override
         public ValueDescriptor newValueDescriptor(Class<?> type, String name) {
-            return new ValueDescriptor(type, name, Collections.emptyList(), true);
+            return new ValueDescriptor(type, name, List.of(), true);
         }
 
         @Override
@@ -194,6 +193,7 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
             return FlightRecorder.getFlightRecorder().getInternal();
         }
 
+        @SuppressWarnings("removal")
         @Override
         public AccessControlContext getContext(SettingControl settingControl) {
             return settingControl.getContext();

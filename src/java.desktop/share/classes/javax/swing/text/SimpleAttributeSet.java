@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing.text;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
-import java.util.Collections;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
-import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.LinkedHashMap;
 
 /**
@@ -51,6 +51,10 @@ import java.util.LinkedHashMap;
 @SuppressWarnings("serial") // Same-version serialization only
 public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cloneable
 {
+    /**
+     * Use serialVersionUID from JDK 1.7 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = -6631553454711782652L;
 
     /**
@@ -332,11 +336,13 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
         return s;
     }
 
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         StyleContext.writeAttributeSet(s, this);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException {
         s.defaultReadObject();
@@ -348,7 +354,12 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
      * An AttributeSet that is always empty.
      */
     static class EmptyAttributeSet implements AttributeSet, Serializable {
-        static final long serialVersionUID = -8714803568785904228L;
+
+        /**
+         * Use serialVersionUID from JDK 1.7 for interoperability.
+         */
+        @Serial
+        private static final long serialVersionUID = -8714803568785904228L;
 
         public int getAttributeCount() {
             return 0;

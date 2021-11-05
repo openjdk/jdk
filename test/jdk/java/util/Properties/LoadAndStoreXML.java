@@ -25,6 +25,7 @@
  * @test
  * @bug 8000354 8000685 8004371 8043119
  * @summary Basic test of storeToXML and loadToXML
+ * @run main/othervm -Djava.security.manager=allow LoadAndStoreXML
  */
 
 import java.io.ByteArrayInputStream;

@@ -176,10 +176,10 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
     # space.
     [ if [[ "$OPENJDK_BUILD_OS" = "windows" && input =~ ^$FIXPATH ]]; then
       line="${input#$FIXPATH }"
-      prefix="$FIXPATH "
+      fixpath_prefix="$FIXPATH "
     else
       line="$input"
-      prefix=""
+      fixpath_prefix=""
     fi ]
     path="${line%% *}"
     arguments="${line#"$path"}"
@@ -247,11 +247,11 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
 
     # Now we have a usable command as new_path, with arguments in arguments
     if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-      if test "x$prefix" = x; then
-        # Only mess around if prefix was not given
+      if test "x$fixpath_prefix" = x; then
+        # Only mess around if fixpath_prefix was not given
         UTIL_CHECK_WINENV_EXEC_TYPE("$new_path")
         if test "x$RESULT" = xwindows; then
-          prefix="$FIXPATH "
+          fixpath_prefix="$FIXPATH "
           # make sure we have an .exe suffix (but not two)
           new_path="${new_path%.exe}.exe"
         else
@@ -262,11 +262,11 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
     fi
 
     if test "x$3" = xNOFIXPATH; then
-      prefix=""
+      fixpath_prefix=""
     fi
 
     # Now join together the path and the arguments once again
-    new_complete="$prefix$new_path$arguments"
+    new_complete="$fixpath_prefix$new_path$arguments"
     $1="$new_complete"
   fi
 ])

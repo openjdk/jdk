@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,9 +87,9 @@ public:
 #endif
 };
 
-class ShenandoahEnqueueBarrierNode : public Node {
+class ShenandoahIUBarrierNode : public Node {
 public:
-  ShenandoahEnqueueBarrierNode(Node* val);
+  ShenandoahIUBarrierNode(Node* val);
 
   const Type *bottom_type() const;
   const Type* Value(PhaseGVN* phase) const;
@@ -131,6 +131,8 @@ public:
   Node* find_mem(Node* ctrl, Node* n) const;
   void fix_mem(Node* ctrl, Node* region, Node* mem, Node* mem_for_ctrl, Node* mem_phi, Unique_Node_List& uses);
   int alias() const { return _alias; }
+
+  Node* collect_memory_for_infinite_loop(const Node* in);
 };
 
 class ShenandoahCompareAndSwapPNode : public CompareAndSwapPNode {

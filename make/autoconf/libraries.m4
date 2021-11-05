@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,9 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   if test "x$OPENJDK_TARGET_OS" = xwindows || test "x$OPENJDK_TARGET_OS" = xmacosx; then
     # No X11 support on windows or macosx
     NEEDS_LIB_X11=false
-  elif test "x$ENABLE_HEADLESS_ONLY" = xtrue; then
-    # No X11 support needed when building headless only
-    NEEDS_LIB_X11=false
   else
-    # All other instances need X11
+    # All other instances need X11, even if building headless only, libawt still
+    # needs X11 headers.
     NEEDS_LIB_X11=true
   fi
 
@@ -103,7 +101,6 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_LIBFFI
   LIB_SETUP_BUNDLED_LIBS
   LIB_SETUP_MISC_LIBS
-  LIB_TESTS_SETUP_GRAALUNIT
   LIB_TESTS_SETUP_GTEST
 
   BASIC_JDKLIB_LIBS=""
@@ -124,12 +121,27 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lpthread"
   fi
 
-  # Libatomic library
-  # 32-bit MIPS needs fallback library for 8-byte atomic ops
-  if test "x$OPENJDK_TARGET_OS" = xlinux &&
-      (test "x$OPENJDK_TARGET_CPU" = xmips ||
-       test "x$OPENJDK_TARGET_CPU" = xmipsel); then
-    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -latomic"
+  # librt for legacy clock_gettime
+  if test "x$OPENJDK_TARGET_OS" = xlinux; then
+    # Hotspot needs to link librt to get the clock_* functions.
+    # But once our supported minimum build and runtime platform
+    # has glibc 2.17, this can be removed as the functions are
+    # in libc.
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lrt"
+  fi
+
+  # Atomic library
+  # 32-bit platforms needs fallback library for 8-byte atomic ops on Zero
+  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+    if test "x$OPENJDK_TARGET_OS" = xlinux &&
+        (test "x$OPENJDK_TARGET_CPU" = xarm ||
+         test "x$OPENJDK_TARGET_CPU" = xm68k ||
+         test "x$OPENJDK_TARGET_CPU" = xmips ||
+         test "x$OPENJDK_TARGET_CPU" = xmipsel ||
+         test "x$OPENJDK_TARGET_CPU" = xppc ||
+         test "x$OPENJDK_TARGET_CPU" = xsh); then
+      BASIC_JVM_LIBS="$BASIC_JVM_LIBS -latomic"
+    fi
   fi
 
   # perfstat lib

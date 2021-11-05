@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,14 +76,16 @@ public final class OCSPNonceExtension extends Extension {
      *
      * @throws IOException if any errors happen during encoding of the
      *      extension.
-     * @throws IllegalArgumentException if length is not a positive integer.
+     * @throws IllegalArgumentException if length is not in the range of 1 to 32.
      */
     public OCSPNonceExtension(boolean isCritical, int length)
             throws IOException {
         this.extensionId = PKIXExtensions.OCSPNonce_Id;
         this.critical = isCritical;
 
-        if (length > 0) {
+        // RFC 8954, section 2.1: the length of the nonce MUST be at least 1 octet
+        // and can be up to 32 octets.
+        if (length > 0 && length <= 32) {
             SecureRandom rng = new SecureRandom();
             this.nonceData = new byte[length];
             rng.nextBytes(nonceData);
@@ -91,7 +93,7 @@ public final class OCSPNonceExtension extends Extension {
                     nonceData).toByteArray();
         } else {
             throw new IllegalArgumentException(
-                    "Length must be a positive integer");
+                    "Length of nonce must be at least 1 byte and can be up to 32 bytes");
         }
     }
 
@@ -121,12 +123,13 @@ public final class OCSPNonceExtension extends Extension {
      * @param isCritical a boolean flag indicating whether the criticality bit
      *      is set for this extension
      * @param incomingNonce The nonce data to be set for the extension.  This
-     *      must be a non-null array of at least one byte long.
+     *      must be a non-null array of at least one byte long and can be up to
+     *      32 bytes.
      *
      * @throws IOException if any errors happen during encoding of the
      *      extension.
-     * @throws IllegalArgumentException if the incomingNonce length is not a
-     *      positive integer.
+     * @throws IllegalArgumentException if the incomingNonce length is not
+     *      in the range of 1 to 32.
      * @throws NullPointerException if the incomingNonce is null.
      */
     public OCSPNonceExtension(boolean isCritical, byte[] incomingNonce)
@@ -135,13 +138,15 @@ public final class OCSPNonceExtension extends Extension {
         this.critical = isCritical;
 
         Objects.requireNonNull(incomingNonce, "Nonce data must be non-null");
-        if (incomingNonce.length > 0) {
+        // RFC 8954, section 2.1: the length of the nonce MUST be at least 1 octet
+        // and can be up to 32 octets.
+        if (incomingNonce.length > 0 && incomingNonce.length <= 32) {
             this.nonceData = incomingNonce.clone();
             this.extensionValue = new DerValue(DerValue.tag_OctetString,
                     nonceData).toByteArray();
         } else {
             throw new IllegalArgumentException(
-                    "Nonce data must be at least 1 byte in length");
+                    "Nonce data must be at least 1 byte and can be up to 32 bytes in length");
         }
     }
 

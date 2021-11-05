@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class Bytecode {
   }
 
   public String toString() {
-    StringBuffer buf = new StringBuffer(getJavaBytecodeName());
+    StringBuilder buf = new StringBuilder(getJavaBytecodeName());
     if (code() != javaCode()) {
        buf.append(spaces);
        buf.append('[');

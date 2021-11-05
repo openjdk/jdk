@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "jvm.h"
 #include "jvmci/jvmci_globals.hpp"
+#include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/globals_extension.hpp"
@@ -119,6 +121,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(JVMCIPrintProperties,         EnableJVMCI)
   CHECK_NOT_SET(UseJVMCINativeLibrary,        EnableJVMCI)
   CHECK_NOT_SET(JVMCILibPath,                 EnableJVMCI)
+  CHECK_NOT_SET(JVMCINativeLibraryErrorFile,  EnableJVMCI)
   CHECK_NOT_SET(JVMCILibDumpJNIConfig,        EnableJVMCI)
 
 #ifndef COMPILER2
@@ -174,6 +177,7 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
     "JVMCILibPath",
     "JVMCILibDumpJNIConfig",
     "UseJVMCINativeLibrary",
+    "JVMCINativeLibraryErrorFile",
     NULL
   };
 
@@ -188,7 +192,7 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
 
   bool value = true;
   JVMFlag *jvmciEnableFlag = JVMFlag::find_flag("EnableJVMCIProduct");
-  if (JVMFlagAccess::boolAtPut(jvmciEnableFlag, &value, origin) != JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::set_bool(jvmciEnableFlag, &value, origin) != JVMFlag::SUCCESS) {
     return false;
   }
 

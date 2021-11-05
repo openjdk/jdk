@@ -26,6 +26,7 @@
 #define SHARE_PRIMS_JVMTIEVENTCONTROLLER_INLINE_HPP
 
 #include "prims/jvmtiEventController.hpp"
+
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiUtil.hpp"
 

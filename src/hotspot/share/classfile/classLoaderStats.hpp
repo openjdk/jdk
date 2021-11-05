@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "oops/klass.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/vmOperations.hpp"
+#include "runtime/vmOperation.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/resourceHash.hpp"
 
@@ -97,10 +97,6 @@ public:
 
 class ClassLoaderStatsClosure : public CLDClosure {
 protected:
-  static bool oop_equals(oop const& s1, oop const& s2) {
-    return s1 == s2;
-  }
-
   static unsigned oop_hash(oop const& s1) {
     // Robert Jenkins 1996 & Thomas Wang 1997
     // http://web.archive.org/web/20071223173210/http://www.concentric.net/~Ttwang/tech/inthash.htm
@@ -116,7 +112,8 @@ protected:
   }
 
   typedef ResourceHashtable<oop, ClassLoaderStats,
-      ClassLoaderStatsClosure::oop_hash, ClassLoaderStatsClosure::oop_equals> StatsTable;
+                            256, ResourceObj::RESOURCE_AREA, mtInternal,
+                            ClassLoaderStatsClosure::oop_hash> StatsTable;
 
   outputStream* _out;
   StatsTable* _stats;

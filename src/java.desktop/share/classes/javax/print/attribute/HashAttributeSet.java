@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.print.attribute;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 
@@ -42,6 +43,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
     /**
      * Use serialVersionUID from JDK 1.4 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 5311560590283707917L;
 
     /**
@@ -69,6 +71,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *             This does not guarantee equality of serialized forms since
      *             the order in which the attributes are written is not defined.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
 
         s.defaultWriteObject();
@@ -86,6 +89,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * @throws ClassNotFoundException if the class is not found
      * @throws IOException if an I/O exception has occurred
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_OS_HPP
 #define SHARE_RUNTIME_OS_HPP
 
-#include "jvm.h"
+#include "jvm_md.h"
 #include "metaprogramming/integralConstant.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -77,12 +77,17 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
+enum WXMode {
+  WXWrite,
+  WXExec
+};
+
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
 const bool ExecMem = true;
 
 // Typedef for structured exception handling support
-typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
+typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread);
 
 class MallocTracker;
 
@@ -154,7 +159,8 @@ class os: AllStatic {
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
-  static char*  pd_reserve_memory_special(size_t size, size_t alignment,
+  static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
+
                                           char* addr, bool executable);
   static bool   pd_release_memory_special(char* addr, size_t bytes);
 
@@ -180,8 +186,8 @@ class os: AllStatic {
   static jint init_2(void);                    // Called after command line parsing
                                                // and VM ergonomics processing
 
-  // unset environment variable
-  static bool unsetenv(const char* name);
+  // Get environ pointer, platform independently
+  static char** get_environ();
 
   static bool have_special_privileges();
 
@@ -190,7 +196,6 @@ class os: AllStatic {
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
   static void   run_periodic_checks();
-  static bool   supports_monotonic_clock();
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();
@@ -218,6 +223,16 @@ class os: AllStatic {
   static char*      local_time_string(char *buf, size_t buflen);
   static struct tm* localtime_pd     (const time_t* clock, struct tm*  res);
   static struct tm* gmtime_pd        (const time_t* clock, struct tm*  res);
+
+  // "YYYY-MM-DDThh:mm:ss.mmm+zzzz" incl. terminating zero
+  static const size_t iso8601_timestamp_size = 29;
+
+  // Fill in buffer with an ISO-8601 string corresponding to the given javaTimeMillis value
+  // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
+  // Returns buffer, or NULL if it failed.
+  static char* iso8601_time(jlong milliseconds_since_19700101, char* buffer,
+                            size_t buffer_length, bool utc = false);
+
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
   // Returns buffer, or NULL if it failed.
@@ -260,10 +275,6 @@ class os: AllStatic {
     assert(_initial_active_processor_count > 0, "Initial active processor count not set yet.");
     return _initial_active_processor_count;
   }
-
-  // Binds the current process to a processor.
-  //    Returns true if it worked, false if it didn't.
-  static bool bind_to_processor(uint processor_id);
 
   // Give a name to the current thread.
   static void set_native_thread_name(const char *name);
@@ -412,7 +423,7 @@ class os: AllStatic {
 
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
-  static char*  reserve_memory_special(size_t size, size_t alignment,
+  static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
                                        char* addr, bool executable);
   static bool   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
@@ -428,11 +439,11 @@ class os: AllStatic {
 
   enum ThreadType {
     vm_thread,
-    cgc_thread,        // Concurrent GC thread
-    pgc_thread,        // Parallel GC thread
+    gc_thread,         // GC thread
     java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,
+    asynclog_thread,   // dedicated to flushing logs
     os_thread
   };
 
@@ -502,11 +513,16 @@ class os: AllStatic {
 
   static bool message_box(const char* title, const char* message);
 
-  // run cmd in a separate process and return its exit code; or -1 on failures
-  static int fork_and_exec(char *cmd, bool use_vfork_if_available = false);
+  // run cmd in a separate process and return its exit code; or -1 on failures.
+  // Note: only safe to use in fatal error situations.
+  static int fork_and_exec(const char *cmd);
 
-  // Call ::exit() on all platforms but Windows
+  // Call ::exit() on all platforms
   static void exit(int num);
+
+  // Call ::_exit() on all platforms. Similar semantics to die() except we never
+  // want a core dump.
+  static void _exit(int num);
 
   // Terminate the VM, but don't exit the process
   static void shutdown();
@@ -529,6 +545,7 @@ class os: AllStatic {
   static FILE* fopen(const char* path, const char* mode);
   static int close(int fd);
   static jlong lseek(int fd, jlong offset, int whence);
+  static bool file_exists(const char* file);
   // This function, on Windows, canonicalizes a given path (see os_windows.cpp for details).
   // On Posix, this function is a noop: it does not change anything and just returns
   // the input pointer.
@@ -799,7 +816,7 @@ class os: AllStatic {
   static void init_random(unsigned int initval);    // initialize random sequence
 
   // Structured OS Exception support
-  static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
+  static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread);
 
   // On Posix compatible OS it will simply check core dump limits while on Windows
   // it will check if dump file can be created. Check or prepare a core dump to be
@@ -926,6 +943,11 @@ class os: AllStatic {
     Thread* _thread;
     bool _done;
   };
+
+#if defined(__APPLE__) && defined(AARCH64)
+  // Enables write or execute access to writeable and executable pages.
+  static void current_thread_enable_wx(WXMode mode);
+#endif // __APPLE__ && AARCH64
 
 #ifndef _WINDOWS
   // Suspend/resume support

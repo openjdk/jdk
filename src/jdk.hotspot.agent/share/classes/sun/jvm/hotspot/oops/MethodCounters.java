@@ -50,7 +50,6 @@ public class MethodCounters extends Metadata {
     Type type      = db.lookupType("MethodCounters");
 
     if (VM.getVM().isServerCompiler()) {
-      interpreterInvocationCountField = new CIntField(type.getCIntegerField("_interpreter_invocation_count"), 0);
       interpreterThrowoutCountField = new CIntField(type.getCIntegerField("_interpreter_throwout_count"), 0);
     }
     if (!VM.getVM().isCore()) {
@@ -59,18 +58,9 @@ public class MethodCounters extends Metadata {
     }
   }
 
-  private static CIntField interpreterInvocationCountField;
   private static CIntField interpreterThrowoutCountField;
   private static CIntField invocationCounter;
   private static CIntField backedgeCounter;
-
-  public int interpreterInvocationCount() {
-      if (interpreterInvocationCountField != null) {
-        return (int) interpreterInvocationCountField.getValue(this);
-      } else {
-        return 0;
-      }
-  }
 
   public int interpreterThrowoutCount() {
       if (interpreterThrowoutCountField != null) {

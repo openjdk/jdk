@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,20 +62,20 @@ import sun.security.util.KeyUtil;
 public final class CRSACipher extends CipherSpi {
 
     // constant for an empty byte array
-    private final static byte[] B0 = new byte[0];
+    private static final byte[] B0 = new byte[0];
 
     // mode constant for public key encryption
-    private final static int MODE_ENCRYPT = 1;
+    private static final int MODE_ENCRYPT = 1;
     // mode constant for private key decryption
-    private final static int MODE_DECRYPT = 2;
+    private static final int MODE_DECRYPT = 2;
     // mode constant for private key encryption (signing)
-    private final static int MODE_SIGN    = 3;
+    private static final int MODE_SIGN    = 3;
     // mode constant for public key decryption (verifying)
-    private final static int MODE_VERIFY  = 4;
+    private static final int MODE_VERIFY  = 4;
 
     // constant for PKCS#1 v1.5 RSA
-    private final static String PAD_PKCS1 = "PKCS1Padding";
-    private final static int PAD_PKCS1_LENGTH = 11;
+    private static final String PAD_PKCS1 = "PKCS1Padding";
+    private static final int PAD_PKCS1_LENGTH = 11;
 
     // current mode, one of MODE_* above. Set when init() is called
     private int mode;
@@ -204,7 +204,8 @@ public final class CRSACipher extends CipherSpi {
             encrypt = false;
             break;
         default:
-            throw new InvalidKeyException("Unknown mode: " + opmode);
+            // should never happen; checked by Cipher.init()
+            throw new AssertionError("Unknown mode: " + opmode);
         }
 
         if (!(key instanceof CKey)) {
@@ -289,19 +290,19 @@ public final class CRSACipher extends CipherSpi {
             switch (mode) {
             case MODE_SIGN:
                 return encryptDecrypt(data, bufOfs,
-                    privateKey.getHCryptKey(), true);
+                    privateKey, true);
 
             case MODE_VERIFY:
                 return encryptDecrypt(data, bufOfs,
-                    publicKey.getHCryptKey(), false);
+                    publicKey, false);
 
             case MODE_ENCRYPT:
                 return encryptDecrypt(data, bufOfs,
-                    publicKey.getHCryptKey(), true);
+                    publicKey, true);
 
             case MODE_DECRYPT:
                 return encryptDecrypt(data, bufOfs,
-                    privateKey.getHCryptKey(), false);
+                    privateKey, false);
 
             default:
                 throw new AssertionError("Internal error");
@@ -492,10 +493,20 @@ public final class CRSACipher extends CipherSpi {
     }
 
     /*
-     * Encrypt/decrypt a data buffer using Microsoft Crypto API with HCRYPTKEY.
+     * Encrypt/decrypt a data buffer using Microsoft Crypto API or CNG.
      * It expects and returns ciphertext data in big-endian form.
      */
-    private native static byte[] encryptDecrypt(byte[] data, int dataSize,
-        long hCryptKey, boolean doEncrypt) throws KeyException;
+    private static byte[] encryptDecrypt(byte[] data, int dataSize,
+            CKey key, boolean doEncrypt) throws KeyException {
+        if (key.getHCryptKey() != 0) {
+            return encryptDecrypt(data, dataSize, key.getHCryptKey(), doEncrypt);
+        } else {
+            return cngEncryptDecrypt(data, dataSize, key.getHCryptProvider(), doEncrypt);
+        }
+    }
 
+    private static native byte[] encryptDecrypt(byte[] data, int dataSize,
+            long key, boolean doEncrypt) throws KeyException;
+    private static native byte[] cngEncryptDecrypt(byte[] data, int dataSize,
+            long key, boolean doEncrypt) throws KeyException;
 }

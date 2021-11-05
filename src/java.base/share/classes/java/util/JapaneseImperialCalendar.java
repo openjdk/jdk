@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -886,7 +886,7 @@ class JapaneseImperialCalendar extends Calendar {
                 } else if (nfd >= (month1 + monthLength)) {
                     nfd = month1 + monthLength - 1;
                 }
-                set(DAY_OF_MONTH, (int)(nfd - month1) + 1);
+                set(DAY_OF_MONTH, getCalendarDate(nfd).getDayOfMonth());
                 return;
             }
 
@@ -1115,16 +1115,14 @@ class JapaneseImperialCalendar extends Calendar {
      * @see #getActualMaximum(int)
      */
     public int getMaximum(int field) {
-        switch (field) {
-        case YEAR:
-            {
+        return switch (field) {
+            case YEAR -> {
                 // The value should depend on the time zone of this calendar.
-                LocalGregorianCalendar.Date d = jcal.getCalendarDate(Long.MAX_VALUE,
-                                                                     getZone());
-                return Math.max(LEAST_MAX_VALUES[YEAR], d.getYear());
+                LocalGregorianCalendar.Date d = jcal.getCalendarDate(Long.MAX_VALUE, getZone());
+                yield Math.max(LEAST_MAX_VALUES[YEAR], d.getYear());
             }
-        }
-        return MAX_VALUES[field];
+            default -> MAX_VALUES[field];
+        };
     }
 
     /**
@@ -1168,13 +1166,10 @@ class JapaneseImperialCalendar extends Calendar {
      * @see #getActualMaximum(int)
      */
     public int getLeastMaximum(int field) {
-        switch (field) {
-        case YEAR:
-            {
-                return Math.min(LEAST_MAX_VALUES[YEAR], getMaximum(YEAR));
-            }
-        }
-        return LEAST_MAX_VALUES[field];
+        return switch (field) {
+            case YEAR -> Math.min(LEAST_MAX_VALUES[YEAR], getMaximum(YEAR));
+            default -> LEAST_MAX_VALUES[field];
+        };
     }
 
     /**
@@ -1207,8 +1202,7 @@ class JapaneseImperialCalendar extends Calendar {
                                                               getZone());
         int eraIndex = getEraIndex(jd);
         switch (field) {
-        case YEAR:
-            {
+            case YEAR -> {
                 if (eraIndex > BEFORE_MEIJI) {
                     value = 1;
                     long since = eras[eraIndex].getSince(getZone());
@@ -1239,10 +1233,7 @@ class JapaneseImperialCalendar extends Calendar {
                     }
                 }
             }
-            break;
-
-        case MONTH:
-            {
+            case MONTH -> {
                 // In Before Meiji and Meiji, January is the first month.
                 if (eraIndex > MEIJI && jd.getYear() == 1) {
                     long since = eras[eraIndex].getSince(getZone());
@@ -1253,10 +1244,7 @@ class JapaneseImperialCalendar extends Calendar {
                     }
                 }
             }
-            break;
-
-        case WEEK_OF_YEAR:
-            {
+            case WEEK_OF_YEAR -> {
                 value = 1;
                 CalendarDate d = jcal.getCalendarDate(Long.MIN_VALUE, getZone());
                 // shift 400 years to avoid underflow
@@ -1276,7 +1264,6 @@ class JapaneseImperialCalendar extends Calendar {
                     value++;
                 }
             }
-            break;
         }
         return value;
     }
@@ -1313,13 +1300,10 @@ class JapaneseImperialCalendar extends Calendar {
 
         JapaneseImperialCalendar jc = getNormalizedCalendar();
         LocalGregorianCalendar.Date date = jc.jdate;
-        int normalizedYear = date.getNormalizedYear();
 
-        int value = -1;
-        switch (field) {
-        case MONTH:
-            {
-                value = DECEMBER;
+        return switch (field) {
+            case MONTH -> {
+                int month = DECEMBER;
                 if (isTransitionYear(date.getNormalizedYear())) {
                     // TODO: there may be multiple transitions in a year.
                     int eraIndex = getEraIndex(date);
@@ -1333,24 +1317,18 @@ class JapaneseImperialCalendar extends Calendar {
                         LocalGregorianCalendar.Date ldate
                             = (LocalGregorianCalendar.Date) date.clone();
                         jcal.getCalendarDateFromFixedDate(ldate, transition - 1);
-                        value = ldate.getMonth() - 1;
+                        month = ldate.getMonth() - 1;
                     }
                 } else {
-                    LocalGregorianCalendar.Date d = jcal.getCalendarDate(Long.MAX_VALUE,
-                                                                         getZone());
+                    LocalGregorianCalendar.Date d = jcal.getCalendarDate(Long.MAX_VALUE, getZone());
                     if (date.getEra() == d.getEra() && date.getYear() == d.getYear()) {
-                        value = d.getMonth() - 1;
+                        month = d.getMonth() - 1;
                     }
                 }
+                yield month;
             }
-            break;
-
-        case DAY_OF_MONTH:
-            value = jcal.getMonthLength(date);
-            break;
-
-        case DAY_OF_YEAR:
-            {
+            case DAY_OF_MONTH -> jcal.getMonthLength(date);
+            case DAY_OF_YEAR -> {
                 if (isTransitionYear(date.getNormalizedYear())) {
                     // Handle transition year.
                     // TODO: there may be multiple transitions in a year.
@@ -1364,42 +1342,35 @@ class JapaneseImperialCalendar extends Calendar {
                     CalendarDate d = gcal.newCalendarDate(TimeZone.NO_TIMEZONE);
                     d.setDate(date.getNormalizedYear(), BaseCalendar.JANUARY, 1);
                     if (fd < transition) {
-                        value = (int)(transition - gcal.getFixedDate(d));
-                    } else {
-                        d.addYear(+1);
-                        value = (int)(gcal.getFixedDate(d) - transition);
+                        yield (int) (transition - gcal.getFixedDate(d));
                     }
+                    d.addYear(1);
+                    yield (int) (gcal.getFixedDate(d) - transition);
+                }
+                LocalGregorianCalendar.Date d = jcal.getCalendarDate(Long.MAX_VALUE, getZone());
+                if (date.getEra() == d.getEra() && date.getYear() == d.getYear()) {
+                    long fd = jcal.getFixedDate(d);
+                    long jan1 = getFixedDateJan1(d, fd);
+                    yield (int) (fd - jan1) + 1;
+                } else if (date.getYear() == getMinimum(YEAR)) {
+                    CalendarDate d1 = jcal.getCalendarDate(Long.MIN_VALUE, getZone());
+                    long fd1 = jcal.getFixedDate(d1);
+                    d1.addYear(1);
+                    d1.setMonth(BaseCalendar.JANUARY).setDayOfMonth(1);
+                    jcal.normalize(d1);
+                    long fd2 = jcal.getFixedDate(d1);
+                    yield (int) (fd2 - fd1);
                 } else {
-                    LocalGregorianCalendar.Date d = jcal.getCalendarDate(Long.MAX_VALUE,
-                                                                         getZone());
-                    if (date.getEra() == d.getEra() && date.getYear() == d.getYear()) {
-                        long fd = jcal.getFixedDate(d);
-                        long jan1 = getFixedDateJan1(d, fd);
-                        value = (int)(fd - jan1) + 1;
-                    } else if (date.getYear() == getMinimum(YEAR)) {
-                        CalendarDate d1 = jcal.getCalendarDate(Long.MIN_VALUE, getZone());
-                        long fd1 = jcal.getFixedDate(d1);
-                        d1.addYear(1);
-                        d1.setMonth(BaseCalendar.JANUARY).setDayOfMonth(1);
-                        jcal.normalize(d1);
-                        long fd2 = jcal.getFixedDate(d1);
-                        value = (int)(fd2 - fd1);
-                    } else {
-                        value = jcal.getYearLength(date);
-                    }
+                    yield jcal.getYearLength(date);
                 }
             }
-            break;
-
-        case WEEK_OF_YEAR:
-            {
+            case WEEK_OF_YEAR -> {
                 if (!isTransitionYear(date.getNormalizedYear())) {
-                    LocalGregorianCalendar.Date jd = jcal.getCalendarDate(Long.MAX_VALUE,
-                                                                          getZone());
+                    LocalGregorianCalendar.Date jd = jcal.getCalendarDate(Long.MAX_VALUE, getZone());
                     if (date.getEra() == jd.getEra() && date.getYear() == jd.getYear()) {
                         long fd = jcal.getFixedDate(jd);
                         long jan1 = getFixedDateJan1(jd, fd);
-                        value = getWeekNumber(jan1, fd);
+                        yield getWeekNumber(jan1, fd);
                     } else if (date.getEra() == null && date.getYear() == getMinimum(YEAR)) {
                         CalendarDate d = jcal.getCalendarDate(Long.MIN_VALUE, getZone());
                         // shift 400 years to avoid underflow
@@ -1412,29 +1383,27 @@ class JapaneseImperialCalendar extends Calendar {
                         long nextJan1 = jcal.getFixedDate(jd);
                         long nextJan1st = LocalGregorianCalendar.getDayOfWeekDateOnOrBefore(nextJan1 + 6,
                                                                                             getFirstDayOfWeek());
-                        int ndays = (int)(nextJan1st - nextJan1);
+                        int ndays = (int) (nextJan1st - nextJan1);
                         if (ndays >= getMinimalDaysInFirstWeek()) {
                             nextJan1st -= 7;
                         }
-                        value = getWeekNumber(jan1, nextJan1st);
-                    } else {
-                        // Get the day of week of January 1 of the year
-                        CalendarDate d = gcal.newCalendarDate(TimeZone.NO_TIMEZONE);
-                        d.setDate(date.getNormalizedYear(), BaseCalendar.JANUARY, 1);
-                        int dayOfWeek = gcal.getDayOfWeek(d);
-                        // Normalize the day of week with the firstDayOfWeek value
-                        dayOfWeek -= getFirstDayOfWeek();
-                        if (dayOfWeek < 0) {
-                            dayOfWeek += 7;
-                        }
-                        value = 52;
-                        int magic = dayOfWeek + getMinimalDaysInFirstWeek() - 1;
-                        if ((magic == 6) ||
-                            (date.isLeapYear() && (magic == 5 || magic == 12))) {
-                            value++;
-                        }
+                        yield getWeekNumber(jan1, nextJan1st);
                     }
-                    break;
+                    // Get the day of week of January 1 of the year
+                    CalendarDate d = gcal.newCalendarDate(TimeZone.NO_TIMEZONE);
+                    d.setDate(date.getNormalizedYear(), BaseCalendar.JANUARY, 1);
+                    int dayOfWeek = gcal.getDayOfWeek(d);
+                    // Normalize the day of week with the firstDayOfWeek value
+                    dayOfWeek -= getFirstDayOfWeek();
+                    if (dayOfWeek < 0) {
+                        dayOfWeek += 7;
+                    }
+                    int magic = dayOfWeek + getMinimalDaysInFirstWeek() - 1;
+                    if ((magic == 6) ||
+                        (date.isLeapYear() && (magic == 5 || magic == 12))) {
+                        yield 53;
+                    }
+                    yield 52;
                 }
 
                 if (jc == this) {
@@ -1442,49 +1411,43 @@ class JapaneseImperialCalendar extends Calendar {
                 }
                 int max = getActualMaximum(DAY_OF_YEAR);
                 jc.set(DAY_OF_YEAR, max);
-                value = jc.get(WEEK_OF_YEAR);
-                if (value == 1 && max > 7) {
+                int weekOfYear = jc.get(WEEK_OF_YEAR);
+                if (weekOfYear == 1 && max > 7) {
                     jc.add(WEEK_OF_YEAR, -1);
-                    value = jc.get(WEEK_OF_YEAR);
+                    weekOfYear = jc.get(WEEK_OF_YEAR);
                 }
+                yield weekOfYear;
             }
-            break;
-
-        case WEEK_OF_MONTH:
-            {
-                LocalGregorianCalendar.Date jd = jcal.getCalendarDate(Long.MAX_VALUE,
-                                                                      getZone());
-                if (!(date.getEra() == jd.getEra() && date.getYear() == jd.getYear())) {
-                    CalendarDate d = gcal.newCalendarDate(TimeZone.NO_TIMEZONE);
-                    d.setDate(date.getNormalizedYear(), date.getMonth(), 1);
-                    int dayOfWeek = gcal.getDayOfWeek(d);
-                    int monthLength = gcal.getMonthLength(d);
-                    dayOfWeek -= getFirstDayOfWeek();
-                    if (dayOfWeek < 0) {
-                        dayOfWeek += 7;
-                    }
-                    int nDaysFirstWeek = 7 - dayOfWeek; // # of days in the first week
-                    value = 3;
-                    if (nDaysFirstWeek >= getMinimalDaysInFirstWeek()) {
-                        value++;
-                    }
-                    monthLength -= nDaysFirstWeek + 7 * 3;
-                    if (monthLength > 0) {
-                        value++;
-                        if (monthLength > 7) {
-                            value++;
-                        }
-                    }
-                } else {
+            case WEEK_OF_MONTH -> {
+                LocalGregorianCalendar.Date jd = jcal.getCalendarDate(Long.MAX_VALUE, getZone());
+                if (date.getEra() == jd.getEra() && date.getYear() == jd.getYear()) {
                     long fd = jcal.getFixedDate(jd);
                     long month1 = fd - jd.getDayOfMonth() + 1;
-                    value = getWeekNumber(month1, fd);
+                    yield getWeekNumber(month1, fd);
                 }
+                CalendarDate d = gcal.newCalendarDate(TimeZone.NO_TIMEZONE);
+                d.setDate(date.getNormalizedYear(), date.getMonth(), 1);
+                int dayOfWeek = gcal.getDayOfWeek(d);
+                int monthLength = actualMonthLength();
+                dayOfWeek -= getFirstDayOfWeek();
+                if (dayOfWeek < 0) {
+                    dayOfWeek += 7;
+                }
+                int nDaysFirstWeek = 7 - dayOfWeek; // # of days in the first week
+                int weekOfMonth = 3;
+                if (nDaysFirstWeek >= getMinimalDaysInFirstWeek()) {
+                    weekOfMonth++;
+                }
+                monthLength -= nDaysFirstWeek + 7 * 3;
+                if (monthLength > 0) {
+                    weekOfMonth++;
+                    if (monthLength > 7) {
+                        weekOfMonth++;
+                    }
+                }
+                yield weekOfMonth;
             }
-            break;
-
-        case DAY_OF_WEEK_IN_MONTH:
-            {
+            case DAY_OF_WEEK_IN_MONTH -> {
                 int ndays, dow1;
                 int dow = date.getDayOfWeek();
                 BaseCalendar.Date d = (BaseCalendar.Date) date.clone();
@@ -1497,42 +1460,36 @@ class JapaneseImperialCalendar extends Calendar {
                     x += 7;
                 }
                 ndays -= x;
-                value = (ndays + 6) / 7;
+                yield (ndays + 6) / 7;
             }
-            break;
-
-        case YEAR:
-            {
+            case YEAR -> {
                 CalendarDate jd = jcal.getCalendarDate(jc.getTimeInMillis(), getZone());
                 CalendarDate d;
                 int eraIndex = getEraIndex(date);
+                int year;
                 if (eraIndex == eras.length - 1) {
                     d = jcal.getCalendarDate(Long.MAX_VALUE, getZone());
-                    value = d.getYear();
+                    year = d.getYear();
                     // Use an equivalent year for the
                     // getYearOffsetInMillis call to avoid overflow.
-                    if (value > 400) {
-                        jd.setYear(value - 400);
+                    if (year > 400) {
+                        jd.setYear(year - 400);
                     }
                 } else {
-                    d = jcal.getCalendarDate(eras[eraIndex + 1].getSince(getZone()) - 1,
-                                             getZone());
-                    value = d.getYear();
+                    d = jcal.getCalendarDate(eras[eraIndex + 1].getSince(getZone()) - 1, getZone());
+                    year = d.getYear();
                     // Use the same year as d.getYear() to be
                     // consistent with leap and common years.
-                    jd.setYear(value);
+                    jd.setYear(year);
                 }
                 jcal.normalize(jd);
                 if (getYearOffsetInMillis(jd) > getYearOffsetInMillis(d)) {
-                    value--;
+                    year--;
                 }
+                yield year;
             }
-            break;
-
-        default:
-            throw new ArrayIndexOutOfBoundsException(field);
-        }
-        return value;
+            default -> throw new ArrayIndexOutOfBoundsException(field);
+        };
     }
 
     /**
@@ -2239,7 +2196,7 @@ class JapaneseImperialCalendar extends Calendar {
     private int actualMonthLength() {
         int length = jcal.getMonthLength(jdate);
         int eraIndex = getTransitionEraIndex(jdate);
-        if (eraIndex == -1) {
+        if (eraIndex != -1) {
             long transitionFixedDate = sinceFixedDates[eraIndex];
             CalendarDate d = eras[eraIndex].getSinceDate();
             if (transitionFixedDate <= cachedFixedDate) {

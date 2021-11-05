@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ public abstract class Reference<T> {
      *   [inactive/unregistered]
      *
      * Unreachable states (because enqueue also clears):
-     *   [active/enqeued]
+     *   [active/enqueued]
      *   [active/dequeued]
      *
      * [1] Unregistered is not permitted for FinalReferences.
@@ -184,7 +184,7 @@ public abstract class Reference<T> {
      *     pending: next element in the pending-Reference list (null if last)
      *    inactive: null
      */
-    private transient Reference<T> discovered;
+    private transient Reference<?> discovered;
 
 
     /* High-priority thread to enqueue pending References
@@ -220,7 +220,7 @@ public abstract class Reference<T> {
     /*
      * Atomically get and clear (set to null) the VM's pending-Reference list.
      */
-    private static native Reference<Object> getAndClearReferencePendingList();
+    private static native Reference<?> getAndClearReferencePendingList();
 
     /*
      * Test whether the VM's pending-Reference list contains any entries.
@@ -232,6 +232,16 @@ public abstract class Reference<T> {
      */
     private static native void waitForReferencePendingList();
 
+    /*
+     * Enqueue a Reference taken from the pending list.  Calling this method
+     * takes us from the Reference<?> domain of the pending list elements to
+     * having a Reference<T> with a correspondingly typed queue.
+     */
+    private void enqueueFromPending() {
+        var q = queue;
+        if (q != ReferenceQueue.NULL) q.enqueue(this);
+    }
+
     private static final Object processPendingLock = new Object();
     private static boolean processPendingActive = false;
 
@@ -241,13 +251,13 @@ public abstract class Reference<T> {
         // These are separate operations to avoid a race with other threads
         // that are calling waitForReferenceProcessing().
         waitForReferencePendingList();
-        Reference<Object> pendingList;
+        Reference<?> pendingList;
         synchronized (processPendingLock) {
             pendingList = getAndClearReferencePendingList();
             processPendingActive = true;
         }
         while (pendingList != null) {
-            Reference<Object> ref = pendingList;
+            Reference<?> ref = pendingList;
             pendingList = ref.discovered;
             ref.discovered = null;
 
@@ -260,8 +270,7 @@ public abstract class Reference<T> {
                     processPendingLock.notifyAll();
                 }
             } else {
-                ReferenceQueue<? super Object> q = ref.queue;
-                if (q != ReferenceQueue.NULL) q.enqueue(ref);
+                ref.enqueueFromPending();
             }
         }
         // Notify any waiters of completion of current round.
@@ -354,13 +363,20 @@ public abstract class Reference<T> {
      * @since 16
      */
     public final boolean refersTo(T obj) {
-        return refersTo0(obj);
+        return refersToImpl(obj);
     }
 
     /* Implementation of refersTo(), overridden for phantom references.
+     * This method exists only to avoid making refersTo0() virtual. Making
+     * refersTo0() virtual has the undesirable effect of C2 often preferring
+     * to call the native implementation over the intrinsic.
      */
+    boolean refersToImpl(T obj) {
+        return refersTo0(obj);
+    }
+
     @IntrinsicCandidate
-    native boolean refersTo0(Object o);
+    private native boolean refersTo0(Object o);
 
     /**
      * Clears this reference object.  Invoking this method will not cause this
@@ -494,8 +510,7 @@ public abstract class Reference<T> {
      * this method.  Invocation of this method does not itself initiate garbage
      * collection or finalization.
      *
-     * <p> This method establishes an ordering for
-     * <a href="package-summary.html#reachability"><em>strong reachability</em></a>
+     * <p> This method establishes an ordering for <em>strong reachability</em>
      * with respect to garbage collection.  It controls relations that are
      * otherwise only implicit in a program -- the reachability conditions
      * triggering garbage collection.  This method is designed for use in
@@ -593,7 +608,6 @@ public abstract class Reference<T> {
      *
      * @param ref the reference. If {@code null}, this method has no effect.
      * @since 9
-     * @jls 12.6 Finalization of Class Instances
      */
     @ForceInline
     public static void reachabilityFence(Object ref) {

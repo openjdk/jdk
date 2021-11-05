@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -123,12 +124,112 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
   if (!InlineIntrinsics) return NULL; // Generate a vanilla entry
 
-  // TODO: ARM
-  return NULL;
+  address entry_point = NULL;
+  Register continuation = LR;
+  bool use_runtime_call = false;
+  switch (kind) {
+  case Interpreter::java_lang_math_abs:
+    entry_point = __ pc();
+#ifdef __SOFTFP__
+    use_runtime_call = true;
+    __ ldrd(R0, Address(SP));
+#else // !__SOFTFP__
+    __ ldr_double(D0, Address(SP));
+    __ abs_double(D0, D0);
+#endif // __SOFTFP__
+    break;
+  case Interpreter::java_lang_math_sqrt:
+    entry_point = __ pc();
+#ifdef __SOFTFP__
+    use_runtime_call = true;
+    __ ldrd(R0, Address(SP));
+#else // !__SOFTFP__
+    __ ldr_double(D0, Address(SP));
+    __ sqrt_double(D0, D0);
+#endif // __SOFTFP__
+    break;
+  case Interpreter::java_lang_math_sin:
+  case Interpreter::java_lang_math_cos:
+  case Interpreter::java_lang_math_tan:
+  case Interpreter::java_lang_math_log:
+  case Interpreter::java_lang_math_log10:
+  case Interpreter::java_lang_math_exp:
+    entry_point = __ pc();
+    use_runtime_call = true;
+#ifdef __SOFTFP__
+    __ ldrd(R0, Address(SP));
+#else // !__SOFTFP__
+    __ ldr_double(D0, Address(SP));
+#endif // __SOFTFP__
+    break;
+  case Interpreter::java_lang_math_pow:
+    entry_point = __ pc();
+    use_runtime_call = true;
+#ifdef __SOFTFP__
+    __ ldrd(R0, Address(SP, 2 * Interpreter::stackElementSize));
+    __ ldrd(R2, Address(SP));
+#else // !__SOFTFP__
+    __ ldr_double(D0, Address(SP, 2 * Interpreter::stackElementSize));
+    __ ldr_double(D1, Address(SP));
+#endif // __SOFTFP__
+    break;
+  case Interpreter::java_lang_math_fmaD:
+  case Interpreter::java_lang_math_fmaF:
+    // TODO: Implement intrinsic
+    break;
+  default:
+    ShouldNotReachHere();
+  }
 
-  address entry_point = __ pc();
-  STOP("generate_math_entry");
+  if (entry_point != NULL) {
+    __ mov(SP, Rsender_sp);
+    if (use_runtime_call) {
+      __ mov(Rtmp_save0, LR);
+      continuation = Rtmp_save0;
+      generate_math_runtime_call(kind);
+    }
+    __ ret(continuation);
+  }
   return entry_point;
+}
+
+void TemplateInterpreterGenerator::generate_math_runtime_call(AbstractInterpreter::MethodKind kind) {
+  address fn;
+  switch (kind) {
+#ifdef __SOFTFP__
+  case Interpreter::java_lang_math_abs:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dabs);
+    break;
+  case Interpreter::java_lang_math_sqrt:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);
+    break;
+#endif // __SOFTFP__
+  case Interpreter::java_lang_math_sin:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
+    break;
+  case Interpreter::java_lang_math_cos:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
+    break;
+  case Interpreter::java_lang_math_tan:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
+    break;
+  case Interpreter::java_lang_math_log:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
+    break;
+  case Interpreter::java_lang_math_log10:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
+    break;
+  case Interpreter::java_lang_math_exp:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
+    break;
+  case Interpreter::java_lang_math_pow:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
+    break;
+  default:
+    ShouldNotReachHere();
+    fn = NULL; // silence "maybe uninitialized" compiler warnings
+  }
+  __ call_VM_leaf(fn);
 }
 
 address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
@@ -364,9 +465,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
 //
 // Uses R0, R1, Rtemp.
 //
-void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow,
-                                                 Label* profile_method,
-                                                 Label* profile_method_continue) {
+void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
   Label done;
   const Register Rcounters = Rtemp;
   const Address invocation_counter(Rcounters,
@@ -375,79 +474,25 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow,
 
   // Note: In tiered we increment either counters in MethodCounters* or
   // in MDO depending if we're profiling or not.
-  if (TieredCompilation) {
-    int increment = InvocationCounter::count_increment;
-    Label no_mdo;
-    if (ProfileInterpreter) {
-      // Are we profiling?
-      __ ldr(R1_tmp, Address(Rmethod, Method::method_data_offset()));
-      __ cbz(R1_tmp, no_mdo);
-      // Increment counter in the MDO
-      const Address mdo_invocation_counter(R1_tmp,
-                    in_bytes(MethodData::invocation_counter_offset()) +
-                    in_bytes(InvocationCounter::counter_offset()));
-      const Address mask(R1_tmp, in_bytes(MethodData::invoke_mask_offset()));
-      __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, R0_tmp, Rtemp, eq, overflow);
-      __ b(done);
-    }
-    __ bind(no_mdo);
-    __ get_method_counters(Rmethod, Rcounters, done);
-    const Address mask(Rcounters, in_bytes(MethodCounters::invoke_mask_offset()));
-    __ increment_mask_and_jump(invocation_counter, increment, mask, R0_tmp, R1_tmp, eq, overflow);
-    __ bind(done);
-  } else { // not TieredCompilation
-    const Address backedge_counter(Rcounters,
-                  MethodCounters::backedge_counter_offset() +
-                  InvocationCounter::counter_offset());
-
-    const Register Ricnt = R0_tmp;  // invocation counter
-    const Register Rbcnt = R1_tmp;  // backedge counter
-
-    __ get_method_counters(Rmethod, Rcounters, done);
-
-    if (ProfileInterpreter) {
-      const Register Riic = R1_tmp;
-      __ ldr_s32(Riic, Address(Rcounters, MethodCounters::interpreter_invocation_counter_offset()));
-      __ add(Riic, Riic, 1);
-      __ str_32(Riic, Address(Rcounters, MethodCounters::interpreter_invocation_counter_offset()));
-    }
-
-    // Update standard invocation counters
-
-    __ ldr_u32(Ricnt, invocation_counter);
-    __ ldr_u32(Rbcnt, backedge_counter);
-
-    __ add(Ricnt, Ricnt, InvocationCounter::count_increment);
-
-    __ bic(Rbcnt, Rbcnt, ~InvocationCounter::count_mask_value); // mask out the status bits
-
-    __ str_32(Ricnt, invocation_counter);            // save invocation count
-    __ add(Ricnt, Ricnt, Rbcnt);                     // add both counters
-
-    // profile_method is non-null only for interpreted method so
-    // profile_method != NULL == !native_call
-    // BytecodeInterpreter only calls for native so code is elided.
-
-    if (ProfileInterpreter && profile_method != NULL) {
-      assert(profile_method_continue != NULL, "should be non-null");
-
-      // Test to see if we should create a method data oop
-      // Reuse R1_tmp as we don't need backedge counters anymore.
-      Address profile_limit(Rcounters, in_bytes(MethodCounters::interpreter_profile_limit_offset()));
-      __ ldr_s32(R1_tmp, profile_limit);
-      __ cmp_32(Ricnt, R1_tmp);
-      __ b(*profile_method_continue, lt);
-
-      // if no method data exists, go to profile_method
-      __ test_method_data_pointer(R1_tmp, *profile_method);
-    }
-
-    Address invoke_limit(Rcounters, in_bytes(MethodCounters::interpreter_invocation_limit_offset()));
-    __ ldr_s32(R1_tmp, invoke_limit);
-    __ cmp_32(Ricnt, R1_tmp);
-    __ b(*overflow, hs);
-    __ bind(done);
+  int increment = InvocationCounter::count_increment;
+  Label no_mdo;
+  if (ProfileInterpreter) {
+    // Are we profiling?
+    __ ldr(R1_tmp, Address(Rmethod, Method::method_data_offset()));
+    __ cbz(R1_tmp, no_mdo);
+    // Increment counter in the MDO
+    const Address mdo_invocation_counter(R1_tmp,
+                  in_bytes(MethodData::invocation_counter_offset()) +
+                  in_bytes(InvocationCounter::counter_offset()));
+    const Address mask(R1_tmp, in_bytes(MethodData::invoke_mask_offset()));
+    __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, R0_tmp, Rtemp, eq, overflow);
+    __ b(done);
   }
+  __ bind(no_mdo);
+  __ get_method_counters(Rmethod, Rcounters, done);
+  const Address mask(Rcounters, in_bytes(MethodCounters::invoke_mask_offset()));
+  __ increment_mask_and_jump(invocation_counter, increment, mask, R0_tmp, R1_tmp, eq, overflow);
+  __ bind(done);
 }
 
 void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue) {
@@ -538,7 +583,6 @@ void TemplateInterpreterGenerator::lock_method() {
     __ b(done, eq);
     __ load_mirror(R0, Rmethod, Rtemp);
     __ bind(done);
-    __ resolve(IS_NOT_NULL, R0);
   }
 
   // add space for monitor & lock
@@ -809,7 +853,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
       // been locked yet.
       __ set_do_not_unlock_if_synchronized(true, Rtemp);
     }
-    generate_counter_incr(&invocation_counter_overflow, NULL, NULL);
+    generate_counter_incr(&invocation_counter_overflow);
   }
 
   Label continue_after_compile;
@@ -1154,18 +1198,13 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // increment invocation count & check for overflow
   Label invocation_counter_overflow;
-  Label profile_method;
-  Label profile_method_continue;
   if (inc_counter) {
     if (synchronized) {
       // Avoid unlocking method's monitor in case of exception, as it has not
       // been locked yet.
       __ set_do_not_unlock_if_synchronized(true, Rtemp);
     }
-    generate_counter_incr(&invocation_counter_overflow, &profile_method, &profile_method_continue);
-    if (ProfileInterpreter) {
-      __ bind(profile_method_continue);
-    }
+    generate_counter_incr(&invocation_counter_overflow);
   }
   Label continue_after_compile;
   __ bind(continue_after_compile);
@@ -1218,16 +1257,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // invocation counter overflow
   if (inc_counter) {
-    if (ProfileInterpreter) {
-      // We have decided to profile this method in the interpreter
-      __ bind(profile_method);
-
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-      __ set_method_data_pointer_for_bcp();
-
-      __ b(profile_method_continue);
-    }
-
     // Handle overflow of counter and compile method
     __ bind(invocation_counter_overflow);
     generate_counter_overflow(continue_after_compile);

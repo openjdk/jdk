@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,8 +170,8 @@ Breakpoint(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
     }
 
     for (i=0; i<METH_NUM; i++)
-        if (strcmp(methNam,METHODS[i][0]) &&
-                strcmp(methSig,METHODS[i][1])) {
+        if (strcmp(methNam, METHODS[i][0]) == 0 &&
+                strcmp(methSig, METHODS[i][1]) == 0) {
             NSK_DISPLAY2("CHECK PASSED: method name: \"%s\"\tsignature: \"%s\"\n",
                 methNam, methSig);
             if (checkStatus == PASSED)

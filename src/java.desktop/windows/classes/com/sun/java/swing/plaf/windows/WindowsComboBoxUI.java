@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,34 +514,6 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
 
         WindowsComboBoxUI getWindowsComboBoxUI() {
             return WindowsComboBoxUI.this;
-        }
-    }
-
-
-    /**
-     * Subclassed to add Windows specific Key Bindings.
-     * This class is now obsolete and doesn't do anything.
-     * Only included for backwards API compatibility.
-     * Do not call or override.
-     *
-     * @deprecated As of Java 2 platform v1.4.
-     */
-    @Deprecated
-    @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class WindowsComboPopup extends BasicComboPopup {
-
-        public WindowsComboPopup( JComboBox<Object> cBox ) {
-            super( cBox );
-        }
-
-        protected KeyListener createKeyListener() {
-            return new InvocationKeyHandler();
-        }
-
-        protected class InvocationKeyHandler extends BasicComboPopup.InvocationKeyHandler {
-            protected InvocationKeyHandler() {
-                WindowsComboPopup.this.super();
-            }
         }
     }
 

@@ -338,11 +338,5 @@ public class SimpleScriptContext  implements ScriptContext {
         }
     }
 
-    private static List<Integer> scopes;
-    static {
-        scopes = new ArrayList<Integer>(2);
-        scopes.add(ENGINE_SCOPE);
-        scopes.add(GLOBAL_SCOPE);
-        scopes = Collections.unmodifiableList(scopes);
-    }
+    private static final List<Integer> scopes = List.of(ENGINE_SCOPE, GLOBAL_SCOPE);
 }

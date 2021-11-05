@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,6 @@ class Bytecode_invoke: public Bytecode_member_ref {
 
   // Attributes
   Method* static_target(TRAPS);                  // "specified" method   (from constant pool)
-  Handle       appendix(TRAPS);                  // if CPCE::has_appendix (from constant pool)
 
   // Testers
   bool is_invokeinterface() const                { return invoke_code() == Bytecodes::_invokeinterface; }

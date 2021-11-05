@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public final class EventWriter {
     // Event may not exceed size for a padded integer
     private static final long MAX_EVENT_SIZE = (1 << 28) -1;
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private final static JVM jvm = JVM.getJVM();
+    private static final JVM jvm = JVM.getJVM();
 
     // The JVM needs access to these values. Don't remove
     private final long threadID;
@@ -166,7 +166,7 @@ public final class EventWriter {
         if (aClass == null) {
             putLong(0L);
         } else {
-            putLong(JVM.getClassIdNonIntrinsic(aClass));
+            putLong(JVM.getClassId(aClass));
         }
     }
 

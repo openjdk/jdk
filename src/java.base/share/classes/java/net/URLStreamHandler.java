@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,8 @@
 package java.net;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.File;
-import java.io.OutputStream;
-import java.util.Hashtable;
 import java.util.Objects;
 import sun.net.util.IPAddressUtil;
-import sun.net.www.ParseUtil;
 
 /**
  * The abstract class {@code URLStreamHandler} is the common
@@ -158,13 +153,12 @@ public abstract class URLStreamHandler {
             queryOnly = queryStart == start;
             if ((queryStart != -1) && (queryStart < limit)) {
                 query = spec.substring(queryStart+1, limit);
-                if (limit > queryStart)
-                    limit = queryStart;
+                limit = queryStart;
                 spec = spec.substring(0, queryStart);
             }
         }
 
-        int i = 0;
+        int i;
         // Parse the authority part if any
         boolean isUNCName = (start <= limit - 4) &&
                         (spec.charAt(start) == '/') &&
@@ -249,7 +243,7 @@ public abstract class URLStreamHandler {
             start = i;
             // If the authority is defined then the path is defined by the
             // spec only; See RFC 2396 Section 5.2.4.
-            if (authority != null && !authority.isEmpty())
+            if (!authority.isEmpty())
                 path = "";
         }
 
@@ -259,26 +253,27 @@ public abstract class URLStreamHandler {
 
         // Parse the file path if any
         if (start < limit) {
+            String specStr = spec.substring(start, limit);
             if (spec.charAt(start) == '/') {
-                path = spec.substring(start, limit);
+                path = specStr;
             } else if (path != null && !path.isEmpty()) {
                 isRelPath = true;
                 int ind = path.lastIndexOf('/');
-                String separator = "";
-                if (ind == -1 && authority != null)
-                    separator = "/";
-                path = path.substring(0, ind + 1) + separator +
-                         spec.substring(start, limit);
-
+                if (ind == -1 && authority != null) {
+                    path = "/".concat(specStr);
+                } else {
+                    path = path.substring(0, ind + 1).concat(specStr);
+                }
             } else {
-                path = spec.substring(start, limit);
-                path = (authority != null) ? "/" + path : path;
+                path = (authority != null) ? "/".concat(specStr) : specStr;
             }
         } else if (queryOnly && path != null) {
             int ind = path.lastIndexOf('/');
-            if (ind < 0)
-                ind = 0;
-            path = path.substring(0, ind) + "/";
+            if (ind < 0) {
+                path = "/";
+            } else {
+                path = path.substring(0, ind + 1);
+            }
         }
         if (path == null)
             path = "";
@@ -299,7 +294,7 @@ public abstract class URLStreamHandler {
                  */
                 if (i > 0 && (limit = path.lastIndexOf('/', i - 1)) >= 0 &&
                     (path.indexOf("/../", limit) != 0)) {
-                    path = path.substring(0, limit) + path.substring(i + 3);
+                    path = path.substring(0, limit).concat(path.substring(i + 3));
                     i = 0;
                 } else {
                     i = i + 3;
@@ -443,23 +438,8 @@ public abstract class URLStreamHandler {
      * IP address.
      * @since 1.3
      */
-    protected synchronized InetAddress getHostAddress(URL u) {
-        if (u.hostAddress != null)
-            return u.hostAddress;
-
-        String host = u.getHost();
-        if (host == null || host.isEmpty()) {
-            return null;
-        } else {
-            try {
-                u.hostAddress = InetAddress.getByName(host);
-            } catch (UnknownHostException ex) {
-                return null;
-            } catch (SecurityException se) {
-                return null;
-            }
-        }
-        return u.hostAddress;
+    protected InetAddress getHostAddress(URL u) {
+        return u.getHostAddress();
     }
 
     /**

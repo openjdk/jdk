@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,7 +377,7 @@ bool RootChunkArea::is_free() const {
   }
 
 void RootChunkArea::verify() const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert_is_aligned(_base, chunklevel::MAX_CHUNK_BYTE_SIZE);
 
   // Iterate thru all chunks in this area. They must be ordered correctly,
@@ -415,7 +415,7 @@ void RootChunkArea::verify() const {
 }
 
 void RootChunkArea::verify_area_is_ideally_merged() const {
-  SOMETIMES(assert_lock_strong(MetaspaceExpand_lock);)
+  SOMETIMES(assert_lock_strong(Metaspace_lock);)
   int num_chunk = 0;
   for (const Metachunk* c = _first_chunk; c != NULL; c = c->next_in_vs()) {
     if (!c->is_root_chunk() && c->is_free()) {
@@ -479,16 +479,6 @@ RootChunkAreaLUT::~RootChunkAreaLUT() {
     _arr[i].~RootChunkArea();
   }
   FREE_C_HEAP_ARRAY(RootChunkArea, _arr);
-}
-
-// Returns true if all areas in this area table are free (only contain free chunks).
-bool RootChunkAreaLUT::is_free() const {
-  for (int i = 0; i < _num; i++) {
-    if (!_arr[i].is_free()) {
-      return false;
-    }
-  }
-  return true;
 }
 
 #ifdef ASSERT

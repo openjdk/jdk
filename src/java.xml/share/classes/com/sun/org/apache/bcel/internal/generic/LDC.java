@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  *
  * <PRE>Stack: ... -&gt; ..., item</PRE>
  *
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public class LDC extends CPInstruction implements PushInstruction, ExceptionThrower {
 
@@ -112,7 +112,7 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
                 c = cpg.getConstantPool().getConstant(nameIndex);
                 return new ObjectType(((com.sun.org.apache.bcel.internal.classfile.ConstantUtf8) c).getBytes());
             default: // Never reached
-                throw new RuntimeException("Unknown or invalid constant type at " + super.getIndex());
+                throw new IllegalArgumentException("Unknown or invalid constant type at " + super.getIndex());
         }
     }
 
@@ -129,7 +129,7 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
             case com.sun.org.apache.bcel.internal.Const.CONSTANT_Class:
                 return Type.CLASS;
             default: // Never reached
-                throw new RuntimeException("Unknown or invalid constant type at " + super.getIndex());
+                throw new IllegalArgumentException("Unknown or invalid constant type at " + super.getIndex());
         }
     }
 

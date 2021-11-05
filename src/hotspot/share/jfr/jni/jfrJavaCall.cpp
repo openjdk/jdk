@@ -73,7 +73,7 @@ void JfrJavaArguments::Parameters::set_receiver(const oop receiver) {
   assert(_storage != NULL, "invariant");
   assert(receiver != NULL, "invariant");
   JavaValue value(T_OBJECT);
-  value.set_jobject(cast_from_oop<jobject>(receiver));
+  value.set_oop(receiver);
   _storage[0] = value;
 }
 
@@ -84,7 +84,7 @@ void JfrJavaArguments::Parameters::set_receiver(Handle receiver) {
 oop JfrJavaArguments::Parameters::receiver() const {
   assert(has_receiver(), "invariant");
   assert(_storage[0].get_type() == T_OBJECT, "invariant");
-  return (oop)_storage[0].get_jobject();
+  return _storage[0].get_oop();
 }
 
 bool JfrJavaArguments::Parameters::has_receiver() const {
@@ -96,7 +96,7 @@ bool JfrJavaArguments::Parameters::has_receiver() const {
 
 void JfrJavaArguments::Parameters::push_oop(const oop obj) {
   JavaValue value(T_OBJECT);
-  value.set_jobject(cast_from_oop<jobject>(obj));
+  value.set_oop(obj);
   push(value);
 }
 
@@ -173,7 +173,7 @@ void JfrJavaArguments::Parameters::copy(JavaCallArguments& args, TRAPS) const {
         args.push_double(values(i).get_jdouble());
         break;
       case T_OBJECT:
-        args.push_oop(Handle(THREAD, (oop)values(i).get_jobject()));
+        args.push_oop(Handle(THREAD, values(i).get_oop()));
         break;
       case T_ADDRESS:
         args.push_jobject(values(i).get_jobject());

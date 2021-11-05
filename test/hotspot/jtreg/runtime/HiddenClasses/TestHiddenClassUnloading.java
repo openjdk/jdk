@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @modules java.management
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:-BackgroundCompilation
@@ -47,7 +47,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import compiler.whitebox.CompilerWhiteBoxTest;
 
-// This is based on test compiler/classUnloading/anonymousClass/TestAnonymousClassUnloading.java
 public class TestHiddenClassUnloading {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 

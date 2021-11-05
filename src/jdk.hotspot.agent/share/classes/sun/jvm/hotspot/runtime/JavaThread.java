@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,7 +467,7 @@ public class JavaThread extends Thread {
     return fr;
   }
 
-  private Address lastSPDbg() {
+  public Address lastSPDbg() {
     return access.getLastSP(addr);
   }
 
@@ -487,7 +487,7 @@ public class JavaThread extends Thread {
     out.print(" tid=");
     out.print(this.getAddress());
     out.print(" nid=");
-    out.print(String.format("0x%x ",this.getOSThread().threadId()));
+    out.print(String.format("%d ",this.getOSThread().threadId()));
     out.print(getOSThread().getThreadState().getPrintVal());
     out.print(" [");
     if(this.getLastJavaSP() == null){

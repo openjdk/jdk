@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,6 +328,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     static {
         try {
             GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
+            @SuppressWarnings("removal")
             String form = AccessController.doPrivileged(act);
             compat = (form != null && form.equals("1.0"));
         } catch (Exception e) {
@@ -350,7 +351,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     /**
      * a shared empty array for empty property lists
      */
-    static final private Property[] _Empty_property_array = new Property[0];
+    private static final Property[] _Empty_property_array = new Property[0];
 
 
     // Class private fields <==============================

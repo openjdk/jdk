@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -434,7 +434,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">молдавська</language>
 			<language type="rof">ромбо</language>
 			<language type="rom">циганська</language>
-			<language type="root">коренева</language>
 			<language type="ru">російська</language>
 			<language type="rup">арумунська</language>
 			<language type="rw">кіньяруанда</language>
@@ -3739,9 +3738,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>Санта-Ісабель</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Гонолулу</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>за всесвітнім координованим часом</standard>
@@ -3861,11 +3857,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Брокен-Хілл</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Каррі</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Мельбурн</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>Каррі</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Гобарт</exemplarCity>
@@ -4898,6 +4894,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Ном</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Гонолулу</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>Джонстон</exemplarCity>
@@ -7903,7 +7902,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">західноафриканські франки</displayName>
 				<displayName count="many">західноафриканських франків</displayName>
 				<displayName count="other">західноафриканського франка</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName draft="contributed">паладій</displayName>
@@ -8256,7 +8255,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} каратів</unitPattern>
 				<unitPattern count="other">{0} карата</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>міліграми на децилітр</displayName>
 				<unitPattern count="one">{0} міліграм на децилітр</unitPattern>
 				<unitPattern count="few">{0} міліграми на децилітр</unitPattern>
@@ -9605,7 +9604,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} кар.</unitPattern>
 				<unitPattern count="other">{0} кар.</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>мг/дл</displayName>
 				<unitPattern count="one">{0} мг/дл</unitPattern>
 				<unitPattern count="few">{0} мг/дл</unitPattern>
@@ -10016,16 +10015,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName draft="contributed">dpcm</displayName>
-				<unitPattern count="one" draft="contributed">{0} dpcm</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} dpcm</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} dpcm</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} ppcm</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} ppcm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
 				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="few">{0} dpi</unitPattern>
-				<unitPattern count="many">{0} dpi</unitPattern>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="few">{0} ppi</unitPattern>
+				<unitPattern count="many">{0} ppi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">

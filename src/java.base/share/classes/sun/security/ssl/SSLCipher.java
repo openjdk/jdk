@@ -411,10 +411,11 @@ enum SSLCipher {
     private static final HashMap<String, Long> cipherLimits = new HashMap<>();
 
     // Keywords found on the jdk.tls.keyLimits security property.
-    final static String[] tag = {"KEYUPDATE"};
+    static final String[] tag = {"KEYUPDATE"};
 
     static  {
         final long max = 4611686018427387904L; // 2^62
+        @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(
                 new PrivilegedAction<String>() {
             @Override

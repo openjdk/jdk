@@ -31,6 +31,12 @@ import java.lang.annotation.*;
  * Indicates the API declaration in question is associated with a
  * <em>preview feature</em>. See JEP 12: "Preview Language and VM
  * Features" (http://openjdk.java.net/jeps/12).
+ *
+ * Note this internal annotation is handled specially by the javac compiler.
+ * To work properly with {@code --release older-release}, it requires special
+ * handling in {@code make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java}
+ * and {@code src/jdk.compiler/share/classes/com/sun/tools/javac/jvm/ClassReader.java}.
+ *
  * @since 14
  */
 // Match the meaningful targets of java.lang.Deprecated, omit local
@@ -54,20 +60,7 @@ public @interface PreviewFeature {
     public boolean reflective() default false;
 
     public enum Feature {
-        // 8242284:
-        // The TEXT_BLOCKS enum constant is not used in the JDK 15 codebase, but
-        // exists to support the bootcycle build of JDK 15. The bootcycle build
-        // of JDK 15 is performed with JDK 14 and the PreviewFeature type from
-        // JDK 15. Since the JDK 14 codebase uses the enum constant, it is
-        // necessary for PreviewFeature in JDK 15 to declare the enum constant.
-        TEXT_BLOCKS,
-        // The RECORDS enum constant is not used in the JDK 16 codebase, but
-        // exists to support the bootcycle build of JDK 16. The bootcycle build
-        // of JDK 16 is performed with JDK 15 and the PreviewFeature type from
-        // JDK 16. Since the JDK 15 codebase uses the enum constant, it is
-        // necessary for PreviewFeature in JDK 16 to declare the enum constant.
-        RECORDS,
-        SEALED_CLASSES,
+        SWITCH_PATTERN_MATCHING,
         /**
          * A key for testing.
          */

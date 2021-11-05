@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,11 +93,9 @@ public:
   // Override Abstract_VM_Version implementation
   static void print_platform_virtualization_info(outputStream*);
 
-  // Override Abstract_VM_Version implementation
-  static bool use_biased_locking();
-
   // PPC64 supports fast class initialization checks for static methods.
   static bool supports_fast_class_init_checks() { return true; }
+  constexpr static bool supports_stack_watermark_barrier() { return true; }
 
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }
   // CPU instruction support

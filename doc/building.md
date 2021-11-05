@@ -382,6 +382,9 @@ If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
 setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2017`.
 
+If you have Visual Studio installed but `configure` fails to detect it, it may
+be because of [spaces in path](#spaces-in-path).
+
 ### IBM XL C/C++
 
 Please consult the AIX section of the [Supported Build Platforms](
@@ -451,6 +454,7 @@ rather than bundling the JDK's own copy.
   * To install on an rpm-based Linux, try running `sudo yum install
     freetype-devel`.
   * To install on Alpine Linux, try running `sudo apk add freetype-dev`.
+  * To install on macOS, try running `brew install freetype`.
 
 Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
 if `configure` does not automatically locate the platform FreeType files.
@@ -814,7 +818,7 @@ configuration, as opposed to the "configure time" configuration.
 #### Test Make Control Variables
 
 These make control variables only make sense when running tests. Please see
-[Testing the JDK](testing.html) for details.
+**Testing the JDK** ([html](testing.html), [markdown](testing.md)) for details.
 
   * `TEST`
   * `TEST_JOBS`
@@ -844,7 +848,7 @@ containing `lib/jtreg.jar` etc.
 
 The [Adoption Group](https://wiki.openjdk.java.net/display/Adoption) provides
 recent builds of jtreg [here](
-https://ci.adoptopenjdk.net/view/Dependencies/job/jtreg/lastSuccessfulBuild/artifact).
+https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/).
 Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
 `jtreg` directory that you just unpacked.
 
@@ -861,8 +865,8 @@ To execute the most basic tests (tier 1), use:
 make run-test-tier1
 ```
 
-For more details on how to run tests, please see the [Testing
-the JDK](testing.html) document.
+For more details on how to run tests, please see **Testing the JDK**
+([html](testing.html), [markdown](testing.md)).
 
 ## Cross-compiling
 
@@ -1086,7 +1090,7 @@ Note that X11 is needed even if you only want to build a headless JDK.
   * If the X11 libraries are not properly detected by `configure`, you can
     point them out by `--with-x`.
 
-### Creating And Using Sysroots With qemu-deboostrap
+### Cross compiling with Debian sysroots
 
 Fortunately, you can create sysroots for foreign architectures with tools
 provided by your OS. On Debian/Ubuntu systems, one could use `qemu-deboostrap` to
@@ -1107,7 +1111,7 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     sudo qemu-debootstrap \
       --arch=arm64 \
       --verbose \
-      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev \
+      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
       --resolve-deps \
       buster \
       ~/sysroot-arm64 \
@@ -1121,13 +1125,9 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
 
   * Configure and build with newly created chroot as sysroot/toolchain-path:
     ```
-    CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ sh ./configure \
-     --openjdk-target=aarch64-linux-gnu \
-     --with-sysroot=~/sysroot-arm64 \
-     --with-toolchain-path=~/sysroot-arm64 \
-     --with-freetype-lib=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/ \
-     --with-freetype-include=~/sysroot-arm64/usr/include/freetype2/ \
-     --x-libraries=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/
+    sh ./configure \
+      --openjdk-target=aarch64-linux-gnu \
+      --with-sysroot=~/sysroot-arm64
     make images
     ls build/linux-aarch64-server-release/
     ```
@@ -1135,17 +1135,34 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
 The build does not create new files in that chroot, so it can be reused for multiple builds
 without additional cleanup.
 
+The build system should automatically detect the toolchain paths and dependencies, but sometimes
+it might require a little nudge with:
+
+  * Native compilers: override `CC` or `CXX` for `./configure`
+
+  * Freetype lib location: override `--with-freetype-lib`, for example `${sysroot}/usr/lib/${target}/`
+
+  * Freetype includes location: override `--with-freetype-include` for example `${sysroot}/usr/include/freetype2/`
+
+  * X11 libraries location: override `--x-libraries`, for example `${sysroot}/usr/lib/${target}/`
+
 Architectures that are known to successfully cross-compile like this are:
 
-  Target        `CC`                      `CXX`                       `--arch=...`  `--openjdk-target=...`
-  ------------  ------------------------- --------------------------- ------------- -----------------------
-  x86           default                   default                     i386          i386-linux-gnu
-  armhf         gcc-arm-linux-gnueabihf   g++-arm-linux-gnueabihf     armhf         arm-linux-gnueabihf
-  aarch64       gcc-aarch64-linux-gnu     g++-aarch64-linux-gnu       arm64         aarch64-linux-gnu
-  ppc64el       gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu   ppc64el       powerpc64le-linux-gnu
-  s390x         gcc-s390x-linux-gnu       g++-s390x-linux-gnu         s390x         s390x-linux-gnu
-
-Additional architectures might be supported by Debian/Ubuntu Ports.
+  Target        Debian tree  Debian arch   `--openjdk-target=...`   `--with-jvm-variants=...`
+  ------------  ------------ ------------- ------------------------ --------------
+  x86           buster       i386          i386-linux-gnu           (all)
+  arm           buster       armhf         arm-linux-gnueabihf      (all)
+  aarch64       buster       arm64         aarch64-linux-gnu        (all)
+  ppc64le       buster       ppc64el       powerpc64le-linux-gnu    (all)
+  s390x         buster       s390x         s390x-linux-gnu          (all)
+  mipsle        buster       mipsel        mipsel-linux-gnu         zero
+  mips64le      buster       mips64el      mips64el-linux-gnueabi64 zero
+  armel         buster       arm           arm-linux-gnueabi        zero
+  ppc           sid          powerpc       powerpc-linux-gnu        zero
+  ppc64be       sid          ppc64         powerpc64-linux-gnu      (all)
+  m68k          sid          m68k          m68k-linux-gnu           zero
+  alpha         sid          alpha         alpha-linux-gnu          zero
+  sh4           sid          sh4           sh4-linux-gnu            zero
 
 ### Building for ARM/aarch64
 
@@ -1466,6 +1483,15 @@ This can be a sign of a Cygwin problem. See the information about solving
 problems in the [Cygwin](#cygwin) section. Rebooting the computer might help
 temporarily.
 
+#### Spaces in Path
+
+On Windows, when configuring, `fixpath.sh` may report that some directory
+names have spaces. Usually, it assumes those directories have
+[short paths](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name).
+You can run `fsutil file setshortname` in `cmd` on certain directories, such as
+`Microsoft Visual Studio` or `Windows Kits`, to assign arbitrary short paths so
+`configure` can access them.
+
 ### Getting Help
 
 If none of the suggestions in this document helps you, or if you find what you
@@ -1544,8 +1570,8 @@ update. This might speed up the build, but comes at the risk of an incorrect
 build result. This is only recommended if you know what you're doing.
 
 From time to time, you will also need to modify the command line to `configure`
-due to changes. Use `make print-configure` to show the command line used for
-your current configuration.
+due to changes. Use `make print-configuration` to show the command line used
+for your current configuration.
 
 ### Using Fine-Grained Make Targets
 

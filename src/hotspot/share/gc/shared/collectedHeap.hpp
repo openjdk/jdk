@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,13 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
-#include "memory/heapInspection.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -45,9 +44,10 @@
 // class defines the functions that a heap must implement, and contains
 // infrastructure common to all heaps.
 
-class AbstractGangTask;
+class WorkerTask;
 class AdaptiveSizePolicy;
 class BarrierSet;
+class GCHeapLog;
 class GCHeapSummary;
 class GCTimer;
 class GCTracer;
@@ -59,33 +59,8 @@ class SoftRefPolicy;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
-class WorkGang;
+class WorkerThreads;
 class nmethod;
-
-class GCMessage : public FormatBuffer<1024> {
- public:
-  bool is_before;
-
- public:
-  GCMessage() {}
-};
-
-class CollectedHeap;
-
-class GCHeapLog : public EventLogBase<GCMessage> {
- private:
-  void log_heap(CollectedHeap* heap, bool before);
-
- public:
-  GCHeapLog() : EventLogBase<GCMessage>("GC Heap History", "gc") {}
-
-  void log_heap_before(CollectedHeap* heap) {
-    log_heap(heap, true);
-  }
-  void log_heap_after(CollectedHeap* heap) {
-    log_heap(heap, false);
-  }
-};
 
 class ParallelObjectIterator : public CHeapObj<mtGC> {
 public:
@@ -271,19 +246,12 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   virtual uint32_t hash_oop(oop obj) const;
 
-  void set_gc_cause(GCCause::Cause v) {
-     if (UsePerfData) {
-       _gc_lastcause = _gc_cause;
-       _perf_gc_lastcause->set_value(GCCause::to_string(_gc_lastcause));
-       _perf_gc_cause->set_value(GCCause::to_string(v));
-     }
-    _gc_cause = v;
-  }
+  void set_gc_cause(GCCause::Cause v);
   GCCause::Cause gc_cause() { return _gc_cause; }
 
-  oop obj_allocate(Klass* klass, int size, TRAPS);
-  virtual oop array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS);
-  oop class_allocate(Klass* klass, int size, TRAPS);
+  oop obj_allocate(Klass* klass, size_t size, TRAPS);
+  virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
+  oop class_allocate(Klass* klass, size_t size, TRAPS);
 
   // Utilities for turning raw memory into filler objects.
   //
@@ -501,7 +469,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // concurrent marking) for an intermittent non-GC safepoint.
   // If this method returns NULL, SafepointSynchronize will
   // perform cleanup tasks serially in the VMThread.
-  virtual WorkGang* safepoint_workers() { return NULL; }
+  virtual WorkerThreads* safepoint_workers() { return NULL; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
   // and Release*Critical() family of functions. If supported, the GC
@@ -513,8 +481,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Is the given object inside a CDS archive area?
   virtual bool is_archived_object(oop object) const;
 
-  // Deduplicate the string, iff the GC supports string deduplication.
-  virtual void deduplicate_string(oop str);
+  // Support for loading objects from CDS archive into the heap
+  // (usually as a snapshot of the old generation).
+  virtual bool can_load_archived_objects() const { return false; }
+  virtual HeapWord* allocate_loaded_archive_space(size_t size) { return NULL; }
+  virtual void complete_loaded_archive_space(MemRegion archive_space) { }
 
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
  */
 
 package sun.nio.cs;
+
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -80,6 +83,8 @@ public final class UTF_8 extends Unicode {
         dst.position(dp - dst.arrayOffset());
     }
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     private static class Decoder extends CharsetDecoder {
 
         private Decoder(Charset cs) {
@@ -127,15 +132,6 @@ public final class UTF_8 extends Unicode {
         // after isMalformed4_2 has been invoked.
         private static boolean isMalformed4_3(int b3) {
             return (b3 & 0xc0) != 0x80;
-        }
-
-        private static CoderResult lookupN(ByteBuffer src, int n)
-        {
-            for (int i = 1; i < n; i++) {
-               if (isNotContinuation(src.get()))
-                   return CoderResult.malformedForLength(i);
-            }
-            return CoderResult.malformedForLength(n);
         }
 
         private static CoderResult malformedN(ByteBuffer src, int nb) {
@@ -223,17 +219,19 @@ public final class UTF_8 extends Unicode {
         {
             // This method is optimized for ASCII input.
             byte[] sa = src.array();
-            int sp = src.arrayOffset() + src.position();
-            int sl = src.arrayOffset() + src.limit();
+            int soff = src.arrayOffset();
+            int sp = soff + src.position();
+            int sl = soff + src.limit();
 
             char[] da = dst.array();
-            int dp = dst.arrayOffset() + dst.position();
-            int dl = dst.arrayOffset() + dst.limit();
-            int dlASCII = dp + Math.min(sl - sp, dl - dp);
+            int doff = dst.arrayOffset();
+            int dp = doff + dst.position();
+            int dl = doff + dst.limit();
 
-            // ASCII only loop
-            while (dp < dlASCII && sa[sp] >= 0)
-                da[dp++] = (char) sa[sp++];
+            int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            sp += n;
+            dp += n;
+
             while (sp < sl) {
                 int b1 = sa[sp];
                 if (b1 >= 0) {
@@ -415,14 +413,6 @@ public final class UTF_8 extends Unicode {
             else
                 return decodeBufferLoop(src, dst);
         }
-
-        private static ByteBuffer getByteBuffer(ByteBuffer bb, byte[] ba, int sp)
-        {
-            if (bb == null)
-                bb = ByteBuffer.wrap(ba);
-            bb.position(sp);
-            return bb;
-        }
     }
 
     private static final class Encoder extends CharsetEncoder {
@@ -453,8 +443,7 @@ public final class UTF_8 extends Unicode {
 
         private Surrogate.Parser sgp;
         private CoderResult encodeArrayLoop(CharBuffer src,
-                                            ByteBuffer dst)
-        {
+                                            ByteBuffer dst) {
             char[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
@@ -462,11 +451,22 @@ public final class UTF_8 extends Unicode {
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            int dlASCII = dp + Math.min(sl - sp, dl - dp);
 
-            // ASCII only loop
-            while (dp < dlASCII && sa[sp] < '\u0080')
-                da[dp++] = (byte) sa[sp++];
+            // Handle ASCII-only prefix
+            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            sp += n;
+            dp += n;
+
+            if (sp < sl) {
+                return encodeArrayLoopSlow(src, sa, sp, sl, dst, da, dp, dl);
+            } else {
+                updatePositions(src, sp, dst, dp);
+                return CoderResult.UNDERFLOW;
+            }
+        }
+
+        private CoderResult encodeArrayLoopSlow(CharBuffer src, char[] sa, int sp, int sl,
+                                                ByteBuffer dst, byte[] da, int dp, int dl) {
             while (sp < sl) {
                 char c = sa[sp];
                 if (c < 0x80) {

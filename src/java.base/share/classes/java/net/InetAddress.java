@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,7 +215,7 @@ public class InetAddress implements java.io.Serializable {
     @Native static final int IPv6 = 2;
 
     /* Specify address family preference */
-    static transient final int preferIPv6Address;
+    static final transient int preferIPv6Address;
 
     static class InetAddressHolder {
         /**
@@ -400,7 +400,7 @@ public class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Utility routine to check if the InetAddress is an link local address.
+     * Utility routine to check if the InetAddress is a link local address.
      *
      * @return a {@code boolean} indicating if the InetAddress is
      * a link local address; or false if address is not a link local unicast address.
@@ -486,7 +486,7 @@ public class InetAddress implements java.io.Serializable {
     /**
      * Test whether that address is reachable. Best effort is made by the
      * implementation to try to reach the host, but firewalls and server
-     * configuration may block requests resulting in a unreachable status
+     * configuration may block requests resulting in an unreachable status
      * while some specific ports may be accessible.
      * A typical implementation will use ICMP ECHO REQUESTs if the
      * privilege can be obtained, otherwise it will try to establish
@@ -657,45 +657,46 @@ public class InetAddress implements java.io.Serializable {
      */
     private static String getHostFromNameService(InetAddress addr, boolean check) {
         String host = null;
-            try {
-                // first lookup the hostname
-                host = nameService.getHostByAddr(addr.getAddress());
+        try {
+            // first lookup the hostname
+            host = nameService.getHostByAddr(addr.getAddress());
 
-                /* check to see if calling code is allowed to know
-                 * the hostname for this IP address, ie, connect to the host
-                 */
-                if (check) {
-                    SecurityManager sec = System.getSecurityManager();
-                    if (sec != null) {
-                        sec.checkConnect(host, -1);
-                    }
+            /* check to see if calling code is allowed to know
+             * the hostname for this IP address, ie, connect to the host
+             */
+            if (check) {
+                @SuppressWarnings("removal")
+                SecurityManager sec = System.getSecurityManager();
+                if (sec != null) {
+                    sec.checkConnect(host, -1);
                 }
-
-                /* now get all the IP addresses for this hostname,
-                 * and make sure one of them matches the original IP
-                 * address. We do this to try and prevent spoofing.
-                 */
-
-                InetAddress[] arr = InetAddress.getAllByName0(host, check);
-                boolean ok = false;
-
-                if(arr != null) {
-                    for(int i = 0; !ok && i < arr.length; i++) {
-                        ok = addr.equals(arr[i]);
-                    }
-                }
-
-                //XXX: if it looks a spoof just return the address?
-                if (!ok) {
-                    host = addr.getHostAddress();
-                    return host;
-                }
-            } catch (SecurityException e) {
-                host = addr.getHostAddress();
-            } catch (UnknownHostException e) {
-                host = addr.getHostAddress();
-                // let next provider resolve the hostname
             }
+
+            /* now get all the IP addresses for this hostname,
+             * and make sure one of them matches the original IP
+             * address. We do this to try and prevent spoofing.
+             */
+
+            InetAddress[] arr = InetAddress.getAllByName0(host, check);
+            boolean ok = false;
+
+            if (arr != null) {
+                for (int i = 0; !ok && i < arr.length; i++) {
+                    ok = addr.equals(arr[i]);
+                }
+            }
+
+            //XXX: if it looks like a spoof just return the address?
+            if (!ok) {
+                host = addr.getHostAddress();
+                return host;
+            }
+        } catch (SecurityException e) {
+            host = addr.getHostAddress();
+        } catch (UnknownHostException e) {
+            host = addr.getHostAddress();
+            // let next provider resolve the hostname
+        }
         return host;
     }
 
@@ -1135,7 +1136,7 @@ public class InetAddress implements java.io.Serializable {
 
         // create name service
         nameService = createNameService();
-        }
+    }
 
     /**
      * Create an instance of the NameService interface based on
@@ -1450,6 +1451,7 @@ public class InetAddress implements java.io.Serializable {
          * give out a hostname
          */
         if (check) {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 security.checkConnect(host, -1);
@@ -1508,21 +1510,19 @@ public class InetAddress implements java.io.Serializable {
     }
 
     static InetAddress[] getAddressesFromNameService(String host, InetAddress reqAddr)
-        throws UnknownHostException
-    {
+            throws UnknownHostException {
         InetAddress[] addresses = null;
         UnknownHostException ex = null;
 
-            try {
-                addresses = nameService.lookupAllHostAddr(host);
-            } catch (UnknownHostException uhe) {
-                if (host.equalsIgnoreCase("localhost")) {
-                    addresses = new InetAddress[] { impl.loopbackAddress() };
-                }
-                else {
-                    ex = uhe;
-                }
+        try {
+            addresses = nameService.lookupAllHostAddr(host);
+        } catch (UnknownHostException uhe) {
+            if (host.equalsIgnoreCase("localhost")) {
+                addresses = new InetAddress[]{impl.loopbackAddress()};
+            } else {
+                ex = uhe;
             }
+        }
 
         if (addresses == null) {
             throw ex == null ? new UnknownHostException(host) : ex;
@@ -1611,6 +1611,7 @@ public class InetAddress implements java.io.Serializable {
      */
     public static InetAddress getLocalHost() throws UnknownHostException {
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         try {
             // is cached data still valid?
@@ -1667,51 +1668,9 @@ public class InetAddress implements java.io.Serializable {
         return impl.anyLocalAddress();
     }
 
-    /*
-     * Load and instantiate an underlying impl class
+    /**
+     * Initializes an empty InetAddress.
      */
-    static InetAddressImpl loadImpl(String implName) {
-        Object impl = null;
-
-        /*
-         * Property "impl.prefix" will be prepended to the classname
-         * of the implementation object we instantiate, to which we
-         * delegate the real work (like native methods).  This
-         * property can vary across implementations of the java.
-         * classes.  The default is an empty String "".
-         */
-        String prefix = GetPropertyAction.privilegedGetProperty("impl.prefix", "");
-        try {
-            @SuppressWarnings("deprecation")
-            Object tmp = Class.forName("java.net." + prefix + implName).newInstance();
-            impl = tmp;
-        } catch (ClassNotFoundException e) {
-            System.err.println("Class not found: java.net." + prefix +
-                               implName + ":\ncheck impl.prefix property " +
-                               "in your properties file.");
-        } catch (InstantiationException e) {
-            System.err.println("Could not instantiate: java.net." + prefix +
-                               implName + ":\ncheck impl.prefix property " +
-                               "in your properties file.");
-        } catch (IllegalAccessException e) {
-            System.err.println("Cannot access class: java.net." + prefix +
-                               implName + ":\ncheck impl.prefix property " +
-                               "in your properties file.");
-        }
-
-        if (impl == null) {
-            try {
-                @SuppressWarnings("deprecation")
-                Object tmp = Class.forName(implName).newInstance();
-                impl = tmp;
-            } catch (Exception e) {
-                throw new Error("System property impl.prefix incorrect");
-            }
-        }
-
-        return (InetAddressImpl) impl;
-    }
-
     @java.io.Serial
     private void readObjectNoData () {
         if (getClass().getClassLoader() != null) {
@@ -1724,6 +1683,13 @@ public class InetAddress implements java.io.Serializable {
     private static final long FIELDS_OFFSET
             = UNSAFE.objectFieldOffset(InetAddress.class, "holder");
 
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
     @java.io.Serial
     private void readObject (ObjectInputStream s) throws
                          IOException, ClassNotFoundException {
@@ -1744,9 +1710,10 @@ public class InetAddress implements java.io.Serializable {
     /* needed because the serializable fields no longer exist */
 
     /**
-     * @serialField hostName String
-     * @serialField address int
-     * @serialField family int
+     * @serialField hostName String the hostname for this address
+     * @serialField address int holds a 32-bit IPv4 address.
+     * @serialField family int specifies the address family type, for instance,
+     * {@code '1'} for IPv4 addresses, and {@code '2'} for IPv6 addresses.
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
@@ -1755,6 +1722,12 @@ public class InetAddress implements java.io.Serializable {
         new ObjectStreamField("family", int.class),
     };
 
+    /**
+     * Writes the state of this object to the stream.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
+     */
     @java.io.Serial
     private void writeObject (ObjectOutputStream s) throws
                         IOException {
@@ -1775,8 +1748,8 @@ public class InetAddress implements java.io.Serializable {
 class InetAddressImplFactory {
 
     static InetAddressImpl create() {
-        return InetAddress.loadImpl(isIPv6Supported() ?
-                                    "Inet6AddressImpl" : "Inet4AddressImpl");
+        return isIPv6Supported() ?
+                new Inet6AddressImpl() : new Inet4AddressImpl();
     }
 
     static native boolean isIPv6Supported();

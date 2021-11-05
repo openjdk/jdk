@@ -966,6 +966,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             return tmf.getTrustManagers();
         }
 
+        @SuppressWarnings("removal")
         private static KeyManager[] getKeyManagers() throws Exception {
 
             final Map<String,String> props = new HashMap<>();
@@ -1558,7 +1559,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             // A forward checker, need to check from trust to target
             if (checkedLength >= 0) {
                 AlgorithmChecker checker =
-                    new AlgorithmChecker(constraints, null,
+                    new AlgorithmChecker(constraints,
                             (checkClientTrusted ? Validator.VAR_TLS_CLIENT :
                                         Validator.VAR_TLS_SERVER));
                 checker.init(false);

@@ -23,6 +23,7 @@
  */
 
 // no precompiled headers
+#include "jvm_io.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -106,7 +107,7 @@
   There really shouldn't be any handles remaining to trash but this is cheap
   in relation to a safepoint.
 */
-#define SAFEPOINT                                                                                         \
+#define RETURN_SAFEPOINT                                                                                  \
     if (SafepointMechanism::should_process(THREAD)) {                                                     \
       HandleMarkCleaner __hmc(THREAD);                                                                    \
       CALL_VM(SafepointMechanism::process_if_requested_with_exit_check(THREAD, true /* check asyncs */),  \
@@ -402,36 +403,6 @@ template void BytecodeInterpreter::run<false>(interpreterState istate);
 
 template<bool JVMTI_ENABLED>
 void BytecodeInterpreter::run(interpreterState istate) {
-
-  // In order to simplify some tests based on switches set at runtime
-  // we invoke the interpreter a single time after switches are enabled
-  // and set simpler to to test variables rather than method calls or complex
-  // boolean expressions.
-
-  static int initialized = 0;
-  static int checkit = 0;
-  static intptr_t* c_addr = NULL;
-  static intptr_t  c_value;
-
-  if (checkit && *c_addr != c_value) {
-    os::breakpoint();
-  }
-
-#ifdef ASSERT
-  if (istate->_msg != initialize) {
-    assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
-  }
-  // Verify linkages.
-  interpreterState l = istate;
-  do {
-    assert(l == l->_self_link, "bad link");
-    l = l->_prev_link;
-  } while (l != NULL);
-  // Screwups with stack management usually cause us to overwrite istate
-  // save a copy so we can verify it.
-  interpreterState orig = istate;
-#endif
-
   intptr_t*        topOfStack = (intptr_t *)istate->stack(); /* access with STACK macros */
   address          pc = istate->bcp();
   jubyte opcode;
@@ -444,124 +415,117 @@ void BytecodeInterpreter::run(interpreterState istate) {
 #define THREAD istate->thread()
 #endif
 
+#ifdef ASSERT
+  assert(labs(istate->stack_base() - istate->stack_limit()) == (istate->method()->max_stack() + 1),
+         "Bad stack limit");
+  /* QQQ this should be a stack method so we don't know actual direction */
+  assert(topOfStack >= istate->stack_limit() && topOfStack < istate->stack_base(),
+         "Stack top out of range");
+
+  // Verify linkages.
+  interpreterState l = istate;
+  do {
+    assert(l == l->_self_link, "bad link");
+    l = l->_prev_link;
+  } while (l != NULL);
+  // Screwups with stack management usually cause us to overwrite istate
+  // save a copy so we can verify it.
+  interpreterState orig = istate;
+#endif
+
 #ifdef USELABELS
   const static void* const opclabels_data[256] = {
-/* 0x00 */ &&opc_nop,     &&opc_aconst_null,&&opc_iconst_m1,&&opc_iconst_0,
-/* 0x04 */ &&opc_iconst_1,&&opc_iconst_2,   &&opc_iconst_3, &&opc_iconst_4,
-/* 0x08 */ &&opc_iconst_5,&&opc_lconst_0,   &&opc_lconst_1, &&opc_fconst_0,
-/* 0x0C */ &&opc_fconst_1,&&opc_fconst_2,   &&opc_dconst_0, &&opc_dconst_1,
+/* 0x00 */ &&opc_nop,           &&opc_aconst_null,      &&opc_iconst_m1,      &&opc_iconst_0,
+/* 0x04 */ &&opc_iconst_1,      &&opc_iconst_2,         &&opc_iconst_3,       &&opc_iconst_4,
+/* 0x08 */ &&opc_iconst_5,      &&opc_lconst_0,         &&opc_lconst_1,       &&opc_fconst_0,
+/* 0x0C */ &&opc_fconst_1,      &&opc_fconst_2,         &&opc_dconst_0,       &&opc_dconst_1,
 
-/* 0x10 */ &&opc_bipush, &&opc_sipush, &&opc_ldc,    &&opc_ldc_w,
-/* 0x14 */ &&opc_ldc2_w, &&opc_iload,  &&opc_lload,  &&opc_fload,
-/* 0x18 */ &&opc_dload,  &&opc_aload,  &&opc_iload_0,&&opc_iload_1,
-/* 0x1C */ &&opc_iload_2,&&opc_iload_3,&&opc_lload_0,&&opc_lload_1,
+/* 0x10 */ &&opc_bipush,        &&opc_sipush,           &&opc_ldc,            &&opc_ldc_w,
+/* 0x14 */ &&opc_ldc2_w,        &&opc_iload,            &&opc_lload,          &&opc_fload,
+/* 0x18 */ &&opc_dload,         &&opc_aload,            &&opc_iload_0,        &&opc_iload_1,
+/* 0x1C */ &&opc_iload_2,       &&opc_iload_3,          &&opc_lload_0,        &&opc_lload_1,
 
-/* 0x20 */ &&opc_lload_2,&&opc_lload_3,&&opc_fload_0,&&opc_fload_1,
-/* 0x24 */ &&opc_fload_2,&&opc_fload_3,&&opc_dload_0,&&opc_dload_1,
-/* 0x28 */ &&opc_dload_2,&&opc_dload_3,&&opc_aload_0,&&opc_aload_1,
-/* 0x2C */ &&opc_aload_2,&&opc_aload_3,&&opc_iaload, &&opc_laload,
+/* 0x20 */ &&opc_lload_2,       &&opc_lload_3,          &&opc_fload_0,        &&opc_fload_1,
+/* 0x24 */ &&opc_fload_2,       &&opc_fload_3,          &&opc_dload_0,        &&opc_dload_1,
+/* 0x28 */ &&opc_dload_2,       &&opc_dload_3,          &&opc_aload_0,        &&opc_aload_1,
+/* 0x2C */ &&opc_aload_2,       &&opc_aload_3,          &&opc_iaload,         &&opc_laload,
 
-/* 0x30 */ &&opc_faload,  &&opc_daload,  &&opc_aaload,  &&opc_baload,
-/* 0x34 */ &&opc_caload,  &&opc_saload,  &&opc_istore,  &&opc_lstore,
-/* 0x38 */ &&opc_fstore,  &&opc_dstore,  &&opc_astore,  &&opc_istore_0,
-/* 0x3C */ &&opc_istore_1,&&opc_istore_2,&&opc_istore_3,&&opc_lstore_0,
+/* 0x30 */ &&opc_faload,        &&opc_daload,           &&opc_aaload,         &&opc_baload,
+/* 0x34 */ &&opc_caload,        &&opc_saload,           &&opc_istore,         &&opc_lstore,
+/* 0x38 */ &&opc_fstore,        &&opc_dstore,           &&opc_astore,         &&opc_istore_0,
+/* 0x3C */ &&opc_istore_1,      &&opc_istore_2,         &&opc_istore_3,       &&opc_lstore_0,
 
-/* 0x40 */ &&opc_lstore_1,&&opc_lstore_2,&&opc_lstore_3,&&opc_fstore_0,
-/* 0x44 */ &&opc_fstore_1,&&opc_fstore_2,&&opc_fstore_3,&&opc_dstore_0,
-/* 0x48 */ &&opc_dstore_1,&&opc_dstore_2,&&opc_dstore_3,&&opc_astore_0,
-/* 0x4C */ &&opc_astore_1,&&opc_astore_2,&&opc_astore_3,&&opc_iastore,
+/* 0x40 */ &&opc_lstore_1,      &&opc_lstore_2,         &&opc_lstore_3,       &&opc_fstore_0,
+/* 0x44 */ &&opc_fstore_1,      &&opc_fstore_2,         &&opc_fstore_3,       &&opc_dstore_0,
+/* 0x48 */ &&opc_dstore_1,      &&opc_dstore_2,         &&opc_dstore_3,       &&opc_astore_0,
+/* 0x4C */ &&opc_astore_1,      &&opc_astore_2,         &&opc_astore_3,       &&opc_iastore,
 
-/* 0x50 */ &&opc_lastore,&&opc_fastore,&&opc_dastore,&&opc_aastore,
-/* 0x54 */ &&opc_bastore,&&opc_castore,&&opc_sastore,&&opc_pop,
-/* 0x58 */ &&opc_pop2,   &&opc_dup,    &&opc_dup_x1, &&opc_dup_x2,
-/* 0x5C */ &&opc_dup2,   &&opc_dup2_x1,&&opc_dup2_x2,&&opc_swap,
+/* 0x50 */ &&opc_lastore,       &&opc_fastore,          &&opc_dastore,        &&opc_aastore,
+/* 0x54 */ &&opc_bastore,       &&opc_castore,          &&opc_sastore,        &&opc_pop,
+/* 0x58 */ &&opc_pop2,          &&opc_dup,              &&opc_dup_x1,         &&opc_dup_x2,
+/* 0x5C */ &&opc_dup2,          &&opc_dup2_x1,          &&opc_dup2_x2,        &&opc_swap,
 
-/* 0x60 */ &&opc_iadd,&&opc_ladd,&&opc_fadd,&&opc_dadd,
-/* 0x64 */ &&opc_isub,&&opc_lsub,&&opc_fsub,&&opc_dsub,
-/* 0x68 */ &&opc_imul,&&opc_lmul,&&opc_fmul,&&opc_dmul,
-/* 0x6C */ &&opc_idiv,&&opc_ldiv,&&opc_fdiv,&&opc_ddiv,
+/* 0x60 */ &&opc_iadd,          &&opc_ladd,             &&opc_fadd,           &&opc_dadd,
+/* 0x64 */ &&opc_isub,          &&opc_lsub,             &&opc_fsub,           &&opc_dsub,
+/* 0x68 */ &&opc_imul,          &&opc_lmul,             &&opc_fmul,           &&opc_dmul,
+/* 0x6C */ &&opc_idiv,          &&opc_ldiv,             &&opc_fdiv,           &&opc_ddiv,
 
-/* 0x70 */ &&opc_irem, &&opc_lrem, &&opc_frem,&&opc_drem,
-/* 0x74 */ &&opc_ineg, &&opc_lneg, &&opc_fneg,&&opc_dneg,
-/* 0x78 */ &&opc_ishl, &&opc_lshl, &&opc_ishr,&&opc_lshr,
-/* 0x7C */ &&opc_iushr,&&opc_lushr,&&opc_iand,&&opc_land,
+/* 0x70 */ &&opc_irem,          &&opc_lrem,             &&opc_frem,           &&opc_drem,
+/* 0x74 */ &&opc_ineg,          &&opc_lneg,             &&opc_fneg,           &&opc_dneg,
+/* 0x78 */ &&opc_ishl,          &&opc_lshl,             &&opc_ishr,           &&opc_lshr,
+/* 0x7C */ &&opc_iushr,         &&opc_lushr,            &&opc_iand,           &&opc_land,
 
-/* 0x80 */ &&opc_ior, &&opc_lor,&&opc_ixor,&&opc_lxor,
-/* 0x84 */ &&opc_iinc,&&opc_i2l,&&opc_i2f, &&opc_i2d,
-/* 0x88 */ &&opc_l2i, &&opc_l2f,&&opc_l2d, &&opc_f2i,
-/* 0x8C */ &&opc_f2l, &&opc_f2d,&&opc_d2i, &&opc_d2l,
+/* 0x80 */ &&opc_ior,           &&opc_lor,              &&opc_ixor,           &&opc_lxor,
+/* 0x84 */ &&opc_iinc,          &&opc_i2l,              &&opc_i2f,            &&opc_i2d,
+/* 0x88 */ &&opc_l2i,           &&opc_l2f,              &&opc_l2d,            &&opc_f2i,
+/* 0x8C */ &&opc_f2l,           &&opc_f2d,              &&opc_d2i,            &&opc_d2l,
 
-/* 0x90 */ &&opc_d2f,  &&opc_i2b,  &&opc_i2c,  &&opc_i2s,
-/* 0x94 */ &&opc_lcmp, &&opc_fcmpl,&&opc_fcmpg,&&opc_dcmpl,
-/* 0x98 */ &&opc_dcmpg,&&opc_ifeq, &&opc_ifne, &&opc_iflt,
-/* 0x9C */ &&opc_ifge, &&opc_ifgt, &&opc_ifle, &&opc_if_icmpeq,
+/* 0x90 */ &&opc_d2f,           &&opc_i2b,              &&opc_i2c,            &&opc_i2s,
+/* 0x94 */ &&opc_lcmp,          &&opc_fcmpl,            &&opc_fcmpg,          &&opc_dcmpl,
+/* 0x98 */ &&opc_dcmpg,         &&opc_ifeq,             &&opc_ifne,           &&opc_iflt,
+/* 0x9C */ &&opc_ifge,          &&opc_ifgt,             &&opc_ifle,           &&opc_if_icmpeq,
 
-/* 0xA0 */ &&opc_if_icmpne,&&opc_if_icmplt,&&opc_if_icmpge,  &&opc_if_icmpgt,
-/* 0xA4 */ &&opc_if_icmple,&&opc_if_acmpeq,&&opc_if_acmpne,  &&opc_goto,
-/* 0xA8 */ &&opc_jsr,      &&opc_ret,      &&opc_tableswitch,&&opc_lookupswitch,
-/* 0xAC */ &&opc_ireturn,  &&opc_lreturn,  &&opc_freturn,    &&opc_dreturn,
+/* 0xA0 */ &&opc_if_icmpne,     &&opc_if_icmplt,        &&opc_if_icmpge,      &&opc_if_icmpgt,
+/* 0xA4 */ &&opc_if_icmple,     &&opc_if_acmpeq,        &&opc_if_acmpne,      &&opc_goto,
+/* 0xA8 */ &&opc_jsr,           &&opc_ret,              &&opc_tableswitch,    &&opc_lookupswitch,
+/* 0xAC */ &&opc_ireturn,       &&opc_lreturn,          &&opc_freturn,        &&opc_dreturn,
 
-/* 0xB0 */ &&opc_areturn,     &&opc_return,         &&opc_getstatic,    &&opc_putstatic,
-/* 0xB4 */ &&opc_getfield,    &&opc_putfield,       &&opc_invokevirtual,&&opc_invokespecial,
-/* 0xB8 */ &&opc_invokestatic,&&opc_invokeinterface,&&opc_invokedynamic,&&opc_new,
-/* 0xBC */ &&opc_newarray,    &&opc_anewarray,      &&opc_arraylength,  &&opc_athrow,
+/* 0xB0 */ &&opc_areturn,       &&opc_return,           &&opc_getstatic,      &&opc_putstatic,
+/* 0xB4 */ &&opc_getfield,      &&opc_putfield,         &&opc_invokevirtual,  &&opc_invokespecial,
+/* 0xB8 */ &&opc_invokestatic,  &&opc_invokeinterface,  &&opc_invokedynamic,  &&opc_new,
+/* 0xBC */ &&opc_newarray,      &&opc_anewarray,        &&opc_arraylength,    &&opc_athrow,
 
-/* 0xC0 */ &&opc_checkcast,   &&opc_instanceof,     &&opc_monitorenter, &&opc_monitorexit,
-/* 0xC4 */ &&opc_wide,        &&opc_multianewarray, &&opc_ifnull,       &&opc_ifnonnull,
-/* 0xC8 */ &&opc_goto_w,      &&opc_jsr_w,          &&opc_breakpoint,   &&opc_default,
-/* 0xCC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
+/* 0xC0 */ &&opc_checkcast,     &&opc_instanceof,       &&opc_monitorenter,   &&opc_monitorexit,
+/* 0xC4 */ &&opc_wide,          &&opc_multianewarray,   &&opc_ifnull,         &&opc_ifnonnull,
+/* 0xC8 */ &&opc_goto_w,        &&opc_jsr_w,            &&opc_breakpoint,     &&opc_default,
+/* 0xCC */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
 
-/* 0xD0 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xD4 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xD8 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xDC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
+/* 0xD0 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+/* 0xD4 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+/* 0xD8 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+/* 0xDC */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
 
-/* 0xE0 */ &&opc_default,     &&opc_default,        &&opc_default,         &&opc_default,
-/* 0xE4 */ &&opc_default,     &&opc_default,        &&opc_fast_aldc,    &&opc_fast_aldc_w,
+/* 0xE0 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+/* 0xE4 */ &&opc_default,       &&opc_default,          &&opc_fast_aldc,      &&opc_fast_aldc_w,
 /* 0xE8 */ &&opc_return_register_finalizer,
-                              &&opc_invokehandle,   &&opc_default,      &&opc_default,
-/* 0xEC */ &&opc_default,     &&opc_default,        &&opc_default,         &&opc_default,
+                                &&opc_invokehandle,     &&opc_default,        &&opc_default,
+/* 0xEC */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
 
-/* 0xF0 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xF4 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xF8 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xFC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default
+/* 0xF0 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+/* 0xF4 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+/* 0xF8 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+/* 0xFC */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default
   };
   uintptr_t *dispatch_table = (uintptr_t*)&opclabels_data[0];
 #endif /* USELABELS */
 
-#ifdef ASSERT
-  // this will trigger a VERIFY_OOP on entry
-  if (istate->msg() != initialize && ! METHOD->is_static()) {
-    oop rcvr = LOCALS_OBJECT(0);
-    VERIFY_OOP(rcvr);
-  }
-#endif
-
-  /* QQQ this should be a stack method so we don't know actual direction */
-  guarantee(istate->msg() == initialize ||
-         topOfStack >= istate->stack_limit() &&
-         topOfStack < istate->stack_base(),
-         "Stack top out of range");
-
-  assert(!UseCompiler, "Zero does not support compilers");
-  assert(!CountCompiledCalls, "Zero does not support counting compiled calls");
-
   switch (istate->msg()) {
     case initialize: {
-      if (initialized++) ShouldNotReachHere(); // Only one initialize call.
+      ShouldNotCallThis();
       return;
     }
-    break;
     case method_entry: {
       THREAD->set_do_not_unlock();
-      // count invocations
-      assert(initialized, "Interpreter not initialized");
-
-      if ((istate->_stack_base - istate->_stack_limit) != istate->method()->max_stack() + 1) {
-        // initialize
-        os::breakpoint();
-      }
 
       // Lock method if synchronized.
       if (METHOD->is_synchronized()) {
@@ -575,11 +539,8 @@ void BytecodeInterpreter::run(interpreterState istate) {
         }
 
         // The initial monitor is ours for the taking.
-        // Monitor not filled in frame manager any longer as this caused race condition with biased locking.
         BasicObjectLock* mon = &istate->monitor_base()[-1];
         mon->set_obj(rcvr);
-
-        assert(!UseBiasedLocking, "Not implemented");
 
         // Traditional lightweight locking.
         markWord displaced = rcvr->mark().set_unlocked();
@@ -674,8 +635,6 @@ void BytecodeInterpreter::run(interpreterState istate) {
       BasicObjectLock* entry = (BasicObjectLock*) istate->stack_base();
       assert(entry->obj() == NULL, "Frame manager didn't allocate the monitor");
       entry->set_obj(lockee);
-
-      assert(!UseBiasedLocking, "Not implemented");
 
       // traditional lightweight locking
       markWord displaced = lockee->mark().set_unlocked();
@@ -1335,34 +1294,20 @@ run:
       CASE(_areturn):
       CASE(_ireturn):
       CASE(_freturn):
-      {
-          // Allow a safepoint before returning to frame manager.
-          SAFEPOINT;
-
-          goto handle_return;
-      }
-
       CASE(_lreturn):
       CASE(_dreturn):
-      {
+      CASE(_return): {
           // Allow a safepoint before returning to frame manager.
-          SAFEPOINT;
+          RETURN_SAFEPOINT;
           goto handle_return;
       }
 
       CASE(_return_register_finalizer): {
-
           oop rcvr = LOCALS_OBJECT(0);
           VERIFY_OOP(rcvr);
           if (rcvr->klass()->has_finalizer()) {
             CALL_VM(InterpreterRuntime::register_finalizer(THREAD, rcvr), handle_exception);
           }
-          goto handle_return;
-      }
-      CASE(_return): {
-
-          // Allow a safepoint before returning to frame manager.
-          SAFEPOINT;
           goto handle_return;
       }
 
@@ -1518,8 +1463,6 @@ run:
         if (entry != NULL) {
           entry->set_obj(lockee);
 
-          assert(!UseBiasedLocking, "Not implemented");
-
           // traditional lightweight locking
           markWord displaced = lockee->mark().set_unlocked();
           entry->lock()->set_displaced_header(displaced);
@@ -1551,8 +1494,6 @@ run:
             BasicLock* lock = most_recent->lock();
             markWord header = lock->displaced_header();
             most_recent->set_obj(NULL);
-
-            assert(!UseBiasedLocking, "Not implemented");
 
             // If it isn't recursive we either must swap old header or call the runtime
             bool call_vm = UseHeavyMonitors;
@@ -1604,9 +1545,9 @@ run:
             count_addr = (int *)JvmtiExport::get_field_access_count_addr();
             if ( *count_addr > 0 ) {
               if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {
-                obj = (oop)NULL;
+                obj = NULL;
               } else {
-                obj = (oop) STACK_OBJECT(-1);
+                obj = STACK_OBJECT(-1);
                 VERIFY_OOP(obj);
               }
               CALL_VM(InterpreterRuntime::post_field_access(THREAD,
@@ -1622,7 +1563,7 @@ run:
             obj = k->java_mirror();
             MORE_STACK(1);  // Assume single slot push
           } else {
-            obj = (oop) STACK_OBJECT(-1);
+            obj = STACK_OBJECT(-1);
             CHECK_NULL(obj);
           }
 
@@ -1635,46 +1576,74 @@ run:
             if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
               OrderAccess::fence();
             }
-            if (tos_type == atos) {
-              VERIFY_OOP(obj->obj_field_acquire(field_offset));
-              SET_STACK_OBJECT(obj->obj_field_acquire(field_offset), -1);
-            } else if (tos_type == itos) {
-              SET_STACK_INT(obj->int_field_acquire(field_offset), -1);
-            } else if (tos_type == ltos) {
-              SET_STACK_LONG(obj->long_field_acquire(field_offset), 0);
-              MORE_STACK(1);
-            } else if (tos_type == btos || tos_type == ztos) {
-              SET_STACK_INT(obj->byte_field_acquire(field_offset), -1);
-            } else if (tos_type == ctos) {
-              SET_STACK_INT(obj->char_field_acquire(field_offset), -1);
-            } else if (tos_type == stos) {
-              SET_STACK_INT(obj->short_field_acquire(field_offset), -1);
-            } else if (tos_type == ftos) {
-              SET_STACK_FLOAT(obj->float_field_acquire(field_offset), -1);
-            } else {
-              SET_STACK_DOUBLE(obj->double_field_acquire(field_offset), 0);
-              MORE_STACK(1);
+            switch (tos_type) {
+              case btos:
+              case ztos:
+                SET_STACK_INT(obj->byte_field_acquire(field_offset), -1);
+                break;
+              case ctos:
+                SET_STACK_INT(obj->char_field_acquire(field_offset), -1);
+                break;
+              case stos:
+                SET_STACK_INT(obj->short_field_acquire(field_offset), -1);
+                break;
+              case itos:
+                SET_STACK_INT(obj->int_field_acquire(field_offset), -1);
+                break;
+              case ftos:
+                SET_STACK_FLOAT(obj->float_field_acquire(field_offset), -1);
+                break;
+              case ltos:
+                SET_STACK_LONG(obj->long_field_acquire(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case dtos:
+                SET_STACK_DOUBLE(obj->double_field_acquire(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case atos: {
+                oop val = obj->obj_field_acquire(field_offset);
+                VERIFY_OOP(val);
+                SET_STACK_OBJECT(val, -1);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           } else {
-            if (tos_type == atos) {
-              VERIFY_OOP(obj->obj_field(field_offset));
-              SET_STACK_OBJECT(obj->obj_field(field_offset), -1);
-            } else if (tos_type == itos) {
-              SET_STACK_INT(obj->int_field(field_offset), -1);
-            } else if (tos_type == ltos) {
-              SET_STACK_LONG(obj->long_field(field_offset), 0);
-              MORE_STACK(1);
-            } else if (tos_type == btos || tos_type == ztos) {
-              SET_STACK_INT(obj->byte_field(field_offset), -1);
-            } else if (tos_type == ctos) {
-              SET_STACK_INT(obj->char_field(field_offset), -1);
-            } else if (tos_type == stos) {
-              SET_STACK_INT(obj->short_field(field_offset), -1);
-            } else if (tos_type == ftos) {
-              SET_STACK_FLOAT(obj->float_field(field_offset), -1);
-            } else {
-              SET_STACK_DOUBLE(obj->double_field(field_offset), 0);
-              MORE_STACK(1);
+            switch (tos_type) {
+              case btos:
+              case ztos:
+                SET_STACK_INT(obj->byte_field(field_offset), -1);
+                break;
+              case ctos:
+                SET_STACK_INT(obj->char_field(field_offset), -1);
+                break;
+              case stos:
+                SET_STACK_INT(obj->short_field(field_offset), -1);
+                break;
+              case itos:
+                SET_STACK_INT(obj->int_field(field_offset), -1);
+                break;
+              case ftos:
+                SET_STACK_FLOAT(obj->float_field(field_offset), -1);
+                break;
+              case ltos:
+                SET_STACK_LONG(obj->long_field(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case dtos:
+                SET_STACK_DOUBLE(obj->double_field(field_offset), 0);
+                MORE_STACK(1);
+                break;
+              case atos: {
+                oop val = obj->obj_field(field_offset);
+                VERIFY_OOP(val);
+                SET_STACK_OBJECT(val, -1);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           }
 
@@ -1700,13 +1669,13 @@ run:
             count_addr = (int *)JvmtiExport::get_field_modification_count_addr();
             if ( *count_addr > 0 ) {
               if ((Bytecodes::Code)opcode == Bytecodes::_putstatic) {
-                obj = (oop)NULL;
+                obj = NULL;
               }
               else {
                 if (cache->is_long() || cache->is_double()) {
-                  obj = (oop) STACK_OBJECT(-3);
+                  obj = STACK_OBJECT(-3);
                 } else {
-                  obj = (oop) STACK_OBJECT(-2);
+                  obj = STACK_OBJECT(-2);
                 }
                 VERIFY_OOP(obj);
               }
@@ -1735,7 +1704,7 @@ run:
             obj = k->java_mirror();
           } else {
             --count;
-            obj = (oop) STACK_OBJECT(count);
+            obj = STACK_OBJECT(count);
             CHECK_NULL(obj);
           }
 
@@ -1744,49 +1713,75 @@ run:
           //
           int field_offset = cache->f2_as_index();
           if (cache->is_volatile()) {
-            if (tos_type == itos) {
-              obj->release_int_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == atos) {
-              VERIFY_OOP(STACK_OBJECT(-1));
-              obj->release_obj_field_put(field_offset, STACK_OBJECT(-1));
-            } else if (tos_type == btos) {
-              obj->release_byte_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ztos) {
-              int bool_field = STACK_INT(-1);  // only store LSB
-              obj->release_byte_field_put(field_offset, (bool_field & 1));
-            } else if (tos_type == ltos) {
-              obj->release_long_field_put(field_offset, STACK_LONG(-1));
-            } else if (tos_type == ctos) {
-              obj->release_char_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == stos) {
-              obj->release_short_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ftos) {
-              obj->release_float_field_put(field_offset, STACK_FLOAT(-1));
-            } else {
-              obj->release_double_field_put(field_offset, STACK_DOUBLE(-1));
+            switch (tos_type) {
+              case ztos:
+                obj->release_byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
+                break;
+              case btos:
+                obj->release_byte_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ctos:
+                obj->release_char_field_put(field_offset, STACK_INT(-1));
+                break;
+              case stos:
+                obj->release_short_field_put(field_offset, STACK_INT(-1));
+                break;
+              case itos:
+                obj->release_int_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ftos:
+                obj->release_float_field_put(field_offset, STACK_FLOAT(-1));
+                break;
+              case ltos:
+                obj->release_long_field_put(field_offset, STACK_LONG(-1));
+                break;
+              case dtos:
+                obj->release_double_field_put(field_offset, STACK_DOUBLE(-1));
+                break;
+              case atos: {
+                oop val = STACK_OBJECT(-1);
+                VERIFY_OOP(val);
+                obj->release_obj_field_put(field_offset, val);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
             OrderAccess::storeload();
           } else {
-            if (tos_type == itos) {
-              obj->int_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == atos) {
-              VERIFY_OOP(STACK_OBJECT(-1));
-              obj->obj_field_put(field_offset, STACK_OBJECT(-1));
-            } else if (tos_type == btos) {
-              obj->byte_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ztos) {
-              int bool_field = STACK_INT(-1);  // only store LSB
-              obj->byte_field_put(field_offset, (bool_field & 1));
-            } else if (tos_type == ltos) {
-              obj->long_field_put(field_offset, STACK_LONG(-1));
-            } else if (tos_type == ctos) {
-              obj->char_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == stos) {
-              obj->short_field_put(field_offset, STACK_INT(-1));
-            } else if (tos_type == ftos) {
-              obj->float_field_put(field_offset, STACK_FLOAT(-1));
-            } else {
-              obj->double_field_put(field_offset, STACK_DOUBLE(-1));
+            switch (tos_type) {
+              case ztos:
+                obj->byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
+                break;
+              case btos:
+                obj->byte_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ctos:
+                obj->char_field_put(field_offset, STACK_INT(-1));
+                break;
+              case stos:
+                obj->short_field_put(field_offset, STACK_INT(-1));
+                break;
+              case itos:
+                obj->int_field_put(field_offset, STACK_INT(-1));
+                break;
+              case ftos:
+                obj->float_field_put(field_offset, STACK_FLOAT(-1));
+                break;
+              case ltos:
+                obj->long_field_put(field_offset, STACK_LONG(-1));
+                break;
+              case dtos:
+                obj->double_field_put(field_offset, STACK_DOUBLE(-1));
+                break;
+              case atos: {
+                oop val = STACK_OBJECT(-1);
+                VERIFY_OOP(val);
+                obj->obj_field_put(field_offset, val);
+                break;
+              }
+              default:
+                ShouldNotReachHere();
             }
           }
 
@@ -1795,35 +1790,41 @@ run:
 
       CASE(_new): {
         u2 index = Bytes::get_Java_u2(pc+1);
+
+        // Attempt TLAB allocation first.
+        //
+        // To do this, we need to make sure:
+        //   - klass is initialized
+        //   - klass can be fastpath allocated (e.g. does not have finalizer)
+        //   - TLAB accepts the allocation
         ConstantPool* constants = istate->method()->constants();
-        if (!constants->tag_at(index).is_unresolved_klass()) {
-          // Make sure klass is initialized and doesn't have a finalizer
+        if (UseTLAB && !constants->tag_at(index).is_unresolved_klass()) {
           Klass* entry = constants->resolved_klass_at(index);
           InstanceKlass* ik = InstanceKlass::cast(entry);
-          if (ik->is_initialized() && ik->can_be_fastpath_allocated() ) {
+          if (ik->is_initialized() && ik->can_be_fastpath_allocated()) {
             size_t obj_size = ik->size_helper();
-            oop result = NULL;
-            if (UseTLAB) {
-              result = (oop) THREAD->tlab().allocate(obj_size);
-            }
+            HeapWord* result = THREAD->tlab().allocate(obj_size);
             if (result != NULL) {
-              // Initialize object (if nonzero size and need) and then the header.
-              // If the TLAB isn't pre-zeroed then we'll have to do it.
-              if (!ZeroTLAB) {
-                HeapWord* to_zero = cast_from_oop<HeapWord*>(result) + sizeof(oopDesc) / oopSize;
-                obj_size -= sizeof(oopDesc) / oopSize;
-                if (obj_size > 0 ) {
-                  memset(to_zero, 0, obj_size * HeapWordSize);
-                }
+              // Initialize object field block:
+              //   - if TLAB is pre-zeroed, we can skip this path
+              //   - in debug mode, ThreadLocalAllocBuffer::allocate mangles
+              //     this area, and we still need to initialize it
+              if (DEBUG_ONLY(true ||) !ZeroTLAB) {
+                size_t hdr_size = oopDesc::header_size();
+                Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
-              assert(!UseBiasedLocking, "Not implemented");
-              result->set_mark(markWord::prototype());
-              result->set_klass_gap(0);
-              result->set_klass(ik);
+
+              oop obj = cast_to_oop(result);
+
+              // Initialize header
+              obj->set_mark(markWord::prototype());
+              obj->set_klass_gap(0);
+              obj->set_klass(ik);
+
               // Must prevent reordering of stores for object initialization
               // with stores that publish the new object.
               OrderAccess::storestore();
-              SET_STACK_OBJECT(result, 0);
+              SET_STACK_OBJECT(obj, 0);
               UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
             }
           }
@@ -2621,8 +2622,6 @@ run:
           markWord header = lock->displaced_header();
           end->set_obj(NULL);
 
-          assert(!UseBiasedLocking, "Not implemented");
-
           // If it isn't recursive we either must swap old header or call the runtime
           if (header.to_pointer() != NULL) {
             markWord old_header = markWord::encode(lock);
@@ -2688,8 +2687,6 @@ run:
             BasicLock* lock = base->lock();
             markWord header = lock->displaced_header();
             base->set_obj(NULL);
-
-            assert(!UseBiasedLocking, "Not implemented");
 
             // If it isn't recursive we either must swap old header or call the runtime
             if (header.to_pointer() != NULL) {

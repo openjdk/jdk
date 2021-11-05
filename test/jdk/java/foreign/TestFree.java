@@ -26,28 +26,30 @@
  * @test
  * @bug 8248421
  * @summary SystemCLinker should have a way to free memory allocated outside Java
- * @run testng/othervm -Dforeign.restricted=permit TestFree
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestFree
  */
 
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
+
 import static jdk.incubator.foreign.CLinker.*;
 import static org.testng.Assert.assertEquals;
 
 public class TestFree {
-    private static MemorySegment asArrayRestricted(MemoryAddress addr, MemoryLayout layout, int numElements) {
-        return addr.asSegmentRestricted(numElements * layout.byteSize());
+    private static MemorySegment asArray(MemoryAddress addr, MemoryLayout layout, int numElements) {
+        return addr.asSegment(numElements * layout.byteSize(), ResourceScope.globalScope());
     }
 
     public void test() throws Throwable {
         String str = "hello world";
-        MemoryAddress addr = allocateMemoryRestricted(str.length() + 1);
-        MemorySegment seg = asArrayRestricted(addr, C_CHAR, str.length() + 1);
+        MemoryAddress addr = allocateMemory(str.length() + 1);
+        MemorySegment seg = asArray(addr, C_CHAR, str.length() + 1);
         seg.copyFrom(MemorySegment.ofArray(str.getBytes()));
         MemoryAccess.setByteAtOffset(seg, str.length(), (byte)0);
         assertEquals(str, toJavaString(seg));
-        freeMemoryRestricted(addr);
+        freeMemory(addr);
     }
 }

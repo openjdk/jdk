@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
 import java.nio.ByteOrder;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.jimage.decompressor.Decompressor;
@@ -88,7 +87,7 @@ public final class ImagePluginStack {
         }
     }
 
-    private final static class CheckOrderResourcePoolManager extends ResourcePoolManager {
+    private static final class CheckOrderResourcePoolManager extends ResourcePoolManager {
 
         private final List<ResourcePoolEntry> orderedList;
         private int currentIndex;
@@ -149,7 +148,7 @@ public final class ImagePluginStack {
                     Comparator.reverseOrder())).filter((e) -> {
                         return e.getValue() > 1;
                     }).map(java.util.Map.Entry::getKey).
-                    collect(Collectors.toList());
+                    toList();
             return result;
         }
 
@@ -182,7 +181,7 @@ public final class ImagePluginStack {
         this.imageBuilder = Objects.requireNonNull(imageBuilder);
         this.lastSorter = lastSorter;
         this.plugins.addAll(Objects.requireNonNull(plugins));
-        plugins.stream().forEach((p) -> {
+        plugins.forEach((p) -> {
             Objects.requireNonNull(p);
             if (p instanceof ResourcePrevisitor) {
                 resourcePrevisitors.add((ResourcePrevisitor) p);
@@ -228,13 +227,13 @@ public final class ImagePluginStack {
                     resources.getStringTable()).resourcePool();
         }
         PreVisitStrings previsit = new PreVisitStrings();
-        resourcePrevisitors.stream().forEach((p) -> {
+        resourcePrevisitors.forEach((p) -> {
             p.previsit(resources.resourcePool(), previsit);
         });
 
         // Store the strings resulting from the previsit.
         List<String> sorted = previsit.getSortedStrings();
-        sorted.stream().forEach((s) -> {
+        sorted.forEach((s) -> {
             resources.getStringTable().addString(s);
         });
 

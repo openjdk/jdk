@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ public class OptionProcessingFailureTest extends JavadocTester {
         long sumErrors = optionDescriptions.stream().mapToLong(d -> d.nProcessErrors).sum() + nInitErrors;
         boolean success = optionDescriptions.stream().allMatch(d -> d.success);
 
-        checkOutput(Output.OUT, sumErrors != 0 || !success, "error - ");
+        checkOutput(Output.OUT, sumErrors != 0 || !success, "error: ");
     }
 
     /* Creating a specialized consumer is even more lightweight than creating a POJO */

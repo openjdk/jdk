@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +26,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -240,7 +238,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           tty->print_cr("trap: %s: (SIGILL)", msg);
         }
 
-        return false; // Fatal error
+        // End life with a fatal error, message and detail message and the context.
+        // Note: no need to do any post-processing here (e.g. signal chaining)
+        va_list va_dummy;
+        VMError::report_and_die(thread, uc, NULL, 0, msg, detail_msg, va_dummy);
+        va_end(va_dummy);
+
+        ShouldNotReachHere();
+
       }
       else
 
@@ -297,10 +302,6 @@ int os::Linux::get_fpu_control_word(void) {
 }
 
 void os::Linux::set_fpu_control_word(int fpu_control) {
-}
-
-bool os::is_allocatable(size_t bytes) {
-  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

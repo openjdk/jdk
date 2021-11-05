@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -112,7 +112,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
                            &args,
                            CHECK_NULL);
 
-    instanceOop p = (instanceOop) result.get_jobject();
+    instanceOop p = (instanceOop) result.get_oop();
     instanceHandle pool(THREAD, p);
 
     {
@@ -188,8 +188,8 @@ MetaspacePool::MetaspacePool() :
   MemoryPool("Metaspace", NonHeap, 0, calculate_max_size(), true, false) { }
 
 MemoryUsage MetaspacePool::get_memory_usage() {
-  size_t committed = MetaspaceUtils::committed_bytes();
-  return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
+  MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
+  return MemoryUsage(initial_size(), stats.used(), stats.committed(), max_size());
 }
 
 size_t MetaspacePool::used_in_bytes() {
@@ -197,8 +197,8 @@ size_t MetaspacePool::used_in_bytes() {
 }
 
 size_t MetaspacePool::calculate_max_size() const {
-  return FLAG_IS_CMDLINE(MaxMetaspaceSize) ? MaxMetaspaceSize :
-                                             MemoryUsage::undefined_size();
+  return !FLAG_IS_DEFAULT(MaxMetaspaceSize) ? MaxMetaspaceSize :
+                                              MemoryUsage::undefined_size();
 }
 
 CompressedKlassSpacePool::CompressedKlassSpacePool() :
@@ -209,6 +209,6 @@ size_t CompressedKlassSpacePool::used_in_bytes() {
 }
 
 MemoryUsage CompressedKlassSpacePool::get_memory_usage() {
-  size_t committed = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
-  return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
+  MetaspaceStats stats = MetaspaceUtils::get_statistics(Metaspace::ClassType);
+  return MemoryUsage(initial_size(), stats.used(), stats.committed(), max_size());
 }

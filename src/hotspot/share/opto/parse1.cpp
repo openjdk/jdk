@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
-#include "runtime/arguments.hpp"
+#include "opto/type.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -815,7 +815,7 @@ JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
   int        arg_size = tf->domain()->cnt();
   int        max_size = MAX2(arg_size, (int)tf->range()->cnt());
   JVMState*  jvms     = new (this) JVMState(max_size - TypeFunc::Parms);
-  SafePointNode* map  = new SafePointNode(max_size, NULL);
+  SafePointNode* map  = new SafePointNode(max_size, jvms);
   record_for_igvn(map);
   assert(arg_size == TypeFunc::Parms + (is_osr_compilation() ? 1 : method()->arg_size()), "correct arg_size");
   Node_Notes* old_nn = default_node_notes();
@@ -839,7 +839,6 @@ JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
   }
   assert(jvms->argoff() == TypeFunc::Parms, "parser gets arguments here");
   set_default_node_notes(old_nn);
-  map->set_jvms(jvms);
   jvms->set_map(map);
   return jvms;
 }
@@ -1074,8 +1073,7 @@ void Parse::do_exits() {
       // The exiting JVM state is otherwise a copy of the calling JVMS.
       JVMState* caller = kit.jvms();
       JVMState* ex_jvms = caller->clone_shallow(C);
-      ex_jvms->set_map(kit.clone_map());
-      ex_jvms->map()->set_jvms(ex_jvms);
+      ex_jvms->bind_map(kit.clone_map());
       ex_jvms->set_bci(   InvocationEntryBci);
       kit.set_jvms(ex_jvms);
       if (do_synch) {
@@ -1094,8 +1092,7 @@ void Parse::do_exits() {
       ex_map = kit.make_exception_state(ex_oop);
       assert(ex_jvms->same_calls_as(ex_map->jvms()), "sanity");
       // Pop the last vestige of this method:
-      ex_map->set_jvms(caller->clone_shallow(C));
-      ex_map->jvms()->set_map(ex_map);
+      caller->clone_shallow(C)->bind_map(ex_map);
       _exits.push_exception_state(ex_map);
     }
     assert(_exits.map() == normal_map, "keep the same return state");
@@ -1196,6 +1193,33 @@ void Parse::do_method_entry() {
     make_dtrace_method_entry(method());
   }
 
+#ifdef ASSERT
+  // Narrow receiver type when it is too broad for the method being parsed.
+  if (!method()->is_static()) {
+    ciInstanceKlass* callee_holder = method()->holder();
+    const Type* holder_type = TypeInstPtr::make(TypePtr::BotPTR, callee_holder);
+
+    Node* receiver_obj = local(0);
+    const TypeInstPtr* receiver_type = _gvn.type(receiver_obj)->isa_instptr();
+
+    if (receiver_type != NULL && !receiver_type->higher_equal(holder_type)) {
+      // Receiver should always be a subtype of callee holder.
+      // But, since C2 type system doesn't properly track interfaces,
+      // the invariant can't be expressed in the type system for default methods.
+      // Example: for unrelated C <: I and D <: I, (C `meet` D) = Object </: I.
+      assert(callee_holder->is_interface(), "missing subtype check");
+
+      // Perform dynamic receiver subtype check against callee holder class w/ a halt on failure.
+      Node* holder_klass = _gvn.makecon(TypeKlassPtr::make(callee_holder));
+      Node* not_subtype_ctrl = gen_subtype_check(receiver_obj, holder_klass);
+      assert(!stopped(), "not a subtype");
+
+      Node* halt = _gvn.transform(new HaltNode(not_subtype_ctrl, frameptr(), "failed receiver subtype check"));
+      C->root()->add_req(halt);
+    }
+  }
+#endif // ASSERT
+
   // If the method is synchronized, we need to construct a lock node, attach
   // it to the Start node, and pin it there.
   if (method()->is_synchronized()) {
@@ -1209,7 +1233,7 @@ void Parse::do_method_entry() {
 
     // Setup Object Pointer
     Node *lock_obj = NULL;
-    if(method()->is_static()) {
+    if (method()->is_static()) {
       ciInstance* mirror = _method->holder()->java_mirror();
       const TypeInstPtr *t_lock = TypeInstPtr::make(mirror);
       lock_obj = makecon(t_lock);
@@ -2283,7 +2307,7 @@ void Parse::add_safepoint() {
   // Create a node for the polling address
   Node *polladr;
   Node *thread = _gvn.transform(new ThreadLocalNode());
-  Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(Thread::polling_page_offset())));
+  Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(JavaThread::polling_page_offset())));
   polladr = make_load(control(), polling_page_load_addr, TypeRawPtr::BOTTOM, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
   sfpnt->init_req(TypeFunc::Parms+0, _gvn.transform(polladr));
 
@@ -2294,7 +2318,7 @@ void Parse::add_safepoint() {
 
   // Provide an edge from root to safepoint.  This makes the safepoint
   // appear useful until the parse has completed.
-  if( OptoRemoveUseless && transformed_sfpnt->is_SafePoint() ) {
+  if (transformed_sfpnt->is_SafePoint()) {
     assert(C->root() != NULL, "Expect parse is still valid");
     C->root()->add_prec(transformed_sfpnt);
   }

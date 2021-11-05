@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class SwingUtilities3 {
      *  or {@code Applet}
      * @param isRequested the value to set vsyncRequested state to
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public static void setVsyncRequested(Container rootContainer,
                                          boolean isRequested) {
         assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
@@ -105,7 +105,7 @@ public class SwingUtilities3 {
      * @param rootContainer topmost container. Should be either Window or Applet
      * @return {@code true} if vsync painting is requested for {@code rootContainer}
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public static boolean isVsyncRequested(Container rootContainer) {
         assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
         return Boolean.TRUE == vsyncedMap.get(rootContainer);

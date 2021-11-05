@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,14 @@
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 
+class ShenandoahObjToScanQueueSet;
+
 /**
  * Encapsulate a marking bitmap with the top-at-mark-start and top-bitmaps array.
  */
 class ShenandoahMarkingContext : public CHeapObj<mtGC> {
 private:
+  // Marking bitmap
   ShenandoahMarkBitMap _mark_bit_map;
 
   HeapWord** const _top_bitmaps;
@@ -44,8 +47,12 @@ private:
 
   ShenandoahSharedFlag _is_complete;
 
+  // Marking task queues
+  ShenandoahObjToScanQueueSet* _task_queues;
+
 public:
-  ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions);
+  ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions, uint max_queues);
+  ~ShenandoahMarkingContext();
 
   /*
    * Marks the object. Returns true if the object has not been marked before and has
@@ -80,6 +87,8 @@ public:
   void mark_complete();
   void mark_incomplete();
 
+  // Task queues
+  ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP

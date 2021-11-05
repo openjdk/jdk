@@ -28,7 +28,7 @@
  * @summary Checks that popup menu cannot be partially hidden
  * by the task bar in applets.
  * @author Mikhail Lapshin
- * @run main bug6694823
+ * @run main/othervm -Djava.security.manager=allow bug6694823
  */
 
 import javax.swing.*;

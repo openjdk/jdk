@@ -29,6 +29,7 @@
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspaceCriticalAllocation.hpp"
 #include "memory/universe.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
 class MetadataAllocationRequest {
@@ -75,7 +76,7 @@ MetadataAllocationRequest* MetaspaceCriticalAllocation::_requests_head = NULL;
 MetadataAllocationRequest* MetaspaceCriticalAllocation::_requests_tail = NULL;
 
 void MetaspaceCriticalAllocation::add(MetadataAllocationRequest* request) {
-  MutexLocker ml(MetaspaceCritical_lock);
+  MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
   log_info(metaspace)("Requesting critical metaspace allocation; almost out of memory");
   Atomic::store(&_has_critical_allocation, true);
   if (_requests_head == NULL) {
@@ -99,7 +100,7 @@ void MetaspaceCriticalAllocation::unlink(MetadataAllocationRequest* curr, Metada
 }
 
 void MetaspaceCriticalAllocation::remove(MetadataAllocationRequest* request) {
-  MutexLocker ml(MetaspaceCritical_lock);
+  MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
   MetadataAllocationRequest* prev = NULL;
   for (MetadataAllocationRequest* curr = _requests_head; curr != NULL; curr = curr->next()) {
     if (curr == request) {
@@ -112,7 +113,7 @@ void MetaspaceCriticalAllocation::remove(MetadataAllocationRequest* request) {
 }
 
 bool MetaspaceCriticalAllocation::try_allocate_critical(MetadataAllocationRequest* request) {
-  MutexLocker ml(MetaspaceCritical_lock);
+  MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
   if (_requests_head == request) {
     // The first request can't opportunistically ride on a previous GC
     return false;
@@ -124,7 +125,8 @@ bool MetaspaceCriticalAllocation::try_allocate_critical(MetadataAllocationReques
 
 void MetaspaceCriticalAllocation::wait_for_purge(MetadataAllocationRequest* request) {
   while (!request->has_result()) {
-    MetaspaceCritical_lock->wait();
+    ThreadBlockInVM tbivm(JavaThread::current());
+    MetaspaceCritical_lock->wait_without_safepoint_check();
   }
 }
 
@@ -132,7 +134,7 @@ void MetaspaceCriticalAllocation::block_if_concurrent_purge() {
   if (Atomic::load(&_has_critical_allocation)) {
     // If there is a concurrent Metaspace::purge() operation, we will block here,
     // to make sure critical allocations get precedence and don't get starved.
-    MutexLocker ml(MetaspaceCritical_lock);
+    MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -150,15 +150,15 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
 
 void SignatureHandlerLibrary::pd_set_handler(address handler) {}
 
-JRT_ENTRY(address, InterpreterRuntime::get_signature(JavaThread* thread, Method* method))
-  methodHandle m(thread, method);
+JRT_ENTRY(address, InterpreterRuntime::get_signature(JavaThread* current, Method* method))
+  methodHandle m(current, method);
   assert(m->is_native(), "sanity check");
   Symbol *s = m->signature();
   return (address) s->base();
 JRT_END
 
-JRT_ENTRY(address, InterpreterRuntime::get_result_handler(JavaThread* thread, Method* method))
-  methodHandle m(thread, method);
+JRT_ENTRY(address, InterpreterRuntime::get_result_handler(JavaThread* current, Method* method))
+  methodHandle m(current, method);
   assert(m->is_native(), "sanity check");
   return AbstractInterpreter::result_handler(m->result_type());
 JRT_END

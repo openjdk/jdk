@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include <limits>
 #include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/debug.hpp"
 
 // Iteration support for enums.
@@ -115,8 +116,9 @@ struct EnumeratorRangeImpl : AllStatic {
                          EnumeratorRangeImpl::start_value<T>(First),    \
                          EnumeratorRangeImpl::end_value<T>(Last));
 
-// A helper class for EnumRange and EnumIterator, computing some
-// additional information based on T and EnumeratorRange<T>.
+// An internal helper class for EnumRange and EnumIterator, computing some
+// additional information based on T and EnumeratorRange<T>, and performing
+// or supporting various validity checks.
 template<typename T>
 class EnumIterationTraits : AllStatic {
   using RangeType = EnumeratorRange<T>;
@@ -131,14 +133,29 @@ public:
   // The one-past-the-end value for T.
   static constexpr Underlying _end = RangeType::_end;
 
-  // The first enumerator of T.
-  static constexpr T _first = static_cast<T>(_start);
-
-  // The last enumerator of T.
-  static constexpr T _last = static_cast<T>(_end - 1);
-
   static_assert(_start != _end, "empty range");
   static_assert(_start <= _end, "invalid range"); // <= so only one failure when ==.
+
+  // Verify value is in [start, end].
+  // The values for start and end default to _start and _end, respectively.
+  // The (deduced) type V is expected to be either T or Underlying.
+  template<typename V>
+  static constexpr void assert_in_range(V value,
+                                        V start = PrimitiveConversions::cast<V>(_start),
+                                        V end = PrimitiveConversions::cast<V>(_end)) {
+    assert(start <= value, "out of range");
+    assert(value <= end, "out of range");
+  }
+
+  // Convert an enumerator value to the corresponding underlying type.
+  static constexpr Underlying underlying_value(T value) {
+    return static_cast<Underlying>(value);
+  }
+
+  // Convert a value to the corresponding enumerator.
+  static constexpr T enumerator(Underlying value) {
+    return static_cast<T>(value);
+  }
 };
 
 template<typename T>
@@ -160,10 +177,9 @@ public:
 
   // Return an iterator with the indicated value.
   constexpr explicit EnumIterator(T value) :
-    _value(static_cast<Underlying>(value))
+    _value(Traits::underlying_value(value))
   {
-    assert(_value >= Traits::_start, "out of range");
-    assert(_value <= Traits::_end, "out of range");
+    Traits::assert_in_range(value);
   }
 
   // True if the iterators designate the same enumeration value.
@@ -180,7 +196,7 @@ public:
   // precondition: this is not beyond the last enumerator.
   constexpr T operator*() const {
     assert_in_bounds();
-    return static_cast<T>(_value);
+    return Traits::enumerator(_value);
   }
 
   // Step this iterator to the next value.
@@ -209,52 +225,67 @@ class EnumRange {
   Underlying _start;
   Underlying _end;
 
+  constexpr void assert_not_empty() const {
+    assert(size() > 0, "empty range");
+  }
+
 public:
   using EnumType = T;
   using Iterator = EnumIterator<T>;
 
   // Default constructor gives the full range.
   constexpr EnumRange() :
-    EnumRange(Traits::_first) {}
+    EnumRange(Traits::enumerator(Traits::_start)) {}
 
   // Range from start to the (exclusive) end of the enumerator range.
   constexpr explicit EnumRange(T start) :
-    EnumRange(start, static_cast<T>(Traits::_end)) {}
+    EnumRange(start, Traits::enumerator(Traits::_end)) {}
 
   // Range from start (inclusive) to end (exclusive).
   // precondition: start <= end.
   constexpr EnumRange(T start, T end) :
-    _start(static_cast<Underlying>(start)),
-    _end(static_cast<Underlying>(end))
+    _start(Traits::underlying_value(start)),
+    _end(Traits::underlying_value(end))
   {
-    assert(Traits::_start <= _start, "out of range");
-    assert(_end <= Traits::_end, "out of range");
-    assert(_start <= _end, "invalid range");
+    Traits::assert_in_range(start);
+    Traits::assert_in_range(end);
+    assert(start <= end, "invalid range");
   }
 
   // Return an iterator for the start of the range.
   constexpr Iterator begin() const {
-    return Iterator(static_cast<T>(_start));
+    return Iterator(Traits::enumerator(_start));
   }
 
   // Return an iterator for the end of the range.
   constexpr Iterator end() const {
-    return Iterator(static_cast<T>(_end));
+    return Iterator(Traits::enumerator(_end));
   }
 
+  // Return the number of enumerator values in the range.
   constexpr size_t size() const {
     return static_cast<size_t>(_end - _start); // _end is exclusive
   }
 
-  constexpr T first() const { return static_cast<T>(_start); }
-  constexpr T last() const { return static_cast<T>(_end - 1); }
+  // Return the first enumerator in the range.
+  // precondition: size() > 0
+  constexpr T first() const {
+    assert_not_empty();
+    return Traits::enumerator(_start);
+  }
+
+  // Return the last enumerator in the range.
+  // precondition: size() > 0
+  constexpr T last() const {
+    assert_not_empty();
+    return Traits::enumerator(_end - 1);
+  }
 
   // Convert value to a zero-based index into the range [first(), last()].
   // precondition: first() <= value && value <= last()
   constexpr size_t index(T value) const {
-    assert(first() <= value, "out of bounds");
-    assert(value <= last(), "out of bounds");
-    return static_cast<size_t>(static_cast<Underlying>(value) - _start);
+    Traits::assert_in_range(value, first(), last());
+    return static_cast<size_t>(Traits::underlying_value(value) - _start);
   }
 };
 

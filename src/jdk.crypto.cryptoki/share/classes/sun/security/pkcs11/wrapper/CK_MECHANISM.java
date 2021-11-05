@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -152,6 +152,11 @@ public class CK_MECHANISM {
     }
 
     public CK_MECHANISM(long mechanism, CK_CCM_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism,
+            CK_SALSA20_CHACHA20_POLY1305_PARAMS params) {
         init(mechanism, params);
     }
 

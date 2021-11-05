@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *          java.base/jdk.internal.module
  *          java.base/jdk.internal.perf
  *          java.base/jdk.internal.misc:+open
- * @run testng/othervm --illegal-access=deny TrySetAccessibleTest
+ * @run testng/othervm TrySetAccessibleTest
  * @summary Test AccessibleObject::trySetAccessible method
  */
 

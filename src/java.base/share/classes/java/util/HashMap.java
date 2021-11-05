@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.util;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -307,13 +308,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public final boolean equals(Object o) {
             if (o == this)
                 return true;
-            if (o instanceof Map.Entry) {
-                Map.Entry<?,?> e = (Map.Entry<?,?>)o;
-                if (Objects.equals(key, e.getKey()) &&
-                    Objects.equals(value, e.getValue()))
-                    return true;
-            }
-            return false;
+
+            return o instanceof Map.Entry<?, ?> e
+                    && Objects.equals(key, e.getKey())
+                    && Objects.equals(value, e.getValue());
         }
     }
 
@@ -1100,16 +1098,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             return new EntryIterator();
         }
         public final boolean contains(Object o) {
-            if (!(o instanceof Map.Entry))
+            if (!(o instanceof Map.Entry<?, ?> e))
                 return false;
-            Map.Entry<?,?> e = (Map.Entry<?,?>) o;
             Object key = e.getKey();
             Node<K,V> candidate = getNode(key);
             return candidate != null && candidate.equals(e);
         }
         public final boolean remove(Object o) {
-            if (o instanceof Map.Entry) {
-                Map.Entry<?,?> e = (Map.Entry<?,?>) o;
+            if (o instanceof Map.Entry<?, ?> e) {
                 Object key = e.getKey();
                 Object value = e.getValue();
                 return removeNode(hash(key), key, value, true, true) != null;
@@ -1509,23 +1505,28 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
-    private void readObject(java.io.ObjectInputStream s)
+    private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
-        // Read in the threshold (ignored), loadfactor, and any hidden stuff
-        s.defaultReadObject();
+
+        ObjectInputStream.GetField fields = s.readFields();
+
+        // Read loadFactor (ignore threshold)
+        float lf = fields.get("loadFactor", 0.75f);
+        if (lf <= 0 || Float.isNaN(lf))
+            throw new InvalidObjectException("Illegal load factor: " + lf);
+
+        lf = Math.min(Math.max(0.25f, lf), 4.0f);
+        HashMap.UnsafeHolder.putLoadFactor(this, lf);
+
         reinitialize();
-        if (loadFactor <= 0 || Float.isNaN(loadFactor))
-            throw new InvalidObjectException("Illegal load factor: " +
-                                             loadFactor);
+
         s.readInt();                // Read and ignore number of buckets
         int mappings = s.readInt(); // Read number of mappings (size)
-        if (mappings < 0)
-            throw new InvalidObjectException("Illegal mappings count: " +
-                                             mappings);
-        else if (mappings > 0) { // (if zero, use defaults)
-            // Size the table using given load factor only if within
-            // range of 0.25...4.0
-            float lf = Math.min(Math.max(0.25f, loadFactor), 4.0f);
+        if (mappings < 0) {
+            throw new InvalidObjectException("Illegal mappings count: " + mappings);
+        } else if (mappings == 0) {
+            // use defaults
+        } else if (mappings > 0) {
             float fc = (float)mappings / lf + 1.0f;
             int cap = ((fc < DEFAULT_INITIAL_CAPACITY) ?
                        DEFAULT_INITIAL_CAPACITY :
@@ -1551,6 +1552,18 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     V value = (V) s.readObject();
                 putVal(hash(key), key, value, false, false);
             }
+        }
+    }
+
+    // Support for resetting final field during deserializing
+    private static final class UnsafeHolder {
+        private UnsafeHolder() { throw new InternalError(); }
+        private static final jdk.internal.misc.Unsafe unsafe
+                = jdk.internal.misc.Unsafe.getUnsafe();
+        private static final long LF_OFFSET
+                = unsafe.objectFieldOffset(HashMap.class, "loadFactor");
+        static void putLoadFactor(HashMap<?, ?> map, float lf) {
+            unsafe.putFloat(map, LF_OFFSET, lf);
         }
     }
 

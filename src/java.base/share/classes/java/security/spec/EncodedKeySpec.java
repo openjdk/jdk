@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,11 @@
 
 package java.security.spec;
 
+import jdk.internal.access.JavaSecuritySpecAccess;
+import jdk.internal.access.SharedSecrets;
+
+import java.util.Arrays;
+
 /**
  * This class represents a public or private key in encoded format.
  *
@@ -45,7 +50,17 @@ public abstract class EncodedKeySpec implements KeySpec {
     private byte[] encodedKey;
     private String algorithmName;
 
-    /**
+    static {
+        SharedSecrets.setJavaSecuritySpecAccess(
+                new JavaSecuritySpecAccess() {
+                    @Override
+                    public void clearEncodedKeySpec(EncodedKeySpec keySpec) {
+                        keySpec.clear();
+                    }
+                });
+    }
+
+                    /**
      * Creates a new {@code EncodedKeySpec} with the given encoded key.
      *
      * @param encodedKey the encoded key. The contents of the
@@ -125,4 +140,11 @@ public abstract class EncodedKeySpec implements KeySpec {
      * @return a string representation of the encoding format.
      */
     public abstract String getFormat();
+
+    /**
+     * Clear the encoding inside.
+     */
+    void clear() {
+        Arrays.fill(encodedKey, (byte)0);
+    }
 }

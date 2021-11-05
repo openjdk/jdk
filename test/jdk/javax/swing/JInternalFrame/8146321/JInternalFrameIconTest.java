@@ -30,6 +30,7 @@
  * @build Util
  * @run main JInternalFrameIconTest
  */
+import java.io.File;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Graphics;
@@ -37,6 +38,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JDesktopPane;
@@ -61,7 +63,6 @@ public class JInternalFrameIconTest {
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.delay(2000);
         UIManager.LookAndFeelInfo[] lookAndFeelArray
                 = UIManager.getInstalledLookAndFeels();
         for (UIManager.LookAndFeelInfo lookAndFeelItem : lookAndFeelArray) {
@@ -76,21 +77,28 @@ public class JInternalFrameIconTest {
     private static void executeCase(String lookAndFeelString) throws Exception {
         if (tryLookAndFeel(lookAndFeelString)) {
             createImageIconUI(lookAndFeelString);
+            robot.waitForIdle();
             robot.delay(1000);
             getImageIconBufferedImage();
+            robot.waitForIdle();
             robot.delay(1000);
             cleanUp();
             robot.waitForIdle();
+            robot.delay(1000);
 
             createIconUI(lookAndFeelString);
+            robot.waitForIdle();
             robot.delay(1000);
             getIconBufferedImage();
+            robot.waitForIdle();
             robot.delay(1000);
             cleanUp();
             robot.waitForIdle();
+            robot.delay(1000);
 
             testIfSame(lookAndFeelString);
             robot.waitForIdle();
+            robot.delay(1000);
         }
 
     }
@@ -186,9 +194,11 @@ public class JInternalFrameIconTest {
         Rectangle rect = internalFrame.getBounds();
         Rectangle captureRect = new Rectangle(
                 point.x + internalFrame.getInsets().left,
-                point.y,
-                rect.width,
-                internalFrame.getInsets().top);
+                point.y + internalFrame.getInsets().top,
+                titleImageIcon.getIconWidth(),
+                titleImageIcon.getIconHeight());
+
+        System.out.println("imageicon captureRect " + captureRect);
         imageIconImage
                 = robot.createScreenCapture(captureRect);
     }
@@ -198,9 +208,11 @@ public class JInternalFrameIconTest {
         Rectangle rect = internalFrame.getBounds();
         Rectangle captureRect = new Rectangle(
                 point.x + internalFrame.getInsets().left,
-                point.y,
-                rect.width,
-                internalFrame.getInsets().top);
+                point.y + internalFrame.getInsets().top,
+                titleIcon.getIconWidth(),
+                titleIcon.getIconHeight());
+
+        System.out.println("icon captureRect " + captureRect);
         iconImage
                 = robot.createScreenCapture(captureRect);
     }
@@ -208,6 +220,8 @@ public class JInternalFrameIconTest {
     private static void testIfSame(final String lookAndFeelString)
             throws Exception {
         if (!bufferedImagesEqual(imageIconImage, iconImage)) {
+            ImageIO.write(imageIconImage, "png", new File("imageicon-fail.png"));
+            ImageIO.write(iconImage, "png", new File("iconImage-fail.png"));
             String error ="[" + lookAndFeelString
                     + "] : ERROR: icon and imageIcon not same.";
             errorString += error;

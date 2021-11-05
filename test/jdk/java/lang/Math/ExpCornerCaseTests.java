@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011,2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8255368
+ * @bug 8255368 8240632
  * @summary Tests corner cases of Math.exp
  */
 
@@ -46,6 +46,10 @@ public class ExpCornerCaseTests {
         double [][] testCases = {
            {+0x4.0p8,                  Double.POSITIVE_INFINITY},
            {+0x2.71p12,                Double.POSITIVE_INFINITY},
+
+           // Identified special cases in IEEE 754 exp operation
+           {+0.0,                      1.0},
+           {-0.0,                      1.0},
          };
 
         for (double[] testCase : testCases) {

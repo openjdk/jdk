@@ -233,7 +233,7 @@ public class ExecutorsTest extends JSR166TestCase {
                     await(proceed);
                 }};
             long startTime = System.nanoTime();
-            Future f = p.schedule(Executors.callable(task, Boolean.TRUE),
+            Future<?> f = p.schedule(Executors.callable(task, Boolean.TRUE),
                                   timeoutMillis(), MILLISECONDS);
             assertFalse(f.isDone());
             proceed.countDown();
@@ -257,7 +257,7 @@ public class ExecutorsTest extends JSR166TestCase {
                     await(proceed);
                 }};
             long startTime = System.nanoTime();
-            Future f = p.schedule(Executors.callable(task, Boolean.TRUE),
+            Future<?> f = p.schedule(Executors.callable(task, Boolean.TRUE),
                                   timeoutMillis(), MILLISECONDS);
             assertFalse(f.isDone());
             proceed.countDown();
@@ -283,7 +283,7 @@ public class ExecutorsTest extends JSR166TestCase {
                     await(proceed);
                 }};
             long startTime = System.nanoTime();
-            Future f = p.schedule(Executors.callable(task, Boolean.TRUE),
+            Future<?> f = p.schedule(Executors.callable(task, Boolean.TRUE),
                                   timeoutMillis(), MILLISECONDS);
             assertFalse(f.isDone());
             proceed.countDown();
@@ -317,7 +317,7 @@ public class ExecutorsTest extends JSR166TestCase {
         for (final ExecutorService executor : executors) {
             threads.add(newStartedThread(new CheckedRunnable() {
                 public void realRun() {
-                    Future future = executor.submit(sleeper);
+                    Future<?> future = executor.submit(sleeper);
                     assertFutureTimesOut(future);
                 }}));
         }
@@ -469,7 +469,7 @@ public class ExecutorsTest extends JSR166TestCase {
             public void realRun() throws Exception {
                 if (System.getSecurityManager() == null)
                     return;
-                Callable task = Executors.privilegedCallable(new CheckCCL());
+                Callable<?> task = Executors.privilegedCallable(new CheckCCL());
                 try {
                     task.call();
                     shouldThrow();
@@ -548,7 +548,7 @@ public class ExecutorsTest extends JSR166TestCase {
      * callable(Runnable) returns null when called
      */
     public void testCallable1() throws Exception {
-        Callable c = Executors.callable(new NoOpRunnable());
+        Callable<?> c = Executors.callable(new NoOpRunnable());
         assertNull(c.call());
     }
 
@@ -556,7 +556,7 @@ public class ExecutorsTest extends JSR166TestCase {
      * callable(Runnable, result) returns result when called
      */
     public void testCallable2() throws Exception {
-        Callable c = Executors.callable(new NoOpRunnable(), one);
+        Callable<?> c = Executors.callable(new NoOpRunnable(), one);
         assertSame(one, c.call());
     }
 
@@ -564,7 +564,7 @@ public class ExecutorsTest extends JSR166TestCase {
      * callable(PrivilegedAction) returns its result when called
      */
     public void testCallable3() throws Exception {
-        Callable c = Executors.callable(new PrivilegedAction() {
+        Callable<?> c = Executors.callable(new PrivilegedAction() {
                 public Object run() { return one; }});
         assertSame(one, c.call());
     }
@@ -573,7 +573,7 @@ public class ExecutorsTest extends JSR166TestCase {
      * callable(PrivilegedExceptionAction) returns its result when called
      */
     public void testCallable4() throws Exception {
-        Callable c = Executors.callable(new PrivilegedExceptionAction() {
+        Callable<?> c = Executors.callable(new PrivilegedExceptionAction() {
                 public Object run() { return one; }});
         assertSame(one, c.call());
     }
@@ -583,7 +583,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testCallableNPE1() {
         try {
-            Callable unused = Executors.callable((Runnable) null);
+            Callable<?> unused = Executors.callable((Runnable) null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -593,7 +593,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testCallableNPE2() {
         try {
-            Callable unused = Executors.callable((Runnable) null, one);
+            Callable<?> unused = Executors.callable((Runnable) null, one);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -603,7 +603,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testCallableNPE3() {
         try {
-            Callable unused = Executors.callable((PrivilegedAction) null);
+            Callable<?> unused = Executors.callable((PrivilegedAction) null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -613,7 +613,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testCallableNPE4() {
         try {
-            Callable unused = Executors.callable((PrivilegedExceptionAction) null);
+            Callable<?> unused = Executors.callable((PrivilegedExceptionAction) null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }

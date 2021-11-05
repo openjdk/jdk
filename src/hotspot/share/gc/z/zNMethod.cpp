@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,10 @@ void ZNMethod::log_register(const nmethod* nm) {
     oop* const begin = nm->oops_begin();
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
+      const oop o = Atomic::load(p); // C1 PatchingStub may replace it concurrently.
+      const char* external_name = (o == nullptr) ? "N/A" : o->klass()->external_name();
       log_oops.print("           Oop[" SIZE_FORMAT "] " PTR_FORMAT " (%s)",
-                     (p - begin), p2i(*p), (*p)->klass()->external_name());
+                     (p - begin), p2i(o), external_name);
     }
   }
 
@@ -219,7 +221,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
     oop* const begin = nm->oops_begin();
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
-      if (*p != Universe::non_oop_word()) {
+      if (!Universe::contains_non_oop_word(p)) {
         cl->do_oop(p);
       }
     }
@@ -232,7 +234,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
     oop** const begin = oops->immediates_begin();
     oop** const end = oops->immediates_end();
     for (oop** p = begin; p < end; p++) {
-      if (**p != Universe::non_oop_word()) {
+      if (*p != Universe::non_oop_word()) {
         cl->do_oop(*p);
       }
     }
@@ -376,7 +378,7 @@ void ZNMethod::unlink(ZWorkers* workers, bool unloading_occurred) {
 
     {
       ZNMethodUnlinkTask task(unloading_occurred, &verifier);
-      workers->run_concurrent(&task);
+      workers->run(&task);
       if (task.success()) {
         return;
       }
@@ -421,5 +423,5 @@ public:
 
 void ZNMethod::purge(ZWorkers* workers) {
   ZNMethodPurgeTask task;
-  workers->run_concurrent(&task);
+  workers->run(&task);
 }

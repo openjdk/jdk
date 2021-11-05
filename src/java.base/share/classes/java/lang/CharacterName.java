@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class CharacterName {
     private final int[] hsIndices;   // chain heads, hash indices into "cps"
 
     private CharacterName()  {
-        try (DataInputStream dis = new DataInputStream(new InflaterInputStream(
+        try (@SuppressWarnings("removal") DataInputStream dis = new DataInputStream(new InflaterInputStream(
             AccessController.doPrivileged(new PrivilegedAction<>() {
                 public InputStream run() {
                     return getClass().getResourceAsStream("uniName.dat");

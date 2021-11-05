@@ -63,7 +63,7 @@ extern "C" {
 **   https://github.com/KhronosGroup/OpenGL-Registry
 */
 
-#define GLX_GLXEXT_VERSION 20180525
+#define GLX_GLXEXT_VERSION 20190911
 
 /* Generated C header for:
  * API: glx
@@ -309,6 +309,14 @@ void glXBlitContextFramebufferAMD (GLXContext dstCtx, GLint srcX0, GLint srcY0, 
 #define GLX_BACK_BUFFER_AGE_EXT           0x20F4
 #endif /* GLX_EXT_buffer_age */
 
+#ifndef GLX_EXT_context_priority
+#define GLX_EXT_context_priority 1
+#define GLX_CONTEXT_PRIORITY_LEVEL_EXT    0x3100
+#define GLX_CONTEXT_PRIORITY_HIGH_EXT     0x3101
+#define GLX_CONTEXT_PRIORITY_MEDIUM_EXT   0x3102
+#define GLX_CONTEXT_PRIORITY_LOW_EXT      0x3103
+#endif /* GLX_EXT_context_priority */
+
 #ifndef GLX_EXT_create_context_es2_profile
 #define GLX_EXT_create_context_es2_profile 1
 #define GLX_CONTEXT_ES2_PROFILE_BIT_EXT   0x00000004
@@ -505,7 +513,6 @@ GLXPixmap glXCreateGLXPixmapMESA (Display *dpy, XVisualInfo *visual, Pixmap pixm
 #define GLX_RENDERER_OPENGL_COMPATIBILITY_PROFILE_VERSION_MESA 0x818B
 #define GLX_RENDERER_OPENGL_ES_PROFILE_VERSION_MESA 0x818C
 #define GLX_RENDERER_OPENGL_ES2_PROFILE_VERSION_MESA 0x818D
-#define GLX_RENDERER_ID_MESA              0x818E
 typedef Bool ( *PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC) (int attribute, unsigned int *value);
 typedef const char *( *PFNGLXQUERYCURRENTRENDERERSTRINGMESAPROC) (int attribute);
 typedef Bool ( *PFNGLXQUERYRENDERERINTEGERMESAPROC) (Display *dpy, int screen, int renderer, int attribute, unsigned int *value);
@@ -530,9 +537,9 @@ Bool glXReleaseBuffersMESA (Display *dpy, GLXDrawable drawable);
 #define GLX_MESA_set_3dfx_mode 1
 #define GLX_3DFX_WINDOW_MODE_MESA         0x1
 #define GLX_3DFX_FULLSCREEN_MODE_MESA     0x2
-typedef Bool ( *PFNGLXSET3DFXMODEMESAPROC) (int mode);
+typedef GLboolean ( *PFNGLXSET3DFXMODEMESAPROC) (GLint mode);
 #ifdef GLX_GLXEXT_PROTOTYPES
-Bool glXSet3DfxModeMESA (int mode);
+GLboolean glXSet3DfxModeMESA (GLint mode);
 #endif
 #endif /* GLX_MESA_set_3dfx_mode */
 
@@ -576,6 +583,15 @@ Bool glXDelayBeforeSwapNV (Display *dpy, GLXDrawable drawable, GLfloat seconds);
 #define GLX_NV_float_buffer 1
 #define GLX_FLOAT_COMPONENTS_NV           0x20B0
 #endif /* GLX_NV_float_buffer */
+
+#ifndef GLX_NV_multigpu_context
+#define GLX_NV_multigpu_context 1
+#define GLX_CONTEXT_MULTIGPU_ATTRIB_NV    0x20AA
+#define GLX_CONTEXT_MULTIGPU_ATTRIB_SINGLE_NV 0x20AB
+#define GLX_CONTEXT_MULTIGPU_ATTRIB_AFR_NV 0x20AC
+#define GLX_CONTEXT_MULTIGPU_ATTRIB_MULTICAST_NV 0x20AD
+#define GLX_CONTEXT_MULTIGPU_ATTRIB_MULTI_DISPLAY_MULTICAST_NV 0x20AE
+#endif /* GLX_NV_multigpu_context */
 
 #ifndef GLX_NV_multisample_coverage
 #define GLX_NV_multisample_coverage 1
@@ -682,10 +698,8 @@ int glXGetVideoInfoNV (Display *dpy, int screen, GLXVideoDeviceNV VideoDevice, u
 /* Define int32_t, int64_t, and uint64_t types for UST/MSC */
 /* (as used in the GLX_OML_sync_control extension). */
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-/* JDK modification */
-#elif defined(__sun__)
 #include <inttypes.h>
-#elif defined(__digital__)
+#elif defined(__sun__) || defined(__digital__)
 #include <inttypes.h>
 #if defined(__STDC__)
 #if defined(__arch64__) || defined(_LP64)
@@ -696,7 +710,6 @@ typedef long long int int64_t;
 typedef unsigned long long int uint64_t;
 #endif /* __arch64__ */
 #endif /* __STDC__ */
-
 #elif defined( __VMS ) || defined(__sgi)
 #include <inttypes.h>
 #elif defined(__SCO__) || defined(__USLC__)
@@ -868,13 +881,13 @@ int glXQueryHyperpipeAttribSGIX (Display *dpy, int timeSlice, int attrib, int si
 #define GLX_PBUFFER_SGIX                  0x8023
 typedef GLXPbufferSGIX ( *PFNGLXCREATEGLXPBUFFERSGIXPROC) (Display *dpy, GLXFBConfigSGIX config, unsigned int width, unsigned int height, int *attrib_list);
 typedef void ( *PFNGLXDESTROYGLXPBUFFERSGIXPROC) (Display *dpy, GLXPbufferSGIX pbuf);
-typedef int ( *PFNGLXQUERYGLXPBUFFERSGIXPROC) (Display *dpy, GLXPbufferSGIX pbuf, int attribute, unsigned int *value);
+typedef void ( *PFNGLXQUERYGLXPBUFFERSGIXPROC) (Display *dpy, GLXPbufferSGIX pbuf, int attribute, unsigned int *value);
 typedef void ( *PFNGLXSELECTEVENTSGIXPROC) (Display *dpy, GLXDrawable drawable, unsigned long mask);
 typedef void ( *PFNGLXGETSELECTEDEVENTSGIXPROC) (Display *dpy, GLXDrawable drawable, unsigned long *mask);
 #ifdef GLX_GLXEXT_PROTOTYPES
 GLXPbufferSGIX glXCreateGLXPbufferSGIX (Display *dpy, GLXFBConfigSGIX config, unsigned int width, unsigned int height, int *attrib_list);
 void glXDestroyGLXPbufferSGIX (Display *dpy, GLXPbufferSGIX pbuf);
-int glXQueryGLXPbufferSGIX (Display *dpy, GLXPbufferSGIX pbuf, int attribute, unsigned int *value);
+void glXQueryGLXPbufferSGIX (Display *dpy, GLXPbufferSGIX pbuf, int attribute, unsigned int *value);
 void glXSelectEventSGIX (Display *dpy, GLXDrawable drawable, unsigned long mask);
 void glXGetSelectedEventSGIX (Display *dpy, GLXDrawable drawable, unsigned long *mask);
 #endif
@@ -982,9 +995,9 @@ int glXWaitVideoSyncSGI (int divisor, int remainder, unsigned int *count);
 
 #ifndef GLX_SUN_get_transparent_index
 #define GLX_SUN_get_transparent_index 1
-typedef Status ( *PFNGLXGETTRANSPARENTINDEXSUNPROC) (Display *dpy, Window overlay, Window underlay, long *pTransparentIndex);
+typedef Status ( *PFNGLXGETTRANSPARENTINDEXSUNPROC) (Display *dpy, Window overlay, Window underlay, unsigned long *pTransparentIndex);
 #ifdef GLX_GLXEXT_PROTOTYPES
-Status glXGetTransparentIndexSUN (Display *dpy, Window overlay, Window underlay, long *pTransparentIndex);
+Status glXGetTransparentIndexSUN (Display *dpy, Window overlay, Window underlay, unsigned long *pTransparentIndex);
 #endif
 #endif /* GLX_SUN_get_transparent_index */
 

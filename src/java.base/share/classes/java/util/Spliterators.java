@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -688,8 +688,22 @@ public final class Spliterators {
                     throw new NoSuchElementException();
                 else {
                     valueReady = false;
-                    return nextElement;
+                    T t = nextElement;
+                    nextElement = null;
+                    return t;
                 }
+            }
+
+            @Override
+            public void forEachRemaining(Consumer<? super T> action) {
+                Objects.requireNonNull(action);
+                if (valueReady) {
+                    valueReady = false;
+                    T t = nextElement;
+                    nextElement = null;
+                    action.accept(t);
+                }
+                spliterator.forEachRemaining(action);
             }
         }
 
@@ -736,6 +750,16 @@ public final class Spliterators {
                     return nextElement;
                 }
             }
+
+            @Override
+            public void forEachRemaining(IntConsumer action) {
+                Objects.requireNonNull(action);
+                if (valueReady) {
+                    valueReady = false;
+                    action.accept(nextElement);
+                }
+                spliterator.forEachRemaining(action);
+            }
         }
 
         return new Adapter();
@@ -781,6 +805,16 @@ public final class Spliterators {
                     return nextElement;
                 }
             }
+
+            @Override
+            public void forEachRemaining(LongConsumer action) {
+                Objects.requireNonNull(action);
+                if (valueReady) {
+                    valueReady = false;
+                    action.accept(nextElement);
+                }
+                spliterator.forEachRemaining(action);
+            }
         }
 
         return new Adapter();
@@ -825,6 +859,16 @@ public final class Spliterators {
                     valueReady = false;
                     return nextElement;
                 }
+            }
+
+            @Override
+            public void forEachRemaining(DoubleConsumer action) {
+                Objects.requireNonNull(action);
+                if (valueReady) {
+                    valueReady = false;
+                    action.accept(nextElement);
+                }
+                spliterator.forEachRemaining(action);
             }
         }
 
@@ -1843,7 +1887,7 @@ public final class Spliterators {
     static final class IntIteratorSpliterator implements Spliterator.OfInt {
         static final int BATCH_UNIT = IteratorSpliterator.BATCH_UNIT;
         static final int MAX_BATCH = IteratorSpliterator.MAX_BATCH;
-        private PrimitiveIterator.OfInt it;
+        private final PrimitiveIterator.OfInt it;
         private final int characteristics;
         private long est;             // size estimate
         private int batch;            // batch size for splits
@@ -1937,7 +1981,7 @@ public final class Spliterators {
     static final class LongIteratorSpliterator implements Spliterator.OfLong {
         static final int BATCH_UNIT = IteratorSpliterator.BATCH_UNIT;
         static final int MAX_BATCH = IteratorSpliterator.MAX_BATCH;
-        private PrimitiveIterator.OfLong it;
+        private final PrimitiveIterator.OfLong it;
         private final int characteristics;
         private long est;             // size estimate
         private int batch;            // batch size for splits
@@ -2031,7 +2075,7 @@ public final class Spliterators {
     static final class DoubleIteratorSpliterator implements Spliterator.OfDouble {
         static final int BATCH_UNIT = IteratorSpliterator.BATCH_UNIT;
         static final int MAX_BATCH = IteratorSpliterator.MAX_BATCH;
-        private PrimitiveIterator.OfDouble it;
+        private final PrimitiveIterator.OfDouble it;
         private final int characteristics;
         private long est;             // size estimate
         private int batch;            // batch size for splits

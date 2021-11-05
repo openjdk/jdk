@@ -112,7 +112,7 @@ MIB_IFROW *getIF(jint index) {
         return NULL;
 
     count = GetIfTable(tableP, &size, TRUE);
-    if (count == ERROR_INSUFFICIENT_BUFFER || count == ERROR_BUFFER_OVERFLOW) {
+    if (count == ERROR_INSUFFICIENT_BUFFER) {
         MIB_IFTABLE* newTableP =  (MIB_IFTABLE *)realloc(tableP, size);
         if (newTableP == NULL) {
             free(tableP);
@@ -187,7 +187,7 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
     }
 
     ret = GetIfTable(tableP, &size, TRUE);
-    if (ret == ERROR_INSUFFICIENT_BUFFER || ret == ERROR_BUFFER_OVERFLOW) {
+    if (ret == ERROR_INSUFFICIENT_BUFFER) {
         MIB_IFTABLE * newTableP = (MIB_IFTABLE *)realloc(tableP, size);
         if (newTableP == NULL) {
             free(tableP);
@@ -200,9 +200,19 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
 
     if (ret != NO_ERROR) {
         free(tableP);
-
-        JNU_ThrowByName(env, "java/lang/Error",
-                "IP Helper Library GetIfTable function failed");
+        switch (ret) {
+            case ERROR_INVALID_PARAMETER:
+                JNU_ThrowInternalError(env,
+                    "IP Helper Library GetIfTable function failed: "
+                    "invalid parameter");
+                break;
+            default:
+                SetLastError(ret);
+                JNU_ThrowByNameWithMessageAndLastError(env,
+                    JNU_JAVANETPKG "SocketException",
+                    "IP Helper Library GetIfTable function failed");
+                break;
+        }
         // this different error code is to handle the case when we call
         // GetIpAddrTable in pure IPv6 environment
         return -2;
@@ -308,8 +318,8 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
             // it should not fail, because we have called it once before
             if (MultiByteToWideChar(CP_OEMCP, 0, ifrowP->bDescr,
                    ifrowP->dwDescrLen, curr->displayName, wlen) == 0) {
-                JNU_ThrowByName(env, "java/lang/Error",
-                       "Cannot get multibyte char for interface display name");
+                JNU_ThrowInternalError(env,
+                    "Cannot get multibyte char for interface display name");
                 free_netif(netifP);
                 free(tableP);
                 free(curr->name);
@@ -374,7 +384,7 @@ int lookupIPAddrTable(JNIEnv *env, MIB_IPADDRTABLE **tablePP)
     }
 
     ret = GetIpAddrTable(tableP, &size, FALSE);
-    if (ret == ERROR_INSUFFICIENT_BUFFER || ret == ERROR_BUFFER_OVERFLOW) {
+    if (ret == ERROR_INSUFFICIENT_BUFFER) {
         MIB_IPADDRTABLE * newTableP = (MIB_IPADDRTABLE *)realloc(tableP, size);
         if (newTableP == NULL) {
             free(tableP);
@@ -389,8 +399,19 @@ int lookupIPAddrTable(JNIEnv *env, MIB_IPADDRTABLE **tablePP)
         if (tableP != NULL) {
             free(tableP);
         }
-        JNU_ThrowByName(env, "java/lang/Error",
-                "IP Helper Library GetIpAddrTable function failed");
+        switch (ret) {
+            case ERROR_INVALID_PARAMETER:
+                JNU_ThrowInternalError(env,
+                    "IP Helper Library GetIpAddrTable function failed: "
+                    "invalid parameter");
+                break;
+            default:
+                SetLastError(ret);
+                JNU_ThrowByNameWithMessageAndLastError(env,
+                    JNU_JAVANETPKG "SocketException",
+                    "IP Helper Library GetIpAddrTable function failed");
+                break;
+        }
         // this different error code is to handle the case when we call
         // GetIpAddrTable in pure IPv6 environment
         return -2;
@@ -641,8 +662,10 @@ jobject createNetworkInterface
                   return NULL;
               }
               (*env)->SetObjectField(env, ibObj, ni_ibbroadcastID, ia2Obj);
+              (*env)->DeleteLocalRef(env, ia2Obj);
               (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
               (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
+              (*env)->DeleteLocalRef(env, ibObj);
             }
         } else /* AF_INET6 */ {
             int scope;
@@ -667,9 +690,11 @@ jobject createNetworkInterface
                 (*env)->SetObjectField(env, ibObj, ni_ibaddressID, iaObj);
                 (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
                 (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
+                (*env)->DeleteLocalRef(env, ibObj);
             }
         }
         (*env)->SetObjectArrayElement(env, addrArr, addr_index, iaObj);
+        (*env)->DeleteLocalRef(env, iaObj);
         addrs = addrs->next;
         addr_index++;
     }
@@ -677,6 +702,10 @@ jobject createNetworkInterface
     (*env)->SetObjectField(env, netifObj, ni_bindsID, bindsArr);
 
     free_netaddr(netaddrP);
+    (*env)->DeleteLocalRef(env, name);
+    (*env)->DeleteLocalRef(env, displayName);
+    (*env)->DeleteLocalRef(env, addrArr);
+    (*env)->DeleteLocalRef(env, bindsArr);
 
     /*
      * Windows doesn't have virtual interfaces, so child array
@@ -687,6 +716,7 @@ jobject createNetworkInterface
       return NULL;
     }
     (*env)->SetObjectField(env, netifObj, ni_childsID, childArr);
+    (*env)->DeleteLocalRef(env, childArr);
 
     /* return the NetworkInterface */
     return netifObj;
@@ -959,6 +989,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
 
         /* put the NetworkInterface into the array */
         (*env)->SetObjectArrayElement(env, netIFArr, arr_index++, netifObj);
+        (*env)->DeleteLocalRef(env, netifObj);
 
         curr = curr->next;
     }

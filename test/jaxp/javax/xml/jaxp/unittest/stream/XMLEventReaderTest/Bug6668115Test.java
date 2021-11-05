@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6668115
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLEventReaderTest.Bug6668115Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLEventReaderTest.Bug6668115Test
  * @run testng/othervm stream.XMLEventReaderTest.Bug6668115Test
  * @summary Test XMLEventReader.getElementText() shall update last event even if no peek.
  */

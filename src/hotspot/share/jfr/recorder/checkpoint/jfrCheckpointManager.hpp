@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ class JfrCheckpointManager : public JfrCHeapObj {
   void notify_threads();
 
   size_t write_static_type_set(Thread* thread);
-  size_t write_threads(Thread* thread);
+  size_t write_threads(JavaThread* thread);
   size_t write_static_type_set_and_threads();
   void clear_type_set();
   void write_type_set();

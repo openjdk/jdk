@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,8 +242,13 @@ void Canonicalizer::do_ArrayLength    (ArrayLength*     x) {
     // with same value Otherwise a Constant is live over multiple
     // blocks without being registered in a state array.
     Constant* length;
+    NewMultiArray* nma;
     if (na->length() != NULL &&
         (length = na->length()->as_Constant()) != NULL) {
+      assert(length->type()->as_IntConstant() != NULL, "array length must be integer");
+      set_constant(length->type()->as_IntConstant()->value());
+    } else if ((nma = x->array()->as_NewMultiArray()) != NULL &&
+               (length = nma->dims()->at(0)->as_Constant()) != NULL) {
       assert(length->type()->as_IntConstant() != NULL, "array length must be integer");
       set_constant(length->type()->as_IntConstant()->value());
     }
@@ -463,8 +468,6 @@ void Canonicalizer::do_CompareOp      (CompareOp*       x) {
 }
 
 
-void Canonicalizer::do_IfInstanceOf(IfInstanceOf*    x) {}
-
 void Canonicalizer::do_IfOp(IfOp* x) {
   // Caution: do not use do_Op2(x) here for now since
   //          we map the condition to the op for now!
@@ -540,6 +543,22 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
     if (c != NULL && !c->value()->is_null_object()) {
       ciType* t = c->value()->java_mirror_type();
       set_constant(t->is_primitive_type());
+    }
+    break;
+  }
+  case vmIntrinsics::_getModifiers: {
+    assert(x->number_of_arguments() == 1, "wrong type");
+
+    // Optimize for Foo.class.getModifier()
+    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
+    if (c != NULL && !c->value()->is_null_object()) {
+      ciType* t = c->value()->java_mirror_type();
+      if (t->is_klass()) {
+        set_constant(t->as_klass()->modifier_flags());
+      } else {
+        assert(t->is_primitive_type(), "should be a primitive type");
+        set_constant(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+      }
     }
     break;
   }
@@ -775,7 +794,7 @@ void Canonicalizer::do_If(If* x) {
         if (cmp->x() == cmp->y()) {
           do_If(canon);
         } else {
-          if (compilation()->profile_branches() || compilation()->count_backedges()) {
+          if (compilation()->profile_branches() || compilation()->is_profiling()) {
             // TODO: If profiling, leave floating point comparisons unoptimized.
             // We currently do not support profiling of the unordered case.
             switch(cmp->op()) {
@@ -790,23 +809,6 @@ void Canonicalizer::do_If(If* x) {
           set_bci(cmp->state_before()->bci());
           set_canonical(canon);
         }
-      }
-    } else if (l->as_InstanceOf() != NULL) {
-      // NOTE: Code permanently disabled for now since it leaves the old InstanceOf
-      //       instruction in the graph (it is pinned). Need to fix this at some point.
-      //       It should also be left in the graph when generating a profiled method version or Goto
-      //       has to know that it was an InstanceOf.
-      return;
-      // pattern: If ((obj instanceof klass) cond rc) => simplify to: IfInstanceOf or: Goto
-      InstanceOf* inst = l->as_InstanceOf();
-      BlockBegin* is_inst_sux = x->sux_for(is_true(1, x->cond(), rc)); // successor for instanceof == 1
-      BlockBegin* no_inst_sux = x->sux_for(is_true(0, x->cond(), rc)); // successor for instanceof == 0
-      if (is_inst_sux == no_inst_sux && inst->is_loaded()) {
-        // both successors identical and klass is loaded => simplify to: Goto
-        set_canonical(new Goto(is_inst_sux, x->state_before(), x->is_safepoint()));
-      } else {
-        // successors differ => simplify to: IfInstanceOf
-        set_canonical(new IfInstanceOf(inst->klass(), inst->obj(), true, inst->state_before()->bci(), is_inst_sux, no_inst_sux));
       }
     }
   } else if (rt == objectNull &&
@@ -832,23 +834,6 @@ void Canonicalizer::do_TableSwitch(TableSwitch* x) {
       sux = x->sux_at(v - x->lo_key());
     }
     set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
-  } else if (x->number_of_sux() == 1) {
-    // NOTE: Code permanently disabled for now since the switch statement's
-    //       tag expression may produce side-effects in which case it must
-    //       be executed.
-    return;
-    // simplify to Goto
-    set_canonical(new Goto(x->default_sux(), x->state_before(), x->is_safepoint()));
-  } else if (x->number_of_sux() == 2) {
-    // NOTE: Code permanently disabled for now since it produces two new nodes
-    //       (Constant & If) and the Canonicalizer cannot return them correctly
-    //       yet. For now we copied the corresponding code directly into the
-    //       GraphBuilder (i.e., we should never reach here).
-    return;
-    // simplify to If
-    assert(x->lo_key() == x->hi_key(), "keys must be the same");
-    Constant* key = new Constant(new IntConstant(x->lo_key()));
-    set_canonical(new If(x->tag(), If::eql, true, key, x->sux_at(0), x->default_sux(), x->state_before(), x->is_safepoint()));
   }
 }
 
@@ -863,23 +848,6 @@ void Canonicalizer::do_LookupSwitch(LookupSwitch* x) {
       }
     }
     set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
-  } else if (x->number_of_sux() == 1) {
-    // NOTE: Code permanently disabled for now since the switch statement's
-    //       tag expression may produce side-effects in which case it must
-    //       be executed.
-    return;
-    // simplify to Goto
-    set_canonical(new Goto(x->default_sux(), x->state_before(), x->is_safepoint()));
-  } else if (x->number_of_sux() == 2) {
-    // NOTE: Code permanently disabled for now since it produces two new nodes
-    //       (Constant & If) and the Canonicalizer cannot return them correctly
-    //       yet. For now we copied the corresponding code directly into the
-    //       GraphBuilder (i.e., we should never reach here).
-    return;
-    // simplify to If
-    assert(x->length() == 1, "length must be the same");
-    Constant* key = new Constant(new IntConstant(x->key_at(0)));
-    set_canonical(new If(x->tag(), If::eql, true, key, x->sux_at(0), x->default_sux(), x->state_before(), x->is_safepoint()));
   }
 }
 
@@ -889,171 +857,16 @@ void Canonicalizer::do_Throw          (Throw*           x) {}
 void Canonicalizer::do_Base           (Base*            x) {}
 void Canonicalizer::do_OsrEntry       (OsrEntry*        x) {}
 void Canonicalizer::do_ExceptionObject(ExceptionObject* x) {}
-
-static bool match_index_and_scale(Instruction*  instr,
-                                  Instruction** index,
-                                  int*          log2_scale) {
-  // Skip conversion ops. This works only on 32bit because of the implicit l2i that the
-  // unsafe performs.
-#ifndef _LP64
-  Convert* convert = instr->as_Convert();
-  if (convert != NULL && convert->op() == Bytecodes::_i2l) {
-    assert(convert->value()->type() == intType, "invalid input type");
-    instr = convert->value();
-  }
-#endif
-
-  ShiftOp* shift = instr->as_ShiftOp();
-  if (shift != NULL) {
-    if (shift->op() == Bytecodes::_lshl) {
-      assert(shift->x()->type() == longType, "invalid input type");
-    } else {
-#ifndef _LP64
-      if (shift->op() == Bytecodes::_ishl) {
-        assert(shift->x()->type() == intType, "invalid input type");
-      } else {
-        return false;
-      }
-#else
-      return false;
-#endif
-    }
-
-
-    // Constant shift value?
-    Constant* con = shift->y()->as_Constant();
-    if (con == NULL) return false;
-    // Well-known type and value?
-    IntConstant* val = con->type()->as_IntConstant();
-    assert(val != NULL, "Should be an int constant");
-
-    *index = shift->x();
-    int tmp_scale = val->value();
-    if (tmp_scale >= 0 && tmp_scale < 4) {
-      *log2_scale = tmp_scale;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  ArithmeticOp* arith = instr->as_ArithmeticOp();
-  if (arith != NULL) {
-    // See if either arg is a known constant
-    Constant* con = arith->x()->as_Constant();
-    if (con != NULL) {
-      *index = arith->y();
-    } else {
-      con = arith->y()->as_Constant();
-      if (con == NULL) return false;
-      *index = arith->x();
-    }
-    long const_value;
-    // Check for integer multiply
-    if (arith->op() == Bytecodes::_lmul) {
-      assert((*index)->type() == longType, "invalid input type");
-      LongConstant* val = con->type()->as_LongConstant();
-      assert(val != NULL, "expecting a long constant");
-      const_value = val->value();
-    } else {
-#ifndef _LP64
-      if (arith->op() == Bytecodes::_imul) {
-        assert((*index)->type() == intType, "invalid input type");
-        IntConstant* val = con->type()->as_IntConstant();
-        assert(val != NULL, "expecting an int constant");
-        const_value = val->value();
-      } else {
-        return false;
-      }
-#else
-      return false;
-#endif
-    }
-    switch (const_value) {
-    case 1: *log2_scale = 0; return true;
-    case 2: *log2_scale = 1; return true;
-    case 4: *log2_scale = 2; return true;
-    case 8: *log2_scale = 3; return true;
-    default:            return false;
-    }
-  }
-
-  // Unknown instruction sequence; don't touch it
-  return false;
-}
-
-
-static bool match(UnsafeRawOp* x,
-                  Instruction** base,
-                  Instruction** index,
-                  int*          log2_scale) {
-  ArithmeticOp* root = x->base()->as_ArithmeticOp();
-  if (root == NULL) return false;
-  // Limit ourselves to addition for now
-  if (root->op() != Bytecodes::_ladd) return false;
-
-  bool match_found = false;
-  // Try to find shift or scale op
-  if (match_index_and_scale(root->y(), index, log2_scale)) {
-    *base = root->x();
-    match_found = true;
-  } else if (match_index_and_scale(root->x(), index, log2_scale)) {
-    *base = root->y();
-    match_found = true;
-  } else if (NOT_LP64(root->y()->as_Convert() != NULL) LP64_ONLY(false)) {
-    // Skipping i2l works only on 32bit because of the implicit l2i that the unsafe performs.
-    // 64bit needs a real sign-extending conversion.
-    Convert* convert = root->y()->as_Convert();
-    if (convert->op() == Bytecodes::_i2l) {
-      assert(convert->value()->type() == intType, "should be an int");
-      // pick base and index, setting scale at 1
-      *base  = root->x();
-      *index = convert->value();
-      *log2_scale = 0;
-      match_found = true;
-    }
-  }
-  // The default solution
-  if (!match_found) {
-    *base = root->x();
-    *index = root->y();
-    *log2_scale = 0;
-  }
-
-  // If the value is pinned then it will be always be computed so
-  // there's no profit to reshaping the expression.
-  return !root->is_pinned();
-}
-
-
-void Canonicalizer::do_UnsafeRawOp(UnsafeRawOp* x) {
-  Instruction* base = NULL;
-  Instruction* index = NULL;
-  int          log2_scale;
-
-  if (match(x, &base, &index, &log2_scale)) {
-    x->set_base(base);
-    x->set_index(index);
-    x->set_log2_scale(log2_scale);
-    if (PrintUnsafeOptimization) {
-      tty->print_cr("Canonicalizer: UnsafeRawOp id %d: base = id %d, index = id %d, log2_scale = %d",
-                    x->id(), x->base()->id(), x->index()->id(), x->log2_scale());
-    }
-  }
-}
-
-void Canonicalizer::do_RoundFP(RoundFP* x) {}
-void Canonicalizer::do_UnsafeGetRaw(UnsafeGetRaw* x) { if (OptimizeUnsafes) do_UnsafeRawOp(x); }
-void Canonicalizer::do_UnsafePutRaw(UnsafePutRaw* x) { if (OptimizeUnsafes) do_UnsafeRawOp(x); }
-void Canonicalizer::do_UnsafeGetObject(UnsafeGetObject* x) {}
-void Canonicalizer::do_UnsafePutObject(UnsafePutObject* x) {}
-void Canonicalizer::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {}
-void Canonicalizer::do_ProfileCall(ProfileCall* x) {}
+void Canonicalizer::do_RoundFP        (RoundFP*         x) {}
+void Canonicalizer::do_UnsafeGet      (UnsafeGet*       x) {}
+void Canonicalizer::do_UnsafePut      (UnsafePut*       x) {}
+void Canonicalizer::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}
+void Canonicalizer::do_ProfileCall    (ProfileCall*     x) {}
 void Canonicalizer::do_ProfileReturnType(ProfileReturnType* x) {}
-void Canonicalizer::do_ProfileInvoke(ProfileInvoke* x) {}
-void Canonicalizer::do_RuntimeCall(RuntimeCall* x) {}
+void Canonicalizer::do_ProfileInvoke  (ProfileInvoke*   x) {}
+void Canonicalizer::do_RuntimeCall    (RuntimeCall*     x) {}
 void Canonicalizer::do_RangeCheckPredicate(RangeCheckPredicate* x) {}
 #ifdef ASSERT
-void Canonicalizer::do_Assert(Assert* x) {}
+void Canonicalizer::do_Assert         (Assert*          x) {}
 #endif
-void Canonicalizer::do_MemBar(MemBar* x) {}
+void Canonicalizer::do_MemBar         (MemBar*          x) {}

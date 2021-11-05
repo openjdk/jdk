@@ -31,15 +31,12 @@ import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
-import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DeprecatedTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -95,7 +92,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * Print all the classes in the file.
      */
     protected void buildAllClassesFile() throws DocFileIOException {
-        String label = resources.getText("doclet.All_Classes");
+        String label = resources.getText("doclet.All_Classes_And_Interfaces");
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
         Content mainContent = new ContentBuilder();
@@ -117,14 +114,14 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Table table = new Table(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
-                .setId("all-classes-table")
-                .setDefaultTab(resources.getText("doclet.All_Classes"))
-                .addTab(contents.interfaceSummary, utils::isInterface)
-                .addTab(contents.classSummary, e -> utils.isOrdinaryClass((TypeElement)e))
-                .addTab(contents.enumSummary, utils::isEnum)
-                .addTab(contents.exceptionSummary, e -> utils.isException((TypeElement)e))
-                .addTab(contents.errorSummary, e -> utils.isError((TypeElement)e))
-                .addTab(contents.annotationTypeSummary, utils::isAnnotationType);
+                .setId(HtmlIds.ALL_CLASSES_TABLE)
+                .setDefaultTab(contents.allClassesAndInterfacesLabel)
+                .addTab(contents.interfaces, utils::isInterface)
+                .addTab(contents.classes, e -> utils.isOrdinaryClass((TypeElement)e))
+                .addTab(contents.enums, utils::isEnum)
+                .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
+                .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
+                .addTab(contents.annotationTypes, utils::isAnnotationType);
         for (Character unicode : indexBuilder.getFirstCharacters()) {
             for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
                 TypeElement typeElement = (TypeElement) indexItem.getElement();
@@ -133,7 +130,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 }
             }
         }
-        Content titleContent = contents.allClassesLabel;
+        Content titleContent = contents.allClassesAndInterfacesLabel;
         Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
@@ -154,8 +151,8 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      */
     protected void addTableRow(Table table, TypeElement klass) {
         List<Content> rowContents = new ArrayList<>();
-        Content classLink = getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.Kind.INDEX, klass));
+        Content classLink = getLink(new HtmlLinkInfo(
+                configuration, HtmlLinkInfo.Kind.INDEX, klass));
         ContentBuilder description = new ContentBuilder();
         Set<ElementFlag> flags = utils.elementFlags(klass);
         if (flags.contains(ElementFlag.PREVIEW)) {

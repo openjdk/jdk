@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 
 typedef JfrCheckpointManager::BufferPtr BufferPtr;
@@ -337,7 +336,7 @@ void JfrCheckpointManager::end_epoch_shift() {
 }
 
 size_t JfrCheckpointManager::write() {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(Thread::current()));
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
   WriteOperation wo(_chunkwriter);
   MutexedWriteOperation mwo(wo);
   _thread_local_mspace->iterate(mwo, true); // previous epoch list
@@ -370,11 +369,10 @@ size_t JfrCheckpointManager::write_static_type_set(Thread* thread) {
   return writer.used_size();
 }
 
-size_t JfrCheckpointManager::write_threads(Thread* thread) {
+size_t JfrCheckpointManager::write_threads(JavaThread* thread) {
   assert(thread != NULL, "invariant");
   // can safepoint here
-  ThreadInVMfromNative transition(thread->as_Java_thread());
-  ResetNoHandleMark rnhm;
+  ThreadInVMfromNative transition(thread);
   ResourceMark rm(thread);
   HandleMark hm(thread);
   JfrCheckpointWriter writer(true, thread, THREADS);
@@ -383,7 +381,7 @@ size_t JfrCheckpointManager::write_threads(Thread* thread) {
 }
 
 size_t JfrCheckpointManager::write_static_type_set_and_threads() {
-  Thread* const thread = Thread::current();
+  JavaThread* const thread = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread));
   write_static_type_set(thread);
   write_threads(thread);
@@ -402,7 +400,6 @@ void JfrCheckpointManager::clear_type_set() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(t));
   // can safepoint here
   ThreadInVMfromNative transition(t);
-  ResetNoHandleMark rnhm;
   MutexLocker cld_lock(ClassLoaderDataGraph_lock);
   MutexLocker module_lock(Module_lock);
   JfrTypeSet::clear();
@@ -414,7 +411,6 @@ void JfrCheckpointManager::write_type_set() {
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread));
     // can safepoint here
     ThreadInVMfromNative transition(thread);
-    ResetNoHandleMark rnhm;
     MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
     MutexLocker module_lock(thread, Module_lock);
     if (LeakProfiler::is_running()) {
@@ -453,14 +449,13 @@ size_t JfrCheckpointManager::flush_type_set() {
     Thread* const thread = Thread::current();
     if (thread->is_Java_thread()) {
       // can safepoint here
-      ThreadInVMfromNative transition(thread->as_Java_thread());
-      ResetNoHandleMark rnhm;
+      ThreadInVMfromNative transition(JavaThread::cast(thread));
       elements = ::flush_type_set(thread);
     } else {
       elements = ::flush_type_set(thread);
     }
   }
-  if (_new_checkpoint.is_signaled()) {
+  if (_new_checkpoint.is_signaled_with_reset()) {
     WriteOperation wo(_chunkwriter);
     MutexedWriteOperation mwo(wo);
     _thread_local_mspace->iterate(mwo); // current epoch list
@@ -483,7 +478,7 @@ class JfrNotifyClosure : public ThreadClosure {
   void do_thread(Thread* thread) {
     assert(thread != NULL, "invariant");
     assert_locked_or_safepoint(Threads_lock);
-    JfrJavaEventWriter::notify(thread->as_Java_thread());
+    JfrJavaEventWriter::notify(JavaThread::cast(thread));
   }
 };
 

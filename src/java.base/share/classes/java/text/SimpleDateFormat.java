@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -428,12 +428,15 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * It is recommended to create separate format instances for each thread.
  * If multiple threads access a format concurrently, it must be synchronized
  * externally.
+ * @apiNote Consider using {@link java.time.format.DateTimeFormatter} as an
+ * immutable and thread-safe alternative.
  *
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/simpleDateFormat.html">Java Tutorial</a>
  * @see          java.util.Calendar
  * @see          java.util.TimeZone
  * @see          DateFormat
  * @see          DateFormatSymbols
+ * @see          java.time.format.DateTimeFormatter
  * @author       Mark Davis, Chen-Lieh Huang, Alan Liu
  * @since 1.1
  */

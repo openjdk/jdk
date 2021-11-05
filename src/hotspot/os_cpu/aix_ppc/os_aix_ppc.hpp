@@ -32,8 +32,11 @@
   // Note: Currently only used in 64 bit Windows implementations
   static bool register_code_area(char *low, char *high) { return true; }
 
-#define PLATFORM_PRINT_NATIVE_STACK 1
-static bool platform_print_native_stack(outputStream* st, void* context,
-                                        char *buf, int buf_size);
+  #define PLATFORM_PRINT_NATIVE_STACK 1
+  static bool platform_print_native_stack(outputStream* st, void* context,
+                                          char *buf, int buf_size);
+
+  #define HAVE_FUNCTION_DESCRIPTORS 1
+  static void* resolve_function_descriptor(void* p);
 
 #endif // OS_CPU_AIX_PPC_OS_AIX_PPC_HPP

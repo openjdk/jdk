@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,40 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing.text;
 
-import java.util.*;
-import java.io.*;
 import java.awt.font.TextAttribute;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectInputValidation;
+import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.Serial;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.text.Bidi;
+import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.EventListener;
+import java.util.Hashtable;
+import java.util.Vector;
 
 import javax.swing.UIManager;
-import javax.swing.undo.*;
-import javax.swing.event.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.EventListenerList;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
 import javax.swing.tree.TreeNode;
+import javax.swing.undo.AbstractUndoableEdit;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
+import javax.swing.undo.CompoundEdit;
+import javax.swing.undo.UndoableEdit;
 
 import sun.font.BidiUtils;
 import sun.swing.SwingUtilities2;
@@ -124,6 +147,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
         if (defaultI18NProperty == null) {
             // determine default setting for i18n support
+            @SuppressWarnings("removal")
             String o = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<String>() {
                     public String run() {
@@ -1060,7 +1084,7 @@ public abstract class AbstractDocument implements Document, Serializable {
         byte[] levels = calculateBidiLevels( firstPStart, lastPEnd );
 
 
-        Vector<Element> newElements = new Vector<Element>();
+        ArrayList<Element> newElements = new ArrayList<Element>();
 
         // Calculate the first span of characters in the affected range with
         // the same bidi level.  If this level is the same as the level of the
@@ -1079,9 +1103,9 @@ public abstract class AbstractDocument implements Document, Serializable {
             if( prevLevel==levels[0] ) {
                 firstSpanStart = prevElem.getStartOffset();
             } else if( prevElem.getEndOffset() > firstPStart ) {
-                newElements.addElement(new BidiElement(bidiRoot,
-                                                       prevElem.getStartOffset(),
-                                                       firstPStart, prevLevel));
+                newElements.add(new BidiElement(bidiRoot,
+                                                prevElem.getStartOffset(),
+                                                firstPStart, prevLevel));
             } else {
                 removeFromIndex++;
             }
@@ -1128,32 +1152,32 @@ public abstract class AbstractDocument implements Document, Serializable {
         // Otherwise, create elements for the first and last spans as well as
         // any spans in between.
         if((firstSpanEnd==lastSpanStart)&&(levels[0]==levels[levels.length-1])){
-            newElements.addElement(new BidiElement(bidiRoot, firstSpanStart,
-                                                   lastSpanEnd, levels[0]));
+            newElements.add(new BidiElement(bidiRoot, firstSpanStart,
+                                            lastSpanEnd, levels[0]));
         } else {
             // Create an element for the first span.
-            newElements.addElement(new BidiElement(bidiRoot, firstSpanStart,
-                                                   firstSpanEnd+firstPStart,
-                                                   levels[0]));
+            newElements.add(new BidiElement(bidiRoot, firstSpanStart,
+                                            firstSpanEnd+firstPStart,
+                                            levels[0]));
             // Create elements for the spans in between the first and last
             for( int i=firstSpanEnd; i<lastSpanStart; ) {
                 //System.out.println("executed line 872");
                 int j;
                 for( j=i;  (j<levels.length) && (levels[j] == levels[i]); j++ );
-                newElements.addElement(new BidiElement(bidiRoot, firstPStart+i,
-                                                       firstPStart+j,
-                                                       (int)levels[i]));
+                newElements.add(new BidiElement(bidiRoot, firstPStart+i,
+                                                firstPStart+j,
+                                                (int)levels[i]));
                 i=j;
             }
             // Create an element for the last span.
-            newElements.addElement(new BidiElement(bidiRoot,
-                                                   lastSpanStart+firstPStart,
-                                                   lastSpanEnd,
-                                                   levels[levels.length-1]));
+            newElements.add(new BidiElement(bidiRoot,
+                                            lastSpanStart+firstPStart,
+                                            lastSpanEnd,
+                                            levels[levels.length-1]));
         }
 
         if( newNextElem != null )
-            newElements.addElement( newNextElem );
+            newElements.add( newNextElem );
 
 
         // Calculate the set of existing bidi elements which must be
@@ -1167,8 +1191,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             removedElems[i] = bidiRoot.getElement(removeFromIndex+i);
         }
 
-        Element[] addedElems = new Element[ newElements.size() ];
-        newElements.copyInto( addedElems );
+        Element[] addedElems = newElements.toArray(new Element[0]);
 
         // Update the change record.
         ElementEdit ee = new ElementEdit( bidiRoot, removeFromIndex,
@@ -1436,6 +1459,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
     // --- serialization ---------------------------------------------
 
+    @Serial
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
@@ -2215,11 +2239,13 @@ public abstract class AbstractDocument implements Document, Serializable {
 
         // --- serialization ---------------------------------------------
 
+        @Serial
         private void writeObject(ObjectOutputStream s) throws IOException {
             s.defaultWriteObject();
             StyleContext.writeAttributeSet(s, attributes);
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException
         {
@@ -2634,12 +2660,14 @@ public abstract class AbstractDocument implements Document, Serializable {
 
         // --- serialization ---------------------------------------------
 
+        @Serial
         private void writeObject(ObjectOutputStream s) throws IOException {
             s.defaultWriteObject();
             s.writeInt(p0.getOffset());
             s.writeInt(p1.getOffset());
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException
         {

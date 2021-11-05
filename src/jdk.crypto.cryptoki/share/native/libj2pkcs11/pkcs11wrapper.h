@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -256,6 +256,8 @@ void printDebug(const char *format, ...);
 #define CLASS_AES_CTR_PARAMS "sun/security/pkcs11/wrapper/CK_AES_CTR_PARAMS"
 #define CLASS_GCM_PARAMS "sun/security/pkcs11/wrapper/CK_GCM_PARAMS"
 #define CLASS_CCM_PARAMS "sun/security/pkcs11/wrapper/CK_CCM_PARAMS"
+#define CLASS_SALSA20_CHACHA20_POLY1305_PARAMS \
+        "sun/security/pkcs11/wrapper/CK_SALSA20_CHACHA20_POLY1305_PARAMS"
 #define CLASS_RSA_PKCS_PSS_PARAMS "sun/security/pkcs11/wrapper/CK_RSA_PKCS_PSS_PARAMS"
 #define CLASS_RSA_PKCS_OAEP_PARAMS "sun/security/pkcs11/wrapper/CK_RSA_PKCS_OAEP_PARAMS"
 
@@ -305,6 +307,7 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr);
  */
 
 jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue);
+jlong ckAssertReturnValueOK2(JNIEnv *env, CK_RV returnValue, const char *msg);
 void throwOutOfMemoryError(JNIEnv *env, const char *message);
 void throwNullPointerException(JNIEnv *env, const char *message);
 void throwIOException(JNIEnv *env, const char *message);

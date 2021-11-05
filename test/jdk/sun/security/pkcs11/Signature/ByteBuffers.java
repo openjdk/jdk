@@ -30,7 +30,7 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm ByteBuffers
- * @run main/othervm ByteBuffers sm
+ * @run main/othervm -Djava.security.manager=allow ByteBuffers sm
  */
 
 import java.nio.ByteBuffer;

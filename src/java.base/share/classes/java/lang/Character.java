@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static java.lang.constant.ConstantDescs.BSM_EXPLICIT_CAST;
@@ -63,7 +64,43 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * <a href="http://www.unicode.org">http://www.unicode.org</a>.
  * <p>
  * Character information is based on the Unicode Standard, version 13.0.
- *
+ * <p>
+ * The Java platform has supported different versions of the Unicode
+ * Standard over time. Upgrades to newer versions of the Unicode Standard
+ * occurred in the following Java releases, each indicating the new version:
+ * <table class="striped">
+ * <caption style="display:none">Shows Java releases and supported Unicode versions</caption>
+ * <thead>
+ * <tr><th scope="col">Java release</th>
+ *     <th scope="col">Unicode version</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row" style="text-align:left">Java SE 15</th>
+ *     <td>Unicode 13.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 13</th>
+ *     <td>Unicode 12.1</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 12</th>
+ *     <td>Unicode 11.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 11</th>
+ *     <td>Unicode 10.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 9</th>
+ *     <td>Unicode 8.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 8</th>
+ *     <td>Unicode 6.2</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 7</th>
+ *     <td>Unicode 6.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 5.0</th>
+ *     <td>Unicode 4.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 1.4</th>
+ *     <td>Unicode 3.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 1.1</th>
+ *     <td>Unicode 2.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 1.0.2</th>
+ *     <td>Unicode 1.1.5</td></tr>
+ * </tbody>
+ * </table>
+ * Variations from these base Unicode versions, such as recognized appendixes,
+ * are documented elsewhere.
  * <h2><a id="unicode">Unicode Character Representations</a></h2>
  *
  * <p>The {@code char} data type (and therefore the value that a
@@ -8620,6 +8657,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      *
      * @return  a string representation of this object.
      */
+    @Override
     public String toString() {
         return String.valueOf(value);
     }
@@ -9213,10 +9251,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointCount(CharSequence seq, int beginIndex, int endIndex) {
-        int length = seq.length();
-        if (beginIndex < 0 || endIndex > length || beginIndex > endIndex) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromToIndex(beginIndex, endIndex, seq.length());
         int n = endIndex - beginIndex;
         for (int i = beginIndex; i < endIndex; ) {
             if (isHighSurrogate(seq.charAt(i++)) && i < endIndex &&
@@ -9248,9 +9283,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointCount(char[] a, int offset, int count) {
-        if (count > a.length - offset || offset < 0 || count < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(count, offset, a.length);
         return codePointCountImpl(a, offset, count);
     }
 
@@ -9280,7 +9313,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @return the index within the char sequence
      * @throws NullPointerException if {@code seq} is null.
      * @throws IndexOutOfBoundsException if {@code index}
-     *   is negative or larger then the length of the char sequence,
+     *   is negative or larger than the length of the char sequence,
      *   or if {@code codePointOffset} is positive and the
      *   subsequence starting with {@code index} has fewer than
      *   {@code codePointOffset} code points, or if
@@ -9459,8 +9492,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since   1.5
      */
     public static boolean isLowerCase(int codePoint) {
-        return CharacterData.of(codePoint).isLowerCase(codePoint) ||
-               CharacterData.of(codePoint).isOtherLowercase(codePoint);
+        return CharacterData.of(codePoint).isLowerCase(codePoint);
     }
 
     /**
@@ -9525,8 +9557,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since   1.5
      */
     public static boolean isUpperCase(int codePoint) {
-        return CharacterData.of(codePoint).isUpperCase(codePoint) ||
-               CharacterData.of(codePoint).isOtherUppercase(codePoint);
+        return CharacterData.of(codePoint).isUpperCase(codePoint);
     }
 
     /**
@@ -11265,14 +11296,14 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
     }
 
     /**
-     * Returns the Unicode name of the specified character
+     * Returns the name of the specified character
      * {@code codePoint}, or null if the code point is
      * {@link #UNASSIGNED unassigned}.
      * <p>
-     * Note: if the specified character is not assigned a name by
+     * If the specified character is not assigned a name by
      * the <i>UnicodeData</i> file (part of the Unicode Character
      * Database maintained by the Unicode Consortium), the returned
-     * name is the same as the result of expression:
+     * name is the same as the result of the expression:
      *
      * <blockquote>{@code
      *     Character.UnicodeBlock.of(codePoint).toString().replace('_', ' ')
@@ -11281,9 +11312,15 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      *
      * }</blockquote>
      *
+     * For the {@code codePoint}s in the <i>UnicodeData</i> file, the name
+     * returned by this method follows the naming scheme in the
+     * "Unicode Name Property" section of the Unicode Standard. For other
+     * code points, such as Hangul/Ideographs, The name generation rule above
+     * differs from the one defined in the Unicode Standard.
+     *
      * @param  codePoint the character (Unicode code point)
      *
-     * @return the Unicode name of the specified character, or null if
+     * @return the name of the specified character, or null if
      *         the code point is unassigned.
      *
      * @throws IllegalArgumentException if the specified
@@ -11312,11 +11349,11 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
 
     /**
      * Returns the code point value of the Unicode character specified by
-     * the given Unicode character name.
+     * the given character name.
      * <p>
-     * Note: if a character is not assigned a name by the <i>UnicodeData</i>
+     * If a character is not assigned a name by the <i>UnicodeData</i>
      * file (part of the Unicode Character Database maintained by the Unicode
-     * Consortium), its name is defined as the result of expression:
+     * Consortium), its name is defined as the result of the expression:
      *
      * <blockquote>{@code
      *     Character.UnicodeBlock.of(codePoint).toString().replace('_', ' ')
@@ -11328,12 +11365,18 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * The {@code name} matching is case insensitive, with any leading and
      * trailing whitespace character removed.
      *
-     * @param  name the Unicode character name
+     * For the code points in the <i>UnicodeData</i> file, this method
+     * recognizes the name which conforms to the name defined in the
+     * "Unicode Name Property" section in the Unicode Standard. For other
+     * code points, this method recognizes the name generated with
+     * {@link #getName(int)} method.
+     *
+     * @param  name the character name
      *
      * @return the code point value of the character specified by its name.
      *
      * @throws IllegalArgumentException if the specified {@code name}
-     *         is not a valid Unicode character name.
+     *         is not a valid character name.
      * @throws NullPointerException if {@code name} is {@code null}
      *
      * @since 9

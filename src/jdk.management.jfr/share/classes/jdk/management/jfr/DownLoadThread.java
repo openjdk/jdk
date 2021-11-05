@@ -29,13 +29,16 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import jdk.jfr.internal.management.ManagementSupport;
+
 final class DownLoadThread extends Thread {
     private final RemoteRecordingStream stream;
     private final Instant startTime;
     private final Instant endTime;
     private final DiskRepository diskRepository;
 
-    DownLoadThread(RemoteRecordingStream stream) {
+    DownLoadThread(RemoteRecordingStream stream, String name) {
+        super(name);
         this.stream = stream;
         this.startTime = stream.startTime;
         this.endTime = stream.endTime;
@@ -65,7 +68,7 @@ final class DownLoadThread extends Thread {
                 }
             }
         } catch (IOException ioe) {
-           // ignore
+            ManagementSupport.logDebug(ioe.getMessage());
         } finally {
            diskRepository.complete();
         }

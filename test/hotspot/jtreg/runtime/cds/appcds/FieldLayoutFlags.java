@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.vm.annotation
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build FieldLayoutApp
- * @run driver ClassFileInstaller -jar field_layout.jar
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar field_layout.jar
  *     FieldLayoutApp
  *     FieldLayoutApp$TestObject
  *     FieldLayoutApp$Base1
@@ -42,6 +42,7 @@
  */
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class FieldLayoutFlags {
     static final String[][] flags = {

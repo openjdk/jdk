@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,9 +83,10 @@ import sun.reflect.misc.ReflectUtil;
  *      oos.close();
  * </pre>
  *
- * <p>Classes that require special handling during the serialization and
- * deserialization process must implement special methods with these exact
- * signatures:
+ * <p>Serializable classes that require special handling during the
+ * serialization and deserialization process should implement methods
+ * with the following signatures:
+ *
  * <br>
  * <pre>
  * private void readObject(java.io.ObjectInputStream stream)
@@ -95,6 +96,12 @@ import sun.reflect.misc.ReflectUtil;
  * private void readObjectNoData()
  *     throws ObjectStreamException;
  * </pre>
+ *
+ * <p>The method name, modifiers, return type, and number and type of
+ * parameters must match exactly for the method to be used by
+ * serialization or deserialization. The methods should only be
+ * declared to throw checked exceptions consistent with these
+ * signatures.
  *
  * <p>The writeObject method is responsible for writing the state of the object
  * for its particular class so that the corresponding readObject method can
@@ -213,6 +220,7 @@ public class ObjectOutputStream
      * value of "sun.io.serialization.extendedDebugInfo" property,
      * as true or false for extended information about exception's place
      */
+    @SuppressWarnings("removal")
     private static final boolean extendedDebugInfo =
         java.security.AccessController.doPrivileged(
             new sun.security.action.GetBooleanAction(
@@ -274,6 +282,7 @@ public class ObjectOutputStream
      * @see java.io.SerializablePermission
      */
     protected ObjectOutputStream() throws IOException, SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
@@ -566,7 +575,7 @@ public class ObjectOutputStream
      * Object (as opposed to type Serializable) to allow for cases where
      * non-serializable objects are replaced by serializable ones.
      *
-     * <p>When a subclass is replacing objects it must insure that either a
+     * <p>When a subclass is replacing objects it must ensure that either a
      * complementary substitution must be made during deserialization or that
      * the substituted object is compatible with every field where the
      * reference will be stored.  Objects whose type is not a subclass of the
@@ -621,6 +630,7 @@ public class ObjectOutputStream
             return enable;
         }
         if (enable) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(SUBSTITUTION_PERMISSION);
@@ -1052,6 +1062,7 @@ public class ObjectOutputStream
         if (cl == ObjectOutputStream.class) {
             return;
         }
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             return;
@@ -1073,6 +1084,7 @@ public class ObjectOutputStream
      * override security-sensitive non-final methods.  Returns TRUE if subclass
      * is "safe", FALSE otherwise.
      */
+    @SuppressWarnings("removal")
     private static Boolean auditSubclass(Class<?> subcl) {
         return AccessController.doPrivileged(
             new PrivilegedAction<>() {
@@ -1414,7 +1426,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes representation of a "ordinary" (i.e., not a String, Class,
+     * Writes representation of an "ordinary" (i.e., not a String, Class,
      * ObjectStreamClass, array, or enum constant) serializable object to the
      * stream.
      */

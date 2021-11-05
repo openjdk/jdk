@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,18 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_arm.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -250,16 +251,6 @@ bool SharedRuntime::is_wide_vector(int size) {
   return false;
 }
 
-size_t SharedRuntime::trampoline_size() {
-  return 16;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  InlinedAddress dest(destination);
-  __ indirect_jump(dest, Rtemp);
-  __ bind_literal(dest);
-}
-
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
                                         VMRegPair *regs2,
@@ -361,6 +352,13 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     }
   }
   return slot;
+}
+
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  Unimplemented();
+  return 0;
 }
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
@@ -864,11 +862,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     assert(markWord::unlocked_value == 1, "adjust this code");
     __ tbz(Rtemp, exact_log2(markWord::unlocked_value), slow_case);
 
-    if (UseBiasedLocking) {
-      assert(is_power_of_2(markWord::biased_lock_bit_in_place), "adjust this code");
-      __ tbnz(Rtemp, exact_log2(markWord::biased_lock_bit_in_place), slow_case);
-    }
-
     __ bics(Rtemp, Rtemp, ~markWord::hash_mask_in_place);
     __ mov(R0, AsmOperand(Rtemp, lsr, markWord::hash_shift), ne);
     __ bx(LR, ne);
@@ -1153,18 +1146,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register disp_hdr    = altFP_7_11;
   const Register tmp         = R8;
 
-  Label slow_lock, slow_lock_biased, lock_done, fast_lock;
+  Label slow_lock, lock_done, fast_lock;
   if (method->is_synchronized()) {
     // The first argument is a handle to sync object (a class or an instance)
     __ ldr(sync_obj, Address(R1));
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
-
-    __ resolve(IS_NOT_NULL, sync_obj);
-
-    if(UseBiasedLocking) {
-      __ biased_locking_enter(sync_obj, tmp, disp_hdr/*scratched*/, false, Rtemp, lock_done, slow_lock_biased);
-    }
 
     const Register mark = tmp;
     // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
@@ -1184,8 +1171,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // -2- test (hdr - SP) if the low two bits are 0
     __ sub(Rtemp, mark, SP, eq);
     __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
-    // If still 'eq' then recursive locking OK: set displaced header to 0
-    __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()), eq);
+    // If still 'eq' then recursive locking OK
+    // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
+    __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
     __ b(lock_done, eq);
     __ b(slow_lock);
 
@@ -1246,14 +1234,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   if (method->is_synchronized()) {
     __ ldr(sync_obj, Address(sync_handle));
 
-    __ resolve(IS_NOT_NULL, sync_obj);
-
-    if(UseBiasedLocking) {
-      __ biased_locking_exit(sync_obj, Rtemp, unlock_done);
-      // disp_hdr may not have been saved on entry with biased locking
-      __ sub(disp_hdr, FP, lock_slot_fp_offset);
-    }
-
     // See C1_MacroAssembler::unlock_object() for more comments
     __ ldr(R2, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
     __ cbz(R2, unlock_done);
@@ -1309,11 +1289,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   if (method->is_synchronized()) {
     // Locking slow case
-    if(UseBiasedLocking) {
-      __ bind(slow_lock_biased);
-      __ sub(disp_hdr, FP, lock_slot_fp_offset);
-    }
-
     __ bind(slow_lock);
 
     push_param_registers(masm, fp_regs_in_arguments);
@@ -1504,18 +1479,17 @@ void SharedRuntime::generate_deopt_blob() {
   // Compilers generate code that bang the stack by as much as the
   // interpreter would need. So this stack banging should never
   // trigger a fault. Verify that it does not on non product builds.
-  // See if it is enough stack to push deoptimized frames
-  if (UseStackBanging) {
-    // The compiled method that we are deoptimizing was popped from the stack.
-    // If the stack bang results in a stack overflow, we don't return to the
-    // method that is being deoptimized. The stack overflow exception is
-    // propagated to the caller of the deoptimized method. Need to get the pc
-    // from the caller in LR and restore FP.
-    __ ldr(LR, Address(R2, 0));
-    __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-    __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
-    __ arm_stack_overflow_check(R8, Rtemp);
-  }
+  // See if it is enough stack to push deoptimized frames.
+  //
+  // The compiled method that we are deoptimizing was popped from the stack.
+  // If the stack bang results in a stack overflow, we don't return to the
+  // method that is being deoptimized. The stack overflow exception is
+  // propagated to the caller of the deoptimized method. Need to get the pc
+  // from the caller in LR and restore FP.
+  __ ldr(LR, Address(R2, 0));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
+  __ arm_stack_overflow_check(R8, Rtemp);
 #endif
   __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
 
@@ -1700,22 +1674,21 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   __ add(SP, SP, Rtemp);
 
-  // See if it is enough stack to push deoptimized frames
+  // See if it is enough stack to push deoptimized frames.
 #ifdef ASSERT
   // Compilers generate code that bang the stack by as much as the
   // interpreter would need. So this stack banging should never
   // trigger a fault. Verify that it does not on non product builds.
-  if (UseStackBanging) {
-    // The compiled method that we are deoptimizing was popped from the stack.
-    // If the stack bang results in a stack overflow, we don't return to the
-    // method that is being deoptimized. The stack overflow exception is
-    // propagated to the caller of the deoptimized method. Need to get the pc
-    // from the caller in LR and restore FP.
-    __ ldr(LR, Address(R2, 0));
-    __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-    __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
-    __ arm_stack_overflow_check(R8, Rtemp);
-  }
+  //
+  // The compiled method that we are deoptimizing was popped from the stack.
+  // If the stack bang results in a stack overflow, we don't return to the
+  // method that is being deoptimized. The stack overflow exception is
+  // propagated to the caller of the deoptimized method. Need to get the pc
+  // from the caller in LR and restore FP.
+  __ ldr(LR, Address(R2, 0));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
+  __ arm_stack_overflow_check(R8, Rtemp);
 #endif
   __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
   __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset_in_bytes()));
@@ -1899,10 +1872,12 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
 }
 
-BufferBlob* SharedRuntime::make_native_invoker(address call_target,
-                                               int shadow_space_bytes,
-                                               const GrowableArray<VMReg>& input_registers,
-                                               const GrowableArray<VMReg>& output_registers) {
+#ifdef COMPILER2
+RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
+                                                int shadow_space_bytes,
+                                                const GrowableArray<VMReg>& input_registers,
+                                                const GrowableArray<VMReg>& output_registers) {
   Unimplemented();
   return nullptr;
 }
+#endif

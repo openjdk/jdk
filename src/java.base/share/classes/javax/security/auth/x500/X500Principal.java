@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,10 +181,8 @@ public final class X500Principal implements Principal, java.io.Serializable {
         try {
             thisX500Name = new X500Name(name, keywordMap);
         } catch (Exception e) {
-            IllegalArgumentException iae = new IllegalArgumentException
-                        ("improperly specified input name: " + name);
-            iae.initCause(e);
-            throw iae;
+            throw new IllegalArgumentException
+                        ("improperly specified input name: " + name, e);
         }
     }
 
@@ -226,10 +224,8 @@ public final class X500Principal implements Principal, java.io.Serializable {
         try {
             thisX500Name = new X500Name(name);
         } catch (Exception e) {
-            IllegalArgumentException iae = new IllegalArgumentException
-                        ("improperly specified input name");
-            iae.initCause(e);
-            throw iae;
+            throw new IllegalArgumentException
+                        ("improperly specified input name", e);
         }
     }
 
@@ -266,17 +262,13 @@ public final class X500Principal implements Principal, java.io.Serializable {
                 try {
                     is.reset();
                 } catch (IOException ioe) {
-                    IllegalArgumentException iae = new IllegalArgumentException
+                    throw new IllegalArgumentException
                         ("improperly specified input stream " +
-                        ("and unable to reset input stream"));
-                    iae.initCause(e);
-                    throw iae;
+                        ("and unable to reset input stream"), e);
                 }
             }
-            IllegalArgumentException iae = new IllegalArgumentException
-                        ("improperly specified input stream");
-            iae.initCause(e);
-            throw iae;
+            throw new IllegalArgumentException
+                        ("improperly specified input stream", e);
         }
     }
 
@@ -494,6 +486,9 @@ public final class X500Principal implements Principal, java.io.Serializable {
      * @serialData this {@code X500Principal} is serialized
      *          by writing out its DER-encoded form
      *          (the value of {@code getEncoded} is serialized).
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
@@ -503,6 +498,11 @@ public final class X500Principal implements Principal, java.io.Serializable {
 
     /**
      * Reads this object from a stream (i.e., deserializes it).
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws NotActiveException if serialization is not active
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)

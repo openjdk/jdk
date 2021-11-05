@@ -58,9 +58,8 @@ public class TestX509CertificateLog {
 
     public static class GenerateX509Certicate {
         public static void main(String[] args) throws Exception {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            TestCertificate.ONE.generate(cf);
-            TestCertificate.TWO.generate(cf);
+            TestCertificate.ONE.certificate();
+            TestCertificate.TWO.certificate();
         }
     }
 }

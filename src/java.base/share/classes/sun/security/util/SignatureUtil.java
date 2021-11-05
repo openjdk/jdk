@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,8 +170,7 @@ public class SignatureUtil {
     // for verification with the specified key and params (may be null)
     public static void initVerifyWithParam(Signature s, PublicKey key,
             AlgorithmParameterSpec params)
-            throws ProviderException, InvalidAlgorithmParameterException,
-            InvalidKeyException {
+            throws InvalidAlgorithmParameterException, InvalidKeyException {
         SharedSecrets.getJavaSecuritySignatureAccess().initVerify(s, key, params);
     }
 
@@ -180,8 +179,7 @@ public class SignatureUtil {
     public static void initVerifyWithParam(Signature s,
             java.security.cert.Certificate cert,
             AlgorithmParameterSpec params)
-            throws ProviderException, InvalidAlgorithmParameterException,
-            InvalidKeyException {
+            throws InvalidAlgorithmParameterException, InvalidKeyException {
         SharedSecrets.getJavaSecuritySignatureAccess().initVerify(s, cert, params);
     }
 
@@ -189,15 +187,14 @@ public class SignatureUtil {
     // for signing with the specified key and params (may be null)
     public static void initSignWithParam(Signature s, PrivateKey key,
             AlgorithmParameterSpec params, SecureRandom sr)
-            throws ProviderException, InvalidAlgorithmParameterException,
-            InvalidKeyException {
+            throws InvalidAlgorithmParameterException, InvalidKeyException {
         SharedSecrets.getJavaSecuritySignatureAccess().initSign(s, key, params, sr);
     }
 
     public static class EdDSADigestAlgHolder {
-        public final static AlgorithmId sha512;
-        public final static AlgorithmId shake256;
-        public final static AlgorithmId shake256$512;
+        public static final AlgorithmId sha512;
+        public static final AlgorithmId shake256;
+        public static final AlgorithmId shake256$512;
 
         static {
             try {
@@ -342,10 +339,10 @@ public class SignatureUtil {
      * Create a Signature that has been initialized with proper key and params.
      *
      * @param sigAlg signature algorithms
-     * @param key public or private key
+     * @param key private key
      * @param provider (optional) provider
      */
-    public static Signature fromKey(String sigAlg, Key key, String provider)
+    public static Signature fromKey(String sigAlg, PrivateKey key, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException,
                    InvalidKeyException{
         Signature sigEngine = (provider == null || provider.isEmpty())
@@ -358,10 +355,10 @@ public class SignatureUtil {
      * Create a Signature that has been initialized with proper key and params.
      *
      * @param sigAlg signature algorithms
-     * @param key public or private key
+     * @param key private key
      * @param provider (optional) provider
      */
-    public static Signature fromKey(String sigAlg, Key key, Provider provider)
+    public static Signature fromKey(String sigAlg, PrivateKey key, Provider provider)
             throws NoSuchAlgorithmException, InvalidKeyException{
         Signature sigEngine = (provider == null)
                 ? Signature.getInstance(sigAlg)
@@ -369,17 +366,12 @@ public class SignatureUtil {
         return autoInitInternal(sigAlg, key, sigEngine);
     }
 
-    private static Signature autoInitInternal(String alg, Key key, Signature s)
+    private static Signature autoInitInternal(String alg, PrivateKey key, Signature s)
             throws InvalidKeyException {
         AlgorithmParameterSpec params = SignatureUtil
                 .getDefaultParamSpec(alg, key);
         try {
-            if (key instanceof PrivateKey) {
-                SignatureUtil.initSignWithParam(s, (PrivateKey) key, params,
-                        null);
-            } else {
-                SignatureUtil.initVerifyWithParam(s, (PublicKey) key, params);
-            }
+            SignatureUtil.initSignWithParam(s, key, params, null);
         } catch (InvalidAlgorithmParameterException e) {
             throw new AssertionError("Should not happen", e);
         }
@@ -508,15 +500,15 @@ public class SignatureUtil {
 
     // Useful PSSParameterSpec objects
     private static class PSSParamsHolder {
-        final static PSSParameterSpec PSS_256_SPEC = new PSSParameterSpec(
+        static final PSSParameterSpec PSS_256_SPEC = new PSSParameterSpec(
                 "SHA-256", "MGF1",
                 MGF1ParameterSpec.SHA256,
                 32, PSSParameterSpec.TRAILER_FIELD_BC);
-        final static PSSParameterSpec PSS_384_SPEC = new PSSParameterSpec(
+        static final PSSParameterSpec PSS_384_SPEC = new PSSParameterSpec(
                 "SHA-384", "MGF1",
                 MGF1ParameterSpec.SHA384,
                 48, PSSParameterSpec.TRAILER_FIELD_BC);
-        final static PSSParameterSpec PSS_512_SPEC = new PSSParameterSpec(
+        static final PSSParameterSpec PSS_512_SPEC = new PSSParameterSpec(
                 "SHA-512", "MGF1",
                 MGF1ParameterSpec.SHA512,
                 64, PSSParameterSpec.TRAILER_FIELD_BC);

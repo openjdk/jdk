@@ -674,7 +674,8 @@ public class JmodTask {
         Set<String> findPackages(Path dir) {
             try {
                 return Files.find(dir, Integer.MAX_VALUE,
-                                  ((path, attrs) -> attrs.isRegularFile()))
+                                  ((path, attrs) -> attrs.isRegularFile()),
+                                  FileVisitOption.FOLLOW_LINKS)
                         .map(dir::relativize)
                         .filter(path -> isResource(path.toString()))
                         .map(path -> toPackageName(path))
@@ -889,7 +890,7 @@ public class JmodTask {
             // filter modules resolved from the system module finder
             this.modules = config.modules().stream()
                 .map(ResolvedModule::name)
-                .filter(mn -> roots.contains(mn) && !system.find(mn).isPresent())
+                .filter(mn -> roots.contains(mn) && system.find(mn).isEmpty())
                 .collect(Collectors.toSet());
 
             this.hashesBuilder = new ModuleHashesBuilder(config, modules);
@@ -1040,7 +1041,7 @@ public class JmodTask {
      * Specific subclasses should do whatever validation is required on the
      * individual path elements, if any.
      */
-    static abstract class AbstractPathConverter implements ValueConverter<List<Path>> {
+    abstract static class AbstractPathConverter implements ValueConverter<List<Path>> {
         @Override
         public List<Path> convert(String value) {
             List<Path> paths = new ArrayList<>();

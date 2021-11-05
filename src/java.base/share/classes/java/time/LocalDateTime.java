@@ -574,9 +574,8 @@ public final class LocalDateTime
      */
     @Override
     public boolean isSupported(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return f.isDateBased() || f.isTimeBased();
+        if (field instanceof ChronoField chronoField) {
+            return chronoField.isDateBased() || chronoField.isTimeBased();
         }
         return field != null && field.isSupportedBy(this);
     }
@@ -648,9 +647,8 @@ public final class LocalDateTime
      */
     @Override
     public ValueRange range(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return (f.isTimeBased() ? time.range(field) : date.range(field));
+        if (field instanceof ChronoField chronoField) {
+            return (chronoField.isTimeBased() ? time.range(field) : date.range(field));
         }
         return field.rangeRefinedBy(this);
     }
@@ -685,9 +683,8 @@ public final class LocalDateTime
      */
     @Override
     public int get(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return (f.isTimeBased() ? time.get(field) : date.get(field));
+        if (field instanceof ChronoField chronoField) {
+            return (chronoField.isTimeBased() ? time.get(field) : date.get(field));
         }
         return ChronoLocalDateTime.super.get(field);
     }
@@ -717,9 +714,8 @@ public final class LocalDateTime
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return (f.isTimeBased() ? time.getLong(field) : date.getLong(field));
+        if (field instanceof ChronoField chronoField) {
+            return (chronoField.isTimeBased() ? time.getLong(field) : date.getLong(field));
         }
         return field.getFrom(this);
     }
@@ -964,9 +960,8 @@ public final class LocalDateTime
      */
     @Override
     public LocalDateTime with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            if (f.isTimeBased()) {
+        if (field instanceof ChronoField chronoField) {
+            if (chronoField.isTimeBased()) {
                 return with(date, time.with(field, newValue));
             } else {
                 return with(date.with(field, newValue), time);
@@ -1146,8 +1141,7 @@ public final class LocalDateTime
      */
     @Override
     public LocalDateTime plus(TemporalAmount amountToAdd) {
-        if (amountToAdd instanceof Period) {
-            Period periodToAdd = (Period) amountToAdd;
+        if (amountToAdd instanceof Period periodToAdd) {
             return with(date.plus(periodToAdd), time);
         }
         Objects.requireNonNull(amountToAdd, "amountToAdd");
@@ -1182,18 +1176,17 @@ public final class LocalDateTime
      */
     @Override
     public LocalDateTime plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            ChronoUnit f = (ChronoUnit) unit;
-            switch (f) {
-                case NANOS: return plusNanos(amountToAdd);
-                case MICROS: return plusDays(amountToAdd / MICROS_PER_DAY).plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
-                case MILLIS: return plusDays(amountToAdd / MILLIS_PER_DAY).plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000_000);
-                case SECONDS: return plusSeconds(amountToAdd);
-                case MINUTES: return plusMinutes(amountToAdd);
-                case HOURS: return plusHours(amountToAdd);
-                case HALF_DAYS: return plusDays(amountToAdd / 256).plusHours((amountToAdd % 256) * 12);  // no overflow (256 is multiple of 2)
-            }
-            return with(date.plus(amountToAdd, unit), time);
+        if (unit instanceof ChronoUnit chronoUnit) {
+            return switch (chronoUnit) {
+                case NANOS     -> plusNanos(amountToAdd);
+                case MICROS    -> plusDays(amountToAdd / MICROS_PER_DAY).plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
+                case MILLIS    -> plusDays(amountToAdd / MILLIS_PER_DAY).plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000_000);
+                case SECONDS   -> plusSeconds(amountToAdd);
+                case MINUTES   -> plusMinutes(amountToAdd);
+                case HOURS     -> plusHours(amountToAdd);
+                case HALF_DAYS -> plusDays(amountToAdd / 256).plusHours((amountToAdd % 256) * 12); // no overflow (256 is multiple of 2)
+                default -> with(date.plus(amountToAdd, unit), time);
+            };
         }
         return unit.addTo(this, amountToAdd);
     }
@@ -1365,8 +1358,7 @@ public final class LocalDateTime
      */
     @Override
     public LocalDateTime minus(TemporalAmount amountToSubtract) {
-        if (amountToSubtract instanceof Period) {
-            Period periodToSubtract = (Period) amountToSubtract;
+        if (amountToSubtract instanceof Period periodToSubtract) {
             return with(date.minus(periodToSubtract), time);
         }
         Objects.requireNonNull(amountToSubtract, "amountToSubtract");
@@ -1683,7 +1675,7 @@ public final class LocalDateTime
     @Override
     public long until(Temporal endExclusive, TemporalUnit unit) {
         LocalDateTime end = LocalDateTime.from(endExclusive);
-        if (unit instanceof ChronoUnit) {
+        if (unit instanceof ChronoUnit chronoUnit) {
             if (unit.isTimeBased()) {
                 long amount = date.daysUntil(end.date);
                 if (amount == 0) {
@@ -1697,7 +1689,7 @@ public final class LocalDateTime
                     amount++;  // safe
                     timePart -= NANOS_PER_DAY;  // safe
                 }
-                switch ((ChronoUnit) unit) {
+                switch (chronoUnit) {
                     case NANOS:
                         amount = Math.multiplyExact(amount, NANOS_PER_DAY);
                         break;
@@ -1935,11 +1927,9 @@ public final class LocalDateTime
         if (this == obj) {
             return true;
         }
-        if (obj instanceof LocalDateTime) {
-            LocalDateTime other = (LocalDateTime) obj;
-            return date.equals(other.date) && time.equals(other.time);
-        }
-        return false;
+        return (obj instanceof LocalDateTime other)
+                && date.equals(other.date)
+                && time.equals(other.time);
     }
 
     /**

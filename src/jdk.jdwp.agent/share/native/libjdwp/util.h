@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,8 +133,11 @@ typedef struct {
     int           objectsByIDsize;
     int           objectsByIDcount;
 
-     /* Indication that the agent has been loaded */
-     jboolean isLoaded;
+    /* Indication that the agent has been loaded */
+    jboolean isLoaded;
+
+    /* Indication that VM_DEATH has been recieved and the JVMTI callbacks have been cleared. */
+    volatile jboolean jvmtiCallBacksCleared;
 
 } BackendGlobalData;
 
@@ -379,6 +382,9 @@ void *jvmtiAllocate(jint numBytes);
 void jvmtiDeallocate(void *buffer);
 
 void             eventIndexInit(void);
+#ifdef DEBUG
+char*            eventIndex2EventName(EventIndex ei);
+#endif
 jdwpEvent        eventIndex2jdwp(EventIndex i);
 jvmtiEvent       eventIndex2jvmti(EventIndex i);
 EventIndex       jdwp2EventIndex(jdwpEvent eventType);

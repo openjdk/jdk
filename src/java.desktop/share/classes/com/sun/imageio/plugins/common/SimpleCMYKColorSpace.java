@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.imageio.plugins.common;
 
 import java.awt.color.ColorSpace;
+import java.io.Serial;
 
 /**
  * Singleton class representing a simple, mathematically defined CMYK
  * color space.
  */
 public final class SimpleCMYKColorSpace extends ColorSpace {
+
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = 5387117338644522424L;
 
     private static ColorSpace theInstance = null;

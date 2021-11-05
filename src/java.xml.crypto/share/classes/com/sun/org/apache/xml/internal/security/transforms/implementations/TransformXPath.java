@@ -29,7 +29,6 @@ import javax.xml.transform.TransformerException;
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityRuntimeException;
 import com.sun.org.apache.xml.internal.security.signature.NodeFilter;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-import com.sun.org.apache.xml.internal.security.transforms.Transform;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
@@ -52,27 +51,21 @@ import org.w3c.dom.Node;
  */
 public class TransformXPath extends TransformSpi {
 
-    /** Field implementedTransformURI */
-    public static final String implementedTransformURI = Transforms.TRANSFORM_XPATH;
-
     /**
-     * Method engineGetURI
-     *
      * {@inheritDoc}
      */
+    @Override
     protected String engineGetURI() {
-        return implementedTransformURI;
+        return Transforms.TRANSFORM_XPATH;
     }
 
     /**
-     * Method enginePerformTransform
      * {@inheritDoc}
-     * @param input
-     *
-     * @throws TransformationException
      */
+    @Override
     protected XMLSignatureInput enginePerformTransform(
-        XMLSignatureInput input, OutputStream os, Transform transformObject
+        XMLSignatureInput input, OutputStream os, Element transformElement,
+        String baseURI, boolean secureValidation
     ) throws TransformationException {
         try {
             /**
@@ -88,10 +81,10 @@ public class TransformXPath extends TransformSpi {
              */
             Element xpathElement =
                 XMLUtils.selectDsNode(
-                    transformObject.getElement().getFirstChild(), Constants._TAG_XPATH, 0);
+                    transformElement.getFirstChild(), Constants._TAG_XPATH, 0);
 
             if (xpathElement == null) {
-                Object exArgs[] = { "ds:XPath", "Transform" };
+                Object[] exArgs = { "ds:XPath", "Transform" };
 
                 throw new TransformationException("xml.WrongContent", exArgs);
             }
@@ -104,7 +97,7 @@ public class TransformXPath extends TransformSpi {
             String str = XMLUtils.getStrFromNode(xpathnode);
             input.setNeedsToBeExpanded(needsCircumvent(str));
 
-            XPathFactory xpathFactory = XPathFactory.newInstance();
+            XPathFactory xpathFactory = getXPathFactory();
             XPathAPI xpathAPIInstance = xpathFactory.newXPathAPI();
             input.addNodeFilter(new XPathNodeFilter(xpathElement, xpathnode, str, xpathAPIInstance));
             input.setNodeSet(true);
@@ -112,6 +105,10 @@ public class TransformXPath extends TransformSpi {
         } catch (DOMException ex) {
             throw new TransformationException(ex);
         }
+    }
+
+    protected XPathFactory getXPathFactory() {
+        return XPathFactory.newInstance();
     }
 
     /**
@@ -122,12 +119,12 @@ public class TransformXPath extends TransformSpi {
         return str.indexOf("namespace") != -1 || str.indexOf("name()") != -1;
     }
 
-    static class XPathNodeFilter implements NodeFilter {
+    private static class XPathNodeFilter implements NodeFilter {
 
-        XPathAPI xPathAPI;
-        Node xpathnode;
-        Element xpathElement;
-        String str;
+        private final XPathAPI xPathAPI;
+        private final Node xpathnode;
+        private final Element xpathElement;
+        private final String str;
 
         XPathNodeFilter(Element xpathElement, Node xpathnode, String str, XPathAPI xPathAPI) {
             this.xpathnode = xpathnode;

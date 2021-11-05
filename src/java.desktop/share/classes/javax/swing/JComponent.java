@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,41 +22,83 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-
-import java.beans.*;
+import java.applet.Applet;
+import java.awt.AWTEvent;
+import java.awt.AWTKeyStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FocusTraversalPolicy;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.beans.BeanProperty;
+import java.beans.JavaBean;
+import java.beans.PropertyChangeListener;
+import java.beans.Transient;
+import java.beans.VetoableChangeListener;
+import java.beans.VetoableChangeSupport;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.ObjectInputValidation;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Enumeration;
+import java.util.EventListener;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Enumeration;
 import java.util.Locale;
-import java.util.Vector;
-import java.util.EventListener;
 import java.util.Set;
-
-import java.awt.*;
-import java.awt.event.*;
-
-import java.applet.Applet;
-
-import java.io.Serializable;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.io.IOException;
-import java.io.ObjectInputValidation;
-import java.io.InvalidObjectException;
+import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.swing.border.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import static javax.swing.ClientPropertyKey.*;
-import javax.accessibility.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleExtendedComponent;
+import javax.accessibility.AccessibleKeyBinding;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.swing.border.AbstractBorder;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import javax.swing.event.EventListenerList;
+import javax.swing.plaf.ComponentUI;
 
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
+
+import static javax.swing.ClientPropertyKey.JComponent_ANCESTOR_NOTIFIER;
+import static javax.swing.ClientPropertyKey.JComponent_INPUT_VERIFIER;
+import static javax.swing.ClientPropertyKey.JComponent_TRANSFER_HANDLER;
 
 /**
  * The base class for all Swing components except top-level containers.
@@ -138,6 +180,16 @@ import sun.swing.SwingUtilities2;
  * BEFORE the <code>ComponentUI</code> has been installed.  If you
  * need a specific value for a particular property you should
  * explicitly set it.
+ * <p>
+ * A <code>JComponent</code> may contain any number of default or initial
+ * components as children. This behaviour may change according to look and
+ * feel, therefore a <code>JComponent</code> may contain some default or
+ * initial components as children for a particular Look and Feel, whereas it
+ * may not do so for some other Look and Feel. Within a particular Look and
+ * Feel also, this behaviour may change depending upon the configuration
+ * properties of the <code>JComponent</code>. In summary, it is not valid
+ * to assume a JComponent has no children just because the application
+ * did not directly add them.
  * <p>
  * In release 1.4, the focus subsystem was rearchitected.
  * For more information, see
@@ -557,7 +609,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #setComponentPopupMenu
      * @since 1.5
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public JPopupMenu getComponentPopupMenu() {
 
         if(!getInheritsPopupMenu()) {
@@ -614,14 +666,17 @@ public abstract class JComponent extends Container implements Serializable,
 
 
     /**
-     * Resets the UI property to a value from the current look and feel.
-     * <code>JComponent</code> subclasses must override this method
+     * This method is called to update the UI property to a value from the
+     * current look and feel.
+     * {@code JComponent} subclasses must override this method
      * like this:
      * <pre>
      *   public void updateUI() {
      *      setUI((SliderUI)UIManager.getUI(this);
      *   }
      *  </pre>
+     *
+     * @implSpec The default implementation of this method does nothing.
      *
      * @see #setUI
      * @see UIManager#getLookAndFeel
@@ -2809,6 +2864,8 @@ public abstract class JComponent extends Container implements Serializable,
      * potentially multiple lightweight applications running in a single VM)
      * can have their own setting. An applet can safely alter its default
      * locale because it will have no affect on other applets (or the browser).
+     * Passing {@code null} will reset the current locale back
+     * to VM's default locale.
      *
      * @param l the desired default <code>Locale</code> for new components.
      * @see #getDefaultLocale
@@ -2887,7 +2944,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @since 1.3
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e,
                                         int condition, boolean pressed) {
         InputMap map = getInputMap(condition, false);
@@ -2916,7 +2973,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @param pressed true if the key is pressed
      * @return true if there is a key binding for <code>e</code>
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     boolean processKeyBindings(KeyEvent e, boolean pressed) {
       if (!SwingUtilities.isValidKeyEventForKeyBindings(e)) {
           return false;
@@ -3695,7 +3752,7 @@ public abstract class JComponent extends Container implements Serializable,
          * to add/remove ContainerListener and FocusListener to track
          * target JComponent's state
          */
-        private transient volatile int propertyListenersCount = 0;
+        private transient volatile int propertyListenersCount;
 
         /**
          * This field duplicates the function of the accessibleAWTFocusHandler field
@@ -4144,17 +4201,17 @@ public abstract class JComponent extends Container implements Serializable,
      * @param value Object containing the property value
      */
     void setUIProperty(String propertyName, Object value) {
-        if (propertyName == "opaque") {
+        if ("opaque".equals(propertyName)) {
             if (!getFlag(OPAQUE_SET)) {
                 setOpaque(((Boolean)value).booleanValue());
                 setFlag(OPAQUE_SET, false);
             }
-        } else if (propertyName == "autoscrolls") {
+        } else if ("autoscrolls".equals(propertyName)) {
             if (!getFlag(AUTOSCROLLS_SET)) {
                 setAutoscrolls(((Boolean)value).booleanValue());
                 setFlag(AUTOSCROLLS_SET, false);
             }
-        } else if (propertyName == "focusTraversalKeysForward") {
+        } else if ("focusTraversalKeysForward".equals(propertyName)) {
             @SuppressWarnings("unchecked")
             Set<AWTKeyStroke> strokeSet = (Set<AWTKeyStroke>) value;
             if (!getFlag(FOCUS_TRAVERSAL_KEYS_FORWARD_SET)) {
@@ -4162,7 +4219,7 @@ public abstract class JComponent extends Container implements Serializable,
                                             FORWARD_TRAVERSAL_KEYS,
                                             strokeSet);
             }
-        } else if (propertyName == "focusTraversalKeysBackward") {
+        } else if ("focusTraversalKeysBackward".equals(propertyName)) {
             @SuppressWarnings("unchecked")
             Set<AWTKeyStroke> strokeSet = (Set<AWTKeyStroke>) value;
             if (!getFlag(FOCUS_TRAVERSAL_KEYS_BACKWARD_SET)) {
@@ -4474,7 +4531,7 @@ public abstract class JComponent extends Container implements Serializable,
      *          return value for this method
      * @see #getVisibleRect
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     static final void computeVisibleRect(Component c, Rectangle visibleRect) {
         Container p = c.getParent();
         Rectangle bounds = c.getBounds();
@@ -4643,7 +4700,7 @@ public abstract class JComponent extends Container implements Serializable,
      *          or <code>null</code> if not in any container
      */
     @BeanProperty(bound = false)
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public Container getTopLevelAncestor() {
         for(Container p = this; p != null; p = p.getParent()) {
             if(p instanceof Window || p instanceof Applet) {
@@ -5051,7 +5108,7 @@ public abstract class JComponent extends Container implements Serializable,
         this.paintingChild = paintingChild;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     void _paintImmediately(int x, int y, int w, int h) {
         Graphics g;
         Container c;
@@ -5516,6 +5573,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param s  the <code>ObjectInputStream</code> from which to read
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
@@ -5583,6 +5641,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param s the <code>ObjectOutputStream</code> in which to write
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

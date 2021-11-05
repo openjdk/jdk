@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.media.sound;
 
+import java.io.Serial;
+
 /**
  * This exception is used when a RIFF file contains illegal or unexpected data.
  *
@@ -32,6 +34,10 @@ package com.sun.media.sound;
  */
 public final class RIFFInvalidDataException extends InvalidDataException {
 
+    /**
+     * Use serialVersionUID from JDK 1.7 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public RIFFInvalidDataException() {

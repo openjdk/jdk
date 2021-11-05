@@ -63,7 +63,10 @@ package jdk.dynalink.beans;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 class StaticClassIntrospector extends FacetIntrospector {
@@ -79,6 +82,10 @@ class StaticClassIntrospector extends FacetIntrospector {
                     StaticClass.forClass(innerClass))));
         }
         return map;
+    }
+
+    @Override Collection<Method> getRecordComponentGetters() {
+        return List.of();
     }
 
     @Override

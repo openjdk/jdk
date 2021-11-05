@@ -26,7 +26,7 @@
  * @bug 8009977 8186884 8194486 8201627
  * @summary A test to launch multiple Java processes using either Java GSS
  *          or native GSS
- * @library ../../../../java/security/testlibrary/ /test/lib
+ * @library /test/lib
  * @compile -XDignore.symbol.file BasicProc.java
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
  * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicProc launcher
@@ -41,6 +41,7 @@ import java.util.Set;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.Proc;
 import org.ietf.jgss.Oid;
 import sun.security.krb5.Config;
 

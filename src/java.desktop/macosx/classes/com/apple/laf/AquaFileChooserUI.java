@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.net.URI;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
@@ -1300,23 +1301,23 @@ public class AquaFileChooserUI extends FileChooserUI {
 
             // create File instances of each directory leading up to the top
             File f = directory.getAbsoluteFile();
-            final Vector<File> path = new Vector<File>(10);
+            final ArrayList<File> path = new ArrayList<File>(10);
             while (f.getParent() != null) {
-                path.addElement(f);
+                path.add(f);
                 f = getFileChooser().getFileSystemView().createFileObject(f.getParent());
             };
 
             // Add root file (the desktop) to the model
             final File[] roots = getFileChooser().getFileSystemView().getRoots();
             for (final File element : roots) {
-                path.addElement(element);
+                path.add(element);
             }
             fPathCount = path.size();
 
             // insert all the path fDirectories leading up to the
             // selected directory in reverse order (current directory at top)
             for (int i = 0; i < path.size(); i++) {
-                fDirectories.addElement(path.elementAt(i));
+                fDirectories.addElement(path.get(i));
             }
 
             setSelectedItem(fDirectories.elementAt(0));
@@ -2037,11 +2038,9 @@ public class AquaFileChooserUI extends FileChooserUI {
         // Try to get the custom text.  If none, use the fallback
         String getApproveButtonText(final JFileChooser fc, final String fallbackText) {
             final String buttonText = fc.getApproveButtonText();
-            if (buttonText != null) {
-                buttonText.trim();
-                if (!buttonText.isEmpty()) return buttonText;
-            }
-            return fallbackText;
+            return buttonText != null
+                    ? buttonText
+                    : fallbackText;
         }
 
         int getApproveButtonMnemonic(final JFileChooser fc) {
@@ -2056,11 +2055,9 @@ public class AquaFileChooserUI extends FileChooserUI {
 
         String getApproveButtonToolTipText(final JFileChooser fc, final String fallbackText) {
             final String tooltipText = fc.getApproveButtonToolTipText();
-            if (tooltipText != null) {
-                tooltipText.trim();
-                if (!tooltipText.isEmpty()) return tooltipText;
-            }
-            return fallbackText;
+            return tooltipText != null
+                    ? tooltipText
+                    : fallbackText;
         }
 
         String getCancelButtonToolTipText(final JFileChooser fc) {

@@ -113,6 +113,7 @@ module java.base {
     exports java.util.concurrent.locks;
     exports java.util.function;
     exports java.util.jar;
+    exports java.util.random;
     exports java.util.regex;
     exports java.util.spi;
     exports java.util.stream;
@@ -133,6 +134,8 @@ module java.base {
     // additional qualified exports may be inserted at build time
     // see make/gensrc/GenModuleInfo.gmk
 
+    exports com.sun.crypto.provider to
+        jdk.crypto.cryptoki;
     exports sun.invoke.util to
         jdk.compiler,
         jdk.incubator.foreign;
@@ -148,6 +151,7 @@ module java.base {
         java.management,
         java.naming,
         java.rmi,
+        jdk.charsets,
         jdk.jartool,
         jdk.jlink,
         jdk.net,
@@ -196,6 +200,7 @@ module java.base {
         jdk.attach,
         jdk.charsets,
         jdk.compiler,
+        jdk.crypto.cryptoki,
         jdk.incubator.vector,
         jdk.jfr,
         jdk.jshell,
@@ -209,13 +214,15 @@ module java.base {
         jdk.jartool,
         jdk.jfr,
         jdk.jlink,
-        jdk.jpackage;
+        jdk.jpackage,
+        jdk.incubator.foreign;
     exports jdk.internal.perf to
         java.management,
         jdk.management.agent,
         jdk.internal.jvmstat;
     exports jdk.internal.platform to
-        jdk.management;
+        jdk.management,
+        jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
         jdk.incubator.foreign;
@@ -225,7 +232,8 @@ module java.base {
         java.sql.rowset,
         jdk.dynalink,
         jdk.internal.vm.ci,
-        jdk.unsupported;
+        jdk.unsupported,
+        jdk.incubator.foreign;
     exports jdk.internal.vm to
         jdk.internal.jvmstat,
         jdk.management.agent;
@@ -246,6 +254,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
         jdk.jfr;
+    exports jdk.internal.util.random to
+        jdk.random;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;
@@ -309,7 +319,8 @@ module java.base {
         jdk.crypto.ec,
         jdk.security.auth;
     exports sun.security.provider.certpath to
-        java.naming;
+        java.naming,
+        jdk.jartool;
     exports sun.security.rsa to
         jdk.crypto.cryptoki;
     exports sun.security.timestamp to
@@ -354,7 +365,6 @@ module java.base {
     exports jdk.internal.invoke to
         jdk.incubator.foreign;
 
-
     // the service types defined by the APIs in this module
 
     uses java.lang.System.LoggerFinder;
@@ -375,6 +385,7 @@ module java.base {
     uses java.time.chrono.AbstractChronology;
     uses java.time.chrono.Chronology;
     uses java.time.zone.ZoneRulesProvider;
+    uses java.util.random.RandomGenerator;
     uses java.util.spi.CalendarDataProvider;
     uses java.util.spi.CalendarNameProvider;
     uses java.util.spi.CurrencyNameProvider;
@@ -398,4 +409,10 @@ module java.base {
 
     provides java.nio.file.spi.FileSystemProvider with
         jdk.internal.jrtfs.JrtFileSystemProvider;
+
+    provides java.util.random.RandomGenerator with
+        java.security.SecureRandom,
+        java.util.Random,
+        java.util.SplittableRandom;
+
 }

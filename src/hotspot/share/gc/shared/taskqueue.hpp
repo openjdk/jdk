@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,8 +345,6 @@ public:
   // Initializes the queue to empty.
   GenericTaskQueue();
 
-  void initialize();
-
   // Push the task "t" on the queue.  Returns "false" iff the queue is full.
   inline bool push(E t);
 
@@ -391,11 +389,6 @@ public:
   bool is_last_stolen_queue_id_valid() const { return _last_stolen_queue_id != InvalidQueueId; }
   void invalidate_last_stolen_queue_id()     { _last_stolen_queue_id = InvalidQueueId; }
 };
-
-template<class E, MEMFLAGS F, unsigned int N>
-GenericTaskQueue<E, F, N>::GenericTaskQueue() : _last_stolen_queue_id(InvalidQueueId), _seed(17 /* random number */) {
-  assert(sizeof(Age) == sizeof(size_t), "Depends on this.");
-}
 
 // OverflowTaskQueue is a TaskQueue that also includes an overflow stack for
 // elements that do not fit in the TaskQueue.
@@ -465,6 +458,8 @@ public:
   GenericTaskQueueSet(uint n);
   ~GenericTaskQueueSet();
 
+  // Set the i'th queue to the provided queue.
+  // Does not transfer ownership of the queue to this queue set.
   void register_queue(uint i, T* q);
 
   T* queue(uint n);
@@ -513,36 +508,6 @@ uint GenericTaskQueueSet<T, F>::tasks() const {
 class TerminatorTerminator: public CHeapObj<mtInternal> {
 public:
   virtual bool should_exit_termination() = 0;
-};
-
-// This is a container class for either an oop* or a narrowOop*.
-// Both are pushed onto a task queue and the consumer will test is_narrow()
-// to determine which should be processed.
-class StarTask {
-  void*  _holder;        // either union oop* or narrowOop*
-
-  enum { COMPRESSED_OOP_MASK = 1 };
-
- public:
-  StarTask(narrowOop* p) {
-    assert(((uintptr_t)p & COMPRESSED_OOP_MASK) == 0, "Information loss!");
-    _holder = (void *)((uintptr_t)p | COMPRESSED_OOP_MASK);
-  }
-  StarTask(oop* p)       {
-    assert(((uintptr_t)p & COMPRESSED_OOP_MASK) == 0, "Information loss!");
-    _holder = (void*)p;
-  }
-  StarTask()             { _holder = NULL; }
-  // Trivially copyable, for use in GenericTaskQueue.
-
-  operator oop*()        { return (oop*)_holder; }
-  operator narrowOop*()  {
-    return (narrowOop*)((uintptr_t)_holder & ~COMPRESSED_OOP_MASK);
-  }
-
-  bool is_narrow() const {
-    return (((uintptr_t)_holder & COMPRESSED_OOP_MASK) != 0);
-  }
 };
 
 class ObjArrayTask
@@ -644,7 +609,7 @@ public:
   }
 
   PartialArrayScanTask to_partial_array_task() const {
-    return PartialArrayScanTask(oop(decode(PartialArrayTag)));
+    return PartialArrayScanTask(cast_to_oop(decode(PartialArrayTag)));
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Test recursively retransforms the same class. The test hangs if
  *          a deadlock happens.
  * @requires vm.jvmti
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.instrument
  * @compile TransformerDeadlockTest.java
@@ -34,6 +35,7 @@
  */
 
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
@@ -42,7 +44,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.ProtectionDomain;
-
 
 public class TransformerDeadlockTest {
 

@@ -32,6 +32,7 @@ import java.nio.ReadOnlyBufferException;
 import java.util.Objects;
 
 import jdk.internal.ref.CleanerFactory;
+import jdk.internal.util.Preconditions;
 import sun.nio.ch.DirectBuffer;
 
 /**
@@ -39,7 +40,7 @@ import sun.nio.ch.DirectBuffer;
  * popular ZLIB compression library. The ZLIB compression library was
  * initially developed as part of the PNG graphics standard and is not
  * protected by patents. It is fully described in the specifications at
- * the <a href="package-summary.html#package.description">java.util.zip
+ * the <a href="package-summary.html#package-description">java.util.zip
  * package description</a>.
  * <p>
  * This class inflates sequences of ZLIB compressed bytes. The input byte
@@ -151,9 +152,7 @@ public class Inflater {
      * @see Inflater#needsInput
      */
     public void setInput(byte[] input, int off, int len) {
-        if (off < 0 || len < 0 || off > input.length - len) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        Preconditions.checkFromIndexSize(len, off, input.length, Preconditions.AIOOBE_FORMATTER);
         synchronized (zsRef) {
             this.input = null;
             this.inputArray = input;
@@ -218,9 +217,7 @@ public class Inflater {
      * @see Inflater#getAdler
      */
     public void setDictionary(byte[] dictionary, int off, int len) {
-        if (off < 0 || len < 0 || off > dictionary.length - len) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        Preconditions.checkFromIndexSize(len, off, dictionary.length, Preconditions.AIOOBE_FORMATTER);
         synchronized (zsRef) {
             ensureOpen();
             setDictionary(zsRef.address(), dictionary, off, len);
@@ -363,9 +360,7 @@ public class Inflater {
     public int inflate(byte[] output, int off, int len)
         throws DataFormatException
     {
-        if (off < 0 || len < 0 || off > output.length - len) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        Preconditions.checkFromIndexSize(len, off, output.length, Preconditions.AIOOBE_FORMATTER);
         synchronized (zsRef) {
             ensureOpen();
             ByteBuffer input = this.input;

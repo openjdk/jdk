@@ -42,7 +42,7 @@ import sun.tools.jconsole.Messages;
 @SuppressWarnings("serial") // JDK implementation class
 public abstract class XOperations extends JPanel implements ActionListener {
 
-    public final static String OPERATION_INVOCATION_EVENT =
+    public static final String OPERATION_INVOCATION_EVENT =
             "jam.xoperations.invoke.result";
     private java.util.List<NotificationListener> notificationListenersList;
     private Hashtable<JButton, OperationEntry> operationEntryTable;

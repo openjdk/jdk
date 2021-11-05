@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 #ifndef SHARE_RUNTIME_VMTHREAD_HPP
 #define SHARE_RUNTIME_VMTHREAD_HPP
 
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/task.hpp"
-#include "runtime/vmOperations.hpp"
+#include "runtime/vmOperation.hpp"
 
 // VM operation timeout handling: warn or abort the VM when VM operation takes
 // too long. Periodic tasks do not participate in safepoint protocol, and therefore
@@ -38,15 +39,15 @@ class VMOperationTimeoutTask : public PeriodicTask {
 private:
   volatile int _armed;
   jlong _arm_time;
-
+  const char* _vm_op_name;
 public:
   VMOperationTimeoutTask(size_t interval_time) :
-          PeriodicTask(interval_time), _armed(0), _arm_time(0) {}
+          PeriodicTask(interval_time), _armed(0), _arm_time(0), _vm_op_name(nullptr) {}
 
   virtual void task();
 
   bool is_armed();
-  void arm();
+  void arm(const char* vm_op_name);
   void disarm();
 };
 
@@ -128,6 +129,9 @@ class VMThread: public NamedThread {
   static void destroy();
 
   static void wait_until_executed(VM_Operation* op);
+
+  // Printing
+  const char* type_name() const { return "VMThread"; }
 
  private:
   // VM_Operation support

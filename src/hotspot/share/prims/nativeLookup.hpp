@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,12 @@
 class NativeLookup : AllStatic {
  private:
   // Style specific lookup
-  static address lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, bool& in_base_library, TRAPS);
+  static address lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, TRAPS);
   static address lookup_critical_style(void* dll, const char* pure_name, const char* long_name, int args_size, bool os_style);
   static address lookup_critical_style(void* dll, const methodHandle& method, int args_size);
-  static address lookup_base (const methodHandle& method, bool& in_base_library, TRAPS);
-  static address lookup_entry(const methodHandle& method, bool& in_base_library, TRAPS);
-  static address lookup_entry_prefixed(const methodHandle& method, bool& in_base_library, TRAPS);
+  static address lookup_base (const methodHandle& method, TRAPS);
+  static address lookup_entry(const methodHandle& method, TRAPS);
+  static address lookup_entry_prefixed(const methodHandle& method, TRAPS);
 
   static void* dll_load(const methodHandle& method);
   static const char* compute_complete_jni_name(const char* pure_name, const char* long_name, int args_size, bool os_style);
@@ -50,11 +50,8 @@ class NativeLookup : AllStatic {
   static char* critical_jni_name(const methodHandle& method);
 
   // Lookup native function. May throw UnsatisfiedLinkError.
-  static address lookup(const methodHandle& method, bool& in_base_library, TRAPS);
+  static address lookup(const methodHandle& method, TRAPS);
   static address lookup_critical_entry(const methodHandle& method);
-
-  // Lookup native functions in base library.
-  static address base_library_lookup(const char* class_name, const char* method_name, const char* signature);
 };
 
 #endif // SHARE_PRIMS_NATIVELOOKUP_HPP

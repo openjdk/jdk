@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,18 +188,21 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
 
 
 
-class PlatformParker : public CHeapObj<mtSynchronizer> {
-  protected:
-    HANDLE _ParkEvent ;
+class PlatformParker {
+  NONCOPYABLE(PlatformParker);
 
-  public:
-    ~PlatformParker () { guarantee (0, "invariant") ; }
-    PlatformParker  () {
-      _ParkEvent = CreateEvent (NULL, true, false, NULL) ;
-      guarantee (_ParkEvent != NULL, "invariant") ;
-    }
+ protected:
+  HANDLE _ParkHandle;
 
-} ;
+ public:
+  PlatformParker() {
+    _ParkHandle = CreateEvent (NULL, true, false, NULL) ;
+    guarantee(_ParkHandle != NULL, "invariant") ;
+  }
+  ~PlatformParker() {
+    CloseHandle(_ParkHandle);
+  }
+};
 
 // Platform specific implementations that underpin VM Mutex/Monitor classes.
 // Note that CRITICAL_SECTION supports recursive locking, while the semantics

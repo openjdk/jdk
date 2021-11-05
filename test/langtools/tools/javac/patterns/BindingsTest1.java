@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,6 +231,11 @@ public class BindingsTest1 {
             throw new AssertionError();
         }
 
+        //binding in an anonymous class:
+        if (!(invokeOnce("") instanceof String s)) {
+            throw new AssertionError();
+        }
+
         System.out.println("BindingsTest1 complete");
     }
 
@@ -239,5 +244,14 @@ public class BindingsTest1 {
     }
     static boolean id(boolean b) {
         return b;
+    }
+    private static boolean invoked;
+    static Object invokeOnce(Object val) {
+        if (invoked) {
+            throw new IllegalStateException();
+        } else {
+            invoked = true;
+            return val;
+        }
     }
 }

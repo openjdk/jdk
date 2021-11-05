@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import java.io.*;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class MyDiffClassLoader extends ClassLoader {
 
@@ -48,24 +49,9 @@ public class MyDiffClassLoader extends ClassLoader {
             return c;
         }
 
-        byte[] data = switchClassData ? getNewClassData(name) : getClassData(name);
+        byte[] data = switchClassData ? getNewClassData(name) : ClassUnloadCommon.getClassData(name);
         System.out.println("name is " + name);
         return defineClass(name, data, 0, data.length);
-    }
-    byte[] getClassData(String name) {
-        try {
-           String TempName = name.replaceAll("\\.", "/");
-           String currentDir = System.getProperty("test.classes");
-           String filename = currentDir + File.separator + TempName + ".class";
-           FileInputStream fis = new FileInputStream(filename);
-           byte[] b = new byte[5000];
-           int cnt = fis.read(b, 0, 5000);
-           byte[] c = new byte[cnt];
-           for (int i=0; i<cnt; i++) c[i] = b[i];
-             return c;
-        } catch (IOException e) {
-           return null;
-        }
     }
 
     // Return p2.c2 with everything removed

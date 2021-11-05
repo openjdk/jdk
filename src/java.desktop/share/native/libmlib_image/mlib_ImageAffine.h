@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,7 +215,7 @@ typedef union {
     SRC = MLIB_S32_MAX;                                        \
   if (SRC <= MLIB_S32_MIN)                                     \
     SRC = MLIB_S32_MIN;                                        \
-    DST = (mlib_s32) SRC
+  DST = (mlib_s32) SRC
 
 #endif /* MLIB_USE_FTOI_CLAMPING */
 

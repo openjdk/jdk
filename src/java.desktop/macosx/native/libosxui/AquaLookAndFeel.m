@@ -23,11 +23,8 @@
  * questions.
  */
 
-// Must include this before JavaNativeFoundation.h to get jni.h from build
 #include "jni.h"
 #include "jni_util.h"
-
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 /*
  *    Empty JNI_OnLoad - needed to prevent:

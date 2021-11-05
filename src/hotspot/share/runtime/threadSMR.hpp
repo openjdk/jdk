@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/timer.hpp"
+#include "utilities/debug.hpp"
 
 class JavaThread;
 class Monitor;
@@ -162,11 +163,13 @@ class ThreadsSMRSupport : AllStatic {
 // A fast list of JavaThreads.
 //
 class ThreadsList : public CHeapObj<mtThread> {
+  enum { THREADS_LIST_MAGIC = (int)(('T' << 24) | ('L' << 16) | ('S' << 8) | 'T') };
   friend class VMStructs;
   friend class SafeThreadsListPtr;  // for {dec,inc}_nested_handle_cnt() access
   friend class ThreadsSMRSupport;  // for _nested_handle_cnt, {add,remove}_thread(), {,set_}next_list() access
   friend class ThreadsListHandleTest;  // for _nested_handle_cnt access
 
+  uint _magic;
   const uint _length;
   ThreadsList* _next_list;
   JavaThread *const *const _threads;
@@ -190,6 +193,10 @@ public:
   explicit ThreadsList(int entries);
   ~ThreadsList();
 
+  class Iterator;
+  inline Iterator begin();
+  inline Iterator end();
+
   template <class T>
   void threads_do(T *cl) const;
 
@@ -203,6 +210,33 @@ public:
   int find_index_of_JavaThread(JavaThread* target);
   JavaThread* find_JavaThread_from_java_tid(jlong java_tid) const;
   bool includes(const JavaThread * const p) const;
+
+#ifdef ASSERT
+  static bool is_valid(ThreadsList* list) { return list->_magic == THREADS_LIST_MAGIC; }
+#endif
+};
+
+class ThreadsList::Iterator {
+  JavaThread* const* _thread_ptr;
+  DEBUG_ONLY(ThreadsList* _list;)
+
+  static uint check_index(ThreadsList* list, uint i) NOT_DEBUG({ return i; });
+  void assert_not_singular() const NOT_DEBUG_RETURN;
+  void assert_dereferenceable() const NOT_DEBUG_RETURN;
+  void assert_same_list(Iterator i) const NOT_DEBUG_RETURN;
+
+public:
+  Iterator() NOT_DEBUG(= default); // Singular iterator.
+  inline Iterator(ThreadsList* list, uint i);
+
+  inline bool operator==(Iterator other) const;
+  inline bool operator!=(Iterator other) const;
+
+  inline JavaThread* operator*() const;
+  inline JavaThread* operator->() const;
+
+  inline Iterator& operator++();
+  inline Iterator operator++(int);
 };
 
 // An abstract safe ptr to a ThreadsList comprising either a stable hazard ptr
@@ -293,6 +327,10 @@ public:
   ThreadsList *list() const {
     return _list_ptr.list();
   }
+
+  using Iterator = ThreadsList::Iterator;
+  inline Iterator begin();
+  inline Iterator end();
 
   template <class T>
   void threads_do(T *cl) const {

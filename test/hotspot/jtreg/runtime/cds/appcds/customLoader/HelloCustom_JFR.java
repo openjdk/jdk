@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,21 @@
 
 /*
  * @test
- * @summary Same as HelloCustom, but add -XX:StartFlightRecording=dumponexit=true to the runtime
+ * @summary Same as HelloCustom, but add -XX:StartFlightRecording:dumponexit=true to the runtime
  *          options. This makes sure that the shared classes are compatible with both
  *          JFR and JVMTI ClassFileLoadHook.
  * @requires vm.hasJFR
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /runtime/testlibrary
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile test-classes/HelloUnload.java test-classes/CustomLoadee.java
- * @build sun.hotspot.WhiteBox ClassUnloadCommon
- * @run driver ClassFileInstaller -jar hello.jar HelloUnload ClassUnloadCommon ClassUnloadCommon$1 ClassUnloadCommon$TestFailure
- * @run driver ClassFileInstaller -jar hello_custom.jar CustomLoadee
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @build sun.hotspot.WhiteBox jdk.test.lib.classloader.ClassUnloadCommon
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar HelloUnload
+ *                 jdk.test.lib.classloader.ClassUnloadCommon
+ *                 jdk.test.lib.classloader.ClassUnloadCommon$1
+ *                 jdk.test.lib.classloader.ClassUnloadCommon$TestFailure
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello_custom.jar CustomLoadee
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver HelloCustom_JFR
  */
 
@@ -44,6 +47,6 @@ import sun.hotspot.WhiteBox;
 
 public class HelloCustom_JFR {
     public static void main(String[] args) throws Exception {
-        HelloCustom.run("-XX:StartFlightRecording=dumponexit=true", "-Xlog:cds+jvmti=debug");
+        HelloCustom.run("-XX:StartFlightRecording:dumponexit=true", "-Xlog:cds+jvmti=debug");
     }
 }

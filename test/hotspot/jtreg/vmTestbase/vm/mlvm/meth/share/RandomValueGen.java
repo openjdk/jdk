@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class RandomValueGen {
 
         // A workaround for booleans. Sometimes RNG produces long series of trues or falses
         if ( type.equals(Boolean.class) || type.equals(boolean.class) )
-            return new Boolean(! (Boolean) notEqualTo);
+            return Boolean.valueOf(! (Boolean) notEqualTo);
 
         throw new InstantiationException("Can't create distinct value for type=[" + type.getName() + "]; value=[" + notEqualTo + "]");
     }

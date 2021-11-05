@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class TestHelpOption extends JavadocTester {
                 "-nohelp",
                 testSrc("Sample.java"));
         checkOutput("Sample.html", false, """
-            <li><a href="../help-doc.html">Help</a></li>""");
+            <li><a href="../help-doc.html#class">Help</a></li>""");
         checkExit(Exit.OK);
     }
 
@@ -102,7 +102,7 @@ public class TestHelpOption extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("Sample.html", true,
                 """
-                    <li><a href="test-help.html">Help</a></li>""");
+                    <li><a href="test-help.html#class">Help</a></li>""");
         checkOutput("test-help.html", true,
                 "Help, help.");
     }

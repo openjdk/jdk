@@ -287,7 +287,6 @@ public class JViewport extends JComponent implements Accessible
     public JViewport() {
         super();
         setLayout(createLayoutManager());
-        setOpaque(true);
         updateUI();
         setInheritsPopupMenu(true);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutex.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 
@@ -1984,7 +1985,11 @@ public:
 
   public:
     CompilerCounters() : _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
+#ifndef ZERO
+      // Some Zero platforms do not have expected alignment, and do not use
+      // this code. static_assert would still fire and fail for them.
       static_assert(sizeof(_trap_hist) % HeapWordSize == 0, "align");
+#endif
       uint size_in_words = sizeof(_trap_hist) / HeapWordSize;
       Copy::zero_to_words((HeapWord*) &_trap_hist, size_in_words);
     }

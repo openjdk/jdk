@@ -56,6 +56,8 @@ class BsdFileSystem extends UnixFileSystem {
         private static Set<String> supportedFileAttributeViews() {
             Set<String> result = new HashSet<String>();
             result.addAll(standardFileAttributeViews());
+            // additional BSD-specific views
+            result.add("user");
             return Collections.unmodifiableSet(result);
         }
     }
@@ -67,6 +69,7 @@ class BsdFileSystem extends UnixFileSystem {
 
     @Override
     void copyNonPosixAttributes(int ofd, int nfd) {
+        UnixUserDefinedFileAttributeView.copyExtendedAttributes(ofd, nfd);
     }
 
     /**

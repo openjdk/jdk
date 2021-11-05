@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   assert(cmpval != addr, "cmp and addr must be in different registers");
   assert(newval != addr, "new value and addr must be in different registers");
 
-  // Apply storeval barrier to newval.
-  ShenandoahBarrierSet::assembler()->storeval_barrier(masm->masm(), newval, tmp1);
+  // Apply IU barrier to newval.
+  ShenandoahBarrierSet::assembler()->iu_barrier(masm->masm(), newval, tmp1);
 
 #ifdef _LP64
   if (UseCompressedOops) {
@@ -102,7 +102,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   LIR_Opr value_opr = value.result();
 
   if (access.is_oop()) {
-    value_opr = storeval_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
+    value_opr = iu_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
   }
 
   // Because we want a 2-arg form of xchg and xadd

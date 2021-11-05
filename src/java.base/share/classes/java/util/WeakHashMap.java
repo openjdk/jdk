@@ -619,10 +619,9 @@ public class WeakHashMap<K,V>
 
     /** Special version of remove needed by Entry set */
     boolean removeMapping(Object o) {
-        if (!(o instanceof Map.Entry))
+        if (!(o instanceof Map.Entry<?, ?> entry))
             return false;
         Entry<K,V>[] tab = getTable();
-        Map.Entry<?,?> entry = (Map.Entry<?,?>)o;
         Object k = maskNull(entry.getKey());
         int h = hash(k);
         int i = indexFor(h, tab.length);
@@ -737,9 +736,8 @@ public class WeakHashMap<K,V>
         }
 
         public boolean equals(Object o) {
-            if (!(o instanceof Map.Entry))
+            if (!(o instanceof Map.Entry<?, ?> e))
                 return false;
-            Map.Entry<?,?> e = (Map.Entry<?,?>)o;
             K k1 = getKey();
             Object k2 = e.getKey();
             if (k1 == k2 || (k1 != null && k1.equals(k2))) {
@@ -977,11 +975,9 @@ public class WeakHashMap<K,V>
         }
 
         public boolean contains(Object o) {
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry<?,?> e = (Map.Entry<?,?>)o;
-            Entry<K,V> candidate = getEntry(e.getKey());
-            return candidate != null && candidate.equals(e);
+            return o instanceof Map.Entry<?, ?> e
+                    && getEntry(e.getKey()) != null
+                    && getEntry(e.getKey()).equals(e);
         }
 
         public boolean remove(Object o) {

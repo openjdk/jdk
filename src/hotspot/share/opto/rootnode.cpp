@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ HaltNode::HaltNode(Node* ctrl, Node* frameptr, const char* halt_reason, bool rea
 }
 
 const Type *HaltNode::bottom_type() const { return Type::BOTTOM; }
+uint HaltNode::size_of() const { return sizeof(*this); }
 
 //------------------------------Ideal------------------------------------------
 Node *HaltNode::Ideal(PhaseGVN *phase, bool can_reshape) {

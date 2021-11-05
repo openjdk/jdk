@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,40 @@
  */
 
 #include "precompiled.hpp"
-
-#include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
+#include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahFullGC.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceUtils.hpp"
+#include "memory/metaspaceStats.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
-  _alloc_failure_waiters_lock(Mutex::leaf, "ShenandoahAllocFailureGC_lock", true, Monitor::_safepoint_check_always),
-  _gc_waiters_lock(Mutex::leaf, "ShenandoahRequestedGC_lock", true, Monitor::_safepoint_check_always),
+  _alloc_failure_waiters_lock(Mutex::safepoint-1, "ShenandoahAllocFailureGC_lock", true),
+  _gc_waiters_lock(Mutex::safepoint-1, "ShenandoahRequestedGC_lock", true),
   _periodic_task(this),
   _requested_gc_cause(GCCause::_no_cause_specified),
-  _degen_point(ShenandoahHeap::_degenerated_outside_cycle),
+  _degen_point(ShenandoahGC::_degenerated_outside_cycle),
   _allocs_seen(0) {
 
   reset_gc_id();
   create_and_start();
   _periodic_task.enroll();
-  _periodic_satb_flush_task.enroll();
   if (ShenandoahPacing) {
     _periodic_pacer_notify_task.enroll();
   }
@@ -65,10 +69,6 @@ ShenandoahControlThread::~ShenandoahControlThread() {
 void ShenandoahPeriodicTask::task() {
   _thread->handle_force_counters_update();
   _thread->handle_counters_update();
-}
-
-void ShenandoahPeriodicSATBFlushTask::task() {
-  ShenandoahHeap::heap()->force_satb_flush_all_threads();
 }
 
 void ShenandoahPeriodicPacerNotify::task() {
@@ -97,11 +97,13 @@ void ShenandoahControlThread::run_service() {
   while (!in_graceful_shutdown() && !should_terminate()) {
     // Figure out if we have pending requests.
     bool alloc_failure_pending = _alloc_failure_gc.is_set();
-    bool explicit_gc_requested = _gc_requested.is_set() &&  is_explicit_gc(_requested_gc_cause);
-    bool implicit_gc_requested = _gc_requested.is_set() && !is_explicit_gc(_requested_gc_cause);
+    bool is_gc_requested = _gc_requested.is_set();
+    GCCause::Cause requested_gc_cause = _requested_gc_cause;
+    bool explicit_gc_requested = is_gc_requested && is_explicit_gc(requested_gc_cause);
+    bool implicit_gc_requested = is_gc_requested && !is_explicit_gc(requested_gc_cause);
 
     // This control loop iteration have seen this much allocations.
-    size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0);
+    size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
 
     // Check if we have seen a new target for soft max heap size.
     bool soft_max_changed = check_soft_max_changed();
@@ -109,7 +111,7 @@ void ShenandoahControlThread::run_service() {
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
     GCCause::Cause cause = GCCause::_last_gc_cause;
-    ShenandoahHeap::ShenandoahDegenPoint degen_point = ShenandoahHeap::_degenerated_unset;
+    ShenandoahGC::ShenandoahDegenPoint degen_point = ShenandoahGC::_degenerated_unset;
 
     if (alloc_failure_pending) {
       // Allocation failure takes precedence: we have to deal with it first thing
@@ -119,7 +121,7 @@ void ShenandoahControlThread::run_service() {
 
       // Consume the degen point, and seed it with default value
       degen_point = _degen_point;
-      _degen_point = ShenandoahHeap::_degenerated_outside_cycle;
+      _degen_point = ShenandoahGC::_degenerated_outside_cycle;
 
       if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle()) {
         heuristics->record_allocation_failure_gc();
@@ -132,7 +134,7 @@ void ShenandoahControlThread::run_service() {
       }
 
     } else if (explicit_gc_requested) {
-      cause = _requested_gc_cause;
+      cause = requested_gc_cause;
       log_info(gc)("Trigger: Explicit GC request (%s)", GCCause::to_string(cause));
 
       heuristics->record_requested_gc();
@@ -147,7 +149,7 @@ void ShenandoahControlThread::run_service() {
         mode = stw_full;
       }
     } else if (implicit_gc_requested) {
-      cause = _requested_gc_cause;
+      cause = requested_gc_cause;
       log_info(gc)("Trigger: Implicit GC request (%s)", GCCause::to_string(cause));
 
       heuristics->record_requested_gc();
@@ -188,8 +190,7 @@ void ShenandoahControlThread::run_service() {
 
       heap->reset_bytes_allocated_since_gc_start();
 
-      // Use default constructor to snapshot the Metaspace state before GC.
-      metaspace::MetaspaceSizesSnapshot meta_sizes;
+      MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
       // If GC was requested, we are sampling the counters even without actual triggers
       // from allocation machinery. This captures GC phases more accurately.
@@ -383,96 +384,31 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   //                                      Full GC  --------------------------/
   //
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_outside_cycle)) return;
+  if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) return;
 
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 
-  // Reset for upcoming marking
-  heap->entry_reset();
-
-  // Start initial mark under STW
-  heap->vmop_entry_init_mark();
-
-  // Continue concurrent mark
-  heap->entry_mark();
-  if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_mark)) return;
-
-  // Complete marking under STW, and start evacuation
-  heap->vmop_entry_final_mark();
-
-  // Process weak roots that might still point to regions that would be broken by cleanup
-  if (heap->is_concurrent_weak_root_in_progress()) {
-    heap->entry_weak_refs();
-    heap->entry_weak_roots();
-  }
-
-  // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
-  // the space. This would be the last action if there is nothing to evacuate.
-  heap->entry_cleanup_early();
-
-  {
-    ShenandoahHeapLocker locker(heap->lock());
-    heap->free_set()->log_status();
-  }
-
-  // Perform concurrent class unloading
-  if (heap->is_concurrent_weak_root_in_progress() &&
-      ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-    heap->entry_class_unloading();
-  }
-
-  // Processing strong roots
-  // This may be skipped if there is nothing to update/evacuate.
-  // If so, strong_root_in_progress would be unset.
-  if (heap->is_concurrent_strong_root_in_progress()) {
-    heap->entry_strong_roots();
-  }
-
-  // Continue the cycle with evacuation and optional update-refs.
-  // This may be skipped if there is nothing to evacuate.
-  // If so, evac_in_progress would be unset by collection set preparation code.
-  if (heap->is_evacuation_in_progress()) {
-    // Concurrently evacuate
-    heap->entry_evac();
-    if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_evac)) return;
-
-    // Perform update-refs phase.
-    heap->vmop_entry_init_updaterefs();
-    heap->entry_updaterefs();
-    if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_updaterefs)) return;
-
-    // Concurrent update thread roots
-    heap->entry_update_thread_roots();
-    if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_updaterefs)) return;
-
-    heap->vmop_entry_final_updaterefs();
-
-    // Update references freed up collection set, kick the cleanup to reclaim the space.
-    heap->entry_cleanup_complete();
+  ShenandoahConcurrentGC gc;
+  if (gc.collect(cause)) {
+    // Cycle is complete
+    heap->heuristics()->record_success_concurrent();
+    heap->shenandoah_policy()->record_success_concurrent();
   } else {
-    // Concurrent weak/strong root flags are unset concurrently. We depend on updateref GC safepoints
-    // to ensure the changes are visible to all mutators before gc cycle is completed.
-    // In case of no evacuation, updateref GC safepoints are skipped. Therefore, we will need
-    // to perform thread handshake to ensure their consistences.
-    heap->entry_rendezvous_roots();
+    assert(heap->cancelled_gc(), "Must have been cancelled");
+    check_cancellation_or_degen(gc.degen_point());
   }
-
-  // Cycle is complete
-  heap->heuristics()->record_success_concurrent();
-  heap->shenandoah_policy()->record_success_concurrent();
 }
 
-bool ShenandoahControlThread::check_cancellation_or_degen(ShenandoahHeap::ShenandoahDegenPoint point) {
+bool ShenandoahControlThread::check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->cancelled_gc()) {
     assert (is_alloc_failure_gc() || in_graceful_shutdown(), "Cancel GC either for alloc failure GC, or gracefully exiting");
     if (!in_graceful_shutdown()) {
-      assert (_degen_point == ShenandoahHeap::_degenerated_outside_cycle,
-              "Should not be set yet: %s", ShenandoahHeap::degen_point_to_string(_degen_point));
+      assert (_degen_point == ShenandoahGC::_degenerated_outside_cycle,
+              "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
       _degen_point = point;
     }
     return true;
@@ -488,22 +424,24 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  heap->vmop_entry_full(cause);
+  ShenandoahFullGC gc;
+  gc.collect(cause);
 
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   heap->heuristics()->record_success_full();
   heap->shenandoah_policy()->record_success_full();
 }
 
-void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahHeap::ShenandoahDegenPoint point) {
-  assert (point != ShenandoahHeap::_degenerated_unset, "Degenerated point should be set");
+void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
+  assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
 
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  heap->vmop_degenerated(point);
+  ShenandoahDegenGC gc(point);
+  gc.collect(cause);
 
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   heap->heuristics()->record_success_degenerated();
   heap->shenandoah_policy()->record_success_degenerated();
 }
@@ -542,6 +480,7 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
          cause == GCCause::_metadata_GC_clear_soft_refs ||
          cause == GCCause::_full_gc_alot ||
          cause == GCCause::_wb_full_gc ||
+         cause == GCCause::_wb_breakpoint ||
          cause == GCCause::_scavenge_alot,
          "only requested GCs here");
 
@@ -568,9 +507,15 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   size_t current_gc_id = get_gc_id();
   size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id) {
-    _gc_requested.set();
+    // Although setting gc request is under _gc_waiters_lock, but read side (run_service())
+    // does not take the lock. We need to enforce following order, so that read side sees
+    // latest requested gc cause when the flag is set.
     _requested_gc_cause = cause;
-    ml.wait();
+    _gc_requested.set();
+
+    if (cause != GCCause::_wb_breakpoint) {
+      ml.wait();
+    }
     current_gc_id = get_gc_id();
   }
 }
@@ -659,7 +604,7 @@ void ShenandoahControlThread::notify_heap_changed() {
 
 void ShenandoahControlThread::pacing_notify_alloc(size_t words) {
   assert(ShenandoahPacing, "should only call when pacing is enabled");
-  Atomic::add(&_allocs_seen, words);
+  Atomic::add(&_allocs_seen, words, memory_order_relaxed);
 }
 
 void ShenandoahControlThread::set_forced_counters_update(bool value) {

@@ -28,7 +28,6 @@
 #import "java_awt_SystemColor.h"
 #import "sun_lwawt_macosx_LWCToolkit.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #import "ThreadUtilities.h"
@@ -41,10 +40,10 @@ NSColor **appleColors = nil;
 
 + (void)initialize {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [CSystemColors reloadColors];
     [[NSNotificationCenter defaultCenter] addObserver:[CSystemColors class] selector:@selector(systemColorsDidChange:) name:NSSystemColorsDidChangeNotification object:nil];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 

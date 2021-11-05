@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,6 @@ void SafepointMechanism::pd_initialize() {
   }
   uintptr_t bad_page_val  = reinterpret_cast<uintptr_t>(map_address),
             good_page_val = bad_page_val + os::vm_page_size();
-  _poll_page_armed_value    = bad_page_val  + poll_bit();
+  _poll_page_armed_value    = bad_page_val;
   _poll_page_disarmed_value = good_page_val;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.io.ObjectStreamField;
 import java.io.Serializable;
 
 import java.security.AccessController;
-import java.util.Iterator;
 
 /**
  * Represents the result of a multiple access to several roles of a relation
@@ -85,6 +84,7 @@ public class RoleResult implements Serializable {
     static {
         try {
             GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
+            @SuppressWarnings("removal")
             String form = AccessController.doPrivileged(act);
             compat = (form != null && form.equals("1.0"));
         } catch (Exception e) {
@@ -131,7 +131,6 @@ public class RoleResult implements Serializable {
 
         setRoles(list);
         setRolesUnresolved(unresolvedList);
-        return;
     }
 
     //
@@ -172,15 +171,13 @@ public class RoleResult implements Serializable {
 
             roleList = new RoleList();
 
-            for (Iterator<?> roleIter = list.iterator();
-                 roleIter.hasNext();) {
-                Role currRole = (Role)(roleIter.next());
-                roleList.add((Role)(currRole.clone()));
+            for (Object o : list) {
+                Role currRole = (Role)o;
+                roleList.add((Role)currRole.clone());
             }
         } else {
             roleList = null;
         }
-        return;
     }
 
     /**
@@ -195,16 +192,13 @@ public class RoleResult implements Serializable {
 
             unresolvedRoleList = new RoleUnresolvedList();
 
-            for (Iterator<?> roleUnresIter = unresolvedList.iterator();
-                 roleUnresIter.hasNext();) {
-                RoleUnresolved currRoleUnres =
-                    (RoleUnresolved)(roleUnresIter.next());
-                unresolvedRoleList.add((RoleUnresolved)(currRoleUnres.clone()));
+            for (Object o : unresolvedList) {
+                RoleUnresolved currRoleUnres = (RoleUnresolved)o;
+                unresolvedRoleList.add((RoleUnresolved)currRoleUnres.clone());
             }
         } else {
             unresolvedRoleList = null;
         }
-        return;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ class NTLM {
         int readShort(int offset) throws NTLMException {
             try {
                 return (internal[offset] & 0xff) +
-                        ((internal[offset+1] & 0xff << 8));
+                        (((internal[offset+1] & 0xff) << 8));
             } catch (ArrayIndexOutOfBoundsException ex) {
                 throw new NTLMException(NTLMException.PACKET_READ_ERROR,
                         "Input message incorrect size");

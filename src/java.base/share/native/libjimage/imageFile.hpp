@@ -371,7 +371,12 @@ private:
 
 public:
     ImageFileReaderTable();
-    ~ImageFileReaderTable();
+// ~ImageFileReaderTable()
+// Bug 8166727
+//
+// WARNING: Should never close jimage files.
+//          Threads may still be running during shutdown.
+//
 
     // Return the number of entries.
     inline u4 count() { return _count; }

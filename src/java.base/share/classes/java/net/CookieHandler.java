@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ public abstract class CookieHandler {
      * @see #setDefault(CookieHandler)
      */
     public static synchronized CookieHandler getDefault() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.GET_COOKIEHANDLER_PERMISSION);
@@ -95,6 +96,7 @@ public abstract class CookieHandler {
      * @see #getDefault()
      */
     public static synchronized void setDefault(CookieHandler cHandler) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.SET_COOKIEHANDLER_PERMISSION);

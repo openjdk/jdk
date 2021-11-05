@@ -73,12 +73,20 @@ public class DoubleConsts {
      */
     public static final long    SIGNIF_BIT_MASK = 0x000FFFFFFFFFFFFFL;
 
+    /**
+     * Bit mask to isolate the magnitude bits (combined exponent and
+     * significand fields) of a {@code double}.
+     */
+    public static final long    MAG_BIT_MASK = ~SIGN_BIT_MASK;
+
     static {
         // verify bit masks cover all bit positions and that the bit
         // masks are non-overlapping
         assert(((SIGN_BIT_MASK | EXP_BIT_MASK | SIGNIF_BIT_MASK) == ~0L) &&
                (((SIGN_BIT_MASK & EXP_BIT_MASK) == 0L) &&
                 ((SIGN_BIT_MASK & SIGNIF_BIT_MASK) == 0L) &&
-                ((EXP_BIT_MASK & SIGNIF_BIT_MASK) == 0L)));
+                ((EXP_BIT_MASK & SIGNIF_BIT_MASK) == 0L)) &&
+                ((SIGN_BIT_MASK | MAG_BIT_MASK) == ~0L));
+
     }
 }

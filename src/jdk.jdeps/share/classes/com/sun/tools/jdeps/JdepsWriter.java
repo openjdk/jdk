@@ -312,7 +312,7 @@ public abstract class JdepsWriter {
      * For non-JDK archives, this method returns the file name of the archive.
      */
     String toTag(Archive source, String name, Archive target) {
-        if (source == target || !target.getModule().isNamed()) {
+        if (source == target || !target.getModule().isNamed() || Analyzer.notFound(target)) {
             return target.getName();
         }
 

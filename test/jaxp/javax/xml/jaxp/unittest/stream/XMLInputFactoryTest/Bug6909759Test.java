@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6909759
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLInputFactoryTest.Bug6909759Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLInputFactoryTest.Bug6909759Test
  * @run testng/othervm stream.XMLInputFactoryTest.Bug6909759Test
  * @summary Test createXMLStreamReader with StreamSource.
  */

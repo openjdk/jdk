@@ -22,14 +22,7 @@
  */
 package org.openjdk.bench.java.lang;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.*;
 
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
@@ -60,9 +53,12 @@ import java.util.concurrent.TimeUnit;
  * This benchmark is great for measuring cache effects, e.g. size=10^6 has 5x
  * the per-element cost of size=10^3 (See "The Myth of RAM".)
  *
- * (cd $(hg root) && for size in 3 16 999 999999; do make test TEST="micro:java.lang.ArrayFiddle" MICRO="FORK=2;WARMUP_ITER=4;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
+ * (cd $(git rev-parse --show-toplevel) && for size in 3 16 999 999999; do make test TEST='micro:java.lang.ArrayFiddle' MICRO="FORK=2;WARMUP_ITER=4;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
  */
 @BenchmarkMode(Mode.AverageTime)
+@Fork(2)
+@Warmup(iterations = 1)
+@Measurement(iterations = 4)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
 public class ArrayFiddle {

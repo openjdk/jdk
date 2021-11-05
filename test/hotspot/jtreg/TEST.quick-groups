@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1784,7 +1784,6 @@ vmTestbase_vm_compiler_quick = \
   vmTestbase/jit/t/t111/t111.java \
   vmTestbase/jit/t/t112/t112.java \
   vmTestbase/jit/t/t113/t113.java \
-  vmTestbase/jit/tiered/Test.java \
   vmTestbase/jit/verifier/VerifyInitLocal/VerifyInitLocal.java \
   vmTestbase/jit/verifier/VerifyMergeStack/VerifyMergeStack.java \
   vmTestbase/jit/wide/wide01/wide01.java \

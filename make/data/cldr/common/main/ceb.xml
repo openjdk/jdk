@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -3099,7 +3099,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka karat</unitPattern>
 				<unitPattern count="other">{0} ka mga karat</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mga milligram kada deciliter</displayName>
 				<unitPattern count="one">{0} ka milligram kada deciliter</unitPattern>
 				<unitPattern count="other">{0} ka mga milligram kada deciliter</unitPattern>
@@ -3408,7 +3408,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="graphics-dot">
 				<unitPattern count="one">{0} dot</unitPattern>
-				<unitPattern count="other">{0} dot</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>radyus sa yuta</displayName>
@@ -3963,7 +3963,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<unit type="concentr-karat">
 				<displayName>mga karat</displayName>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<unitPattern count="one">{0} mg/dL</unitPattern>
 				<unitPattern count="other">{0} mg/dL</unitPattern>
 			</unit>
@@ -4149,7 +4149,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName>m</displayName>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>mga µmeter</displayName>
+				<displayName>mga μmeter</displayName>
 			</unit>
 			<unit type="length-mile">
 				<displayName>mga milya</displayName>

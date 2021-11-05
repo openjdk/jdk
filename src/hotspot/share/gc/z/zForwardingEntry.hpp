@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@
 
 class ZForwardingEntry {
   friend struct PrimitiveConversions::Translate<ZForwardingEntry>;
+  friend class VMStructs;
 
 private:
   typedef ZBitField<uint64_t, bool,   0,   1> field_populated;

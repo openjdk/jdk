@@ -375,10 +375,19 @@ enum SignatureScheme {
             AlgorithmConstraints constraints,
             List<ProtocolVersion> activeProtocols) {
         List<SignatureScheme> supported = new LinkedList<>();
-        for (SignatureScheme ss: SignatureScheme.values()) {
-            if (!ss.isAvailable ||
-                    (!config.signatureSchemes.isEmpty() &&
-                        !config.signatureSchemes.contains(ss))) {
+
+        // If config.signatureSchemes is non-empty then it means that
+        // it was defined by a System property.  Per
+        // SSLConfiguration.getCustomizedSignatureScheme() the list will
+        // only contain schemes that are in the enum.
+        // Otherwise, use the enum constants (converted to a List).
+        List<SignatureScheme> schemesToCheck =
+                config.signatureSchemes.isEmpty() ?
+                    Arrays.asList(SignatureScheme.values()) :
+                    config.signatureSchemes;
+
+        for (SignatureScheme ss: schemesToCheck) {
+            if (!ss.isAvailable) {
                 if (SSLLogger.isOn &&
                         SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.finest(

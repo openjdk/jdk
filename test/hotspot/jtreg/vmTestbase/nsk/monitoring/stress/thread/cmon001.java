@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public class cmon001 {
 
     private static volatile boolean testFailed = false;
     private static Integer calculated;
+    private static String calculatedSync = "abc";
     private static Object common = new Object();
     private static Object[] finishBarriers;
     private static long[] startTime;
@@ -83,7 +84,7 @@ public class cmon001 {
         for (int time = 0; time < ITERATIONS; time++) {
             log.display("Iteration: " + time);
 
-            calculated = new Integer(0);
+            calculated = Integer.valueOf(0);
 
             // Start all threads. Half of them are user threads,
             // others - daemon.
@@ -203,8 +204,8 @@ public class cmon001 {
 
             // Increase "calculated" value by one
             synchronized (common) {
-                synchronized (calculated) {
-                    calculated = new Integer(calculated.intValue() + 1);
+                synchronized (calculatedSync) {
+                    calculated = Integer.valueOf(calculated.intValue() + 1);
                 }
             }
 

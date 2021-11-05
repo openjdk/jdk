@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,22 +46,6 @@ SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset) :
   // BarrierSet thread attachment protocol.
   _active(false)
 { }
-
-void SATBMarkQueue::flush() {
-  // Filter now to possibly save work later.  If filtering empties the
-  // buffer then flush_impl can deallocate the buffer.
-  filter();
-  flush_impl();
-}
-
-void SATBMarkQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
-  assert(SafepointSynchronize::is_at_safepoint(),
-         "SATB queues must only be processed at safepoints");
-  if (_buf != NULL) {
-    cl->do_buffer(&_buf[index()], size());
-    reset();
-  }
-}
 
 #ifndef PRODUCT
 // Helpful for debugging
@@ -235,6 +219,13 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) 
   }
 }
 
+void SATBMarkQueueSet::flush_queue(SATBMarkQueue& queue) {
+  // Filter now to possibly save work later.  If filtering empties the
+  // buffer then flush_queue can deallocate the buffer.
+  filter(queue);
+  PtrQueueSet::flush_queue(queue);
+}
+
 void SATBMarkQueueSet::enqueue_known_active(SATBMarkQueue& queue, oop obj) {
   assert(queue.is_active(), "precondition");
   void* value = cast_from_oop<void*>(obj);
@@ -359,12 +350,12 @@ void SATBMarkQueueSet::abandon_partial_marking() {
   abandon_completed_buffers();
 
   class AbandonThreadQueueClosure : public ThreadClosure {
-    SATBMarkQueueSet* _qset;
+    SATBMarkQueueSet& _qset;
   public:
-    AbandonThreadQueueClosure(SATBMarkQueueSet* qset) : _qset(qset) {}
+    AbandonThreadQueueClosure(SATBMarkQueueSet& qset) : _qset(qset) {}
     virtual void do_thread(Thread* t) {
-      _qset->satb_queue_for_thread(t).reset();
+      _qset.reset_queue(_qset.satb_queue_for_thread(t));
     }
-  } closure(this);
+  } closure(*this);
   Threads::threads_do(&closure);
 }

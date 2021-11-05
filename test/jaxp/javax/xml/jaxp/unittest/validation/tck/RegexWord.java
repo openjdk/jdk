@@ -36,7 +36,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 8142900
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.tck.RegexWord
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.tck.RegexWord
  * @run testng/othervm validation.tck.RegexWord
  * @summary Verifies that all characters except the set of "punctuation",
  * "separator" and "other" characters are accepted by \w [#x0000-#x10FFFF]-[\p{P}\p{Z}\p{C}]

@@ -55,7 +55,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.ResolverTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.xml.sax.ptests.ResolverTest
  * @run testng/othervm org.xml.sax.ptests.ResolverTest
  */
 @Test

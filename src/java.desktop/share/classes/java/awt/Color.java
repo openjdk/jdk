@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 package java.awt;
 
-import java.beans.ConstructorProperties;
-import java.awt.image.ColorModel;
+import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.awt.color.ColorSpace;
+import java.awt.image.ColorModel;
+import java.beans.ConstructorProperties;
+import java.io.Serial;
 
 /**
  * The {@code Color} class is used to encapsulate colors in the default
@@ -253,9 +254,10 @@ public class Color implements Paint, java.io.Serializable {
      */
     private ColorSpace cs = null;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = 118526816881161077L;
 
     /**

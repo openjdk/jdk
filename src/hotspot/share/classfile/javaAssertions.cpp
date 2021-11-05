@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 #include "precompiled.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
@@ -104,14 +106,14 @@ oop JavaAssertions::createAssertionStatusDirectives(TRAPS) {
   int len;
   typeArrayOop t;
   len = OptionList::count(_packages);
-  objArrayOop pn = oopFactory::new_objArray(SystemDictionary::String_klass(), len, CHECK_NULL);
+  objArrayOop pn = oopFactory::new_objArray(vmClasses::String_klass(), len, CHECK_NULL);
   objArrayHandle pkgNames (THREAD, pn);
   t = oopFactory::new_typeArray(T_BOOLEAN, len, CHECK_NULL);
   typeArrayHandle pkgEnabled(THREAD, t);
   fillJavaArrays(_packages, len, pkgNames, pkgEnabled, CHECK_NULL);
 
   len = OptionList::count(_classes);
-  objArrayOop cn = oopFactory::new_objArray(SystemDictionary::String_klass(), len, CHECK_NULL);
+  objArrayOop cn = oopFactory::new_objArray(vmClasses::String_klass(), len, CHECK_NULL);
   objArrayHandle classNames (THREAD, cn);
   t = oopFactory::new_typeArray(T_BOOLEAN, len, CHECK_NULL);
   typeArrayHandle classEnabled(THREAD, t);
@@ -126,7 +128,8 @@ oop JavaAssertions::createAssertionStatusDirectives(TRAPS) {
 }
 
 void JavaAssertions::fillJavaArrays(const OptionList* p, int len,
-objArrayHandle names, typeArrayHandle enabled, TRAPS) {
+                                    objArrayHandle names,
+                                    typeArrayHandle enabled, TRAPS) {
   // Fill in the parallel names and enabled (boolean) arrays.  Start at the end
   // of the array and work backwards, so the order of items in the arrays
   // matches the order on the command line (the list is in reverse order, since
@@ -134,8 +137,8 @@ objArrayHandle names, typeArrayHandle enabled, TRAPS) {
   int index;
   for (index = len - 1; p != 0; p = p->next(), --index) {
     assert(index >= 0, "length does not match list");
-    Handle s = java_lang_String::create_from_str(p->name(), CHECK);
-    s = java_lang_String::char_converter(s, JVM_SIGNATURE_SLASH, JVM_SIGNATURE_DOT, CHECK);
+    TempNewSymbol name = SymbolTable::new_symbol(p->name());
+    Handle s = java_lang_String::externalize_classname(name, CHECK);
     names->obj_at_put(index, s());
     enabled->bool_at_put(index, p->enabled());
   }

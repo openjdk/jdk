@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 /**
    Provides a simple high-level Http server API, which can be used to build
    embedded HTTP servers. Both "http" and "https" are supported. The API provides
-   a partial implementation of RFC <a href="http://www.ietf.org/rfc/rfc2616.txt">2616</a> (HTTP 1.1)
-   and RFC <a href="http://www.ietf.org/rfc/rfc2818.txt">2818</a> (HTTP over TLS).
+   a partial implementation of RFC <a href="https://www.ietf.org/rfc/rfc2616.txt">2616</a> (HTTP 1.1)
+   and RFC <a href="https://www.ietf.org/rfc/rfc2818.txt">2818</a> (HTTP over TLS).
    Any HTTP functionality not provided by this API can be implemented by application code
    using the API.
    <p>
@@ -120,6 +120,12 @@
         }
     });
    </pre></blockquote>
+   <p>
+   The {@link com.sun.net.httpserver.SimpleFileServer} class offers a simple
+   HTTP file server (intended for testing, development and debugging purposes
+   only). A default implementation is provided via the
+   <a href="{@docRoot}/jdk.httpserver/module-summary.html#entry-point">main entry point</a>
+   of the {@code jdk.httpserver} module.
 
    @since 1.6
  */

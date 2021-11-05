@@ -106,7 +106,7 @@ public class CodeWriter extends BasicWriter {
                 for (InstructionDetailWriter w: detailWriters)
                     w.writeDetails(instr);
                 writeInstr(instr);
-            } catch (ArrayIndexOutOfBoundsException e) {
+            } catch (ArrayIndexOutOfBoundsException | IllegalStateException e) {
                 println(report("error at or after byte " + instr.getPC()));
                 break;
             }

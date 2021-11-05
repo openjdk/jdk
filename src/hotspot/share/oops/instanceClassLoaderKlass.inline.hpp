@@ -25,9 +25,10 @@
 #ifndef SHARE_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP
 #define SHARE_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP
 
+#include "oops/instanceClassLoaderKlass.hpp"
+
 #include "classfile/javaClasses.hpp"
 #include "memory/iterator.hpp"
-#include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
@@ -39,7 +40,7 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* c
   InstanceKlass::oop_oop_iterate<T>(obj, closure);
 
   if (Devirtualizer::do_metadata(closure)) {
-    ClassLoaderData* cld = java_lang_ClassLoader::loader_data_raw(obj);
+    ClassLoaderData* cld = java_lang_ClassLoader::loader_data(obj);
     // cld can be null if we have a non-registered class loader.
     if (cld != NULL) {
       Devirtualizer::do_cld(closure, cld);
@@ -61,7 +62,7 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosur
 
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
-      ClassLoaderData* cld = java_lang_ClassLoader::loader_data_raw(obj);
+      ClassLoaderData* cld = java_lang_ClassLoader::loader_data(obj);
       // cld can be null if we have a non-registered class loader.
       if (cld != NULL) {
         Devirtualizer::do_cld(closure, cld);

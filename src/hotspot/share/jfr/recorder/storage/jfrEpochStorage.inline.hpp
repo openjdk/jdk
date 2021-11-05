@@ -26,6 +26,7 @@
 #define SHARE_JFR_RECORDER_STORAGE_JFREPOCHSTORAGE_INLINE_HPP
 
 #include "jfr/recorder/storage/jfrEpochStorage.hpp"
+
 #include "jfr/recorder/storage/jfrMemorySpace.inline.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
 #include "jfr/utilities/jfrConcurrentQueue.inline.hpp"

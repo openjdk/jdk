@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.security.AccessController;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
-import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
@@ -83,6 +82,7 @@ public class AccessibleObject implements AnnotatedElement {
     }
 
     static void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // SecurityConstants.ACCESS_PERMISSION is used to check
@@ -324,7 +324,6 @@ public class AccessibleObject implements AnnotatedElement {
         if (isClassPublic && declaringModule.isExported(pn, callerModule)) {
             // member is public
             if (Modifier.isPublic(modifiers)) {
-                logIfExportedForIllegalAccess(caller, declaringClass);
                 return true;
             }
 
@@ -332,14 +331,12 @@ public class AccessibleObject implements AnnotatedElement {
             if (Modifier.isProtected(modifiers)
                 && Modifier.isStatic(modifiers)
                 && isSubclassOf(caller, declaringClass)) {
-                logIfExportedForIllegalAccess(caller, declaringClass);
                 return true;
             }
         }
 
         // package is open to caller
         if (declaringModule.isOpen(pn, callerModule)) {
-            logIfOpenedForIllegalAccess(caller, declaringClass);
             return true;
         }
 
@@ -371,30 +368,6 @@ public class AccessibleObject implements AnnotatedElement {
             queryClass = queryClass.getSuperclass();
         }
         return false;
-    }
-
-    private void logIfOpenedForIllegalAccess(Class<?> caller, Class<?> declaringClass) {
-        Module callerModule = caller.getModule();
-        Module targetModule = declaringClass.getModule();
-        // callerModule is null during early startup
-        if (callerModule != null && !callerModule.isNamed() && targetModule.isNamed()) {
-            IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
-            if (logger != null) {
-                logger.logIfOpenedForIllegalAccess(caller, declaringClass, this::toShortString);
-            }
-        }
-    }
-
-    private void logIfExportedForIllegalAccess(Class<?> caller, Class<?> declaringClass) {
-        Module callerModule = caller.getModule();
-        Module targetModule = declaringClass.getModule();
-        // callerModule is null during early startup
-        if (callerModule != null && !callerModule.isNamed() && targetModule.isNamed()) {
-            IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
-            if (logger != null) {
-                logger.logIfExportedForIllegalAccess(caller, declaringClass, this::toShortString);
-            }
-        }
     }
 
     /**
@@ -497,6 +470,7 @@ public class AccessibleObject implements AnnotatedElement {
     /**
      * Constructor: only used by the Java Virtual Machine.
      */
+    @Deprecated(since="17")
     protected AccessibleObject() {}
 
     // Indicates whether language-level access checks are overridden
@@ -510,6 +484,7 @@ public class AccessibleObject implements AnnotatedElement {
     // Reflection factory used by subclasses for creating field,
     // method, and constructor accessors. Note that this is called
     // very early in the bootstrapping process.
+    @SuppressWarnings("removal")
     static final ReflectionFactory reflectionFactory =
         AccessController.doPrivileged(
             new ReflectionFactory.GetReflectionFactoryAction());
@@ -520,12 +495,16 @@ public class AccessibleObject implements AnnotatedElement {
      * <p> Note that any annotation returned by this method is a
      * declaration annotation.
      *
+     * @implSpec
+     * The default implementation throws {@link
+     * UnsupportedOperationException}; subclasses should override this method.
+     *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        throw new AssertionError("All subclasses should override this method");
+        throw new UnsupportedOperationException("All subclasses should override this method");
     }
 
     /**
@@ -545,12 +524,16 @@ public class AccessibleObject implements AnnotatedElement {
      * <p> Note that any annotations returned by this method are
      * declaration annotations.
      *
+     * @implSpec
+     * The default implementation throws {@link
+     * UnsupportedOperationException}; subclasses should override this method.
+     *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
     @Override
     public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
-        throw new AssertionError("All subclasses should override this method");
+        throw new UnsupportedOperationException("All subclasses should override this method");
     }
 
     /**
@@ -606,11 +589,15 @@ public class AccessibleObject implements AnnotatedElement {
      * <p> Note that any annotations returned by this method are
      * declaration annotations.
      *
+     * @implSpec
+     * The default implementation throws {@link
+     * UnsupportedOperationException}; subclasses should override this method.
+     *
      * @since 1.5
      */
     @Override
     public Annotation[] getDeclaredAnnotations()  {
-        throw new AssertionError("All subclasses should override this method");
+        throw new UnsupportedOperationException("All subclasses should override this method");
     }
 
     // Shared access checking logic.
@@ -729,9 +716,6 @@ public class AccessibleObject implements AnnotatedElement {
             // access denied
             return false;
         }
-
-        // access okay
-        logIfExportedForIllegalAccess(caller, memberClass);
 
         // Success: Update the cache.
         Object cache = (targetClass != null

@@ -36,10 +36,10 @@ import com.sun.org.apache.bcel.internal.Const;
  */
 public final class InnerClass implements Cloneable, Node {
 
-    private int inner_class_index;
-    private int outer_class_index;
-    private int inner_name_index;
-    private int inner_access_flags;
+    private int innerClassIndex;
+    private int outerClassIndex;
+    private int innerNameIndex;
+    private int innerAccessFlags;
 
 
     /**
@@ -63,17 +63,17 @@ public final class InnerClass implements Cloneable, Node {
 
 
     /**
-     * @param inner_class_index Class index in constant pool of inner class
-     * @param outer_class_index Class index in constant pool of outer class
-     * @param inner_name_index  Name index in constant pool of inner class
-     * @param inner_access_flags Access flags of inner class
+     * @param innerClassIndex Class index in constant pool of inner class
+     * @param outerClassIndex Class index in constant pool of outer class
+     * @param innerNameIndex  Name index in constant pool of inner class
+     * @param innerAccessFlags Access flags of inner class
      */
-    public InnerClass(final int inner_class_index, final int outer_class_index, final int inner_name_index,
-            final int inner_access_flags) {
-        this.inner_class_index = inner_class_index;
-        this.outer_class_index = outer_class_index;
-        this.inner_name_index = inner_name_index;
-        this.inner_access_flags = inner_access_flags;
+    public InnerClass(final int innerClassIndex, final int outerClassIndex, final int innerNameIndex,
+            final int innerAccessFlags) {
+        this.innerClassIndex = innerClassIndex;
+        this.outerClassIndex = outerClassIndex;
+        this.innerNameIndex = innerNameIndex;
+        this.innerAccessFlags = innerAccessFlags;
     }
 
 
@@ -97,10 +97,10 @@ public final class InnerClass implements Cloneable, Node {
      * @throws IOException
      */
     public void dump( final DataOutputStream file ) throws IOException {
-        file.writeShort(inner_class_index);
-        file.writeShort(outer_class_index);
-        file.writeShort(inner_name_index);
-        file.writeShort(inner_access_flags);
+        file.writeShort(innerClassIndex);
+        file.writeShort(outerClassIndex);
+        file.writeShort(innerNameIndex);
+        file.writeShort(innerAccessFlags);
     }
 
 
@@ -108,7 +108,7 @@ public final class InnerClass implements Cloneable, Node {
      * @return access flags of inner class.
      */
     public int getInnerAccessFlags() {
-        return inner_access_flags;
+        return innerAccessFlags;
     }
 
 
@@ -116,7 +116,7 @@ public final class InnerClass implements Cloneable, Node {
      * @return class index of inner class.
      */
     public int getInnerClassIndex() {
-        return inner_class_index;
+        return innerClassIndex;
     }
 
 
@@ -124,7 +124,7 @@ public final class InnerClass implements Cloneable, Node {
      * @return name index of inner class.
      */
     public int getInnerNameIndex() {
-        return inner_name_index;
+        return innerNameIndex;
     }
 
 
@@ -132,39 +132,39 @@ public final class InnerClass implements Cloneable, Node {
      * @return class index of outer class.
      */
     public int getOuterClassIndex() {
-        return outer_class_index;
+        return outerClassIndex;
     }
 
 
     /**
-     * @param inner_access_flags access flags for this inner class
+     * @param innerAccessFlags access flags for this inner class
      */
-    public void setInnerAccessFlags( final int inner_access_flags ) {
-        this.inner_access_flags = inner_access_flags;
+    public void setInnerAccessFlags( final int innerAccessFlags ) {
+        this.innerAccessFlags = innerAccessFlags;
     }
 
 
     /**
-     * @param inner_class_index index into the constant pool for this class
+     * @param innerClassIndex index into the constant pool for this class
      */
-    public void setInnerClassIndex( final int inner_class_index ) {
-        this.inner_class_index = inner_class_index;
+    public void setInnerClassIndex( final int innerClassIndex ) {
+        this.innerClassIndex = innerClassIndex;
     }
 
 
     /**
-     * @param inner_name_index index into the constant pool for this class's name
+     * @param innerNameIndex index into the constant pool for this class's name
      */
-    public void setInnerNameIndex( final int inner_name_index ) { // TODO unused
-        this.inner_name_index = inner_name_index;
+    public void setInnerNameIndex( final int innerNameIndex ) { // TODO unused
+        this.innerNameIndex = innerNameIndex;
     }
 
 
     /**
-     * @param outer_class_index index into the constant pool for the owning class
+     * @param outerClassIndex index into the constant pool for the owning class
      */
-    public void setOuterClassIndex( final int outer_class_index ) { // TODO unused
-        this.outer_class_index = outer_class_index;
+    public void setOuterClassIndex( final int outerClassIndex ) { // TODO unused
+        this.outerClassIndex = outerClassIndex;
     }
 
 
@@ -173,34 +173,34 @@ public final class InnerClass implements Cloneable, Node {
      */
     @Override
     public String toString() {
-        return "InnerClass(" + inner_class_index + ", " + outer_class_index + ", "
-                + inner_name_index + ", " + inner_access_flags + ")";
+        return "InnerClass(" + innerClassIndex + ", " + outerClassIndex + ", "
+                + innerNameIndex + ", " + innerAccessFlags + ")";
     }
 
 
     /**
      * @return Resolved string representation
      */
-    public String toString( final ConstantPool constant_pool ) {
+    public String toString( final ConstantPool constantPool ) {
         String outer_class_name;
         String inner_name;
-        String inner_class_name = constant_pool.getConstantString(inner_class_index,
+        String inner_class_name = constantPool.getConstantString(innerClassIndex,
                 Const.CONSTANT_Class);
         inner_class_name = Utility.compactClassName(inner_class_name, false);
-        if (outer_class_index != 0) {
-            outer_class_name = constant_pool.getConstantString(outer_class_index,
+        if (outerClassIndex != 0) {
+            outer_class_name = constantPool.getConstantString(outerClassIndex,
                     Const.CONSTANT_Class);
             outer_class_name = " of class " + Utility.compactClassName(outer_class_name, false);
         } else {
             outer_class_name = "";
         }
-        if (inner_name_index != 0) {
-            inner_name = ((ConstantUtf8) constant_pool.getConstant(inner_name_index,
+        if (innerNameIndex != 0) {
+            inner_name = ((ConstantUtf8) constantPool.getConstant(innerNameIndex,
                     Const.CONSTANT_Utf8)).getBytes();
         } else {
             inner_name = "(anonymous)";
         }
-        String access = Utility.accessToString(inner_access_flags, true);
+        String access = Utility.accessToString(innerAccessFlags, true);
         access = access.isEmpty() ? "" : (access + " ");
         return "  " + access + inner_name + "=class " + inner_class_name + outer_class_name;
     }

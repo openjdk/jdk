@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,7 +220,7 @@ public class popframe003p extends Thread {
             charGlFld = 'd';
             booleanGlFld = false;
             strGlFld = "nstnc fld";
-            objGl = new Integer(1973);
+            objGl = Integer.valueOf(1973);
 
             // for the global public instance fields
             bytePubGlFld = 7;
