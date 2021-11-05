@@ -2269,12 +2269,10 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Phi(...MergeMem(m0, m1:AT1, m2:AT2)...) into
         //     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
         PhaseIterGVN* igvn = phase->is_IterGVN();
-        Node* hook = new Node(1);
         PhiNode* new_base = (PhiNode*) clone();
         // Must eagerly register phis, since they participate in loops.
         if (igvn) {
           igvn->register_new_node_with_optimizer(new_base);
-          hook->add_req(new_base);
         }
         MergeMemNode* result = MergeMemNode::make(new_base);
         for (uint i = 1; i < req(); ++i) {
@@ -2289,7 +2287,6 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
                 made_new_phi = true;
                 if (igvn) {
                   igvn->register_new_node_with_optimizer(new_phi);
-                  hook->add_req(new_phi);
                 }
                 mms.set_memory(new_phi);
               }
@@ -2308,13 +2305,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             }
           }
         }
-        // now transform the new nodes, and return the mergemem
-        for (MergeMemStream mms(result); mms.next_non_empty(); ) {
-          Node* phi = mms.memory();
-          mms.set_memory(phase->transform(phi));
-        }
-        hook->destruct(igvn);
-        // Replace self with the result.
+        // Replace self with the result without transforming the new phi nodes now. This prevents a
+        // potential dead loop because this phi is still alive during the transformations and could
+        // let a dead loop check fail even though there is one without this phi.
         return result;
       }
     }
