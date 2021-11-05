@@ -130,9 +130,9 @@ import java.util.Optional;
  *     <li>The scope of {@code R} is {@linkplain ResourceScope#keepAlive(ResourceScope) kept alive} (and cannot be closed) during the invocation.
  *</ul>
  * <p>
- * Upcall stubs are safer to work with, as the linker runtime can validate the type of the target method
- * handle against the provided function descriptor and report an error if any mismatch is detected. That said, JVM
- * crashes might still occur if the native code casts the function pointer associated with an upcall stub to a type
+ * When creating upcall stubs the linker runtime validates the type of the target method handle against the provided
+ * function descriptor and report an error if any mismatch is detected. As for downcalls, JVM crashes might occur,
+ * if the native code casts the function pointer associated with an upcall stub to a type
  * that is incompatible with the provided function descriptor. Moreover, if the target method
  * handle associated with an upcall stub returns a {@linkplain MemoryAddress native address}, clients must ensure
  * that this address cannot become invalid after the upcall completes. This can lead to unspecified behavior,
