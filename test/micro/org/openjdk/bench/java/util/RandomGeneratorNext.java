@@ -36,8 +36,7 @@ import java.util.random.RandomGeneratorFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Tests java.util.random.RandomGenerator's different random number generators 
- * which use Math.unsignedMultiplyHigh().
+ * Tests java.util.random.RandomGenerator's different random number generators which use Math.unsignedMultiplyHigh().
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
