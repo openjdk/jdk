@@ -381,8 +381,8 @@ public abstract class XPathFactory {
      * @param name the property name
      * @param value the value for the property
      *
-     * @throws XPathFactoryConfigurationException if the property name is not
-     * recognized, or the value can not be assigned
+     * @throws IllegalArgumentException if the property name is not recognized,
+     * or the value can not be assigned
      * @throws UnsupportedOperationException if the implementation does not
      * support the method
      * @throws NullPointerException if the {@code name} is {@code null}.
@@ -408,8 +408,7 @@ public abstract class XPathFactory {
      * @param name the property name
      * @return the value of the property.
      *
-     * @throws XPathFactoryConfigurationException if the property name is not
-     * recognized
+     * @throws IllegalArgumentException if the property name is not recognized
      * @throws UnsupportedOperationException if the implementation does not
      * support the method
      * @throws NullPointerException if the {@code name} is {@code null}.
