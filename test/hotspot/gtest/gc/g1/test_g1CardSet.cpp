@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1BufferListFreePool.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -211,7 +212,7 @@ void G1CardSetTest::cardset_basic_test() {
                                 8,
                                 FullCardSetThreshold,
                                 CardsPerRegion);
-  G1CardSetFreePool free_pool(config.num_mem_object_types());
+  G1BufferListFreePool free_pool(config.num_mem_object_types());
   G1CardSetMemoryManager mm(&config, &free_pool);
 
   {
@@ -429,7 +430,7 @@ void G1CardSetTest::cardset_mt_test() {
                                 8,
                                 FullCardSetThreshold,
                                 CardsPerRegion);
-  G1CardSetFreePool free_pool(config.num_mem_object_types());
+  G1BufferListFreePool free_pool(config.num_mem_object_types());
   G1CardSetMemoryManager mm(&config, &free_pool);
 
   G1CardSet card_set(&config, &mm);
