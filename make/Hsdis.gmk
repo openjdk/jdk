@@ -42,15 +42,23 @@ ifeq ($(call isTargetOs, windows), true)
   # On windows, we need to "fake" a completely different toolchain using gcc
   # instead of the normal microsoft toolchain. This is quite hacky...
 
+  SYSROOT_FLAGS :=
   MINGW_BASE := x86_64-w64-mingw32
+  $(eval MINGW_VERSION = $(shell $(MINGW_BASE)-gcc -v 2>&1 | grep "gcc version" | cut -d" " -f 3))
+  $(eval MINGW_SYSROOT = $(shell $(MINGW_BASE)-gcc -print-sysroot))
+  ifeq ($(MINGW_SYSROOT), )
+    MINGW_SYSROOT := /usr/$(MINGW_BASE)
+  else
+    SYSROOT_FLAGS := --sysroot=$(MINGW_SYSROOT)
+  endif
 
   $(eval $(call DefineNativeToolchain, TOOLCHAIN_MINGW, \
       CC := $(MINGW_BASE)-gcc, \
       LD := $(MINGW_BASE)-ld, \
       OBJCOPY := $(MINGW_BASE)-objcopy, \
       RC := $(RC), \
-      SYSROOT_CFLAGS := --sysroot=/usr/$(MINGW_BASE)/sys-root, \
-      SYSROOT_LDFLAGS := --sysroot=/usr/$(MINGW_BASE)/sys-root, \
+      SYSROOT_CFLAGS := $(SYSROOT_FLAGS), \
+      SYSROOT_LDFLAGS := $(SYSROOT_FLAGS), \
   ))
 
   TOOLCHAIN_TYPE := gcc
@@ -66,9 +74,9 @@ ifeq ($(call isTargetOs, windows), true)
 
   HSDIS_TOOLCHAIN := TOOLCHAIN_MINGW
   HSDIS_TOOLCHAIN_CFLAGS :=
-  HSDIS_TOOLCHAIN_LDFLAGS := -L/usr/lib/gcc/$(MINGW_BASE)/9.2.0 \
-      -L/usr/$(MINGW_BASE)/sys-root/mingw/lib
-  MINGW_DLLCRT := /usr/$(MINGW_BASE)/sys-root/mingw/lib/dllcrt2.o
+  HSDIS_TOOLCHAIN_LDFLAGS := -L/usr/lib/gcc/$(MINGW_BASE)/$(MINGW_VERSION) \
+      -L$(MINGW_SYSROOT)/lib
+  MINGW_DLLCRT := $(MINGW_SYSROOT)/lib/dllcrt2.o
   HSDIS_TOOLCHAIN_LIBS := $(MINGW_DLLCRT) -lmingw32 -lgcc -lgcc_eh -lmoldname \
       -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32
 else
