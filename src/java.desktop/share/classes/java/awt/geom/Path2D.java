@@ -2096,7 +2096,7 @@ public abstract class Path2D implements Shape, Cloneable {
      * implement support for the {@link Shape#getBounds2D()} method.
      * </p>
      * @return an instance of {@code Rectangle2D} that is a high-precision bounding box of the
-         *         {@code PathIterator}.
+     *         {@code PathIterator}.
      * @see Shape#getBounds2D()
      */
     public static Rectangle2D getBounds2D(PathIterator pi) {
@@ -2108,12 +2108,12 @@ public abstract class Path2D implements Shape, Cloneable {
         double[] coords = new double[6];
         double[] tExtrema = new double[3];
         boolean isEmpty = true;
-        double leftX = 0;
-        double rightX = 0;
-        double topY = 0;
-        double bottomY = 0;
-        double lastX = 0;
-        double lastY = 0;
+        double leftX = 0.0;
+        double rightX = 0.0;
+        double topY = 0.0;
+        double bottomY = 0.0;
+        double lastX = 0.0;
+        double lastY = 0.0;
 
         pathIteratorLoop : while (!pi.isDone()) {
             int type = pi.currentSegment(coords);
@@ -2143,10 +2143,10 @@ public abstract class Path2D implements Shape, Cloneable {
                 topY = bottomY = endY;
             } else {
                 // extend our rectangle to cover the point at t = 1:
-                leftX = endX < leftX ? endX : leftX;
-                rightX = endX > rightX ? endX : rightX;
-                topY = endY < topY ? endY : topY;
-                bottomY = endY > bottomY ? endY : bottomY;
+                leftX = (endX < leftX) ? endX : leftX;
+                rightX = (endX > rightX) ? endX : rightX;
+                topY = (endY < topY) ? endY : topY;
+                bottomY = (endY > bottomY) ? endY : bottomY;
             }
 
             // here's the slightly trickier part: examine quadratic and cubic
@@ -2156,46 +2156,50 @@ public abstract class Path2D implements Shape, Cloneable {
             if (type == PathIterator.SEG_QUADTO) {
                 definedParametricEquations = true;
 
-                x_coeff[3] = 0;
-                x_coeff[2] = lastX - 2 * coords[0] + coords[2];
-                x_coeff[1] = -2 * lastX + 2 * coords[0];
+                x_coeff[3] = 0.0;
+                x_coeff[2] = lastX - 2.0 * coords[0] + coords[2];
+                x_coeff[1] = -2.0 * lastX + 2.0 * coords[0];
                 x_coeff[0] = lastX;
 
                 y_coeff[3] = 0;
-                y_coeff[2] = lastY - 2 * coords[1] + coords[3];
-                y_coeff[1] = -2 * lastY + 2 * coords[1];
+                y_coeff[2] = lastY - 2.0 * coords[1] + coords[3];
+                y_coeff[1] = -2.0 * lastY + 2.0 * coords[1];
                 y_coeff[0] = lastY;
             } else if (type == PathIterator.SEG_CUBICTO) {
                 definedParametricEquations = true;
 
-                x_coeff[3] = -lastX + 3 * coords[0] - 3 * coords[2] + coords[4];
-                x_coeff[2] = 3 * lastX - 6 * coords[0] + 3 * coords[2];
-                x_coeff[1] = -3 * lastX + 3 * coords[0];
+                x_coeff[3] = -lastX + 3.0 * coords[0] - 3.0 * coords[2] + coords[4];
+                x_coeff[2] = 3.0 * lastX - 6.0 * coords[0] + 3.0 * coords[2];
+                x_coeff[1] = -3.0 * lastX + 3.0 * coords[0];
                 x_coeff[0] = lastX;
 
-                y_coeff[3] = -lastY + 3 * coords[1] - 3 * coords[3] + coords[5];
-                y_coeff[2] = 3 * lastY - 6 * coords[1] + 3 * coords[3];
-                y_coeff[1] = -3 * lastY + 3 * coords[1];
+                y_coeff[3] = -lastY + 3.0 * coords[1] - 3.0 * coords[3] + coords[5];
+                y_coeff[2] = 3.0 * lastY - 6.0 * coords[1] + 3.0 * coords[3];
+                y_coeff[1] = -3.0 * lastY + 3.0 * coords[1];
                 y_coeff[0] = lastY;
             } else {
                 definedParametricEquations = false;
             }
 
             if (definedParametricEquations) {
-                int tExtremaCount = Curve.getPossibleExtremaInCubicEquation(x_coeff, tExtrema);
+                int tExtremaCount = Curve.findExtrema(x_coeff, tExtrema);
                 for(int i = 0; i < tExtremaCount; i++) {
                     double t = tExtrema[i];
-                    double x = x_coeff[0] + x_coeff[1] * t + x_coeff[2] * t * t + x_coeff[3] * t * t * t;
-                    leftX = x < leftX ? x : leftX;
-                    rightX = x > rightX ? x : rightX;
+                    if (t > 0 && t < 1) {
+                        double x = x_coeff[0] + t * (x_coeff[1] + t * (x_coeff[2] + t * x_coeff[3]));
+                        leftX = (x < leftX) ? x : leftX;
+                        rightX = (x > rightX) ? x : rightX;
+                    }
                 }
 
-                tExtremaCount = Curve.getPossibleExtremaInCubicEquation(y_coeff, tExtrema);
+                tExtremaCount = Curve.findExtrema(y_coeff, tExtrema);
                 for(int i = 0; i < tExtremaCount; i++) {
                     double t = tExtrema[i];
-                    double y = y_coeff[0] + y_coeff[1] * t + y_coeff[2] * t * t + y_coeff[3] * t * t * t;
-                    topY = y < topY ? y : topY;
-                    bottomY = y > bottomY ? y : bottomY;
+                    if (t > 0 && t < 1) {
+                        double y = y_coeff[0] + t * (y_coeff[1] + t * (y_coeff[2] + t * y_coeff[3]));
+                        topY = (y < topY) ? y : topY;
+                        bottomY = (y > bottomY) ? y : bottomY;
+                    }
                 }
             }
 
