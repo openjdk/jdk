@@ -44,6 +44,7 @@ import javax.lang.model.element.ExecutableElement;
  * @author Scott Seligman
  * @author Peter von der Ah&eacute;
  * @see ExecutableElement#getReturnType()
+ * @see javax.lang.model.util.Types#getNoType(TypeKind)
  * @since 1.6
  */
 

@@ -35,6 +35,7 @@ package javax.lang.model.type;
  * @author Peter von der Ah&eacute;
  * @jls 3.10.7 The Null Literal
  * @jls 4.1 The Kinds of Types and Values
+ * @see javax.lang.model.util.Types#getNullType()
  * @since 1.6
  */
 

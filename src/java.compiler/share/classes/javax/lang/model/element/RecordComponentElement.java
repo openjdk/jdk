@@ -28,6 +28,7 @@ package javax.lang.model.element;
 /**
  * Represents a record component.
  *
+ * @jls 8.10.1 Record Components
  * @since 16
  */
 public interface RecordComponentElement extends Element {

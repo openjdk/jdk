@@ -59,7 +59,7 @@ import javax.lang.model.util.*;
  *
  * <p>Methods to accommodate new language constructs are expected to
  * be added as default methods to provide strong source compatibility,
- * as done for {@link visitModule visitModule}. The implementations of
+ * as done for {@link visitModule visitModule} and {@link visitRecordComponent visitRecordComponent}. The implementations of
  * the default methods will in turn call {@link visitUnknown
  * visitUnknown}, behavior that will be overridden in concrete
  * visitors supporting the source version with the new language

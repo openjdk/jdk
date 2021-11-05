@@ -63,6 +63,8 @@ public enum SourceVersion {
      *  14: switch expressions (pattern matching and records in
      *      preview, text blocks in preview again)
      *  15: text blocks (records and pattern matching in preview again)
+     *  16: records and pattern matching
+     *  17: sealed classes, floating-point always strict
      */
 
     /**
@@ -184,6 +186,7 @@ public enum SourceVersion {
     /**
      * The version recognized by the Java Platform, Standard Edition
      * 12.
+     * No major changes from the prior release.
      *
      * @since 12
      */
@@ -192,6 +195,7 @@ public enum SourceVersion {
     /**
      * The version recognized by the Java Platform, Standard Edition
      * 13.
+     * No major changes from the prior release.
      *
      * @since 13
      */
@@ -221,8 +225,8 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 16.
      *
-     * Additions in this release include pattern matching for {@code
-     * instanceof} and records.
+     * Additions in this release include records and pattern matching for {@code
+     * instanceof}.
      *
      * @since 16
      */
