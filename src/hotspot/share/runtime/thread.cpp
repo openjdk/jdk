@@ -441,10 +441,8 @@ void Thread::check_for_dangling_thread_pointer(Thread *thread) {
 // with the calling Thread.
 //
 bool Thread::is_JavaThread_protected(const JavaThread* p, bool checkTLHOnly) {
-  Thread* current_thread = nullptr;
-  if (checkTLHOnly) {
-    current_thread = Thread::current();
-  } else {
+  Thread* current_thread = Thread::current();
+  if (!checkTLHOnly) {
     // Do the simplest check first:
     if (SafepointSynchronize::is_at_safepoint()) {
       // The target is protected since JavaThreads cannot exit
@@ -460,7 +458,6 @@ bool Thread::is_JavaThread_protected(const JavaThread* p, bool checkTLHOnly) {
     }
 
     // Now make the simple checks based on who the caller is:
-    current_thread = Thread::current();
     if (current_thread == p || Threads_lock->owner() == current_thread) {
       // Target JavaThread is self or calling thread owns the Threads_lock.
       // Second check is the same as Threads_lock->owner_is_self(),
