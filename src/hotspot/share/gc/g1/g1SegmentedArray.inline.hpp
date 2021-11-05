@@ -261,14 +261,14 @@ uint G1SegmentedArray<Elem, flag>::calculate_length() const {
 
 template <class Elem, MEMFLAGS flag>
 template <typename BufferClosure>
-void G1SegmentedArray<Elem, flag>::iterate_nodes(BufferClosure& cloure) const {
+void G1SegmentedArray<Elem, flag>::iterate_nodes(BufferClosure& closure) const {
   G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
 
   assert((cur != nullptr) == (_last != nullptr),
          "If there is at least one element, there must be a last one");
 
   while (cur != nullptr) {
-    cloure.do_buffer(cur, cur->length());
+    closure.do_buffer(cur, cur->length());
     cur = cur->next();
   }
 }
