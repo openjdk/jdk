@@ -370,9 +370,11 @@ public:
 
   void set_chunk_range_dirty(size_t const region_card_idx, size_t const card_length) {
     size_t chunk_idx = region_card_idx >> _scan_chunks_shift;
-    size_t const num_chunks = (card_length + scan_chunk_size_in_cards() - 1) >> _scan_chunks_shift;
-    for (uint i = 0; i < num_chunks; i++) {
-      _region_scan_chunks[chunk_idx++] = true;
+    // Make sure that all chunks that contain the range are marked. Calculate the
+    // chunk of the last card that is actually marked.
+    size_t const end_chunk = (region_card_idx + card_length - 1) >> _scan_chunks_shift;
+    for (; chunk_idx <= end_chunk; chunk_idx++) {
+      _region_scan_chunks[chunk_idx] = true;
     }
   }
 
