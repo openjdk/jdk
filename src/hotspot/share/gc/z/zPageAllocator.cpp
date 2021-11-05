@@ -199,7 +199,6 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
     _used(0),
     _stalled(),
     _nstalled(0),
-    _satisfied(),
     _unmapper(new ZUnmapper(this)),
     _uncommitter(new ZUncommitter(this)),
     _safe_destroy(),
@@ -509,21 +508,14 @@ bool ZPageAllocator::alloc_page_stall(ZPageAllocation* allocation) {
   } while (result == ZPageAllocationStallStartGC);
 
   {
-    //
-    // We grab the lock here for two different reasons:
-    //
-    // 1) Guard deletion of underlying semaphore. This is a workaround for
+    // Guard deletion of underlying semaphore. This is a workaround for
     // a bug in sem_post() in glibc < 2.21, where it's not safe to destroy
     // the semaphore immediately after returning from sem_wait(). The
     // reason is that sem_post() can touch the semaphore after a waiting
     // thread have returned from sem_wait(). To avoid this race we are
     // forcing the waiting thread to acquire/release the lock held by the
     // posting thread. https://sourceware.org/bugzilla/show_bug.cgi?id=12674
-    //
-    // 2) Guard the list of satisfied pages.
-    //
     ZLocker<ZLock> locker(&_lock);
-    _satisfied.remove(allocation);
   }
 
   // Send event
@@ -711,7 +703,6 @@ void ZPageAllocator::satisfy_stalled() {
     // Note that we must dequeue the allocation request first, since
     // it will immediately be deallocated once it has been satisfied.
     _stalled.remove(allocation);
-    _satisfied.insert_last(allocation);
     allocation->satisfy(ZPageAllocationStallSuccess);
   }
 }
@@ -882,7 +873,6 @@ void ZPageAllocator::check_out_of_memory() {
 
     // Out of memory, fail allocation request
     _stalled.remove(allocation);
-    _satisfied.insert_last(allocation);
     allocation->satisfy(ZPageAllocationStallFailed);
   }
 }

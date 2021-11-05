@@ -76,7 +76,6 @@ private:
   volatile size_t            _used;
   ZList<ZPageAllocation>     _stalled;
   volatile uint64_t          _nstalled;
-  ZList<ZPageAllocation>     _satisfied;
   ZUnmapper*                 _unmapper;
   ZUncommitter*              _uncommitter;
   mutable ZSafeDelete<ZPage> _safe_destroy;
