@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CardSetFreeMemoryTask.hpp"
+#include "gc/g1/g1BufferListFreeMemoryTask.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1_globals.hpp"

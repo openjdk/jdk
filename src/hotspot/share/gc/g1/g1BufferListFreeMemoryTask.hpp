@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1CARDSETFREEMEMORYTASK_HPP
-#define SHARE_GC_G1_G1CARDSETFREEMEMORYTASK_HPP
+#ifndef SHARE_GC_G1_G1BUFFERLISTFREEMEMORYTASK_HPP
+#define SHARE_GC_G1_G1BUFFERLISTFREEMEMORYTASK_HPP
 
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1BufferListFreePool.hpp"
@@ -93,4 +93,4 @@ public:
                         G1BufferListMemoryStats* collection_set_candidate_stats);
 };
 
-#endif // SHARE_GC_G1_G1CARDSETFREEMEMORYTASK_HPP
+#endif // SHARE_GC_G1_G1BUFFERLISTFREEMEMORYTASK_HPP
