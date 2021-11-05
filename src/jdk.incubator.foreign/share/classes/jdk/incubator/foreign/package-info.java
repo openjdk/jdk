@@ -52,11 +52,10 @@ for (int i = 0 ; i < 10 ; i++) {
  *
  * This code creates a <em>native</em> memory segment, that is, a memory segment backed by
  * off-heap memory; the size of the segment is 40 bytes, enough to store 10 values of the primitive type {@code int}.
- * Inside a loop, we then initialize the contents of the memory segment using the
- * {@link jdk.incubator.foreign.MemorySegment#setAtIndex(ValueLayout.OfInt, long, int)} dereference method. Note how
- * the dereference method accepts a {@linkplain jdk.incubator.foreign.ValueLayout value layout},
- * which specifies the size, alignment constraints, byte order as well
- * as the Java type ({@code int}, in this case) associated with the dereference operation. More specifically,
+ * Inside a loop, we then initialize the contents of the memory segment; note how the
+ * {@linkplain jdk.incubator.foreign.MemorySegment#setAtIndex(ValueLayout.OfInt, long, int) dereference method}
+ * accepts a {@linkplain jdk.incubator.foreign.ValueLayout value layout}, which specifies the size, alignment constraints,
+ * byte order as well as the Java type ({@code int}, in this case) associated with the dereference operation. More specifically,
  * if we view the memory segment as a set of 10 adjacent slots, {@code s[i]}, where {@code 0 <= i < 10},
  * where the size of each slot is exactly 4 bytes, the initialization logic above will set each slot
  * so that {@code s[i] = i}, again where {@code 0 <= i < 10}.
@@ -132,9 +131,9 @@ try (ResourceScope scope = ResourceScope.newConfinedScope()) {
  * the method handle invocation (here performed using {@link java.lang.invoke.MethodHandle#invoke(java.lang.Object...)})
  * into a foreign function call, according to the rules specified by the platform C ABI.
  * The {@link jdk.incubator.foreign.MemorySegment} class also provides many useful methods for
- * interacting with native code, such as converting Java strings into native strings and back
- * (see {@link jdk.incubator.foreign.MemorySegment#setUtf8String(long, java.lang.String)} and
- * {@link jdk.incubator.foreign.MemorySegment#getUtf8String(long)}, respectively), as demonstrated in the above example.
+ * interacting with native code, such as converting Java strings
+ * {@linkplain jdk.incubator.foreign.MemorySegment#setUtf8String(long, java.lang.String) into} native strings and
+ * {@linkplain jdk.incubator.foreign.MemorySegment#getUtf8String(long) back}, as demonstrated in the above example.
  *
  * <h3>Foreign addresses</h3>
  *
@@ -145,8 +144,9 @@ try (ResourceScope scope = ResourceScope.newConfinedScope()) {
  * <p>
  * Raw pointers are modelled using the {@link jdk.incubator.foreign.MemoryAddress} class. When clients receive a
  * memory address instance from a foreign function call, they can perform memory dereference on it directly,
- * using one of the many <em>unsafe</em> dereference methods provided
- * (see {@link jdk.incubator.foreign.MemoryAddress#get(jdk.incubator.foreign.ValueLayout.OfInt, long)}):
+ * using one of the many <em>unsafe</em>
+ * {@linkplain jdk.incubator.foreign.MemoryAddress#get(jdk.incubator.foreign.ValueLayout.OfInt, long) dereference methods}
+ * provided:
  *
  * <pre>{@code
 ...
@@ -154,10 +154,11 @@ MemoryAddress addr = ... //obtain address from native code
 int x = addr.get(ValueLayout.JAVA_INT, 0);
  * }</pre>
  *
- * Alternatively, the client can create a memory segment <em>unsafely</em>, using the
- * {@link jdk.incubator.foreign.MemorySegment#ofAddressNative(jdk.incubator.foreign.MemoryAddress, long, jdk.incubator.foreign.ResourceScope)} factory.
- * This allows the client to inject extra knowledge about spatial bounds which might, for instance, be available in the documentation of the foreign function
- * which produced the native address. Here is how an unsafe segment can be created from a native address:
+ * Alternatively, the client can
+ * {@linkplain jdk.incubator.foreign.MemorySegment#ofAddressNative(jdk.incubator.foreign.MemoryAddress, long, jdk.incubator.foreign.ResourceScope) create}
+ * a memory segment <em>unsafely</em>. This allows the client to inject extra knowledge about spatial bounds which might,
+ * for instance, be available in the documentation of the foreign function which produced the native address.
+ * Here is how an unsafe segment can be created from a native address:
  *
  * <pre>{@code
 ResourceScope scope = ... // initialize a resource scope object
@@ -184,39 +185,44 @@ class IntComparator {
  * method, as follows:
  *
  * <pre>{@code
+FunctionDescriptor intCompareDescriptor = FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS);
 MethodHandle intCompareHandle = MethodHandles.lookup().findStatic(IntComparator.class,
                                                    "intCompare",
-                                                   MethodType.methodType(int.class, MemoryAddress.class, MemoryAddress.class));
+                                                   CLinker.upcallType(comparFunction));
  * }</pre>
  *
- * Now that we have a method handle instance, we can link it into a fresh native memory address, using the {@link jdk.incubator.foreign.CLinker} interface, as follows:
+ * As before, we need to create a {@link jdk.incubator.foreign.FunctionDescriptor} instance, this time describing the signature
+ * of the function pointer we want to create. The descriptor can be used to
+ * {@linkplain jdk.incubator.foreign.CLinker#upcallType(jdk.incubator.foreign.FunctionDescriptor) derive} a method type
+ * that can be used to lookup the method handle for {@code IntComparator.intCompare}.
+ * <p>
+ * Now that we have a method handle instance, we can turn it into a fresh function pointer,
+ * using the {@link jdk.incubator.foreign.CLinker} interface, as follows:
  *
  * <pre>{@code
 ResourceScope scope = ...
 Addressable comparFunc = CLinker.systemCLinker().upcallStub(
-     intCompareHandle,
-     FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
-     scope
+     intCompareHandle, intCompareDescriptor, scope);
 );
  * }</pre>
  *
- * As before, we need to provide a {@link jdk.incubator.foreign.FunctionDescriptor} instance describing the signature
- * of the function pointer we want to create; this descriptor allows the linker to determine the
- * sequence of steps which allow foreign code to call the stub for {@code intCompareHandle} according to the rules specified
- * by the platform C ABI. The lifecycle of the stub returned by
- * {@link jdk.incubator.foreign.CLinker#upcallStub(java.lang.invoke.MethodHandle, jdk.incubator.foreign.FunctionDescriptor, jdk.incubator.foreign.ResourceScope)}
- * is tied to the {@linkplain jdk.incubator.foreign.ResourceScope resource scope} parameter passed to that method. This
- * is made available by the {@link jdk.incubator.foreign.NativeSymbol} instance returned by that method.
+ * The {@link jdk.incubator.foreign.FunctionDescriptor} instance created in the previous step is then used to
+ * {@linkplain jdk.incubator.foreign.CLinker#upcallStub(java.lang.invoke.MethodHandle, jdk.incubator.foreign.FunctionDescriptor, jdk.incubator.foreign.ResourceScope) create}
+ * a new upcall stub; the layouts in the function descriptors allow the linker to determine the sequence of steps which
+ * allow foreign code to call the stub for {@code intCompareHandle} according to the rules specified by the platform C ABI.
+ * The lifecycle of the upcall stub returned by is tied to the {@linkplain jdk.incubator.foreign.ResourceScope resource scope}
+ * provided when the upcall stub is created. This same scope is made available by the {@link jdk.incubator.foreign.NativeSymbol}
+ * instance returned by that method.
  *
  * <a id="restricted"></a>
  * <h2>Restricted methods</h2>
  * Some methods in this package are considered <em>restricted</em>. Restricted methods are typically used to bind native
  * foreign data and/or functions to first-class Java API elements which can then be used directly by clients. For instance
- * the restricted method {@link jdk.incubator.foreign.MemorySegment#ofAddressNative(jdk.incubator.foreign.MemoryAddress, long, jdk.incubator.foreign.ResourceScope)}
+ * the restricted method {@link MemorySegment#ofAddressNative(MemoryAddress, long, ResourceScope)}
  * can be used to create a fresh segment with given spatial bounds out of a native address.
  * <p>
  * Binding foreign data and/or functions is generally unsafe and, if done incorrectly, can result in VM crashes, or memory corruption when the bound Java API element is accessed.
- * For instance, in the case of {@link jdk.incubator.foreign.MemorySegment#ofAddressNative(jdk.incubator.foreign.MemoryAddress, long, jdk.incubator.foreign.ResourceScope)},
+ * For instance, in the case of {@link MemorySegment#ofAddressNative(MemoryAddress, long, ResourceScope)},
  * if the provided spatial bounds are incorrect, a client of the segment returned by that method might crash the VM, or corrupt
  * memory when attempting to dereference said segment. For these reasons, it is crucial for code that calls a restricted method
  * to never pass arguments that might cause incorrect binding of foreign data and/or functions to a Java API.
