@@ -31,11 +31,13 @@
 /*
  * @test
  * @bug 8274736
- * @summary Concurrent read/close of SSLSockets causes SSLSessions to be invalidated unnecessarily
+ * @summary Concurrent read/close of SSLSockets causes SSLSessions to be
+ *          invalidated unnecessarily
  * @library /javax/net/ssl/templates
  * @run main/othervm NoInvalidateSocketException TLSv1.3
  * @run main/othervm NoInvalidateSocketException TLSv1.2
- * @run main/othervm -Djdk.tls.client.enableSessionTicketExtension=false NoInvalidateSocketException TLSv1.2
+ * @run main/othervm -Djdk.tls.client.enableSessionTicketExtension=false
+ *      NoInvalidateSocketException TLSv1.2
  */
 
 
