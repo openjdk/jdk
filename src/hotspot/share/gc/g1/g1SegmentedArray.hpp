@@ -73,6 +73,17 @@ public:
 
   size_t mem_size() const { return sizeof(*this) + (size_t)_num_elems * _elem_size; }
 
+  uint length() const {
+    // _next_allocate might grow larger than _num_elems in multi-thread environments
+    // due to races.
+    return MIN2(_next_allocate, _num_elems);
+  }
+
+  // Copies the (valid) contents of this buffer into the destination.
+  void copy_to(void* dest) const {
+    ::memcpy(dest, _buffer, length() * _elem_size);
+  }
+
   bool is_full() const { return _next_allocate >= _num_elems; }
 };
 
@@ -189,19 +200,23 @@ class G1SegmentedArray {
 private:
   inline G1SegmentedArrayBuffer<flag>* create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev);
 
+  DEBUG_ONLY(uint calculate_length() const;)
+
 public:
   const G1SegmentedArrayBuffer<flag>* first_array_buffer() const { return Atomic::load(&_first); }
 
   uint num_available_nodes() const { return Atomic::load(&_num_available_nodes); }
-  uint num_allocated_nodes() const { return Atomic::load(&_num_allocated_nodes); }
+  uint num_allocated_nodes() const {
+    uint allocated = Atomic::load(&_num_allocated_nodes);
+    assert(calculate_length() == allocated, "Must be");
+    return allocated;
+  }
 
   inline uint elem_size() const;
 
   G1SegmentedArray(const G1SegmentedArrayAllocOptions* buffer_options,
                    G1SegmentedArrayBufferList<flag>* free_buffer_list);
-  ~G1SegmentedArray() {
-    drop_all();
-  }
+  ~G1SegmentedArray();
 
   // Deallocate all buffers to the free buffer list and reset this allocator. Must
   // be called in a globally synchronized area.
@@ -210,6 +225,9 @@ public:
   inline Elem* allocate();
 
   inline uint num_buffers() const;
+
+  template<typename BufferClosure>
+  void iterate_nodes(BufferClosure& closure) const;
 };
 
 #endif //SHARE_GC_G1_G1SEGMENTEDARRAY_HPP
