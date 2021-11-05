@@ -86,12 +86,12 @@
 // MANAGEABLE flags are writeable external product flags.
 //    They are dynamically writeable through the JDK management interface
 //    (com.sun.management.HotSpotDiagnosticMXBean API) and also through JConsole.
-//    These flags are external exported interface (see CCC).  The list of
+//    These flags are external exported interface (see CSR).  The list of
 //    manageable flags can be queried programmatically through the management
 //    interface.
 //
 //    A flag can be made as "manageable" only if
-//    - the flag is defined in a CCC as an external exported interface.
+//    - the flag is defined in a CSR request as an external exported interface.
 //    - the VM implementation supports dynamic setting of the flag.
 //      This implies that the VM must *always* query the flag variable
 //      and not reuse state related to the flag state at any given time.

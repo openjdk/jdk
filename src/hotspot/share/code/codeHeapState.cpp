@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "code/codeHeapState.hpp"
 #include "compiler/compileBroker.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sweeper.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -2334,6 +2335,11 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
             Symbol* methSig   = method->signature();
             const char*   methSigS  = (methSig  == NULL) ? NULL : methSig->as_C_string();
             methSigS  = (methSigS  == NULL) ? "<method signature unavailable>" : methSigS;
+            Klass* klass = method->method_holder();
+            assert(klass != nullptr, "No method holder");
+            const char* classNameS = (klass->name() == nullptr) ? "<class name unavailable>" : klass->external_name();
+
+            ast->print("%s.", classNameS);
             ast->print("%s", methNameS);
             ast->print("%s", methSigS);
           } else {

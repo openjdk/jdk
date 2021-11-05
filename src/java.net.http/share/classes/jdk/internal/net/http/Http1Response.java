@@ -71,14 +71,14 @@ class Http1Response<T> {
     private volatile EOFException eof;
     private volatile BodyParser bodyParser;
     // max number of bytes of (fixed length) body to ignore on redirect
-    private final static int MAX_IGNORE = 1024;
+    private static final int MAX_IGNORE = 1024;
 
     // Revisit: can we get rid of this?
     static enum State {INITIAL, READING_HEADERS, READING_BODY, DONE}
     private volatile State readProgress = State.INITIAL;
 
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
-    final static AtomicLong responseCount = new AtomicLong();
+    static final AtomicLong responseCount = new AtomicLong();
     final long id = responseCount.incrementAndGet();
     private Http1HeaderParser hd;
 
@@ -294,7 +294,7 @@ class Http1Response<T> {
      * subscribed.
      * @param <U> The type of response.
      */
-    final static class Http1BodySubscriber<U> implements TrustedSubscriber<U> {
+    static final class Http1BodySubscriber<U> implements TrustedSubscriber<U> {
         final HttpResponse.BodySubscriber<U> userSubscriber;
         final AtomicBoolean completed = new AtomicBoolean();
         volatile Throwable withError;
@@ -585,7 +585,7 @@ class Http1Response<T> {
 
     }
 
-    static abstract class Receiver<T>
+    abstract static class Receiver<T>
             implements Http1AsyncReceiver.Http1AsyncDelegate {
         abstract void start(T parser);
         abstract CompletableFuture<State> completion();
