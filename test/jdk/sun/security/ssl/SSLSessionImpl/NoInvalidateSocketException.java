@@ -35,7 +35,10 @@
  * @library /javax/net/ssl/templates
  * @run main/othervm NoInvalidateSocketException TLSv1.3
  * @run main/othervm NoInvalidateSocketException TLSv1.2
+ * @run main/othervm -Djdk.tls.client.enableSessionTicketExtension=false NoInvalidateSocketException TLSv1.2
  */
+
+
 
 import java.io.*;
 import javax.net.ssl.*;
@@ -49,13 +52,14 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class NoInvalidateSocketException extends SSLSocketTemplate {
-    private static final int ITERATIONS = 5;
+    private static final int ITERATIONS = 10;
 
     // This controls how long the main thread waits before closing the socket.
     // This may need tweaking for different environments to get the timing
     // right.
     private static final int CLOSE_DELAY = 10;
 
+    private static SSLContext clientSSLCtx;
     private static SSLSocket theSSLSocket;
     private static SSLSession theSSLSession;
     private static InputStream theInputStream;
@@ -96,6 +100,14 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
     @Override
     public void runClientApplication(int serverPort) {
         Thread.currentThread().setName("Main Client Thread");
+
+        // Create the SSLContext we'll use for client sockets for the
+        // duration of the test.
+        try {
+            clientSSLCtx = createClientSSLContext();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create client ctx", e);
+        }
 
         // Create the reader thread
         ReaderThread readerThread = new ReaderThread();
@@ -188,13 +200,7 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
     }
 
     private void openSSLSocket() throws IOException {
-        SSLContext ctx;
-        try {
-            ctx = createClientSSLContext();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create client ctx", e);
-        }
-        theSSLSocket = (SSLSocket)ctx.getSocketFactory().
+        theSSLSocket = (SSLSocket)clientSSLCtx.getSocketFactory().
                 createSocket(serverAddress, serverPort);
         if (tlsVersion != null) {
             theSSLSocket.setEnabledProtocols(new String[] { tlsVersion });
