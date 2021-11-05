@@ -955,7 +955,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.in(D).in(C)} hop back to module</td>
+     * <th scope="row" style="text-align:left">{@code CL.in(D).in(C)} hop back to module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -964,7 +964,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1 = privateLookupIn(C1,CL)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1 = privateLookupIn(C1,CL)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -973,7 +973,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1a = privateLookupIn(C,PRI1)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1a = privateLookupIn(C,PRI1)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -982,7 +982,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(C1)} same package</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(C1)} same package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -991,7 +991,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(C1)} different package</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(C1)} different package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1000,7 +1000,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(D)} different module</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(D)} different module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1009,7 +1009,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1018,7 +1018,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1027,7 +1027,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1036,7 +1036,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1045,7 +1045,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1053,7 +1053,7 @@ public class MethodHandles {
      * <td></td>
      * <td style="text-align:center">none</td>
      * <tr>
-     * <td>{@code PRI2 = privateLookupIn(D,CL)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2 = privateLookupIn(D,CL)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -1062,7 +1062,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(D,PRI1)}</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(D,PRI1)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -1071,7 +1071,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(C,PRI2)} fails</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(C,PRI2)} fails</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1080,7 +1080,7 @@ public class MethodHandles {
      * <td style="text-align:center">IAE</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(D2)} same package</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(D2)} same package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1089,7 +1089,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(D2)} different package</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(D2)} different package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1098,7 +1098,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(C1)} hop back to module</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(C1)} hop back to module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1107,7 +1107,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(E)} hop to third module</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(E)} hop to third module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1116,7 +1116,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1125,7 +1125,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1134,7 +1134,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1143,7 +1143,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1152,7 +1152,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1161,7 +1161,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1170,7 +1170,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1179,7 +1179,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1188,7 +1188,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1197,7 +1197,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1206,7 +1206,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB = publicLookup()}</td>
+     * <th scope="row" style="text-align:left">{@code PUB = publicLookup()}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1215,7 +1215,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.in(D)} different module</td>
+     * <th scope="row" style="text-align:left">{@code PUB.in(D)} different module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1224,7 +1224,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.in(D).in(E)} third module</td>
+     * <th scope="row" style="text-align:left">{@code PUB.in(D).in(E)} third module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1233,7 +1233,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.dropLookupMode(UNCONDITIONAL)}</td>
+     * <th scope="row" style="text-align:left">{@code PUB.dropLookupMode(UNCONDITIONAL)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1242,7 +1242,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(C1,PUB)} fails</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(C1,PUB)} fails</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1251,7 +1251,7 @@ public class MethodHandles {
      * <td style="text-align:center">IAE</td>
      * </tr>
      * <tr>
-     * <td>{@code ANY.in(X)}, for inaccessible {@code X}</td>
+     * <th scope="row" style="text-align:left">{@code ANY.in(X)}, for inaccessible {@code X}</th>
      * <td></td>
      * <td></td>
      * <td></td>

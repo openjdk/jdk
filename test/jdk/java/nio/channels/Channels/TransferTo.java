@@ -52,7 +52,7 @@ import static org.testng.Assert.assertTrue;
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng TransferTo
+ * @run testng/othervm TransferTo
  * @bug 8265891
  * @summary tests whether sun.nio.ChannelInputStream.transferTo conforms to the
  *          InputStream.transferTo contract defined in the javadoc

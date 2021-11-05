@@ -1443,14 +1443,22 @@ void ciEnv::record_mh(Thread* thread, oop mh) {
     RecordLocation fp(this, "member");
     record_member(thread, member);
   } else {
-    // Check <MethodHandle subclass>.argL0 field
-    // Probably BoundMethodHandle.Species_L, but we only care if the field exists
-    oop arg = obj_field(mh, "argL0");
-    if (arg != NULL) {
-      RecordLocation fp(this, "argL0");
-      if (arg->klass()->is_instance_klass()) {
-        InstanceKlass* ik2 = InstanceKlass::cast(arg->klass());
-        record_best_dyno_loc(ik2);
+    // Check <MethodHandle subclass>.argL<n> fields
+    // Probably BoundMethodHandle.Species_L*, but we only care if the field exists
+    char arg_name[] = "argLXX";
+    int max_arg = 99;
+    for (int index = 0; index <= max_arg; ++index) {
+      jio_snprintf(arg_name, sizeof (arg_name), "argL%d", index);
+      oop arg = obj_field(mh, arg_name);
+      if (arg != NULL) {
+        RecordLocation fp(this, "%s", arg_name);
+        if (arg->klass()->is_instance_klass()) {
+          InstanceKlass* ik2 = InstanceKlass::cast(arg->klass());
+          record_best_dyno_loc(ik2);
+          record_call_site_obj(thread, arg);
+        }
+      } else {
+        break;
       }
     }
   }
@@ -1459,13 +1467,13 @@ void ciEnv::record_mh(Thread* thread, oop mh) {
 // Process an object found at an invokedynamic/invokehandle call site and record any dynamic locations.
 // Types currently supported are MethodHandle and CallSite.
 // The object is typically the "appendix" object, or Bootstrap Method (BSM) object.
-void ciEnv::record_call_site_obj(Thread* thread, const constantPoolHandle& pool, const Handle obj)
+void ciEnv::record_call_site_obj(Thread* thread, oop obj)
 {
-  if (obj.not_null()) {
-    if (java_lang_invoke_MethodHandle::is_instance(obj())) {
-        record_mh(thread, obj());
-    } else if (java_lang_invoke_ConstantCallSite::is_instance(obj())) {
-      oop target = java_lang_invoke_CallSite::target(obj());
+  if (obj != NULL) {
+    if (java_lang_invoke_MethodHandle::is_instance(obj)) {
+        record_mh(thread, obj);
+    } else if (java_lang_invoke_ConstantCallSite::is_instance(obj)) {
+      oop target = java_lang_invoke_CallSite::target(obj);
       if (target->klass()->is_instance_klass()) {
         RecordLocation fp(this, "target");
         InstanceKlass* ik = InstanceKlass::cast(target->klass());
@@ -1476,7 +1484,7 @@ void ciEnv::record_call_site_obj(Thread* thread, const constantPoolHandle& pool,
 }
 
 // Process an adapter Method* found at an invokedynamic/invokehandle call site and record any dynamic locations.
-void ciEnv::record_call_site_method(Thread* thread, const constantPoolHandle& pool, Method* adapter) {
+void ciEnv::record_call_site_method(Thread* thread, Method* adapter) {
   InstanceKlass* holder = adapter->method_holder();
   if (!holder->is_hidden()) {
     return;
@@ -1491,21 +1499,20 @@ void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, 
   if (cp_cache_entry->is_resolved(Bytecodes::_invokedynamic)) {
     // process the adapter
     Method* adapter = cp_cache_entry->f1_as_method();
-    record_call_site_method(thread, cp, adapter);
+    record_call_site_method(thread, adapter);
     // process the appendix
-    Handle appendix(thread, cp_cache_entry->appendix_if_resolved(cp));
+    oop appendix = cp_cache_entry->appendix_if_resolved(cp);
     {
       RecordLocation fp(this, "<appendix>");
-      record_call_site_obj(thread, cp, appendix);
+      record_call_site_obj(thread, appendix);
     }
     // process the BSM
     int pool_index = cp_cache_entry->constant_pool_index();
     BootstrapInfo bootstrap_specifier(cp, pool_index, indy_index);
-    oop bsm_oop = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
-    Handle bsm(thread, bsm_oop);
+    oop bsm = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
     {
       RecordLocation fp(this, "<bsm>");
-      record_call_site_obj(thread, cp, bsm);
+      record_call_site_obj(thread, bsm);
     }
   }
 }
@@ -1523,12 +1530,12 @@ void ciEnv::process_invokehandle(const constantPoolHandle &cp, int index, JavaTh
     if (cp_cache_entry->is_resolved(Bytecodes::_invokehandle)) {
       // process the adapter
       Method* adapter = cp_cache_entry->f1_as_method();
-      Handle appendix(thread, cp_cache_entry->appendix_if_resolved(cp));
-      record_call_site_method(thread, cp, adapter);
+      oop appendix = cp_cache_entry->appendix_if_resolved(cp);
+      record_call_site_method(thread, adapter);
       // process the appendix
       {
         RecordLocation fp(this, "<appendix>");
-        record_call_site_obj(thread, cp, appendix);
+        record_call_site_obj(thread, appendix);
       }
     }
   }
