@@ -97,7 +97,6 @@ public:
   ~G1SegmentedArrayBufferList() { free_all(); }
 
   void bulk_add(G1SegmentedArrayBuffer<flag>& first, G1SegmentedArrayBuffer<flag>& last, size_t num, size_t mem_size);
-  void add(G1SegmentedArrayBuffer<flag>& elem) { _list.prepend(elem); }
 
   G1SegmentedArrayBuffer<flag>* get();
   G1SegmentedArrayBuffer<flag>* get_all(size_t& num_buffers, size_t& mem_size);
@@ -198,8 +197,7 @@ public:
 
   inline uint elem_size() const;
 
-  G1SegmentedArray(const char* name,
-                   const G1SegmentedArrayAllocOptions* buffer_options,
+  G1SegmentedArray(const G1SegmentedArrayAllocOptions* buffer_options,
                    G1SegmentedArrayBufferList<flag>* free_buffer_list);
   ~G1SegmentedArray() {
     drop_all();

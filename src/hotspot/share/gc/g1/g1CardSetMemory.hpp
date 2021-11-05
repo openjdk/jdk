@@ -149,9 +149,6 @@ public:
 
   // Returns all-zero statistics.
   G1CardSetMemoryStats();
-  // For every element in the set (indicated by i), call fn to provide the
-  // memory size and number of buffers for that i'th buffer list.
-  G1CardSetMemoryStats(void (*fn)(const void* context, uint i, size_t& mem_size, size_t& num_buffers), const void* context);
 
   void add(G1CardSetMemoryStats const other) {
     STATIC_ASSERT(ARRAY_SIZE(_num_buffers) == ARRAY_SIZE(_num_mem_sizes));
@@ -171,7 +168,7 @@ class G1CardSetFreePool {
   // The global free pool.
   static G1CardSetFreePool _freelist_pool;
 
-  uint _num_free_lists;
+  const uint _num_free_lists;
   G1CardSetBufferList* _free_lists;
 
 public:
@@ -192,9 +189,6 @@ public:
   }
 
   uint num_free_lists() const { return _num_free_lists; }
-
-  // Return sizes for free list i in this free list pool.
-  void get_size(uint i, size_t& mem_size, size_t& num_buffers) const;
 
   G1CardSetMemoryStats memory_sizes() const;
   size_t mem_size() const;

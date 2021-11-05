@@ -331,7 +331,7 @@ public final class System {
     private static class CallersHolder {
         // Remember callers of setSecurityManager() here so that warning
         // is only printed once for each different caller
-        final static Map<Class<?>, Boolean> callers
+        static final Map<Class<?>, Boolean> callers
             = Collections.synchronizedMap(new WeakHashMap<>());
     }
 
@@ -1595,7 +1595,7 @@ public final class System {
      *
      * @since 9
      */
-    public static abstract class LoggerFinder {
+    public abstract static class LoggerFinder {
         /**
          * The {@code RuntimePermission("loggerFinder")} is
          * necessary to subclass and instantiate the {@code LoggerFinder} class,

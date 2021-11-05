@@ -505,8 +505,8 @@ public final class CRSACipher extends CipherSpi {
         }
     }
 
-    private native static byte[] encryptDecrypt(byte[] data, int dataSize,
+    private static native byte[] encryptDecrypt(byte[] data, int dataSize,
             long key, boolean doEncrypt) throws KeyException;
-    private native static byte[] cngEncryptDecrypt(byte[] data, int dataSize,
+    private static native byte[] cngEncryptDecrypt(byte[] data, int dataSize,
             long key, boolean doEncrypt) throws KeyException;
 }

@@ -4988,7 +4988,7 @@ public class JavacParser implements Parser {
 
     }
 
-    protected static abstract class AbstractEndPosTable implements EndPosTable {
+    protected abstract static class AbstractEndPosTable implements EndPosTable {
         /**
          * The current parser.
          */

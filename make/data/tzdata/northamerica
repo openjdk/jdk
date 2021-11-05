@@ -999,7 +999,7 @@ Zone America/Indiana/Vincennes -5:50:07 - LMT	1883 Nov 18 12:09:53
 			-5:00	US	E%sT
 #
 # Perry County, Indiana, switched from eastern to central time in April 2006.
-# From Alois Triendl (2019-07-09):
+# From Alois Treindl (2019-07-09):
 # The Indianapolis News, Friday 27 October 1967 states that Perry County
 # returned to CST.  It went again to EST on 27 April 1969, as documented by the
 # Indianapolis star of Saturday 26 April.
@@ -1959,7 +1959,7 @@ Zone America/Swift_Current -7:11:20 -	LMT	1905 Sep
 
 # Alberta
 
-# From Alois Triendl (2019-07-19):
+# From Alois Treindl (2019-07-19):
 # There was no DST in Alberta in 1967... Calgary Herald, 29 April 1967.
 # 1969, no DST, from Edmonton Journal 18 April 1969
 #
@@ -2014,7 +2014,7 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 #
 # From Paul Eggert (2019-07-25):
 # Shanks says Fort Nelson did not observe DST in 1946, unlike Vancouver.
-# Alois Triendl confirmed this on 07-22, citing the 1946-04-27 Vancouver Daily
+# Alois Treindl confirmed this on 07-22, citing the 1946-04-27 Vancouver Daily
 # Province.  He also cited the 1946-09-28 Victoria Daily Times, which said
 # that Vancouver, Victoria, etc. "change at midnight Saturday"; for now,
 # guess they meant 02:00 Sunday since 02:00 was common practice in Vancouver.

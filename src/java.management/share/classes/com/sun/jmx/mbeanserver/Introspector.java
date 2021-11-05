@@ -66,7 +66,7 @@ import sun.reflect.misc.ReflectUtil;
  * @since 1.5
  */
 public class Introspector {
-    final public static boolean ALLOW_NONPUBLIC_MBEAN;
+    public static final boolean ALLOW_NONPUBLIC_MBEAN;
     static {
         @SuppressWarnings("removal")
         String val = AccessController.doPrivileged(new GetPropertyAction("jdk.jmx.mbeans.allowNonPublic"));

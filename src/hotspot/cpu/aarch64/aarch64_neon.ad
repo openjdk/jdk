@@ -506,12 +506,21 @@ instruct vcvt2Dto2I(vecD dst, vecX src)
 %{
   predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (VectorCastD2X src));
-  format %{ "fcvtzs  $dst, T2D, $src\n\t"
-            "xtn     $dst, T2S, $dst, T2D\t# convert 2D to 2I vector"
+  effect(TEMP_DEF dst);
+  format %{ "ins      $dst, D, $src, 0, 1\n\t"
+            "fcvtzdw  rscratch1, $src\n\t"
+            "fcvtzdw  rscratch2, $dst\n\t"
+            "fmovs    $dst, rscratch1\n\t"
+            "mov      $dst, T2S, 1, rscratch2\t#convert 2D to 2I vector"
   %}
   ins_encode %{
-    __ fcvtzs(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
-    __ xtn(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($dst$$reg), __ T2D);
+    __ ins(as_FloatRegister($dst$$reg), __ D, as_FloatRegister($src$$reg), 0, 1);
+    // We can't use fcvtzs(vector, integer) instruction here because we need
+    // saturation arithmetic. See JDK-8276151.
+    __ fcvtzdw(rscratch1, as_FloatRegister($src$$reg));
+    __ fcvtzdw(rscratch2, as_FloatRegister($dst$$reg));
+    __ fmovs(as_FloatRegister($dst$$reg), rscratch1);
+    __ mov(as_FloatRegister($dst$$reg), __ T2S, 1, rscratch2);
   %}
   ins_pipe(pipe_slow);
 %}
