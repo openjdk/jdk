@@ -71,7 +71,7 @@ public class SystemLookup implements SymbolLookup {
             SymbolLookup fallbackLibLookup = libLookup(libs -> libs.loadLibrary("WinFallbackLookup"));
 
             int numSymbols = WindowsFallbackSymbols.values().length;
-            MemorySegment funcs = MemorySegment.ofAddressNative(fallbackLibLookup.lookup("funcs").orElseThrow().address(),
+            MemorySegment funcs = MemorySegment.ofAddress(fallbackLibLookup.lookup("funcs").orElseThrow().address(),
                 ADDRESS.byteSize() * numSymbols, ResourceScope.globalScope());
 
             SymbolLookup fallbackLookup = name -> Optional.ofNullable(WindowsFallbackSymbols.valueOfOrNull(name))

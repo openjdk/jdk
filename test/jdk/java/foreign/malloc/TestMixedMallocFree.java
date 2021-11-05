@@ -57,7 +57,7 @@ public class TestMixedMallocFree extends NativeTestHelper {
     @Test
     public void testMalloc() throws Throwable {
         MemoryAddress ma = (MemoryAddress) MH_my_malloc.invokeExact(4L);
-        MemorySegment seg = MemorySegment.ofAddressNative(ma, 4L, ResourceScope.newImplicitScope());
+        MemorySegment seg = MemorySegment.ofAddress(ma, 4L, ResourceScope.newImplicitScope());
         seg.set(JAVA_INT, 0, 42);
         assertEquals(seg.get(JAVA_INT, 0), 42);
         // Test if this free crashes the VM, which might be the case if we load the wrong default library

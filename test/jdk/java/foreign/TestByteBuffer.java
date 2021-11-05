@@ -488,7 +488,7 @@ public class TestByteBuffer {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void testTooBigForByteBuffer() {
-        MemorySegment segment = MemorySegment.ofAddressNative(MemoryAddress.NULL, Integer.MAX_VALUE + 10L, ResourceScope.newImplicitScope());
+        MemorySegment segment = MemorySegment.ofAddress(MemoryAddress.NULL, Integer.MAX_VALUE + 10L, ResourceScope.newImplicitScope());
         segment.asByteBuffer();
     }
 

@@ -155,7 +155,7 @@ int x = addr.get(ValueLayout.JAVA_INT, 0);
  * }</pre>
  *
  * Alternatively, the client can
- * {@linkplain jdk.incubator.foreign.MemorySegment#ofAddressNative(jdk.incubator.foreign.MemoryAddress, long, jdk.incubator.foreign.ResourceScope) create}
+ * {@linkplain jdk.incubator.foreign.MemorySegment#ofAddress(jdk.incubator.foreign.MemoryAddress, long, jdk.incubator.foreign.ResourceScope) create}
  * a memory segment <em>unsafely</em>. This allows the client to inject extra knowledge about spatial bounds which might,
  * for instance, be available in the documentation of the foreign function which produced the native address.
  * Here is how an unsafe segment can be created from a native address:
@@ -163,7 +163,7 @@ int x = addr.get(ValueLayout.JAVA_INT, 0);
  * <pre>{@code
 ResourceScope scope = ... // initialize a resource scope object
 MemoryAddress addr = ... //obtain address from native code
-MemorySegment segment = MemorySegment.ofAddressNative(addr, 4, scope); // segment is 4 bytes long
+MemorySegment segment = MemorySegment.ofAddress(addr, 4, scope); // segment is 4 bytes long
 int x = segment.get(ValueLayout.JAVA_INT, 0);
  * }</pre>
  *
@@ -218,11 +218,11 @@ Addressable comparFunc = CLinker.systemCLinker().upcallStub(
  * <h2>Restricted methods</h2>
  * Some methods in this package are considered <em>restricted</em>. Restricted methods are typically used to bind native
  * foreign data and/or functions to first-class Java API elements which can then be used directly by clients. For instance
- * the restricted method {@link MemorySegment#ofAddressNative(MemoryAddress, long, ResourceScope)}
+ * the restricted method {@link MemorySegment#ofAddress(MemoryAddress, long, ResourceScope)}
  * can be used to create a fresh segment with given spatial bounds out of a native address.
  * <p>
  * Binding foreign data and/or functions is generally unsafe and, if done incorrectly, can result in VM crashes, or memory corruption when the bound Java API element is accessed.
- * For instance, in the case of {@link MemorySegment#ofAddressNative(MemoryAddress, long, ResourceScope)},
+ * For instance, in the case of {@link MemorySegment#ofAddress(MemoryAddress, long, ResourceScope)},
  * if the provided spatial bounds are incorrect, a client of the segment returned by that method might crash the VM, or corrupt
  * memory when attempting to dereference said segment. For these reasons, it is crucial for code that calls a restricted method
  * to never pass arguments that might cause incorrect binding of foreign data and/or functions to a Java API.

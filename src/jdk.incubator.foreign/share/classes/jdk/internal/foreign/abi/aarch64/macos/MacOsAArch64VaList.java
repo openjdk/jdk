@@ -102,7 +102,7 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
             res = switch (typeClass) {
                 case STRUCT_REFERENCE -> {
                     MemoryAddress structAddr = (MemoryAddress) VH_address.get(segment);
-                    MemorySegment struct = MemorySegment.ofAddressNative(structAddr, layout.byteSize(), scope());
+                    MemorySegment struct = MemorySegment.ofAddress(structAddr, layout.byteSize(), scope());
                     MemorySegment seg = allocator.allocate(layout);
                     seg.copyFrom(struct);
                     segment = segment.asSlice(VA_SLOT_SIZE_BYTES);
@@ -139,7 +139,7 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
     }
 
     static MacOsAArch64VaList ofAddress(MemoryAddress addr, ResourceScope scope) {
-        MemorySegment segment = MemorySegment.ofAddressNative(addr, Long.MAX_VALUE, scope);
+        MemorySegment segment = MemorySegment.ofAddress(addr, Long.MAX_VALUE, scope);
         return new MacOsAArch64VaList(segment, scope);
     }
 

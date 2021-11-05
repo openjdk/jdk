@@ -102,12 +102,12 @@ import java.util.stream.Stream;
  * Clients requiring sophisticated, low-level control over mapped memory segments, should consider writing
  * custom mapped memory segment factories; using {@link CLinker}, e.g. on Linux, it is possible to call {@code mmap}
  * with the desired parameters; the returned address can be easily wrapped into a memory segment, using
- * {@link MemoryAddress#ofLong(long)} and {@link MemorySegment#ofAddressNative(MemoryAddress, long, ResourceScope)}.
+ * {@link MemoryAddress#ofLong(long)} and {@link MemorySegment#ofAddress(MemoryAddress, long, ResourceScope)}.
  *
  * <h2>Restricted native segments</h2>
  *
  * Sometimes it is necessary to turn a memory address obtained from native code into a memory segment with
- * full spatial, temporal and confinement bounds. To do this, clients can {@link #ofAddressNative(MemoryAddress, long, ResourceScope) obtain}
+ * full spatial, temporal and confinement bounds. To do this, clients can {@link #ofAddress(MemoryAddress, long, ResourceScope) obtain}
  * a native segment <em>unsafely</em> from a give memory address, by providing the segment size, as well as the segment {@linkplain ResourceScope scope}.
  * This is a <a href="package-summary.html#restricted"><em>restricted</em></a> operation and should be used with
  * caution: for instance, an incorrect segment size could result in a VM crash when attempting to dereference
@@ -784,7 +784,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     @CallerSensitive
-    static MemorySegment ofAddressNative(MemoryAddress address, long bytesSize, ResourceScope scope) {
+    static MemorySegment ofAddress(MemoryAddress address, long bytesSize, ResourceScope scope) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
         Objects.requireNonNull(address);
         Objects.requireNonNull(scope);

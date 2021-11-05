@@ -33,7 +33,6 @@ import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.misc.Unsafe;
 
 import java.lang.invoke.VarHandle;
-import java.lang.ref.Cleaner;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -128,7 +127,7 @@ public non-sealed class SysVVaList implements VaList, Scoped {
         long ptr = U.allocateMemory(LAYOUT.byteSize());
         ResourceScope scope = ResourceScope.newImplicitScope();
         scope.addCloseAction(() -> U.freeMemory(ptr));
-        MemorySegment base = MemorySegment.ofAddressNative(MemoryAddress.ofLong(ptr),
+        MemorySegment base = MemorySegment.ofAddress(MemoryAddress.ofLong(ptr),
                 LAYOUT.byteSize(), scope);
         VH_gp_offset.set(base, MAX_GP_OFFSET);
         VH_fp_offset.set(base, MAX_FP_OFFSET);
@@ -170,7 +169,7 @@ public non-sealed class SysVVaList implements VaList, Scoped {
     }
 
     private static MemorySegment getRegSaveArea(MemorySegment segment) {
-        return MemorySegment.ofAddressNative(((MemoryAddress)VH_reg_save_area.get(segment)),
+        return MemorySegment.ofAddress(((MemoryAddress)VH_reg_save_area.get(segment)),
                 LAYOUT_REG_SAVE_AREA.byteSize(), segment.scope());
     }
 
@@ -222,7 +221,7 @@ public non-sealed class SysVVaList implements VaList, Scoped {
             preAlignStack(layout);
             return switch (typeClass.kind()) {
                 case STRUCT -> {
-                    MemorySegment slice = MemorySegment.ofAddressNative(stackPtr(), layout.byteSize(), scope());
+                    MemorySegment slice = MemorySegment.ofAddress(stackPtr(), layout.byteSize(), scope());
                     MemorySegment seg = allocator.allocate(layout);
                     seg.copyFrom(slice);
                     postAlignStack(layout);
@@ -231,7 +230,7 @@ public non-sealed class SysVVaList implements VaList, Scoped {
                 case POINTER, INTEGER, FLOAT -> {
                     VarHandle reader = layout.varHandle();
                     try (ResourceScope localScope = ResourceScope.newConfinedScope()) {
-                        MemorySegment slice = MemorySegment.ofAddressNative(stackPtr(), layout.byteSize(), localScope);
+                        MemorySegment slice = MemorySegment.ofAddress(stackPtr(), layout.byteSize(), localScope);
                         Object res = reader.get(slice);
                         postAlignStack(layout);
                         yield res;
@@ -296,7 +295,7 @@ public non-sealed class SysVVaList implements VaList, Scoped {
     }
 
     public static VaList ofAddress(MemoryAddress ma, ResourceScope scope) {
-        return readFromSegment(MemorySegment.ofAddressNative(ma, LAYOUT.byteSize(), scope));
+        return readFromSegment(MemorySegment.ofAddress(ma, LAYOUT.byteSize(), scope));
     }
 
     @Override

@@ -210,8 +210,8 @@ public class TestLoadStoreShort {
   @Benchmark
   public void bufferSegmentConfined() {
     try (final var scope = ResourceScope.newConfinedScope()) {
-      final var srcBufferSegmentConfined = MemorySegment.ofAddressNative(srcAddress, size, scope).asByteBuffer();
-      final var dstBufferSegmentConfined = MemorySegment.ofAddressNative(dstAddress, size, scope).asByteBuffer();
+      final var srcBufferSegmentConfined = MemorySegment.ofAddress(srcAddress, size, scope).asByteBuffer();
+      final var dstBufferSegmentConfined = MemorySegment.ofAddress(dstAddress, size, scope).asByteBuffer();
 
       for (int i = 0; i < SPECIES.loopBound(srcArray.length); i += SPECIES.length()) {
         var v = ShortVector.fromByteBuffer(SPECIES, srcBufferSegmentConfined, i, ByteOrder.nativeOrder());

@@ -125,7 +125,7 @@ public class StrLenTest extends CLayouts {
         byte[] bytes = s.getBytes();
         int len = bytes.length;
         MemoryAddress address = allocateMemory(len + 1);
-        MemorySegment str = MemorySegment.ofAddressNative(address, len + 1, ResourceScope.globalScope());
+        MemorySegment str = MemorySegment.ofAddress(address, len + 1, ResourceScope.globalScope());
         str.copyFrom(MemorySegment.ofArray(bytes));
         str.set(JAVA_BYTE, len, (byte)0);
         return address;

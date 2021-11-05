@@ -66,8 +66,8 @@ public class UnrolledAccess {
             this.outputArray = new double[SIZE];
             this.inputAddress = U.allocateMemory(8 * SIZE);
             this.outputAddress = U.allocateMemory(8 * SIZE);
-            this.inputSegment = MemorySegment.ofAddressNative(MemoryAddress.ofLong(inputAddress), 8*SIZE, ResourceScope.globalScope());
-            this.outputSegment = MemorySegment.ofAddressNative(MemoryAddress.ofLong(outputAddress), 8*SIZE, ResourceScope.globalScope());
+            this.inputSegment = MemorySegment.ofAddress(MemoryAddress.ofLong(inputAddress), 8*SIZE, ResourceScope.globalScope());
+            this.outputSegment = MemorySegment.ofAddress(MemoryAddress.ofLong(outputAddress), 8*SIZE, ResourceScope.globalScope());
         }
     }
 

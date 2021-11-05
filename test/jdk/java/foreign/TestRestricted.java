@@ -57,19 +57,19 @@ public class TestRestricted {
 
     @Test(expectedExceptions = InvocationTargetException.class)
     public void testReflection2() throws Throwable {
-        Method method = MemorySegment.class.getDeclaredMethod("ofAddressNative", MemoryAddress.class, long.class, ResourceScope.class);
+        Method method = MemorySegment.class.getDeclaredMethod("ofAddress", MemoryAddress.class, long.class, ResourceScope.class);
         method.invoke(null, MemoryAddress.NULL, 4000L, ResourceScope.globalScope());
     }
 
     @Test(expectedExceptions = IllegalCallerException.class)
     public void testInvoke2() throws Throwable {
-        var mh = MethodHandles.lookup().findStatic(MemorySegment.class, "ofAddressNative",
+        var mh = MethodHandles.lookup().findStatic(MemorySegment.class, "ofAddress",
             MethodType.methodType(MemorySegment.class, MemoryAddress.class, long.class, ResourceScope.class));
         var seg = (MemorySegment)mh.invokeExact(MemoryAddress.NULL, 4000L, ResourceScope.globalScope());
     }
 
     @Test(expectedExceptions = IllegalCallerException.class)
     public void testDirectAccess2() throws Throwable {
-        MemorySegment.ofAddressNative(MemoryAddress.NULL, 4000, ResourceScope.globalScope());
+        MemorySegment.ofAddress(MemoryAddress.NULL, 4000, ResourceScope.globalScope());
     }
 }

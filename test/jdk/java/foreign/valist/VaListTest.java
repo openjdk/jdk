@@ -742,7 +742,7 @@ public class VaListTest extends NativeTestHelper {
                 })},
                 { linkVaListCB("upcallMemoryAddress"), VaListConsumer.mh(vaList -> {
                     MemoryAddress intPtr = vaList.nextVarg(C_POINTER);
-                    MemorySegment ms = MemorySegment.ofAddressNative(intPtr, C_INT.byteSize(), ResourceScope.globalScope());
+                    MemorySegment ms = MemorySegment.ofAddress(intPtr, C_INT.byteSize(), ResourceScope.globalScope());
                     int x = ms.get(JAVA_INT, 0);
                     assertEquals(x, 10);
                 })},

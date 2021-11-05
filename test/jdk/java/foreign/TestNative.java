@@ -170,7 +170,7 @@ public class TestNative extends NativeTestHelper {
         MemoryAddress addr = allocateMemory(12);
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
             scope.addCloseAction(() -> freeMemory(addr));
-            MemorySegment mallocSegment = MemorySegment.ofAddressNative(addr, 12, scope);
+            MemorySegment mallocSegment = MemorySegment.ofAddress(addr, 12, scope);
             assertFalse(mallocSegment.isReadOnly());
         }
     }
@@ -181,7 +181,7 @@ public class TestNative extends NativeTestHelper {
         MemorySegment mallocSegment = null;
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
             scope.addCloseAction(() -> freeMemory(addr));
-            mallocSegment = MemorySegment.ofAddressNative(addr, 12, scope);
+            mallocSegment = MemorySegment.ofAddress(addr, 12, scope);
             assertEquals(mallocSegment.byteSize(), 12);
             //free here
         }
@@ -200,7 +200,7 @@ public class TestNative extends NativeTestHelper {
     public void testBadResize() {
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
             MemorySegment segment = MemorySegment.allocateNative(4, 1, scope);
-            MemorySegment.ofAddressNative(segment.address(), 0, ResourceScope.globalScope());
+            MemorySegment.ofAddress(segment.address(), 0, ResourceScope.globalScope());
         }
     }
 

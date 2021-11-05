@@ -234,7 +234,7 @@ public class TestScopedOperations {
                     throw new AssertionError(ex);
                 }
             }),
-            UNSAFE(scope -> MemorySegment.ofAddressNative(MemoryAddress.NULL, 10, scope));
+            UNSAFE(scope -> MemorySegment.ofAddress(MemoryAddress.NULL, 10, scope));
 
             static {
                 try {

@@ -245,7 +245,7 @@ public class StdLibTest extends NativeTestHelper {
             static final long SIZE = 56;
 
             Tm(MemoryAddress addr) {
-                this.base = MemorySegment.ofAddressNative(addr, SIZE, ResourceScope.globalScope());
+                this.base = MemorySegment.ofAddress(addr, SIZE, ResourceScope.globalScope());
             }
 
             int sec() {

@@ -118,7 +118,7 @@ public class TestArrays {
     public void testTooBigForArray(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
         MemoryLayout seq = MemoryLayout.sequenceLayout((Integer.MAX_VALUE * layout.byteSize()) + 1, layout);
         //do not really allocate here, as it's way too much memory
-        MemorySegment segment = MemorySegment.ofAddressNative(MemoryAddress.NULL, seq.byteSize(), ResourceScope.globalScope());
+        MemorySegment segment = MemorySegment.ofAddress(MemoryAddress.NULL, seq.byteSize(), ResourceScope.globalScope());
         arrayFactory.apply(segment);
     }
 
