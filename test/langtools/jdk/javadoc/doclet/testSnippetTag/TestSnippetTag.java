@@ -39,6 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -103,14 +104,7 @@ public class TestSnippetTag extends SnippetTester {
         Path outDir = base.resolve("out");
 
         // A record of a snippet content and matching expected attribute values
-        record SnippetAttributes(String content, String id, String lang) {
-            public String idAttribute() {
-                return id == null ? "" : " id=\"" + id + "\"";
-            }
-            public String langAttribute() {
-                return lang == null ? "" : " class=\"language-" + lang + "\"";
-            }
-        }
+        record SnippetAttributes(String content, String id, String lang) { }
 
         // TODO: use combinatorial methods, e.g. just like in TestSnippetMarkup
         final var snippets = List.of(
@@ -229,19 +223,16 @@ public class TestSnippetTag extends SnippetTester {
         checkExit(Exit.OK);
         checkLinks();
         for (int j = 0; j < snippets.size(); j++) {
-            SnippetAttributes snippet = snippets.get(j);
+            var attr = snippets.get(j);
+            var snippetHtml = getSnippetHtmlRepresentation("pkg/A.html", "    Hello, Snippet!\n",
+                    Optional.ofNullable(attr.lang()), Optional.ofNullable(attr.id()));
             checkOutput("pkg/A.html", true,
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">A method.
                          \s
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"%s><code%s>    Hello, Snippet!
-                        </code></pre>
-                        </div>
-                        """.formatted(j, snippet.idAttribute(), snippet.langAttribute()));
+                        %s
+                        """.formatted(j, snippetHtml));
         }
     }
 
@@ -290,43 +281,24 @@ public class TestSnippetTag extends SnippetTester {
                 "com.example");
         checkExit(Exit.OK);
         checkLinks();
+        final var javaContent = """
+                
+                System.out.println(msg);
+                """;
+        final var propertiesContent = """
+                user=jane
+                home=/home/jane
+                """;
         checkOutput("com/example/Cls.html", true,
-                """
-                    <pre class="snippet" id="snippet1"><code class="language-java">
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet2"><code class="language-java">
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet3"><code class="language-none">
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet4"><code class="language-none">
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet5"><code>
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet6"><code>
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet7"><code class="language-properties">user=jane
-                    home=/home/jane
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet8"><code class="language-none">user=jane
-                    home=/home/jane
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet9"><code>user=jane
-                    home=/home/jane
-                    </code></pre>""");
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.of("java"), Optional.of("snippet1")),
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.of("java"), Optional.of("snippet2")),
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.of("none"), Optional.of("snippet3")),
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.of("none"), Optional.of("snippet4")),
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.empty(), Optional.of("snippet5")),
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.empty(), Optional.of("snippet6")),
+                getSnippetHtmlRepresentation("com/example/user.properties", propertiesContent, Optional.of("properties"), Optional.of("snippet7")),
+                getSnippetHtmlRepresentation("com/example/user.properties", propertiesContent, Optional.of("none"), Optional.of("snippet8")),
+                getSnippetHtmlRepresentation("com/example/user.properties", propertiesContent, Optional.empty(), Optional.of("snippet9")));
     }
 
     @Test
@@ -912,11 +884,7 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>%s</code></pre>
-                        </div>""".formatted(id, t.expectedOutput()));
+                        %s""".formatted(id, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
         });
     }
 
@@ -1008,11 +976,7 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>%s</code></pre>
-                        </div>""".formatted(index, expectedOutput));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", expectedOutput)));
         });
     }
 
@@ -1542,11 +1506,7 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>%s</code></pre>
-                        </div>""".formatted(index, t.expectedOutput()));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
         });
     }
 
@@ -1659,20 +1619,12 @@ public class TestSnippetTag extends SnippetTester {
                     """
                     <span class="element-name">case0</span>()</div>
                     <div class="block">
-                    <div class="snippet-container"><button class="snippet-copy" onclick="copySnippet\
-                    (this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" alt="Copy"\
-                    ></button>
-                    <pre class="snippet"><code></code></pre>
-                    </div>""");
+                    """ + getSnippetHtmlRepresentation("pkg/A.html", ""));
         checkOutput("pkg/A.html", true,
                     """
                     <span class="element-name">case1</span>()</div>
                     <div class="block">
-                    <div class="snippet-container"><button class="snippet-copy" onclick="copySnippet\
-                    (this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" alt="Copy"\
-                    ></button>
-                    <pre class="snippet"><code></code></pre>
-                    </div>""");
+                    """ + getSnippetHtmlRepresentation("pkg/A.html", ""));
     }
 
     @Test // TODO: use combinatorial methods
@@ -1769,12 +1721,8 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>2</code></pre>
-                        </div>
-                        """.formatted(j));
+                        %s
+                        """.formatted(j, getSnippetHtmlRepresentation("pkg/A.html", "2")));
         }
     }
 
@@ -1853,11 +1801,7 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>%s</code></pre>
-                        </div>""".formatted(index, t.expectedOutput()));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
         });
     }
 
@@ -2185,11 +2129,7 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>%s</code></pre>
-                        </div>""".formatted(index, t.expectedOutput()));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
         });
     }
 

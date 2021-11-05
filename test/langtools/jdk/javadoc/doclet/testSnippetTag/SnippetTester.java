@@ -116,4 +116,25 @@ public class SnippetTester extends JavadocTester {
             failed(": nothing found");
         }
     }
+
+    protected String getSnippetHtmlRepresentation(String pathToHtmlFile,
+                                                  String content) {
+        return getSnippetHtmlRepresentation(pathToHtmlFile, content, Optional.empty(), Optional.empty());
+    }
+
+    protected String getSnippetHtmlRepresentation(String pathToHtmlFile,
+                                                  String content,
+                                                  Optional<String> lang,
+                                                  Optional<String> id) {
+        // the further away from the root, the further to reach to common resources
+        int nComponents = (int) pathToHtmlFile.chars().filter(c -> c == '/').count();
+        var svgString = "../".repeat(nComponents) + "copy.svg";
+        var idString = id.isEmpty() ? "" : " id=\"%s\"".formatted(id.get());
+        var langString = lang.isEmpty() ? "" : " class=\"language-%s\"".formatted(lang.get());
+        return """
+                <div class="snippet-container"><button class="snippet-copy" onclick="copySnippet(this)">\
+                <span data-copied="Copied!">Copy</span><img src="%s" alt="Copy"></button>
+                <pre class="snippet"%s><code%s>%s</code></pre>
+                </div>""".formatted(svgString, idString, langString, content);
+    }
 }

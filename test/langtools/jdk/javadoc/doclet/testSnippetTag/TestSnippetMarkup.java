@@ -216,11 +216,8 @@ public class TestSnippetMarkup extends SnippetTester {
             String html = """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><a href="#" class="snippet-copy" onclick="cop\
-                        ySnippet(this)" aria-label="Copy" data-copied="Copied!"><img src="copy.svg" \
-                        alt="Copy"></a>
-                        <pre class="snippet"><code>%s</code></pre>
-                        </div>""".formatted(index, t.expectedOutput());
+                        %s
+                        </div>""".formatted(index, getSnippetHtmlRepresentation("A.html", t.expectedOutput()));
             checkOutput("A.html", true, html);
         });
     }
