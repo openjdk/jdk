@@ -144,7 +144,7 @@ public class TestUpcall extends CallGeneratorHelper {
             FunctionDescriptor callbackDesc = descriptor.returnLayout()
                     .map(FunctionDescriptor::of)
                     .orElse(FunctionDescriptor.ofVoid());
-            NativeSymbol callback = abi.upcallStub(reverse(mh), callbackDesc, scope);
+            NativeSymbol callback = abi.upcallStub(mh.asType(CLinker.upcallType(callbackDesc)), callbackDesc, scope);
 
             MethodHandle invoker = asyncInvoker(ret, ret == Ret.VOID ? null : paramTypes.get(0), fields);
 
@@ -257,18 +257,5 @@ public class TestUpcall extends CallGeneratorHelper {
 
     static void dummy() {
         //do nothing
-    }
-
-    static MethodHandle reverse(MethodHandle handle) {
-        MethodType type = handle.type();
-        if (type.returnType().equals(MemoryAddress.class)) {
-            type = type.changeReturnType(Addressable.class);
-        }
-        for (int i = 0 ; i < type.parameterCount() ; i++) {
-            if (type.parameterType(i).equals(Addressable.class)) {
-                type = type.changeParameterType(i, MemoryAddress.class);
-            }
-        }
-        return handle.asType(type);
     }
 }

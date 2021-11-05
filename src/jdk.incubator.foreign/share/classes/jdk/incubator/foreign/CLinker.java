@@ -35,6 +35,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.util.Optional;
 
 /**
@@ -54,32 +55,29 @@ import java.util.Optional;
  * {@linkplain #downcallHandle(FunctionDescriptor) Linking a foreign function} is a process which requires a function descriptor,
  * a set of memory layouts which, together, specify the signature of the foreign function to be linked, and returns,
  * when complete, a downcall method handle, that is, a method handle that can be used to invoke the target native function.
- * The Java {@link java.lang.invoke.MethodType method type} associated with the returned method handle is derived from the
- * argument and return layouts in the function descriptor. More specifically, given each layout {@code L} in the
- * function descriptor, a corresponding carrier {@code C} is inferred, as described below:
+ * The Java {@link java.lang.invoke.MethodType method type} associated with the returned method handle is
+ * {@linkplain #downcallType(FunctionDescriptor) derived} from the argument and return layouts in the function descriptor.
+ * More specifically, given each layout {@code L} in the function descriptor, a corresponding carrier {@code C} is inferred,
+ * as described below:
  * <ul>
  * <li>if {@code L} is a {@link ValueLayout} with carrier {@code E} then there are two cases:
  *     <ul>
- *         <li>if {@code L} occurs in a parameter position and {@code E} is {@code MemoryAddress.class},
+ *         <li>if {@code L} occurs in a parameter position and {@code E} is {@code NativeAddress.class},
  *         then {@code C = Addressable.class};</li>
  *         <li>otherwise, {@code C = E};
  *     </ul></li>
  * <li>or, if {@code L} is a {@link GroupLayout}, then {@code C} is set to {@code MemorySegment.class}</li>
  * </ul>
  * <p>
- * Arguments of type {@link MemorySegment}, {@link VaList} and {@link NativeSymbol} passed by-reference to a downcall method handle
- * are {@linkplain ResourceScope#keepAlive(ResourceScope) kept alive} by the linker implementation. That is, the resource
- * scope associated with such arguments cannot be closed, either implicitly or {@linkplain ResourceScope#close() explicitly}
- * until the downcall method handle completes.
- * <p>
- * Furthermore, if the function descriptor's return layout is a group layout, the resulting downcall method handle accepts
- * an extra parameter of type {@link SegmentAllocator}, which is used by the linker runtime to allocate the
- * memory region associated with the struct returned by the downcall method handle.
- * <p>
- * Finally, downcall method handles feature a leading parameter of type {@link NativeSymbol}, from which the
- * address of the target native function can be derived. The address, when known statically, can also be provided by
- * clients at link time. As for other by-reference parameters (see above) this leading parameter will be
- * {@linkplain ResourceScope#keepAlive(ResourceScope) kept alive} by the linker implementation.
+ * The downcall method handle type, derived as above, might be decorated by additional leading parameters:
+ * <ul>
+ * <li>If the downcall method handle is created {@linkplain #downcallHandle(FunctionDescriptor) without specifying a native symbol},
+ * the downcall method handle type features a leading parameter of type {@link NativeSymbol}, from which the
+ * address of the target native function can be derived.</li>
+ * <li>If the function descriptor's return layout is a group layout, the resulting downcall method handle accepts
+ * an additional leading parameter of type {@link SegmentAllocator}, which is used by the linker runtime to allocate the
+ * memory region associated with the struct returned by the downcall method handle.</li>
+ * </ul>
  * <p>Variadic functions, declared in C either with a trailing ellipses ({@code ...}) at the end of the formal parameter
  * list or with an empty formal parameter list, are not supported directly. However, it is possible to link a native
  * variadic function by using a {@linkplain FunctionDescriptor#asVariadic(MemoryLayout...) <em>variadic</em>} function descriptor,
@@ -114,6 +112,29 @@ import java.util.Optional;
  * This class implements the {@link SymbolLookup} interface; as such clients can {@linkplain #lookup(String) lookup} symbols
  * in the standard libraries associated with this linker. The set of symbols available for lookup is unspecified,
  * as it depends on the platform and on the operating system.
+ *
+ * <h2>Safety considerations</h2>
+ *
+ * Obtaining downcall method handle is intrinsically unsafe. A symbol in a native library does not, in general,
+ * contain enough signature information (e.g. arity and types of native function parameters). As a consequence,
+ * the linker runtime cannot validate linkage requests. When a client interacts with a downcall method handle obtained
+ * through an invalid linkage request (e.g. by specifying a function descriptor featuring too many argument layouts),
+ * the result of such interaction is unspecified and can lead to JVM crashes. On downcall handle invocation,
+ * the linker runtime guarantees the following for any argument that is a memory resource {@code R} (of type {@link MemorySegment},
+ * {@link NativeSymbol} or {@link VaList}):
+ * <ul>
+ *     <li>The resource scope of {@code R} is {@linkplain ResourceScope#isAlive() alive}. Otherwise, the invocation throws
+ *     {@link IllegalStateException};</li>
+ *     <li>The invocation occurs in same thread as the one {@link ResourceScope#ownerThread() owning} the resource scope of {@code R},
+ *     if said scope is confined. Otherwise, the invocation throws {@link IllegalStateException}; and</li>
+ *     <li>The scope of {@code R} is {@linkplain ResourceScope#keepAlive(ResourceScope) kept alive} (and cannot be closed) during the invocation.
+ *</ul>
+ * <p>
+ * Upcall stubs are generally safer to work with, as the linker runtime can validate the type of the target method
+ * handle against the provided function descriptor and report an error if any mismatch is detected. If the target method
+ * handle associated with an upcall stub returns a {@linkplain MemoryAddress native address}, clients must ensure
+ * that this address cannot become invalid after the upcall completes. This can lead to unspecified behavior,
+ * and even JVM crashes, since an upcall is typically executed in the context of a downcall method handle invocation.
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -222,4 +243,26 @@ public sealed interface CLinker extends SymbolLookup permits Windowsx64Linker, S
      * than the thread owning {@code scope}.
      */
     NativeSymbol upcallStub(MethodHandle target, FunctionDescriptor function, ResourceScope scope);
+
+    /**
+     * Obtains the downcall method handle {@linkplain MethodType type} associated with a given function descriptor.
+     * @param functionDescriptor a function descriptor.
+     * @return the downcall method handle {@linkplain MethodType type} associated with a given function descriptor.
+     * @throws IllegalArgumentException if one or more layouts in the function descriptor are not supported
+     * (e.g. if they are sequence layouts or padding layouts).
+     */
+    static MethodType downcallType(FunctionDescriptor functionDescriptor) {
+        return SharedUtils.inferMethodType(functionDescriptor, false);
+    }
+
+    /**
+     * Obtains the method handle {@linkplain MethodType type} associated with an upcall stub with given function descriptor.
+     * @param functionDescriptor a function descriptor.
+     * @return the method handle {@linkplain MethodType type} associated with an upcall stub with given function descriptor.
+     * @throws IllegalArgumentException if one or more layouts in the function descriptor are not supported
+     * (e.g. if they are sequence layouts or padding layouts).
+     */
+    static MethodType upcallType(FunctionDescriptor functionDescriptor) {
+        return SharedUtils.inferMethodType(functionDescriptor, true);
+    }
 }
