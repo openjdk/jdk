@@ -1548,7 +1548,7 @@ JDK version, or a value describing a date, either an epoch based timestamp as an
 integer, or a valid ISO-8601 date.
 
 **Hint:** If your build environment already sets `SOURCE_DATE_EPOCH`, you can
-propagate this using `--with-source-date=$(SOURCE_DATE_EPOCH)`.
+propagate this using `--with-source-date=$SOURCE_DATE_EPOCH`.
 
   * Specify a hotspot build time
 

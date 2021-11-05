@@ -902,7 +902,7 @@ spawn failed</code></pre>
 <p>The JDK build system will set the <code>SOURCE_DATE_EPOCH</code> environment variable during building, depending on the value of the <code>--with-source-date</code> option for <code>configure</code>. The default value is <code>updated</code>, which means that <code>SOURCE_DATE_EPOCH</code> will be set to the current time each time you are running <code>make</code>.</p>
 <p>The <a href="https://reproducible-builds.org/docs/source-date-epoch/"><code>SOURCE_DATE_EPOCH</code> environment variable</a> is an industry standard, that many tools, such as gcc, recognize, and use in place of the current time when generating output.</p>
 <p>For reproducible builds, you need to set this to a fixed value. You can use the special value <code>version</code> which will use the nominal release date for the current JDK version, or a value describing a date, either an epoch based timestamp as an integer, or a valid ISO-8601 date.</p>
-<p><strong>Hint:</strong> If your build environment already sets <code>SOURCE_DATE_EPOCH</code>, you can propagate this using <code>--with-source-date=$(SOURCE_DATE_EPOCH)</code>.</p>
+<p><strong>Hint:</strong> If your build environment already sets <code>SOURCE_DATE_EPOCH</code>, you can propagate this using <code>--with-source-date=$SOURCE_DATE_EPOCH</code>.</p>
 <ul>
 <li>Specify a hotspot build time</li>
 </ul>
