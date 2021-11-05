@@ -959,8 +959,10 @@ final class Streams {
      * during stream creation for empty streams. Most of the
      * methods such as filter() and map() will return "this".
      * We have tried to mirror the behavior of the previous
-     * Stream.empty() for spliterator characteristics, parallel()
-     * and
+     * Stream.empty() for spliterator characteristics. If someone
+     * calls parallel() or sorted() then we will create a new
+     * empty stream using the old way of StreamSupport.stream(
+     * spliterator(), false).
      */
     private static final class EmptyStream<T> implements Stream<T> {
         private static <T> Stream<T> createOldEmpty() {
@@ -976,9 +978,7 @@ final class Streams {
         @Override
         public <R> Stream<R> map(Function<? super T, ? extends R> mapper) {
             Objects.requireNonNull(mapper);
-            @SuppressWarnings("unchecked")
-            var stream = (Stream<R>) this;
-            return stream;
+            return emptyStream();
         }
 
         @Override
@@ -1002,9 +1002,7 @@ final class Streams {
         @Override
         public <R> Stream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
             Objects.requireNonNull(mapper);
-            @SuppressWarnings("unchecked")
-            var stream = (Stream<R>) this;
-            return stream;
+            return emptyStream();
         }
 
         @Override
@@ -1028,9 +1026,7 @@ final class Streams {
         @Override
         public <R> Stream<R> mapMulti(BiConsumer<? super T, ? super Consumer<R>> mapper) {
             Objects.requireNonNull(mapper);
-            @SuppressWarnings("unchecked")
-            var stream = (Stream<R>) this;
-            return stream;
+            return emptyStream();
         }
 
         @Override
@@ -1249,6 +1245,10 @@ final class Streams {
         }
     }
 
+    /**
+     * The EmptyIntStream is equivalent to the EmptyStream - to
+     * optimize empty stream processing, but for IntStreams.
+     */
     private static final class EmptyIntStream implements IntStream {
         private static IntStream createOldEmpty() {
             return StreamSupport.intStream(
@@ -1502,6 +1502,10 @@ final class Streams {
         }
     }
 
+    /**
+     * The EmptyLongStream is equivalent to the EmptyStream - to
+     * optimize empty stream processing, but for LongStreams.
+     */
     private static final class EmptyLongStream implements LongStream {
         private static LongStream createOldEmpty() {
             return StreamSupport.longStream(
@@ -1750,6 +1754,10 @@ final class Streams {
         }
     }
 
+    /**
+     * The EmptyDoubleStream is equivalent to the EmptyStream - to
+     * optimize empty stream processing, but for DoubleStreams.
+     */
     private static final class EmptyDoubleStream implements DoubleStream {
         private static DoubleStream createOldEmpty() {
             return StreamSupport.doubleStream(
