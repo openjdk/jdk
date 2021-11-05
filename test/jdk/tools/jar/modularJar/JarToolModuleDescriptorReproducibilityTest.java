@@ -77,9 +77,9 @@ public class JarToolModuleDescriptorReproducibilityTest {
      */
     @Test
     public void testJarCreate() throws Exception {
-        final List<Path> jarFiles = new ArrayList<>();
+        List<Path> jarFiles = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            final Path targetJar = Files.createTempFile(Path.of("."), "8258117-jar-create", ".jar");
+            Path targetJar = Files.createTempFile(Path.of("."), "8258117-jar-create", ".jar");
             jarFiles.add(targetJar);
             if (i > 0) {
                 // the timestamp that gets embedded in (Zip/Jar)Entry gets narrowed
@@ -108,9 +108,9 @@ public class JarToolModuleDescriptorReproducibilityTest {
      */
     @Test
     public void testJarUpdate() throws Exception {
-        final List<Path> jarFiles = new ArrayList<>();
+        List<Path> jarFiles = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            final Path targetJar = Files.createTempFile(Path.of("."), "8258117-jar-update", ".jar");
+            Path targetJar = Files.createTempFile(Path.of("."), "8258117-jar-update", ".jar");
             jarFiles.add(targetJar);
             if (i > 0) {
                 // the timestamp that gets embedded in (Zip/Jar)Entry gets narrowed
@@ -145,7 +145,7 @@ public class JarToolModuleDescriptorReproducibilityTest {
         List<String> sourceFiles = new ArrayList<>();
         Files.walkFileTree(sourcePath, new SimpleFileVisitor<>() {
             @Override
-            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 if (file.toString().endsWith(".java")) {
                     sourceFiles.add(file.toString());
                 }
@@ -182,10 +182,10 @@ public class JarToolModuleDescriptorReproducibilityTest {
     }
 
     // verifies the byte equality of the contents in each of the files
-    private static void assertAllFileContentsAreSame(final List<Path> files) throws Exception {
-        final byte[] file1Contents = Files.readAllBytes(files.get(0));
+    private static void assertAllFileContentsAreSame(List<Path> files) throws Exception {
+        byte[] file1Contents = Files.readAllBytes(files.get(0));
         for (int i = 1; i < files.size(); i++) {
-            final byte[] otherFileContents = Files.readAllBytes(files.get(i));
+            byte[] otherFileContents = Files.readAllBytes(files.get(i));
             if (!Arrays.equals(file1Contents, otherFileContents)) {
                 throw new RuntimeException("Content in file " + files.get(i)
                         + " isn't the same as in file " + files.get(0));
