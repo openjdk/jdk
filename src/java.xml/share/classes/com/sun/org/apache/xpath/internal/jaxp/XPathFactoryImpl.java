@@ -312,8 +312,7 @@ public  class XPathFactoryImpl extends XPathFactory {
         }
 
     @Override
-    public void setProperty(String name, String value)
-        throws XPathFactoryConfigurationException {
+    public void setProperty(String name, String value) {
         // property name cannot be null
         if (name == null) {
             String fmsg = XSLMessages.createXPATHMessage(
@@ -326,12 +325,11 @@ public  class XPathFactoryImpl extends XPathFactory {
         String fmsg = XSLMessages.createXPATHMessage(
                 XPATHErrorResources.ER_GETTING_UNKNOWN_PROPERTY,
                 new Object[] {name, CLASS_NAME} );
-        throw new XPathFactoryConfigurationException(fmsg);
+        throw new IllegalArgumentException(fmsg);
     }
 
     @Override
-    public String getProperty(String name)
-        throws XPathFactoryConfigurationException {
+    public String getProperty(String name) {
         // property name cannot be null
         if (name == null) {
             String fmsg = XSLMessages.createXPATHMessage(
@@ -344,6 +342,6 @@ public  class XPathFactoryImpl extends XPathFactory {
         String fmsg = XSLMessages.createXPATHMessage(
                 XPATHErrorResources.ER_GETTING_UNKNOWN_PROPERTY,
                 new Object[] {name, CLASS_NAME} );
-        throw new XPathFactoryConfigurationException(fmsg);
+        throw new IllegalArgumentException(fmsg);
     }
 }

@@ -389,8 +389,7 @@ public abstract class XPathFactory {
      *
      * @since 18
      */
-    public void setProperty(String name, String value)
-        throws IllegalArgumentException {
+    public void setProperty(String name, String value) {
 
         if (name == null) {
             throw new NullPointerException("the name parameter is null");
@@ -415,8 +414,7 @@ public abstract class XPathFactory {
      *
      * @since 18
      */
-    public String getProperty(String name)
-        throws IllegalArgumentException {
+    public String getProperty(String name) {
 
         if (name == null) {
             throw new NullPointerException("the name parameter is null");

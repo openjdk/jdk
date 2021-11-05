@@ -30,7 +30,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathFactoryConfigurationException;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -40,7 +39,6 @@ import org.w3c.dom.Node;
 /*
  * @test
  * @bug 6376058 8276141
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @build xpath.XPathTest xpath.XPathFactoryDummyImpl
  * @run testng/othervm xpath.XPathTest
  * @summary Test XPath functions. See details for each test.
@@ -81,9 +79,9 @@ public class XPathTest {
 
         if (factoryName == null) {
             // default factory impl
-            Assert.assertThrows(XPathFactoryConfigurationException.class,
+            Assert.assertThrows(IllegalArgumentException.class,
                     () -> setProperty(xpf, "unknown", "value"));
-            Assert.assertThrows(XPathFactoryConfigurationException.class,
+            Assert.assertThrows(IllegalArgumentException.class,
                     () -> getProperty(xpf, "unknown"));
         } else {
             // the DummyImpl does not implement the method
