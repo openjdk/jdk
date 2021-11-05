@@ -230,7 +230,7 @@ void MallocSiteTable::AccessLock::exclusiveLock() {
 
   // make counter negative to block out shared locks
   do {
-    val = *_lock;
+    val = Atomic::load(_lock);
     target = _MAGIC_ + val;
   } while (Atomic::cmpxchg(_lock, val, target, memory_order_relaxed) != val);
 
