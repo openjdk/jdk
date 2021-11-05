@@ -191,10 +191,10 @@ Address LIR_Assembler::as_Address(LIR_Address* addr, Register tmp) {
     assert(addr->scale() == 0,
            "expected for immediate operand, was: %d", addr->scale());
     ptrdiff_t offset = ptrdiff_t(addr->disp());
-    // FIXME: Assuming worst case, 8 byte datum, since operand size is unknown.
-    //        NOTE: Not expecting 16 byte vector access.
-    const uint log2size = 3;
-    if (Address::offset_ok_for_immed(offset, log2size)) {
+    // NOTE: Does not handle any 16 byte vector access.
+    const uint type_size = type2aelembytes(addr->type(), true);
+    const uint log2_size = log2i_exact(type_size);
+    if (Address::offset_ok_for_immed(offset, log2_size)) {
       return Address(base, offset);
     } else {
       __ mov(tmp, offset);
