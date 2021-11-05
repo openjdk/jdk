@@ -2099,14 +2099,18 @@ public abstract class Path2D implements Shape, Cloneable {
      *         {@code PathIterator}.
      * @see Shape#getBounds2D()
      */
-    public static Rectangle2D getBounds2D(PathIterator pi) {
+    public static Rectangle2D getBounds2D(final PathIterator pi) {
         // define x and y parametric coefficients where:
         // x(t) = x_coeff[0] + x_coeff[1] * t + x_coeff[2] * t^2 + x_coeff[3] * t^3
-        double[] x_coeff = new double[4];
-        double[] y_coeff = new double[4];
+        final double[] x_coeff = new double[4];
+        final double[] y_coeff = new double[4];
 
-        double[] coords = new double[6];
-        double[] tExtrema = new double[3];
+        // define the derivative's coefficients
+        final double[] x_deriv_coeff = new double[3];
+        final double[] y_deriv_coeff = new double[3];
+
+        final double[] coords = new double[6];
+        final double[] tExtrema = new double[2];
         boolean isEmpty = true;
         double leftX = 0.0;
         double rightX = 0.0;
@@ -2115,9 +2119,8 @@ public abstract class Path2D implements Shape, Cloneable {
         double lastX = 0.0;
         double lastY = 0.0;
 
-        pathIteratorLoop : while (!pi.isDone()) {
+        for (; !pi.isDone(); pi.next()) {
             int type = pi.currentSegment(coords);
-            pi.next();
             double endX, endY;
             switch (type) {
                 case PathIterator.SEG_MOVETO, PathIterator.SEG_LINETO:
@@ -2132,8 +2135,9 @@ public abstract class Path2D implements Shape, Cloneable {
                     endX = coords[4];
                     endY = coords[5];
                     break;
+                case PathIterator.SEG_CLOSE:
                 default:
-                    continue pathIteratorLoop;
+                    continue;
             }
 
             if (isEmpty) {
@@ -2149,53 +2153,54 @@ public abstract class Path2D implements Shape, Cloneable {
                 bottomY = (endY > bottomY) ? endY : bottomY;
             }
 
-            // here's the slightly trickier part: examine quadratic and cubic
-            // segments for extrema where t is between (0, 1):
+            if (type == PathIterator.SEG_QUADTO || type == PathIterator.SEG_CUBICTO) {
+                // here's the slightly trickier part: examine quadratic and cubic
+                // segments for extrema where t is between (0, 1):
 
-            boolean definedParametricEquations;
-            if (type == PathIterator.SEG_QUADTO) {
-                definedParametricEquations = true;
+                if (type == PathIterator.SEG_QUADTO) {
+                    x_coeff[3] = 0.0;
+                    x_coeff[2] = lastX - 2.0 * coords[0] + coords[2];
+                    x_coeff[1] = -2.0 * lastX + 2.0 * coords[0];
+                    x_coeff[0] = lastX;
 
-                x_coeff[3] = 0.0;
-                x_coeff[2] = lastX - 2.0 * coords[0] + coords[2];
-                x_coeff[1] = -2.0 * lastX + 2.0 * coords[0];
-                x_coeff[0] = lastX;
+                    y_coeff[3] = 0;
+                    y_coeff[2] = lastY - 2.0 * coords[1] + coords[3];
+                    y_coeff[1] = -2.0 * lastY + 2.0 * coords[1];
+                    y_coeff[0] = lastY;
+                } else if (type == PathIterator.SEG_CUBICTO) {
+                    x_coeff[3] = -lastX + 3.0 * coords[0] - 3.0 * coords[2] + coords[4];
+                    x_coeff[2] = 3.0 * lastX - 6.0 * coords[0] + 3.0 * coords[2];
+                    x_coeff[1] = -3.0 * lastX + 3.0 * coords[0];
+                    x_coeff[0] = lastX;
 
-                y_coeff[3] = 0;
-                y_coeff[2] = lastY - 2.0 * coords[1] + coords[3];
-                y_coeff[1] = -2.0 * lastY + 2.0 * coords[1];
-                y_coeff[0] = lastY;
-            } else if (type == PathIterator.SEG_CUBICTO) {
-                definedParametricEquations = true;
+                    y_coeff[3] = -lastY + 3.0 * coords[1] - 3.0 * coords[3] + coords[5];
+                    y_coeff[2] = 3.0 * lastY - 6.0 * coords[1] + 3.0 * coords[3];
+                    y_coeff[1] = -3.0 * lastY + 3.0 * coords[1];
+                    y_coeff[0] = lastY;
+                }
 
-                x_coeff[3] = -lastX + 3.0 * coords[0] - 3.0 * coords[2] + coords[4];
-                x_coeff[2] = 3.0 * lastX - 6.0 * coords[0] + 3.0 * coords[2];
-                x_coeff[1] = -3.0 * lastX + 3.0 * coords[0];
-                x_coeff[0] = lastX;
+                x_deriv_coeff[0] = x_coeff[1];
+                x_deriv_coeff[1] = 2.0 * x_coeff[2];
+                x_deriv_coeff[2] = 3.0 * x_coeff[3];
 
-                y_coeff[3] = -lastY + 3.0 * coords[1] - 3.0 * coords[3] + coords[5];
-                y_coeff[2] = 3.0 * lastY - 6.0 * coords[1] + 3.0 * coords[3];
-                y_coeff[1] = -3.0 * lastY + 3.0 * coords[1];
-                y_coeff[0] = lastY;
-            } else {
-                definedParametricEquations = false;
-            }
-
-            if (definedParametricEquations) {
-                int tExtremaCount = Curve.findExtrema(x_coeff, tExtrema);
-                for(int i = 0; i < tExtremaCount; i++) {
+                int tExtremaCount = QuadCurve2D.solveQuadratic(x_deriv_coeff, tExtrema);
+                for (int i = 0; i < tExtremaCount; i++) {
                     double t = tExtrema[i];
-                    if (t > 0 && t < 1) {
+                    if (t > 0.0 && t < 1.0) {
                         double x = x_coeff[0] + t * (x_coeff[1] + t * (x_coeff[2] + t * x_coeff[3]));
                         leftX = (x < leftX) ? x : leftX;
                         rightX = (x > rightX) ? x : rightX;
                     }
                 }
 
-                tExtremaCount = Curve.findExtrema(y_coeff, tExtrema);
-                for(int i = 0; i < tExtremaCount; i++) {
+                y_deriv_coeff[0] = y_coeff[1];
+                y_deriv_coeff[1] = 2.0 * y_coeff[2];
+                y_deriv_coeff[2] = 3.0 * y_coeff[3];
+
+                tExtremaCount = QuadCurve2D.solveQuadratic(y_deriv_coeff, tExtrema);
+                for (int i = 0; i < tExtremaCount; i++) {
                     double t = tExtrema[i];
-                    if (t > 0 && t < 1) {
+                    if (t > 0.0 && t < 1.0) {
                         double y = y_coeff[0] + t * (y_coeff[1] + t * (y_coeff[2] + t * y_coeff[3]));
                         topY = (y < topY) ? y : topY;
                         bottomY = (y > bottomY) ? y : bottomY;
