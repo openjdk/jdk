@@ -97,29 +97,22 @@ ZPage* ZSafePageRecycle::register_and_clone_if_activated(ZPage* page) {
   return cloned_page;
 }
 
-enum ZPageAllocationStall {
-  ZPageAllocationStallStartMinorGC,
-  ZPageAllocationStallStartMajorGC,
-  ZPageAllocationStallSuccess,
-  ZPageAllocationStallFailed
-};
-
 class ZPageAllocation : public StackObj {
   friend class ZList<ZPageAllocation>;
 
 private:
-  const uint8_t                 _type;
-  const size_t                  _size;
-  const ZAllocationFlags        _flags;
-  const uint32_t                _young_seqnum;
-  const uint32_t                _old_seqnum;
-  size_t                        _flushed;
-  size_t                        _committed;
-  ZList<ZPage>                  _pages;
-  ZListNode<ZPageAllocation>    _node;
-  ZFuture<ZPageAllocationStall> _stall_result;
-  ZGenerationId const           _generation;
-  ZCollector* const             _collector;
+  const uint8_t              _type;
+  const size_t               _size;
+  const ZAllocationFlags     _flags;
+  const uint32_t             _young_seqnum;
+  const uint32_t             _old_seqnum;
+  size_t                     _flushed;
+  size_t                     _committed;
+  ZList<ZPage>               _pages;
+  ZListNode<ZPageAllocation> _node;
+  ZFuture<bool>              _stall_result;
+  ZGenerationId const        _generation;
+  ZCollector* const          _collector;
 
 public:
   ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation, ZCollector* collector) :
@@ -172,7 +165,7 @@ public:
     _committed = committed;
   }
 
-  ZPageAllocationStall wait() {
+  bool wait() {
     return _stall_result.get();
   }
 
@@ -180,7 +173,7 @@ public:
     return &_pages;
   }
 
-  void satisfy(ZPageAllocationStall result) {
+  void satisfy(bool result) {
     _stall_result.set(result);
   }
 
@@ -524,23 +517,11 @@ bool ZPageAllocator::alloc_page_stall(ZPageAllocation* allocation) {
   // Increment stalled counter
   Atomic::inc(&_nstalled);
 
-  ZPageAllocationStall result = ZPageAllocationStallStartMinorGC;
+  // Start asynchronous minor GC
+  ZCollectedHeap::heap()->collect(GCCause::_z_minor_allocation_stall);
 
-  for (;;) {
-    if (result == ZPageAllocationStallStartMinorGC) {
-      // Start asynchronous minor GC
-      ZCollectedHeap::heap()->collect(GCCause::_z_minor_allocation_stall);
-    } else if (result == ZPageAllocationStallStartMajorGC) {
-      // Start asynchronous major GC
-      ZCollectedHeap::heap()->collect(GCCause::_z_major_allocation_stall);
-    } else {
-      // Suceeded or failed
-      break;
-    }
-
-    // Wait for allocation to complete, fail or request a GC
-    result = allocation->wait();
-  }
+  // Wait for allocation to complete or fail
+  const bool result = allocation->wait();
 
   {
     // Guard deletion of underlying semaphore. This is a workaround for
@@ -556,7 +537,7 @@ bool ZPageAllocator::alloc_page_stall(ZPageAllocation* allocation) {
   // Send event
   event.commit(allocation->type(), allocation->size());
 
-  return (result == ZPageAllocationStallSuccess);
+  return result;
 }
 
 bool ZPageAllocator::alloc_page_or_stall(ZPageAllocation* allocation) {
@@ -769,7 +750,7 @@ void ZPageAllocator::satisfy_stalled() {
     // Note that we must dequeue the allocation request first, since
     // it will immediately be deallocated once it has been satisfied.
     _stalled.remove(allocation);
-    allocation->satisfy(ZPageAllocationStallSuccess);
+    allocation->satisfy(true);
   }
 }
 
@@ -938,10 +919,10 @@ void ZPageAllocator::check_minor_out_of_memory() {
   // after the last minor GC started, otherwise start a major GC.
   if (allocation->young_seqnum() == ZHeap::heap()->young_collector()->seqnum()) {
     // Start a minor GC, keep allocation requests enqueued
-    allocation->satisfy(ZPageAllocationStallStartMinorGC);
+    ZCollectedHeap::heap()->collect(GCCause::_z_minor_allocation_stall);
   } else {
     // Start a major GC, keep allocation requests enqueued
-    allocation->satisfy(ZPageAllocationStallStartMajorGC);
+    ZCollectedHeap::heap()->collect(GCCause::_z_major_allocation_stall);
   }
 }
 
@@ -953,13 +934,13 @@ void ZPageAllocator::check_major_out_of_memory() {
   for (ZPageAllocation* allocation = _stalled.first(); allocation != NULL; allocation = _stalled.first()) {
     if (allocation->old_seqnum() == ZHeap::heap()->old_collector()->seqnum()) {
       // Start a major GC, keep allocation requests enqueued
-      allocation->satisfy(ZPageAllocationStallStartMajorGC);
+      ZCollectedHeap::heap()->collect(GCCause::_z_major_allocation_stall);
       return;
     }
 
     // Out of memory, fail allocation request
     _stalled.remove(allocation);
-    allocation->satisfy(ZPageAllocationStallFailed);
+    allocation->satisfy(false);
   }
 }
 
