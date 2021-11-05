@@ -32,13 +32,14 @@
 #include "heapRegionRemSet.hpp"
 #include "ci/ciUtilities.hpp"
 
-constexpr const char* G1CardSetFreeMemoryTask::_state_names[];
 
-const char* G1CardSetFreeMemoryTask::get_state_name(State value) const {
+constexpr const char* G1BufferListFreeMemoryTask::_state_names[];
+
+const char* G1BufferListFreeMemoryTask::get_state_name(State value) const {
   return _state_names[static_cast<std::underlying_type_t<State>>(value)];
 }
 
-bool G1CardSetFreeMemoryTask::deadline_exceeded(jlong deadline) {
+bool G1BufferListFreeMemoryTask::deadline_exceeded(jlong deadline) {
   return os::elapsed_counter() >= deadline;
 }
 
@@ -47,11 +48,11 @@ static size_t keep_size(size_t free, size_t used, double percent) {
   return MIN2(free, to_keep);
 }
 
-bool G1CardSetFreeMemoryTask::calculate_return_infos(jlong deadline) {
+bool G1BufferListFreeMemoryTask::calculate_return_infos(jlong deadline) {
   // Ignore the deadline in this step as it is very short.
 
-  G1CardSetMemoryStats used = _total_used;
-  G1CardSetMemoryStats free = G1CardSetFreePool::free_list_sizes();
+  G1BufferListMemoryStats used = _total_used;
+  G1BufferListMemoryStats free = G1BufferListFreePool<mtGCCardSet>::free_list_sizes();
 
   _return_info = new G1ReturnMemoryProcessorSet(used.num_pools());
   for (uint i = 0; i < used.num_pools(); i++) {
@@ -67,11 +68,11 @@ bool G1CardSetFreeMemoryTask::calculate_return_infos(jlong deadline) {
     _return_info->append(new G1ReturnMemoryProcessor(return_to_vm_size));
   }
 
-  G1CardSetFreePool::update_unlink_processors(_return_info);
+  G1BufferListFreePool<mtGCCardSet>::update_unlink_processors(_return_info);
   return false;
 }
 
-bool G1CardSetFreeMemoryTask::return_memory_to_vm(jlong deadline) {
+bool G1BufferListFreeMemoryTask::return_memory_to_vm(jlong deadline) {
   for (int i = 0; i < _return_info->length(); i++) {
     G1ReturnMemoryProcessor* info = _return_info->at(i);
     if (!info->finished_return_to_vm()) {
@@ -83,7 +84,7 @@ bool G1CardSetFreeMemoryTask::return_memory_to_vm(jlong deadline) {
   return false;
 }
 
-bool G1CardSetFreeMemoryTask::return_memory_to_os(jlong deadline) {
+bool G1BufferListFreeMemoryTask::return_memory_to_os(jlong deadline) {
   for (int i = 0; i < _return_info->length(); i++) {
     G1ReturnMemoryProcessor* info = _return_info->at(i);
     if (!info->finished_return_to_os()) {
@@ -95,7 +96,7 @@ bool G1CardSetFreeMemoryTask::return_memory_to_os(jlong deadline) {
   return false;
 }
 
-bool G1CardSetFreeMemoryTask::cleanup_return_infos() {
+bool G1BufferListFreeMemoryTask::cleanup_return_infos() {
   for (int i = 0; i < _return_info->length(); i++) {
      G1ReturnMemoryProcessor* info = _return_info->at(i);
      delete info;
@@ -106,7 +107,7 @@ bool G1CardSetFreeMemoryTask::cleanup_return_infos() {
   return false;
 }
 
-bool G1CardSetFreeMemoryTask::free_excess_card_set_memory() {
+bool G1BufferListFreeMemoryTask::free_excess_card_set_memory() {
   jlong start = os::elapsed_counter();
   jlong end = start +
               (os::elapsed_frequency() / 1000) * G1RemSetFreeMemoryStepDurationMillis;
@@ -163,25 +164,25 @@ bool G1CardSetFreeMemoryTask::free_excess_card_set_memory() {
   return is_active();
 }
 
-void G1CardSetFreeMemoryTask::set_state(State new_state) {
+void G1BufferListFreeMemoryTask::set_state(State new_state) {
   log_trace(gc, task)("Card Set Free Memory: State change from %s to %s",
                       get_state_name(_state),
                       get_state_name(new_state));
   _state = new_state;
 }
 
-bool G1CardSetFreeMemoryTask::is_active() const {
+bool G1BufferListFreeMemoryTask::is_active() const {
   return _state != State::Inactive;
 }
 
-jlong G1CardSetFreeMemoryTask::reschedule_delay_ms() const {
+jlong G1BufferListFreeMemoryTask::reschedule_delay_ms() const {
   return G1RemSetFreeMemoryRescheduleDelayMillis;
 }
 
-G1CardSetFreeMemoryTask::G1CardSetFreeMemoryTask(const char* name) :
+G1BufferListFreeMemoryTask::G1BufferListFreeMemoryTask(const char* name) :
   G1ServiceTask(name), _state(State::CalculateUsed), _return_info(nullptr) { }
 
-void G1CardSetFreeMemoryTask::execute() {
+void G1BufferListFreeMemoryTask::execute() {
   SuspendibleThreadSetJoiner sts;
 
   if (free_excess_card_set_memory()) {
@@ -189,8 +190,8 @@ void G1CardSetFreeMemoryTask::execute() {
   }
 }
 
-void G1CardSetFreeMemoryTask::notify_new_stats(G1CardSetMemoryStats* young_gen_stats,
-                                               G1CardSetMemoryStats* collection_set_candidate_stats) {
+void G1BufferListFreeMemoryTask::notify_new_stats(G1BufferListMemoryStats* young_gen_stats,
+                                                  G1BufferListMemoryStats* collection_set_candidate_stats) {
   assert_at_safepoint_on_vm_thread();
 
   _total_used = *young_gen_stats;

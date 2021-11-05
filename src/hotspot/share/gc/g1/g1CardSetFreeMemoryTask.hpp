@@ -26,13 +26,14 @@
 #define SHARE_GC_G1_G1CARDSETFREEMEMORYTASK_HPP
 
 #include "gc/g1/g1ServiceThread.hpp"
+#include "gc/g1/g1BufferListFreePool.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"
 
 // Task handling deallocation of free card set memory.
-class G1CardSetFreeMemoryTask : public G1ServiceTask {
+class G1BufferListFreeMemoryTask : public G1ServiceTask {
 
   enum class State : uint {
     Inactive,
@@ -53,10 +54,10 @@ class G1CardSetFreeMemoryTask : public G1ServiceTask {
   State _state;
 
   // Current total card set memory usage.
-  G1CardSetMemoryStats _total_used;
+  G1BufferListMemoryStats _total_used;
 
-  typedef G1CardSetFreePool::G1ReturnMemoryProcessor G1ReturnMemoryProcessor;
-  typedef G1CardSetFreePool::G1ReturnMemoryProcessorSet G1ReturnMemoryProcessorSet;
+  typedef G1BufferListFreePool<mtGCCardSet>::G1ReturnMemoryProcessor G1ReturnMemoryProcessor;
+  typedef G1BufferListFreePool<mtGCCardSet>::G1ReturnMemoryProcessorSet G1ReturnMemoryProcessorSet;
 
   G1ReturnMemoryProcessorSet* _return_info;
 
@@ -82,14 +83,14 @@ class G1CardSetFreeMemoryTask : public G1ServiceTask {
   jlong reschedule_delay_ms() const;
 
 public:
-  explicit G1CardSetFreeMemoryTask(const char* name);
+  explicit G1BufferListFreeMemoryTask(const char* name);
 
   void execute() override;
 
   // Notify the task of new used remembered set memory statistics for the young
   // generation and the collection set candidate sets.
-  void notify_new_stats(G1CardSetMemoryStats* young_gen_stats,
-                        G1CardSetMemoryStats* collection_set_candidate_stats);
+  void notify_new_stats(G1BufferListMemoryStats* young_gen_stats,
+                        G1BufferListMemoryStats* collection_set_candidate_stats);
 };
 
 #endif // SHARE_GC_G1_G1CARDSETFREEMEMORYTASK_HPP

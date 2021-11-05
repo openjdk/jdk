@@ -33,7 +33,7 @@
 class WorkerTask;
 class G1Allocator;
 class G1BatchedTask;
-class G1CardSetMemoryStats;
+class G1BufferListMemoryStats;
 class G1CollectedHeap;
 class G1CollectionSet;
 class G1CollectorState;

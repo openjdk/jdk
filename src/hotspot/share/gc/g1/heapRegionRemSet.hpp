@@ -34,6 +34,7 @@
 #include "utilities/bitMap.hpp"
 
 class outputStream;
+class G1CardSetMemoryManager;
 
 class HeapRegionRemSet : public CHeapObj<mtGC> {
   friend class VMStructs;
@@ -53,7 +54,7 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   // When splitting addresses into region and card within that region, the logical
   // shift value to get the region.
   static uint _split_card_shift;
-  // When splitting addresses into region and card within that region, the mask
+  // When splitting addresses into region and card within that region, the mask_card_set_mm
   // to get the offset within the region.
   static size_t _split_card_mask;
   // Cached value of heap base address.
@@ -125,7 +126,7 @@ public:
   void clear(bool only_cardset = false);
   void clear_locked(bool only_cardset = false);
 
-  G1CardSetMemoryStats card_set_memory_stats() const { return _card_set_mm.memory_stats(); }
+  G1BufferListMemoryStats card_set_memory_stats() const; // { return _card_set_mm.memory_stats(); }
 
   // The actual # of bytes this hr_remset takes up. Also includes the strong code
   // root set.
@@ -142,7 +143,7 @@ public:
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return G1CardSet::static_mem_size() + G1CodeRootSet::static_mem_size() + sizeof(G1CardSetFreePool);
+    return G1CardSet::static_mem_size() + G1CodeRootSet::static_mem_size() + sizeof(G1BufferListFreePool<mtGCCardSet>);
   }
 
   static void print_static_mem_size(outputStream* out);

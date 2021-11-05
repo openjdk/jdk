@@ -187,7 +187,7 @@ class G1SegmentedArray {
   volatile uint _num_allocated_nodes; // Number of total nodes allocated and in use.
 
 private:
-  inline G1SegmentedArrayBuffer<flag>* create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev);
+  G1SegmentedArrayBuffer<flag>* create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev);
 
 public:
   const G1SegmentedArrayBuffer<flag>* first_array_buffer() const { return Atomic::load(&_first); }
@@ -195,7 +195,7 @@ public:
   uint num_available_nodes() const { return Atomic::load(&_num_available_nodes); }
   uint num_allocated_nodes() const { return Atomic::load(&_num_allocated_nodes); }
 
-  inline uint elem_size() const;
+  uint elem_size() const;
 
   G1SegmentedArray(const G1SegmentedArrayAllocOptions* buffer_options,
                    G1SegmentedArrayBufferList<flag>* free_buffer_list);
@@ -207,9 +207,9 @@ public:
   // be called in a globally synchronized area.
   void drop_all();
 
-  inline Elem* allocate();
+  Elem* allocate();
 
-  inline uint num_buffers() const;
+  uint num_buffers() const;
 };
 
 #endif //SHARE_GC_G1_G1SEGMENTEDARRAY_HPP
