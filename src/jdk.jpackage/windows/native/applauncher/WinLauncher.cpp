@@ -154,6 +154,8 @@ void launchApp() {
     std::unique_ptr<Jvm> jvm(appLauncher.createJvmLauncher());
 
     if (restart) {
+        jvm->setEnvVariables();
+
         jvm = std::unique_ptr<Jvm>();
 
         STARTUPINFOW si;
