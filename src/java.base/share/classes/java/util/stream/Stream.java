@@ -1384,7 +1384,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return an empty sequential stream
      */
     public static<T> Stream<T> empty() {
-        return StreamSupport.stream(Spliterators.<T>emptySpliterator(), false);
+        return Streams.<T>emptyStream();
     }
 
     /**

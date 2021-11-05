@@ -954,7 +954,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * @return an empty sequential stream
      */
     public static DoubleStream empty() {
-        return StreamSupport.doubleStream(Spliterators.emptyDoubleSpliterator(), false);
+        return Streams.emptyDoubleStream();
     }
 
     /**

@@ -24,14 +24,58 @@
  */
 package java.util.stream;
 
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.Spliterator;
-import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
-import java.util.function.IntConsumer;
-import java.util.function.LongConsumer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.DoubleSummaryStatistics;
+import java.util.IntSummaryStatistics;
+import java.util.Iterator;
+import java.util.List;
+import java.util.LongSummaryStatistics;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
+import java.util.PrimitiveIterator;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleFunction;
+import java.util.function.DoublePredicate;
+import java.util.function.DoubleToIntFunction;
+import java.util.function.DoubleToLongFunction;
+import java.util.function.DoubleUnaryOperator;
+import java.util.function.Function;
+import java.util.function.IntBinaryOperator;
+import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
+import java.util.function.IntToDoubleFunction;
+import java.util.function.IntToLongFunction;
+import java.util.function.IntUnaryOperator;
+import java.util.function.LongBinaryOperator;
+import java.util.function.LongConsumer;
+import java.util.function.LongFunction;
+import java.util.function.LongPredicate;
+import java.util.function.LongToDoubleFunction;
+import java.util.function.LongToIntFunction;
+import java.util.function.LongUnaryOperator;
+import java.util.function.ObjDoubleConsumer;
+import java.util.function.ObjIntConsumer;
+import java.util.function.ObjLongConsumer;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
 /**
  * Utility methods for operating on and creating streams.
@@ -884,5 +928,1068 @@ final class Streams {
                 b.close();
             }
         };
+    }
+
+
+    private static final Stream<?> emptyStream = new EmptyStream<>();
+    private static final IntStream emptyIntStream = new EmptyIntStream();
+    private static final LongStream emptyLongStream = new EmptyLongStream();
+    private static final DoubleStream emptyDoubleStream = new EmptyDoubleStream();
+
+    static <T> Stream<T> emptyStream() {
+        @SuppressWarnings("unchecked")
+        var stream = (Stream<T>) emptyStream;
+        return stream;
+    }
+
+    static IntStream emptyIntStream() {
+        return emptyIntStream;
+    }
+
+    static LongStream emptyLongStream() {
+        return emptyLongStream;
+    }
+
+    static DoubleStream emptyDoubleStream() {
+        return emptyDoubleStream;
+    }
+
+    /**
+     * EmptyStream is an optimization to reduce object allocation
+     * during stream creation for empty streams. Most of the
+     * methods such as filter() and map() will return "this".
+     * We have tried to mirror the behavior of the previous
+     * Stream.empty() for spliterator characteristics, parallel()
+     * and
+     */
+    private static final class EmptyStream<T> implements Stream<T> {
+        private static <T> Stream<T> createOldEmpty() {
+            return StreamSupport.stream(Spliterators.<T>emptySpliterator(), false);
+        }
+
+        @Override
+        public Stream<T> filter(Predicate<? super T> predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
+
+        @Override
+        public <R> Stream<R> map(Function<? super T, ? extends R> mapper) {
+            Objects.requireNonNull(mapper);
+            @SuppressWarnings("unchecked")
+            var stream = (Stream<R>) this;
+            return stream;
+        }
+
+        @Override
+        public IntStream mapToInt(ToIntFunction<? super T> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyIntStream();
+        }
+
+        @Override
+        public LongStream mapToLong(ToLongFunction<? super T> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyLongStream();
+        }
+
+        @Override
+        public DoubleStream mapToDouble(ToDoubleFunction<? super T> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyDoubleStream();
+        }
+
+        @Override
+        public <R> Stream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
+            Objects.requireNonNull(mapper);
+            @SuppressWarnings("unchecked")
+            var stream = (Stream<R>) this;
+            return stream;
+        }
+
+        @Override
+        public IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyIntStream();
+        }
+
+        @Override
+        public LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyLongStream();
+        }
+
+        @Override
+        public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyDoubleStream();
+        }
+
+        @Override
+        public <R> Stream<R> mapMulti(BiConsumer<? super T, ? super Consumer<R>> mapper) {
+            Objects.requireNonNull(mapper);
+            @SuppressWarnings("unchecked")
+            var stream = (Stream<R>) this;
+            return stream;
+        }
+
+        @Override
+        public IntStream mapMultiToInt(BiConsumer<? super T, ? super IntConsumer> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyIntStream();
+        }
+
+        @Override
+        public LongStream mapMultiToLong(BiConsumer<? super T, ? super LongConsumer> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyLongStream();
+        }
+
+        @Override
+        public DoubleStream mapMultiToDouble(BiConsumer<? super T, ? super DoubleConsumer> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyDoubleStream();
+        }
+
+        @Override
+        public Stream<T> distinct() {
+            return EmptyStream.<T>createOldEmpty().distinct();
+        }
+
+        @Override
+        public Stream<T> sorted() {
+            return EmptyStream.<T>createOldEmpty().sorted();
+        }
+
+        @Override
+        public Stream<T> sorted(Comparator<? super T> comparator) {
+            Objects.requireNonNull(comparator);
+            return this;
+        }
+
+        @Override
+        public Stream<T> peek(Consumer<? super T> action) {
+            Objects.requireNonNull(action);
+            return this;
+        }
+
+        @Override
+        public Stream<T> limit(long maxSize) {
+            if (maxSize < 0)
+                throw new IllegalArgumentException(Long.toString(maxSize));
+            return this;
+        }
+
+        @Override
+        public Stream<T> skip(long n) {
+            if (n < 0)
+                throw new IllegalArgumentException(Long.toString(n));
+            return this;
+        }
+
+        @Override
+        public Stream<T> takeWhile(Predicate<? super T> predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
+
+        @Override
+        public Stream<T> dropWhile(Predicate<? super T> predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
+
+        @Override
+        public void forEach(Consumer<? super T> action) {
+            Objects.requireNonNull(action);
+            // do nothing
+        }
+
+        @Override
+        public void forEachOrdered(Consumer<? super T> action) {
+            Objects.requireNonNull(action);
+            // do nothing
+        }
+
+        private static final Object[] EMPTY_ARRAY = {};
+
+        @Override
+        public Object[] toArray() {
+            return EMPTY_ARRAY;
+        }
+
+        @Override
+        public <A> A[] toArray(IntFunction<A[]> generator) {
+            return generator.apply(0);
+        }
+
+        @Override
+        public T reduce(T identity, BinaryOperator<T> accumulator) {
+            Objects.requireNonNull(accumulator);
+            return identity;
+        }
+
+        @Override
+        public Optional<T> reduce(BinaryOperator<T> accumulator) {
+            Objects.requireNonNull(accumulator);
+            return Optional.empty();
+        }
+
+        @Override
+        public <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner) {
+            Objects.requireNonNull(accumulator);
+            Objects.requireNonNull(combiner);
+            return identity;
+        }
+
+        @Override
+        public <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
+            Objects.requireNonNull(supplier);
+            Objects.requireNonNull(accumulator);
+            Objects.requireNonNull(combiner);
+            return supplier.get();
+        }
+
+        @Override
+        public <R, A> R collect(Collector<? super T, A, R> collector) {
+            Objects.requireNonNull(collector);
+            return collector.finisher().apply(collector.supplier().get());
+        }
+
+        @Override
+        public List<T> toList() {
+            return List.of();
+        }
+
+        @Override
+        public Optional<T> min(Comparator<? super T> comparator) {
+            Objects.requireNonNull(comparator);
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<T> max(Comparator<? super T> comparator) {
+            Objects.requireNonNull(comparator);
+            return Optional.empty();
+        }
+
+        @Override
+        public long count() {
+            return 0L;
+        }
+
+        @Override
+        public boolean anyMatch(Predicate<? super T> predicate) {
+            Objects.requireNonNull(predicate);
+            return false;
+        }
+
+        @Override
+        public boolean allMatch(Predicate<? super T> predicate) {
+            Objects.requireNonNull(predicate);
+            return true;
+        }
+
+        @Override
+        public boolean noneMatch(Predicate<? super T> predicate) {
+            Objects.requireNonNull(predicate);
+            return true;
+        }
+
+        @Override
+        public Optional<T> findFirst() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<T> findAny() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Iterator<T> iterator() {
+            return Collections.emptyIterator();
+        }
+
+        @Override
+        public Spliterator<T> spliterator() {
+            return Spliterators.emptySpliterator();
+        }
+
+        @Override
+        public boolean isParallel() {
+            return false;
+        }
+
+        @Override
+        public Stream<T> sequential() {
+            return this;
+        }
+
+        @Override
+        public Stream<T> parallel() {
+            return EmptyStream.<T>createOldEmpty().parallel();
+        }
+
+        @Override
+        public Stream<T> unordered() {
+            // Since our characteristics are already not ORDERED,
+            // we do not need to change anything.
+            return this;
+        }
+
+        @Override
+        public Stream<T> onClose(Runnable closeHandler) {
+            return EmptyStream.<T>createOldEmpty().onClose(closeHandler);
+        }
+
+        @Override
+        public void close() {
+            // nothing to do
+        }
+    }
+
+    private static final class EmptyIntStream implements IntStream {
+        private static IntStream createOldEmpty() {
+            return StreamSupport.intStream(
+                Spliterators.emptyIntSpliterator(), false);
+        }
+
+        @Override
+        public IntStream filter(IntPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
+
+        @Override
+        public IntStream map(IntUnaryOperator mapper) {
+            Objects.requireNonNull(mapper);
+            return this;
+        }
+
+        @Override
+        public <U> Stream<U> mapToObj(IntFunction<? extends U> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyStream();
+        }
+
+        @Override
+        public LongStream mapToLong(IntToLongFunction mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyLongStream();
+        }
+
+        @Override
+        public DoubleStream mapToDouble(IntToDoubleFunction mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyDoubleStream();
+        }
+
+        @Override
+        public IntStream flatMap(IntFunction<? extends IntStream> mapper) {
+            Objects.requireNonNull(mapper);
+            return this;
+        }
+
+        @Override
+        public IntStream distinct() {
+            return createOldEmpty().distinct();
+        }
+
+        @Override
+        public IntStream sorted() {
+            return createOldEmpty().sorted();
+        }
+
+        @Override
+        public IntStream peek(IntConsumer action) {
+            Objects.requireNonNull(action);
+            return this;
+        }
+
+        @Override
+        public IntStream limit(long maxSize) {
+            if (maxSize < 0)
+                throw new IllegalArgumentException("maxSize < 0");
+            return this;
+        }
+
+        @Override
+        public IntStream skip(long n) {
+            if (n < 0) throw new IllegalArgumentException("n < 0");
+            return this;
+        }
+
+        @Override
+        public void forEach(IntConsumer action) {
+            Objects.requireNonNull(action);
+        }
+
+        @Override
+        public void forEachOrdered(IntConsumer action) {
+            Objects.requireNonNull(action);
+        }
+
+        private static final int[] EMPTY_INT_ARRAY = {};
+
+        @Override
+        public int[] toArray() {
+            return EMPTY_INT_ARRAY;
+        }
+
+        @Override
+        public int reduce(int identity, IntBinaryOperator op) {
+            Objects.requireNonNull(op);
+            return identity;
+        }
+
+        @Override
+        public OptionalInt reduce(IntBinaryOperator op) {
+            Objects.requireNonNull(op);
+            return OptionalInt.empty();
+        }
+
+        @Override
+        public <R> R collect(Supplier<R> supplier, ObjIntConsumer<R> accumulator, BiConsumer<R, R> combiner) {
+            Objects.requireNonNull(supplier);
+            Objects.requireNonNull(accumulator);
+            Objects.requireNonNull(combiner);
+            return supplier.get();
+        }
+
+        @Override
+        public int sum() {
+            return 0;
+        }
+
+        @Override
+        public OptionalInt min() {
+            return OptionalInt.empty();
+        }
+
+        @Override
+        public OptionalInt max() {
+            return OptionalInt.empty();
+        }
+
+        @Override
+        public long count() {
+            return 0L;
+        }
+
+        @Override
+        public OptionalDouble average() {
+            return OptionalDouble.empty();
+        }
+
+        @Override
+        public IntSummaryStatistics summaryStatistics() {
+            return new IntSummaryStatistics();
+        }
+
+        @Override
+        public boolean anyMatch(IntPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return false;
+        }
+
+        @Override
+        public boolean allMatch(IntPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return true;
+        }
+
+        @Override
+        public boolean noneMatch(IntPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return true;
+        }
+
+        @Override
+        public OptionalInt findFirst() {
+            return OptionalInt.empty();
+        }
+
+        @Override
+        public OptionalInt findAny() {
+            return OptionalInt.empty();
+        }
+
+        @Override
+        public LongStream asLongStream() {
+            return emptyLongStream();
+        }
+
+        @Override
+        public DoubleStream asDoubleStream() {
+            return emptyDoubleStream();
+        }
+
+        @Override
+        public Stream<Integer> boxed() {
+            return emptyStream();
+        }
+
+        @Override
+        public IntStream sequential() {
+            return this;
+        }
+
+        @Override
+        public IntStream parallel() {
+            return createOldEmpty().parallel();
+        }
+
+        private static final PrimitiveIterator.OfInt EMPTY_ITERATOR =
+            new PrimitiveIterator.OfInt() {
+                @Override
+                public int nextInt() {
+                    throw new NoSuchElementException();
+                }
+
+                @Override
+                public boolean hasNext() {
+                    return false;
+                }
+            };
+
+        @Override
+        public PrimitiveIterator.OfInt iterator() {
+            return EMPTY_ITERATOR;
+        }
+
+        @Override
+        public Spliterator.OfInt spliterator() {
+            return Spliterators.emptyIntSpliterator();
+        }
+
+        @Override
+        public boolean isParallel() {
+            return false;
+        }
+
+        @Override
+        public IntStream unordered() {
+            return this;
+        }
+
+        @Override
+        public IntStream onClose(Runnable closeHandler) {
+            return createOldEmpty().onClose(closeHandler);
+        }
+
+        @Override
+        public void close() {
+            // do nothing
+        }
+
+        @Override
+        public IntStream mapMulti(IntMapMultiConsumer mapper) {
+            Objects.requireNonNull(mapper);
+            return this;
+        }
+
+        @Override
+        public IntStream takeWhile(IntPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
+
+        @Override
+        public IntStream dropWhile(IntPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
+    }
+
+    private static final class EmptyLongStream implements LongStream {
+        private static LongStream createOldEmpty() {
+            return StreamSupport.longStream(
+                Spliterators.emptyLongSpliterator(), false);
+        }
+
+        @Override
+        public LongStream filter(LongPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
+
+        @Override
+        public LongStream map(LongUnaryOperator mapper) {
+            Objects.requireNonNull(mapper);
+            return this;
+        }
+
+        @Override
+        public <U> Stream<U> mapToObj(LongFunction<? extends U> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyStream();
+        }
+
+        @Override
+        public IntStream mapToInt(LongToIntFunction mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyIntStream();
+        }
+
+        @Override
+        public DoubleStream mapToDouble(LongToDoubleFunction mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyDoubleStream();
+        }
+
+        @Override
+        public LongStream flatMap(LongFunction<? extends LongStream> mapper) {
+            Objects.requireNonNull(mapper);
+            return this;
+        }
+
+        @Override
+        public LongStream distinct() {
+            return createOldEmpty().distinct();
+        }
+
+        @Override
+        public LongStream sorted() {
+            return createOldEmpty().sorted();
+        }
+
+        @Override
+        public LongStream peek(LongConsumer action) {
+            Objects.requireNonNull(action);
+            return this;
+        }
+
+        @Override
+        public LongStream limit(long maxSize) {
+            if (maxSize < 0)
+                throw new IllegalArgumentException("maxSize < 0");
+            return this;
+        }
+
+        @Override
+        public LongStream skip(long n) {
+            if (n < 0) throw new IllegalArgumentException("n < 0");
+            return this;
+        }
+
+        @Override
+        public void forEach(LongConsumer action) {
+            Objects.requireNonNull(action);
+        }
+
+        @Override
+        public void forEachOrdered(LongConsumer action) {
+            Objects.requireNonNull(action);
+        }
+
+        private static final long[] EMPTY_LONG_ARRAY = {};
+
+        @Override
+        public long[] toArray() {
+            return EMPTY_LONG_ARRAY;
+        }
+
+        @Override
+        public long reduce(long identity, LongBinaryOperator op) {
+            Objects.requireNonNull(op);
+            return identity;
+        }
+
+        @Override
+        public OptionalLong reduce(LongBinaryOperator op) {
+            Objects.requireNonNull(op);
+            return OptionalLong.empty();
+        }
+
+        @Override
+        public <R> R collect(Supplier<R> supplier, ObjLongConsumer<R> accumulator, BiConsumer<R, R> combiner) {
+            Objects.requireNonNull(supplier);
+            Objects.requireNonNull(accumulator);
+            Objects.requireNonNull(combiner);
+            return supplier.get();
+        }
+
+        @Override
+        public long sum() {
+            return 0;
+        }
+
+        @Override
+        public OptionalLong min() {
+            return OptionalLong.empty();
+        }
+
+        @Override
+        public OptionalLong max() {
+            return OptionalLong.empty();
+        }
+
+        @Override
+        public long count() {
+            return 0L;
+        }
+
+        @Override
+        public OptionalDouble average() {
+            return OptionalDouble.empty();
+        }
+
+        @Override
+        public LongSummaryStatistics summaryStatistics() {
+            return new LongSummaryStatistics();
+        }
+
+        @Override
+        public boolean anyMatch(LongPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return false;
+        }
+
+        @Override
+        public boolean allMatch(LongPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return true;
+        }
+
+        @Override
+        public boolean noneMatch(LongPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return true;
+        }
+
+        @Override
+        public OptionalLong findFirst() {
+            return OptionalLong.empty();
+        }
+
+        @Override
+        public OptionalLong findAny() {
+            return OptionalLong.empty();
+        }
+
+        @Override
+        public DoubleStream asDoubleStream() {
+            return emptyDoubleStream();
+        }
+
+        @Override
+        public Stream<Long> boxed() {
+            return emptyStream();
+        }
+
+        @Override
+        public LongStream sequential() {
+            return this;
+        }
+
+        @Override
+        public LongStream parallel() {
+            return createOldEmpty().parallel();
+        }
+
+        private static final PrimitiveIterator.OfLong EMPTY_ITERATOR =
+            new PrimitiveIterator.OfLong() {
+                @Override
+                public long nextLong() {
+                    throw new NoSuchElementException();
+                }
+
+                @Override
+                public boolean hasNext() {
+                    return false;
+                }
+            };
+
+        @Override
+        public PrimitiveIterator.OfLong iterator() {
+            return EMPTY_ITERATOR;
+        }
+
+        @Override
+        public Spliterator.OfLong spliterator() {
+            return Spliterators.emptyLongSpliterator();
+        }
+
+        @Override
+        public boolean isParallel() {
+            return false;
+        }
+
+        @Override
+        public LongStream unordered() {
+            return this;
+        }
+
+        @Override
+        public LongStream onClose(Runnable closeHandler) {
+            return createOldEmpty().onClose(closeHandler);
+        }
+
+        @Override
+        public void close() {
+            // do nothing
+        }
+
+        @Override
+        public LongStream mapMulti(LongMapMultiConsumer mapper) {
+            Objects.requireNonNull(mapper);
+            return this;
+        }
+
+        @Override
+        public LongStream takeWhile(LongPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
+
+        @Override
+        public LongStream dropWhile(LongPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
+    }
+
+    private static final class EmptyDoubleStream implements DoubleStream {
+        private static DoubleStream createOldEmpty() {
+            return StreamSupport.doubleStream(
+                Spliterators.emptyDoubleSpliterator(), false);
+        }
+
+        @Override
+        public DoubleStream filter(DoublePredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
+
+        @Override
+        public DoubleStream map(DoubleUnaryOperator mapper) {
+            Objects.requireNonNull(mapper);
+            return this;
+        }
+
+        @Override
+        public <U> Stream<U> mapToObj(DoubleFunction<? extends U> mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyStream();
+        }
+
+        @Override
+        public IntStream mapToInt(DoubleToIntFunction mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyIntStream();
+        }
+
+        @Override
+        public LongStream mapToLong(DoubleToLongFunction mapper) {
+            Objects.requireNonNull(mapper);
+            return emptyLongStream();
+        }
+
+        @Override
+        public DoubleStream flatMap(DoubleFunction<? extends DoubleStream> mapper) {
+            Objects.requireNonNull(mapper);
+            return this;
+        }
+
+        @Override
+        public DoubleStream distinct() {
+            return createOldEmpty().distinct();
+        }
+
+        @Override
+        public DoubleStream sorted() {
+            return createOldEmpty().sorted();
+        }
+
+        @Override
+        public DoubleStream peek(DoubleConsumer action) {
+            Objects.requireNonNull(action);
+            return this;
+        }
+
+        @Override
+        public DoubleStream limit(long maxSize) {
+            if (maxSize < 0)
+                throw new IllegalArgumentException("maxSize < 0");
+            return this;
+        }
+
+        @Override
+        public DoubleStream skip(long n) {
+            if (n < 0) throw new IllegalArgumentException("n < 0");
+            return this;
+        }
+
+        @Override
+        public void forEach(DoubleConsumer action) {
+            Objects.requireNonNull(action);
+        }
+
+        @Override
+        public void forEachOrdered(DoubleConsumer action) {
+            Objects.requireNonNull(action);
+        }
+
+        private static final double[] EMPTY_DOUBLE_ARRAY = {};
+
+        @Override
+        public double[] toArray() {
+            return EMPTY_DOUBLE_ARRAY;
+        }
+
+        @Override
+        public double reduce(double identity, DoubleBinaryOperator op) {
+            Objects.requireNonNull(op);
+            return identity;
+        }
+
+        @Override
+        public OptionalDouble reduce(DoubleBinaryOperator op) {
+            Objects.requireNonNull(op);
+            return OptionalDouble.empty();
+        }
+
+        @Override
+        public <R> R collect(Supplier<R> supplier, ObjDoubleConsumer<R> accumulator, BiConsumer<R, R> combiner) {
+            Objects.requireNonNull(supplier);
+            Objects.requireNonNull(accumulator);
+            Objects.requireNonNull(combiner);
+            return supplier.get();
+        }
+
+        @Override
+        public double sum() {
+            return 0;
+        }
+
+        @Override
+        public OptionalDouble min() {
+            return OptionalDouble.empty();
+        }
+
+        @Override
+        public OptionalDouble max() {
+            return OptionalDouble.empty();
+        }
+
+        @Override
+        public long count() {
+            return 0L;
+        }
+
+        @Override
+        public OptionalDouble average() {
+            return OptionalDouble.empty();
+        }
+
+        @Override
+        public DoubleSummaryStatistics summaryStatistics() {
+            return new DoubleSummaryStatistics();
+        }
+
+        @Override
+        public boolean anyMatch(DoublePredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return false;
+        }
+
+        @Override
+        public boolean allMatch(DoublePredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return true;
+        }
+
+        @Override
+        public boolean noneMatch(DoublePredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return true;
+        }
+
+        @Override
+        public OptionalDouble findFirst() {
+            return OptionalDouble.empty();
+        }
+
+        @Override
+        public OptionalDouble findAny() {
+            return OptionalDouble.empty();
+        }
+
+        @Override
+        public Stream<Double> boxed() {
+            return emptyStream();
+        }
+
+        @Override
+        public DoubleStream sequential() {
+            return this;
+        }
+
+        @Override
+        public DoubleStream parallel() {
+            return createOldEmpty().parallel();
+        }
+
+        private static final PrimitiveIterator.OfDouble EMPTY_ITERATOR =
+            new PrimitiveIterator.OfDouble() {
+                @Override
+                public double nextDouble() {
+                    throw new NoSuchElementException();
+                }
+
+                @Override
+                public boolean hasNext() {
+                    return false;
+                }
+            };
+
+        @Override
+        public PrimitiveIterator.OfDouble iterator() {
+            return EMPTY_ITERATOR;
+        }
+
+        @Override
+        public Spliterator.OfDouble spliterator() {
+            return Spliterators.emptyDoubleSpliterator();
+        }
+
+        @Override
+        public boolean isParallel() {
+            return false;
+        }
+
+        @Override
+        public DoubleStream unordered() {
+            return this;
+        }
+
+        @Override
+        public DoubleStream onClose(Runnable closeHandler) {
+            return createOldEmpty().onClose(closeHandler);
+        }
+
+        @Override
+        public void close() {
+            // do nothing
+        }
+
+        @Override
+        public DoubleStream mapMulti(DoubleMapMultiConsumer mapper) {
+            Objects.requireNonNull(mapper);
+            return this;
+        }
+
+        @Override
+        public DoubleStream takeWhile(DoublePredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
+
+        @Override
+        public DoubleStream dropWhile(DoublePredicate predicate) {
+            Objects.requireNonNull(predicate);
+            return this;
+        }
     }
 }

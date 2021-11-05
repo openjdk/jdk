@@ -740,6 +740,7 @@ public interface Collection<E> extends Iterable<E> {
      * @since 1.8
      */
     default Stream<E> stream() {
+        if (isEmpty()) return Stream.empty();
         return StreamSupport.stream(spliterator(), false);
     }
 
