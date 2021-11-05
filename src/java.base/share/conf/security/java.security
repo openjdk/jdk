@@ -1365,3 +1365,30 @@ jdk.tls.alpnCharset=ISO_8859_1
 # The default pattern value allows any object factory class specified by the reference
 # instance to recreate the referenced object.
 #jdk.jndi.object.factoriesFilter=*
+
+#
+# Policy for non-forwardable service ticket in a S4U2proxy request
+#
+# The Service for User to Proxy (S4U2proxy) extension of Kerberos enables a service
+# to obtain a service ticket on behalf of the user to a second end service. It requires
+# that the service ticket to the first service has the forwardable flag set [1].
+# However, some implementations ignore this requirement and accept a ticket with
+# the forwardable flag set.
+#
+# If this security property is set to true, then
+#
+# 1) The ticket in a S4U2self response (the service ticket from the user to the first
+#    service that will be used in a S4U2proxy request) is not required to have
+#    its forwardable flag set.
+#
+# 2) If a S4U2proxy request receives a KRB_ERROR of the KDC_ERR_BADOPTION error code
+#    and the ticket to the first service is not forwardable, Java will not treat this
+#    as an immediate failure and will try the same request with another KDC.
+#
+# The default value is "false".
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+# [1] https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-sfu/bde93b0e-f3c9-4ddf-9f44-e1453be7af5a
+#jdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket=false

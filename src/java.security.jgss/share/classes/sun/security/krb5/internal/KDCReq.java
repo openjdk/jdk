@@ -31,7 +31,6 @@
 package sun.security.krb5.internal;
 
 import sun.security.krb5.*;
-import java.util.Vector;
 import sun.security.util.*;
 import java.io.IOException;
 import java.math.BigInteger;

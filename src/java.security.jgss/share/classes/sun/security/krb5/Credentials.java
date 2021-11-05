@@ -31,11 +31,12 @@
 
 package sun.security.krb5;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.CredentialsCache;
 import sun.security.krb5.internal.crypto.EType;
+import sun.security.util.SecurityProperties;
+
 import java.io.IOException;
 import java.util.Date;
 import java.util.Locale;
@@ -66,8 +67,8 @@ public class Credentials {
     private static boolean alreadyTried = false;
 
     public final static boolean S4U2PROXY_ACCEPT_NON_FORWARDABLE
-            = GetBooleanAction.privilegedGetProperty(
-                    "jdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket");
+            = "true".equalsIgnoreCase(SecurityProperties.privilegedGetOverridable(
+                    "jdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket"));
 
     private Credentials proxy = null;
 
