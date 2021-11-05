@@ -75,7 +75,7 @@ define SetupInterimModule
       EXCLUDE_FILES := $(TOPDIR)/src/$1/share/classes/module-info.java \
           Standard.java, \
       EXTRA_FILES := $(BUILDTOOLS_OUTPUTDIR)/gensrc/$1.interim/module-info.java, \
-      COPY := .gif .png .xml .css .js .js.template .txt javax.tools.JavaCompilerTool, \
+      COPY := .gif .png .xml .css .svg .js .js.template .txt javax.tools.JavaCompilerTool, \
       BIN := $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules/$1.interim, \
       DISABLED_WARNINGS := module options, \
       JAVAC_FLAGS := \

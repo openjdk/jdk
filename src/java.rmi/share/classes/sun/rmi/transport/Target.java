@@ -308,7 +308,7 @@ public final class Target {
      * Remove endpoint from the reference set.
      */
     @SuppressWarnings("removal")
-    synchronized private void refSetRemove(VMID vmid) {
+    private synchronized void refSetRemove(VMID vmid) {
         // remove notification request
         DGCImpl.getDGCImpl().unregisterTarget(vmid, this);
 
@@ -434,7 +434,7 @@ public final class Target {
      * vmid dies.  In that case, the vmid should be removed
      * from the reference set.
      */
-    synchronized public void vmidDead(VMID vmid) {
+    public synchronized void vmidDead(VMID vmid) {
         if (DGCImpl.dgcLog.isLoggable(Log.BRIEF)) {
             DGCImpl.dgcLog.log(Log.BRIEF, "removing endpoint " +
                             vmid + " from reference set");
