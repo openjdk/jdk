@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -44,9 +44,8 @@ import java.util.spi.ToolProvider;
 /**
  * @test
  * @bug 8258117
- * @library /test/lib
  * @summary Tests that the content generated for module-info.class, using the jar command, is reproducible
- * @run driver JarToolModuleDescriptorReproducibilityTest
+ * @run testng JarToolModuleDescriptorReproducibilityTest
  */
 public class JarToolModuleDescriptorReproducibilityTest {
 
@@ -65,28 +64,23 @@ public class JarToolModuleDescriptorReproducibilityTest {
                     -> new RuntimeException("javac tool not found")
             );
 
-    public static void main(final String[] args) throws Exception {
-        // compile the module classes once
+
+    @BeforeClass
+    public static void setup() throws Exception {
         compileModuleClasses();
-        // jar --create tests
-        testJarCreate();
-        // jar --update tests
-        testJarUpdate();
     }
 
     /**
-     * Launches a "jar --create" process multiple times to create a module-info.class module descriptor
-     * from the same content and then expects that the modular jar created by each of these processes
-     * has the exact same bytes.
+     * Launches a "jar --create" command multiple times with a module-info.class. The module-info.class
+     * is internally updated by the jar tool to add additional data. Expects that each such generated
+     * jar has the exact same bytes.
      */
-    private static void testJarCreate() throws Exception {
+    @Test
+    public void testJarCreate() throws Exception {
         final List<Path> jarFiles = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            final Path tmpFile = Files.createTempFile(Path.of("."), "8258117-jar-create", ".jar");
-            jarFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    CreateJar.class.getName(),
-                    tmpFile.toString());
+            final Path targetJar = Files.createTempFile(Path.of("."), "8258117-jar-create", ".jar");
+            jarFiles.add(targetJar);
             if (i > 0) {
                 // the timestamp that gets embedded in (Zip/Jar)Entry gets narrowed
                 // down to SECONDS unit. So we make sure that there's at least a second
@@ -94,7 +88,15 @@ public class JarToolModuleDescriptorReproducibilityTest {
                 // was indeed generated at "different times"
                 Thread.sleep(1000);
             }
-            executeJavaProcess(processBuilder);
+            // create a modular jar
+            runJarCommand("--create",
+                    "--file=" + targetJar,
+                    "--main-class=" + MAIN_CLASS,
+                    "--module-version=" + MODULE_VERSION,
+                    "--no-manifest",
+                    "-C", MODULE_CLASSES_DIR.toString(), ".");
+            // verify the module descriptor in the jar
+            assertExpectedModuleInfo(targetJar, MODULE_VERSION);
         }
         assertAllFileContentsAreSame(jarFiles);
     }
@@ -104,14 +106,12 @@ public class JarToolModuleDescriptorReproducibilityTest {
      * descriptor with the same content and then expects that the modular jar created by
      * each of these processes has the exact same bytes.
      */
-    private static void testJarUpdate() throws Exception {
+    @Test
+    public void testJarUpdate() throws Exception {
         final List<Path> jarFiles = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            final Path tmpFile = Files.createTempFile(Path.of("."), "8258117-jar-update", ".jar");
-            jarFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    UpdateJar.class.getName(),
-                    tmpFile.toString());
+            final Path targetJar = Files.createTempFile(Path.of("."), "8258117-jar-update", ".jar");
+            jarFiles.add(targetJar);
             if (i > 0) {
                 // the timestamp that gets embedded in (Zip/Jar)Entry gets narrowed
                 // down to SECONDS unit. So we make sure that there's at least a second
@@ -119,7 +119,21 @@ public class JarToolModuleDescriptorReproducibilityTest {
                 // was indeed generated at "different times"
                 Thread.sleep(1000);
             }
-            executeJavaProcess(processBuilder);
+            // first create the modular jar
+            runJarCommand("--create",
+                    "--file=" + targetJar,
+                    "--module-version=" + MODULE_VERSION,
+                    "--no-manifest",
+                    "-C", MODULE_CLASSES_DIR.toString(), ".");
+            assertExpectedModuleInfo(targetJar, MODULE_VERSION);
+            // now update the same modular jar
+            runJarCommand("--update",
+                    "--file=" + targetJar,
+                    "--module-version=" + UPDATED_MODULE_VERSION,
+                    "--no-manifest",
+                    "-C", MODULE_CLASSES_DIR.toString(), "module-info.class");
+            // verify the module descriptor in the jar
+            assertExpectedModuleInfo(targetJar, UPDATED_MODULE_VERSION);
         }
         assertAllFileContentsAreSame(jarFiles);
     }
@@ -167,17 +181,6 @@ public class JarToolModuleDescriptorReproducibilityTest {
         }
     }
 
-    // launches the java process and waits for it to exit. throws an exception if exit value is non-zero
-    private static void executeJavaProcess(ProcessBuilder pb) throws Exception {
-        final OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(pb);
-        try {
-            outputAnalyzer.shouldHaveExitValue(0);
-        } finally {
-            // print out any stdout/err that was generated in the launched program
-            outputAnalyzer.reportDiagnosticSummary();
-        }
-    }
-
     // verifies the byte equality of the contents in each of the files
     private static void assertAllFileContentsAreSame(final List<Path> files) throws Exception {
         final byte[] file1Contents = Files.readAllBytes(files.get(0));
@@ -220,40 +223,5 @@ public class JarToolModuleDescriptorReproducibilityTest {
                     + moduleInfoEntry.getTime() + " for version " + actualVersion);
         }
     }
-
-    static class CreateJar {
-        public static void main(final String[] args) throws Exception {
-            Path targetJar = Path.of(args[0]);
-            // create a modular jar
-            runJarCommand("--create",
-                    "--file=" + targetJar,
-                    "--main-class=" + MAIN_CLASS,
-                    "--module-version=" + MODULE_VERSION,
-                    "--no-manifest",
-                    "-C", MODULE_CLASSES_DIR.toString(), ".");
-            // verify the module descriptor in the jar
-            assertExpectedModuleInfo(targetJar, MODULE_VERSION);
-        }
-    }
-
-    static class UpdateJar {
-        public static void main(final String[] args) throws Exception {
-            Path targetJar = Path.of(args[0]);
-            // create the modular jar
-            runJarCommand("--create",
-                    "--file=" + targetJar,
-                    "--module-version=" + MODULE_VERSION,
-                    "--no-manifest",
-                    "-C", MODULE_CLASSES_DIR.toString(), ".");
-            assertExpectedModuleInfo(targetJar, MODULE_VERSION);
-            // update the same modular jar
-            runJarCommand("--update",
-                    "--file=" + targetJar,
-                    "--module-version=" + UPDATED_MODULE_VERSION,
-                    "--no-manifest",
-                    "-C", MODULE_CLASSES_DIR.toString(), "module-info.class");
-            // verify the module descriptor in the jar
-            assertExpectedModuleInfo(targetJar, UPDATED_MODULE_VERSION);
-        }
-    }
 }
+
