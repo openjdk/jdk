@@ -375,7 +375,7 @@ public abstract class XPathFactory {
      * created by this factory.
      *
      * @implSpec
-     * The default implementation in the XPath API throws
+     * The default implementation throws
      * {@link java.lang.UnsupportedOperationException}.
      *
      * @param name the property name
@@ -402,7 +402,7 @@ public abstract class XPathFactory {
      * Returns the value of the specified property.
      *
      * @implSpec
-     * The default implementation in the XPath API throws
+     * The default implementation throws
      * {@link java.lang.UnsupportedOperationException}.
      *
      * @param name the property name
