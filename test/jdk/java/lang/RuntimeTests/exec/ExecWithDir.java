@@ -41,7 +41,7 @@ public class ExecWithDir {
         }
         UnixCommands.ensureCommandsAvailable("true");
 
-        final String trueCmd = UnixCommands.findCommand("true");
+        final String[] trueCmd = {UnixCommands.findCommand("true")};
         File dir = new File(".");
         for (int i = 1; i <= N; i++) {
             System.out.print(i);
