@@ -57,7 +57,7 @@ bool isEnvVariableSet(const tstring& name) {
 
 void setEnvVariable(const tstring& name, const tstring& value) {
     if (::setenv(name.c_str(), value.c_str(), 1) != 0) {
-        JP_THROW(tstrings::any() << "setenv(" << name << ", " << value 
+        JP_THROW(tstrings::any() << "setenv(" << name << ", " << value
                                     << ") failed. Error: " << lastCRTError());
     }
 }
