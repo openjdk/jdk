@@ -178,7 +178,7 @@ HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
         // Otherwise, it is possible that the object starting on the dirty
         // card spans the entire card, and that the store happened on a
         // later card.  Figure out where the object ends.
-        assert(_sp->block_size(top_obj) == (size_t) cast_to_oop(top_obj)->size(),
+        assert(_sp->block_size(top_obj) == cast_to_oop(top_obj)->size(),
           "Block size and object size mismatch");
         top = top_obj + cast_to_oop(top_obj)->size();
       }
@@ -773,8 +773,7 @@ void OffsetTableContigSpace::alloc_block(HeapWord* start, HeapWord* end) {
 OffsetTableContigSpace::OffsetTableContigSpace(BlockOffsetSharedArray* sharedOffsetArray,
                                                MemRegion mr) :
   _offsets(sharedOffsetArray, mr),
-  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock",
-                  Mutex::_safepoint_check_always, true)
+  _par_alloc_lock(Mutex::safepoint, "OffsetTableContigSpaceParAlloc_lock", true)
 {
   _offsets.set_contig_space(this);
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);

@@ -184,6 +184,7 @@ public class MLet extends java.net.URLClassLoader
       * The reference to the MBean server.
       * @serial
       */
+     @SuppressWarnings("serial") // Type of field is not Serializable
      private MBeanServer server = null;
 
 
@@ -192,6 +193,7 @@ public class MLet extends java.net.URLClassLoader
       * class found at the specified URL.
       * @serial
       */
+     @SuppressWarnings("serial") // Type of field is not Serializable
      private List<MLetContent> mletList = new ArrayList<MLetContent>();
 
 
@@ -228,6 +230,7 @@ public class MLet extends java.net.URLClassLoader
      /**
       * objects maps from primitive classes to primitive object classes.
       */
+     @SuppressWarnings("serial") // Type of field is not Serializable
      private Map<String,Class<?>> primitiveClasses =
          new HashMap<String,Class<?>>(8) ;
      {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,21 +425,6 @@ void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
 #define FOR_ALL_DICTIONARY(X)   ClassLoaderDataGraphIterator iter; \
                                 while (ClassLoaderData* X = iter.get_next()) \
                                   if (X->dictionary() != NULL)
-
-// Walk classes in the loaded class dictionaries in various forms.
-// Only walks the classes defined in this class loader.
-void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*)) {
-  FOR_ALL_DICTIONARY(cld) {
-    cld->dictionary()->classes_do(f);
-  }
-}
-
-// Only walks the classes defined in this class loader.
-void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS) {
-  FOR_ALL_DICTIONARY(cld) {
-    cld->dictionary()->classes_do(f, CHECK);
-  }
-}
 
 void ClassLoaderDataGraph::verify_dictionary() {
   FOR_ALL_DICTIONARY(cld) {

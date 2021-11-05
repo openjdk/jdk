@@ -157,27 +157,29 @@ public class JDIBase {
     // we can get the events from system threads unexpected for tests.
     // The method skips ThreadStartEvent/ThreadDeathEvent events
     // for all threads except the expected one.
+    // Note: don't limit ThreadStartRequest/ThreadDeathRequest request by addCountFilter(),
+    // as it limits the requested event to be reported at most once.
     protected void getEventSetForThreadStartDeath(String threadName) throws JDITestRuntimeException {
-        boolean gotDesiredEvent = false;
-        while (!gotDesiredEvent) {
+        while (true) {
             getEventSet();
             Event event = eventIterator.nextEvent();
             if (event instanceof ThreadStartEvent evt) {
                 if (evt.thread().name().equals(threadName)) {
-                    gotDesiredEvent = true;
-                } else {
-                    log2("Got ThreadStartEvent for wrong thread: " + event);
+                    break;
                 }
+                log2("Got ThreadStartEvent for '" + evt.thread().name()
+                        + "' instead of '" + threadName + "', skipping");
             } else if (event instanceof ThreadDeathEvent evt) {
                 if (evt.thread().name().equals(threadName)) {
-                    gotDesiredEvent = true;
-                } else {
-                    log2("Got ThreadDeathEvent for wrong thread: " + event);
+                    break;
                 }
+                log2("Got ThreadDeathEvent for '" + evt.thread().name()
+                        + "' instead of '" + threadName + "', skipping");
             } else {
                 // not ThreadStartEvent nor ThreadDeathEvent
-                gotDesiredEvent = true;
+                break;
             }
+            eventSet.resume();
         }
         // reset the iterator before return
         eventIterator = eventSet.eventIterator();

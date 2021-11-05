@@ -525,7 +525,7 @@ static bool condition_stride_ok(BoolTest::mask bt, jlong stride_con) {
   return true;
 }
 
-void PhaseIdealLoop::long_loop_replace_long_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head) {
+Node* PhaseIdealLoop::long_loop_replace_long_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head) {
   Node* iv_as_long = new ConvI2LNode(inner_iv, TypeLong::INT);
   register_new_node(iv_as_long, inner_head);
   Node* iv_replacement = new AddLNode(outer_phi, iv_as_long);
@@ -546,6 +546,7 @@ void PhaseIdealLoop::long_loop_replace_long_iv(Node* iv_to_replace, Node* inner_
     int nb = u->replace_edge(iv_to_replace, iv_replacement, &_igvn);
     i -= nb;
   }
+  return iv_replacement;
 }
 
 void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt) {
@@ -828,6 +829,9 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   Node* entry_control = x->in(LoopNode::EntryControl);
   Node* cmp = exit_test->cmp_node();
 
+  Node_List range_checks;
+  iters_limit = extract_long_range_checks(loop, stride_con, iters_limit, phi, range_checks);
+
   // Clone the control flow of the loop to build an outer loop
   Node* outer_back_branch = back_control->clone();
   Node* outer_exit_test = new IfNode(exit_test->in(0), exit_test->in(1), exit_test->_prob, exit_test->_fcnt);
@@ -877,22 +881,22 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   Node* inner_iters_actual_int = new ConvL2INode(inner_iters_actual);
   _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
 
-  Node* zero = _igvn.intcon(0);
-  set_ctrl(zero, C->root());
+  Node* int_zero = _igvn.intcon(0);
+  set_ctrl(int_zero, C->root());
   if (stride_con < 0) {
-    inner_iters_actual_int = new SubINode(zero, inner_iters_actual_int);
+    inner_iters_actual_int = new SubINode(int_zero, inner_iters_actual_int);
     _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
   }
 
   // Clone the iv data nodes as an integer iv
-  Node* int_stride = _igvn.intcon((int)stride_con);
+  Node* int_stride = _igvn.intcon(checked_cast<int>(stride_con));
   set_ctrl(int_stride, C->root());
   Node* inner_phi = new PhiNode(x->in(0), TypeInt::INT);
   Node* inner_incr = new AddINode(inner_phi, int_stride);
   Node* inner_cmp = NULL;
   inner_cmp = new CmpINode(inner_incr, inner_iters_actual_int);
   Node* inner_bol = new BoolNode(inner_cmp, exit_test->in(1)->as_Bool()->_test._test);
-  inner_phi->set_req(LoopNode::EntryControl, zero);
+  inner_phi->set_req(LoopNode::EntryControl, int_zero);
   inner_phi->set_req(LoopNode::LoopBackControl, inner_incr);
   register_new_node(inner_phi, x);
   register_new_node(inner_incr, x);
@@ -915,7 +919,7 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
 
   // Replace inner loop long iv phi as inner loop int iv phi + outer
   // loop iv phi
-  long_loop_replace_long_iv(phi, inner_phi, outer_phi, head);
+  Node* iv_add = long_loop_replace_long_iv(phi, inner_phi, outer_phi, head);
 
   // Replace inner loop long iv incr with inner loop int incr + outer
   // loop iv phi
@@ -979,6 +983,8 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   //     exit_branch: break;  //in(0) := outer_exit_test
   // }
 
+  transform_long_range_checks(checked_cast<int>(stride_con), range_checks, outer_phi, inner_iters_actual_int,
+                              inner_phi, iv_add, inner_head);
   // Peel one iteration of the loop and use the safepoint at the end
   // of the peeled iteration to insert empty predicates. If no well
   // positioned safepoint peel to guarantee a safepoint in the outer
@@ -1010,6 +1016,239 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   outer_head->mark_transformed_long_outer_loop();
 
   return true;
+}
+
+int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
+                                              Node_List& range_checks) {
+  if (stride_con < 0) { // only for stride_con > 0 && scale > 0 for now
+    return iters_limit;
+  }
+  const jlong min_iters = 2;
+  jlong reduced_iters_limit = iters_limit;
+  jlong original_iters_limit = iters_limit;
+  for (uint i = 0; i < loop->_body.size(); i++) {
+    Node* c = loop->_body.at(i);
+    if (c->is_IfProj() && c->in(0)->is_RangeCheck()) {
+      CallStaticJavaNode* call = c->as_IfProj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      if (call != NULL) {
+        Node* range = NULL;
+        Node* offset = NULL;
+        jlong scale = 0;
+        RangeCheckNode* rc = c->in(0)->as_RangeCheck();
+        if (loop->is_range_check_if(rc, this, T_LONG, phi, range, offset, scale) &&
+            loop->is_invariant(range) && loop->is_invariant(offset) &&
+            scale > 0 && // only for stride_con > 0 && scale > 0 for now
+            original_iters_limit / ABS(scale * stride_con) >= min_iters) {
+          reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
+          range_checks.push(c);
+        }
+      }
+    }
+  }
+
+  return checked_cast<int>(reduced_iters_limit);
+}
+
+// One execution of the inner loop covers a sub-range of the entire iteration range of the loop: [A,Z), aka [A=init,
+// Z=limit). If the loop has at least one trip (which is the case here), the iteration variable i always takes A as its
+// first value, followed by A+S (S is the stride), next A+2S, etc. The limit is exclusive, so that the final value B of
+// i is never Z.  It will be B=Z-1 if S=1, or B=Z+1 if S=-1.  If |S|>1 the formula for the last value requires a floor
+// operation, specifically B=floor((Z-sgn(S)-A)/S)*S+A.  Thus i ranges as i:[A,B] or i:[A,Z) or i:[A,Z-U) for some U<S.
+
+// N.B. We handle only the case of positive S currently, so comments about S<0 are not operative at present.  Also,
+// we only support positive index scale value (K > 0) to simplify the logic for clamping 32-bit bounds (L_2, R_2).
+// For restrictions on S and K, see the guards in extract_long_range_checks.
+
+// Within the loop there may be many range checks.  Each such range check (R.C.) is of the form 0 <= i*K+L < R, where K
+// is a scale factor applied to the loop iteration variable i, and L is some offset; K, L, and R are loop-invariant.
+// Because R is never negative, this check can always be simplified to an unsigned check i*K+L <u R.
+
+// When a long loop over a 64-bit variable i (outer_iv) is decomposed into a series of shorter sub-loops over a 32-bit
+// variable j (inner_iv), j ranges over a shorter interval j:[0,Z_2), where the limit is chosen to prevent various cases
+// of 32-bit overflow (including multiplications j*K below).  In the sub-loop the logical value i is offset from j by a
+// 64-bit constant C, so i ranges in i:C+[0,Z_2).
+
+// The union of all the C+[0,Z_2) ranges from the sub-loops must be identical to the whole range [A,B].  Assuming S>0,
+// the first C must be A itself, and the next C value is the previous C+Z_2.  In each sub-loop, j counts up from zero
+// and exits just before i=C+Z_2.
+
+// (N.B. If S<0 the formulas are different, because all the loops count downward.)
+
+// Returning to range checks, we see that each i*K+L <u R expands to (C+j)*K+L <u R, or j*K+Q <u R, where Q=(C*K+L).
+// (Recall that K and L and R are loop-invariant scale, offset and range values for a particular R.C.)  This is still a
+// 64-bit comparison, so the range check elimination logic will not apply to it.  (The R.C.E. transforms operate only on
+// 32-bit indexes and comparisons, because they use 64-bit temporary values to avoid overflow; see
+// PhaseIdealLoop::add_constraint.)
+
+// We must transform this comparison so that it gets the same answer, but by means of a 32-bit R.C. (using j not i) of
+// the form j*K+L_2 <u32 R_2.  Note that L_2 and R_2 must be loop-invariant, but only with respect to the sub-loop.  Thus, the
+// problem reduces to computing values for L_2 and R_2 (for each R.C. in the loop) in the loop header for the sub-loop.
+// Then the standard R.C.E. transforms can take those as inputs and further compute the necessary minimum and maximum
+// values for the 32-bit counter j within which the range checks can be eliminated.
+
+// So, given j*K+Q <u R, we need to find some j*K+L_2 <u32 R_2, where L_2 and R_2 fit in 32 bits, and the 32-bit operations do
+// not overflow. We also need to cover the cases where i*K+L (= j*K+Q) overflows to a 64-bit negative, since that is
+// allowed as an input to the R.C., as long as the R.C. as a whole fails.
+
+// If 32-bit multiplication j*K might overflow, we adjust the sub-loop limit Z_2 closer to zero to reduce j's range.
+
+// For each R.C. j*K+Q <u32 R, the range of mathematical values of j*K+Q in the sub-loop is [Q_min, Q_max), where
+// Q_min=Q and Q_max=Z_2*K+Q.  Making the upper limit Q_max be exclusive helps it integrate correctly with the strict
+// comparisons against R and R_2.  Sometimes a very high R will be replaced by an R_2 derived from the more moderate
+// Q_max, and replacing one exclusive limit by another exclusive limit avoids off-by-one complexities.
+
+// N.B. If (S*K)<0 then the formulas for Q_min and Q_max may differ; the values may need to be swapped and adjusted to
+// the correct type of bound (inclusive or exclusive).
+
+// Case A: Some Negatives (but no overflow).
+// Number line:
+// |s64_min   .    .    .    0    .    .    .   s64_max|
+// |    .  Q_min..Q_max .    0    .    .    .     .    |  s64 negative
+// |    .     .    .  Q_min..0..Q_max  .    .     .    |  small mixed
+//
+// if Q_min <s64 0, then use this test:
+// j*K + s32_trunc(Q_min) <u32 clamp(R, 0, Q_max)
+
+// If the 32-bit truncation loses information, no harm is done, since certainly the clamp also returns R_2=zero.
+
+// Case B: No Negatives.
+// Number line:
+// |s64_min   .    .    .    0    .    .    .   s64_max|
+// |    .     .    .    .    0 Q_min..Q_max .     .    |  small positive
+// |    .     .    .    .    0    . Q_min..Q_max  .    |  s64 positive
+//
+// if both Q_min, Q_max >=s64 0, then use this test:
+// j*K + 0 <u32 clamp(R, Q_min, Q_max) - Q_min
+// or equivalently:
+// j*K + 0 <u32 clamp(R - Q_min, 0, Q_max - Q_min)
+
+// Case C: Overflow in the 64-bit domain
+// Number line:
+// |..Q_max-2^64   .    .    0    .    .    .   Q_min..|  s64 overflow
+//
+// if Q_min >=s64 0 but Q_max <s64 0, then use this test:
+// j*K + 0 <u32 clamp(R, Q_min, R) - Q_min
+// or equivalently:
+// j*K + 0 <u32 clamp(R - Q_min, 0, R - Q_min)
+// or also equivalently:
+// j*K + 0 <u32 max(0, R - Q_min)
+//
+// Here the clamp function is a simple 64-bit min/max:
+// clamp(X, L, H) := max(L, min(X, H))
+// When degenerately L > H, it returns L not H.
+//
+// Tests above can be merged into a single one:
+// L_clamp = Q_min < 0 ? 0 : Q_min
+// H_clamp = Q_max < Q_min ? R : Q_max
+// j*K + Q_min - L_clamp <u32 clamp(R, L_clamp, H_clamp) - L_clamp
+// or equivalently:
+// j*K + Q_min - L_clamp <u32 clamp(R - L_clamp, 0, H_clamp - L_clamp)
+//
+// Readers may find the equivalent forms easier to reason about, but the forms given first generate better code.
+
+void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List &range_checks, Node* outer_phi,
+                                                 Node* inner_iters_actual_int, Node* inner_phi,
+                                                 Node* iv_add, LoopNode* inner_head) {
+  Node* long_zero = _igvn.longcon(0);
+  set_ctrl(long_zero, C->root());
+
+  for (uint i = 0; i < range_checks.size(); i++) {
+    ProjNode* proj = range_checks.at(i)->as_Proj();
+    ProjNode* unc_proj = proj->other_if_proj();
+    RangeCheckNode* rc = proj->in(0)->as_RangeCheck();
+    jlong scale = 0;
+    Node* offset = NULL;
+    Node* rc_bol = rc->in(1);
+    Node* rc_cmp = rc_bol->in(1);
+    if (rc_cmp->Opcode() == Op_CmpU) {
+      // could be shared and have already been taken care of
+      continue;
+    }
+    bool ok = is_scaled_iv_plus_offset(rc_cmp->in(1), iv_add, &scale, &offset, T_LONG);
+    assert(ok, "inconsistent: was tested before");
+    Node* range = rc_cmp->in(2);
+    Node* c = rc->in(0);
+    Node* entry_control = inner_head->in(LoopNode::EntryControl);
+
+    Node* R = range;
+    Node* K = _igvn.longcon(scale);
+    set_ctrl(K, this->C->root());
+    Node* L = offset;
+    Node* C = outer_phi;
+    Node* Z_2 = new ConvI2LNode(inner_iters_actual_int, TypeLong::LONG);
+    register_new_node(Z_2, entry_control);
+
+    // Start with 64-bit values:
+    //   i*K + L <u64 R
+    //   (C+j)*K + L <u64 R
+    //   j*K + L_2 <u64 R    where L_2 = C*K+L
+    Node* L_2 = new MulLNode(C, K);
+    register_new_node(L_2, entry_control);
+    L_2 = new AddLNode(L_2, L);
+    register_new_node(L_2, entry_control);
+
+    // Compute endpoints of the range of values j*K.
+    //  Q_min = (j=0)*K + L_2;  Q_max = (j=Z_2)*K + L_2
+    Node* Q_min = L_2;
+    Node* Q_max = new MulLNode(Z_2, K);
+    register_new_node(Q_max, entry_control);
+    Q_max = new AddLNode(Q_max, L_2);
+    register_new_node(Q_max, entry_control);
+
+    // L_clamp = Q_min < 0 ? 0 : Q_min
+    Node* Q_min_cmp = new CmpLNode(Q_min, long_zero);
+    register_new_node(Q_min_cmp, entry_control);
+    Node* Q_min_bool = new BoolNode(Q_min_cmp, BoolTest::lt);
+    register_new_node(Q_min_bool, entry_control);
+    Node* L_clamp = new CMoveLNode(Q_min_bool, Q_min, long_zero, TypeLong::LONG);
+    register_new_node(L_clamp, entry_control);
+
+    // H_clamp = Q_max < Q_min ? R : Q_max
+    Node* Q_max_cmp = new CmpLNode(Q_max, Q_min);
+    register_new_node(Q_max_cmp, entry_control);
+    Node* Q_max_bool = new BoolNode(Q_max_cmp, BoolTest::lt);
+    register_new_node(Q_max_bool, entry_control);
+    Node* H_clamp = new CMoveLNode(Q_max_bool, Q_max, R, TypeLong::LONG);
+    register_new_node(H_clamp, entry_control);
+
+    // R_2 = clamp(R, L_clamp, H_clamp) - L_clamp
+    // that is: R_2 = clamp(R, L_clamp, H_clamp) if Q_min < 0
+    // or:      R_2 = clamp(R, L_clamp, H_clamp) - Q_min if Q_min > 0
+    Node* R_2 = clamp(R, L_clamp, H_clamp);
+    R_2 = new SubLNode(R_2, L_clamp);
+    register_new_node(R_2, entry_control);
+    R_2 = new ConvL2INode(R_2, TypeInt::POS);
+    register_new_node(R_2, entry_control);
+
+    // Q = Q_min - L_clamp
+    // that is: Q = Q_min - 0 if Q_min < 0
+    // or:      Q = Q_min - Q_min = 0 if Q_min > 0
+    Node* Q = new SubLNode(Q_min, L_clamp);
+    register_new_node(Q, entry_control);
+    Q = new ConvL2INode(Q, TypeInt::INT);
+    register_new_node(Q, entry_control);
+
+    // Transform the range check
+    K = _igvn.intcon(checked_cast<int>(scale));
+    set_ctrl(K, this->C->root());
+    Node* scaled_iv = new MulINode(inner_phi, K);
+    register_new_node(scaled_iv, c);
+    Node* scaled_iv_plus_offset = scaled_iv_plus_offset = new AddINode(scaled_iv, Q);
+    register_new_node(scaled_iv_plus_offset, c);
+
+    Node* new_rc_cmp = new CmpUNode(scaled_iv_plus_offset, R_2);
+    register_new_node(new_rc_cmp, c);
+
+    _igvn.replace_input_of(rc_bol, 1, new_rc_cmp);
+  }
+}
+
+Node* PhaseIdealLoop::clamp(Node* R, Node* L, Node* H) {
+  Node* min = MaxNode::signed_min(R, H, TypeLong::LONG, _igvn);
+  set_subtree_ctrl(min, true);
+  Node* max = MaxNode::signed_max(L, min, TypeLong::LONG, _igvn);
+  set_subtree_ctrl(max, true);
+  return max;
 }
 
 LoopNode* PhaseIdealLoop::create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head,
@@ -1417,10 +1656,10 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     Node* bol;
 
     if (stride_con > 0) {
-      cmp_limit = CmpNode::make(limit, _igvn.integercon(max_jint - stride_m, iv_bt), iv_bt);
+      cmp_limit = CmpNode::make(limit, _igvn.integercon(max_signed_integer(iv_bt) - stride_m, iv_bt), iv_bt);
       bol = new BoolNode(cmp_limit, BoolTest::le);
     } else {
-      cmp_limit = CmpNode::make(limit, _igvn.integercon(min_jint - stride_m, iv_bt), iv_bt);
+      cmp_limit = CmpNode::make(limit, _igvn.integercon(min_signed_integer(iv_bt) - stride_m, iv_bt), iv_bt);
       bol = new BoolNode(cmp_limit, BoolTest::ge);
     }
 
@@ -1873,7 +2112,7 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
 
   int stride_con = stride_t->is_int()->get_con();
   if (stride_con == 1)
-    return NULL;  // Identity
+    return bottom_type();  // Identity
 
   if (init_t->is_int()->is_con() && limit_t->is_int()->is_con()) {
     // Use jlongs to avoid integer overflow.
@@ -3177,7 +3416,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // Look for induction variables of the form:  X += constant
     if (phi2->region() != loop->_head ||
         incr2->req() != 3 ||
-        incr2->in(1) != phi2 ||
+        incr2->in(1)->uncast() != phi2 ||
         incr2 == incr ||
         incr2->Opcode() != Op_AddI ||
         !incr2->in(2)->is_Con())
@@ -3955,24 +4194,26 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     // Reassociate invariants and prep for split_thru_phi
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
-      bool is_counted = lpt->is_counted();
-      if (!is_counted || !lpt->is_innermost()) continue;
+      if (!lpt->is_loop()) {
+        continue;
+      }
+      Node* head = lpt->_head;
+      if (!head->is_BaseCountedLoop() || !lpt->is_innermost()) continue;
 
       // check for vectorized loops, any reassociation of invariants was already done
-      if (is_counted && lpt->_head->as_CountedLoop()->is_unroll_only()) {
-        continue;
-      } else {
-        AutoNodeBudget node_budget(this);
-        lpt->reassociate_invariants(this);
+      if (head->is_CountedLoop()) {
+        if (head->as_CountedLoop()->is_unroll_only()) {
+          continue;
+        } else {
+          AutoNodeBudget node_budget(this);
+          lpt->reassociate_invariants(this);
+        }
       }
       // Because RCE opportunities can be masked by split_thru_phi,
       // look for RCE candidates and inhibit split_thru_phi
       // on just their loop-phi's for this pass of loop opts
-      if (SplitIfBlocks && do_split_ifs) {
-        AutoNodeBudget node_budget(this, AutoNodeBudget::NO_BUDGET_CHECK);
-        if (lpt->policy_range_check(this)) {
-          lpt->_rce_candidate = 1; // = true
-        }
+      if (SplitIfBlocks && do_split_ifs && lpt->policy_range_check(this, true)) {
+        lpt->_rce_candidate = 1; // = true
       }
     }
   }

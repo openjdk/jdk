@@ -56,6 +56,7 @@ class JfrJavaSupport : public AllStatic {
 
   static void set_field(JfrJavaArguments* args, TRAPS);
   static void get_field(JfrJavaArguments* args, TRAPS);
+  static void get_field(JfrJavaArguments* args, Thread* thread);
   static void new_object(JfrJavaArguments* args, TRAPS);
 
   // global jni handle result
@@ -75,8 +76,8 @@ class JfrJavaSupport : public AllStatic {
 
   // misc
   static Klass* klass(const jobject handle);
-  static const char* c_str(jstring string, JavaThread* jt, bool c_heap = false);
-  static const char* c_str(oop string, JavaThread* jt, bool c_heap = false);
+  static const char* c_str(jstring string, Thread* thread, bool c_heap = false);
+  static const char* c_str(oop string, Thread* thread, bool c_heap = false);
 
   // exceptions
   static void throw_illegal_state_exception(const char* message, TRAPS);

@@ -210,6 +210,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_multiplyExactI();
   bool inline_math_multiplyExactL();
   bool inline_math_multiplyHigh();
+  bool inline_math_unsignedMultiplyHigh();
   bool inline_math_negateExactI();
   bool inline_math_negateExactL();
   bool inline_math_subtractExactI(bool is_decrement);
@@ -285,7 +286,7 @@ class LibraryCallKit : public GraphKit {
   Node* get_state_from_digest_object(Node *digestBase_object, const char* state_type);
   Node* get_digest_length_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
-  bool inline_encodeISOArray();
+  bool inline_encodeISOArray(bool ascii);
   bool inline_updateCRC32();
   bool inline_updateBytesCRC32();
   bool inline_updateByteBufferCRC32();

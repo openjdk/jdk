@@ -324,7 +324,6 @@ public class nextevent001 extends JDIBase {
 
             log2("......setting up ThreadStartRequest");
             ThreadStartRequest tsr = eventRManager.createThreadStartRequest();
-            tsr.addCountFilter(1);
             tsr.setSuspendPolicy(EventRequest.SUSPEND_ALL);
             tsr.putProperty("number", "ThreadStartRequest");
             tsr.enable();
@@ -333,7 +332,6 @@ public class nextevent001 extends JDIBase {
 
             log2("......setting up ThreadDeathRequest");
             ThreadDeathRequest tdr = eventRManager.createThreadDeathRequest();
-            tdr.addCountFilter(1);
             tdr.setSuspendPolicy(EventRequest.SUSPEND_ALL);
             tsr.putProperty("number", "ThreadDeathRequest");
             tdr.enable();

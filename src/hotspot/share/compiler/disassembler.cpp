@@ -872,7 +872,7 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
   if (cb->is_nmethod()) {
     // If we  have an nmethod at hand,
     // call the specialized decoder directly.
-    decode((nmethod*)cb, st);
+    ((nmethod*)cb)->decode2(st);
     return;
   }
 

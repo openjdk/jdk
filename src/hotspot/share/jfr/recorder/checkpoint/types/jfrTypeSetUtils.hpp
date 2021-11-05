@@ -26,8 +26,8 @@
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETUTILS_HPP
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/support/jfrSymbolTable.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "jfr/utilities/jfrHashtable.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 
@@ -191,98 +191,6 @@ class LeakPredicate<const Method*> {
   }
 };
 
-template <typename T, typename IdType>
-class ListEntry : public JfrHashtableEntry<T, IdType> {
- public:
-  ListEntry(uintptr_t hash, const T& data) : JfrHashtableEntry<T, IdType>(hash, data),
-    _list_next(NULL), _serialized(false), _unloading(false), _leakp(false) {}
-  const ListEntry<T, IdType>* list_next() const { return _list_next; }
-  void reset() const {
-    _list_next = NULL; _serialized = false; _unloading = false; _leakp = false;
-  }
-  void set_list_next(const ListEntry<T, IdType>* next) const { _list_next = next; }
-  bool is_serialized() const { return _serialized; }
-  void set_serialized() const { _serialized = true; }
-  bool is_unloading() const { return _unloading; }
-  void set_unloading() const { _unloading = true; }
-  bool is_leakp() const { return _leakp; }
-  void set_leakp() const { _leakp = true; }
- private:
-  mutable const ListEntry<T, IdType>* _list_next;
-  mutable bool _serialized;
-  mutable bool _unloading;
-  mutable bool _leakp;
-};
-
-class JfrSymbolId : public JfrCHeapObj {
-  template <typename, typename, template<typename, typename> class, typename, size_t>
-  friend class HashTableHost;
-  typedef HashTableHost<const Symbol*, traceid, ListEntry, JfrSymbolId> SymbolTable;
-  typedef HashTableHost<const char*, traceid, ListEntry, JfrSymbolId> CStringTable;
-  friend class JfrArtifactSet;
- public:
-  typedef SymbolTable::HashEntry SymbolEntry;
-  typedef CStringTable::HashEntry CStringEntry;
- private:
-  SymbolTable* _sym_table;
-  CStringTable* _cstring_table;
-  const SymbolEntry* _sym_list;
-  const CStringEntry* _cstring_list;
-  const Symbol* _sym_query;
-  const char* _cstring_query;
-  traceid _symbol_id_counter;
-  bool _class_unload;
-
-  // hashtable(s) callbacks
-  void on_link(const SymbolEntry* entry);
-  bool on_equals(uintptr_t hash, const SymbolEntry* entry);
-  void on_unlink(const SymbolEntry* entry);
-  void on_link(const CStringEntry* entry);
-  bool on_equals(uintptr_t hash, const CStringEntry* entry);
-  void on_unlink(const CStringEntry* entry);
-
-  template <typename Functor, typename T>
-  void iterate(Functor& functor, const T* list) {
-    const T* symbol = list;
-    while (symbol != NULL) {
-      const T* next = symbol->list_next();
-      functor(symbol);
-      symbol = next;
-    }
-  }
-
-  traceid mark_hidden_klass_name(const InstanceKlass* k, bool leakp);
-  bool is_hidden_klass(const Klass* k);
-  uintptr_t hidden_klass_name_hash(const InstanceKlass* ik);
-
- public:
-  JfrSymbolId();
-  ~JfrSymbolId();
-
-  void clear();
-  void set_class_unload(bool class_unload);
-
-  traceid mark(uintptr_t hash, const Symbol* sym, bool leakp);
-  traceid mark(const Klass* k, bool leakp);
-  traceid mark(const Symbol* symbol, bool leakp);
-  traceid mark(uintptr_t hash, const char* str, bool leakp);
-  traceid bootstrap_name(bool leakp);
-
-  template <typename Functor>
-  void iterate_symbols(Functor& functor) {
-    iterate(functor, _sym_list);
-  }
-
-  template <typename Functor>
-  void iterate_cstrings(Functor& functor) {
-    iterate(functor, _cstring_list);
-  }
-
-  bool has_entries() const { return has_symbol_entries() || has_cstring_entries(); }
-  bool has_symbol_entries() const { return _sym_list != NULL; }
-  bool has_cstring_entries() const { return _cstring_list != NULL; }
-};
-
 /**
  * When processing a set of artifacts, there will be a need
  * to track transitive dependencies originating with each artifact.
@@ -299,7 +207,7 @@ class JfrSymbolId : public JfrCHeapObj {
  */
 class JfrArtifactSet : public JfrCHeapObj {
  private:
-  JfrSymbolId* _symbol_id;
+  JfrSymbolTable* _symbol_table;
   GrowableArray<const Klass*>* _klass_list;
   GrowableArray<const Klass*>* _klass_loader_set;
   size_t _total_count;
@@ -309,7 +217,8 @@ class JfrArtifactSet : public JfrCHeapObj {
   ~JfrArtifactSet();
 
   // caller needs ResourceMark
-  void initialize(bool class_unload, bool clear = false);
+  void initialize(bool class_unload);
+  void clear();
 
   traceid mark(uintptr_t hash, const Symbol* sym, bool leakp);
   traceid mark(const Klass* klass, bool leakp);
@@ -318,15 +227,16 @@ class JfrArtifactSet : public JfrCHeapObj {
   traceid mark_hidden_klass_name(const Klass* klass, bool leakp);
   traceid bootstrap_name(bool leakp);
 
-  const JfrSymbolId::SymbolEntry* map_symbol(const Symbol* symbol) const;
-  const JfrSymbolId::SymbolEntry* map_symbol(uintptr_t hash) const;
-  const JfrSymbolId::CStringEntry* map_cstring(uintptr_t hash) const;
+  const JfrSymbolTable::SymbolEntry* map_symbol(const Symbol* symbol) const;
+  const JfrSymbolTable::SymbolEntry* map_symbol(uintptr_t hash) const;
+  const JfrSymbolTable::StringEntry* map_string(uintptr_t hash) const;
 
   bool has_klass_entries() const;
   int entries() const;
   size_t total_count() const;
   void register_klass(const Klass* k);
   bool should_do_loader_klass(const Klass* k);
+  void increment_checkpoint_id();
 
   template <typename Functor>
   void iterate_klasses(Functor& functor) const {
@@ -339,12 +249,12 @@ class JfrArtifactSet : public JfrCHeapObj {
 
   template <typename T>
   void iterate_symbols(T& functor) {
-    _symbol_id->iterate_symbols(functor);
+    _symbol_table->iterate_symbols(functor);
   }
 
   template <typename T>
-  void iterate_cstrings(T& functor) {
-    _symbol_id->iterate_cstrings(functor);
+  void iterate_strings(T& functor) {
+    _symbol_table->iterate_strings(functor);
   }
 
   template <typename Writer>
