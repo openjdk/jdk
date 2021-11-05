@@ -54,6 +54,15 @@ enum { name##_##type##EnumValue = (value) }
 #define REGISTER_DECLARATION(type, name, value)                 \
 const type name = ((type)value)
 
+// For definitions of RegisterImpl* instances. To be redefined in an
+// OS-specific way.
+#ifdef __GNUC__
+#define INTERNAL_VISIBILITY  __attribute__ ((visibility ("internal")))
+#else
+#define INTERNAL_VISIBILITY
+#endif
+
+
 #define REGISTER_DEFINITION(type, name)
 
 #include CPU_HEADER(register)
