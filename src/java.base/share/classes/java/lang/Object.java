@@ -544,18 +544,19 @@ public class Object {
      * }</pre>
      *
      * @deprecated Finalization has been deprecated for removal in a future
-     * release. See <a href="https://openjdk.java.net/jeps/421">JEP 421</a> for
-     * discussion and alternatives.
-     * 
-     * When running in a JVM in which finalization has been disabled or removed,
-     * the garbage collector will never schedule {@code finalize()} to be called.
-     * 
+     * release. Finalization can lead to problems with security, performance,
+     * and reliability. See <a href="https://openjdk.java.net/jeps/421">JEP 421</a>
+     * for discussion and alternatives.
+     * <p>
      * Classes whose instances hold non-heap resources should provide a method
      * to enable explicit release of those resources, and they should also
      * implement {@link AutoCloseable} if appropriate.
      * {@link java.lang.ref.Cleaner} and {@link java.lang.ref.PhantomReference}
      * provide more flexible and efficient ways to release resources when an object
      * becomes unreachable.
+     * <p>
+     * When running in a JVM in which finalization has been disabled or removed,
+     * the garbage collector will never schedule {@code finalize()} to be called.
      *
      * @throws Throwable the {@code Exception} raised by this method
      * @see java.lang.ref.WeakReference
