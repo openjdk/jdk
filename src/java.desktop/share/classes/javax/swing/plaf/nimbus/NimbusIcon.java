@@ -43,7 +43,7 @@ import java.awt.image.BufferedImage;
  * An icon that delegates to a painter.
  * @author rbair
  */
-class NimbusIcon implements SynthIcon, UIResource {
+class NimbusIcon implements SynthIcon {
     private int width;
     private int height;
     private String prefix;
