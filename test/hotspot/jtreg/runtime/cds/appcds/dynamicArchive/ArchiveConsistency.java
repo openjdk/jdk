@@ -152,8 +152,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
 
         runTwo(baseArchiveName, wrongBaseName,
                appJar, mainClass, 1,
-               new String[] {"Base archive " + baseArchiveName,
-                             " does not exist",
+               new String[] {"Base archive name is damaged",
                              "Header checksum verification failed"});
     }
 }
