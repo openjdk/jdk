@@ -1085,7 +1085,7 @@ public:
 
   char* read_base_archive_name() {
     assert(_fd != -1, "Archive should be open");
-    size_t name_size = (size_t)_header._base_archive_name_size;
+    size_t name_size = _header._base_archive_name_size;
     assert(name_size != 0, "For non-default base archive, name size should be non-zero!");
     char* base_name = NEW_C_HEAP_ARRAY(char, name_size, mtInternal);
     lseek(_fd, _header._base_archive_path_offset, SEEK_SET); // position to correct offset.
