@@ -129,15 +129,15 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
         env->report_failure(C.failure_reason());
         continue;  // retry
       }
-      if (C.failure_reason_is(retry_no_locks_coarsening())) {
-        assert(do_locks_coarsening, "must make progress");
-        do_locks_coarsening = false;
-        env->report_failure(C.failure_reason());
-        continue;  // retry
-      }
       if (C.failure_reason_is(retry_no_iterative_escape_analysis())) {
         assert(do_iterative_escape_analysis, "must make progress");
         do_iterative_escape_analysis = false;
+        env->report_failure(C.failure_reason());
+        continue;  // retry
+      }
+      if (C.failure_reason_is(retry_no_locks_coarsening())) {
+        assert(do_locks_coarsening, "must make progress");
+        do_locks_coarsening = false;
         env->report_failure(C.failure_reason());
         continue;  // retry
       }

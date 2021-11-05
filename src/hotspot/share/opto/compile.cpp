@@ -499,7 +499,7 @@ void Compile::print_compile_messages() {
     tty->print_cr("** Bailout: Recompile without escape analysis          **");
     tty->print_cr("*********************************************************");
   }
-  if (!do_iterative_escape_analysis() && PrintOpto) {
+  if (do_iterative_escape_analysis() != DoEscapeAnalysis && PrintOpto) {
     // Recompiling without iterative escape analysis
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without iterative escape analysis**");
@@ -2191,7 +2191,7 @@ void Compile::Optimize() {
 
         if (failing())  return;
       }
-      progress = _do_iterative_escape_analysis &&
+      progress = do_iterative_escape_analysis() &&
                  (macro_count() < mcount) &&
                  ConnectionGraph::has_candidates(this);
       // Try again if candidates exist and made progress

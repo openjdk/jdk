@@ -99,7 +99,7 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   // to create space for them in ConnectionGraph::_nodes[].
   Node* oop_null = igvn->zerocon(T_OBJECT);
   Node* noop_null = igvn->zerocon(T_NARROWOOP);
-  int invocation = 1;
+  int invocation = 0;
   if (C->congraph() != NULL) {
     invocation = C->congraph()->_invocation + 1;
   }
