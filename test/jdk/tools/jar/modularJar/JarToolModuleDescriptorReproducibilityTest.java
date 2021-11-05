@@ -41,6 +41,10 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.spi.ToolProvider;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+
 /**
  * @test
  * @bug 8258117
@@ -161,35 +165,28 @@ public class JarToolModuleDescriptorReproducibilityTest {
         StringWriter sw = new StringWriter();
         try (PrintWriter pw = new PrintWriter(sw)) {
             int exitCode = JAVAC_TOOL.run(pw, pw, javacArgs.toArray(new String[0]));
-            if (exitCode != 0) {
-                throw new RuntimeException("Module compilation failed: " + sw.toString());
-            }
+            assertEquals(exitCode, 0, "Module compilation failed: " + sw.toString());
         }
         System.out.println("Module classes successfully compiled to directory " + classesDir);
     }
 
     // runs the "jar" command passing it the "jarArgs" and verifying that the command
     // execution didn't fail
-    private static void runJarCommand(String... jarArgs) throws Exception {
+    private static void runJarCommand(String... jarArgs) {
         StringWriter sw = new StringWriter();
         System.out.println("Launching jar command with args: " + Arrays.toString(jarArgs));
         try (PrintWriter pw = new PrintWriter(sw)) {
             int exitCode = JAR_TOOL.run(pw, pw, jarArgs);
-            if (exitCode != 0) {
-                throw new RuntimeException("jar command execution failed: " + sw.toString());
-            }
+            assertEquals(exitCode, 0, "jar command execution failed: " + sw.toString());
         }
     }
 
     // verifies the byte equality of the contents in each of the files
     private static void assertAllFileContentsAreSame(List<Path> files) throws Exception {
-        byte[] file1Contents = Files.readAllBytes(files.get(0));
+        Path firstFile = files.get(0);
         for (int i = 1; i < files.size(); i++) {
-            byte[] otherFileContents = Files.readAllBytes(files.get(i));
-            if (!Arrays.equals(file1Contents, otherFileContents)) {
-                throw new RuntimeException("Content in file " + files.get(i)
-                        + " isn't the same as in file " + files.get(0));
-            }
+            assertEquals(Files.mismatch(firstFile, files.get(i)), -1,
+                    "Content in file " + files.get(i) + " isn't the same as in file " + firstFile);
         }
     }
 
@@ -205,20 +202,15 @@ public class JarToolModuleDescriptorReproducibilityTest {
                     break;
                 }
             }
-            if (moduleInfoEntry == null) {
-                throw new RuntimeException("module-info.class is missing from jar " + jar);
-            }
+            assertNotNull(moduleInfoEntry, "module-info.class is missing from jar " + jar);
+
             ModuleDescriptor md = ModuleDescriptor.read(jaris);
-            if (!md.name().equals(MODULE_NAME)) {
-                throw new RuntimeException("Unexpected module name " + md.name() + ", expected " + MODULE_NAME);
-            }
-            if (md.rawVersion().isEmpty()) {
-                throw new RuntimeException("Module version missing from descriptor");
-            }
+            assertEquals(md.name(), MODULE_NAME, "Unexpected module name");
+            assertFalse(md.rawVersion().isEmpty(), "Module version missing from descriptor");
+
             String actualVersion = md.rawVersion().get();
-            if (!actualVersion.equals(expectedModuleVersion)) {
-                throw new RuntimeException("Unexpected module version " + actualVersion + ", expected " + expectedModuleVersion);
-            }
+            assertEquals(actualVersion, expectedModuleVersion, "Unexpected module version");
+
             System.out.println(moduleInfoEntry.getName() + " has a timestamp of "
                     + moduleInfoEntry.getTime() + " for version " + actualVersion);
         }
