@@ -62,7 +62,7 @@ import java.util.Optional;
  * <ul>
  * <li>if {@code L} is a {@link ValueLayout} with carrier {@code E} then there are two cases:
  *     <ul>
- *         <li>if {@code L} occurs in a parameter position and {@code E} is {@code NativeAddress.class},
+ *         <li>if {@code L} occurs in a parameter position and {@code E} is {@code MemoryAddress.class},
  *         then {@code C = Addressable.class};</li>
  *         <li>otherwise, {@code C = E};
  *     </ul></li>
@@ -130,8 +130,10 @@ import java.util.Optional;
  *     <li>The scope of {@code R} is {@linkplain ResourceScope#keepAlive(ResourceScope) kept alive} (and cannot be closed) during the invocation.
  *</ul>
  * <p>
- * Upcall stubs are generally safer to work with, as the linker runtime can validate the type of the target method
- * handle against the provided function descriptor and report an error if any mismatch is detected. If the target method
+ * Upcall stubs are safer to work with, as the linker runtime can validate the type of the target method
+ * handle against the provided function descriptor and report an error if any mismatch is detected. That said, JVM
+ * crashes might still occur if the native code casts the function pointer associated with an upcall stub to a type
+ * that is incompatible with the provided function descriptor. Moreover, if the target method
  * handle associated with an upcall stub returns a {@linkplain MemoryAddress native address}, clients must ensure
  * that this address cannot become invalid after the upcall completes. This can lead to unspecified behavior,
  * and even JVM crashes, since an upcall is typically executed in the context of a downcall method handle invocation.
