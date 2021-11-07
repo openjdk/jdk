@@ -1250,5 +1250,18 @@ public class SealedCompilationTests extends CompilationTestCase {
                 class Foo<X extends A & I> {}
                 """
         );
+        assertOK(
+                """
+                class Outer {
+                    abstract class Base {}
+                    interface Marker {}
+                    sealed class B extends Base {}
+                    final class C extends B implements Marker {}
+                    private <T extends Base & Marker> void test(T obj) {
+                        B b = (B) obj;
+                    }
+                }
+                """
+        );
     }
 }

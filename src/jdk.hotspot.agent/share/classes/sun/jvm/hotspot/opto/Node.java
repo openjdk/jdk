@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,11 +74,11 @@ public class Node extends VMObject {
 
   static HashMap constructors = new HashMap();
 
-  static abstract class Instantiator {
+  abstract static class Instantiator {
     abstract Node create(Address addr);
   }
 
-  static public Node create(Address addr) {
+  public static Node create(Address addr) {
     if (addr == null) return null;
     Node result = nodes.get(addr);
     if (result == null) {

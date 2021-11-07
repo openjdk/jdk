@@ -143,13 +143,13 @@ bool oopDesc::is_a(Klass* k) const {
   return klass()->is_subtype_of(k);
 }
 
-int oopDesc::size()  {
+size_t oopDesc::size()  {
   return size_given_klass(klass());
 }
 
-int oopDesc::size_given_klass(Klass* klass)  {
+size_t oopDesc::size_given_klass(Klass* klass)  {
   int lh = klass->layout_helper();
-  int s;
+  size_t s;
 
   // lh is now a value computed at class initialization that may hint
   // at the size.  For instances, this is positive and equal to the
@@ -182,7 +182,7 @@ int oopDesc::size_given_klass(Klass* klass)  {
       // This code could be simplified, but by keeping array_header_in_bytes
       // in units of bytes and doing it this way we can round up just once,
       // skipping the intermediate round to HeapWordSize.
-      s = (int)(align_up(size_in_bytes, MinObjAlignmentInBytes) / HeapWordSize);
+      s = align_up(size_in_bytes, MinObjAlignmentInBytes) / HeapWordSize;
 
       // UseParallelGC and UseG1GC can change the length field
       // of an "old copy" of an object array in the young gen so it indicates
@@ -198,8 +198,8 @@ int oopDesc::size_given_klass(Klass* klass)  {
     }
   }
 
-  assert(s > 0, "Oop size must be greater than zero, not %d", s);
-  assert(is_object_aligned(s), "Oop size is not properly aligned: %d", s);
+  assert(s > 0, "Oop size must be greater than zero, not " SIZE_FORMAT, s);
+  assert(is_object_aligned(s), "Oop size is not properly aligned: " SIZE_FORMAT, s);
   return s;
 }
 
@@ -208,10 +208,8 @@ bool oopDesc::is_array()     const { return klass()->is_array_klass();     }
 bool oopDesc::is_objArray()  const { return klass()->is_objArray_klass();  }
 bool oopDesc::is_typeArray() const { return klass()->is_typeArray_klass(); }
 
-void*    oopDesc::field_addr(int offset)     const { return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
-
-template <class T>
-T*       oopDesc::obj_field_addr(int offset) const { return (T*) field_addr(offset); }
+template<typename T>
+T*       oopDesc::field_addr(int offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
 
 template <typename T>
 size_t   oopDesc::field_offset(T* p) const { return pointer_delta((void*)p, (void*)this, 1); }
@@ -222,30 +220,30 @@ inline oop  oopDesc::obj_field(int offset) const                    { return Hea
 
 inline void oopDesc::obj_field_put(int offset, oop value)           { HeapAccess<>::oop_store_at(as_oop(), offset, value); }
 
-inline jbyte oopDesc::byte_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void  oopDesc::byte_field_put(int offset, jbyte value)       { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jbyte oopDesc::byte_field(int offset) const                  { return *field_addr<jbyte>(offset);  }
+inline void  oopDesc::byte_field_put(int offset, jbyte value)       { *field_addr<jbyte>(offset) = value; }
 
-inline jchar oopDesc::char_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void  oopDesc::char_field_put(int offset, jchar value)       { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jchar oopDesc::char_field(int offset) const                  { return *field_addr<jchar>(offset);  }
+inline void  oopDesc::char_field_put(int offset, jchar value)       { *field_addr<jchar>(offset) = value; }
 
-inline jboolean oopDesc::bool_field(int offset) const               { return HeapAccess<>::load_at(as_oop(), offset); }
-inline void     oopDesc::bool_field_put(int offset, jboolean value) { HeapAccess<>::store_at(as_oop(), offset, jboolean(value & 1)); }
-inline jboolean oopDesc::bool_field_volatile(int offset) const      { return HeapAccess<MO_SEQ_CST>::load_at(as_oop(), offset); }
-inline void     oopDesc::bool_field_put_volatile(int offset, jboolean value) { HeapAccess<MO_SEQ_CST>::store_at(as_oop(), offset, jboolean(value & 1)); }
-inline jshort oopDesc::short_field(int offset) const                { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void   oopDesc::short_field_put(int offset, jshort value)    { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jboolean oopDesc::bool_field(int offset) const               { return *field_addr<jboolean>(offset); }
+inline void     oopDesc::bool_field_put(int offset, jboolean value) { *field_addr<jboolean>(offset) = jboolean(value & 1); }
+inline jboolean oopDesc::bool_field_volatile(int offset) const      { return RawAccess<MO_SEQ_CST>::load(field_addr<jboolean>(offset)); }
+inline void     oopDesc::bool_field_put_volatile(int offset, jboolean value) { RawAccess<MO_SEQ_CST>::store(field_addr<jboolean>(offset), jboolean(value & 1)); }
+inline jshort oopDesc::short_field(int offset) const                { return *field_addr<jshort>(offset);   }
+inline void   oopDesc::short_field_put(int offset, jshort value)    { *field_addr<jshort>(offset) = value;  }
 
-inline jint oopDesc::int_field(int offset) const                    { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void oopDesc::int_field_put(int offset, jint value)          { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jint oopDesc::int_field(int offset) const                    { return *field_addr<jint>(offset);     }
+inline void oopDesc::int_field_put(int offset, jint value)          { *field_addr<jint>(offset) = value;    }
 
-inline jlong oopDesc::long_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void  oopDesc::long_field_put(int offset, jlong value)       { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jlong oopDesc::long_field(int offset) const                  { return *field_addr<jlong>(offset);    }
+inline void  oopDesc::long_field_put(int offset, jlong value)       { *field_addr<jlong>(offset) = value;   }
 
-inline jfloat oopDesc::float_field(int offset) const                { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void   oopDesc::float_field_put(int offset, jfloat value)    { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jfloat oopDesc::float_field(int offset) const                { return *field_addr<jfloat>(offset);   }
+inline void   oopDesc::float_field_put(int offset, jfloat value)    { *field_addr<jfloat>(offset) = value;  }
 
-inline jdouble oopDesc::double_field(int offset) const              { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void    oopDesc::double_field_put(int offset, jdouble value) { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jdouble oopDesc::double_field(int offset) const              { return *field_addr<jdouble>(offset);  }
+inline void    oopDesc::double_field_put(int offset, jdouble value) { *field_addr<jdouble>(offset) = value; }
 
 bool oopDesc::is_locked() const {
   return mark().is_locked();
@@ -324,17 +322,17 @@ void oopDesc::oop_iterate(OopClosureType* cl, MemRegion mr) {
 }
 
 template <typename OopClosureType>
-int oopDesc::oop_iterate_size(OopClosureType* cl) {
+size_t oopDesc::oop_iterate_size(OopClosureType* cl) {
   Klass* k = klass();
-  int size = size_given_klass(k);
+  size_t size = size_given_klass(k);
   OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k);
   return size;
 }
 
 template <typename OopClosureType>
-int oopDesc::oop_iterate_size(OopClosureType* cl, MemRegion mr) {
+size_t oopDesc::oop_iterate_size(OopClosureType* cl, MemRegion mr) {
   Klass* k = klass();
-  int size = size_given_klass(k);
+  size_t size = size_given_klass(k);
   OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k, mr);
   return size;
 }

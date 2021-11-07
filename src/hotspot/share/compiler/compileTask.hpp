@@ -104,7 +104,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
  public:
   CompileTask() : _failure_reason(NULL), _failure_reason_on_C_heap(false) {
-    _lock = new Monitor(Mutex::nonleaf+2, "CompileTaskLock", Mutex::_safepoint_check_always);
+    _lock = new Monitor(Mutex::safepoint, "CompileTask_lock");
   }
 
   void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
@@ -187,16 +187,16 @@ class CompileTask : public CHeapObj<mtCompiler> {
 private:
   static void  print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                                       bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false,
-                                      const char* msg = NULL, bool short_form = false, bool cr = true,
+                                      const char* msg = NULL, bool short_form = false, bool cr = true, bool timestamp = true,
                                       jlong time_queued = 0, jlong time_started = 0);
 
 public:
   void         print(outputStream* st = tty, const char* msg = NULL, bool short_form = false, bool cr = true);
   void         print_ul(const char* msg = NULL);
-  static void  print(outputStream* st, const nmethod* nm, const char* msg = NULL, bool short_form = false, bool cr = true) {
+  static void  print(outputStream* st, const nmethod* nm, const char* msg = NULL, bool short_form = false, bool cr = true, bool timestamp = true) {
     print_impl(st, nm->method(), nm->compile_id(), nm->comp_level(),
                            nm->is_osr_method(), nm->is_osr_method() ? nm->osr_entry_bci() : -1, /*is_blocking*/ false,
-                           msg, short_form, cr);
+                           msg, short_form, cr, timestamp);
   }
   static void  print_ul(const nmethod* nm, const char* msg = NULL);
 

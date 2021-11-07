@@ -28,7 +28,7 @@
   @summary namefilter is not called for file dialog on windows
   @library ../../regtesthelpers
   @build Util
-  @run main FilenameFilterTest
+  @run main/othervm FilenameFilterTest
 */
 
 import java.awt.*;

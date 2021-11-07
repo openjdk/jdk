@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class GraphUtils {
     /**
      * Visitor for graph nodes.
      */
-    static abstract class NodeVisitor<D, N extends Node<D, N>, A> {
+    abstract static class NodeVisitor<D, N extends Node<D, N>, A> {
         /**
          * Visitor action for nodes.
          */
@@ -92,7 +92,7 @@ public class GraphUtils {
      * This class is a basic abstract class for representing a node.
      * A node is associated with a given data.
      */
-    public static abstract class AbstractNode<D, N extends AbstractNode<D, N>> implements Node<D, N> {
+    public abstract static class AbstractNode<D, N extends AbstractNode<D, N>> implements Node<D, N> {
         public final D data;
 
         public AbstractNode(D data) {
@@ -129,7 +129,7 @@ public class GraphUtils {
      * This class specialized Node, by adding elements that are required in order
      * to perform Tarjan computation of strongly connected components.
      */
-    public static abstract class TarjanNode<D, N extends TarjanNode<D, N>> extends AbstractNode<D, N>
+    public abstract static class TarjanNode<D, N extends TarjanNode<D, N>> extends AbstractNode<D, N>
             implements Comparable<N> {
         int index = -1;
         int lowlink;

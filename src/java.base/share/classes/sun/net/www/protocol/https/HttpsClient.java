@@ -329,7 +329,7 @@ final class HttpsClient extends HttpClient
             ret = (HttpsClient) kac.get(url, sf);
             if (ret != null && httpuc != null &&
                 httpuc.streaming() &&
-                httpuc.getRequestMethod() == "POST") {
+                "POST".equals(httpuc.getRequestMethod())) {
                 if (!ret.available())
                     ret = null;
             }

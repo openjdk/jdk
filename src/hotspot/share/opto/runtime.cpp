@@ -302,7 +302,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   if ((len > 0) && (result != NULL) &&
       is_deoptimized_caller_frame(current)) {
     // Zero array here if the caller is deoptimized.
-    int size = TypeArrayKlass::cast(array_type)->oop_size(result);
+    const size_t size = TypeArrayKlass::cast(array_type)->oop_size(result);
     BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
     const size_t hs = arrayOopDesc::header_size(elem_type);
     // Align to next 8 bytes to avoid trashing arrays's length.
@@ -958,7 +958,7 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
 //for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
 const TypeFunc* OptoRuntime::galoisCounterMode_aescrypt_Type() {
   // create input type (domain)
-  int num_args = 8;
+  int num_args = 9;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -969,6 +969,7 @@ const TypeFunc* OptoRuntime::galoisCounterMode_aescrypt_Type() {
   fields[argp++] = TypePtr::NOTNULL; // byte[] key from AESCrypt obj
   fields[argp++] = TypePtr::NOTNULL; // long[] state from GHASH obj
   fields[argp++] = TypePtr::NOTNULL; // long[] subkeyHtbl from GHASH obj
+  fields[argp++] = TypePtr::NOTNULL; // long[] avx512_subkeyHtbl newly created
   fields[argp++] = TypePtr::NOTNULL; // byte[] counter from GCTR obj
 
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
