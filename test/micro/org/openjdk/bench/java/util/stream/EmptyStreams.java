@@ -61,19 +61,22 @@ import java.util.stream.StreamSupport;
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 2)
+@Fork(value = 2)//, jvmArgsAppend = {"-XX:+UseParallelGC", "-Xmx16g", "-Xms16g", "-XX:+AlwaysPreTouch", "-XX:NewRatio=1", "-XX:SurvivorRatio=1"})
 @Warmup(iterations = 20, time = 3, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 10, time = 3, timeUnit = TimeUnit.SECONDS)
 @State(Scope.Thread)
 public class EmptyStreams {
     @Param({"0", "1", "10", "100"})
-    private int length;
-
-    @Param({"minimal", "basic", "complex", "crossover"})
-    private String typeOfStreamDecoration;
+    private int a_length;
 
     @Param({"ArrayList", "ConcurrentLinkedQueue", "ConcurrentSkipListSet", "CopyOnWriteArrayList", "ConcurrentHashMap"})
-    private String typeOfCollection;
+    private String b_typeOfCollection;
+
+    @Param({"minimal", "basic", "complex", "crossover"})
+    private String c_typeOfStreamDecoration;
+
+    @Param({"old", "new"})
+    private String d_streamCreation;
 
     private static final Map<Integer/*length*/, Map<String/*typeOfCollection*/, Collection<Integer>>> collectionData =
             Map.ofEntries(
@@ -100,12 +103,17 @@ public class EmptyStreams {
         return IntStream.range(0, length).boxed().collect(Collectors.toCollection(supplier));
     }
 
-    private static Stream<Integer> createStream(int length, String typeOfCollection) {
-        return collectionData.get(length).get(typeOfCollection).stream();
+    private Stream<Integer> createStream() {
+        Collection<Integer> collection = collectionData.get(a_length).get(b_typeOfCollection);
+        return switch (d_streamCreation) {
+            case "old" -> StreamSupport.stream(collection.spliterator(), false);
+            case "new" -> collection.stream();
+            default -> throw new AssertionError();
+        };
     }
 
-    private static Optional<Integer> decorateStream(Stream<Integer> stream, String typeOfStreamDecoration) {
-        return streamDecorators.get(typeOfStreamDecoration).apply(stream);
+    private Optional<Integer> decorateStream(Stream<Integer> stream) {
+        return streamDecorators.get(c_typeOfStreamDecoration).apply(stream);
     }
 
     private static final Map<String, Function<Stream<Integer>, Optional<Integer>>> streamDecorators =
@@ -160,6 +168,6 @@ public class EmptyStreams {
 
     @Benchmark
     public void mixOfCollectionsAndSizesAndStreams() {
-        decorateStream(createStream(length, typeOfCollection), typeOfStreamDecoration);
+        decorateStream(createStream());
     }
 }
