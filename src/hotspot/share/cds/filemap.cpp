@@ -196,7 +196,7 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
   size_t c_header_size;
   size_t header_size;
   size_t base_archive_name_size = 0;
-  size_t base_archive_path_offset = 0;
+  size_t base_archive_name_offset = 0;
   if (is_static()) {
     c_header_size = sizeof(FileMapHeader);
     header_size = c_header_size;
@@ -207,7 +207,7 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     if (!FLAG_IS_DEFAULT(SharedArchiveFile)) {
       base_archive_name_size = strlen(Arguments::GetSharedArchivePath()) + 1;
       header_size += base_archive_name_size;
-      base_archive_path_offset = c_header_size;
+      base_archive_name_offset = c_header_size;
     }
   }
   _header = (FileMapHeader*)os::malloc(header_size, mtInternal);
@@ -216,17 +216,17 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
                     core_region_alignment,
                     header_size,
                     base_archive_name_size,
-                    base_archive_path_offset);
+                    base_archive_name_offset);
 }
 
 void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
                              size_t header_size, size_t base_archive_name_size,
-                             size_t base_archive_path_offset) {
+                             size_t base_archive_name_offset) {
   // 1. We require _generic_header._magic to be at the beginning of the file
   // 2. FileMapHeader also assumes that _generic_header is at the beginning of the file
   assert(offset_of(FileMapHeader, _generic_header) == 0, "must be");
   set_header_size((unsigned int)header_size);
-  set_base_archive_path_offset((unsigned int)base_archive_path_offset);
+  set_base_archive_name_offset((unsigned int)base_archive_name_offset);
   set_base_archive_name_size((unsigned int)base_archive_name_size);
   set_magic(DynamicDumpSharedSpaces ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
   set_version(CURRENT_CDS_ARCHIVE_VERSION);
@@ -280,9 +280,9 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
 void FileMapHeader::copy_base_archive_name(const char* archive) {
   assert(base_archive_name_size() != 0, "_base_archive_name_size not set");
-  assert(base_archive_path_offset() != 0, "_base_archive_path_offset not set");
+  assert(base_archive_name_offset() != 0, "_base_archive_name_offset not set");
   assert(header_size() > sizeof(*this), "_base_archive_name_size not included in header size?");
-  memcpy((char*)this + base_archive_path_offset(), archive, base_archive_name_size());
+  memcpy((char*)this + base_archive_name_offset(), archive, base_archive_name_size());
 }
 
 void FileMapHeader::print(outputStream* st) {
@@ -292,7 +292,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- crc:                            0x%08x", crc());
   st->print_cr("- version:                        %d", version());
   st->print_cr("- header_size:                    " UINT32_FORMAT, header_size());
-  st->print_cr("- base_archive_path_offset:       " UINT32_FORMAT, base_archive_path_offset());
+  st->print_cr("- base_archive_name_offset:       " UINT32_FORMAT, base_archive_name_offset());
   st->print_cr("- base_archive_name_size:         " UINT32_FORMAT, base_archive_name_size());
 
   for (int i = 0; i < NUM_CDS_REGIONS; i++) {
@@ -1088,7 +1088,7 @@ public:
     size_t name_size = _header._base_archive_name_size;
     assert(name_size != 0, "For non-default base archive, name size should be non-zero!");
     char* base_name = NEW_C_HEAP_ARRAY(char, name_size, mtInternal);
-    lseek(_fd, _header._base_archive_path_offset, SEEK_SET); // position to correct offset.
+    lseek(_fd, _header._base_archive_name_offset, SEEK_SET); // position to correct offset.
     size_t n = os::read(_fd, base_name, (unsigned int)name_size);
     if (n != name_size) {
       log_info(cds)("Unable to read base archive name from archive");
@@ -1124,9 +1124,9 @@ bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
       vm_exit_during_initialization("Not a base shared archive", archive_name);
       return false;
     }
-    if (header->_base_archive_path_offset != 0) {
-      log_info(cds)("_base_archive_path_offset should be 0");
-      log_info(cds)("_base_archive_path_offset = " UINT32_FORMAT, header->_base_archive_path_offset);
+    if (header->_base_archive_name_offset != 0) {
+      log_info(cds)("_base_archive_name_offset should be 0");
+      log_info(cds)("_base_archive_name_offset = " UINT32_FORMAT, header->_base_archive_name_offset);
       return false;
     }
   } else {
@@ -1135,12 +1135,12 @@ bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
       return false;
     }
     unsigned int name_size = header->_base_archive_name_size;
-    unsigned int path_offset = header->_base_archive_path_offset;
+    unsigned int name_offset = header->_base_archive_name_offset;
     unsigned int header_size = header->_header_size;
-    if (path_offset + name_size != header_size) {
-      log_info(cds)("_header_size should be equal to _base_archive_path_offset plus _base_archive_name_size");
+    if (name_offset + name_size != header_size) {
+      log_info(cds)("_header_size should be equal to _base_archive_name_offset plus _base_archive_name_size");
       log_info(cds)("  _base_archive_name_size   = " UINT32_FORMAT, name_size);
-      log_info(cds)("  _base_archive_path_offset = " UINT32_FORMAT, path_offset);
+      log_info(cds)("  _base_archive_name_offset = " UINT32_FORMAT, name_offset);
       log_info(cds)("  _header_size              = " UINT32_FORMAT, header_size);
       return false;
     }
@@ -1165,13 +1165,13 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
     return false;
   }
 
-  if ((header->_base_archive_name_size == 0 && header->_base_archive_path_offset != 0) ||
-      (header->_base_archive_name_size != 0 && header->_base_archive_path_offset == 0)) {
+  if ((header->_base_archive_name_size == 0 && header->_base_archive_name_offset != 0) ||
+      (header->_base_archive_name_size != 0 && header->_base_archive_name_offset == 0)) {
     fail_continue("Default base archive not set correct");
     return false;
   }
   if (header->_base_archive_name_size == 0 &&
-      header->_base_archive_path_offset == 0) {
+      header->_base_archive_name_offset == 0) {
     *base_archive_name = Arguments::get_default_shared_archive_path();
   } else {
     // read the base archive name
@@ -1217,14 +1217,14 @@ bool FileMapInfo::init_from_file(int fd) {
     return false;
   }
 
-  unsigned int base_offset = header()->base_archive_path_offset();
+  unsigned int base_offset = header()->base_archive_name_offset();
   unsigned int name_size = header()->base_archive_name_size();
   unsigned int header_size = header()->header_size();
   if (base_offset != 0 && name_size != 0) {
     if (header_size != base_offset + name_size) {
       log_info(cds)("_header_size: " UINT32_FORMAT, header_size);
       log_info(cds)("base_archive_name_size: " UINT32_FORMAT, name_size);
-      log_info(cds)("base_archive_path_offset: " UINT32_FORMAT, base_offset);
+      log_info(cds)("base_archive_name_offset: " UINT32_FORMAT, base_offset);
       FileMapInfo::fail_continue("The shared archive file has an incorrect header size.");
       return false;
     }

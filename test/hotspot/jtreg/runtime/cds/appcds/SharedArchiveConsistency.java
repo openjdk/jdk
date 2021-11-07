@@ -222,15 +222,15 @@ public class SharedArchiveConsistency {
         CDSArchiveUtils.modifyRegionContentRandomly(copiedJsa);
         testAndCheck(verifyExecArgs);
 
-        // modify _base_archive_path_offet to non-zero
-        System.out.println("\n8. modify _base_archive_path_offset to non-zero\n");
-        String baseArchivePathOffsetName = startNewArchive("base-arhive-path-offset");
-        copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, baseArchivePathOffsetName);
-        int baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
-        System.out.println("    baseArchivePathOffset = " + baseArchivePathOffset);
-        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetBaseArchivePathOffset(), 1024);
-        baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
-        System.out.println("new baseArchivePathOffset = " + baseArchivePathOffset);
+        // modify _base_archive_name_offet to non-zero
+        System.out.println("\n8. modify _base_archive_name_offset to non-zero\n");
+        String baseArchiveNameOffsetName = startNewArchive("base-arhive-path-offset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, baseArchiveNameOffsetName);
+        int baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
+        System.out.println("    baseArchiveNameOffset = " + baseArchiveNameOffset);
+        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetBaseArchiveNameOffset(), 1024);
+        baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
+        System.out.println("new baseArchiveNameOffset = " + baseArchiveNameOffset);
         testAndCheck(verifyExecArgs);
     }
 }
