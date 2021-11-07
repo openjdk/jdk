@@ -162,26 +162,4 @@ public class EmptyStreams {
     public void mixOfCollectionsAndSizesAndStreams() {
         decorateStream(createStream(length, typeOfCollection), typeOfStreamDecoration);
     }
-
-    @Benchmark
-    public OptionalInt emptyStreamCreatedWithStreamSupport() {
-        return addStreamFilters(
-                StreamSupport.stream(
-                        Spliterators.emptySpliterator(), false));
-    }
-
-    @Benchmark
-    public OptionalInt emptyStreamCreatedWithStreamEmpty() {
-        return addStreamFilters(Stream.empty());
-    }
-
-    @Benchmark
-    public OptionalInt emptyStreamCreatedWithStreamOf() {
-        return addStreamFilters(Stream.of());
-    }
-
-    @Benchmark
-    public OptionalInt emptyStreamCreatedWithArrayListStream() {
-        return addStreamFilters(new ArrayList<String>().stream());
-    }
 }
