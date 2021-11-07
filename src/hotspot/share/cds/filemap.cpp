@@ -1083,24 +1083,29 @@ public:
     return &_header;
   }
 
-  bool read_base_archive_name(char** target) {
+  char* read_base_archive_name() {
     assert(_fd != -1, "Archive should be open");
-    size_t name_size = (size_t)_header._base_archive_name_size;
+    size_t name_size = _header._base_archive_name_size;
     assert(name_size != 0, "For non-default base archive, name size should be non-zero!");
-    *target = NEW_C_HEAP_ARRAY(char, name_size, mtInternal);
+    char* base_name = NEW_C_HEAP_ARRAY(char, name_size, mtInternal);
     lseek(_fd, _header._base_archive_path_offset, SEEK_SET); // position to correct offset.
-    size_t n = os::read(_fd, *target, (unsigned int)name_size);
+    size_t n = os::read(_fd, base_name, (unsigned int)name_size);
     if (n != name_size) {
       log_info(cds)("Unable to read base archive name from archive");
-      FREE_C_HEAP_ARRAY(char, *target);
-      return false;
+      FREE_C_HEAP_ARRAY(char, base_name);
+      return nullptr;
     }
-    if (!os::file_exists(*target)) {
-      log_info(cds)("Base archive %s does not exist", *target);
-      FREE_C_HEAP_ARRAY(char, *target);
-      return false;
+    if (base_name[name_size - 1] != '\0' || strlen(base_name) != name_size - 1) {
+      log_info(cds)("Base archive name is damaged");
+      FREE_C_HEAP_ARRAY(char, base_name);
+      return nullptr;
     }
-    return true;
+    if (!os::file_exists(base_name)) {
+      log_info(cds)("Base archive %s does not exist", base_name);
+      FREE_C_HEAP_ARRAY(char, base_name);
+      return nullptr;
+    }
+    return base_name;
   }
 };
 
@@ -1139,8 +1144,8 @@ bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
       log_info(cds)("  _header_size              = " UINT32_FORMAT, header_size);
       return false;
     }
-    char* base_name = NULL;
-    if (!file_helper.read_base_archive_name(&base_name)) {
+    char* base_name = file_helper.read_base_archive_name();
+    if (base_name == nullptr) {
       return false;
     }
     FREE_C_HEAP_ARRAY(char, base_name);
@@ -1170,8 +1175,8 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
     *base_archive_name = Arguments::get_default_shared_archive_path();
   } else {
     // read the base archive name
-    if (!file_helper.read_base_archive_name(base_archive_name)) {
-      *base_archive_name = NULL;
+    *base_archive_name = file_helper.read_base_archive_name();
+    if (*base_archive_name == nullptr) {
       return false;
     }
   }

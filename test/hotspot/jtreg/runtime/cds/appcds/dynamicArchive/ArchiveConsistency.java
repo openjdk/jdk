@@ -141,6 +141,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
                new String[] {"An error has occurred while processing the shared archive file.",
                              "Header checksum verification failed",
                              "Unable to use shared archive"});
+
         // 5. Make base archive name not terminated with '\0'
         System.out.println("\n5. Make base archive name not terminated with '\0'");
         String wrongBaseName = getNewArchiveName("wrongBaseName");
@@ -152,8 +153,25 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
 
         runTwo(baseArchiveName, wrongBaseName,
                appJar, mainClass, 1,
-               new String[] {"Base archive " + baseArchiveName,
-                             " does not exist",
+               new String[] {"Base archive name is damaged",
+                             "Header checksum verification failed"});
+
+        // 6. Modify base archive name to a file that doesn't exist.
+        System.out.println("\n6. Modify base archive name to a file that doesn't exist");
+        String wrongBaseName2 = getNewArchiveName("wrongBaseName2");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseName2);
+        baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
+        baseArchiveNameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
+        offset = baseArchivePathOffset + baseArchiveNameSize - 2;  // the "a" in ".jsa"
+        CDSArchiveUtils.writeData(copiedJsa, offset, new byte[] {(byte)'b'}); // .jsa -> .jsb
+
+        // Make sure it doesn't exist
+        String badName = baseArchiveName.replace(".jsa", ".jsb");
+        (new File(badName)).delete();
+
+        runTwo(baseArchiveName, wrongBaseName2,
+               appJar, mainClass, 1,
+               new String[] {"Base archive " + badName + " does not exist",
                              "Header checksum verification failed"});
     }
 }
