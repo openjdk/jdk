@@ -60,10 +60,10 @@ import java.util.stream.StreamSupport;
  * @author Heinz Kabutz, heinz@javaspecialists.eu
  */
 @BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.SECONDS)
-@Fork(3)
-@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@Fork(value = 2)
+@Warmup(iterations = 20, time = 3, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 10, time = 3, timeUnit = TimeUnit.SECONDS)
 @State(Scope.Thread)
 public class EmptyStreams {
     @Param({"0", "1", "10", "100"})
