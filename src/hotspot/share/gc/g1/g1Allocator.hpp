@@ -189,6 +189,10 @@ private:
   // active NUMA nodes.
   inline uint alloc_buffers_length(region_type_t dest) const;
 
+  // Returns if BOT updates are needed for the given destinaion. Currently we only have
+  // two destinations and BOT updates are only needed for the old generation.
+  inline bool needs_bot_update(G1HeapRegionAttr dest) const;
+
   bool may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const;
 public:
   G1PLABAllocator(G1Allocator* allocator);
@@ -218,7 +222,7 @@ public:
                             uint node_index);
 
   // Update the BOT for the last PLAB allocation.
-  inline void update_bot_for_allocation(G1HeapRegionAttr dest, size_t word_sz, uint node_index);
+  inline void update_bot_for_plab_allocation(G1HeapRegionAttr dest, size_t word_sz, uint node_index);
 
   void undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size_t word_sz, uint node_index);
 };

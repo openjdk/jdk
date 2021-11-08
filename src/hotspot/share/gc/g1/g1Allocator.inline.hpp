@@ -133,9 +133,12 @@ inline HeapWord* G1PLABAllocator::allocate(G1HeapRegionAttr dest,
   return allocate_direct_or_new_plab(dest, word_sz, refill_failed, node_index);
 }
 
+inline bool G1PLABAllocator::needs_bot_update(G1HeapRegionAttr dest) const {
+  return dest.is_old();
+}
+
 inline void G1PLABAllocator::update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size) {
-  if (!attr.needs_bot_update()) {
-    // BOT updates are only done for old generation.
+  if (!needs_bot_update(attr)) {
     return;
   }
 
@@ -144,8 +147,8 @@ inline void G1PLABAllocator::update_bot_for_direct_allocation(G1HeapRegionAttr a
   region->update_bot_at(addr, size);
 }
 
-inline void G1PLABAllocator::update_bot_for_allocation(G1HeapRegionAttr dest, size_t word_sz, uint node_index) {
-  assert(dest.needs_bot_update(), "Wrong destination: %s", dest.get_type_str());
+inline void G1PLABAllocator::update_bot_for_plab_allocation(G1HeapRegionAttr dest, size_t word_sz, uint node_index) {
+  assert(needs_bot_update(dest), "Wrong destination: %s", dest.get_type_str());
   G1BotUpdatingPLAB* plab = static_cast<G1BotUpdatingPLAB*>(alloc_buffer(dest, node_index));
   plab->update_bot(word_sz);
 }
