@@ -2273,10 +2273,13 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Must eagerly register phis, since they participate in loops.
         if (igvn) {
           igvn->register_new_node_with_optimizer(new_base);
+        } else {
+          phase->record_for_igvn(new_base);
         }
+
         MergeMemNode* result = MergeMemNode::make(new_base);
         for (uint i = 1; i < req(); ++i) {
-          Node *ii = in(i);
+          Node* ii = in(i);
           if (ii->is_MergeMem()) {
             MergeMemNode* n = ii->as_MergeMem();
             for (MergeMemStream mms(result, n); mms.next_non_empty2(); ) {
@@ -2287,6 +2290,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
                 made_new_phi = true;
                 if (igvn) {
                   igvn->register_new_node_with_optimizer(new_phi);
+                } else {
+                  phase->record_for_igvn(new_phi);
                 }
                 mms.set_memory(new_phi);
               }
