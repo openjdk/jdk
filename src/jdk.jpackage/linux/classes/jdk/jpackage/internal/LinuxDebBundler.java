@@ -108,12 +108,17 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         DEB_ARCH = debArch;
     }
 
+    private static final String releaseSuffix(Map<String, ? super Object> params) {
+        return Optional.ofNullable(RELEASE.fetchFrom(params, false)).map(
+                rel -> "-" + rel).orElse("");
+    }
+
     private static final BundlerParamInfo<String> FULL_PACKAGE_NAME =
             new StandardBundlerParam<>(
                     "linux.deb.fullPackageName", String.class, params -> {
                         return PACKAGE_NAME.fetchFrom(params)
                             + "_" + VERSION.fetchFrom(params)
-                            + "-" + RELEASE.fetchFrom(params)
+                            + releaseSuffix(params)
                             + "_" + DEB_ARCH;
                     }, (s, p) -> s);
 
@@ -275,8 +280,8 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         List<PackageProperty> properties = List.of(
                 new PackageProperty("Package", PACKAGE_NAME.fetchFrom(params),
                         "APPLICATION_PACKAGE", controlFileName),
-                new PackageProperty("Version", String.format("%s-%s",
-                        VERSION.fetchFrom(params), RELEASE.fetchFrom(params)),
+                new PackageProperty("Version", String.format("%s%s",
+                        VERSION.fetchFrom(params), releaseSuffix(params)),
                         "APPLICATION_VERSION-APPLICATION_RELEASE",
                         controlFileName),
                 new PackageProperty("Architecture", DEB_ARCH, "APPLICATION_ARCH",
