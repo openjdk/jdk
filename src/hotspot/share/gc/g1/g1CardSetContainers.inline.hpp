@@ -330,7 +330,7 @@ inline void G1CardSetHowl::iterate_cardset(CardSetPtr const card_set, uint index
       if (found.start_iterate(G1GCPhaseTimes::MergeRSHowlFull)) {
         assert(card_set == G1CardSet::FullCardSet, "Must be");
         uint offset = index << config->log2_num_cards_in_howl_bitmap();
-        for (uint i = 0; i < config->max_cards_in_region(); i++) {
+        for (uint i = 0; i < config->num_cards_in_howl_bitmap(); i++) {
           found((offset | (uint)i));
         }
       }
