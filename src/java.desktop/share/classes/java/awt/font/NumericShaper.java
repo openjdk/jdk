@@ -118,22 +118,19 @@ import jdk.internal.access.SharedSecrets;
  * </thead>
  * <tbody>
  *   <tr>
- *     <th scope="rowgroup" rowspan="2">Arabic
- *     <td>{@link NumericShaper#ARABIC NumericShaper.ARABIC}
+ *     <td rowspan="2" style="font-weight:bold; text-align:center">Arabic
+ *     <th scope="row" style="font-weight:normal; text-align:left">{@link NumericShaper#ARABIC NumericShaper.ARABIC}
  *     <br>
  *     {@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
  *     <td>{@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
- *   </tr>
  *   <tr>
- *     <td>{@link NumericShaper.Range#ARABIC}
+ *     <th scope="row" style="font-weight:normal; text-align:left">{@link NumericShaper.Range#ARABIC}
  *     <br>
  *     {@link NumericShaper.Range#EASTERN_ARABIC}
  *     <td>{@link NumericShaper.Range#EASTERN_ARABIC}
- * </tbody>
- * <tbody>
  *   <tr>
- *     <th scope="row">Tai Tham
- *     <td>{@link NumericShaper.Range#TAI_THAM_HORA}
+ *     <td style="font-weight:bold; text-align:center">Tai Tham
+ *     <th scope="row" style="font-weight:normal; text-align:left">{@link NumericShaper.Range#TAI_THAM_HORA}
  *     <br>
  *     {@link NumericShaper.Range#TAI_THAM_THAM}
  *     <td>{@link NumericShaper.Range#TAI_THAM_THAM}
