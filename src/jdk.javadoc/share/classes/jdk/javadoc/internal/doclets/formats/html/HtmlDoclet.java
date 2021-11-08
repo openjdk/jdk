@@ -290,6 +290,8 @@ public class HtmlDoclet extends AbstractDoclet {
         }
         f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
+        f = DocFile.createFileForOutput(configuration, DocPaths.CLIPBOARD_SVG);
+        f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.CLIPBOARD_SVG), true, true);
         if (options.createIndex()) {
             f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS_TEMPLATE), configuration.docResources);

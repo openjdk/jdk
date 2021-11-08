@@ -247,13 +247,6 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
             fail(Controller.MEMORY, "memory.kmem.failcnt", oldVal, newVal);
         }
 
-        oldVal = metrics.getKernelMemoryLimit();
-        newVal = getLongValueFromFile(Controller.MEMORY, "memory.kmem.limit_in_bytes");
-        newVal = newVal > unlimited_minimum ? CgroupSubsystem.LONG_RETVAL_UNLIMITED : newVal;
-        if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
-            fail(Controller.MEMORY, "memory.kmem.limit_in_bytes", oldVal, newVal);
-        }
-
         oldVal = metrics.getKernelMemoryMaxUsage();
         newVal = getLongValueFromFile(Controller.MEMORY, "memory.kmem.max_usage_in_bytes");
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
@@ -271,13 +264,6 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
         newVal = getLongValueFromFile(Controller.MEMORY, "memory.kmem.tcp.failcnt");
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             fail(Controller.MEMORY, "memory.kmem.tcp.failcnt", oldVal, newVal);
-        }
-
-        oldVal = metrics.getTcpMemoryLimit();
-        newVal = getLongValueFromFile(Controller.MEMORY, "memory.kmem.tcp.limit_in_bytes");
-        newVal = newVal > unlimited_minimum ? CgroupSubsystem.LONG_RETVAL_UNLIMITED: newVal;
-        if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
-            fail(Controller.MEMORY, "memory.kmem.tcp.limit_in_bytes", oldVal, newVal);
         }
 
         oldVal = metrics.getTcpMemoryMaxUsage();

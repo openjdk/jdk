@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import toolbox.ToolBox;
 
@@ -256,7 +257,7 @@ public class TestJavadocTester extends JavadocTester {
     @Test
     public void testOrdered() {
         messages.clear();
-        // methods are listed alphabetiocally in the Summary table,
+        // methods are listed alphabetically in the Summary table,
         // but in source-code order in the Details section.
         new OutputChecker("p/C.html")
                 .check("<h2>Method Summary</h2>",
@@ -329,7 +330,7 @@ public class TestJavadocTester extends JavadocTester {
     @Test
     public void testComplete_Ordered() {
         messages.clear();
-        // In this following calls, the strings are specified in the expected order.
+        // In the following calls, the strings are specified in the expected order.
         // File separators are made platform-specific by calling 'fix'.
         // Newlines are handled automatically by the 'check' method.
         new OutputChecker(Output.OUT)
@@ -350,7 +351,7 @@ public class TestJavadocTester extends JavadocTester {
     @Test
     public void testComplete_Unordered() {
         messages.clear();
-        // In this following calls, the strings are deliberately specified out of the expected order.
+        // In the following calls, the strings are deliberately specified out of the expected order.
         // File separators are made platform-specific by calling 'fix'.
         // Newlines are handled automatically by the 'check' method.
         new OutputChecker(Output.OUT)
@@ -430,7 +431,7 @@ public class TestJavadocTester extends JavadocTester {
      * @param items the strings
      */
     private String[] fix(String... items) {
-        return List.of(items).stream()
+        return Stream.of(items)
                 .map(this::fix)
                 .toArray(String[]::new);
     }

@@ -140,7 +140,7 @@ public:
     init_class_id(Class_CastFF);
   }
   virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Op_RegF; }
+  virtual uint ideal_reg() const { return in(1)->ideal_reg(); }
 };
 
 class CastDDNode: public ConstraintCastNode {
@@ -150,7 +150,7 @@ public:
     init_class_id(Class_CastDD);
   }
   virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Op_RegD; }
+  virtual uint ideal_reg() const { return in(1)->ideal_reg(); }
 };
 
 class CastVVNode: public ConstraintCastNode {

@@ -51,6 +51,10 @@ class VMError : public AllStatic {
   static void*       _context;          // ContextRecord on Windows,
                                         // ucontext_t on Solaris/Linux
 
+  // records if VMError::print_native_stack was used to
+  // print the native stack instead of os::platform_print_native_stack
+  static bool        _print_native_stack_used;
+
   // additional info for VM internal errors
   static const char* _filename;
   static int         _lineno;
@@ -180,6 +184,9 @@ public:
   // Address which is guaranteed to generate a fault on read, for test purposes,
   // which is not NULL and contains bits in every word.
   static const intptr_t segfault_address = LP64_ONLY(0xABC0000000000ABCULL) NOT_LP64(0x00000ABC);
+
+  // Max value for the ErrorLogPrintCodeLimit flag.
+  static const int max_error_log_print_code = 10;
 
   // Needed when printing signal handlers.
   NOT_WINDOWS(static const void* crash_handler_address;)

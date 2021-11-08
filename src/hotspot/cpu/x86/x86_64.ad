@@ -6787,6 +6787,7 @@ instruct unnecessary_membar_volatile()
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(0);
 
   size(0);
@@ -8523,6 +8524,19 @@ instruct mulHiL_rReg(rdx_RegL dst, no_rax_RegL src, rax_RegL rax, rFlagsReg cr)
   format %{ "imulq   RDX:RAX, RAX, $src\t# mulhi" %}
   ins_encode %{
     __ imulq($src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct umulHiL_rReg(rdx_RegL dst, no_rax_RegL src, rax_RegL rax, rFlagsReg cr)
+%{
+  match(Set dst (UMulHiL src rax));
+  effect(USE_KILL rax, KILL cr);
+
+  ins_cost(300);
+  format %{ "mulq   RDX:RAX, RAX, $src\t# umulhi" %}
+  ins_encode %{
+    __ mulq($src$$Register);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}

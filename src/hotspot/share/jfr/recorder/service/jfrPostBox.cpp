@@ -26,6 +26,8 @@
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 #define MSG_IS_SYNCHRONOUS ( (MSGBIT(MSG_ROTATE)) |          \
@@ -110,7 +112,9 @@ void JfrPostBox::asynchronous_post(int msg) {
 void JfrPostBox::synchronous_post(int msg) {
   assert(is_synchronous(msg), "invariant");
   assert(!JfrMsg_lock->owned_by_self(), "should not hold JfrMsg_lock here!");
-  MonitorLocker msg_lock(JfrMsg_lock);
+  NoHandleMark nhm;
+  ThreadBlockInVM transition(JavaThread::current());
+  MonitorLocker msg_lock(JfrMsg_lock, Mutex::_no_safepoint_check_flag);
   deposit(msg);
   // serial_id is used to check when what we send in has been processed.
   // _msg_read_serial is read under JfrMsg_lock protection.
@@ -168,6 +172,6 @@ void JfrPostBox::notify_waiters() {
 
 // safeguard to ensure no threads are left waiting
 void JfrPostBox::notify_collection_stop() {
-  MutexLocker msg_lock(JfrMsg_lock);
+  assert(JfrMsg_lock->owned_by_self(), "invariant");
   JfrMsg_lock->notify_all();
 }

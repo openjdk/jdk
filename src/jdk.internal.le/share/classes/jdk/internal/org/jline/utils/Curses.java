@@ -352,11 +352,82 @@ public final class Curses {
                             out.append(Integer.toString(toInteger(stack.pop())));
                             break;
                         default:
-                            throw new UnsupportedOperationException();
+                            if (ch == ':') {
+                                ch = str.charAt(index++);
+                            }
+                            boolean alternate = false;
+                            boolean left = false;
+                            boolean space = false;
+                            boolean plus = false;
+                            int width = 0;
+                            int prec = -1;
+                            int cnv;
+                            while ("-+# ".indexOf(ch) >= 0) {
+                                switch (ch) {
+                                    case '-': left = true; break;
+                                    case '+': plus = true; break;
+                                    case '#': alternate = true; break;
+                                    case ' ': space = true; break;
+                                }
+                                ch = str.charAt(index++);
+                            }
+                            if ("123456789".indexOf(ch) >= 0) {
+                                do {
+                                    width = width * 10 + (ch - '0');
+                                    ch = str.charAt(index++);
+                                } while ("0123456789".indexOf(ch) >= 0);
+                            }
+                            if (ch == '.') {
+                                prec = 0;
+                                ch = str.charAt(index++);
+                            }
+                            if ("0123456789".indexOf(ch) >= 0) {
+                                do {
+                                    prec = prec * 10 + (ch - '0');
+                                    ch = str.charAt(index++);
+                                } while ("0123456789".indexOf(ch) >= 0);
+                            }
+                            if ("cdoxXs".indexOf(ch) < 0) {
+                                throw new IllegalArgumentException();
+                            }
+                            cnv = ch;
+                            if (exec) {
+                                String res;
+                                if (cnv == 's') {
+                                    res = (String) stack.pop();
+                                    if (prec >= 0) {
+                                        res = res.substring(0, prec);
+                                    }
+                                } else {
+                                    int p = toInteger(stack.pop());
+                                    StringBuilder fmt = new StringBuilder(16);
+                                    fmt.append('%');
+                                    if (alternate) {
+                                        fmt.append('#');
+                                    }
+                                    if (plus) {
+                                        fmt.append('+');
+                                    }
+                                    if (space) {
+                                        fmt.append(' ');
+                                    }
+                                    if (prec >= 0) {
+                                        fmt.append('0');
+                                        fmt.append(prec);
+                                    }
+                                    fmt.append((char) cnv);
+                                    res = String.format(fmt.toString(), p);
+                                }
+                                if (width > res.length()) {
+                                    res = String.format("%" + (left ? "-" : "") + width + "s", res);
+                                }
+                                out.append(res);
+                            }
+                            break;
                     }
                     break;
                 case '$':
-                    if (str.charAt(index) == '<') {
+                    if (index < length && str.charAt(index) == '<') {
                         // We don't honour delays, just skip
                         int nb = 0;
                         while ((ch = str.charAt(++index)) != '>') {

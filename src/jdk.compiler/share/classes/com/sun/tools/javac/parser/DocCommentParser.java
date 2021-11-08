@@ -43,6 +43,7 @@ import com.sun.tools.javac.tree.DCTree.DCReference;
 import com.sun.tools.javac.tree.DCTree.DCText;
 import com.sun.tools.javac.tree.DocTreeMaker;
 import com.sun.tools.javac.util.DiagnosticSource;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
@@ -62,14 +63,21 @@ import static com.sun.tools.javac.util.LayoutCharacters.EOI;
 public class DocCommentParser {
     static class ParseException extends Exception {
         private static final long serialVersionUID = 0;
+        final int pos;
+
         ParseException(String key) {
+            this(Position.NOPOS, key);
+        }
+        ParseException(int pos, String key) {
             super(key);
+            this.pos = pos;
         }
     }
 
-    private enum Phase {PREAMBLE, BODY, POSTAMBLE}
+    private enum Phase { PREAMBLE, BODY, POSTAMBLE }
 
     private final ParserFactory fac;
+    private final JCDiagnostic.Factory diags;
     private final DiagnosticSource diagSource;
     private final Comment comment;
     private final DocTreeMaker m;
@@ -96,6 +104,7 @@ public class DocCommentParser {
     public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource,
                             Comment comment, boolean isFileContent) {
         this.fac = fac;
+        this.diags = fac.log.diags;
         this.diagSource = diagSource;
         this.comment = comment;
         names = fac.names;
@@ -126,18 +135,13 @@ public class DocCommentParser {
         List<DCTree> tags = blockTags();
         List<DCTree> postamble = isFileContent ? blockContent(Phase.POSTAMBLE) : List.nil();
 
-        int pos = Position.NOPOS;
-        if (!preamble.isEmpty())
-            pos = preamble.head.pos;
-        else if (!body.isEmpty())
-            pos = body.head.pos;
-        else if (!tags.isEmpty())
-            pos = tags.head.pos;
-        else if (!postamble.isEmpty())
-            pos = postamble.head.pos;
+        int pos = !preamble.isEmpty() ? preamble.head.pos
+                : !body.isEmpty() ? body.head.pos
+                : !tags.isEmpty() ? tags.head.pos
+                : !postamble.isEmpty() ? postamble.head.pos
+                : 0;
 
-        DCDocComment dc = m.at(pos).newDocCommentTree(comment, body, tags, preamble, postamble);
-        return dc;
+        return m.at(pos).newDocCommentTree(comment, body, tags, preamble, postamble);
     }
 
     void nextChar() {
@@ -281,7 +285,7 @@ public class DocCommentParser {
             return erroneous("dc.no.tag.name", p);
         } catch (ParseException e) {
             blockContent();
-            return erroneous(e.getMessage(), p);
+            return erroneous(e.getMessage(), p, e.pos);
         }
     }
 
@@ -334,7 +338,7 @@ public class DocCommentParser {
                 }
             }
         } catch (ParseException e) {
-            return erroneous(e.getMessage(), p);
+            return erroneous(e.getMessage(), p, e.pos);
         }
     }
 
@@ -471,18 +475,15 @@ public class DocCommentParser {
                     ref.moduleName, ref.qualExpr,
                     ref.member, ref.paramTypes)
                     .setEndPos(bp);
-        } catch (ReferenceParser.ParseException parseException) {
-            throw new ParseException(parseException.getMessage());
+        } catch (ReferenceParser.ParseException pe) {
+            throw new ParseException(pos + pe.pos, pe.getMessage());
         }
 
     }
 
     /**
-     * Read Java identifier
-     * Matching pairs of { } are skipped; the text is terminated by the first
-     * unmatched }. It is an error if the beginning of the next tag is detected.
+     * Reads a Java identifier.
      */
-    @SuppressWarnings("fallthrough")
     protected DCIdentifier identifier() throws ParseException {
         skipWhitespace();
         int pos = bp;
@@ -496,10 +497,9 @@ public class DocCommentParser {
     }
 
     /**
-     * Read a quoted string.
+     * Reads a quoted string.
      * It is an error if the beginning of the next tag is detected.
      */
-    @SuppressWarnings("fallthrough")
     protected DCText quotedString() {
         int pos = bp;
         nextChar();
@@ -530,7 +530,7 @@ public class DocCommentParser {
     }
 
     /**
-     * Read a term (that is, one word).
+     * Reads a term (that is, one word).
      * It is an error if the beginning of the next tag is detected.
      */
     @SuppressWarnings("fallthrough")
@@ -567,7 +567,7 @@ public class DocCommentParser {
     }
 
     /**
-     * Read general text content of an inline tag, including HTML entities and elements.
+     * Reads general text content of an inline tag, including HTML entities and elements.
      * Matching pairs of { } are skipped; the text is terminated by the first
      * unmatched }. It is an error if the beginning of the next tag is detected.
      */
@@ -656,7 +656,7 @@ public class DocCommentParser {
     }
 
     /**
-     * Read an HTML entity.
+     * Reads an HTML entity.
      * {@literal &identifier; } or {@literal &#digits; } or {@literal &#xhex-digits; }
      */
     protected DCTree entity() {
@@ -966,7 +966,33 @@ public class DocCommentParser {
         }
     }
 
+    /**
+     * Creates an {@code ErroneousTree} node, for a range of text starting at a given position,
+     * ending at the last non-whitespace character before the current position,
+     * and with the preferred position set to the last character within that range.
+     *
+     * @param code the resource key for the error message
+     * @param pos  the starting position
+     *
+     * @return the {@code ErroneousTree} node
+     */
     protected DCErroneous erroneous(String code, int pos) {
+        return erroneous(code, pos, Position.NOPOS);
+    }
+
+    /**
+     * Creates an {@code ErroneousTree} node, for a range of text starting at a given position,
+     * ending at the last non-whitespace character before the current position,
+     * and with a given preferred position.
+     *
+     * @param code the resource key for the error message
+     * @param pos  the starting position
+     * @param pref the preferred position for the node, or {@code NOPOS} to use the default value
+     *             as the last character of the range
+     *
+     * @return the {@code ErroneousTree} node
+     */
+    protected DCErroneous erroneous(String code, int pos, int pref) {
         int i = bp - 1;
         loop:
         while (i > pos) {
@@ -981,8 +1007,14 @@ public class DocCommentParser {
             }
             i--;
         }
+        if (pref == Position.NOPOS) {
+            pref = i;
+        }
+        int end = i + 1;
         textStart = -1;
-        return m.at(pos).newErroneousTree(newString(pos, i + 1), diagSource, code);
+        JCDiagnostic.DiagnosticPosition dp = DCTree.createDiagnosticPosition(comment, pos, pref, end);
+        JCDiagnostic diag = diags.error(null, diagSource, dp, code);
+        return m.at(pos).newErroneousTree(newString(pos, end), diag).setPrefPos(pref);
     }
 
     protected boolean isIdentifierStart(char ch) {
@@ -1083,7 +1115,7 @@ public class DocCommentParser {
         return new String(buf, start, end - start);
     }
 
-    private static abstract class TagParser {
+    private abstract static class TagParser {
         enum Kind { INLINE, BLOCK, EITHER }
 
         final Kind kind;
@@ -1169,7 +1201,7 @@ public class DocCommentParser {
                     }
                     inlineText(WhitespaceRetentionPolicy.REMOVE_ALL); // skip unexpected content
                     nextChar();
-                    throw new ParseException("dc.unexpected.content");
+                    throw new ParseException(pos, "dc.unexpected.content");
                 }
             },
 
@@ -1226,7 +1258,7 @@ public class DocCommentParser {
                     }
                     inlineText(WhitespaceRetentionPolicy.REMOVE_ALL); // skip unexpected content
                     nextChar();
-                    throw new ParseException("dc.unexpected.content");
+                    throw new ParseException(pos, "dc.unexpected.content");
                 }
             },
 

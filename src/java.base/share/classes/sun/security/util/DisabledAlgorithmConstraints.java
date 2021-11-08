@@ -304,10 +304,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     /**
      * Key and Certificate Constraints
      *
-     * The complete disabling of an algorithm is not handled by Constraints or
-     * Constraint classes.  That is addressed with
-     *   permit(Set<CryptoPrimitive>, String, AlgorithmParameters)
-     *
      * When passing a Key to permit(), the boolean return values follow the
      * same as the interface class AlgorithmConstraints.permit().  This is to
      * maintain compatibility:
@@ -318,7 +314,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * will be thrown on a failure to better identify why the operation was
      * disallowed.
      */
-
     private static class Constraints {
         private Map<String, List<Constraint>> constraintsMap = new HashMap<>();
 
@@ -341,9 +336,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // Check if constraint is a complete disabling of an
                 // algorithm or has conditions.
                 int space = constraintEntry.indexOf(' ');
-                String algorithm = AlgorithmDecomposer.hashName(
-                        ((space > 0 ? constraintEntry.substring(0, space) :
-                                constraintEntry)));
+                String algorithm = AlgorithmDecomposer.decomposeDigestName(
+                        space > 0 ? constraintEntry.substring(0, space) :
+                                constraintEntry);
                 List<Constraint> constraintList =
                         constraintsMap.getOrDefault(
                                 algorithm.toUpperCase(Locale.ENGLISH),
@@ -497,7 +492,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             // Get all signature algorithms to check for constraints
             Set<String> algorithms = new HashSet<>();
             if (algorithm != null) {
-                algorithms.addAll(AlgorithmDecomposer.decomposeOneHash(algorithm));
+                algorithms.addAll(AlgorithmDecomposer.decomposeName(algorithm));
                 algorithms.add(algorithm);
             }
 

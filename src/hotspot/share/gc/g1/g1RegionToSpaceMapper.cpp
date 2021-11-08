@@ -89,7 +89,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     return _region_commit_map.get_next_one_offset(start_idx, end) == end;
   }
 
-  virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {
+  virtual void commit_regions(uint start_idx, size_t num_regions, WorkerThreads* pretouch_workers) {
     guarantee(is_range_uncommitted(start_idx, num_regions),
               "Range not uncommitted, start: %u, num_regions: " SIZE_FORMAT,
               start_idx, num_regions);
@@ -105,7 +105,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
       }
     }
     if (AlwaysPreTouch) {
-      _storage.pretouch(start_page, size_in_pages, pretouch_gang);
+      _storage.pretouch(start_page, size_in_pages, pretouch_workers);
     }
     _region_commit_map.par_set_range(start_idx, start_idx + num_regions, BitMap::unknown_range);
     fire_on_commit(start_idx, num_regions, zero_filled);
@@ -167,12 +167,12 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                        MEMFLAGS type) :
     G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
     _regions_per_page((page_size * commit_factor) / alloc_granularity),
-    _lock(Mutex::service-3, "G1Mapper_lock", Mutex::_safepoint_check_never) {
+    _lock(Mutex::service-3, "G1Mapper_lock") {
 
     guarantee((page_size * commit_factor) >= alloc_granularity, "allocation granularity smaller than commit granularity");
   }
 
-  virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {
+  virtual void commit_regions(uint start_idx, size_t num_regions, WorkerThreads* pretouch_workers) {
     uint region_limit = (uint)(start_idx + num_regions);
     assert(num_regions > 0, "Must commit at least one region");
     assert(_region_commit_map.get_next_one_offset(start_idx, region_limit) == region_limit,
@@ -219,7 +219,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     }
 
     if (AlwaysPreTouch && num_committed > 0) {
-      _storage.pretouch(first_committed, num_committed, pretouch_gang);
+      _storage.pretouch(first_committed, num_committed, pretouch_workers);
     }
 
     fire_on_commit(start_idx, num_regions, all_zero_filled);

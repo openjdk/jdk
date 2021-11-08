@@ -490,13 +490,13 @@ public abstract class SubscriberWrapper
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("SubscriberWrapper:")
-          .append(" upstreamCompleted: ").append(Boolean.toString(upstreamCompleted))
-          .append(" upstreamWindow: ").append(upstreamWindow.toString())
-          .append(" downstreamCompleted: ").append(Boolean.toString(downstreamCompleted))
-          .append(" completionAcknowledged: ").append(Boolean.toString(completionAcknowledged))
-          .append(" outputQ size: ").append(Integer.toString(outputQ.size()))
+          .append(" upstreamCompleted: ").append(upstreamCompleted)
+          .append(" upstreamWindow: ").append(upstreamWindow)
+          .append(" downstreamCompleted: ").append(downstreamCompleted)
+          .append(" completionAcknowledged: ").append(completionAcknowledged)
+          .append(" outputQ size: ").append(outputQ.size())
           //.append(" outputQ: ").append(outputQ.toString())
-          .append(" cf: ").append(cf.toString())
+          .append(" cf: ").append(cf)
           .append(" downstreamSubscription: ").append(downstreamSubscription)
           .append(" downstreamSubscriber: ").append(downstreamSubscriber);
 

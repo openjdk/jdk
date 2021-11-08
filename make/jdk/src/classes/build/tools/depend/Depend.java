@@ -102,7 +102,7 @@ public class Depend implements Plugin {
             private final MessageDigest apiHash;
             {
                 try {
-                    apiHash = MessageDigest.getInstance("MD5");
+                    apiHash = MessageDigest.getInstance("SHA-256");
                 } catch (NoSuchAlgorithmException ex) {
                     throw new IllegalStateException(ex);
                 }

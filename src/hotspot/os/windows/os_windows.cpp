@@ -1858,7 +1858,11 @@ void os::win32::print_windows_version(outputStream* st) {
 
   case 10000:
     if (is_workstation) {
-      st->print("10");
+      if (build_number >= 22000) {
+        st->print("11");
+      } else {
+        st->print("10");
+      }
     } else {
       // distinguish Windows Server by build number
       // - 2016 GA 10/2016 build: 14393
@@ -5620,7 +5624,7 @@ int os::PlatformMonitor::wait(jlong millis) {
 
 // Run the specified command in a separate process. Return its exit value,
 // or -1 on failure (e.g. can't create a new process).
-int os::fork_and_exec(const char* cmd, bool dummy /* ignored */) {
+int os::fork_and_exec(const char* cmd) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   DWORD exit_code;

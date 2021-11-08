@@ -53,9 +53,6 @@
 # Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94.
 # https://www.jstor.org/stable/1774359
 #
-# A reliable and entertaining source about time zones is
-# Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
-#
 # European-style abbreviations are commonly used along the Mediterranean.
 # For sub-Saharan Africa abbreviations were less standardized.
 # Previous editions of this database used WAT, CAT, SAT, and EAT
@@ -176,8 +173,9 @@ Zone	Africa/Ndjamena	1:00:12 -	LMT	1912        # N'Djamena
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Abidjan	-0:16:08 -	LMT	1912
 			 0:00	-	GMT
+Link Africa/Abidjan Africa/Accra	# Ghana
 Link Africa/Abidjan Africa/Bamako	# Mali
-Link Africa/Abidjan Africa/Banjul	# Gambia
+Link Africa/Abidjan Africa/Banjul	# The Gambia
 Link Africa/Abidjan Africa/Conakry	# Guinea
 Link Africa/Abidjan Africa/Dakar	# Senegal
 Link Africa/Abidjan Africa/Freetown	# Sierra Leone
@@ -404,93 +402,8 @@ Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct
 # Gabon
 # See Africa/Lagos.
 
-# Gambia
-# See Africa/Abidjan.
-
+# The Gambia
 # Ghana
-
-# From P Chan (2020-11-20):
-# Interpretation Amendment Ordinance, 1915 (No.24 of 1915) [1915-11-02]
-# Ordinances of the Gold Coast, Ashanti, Northern Territories 1915, p 69-71
-# https://books.google.com/books?id=ErA-AQAAIAAJ&pg=PA70
-# This Ordinance added "'Time' shall mean Greenwich Mean Time" to the
-# Interpretation Ordinance, 1876.
-#
-# Determination of the Time Ordinance, 1919 (No. 18 of 1919) [1919-11-24]
-# Ordinances of the Gold Coast, Ashanti, Northern Territories 1919, p 75-76
-# https://books.google.com/books?id=MbA-AQAAIAAJ&pg=PA75
-# This Ordinance removed the previous definition of time and introduced DST.
-#
-# Time Determination Ordinance (Cap. 214)
-# The Laws of the Gold Coast (including Togoland Under British Mandate)
-# Vol. II (1937), p 2328
-# https://books.google.com/books?id=Z7M-AQAAIAAJ&pg=PA2328
-# Revised edition of the 1919 Ordinance.
-#
-# Time Determination (Amendment) Ordinance, 1940 (No. 9 of 1940) [1940-04-06]
-# Annual Volume of the Laws of the Gold Coast:
-# Containing All Legislation Enacted During Year 1940, p 22
-# https://books.google.com/books?id=1ao-AQAAIAAJ&pg=PA22
-# This Ordinance changed the forward transition from September to May.
-#
-# Defence (Time Determination Ordinance Amendment) Regulations, 1942
-# (Regulations No. 6 of 1942) [1942-01-31, commenced on 1942-02-08]
-# Annual Volume of the Laws of the Gold Coast:
-# Containing All Legislation Enacted During Year 1942, p 48
-# https://books.google.com/books?id=Das-AQAAIAAJ&pg=PA48
-# These regulations advanced the [standard] time by thirty minutes.
-#
-# Defence (Time Determination Ordinance Amendment (No.2)) Regulations,
-# 1942 (Regulations No. 28 of 1942) [1942-04-25]
-# Annual Volume of the Laws of the Gold Coast:
-# Containing All Legislation Enacted During Year 1942, p 87
-# https://books.google.com/books?id=Das-AQAAIAAJ&pg=PA87
-# These regulations abolished DST and changed the time to GMT+0:30.
-#
-# Defence (Revocation) (No.4) Regulations, 1945 (Regulations No. 45 of
-# 1945) [1945-10-24, commenced on 1946-01-06]
-# Annual Volume of the Laws of the Gold Coast:
-# Containing All Legislation Enacted During Year 1945, p 256
-# https://books.google.com/books?id=9as-AQAAIAAJ&pg=PA256
-# These regulations revoked the previous two sets of Regulations.
-#
-# Time Determination (Amendment) Ordinance, 1945 (No. 18 of 1945) [1946-01-06]
-# Annual Volume of the Laws of the Gold Coast:
-# Containing All Legislation Enacted During Year 1945, p 69
-# https://books.google.com/books?id=9as-AQAAIAAJ&pg=PA69
-# This Ordinance abolished DST.
-#
-# Time Determination (Amendment) Ordinance, 1950 (No. 26 of 1950) [1950-07-22]
-# Annual Volume of the Laws of the Gold Coast:
-# Containing All Legislation Enacted During Year 1950, p 35
-# https://books.google.com/books?id=e60-AQAAIAAJ&pg=PA35
-# This Ordinance restored DST but with thirty minutes offset.
-#
-# Time Determination Ordinance (Cap. 264)
-# The Laws of the Gold Coast, Vol. V (1954), p 380
-# https://books.google.com/books?id=Mqc-AQAAIAAJ&pg=PA380
-# Revised edition of the Time Determination Ordinance.
-#
-# Time Determination (Amendment) Ordinance, 1956 (No. 21 of 1956) [1956-08-29]
-# Annual Volume of the Ordinances of the Gold Coast Enacted During the
-# Year 1956, p 83
-# https://books.google.com/books?id=VLE-AQAAIAAJ&pg=PA83
-# This Ordinance abolished DST.
-
-# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Ghana	1919	only	-	Nov	24	0:00	0:20	+0020
-Rule	Ghana	1920	1942	-	Jan	 1	2:00	0	GMT
-Rule	Ghana	1920	1939	-	Sep	 1	2:00	0:20	+0020
-Rule	Ghana	1940	1941	-	May	 1	2:00	0:20	+0020
-Rule	Ghana	1950	1955	-	Sep	 1	2:00	0:30	+0030
-Rule	Ghana	1951	1956	-	Jan	 1	2:00	0	GMT
-
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Accra	-0:00:52 -	LMT	1915 Nov  2
-			 0:00	Ghana	%s	1942 Feb  8
-			 0:30	-	+0030	1946 Jan  6
-			 0:00	Ghana	%s
-
 # Guinea
 # See Africa/Abidjan.
 
@@ -755,7 +668,7 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # See Africa/Nairobi.
 
 # Morocco
-# See the 'europe' file for Spanish Morocco (Africa/Ceuta).
+# See Africa/Ceuta for Spanish Morocco.
 
 # From Alex Krivenyshev (2008-05-09):
 # Here is an article that Morocco plan to introduce Daylight Saving Time between
@@ -1405,22 +1318,20 @@ Zone	Africa/Lagos	0:13:35 -	LMT	1905 Jul  1
 			0:13:35	-	LMT	1914 Jan  1
 			0:30	-	+0030	1919 Sep  1
 			1:00	-	WAT
-Link Africa/Lagos Africa/Bangui	     # Central African Republic
-Link Africa/Lagos Africa/Brazzaville # Rep. of the Congo
-Link Africa/Lagos Africa/Douala	     # Cameroon
-Link Africa/Lagos Africa/Kinshasa    # Dem. Rep. of the Congo (west)
-Link Africa/Lagos Africa/Libreville  # Gabon
-Link Africa/Lagos Africa/Luanda	     # Angola
-Link Africa/Lagos Africa/Malabo	     # Equatorial Guinea
-Link Africa/Lagos Africa/Niamey	     # Niger
-Link Africa/Lagos Africa/Porto-Novo  # Benin
+Link Africa/Lagos Africa/Bangui		# Central African Republic
+Link Africa/Lagos Africa/Brazzaville	# Rep. of the Congo
+Link Africa/Lagos Africa/Douala		# Cameroon
+Link Africa/Lagos Africa/Kinshasa	# Dem. Rep. of the Congo (west)
+Link Africa/Lagos Africa/Libreville	# Gabon
+Link Africa/Lagos Africa/Luanda		# Angola
+Link Africa/Lagos Africa/Malabo		# Equatorial Guinea
+Link Africa/Lagos Africa/Niamey		# Niger
+Link Africa/Lagos Africa/Porto-Novo	# Benin
 
 # Réunion
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Indian/Reunion	3:41:52 -	LMT	1911 Jun # Saint-Denis
 			4:00	-	+04
-#
-# Crozet Islands also observes Réunion time; see the 'antarctica' file.
 #
 # Scattered Islands (Îles Éparses) administered from Réunion are as follows.
 # The following information about them is taken from
@@ -1513,8 +1424,8 @@ Rule	SA	1943	1944	-	Mar	Sun>=15	2:00	0	-
 Zone Africa/Johannesburg 1:52:00 -	LMT	1892 Feb 8
 			1:30	-	SAST	1903 Mar
 			2:00	SA	SAST
-Link Africa/Johannesburg Africa/Maseru	   # Lesotho
-Link Africa/Johannesburg Africa/Mbabane    # Eswatini
+Link Africa/Johannesburg Africa/Maseru	# Lesotho
+Link Africa/Johannesburg Africa/Mbabane	# Eswatini
 #
 # Marion and Prince Edward Is
 # scientific station since 1947
@@ -1550,12 +1461,13 @@ Zone	Africa/Khartoum	2:10:08 -	LMT	1931
 			3:00	-	EAT	2017 Nov  1
 			2:00	-	CAT
 
+# South Sudan
+
 # From Steffen Thorsen (2021-01-18):
 # "South Sudan will change its time zone by setting the clock back 1
 # hour on February 1, 2021...."
 # from https://eyeradio.org/south-sudan-adopts-new-time-zone-makuei/
 
-# South Sudan
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Juba	2:06:28 -	LMT	1931
 			2:00	Sudan	CA%sT	2000 Jan 15 12:00
@@ -1660,7 +1572,7 @@ Rule	Tunisia	2005	only	-	Sep	30	 1:00s	0	-
 Rule	Tunisia	2006	2008	-	Mar	lastSun	 2:00s	1:00	S
 Rule	Tunisia	2006	2008	-	Oct	lastSun	 2:00s	0	-
 
-# See Europe/Paris for PMT-related transitions.
+# See Europe/Paris commentary for PMT-related transitions.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Tunis	0:40:44 -	LMT	1881 May 12
 			0:09:21	-	PMT	1911 Mar 11 # Paris Mean Time
