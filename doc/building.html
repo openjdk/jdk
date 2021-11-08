@@ -96,6 +96,7 @@
 <li><a href="#specific-build-issues">Specific Build Issues</a></li>
 <li><a href="#getting-help">Getting Help</a></li>
 </ul></li>
+<li><a href="#reproducible-builds">Reproducible Builds</a></li>
 <li><a href="#hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</a><ul>
 <li><a href="#bash-completion">Bash Completion</a></li>
 <li><a href="#using-multiple-configurations">Using Multiple Configurations</a></li>
@@ -884,6 +885,32 @@ spawn failed</code></pre>
 <h3 id="getting-help">Getting Help</h3>
 <p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <a href="mailto:build-dev@openjdk.java.net">build-dev@openjdk.java.net</a>. Please include the relevant parts of the configure and/or build log.</p>
 <p>If you need general help or advice about developing for the JDK, you can also contact the Adoption Group. See the section on <a href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more information.</p>
+<h2 id="reproducible-builds">Reproducible Builds</h2>
+<p>Build reproducibility is the property of getting exactly the same bits out when building, every time, independent on who builds the product, or where. This is for many reasons a harder goal than it initially appears, but it is an important goal, for security reasons and others. Please see <a href="https://reproducible-builds.org">Reproducible Builds</a> for more information about the background and reasons for reproducible builds.</p>
+<p>Currently, it is not possible to build OpenJDK fully reproducibly, but getting there is an ongoing effort. There are some things you can do to minimize non-determinism and make a larger part of the build reproducible:</p>
+<ul>
+<li>Turn on build system support for reproducible builds</li>
+</ul>
+<p>Add the flag <code>--enable-reproducible-builds</code> to your <code>configure</code> command line. This will turn on support for reproducible builds where it could otherwise be lacking.</p>
+<ul>
+<li>Do not rely on <code>configure</code>'s default adhoc version strings</li>
+</ul>
+<p>Default adhoc version strings OPT segment include user name, source directory and timestamp. You can either override just the OPT segment using <code>--with-version-opt=&lt;any fixed string&gt;</code>, or you can specify the entire version string using <code>--with-version-string=&lt;your version&gt;</code>.</p>
+<ul>
+<li>Specify how the build sets <code>SOURCE_DATE_EPOCH</code></li>
+</ul>
+<p>The JDK build system will set the <code>SOURCE_DATE_EPOCH</code> environment variable during building, depending on the value of the <code>--with-source-date</code> option for <code>configure</code>. The default value is <code>updated</code>, which means that <code>SOURCE_DATE_EPOCH</code> will be set to the current time each time you are running <code>make</code>.</p>
+<p>The <a href="https://reproducible-builds.org/docs/source-date-epoch/"><code>SOURCE_DATE_EPOCH</code> environment variable</a> is an industry standard, that many tools, such as gcc, recognize, and use in place of the current time when generating output.</p>
+<p>For reproducible builds, you need to set this to a fixed value. You can use the special value <code>version</code> which will use the nominal release date for the current JDK version, or a value describing a date, either an epoch based timestamp as an integer, or a valid ISO-8601 date.</p>
+<p><strong>Hint:</strong> If your build environment already sets <code>SOURCE_DATE_EPOCH</code>, you can propagate this using <code>--with-source-date=$SOURCE_DATE_EPOCH</code>.</p>
+<ul>
+<li>Specify a hotspot build time</li>
+</ul>
+<p>Set a fixed hotspot build time. This will be included in the hotspot library (<code>libjvm.so</code> or <code>jvm.dll</code>) and defaults to the current time when building hotspot. Use <code>--with-hotspot-build-time=&lt;any fixed string&gt;</code> for reproducible builds. It's a string so you don't need to format it specifically, so e.g. <code>n/a</code> will do. Another solution is to use the <code>SOURCE_DATE_EPOCH</code> variable, e.g. <code>--with-hotspot-build-time=$(date --date=@$SOURCE_DATE_EPOCH)</code>.</p>
+<ul>
+<li>Copyright year</li>
+</ul>
+<p>The copyright year in some generated text files are normally set to the current year. This can be overridden by <code>--with-copyright-year=&lt;year&gt;</code>. For fully reproducible builds, this needs to be set to a fixed value.</p>
 <h2 id="hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</h2>
 <h3 id="bash-completion">Bash Completion</h3>
 <p>The <code>configure</code> and <code>make</code> commands tries to play nice with bash command-line completion (using <code>&lt;tab&gt;</code> or <code>&lt;tab&gt;&lt;tab&gt;</code>). To use this functionality, make sure you enable completion in your <code>~/.bashrc</code> (see instructions for bash in your operating system).</p>

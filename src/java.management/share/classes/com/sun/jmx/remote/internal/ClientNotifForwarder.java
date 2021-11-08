@@ -146,22 +146,22 @@ public abstract class ClientNotifForwarder {
     /**
      * Called to fetch notifications from a server.
      */
-    abstract protected NotificationResult fetchNotifs(long clientSequenceNumber,
+    protected abstract NotificationResult fetchNotifs(long clientSequenceNumber,
                                                       int maxNotifications,
                                                       long timeout)
             throws IOException, ClassNotFoundException;
 
-    abstract protected Integer addListenerForMBeanRemovedNotif()
+    protected abstract Integer addListenerForMBeanRemovedNotif()
         throws IOException, InstanceNotFoundException;
 
-    abstract protected void removeListenerForMBeanRemovedNotif(Integer id)
+    protected abstract void removeListenerForMBeanRemovedNotif(Integer id)
         throws IOException, InstanceNotFoundException,
                ListenerNotFoundException;
 
     /**
      * Used to send out a notification about lost notifs
      */
-    abstract protected void lostNotifs(String message, long number);
+    protected abstract void lostNotifs(String message, long number);
 
 
     public synchronized void addNotificationListener(Integer listenerID,

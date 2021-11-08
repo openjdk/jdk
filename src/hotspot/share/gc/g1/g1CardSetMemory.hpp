@@ -113,9 +113,7 @@ public:
   G1CardSetAllocator(const char* name,
                      const G1CardSetAllocOptions* buffer_options,
                      G1CardSetBufferList* free_buffer_list);
-  ~G1CardSetAllocator() {
-    drop_all();
-  }
+  ~G1CardSetAllocator();
 
   Elem* allocate();
   void free(Elem* elem);

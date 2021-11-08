@@ -47,6 +47,11 @@ G1CardSetAllocator<Elem>::G1CardSetAllocator(const char* name,
 }
 
 template <class Elem>
+G1CardSetAllocator<Elem>::~G1CardSetAllocator() {
+  drop_all();
+}
+
+template <class Elem>
 bool G1CardSetAllocator<Elem>::try_transfer_pending() {
   // Attempt to claim the lock.
   if (Atomic::load_acquire(&_transfer_lock) || // Skip CAS if likely to fail.
