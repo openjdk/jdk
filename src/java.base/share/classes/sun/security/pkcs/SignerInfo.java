@@ -78,9 +78,9 @@ public class SignerInfo implements DerEncoder {
      * avoid checking algorithms to see if they are disabled more than once.
      * The key is the AlgorithmId of the algorithm, and the value is a record
      * containing the name of the field or attribute and whether the key
-     * size should be checked (ex: if it is a signature algorithm).
+     * should also be checked (ex: if it is a signature algorithm).
      */
-    private record AlgorithmInfo(String field, boolean checkKeySize) {}
+    private record AlgorithmInfo(String field, boolean checkKey) {}
     private Map<AlgorithmId, AlgorithmInfo> algorithms = new HashMap<>();
 
     public SignerInfo(X500Name  issuerName,
@@ -752,7 +752,7 @@ public class SignerInfo implements DerEncoder {
                 params.setExtendedExceptionMsg(name, info.field());
                 AlgorithmId algId = algorithm.getKey();
                 JAR_DISABLED_CHECK.permits(algId.getName(),
-                    algId.getParameters(), params, info.checkKeySize());
+                    algId.getParameters(), params, info.checkKey());
                 enabledAlgorithms.add(algId.getName());
             }
         } catch (CertPathValidatorException e) {

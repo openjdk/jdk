@@ -192,9 +192,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     public final void permits(String algorithm, AlgorithmParameters ap,
-            ConstraintsParameters cp, boolean checkKeySize)
+            ConstraintsParameters cp, boolean checkKey)
             throws CertPathValidatorException {
-        permits(algorithm, cp, checkKeySize);
+        permits(algorithm, cp, checkKey);
         if (ap != null) {
             permits(ap, cp);
         }
@@ -234,8 +234,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     public final void permits(String algorithm, ConstraintsParameters cp,
-            boolean checkKeySize) throws CertPathValidatorException {
-        if (checkKeySize) {
+            boolean checkKey) throws CertPathValidatorException {
+        if (checkKey) {
             // Check if named curves in the key are disabled.
             for (Key key : cp.getKeys()) {
                 for (String curve : getNamedCurveFromKey(key)) {
@@ -248,7 +248,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 }
             }
         }
-        algorithmConstraints.permits(algorithm, cp, checkKeySize);
+        algorithmConstraints.permits(algorithm, cp, checkKey);
     }
 
     private static List<String> getNamedCurveFromKey(Key key) {
@@ -482,7 +482,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         public void permits(String algorithm, ConstraintsParameters cp,
-                boolean checkKeySize) throws CertPathValidatorException {
+                boolean checkKey) throws CertPathValidatorException {
 
             if (debug != null) {
                 debug.println("Constraints.permits(): " + algorithm + ", "
@@ -496,7 +496,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 algorithms.add(algorithm);
             }
 
-            if (checkKeySize) {
+            if (checkKey) {
                 for (Key key : cp.getKeys()) {
                     algorithms.add(key.getAlgorithm());
                 }
@@ -509,7 +509,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     continue;
                 }
                 for (Constraint constraint : list) {
-                    if (!checkKeySize && constraint instanceof KeySizeConstraint) {
+                    if (!checkKey && constraint instanceof KeySizeConstraint) {
                         continue;
                     }
                     constraint.permits(cp);
