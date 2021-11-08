@@ -184,12 +184,12 @@ public class DumpStackTest {
         // In these verifications we ignore the line numbers in the stacktrace.
         // Each thread stack trace will be of the form:
         // <thread-name> Stack trace
-        //	at java.base/java.lang.Thread.dumpStack(Thread.java:xxx)
-        //	at DumpStackTest$Parent.doSomething(DumpStackTest.java:xxx)
-        //	at DumpStackTest.c(DumpStackTest.java:xxx)
-        //	at DumpStackTest.b(DumpStackTest.java:xxx)
-        //	at DumpStackTest.a(DumpStackTest.java:xxx)
-        //	at DumpStackTest.triggerDumpStackCall(DumpStackTest.java:xxx)
+        //  at java.base/java.lang.Thread.dumpStack(Thread.java:xxx)
+        //  at DumpStackTest$Parent.doSomething(DumpStackTest.java:xxx)
+        //  at DumpStackTest.c(DumpStackTest.java:xxx)
+        //  at DumpStackTest.b(DumpStackTest.java:xxx)
+        //  at DumpStackTest.a(DumpStackTest.java:xxx)
+        //  at DumpStackTest.triggerDumpStackCall(DumpStackTest.java:xxx)
         Assert.assertTrue(lines[firstLineIndex].startsWith("\tat java.base/java.lang.Thread.dumpStack(Thread.java:"));
         Assert.assertTrue(lines[firstLineIndex + 1].startsWith("\tat DumpStackTest$Parent.doSomething(DumpStackTest.java:"));
         Assert.assertTrue(lines[firstLineIndex + 2].startsWith("\tat DumpStackTest.c(DumpStackTest.java:"));
