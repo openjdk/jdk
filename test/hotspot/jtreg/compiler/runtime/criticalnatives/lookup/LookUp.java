@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /* @test
  * @bug 8167408
- * @requires (os.arch != "aarch64") & (os.arch != "arm") & (vm.flavor != "zero")
+ * @requires (os.arch != "aarch64") & (os.arch != "arm") & (os.arch != "riscv64") & (vm.flavor != "zero")
  * @run main/othervm/native -Xcomp -XX:+CriticalJNINatives compiler.runtime.criticalnatives.lookup.LookUp
  */
 package compiler.runtime.criticalnatives.lookup;

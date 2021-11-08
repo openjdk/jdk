@@ -43,6 +43,8 @@
 #elif defined(arm)
 #include <asm/ptrace.h>
 #define user_regs_struct  pt_regs
+#elif defined(riscv64)
+#include <asm/ptrace.h>
 #endif
 
 // This C bool type must be int for compatibility with Linux calls and
