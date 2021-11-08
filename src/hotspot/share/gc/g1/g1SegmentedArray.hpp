@@ -198,7 +198,7 @@ class G1SegmentedArray {
   volatile uint _num_allocated_nodes; // Number of total nodes allocated and in use.
 
 private:
-  G1SegmentedArrayBuffer<flag>* create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev);
+  inline G1SegmentedArrayBuffer<flag>* create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev);
 
   DEBUG_ONLY(uint calculate_length() const;)
 
@@ -212,7 +212,7 @@ public:
     return allocated;
   }
 
-  uint elem_size() const;
+  inline uint elem_size() const;
 
   G1SegmentedArray(const G1SegmentedArrayAllocOptions* buffer_options,
                    G1SegmentedArrayBufferList<flag>* free_buffer_list);
@@ -222,9 +222,9 @@ public:
   // be called in a globally synchronized area.
   void drop_all();
 
-  Elem* allocate();
+  inline Elem* allocate();
 
-  uint num_buffers() const;
+  inline uint num_buffers() const;
 
   template<typename BufferClosure>
   void iterate_nodes(BufferClosure& closure) const;
