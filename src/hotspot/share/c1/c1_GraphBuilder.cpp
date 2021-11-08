@@ -3220,6 +3220,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   switch (scope->method()->intrinsic_id()) {
   case vmIntrinsics::_dabs          : // fall through
   case vmIntrinsics::_dsqrt         : // fall through
+  case vmIntrinsics::_dsqrt_strict  : // fall through
   case vmIntrinsics::_dsin          : // fall through
   case vmIntrinsics::_dcos          : // fall through
   case vmIntrinsics::_dtan          : // fall through

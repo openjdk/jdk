@@ -728,7 +728,7 @@ oop InstanceKlass::protection_domain() const {
   return java_lang_Class::protection_domain(java_mirror());
 }
 
-// To remove these from requires an incompatible change and CCC request.
+// To remove these from requires an incompatible change and CSR review.
 objArrayOop InstanceKlass::signers() const {
   // return the signers from the mirror
   return java_lang_Class::signers(java_mirror());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -701,11 +701,20 @@ public final class DateTimeFormatterBuilder {
      */
     public DateTimeFormatterBuilder appendFraction(
             TemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
-        if (minWidth == maxWidth && decimalPoint == false) {
-            // adjacent parsing
-            appendValue(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
+        if (field == NANO_OF_SECOND) {
+            if (minWidth == maxWidth && decimalPoint == false) {
+                // adjacent parsing
+                appendValue(new NanosPrinterParser(minWidth, maxWidth, decimalPoint));
+            } else {
+                appendInternal(new NanosPrinterParser(minWidth, maxWidth, decimalPoint));
+            }
         } else {
-            appendInternal(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
+            if (minWidth == maxWidth && decimalPoint == false) {
+                // adjacent parsing
+                appendValue(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
+            } else {
+                appendInternal(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
+            }
         }
         return this;
     }
@@ -2758,6 +2767,24 @@ public final class DateTimeFormatterBuilder {
             return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, this.subsequentWidth + subsequentWidth);
         }
 
+        /*
+         * Copied from Long.stringSize
+         */
+        private static int stringSize(long x) {
+            int d = 1;
+            if (x >= 0) {
+                d = 0;
+                x = -x;
+            }
+            long p = -10;
+            for (int i = 1; i < 19; i++) {
+                if (x > p)
+                    return i + d;
+                p = 10 * p;
+            }
+            return 19 + d;
+        }
+
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long valueLong = context.getValue(field);
@@ -2766,18 +2793,21 @@ public final class DateTimeFormatterBuilder {
             }
             long value = getValue(context, valueLong);
             DecimalStyle decimalStyle = context.getDecimalStyle();
-            String str = (value == Long.MIN_VALUE ? "9223372036854775808" : Long.toString(Math.abs(value)));
-            if (str.length() > maxWidth) {
+            int size = stringSize(value);
+            if (value < 0) {
+                size--;
+            }
+
+            if (size > maxWidth) {
                 throw new DateTimeException("Field " + field +
                     " cannot be printed as the value " + value +
                     " exceeds the maximum print width of " + maxWidth);
             }
-            str = decimalStyle.convertNumberToI18N(str);
 
             if (value >= 0) {
                 switch (signStyle) {
                     case EXCEEDS_PAD:
-                        if (minWidth < 19 && value >= EXCEED_POINTS[minWidth]) {
+                        if (minWidth < 19 && size > minWidth) {
                             buf.append(decimalStyle.getPositiveSign());
                         }
                         break;
@@ -2793,10 +2823,16 @@ public final class DateTimeFormatterBuilder {
                                              " cannot be negative according to the SignStyle");
                 }
             }
-            for (int i = 0; i < minWidth - str.length(); i++) {
-                buf.append(decimalStyle.getZeroDigit());
+            char zeroDigit = decimalStyle.getZeroDigit();
+            for (int i = 0; i < minWidth - size; i++) {
+                buf.append(zeroDigit);
             }
-            buf.append(str);
+            if (zeroDigit == '0' && value != Long.MIN_VALUE) {
+                buf.append(Math.abs(value));
+            } else {
+                String str = value == Long.MIN_VALUE ? "9223372036854775808" : Long.toString(Math.abs(value));
+                buf.append(decimalStyle.convertNumberToI18N(str));
+            }
             return true;
         }
 
@@ -3113,10 +3149,214 @@ public final class DateTimeFormatterBuilder {
 
     //-----------------------------------------------------------------------
     /**
+     * Prints and parses a NANO_OF_SECOND field with optional padding.
+     */
+    static final class NanosPrinterParser extends NumberPrinterParser {
+        private final boolean decimalPoint;
+
+        /**
+         * Constructor.
+         *
+         * @param minWidth  the minimum width to output, from 0 to 9
+         * @param maxWidth  the maximum width to output, from 0 to 9
+         * @param decimalPoint  whether to output the localized decimal point symbol
+         */
+        NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint) {
+            this(minWidth, maxWidth, decimalPoint, 0);
+            if (minWidth < 0 || minWidth > 9) {
+                throw new IllegalArgumentException("Minimum width must be from 0 to 9 inclusive but was " + minWidth);
+            }
+            if (maxWidth < 1 || maxWidth > 9) {
+                throw new IllegalArgumentException("Maximum width must be from 1 to 9 inclusive but was " + maxWidth);
+            }
+            if (maxWidth < minWidth) {
+                throw new IllegalArgumentException("Maximum width must exceed or equal the minimum width but " +
+                        maxWidth + " < " + minWidth);
+            }
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param minWidth  the minimum width to output, from 0 to 9
+         * @param maxWidth  the maximum width to output, from 0 to 9
+         * @param decimalPoint  whether to output the localized decimal point symbol
+         * @param subsequentWidth the subsequentWidth for this instance
+         */
+        NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
+            super(NANO_OF_SECOND, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
+            this.decimalPoint = decimalPoint;
+        }
+
+        /**
+         * Returns a new instance with fixed width flag set.
+         *
+         * @return a new updated printer-parser, not null
+         */
+        @Override
+        NanosPrinterParser withFixedWidth() {
+            if (subsequentWidth == -1) {
+                return this;
+            }
+            return new NanosPrinterParser(minWidth, maxWidth, decimalPoint, -1);
+        }
+
+        /**
+         * Returns a new instance with an updated subsequent width.
+         *
+         * @param subsequentWidth  the width of subsequent non-negative numbers, 0 or greater
+         * @return a new updated printer-parser, not null
+         */
+        @Override
+        NanosPrinterParser withSubsequentWidth(int subsequentWidth) {
+            return new NanosPrinterParser(minWidth, maxWidth, decimalPoint, this.subsequentWidth + subsequentWidth);
+        }
+
+        /**
+         * For NanosPrinterParser, the width is fixed if context is strict,
+         * minWidth equal to maxWidth and decimalpoint is absent.
+         * @param context the context
+         * @return if the field is fixed width
+         * @see #appendFraction(java.time.temporal.TemporalField, int, int, boolean)
+         */
+        @Override
+        boolean isFixedWidth(DateTimeParseContext context) {
+            if (context.isStrict() && minWidth == maxWidth && decimalPoint == false) {
+                return true;
+            }
+            return false;
+        }
+
+        // Simplified variant of Integer.stringSize that assumes positive values
+        private static int stringSize(int x) {
+            int p = 10;
+            for (int i = 1; i < 10; i++) {
+                if (x < p)
+                    return i;
+                p = 10 * p;
+            }
+            return 10;
+        }
+
+        private static final int[] TENS = new int[] {
+            1,
+            10,
+            100,
+            1000,
+            10000,
+            100000,
+            1000000,
+            10000000,
+            100000000
+        };
+
+        @Override
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+            Long value = context.getValue(field);
+            if (value == null) {
+                return false;
+            }
+            int val = field.range().checkValidIntValue(value, field);
+            DecimalStyle decimalStyle = context.getDecimalStyle();
+            int stringSize = stringSize(val);
+            char zero = decimalStyle.getZeroDigit();
+            if (val == 0 || stringSize < 10 - maxWidth) {
+                // 0 or would round down to 0
+                // to get output identical to FractionPrinterParser use minWidth if the
+                // value is zero, maxWidth otherwise
+                int width = val == 0 ? minWidth : maxWidth;
+                if (width > 0) {
+                    if (decimalPoint) {
+                        buf.append(decimalStyle.getDecimalSeparator());
+                    }
+                    for (int i = 0; i < width; i++) {
+                        buf.append(zero);
+                    }
+                }
+            } else {
+                if (decimalPoint) {
+                    buf.append(decimalStyle.getDecimalSeparator());
+                }
+                // add leading zeros
+                for (int i = 9 - stringSize; i > 0; i--) {
+                    buf.append(zero);
+                }
+                // truncate unwanted digits
+                if (maxWidth < 9) {
+                    val /= TENS[9 - maxWidth];
+                }
+                // truncate zeros
+                for (int i = maxWidth; i > minWidth; i--) {
+                    if ((val % 10) != 0) {
+                        break;
+                    }
+                    val /= 10;
+                }
+                if (zero == '0') {
+                    buf.append(val);
+                } else {
+                    buf.append(decimalStyle.convertNumberToI18N(Integer.toString(val)));
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public int parse(DateTimeParseContext context, CharSequence text, int position) {
+            int effectiveMin = (context.isStrict() || isFixedWidth(context) ? minWidth : 0);
+            int effectiveMax = (context.isStrict() || isFixedWidth(context) ? maxWidth : 9);
+            int length = text.length();
+            if (position == length) {
+                // valid if whole field is optional, invalid if minimum width
+                return (effectiveMin > 0 ? ~position : position);
+            }
+            if (decimalPoint) {
+                if (text.charAt(position) != context.getDecimalStyle().getDecimalSeparator()) {
+                    // valid if whole field is optional, invalid if minimum width
+                    return (effectiveMin > 0 ? ~position : position);
+                }
+                position++;
+            }
+            int minEndPos = position + effectiveMin;
+            if (minEndPos > length) {
+                return ~position;  // need at least min width digits
+            }
+            int maxEndPos = Math.min(position + effectiveMax, length);
+            int total = 0;  // can use int because we are only parsing up to 9 digits
+            int pos = position;
+            while (pos < maxEndPos) {
+                char ch = text.charAt(pos);
+                int digit = context.getDecimalStyle().convertToDigit(ch);
+                if (digit < 0) {
+                    if (pos < minEndPos) {
+                        return ~position;  // need at least min width digits
+                    }
+                    break;
+                }
+                pos++;
+                total = total * 10 + digit;
+            }
+            for (int i = 9 - (pos - position); i > 0; i--) {
+                total *= 10;
+            }
+            return context.setParsedField(field, total, position, pos);
+        }
+
+        @Override
+        public String toString() {
+            String decimal = (decimalPoint ? ",DecimalPoint" : "");
+            return "Fraction(" + field + "," + minWidth + "," + maxWidth + decimal + ")";
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    /**
      * Prints and parses a numeric date-time field with optional padding.
      */
     static final class FractionPrinterParser extends NumberPrinterParser {
         private final boolean decimalPoint;
+        private final BigDecimal minBD;
+        private final BigDecimal rangeBD;
 
         /**
          * Constructor.
@@ -3156,6 +3396,9 @@ public final class DateTimeFormatterBuilder {
         FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
             super(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
             this.decimalPoint = decimalPoint;
+            ValueRange range = field.range();
+            this.minBD = BigDecimal.valueOf(range.getMinimum());
+            this.rangeBD = BigDecimal.valueOf(range.getMaximum()).subtract(minBD).add(BigDecimal.ONE);
         }
 
         /**
@@ -3217,12 +3460,12 @@ public final class DateTimeFormatterBuilder {
             } else {
                 int outputScale = Math.min(Math.max(fraction.scale(), minWidth), maxWidth);
                 fraction = fraction.setScale(outputScale, RoundingMode.FLOOR);
-                String str = fraction.toPlainString().substring(2);
-                str = decimalStyle.convertNumberToI18N(str);
                 if (decimalPoint) {
                     buf.append(decimalStyle.getDecimalSeparator());
                 }
-                buf.append(str);
+                String str = fraction.toPlainString();
+                str = decimalStyle.convertNumberToI18N(str);
+                buf.append(str, 2, str.length());
             }
             return true;
         }
@@ -3284,10 +3527,7 @@ public final class DateTimeFormatterBuilder {
          * @throws DateTimeException if the value cannot be converted to a fraction
          */
         private BigDecimal convertToFraction(long value) {
-            ValueRange range = field.range();
-            range.checkValidValue(value, field);
-            BigDecimal minBD = BigDecimal.valueOf(range.getMinimum());
-            BigDecimal rangeBD = BigDecimal.valueOf(range.getMaximum()).subtract(minBD).add(BigDecimal.ONE);
+            field.range().checkValidValue(value, field);
             BigDecimal valueBD = BigDecimal.valueOf(value).subtract(minBD);
             BigDecimal fraction = valueBD.divide(rangeBD, 9, RoundingMode.FLOOR);
             // stripTrailingZeros bug
@@ -3311,9 +3551,6 @@ public final class DateTimeFormatterBuilder {
          * @throws DateTimeException if the value cannot be converted
          */
         private long convertFromFraction(BigDecimal fraction) {
-            ValueRange range = field.range();
-            BigDecimal minBD = BigDecimal.valueOf(range.getMinimum());
-            BigDecimal rangeBD = BigDecimal.valueOf(range.getMaximum()).subtract(minBD).add(BigDecimal.ONE);
             BigDecimal valueBD = fraction.multiply(rangeBD).setScale(0, RoundingMode.FLOOR).add(minBD);
             return valueBD.longValueExact();
         }

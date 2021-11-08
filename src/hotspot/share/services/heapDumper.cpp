@@ -51,8 +51,8 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/heapDumper.hpp"
 #include "services/heapDumperCompression.hpp"
 #include "services/threadService.hpp"
@@ -68,8 +68,7 @@
  *
  *  u4        size of identifiers. Identifiers are used to represent
  *            UTF8 strings, objects, stack traces, etc. They usually
- *            have the same size as host pointers. For example, on
- *            Solaris and Win32, the size is 4.
+ *            have the same size as host pointers.
  * u4         high word
  * u4         low word    number of milliseconds since 0:00 GMT, 1/1/70
  * [record]*  a sequence of records.
@@ -327,7 +326,7 @@
 
 // HPROF tags
 
-typedef enum {
+enum hprofTag : u1 {
   // top-level records
   HPROF_UTF8                    = 0x01,
   HPROF_LOAD_CLASS              = 0x02,
@@ -372,7 +371,7 @@ typedef enum {
   HPROF_GC_INSTANCE_DUMP        = 0x21,
   HPROF_GC_OBJ_ARRAY_DUMP       = 0x22,
   HPROF_GC_PRIM_ARRAY_DUMP      = 0x23
-} hprofTag;
+};
 
 // Default stack trace ID (used for dummy HPROF_TRACE record)
 enum {
@@ -406,7 +405,7 @@ class AbstractDumpWriter : public StackObj {
   void set_position(size_t pos)                 { _pos = pos; }
 
   // Can be called if we have enough room in the buffer.
-  void write_fast(void* s, size_t len);
+  void write_fast(const void* s, size_t len);
 
   // Returns true if we have enough room in the buffer for 'len' bytes.
   bool can_write_fast(size_t len);
@@ -423,7 +422,7 @@ class AbstractDumpWriter : public StackObj {
 
   size_t position() const                       { return _pos; }
   // writer functions
-  virtual void write_raw(void* s, size_t len);
+  virtual void write_raw(const void* s, size_t len);
   void write_u1(u1 x);
   void write_u2(u2 x);
   void write_u4(u4 x);
@@ -452,7 +451,7 @@ class AbstractDumpWriter : public StackObj {
   virtual void deactivate() = 0;
 };
 
-void AbstractDumpWriter::write_fast(void* s, size_t len) {
+void AbstractDumpWriter::write_fast(const void* s, size_t len) {
   assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
   assert(buffer_size() - position() >= len, "Must fit");
   debug_only(_sub_record_left -= len);
@@ -465,7 +464,7 @@ bool AbstractDumpWriter::can_write_fast(size_t len) {
 }
 
 // write raw bytes
-void AbstractDumpWriter::write_raw(void* s, size_t len) {
+void AbstractDumpWriter::write_raw(const void* s, size_t len) {
   assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
   debug_only(_sub_record_left -= len);
 
@@ -490,25 +489,25 @@ void AbstractDumpWriter::write_raw(void* s, size_t len) {
                                       else write_raw((p), (len)); } while (0)
 
 void AbstractDumpWriter::write_u1(u1 x) {
-  WRITE_KNOWN_TYPE((void*) &x, 1);
+  WRITE_KNOWN_TYPE(&x, 1);
 }
 
 void AbstractDumpWriter::write_u2(u2 x) {
   u2 v;
   Bytes::put_Java_u2((address)&v, x);
-  WRITE_KNOWN_TYPE((void*)&v, 2);
+  WRITE_KNOWN_TYPE(&v, 2);
 }
 
 void AbstractDumpWriter::write_u4(u4 x) {
   u4 v;
   Bytes::put_Java_u4((address)&v, x);
-  WRITE_KNOWN_TYPE((void*)&v, 4);
+  WRITE_KNOWN_TYPE(&v, 4);
 }
 
 void AbstractDumpWriter::write_u8(u8 x) {
   u8 v;
   Bytes::put_Java_u8((address)&v, x);
-  WRITE_KNOWN_TYPE((void*)&v, 8);
+  WRITE_KNOWN_TYPE(&v, 8);
 }
 
 void AbstractDumpWriter::write_objectID(oop o) {
@@ -758,7 +757,7 @@ class ParDumpWriter : public AbstractDumpWriter {
   }
 
   // write raw bytes
-  virtual void write_raw(void* s, size_t len) {
+  virtual void write_raw(const void* s, size_t len) {
     assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
     debug_only(_sub_record_left -= len);
     assert(!_split_data, "Invalid split data");
@@ -946,7 +945,7 @@ class DumperSupport : AllStatic {
 
 // write a header of the given type
 void DumperSupport:: write_header(AbstractDumpWriter* writer, hprofTag tag, u4 len) {
-  writer->write_u1((u1)tag);
+  writer->write_u1(tag);
   writer->write_u4(0);                  // current ticks
   writer->write_u4(len);
 }
@@ -998,33 +997,29 @@ u4 DumperSupport::sig2size(Symbol* sig) {
   }
 }
 
+template<typename T, typename F> T bit_cast(F from) { // replace with the real thing when we can use c++20
+  T to;
+  static_assert(sizeof(to) == sizeof(from), "must be of the same size");
+  memcpy(&to, &from, sizeof(to));
+  return to;
+}
+
 // dump a jfloat
 void DumperSupport::dump_float(AbstractDumpWriter* writer, jfloat f) {
   if (g_isnan(f)) {
-    writer->write_u4(0x7fc00000);    // collapsing NaNs
+    writer->write_u4(0x7fc00000); // collapsing NaNs
   } else {
-    union {
-      int i;
-      float f;
-    } u;
-    u.f = (float)f;
-    writer->write_u4((u4)u.i);
+    writer->write_u4(bit_cast<u4>(f));
   }
 }
 
 // dump a jdouble
 void DumperSupport::dump_double(AbstractDumpWriter* writer, jdouble d) {
-  union {
-    jlong l;
-    double d;
-  } u;
-  if (g_isnan(d)) {                 // collapsing NaNs
-    u.l = (jlong)(0x7ff80000);
-    u.l = (u.l << 32);
+  if (g_isnan(d)) {
+    writer->write_u8(0x7ff80000ull << 32); // collapsing NaNs
   } else {
-    u.d = (double)d;
+    writer->write_u8(bit_cast<u8>(d));
   }
-  writer->write_u8((u8)u.l);
 }
 
 // dumps the raw value of the given field
@@ -1046,17 +1041,17 @@ void DumperSupport::dump_field_value(AbstractDumpWriter* writer, char type, oop 
     }
     case JVM_SIGNATURE_BYTE : {
       jbyte b = obj->byte_field(offset);
-      writer->write_u1((u1)b);
+      writer->write_u1(b);
       break;
     }
     case JVM_SIGNATURE_CHAR : {
       jchar c = obj->char_field(offset);
-      writer->write_u2((u2)c);
+      writer->write_u2(c);
       break;
     }
     case JVM_SIGNATURE_SHORT : {
       jshort s = obj->short_field(offset);
-      writer->write_u2((u2)s);
+      writer->write_u2(s);
       break;
     }
     case JVM_SIGNATURE_FLOAT : {
@@ -1071,17 +1066,17 @@ void DumperSupport::dump_field_value(AbstractDumpWriter* writer, char type, oop 
     }
     case JVM_SIGNATURE_INT : {
       jint i = obj->int_field(offset);
-      writer->write_u4((u4)i);
+      writer->write_u4(i);
       break;
     }
     case JVM_SIGNATURE_LONG : {
       jlong l = obj->long_field(offset);
-      writer->write_u8((u8)l);
+      writer->write_u8(l);
       break;
     }
     case JVM_SIGNATURE_BOOLEAN : {
       jboolean b = obj->bool_field(offset);
-      writer->write_u1((u1)b);
+      writer->write_u1(b);
       break;
     }
     default : {
@@ -1464,19 +1459,19 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
       if (Endian::is_Java_byte_ordering_different()) {
         WRITE_ARRAY(array, int, u4, length);
       } else {
-        writer->write_raw((void*)(array->int_at_addr(0)), length_in_bytes);
+        writer->write_raw(array->int_at_addr(0), length_in_bytes);
       }
       break;
     }
     case T_BYTE : {
-      writer->write_raw((void*)(array->byte_at_addr(0)), length_in_bytes);
+      writer->write_raw(array->byte_at_addr(0), length_in_bytes);
       break;
     }
     case T_CHAR : {
       if (Endian::is_Java_byte_ordering_different()) {
         WRITE_ARRAY(array, char, u2, length);
       } else {
-        writer->write_raw((void*)(array->char_at_addr(0)), length_in_bytes);
+        writer->write_raw(array->char_at_addr(0), length_in_bytes);
       }
       break;
     }
@@ -1484,7 +1479,7 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
       if (Endian::is_Java_byte_ordering_different()) {
         WRITE_ARRAY(array, short, u2, length);
       } else {
-        writer->write_raw((void*)(array->short_at_addr(0)), length_in_bytes);
+        writer->write_raw(array->short_at_addr(0), length_in_bytes);
       }
       break;
     }
@@ -1492,7 +1487,7 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
       if (Endian::is_Java_byte_ordering_different()) {
         WRITE_ARRAY(array, bool, u1, length);
       } else {
-        writer->write_raw((void*)(array->bool_at_addr(0)), length_in_bytes);
+        writer->write_raw(array->bool_at_addr(0), length_in_bytes);
       }
       break;
     }
@@ -1500,7 +1495,7 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
       if (Endian::is_Java_byte_ordering_different()) {
         WRITE_ARRAY(array, long, u8, length);
       } else {
-        writer->write_raw((void*)(array->long_at_addr(0)), length_in_bytes);
+        writer->write_raw(array->long_at_addr(0), length_in_bytes);
       }
       break;
     }
@@ -2281,8 +2276,7 @@ void VM_HeapDumper::work(uint worker_id) {
     const char* header = "JAVA PROFILE 1.0.2";
 
     // header is few bytes long - no chance to overflow int
-    writer()->write_raw((void*)header, (int)strlen(header));
-    writer()->write_u1(0); // terminator
+    writer()->write_raw(header, strlen(header) + 1); // NUL terminated
     writer()->write_u4(oopSize);
     // timestamp is current time in ms
     writer()->write_u8(os::javaTimeMillis());

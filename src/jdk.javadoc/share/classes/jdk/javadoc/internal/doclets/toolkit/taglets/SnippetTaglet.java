@@ -261,7 +261,21 @@ public class SnippetTaglet extends BaseTaglet {
         assert inlineSnippet != null || externalSnippet != null;
         StyledText text = inlineSnippet != null ? inlineSnippet : externalSnippet;
 
-        return writer.snippetTagOutput(holder, snippetTag, text);
+        String lang = null;
+        AttributeTree langAttr = attributes.get("lang");
+        if (langAttr != null && langAttr.getValueKind() != AttributeTree.ValueKind.EMPTY) {
+            lang = stringOf(langAttr.getValue());
+        } else if (containsClass) {
+            lang = "java";
+        } else if (containsFile) {
+            lang = languageFromFileName(fileObject.getName());
+        }
+        AttributeTree idAttr = attributes.get("id");
+        String id = idAttr == null || idAttr.getValueKind() == AttributeTree.ValueKind.EMPTY
+                        ? null
+                        : stringOf(idAttr.getValue());
+
+        return writer.snippetTagOutput(holder, snippetTag, text, id, lang);
     }
 
     /*
@@ -296,6 +310,16 @@ public class SnippetTaglet extends BaseTaglet {
             // ErroneousTree is a subtype of TextTree
             .map(t -> ((TextTree) t).getBody())
             .collect(Collectors.joining());
+    }
+
+    private String languageFromFileName(String fileName) {
+        // TODO: find a way to extend/customize the list of recognized file name extensions
+        if (fileName.endsWith(".java")) {
+            return "java";
+        } else if (fileName.endsWith(".properties")) {
+            return "properties";
+        }
+        return null;
     }
 
     private void error(TagletWriter writer, Element holder, DocTree tag, String key, Object... args) {

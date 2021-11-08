@@ -52,8 +52,8 @@ public class TargetVM implements Runnable {
      * TO DO: The limit numbers below are somewhat arbitrary and should
      * be configurable in the future.
      */
-    static private final int OVERLOADED_QUEUE = 10000;
-    static private final int UNDERLOADED_QUEUE = 100;
+    private static final int OVERLOADED_QUEUE = 10000;
+    private static final int UNDERLOADED_QUEUE = 100;
 
     TargetVM(VirtualMachineImpl vm, Connection connection) {
         this.vm = vm;

@@ -936,62 +936,56 @@ pre.snippet {
 div.snippet-container {
     position: relative;
 }
-a.snippet-copy {
+button.snippet-copy {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 6px;
+    right: 6px;
+    height: 1.7em;
+    opacity: 50%;
+    transition: opacity 0.2s;
+    padding: 2px;
+    border: none;
+    cursor: pointer;
+    background: none;
 }
-a.snippet-copy img {
+button.snippet-copy img {
     width: 18px;
     height: 18px;
     padding: 0.05em 0;
-    opacity: 50%;
-    transition: opacity 0.2s;
+    background: none;
 }
-div.snippet-container:hover a.snippet-copy img {
+div.snippet-container:hover button.snippet-copy {
     opacity: 80%;
 }
-div.snippet-container a.snippet-copy:hover img {
+div.snippet-container button.snippet-copy:hover {
     opacity: 100%;
 }
-a.snippet-copy:active img {
-    background: #d3d3d3;
-    opacity: 100%;
-}
-a.snippet-copy::before {
+button.snippet-copy span {
     color: #3d3d3d;
     content: attr(aria-label);
     font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;
     font-size: 85%;
     line-height: 1.2em;
     padding: 0.2em;
-    position: absolute;
-    opacity: 80%;
-    transition: opacity 0.2s;
+    position: relative;
     white-space: nowrap;
-    top: -0.01em;
-    right: 1.5em;
+    top: -0.5em;
     display: none;
 }
-div.snippet-container:hover a.snippet-copy::before {
-    display: inherit;
+div.snippet-container:hover button.snippet-copy span {
+    display: inline;
 }
-div.snippet-container a.snippet-copy:hover::before {
+button.snippet-copy:active {
+    background: #d3d3d3;
     opacity: 100%;
-}
-a.snippet-copy.copied::before {
-    content: attr(data-copied);
-}
-a.snippet-copy:active::before {
-    background-color: #dadada;
 }
 @media screen and (max-width: 800px) {
     pre.snippet {
         padding-top: 26px;
     }
-    a.snippet-copy {
-        top: 6px;
-        right: 6px;
+    button.snippet-copy {
+        top: 4px;
+        right: 4px;
     }
 }
 pre.snippet .italic {
