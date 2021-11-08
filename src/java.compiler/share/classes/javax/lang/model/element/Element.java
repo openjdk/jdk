@@ -117,8 +117,9 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
 
     /**
      * Returns the modifiers of this element, excluding annotations.
-     * Implicit modifiers, such as the {@code public} and {@code static}
-     * modifiers of interface members (JLS section {@jls 9.3}), are included.
+     * Implicit modifiers, such as the {@code public} and {@code
+     * static} modifiers of interface members (JLS section {@jls
+     * 9.3}), are included.
      *
      * @return the modifiers of this element, or an empty set if there are none
      */

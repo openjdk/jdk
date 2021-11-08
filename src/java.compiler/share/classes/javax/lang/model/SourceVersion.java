@@ -228,8 +228,8 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 16.
      *
-     * Additions in this release include records and pattern matching for {@code
-     * instanceof}.
+     * Additions in this release include records and pattern matching
+     * for {@code instanceof}.
      *
      * @since 16
      */
