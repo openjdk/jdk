@@ -188,6 +188,11 @@ public final class System {
     @SuppressWarnings("removal")
     private static volatile SecurityManager security;   // read by VM
 
+    // A boolean indicating `sun.jnu.encoding` is supported by the JVM or not.
+    // It is initialized in `initPhase1()` before any charset providers
+    // are initialized.
+    private static boolean jnuEncodingSupported;
+
     // return true if a security manager is allowed
     private static boolean allowSecurityManager() {
         return (allowSecurityManager != NEVER);
@@ -2140,6 +2145,8 @@ public final class System {
         Thread current = Thread.currentThread();
         current.getThreadGroup().add(current);
 
+        var jnuEncoding = props.getProperty("sun.jnu.encoding");
+        jnuEncodingSupported = jnuEncoding != null && Charset.isSupported(jnuEncoding);
 
         // Subsystems that are invoked during initialization can invoke
         // VM.isBooted() in order to avoid doing things that should
@@ -2245,6 +2252,14 @@ public final class System {
             System.err.println("""
                     WARNING: A command line option has enabled the Security Manager
                     WARNING: The Security Manager is deprecated and will be removed in a future release""");
+        }
+
+        // Emit a warning if `sun.jnu.encoding` is not supported
+        if (!jnuEncodingSupported) {
+            System.err.printf(
+                    "WARNING: The encoding of the underlying platform's" +
+                            " file system is not supported by the JVM: %s%n",
+                    props.getProperty("sun.jnu.encoding"));
         }
 
         initialErrStream = System.err;
