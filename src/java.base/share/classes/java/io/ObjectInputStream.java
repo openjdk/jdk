@@ -1195,8 +1195,7 @@ public class ObjectInputStream
      * @throws  IOException If other I/O error has occurred.
      */
     public void readFully(byte[] buf, int off, int len) throws IOException {
-        int endoff = off + len;
-        Objects.checkFromToIndex(off, endoff, buf.length);
+        Objects.checkFromToIndex(off, len, buf.length);
         bin.readFully(buf, off, len, false);
     }
 
