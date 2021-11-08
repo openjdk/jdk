@@ -116,7 +116,7 @@ public class TestDialogTypeAhead {
         b.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     System.err.println("B pressed");
-                    d.setVisible(true);
+
                     EventQueue.invokeLater(new Runnable() {
                             public void run() {
                                 waitTillShown(d);
@@ -124,6 +124,7 @@ public class TestDialogTypeAhead {
                                 TestDialogTypeAhead.this.moveMouseOver(d);
                             }
                         });
+                    d.setVisible(true);
                 }
             });
 
@@ -150,7 +151,6 @@ public class TestDialogTypeAhead {
 
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_SPACE);
-        waitForIdle();
 
         try {
             robotSema.doWait(1000);
