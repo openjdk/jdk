@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,6 +369,9 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
   init->disconnect_inputs(C);
 }
 
+static jint SIZE_TABLE[] = { 9, 99, 999, 9999, 99999, 999999, 9999999,
+                            99999999, 999999999, 0x7fffffff };
+
 Node_List PhaseStringOpts::collect_toString_calls() {
   Node_List string_calls;
   Node_List worklist;
@@ -636,14 +639,6 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   _gvn(gvn) {
 
   assert(OptimizeStringConcat, "shouldn't be here");
-
-  size_table_field = C->env()->Integer_klass()->get_field_by_name(ciSymbol::make("sizeTable"),
-                                                                  ciSymbols::int_array_signature(), true);
-  if (size_table_field == NULL) {
-    // Something wrong so give up.
-    assert(false, "why can't we find Integer.sizeTable?");
-    return;
-  }
 
   // Collect the types needed to talk about the various slices of memory
   byte_adr_idx = C->get_alias_index(TypeAryPtr::BYTES);
@@ -1168,42 +1163,11 @@ bool StringConcat::validate_control_flow() {
   return !fail;
 }
 
-Node* PhaseStringOpts::fetch_static_field(GraphKit& kit, ciField* field) {
-  const TypeInstPtr* mirror_type = TypeInstPtr::make(field->holder()->java_mirror());
-  Node* klass_node = __ makecon(mirror_type);
-  BasicType bt = field->layout_type();
-  ciType* field_klass = field->type();
-
-  const Type *type;
-  if( bt == T_OBJECT ) {
-    if (!field->type()->is_loaded()) {
-      type = TypeInstPtr::BOTTOM;
-    } else if (field->is_static_constant()) {
-      // This can happen if the constant oop is non-perm.
-      ciObject* con = field->constant_value().as_object();
-      // Do not "join" in the previous type; it doesn't add value,
-      // and may yield a vacuous result if the field is of interface type.
-      type = TypeOopPtr::make_from_constant(con, true)->isa_oopptr();
-      assert(type != NULL, "field singleton type must be consistent");
-      return __ makecon(type);
-    } else {
-      type = TypeOopPtr::make_from_klass(field_klass->as_klass());
-    }
-  } else {
-    type = Type::get_const_basic_type(bt);
-  }
-
-  return kit.make_load(NULL, kit.basic_plus_adr(klass_node, field->offset_in_bytes()),
-                       type, T_OBJECT,
-                       C->get_alias_index(mirror_type->add_offset(field->offset_in_bytes())),
-                       MemNode::unordered);
-}
-
 Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
   if (arg->is_Con()) {
-    // Constant integer. Compute constant length using Integer.sizeTable
-    int arg_val = arg->get_int();
-    int count = 1;
+    // Constant integer. Compute constant length
+    jint arg_val = arg->get_int();
+    jint count = 1;
     if (arg_val < 0) {
       // Special case for min_jint - it can't be negated.
       if (arg_val == min_jint) {
@@ -1213,10 +1177,8 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
       arg_val = -arg_val;
       count++;
     }
-
-    ciArray* size_table = (ciArray*)size_table_field->constant_value().as_object();
-    for (int i = 0; i < size_table->length(); i++) {
-      if (arg_val <= size_table->element_value(i).as_int()) {
+    for (int i = 0; i < (int)(sizeof(SIZE_TABLE) / sizeof(SIZE_TABLE[0])); i++) {
+      if (arg_val <= SIZE_TABLE[i]) {
         count += i;
         break;
       }
@@ -1224,10 +1186,14 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
     return __ intcon(count);
   }
 
-  RegionNode *final_merge = new RegionNode(3);
+  RegionNode* final_merge = new RegionNode(3);
   kit.gvn().set_type(final_merge, Type::CONTROL);
   Node* final_size = new PhiNode(final_merge, TypeInt::INT);
   kit.gvn().set_type(final_size, TypeInt::INT);
+  Node* final_mem = new PhiNode(final_merge, Type::MEMORY, TypePtr::BOTTOM);
+  kit.gvn().set_type(final_mem, Type::MEMORY);
+  Node* final_io = new PhiNode(final_merge, Type::ABIO);
+  kit.gvn().set_type(final_io, Type::ABIO);
 
   IfNode* iff = kit.create_and_map_if(kit.control(),
                                       __ Bool(__ CmpI(arg, __ intcon(0x80000000)), BoolTest::ne),
@@ -1235,13 +1201,16 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
   Node* is_min = __ IfFalse(iff);
   final_merge->init_req(1, is_min);
   final_size->init_req(1, __ intcon(11));
+  final_mem->init_req(1, kit.merged_memory());
+  final_io->init_req(1, kit.i_o());
 
   kit.set_control(__ IfTrue(iff));
   if (kit.stopped()) {
     final_merge->init_req(2, C->top());
     final_size->init_req(2, C->top());
+    final_mem->init_req(2, C->top());
+    final_io->init_req(2, C->top());
   } else {
-
     // int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
     RegionNode *r = new RegionNode(3);
     kit.gvn().set_type(r, Type::CONTROL);
@@ -1265,6 +1234,24 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
     C->record_for_igvn(phi);
     C->record_for_igvn(size);
 
+    // int[] sizeTable = new int[10];
+    // sizeTable[0] = 9;
+    // sizeTable[1] = 99;
+    // ...
+    // sizeTable[9] = Integer.MAX_VALUE
+    Node* sizeTable = NULL;
+    {
+      PreserveReexecuteState preexces(&kit);
+      kit.jvms()->set_should_reexecute(true);
+      Node* array_klass = __ makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_INT)));
+      sizeTable = kit.new_array(array_klass, __ intcon(10), 1);
+    }
+    for (int i = 0; i < 10; i++) {
+      Node* elem = kit.array_element_address(sizeTable, __ intcon(i), T_INT);
+      __ store_to_memory(kit.control(), elem, __ intcon(SIZE_TABLE[i]), T_INT,
+                        TypeAryPtr::INTS, MemNode::unordered);
+    }
+
     // for (int i=0; ; i++)
     //   if (x <= sizeTable[i])
     //     return i+1;
@@ -1281,7 +1268,6 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
     index->init_req(1, __ intcon(0));
     kit.gvn().set_type(index, TypeInt::INT);
     kit.set_control(loop);
-    Node* sizeTable = fetch_static_field(kit, size_table_field);
 
     Node* value = kit.load_array_element(sizeTable, index, TypeAryPtr::INTS, /* set_ctrl */ false);
     C->record_for_igvn(value);
@@ -1300,12 +1286,18 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
 
     final_merge->init_req(2, kit.control());
     final_size->init_req(2, __ AddI(__ AddI(index, size), __ intcon(1)));
+    final_mem->init_req(2, kit.reset_memory());
+    final_io->init_req(2, kit.i_o());
   }
 
   kit.set_control(final_merge);
+  kit.set_all_memory(final_mem);
+  kit.set_i_o(final_io);
+
   C->record_for_igvn(final_merge);
   C->record_for_igvn(final_size);
-
+  C->record_for_igvn(final_mem);
+  C->record_for_igvn(final_io);
   return final_size;
 }
 
@@ -1814,6 +1806,10 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   int args = MAX2(sc->num_arguments(), 1);
   RegionNode* overflow = new RegionNode(args);
   kit.gvn().set_type(overflow, Type::CONTROL);
+  Node* overflow_mem = new PhiNode(overflow, Type::MEMORY, TypePtr::BOTTOM);
+  kit.gvn().set_type(overflow_mem, Type::MEMORY);
+  Node* overflow_io = new PhiNode(overflow, Type::ABIO);
+  kit.gvn().set_type(overflow_io, Type::ABIO);
 
   // Create a hook node to hold onto the individual sizes since they
   // are need for the copying phase.
@@ -1986,6 +1982,8 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
                                           PROB_MIN, COUNT_UNKNOWN);
       kit.set_control(__ IfFalse(iff));
       overflow->set_req(argi, __ IfTrue(iff));
+      overflow_mem->set_req(argi, kit.merged_memory());
+      overflow_io->set_req(argi, kit.i_o());
     }
   }
 
@@ -1993,6 +1991,8 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     // Hook
     PreserveJVMState pjvms(&kit);
     kit.set_control(overflow);
+    kit.set_all_memory(overflow_mem);
+    kit.set_i_o(overflow_io);
     C->record_for_igvn(overflow);
     kit.uncommon_trap(Deoptimization::Reason_intrinsic,
                       Deoptimization::Action_make_not_entrant);
