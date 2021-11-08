@@ -24,39 +24,46 @@
 package gc;
 
 /*
- * @test TestSystemGCSerial
+ * @test id=serial
  * @requires vm.gc.Serial
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UseSerialGC gc.TestSystemGC
+ * @run main/othervm -XX:+UseSerialGC -XX:+UseLargePages gc.TestSystemGC
  */
 
 /*
- * @test TestSystemGCParallel
+ * @test id=parallel
  * @requires vm.gc.Parallel
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UseParallelGC gc.TestSystemGC
+ * @run main/othervm -XX:+UseParallelGC -XX:+UseLargePages gc.TestSystemGC
  */
 
 /*
- * @test TestSystemGCG1
+ * @test id=g1
  * @requires vm.gc.G1
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UseG1GC gc.TestSystemGC
  * @run main/othervm -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent gc.TestSystemGC
+ * @run main/othervm -XX:+UseG1GC -XX:+UseLargePages gc.TestSystemGC
  */
 
 /*
- * @test TestSystemGCShenandoah
+ * @test id=shenandoah
  * @requires vm.gc.Shenandoah
  * @summary Runs System.gc() with different flags.
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC gc.TestSystemGC
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ExplicitGCInvokesConcurrent gc.TestSystemGC
+ * @run main/othervm -XX:+UseShenandoahGC gc.TestSystemGC
+ * @run main/othervm -XX:+UseShenandoahGC -XX:+ExplicitGCInvokesConcurrent gc.TestSystemGC
+ * @run main/othervm -XX:+UseShenandoahGC -XX:+UseLargePages gc.TestSystemGC
  */
 
 /*
- * @test TestSystemGCLargePages
+ * @test id=z
+ * @requires vm.gc.Z
+ * @comment ZGC would not start when LargePages cannot be allocated, therefore
+ *          we do not run such configuration.
  * @summary Runs System.gc() with different flags.
- * @run main/othervm -XX:+UseLargePages gc.TestSystemGC
+ * @run main/othervm -XX:+UseZGC gc.TestSystemGC
  */
 
 public class TestSystemGC {
