@@ -60,6 +60,7 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
+#include <spawn.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -637,6 +638,21 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
   }
   return true;
 #endif
+}
+
+void* os::get_default_process_handle() {
+#ifdef __APPLE__
+  // MacOS X needs to use RTLD_FIRST instead of RTLD_LAZY
+  // to avoid finding unexpected symbols on second (or later)
+  // loads of a library.
+  return (void*)::dlopen(NULL, RTLD_FIRST);
+#else
+  return (void*)::dlopen(NULL, RTLD_LAZY);
+#endif
+}
+
+void* os::dll_lookup(void* handle, const char* name) {
+  return dlsym(handle, name);
 }
 
 void os::dll_unload(void *lib) {
@@ -1940,40 +1956,16 @@ char** os::get_environ() { return environ; }
 //         doesn't block SIGINT et al.
 //        -this function is unsafe to use in non-error situations, mainly
 //         because the child process will inherit all parent descriptors.
-int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
-  const char * argv[4] = {"sh", "-c", cmd, NULL};
-
-  pid_t pid ;
-
+int os::fork_and_exec(const char* cmd) {
+  const char* argv[4] = {"sh", "-c", cmd, NULL};
+  pid_t pid = -1;
   char** env = os::get_environ();
-
-  // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
-  // Otherwise leave it up to the caller.
-  AIX_ONLY(prefer_vfork = true;)
-  #ifdef __APPLE__
-  pid = ::fork();
-  #else
-  pid = prefer_vfork ? ::vfork() : ::fork();
-  #endif
-
-  if (pid < 0) {
-    // fork failed
-    return -1;
-
-  } else if (pid == 0) {
-    // child process
-
-    ::execve("/bin/sh", (char* const*)argv, env);
-
-    // execve failed
-    ::_exit(-1);
-
-  } else  {
-    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
-    // care about the actual exit code, for now.
-
+  // Note: cast is needed because posix_spawn() requires - for compatibility with ancient
+  // C-code - a non-const argv/envp pointer array. But it is fine to hand in literal
+  // strings and just cast the constness away. See also ProcessImpl_md.c.
+  int rc = ::posix_spawn(&pid, "/bin/sh", NULL, NULL, (char**) argv, env);
+  if (rc == 0) {
     int status;
-
     // Wait for the child process to exit.  This returns immediately if
     // the child has already exited. */
     while (::waitpid(pid, &status, 0) < 0) {
@@ -1983,7 +1975,6 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
       default: return -1;
       }
     }
-
     if (WIFEXITED(status)) {
       // The child exited normally; get its exit code.
       return WEXITSTATUS(status);
@@ -1998,6 +1989,9 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
       // Unknown exit code; pass it through
       return status;
     }
+  } else {
+    // Don't log, we are inside error handling
+    return -1;
   }
 }
 

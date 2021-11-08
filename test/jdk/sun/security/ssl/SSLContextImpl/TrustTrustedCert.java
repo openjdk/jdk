@@ -159,9 +159,9 @@ public class TrustTrustedCert extends SSLSocketTemplate {
             if (expectFail) {
             // focus on the CertPathValidatorException
                 Throwable t = e.getCause().getCause();
-                if (t == null || !t.toString().contains("MD5withRSA")) {
+                if (t == null || !t.toString().contains("MD5")) {
                     throw new RuntimeException(
-                        "Expected to see MD5withRSA in exception output", t);
+                        "Expected to see MD5 in exception output", t);
                 }
             } else {
                 throw e;

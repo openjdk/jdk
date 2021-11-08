@@ -128,7 +128,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         mDestType = UnixPrintJob.DESTPRINTER;
         JobSheets js = (JobSheets)(service.
                                       getDefaultAttributeValue(JobSheets.class));
-        if (js != null && js.equals(JobSheets.NONE)) {
+        if (JobSheets.NONE.equals(js)) {
             mNoJobSheet = true;
         }
     }

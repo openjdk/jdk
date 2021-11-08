@@ -31,6 +31,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1Predictions.hpp"
+#include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -327,7 +328,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
     // If obj is not an objArray and mr contains the start of the
     // obj, then this could be an imprecise mark, and we need to
     // process the entire object.
-    int size = obj->oop_iterate_size(cl);
+    size_t size = obj->oop_iterate_size(cl);
     // We have scanned to the end of the object, but since there can be no objects
     // after this humongous object in the region, we can return the end of the
     // region if it is greater.
@@ -448,6 +449,10 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   assert(has_valid_age_in_surv_rate(), "pre-condition");
   int age_in_group = age_in_surv_rate_group();
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
+}
+
+inline void HeapRegion::record_evac_failure_obj(oop obj) {
+  _evac_failure_objs.record(obj);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

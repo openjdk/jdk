@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
     private Vector<File> files = null;
 
     JFileChooser filechooser = null;
-    Vector<SortableFile> fileCache = null;
-    Object fileCacheLock;
+    ArrayList<SortableFile> fileCache = null;
+    final Object fileCacheLock;
 
     Vector<File> directories = null;
     int fetchID = 0;
@@ -136,7 +136,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
 
         synchronized(fileCacheLock) {
             for (int i = 0; i < fileCache.size(); i++) {
-                final SortableFile sf = fileCache.elementAt(i);
+                final SortableFile sf = fileCache.get(i);
                 final File f = sf.fFile;
                 if (filechooser.isTraversable(f)) {
                     directories.addElement(f);
@@ -180,7 +180,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         // PENDING(jeff) pick the size more sensibly
         invalidateFileCache();
         synchronized(fileCacheLock) {
-            fileCache = new Vector<SortableFile>(50);
+            fileCache = new ArrayList<>(50);
         }
 
         filesLoader = new FilesLoader(currentDirectory, fetchID);
@@ -244,7 +244,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         synchronized(fileCacheLock) {
             if (fileCache != null) {
                 if (!isAscending) row = fileCache.size() - row - 1;
-                return fileCache.elementAt(row).getValueAt(col);
+                return fileCache.get(row).getValueAt(col);
             }
             return null;
         }
@@ -383,7 +383,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
     }
 
     class FilesLoader implements Runnable {
-        Vector<Runnable> queuedTasks = new Vector<>();
+        ArrayList<Runnable> queuedTasks = new ArrayList<>();
         File currentDirectory = null;
         int fid;
         Thread loadThread;
@@ -473,7 +473,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
                         synchronized(fileCacheLock) {
                             if (fileCache != null) {
                                 for (int i = 0; i < contentFiles.size(); i++) {
-                                    fileCache.addElement(contentFiles.elementAt(i));
+                                    fileCache.add(contentFiles.elementAt(i));
                                     fireTableRowsInserted(i, i);
                                 }
                             }

@@ -824,7 +824,7 @@ class UnixFileSystemView extends FileSystemView {
     public boolean isComputerNode(File dir) {
         if (dir != null) {
             String parent = dir.getParent();
-            if (parent != null && parent.equals("/net")) {
+            if ("/net".equals(parent)) {
                 return true;
             }
         }

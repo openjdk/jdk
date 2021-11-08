@@ -3094,7 +3094,8 @@ class StubGenerator: public StubCodeGenerator {
   // key = c_rarg4
   // state = c_rarg5 - GHASH.state
   // subkeyHtbl = c_rarg6 - powers of H
-  // counter = c_rarg7 - pointer to 16 bytes of CTR
+  // subkeyHtbl_48_entries = c_rarg7 (not used)
+  // counter = [sp, #0] pointer to 16 bytes of CTR
   // return - number of processed bytes
   address generate_galoisCounterMode_AESCrypt() {
     address ghash_polynomial = __ pc();
@@ -3107,6 +3108,8 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
      StubCodeMark mark(this, "StubRoutines", "galoisCounterMode_AESCrypt");
     address start = __ pc();
+    __ enter();
+
     const Register in = c_rarg0;
     const Register len = c_rarg1;
     const Register ct = c_rarg2;
@@ -3118,10 +3121,12 @@ class StubGenerator: public StubCodeGenerator {
 
     const Register subkeyHtbl = c_rarg6;
 
+    // Pointer to CTR is passed on the stack before the (fp, lr) pair.
+    const Address counter_mem(sp, 2 * wordSize);
     const Register counter = c_rarg7;
+    __ ldr(counter, counter_mem);
 
     const Register keylen = r10;
-    __ enter();
     // Save state before entering routine
     __ sub(sp, sp, 4 * 16);
     __ st1(v12, v13, v14, v15, __ T16B, Address(sp));
@@ -4834,18 +4839,6 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
-  // code for comparing 16 bytes of strings with same encoding
-  void compare_string_16_bytes_same(Label &DIFF1, Label &DIFF2) {
-    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, tmp1 = r10, tmp2 = r11;
-    __ ldr(rscratch1, Address(__ post(str1, 8)));
-    __ eor(rscratch2, tmp1, tmp2);
-    __ ldr(cnt1, Address(__ post(str2, 8)));
-    __ cbnz(rscratch2, DIFF1);
-    __ ldr(tmp1, Address(__ post(str1, 8)));
-    __ eor(rscratch2, rscratch1, cnt1);
-    __ ldr(tmp2, Address(__ post(str2, 8)));
-    __ cbnz(rscratch2, DIFF2);
-  }
 
   // code for comparing 16 characters of strings with Latin1 and Utf16 encoding
   void compare_string_16_x_LU(Register tmpL, Register tmpU, Label &DIFF1,
@@ -5052,15 +5045,18 @@ class StubGenerator: public StubCodeGenerator {
         : "compare_long_string_same_encoding UU");
     address entry = __ pc();
     Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
-        tmp1 = r10, tmp2 = r11;
-    Label SMALL_LOOP, LARGE_LOOP_PREFETCH, CHECK_LAST, DIFF2, TAIL,
-        LENGTH_DIFF, DIFF, LAST_CHECK_AND_LENGTH_DIFF,
-        DIFF_LAST_POSITION, DIFF_LAST_POSITION2;
+        tmp1 = r10, tmp2 = r11, tmp1h = rscratch1, tmp2h = rscratch2;
+
+    Label LARGE_LOOP_PREFETCH, LOOP_COMPARE16, DIFF, LESS16, LESS8, CAL_DIFFERENCE, LENGTH_DIFF;
+
     // exit from large loop when less than 64 bytes left to read or we're about
     // to prefetch memory behind array border
     int largeLoopExitCondition = MAX2(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
-    // cnt1/cnt2 contains amount of characters to compare. cnt1 can be re-used
-    // update cnt2 counter with already loaded 8 bytes
+
+    // before jumping to stub, pre-load 8 bytes already, so do comparison directly
+    __ eor(rscratch2, tmp1, tmp2);
+    __ cbnz(rscratch2, CAL_DIFFERENCE);
+
     __ sub(cnt2, cnt2, wordSize/(isLL ? 1 : 2));
     // update pointers, because of previous read
     __ add(str1, str1, wordSize);
@@ -5069,80 +5065,88 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(LARGE_LOOP_PREFETCH);
         __ prfm(Address(str1, SoftwarePrefetchHintDistance));
         __ prfm(Address(str2, SoftwarePrefetchHintDistance));
-        compare_string_16_bytes_same(DIFF, DIFF2);
-        compare_string_16_bytes_same(DIFF, DIFF2);
+
+        __ align(OptoLoopAlignment);
+        for (int i = 0; i < 4; i++) {
+          __ ldp(tmp1, tmp1h, Address(str1, i * 16));
+          __ ldp(tmp2, tmp2h, Address(str2, i * 16));
+          __ cmp(tmp1, tmp2);
+          __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
+          __ br(Assembler::NE, DIFF);
+        }
         __ sub(cnt2, cnt2, isLL ? 64 : 32);
-        compare_string_16_bytes_same(DIFF, DIFF2);
+        __ add(str1, str1, 64);
+        __ add(str2, str2, 64);
         __ subs(rscratch2, cnt2, largeLoopExitCondition);
-        compare_string_16_bytes_same(DIFF, DIFF2);
-        __ br(__ GT, LARGE_LOOP_PREFETCH);
-        __ cbz(cnt2, LAST_CHECK_AND_LENGTH_DIFF); // no more chars left?
+        __ br(Assembler::GE, LARGE_LOOP_PREFETCH);
+        __ cbz(cnt2, LENGTH_DIFF); // no more chars left?
     }
-    // less than 16 bytes left?
-    __ subs(cnt2, cnt2, isLL ? 16 : 8);
-    __ br(__ LT, TAIL);
+
+    __ subs(rscratch1, cnt2, isLL ? 16 : 8);
+    __ br(Assembler::LE, LESS16);
     __ align(OptoLoopAlignment);
-    __ bind(SMALL_LOOP);
-      compare_string_16_bytes_same(DIFF, DIFF2);
-      __ subs(cnt2, cnt2, isLL ? 16 : 8);
-      __ br(__ GE, SMALL_LOOP);
-    __ bind(TAIL);
-      __ adds(cnt2, cnt2, isLL ? 16 : 8);
-      __ br(__ EQ, LAST_CHECK_AND_LENGTH_DIFF);
+    __ bind(LOOP_COMPARE16);
+      __ ldp(tmp1, tmp1h, Address(__ post(str1, 16)));
+      __ ldp(tmp2, tmp2h, Address(__ post(str2, 16)));
+      __ cmp(tmp1, tmp2);
+      __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
+      __ br(Assembler::NE, DIFF);
+      __ sub(cnt2, cnt2, isLL ? 16 : 8);
+      __ subs(rscratch2, cnt2, isLL ? 16 : 8);
+      __ br(Assembler::LT, LESS16);
+
+      __ ldp(tmp1, tmp1h, Address(__ post(str1, 16)));
+      __ ldp(tmp2, tmp2h, Address(__ post(str2, 16)));
+      __ cmp(tmp1, tmp2);
+      __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
+      __ br(Assembler::NE, DIFF);
+      __ sub(cnt2, cnt2, isLL ? 16 : 8);
+      __ subs(rscratch2, cnt2, isLL ? 16 : 8);
+      __ br(Assembler::GE, LOOP_COMPARE16);
+      __ cbz(cnt2, LENGTH_DIFF);
+
+    __ bind(LESS16);
+      // each 8 compare
       __ subs(cnt2, cnt2, isLL ? 8 : 4);
-      __ br(__ LE, CHECK_LAST);
-      __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
+      __ br(Assembler::LE, LESS8);
       __ ldr(tmp1, Address(__ post(str1, 8)));
       __ ldr(tmp2, Address(__ post(str2, 8)));
-      __ sub(cnt2, cnt2, isLL ? 8 : 4);
-    __ bind(CHECK_LAST);
-      if (!isLL) {
-        __ add(cnt2, cnt2, cnt2); // now in bytes
-      }
       __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
-      __ ldr(rscratch1, Address(str1, cnt2));
-      __ ldr(cnt1, Address(str2, cnt2));
-      __ eor(rscratch2, rscratch1, cnt1);
-      __ cbz(rscratch2, LENGTH_DIFF);
-      // Find the first different characters in the longwords and
-      // compute their difference.
-    __ bind(DIFF2);
-      __ rev(rscratch2, rscratch2);
-      __ clz(rscratch2, rscratch2);
-      __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
-      __ lsrv(rscratch1, rscratch1, rscratch2);
-      if (isLL) {
-        __ lsrv(cnt1, cnt1, rscratch2);
-        __ uxtbw(rscratch1, rscratch1);
-        __ uxtbw(cnt1, cnt1);
-      } else {
-        __ lsrv(cnt1, cnt1, rscratch2);
-        __ uxthw(rscratch1, rscratch1);
-        __ uxthw(cnt1, cnt1);
+      __ cbnz(rscratch2, CAL_DIFFERENCE);
+      __ sub(cnt2, cnt2, isLL ? 8 : 4);
+
+    __ bind(LESS8); // directly load last 8 bytes
+      if (!isLL) {
+        __ add(cnt2, cnt2, cnt2);
       }
-      __ subw(result, rscratch1, cnt1);
-      __ b(LENGTH_DIFF);
+      __ ldr(tmp1, Address(str1, cnt2));
+      __ ldr(tmp2, Address(str2, cnt2));
+      __ eor(rscratch2, tmp1, tmp2);
+      __ cbz(rscratch2, LENGTH_DIFF);
+      __ b(CAL_DIFFERENCE);
+
     __ bind(DIFF);
+      __ cmp(tmp1, tmp2);
+      __ csel(tmp1, tmp1, tmp1h, Assembler::NE);
+      __ csel(tmp2, tmp2, tmp2h, Assembler::NE);
+      // reuse rscratch2 register for the result of eor instruction
+      __ eor(rscratch2, tmp1, tmp2);
+
+    __ bind(CAL_DIFFERENCE);
       __ rev(rscratch2, rscratch2);
       __ clz(rscratch2, rscratch2);
       __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
       __ lsrv(tmp1, tmp1, rscratch2);
+      __ lsrv(tmp2, tmp2, rscratch2);
       if (isLL) {
-        __ lsrv(tmp2, tmp2, rscratch2);
         __ uxtbw(tmp1, tmp1);
         __ uxtbw(tmp2, tmp2);
       } else {
-        __ lsrv(tmp2, tmp2, rscratch2);
         __ uxthw(tmp1, tmp1);
         __ uxthw(tmp2, tmp2);
       }
       __ subw(result, tmp1, tmp2);
-      __ b(LENGTH_DIFF);
-    __ bind(LAST_CHECK_AND_LENGTH_DIFF);
-      __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
+
     __ bind(LENGTH_DIFF);
       __ ret(lr);
     return entry;
@@ -6205,10 +6209,16 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
   }
 
-  void gen_ldaddal_entry(Assembler::operand_size size) {
+  void gen_ldadd_entry(Assembler::operand_size size, atomic_memory_order order) {
     Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-    __ ldaddal(size, incr, prev, addr);
-    __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    // If not relaxed, then default to conservative.  Relaxed is the only
+    // case we use enough to be worth specializing.
+    if (order == memory_order_relaxed) {
+      __ ldadd(size, incr, prev, addr);
+    } else {
+      __ ldaddal(size, incr, prev, addr);
+      __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    }
     if (size == Assembler::xword) {
       __ mov(r0, prev);
     } else {
@@ -6238,12 +6248,21 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "atomic entry points");
     address first_entry = __ pc();
 
-    // All memory_order_conservative
+    // ADD, memory_order_conservative
     AtomicStubMark mark_fetch_add_4(_masm, &aarch64_atomic_fetch_add_4_impl);
-    gen_ldaddal_entry(Assembler::word);
+    gen_ldadd_entry(Assembler::word, memory_order_conservative);
     AtomicStubMark mark_fetch_add_8(_masm, &aarch64_atomic_fetch_add_8_impl);
-    gen_ldaddal_entry(Assembler::xword);
+    gen_ldadd_entry(Assembler::xword, memory_order_conservative);
 
+    // ADD, memory_order_relaxed
+    AtomicStubMark mark_fetch_add_4_relaxed
+      (_masm, &aarch64_atomic_fetch_add_4_relaxed_impl);
+    gen_ldadd_entry(MacroAssembler::word, memory_order_relaxed);
+    AtomicStubMark mark_fetch_add_8_relaxed
+      (_masm, &aarch64_atomic_fetch_add_8_relaxed_impl);
+    gen_ldadd_entry(MacroAssembler::xword, memory_order_relaxed);
+
+    // XCHG, memory_order_conservative
     AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
     gen_swpal_entry(Assembler::word);
     AtomicStubMark mark_xchg_8_impl(_masm, &aarch64_atomic_xchg_8_impl);
@@ -7356,12 +7375,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif // COMPILER2
 
-    // generate GHASH intrinsics code
-    if (UseGHASHIntrinsics) {
-      // StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
-      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks_wide();
-    }
-
     if (UseBASE64Intrinsics) {
         StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
         StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
@@ -7376,8 +7389,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
-      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
       StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
+    }
+    if (UseGHASHIntrinsics) {
+      // StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks_wide();
+    }
+    if (UseAESIntrinsics && UseGHASHIntrinsics) {
+      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
     }
 
     if (UseSHA1Intrinsics) {
@@ -7443,6 +7462,8 @@ void StubGenerator_generate(CodeBuffer* code, bool all) {
 
 DEFAULT_ATOMIC_OP(fetch_add, 4, )
 DEFAULT_ATOMIC_OP(fetch_add, 8, )
+DEFAULT_ATOMIC_OP(fetch_add, 4, _relaxed)
+DEFAULT_ATOMIC_OP(fetch_add, 8, _relaxed)
 DEFAULT_ATOMIC_OP(xchg, 4, )
 DEFAULT_ATOMIC_OP(xchg, 8, )
 DEFAULT_ATOMIC_OP(cmpxchg, 1, )

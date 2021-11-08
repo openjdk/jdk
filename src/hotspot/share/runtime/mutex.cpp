@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.inline.hpp"
@@ -62,24 +63,21 @@ void Mutex::check_block_state(Thread* thread) {
 void Mutex::check_safepoint_state(Thread* thread) {
   check_block_state(thread);
 
-  // If the JavaThread checks for safepoint, verify that the lock wasn't created with safepoint_check_never.
-  if (thread->is_active_Java_thread()) {
-    assert(_safepoint_check_required != _safepoint_check_never,
-           "This lock should never have a safepoint check for Java threads: %s",
-           name());
+  // If the lock acquisition checks for safepoint, verify that the lock was created with rank that
+  // has safepoint checks. Technically this doesn't affect NonJavaThreads since they won't actually
+  // check for safepoint, but let's make the rule unconditional unless there's a good reason not to.
+  assert(_rank > nosafepoint,
+         "This lock should not be taken with a safepoint check: %s", name());
 
+  if (thread->is_active_Java_thread()) {
     // Also check NoSafepointVerifier, and thread state is _thread_in_vm
     JavaThread::cast(thread)->check_for_valid_safepoint_state();
-  } else {
-    // If initialized with safepoint_check_never, a NonJavaThread should never ask to safepoint check either.
-    assert(_safepoint_check_required != _safepoint_check_never,
-           "NonJavaThread should not check for safepoint");
   }
 }
 
 void Mutex::check_no_safepoint_state(Thread* thread) {
   check_block_state(thread);
-  assert(!thread->is_active_Java_thread() || _safepoint_check_required != _safepoint_check_always,
+  assert(!thread->is_active_Java_thread() || _rank <= nosafepoint,
          "This lock should always have a safepoint check for Java threads: %s",
          name());
 }
@@ -167,7 +165,7 @@ bool Mutex::try_lock_inner(bool do_rank_checks) {
   if (do_rank_checks) {
     check_rank(self);
   }
-  // Some safepoint_check_always locks use try_lock, so cannot check
+  // Some safepoint checking locks use try_lock, so cannot check
   // safepoint state, but can check blocking state.
   check_block_state(self);
 
@@ -274,29 +272,21 @@ Mutex::~Mutex() {
   os::free(const_cast<char*>(_name));
 }
 
-Mutex::Mutex(int Rank, const char * name, SafepointCheckRequired safepoint_check_required,
-             bool allow_vm_block) : _owner(NULL) {
+Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(NULL) {
   assert(os::mutex_init_done(), "Too early!");
   assert(name != NULL, "Mutex requires a name");
   _name = os::strdup(name, mtInternal);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
-  _rank            = Rank;
-  _safepoint_check_required = safepoint_check_required;
+  _rank            = rank;
   _skip_rank_check = false;
 
-  assert(_rank > nosafepoint || _safepoint_check_required == _safepoint_check_never,
-         "Locks below nosafepoint rank should never safepoint: %s", name);
-
-  assert(_rank <= nosafepoint || _safepoint_check_required == _safepoint_check_always,
-         "Locks above nosafepoint rank should safepoint: %s", name);
+  assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %s: %s", rank_name(), name);
 
   // The allow_vm_block also includes allowing other non-Java threads to block or
   // allowing Java threads to block in native.
-  assert(_safepoint_check_required == _safepoint_check_always || _allow_vm_block,
-         "Safepoint check never locks should always allow the vm to block: %s", name);
-
-  assert(_rank >= 0, "Bad lock rank: %s", name);
+  assert(_rank > nosafepoint || _allow_vm_block,
+         "Locks that don't check for safepoint should always allow the vm to block: %s", name);
 #endif
 }
 
@@ -312,23 +302,57 @@ void Mutex::print_on_error(outputStream* st) const {
 
 // ----------------------------------------------------------------------------------
 // Non-product code
+//
+#ifdef ASSERT
+static Mutex::Rank _ranks[] = { Mutex::event, Mutex::service, Mutex::stackwatermark, Mutex::tty, Mutex::oopstorage,
+                                Mutex::nosafepoint, Mutex::safepoint };
 
-#ifndef PRODUCT
-const char* print_safepoint_check(Mutex::SafepointCheckRequired safepoint_check) {
-  switch (safepoint_check) {
-  case Mutex::_safepoint_check_never:     return "safepoint_check_never";
-  case Mutex::_safepoint_check_always:    return "safepoint_check_always";
-  default: return "";
+static const char* _rank_names[] = { "event", "service", "stackwatermark", "tty", "oopstorage",
+                                     "nosafepoint", "safepoint" };
+
+static const int _num_ranks = 7;
+
+static const char* rank_name_internal(Mutex::Rank r) {
+  // Find closest rank and print out the name
+  stringStream st;
+  for (int i = 0; i < _num_ranks; i++) {
+    if (r == _ranks[i]) {
+      return _rank_names[i];
+    } else if (r  > _ranks[i] && (i < _num_ranks-1 && r < _ranks[i+1])) {
+      int delta = static_cast<int>(_ranks[i+1]) - static_cast<int>(r);
+      st.print("%s-%d", _rank_names[i+1], delta);
+      return st.as_string();
+    }
   }
+  return "fail";
 }
 
+const char* Mutex::rank_name() const {
+  return rank_name_internal(_rank);
+}
+
+
+void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
+  int i = 0;
+  while (_ranks[i] < orig) i++;
+  // underflow is caught in constructor
+  if (i != 0 && adjusted > event && adjusted <= _ranks[i-1]) {
+    ResourceMark rm;
+    assert(adjusted > _ranks[i-1],
+           "Rank %s-%d overlaps with %s",
+           rank_name_internal(orig), adjust, rank_name_internal(adjusted));
+  }
+}
+#endif // ASSERT
+
+#ifndef PRODUCT
 void Mutex::print_on(outputStream* st) const {
   st->print("Mutex: [" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
             p2i(this), _name, p2i(owner()));
   if (_allow_vm_block) {
     st->print("%s", " allow_vm_block");
   }
-  st->print(" %s", print_safepoint_check(_safepoint_check_required));
+  DEBUG_ONLY(st->print(" %s", rank_name()));
   st->cr();
 }
 #endif // PRODUCT
@@ -384,14 +408,22 @@ void Mutex::check_rank(Thread* thread) {
   if (owned_by_self()) {
     // wait() case
     Mutex* least = get_least_ranked_lock_besides_this(locks_owned);
-    // We enforce not holding locks of rank nosafepoint or lower while waiting.
+    // For JavaThreads, we enforce not holding locks of rank nosafepoint or lower while waiting
+    // because the held lock has a NoSafepointVerifier so waiting on a lower ranked lock will not be
+    // able to check for safepoints first with a TBIVM.
+    // For all threads, we enforce not holding the tty lock or below, since this could block progress also.
     // Also "this" should be the monitor with lowest rank owned by this thread.
-    if (least != NULL && (least->rank() <= nosafepoint || least->rank() <= this->rank())) {
-      assert(false, "Attempting to wait on monitor %s/%d while holding lock %s/%d -- "
-             "possible deadlock. %s", name(), rank(), least->name(), least->rank(),
+    if (least != NULL && ((least->rank() <= Mutex::nosafepoint && thread->is_Java_thread()) ||
+                           least->rank() <= Mutex::tty ||
+                           least->rank() <= this->rank())) {
+      ResourceMark rm(thread);
+      assert(false, "Attempting to wait on monitor %s/%s while holding lock %s/%s -- "
+             "possible deadlock. %s", name(), rank_name(), least->name(), least->rank_name(),
              least->rank() <= this->rank() ?
               "Should wait on the least ranked monitor from all owned locks." :
-              "Should not block(wait) while holding a lock of rank nosafepoint or below.");
+             thread->is_Java_thread() ?
+              "Should not block(wait) while holding a lock of rank nosafepoint or below." :
+              "Should not block(wait) while holding a lock of rank tty or below.");
     }
   } else {
     // lock()/lock_without_safepoint_check()/try_lock() case
@@ -402,14 +434,15 @@ void Mutex::check_rank(Thread* thread) {
     // to acquire, then deadlock prevention rules require that the rank
     // of m2 be less than the rank of m1. This prevents circular waits.
     if (least != NULL && least->rank() <= this->rank()) {
+      ResourceMark rm(thread);
       if (least->rank() > Mutex::tty) {
         // Printing owned locks acquires tty lock. If the least rank was below or equal
         // tty, then deadlock detection code would circle back here, until we run
         // out of stack and crash hard. Print locks only when it is safe.
         thread->print_owned_locks();
       }
-      assert(false, "Attempting to acquire lock %s/%d out of order with lock %s/%d -- "
-             "possible deadlock", this->name(), this->rank(), least->name(), least->rank());
+      assert(false, "Attempting to acquire lock %s/%s out of order with lock %s/%s -- "
+             "possible deadlock", this->name(), this->rank_name(), least->name(), least->rank_name());
     }
   }
 }

@@ -256,7 +256,12 @@ static void buffer_blob_test()
     BufferBlob::free(blob);
 }
 
+#if defined(PPC) || defined(S390)
+// Neither ppc nor s390 compiler use code strings
+TEST_VM(codestrings, DISABLED_validate)
+#else
 TEST_VM(codestrings, validate)
+#endif
 {
     code_buffer_test();
     buffer_blob_test();

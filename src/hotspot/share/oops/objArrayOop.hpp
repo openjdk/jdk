@@ -91,15 +91,15 @@ private:
 
   // Sizing
   static int header_size()    { return arrayOopDesc::header_size(T_OBJECT); }
-  int object_size()           { return object_size(length()); }
+  size_t object_size()        { return object_size(length()); }
 
-  static int object_size(int length) {
+  static size_t object_size(int length) {
     // This returns the object size in HeapWords.
     uint asz = array_size(length);
     uint osz = align_object_size(header_size() + asz);
     assert(osz >= asz,   "no overflow");
     assert((int)osz > 0, "no overflow");
-    return (int)osz;
+    return (size_t)osz;
   }
 
   Klass* element_klass();

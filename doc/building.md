@@ -1503,6 +1503,68 @@ If you need general help or advice about developing for the JDK, you can also
 contact the Adoption Group. See the section on [Contributing to OpenJDK](
 #contributing-to-openjdk) for more information.
 
+## Reproducible Builds
+
+Build reproducibility is the property of getting exactly the same bits out when
+building, every time, independent on who builds the product, or where. This is
+for many reasons a harder goal than it initially appears, but it is an important
+goal, for security reasons and others. Please see [Reproducible Builds](
+https://reproducible-builds.org) for more information about the background and
+reasons for reproducible builds.
+
+Currently, it is not possible to build OpenJDK fully reproducibly, but getting
+there is an ongoing effort. There are some things you can do to minimize
+non-determinism and make a larger part of the build reproducible:
+
+  * Turn on build system support for reproducible builds
+
+Add the flag `--enable-reproducible-builds` to your `configure` command line.
+This will turn on support for reproducible builds where it could otherwise be
+lacking.
+
+  * Do not rely on `configure`'s default adhoc version strings
+
+Default adhoc version strings OPT segment include user name, source directory
+and timestamp. You can either override just the OPT segment using
+`--with-version-opt=<any fixed string>`, or you can specify the entire version
+string using `--with-version-string=<your version>`.
+
+  * Specify how the build sets `SOURCE_DATE_EPOCH`
+
+The JDK build system will set the `SOURCE_DATE_EPOCH` environment variable
+during building, depending on the value of the `--with-source-date` option for
+`configure`. The default value is `updated`, which means that
+`SOURCE_DATE_EPOCH` will be set to the current time each time you are running
+`make`.
+
+The [`SOURCE_DATE_EPOCH` environment variable](
+https://reproducible-builds.org/docs/source-date-epoch/) is an industry
+standard, that many tools, such as gcc, recognize, and use in place of the
+current time when generating output.
+
+For reproducible builds, you need to set this to a fixed value. You can use the
+special value `version` which will use the nominal release date for the current
+JDK version, or a value describing a date, either an epoch based timestamp as an
+integer, or a valid ISO-8601 date.
+
+**Hint:** If your build environment already sets `SOURCE_DATE_EPOCH`, you can
+propagate this using `--with-source-date=$SOURCE_DATE_EPOCH`.
+
+  * Specify a hotspot build time
+
+Set a fixed hotspot build time. This will be included in the hotspot library
+(`libjvm.so` or `jvm.dll`) and defaults to the current time when building
+hotspot. Use `--with-hotspot-build-time=<any fixed string>` for reproducible
+builds. It's a string so you don't need to format it specifically, so e.g. `n/a`
+will do. Another solution is to use the `SOURCE_DATE_EPOCH` variable, e.g.
+`--with-hotspot-build-time=$(date --date=@$SOURCE_DATE_EPOCH)`.
+
+  * Copyright year
+
+The copyright year in some generated text files are normally set to the current
+year. This can be overridden by `--with-copyright-year=<year>`. For fully
+reproducible builds, this needs to be set to a fixed value.
+
 ## Hints and Suggestions for Advanced Users
 
 ### Bash Completion

@@ -72,7 +72,9 @@ $(JDK_JAVADOC_DIR)/_element_lists.marker: \
     $(MODULE_INFOS)
 	$(call MakeTargetDir)
 	$(call LogInfo, Creating javadoc element lists)
-	$(RM) -r $(ELEMENT_LISTS_DIR)
+	$(RM) $(ELEMENT_LISTS_DIR)/element-list-{$(call CommaList, \
+		$(call sequence, $(GENERATE_SYMBOLS_FROM_JDK_VERSION), \
+				 $(JDK_SOURCE_TARGET_VERSION)))}.txt
         # Generate element-list files for JDK 11 to current-1
 	$(call ExecuteWithLog, $@_historic, \
 	    $(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \

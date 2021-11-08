@@ -540,4 +540,9 @@ public class MathBench {
         return  Math.ulp(float7);
     }
 
+    @Benchmark
+    public long  unsignedMultiplyHighLongLong() {
+        return  Math.unsignedMultiplyHigh(long747, long13);
+    }
+
 }

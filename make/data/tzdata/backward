@@ -26,8 +26,10 @@
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
-# This file provides links between current names for timezones
-# and their old names.  Many names changed in late 1993.
+# This file provides links from old or merged timezone names to current ones.
+# Many names changed in late 1993.  Several of these names are
+# also present in the file 'backzone', which has data important only
+# for pre-1970 timestamps and so is out of scope for tzdb proper.
 
 # Link	TARGET			LINK-NAME
 Link	Africa/Nairobi		Africa/Asmera
@@ -36,7 +38,7 @@ Link	America/Argentina/Catamarca	America/Argentina/ComodRivadavia
 Link	America/Adak		America/Atka
 Link	America/Argentina/Buenos_Aires	America/Buenos_Aires
 Link	America/Argentina/Catamarca	America/Catamarca
-Link	America/Atikokan	America/Coral_Harbour
+Link	America/Panama		America/Coral_Harbour
 Link	America/Argentina/Cordoba	America/Cordoba
 Link	America/Tijuana		America/Ensenada
 Link	America/Indiana/Indianapolis	America/Fort_Wayne
@@ -51,7 +53,7 @@ Link	America/Rio_Branco	America/Porto_Acre
 Link	America/Argentina/Cordoba	America/Rosario
 Link	America/Tijuana		America/Santa_Isabel
 Link	America/Denver		America/Shiprock
-Link	America/Port_of_Spain	America/Virgin
+Link	America/Puerto_Rico	America/Virgin
 Link	Pacific/Auckland	Antarctica/South_Pole
 Link	Asia/Ashgabat		Asia/Ashkhabad
 Link	Asia/Kolkata		Asia/Calcutta
@@ -126,6 +128,7 @@ Link	Pacific/Auckland	NZ
 Link	Pacific/Chatham		NZ-CHAT
 Link	America/Denver		Navajo
 Link	Asia/Shanghai		PRC
+Link	Pacific/Kanton		Pacific/Enderbury
 Link	Pacific/Honolulu	Pacific/Johnston
 Link	Pacific/Pohnpei		Pacific/Ponape
 Link	Pacific/Pago_Pago	Pacific/Samoa

@@ -38,6 +38,12 @@
 #
 #############################################################################
 
+vmTestbase/nsk/jvmti/AttachOnDemand/attach002a/TestDescription.java 8265795 generic-all
+vmTestbase/nsk/jvmti/AttachOnDemand/attach022/TestDescription.java 8265795 generic-all
+vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects002/referringObjects002.java 8265796  generic-all
+
+#############################################################################
+
 # :hotspot_compiler
 
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
@@ -85,11 +91,6 @@ gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
-gc/stringdedup/TestStringDeduplicationAgeThreshold.java#Z 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationPrintOptions.java#Z 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationInterned.java#Z 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationTableResize.java#Z 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationYoungGC.java#Z 8273695 generic-all
 
 #############################################################################
 
@@ -97,9 +98,6 @@ gc/stringdedup/TestStringDeduplicationYoungGC.java#Z 8273695 generic-all
 
 runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java 8253437 windows-x64
 runtime/cds/DeterministicDump.java 8253495 generic-all
-runtime/InvocationTests/invokevirtualTests.java#current-int 8271125 generic-all
-runtime/InvocationTests/invokevirtualTests.java#current-comp 8271125 generic-all
-runtime/InvocationTests/invokevirtualTests.java#old-int 8271125 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
@@ -108,7 +106,7 @@ runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 
-applications/jcstress/copy.java 8229852 linux-x64
+applications/jcstress/copy.java 8229852 linux-all
 
 #############################################################################
 
@@ -160,6 +158,7 @@ vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.ja
 vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/SuspendThread/suspendthrd003/TestDescription.java 8264605 generic-all
 vmTestbase/nsk/jvmti/PopFrame/popframe011/TestDescription.java 8266593 generic-all
+vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineWithoutBytecodeCorruption/TestDescription.java 8272800 generic-all
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
 

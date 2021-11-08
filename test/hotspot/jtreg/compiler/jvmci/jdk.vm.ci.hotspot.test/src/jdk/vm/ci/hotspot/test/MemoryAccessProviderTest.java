@@ -64,6 +64,11 @@ public class MemoryAccessProviderTest {
         Assert.assertNull(PROVIDER.readPrimitiveConstant(kind, null, offset, bitsCount), "Unexpected value for null base");
     }
 
+    @Test(dataProvider = "unalignedPrimitive", dataProviderClass = MemoryAccessProviderData.class, expectedExceptions = {IllegalArgumentException.class})
+    public void testReadUnalignedConstantConstant(JavaKind kind, Constant base, Long offset, Object expected, int bitsCount) {
+        PROVIDER.readPrimitiveConstant(kind, null, offset, bitsCount);
+    }
+
     @Test(dataProvider = "negative", dataProviderClass = MemoryAccessProviderData.class, expectedExceptions = {IllegalArgumentException.class})
     public void testNegativeReadPrimitiveConstant(JavaKind kind, Constant base) {
         PROVIDER.readPrimitiveConstant(kind, base, 0L, kind == null ? 0 : kind.getByteCount() / 8);

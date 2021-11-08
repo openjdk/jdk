@@ -290,6 +290,12 @@ public class Runtime {
      * behaves in exactly the same way as the invocation
      * {@link #exec(String, String[], File) exec}{@code (command, null, null)}.
      *
+     * @deprecated This method is error-prone and should not be used, the corresponding method
+     * {@link #exec(String[])} or {@link ProcessBuilder} should be used instead.
+     * The command string is broken into tokens using only whitespace characters.
+     * For an argument with an embedded space, such as a filename, this can cause problems
+     * as the token does not include the full filename.
+     *
      * @param   command   a specified system command.
      *
      * @return  A new {@link Process} object for managing the subprocess
@@ -311,6 +317,7 @@ public class Runtime {
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
      */
+    @Deprecated(since="18")
     public Process exec(String command) throws IOException {
         return exec(command, null, null);
     }
@@ -323,6 +330,12 @@ public class Runtime {
      * {@code exec(command, envp)}
      * behaves in exactly the same way as the invocation
      * {@link #exec(String, String[], File) exec}{@code (command, envp, null)}.
+     *
+     * @deprecated This method is error-prone and should not be used, the corresponding method
+     * {@link #exec(String[], String[])} or {@link ProcessBuilder} should be used instead.
+     * The command string is broken into tokens using only whitespace characters.
+     * For an argument with an embedded space, such as a filename, this can cause problems
+     * as the token does not include the full filename.
      *
      * @param   command   a specified system command.
      *
@@ -352,6 +365,7 @@ public class Runtime {
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
      */
+    @Deprecated(since="18")
     public Process exec(String command, String[] envp) throws IOException {
         return exec(command, envp, null);
     }
@@ -373,6 +387,12 @@ public class Runtime {
      * further modification of the character categories.  The tokens
      * produced by the tokenizer are then placed in the new string
      * array {@code cmdarray}, in the same order.
+     *
+     * @deprecated This method is error-prone and should not be used, the corresponding method
+     * {@link #exec(String[], String[], File)} or {@link ProcessBuilder} should be used instead.
+     * The command string is broken into tokens using only whitespace characters.
+     * For an argument with an embedded space, such as a filename, this can cause problems
+     * as the token does not include the full filename.
      *
      * @param   command   a specified system command.
      *
@@ -406,6 +426,7 @@ public class Runtime {
      * @see     ProcessBuilder
      * @since 1.3
      */
+    @Deprecated(since="18")
     public Process exec(String command, String[] envp, File dir)
         throws IOException {
         if (command.isEmpty())

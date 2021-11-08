@@ -2033,7 +2033,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         Enumeration<TreePath> toggledPaths = expandedState.keys();
         Vector<TreePath> elements = null;
         TreePath          path;
-        Object            value;
+        Boolean           value;
 
         if(toggledPaths != null) {
             while(toggledPaths.hasMoreElements()) {
@@ -2042,8 +2042,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
                 // Add the path if it is expanded, a descendant of parent,
                 // and it is visible (all parents expanded). This is rather
                 // expensive!
-                if(path != parent && value != null &&
-                   ((Boolean)value).booleanValue() &&
+                if (path != parent && value != null && value &&
                    parent.isDescendant(path) && isVisible(path)) {
                     if (elements == null) {
                         elements = new Vector<TreePath>();
@@ -2081,11 +2080,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
 
         if(path == null)
             return false;
-        Object  value;
+        Boolean value;
 
         do{
             value = expandedState.get(path);
-            if(value == null || !((Boolean)value).booleanValue())
+            if (value == null || !value)
                 return false;
         } while( (path=path.getParentPath())!=null );
 
@@ -2109,7 +2108,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
             if(path != null) {
                 Boolean value = expandedState.get(path);
 
-                return (value != null && value.booleanValue());
+                return (value != null && value);
             }
         }
         return false;
@@ -3729,9 +3728,9 @@ public class JTree extends JComponent implements Scrollable, Accessible
             }
             if(!state) {
                 // collapse last path.
-                Object          cValue = expandedState.get(path);
+                Boolean cValue = expandedState.get(path);
 
-                if(cValue != null && ((Boolean)cValue).booleanValue()) {
+                if (cValue != null && cValue) {
                     try {
                         fireTreeWillCollapse(path);
                     }
@@ -3753,9 +3752,9 @@ public class JTree extends JComponent implements Scrollable, Accessible
             }
             else {
                 // Expand last path.
-                Object          cValue = expandedState.get(path);
+                Boolean cValue = expandedState.get(path);
 
-                if(cValue == null || !((Boolean)cValue).booleanValue()) {
+                if (cValue == null || !cValue) {
                     try {
                         fireTreeWillExpand(path);
                     }
