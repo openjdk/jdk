@@ -136,6 +136,7 @@ class SharedClassLoadingMark {
 
 class SystemDictionaryShared: public SystemDictionary {
   friend class ExcludeDumpTimeSharedClasses;
+  friend class CleanupDumpTimeLambdaProxyClassTable;
 public:
   enum {
     FROM_FIELD_IS_PROTECTED = 1 << 0,
@@ -173,8 +174,11 @@ private:
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
+  static void cleanup_lambda_proxy_class_dictionary();
+  static void reset_registered_lambda_proxy_class(InstanceKlass* ik);
   static bool is_jfr_event_class(InstanceKlass *k);
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
+  static bool check_for_exclusion_impl(InstanceKlass* k, bool silent);
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
 
@@ -187,8 +191,6 @@ private:
                        outputStream* st) NOT_CDS_RETURN;
 
 public:
-  static bool check_for_exclusion_impl(InstanceKlass* k, bool silent);
-  static void reset_registered_lambda_proxy_class(InstanceKlass* ik);
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static InstanceKlass* find_builtin_class(Symbol* class_name);
@@ -289,7 +291,6 @@ public:
   static size_t estimate_size_for_archive();
   static void write_to_archive(bool is_static_archive = true);
   static void adjust_lambda_proxy_class_dictionary();
-  static void cleanup_lambda_proxy_class_dictionary();
   static void serialize_dictionary_headers(class SerializeClosure* soc,
                                            bool is_static_archive = true);
   static void serialize_vm_classes(class SerializeClosure* soc);

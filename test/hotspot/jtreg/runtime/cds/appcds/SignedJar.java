@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8276184
  * @summary AppCDS handling of signed JAR.
  * @requires vm.cds
  * @library /test/lib
@@ -42,24 +43,31 @@ public class SignedJar {
         // Test class exists in signed JAR
         String signedJar = TestCommon.getTestJar("signed_hello.jar");
         OutputAnalyzer output;
-        output = TestCommon.dump(signedJar, TestCommon.list("Hello"));
-        TestCommon.checkDump(output, "Skipping Hello: Signed JAR");
 
-        // At runtime, the Hello class should be loaded from the jar file
-        // instead of from the shared archive since a class from a signed
-        // jar shouldn't be dumped into the archive.
-        output = TestCommon.exec(signedJar, "-verbose:class", "Hello");
-        String expectedOutput = ".class,load. Hello source: file:.*signed_hello.jar";
+        // "testlambda" is for testing JDK-8276184
+        String[] mainArgs = { "dummy", "testlambda" };
+        String mainClass = "Hello";
 
-        try {
-            output.shouldMatch(expectedOutput);
-        } catch (Exception e) {
-            TestCommon.checkCommonExecExceptions(output, e);
+        for (String mainArg : mainArgs) {
+            output = TestCommon.dump(signedJar, TestCommon.list(mainClass), mainClass, mainArg);
+            TestCommon.checkDump(output, "Skipping Hello: Signed JAR");
+
+            // At runtime, the Hello class should be loaded from the jar file
+            // instead of from the shared archive since a class from a signed
+            // jar shouldn't be dumped into the archive.
+            output = TestCommon.exec(signedJar, "-verbose:class", mainClass, mainArg);
+            String expectedOutput = ".class,load. Hello source: file:.*signed_hello.jar";
+
+            try {
+                output.shouldMatch(expectedOutput);
+            } catch (Exception e) {
+                TestCommon.checkCommonExecExceptions(output, e);
+            }
         }
 
         // Test class exists in both signed JAR and unsigned JAR
         String jars = signedJar + System.getProperty("path.separator") + unsignedJar;
-        output = TestCommon.dump(jars, TestCommon.list("Hello"));
+        output = TestCommon.dump(jars, TestCommon.list(mainClass));
         TestCommon.checkDump(output, "Skipping Hello: Signed JAR");
     }
 }

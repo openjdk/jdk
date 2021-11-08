@@ -23,8 +23,13 @@
  */
 
 class SimpleLambda {
-    public static Runnable getRunnable() {
-      return () -> {};
+    public Runnable getRunnable() {
+        return () -> {};
+    }
+    public OldProvider getProvider() {
+        return () -> {
+            return null;
+        };
     }
 }
 
@@ -32,14 +37,29 @@ public class RedefineCallerClass {
 
     public static String newClass =
         " class SimpleLambda { " +
-        "     public static Runnable getRunnable() { " +
+        "     public Runnable getRunnable() { " +
         "         return () -> {}; " +
+        "     } " +
+        "     public OldProvider getProvider() { " +
+        "         return () -> { " +
+        "             return null; " +
+        "         }; " +
         "     } " +
         " } ";
 
     public static void main(String args[]) throws Exception {
+      String mode = "both";
+      if (args.length == 1) {
+          mode = args[0];
+      }
       SimpleLambda s = new SimpleLambda();
-      System.out.println(s.getRunnable());
-      RedefineClassHelper.redefineClass(s.getClass(), newClass);
+      if (mode.equals("both") || mode.equals("useOldInf")) {
+          System.out.println(s.getProvider());
+      } else {
+          System.out.println(s.getRunnable());
+      }
+      if (mode.equals("both") || mode.equals("redefineCaller")) {
+          RedefineClassHelper.redefineClass(s.getClass(), newClass);
+      }
     }
 }

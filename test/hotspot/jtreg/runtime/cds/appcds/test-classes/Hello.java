@@ -25,7 +25,9 @@
 public class Hello {
   public static void main(String args[]) {
     System.out.println("Hello World");
-    System.out.println(getRunnable());
+    if (args.length > 1 && args[0].equals("testlambda")) {
+        System.out.println(getRunnable());
+    }
   }
 
   public static Runnable getRunnable() {

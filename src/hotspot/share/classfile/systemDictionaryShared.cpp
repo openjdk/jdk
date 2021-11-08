@@ -673,6 +673,8 @@ void SystemDictionaryShared::check_excluded_classes() {
   ExcludeDumpTimeSharedClasses excl;
   _dumptime_table->iterate(&excl);
   _dumptime_table->update_counts();
+
+  cleanup_lambda_proxy_class_dictionary();
 }
 
 bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
@@ -1614,14 +1616,17 @@ class CleanupDumpTimeLambdaProxyClassTable: StackObj {
     assert_lock_strong(DumpTimeTable_lock);
     InstanceKlass* caller_ik = key.caller_ik();
     if (SystemDictionaryShared::check_for_exclusion_impl(caller_ik, true)) {
-      // If the caller class is excluded, unregister all the associated lambda proxy classes so that
-      // they won't be included in the CDS archive.
-      for (int i = 0; i < info._proxy_klasses->length(); i++) {
+      // Note that SystemDictionaryShared::is_excluded_class() cannot be used because during
+      // dynamic dump, the caller_ik could be in the base archive and the function
+      // will not return the correct result.
+      // If the caller class is excluded, unregister all the associated lambda proxy classes
+      // so that they will not be included in the CDS archive.
+      for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
         SystemDictionaryShared::reset_registered_lambda_proxy_class(info._proxy_klasses->at(i));
         info._proxy_klasses->remove_at(i);
       }
     }
-    for (int i = 0; i < info._proxy_klasses->length(); i++) {
+    for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
       InstanceKlass* ik = info._proxy_klasses->at(i);
       if (SystemDictionaryShared::check_for_exclusion_impl(ik, true)) {
         SystemDictionaryShared::reset_registered_lambda_proxy_class(ik);
