@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ class JNIHandles : AllStatic {
 
   // Local handles
   static jobject make_local(oop obj);
-  static jobject make_local(Thread* thread, oop obj,  // Faster version when current thread is known
+  static jobject make_local(JavaThread* thread, oop obj,  // Faster version when current thread is known
                             AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   inline static void destroy_local(jobject handle);
 
@@ -104,7 +104,7 @@ class JNIHandles : AllStatic {
   static void print();
   static void verify();
   // The category predicates all require handle != NULL.
-  static bool is_local_handle(Thread* thread, jobject handle);
+  static bool is_local_handle(JavaThread* thread, jobject handle);
   static bool is_frame_handle(JavaThread* thread, jobject handle);
   static bool is_global_handle(jobject handle);
   static bool is_weak_global_handle(jobject handle);
@@ -117,7 +117,7 @@ class JNIHandles : AllStatic {
 #endif
 
   // precondition: handle != NULL.
-  static jobjectRefType handle_type(Thread* thread, jobject handle);
+  static jobjectRefType handle_type(JavaThread* thread, jobject handle);
 
   // Garbage collection support(global handles only, local handles are traversed from thread)
   // Traversal of regular global handles
@@ -179,8 +179,8 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   jobject allocate_handle(oop obj, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
   // Block allocation and block free list management
-  static JNIHandleBlock* allocate_block(Thread* thread = NULL, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-  static void release_block(JNIHandleBlock* block, Thread* thread = NULL);
+  static JNIHandleBlock* allocate_block(JavaThread* thread = NULL, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+  static void release_block(JNIHandleBlock* block, JavaThread* thread = NULL);
 
   // JNI PushLocalFrame/PopLocalFrame support
   JNIHandleBlock* pop_frame_link() const          { return _pop_frame_link; }

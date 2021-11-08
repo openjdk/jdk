@@ -56,16 +56,15 @@ void jni_handles_init() {
 }
 
 jobject JNIHandles::make_local(oop obj) {
-  return make_local(Thread::current(), obj);
+  return make_local(JavaThread::current(), obj);
 }
 
 // Used by NewLocalRef which requires NULL on out-of-memory
-jobject JNIHandles::make_local(Thread* thread, oop obj, AllocFailType alloc_failmode) {
+jobject JNIHandles::make_local(JavaThread* thread, oop obj, AllocFailType alloc_failmode) {
   if (obj == NULL) {
     return NULL;                // ignore null handles
   } else {
     assert(oopDesc::is_oop(obj), "not an oop");
-    assert(thread->is_Java_thread(), "not a Java thread");
     assert(!current_thread_in_native(), "must not be in native");
     return thread->active_handles()->allocate_handle(obj, alloc_failmode);
   }
@@ -187,7 +186,7 @@ inline bool is_storage_handle(const OopStorage* storage, const oop* ptr) {
 }
 
 
-jobjectRefType JNIHandles::handle_type(Thread* thread, jobject handle) {
+jobjectRefType JNIHandles::handle_type(JavaThread* thread, jobject handle) {
   assert(handle != NULL, "precondition");
   jobjectRefType result = JNIInvalidRefType;
   if (is_jweak(handle)) {
@@ -205,9 +204,7 @@ jobjectRefType JNIHandles::handle_type(Thread* thread, jobject handle) {
 
     case OopStorage::INVALID_ENTRY:
       // Not in global storage.  Might be a local handle.
-      if (is_local_handle(thread, handle) ||
-          (thread->is_Java_thread() &&
-           is_frame_handle(JavaThread::cast(thread), handle))) {
+      if (is_local_handle(thread, handle) || is_frame_handle(thread, handle)) {
         result = JNILocalRefType;
       }
       break;
@@ -220,7 +217,7 @@ jobjectRefType JNIHandles::handle_type(Thread* thread, jobject handle) {
 }
 
 
-bool JNIHandles::is_local_handle(Thread* thread, jobject handle) {
+bool JNIHandles::is_local_handle(JavaThread* thread, jobject handle) {
   assert(handle != NULL, "precondition");
   JNIHandleBlock* block = thread->active_handles();
 
@@ -343,7 +340,7 @@ void JNIHandleBlock::zap() {
 }
 #endif // ASSERT
 
-JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread, AllocFailType alloc_failmode)  {
+JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType alloc_failmode)  {
   assert(thread == NULL || thread == Thread::current(), "sanity check");
   JNIHandleBlock* block;
   // Check the thread-local free list for a block so we don't
@@ -394,7 +391,7 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread, AllocFailType all
 }
 
 
-void JNIHandleBlock::release_block(JNIHandleBlock* block, Thread* thread) {
+void JNIHandleBlock::release_block(JNIHandleBlock* block, JavaThread* thread) {
   assert(thread == NULL || thread == Thread::current(), "sanity check");
   JNIHandleBlock* pop_frame_link = block->pop_frame_link();
   // Put returned block at the beginning of the thread-local free list.
@@ -524,7 +521,7 @@ jobject JNIHandleBlock::allocate_handle(oop obj, AllocFailType alloc_failmode) {
       rebuild_free_list();        // updates _allocate_before_rebuild counter
   } else {
     // Append new block
-    Thread* thread = Thread::current();
+    JavaThread* thread = JavaThread::current();
     Handle obj_handle(thread, obj);
     // This can block, so we need to preserve obj across call.
     _last->_next = JNIHandleBlock::allocate_block(thread, alloc_failmode);

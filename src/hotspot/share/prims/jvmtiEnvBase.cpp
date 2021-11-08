@@ -1510,7 +1510,7 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
   for (jint idx = 0; idx < len; idx++) {
-    array[idx] = JNIHandles::make_local(Thread::current(), _tbl->at(idx).resolve());
+    array[idx] = JNIHandles::make_local(_tbl->at(idx).resolve());
   }
   _tbl = NULL;
   *modules_ptr = array;

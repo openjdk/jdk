@@ -220,8 +220,6 @@ Thread::Thread() {
   DEBUG_ONLY(_current_resource_mark = NULL;)
   set_handle_area(new (mtThread) HandleArea(NULL));
   set_metadata_handles(new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(30, mtClass));
-  set_active_handles(NULL);
-  set_free_handle_block(NULL);
   set_last_handle_mark(NULL);
   DEBUG_ONLY(_missed_ic_stub_refill_verifier = NULL);
 
@@ -536,9 +534,6 @@ bool Thread::claim_par_threads_do(uintx claim_token) {
 }
 
 void Thread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
-  if (active_handles() != NULL) {
-    active_handles()->oops_do(f);
-  }
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
@@ -1003,6 +998,8 @@ JavaThread::JavaThread() :
   _current_pending_monitor(NULL),
   _current_pending_monitor_is_from_java(true),
   _current_waiting_monitor(NULL),
+  _active_handles(NULL),
+  _free_handle_block(NULL),
   _Stalled(0),
 
   _monitor_chunks(nullptr),
@@ -1937,6 +1934,10 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   // Traverse the GCHandles
   Thread::oops_do_no_frames(f, cf);
 
+  if (active_handles() != NULL) {
+    active_handles()->oops_do(f);
+  }
+
   DEBUG_ONLY(verify_frame_info();)
 
   if (has_last_Java_frame()) {
@@ -2830,7 +2831,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   { TraceTime timer("Start VMThread", TRACETIME_LOG(Info, startuptime));
 
     VMThread::create();
-    Thread* vmthread = VMThread::vm_thread();
+    VMThread* vmthread = VMThread::vm_thread();
 
     if (!os::create_thread(vmthread, os::vm_thread)) {
       vm_exit_during_initialization("Cannot create VM thread. "
@@ -2842,7 +2843,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     {
       MonitorLocker ml(Notify_lock);
       os::start_thread(vmthread);
-      while (vmthread->active_handles() == NULL) {
+      while (!vmthread->is_running()) {
         ml.wait();
       }
     }
