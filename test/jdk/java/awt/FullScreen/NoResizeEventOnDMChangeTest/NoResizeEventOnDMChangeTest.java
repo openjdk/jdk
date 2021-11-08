@@ -104,7 +104,6 @@ public class NoResizeEventOnDMChangeTest {
                                      final Window fsWin)
     {
         System.out.println("Testing FS window: "+fsWin);
-        final AtomicBoolean skipTest = new AtomicBoolean(false);
         Component c = new Canvas() {
             @Override
             public void paint(Graphics g) {
@@ -154,16 +153,21 @@ public class NoResizeEventOnDMChangeTest {
                             System.err.printf("----------- Setting DM %dx%d:\n",
                                               dm1.getWidth(), dm1.getHeight());
                             try {
+                                Frame f = fsWin instanceof Frame ? (Frame) fsWin : (Frame) fsWin.getOwner();
+                                DisplayMode oldMode = f.getGraphicsConfiguration().getDevice().getDisplayMode();
                                 gd.setDisplayMode(dm1);
-                                // Check if window is placed on this gd
-                                Rectangle screenBounds = gd.getDefaultConfiguration().getBounds();
-                                Rectangle windowBounds = fsWin.getBounds();
-                                if (!screenBounds.contains(new Point(windowBounds.x, windowBounds.y))) {
-                                    System.out.println("Window got moved to another screen, test not valid");
-                                    skipTest.set(true);
+                                // Check if setting new display mode actually results in frame being
+                                // placed onto display with different resolution.
+                                DisplayMode newMode = f.getGraphicsConfiguration().getDevice().getDisplayMode();
+                                if (oldMode.getWidth() != newMode.getWidth()
+                                        || oldMode.getHeight() != newMode.getHeight()) {
+                                    r1.incDmChanges();
+                                    r2.incDmChanges();
+                                } else {
+                                    System.out.println("Skipping this iteration. Details:");
+                                    System.out.println("Requested device = " + gd);
+                                    System.out.println("Actual device = " + f.getGraphicsConfiguration().getDevice());
                                 }
-                                r1.incDmChanges();
-                                r2.incDmChanges();
                             } catch (IllegalArgumentException iae) {}
                         }
                     });
@@ -189,10 +193,6 @@ public class NoResizeEventOnDMChangeTest {
             });
         } catch (Exception ex) {}
 
-        if (skipTest.get()) {
-            // Skipping test because graphics driver switched window to another screen
-            return;
-        }
         System.out.printf("FS Window: resizes=%d, dm changes=%d\n",
                            r1.getResizes(), r1.getDmChanges());
         System.out.printf("Component: resizes=%d, dm changes=%d\n",
