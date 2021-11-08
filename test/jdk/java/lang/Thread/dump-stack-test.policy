@@ -29,6 +29,8 @@ grant {
     permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
     // the test switches the System.err stream
     permission java.lang.RuntimePermission "setIO";
+    // test calls ExecutorService.shutdown()
+    permission java.lang.RuntimePermission "modifyThread";
 };
 
 

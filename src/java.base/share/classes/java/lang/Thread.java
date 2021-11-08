@@ -31,6 +31,8 @@ import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1380,13 +1382,19 @@ public class Thread implements Runnable {
     public static void dumpStack() {
         var walker = StackWalker.getInstance();
         if (walker != null) {
-            System.err.println(Thread.currentThread().name + " Stack trace");
+            List<StackTraceElement> stes = new ArrayList<>();
             walker.forEach(new Consumer<StackWalker.StackFrame>() {
                 @Override
                 public void accept(final StackWalker.StackFrame stackFrame) {
-                    System.err.println("\tat " + stackFrame.toStackTraceElement());
+                    stes.add(stackFrame.toStackTraceElement());
                 }
             });
+            synchronized (System.err) {
+                System.err.println(Thread.currentThread().name + " Stack trace");
+                for (StackTraceElement ste : stes) {
+                    System.err.println("\tat " + ste);
+                }
+            }
             return;
         }
         // Thread.dumpStack() could be called during the static initialization of
