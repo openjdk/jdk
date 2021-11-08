@@ -27,8 +27,8 @@
 #include "gc/g1/g1BufferListFreePool.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "logging/log.hpp"
-#include "runtime/os.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/os.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/ostream.hpp"
 

@@ -54,7 +54,7 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   // When splitting addresses into region and card within that region, the logical
   // shift value to get the region.
   static uint _split_card_shift;
-  // When splitting addresses into region and card within that region, the mask_card_set_mm
+  // When splitting addresses into region and card within that region, the mask
   // to get the offset within the region.
   static size_t _split_card_mask;
   // Cached value of heap base address.
@@ -126,7 +126,7 @@ public:
   void clear(bool only_cardset = false);
   void clear_locked(bool only_cardset = false);
 
-  G1BufferListMemoryStats card_set_memory_stats() const; // { return _card_set_mm.memory_stats(); }
+  G1BufferListMemoryStats card_set_memory_stats() const;
 
   // The actual # of bytes this hr_remset takes up. Also includes the strong code
   // root set.

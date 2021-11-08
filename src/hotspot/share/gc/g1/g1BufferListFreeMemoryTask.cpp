@@ -32,7 +32,6 @@
 #include "heapRegionRemSet.hpp"
 #include "ci/ciUtilities.hpp"
 
-
 constexpr const char* G1BufferListFreeMemoryTask::_state_names[];
 
 const char* G1BufferListFreeMemoryTask::get_state_name(State value) const {
