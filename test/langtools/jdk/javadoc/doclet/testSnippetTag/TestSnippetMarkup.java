@@ -186,6 +186,32 @@ public class TestSnippetMarkup extends SnippetTester {
         testPositive(base, testCases);
     }
 
+    @Test
+    public void testCornerCases(Path base) throws Exception {
+        var testCases = List.of(
+                new TestCase( // This is how one might represent a unicode escape sequence uninterpreted, if required.
+                        """
+                                \\$0041  // @replace substring="$" replacement="u"
+                                """,
+                        """
+                                \\u0041
+                                """
+                ),
+                new TestCase( // This is how one might represent `*/` without ending an enclosing comment, if required.
+                              // A non-whitespace character that is also not `*` is needed before `*` so that `*`
+                              // is not confused with the optional doc comment decoration.
+                              // (We cannot use, for example, `**$` or ` *$`.)
+                        """
+                                a*$  // @replace substring="$" replacement="/"
+                                """,
+                        """
+                                a*/
+                                """
+                )
+        );
+        testPositive(base, testCases);
+    }
+
     private void testPositive(Path base, List<TestCase> testCases)
             throws IOException {
         StringBuilder methods = new StringBuilder();
@@ -402,7 +428,7 @@ public class TestSnippetMarkup extends SnippetTester {
         return Pattern.compile(regex).matcher(source).replaceAll(replacer);
     }
 
-    private final static AtomicLong UNIQUE_INTEGER_NUMBER = new AtomicLong();
+    private static final AtomicLong UNIQUE_INTEGER_NUMBER = new AtomicLong();
 
     private static Collection<StartEndVariant> generateStartEndVariants() {
         var variants = new ArrayList<StartEndVariant>();
