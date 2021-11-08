@@ -59,12 +59,15 @@ public enum SourceVersion {
      *  10: local-variable type inference (var)
      *  11: local-variable syntax for lambda parameters
      *  12: no changes (switch expressions in preview)
-     *  13: no changes (switch expressions and text blocks in preview)
+     *  13: no changes (text blocks in preview; switch expressions in
+     *      second preview)
      *  14: switch expressions (pattern matching and records in
-     *      preview, text blocks in preview again)
-     *  15: text blocks (records and pattern matching in preview again)
-     *  16: records and pattern matching
+     *      preview; text blocks in second preview)
+     *  15: text blocks (sealed classes in preview; records and pattern
+     *      matching in second preview)
+     *  16: records and pattern matching (sealed classes in second preview)
      *  17: sealed classes, floating-point always strict
+     *  18: TBD
      */
 
     /**
