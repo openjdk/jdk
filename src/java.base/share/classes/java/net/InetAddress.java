@@ -215,7 +215,7 @@ public class InetAddress implements java.io.Serializable {
     @Native static final int IPv6 = 2;
 
     /* Specify address family preference */
-    static transient final int preferIPv6Address;
+    static final transient int preferIPv6Address;
 
     static class InetAddressHolder {
         /**

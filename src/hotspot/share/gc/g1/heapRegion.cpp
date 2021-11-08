@@ -85,8 +85,6 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   LogOfHRGrainBytes = region_size_log;
 
   guarantee(GrainBytes == 0, "we should only set it once");
-  // The cast to int is safe, given that we've bounded region_size by
-  // MIN_REGION_SIZE and MAX_REGION_SIZE.
   GrainBytes = region_size;
 
   guarantee(GrainWords == 0, "we should only set it once");
@@ -107,6 +105,10 @@ void HeapRegion::handle_evacuation_failure() {
   clear_young_index_in_cset();
   set_old();
   _next_marked_bytes = 0;
+}
+
+void HeapRegion::iterate_evac_failure_objs(ObjectClosure* closure) {
+  _evac_failure_objs.iterate(closure);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -249,7 +251,8 @@ HeapRegion::HeapRegion(uint hrm_index,
   _prev_marked_bytes(0), _next_marked_bytes(0),
   _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
-  _node_index(G1NUMA::UnknownNodeIndex)
+  _node_index(G1NUMA::UnknownNodeIndex),
+  _evac_failure_objs(hrm_index, _bottom)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
