@@ -124,6 +124,7 @@ public class TestDialogTypeAhead {
                                 TestDialogTypeAhead.this.moveMouseOver(d);
                             }
                         });
+
                     d.setVisible(true);
                 }
             });
