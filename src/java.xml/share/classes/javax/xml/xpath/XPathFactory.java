@@ -275,8 +275,9 @@ public abstract class XPathFactory {
     public abstract boolean isObjectModelSupported(String objectModel);
 
     /**
-     * <p>Set a feature for this {@code XPathFactory} and
-     * <code>XPath</code>s created by this factory.</p>
+     * Sets a feature for this {@code XPathFactory}. A feature set on the
+     * factory is effective to the {@code XPath} object created thereafter, but
+     * not ones that may have been created beforehand.
      *
      * <p>
      * Feature names are fully qualified {@link java.net.URI}s.
@@ -371,8 +372,9 @@ public abstract class XPathFactory {
     public abstract XPath newXPath();
 
     /**
-     * Sets a property for this {@code XPathFactory} and {@code XPath}
-     * created by this factory.
+     * Sets a property for this {@code XPathFactory}. A property set on the
+     * factory is effective to the {@code XPath} object created thereafter, but
+     * not ones that may have been created beforehand.
      *
      * @implSpec
      * The default implementation throws
