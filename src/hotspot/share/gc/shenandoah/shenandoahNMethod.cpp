@@ -294,7 +294,7 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
 }
 
 void ShenandoahNMethodTable::unregister_nmethod(nmethod* nm) {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
+  assert_locked_or_safepoint(CodeCache_lock);
 
   ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
   assert(data != NULL, "Sanity");
