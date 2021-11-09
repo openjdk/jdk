@@ -3293,6 +3293,7 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
   _bytes_used_during_gc += allocated_bytes;
   if (dest.is_old()) {
     old_set_add(alloc_region);
+    alloc_region->update_bot_threshold();
   } else {
     assert(dest.is_young(), "Retiring alloc region should be young (%d)", dest.type());
     _survivor.add_used_bytes(allocated_bytes);
@@ -3444,4 +3445,9 @@ GrowableArray<GCMemoryManager*> G1CollectedHeap::memory_managers() {
 
 GrowableArray<MemoryPool*> G1CollectedHeap::memory_pools() {
   return _monitoring_support->memory_pools();
+}
+
+void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
+  HeapRegion* region = heap_region_containing(start);
+  region->fill_with_dummy_object(start, pointer_delta(end, start), zap);
 }

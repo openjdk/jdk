@@ -29,13 +29,11 @@ import java.util.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import jdk.javadoc.internal.doclets.formats.html.AbstractMemberWriter;
 
-import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
+import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
@@ -47,18 +45,17 @@ import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
-
+public class AnnotationTypeMemberBuilder extends AbstractMemberBuilder {
 
     /**
      * The writer to output the member documentation.
      */
-    protected AnnotationTypeRequiredMemberWriter writer;
+    protected AnnotationTypeMemberWriter writer;
 
     /**
      * The list of members being documented.
      */
-    protected List<? extends Element> members;
+    protected List<Element> members;
 
     /**
      * The index of the current member that is being documented at this point
@@ -72,15 +69,15 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      * @param context  the build context.
      * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
-     * @param memberType the kind of member this builder processes.
      */
-    protected AnnotationTypeRequiredMemberBuilder(Context context,
-            TypeElement typeElement,
-            AnnotationTypeRequiredMemberWriter writer,
-            VisibleMemberTable.Kind memberType) {
+    protected AnnotationTypeMemberBuilder(Context context,
+                                          TypeElement typeElement,
+                                          AnnotationTypeMemberWriter writer) {
         super(context, typeElement);
         this.writer = Objects.requireNonNull(writer);
-        this.members = getVisibleMembers(memberType);
+        // In contrast to the annotation interface member summaries the details generated
+        // by this builder share a single list for both required and optional members.
+        this.members = getVisibleMembers(ANNOTATION_TYPE_MEMBER);
     }
 
 
@@ -92,11 +89,11 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      * @param writer the doclet specific writer.
      * @return an instance of this object
      */
-    public static AnnotationTypeRequiredMemberBuilder getInstance(
+    public static AnnotationTypeMemberBuilder getInstance(
             Context context, TypeElement typeElement,
-            AnnotationTypeRequiredMemberWriter writer) {
-        return new AnnotationTypeRequiredMemberBuilder(context, typeElement,
-                writer, ANNOTATION_TYPE_MEMBER_REQUIRED);
+            AnnotationTypeMemberWriter writer) {
+        return new AnnotationTypeMemberBuilder(context, typeElement,
+                writer);
     }
 
     /**
@@ -110,18 +107,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
 
     @Override
     public void build(Content contentTree) throws DocletException {
-        buildAnnotationTypeRequiredMember(contentTree);
-    }
-
-    /**
-     * Build the annotation type required member documentation.
-     *
-     * @param memberDetailsTree the content tree to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
-     */
-    protected void buildAnnotationTypeRequiredMember(Content memberDetailsTree)
-            throws DocletException {
-        buildAnnotationTypeMember(memberDetailsTree);
+        buildAnnotationTypeMember(contentTree);
     }
 
     /**
@@ -156,6 +142,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
         buildPreviewInfo(annotationDocTree);
         buildMemberComments(annotationDocTree);
         buildTagInfo(annotationDocTree);
+        buildDefaultValueInfo(annotationDocTree);
     }
 
     /**
@@ -207,12 +194,21 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     }
 
     /**
+     * Build the default value for this optional member.
+     *
+     * @param annotationDocTree the content tree to which the documentation will be added
+     */
+    protected void buildDefaultValueInfo(Content annotationDocTree) {
+        writer.addDefaultValueInfo(currentMember, annotationDocTree);
+    }
+
+    /**
      * Return the annotation type required member writer for this builder.
      *
      * @return the annotation type required member constant writer for this
      * builder.
      */
-    public AnnotationTypeRequiredMemberWriter getWriter() {
+    public AnnotationTypeMemberWriter getWriter() {
         return writer;
     }
 }

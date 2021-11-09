@@ -25,8 +25,6 @@
 
 package sun.jvmstat.perfdata.monitor.protocol.local;
 
-import sun.jvmstat.monitor.*;
-import sun.jvmstat.monitor.event.*;
 import java.util.*;
 import java.util.regex.*;
 import java.io.*;
@@ -105,19 +103,19 @@ public class LocalVmManager {
             // 1.4.2 and later: Look for the files {tmpdir}/hsperfdata_{any_user_name}/[0-9]+
             // that are readable by the current user.
             File[] dirs = tmpdir.listFiles(userDirFilter);
-            for (int i = 0 ; i < dirs.length; i ++) {
-                if (!dirs[i].isDirectory()) {
+            for (File subDir : dirs) {
+                if (!subDir.isDirectory()) {
                     continue;
                 }
 
                 // get a list of files from the directory
-                File[] files = dirs[i].listFiles(userDirFileFilter);
+                File[] files = subDir.listFiles(userDirFileFilter);
                 if (files != null) {
-                    for (int j = 0; j < files.length; j++) {
-                        if (files[j].isFile() && files[j].canRead()) {
-                            int vmid = PerfDataFile.getLocalVmId(files[j]);
+                    for (File file : files) {
+                        if (file.isFile() && file.canRead()) {
+                            int vmid = PerfDataFile.getLocalVmId(file);
                             if (vmid != -1) {
-                              jvmSet.add(vmid);
+                                jvmSet.add(vmid);
                             }
                         }
                     }
@@ -127,11 +125,11 @@ public class LocalVmManager {
             // look for any 1.4.1 files that are readable by the current user.
             File[] files = tmpdir.listFiles(oldtmpFileFilter);
             if (files != null) {
-                for (int j = 0; j < files.length; j++) {
-                    if (files[j].isFile() && files[j].canRead()) {
-                        int vmid = PerfDataFile.getLocalVmId(files[j]);
+                for (File file : files) {
+                    if (file.isFile() && file.canRead()) {
+                        int vmid = PerfDataFile.getLocalVmId(file);
                         if (vmid != -1) {
-                          jvmSet.add(vmid);
+                            jvmSet.add(vmid);
                         }
                     }
                 }
