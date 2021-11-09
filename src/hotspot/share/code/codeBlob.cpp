@@ -225,8 +225,8 @@ void CodeBlob::print_code() {
 // Implementation of BufferBlob
 
 
-BufferBlob::BufferBlob(const char* name, int size)
-: RuntimeBlob(name, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, /*locs_size:*/ 0)
+BufferBlob::BufferBlob(const char* name, int header_size, int size)
+: RuntimeBlob(name, header_size, size, CodeOffsets::frame_never_safe, /*locs_size:*/ 0)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
@@ -240,7 +240,7 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
   assert(name != NULL, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferBlob(name, size);
+    blob = new (size) BufferBlob(name, sizeof(BufferBlob), size);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -249,8 +249,8 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
 }
 
 
-BufferBlob::BufferBlob(const char* name, int size, CodeBuffer* cb)
-  : RuntimeBlob(name, cb, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, 0, NULL)
+BufferBlob::BufferBlob(const char* name, int header_size, int size, CodeBuffer* cb)
+  : RuntimeBlob(name, cb, header_size, size, CodeOffsets::frame_never_safe, 0, NULL)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
@@ -261,7 +261,7 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   assert(name != NULL, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferBlob(name, size, cb);
+    blob = new (size) BufferBlob(name, sizeof(BufferBlob), size, cb);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -290,7 +290,7 @@ void BufferBlob::free(BufferBlob *blob) {
 // Implementation of AdapterBlob
 
 AdapterBlob::AdapterBlob(int size, CodeBuffer* cb) :
-  BufferBlob("I2C/C2I adapters", size, cb) {
+  BufferBlob("I2C/C2I adapters", sizeof(AdapterBlob), size, cb) {
   CodeCache::commit(this);
 }
 
@@ -320,7 +320,7 @@ void* VtableBlob::operator new(size_t s, unsigned size) throw() {
 }
 
 VtableBlob::VtableBlob(const char* name, int size) :
-  BufferBlob(name, size) {
+  BufferBlob(name, sizeof(VtableBlob), size) {
 }
 
 VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
@@ -721,7 +721,7 @@ void DeoptimizationBlob::print_value_on(outputStream* st) const {
 
 OptimizedEntryBlob::OptimizedEntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
                                        jobject receiver, ByteSize frame_data_offset) :
-  BufferBlob(name, size, cb),
+  BufferBlob(name, sizeof(OptimizedEntryBlob), size, cb),
   _exception_handler_offset(exception_handler_offset),
   _receiver(receiver),
   _frame_data_offset(frame_data_offset) {

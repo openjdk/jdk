@@ -2169,7 +2169,7 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
   cbz(value, done);           // Use NULL as-is.
 
   STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
-  tbz(r0, 0, not_weak);    // Test for jweak tag.
+  tbz(value, 0, not_weak);    // Test for jweak tag.
 
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,

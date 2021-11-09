@@ -401,8 +401,8 @@ class BufferBlob: public RuntimeBlob {
 
  private:
   // Creation support
-  BufferBlob(const char* name, int size);
-  BufferBlob(const char* name, int size, CodeBuffer* cb);
+  BufferBlob(const char* name, int header_size, int size);
+  BufferBlob(const char* name, int header_size, int size, CodeBuffer* cb);
 
   // This ordinary operator delete is needed even though not used, so the
   // below two-argument operator delete will be treated as a placement
@@ -465,7 +465,7 @@ public:
 
 class MethodHandlesAdapterBlob: public BufferBlob {
 private:
-  MethodHandlesAdapterBlob(int size)                 : BufferBlob("MethodHandles adapters", size) {}
+  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", sizeof(MethodHandlesAdapterBlob), size) {}
 
 public:
   // Creation

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, Arm Limited. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,8 +94,26 @@ const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) con
 }
 
 const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
-  ShouldNotCallThis();
-  return {};
+  oop conv_oop = JNIHandles::resolve_non_null(jconv);
+  objArrayOop arg_regs_oop = oop_cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.arg_regs_offset));
+  objArrayOop ret_regs_oop = oop_cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.ret_regs_offset));
+
+  CallRegs result;
+  result._args_length = arg_regs_oop->length();
+  result._arg_regs = NEW_RESOURCE_ARRAY(VMReg, result._args_length);
+
+  result._rets_length = ret_regs_oop->length();
+  result._ret_regs = NEW_RESOURCE_ARRAY(VMReg, result._rets_length);
+
+  for (int i = 0; i < result._args_length; i++) {
+    result._arg_regs[i] = parse_vmstorage(arg_regs_oop->obj_at(i));
+  }
+
+  for (int i = 0; i < result._rets_length; i++) {
+    result._ret_regs[i] = parse_vmstorage(ret_regs_oop->obj_at(i));
+  }
+
+  return result;
 }
 
 enum class RegType {

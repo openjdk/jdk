@@ -1580,11 +1580,6 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public void ensureCustomized(MethodHandle mh) {
-                mh.customize();
-            }
-
-            @Override
             public VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order) {
                 return VarHandles.memorySegmentViewHandle(carrier, alignmentMask, order);
             }
