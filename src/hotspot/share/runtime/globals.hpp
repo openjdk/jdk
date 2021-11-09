@@ -1071,6 +1071,10 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, UseHeavyMonitors, false,                                    \
           "use heavyweight instead of lightweight Java monitors")           \
                                                                             \
+  develop(bool, VerifyHeavyMonitors, false,                                 \
+          "Checks that no stack locking happens when using "                \
+          "+UseHeavyMonitor")                                               \
+                                                                            \
   product(bool, PrintStringTableStatistics, false,                          \
           "print statistics about the StringTable and SymbolTable")         \
                                                                             \
