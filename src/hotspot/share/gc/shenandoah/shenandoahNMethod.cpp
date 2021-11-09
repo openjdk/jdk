@@ -280,7 +280,7 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
     ShenandoahReentrantLocker data_locker(data->lock());
     data->update();
   } else {
-    // For a new nmethod, we can safely append it to the list, cause
+    // For a new nmethod, we can safely append it to the list, because
     // concurrent iteration will not touch it.
     data = ShenandoahNMethod::for_nmethod(nm);
     assert(data != NULL, "Sanity");
