@@ -174,7 +174,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         }
 
         if (cipherAlgo.equals("AES")) {
-            this.keysize = keysize;
             switch (keysize) {
             case 128:
                 cipherAlgo_OID = aes128CBC_OID;
