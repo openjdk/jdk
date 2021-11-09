@@ -2044,16 +2044,16 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, DeoptimizeNMethodBarriersALot, false, DIAGNOSTIC,           \
                 "Make nmethod barriers deoptimise a lot.")                  \
                                                                             \
-  product(bool, FinalizationEnabled, true,                                  \
-                "The GC finalization mechanism is enabled")                 \
-                                                                            \
   develop(bool, VerifyCrossModifyFence,                                     \
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  develop(bool, TraceOptimizedUpcallStubs, false,                              \
-                "Trace optimized upcall stub generation")                      \
+  develop(bool, TraceOptimizedUpcallStubs, false,                           \
+                "Trace optimized upcall stub generation")                   \
+                                                                            \
+  product(bool, FinalizationEnabled, true,                                  \
+                "The GC finalization mechanism is enabled")                 \
 
 // end of RUNTIME_FLAGS
 
