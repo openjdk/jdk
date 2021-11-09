@@ -235,7 +235,6 @@ HeapRegion::HeapRegion(uint hrm_index,
   _top(NULL),
   _compaction_top(NULL),
   _bot_part(bot, this),
-  _par_alloc_lock(Mutex::service-2, "HeapRegionParAlloc_lock"),
   _pre_dummy_top(NULL),
   _rem_set(NULL),
   _hrm_index(hrm_index),
@@ -817,4 +816,13 @@ void HeapRegion::object_iterate(ObjectClosure* blk) {
     }
     p += block_size(p);
   }
+}
+
+void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap) {
+  // Keep the BOT in sync for old generation regions.
+  if (is_old()) {
+    update_bot_at(address, word_size);
+  }
+  // Fill in the object.
+  CollectedHeap::fill_with_object(address, word_size, zap);
 }
