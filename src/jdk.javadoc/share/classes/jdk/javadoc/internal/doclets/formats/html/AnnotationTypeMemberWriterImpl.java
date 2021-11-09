@@ -67,9 +67,9 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     private final Kind kind;
 
     /**
-     * Construct a new AnnotationTypeMemberWriterImpl for any kind of member.
+     * Constructs a new AnnotationTypeMemberWriterImpl for any kind of member.
      *
-     * @param writer The writer for the class that the member belong to.
+     * @param writer The writer for the class that the member belongs to.
      */
     public AnnotationTypeMemberWriterImpl(SubWriterHolderWriter writer) {
         super(writer);
@@ -77,7 +77,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     }
 
     /**
-     * Construct a new AnnotationTypeMemberWriterImpl for a specific kind of member.
+     * Constructs a new AnnotationTypeMemberWriterImpl for a specific kind of member.
      *
      * @param writer         the writer that will write the output.
      * @param annotationType the AnnotationType that holds this member.
@@ -100,7 +100,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
             case REQUIRED -> memberSummaryTree.add(selectComment(
                     MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY,
                     MarkerComments.START_OF_ANNOTATION_INTERFACE_REQUIRED_MEMBER_SUMMARY));
-            case ANY -> throw new RuntimeException("unsupported member kind");
+            case ANY -> throw new UnsupportedOperationException("unsupported member kind");
         }
         Content memberTree = new ContentBuilder();
         writer.addSummaryHeader(this, memberTree);
@@ -118,7 +118,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
                 switch (kind) {
                     case REQUIRED -> HtmlIds.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY;
                     case OPTIONAL -> HtmlIds.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY;
-                    case ANY -> throw new RuntimeException("unsupported member kind");
+                    case ANY -> throw new UnsupportedOperationException("unsupported member kind");
                 },
                 summariesList, content);
     }
@@ -189,7 +189,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
                 switch (kind) {
                     case REQUIRED -> contents.annotateTypeRequiredMemberSummaryLabel;
                     case OPTIONAL -> contents.annotateTypeOptionalMemberSummaryLabel;
-                    case ANY -> throw new RuntimeException("unsupported member kind");
+                    case ANY -> throw new UnsupportedOperationException("unsupported member kind");
                 });
         memberTree.add(label);
     }
@@ -203,7 +203,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
                 switch (kind) {
                     case REQUIRED -> "doclet.Annotation_Type_Required_Members";
                     case OPTIONAL -> "doclet.Annotation_Type_Optional_Members";
-                    case ANY -> throw new RuntimeException("unsupported member kind");
+                    case ANY -> throw new UnsupportedOperationException("unsupported member kind");
                 });
     }
 
@@ -213,7 +213,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
                 switch (kind) {
                     case REQUIRED -> contents.annotationTypeRequiredMemberLabel;
                     case OPTIONAL -> contents.annotationTypeOptionalMemberLabel;
-                    case ANY -> throw new RuntimeException("unsupported member kind");
+                    case ANY -> throw new UnsupportedOperationException("unsupported member kind");
                 },
                 contents.descriptionLabel);
     }

@@ -39,28 +39,28 @@ import javax.lang.model.element.Element;
 public interface AnnotationTypeMemberWriter extends MemberWriter {
 
     /**
-     * Add the annotation type member tree header.
+     * Adds the annotation type member tree header.
      *
      * @return content tree for the member tree header
      */
     Content getMemberTreeHeader();
 
     /**
-     * Add the annotation type details marker.
+     * Adds the annotation type details marker.
      *
      * @param memberDetails the content tree representing details marker
      */
     void addAnnotationDetailsMarker(Content memberDetails);
 
     /**
-     * Add the annotation type details tree header.
+     * Adds the annotation type details tree header.
      *
      * @return content tree for the annotation details header
      */
     Content getAnnotationDetailsTreeHeader();
 
     /**
-     * Get the annotation type documentation tree header.
+     * Gets the annotation type documentation tree header.
      *
      * @param member the annotation type being documented
      * @return content tree for the annotation type documentation header
@@ -68,7 +68,7 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
     Content getAnnotationDocTreeHeader(Element member);
 
     /**
-     * Get the annotation type details tree.
+     * Gets the annotation type details tree.
      *
      * @param annotationDetailsTreeHeader the content tree representing annotation type details header
      * @param annotationDetailsTree the content tree representing annotation type details
@@ -77,7 +77,7 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
     Content getAnnotationDetails(Content annotationDetailsTreeHeader, Content annotationDetailsTree);
 
     /**
-     * Get the signature for the given member.
+     * Gets the signature for the given member.
      *
      * @param member the member being documented
      * @return content tree for the annotation type signature
@@ -85,7 +85,7 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
     Content getSignature(Element member);
 
     /**
-     * Add the deprecated output for the given member.
+     * Adds the deprecated output for the given member.
      *
      * @param member the member being documented
      * @param annotationDocTree content tree to which the deprecated information will be added
@@ -93,7 +93,7 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
     void addDeprecated(Element member, Content annotationDocTree);
 
     /**
-     * Add the preview output for the given member.
+     * Adds the preview output for the given member.
      *
      * @param member the member being documented
      * @param contentTree content tree to which the preview information will be added
@@ -101,7 +101,7 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
     void addPreview(Element member, Content contentTree);
 
     /**
-     * Add the comments for the given member.
+     * Adds the comments for the given member.
      *
      * @param member the member being documented
      * @param annotationDocTree the content tree to which the comments will be added
@@ -109,7 +109,7 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
     void addComments(Element member, Content annotationDocTree);
 
     /**
-     * Add the tags for the given member.
+     * Adds the tags for the given member.
      *
      * @param member the member being documented
      * @param annotationDocTree the content tree to which the tags will be added
@@ -117,7 +117,7 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
     void addTags(Element member, Content annotationDocTree);
 
     /**
-     * Add the the default value documentation if the member has one.
+     * Adds the default value documentation if the member has one.
      *
      * @param member the member being documented
      * @param annotationDocTree content tree to which the default value will be added
