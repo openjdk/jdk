@@ -74,7 +74,7 @@ public:
 
   // Apply the given ObjectClosure to all objects that failed evacuation. Objects
   // are passed in increasing address order.
-  void iterate(ObjectClosure* closure);
+  void process_and_drop(ObjectClosure* closure);
 };
 
 
