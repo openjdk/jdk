@@ -276,9 +276,8 @@ public abstract class XPathFactory {
 
     /**
      * Sets a feature for this {@code XPathFactory}. A feature set on the
-     * factory is effective to the {@code XPath} object created thereafter, but
-     * not ones that may have been created beforehand.
-     *
+     * factory is effective to the {@code XPath} object created thereafter. It
+     * has no impact on {@code XPath} objects that are already created.
      * <p>
      * Feature names are fully qualified {@link java.net.URI}s.
      * Implementations may define their own features.
@@ -373,8 +372,8 @@ public abstract class XPathFactory {
 
     /**
      * Sets a property for this {@code XPathFactory}. A property set on the
-     * factory is effective to the {@code XPath} object created thereafter, but
-     * not ones that may have been created beforehand.
+     * factory is effective to the {@code XPath} object created thereafter. It
+     * has no impact on {@code XPath} objects that are already created.
      *
      * @implSpec
      * The default implementation throws
