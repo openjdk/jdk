@@ -386,13 +386,13 @@ void ShenandoahNMethodTable::rebuild(int size) {
 }
 
 ShenandoahNMethodTableSnapshot* ShenandoahNMethodTable::snapshot_for_iteration() {
-  assert_lock_strong(CodeCache_lock);
+  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
   _itr_cnt++;
   return new ShenandoahNMethodTableSnapshot(this);
 }
 
 void ShenandoahNMethodTable::finish_iteration(ShenandoahNMethodTableSnapshot* snapshot) {
-  assert_lock_strong(CodeCache_lock);
+  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
   assert(iteration_in_progress(), "Why we here?");
   assert(snapshot != NULL, "No snapshot");
   _itr_cnt--;
