@@ -111,11 +111,6 @@ class JNIHandles : AllStatic {
   static size_t global_handle_memory_usage();
   static size_t weak_global_handle_memory_usage();
 
-#ifndef PRODUCT
-  // Is handle from any local block of any thread?
-  static bool is_local_handle(jobject handle);
-#endif
-
   // precondition: handle != NULL.
   static jobjectRefType handle_type(JavaThread* thread, jobject handle);
 
@@ -145,6 +140,7 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
 
   uintptr_t       _handles[block_size_in_oops]; // The handles
   int             _top;                         // Index of next unused handle
+  int             _allocate_before_rebuild;     // Number of blocks to allocate before rebuilding free list
   JNIHandleBlock* _next;                        // Link to next block
 
   // The following instance variables are only used by the first block in a chain.
@@ -152,17 +148,9 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   JNIHandleBlock* _last;                        // Last block in use
   JNIHandleBlock* _pop_frame_link;              // Block to restore on PopLocalFrame call
   uintptr_t*      _free_list;                   // Handle free list
-  int             _allocate_before_rebuild;     // Number of blocks to allocate before rebuilding free list
 
   // Check JNI, "planned capacity" for current frame (or push/ensure)
   size_t          _planned_capacity;
-
-  #ifndef PRODUCT
-  JNIHandleBlock* _block_list_link;             // Link for list below
-  static JNIHandleBlock* _block_list;           // List of all allocated blocks (for debugging only)
-  #endif
-
-  static JNIHandleBlock* _block_free_list;      // Free list of currently unused blocks
   static int      _blocks_allocated;            // For debugging/printing
 
   // Fill block with bad_handle values
@@ -203,10 +191,6 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   bool contains(jobject handle) const;          // Does this block contain handle
   size_t length() const;                        // Length of chain starting with this block
   size_t memory_usage() const;
-  #ifndef PRODUCT
-  static bool any_contains(jobject handle);     // Does any block currently in use contain handle
-  static void print_statistics();
-  #endif
 };
 
 #endif // SHARE_RUNTIME_JNIHANDLES_HPP
