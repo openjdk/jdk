@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1827,6 +1828,69 @@ public class TestSnippetTag extends SnippetTester {
         checkOutput(Output.OUT, true,
                     """
                     A.java:4: error: File not found: %s""".formatted(fileName));
+        checkNoCrashes();
+    }
+
+    @Test
+    public void testNegativeTagBlankRegion(Path base) throws Exception {
+        // If a blank region were allowed, it could not be used without quotes
+        record TestCase(String input, String expectedError) { }
+
+      var testCases = new ArrayList<TestCase>();
+      for (String quote : List.of("", "'", "\""))
+          for (String value : List.of("", " ")) {
+              var t = new TestCase("""
+{@snippet region=%s%s%s:
+    First line
+      Second line
+}
+""".formatted(quote, value, quote),
+                      """
+: error: illegal value for attribute "region": "%s"
+{@snippet region=%s%s%s:
+          ^""".formatted(quote.isEmpty() ? "" : value, quote, value, quote)); // unquoted whitespace translates to empty string
+              testCases.add(t);
+          }
+      // special case: valueless region attribute
+      testCases.add(new TestCase("""
+{@snippet region:
+    First line
+      Second line
+}
+""",
+"""
+: error: missing value for attribute "region"
+{@snippet region:
+          ^"""));
+
+        List<String> inputs = testCases.stream().map(s -> s.input).toList();
+        StringBuilder methods = new StringBuilder();
+        forEachNumbered(inputs, (i, n) -> {
+            methods.append(
+                    """
+
+                    /**
+                    %s*/
+                    public void case%s() {}
+                    """.formatted(i, n));
+        });
+
+        String classString =
+                """
+                public class A {
+                %s
+                }
+                """.formatted(methods.toString());
+
+        Path src = Files.createDirectories(base.resolve("src"));
+        tb.writeJavaFiles(src, classString);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                src.resolve("A.java").toString());
+        checkExit(Exit.ERROR);
+        // use the facility from JDK-8273154 when it becomes available
+        checkOutput(Output.OUT, true, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
         checkNoCrashes();
     }
 

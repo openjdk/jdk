@@ -122,11 +122,16 @@ public class SnippetTaglet extends BaseTaglet {
         String regionName = null;
         AttributeTree region = attributes.get("region");
         if (region != null) {
-            regionName = stringOf(region.getValue());
-            if (regionName.isBlank()) {
-                error(writer, holder, region, "doclet.tag.attribute.value.illegal",
-                    "region", region.getValue());
+            if (region.getValueKind() == AttributeTree.ValueKind.EMPTY) {
+                error(writer, holder, region, "doclet.tag.attribute.value.missing", "region");
                 return badSnippet(writer);
+            } else {
+                regionName = stringOf(region.getValue());
+                if (regionName.isBlank()) {
+                    error(writer, holder, region, "doclet.tag.attribute.value.illegal",
+                            "region", region.getValue());
+                    return badSnippet(writer);
+                }
             }
         }
 
