@@ -690,6 +690,11 @@ JVM_ENTRY(void, JVM_ReportFinalizationComplete(JNIEnv * env, jobject finalizee))
   MANAGEMENT_ONLY(FinalizerService::on_complete(JNIHandles::resolve_non_null(finalizee), THREAD);)
 JVM_END
 
+
+JVM_ENTRY(jboolean, JVM_IsFinalizationEnabled(JNIEnv * env))
+  return FinalizationEnabled ? JNI_TRUE : JNI_FALSE;
+JVM_END
+
 // java.io.File ///////////////////////////////////////////////////////////////
 
 JVM_LEAF(char*, JVM_NativePath(char* path))

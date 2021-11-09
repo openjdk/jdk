@@ -2864,6 +2864,21 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (FLAG_SET_CMDLINE(ErrorFileToStdout, true) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
+    } else if (match_option(option, "--finalization=", &tail)) {
+      bool enabled;
+      if (strcmp(tail, "enabled") == 0) {
+        enabled = true;
+      } else if (strcmp(tail, "disabled") == 0) {
+        enabled = false;
+      } else {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid finalization value '%s', must be 'disabled' or 'enabled'.\n",
+                    tail);
+        return JNI_EINVAL;
+      }
+      if (FLAG_SET_CMDLINE(FinalizationEnabled, enabled) != JVMFlag::SUCCESS) {
+        return JNI_EINVAL;
+      }
     } else if (match_option(option, "-XX:+ExtendedDTraceProbes")) {
 #if defined(DTRACE_ENABLED)
       if (FLAG_SET_CMDLINE(ExtendedDTraceProbes, true) != JVMFlag::SUCCESS) {

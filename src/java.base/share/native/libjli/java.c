@@ -1179,8 +1179,7 @@ GetOpt(int *pargc, char ***pargv, char **poption, char **pvalue) {
         if (JLI_StrCCmp(arg, "--describe-module=") == 0 ||
             JLI_StrCCmp(arg, "--module=") == 0 ||
             JLI_StrCCmp(arg, "--class-path=") == 0||
-            JLI_StrCCmp(arg, "--source=") == 0 ||
-            JLI_StrCCmp(arg, "--finalization=") == 0) {
+            JLI_StrCCmp(arg, "--source=") == 0) {
             kind = LAUNCHER_OPTION_WITH_ARGUMENT;
         } else {
             kind = VM_LONG_OPTION;
@@ -1222,18 +1221,7 @@ ParseArguments(int *pargc, char ***pargv,
 /*
  * Option to set main entry point
  */
-        if (JLI_StrCCmp(arg, "--finalization=") == 0) {
-            if ((! has_arg) ||
-                ((JLI_StrCmp(value, "enabled") != 0) && (JLI_StrCmp(value, "disabled") != 0))) {
-                REPORT_ERROR (JNI_FALSE, ARG_ERROR18, arg);
-            }
-
-            const char *prop = "-Djdk.finalization=";
-            size_t size = JLI_StrLen(prop) + JLI_StrLen(value) + 1;
-            char *propValue = (char *)JLI_MemAlloc(size);
-            JLI_Snprintf(propValue, size, "%s%s", prop, value);
-            AddOption(propValue, NULL);
-        } else if (JLI_StrCmp(arg, "-jar") == 0) {
+        if (JLI_StrCmp(arg, "-jar") == 0) {
             ARG_CHECK(argc, ARG_ERROR2, arg);
             mode = checkMode(mode, LM_JAR, arg);
         } else if (JLI_StrCmp(arg, "--module") == 0 ||

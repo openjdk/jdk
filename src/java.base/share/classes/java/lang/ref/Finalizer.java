@@ -62,16 +62,10 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
     }
 
     static class Holder {
-        static final boolean enabled;
-        static {
-            boolean e = true;
-            try {
-                String p = System.getProperty("jdk.finalization");
-                e = ! "disabled".equals(p);
-            } catch (Exception ignored) { }
-            enabled = e;
-        }
+        static final boolean enabled = isFinalizationEnabled();
     }
+
+    private static native boolean isFinalizationEnabled();
 
     /* Invoked by VM */
     static void register(Object finalizee) {
@@ -143,7 +137,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
 
     /* Called by Runtime.runFinalization() */
     static void runFinalization() {
-        if (VM.initLevel() == 0) {
+        if (VM.initLevel() == 0 || ! Holder.enabled) {
             return;
         }
 
@@ -195,14 +189,16 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
     }
 
     static {
-        ThreadGroup tg = Thread.currentThread().getThreadGroup();
-        for (ThreadGroup tgn = tg;
-             tgn != null;
-             tg = tgn, tgn = tg.getParent());
-        Thread finalizer = new FinalizerThread(tg);
-        finalizer.setPriority(Thread.MAX_PRIORITY - 2);
-        finalizer.setDaemon(true);
-        finalizer.start();
+        if (Holder.enabled) {
+            ThreadGroup tg = Thread.currentThread().getThreadGroup();
+            for (ThreadGroup tgn = tg;
+                 tgn != null;
+                 tg = tgn, tgn = tg.getParent());
+            Thread finalizer = new FinalizerThread(tg);
+            finalizer.setPriority(Thread.MAX_PRIORITY - 2);
+            finalizer.setDaemon(true);
+            finalizer.start();
+        }
     }
 
 }
