@@ -2111,7 +2111,7 @@ public abstract class Path2D implements Shape, Cloneable {
 
         final double[] coords = new double[6];
         final double[] tExtrema = new double[2];
-        boolean isEmpty = true;
+        boolean isDefined = false;
         double leftX = 0.0;
         double rightX = 0.0;
         double topY = 0.0;
@@ -2121,97 +2121,123 @@ public abstract class Path2D implements Shape, Cloneable {
 
         for (; !pi.isDone(); pi.next()) {
             int type = pi.currentSegment(coords);
-            double endX, endY;
             switch (type) {
-                case PathIterator.SEG_MOVETO, PathIterator.SEG_LINETO:
-                    endX = coords[0];
-                    endY = coords[1];
+                case PathIterator.SEG_MOVETO:
+                    if (!isDefined) {
+                        isDefined = true;
+                        leftX = rightX = coords[0];
+                        topY = bottomY = coords[1];
+                    } else {
+                        if (coords[0] < leftX) leftX = coords[0];
+                        if (coords[0] > rightX) rightX = coords[0];
+                        if (coords[1] < topY) topY = coords[1];
+                        if (coords[1] > bottomY) bottomY = coords[1];
+                    }
+                    lastX = coords[0];
+                    lastY = coords[1];
+                    break;
+                case PathIterator.SEG_LINETO:
+                    if (coords[0] < leftX) leftX = coords[0];
+                    if (coords[0] > rightX) rightX = coords[0];
+                    if (coords[1] < topY) topY = coords[1];
+                    if (coords[1] > bottomY) bottomY = coords[1];
+                    lastX = coords[0];
+                    lastY = coords[1];
                     break;
                 case PathIterator.SEG_QUADTO:
-                    endX = coords[2];
-                    endY = coords[3];
+                    if (coords[2] < leftX) leftX = coords[2];
+                    if (coords[2] > rightX) rightX = coords[2];
+                    if (coords[3] < topY) topY = coords[3];
+                    if (coords[3] > bottomY) bottomY = coords[3];
+
+                    if (coords[0] < leftX || coords[0] > rightX) {
+                        x_coeff[2] = lastX - 2.0 * coords[0] + coords[2];
+                        x_coeff[1] = -2.0 * lastX + 2.0 * coords[0];
+                        x_coeff[0] = lastX;
+
+                        x_deriv_coeff[0] = x_coeff[1];
+                        x_deriv_coeff[1] = 2.0 * x_coeff[2];
+
+                        double t = -x_deriv_coeff[0] / x_deriv_coeff[1];
+                        if (t > 0.0 && t < 1.0) {
+                            double x = x_coeff[0] + t * (x_coeff[1] + t * x_coeff[2]);
+                            if (x < leftX) leftX = x;
+                            if (x > rightX) rightX = x;
+                        }
+                    }
+                    if (coords[1] < topY || coords[1] > bottomY) {
+                        y_coeff[2] = lastY - 2.0 * coords[1] + coords[3];
+                        y_coeff[1] = -2.0 * lastY + 2.0 * coords[1];
+                        y_coeff[0] = lastY;
+
+                        y_deriv_coeff[0] = y_coeff[1];
+                        y_deriv_coeff[1] = 2.0 * y_coeff[2];
+
+                        double t = -y_deriv_coeff[0] / y_deriv_coeff[1];
+                        if (t > 0.0 && t < 1.0) {
+                            double y = y_coeff[0] + t * (y_coeff[1] + t * y_coeff[2]);
+                            if (y < topY) topY = y;
+                            if (y > bottomY) bottomY = y;
+                        }
+                    }
+                    lastX = coords[2];
+                    lastY = coords[3];
                     break;
                 case PathIterator.SEG_CUBICTO:
-                    endX = coords[4];
-                    endY = coords[5];
+                    if (coords[4] < leftX) leftX = coords[4];
+                    if (coords[4] > rightX) rightX = coords[4];
+                    if (coords[5] < topY) topY = coords[5];
+                    if (coords[5] > bottomY) bottomY = coords[5];
+
+                    if (coords[0] < leftX || coords[0] > rightX || coords[2] < leftX || coords[2] > rightX) {
+                        x_coeff[3] = -lastX + 3.0 * coords[0] - 3.0 * coords[2] + coords[4];
+                        x_coeff[2] = 3.0 * lastX - 6.0 * coords[0] + 3.0 * coords[2];
+                        x_coeff[1] = -3.0 * lastX + 3.0 * coords[0];
+                        x_coeff[0] = lastX;
+
+                        x_deriv_coeff[0] = x_coeff[1];
+                        x_deriv_coeff[1] = 2.0 * x_coeff[2];
+                        x_deriv_coeff[2] = 3.0 * x_coeff[3];
+
+                        int tExtremaCount = QuadCurve2D.solveQuadratic(x_deriv_coeff, tExtrema);
+                        for (int i = 0; i < tExtremaCount; i++) {
+                            double t = tExtrema[i];
+                            if (t > 0.0 && t < 1.0) {
+                                double x = x_coeff[0] + t * (x_coeff[1] + t * (x_coeff[2] + t * x_coeff[3]));
+                                if (x < leftX) leftX = x;
+                                if (x > rightX) rightX = x;
+                            }
+                        }
+                    }
+                    if (coords[1] < topY || coords[1] > bottomY || coords[3] < topY || coords[3] > bottomY) {
+                        y_coeff[3] = -lastY + 3.0 * coords[1] - 3.0 * coords[3] + coords[5];
+                        y_coeff[2] = 3.0 * lastY - 6.0 * coords[1] + 3.0 * coords[3];
+                        y_coeff[1] = -3.0 * lastY + 3.0 * coords[1];
+                        y_coeff[0] = lastY;
+
+                        y_deriv_coeff[0] = y_coeff[1];
+                        y_deriv_coeff[1] = 2.0 * y_coeff[2];
+                        y_deriv_coeff[2] = 3.0 * y_coeff[3];
+
+                        int tExtremaCount = QuadCurve2D.solveQuadratic(y_deriv_coeff, tExtrema);
+                        for (int i = 0; i < tExtremaCount; i++) {
+                            double t = tExtrema[i];
+                            if (t > 0.0 && t < 1.0) {
+                                double y = y_coeff[0] + t * (y_coeff[1] + t * (y_coeff[2] + t * y_coeff[3]));
+                                if (y < topY) topY = y;
+                                if (y > bottomY) bottomY = y;
+                            }
+                        }
+                    }
+                    lastX = coords[4];
+                    lastY = coords[5];
                     break;
                 case PathIterator.SEG_CLOSE:
                 default:
                     continue;
             }
-
-            if (isEmpty) {
-                // we're seeding our bounds for the first time:
-                isEmpty = false;
-                leftX = rightX = endX;
-                topY = bottomY = endY;
-            } else {
-                // extend our rectangle to cover the point at t = 1:
-                leftX = (endX < leftX) ? endX : leftX;
-                rightX = (endX > rightX) ? endX : rightX;
-                topY = (endY < topY) ? endY : topY;
-                bottomY = (endY > bottomY) ? endY : bottomY;
-            }
-
-            if (type == PathIterator.SEG_QUADTO || type == PathIterator.SEG_CUBICTO) {
-                // here's the slightly trickier part: examine quadratic and cubic
-                // segments for extrema where t is between (0, 1):
-
-                if (type == PathIterator.SEG_QUADTO) {
-                    x_coeff[3] = 0.0;
-                    x_coeff[2] = lastX - 2.0 * coords[0] + coords[2];
-                    x_coeff[1] = -2.0 * lastX + 2.0 * coords[0];
-                    x_coeff[0] = lastX;
-
-                    y_coeff[3] = 0;
-                    y_coeff[2] = lastY - 2.0 * coords[1] + coords[3];
-                    y_coeff[1] = -2.0 * lastY + 2.0 * coords[1];
-                    y_coeff[0] = lastY;
-                } else if (type == PathIterator.SEG_CUBICTO) {
-                    x_coeff[3] = -lastX + 3.0 * coords[0] - 3.0 * coords[2] + coords[4];
-                    x_coeff[2] = 3.0 * lastX - 6.0 * coords[0] + 3.0 * coords[2];
-                    x_coeff[1] = -3.0 * lastX + 3.0 * coords[0];
-                    x_coeff[0] = lastX;
-
-                    y_coeff[3] = -lastY + 3.0 * coords[1] - 3.0 * coords[3] + coords[5];
-                    y_coeff[2] = 3.0 * lastY - 6.0 * coords[1] + 3.0 * coords[3];
-                    y_coeff[1] = -3.0 * lastY + 3.0 * coords[1];
-                    y_coeff[0] = lastY;
-                }
-
-                x_deriv_coeff[0] = x_coeff[1];
-                x_deriv_coeff[1] = 2.0 * x_coeff[2];
-                x_deriv_coeff[2] = 3.0 * x_coeff[3];
-
-                int tExtremaCount = QuadCurve2D.solveQuadratic(x_deriv_coeff, tExtrema);
-                for (int i = 0; i < tExtremaCount; i++) {
-                    double t = tExtrema[i];
-                    if (t > 0.0 && t < 1.0) {
-                        double x = x_coeff[0] + t * (x_coeff[1] + t * (x_coeff[2] + t * x_coeff[3]));
-                        leftX = (x < leftX) ? x : leftX;
-                        rightX = (x > rightX) ? x : rightX;
-                    }
-                }
-
-                y_deriv_coeff[0] = y_coeff[1];
-                y_deriv_coeff[1] = 2.0 * y_coeff[2];
-                y_deriv_coeff[2] = 3.0 * y_coeff[3];
-
-                tExtremaCount = QuadCurve2D.solveQuadratic(y_deriv_coeff, tExtrema);
-                for (int i = 0; i < tExtremaCount; i++) {
-                    double t = tExtrema[i];
-                    if (t > 0.0 && t < 1.0) {
-                        double y = y_coeff[0] + t * (y_coeff[1] + t * (y_coeff[2] + t * y_coeff[3]));
-                        topY = (y < topY) ? y : topY;
-                        bottomY = (y > bottomY) ? y : bottomY;
-                    }
-                }
-            }
-
-            lastX = endX;
-            lastY = endY;
         }
-        if (!isEmpty) {
+        if (isDefined) {
             return new Rectangle2D.Double(leftX, topY, rightX - leftX, bottomY - topY);
         }
 
