@@ -37,20 +37,9 @@
  * @run testng/othervm
  *       -Djdk.tls.acknowledgeCloseNotify=true
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
- *       CookieHeaderTest
+ *       UserCookieTest
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
-import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import javax.net.ServerSocketFactory;
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -58,7 +47,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.CookieHandler;
-import java.net.CookieManager;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -72,7 +60,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -82,13 +69,23 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLContext;
+
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
+import jdk.test.lib.net.SimpleSSLContext;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
-public class CookieHeaderTest implements HttpServerAdapters {
+public class UserCookieTest implements HttpServerAdapters {
 
     SSLContext sslContext;
     HttpTestServer httpTestServer;        // HTTP/1.1    [ 6 servers ]
@@ -153,9 +150,15 @@ public class CookieHeaderTest implements HttpServerAdapters {
         cookies.add("LOC\u0100TION=TRAIN_STATION");
         cookies.add("ORDER=BISCUITS");
         cookieHeaders.put("Cookie", cookies);
+        String userCookie = "PRICE=42";
+        List<String> expectedCookies =
+                Stream.concat(cookies.stream(), Stream.of(userCookie)).toList();
+
+
 
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(uri)
-                .header("X-uuid", "uuid-" + requestCounter.incrementAndGet());
+                .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
+                .header("Cookie", userCookie);
         if (version != null) {
             requestBuilder.version(version);
         }
@@ -172,11 +175,12 @@ public class CookieHeaderTest implements HttpServerAdapters {
             assertEquals(response.statusCode(), 200);
             assertEquals(response.body(), MESSAGE);
             assertEquals(response.headers().allValues("X-Request-Cookie"),
-                    cookies.stream()
+                    expectedCookies.stream()
                             .filter(s -> !s.startsWith("LOC"))
-                            .collect(Collectors.toList()));
+                            .toList());
             requestBuilder = HttpRequest.newBuilder(uri)
-                    .header("X-uuid", "uuid-" + requestCounter.incrementAndGet());
+                    .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
+                    .header("Cookie", userCookie);
             if (version != null) {
                 requestBuilder.version(version);
             }
@@ -242,14 +246,14 @@ public class CookieHeaderTest implements HttpServerAdapters {
             this.cookies = map;
         }
 
-        @Override
+        @java.lang.Override
         public Map<String, List<String>> get(URI uri, Map<String, List<String>> requestHeaders)
                 throws IOException
         {
             return cookies;
         }
 
-        @Override
+        @java.lang.Override
         public void put(URI uri, Map<String, List<String>> responseHeaders)
                 throws IOException
         {
@@ -260,7 +264,7 @@ public class CookieHeaderTest implements HttpServerAdapters {
     static class CookieValidationHandler implements HttpTestHandler {
         ConcurrentHashMap<String,String> closedRequests = new ConcurrentHashMap<>();
 
-        @Override
+        @java.lang.Override
         public void handle(HttpTestExchange t) throws IOException {
             System.out.println("CookieValidationHandler for: " + t.getRequestURI());
 
@@ -333,10 +337,15 @@ public class CookieHeaderTest implements HttpServerAdapters {
                     os.write(msg.getBytes(UTF_8));
                 } else if (cookie.size() > 1 && !cookie.get(1).equals("ORDER=BISCUITS")) {
                     String msg = "Incorrect cookie header value:[" + cookie.get(1) + "]";
+                     (new RuntimeException(msg)).printStackTrace();
+                    t.sendResponseHeaders(500, -1);
+                    os.write(msg.getBytes(UTF_8));
+                } else if (cookie.size() > 2 && !cookie.get(2).equals("PRICE=42")) {
+                    String msg = "Incorrect cookie header value:[" + cookie.get(2) + "]";
                     (new RuntimeException(msg)).printStackTrace();
                     t.sendResponseHeaders(500, -1);
                     os.write(msg.getBytes(UTF_8));
-                } else if (cookie.size() != 2) {
+                } else if (cookie.size() != 3) {
                     String msg = "Incorrect cookie header values:[" + cookie + "]";
                     (new RuntimeException(msg)).printStackTrace();
                     t.sendResponseHeaders(500, -1);
@@ -393,7 +402,7 @@ public class CookieHeaderTest implements HttpServerAdapters {
             return b.toString();
         }
 
-        @Override
+        @java.lang.Override
         public void run() {
             try {
                 while(!stopped) {
@@ -470,13 +479,16 @@ public class CookieHeaderTest implements HttpServerAdapters {
                                         .map(String::trim)
                                         .collect(Collectors.toList());
                         Collections.sort(values);
-                        if (values.size() != 2) {
+                        if (values.size() != 3) {
                             resp = "Bad cookie list: " + values;
                             status = "500 Internal Server Error";
                         } else if (!values.get(0).equals("CUSTOMER=ARTHUR_DENT")) {
                             resp = "Unexpected cookie: " + values.get(0) + " in " + values;
                             status = "500 Internal Server Error";
                         } else if (!values.get(1).equals("ORDER=BISCUITS")) {
+                            resp = "Unexpected cookie: " + values.get(1) + " in " + values;
+                            status = "500 Internal Server Error";
+                        } else if (!values.get(2).equals("PRICE=42")) {
                             resp = "Unexpected cookie: " + values.get(1) + " in " + values;
                             status = "500 Internal Server Error";
                         } else {

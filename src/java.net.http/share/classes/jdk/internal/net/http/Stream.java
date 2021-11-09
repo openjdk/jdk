@@ -35,6 +35,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -652,10 +653,15 @@ class Stream<T> extends ExchangeImpl<T> {
         // Filter context restricted from userHeaders
         userh = HttpHeaders.of(userh.map(), Utils.CONTEXT_RESTRICTED(client()));
 
+        // Don't override Cookie values that have been set by the CookieHandler.
         final HttpHeaders uh = userh;
+        BiPredicate<String, String> overrides = (k, v) -> "Cookie".equalsIgnoreCase(k)
+                || uh.firstValue(k).isEmpty();
 
         // Filter any headers from systemHeaders that are set in userHeaders
-        sysh = HttpHeaders.of(sysh.map(), (k,v) -> uh.firstValue(k).isEmpty());
+        //   except for "Cookies" - user cookies will be appended to system
+        //   cookies
+        final HttpHeaders sh = HttpHeaders.of(sysh.map(), overrides);
 
         OutgoingHeaders<Stream<T>> f = new OutgoingHeaders<>(sysh, userh, this);
         if (contentLength == 0) {
