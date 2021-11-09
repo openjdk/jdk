@@ -1927,6 +1927,28 @@ void JavaThread::verify_frame_info() {
 }
 #endif
 
+// Push on a new block of JNI handles.
+void JavaThread::push_jni_handle_block() {
+  // Allocate a new block for JNI handles.
+  // Inlined code from jni_PushLocalFrame()
+  JNIHandleBlock* old_handles = active_handles();
+  JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(this);
+  assert(old_handles != NULL && new_handles != NULL, "should not be NULL");
+  new_handles->set_pop_frame_link(old_handles);  // make sure java handles get gc'd.
+  set_active_handles(new_handles);
+}
+
+// Pop off the current block of JNI handles.
+void JavaThread::pop_jni_handle_block() {
+  // Release our JNI handle block
+  JNIHandleBlock* old_handles = active_handles();
+  JNIHandleBlock* new_handles = old_handles->pop_frame_link();
+  assert(new_handles != nullptr, "should never set active handles to null");
+  set_active_handles(new_handles);
+  old_handles->set_pop_frame_link(NULL);
+  JNIHandleBlock::release_block(old_handles, this);
+}
+
 void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   // Verify that the deferred card marks have been flushed.
   assert(deferred_card_mark().is_empty(), "Should be empty during GC");

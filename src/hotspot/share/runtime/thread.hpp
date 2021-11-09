@@ -773,6 +773,9 @@ class JavaThread: public Thread {
   JNIHandleBlock* free_handle_block() const      { return _free_handle_block; }
   void set_free_handle_block(JNIHandleBlock* block) { _free_handle_block = block; }
 
+  void push_jni_handle_block();
+  void pop_jni_handle_block();
+
  private:
   MonitorChunk* _monitor_chunks;              // Contains the off stack monitors
                                               // allocated during deoptimization
@@ -1745,6 +1748,15 @@ class UnlockFlagSaver {
     ~UnlockFlagSaver() {
       _thread->set_do_not_unlock_if_synchronized(_do_not_unlock);
     }
+};
+
+class JNIHandleMark : public StackObj {
+  JavaThread* _thread;
+ public:
+  JNIHandleMark(JavaThread* thread) : _thread(thread) {
+    thread->push_jni_handle_block();
+  }
+  ~JNIHandleMark() { _thread->pop_jni_handle_block(); }
 };
 
 #endif // SHARE_RUNTIME_THREAD_HPP
