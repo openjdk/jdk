@@ -2151,6 +2151,11 @@ public abstract class Path2D implements Shape, Cloneable {
                     if (coords[3] > bottomY) bottomY = coords[3];
 
                     if (coords[0] < leftX || coords[0] > rightX) {
+                        final double dx21 = (coords[0] - lastX);
+                        x_coeff[2] = (coords[2] - coords[0]) - dx21;  // A = P3 - P0 - 2 P2
+                        x_coeff[1] = 2.0 * dx21;                      // B = 2 (P2 - P1)
+                        x_coeff[0] = lastX;                           // C = P1
+
                         x_coeff[2] = lastX - 2.0 * coords[0] + coords[2];
                         x_coeff[1] = -2.0 * lastX + 2.0 * coords[0];
                         x_coeff[0] = lastX;
@@ -2166,8 +2171,9 @@ public abstract class Path2D implements Shape, Cloneable {
                         }
                     }
                     if (coords[1] < topY || coords[1] > bottomY) {
-                        y_coeff[2] = lastY - 2.0 * coords[1] + coords[3];
-                        y_coeff[1] = -2.0 * lastY + 2.0 * coords[1];
+                        final double dy21 = (coords[1] - lastY);
+                        y_coeff[2] = (coords[3] - coords[1]) - dy21;
+                        y_coeff[1] = 2.0 * dy21;
                         y_coeff[0] = lastY;
 
                         y_deriv_coeff[0] = y_coeff[1];
@@ -2190,10 +2196,12 @@ public abstract class Path2D implements Shape, Cloneable {
                     if (coords[5] > bottomY) bottomY = coords[5];
 
                     if (coords[0] < leftX || coords[0] > rightX || coords[2] < leftX || coords[2] > rightX) {
-                        x_coeff[3] = -lastX + 3.0 * coords[0] - 3.0 * coords[2] + coords[4];
-                        x_coeff[2] = 3.0 * lastX - 6.0 * coords[0] + 3.0 * coords[2];
-                        x_coeff[1] = -3.0 * lastX + 3.0 * coords[0];
-                        x_coeff[0] = lastX;
+                        final double dx32 = 3.0 * (coords[2] - coords[0]);
+                        final double dx21 = 3.0 * (coords[0] - lastX);
+                        x_coeff[3] = (coords[4] - lastX) - dx32;  // A = P3 - P0 - 3 (P2 - P1) = (P3 - P0) + 3 (P1 - P2)
+                        x_coeff[2] = (dx32 - dx21);               // B = 3 (P2 - P1) - 3(P1 - P0) = 3 (P2 + P0) - 6 P1
+                        x_coeff[1] = dx21;                        // C = 3 (P1 - P0)
+                        x_coeff[0] = lastX;                       // D = P0
 
                         x_deriv_coeff[0] = x_coeff[1];
                         x_deriv_coeff[1] = 2.0 * x_coeff[2];
@@ -2210,9 +2218,11 @@ public abstract class Path2D implements Shape, Cloneable {
                         }
                     }
                     if (coords[1] < topY || coords[1] > bottomY || coords[3] < topY || coords[3] > bottomY) {
-                        y_coeff[3] = -lastY + 3.0 * coords[1] - 3.0 * coords[3] + coords[5];
-                        y_coeff[2] = 3.0 * lastY - 6.0 * coords[1] + 3.0 * coords[3];
-                        y_coeff[1] = -3.0 * lastY + 3.0 * coords[1];
+                        final double dy32 = 3.0 * (coords[3] - coords[1]);
+                        final double dy21 = 3.0 * (coords[1] - lastY);
+                        y_coeff[3] = (coords[5] - lastY) - dy32;
+                        y_coeff[2] = (dy32 - dy21);
+                        y_coeff[1] = dy21;
                         y_coeff[0] = lastY;
 
                         y_deriv_coeff[0] = y_coeff[1];
