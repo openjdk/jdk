@@ -239,13 +239,14 @@ inline HeapWord* HeapRegion::allocate(size_t min_word_size,
 }
 
 inline HeapWord* HeapRegion::bot_threshold_for_addr(const void* addr) {
-  assert(_bot_part.threshold_for_addr(addr) >= addr,
+  HeapWord* threshold = _bot_part.threshold_for_addr(addr);
+  assert(threshold >= addr,
          "threshold must be at or after given address. " PTR_FORMAT " >= " PTR_FORMAT,
-         p2i(_bot_part.threshold_for_addr(addr)), p2i(addr));
+         p2i(threshold), p2i(addr));
   assert(is_old(),
          "Should only calculate BOT threshold for old regions. addr: " PTR_FORMAT " region:" HR_FORMAT,
          p2i(addr), HR_FORMAT_PARAMS(this));
-  return _bot_part.threshold_for_addr(addr);
+  return threshold;
 }
 
 inline void HeapRegion::update_bot_crossing_threshold(HeapWord** threshold, HeapWord* obj_start, HeapWord* obj_end) {

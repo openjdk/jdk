@@ -299,13 +299,12 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
     _direct_allocated[state] = 0;
     uint length = alloc_buffers_length(state);
     _alloc_buffers[state] = NEW_C_HEAP_ARRAY(PLAB*, length, mtGC);
+    size_t word_sz = _g1h->desired_plab_sz(state);
     for (uint node_index = 0; node_index < length; node_index++) {
-      if (state == G1HeapRegionAttr::Old) {
-        // Specialized PLABs for old that handle BOT updates for object allocations.
-        _alloc_buffers[state][node_index] = new G1BotUpdatingPLAB(_g1h->desired_plab_sz(state));
-      } else {
-        _alloc_buffers[state][node_index] = new PLAB(_g1h->desired_plab_sz(state));
-      }
+      // Specialized PLABs for old that handle BOT updates for object allocations.
+      _alloc_buffers[state][node_index] = (state == G1HeapRegionAttr::Old)
+                                        ? new G1BotUpdatingPLAB(word_sz)
+                                        : new PLAB(word_sz);
     }
   }
 }

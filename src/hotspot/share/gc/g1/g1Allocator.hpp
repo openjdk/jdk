@@ -156,7 +156,7 @@ class G1BotUpdatingPLAB : public PLAB {
 public:
   G1BotUpdatingPLAB(size_t word_sz) : PLAB(word_sz) { }
   // Sets the new PLAB buffer as well as updates the threshold and region.
-  virtual void set_buf(HeapWord* buf, size_t word_sz);
+  void set_buf(HeapWord* buf, size_t word_sz) override;
   // Updates the BOT if the last allocation crossed the threshold.
   inline void update_bot(size_t word_sz);
 };
