@@ -1832,6 +1832,57 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
+    public void testNegativeTagValuelessAttributes(Path base) throws IOException {
+        // none of these attributes should ever be valueless
+        record TestCase(String input, String expectedError) { }
+        var testCases = new ArrayList<TestCase>();
+        for (String attrName : List.of("class", "file", "id", "lang", "region")) {
+            // special case: valueless region attribute
+            TestCase t = new TestCase("""
+{@snippet %s:
+    First line
+      Second line
+}
+""".formatted(attrName),
+"""
+: error: missing value for attribute "%s"
+{@snippet %s:
+          ^""".formatted(attrName, attrName));
+            testCases.add(t);
+        }
+
+        List<String> inputs = testCases.stream().map(s -> s.input).toList();
+        StringBuilder methods = new StringBuilder();
+        forEachNumbered(inputs, (i, n) -> {
+            methods.append(
+                    """
+
+                    /**
+                    %s*/
+                    public void case%s() {}
+                    """.formatted(i, n));
+        });
+
+        String classString =
+                """
+                public class A {
+                %s
+                }
+                """.formatted(methods.toString());
+
+        Path src = Files.createDirectories(base.resolve("src"));
+        tb.writeJavaFiles(src, classString);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                src.resolve("A.java").toString());
+        checkExit(Exit.ERROR);
+        // use the facility from JDK-8273154 when it becomes available
+        checkOutput(Output.OUT, true, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
+        checkNoCrashes();
+    }
+
+  @Test
     public void testNegativeTagBlankRegion(Path base) throws Exception {
         // If a blank region were allowed, it could not be used without quotes
         record TestCase(String input, String expectedError) { }
@@ -1851,17 +1902,6 @@ public class TestSnippetTag extends SnippetTester {
           ^""".formatted(quote.isEmpty() ? "" : value, quote, value, quote)); // unquoted whitespace translates to empty string
               testCases.add(t);
           }
-      // special case: valueless region attribute
-      testCases.add(new TestCase("""
-{@snippet region:
-    First line
-      Second line
-}
-""",
-"""
-: error: missing value for attribute "region"
-{@snippet region:
-          ^"""));
 
         List<String> inputs = testCases.stream().map(s -> s.input).toList();
         StringBuilder methods = new StringBuilder();
