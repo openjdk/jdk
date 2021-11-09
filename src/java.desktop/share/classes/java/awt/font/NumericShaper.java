@@ -112,25 +112,25 @@ import jdk.internal.access.SharedSecrets;
  * <caption>NumericShaper constants precedence</caption>
  * <thead>
  *   <tr>
- *     <th scope="col">Unicode Range
- *     <th scope="col">{@code NumericShaper} Constants
- *     <th scope="col">Precedence
+ *     <th scope="col" id="colheader1">Unicode Range
+ *     <th scope="col" id="colheader2">{@code NumericShaper} Constants
+ *     <th scope="col" id="colheader3">Precedence
  * </thead>
  * <tbody>
  *   <tr>
- *     <td rowspan="2" style="font-weight:bold; text-align:center">Arabic
- *     <th scope="row" style="font-weight:normal; text-align:left">{@link NumericShaper#ARABIC NumericShaper.ARABIC}
+ *     <th scope="rowgroup" rowspan="2" id="rowheader1">Arabic
+ *     <td headers="rowheader1 colheader2">{@link NumericShaper#ARABIC NumericShaper.ARABIC}
  *     <br>
  *     {@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
- *     <td>{@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
+ *     <td headers="rowheader1 colheader3">{@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
  *   <tr>
- *     <th scope="row" style="font-weight:normal; text-align:left">{@link NumericShaper.Range#ARABIC}
+ *     <td headers="rowheader1 colheader2">{@link NumericShaper.Range#ARABIC}
  *     <br>
  *     {@link NumericShaper.Range#EASTERN_ARABIC}
- *     <td>{@link NumericShaper.Range#EASTERN_ARABIC}
+ *     <td headers="rowheader1 colheader3">{@link NumericShaper.Range#EASTERN_ARABIC}
  *   <tr>
- *     <td style="font-weight:bold; text-align:center">Tai Tham
- *     <th scope="row" style="font-weight:normal; text-align:left">{@link NumericShaper.Range#TAI_THAM_HORA}
+ *     <th scope="row">Tai Tham
+ *     <td>{@link NumericShaper.Range#TAI_THAM_HORA}
  *     <br>
  *     {@link NumericShaper.Range#TAI_THAM_THAM}
  *     <td>{@link NumericShaper.Range#TAI_THAM_THAM}
