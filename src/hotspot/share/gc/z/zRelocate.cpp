@@ -155,14 +155,15 @@ static bool should_free_target_page(ZPage* page) {
   return page != NULL && page->top() == page->start();
 }
 
-class ZRelocateSmallAllocator {
+class ZRelocateSmallAllocator : public StackObj {
 private:
+  ResourceMark _rm;
   volatile size_t _in_place_count;
+  ZArray<ZPage*>* _empty_pages;
   static const int BULK_FREE_LIMIT = 64;
 
   ZArray<ZPage*>* bulk_free_pages() {
-    static ZPerWorker<ZArray<ZPage*>> _empty_pages;
-    return _empty_pages.addr();
+    return &_empty_pages[ZThread::worker_id()];
   }
 
   void free_empty_pages(bool free_all) {
@@ -175,7 +176,9 @@ private:
 
 public:
   ZRelocateSmallAllocator() :
-      _in_place_count(0) {}
+      _rm(),
+      _in_place_count(0),
+      _empty_pages(new ZArray<ZPage*>[ZPerWorkerStorage::count()]) {}
 
   ZPage* alloc_target_page(ZForwarding* forwarding, ZPage* target) {
     if (bulk_free_pages()->is_nonempty()) {
@@ -202,6 +205,7 @@ public:
     }
 
     free_empty_pages(true /* free_all */);
+    bulk_free_pages()->clear_and_deallocate();
   }
 
   void free_relocated_page(ZPage* page) {
