@@ -24,7 +24,7 @@
 package gc;
 
 /*
- * @test id=serial
+ * @test id=Serial
  * @requires vm.gc.Serial
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UseSerialGC gc.TestSystemGC
@@ -32,7 +32,7 @@ package gc;
  */
 
 /*
- * @test id=parallel
+ * @test id=Parallel
  * @requires vm.gc.Parallel
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UseParallelGC gc.TestSystemGC
@@ -40,7 +40,7 @@ package gc;
  */
 
 /*
- * @test id=g1
+ * @test id=G1
  * @requires vm.gc.G1
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UseG1GC gc.TestSystemGC
@@ -49,7 +49,7 @@ package gc;
  */
 
 /*
- * @test id=shenandoah
+ * @test id=Shenandoah
  * @requires vm.gc.Shenandoah
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UseShenandoahGC gc.TestSystemGC
@@ -58,9 +58,9 @@ package gc;
  */
 
 /*
- * @test id=z
+ * @test id=Z
  * @requires vm.gc.Z
- * @comment ZGC would not start when LargePages cannot be allocated, therefore
+ * @comment ZGC will not start when LargePages cannot be allocated, therefore
  *          we do not run such configuration.
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UseZGC gc.TestSystemGC
