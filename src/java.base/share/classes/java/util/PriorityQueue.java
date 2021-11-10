@@ -746,6 +746,13 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     public Comparator<? super E> comparator() {
         return comparator;
     }
+    
+    /**
+     * Replaces the comparator.
+     */
+    public void setComparator(Comparator<? super E> cmp) {
+        this.comparator = cmp;
+    } 
 
     /**
      * Saves this queue to a stream (that is, serializes it).
