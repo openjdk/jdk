@@ -90,7 +90,9 @@ import java.util.function.Function;
  *        private static final Cleaner cleaner = Cleaner.create();
  *
  *        // Static state class, capturing information necessary for
- *        // cleanup, but no reference to the instance being cleaned
+ *        // State class captures information necessary for cleanup.
+ *        // It must hold no reference to the instance being cleaned
+ *        // and therefore it is a static inner class in this CleaningExample.
  *        static class State implements Runnable {
  *
  *            State(...) {
