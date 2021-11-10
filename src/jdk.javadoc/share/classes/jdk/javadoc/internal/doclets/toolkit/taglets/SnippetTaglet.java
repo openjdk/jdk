@@ -199,7 +199,7 @@ public class SnippetTaglet extends BaseTaglet {
                 if (fileObject == null && fileManager.hasLocation(Location.SNIPPET_PATH)) {
                     fileObject = fileManager.getFileForInput(Location.SNIPPET_PATH, "", v);
                 }
-            } catch (IOException | IllegalArgumentException e) {
+            } catch (IOException | IllegalArgumentException e) { // TODO: test this when JDK-8276892 is integrated
                 // JavaFileManager.getFileForInput can throw IllegalArgumentException in certain cases
                 throw new BadSnippetException(a, "doclet.exception.read.file", v, e.getCause());
             }
@@ -211,7 +211,7 @@ public class SnippetTaglet extends BaseTaglet {
 
             try {
                 externalContent = fileObject.getCharContent(true).toString();
-            } catch (IOException e) {
+            } catch (IOException e) {  // TODO: test this when JDK-8276892 is integrated
                 throw new BadSnippetException(a, "doclet.exception.read.file",
                         fileObject.getName(), e.getCause());
             }
