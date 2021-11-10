@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
+ * Copyright (c) 2007, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,7 @@ bool frame::is_interpreted_frame_valid(JavaThread *thread) const {
   }
 
   // validate locals
-  address locals =  (address) *interpreter_frame_locals_addr();
+  address locals = (address) *interpreter_frame_locals_addr();
   if (!thread->is_in_stack_range_incl(locals, (address)fp())) {
     return false;
   }
