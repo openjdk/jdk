@@ -919,14 +919,13 @@ class G1CMConcurrentMarkingTask : public WorkerTask {
     } while (!_cm->has_aborted() && task->has_aborted());
   }
 
-  void preclean(uint worker_id) {
+  void preclean() {
     BarrierEnqueueDiscoveredFieldClosure enqueue;
     G1PrecleanYieldClosure yield_cl(_cm);
     _cm_rp->preclean_discovered_references(_cm_rp->is_alive_non_header(),
                                            &enqueue,
                                            &yield_cl,
-                                           _cm->_gc_timer_cm,
-                                           worker_id);
+                                           _cm->_gc_timer_cm);
   }
 public:
   void work(uint worker_id) {
@@ -946,7 +945,7 @@ public:
 
         // Marking is complete; preclean non-strong references
         if (G1UseReferencePrecleaning) {
-          preclean(worker_id);
+          preclean();
         }
       }
       guarantee(!task->has_aborted() || _cm->has_aborted(), "invariant");

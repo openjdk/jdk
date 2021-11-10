@@ -318,8 +318,7 @@ public:
   void preclean_discovered_references(BoolObjectClosure* is_alive,
                                       EnqueueDiscoveredFieldClosure* enqueue,
                                       YieldClosure*      yield,
-                                      GCTimer*           gc_timer,
-                                      uint               worker_id);
+                                      GCTimer*           gc_timer);
 
 private:
   // Returns the name of the discovered reference list
