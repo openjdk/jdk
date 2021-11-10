@@ -2648,7 +2648,7 @@ public final class LdapCtx extends ComponentDirContext
         }
     }
 
-    synchronized public void close() throws NamingException {
+    public synchronized void close() throws NamingException {
         if (debug) {
             System.err.println("LdapCtx: close() called " + this);
             (new Throwable()).printStackTrace();

@@ -435,30 +435,35 @@ void Thread::check_for_dangling_thread_pointer(Thread *thread) {
 }
 #endif
 
-// Is the target JavaThread protected by the calling Thread
-// or by some other mechanism:
-bool Thread::is_JavaThread_protected(const JavaThread* p) {
-  // Do the simplest check first:
-  if (SafepointSynchronize::is_at_safepoint()) {
-    // The target is protected since JavaThreads cannot exit
-    // while we're at a safepoint.
-    return true;
-  }
-
-  // If the target hasn't been started yet then it is trivially
-  // "protected". We assume the caller is the thread that will do
-  // the starting.
-  if (p->osthread() == NULL || p->osthread()->get_state() <= INITIALIZED) {
-    return true;
-  }
-
-  // Now make the simple checks based on who the caller is:
+// Is the target JavaThread protected by the calling Thread or by some other
+// mechanism? If checkTLHOnly is true (default is false), then we only check
+// if the target JavaThread is protected by a ThreadsList (if any) associated
+// with the calling Thread.
+//
+bool Thread::is_JavaThread_protected(const JavaThread* p, bool checkTLHOnly) {
   Thread* current_thread = Thread::current();
-  if (current_thread == p || Threads_lock->owner() == current_thread) {
-    // Target JavaThread is self or calling thread owns the Threads_lock.
-    // Second check is the same as Threads_lock->owner_is_self(),
-    // but we already have the current thread so check directly.
-    return true;
+  if (!checkTLHOnly) {
+    // Do the simplest check first:
+    if (SafepointSynchronize::is_at_safepoint()) {
+      // The target is protected since JavaThreads cannot exit
+      // while we're at a safepoint.
+      return true;
+    }
+
+    // If the target hasn't been started yet then it is trivially
+    // "protected". We assume the caller is the thread that will do
+    // the starting.
+    if (p->osthread() == NULL || p->osthread()->get_state() <= INITIALIZED) {
+      return true;
+    }
+
+    // Now make the simple checks based on who the caller is:
+    if (current_thread == p || Threads_lock->owner() == current_thread) {
+      // Target JavaThread is self or calling thread owns the Threads_lock.
+      // Second check is the same as Threads_lock->owner_is_self(),
+      // but we already have the current thread so check directly.
+      return true;
+    }
   }
 
   // Check the ThreadsLists associated with the calling thread (if any)
@@ -471,16 +476,18 @@ bool Thread::is_JavaThread_protected(const JavaThread* p) {
     }
   }
 
-  // Use this debug code with -XX:+UseNewCode to diagnose locations that
-  // are missing a ThreadsListHandle or other protection mechanism:
-  // guarantee(!UseNewCode, "current_thread=" INTPTR_FORMAT " is not protecting p="
-  //           INTPTR_FORMAT, p2i(current_thread), p2i(p));
+  if (!checkTLHOnly) {
+    // Use this debug code with -XX:+UseNewCode to diagnose locations that
+    // are missing a ThreadsListHandle or other protection mechanism:
+    // guarantee(!UseNewCode, "current_thread=" INTPTR_FORMAT " is not protecting p="
+    //           INTPTR_FORMAT, p2i(current_thread), p2i(p));
 
-  // Note: Since 'p' isn't protected by a TLH, the call to
-  // p->is_handshake_safe_for() may crash, but we have debug bits so
-  // we'll be able to figure out what protection mechanism is missing.
-  assert(p->is_handshake_safe_for(current_thread), "JavaThread=" INTPTR_FORMAT
-         " is not protected and not handshake safe.", p2i(p));
+    // Note: Since 'p' isn't protected by a TLH, the call to
+    // p->is_handshake_safe_for() may crash, but we have debug bits so
+    // we'll be able to figure out what protection mechanism is missing.
+    assert(p->is_handshake_safe_for(current_thread), "JavaThread=" INTPTR_FORMAT
+           " is not protected and not handshake safe.", p2i(p));
+  }
 
   // The target JavaThread is not protected so it is not safe to query:
   return false;
@@ -1743,20 +1750,14 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
 //   - Target thread will not enter any new monitors.
 //
 bool JavaThread::java_suspend() {
-  ThreadsListHandle tlh;
-  if (!tlh.includes(this)) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, no suspension", p2i(this));
-    return false;
-  }
+  guarantee(Thread::is_JavaThread_protected(this, /* checkTLHOnly */ true),
+            "missing ThreadsListHandle in calling context.");
   return this->handshake_state()->suspend();
 }
 
 bool JavaThread::java_resume() {
-  ThreadsListHandle tlh;
-  if (!tlh.includes(this)) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, nothing to resume", p2i(this));
-    return false;
-  }
+  guarantee(Thread::is_JavaThread_protected(this, /* checkTLHOnly */ true),
+            "missing ThreadsListHandle in calling context.");
   return this->handshake_state()->resume();
 }
 

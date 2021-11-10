@@ -264,12 +264,6 @@ void ChunkManager::return_chunk_locked(Metachunk* c) {
     c = merged;
   }
 
-  if (Settings::uncommit_free_chunks() &&
-      c->word_size() >= Settings::commit_granule_words()) {
-    UL2(debug, "uncommitting free chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
-    c->uncommit_locked();
-  }
-
   return_chunk_simple_locked(c);
   DEBUG_ONLY(verify_locked();)
   SOMETIMES(c->vsnode()->verify_locked();)
