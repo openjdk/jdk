@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ abstract class CKey implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected final NativeHandles handles;
 
     protected final int keyLength;
@@ -82,7 +83,7 @@ abstract class CKey implements Key, Length {
     }
 
     // Native method to cleanup the key handle.
-    private native static void cleanUp(long hCryptProv, long hCryptKey);
+    private static native void cleanUp(long hCryptProv, long hCryptKey);
 
     @Override
     public int length() {
@@ -101,9 +102,9 @@ abstract class CKey implements Key, Length {
         return algorithm;
     }
 
-    protected native static String getContainerName(long hCryptProv);
+    protected static native String getContainerName(long hCryptProv);
 
-    protected native static String getKeyType(long hCryptKey);
+    protected static native String getKeyType(long hCryptKey);
 
     // This java method generates EC BLOBs for public key or private key.
     // See https://docs.microsoft.com/en-us/windows/desktop/api/bcrypt/ns-bcrypt-_bcrypt_ecckey_blob

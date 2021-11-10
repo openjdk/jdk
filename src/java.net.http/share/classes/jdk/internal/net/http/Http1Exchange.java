@@ -117,7 +117,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
      * concrete implementations: {@link Http1Request.StreamSubscriber}, and
      * {@link Http1Request.FixedContentSubscriber}, for receiving chunked and
      * fixed length bodies, respectively. */
-    static abstract class Http1BodySubscriber implements Flow.Subscriber<ByteBuffer> {
+    abstract static class Http1BodySubscriber implements Flow.Subscriber<ByteBuffer> {
         final MinimalFuture<Flow.Subscription> whenSubscribed = new MinimalFuture<>();
         private volatile Flow.Subscription subscription;
         volatile boolean complete;

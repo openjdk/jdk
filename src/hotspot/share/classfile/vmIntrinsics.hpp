@@ -140,6 +140,7 @@ class methodHandle;
   do_name(incrementExact_name,"incrementExact")                                                                         \
   do_name(multiplyExact_name,"multiplyExact")                                                                           \
   do_name(multiplyHigh_name,"multiplyHigh")                                                                             \
+  do_name(unsignedMultiplyHigh_name,"unsignedMultiplyHigh")                                                             \
   do_name(negateExact_name,"negateExact")                                                                               \
   do_name(subtractExact_name,"subtractExact")                                                                           \
   do_name(fma_name, "fma")                                                                                              \
@@ -173,6 +174,7 @@ class methodHandle;
   do_intrinsic(_multiplyExactI,           java_lang_Math,         multiplyExact_name, int2_int_signature,        F_S)   \
   do_intrinsic(_multiplyExactL,           java_lang_Math,         multiplyExact_name, long2_long_signature,      F_S)   \
   do_intrinsic(_multiplyHigh,             java_lang_Math,         multiplyHigh_name, long2_long_signature,       F_S)   \
+  do_intrinsic(_unsignedMultiplyHigh,     java_lang_Math,         unsignedMultiplyHigh_name, long2_long_signature, F_S) \
   do_intrinsic(_negateExactI,             java_lang_Math,         negateExact_name, int_int_signature,           F_S)   \
   do_intrinsic(_negateExactL,             java_lang_Math,         negateExact_name, long_long_signature,         F_S)   \
   do_intrinsic(_subtractExactI,           java_lang_Math,         subtractExact_name, int2_int_signature,        F_S)   \
@@ -187,6 +189,16 @@ class methodHandle;
   do_intrinsic(_fcopySign,                java_lang_Math,         copySign_name,      float2_float_signature,    F_S)   \
   do_intrinsic(_dsignum,                  java_lang_Math,         signum_name,        double_double_signature,   F_S)   \
   do_intrinsic(_fsignum,                  java_lang_Math,         signum_name,        float_float_signature,     F_S)   \
+                                                                                                                        \
+  /* StrictMath intrinsics, similar to what we have in Math. */                                                         \
+  do_intrinsic(_min_strict,               java_lang_StrictMath,   min_name,           int2_int_signature,        F_S)   \
+  do_intrinsic(_max_strict,               java_lang_StrictMath,   max_name,           int2_int_signature,        F_S)   \
+  do_intrinsic(_minF_strict,              java_lang_StrictMath,   min_name,           float2_float_signature,    F_S)   \
+  do_intrinsic(_maxF_strict,              java_lang_StrictMath,   max_name,           float2_float_signature,    F_S)   \
+  do_intrinsic(_minD_strict,              java_lang_StrictMath,   min_name,           double2_double_signature,  F_S)   \
+  do_intrinsic(_maxD_strict,              java_lang_StrictMath,   max_name,           double2_double_signature,  F_S)   \
+  /* Special flavor of dsqrt intrinsic to handle the "native" method in StrictMath. Otherwise the same as in Math. */   \
+  do_intrinsic(_dsqrt_strict,             java_lang_StrictMath,   sqrt_name,          double_double_signature,   F_SN)  \
                                                                                                                         \
   do_intrinsic(_floatToRawIntBits,        java_lang_Float,        floatToRawIntBits_name,   float_int_signature, F_S)   \
    do_name(     floatToRawIntBits_name,                          "floatToRawIntBits")                                   \
@@ -515,12 +527,15 @@ class methodHandle;
   do_intrinsic(_copyMemory,               jdk_internal_misc_Unsafe,     copyMemory_name, copyMemory_signature,         F_RN)     \
    do_name(     copyMemory_name,                                        "copyMemory0")                                           \
    do_signature(copyMemory_signature,                                   "(Ljava/lang/Object;JLjava/lang/Object;JJ)V")            \
-  do_intrinsic(_loadFence,                jdk_internal_misc_Unsafe,     loadFence_name, loadFence_signature,           F_RN)     \
+  do_intrinsic(_loadFence,                jdk_internal_misc_Unsafe,     loadFence_name, loadFence_signature,           F_R)      \
    do_name(     loadFence_name,                                         "loadFence")                                             \
    do_alias(    loadFence_signature,                                    void_method_signature)                                   \
-  do_intrinsic(_storeFence,               jdk_internal_misc_Unsafe,     storeFence_name, storeFence_signature,         F_RN)     \
+  do_intrinsic(_storeFence,               jdk_internal_misc_Unsafe,     storeFence_name, storeFence_signature,         F_R)      \
    do_name(     storeFence_name,                                        "storeFence")                                            \
    do_alias(    storeFence_signature,                                   void_method_signature)                                   \
+  do_intrinsic(_storeStoreFence,          jdk_internal_misc_Unsafe,     storeStoreFence_name, storeStoreFence_signature, F_R)    \
+   do_name(     storeStoreFence_name,                                   "storeStoreFence")                                       \
+   do_alias(    storeStoreFence_signature,                              void_method_signature)                                   \
   do_intrinsic(_fullFence,                jdk_internal_misc_Unsafe,     fullFence_name, fullFence_signature,           F_RN)     \
    do_name(     fullFence_name,                                         "fullFence")                                             \
    do_alias(    fullFence_signature,                                    void_method_signature)                                   \

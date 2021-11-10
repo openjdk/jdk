@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public abstract class SunClipboard extends Clipboard
      * A number of {@code FlavorListener}s currently registered
      * on this clipboard across all {@code AppContext}s.
      */
-    private volatile int numberOfFlavorListeners = 0;
+    private volatile int numberOfFlavorListeners;
 
     /**
      * A set of {@code DataFlavor}s that is available on this clipboard. It is

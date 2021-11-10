@@ -1326,7 +1326,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 } else if (kind == HTML.Tag.IMPLIED) {
                     String ws = (String) elem.getAttributes().getAttribute(
                         CSS.Attribute.WHITE_SPACE);
-                    if ((ws != null) && ws.equals("pre")) {
+                    if ("pre".equals(ws)) {
                         return new LineView(elem);
                     }
                     return new javax.swing.text.html.ParagraphView(elem);

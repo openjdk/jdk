@@ -58,10 +58,6 @@ chunklevel_t MetaspaceArena::next_chunk_level() const {
 
 // Given a chunk, add its remaining free committed space to the free block list.
 void MetaspaceArena::salvage_chunk(Metachunk* c) {
-  if (Settings::handle_deallocations() == false) {
-    return;
-  }
-
   assert_lock_strong(lock());
   size_t remaining_words = c->free_below_committed_words();
   if (remaining_words > FreeBlocks::MinWordSize) {
@@ -105,7 +101,6 @@ Metachunk* MetaspaceArena::allocate_new_chunk(size_t requested_word_size) {
 }
 
 void MetaspaceArena::add_allocation_to_fbl(MetaWord* p, size_t word_size) {
-  assert(Settings::handle_deallocations(), "Sanity");
   if (_fbl == NULL) {
     _fbl = new FreeBlocks(); // Create only on demand
   }
@@ -232,7 +227,7 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
 
   // Before bothering the arena proper, attempt to re-use a block from the free blocks list
-  if (Settings::handle_deallocations() && _fbl != NULL && !_fbl->is_empty()) {
+  if (_fbl != NULL && !_fbl->is_empty()) {
     p = _fbl->remove_block(raw_word_size);
     if (p != NULL) {
       DEBUG_ONLY(InternalStats::inc_num_allocs_from_deallocated_blocks();)
@@ -363,10 +358,6 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
 // Prematurely returns a metaspace allocation to the _block_freelists
 // because it is not needed anymore (requires CLD lock to be active).
 void MetaspaceArena::deallocate_locked(MetaWord* p, size_t word_size) {
-  if (Settings::handle_deallocations() == false) {
-    return;
-  }
-
   assert_lock_strong(lock());
   // At this point a current chunk must exist since we only deallocate if we did allocate before.
   assert(current_chunk() != NULL, "stray deallocation?");

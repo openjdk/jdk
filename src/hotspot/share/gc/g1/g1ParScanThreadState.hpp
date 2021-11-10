@@ -28,6 +28,8 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
+#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1_globals.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
@@ -99,14 +101,13 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   size_t* _obj_alloc_stat;
 
   // Per-thread evacuation failure data structures.
-#ifndef PRODUCT
-  size_t _evac_failure_inject_counter;
-#endif
+  EVAC_FAILURE_INJECTOR_ONLY(size_t _evac_failure_inject_counter;)
+
   PreservedMarks* _preserved_marks;
   EvacuationFailedInfo _evacuation_failed_info;
   G1EvacFailureRegions* _evac_failure_regions;
 
-  bool inject_evacuation_failure() PRODUCT_RETURN_( return false; );
+  bool inject_evacuation_failure() EVAC_FAILURE_INJECTOR_RETURN_( return false; );
 
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
@@ -134,7 +135,7 @@ public:
 
   // Apply the post barrier to the given reference field. Enqueues the card of p
   // if the barrier does not filter out the reference for some reason (e.g.
-  // p and q are in the same region, p is in survivor)
+  // p and q are in the same region, p is in survivor, p is in collection set)
   // To be called during GC if nothing particular about p and obj are known.
   template <class T> void write_ref_field_post(T* p, oop obj);
 

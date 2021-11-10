@@ -168,7 +168,7 @@ public class ChannelInputStream
             return new byte[0];
 
         if (!(ch instanceof SeekableByteChannel sbc))
-            return super.readAllBytes();
+            return super.readNBytes(len);
 
         long length = sbc.size();
         long position = sbc.position();

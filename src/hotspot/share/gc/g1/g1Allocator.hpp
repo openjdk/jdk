@@ -145,6 +145,22 @@ public:
                                    uint node_index);
 };
 
+// Specialized PLAB for old generation promotions. For old regions the
+// BOT needs to be updated and the relevant data to do this efficiently
+// is stored in the PLAB.
+class G1BotUpdatingPLAB : public PLAB {
+  // An object spanning this threshold will cause a BOT update.
+  HeapWord* _next_bot_threshold;
+  // The region in which the PLAB resides.
+  HeapRegion* _region;
+public:
+  G1BotUpdatingPLAB(size_t word_sz) : PLAB(word_sz) { }
+  // Sets the new PLAB buffer as well as updates the threshold and region.
+  void set_buf(HeapWord* buf, size_t word_sz) override;
+  // Updates the BOT if the last allocation crossed the threshold.
+  inline void update_bot(size_t word_sz);
+};
+
 // Manages the PLABs used during garbage collection. Interface for allocation from PLABs.
 // Needs to handle multiple contexts, extra alignment in any "survivor" area and some
 // statistics.
@@ -165,10 +181,17 @@ private:
   inline PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;
   inline PLAB* alloc_buffer(region_type_t dest, uint node_index) const;
 
+  // Helpers to do explicit BOT updates for allocations in old generation regions.
+  void update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size);
+
   // Returns the number of allocation buffers for the given dest.
   // There is only 1 buffer for Old while Young may have multiple buffers depending on
   // active NUMA nodes.
   inline uint alloc_buffers_length(region_type_t dest) const;
+
+  // Returns if BOT updates are needed for the given destinaion. Currently we only have
+  // two destinations and BOT updates are only needed for the old generation.
+  inline bool needs_bot_update(G1HeapRegionAttr dest) const;
 
   bool may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const;
 public:
@@ -198,6 +221,9 @@ public:
                             bool* refill_failed,
                             uint node_index);
 
+  // Update the BOT for the last PLAB allocation.
+  inline void update_bot_for_plab_allocation(G1HeapRegionAttr dest, size_t word_sz, uint node_index);
+
   void undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size_t word_sz, uint node_index);
 };
 
@@ -223,9 +249,6 @@ protected:
   // Regions allocated for the current archive range.
   GrowableArray<HeapRegion*> _allocated_regions;
 
-  // The number of bytes used in the current range.
-  size_t _summary_bytes_used;
-
   // Current allocation window within the current region.
   HeapWord* _bottom;
   HeapWord* _top;
@@ -243,7 +266,6 @@ public:
     _allocated_regions((ResourceObj::set_allocation_type((address) &_allocated_regions,
                                                          ResourceObj::C_HEAP),
                         2), mtGC),
-    _summary_bytes_used(0),
     _bottom(NULL),
     _top(NULL),
     _max(NULL) { }
@@ -261,19 +283,6 @@ public:
   // aligning to the requested alignment.
   void complete_archive(GrowableArray<MemRegion>* ranges,
                         size_t end_alignment_in_bytes);
-
-  // The number of bytes allocated by this allocator.
-  size_t used() {
-    return _summary_bytes_used;
-  }
-
-  // Clear the count of bytes allocated in prior G1 regions. This
-  // must be done when recalculate_use is used to reset the counter
-  // for the generic allocator, since it counts bytes in all G1
-  // regions, including those still associated with this allocator.
-  void clear_used() {
-    _summary_bytes_used = 0;
-  }
 };
 
 #endif // SHARE_GC_G1_G1ALLOCATOR_HPP

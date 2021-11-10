@@ -432,14 +432,26 @@ const Type *MulDNode::mul_ring(const Type *t0, const Type *t1) const {
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* MulHiLNode::Value(PhaseGVN* phase) const {
-  // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
+  const Type *bot = bottom_type();
+  return MulHiValue(t1, t2, bot);
+}
+
+const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  const Type *t2 = phase->type( in(2) );
+  const Type *bot = bottom_type();
+  return MulHiValue(t1, t2, bot);
+}
+
+// A common routine used by UMulHiLNode and MulHiLNode
+const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
+  // Either input is TOP ==> the result is TOP
   if( t1 == Type::TOP ) return Type::TOP;
   if( t2 == Type::TOP ) return Type::TOP;
 
   // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
   if( (t1 == bot) || (t2 == bot) ||
       (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
     return bot;

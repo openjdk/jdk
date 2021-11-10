@@ -54,6 +54,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
@@ -169,21 +170,13 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
 FileMapInfo::FileMapInfo(bool is_static) {
   memset((void*)this, 0, sizeof(FileMapInfo));
   _is_static = is_static;
-  size_t header_size;
-  if (is_static) {
+  if (_is_static) {
     assert(_current_info == NULL, "must be singleton"); // not thread safe
     _current_info = this;
-    header_size = sizeof(FileMapHeader);
   } else {
     assert(_dynamic_archive_info == NULL, "must be singleton"); // not thread safe
     _dynamic_archive_info = this;
-    header_size = sizeof(DynamicArchiveHeader);
   }
-  _header = (FileMapHeader*)os::malloc(header_size, mtInternal);
-  memset((void*)_header, 0, header_size);
-  _header->set_header_size(header_size);
-  _header->set_version(INVALID_CDS_ARCHIVE_VERSION);
-  _header->set_has_platform_or_app_classes(true);
   _file_offset = 0;
   _file_open = false;
 }
@@ -199,16 +192,49 @@ FileMapInfo::~FileMapInfo() {
 }
 
 void FileMapInfo::populate_header(size_t core_region_alignment) {
-  header()->populate(this, core_region_alignment);
+  assert(_header == NULL, "Sanity check");
+  size_t c_header_size;
+  size_t header_size;
+  size_t base_archive_name_size = 0;
+  size_t base_archive_name_offset = 0;
+  if (is_static()) {
+    c_header_size = sizeof(FileMapHeader);
+    header_size = c_header_size;
+  } else {
+    // dynamic header including base archive name for non-default base archive
+    c_header_size = sizeof(DynamicArchiveHeader);
+    header_size = c_header_size;
+    if (!FLAG_IS_DEFAULT(SharedArchiveFile)) {
+      base_archive_name_size = strlen(Arguments::GetSharedArchivePath()) + 1;
+      header_size += base_archive_name_size;
+      base_archive_name_offset = c_header_size;
+    }
+  }
+  _header = (FileMapHeader*)os::malloc(header_size, mtInternal);
+  memset((void*)_header, 0, header_size);
+  _header->populate(this,
+                    core_region_alignment,
+                    header_size,
+                    base_archive_name_size,
+                    base_archive_name_offset);
 }
 
-void FileMapHeader::populate(FileMapInfo* mapinfo, size_t core_region_alignment) {
-  if (DynamicDumpSharedSpaces) {
-    _magic = CDS_DYNAMIC_ARCHIVE_MAGIC;
-  } else {
-    _magic = CDS_ARCHIVE_MAGIC;
+void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
+                             size_t header_size, size_t base_archive_name_size,
+                             size_t base_archive_name_offset) {
+  // 1. We require _generic_header._magic to be at the beginning of the file
+  // 2. FileMapHeader also assumes that _generic_header is at the beginning of the file
+  assert(offset_of(FileMapHeader, _generic_header) == 0, "must be");
+  set_header_size((unsigned int)header_size);
+  set_base_archive_name_offset((unsigned int)base_archive_name_offset);
+  set_base_archive_name_size((unsigned int)base_archive_name_size);
+  set_magic(DynamicDumpSharedSpaces ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
+  set_version(CURRENT_CDS_ARCHIVE_VERSION);
+
+  if (!info->is_static() && base_archive_name_size != 0) {
+    // copy base archive name
+    copy_base_archive_name(Arguments::GetSharedArchivePath());
   }
-  _version = CURRENT_CDS_ARCHIVE_VERSION;
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
@@ -245,22 +271,29 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t core_region_alignment)
   _requested_base_address = (char*)SharedBaseAddress;
   _mapped_base_address = (char*)SharedBaseAddress;
   _allow_archiving_with_java_agent = AllowArchivingWithJavaAgent;
-  // the following 2 fields will be set in write_header for dynamic archive header
-  _base_archive_name_size = 0;
-  _base_archive_is_default = false;
 
   if (!DynamicDumpSharedSpaces) {
-    set_shared_path_table(mapinfo->_shared_path_table);
+    set_shared_path_table(info->_shared_path_table);
     CDS_JAVA_HEAP_ONLY(_heap_obj_roots = CompressedOops::encode(HeapShared::roots());)
   }
+}
+
+void FileMapHeader::copy_base_archive_name(const char* archive) {
+  assert(base_archive_name_size() != 0, "_base_archive_name_size not set");
+  assert(base_archive_name_offset() != 0, "_base_archive_name_offset not set");
+  assert(header_size() > sizeof(*this), "_base_archive_name_size not included in header size?");
+  memcpy((char*)this + base_archive_name_offset(), archive, base_archive_name_size());
 }
 
 void FileMapHeader::print(outputStream* st) {
   ResourceMark rm;
 
-  st->print_cr("- magic:                          0x%08x", _magic);
-  st->print_cr("- crc:                            0x%08x", _crc);
-  st->print_cr("- version:                        %d", _version);
+  st->print_cr("- magic:                          0x%08x", magic());
+  st->print_cr("- crc:                            0x%08x", crc());
+  st->print_cr("- version:                        %d", version());
+  st->print_cr("- header_size:                    " UINT32_FORMAT, header_size());
+  st->print_cr("- base_archive_name_offset:       " UINT32_FORMAT, base_archive_name_offset());
+  st->print_cr("- base_archive_name_size:         " UINT32_FORMAT, base_archive_name_size());
 
   for (int i = 0; i < NUM_CDS_REGIONS; i++) {
     FileMapRegion* si = space_at(i);
@@ -268,7 +301,6 @@ void FileMapHeader::print(outputStream* st) {
   }
   st->print_cr("============ end regions ======== ");
 
-  st->print_cr("- header_size:                    " SIZE_FORMAT, _header_size);
   st->print_cr("- core_region_alignment:          " SIZE_FORMAT, _core_region_alignment);
   st->print_cr("- obj_alignment:                  %d", _obj_alignment);
   st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
@@ -283,9 +315,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_HEX, _cloned_vtables_offset);
   st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_HEX, _serialized_data_offset);
   st->print_cr("- heap_end:                       " INTPTR_FORMAT, p2i(_heap_end));
-  st->print_cr("- base_archive_is_default:        %d", _base_archive_is_default);
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
-  st->print_cr("- base_archive_name_size:         " SIZE_FORMAT, _base_archive_name_size);
   st->print_cr("- shared_path_table_offset:       " SIZE_FORMAT_HEX, _shared_path_table_offset);
   st->print_cr("- shared_path_table_size:         %d", _shared_path_table_size);
   st->print_cr("- app_class_paths_start_index:    %d", _app_class_paths_start_index);
@@ -1012,119 +1042,171 @@ void FileMapInfo::validate_non_existent_class_paths() {
   }
 }
 
+// a utility class for checking file header
+class FileHeaderHelper {
+  int _fd;
+  GenericCDSFileMapHeader _header;
+
+public:
+  FileHeaderHelper() {
+    _fd = -1;
+  }
+
+  ~FileHeaderHelper() {
+    if (_fd != -1) {
+      os::close(_fd);
+    }
+  }
+
+  bool initialize(const char* archive_name) {
+    _fd = os::open(archive_name, O_RDONLY | O_BINARY, 0);
+    if (_fd < 0) {
+      return false;
+    }
+    return initialize(_fd);
+  }
+
+  // for an already opened file, do not set _fd
+  bool initialize(int fd) {
+    assert(fd != -1, "Archive should be opened");
+    size_t size = sizeof(GenericCDSFileMapHeader);
+    lseek(fd, 0, SEEK_SET);
+    size_t n = os::read(fd, (void*)&_header, (unsigned int)size);
+    if (n != size) {
+      vm_exit_during_initialization("Unable to read generic CDS file map header from shared archive");
+      return false;
+    }
+    return true;
+  }
+
+  GenericCDSFileMapHeader* get_generic_file_header() {
+    return &_header;
+  }
+
+  char* read_base_archive_name() {
+    assert(_fd != -1, "Archive should be open");
+    size_t name_size = _header._base_archive_name_size;
+    assert(name_size != 0, "For non-default base archive, name size should be non-zero!");
+    char* base_name = NEW_C_HEAP_ARRAY(char, name_size, mtInternal);
+    lseek(_fd, _header._base_archive_name_offset, SEEK_SET); // position to correct offset.
+    size_t n = os::read(_fd, base_name, (unsigned int)name_size);
+    if (n != name_size) {
+      log_info(cds)("Unable to read base archive name from archive");
+      FREE_C_HEAP_ARRAY(char, base_name);
+      return nullptr;
+    }
+    if (base_name[name_size - 1] != '\0' || strlen(base_name) != name_size - 1) {
+      log_info(cds)("Base archive name is damaged");
+      FREE_C_HEAP_ARRAY(char, base_name);
+      return nullptr;
+    }
+    if (!os::file_exists(base_name)) {
+      log_info(cds)("Base archive %s does not exist", base_name);
+      FREE_C_HEAP_ARRAY(char, base_name);
+      return nullptr;
+    }
+    return base_name;
+  }
+};
+
 bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
-  int fd = os::open(archive_name, O_RDONLY | O_BINARY, 0);
-  if (fd < 0) {
+  FileHeaderHelper file_helper;
+  if (!file_helper.initialize(archive_name)) {
     // do not vm_exit_during_initialization here because Arguments::init_shared_archive_paths()
     // requires a shared archive name. The open_for_read() function will log a message regarding
     // failure in opening a shared archive.
     return false;
   }
 
-  size_t sz = is_static ? sizeof(FileMapHeader) : sizeof(DynamicArchiveHeader);
-  void* header = os::malloc(sz, mtInternal);
-  memset(header, 0, sz);
-  size_t n = os::read(fd, header, (unsigned int)sz);
-  if (n != sz) {
-    os::free(header);
-    os::close(fd);
-    vm_exit_during_initialization("Unable to read header from shared archive", archive_name);
-    return false;
-  }
+  GenericCDSFileMapHeader* header = file_helper.get_generic_file_header();
   if (is_static) {
-    FileMapHeader* static_header = (FileMapHeader*)header;
-    if (static_header->magic() != CDS_ARCHIVE_MAGIC) {
-      os::free(header);
-      os::close(fd);
+    if (header->_magic != CDS_ARCHIVE_MAGIC) {
       vm_exit_during_initialization("Not a base shared archive", archive_name);
       return false;
     }
+    if (header->_base_archive_name_offset != 0) {
+      log_info(cds)("_base_archive_name_offset should be 0");
+      log_info(cds)("_base_archive_name_offset = " UINT32_FORMAT, header->_base_archive_name_offset);
+      return false;
+    }
   } else {
-    DynamicArchiveHeader* dynamic_header = (DynamicArchiveHeader*)header;
-    if (dynamic_header->magic() != CDS_DYNAMIC_ARCHIVE_MAGIC) {
-      os::free(header);
-      os::close(fd);
+    if (header->_magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
       vm_exit_during_initialization("Not a top shared archive", archive_name);
       return false;
     }
+    unsigned int name_size = header->_base_archive_name_size;
+    unsigned int name_offset = header->_base_archive_name_offset;
+    unsigned int header_size = header->_header_size;
+    if (name_offset + name_size != header_size) {
+      log_info(cds)("_header_size should be equal to _base_archive_name_offset plus _base_archive_name_size");
+      log_info(cds)("  _base_archive_name_size   = " UINT32_FORMAT, name_size);
+      log_info(cds)("  _base_archive_name_offset = " UINT32_FORMAT, name_offset);
+      log_info(cds)("  _header_size              = " UINT32_FORMAT, header_size);
+      return false;
+    }
+    char* base_name = file_helper.read_base_archive_name();
+    if (base_name == nullptr) {
+      return false;
+    }
+    FREE_C_HEAP_ARRAY(char, base_name);
   }
-  os::free(header);
-  os::close(fd);
   return true;
 }
 
 bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
-                                                    int* size, char** base_archive_name) {
-  int fd = os::open(archive_name, O_RDONLY | O_BINARY, 0);
-  if (fd < 0) {
-    *size = 0;
+                                                    char** base_archive_name) {
+  FileHeaderHelper file_helper;
+  if (!file_helper.initialize(archive_name)) {
+    return false;
+  }
+  GenericCDSFileMapHeader* header = file_helper.get_generic_file_header();
+  if (header->_magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
+    // Not a dynamic header, no need to proceed further.
     return false;
   }
 
-  // read the header as a dynamic archive header
-  size_t sz = sizeof(DynamicArchiveHeader);
-  DynamicArchiveHeader* dynamic_header = (DynamicArchiveHeader*)os::malloc(sz, mtInternal);
-  size_t n = os::read(fd, dynamic_header, (unsigned int)sz);
-  if (n != sz) {
-    fail_continue("Unable to read the file header.");
-    os::free(dynamic_header);
-    os::close(fd);
+  if ((header->_base_archive_name_size == 0 && header->_base_archive_name_offset != 0) ||
+      (header->_base_archive_name_size != 0 && header->_base_archive_name_offset == 0)) {
+    fail_continue("Default base archive not set correct");
     return false;
   }
-  if (dynamic_header->magic() != CDS_DYNAMIC_ARCHIVE_MAGIC) {
-    // Not a dynamic header, no need to proceed further.
-    *size = 0;
-    os::free(dynamic_header);
-    os::close(fd);
-    return false;
-  }
-  if (dynamic_header->base_archive_is_default()) {
+  if (header->_base_archive_name_size == 0 &&
+      header->_base_archive_name_offset == 0) {
     *base_archive_name = Arguments::get_default_shared_archive_path();
   } else {
     // read the base archive name
-    size_t name_size = dynamic_header->base_archive_name_size();
-    if (name_size == 0) {
-      os::free(dynamic_header);
-      os::close(fd);
-      return false;
-    }
-    *base_archive_name = NEW_C_HEAP_ARRAY(char, name_size, mtInternal);
-    n = os::read(fd, *base_archive_name, (unsigned int)name_size);
-    if (n != name_size) {
-      fail_continue("Unable to read the base archive name from the header.");
-      FREE_C_HEAP_ARRAY(char, *base_archive_name);
-      *base_archive_name = NULL;
-      os::free(dynamic_header);
-      os::close(fd);
+    *base_archive_name = file_helper.read_base_archive_name();
+    if (*base_archive_name == nullptr) {
       return false;
     }
   }
-
-  os::free(dynamic_header);
-  os::close(fd);
   return true;
 }
 
 // Read the FileMapInfo information from the file.
 
 bool FileMapInfo::init_from_file(int fd) {
-  size_t sz = is_static() ? sizeof(FileMapHeader) : sizeof(DynamicArchiveHeader);
-  size_t n = os::read(fd, header(), (unsigned int)sz);
-  if (n != sz) {
+  FileHeaderHelper file_helper;
+  if (!file_helper.initialize(fd)) {
     fail_continue("Unable to read the file header.");
     return false;
   }
+  GenericCDSFileMapHeader* gen_header = file_helper.get_generic_file_header();
 
-  if (!Arguments::has_jimage()) {
-    FileMapInfo::fail_continue("The shared archive file cannot be used with an exploded module build.");
+  unsigned int expected_magic = is_static() ? CDS_ARCHIVE_MAGIC : CDS_DYNAMIC_ARCHIVE_MAGIC;
+  if (gen_header->_magic != expected_magic) {
+    log_info(cds)("_magic expected: 0x%08x", expected_magic);
+    log_info(cds)("         actual: 0x%08x", gen_header->_magic);
+    FileMapInfo::fail_continue("The shared archive file has a bad magic number.");
     return false;
   }
 
-  unsigned int expected_magic = is_static() ? CDS_ARCHIVE_MAGIC : CDS_DYNAMIC_ARCHIVE_MAGIC;
-  if (header()->magic() != expected_magic) {
-    log_info(cds)("_magic expected: 0x%08x", expected_magic);
-    log_info(cds)("         actual: 0x%08x", header()->magic());
-    FileMapInfo::fail_continue("The shared archive file has a bad magic number.");
+  _header = (FileMapHeader*)os::malloc(gen_header->_header_size, mtInternal);
+  lseek(fd, 0, SEEK_SET); // reset to begin of the archive
+  size_t size = gen_header->_header_size;
+  size_t n = os::read(fd, (void*)_header, (unsigned int)size);
+  if (n != size) {
+    fail_continue("Failed to read file header from the top archive file\n");
     return false;
   }
 
@@ -1135,11 +1217,17 @@ bool FileMapInfo::init_from_file(int fd) {
     return false;
   }
 
-  if (header()->header_size() != sz) {
-    log_info(cds)("_header_size expected: " SIZE_FORMAT, sz);
-    log_info(cds)("               actual: " SIZE_FORMAT, header()->header_size());
-    FileMapInfo::fail_continue("The shared archive file has an incorrect header size.");
-    return false;
+  unsigned int base_offset = header()->base_archive_name_offset();
+  unsigned int name_size = header()->base_archive_name_size();
+  unsigned int header_size = header()->header_size();
+  if (base_offset != 0 && name_size != 0) {
+    if (header_size != base_offset + name_size) {
+      log_info(cds)("_header_size: " UINT32_FORMAT, header_size);
+      log_info(cds)("base_archive_name_size: " UINT32_FORMAT, name_size);
+      log_info(cds)("base_archive_name_offset: " UINT32_FORMAT, base_offset);
+      FileMapInfo::fail_continue("The shared archive file has an incorrect header size.");
+      return false;
+    }
   }
 
   const char* actual_ident = header()->jvm_ident();
@@ -1169,7 +1257,7 @@ bool FileMapInfo::init_from_file(int fd) {
     }
   }
 
-  _file_offset = n + header()->base_archive_name_size(); // accounts for the size of _base_archive_name
+  _file_offset = header()->header_size(); // accounts for the size of _base_archive_name
 
   if (is_static()) {
     // just checking the last region is sufficient since the archive is written
@@ -1253,15 +1341,11 @@ void FileMapInfo::open_for_write(const char* path) {
   // Seek past the header. We will write the header after all regions are written
   // and their CRCs computed.
   size_t header_bytes = header()->header_size();
-  if (header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
-    header_bytes += strlen(Arguments::GetSharedArchivePath()) + 1;
-  }
 
   header_bytes = align_up(header_bytes, MetaspaceShared::core_region_alignment());
   _file_offset = header_bytes;
   seek_to_position(_file_offset);
 }
-
 
 // Write the header to the file, seek to the next allocation boundary.
 
@@ -1270,13 +1354,6 @@ void FileMapInfo::write_header() {
   seek_to_position(_file_offset);
   assert(is_file_position_aligned(), "must be");
   write_bytes(header(), header()->header_size());
-
-  if (header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
-    char* base_archive_name = (char*)Arguments::GetSharedArchivePath();
-    if (base_archive_name != NULL) {
-      write_bytes(base_archive_name, header()->base_archive_name_size());
-    }
-  }
 }
 
 size_t FileMapRegion::used_aligned() const {
@@ -2220,6 +2297,11 @@ bool FileMapInfo::initialize() {
     return false;
   }
 
+  if (!Arguments::has_jimage()) {
+    FileMapInfo::fail_continue("The shared archive file cannot be used with an exploded module build.");
+    return false;
+  }
+
   if (!open_for_read()) {
     return false;
   }
@@ -2258,9 +2340,9 @@ void FileMapHeader::set_as_offset(char* p, size_t *offset) {
 
 int FileMapHeader::compute_crc() {
   char* start = (char*)this;
-  // start computing from the field after _crc
-  char* buf = (char*)&_crc + sizeof(_crc);
-  size_t sz = _header_size - (buf - start);
+  // start computing from the field after _crc to end of base archive name.
+  char* buf = (char*)&(_generic_header._crc) + sizeof(_generic_header._crc);
+  size_t sz = header_size() - (buf - start);
   int crc = ClassLoader::crc32(0, buf, (jint)sz);
   return crc;
 }

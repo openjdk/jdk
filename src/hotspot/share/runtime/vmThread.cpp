@@ -128,8 +128,7 @@ void VMThread::create() {
     assert(_timeout_task == NULL, "sanity");
   }
 
-  _terminate_lock = new Monitor(Mutex::nosafepoint, "VMThreadTerminate_lock",
-                                Monitor::_safepoint_check_never);
+  _terminate_lock = new Monitor(Mutex::nosafepoint, "VMThreadTerminate_lock");
 
   if (UsePerfData) {
     // jvmstat performance counters

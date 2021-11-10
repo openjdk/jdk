@@ -2401,9 +2401,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     // Special cases
     switch (opcode) {
     case Op_VectorMaskCmp:
-    // We don't have VectorReinterpret with bit_size less than 64 support for
-    // now, even for byte type. To be refined with fully VectorCast support.
-    case Op_VectorReinterpret:
       if (vlen < 2 || bit_size < 64) {
         return false;
       }
@@ -2418,23 +2415,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     case Op_VectorLoadShuffle:
     case Op_VectorRearrange:
       if (vlen < 4) {
-        return false;
-      }
-      break;
-    // Some types of VectorCast are not implemented for now.
-    case Op_VectorCastI2X:
-      if (bt == T_BYTE) {
-        return false;
-      }
-      break;
-    case Op_VectorCastS2X:
-      if (vlen < 4 || bit_size < 64) {
-        return false;
-      }
-      break;
-    case Op_VectorCastF2X:
-    case Op_VectorCastD2X:
-      if (bt == T_INT || bt == T_SHORT || bt == T_BYTE || bt == T_LONG) {
         return false;
       }
       break;
@@ -8567,6 +8547,7 @@ instruct membar_release() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "MEMBAR-store-store" %}
@@ -10893,7 +10874,6 @@ instruct msubI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, iRegIorL2I src3)
 
 instruct mnegI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI0 zero) %{
   match(Set dst (MulI (SubI zero src1) src2));
-  match(Set dst (MulI src1 (SubI zero src2)));
 
   ins_cost(INSN_COST * 3);
   format %{ "mneg  $dst, $src1, $src2" %}
@@ -10945,7 +10925,6 @@ instruct msubL(iRegLNoSp dst, iRegL src1, iRegL src2, iRegL src3) %{
 
 instruct mnegL(iRegLNoSp dst, iRegL src1, iRegL src2, immL0 zero) %{
   match(Set dst (MulL (SubL zero src1) src2));
-  match(Set dst (MulL src1 (SubL zero src2)));
 
   ins_cost(INSN_COST * 5);
   format %{ "mneg  $dst, $src1, $src2" %}
@@ -10995,7 +10974,6 @@ instruct smsubL(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2, iRegLNoSp src3)
 
 instruct smnegL(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2, immL0 zero) %{
   match(Set dst (MulL (SubL zero (ConvI2L src1)) (ConvI2L src2)));
-  match(Set dst (MulL (ConvI2L src1) (SubL zero (ConvI2L src2))));
 
   ins_cost(INSN_COST * 3);
   format %{ "smnegl  $dst, $src1, $src2" %}

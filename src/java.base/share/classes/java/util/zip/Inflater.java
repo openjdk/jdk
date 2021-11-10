@@ -419,7 +419,9 @@ public class Inflater {
                 needDict = true;
             }
             if (input != null) {
-                input.position(inputPos + read);
+                if (read > 0) {
+                    input.position(inputPos + read);
+                }
             } else {
                 this.inputPos = inputPos + read;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.SingleShotTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
-@Fork(value = 30, warmups = 10)
+@Fork(value = 10, warmups = 0)
 public class ReflectionColdstartBenchmark {
 
     static class Nested {
@@ -121,9 +121,22 @@ public class ReflectionColdstartBenchmark {
     }
 
     @Benchmark
-    public void invokeMethods(Blackhole bh) throws ReflectiveOperationException {
+    public void invokeMethods() throws ReflectiveOperationException {
+        // As this is testing warmup, JITs are unlikely to progress to the
+        // point where the lack of a blackhole might lead to DCE. Omitting it
+        // makes it easier to test this code minimal use of JMH code
         for (Method m : methods) {
-            bh.consume(m.invoke(null, arg));
+            m.invoke(null, arg);
         }
+    }
+
+    /**
+     * Runs invokeMethods once without any JMH interaction, acting as an
+     * independent startup benchmark.
+     */
+    public static void main(String ... args) throws Exception {
+        var coldstart = new ReflectionColdstartBenchmark();
+        coldstart.setup();
+        coldstart.invokeMethods();
     }
 }

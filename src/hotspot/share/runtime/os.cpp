@@ -907,7 +907,7 @@ bool os::print_function_and_library_name(outputStream* st,
       addr = addr2;
     }
   }
-#endif // HANDLE_FUNCTION_DESCRIPTORS
+#endif // HAVE_FUNCTION_DESCRIPTORS
 
   if (have_function_name) {
     // Print function name, optionally demangled
