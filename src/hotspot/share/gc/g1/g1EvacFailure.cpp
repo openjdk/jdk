@@ -146,8 +146,8 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   uint _worker_id;
 
-  uint volatile* _num_failed_regions;
   G1EvacFailureRegions* _evac_failure_regions;
+  DEBUG_ONLY(uint volatile* _num_failed_regions;)
 
 public:
   RemoveSelfForwardPtrHRClosure(uint worker_id,
@@ -155,8 +155,8 @@ public:
                                 G1EvacFailureRegions* evac_failure_regions) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _num_failed_regions(num_failed_regions),
     _evac_failure_regions(evac_failure_regions) {
+    DEBUG_ONLY(_num_failed_regions = num_failed_regions;)
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
@@ -195,7 +195,7 @@ public:
 
       hr->note_self_forwarding_removal_end(live_bytes);
 
-      Atomic::inc(_num_failed_regions, memory_order_relaxed);
+      DEBUG_ONLY(Atomic::inc(_num_failed_regions, memory_order_relaxed);)
     }
     return false;
   }
@@ -216,5 +216,6 @@ void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
 }
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {
-  return Atomic::load(&_num_failed_regions);
+  assert(_num_failed_regions == _evac_failure_regions->num_regions_failed_evacuation(), "must be");
+  return _evac_failure_regions->num_regions_failed_evacuation();
 }
