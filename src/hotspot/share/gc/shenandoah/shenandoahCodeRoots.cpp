@@ -111,7 +111,7 @@ void ShenandoahCodeRoots::initialize() {
 }
 
 void ShenandoahCodeRoots::register_nmethod(nmethod* nm) {
-  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
+  assert_locked_or_safepoint(CodeCache_lock);
   _nmethod_table->register_nmethod(nm);
 }
 
