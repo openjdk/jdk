@@ -107,15 +107,15 @@ class methodHandle;
 // add the declaration of the intrinsic to the approriate section of the list.
 #define VM_INTRINSICS_DO(do_intrinsic, do_class, do_name, do_signature, do_alias)                                       \
   /* (1) Library intrinsics                                                                        */                   \
-  do_intrinsic(_hashCode,                 java_lang_Object,       hashCode_name, void_int_signature,             F_R)   \
+  do_intrinsic(_hashCode,                 java_lang_Object,       hashCode_name, void_int_signature,             F_RN)  \
    do_name(     hashCode_name,                                   "hashCode")                                            \
-  do_intrinsic(_getClass,                 java_lang_Object,       getClass_name, void_class_signature,           F_R)   \
+  do_intrinsic(_getClass,                 java_lang_Object,       getClass_name, void_class_signature,           F_RN)  \
    do_name(     getClass_name,                                   "getClass")                                            \
-  do_intrinsic(_clone,                    java_lang_Object,       clone_name, void_object_signature,             F_R)   \
+  do_intrinsic(_clone,                    java_lang_Object,       clone_name, void_object_signature,             F_RN)  \
    do_name(     clone_name,                                      "clone")                                               \
-  do_intrinsic(_notify,                   java_lang_Object,       notify_name, void_method_signature,            F_R)   \
+  do_intrinsic(_notify,                   java_lang_Object,       notify_name, void_method_signature,            F_RN)  \
    do_name(     notify_name,                                     "notify")                                              \
-  do_intrinsic(_notifyAll,                java_lang_Object,       notifyAll_name, void_method_signature,         F_R)   \
+  do_intrinsic(_notifyAll,                java_lang_Object,       notifyAll_name, void_method_signature,         F_RN)  \
    do_name(     notifyAll_name,                                  "notifyAll")                                           \
                                                                                                                         \
   /* Math & StrictMath intrinsics are defined in terms of just a few signatures: */                                     \
@@ -200,17 +200,17 @@ class methodHandle;
   /* Special flavor of dsqrt intrinsic to handle the "native" method in StrictMath. Otherwise the same as in Math. */   \
   do_intrinsic(_dsqrt_strict,             java_lang_StrictMath,   sqrt_name,          double_double_signature,   F_SN)  \
                                                                                                                         \
-  do_intrinsic(_floatToRawIntBits,        java_lang_Float,        floatToRawIntBits_name,   float_int_signature, F_S)   \
+  do_intrinsic(_floatToRawIntBits,        java_lang_Float,        floatToRawIntBits_name,   float_int_signature, F_SN)  \
    do_name(     floatToRawIntBits_name,                          "floatToRawIntBits")                                   \
   do_intrinsic(_floatToIntBits,           java_lang_Float,        floatToIntBits_name,      float_int_signature, F_S)   \
    do_name(     floatToIntBits_name,                             "floatToIntBits")                                      \
-  do_intrinsic(_intBitsToFloat,           java_lang_Float,        intBitsToFloat_name,      int_float_signature, F_S)   \
+  do_intrinsic(_intBitsToFloat,           java_lang_Float,        intBitsToFloat_name,      int_float_signature, F_SN)  \
    do_name(     intBitsToFloat_name,                             "intBitsToFloat")                                      \
-  do_intrinsic(_doubleToRawLongBits,      java_lang_Double,       doubleToRawLongBits_name, double_long_signature, F_S) \
+  do_intrinsic(_doubleToRawLongBits,      java_lang_Double,       doubleToRawLongBits_name, double_long_signature, F_SN)\
    do_name(     doubleToRawLongBits_name,                        "doubleToRawLongBits")                                 \
   do_intrinsic(_doubleToLongBits,         java_lang_Double,       doubleToLongBits_name,    double_long_signature, F_S) \
    do_name(     doubleToLongBits_name,                           "doubleToLongBits")                                    \
-  do_intrinsic(_longBitsToDouble,         java_lang_Double,       longBitsToDouble_name,    long_double_signature, F_S) \
+  do_intrinsic(_longBitsToDouble,         java_lang_Double,       longBitsToDouble_name,    long_double_signature, F_SN)\
    do_name(     longBitsToDouble_name,                           "longBitsToDouble")                                    \
                                                                                                                         \
   do_intrinsic(_numberOfLeadingZeros_i,   java_lang_Integer,      numberOfLeadingZeros_name,int_int_signature,   F_S)   \
@@ -231,20 +231,20 @@ class methodHandle;
   do_intrinsic(_reverseBytes_s,           java_lang_Short,        reverseBytes_name,        short_short_signature, F_S) \
     /*  (symbol reverseBytes_name defined above) */                                                                     \
                                                                                                                         \
-  do_intrinsic(_identityHashCode,         java_lang_System,       identityHashCode_name, object_int_signature,   F_S)   \
+  do_intrinsic(_identityHashCode,         java_lang_System,       identityHashCode_name, object_int_signature,   F_SN)  \
    do_name(     identityHashCode_name,                           "identityHashCode")                                    \
-  do_intrinsic(_currentTimeMillis,        java_lang_System,       currentTimeMillis_name, void_long_signature,   F_S)   \
+  do_intrinsic(_currentTimeMillis,        java_lang_System,       currentTimeMillis_name, void_long_signature,   F_SN)  \
                                                                                                                         \
    do_name(     currentTimeMillis_name,                          "currentTimeMillis")                                   \
-  do_intrinsic(_nanoTime,                 java_lang_System,       nanoTime_name,          void_long_signature,   F_S)   \
+  do_intrinsic(_nanoTime,                 java_lang_System,       nanoTime_name,          void_long_signature,   F_SN)  \
    do_name(     nanoTime_name,                                   "nanoTime")                                            \
                                                                                                                         \
   JFR_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)                                               \
                                                                                                                         \
-  do_intrinsic(_arraycopy,                java_lang_System,       arraycopy_name, arraycopy_signature,           F_S)   \
+  do_intrinsic(_arraycopy,                java_lang_System,       arraycopy_name, arraycopy_signature,           F_SN)  \
    do_name(     arraycopy_name,                                  "arraycopy")                                           \
    do_signature(arraycopy_signature,                             "(Ljava/lang/Object;ILjava/lang/Object;II)V")          \
-  do_intrinsic(_currentThread,            java_lang_Thread,       currentThread_name, currentThread_signature,   F_S)   \
+  do_intrinsic(_currentThread,            java_lang_Thread,       currentThread_name, currentThread_signature,   F_SN)  \
    do_name(     currentThread_name,                              "currentThread")                                       \
    do_signature(currentThread_signature,                         "()Ljava/lang/Thread;")                                \
                                                                                                                         \
@@ -401,9 +401,9 @@ class methodHandle;
    do_signature(vectorizedMismatch_signature, "(Ljava/lang/Object;JLjava/lang/Object;JII)I")                            \
                                                                                                                         \
   /* java/lang/ref/Reference */                                                                                         \
-  do_intrinsic(_Reference_get,            java_lang_ref_Reference, get_name,    void_object_signature, F_R)             \
-  do_intrinsic(_Reference_refersTo0,     java_lang_ref_Reference, refersTo0_name, object_boolean_signature, F_R)        \
-  do_intrinsic(_PhantomReference_refersTo0, java_lang_ref_PhantomReference, refersTo0_name, object_boolean_signature, F_R) \
+  do_intrinsic(_Reference_get,              java_lang_ref_Reference, get_name,       void_object_signature,    F_R)     \
+  do_intrinsic(_Reference_refersTo0,        java_lang_ref_Reference, refersTo0_name, object_boolean_signature, F_RN)    \
+  do_intrinsic(_PhantomReference_refersTo0, java_lang_ref_PhantomReference, refersTo0_name, object_boolean_signature, F_RN) \
                                                                                                                         \
   /* support for com.sun.crypto.provider.AESCrypt and some of its callers */                                            \
   do_class(com_sun_crypto_provider_aescrypt,      "com/sun/crypto/provider/AESCrypt")                                   \
@@ -951,10 +951,10 @@ class methodHandle;
                                                                                                                                                \
    /* (2) Bytecode intrinsics                                                                        */                        \
                                                                                                                                \
-  do_intrinsic(_park,                     jdk_internal_misc_Unsafe,     park_name, park_signature,                     F_R)    \
+  do_intrinsic(_park,                     jdk_internal_misc_Unsafe,     park_name, park_signature,                     F_RN)   \
    do_name(     park_name,                                              "park")                                                \
    do_signature(park_signature,                                         "(ZJ)V")                                               \
-  do_intrinsic(_unpark,                   jdk_internal_misc_Unsafe,     unpark_name, unpark_signature,                 F_R)    \
+  do_intrinsic(_unpark,                   jdk_internal_misc_Unsafe,     unpark_name, unpark_signature,                 F_RN)   \
    do_name(     unpark_name,                                            "unpark")                                              \
    do_alias(    unpark_signature,                                       /*(LObject;)V*/ object_void_signature)                 \
                                                                                                                                \
@@ -1090,9 +1090,9 @@ class vmIntrinsics : AllStatic {
   enum Flags {
     // AccessFlags syndromes relevant to intrinsics.
     F_none = 0,
-    F_R,                        // !static ?native !synchronized (R="regular")
-    F_S,                        //  static ?native !synchronized
-    F_Y,                        // !static ?native  synchronized
+    F_R,                        // !static !native !synchronized (R="regular")
+    F_S,                        //  static !native !synchronized
+    F_Y,                        // !static !native  synchronized
     F_RN,                       // !static  native !synchronized
     F_SN,                       //  static  native !synchronized
 
@@ -1102,6 +1102,50 @@ class vmIntrinsics : AllStatic {
     log2_FLAG_LIMIT = 3         // checked by an assert at start-up
   };
 
+  static constexpr bool is_flag_static(Flags flags) {
+    switch (flags) {
+      case F_S:
+      case F_SN:
+        return true;
+      case F_R:
+      case F_Y:
+      case F_RN:
+        return false;
+      default:
+        ShouldNotReachHere();
+        return false;
+    }
+  }
+
+  static constexpr bool is_flag_synchronized(Flags flags) {
+    switch (flags) {
+      case F_Y:
+        return true;
+      case F_RN:
+      case F_SN:
+      case F_S:
+      case F_R:
+        return false;
+      default:
+        ShouldNotReachHere();
+        return false;
+    }
+  }
+
+  static constexpr bool is_flag_native(Flags flags) {
+    switch (flags) {
+      case F_RN:
+      case F_SN:
+        return true;
+      case F_S:
+      case F_R:
+      case F_Y:
+        return false;
+      default:
+        ShouldNotReachHere();
+        return false;
+    }
+  }
 
   // Convert an arbitrary vmIntrinsicID to int (checks validity):
   //    vmIntrinsicID x = ...; int n = vmIntrinsics::as_int(x);
@@ -1153,9 +1197,15 @@ public:
     // ID _none does not hold the following asserts.
     if (id == _none)  return id;
 #endif
-    assert(    class_for(id) == holder, "correct id");
-    assert(     name_for(id) == name,   "correct id");
-    assert(signature_for(id) == sig,    "correct id");
+    assert(    class_for(id) == holder, "correct class: %s",     name_at(id));
+    assert(     name_for(id) == name,   "correct name: %s",      name_at(id));
+    assert(signature_for(id) == sig,    "correct signature: %s", name_at(id));
+    assert(      is_flag_static(flags_for(id)) == ((flags & JVM_ACC_STATIC)       != 0),
+                 "correct static flag: %s", name_at(id));
+    assert(is_flag_synchronized(flags_for(id)) == ((flags & JVM_ACC_SYNCHRONIZED) != 0),
+           "correct synchronized flag: %s", name_at(id));
+    assert(      is_flag_native(flags_for(id)) == ((flags & JVM_ACC_NATIVE)       != 0),
+                 "correct native flag: %s", name_at(id));
     return id;
   }
 
@@ -1164,7 +1214,7 @@ public:
   static vmSymbolID     class_for(ID id);
   static vmSymbolID      name_for(ID id);
   static vmSymbolID signature_for(ID id);
-  static Flags              flags_for(ID id);
+  static Flags          flags_for(ID id);
 #endif
 
   static bool class_has_intrinsics(vmSymbolID holder);
