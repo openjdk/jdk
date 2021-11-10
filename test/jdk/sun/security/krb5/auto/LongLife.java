@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import org.ietf.jgss.GSSManager;
 import sun.security.krb5.Config;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
-import java.security.PrivilegedExceptionAction;
 
 public class LongLife {
 
@@ -72,8 +71,7 @@ public class LongLife {
 
         Context c = Context.fromJAAS("client");
 
-        GSSCredential cred = Subject.doAs(c.s(),
-                (PrivilegedExceptionAction<GSSCredential>)
+        GSSCredential cred = Subject.callAs(c.s(),
                 ()-> {
                     GSSManager m = GSSManager.getInstance();
                     return m.createCredential(GSSCredential.INITIATE_ONLY);
