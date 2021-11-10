@@ -38,25 +38,8 @@ import javadoc.tester.JavadocTester;
 
 public class SnippetTester extends JavadocTester {
 
-    // TODO This is a temporary method; it should be removed after JavadocTester has provided similar functionality (JDK-8273154).
     protected void checkOrder(Output output, String... strings) {
-        String outputString = getOutput(output);
-        int prevIndex = -1;
-        for (String s : strings) {
-            s = s.replace("\n", NL); // normalize new lines
-            int currentIndex = outputString.indexOf(s, prevIndex + 1);
-            checking("output: " + output + ": " + s + " at index " + currentIndex);
-            if (currentIndex == -1) {
-                failed(output + ": " + s + " not found.");
-                continue;
-            }
-            if (currentIndex > prevIndex) {
-                passed(output + ": " + " is in the correct order");
-            } else {
-                failed(output + ": " + " is in the wrong order.");
-            }
-            prevIndex = currentIndex;
-        }
+        new OutputChecker(output).setExpectOrdered(true).check(strings);
     }
 
     /*
