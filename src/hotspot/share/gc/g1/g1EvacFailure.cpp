@@ -41,7 +41,7 @@ class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   HeapRegion* _hr;
-  size_t _marked_bytes;
+  size_t _marked_words;
   bool _during_concurrent_start;
   uint _worker_id;
   HeapWord* _last_forwarded_object_end;
@@ -53,12 +53,12 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _cm(_g1h->concurrent_mark()),
     _hr(hr),
-    _marked_bytes(0),
+    _marked_words(0),
     _during_concurrent_start(during_concurrent_start),
     _worker_id(worker_id),
     _last_forwarded_object_end(hr->bottom()) { }
 
-  size_t marked_bytes() { return _marked_bytes; }
+  size_t marked_bytes() { return _marked_words * HeapWordSize; }
 
   // Iterate over the live objects in the region to find self-forwarded objects
   // that need to be kept live. We need to update the remembered sets of these
@@ -96,7 +96,7 @@ public:
     }
     size_t obj_size = obj->size();
 
-    _marked_bytes += (obj_size * HeapWordSize);
+    _marked_words += obj_size;
     PreservedMarks::init_forwarded_mark(obj);
 
     HeapWord* obj_end = obj_addr + obj_size;
