@@ -32,12 +32,6 @@ import jdk.jfr.RecordingContext;
 import jdk.jfr.RecordingContextFilter;
 import jdk.jfr.RecordingContextKey;
 
-@BenchmarkMode(Mode.AverageTime)
-@Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 3)
 public class RecordingContextFilterBenchmark {
 
     static final RecordingContextKey contextKey1 =
@@ -47,52 +41,158 @@ public class RecordingContextFilterBenchmark {
     static final RecordingContextKey contextKey3 =
         RecordingContextKey.forName("Key3");
 
-    Recording recording;
+    @State(Scope.Benchmark)
+    static abstract class Base {
 
-    @Setup
-    public void setup() {
-        RecordingContextFilter.Config.setContextFilter(
-            RecordingContextFilter.Config.createFilter()
-                .forAllTypes(b -> {
-                    b.hasKey(contextKey2);
-                })
-                .build());
+        protected Recording recording;
+        protected RecordingContext context;
 
-        recording = new Recording();
-    }
+        final static int REPEAT = 1;
 
-    @TearDown
-    public void tearDown() {
-        recording.close();
-    }
+        @Setup
+        public void setup() {
+            recording = new Recording();
+            recording.start();
+            context = buildContext();
+            RecordingContextFilter.Config.setContextFilter(buildContextFilter());
+        }
 
-    @Benchmark
-    @SuppressWarnings("try")
-    public void key1(Blackhole bh) {
-        try (var c = RecordingContext
-                        .where(contextKey1, "Value1").build()) {
-            new EmptyEvent().commit();
+        public abstract RecordingContext buildContext();
+        public abstract RecordingContextFilter buildContextFilter();
+
+        @Benchmark
+        public void withContext(Blackhole bh) {
+            for (int i = 0; i < REPEAT; i++) {
+                EmptyEventWithContext e = new EmptyEventWithContext();
+                // bh.consume(e);
+                e.commit();
+            }
+        }
+
+        @Benchmark
+        public void withoutContext(Blackhole bh) {
+            for (int i = 0; i < REPEAT; i++) {
+                EmptyEventWithoutContext e = new EmptyEventWithoutContext();
+                // bh.consume(e);
+                e.commit();
+            }
+        }
+
+        @TearDown
+        public void tearDown() {
+            RecordingContextFilter.Config.setContextFilter(null);
+            if (context != null) {
+                context.close();
+            }
+            recording.close();
         }
     }
 
-    @Benchmark
-    @SuppressWarnings("try")
-    public void key2(Blackhole bh) {
-        try (var c = RecordingContext
-                        .where(contextKey1, "Value1")
-                        .where(contextKey2, "Value2").build()) {
-            new EmptyEvent().commit();
+    @BenchmarkMode(Mode.AverageTime)
+    @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+    @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+    @State(Scope.Benchmark)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @Fork(value = 3)
+    public static class Baseline extends Base {
+
+        @Override
+        public RecordingContext buildContext() {
+            return null;
+        }
+
+        @Override
+        public RecordingContextFilter buildContextFilter() {
+            return
+                RecordingContextFilter.Config.createFilter()
+                    .forAllTypes(b -> {
+                        b.hasKey(contextKey1);
+                    })
+                    .build();
         }
     }
 
-    @Benchmark
-    @SuppressWarnings("try")
-    public void key3(Blackhole bh) {
-        try (var c = RecordingContext
-                        .where(contextKey1, "Value1")
-                        .where(contextKey2, "Value2")
-                        .where(contextKey3, "Value3").build()) {
-            new EmptyEvent().commit();
+    @BenchmarkMode(Mode.AverageTime)
+    @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+    @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+    @State(Scope.Benchmark)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @Fork(value = 3)
+    public static class One extends Base {
+
+        @Override
+        public RecordingContext buildContext() {
+            return
+                RecordingContext
+                    .where(contextKey1, "Value1")
+                    .build();
+        }
+
+        @Override
+        public RecordingContextFilter buildContextFilter() {
+            return
+                RecordingContextFilter.Config.createFilter()
+                    .forAllTypes(b -> {
+                        b.hasKey(contextKey1);
+                    })
+                    .build();
+        }
+    }
+
+    @BenchmarkMode(Mode.AverageTime)
+    @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+    @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+    @State(Scope.Benchmark)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @Fork(value = 3)
+    public static class Two extends Base {
+
+        @Override
+        public RecordingContext buildContext() {
+            return
+                RecordingContext
+                    .where(contextKey1, "Value1")
+                    .where(contextKey2, "Value2")
+                    .build();
+        }
+
+        @Override
+        public RecordingContextFilter buildContextFilter() {
+            return
+                RecordingContextFilter.Config.createFilter()
+                    .forAllTypes(b -> {
+                        b.hasKey(contextKey1);
+                    })
+                    .build();
+        }
+    }
+
+    @BenchmarkMode(Mode.AverageTime)
+    @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+    @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+    @State(Scope.Benchmark)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @Fork(value = 3)
+    public static class Three extends Base {
+
+        @Override
+        public RecordingContext buildContext() {
+            return
+                RecordingContext
+                    .where(contextKey1, "Value1")
+                    .where(contextKey2, "Value2")
+                    .where(contextKey3, "Value3")
+                    .build();
+        }
+
+        @Override
+        public RecordingContextFilter buildContextFilter() {
+            return
+                RecordingContextFilter.Config.createFilter()
+                    .forAllTypes(b -> {
+                        b.hasKey(contextKey1);
+                    })
+                    .build();
         }
     }
 }

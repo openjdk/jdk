@@ -35,7 +35,7 @@ import jdk.jfr.StackTrace;
 @Label("EmptyEvent")
 @Description("Empty Event")
 @Category("MicroBenchmark")
-@Context(true)
+@Context(false)
 @StackTrace(false)
-public class EmptyEvent extends Event {
+public class EmptyEventWithoutContext extends Event {
 }
