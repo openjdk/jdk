@@ -983,10 +983,8 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     k = in_jvms->scloff();
     l = in_jvms->scl_size();
     out_jvms->set_scloff(p);
-    for (j = 0; j < l; j++) {
-      assert(in_jvms == youngest_jvms, "Unexpected scalar replacement in caller debug info");
+    for (j = 0; j < l; j++)
       call->set_req(p++, in_map->in(k+j));
-    }
 
     // Finish the new jvms.
     out_jvms->set_endoff(p);
