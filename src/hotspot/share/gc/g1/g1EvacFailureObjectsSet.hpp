@@ -72,9 +72,10 @@ public:
   // Record an object that failed evacuation.
   void record(oop obj);
 
-  // Apply the given ObjectClosure to all objects that failed evacuation. Objects
-  // are passed in increasing address order.
-  void iterate(ObjectClosure* closure);
+  // Apply the given ObjectClosure to all objects that failed evacuation and
+  // empties the list after processing.
+  // Objects are passed in increasing address order.
+  void process_and_drop(ObjectClosure* closure);
 };
 
 

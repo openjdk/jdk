@@ -89,7 +89,7 @@ class G1EvacFailureObjectsIterationHelper {
     QuickSort::sort(_offset_array, _array_length, order_oop, true);
   }
 
-  void iterate_internal(ObjectClosure* closure) {
+  void iterate(ObjectClosure* closure) {
     for (uint i = 0; i < _array_length; i++) {
       oop cur = _objects_set->from_offset(_offset_array[i]);
       closure->do_object(cur);
@@ -103,13 +103,13 @@ public:
     _offset_array(nullptr),
     _array_length(0) { }
 
-  void iterate(ObjectClosure* closure) {
+  void process_and_drop(ObjectClosure* closure) {
     uint num = _segments->num_allocated_nodes();
     _offset_array = NEW_C_HEAP_ARRAY(OffsetInRegion, num, mtGC);
 
     join_and_sort();
     assert(_array_length == num, "must be %u, %u", _array_length, num);
-    iterate_internal(closure);
+    iterate(closure);
 
     FREE_C_HEAP_ARRAY(OffsetInRegion, _offset_array);
   }
@@ -121,11 +121,11 @@ public:
   }
 };
 
-void G1EvacFailureObjectsSet::iterate(ObjectClosure* closure) {
+void G1EvacFailureObjectsSet::process_and_drop(ObjectClosure* closure) {
   assert_at_safepoint();
 
   G1EvacFailureObjectsIterationHelper helper(this);
-  helper.iterate(closure);
+  helper.process_and_drop(closure);
 
   _offsets.drop_all();
 }
