@@ -311,7 +311,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                 current = null;
             }
         } catch (Exception e) {
-            def.end();
+            if (usesDefaultDeflater)
+                def.end();
             throw e;
         }
     }
