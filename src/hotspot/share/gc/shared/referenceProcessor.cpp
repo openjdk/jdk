@@ -1070,20 +1070,32 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
                                                         GCTimer* gc_timer) {
   Ticks preclean_start = Ticks::now();
 
+  ReferenceType ref_type_arr[4] = { REF_SOFT, REF_WEAK, REF_FINAL, REF_PHANTOM };
+  size_t ref_count_arr[4] = {};
+
+  if (discovery_is_mt()) {
+    for (int i = 0; i < 4; ++i) {
+      ReferenceType ref_type = ref_type_arr[i];
+      DiscoveredList* list = get_discovered_list(ref_type);
+      ref_count_arr[i] = list->length();
+      preclean_discovered_reflist(*list, is_alive, enqueue, yield);
+    }
+  } else {
+    for (int i = 0; i < 4; ++i) {
+      ReferenceType ref_type = ref_type_arr[i];
+      // When discovery is *not* multi-threaded, discovered refs are stored in
+      // list[0.._num_queues-1]. Loop _num_queues times to cover all lists.
+      for (uint j = 0; j < _num_queues; ++j) {
+        DiscoveredList* list = get_discovered_list(ref_type);
+        ref_count_arr[i] += list->length();
+        preclean_discovered_reflist(*list, is_alive, enqueue, yield);
+      }
+    }
+  }
+
   uint worker_id = WorkerThread::current()->id();
-
-  size_t soft_count    = _discoveredSoftRefs[worker_id].length();
-  size_t weak_count    = _discoveredWeakRefs[worker_id].length();
-  size_t final_count   = _discoveredFinalRefs[worker_id].length();
-  size_t phantom_count = _discoveredPhantomRefs[worker_id].length();
-
-  preclean_discovered_reflist(_discoveredSoftRefs[worker_id], is_alive, enqueue, yield);
-  preclean_discovered_reflist(_discoveredWeakRefs[worker_id], is_alive, enqueue, yield);
-  preclean_discovered_reflist(_discoveredFinalRefs[worker_id], is_alive, enqueue, yield);
-  preclean_discovered_reflist(_discoveredPhantomRefs[worker_id], is_alive, enqueue, yield);
-
   log_trace(gc, ref)("Worker (%d): Precleaning Soft (%zu), Weak (%zu), Final (%zu), Phantom (%zu) %f ms",
-      worker_id, soft_count, weak_count, final_count, phantom_count,
+      worker_id, ref_count_arr[0], ref_count_arr[1], ref_count_arr[2], ref_count_arr[3],
       (Ticks::now() - preclean_start).seconds()*1000);
 }
 
