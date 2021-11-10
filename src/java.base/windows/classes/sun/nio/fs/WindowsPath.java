@@ -174,16 +174,25 @@ class WindowsPath implements Path {
     // use this path for Win32 calls
     // This method will prefix long paths with \\?\ or \\?\UNC as required.
     String getPathForWin32Calls() throws WindowsException {
+        return getPathForWin32Calls(false);
+    }
+
+    String getPathWithPrefixForWin32Calls() throws WindowsException {
+        return getPathForWin32Calls(true);
+    }
+
+    String getPathForWin32Calls(boolean alwaysAddPrefix)
+        throws WindowsException {
         // short absolute paths can be used directly
         if (isAbsolute() && path.length() <= MAX_PATH)
-            return path;
+            return alwaysAddPrefix ? addPrefixIfAbsent(path) : path;
 
         // return cached values if available
         WeakReference<String> ref = pathForWin32Calls;
         String resolved = (ref != null) ? ref.get() : null;
         if (resolved != null) {
             // Win32 path already available
-            return resolved;
+            return alwaysAddPrefix ? addPrefixIfAbsent(resolved) : resolved;
         }
 
         // resolve against default directory
@@ -194,18 +203,25 @@ class WindowsPath implements Path {
         // a link - for example, it is okay for foo/link/../bar to be changed
         // to foo/bar. The reason is that Win32 APIs to access foo/link/../bar
         // will access foo/bar anyway (which differs to Unix systems)
-        if (resolved.length() > MAX_PATH) {
+        boolean eligibleToCache = true;
+        if (resolved.length() > MAX_PATH || alwaysAddPrefix) {
             if (resolved.length() > MAX_LONG_PATH) {
                 throw new WindowsException("Cannot access file with path exceeding "
                     + MAX_LONG_PATH + " characters");
             }
-            resolved = addPrefixIfNeeded(GetFullPathName(resolved));
+            String prefixed = addPrefixIfNeeded(GetFullPathName(resolved));
+            if (prefixed != resolved) {
+                resolved = prefixed;
+            } else if (alwaysAddPrefix) {
+                resolved = addPrefixIfAbsent(resolved);
+                eligibleToCache = false;
+            }
         }
 
         // cache the resolved path (except drive relative paths as the working
         // directory on removal media devices can change during the lifetime
         // of the VM)
-        if (type != WindowsPathType.DRIVE_RELATIVE) {
+        if (eligibleToCache && type != WindowsPathType.DRIVE_RELATIVE) {
             synchronized (this) {
                 pathForWin32Calls = new WeakReference<String>(resolved);
             }
@@ -287,6 +303,13 @@ class WindowsPath implements Path {
             } else {
                 path = "\\\\?\\" + path;
             }
+        }
+        return path;
+    }
+
+    static String addPrefixIfAbsent(String path) {
+        if (!path.startsWith("\\\\")) {
+            path = "\\\\?\\" + path;
         }
         return path;
     }

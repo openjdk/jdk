@@ -242,7 +242,7 @@ public class Basic {
 
             // We need to run up to MAX_PATH for directories,
             // but not quite go over it.
-            int MAX_PATH = 247;
+            int MAX_PATH = 250;
             int requiredLen = MAX_PATH - len - 2;
 
             // Create a really long directory name.
