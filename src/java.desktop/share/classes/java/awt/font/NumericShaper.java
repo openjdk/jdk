@@ -112,22 +112,24 @@ import jdk.internal.access.SharedSecrets;
  * <caption>NumericShaper constants precedence</caption>
  * <thead>
  *   <tr>
- *     <th scope="col" id="colheader1">Unicode Range
- *     <th scope="col" id="colheader2">{@code NumericShaper} Constants
- *     <th scope="col" id="colheader3">Precedence
+ *     <th scope="col">Unicode Range
+ *     <th scope="col">{@code NumericShaper} Constants
+ *     <th scope="col">Precedence
  * </thead>
  * <tbody>
  *   <tr>
- *     <th scope="rowgroup" rowspan="2" id="rowheader1">Arabic
+ *     <th scope="rowgroup" rowspan="2">Arabic
  *     <th scope="row">{@link NumericShaper#ARABIC NumericShaper.ARABIC}
  *     <br>
  *     {@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
- *     <td headers="rowheader1 colheader3">{@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
+ *     <td>{@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
  *   <tr>
  *     <th scope="row">{@link NumericShaper.Range#ARABIC}
  *     <br>
  *     {@link NumericShaper.Range#EASTERN_ARABIC}
- *     <td headers="rowheader1 colheader3">{@link NumericShaper.Range#EASTERN_ARABIC}
+ *     <td>{@link NumericShaper.Range#EASTERN_ARABIC}
+ * </tbody>
+ * <tbody>
  *   <tr>
  *     <th scope="rowgroup">Tai Tham
  *     <th scope="row">{@link NumericShaper.Range#TAI_THAM_HORA}
