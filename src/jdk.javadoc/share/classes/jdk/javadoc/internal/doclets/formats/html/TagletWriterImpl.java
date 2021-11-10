@@ -447,13 +447,14 @@ public class TagletWriterImpl extends TagletWriter {
         String copyText = resources.getText("doclet.Copy_snippet_to_clipboard");
         String copiedText = resources.getText("doclet.Copied_snippet_to_clipboard");
         HtmlTree snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
-                HtmlTree.A("#", new HtmlTree(TagName.IMG)
+                new HtmlTree(TagName.BUTTON)
+                        .add(HtmlTree.SPAN(Text.of(copyText))
+                                .put(HtmlAttr.DATA_COPIED, copiedText))
+                        .add(new HtmlTree(TagName.IMG)
                                 .put(HtmlAttr.SRC, htmlWriter.pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
                                 .put(HtmlAttr.ALT, copyText))
                         .addStyle(HtmlStyle.snippetCopy)
-                        .put(HtmlAttr.ONCLICK, "copySnippet(this)")
-                        .put(HtmlAttr.ARIA_LABEL, copyText)
-                        .put(HtmlAttr.DATA_COPIED, copiedText));
+                        .put(HtmlAttr.ONCLICK, "copySnippet(this)"));
         return snippetContainer.add(pre.add(code));
     }
 

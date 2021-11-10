@@ -178,11 +178,6 @@ public class HtmlDocletWriter {
     protected final HtmlIds htmlIds;
 
     /**
-     * To check whether annotation heading is printed or not.
-     */
-    protected boolean printedAnnotationHeading = false;
-
-    /**
      * To check whether the repeated annotations is documented or not.
      */
     private boolean isAnnotationDocumented = false;

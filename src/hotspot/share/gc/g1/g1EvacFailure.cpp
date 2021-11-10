@@ -68,40 +68,40 @@ public:
   // dead too) already.
   void do_object(oop obj) {
     HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
+    assert(_last_forwarded_object_end <= obj_addr, "should iterate in ascending address order");
     assert(_hr->is_in(obj_addr), "sanity");
 
-    if (obj->is_forwarded() && obj->forwardee() == obj) {
-      // The object failed to move.
+    // The object failed to move.
+    assert(obj->is_forwarded() && obj->forwardee() == obj, "sanity");
 
-      zap_dead_objects(_last_forwarded_object_end, obj_addr);
-      // We consider all objects that we find self-forwarded to be
-      // live. What we'll do is that we'll update the prev marking
-      // info so that they are all under PTAMS and explicitly marked.
-      if (!_cm->is_marked_in_prev_bitmap(obj)) {
-        _cm->mark_in_prev_bitmap(obj);
-      }
-      if (_during_concurrent_start) {
-        // For the next marking info we'll only mark the
-        // self-forwarded objects explicitly if we are during
-        // concurrent start (since, normally, we only mark objects pointed
-        // to by roots if we succeed in copying them). By marking all
-        // self-forwarded objects we ensure that we mark any that are
-        // still pointed to be roots. During concurrent marking, and
-        // after concurrent start, we don't need to mark any objects
-        // explicitly and all objects in the CSet are considered
-        // (implicitly) live. So, we won't mark them explicitly and
-        // we'll leave them over NTAMS.
-        _cm->mark_in_next_bitmap(_worker_id, _hr, obj);
-      }
-      size_t obj_size = obj->size();
-
-      _marked_bytes += (obj_size * HeapWordSize);
-      PreservedMarks::init_forwarded_mark(obj);
-
-      HeapWord* obj_end = obj_addr + obj_size;
-      _last_forwarded_object_end = obj_end;
-      _hr->alloc_block_in_bot(obj_addr, obj_end);
+    zap_dead_objects(_last_forwarded_object_end, obj_addr);
+    // We consider all objects that we find self-forwarded to be
+    // live. What we'll do is that we'll update the prev marking
+    // info so that they are all under PTAMS and explicitly marked.
+    if (!_cm->is_marked_in_prev_bitmap(obj)) {
+      _cm->mark_in_prev_bitmap(obj);
     }
+    if (_during_concurrent_start) {
+      // For the next marking info we'll only mark the
+      // self-forwarded objects explicitly if we are during
+      // concurrent start (since, normally, we only mark objects pointed
+      // to by roots if we succeed in copying them). By marking all
+      // self-forwarded objects we ensure that we mark any that are
+      // still pointed to be roots. During concurrent marking, and
+      // after concurrent start, we don't need to mark any objects
+      // explicitly and all objects in the CSet are considered
+      // (implicitly) live. So, we won't mark them explicitly and
+      // we'll leave them over NTAMS.
+      _cm->mark_in_next_bitmap(_worker_id, _hr, obj);
+    }
+    size_t obj_size = obj->size();
+
+    _marked_bytes += (obj_size * HeapWordSize);
+    PreservedMarks::init_forwarded_mark(obj);
+
+    HeapWord* obj_end = obj_addr + obj_size;
+    _last_forwarded_object_end = obj_end;
+    _hr->alloc_block_in_bot(obj_addr, obj_end);
   }
 
   // Fill the memory area from start to end with filler objects, and update the BOT
@@ -164,7 +164,8 @@ public:
     RemoveSelfForwardPtrObjClosure rspc(hr,
                                         during_concurrent_start,
                                         _worker_id);
-    hr->object_iterate(&rspc);
+    // Iterates evac failure objs which are recorded during evacuation.
+    hr->iterate_evac_failure_objs(&rspc);
     // Need to zap the remainder area of the processed region.
     rspc.zap_remainder();
 

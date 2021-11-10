@@ -31,6 +31,20 @@
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/atomic.hpp"
 
+inline HeapWord* G1BlockOffsetTablePart::threshold_for_addr(const void* addr) {
+  assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
+  size_t index = _bot->index_for(addr);
+  HeapWord* card_boundary = _bot->address_for_index(index);
+  // Address at card boundary, use as threshold.
+  if (card_boundary == addr) {
+    return card_boundary;
+  }
+
+  // Calculate next threshold.
+  HeapWord* threshold = card_boundary + BOTConstants::N_words;
+  return threshold;
+}
+
 inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
   assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
   HeapWord* q = block_at_or_preceding(addr);
@@ -108,9 +122,6 @@ inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr)
   assert(_object_can_span || _bot->offset_array(_bot->index_for(_hr->bottom())) == 0,
          "Object crossed region boundary, found offset %u instead of 0",
          (uint) _bot->offset_array(_bot->index_for(_hr->bottom())));
-
-  // We must make sure that the offset table entry we use is valid.
-  assert(addr < _next_offset_threshold, "Precondition");
 
   size_t index = _bot->index_for(addr);
 

@@ -168,6 +168,11 @@ G1SegmentedArray<Elem, flag>::G1SegmentedArray(const G1SegmentedArrayAllocOption
 }
 
 template <class Elem, MEMFLAGS flag>
+G1SegmentedArray<Elem, flag>::~G1SegmentedArray() {
+  drop_all();
+}
+
+template <class Elem, MEMFLAGS flag>
 void G1SegmentedArray<Elem, flag>::drop_all() {
   G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
 
@@ -230,6 +235,42 @@ Elem* G1SegmentedArray<Elem, flag>::allocate() {
 template <class Elem, MEMFLAGS flag>
 inline uint G1SegmentedArray<Elem, flag>::num_buffers() const {
   return Atomic::load(&_num_buffers);
+}
+
+#ifdef ASSERT
+template <MEMFLAGS flag>
+class LengthClosure {
+  uint _total;
+public:
+  LengthClosure() : _total(0) {}
+  void do_buffer(G1SegmentedArrayBuffer<flag>* node, uint limit) {
+    _total += limit;
+  }
+  uint length() const {
+    return _total;
+  }
+};
+
+template <class Elem, MEMFLAGS flag>
+uint G1SegmentedArray<Elem, flag>::calculate_length() const {
+  LengthClosure<flag> closure;
+  iterate_nodes(closure);
+  return closure.length();
+}
+#endif
+
+template <class Elem, MEMFLAGS flag>
+template <typename BufferClosure>
+void G1SegmentedArray<Elem, flag>::iterate_nodes(BufferClosure& closure) const {
+  G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
+
+  assert((cur != nullptr) == (_last != nullptr),
+         "If there is at least one element, there must be a last one");
+
+  while (cur != nullptr) {
+    closure.do_buffer(cur, cur->length());
+    cur = cur->next();
+  }
 }
 
 #endif //SHARE_GC_G1_G1SEGMENTEDARRAY_INLINE_HPP
