@@ -550,11 +550,6 @@ java/lang/invoke/RicochetTest.java                              8251969 generic-
 java/lang/instrument/RedefineBigClass.sh                        8065756 generic-all
 java/lang/instrument/RetransformBigClass.sh                     8065756 generic-all
 
-java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
-java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
-
-javax/management/monitor/DerivedGaugeMonitorTest.java         8042211 generic-all
-
 ############################################################################
 
 # jdk_io
@@ -569,6 +564,8 @@ java/io/File/createTempFile/SpecialTempFile.java                8274122 windows1
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
+java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
+java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
 sun/management/jdp/JdpDefaultsTest.java                         8241865 linux-aarch64,macosx-all
@@ -580,6 +577,8 @@ sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-a
 # jdk_jmx
 
 javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
+
+javax/management/monitor/DerivedGaugeMonitorTest.java           8042211 generic-all
 
 javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 generic-all
 
