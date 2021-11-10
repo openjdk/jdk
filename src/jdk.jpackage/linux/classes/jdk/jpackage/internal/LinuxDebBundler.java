@@ -282,7 +282,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                         "APPLICATION_PACKAGE", controlFileName),
                 new PackageProperty("Version", String.format("%s%s",
                         VERSION.fetchFrom(params), releaseSuffix(params)),
-                        "APPLICATION_VERSION-APPLICATION_RELEASE",
+                        "APPLICATION_VERSION_WITH_RELEASE",
                         controlFileName),
                 new PackageProperty("Architecture", DEB_ARCH, "APPLICATION_ARCH",
                         controlFileName));
