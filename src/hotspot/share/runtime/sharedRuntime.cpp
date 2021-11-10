@@ -3014,11 +3014,6 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   assert(method->is_method_handle_intrinsic() ||
          method->has_native_function(), "must have something valid to call!");
 
-  if (CriticalJNINatives && !method->is_method_handle_intrinsic()) {
-    // We perform the I/O with transition to native before acquiring AdapterHandlerLibrary_lock.
-    critical_entry = NativeLookup::lookup_critical_entry(method);
-  }
-
   {
     // Perform the work while holding the lock, but perform any printing outside the lock
     MutexLocker mu(AdapterHandlerLibrary_lock);
@@ -3061,7 +3056,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
 
       // Generate the compiled-to-native wrapper code
-      nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type, critical_entry);
+      nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
 
       if (nm != NULL) {
         {

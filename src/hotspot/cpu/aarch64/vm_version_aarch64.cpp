@@ -450,6 +450,4 @@ void VM_Version::initialize() {
     AlignVector = AvoidUnalignedAccesses;
   }
 #endif
-
-  UNSUPPORTED_OPTION(CriticalJNINatives);
 }
