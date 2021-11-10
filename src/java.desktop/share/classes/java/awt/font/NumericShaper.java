@@ -119,18 +119,18 @@ import jdk.internal.access.SharedSecrets;
  * <tbody>
  *   <tr>
  *     <th scope="rowgroup" rowspan="2" id="rowheader1">Arabic
- *     <td headers="rowheader1 colheader2">{@link NumericShaper#ARABIC NumericShaper.ARABIC}
+ *     <th scope="row">{@link NumericShaper#ARABIC NumericShaper.ARABIC}
  *     <br>
  *     {@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
  *     <td headers="rowheader1 colheader3">{@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
  *   <tr>
- *     <td headers="rowheader1 colheader2">{@link NumericShaper.Range#ARABIC}
+ *     <th scope="row">{@link NumericShaper.Range#ARABIC}
  *     <br>
  *     {@link NumericShaper.Range#EASTERN_ARABIC}
  *     <td headers="rowheader1 colheader3">{@link NumericShaper.Range#EASTERN_ARABIC}
  *   <tr>
- *     <th scope="row">Tai Tham
- *     <td>{@link NumericShaper.Range#TAI_THAM_HORA}
+ *     <th scope="rowgroup">Tai Tham
+ *     <th scope="row">{@link NumericShaper.Range#TAI_THAM_HORA}
  *     <br>
  *     {@link NumericShaper.Range#TAI_THAM_THAM}
  *     <td>{@link NumericShaper.Range#TAI_THAM_THAM}
