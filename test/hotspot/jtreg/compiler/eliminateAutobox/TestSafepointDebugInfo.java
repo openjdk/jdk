@@ -112,8 +112,8 @@ public class TestSafepointDebugInfo {
 
     public static void main(String[] args) {
         // Warmup
-	    for (int i = 0; i < 100_000; ++i) {
-	        int val = (i % 10);
+        for (int i = 0; i < 100_000; ++i) {
+            int val = (i % 10);
             Asserts.assertEquals(test1(val), val);
             Asserts.assertEquals(fBox, val);
             Asserts.assertEquals(test2(val, val), 2*val);
