@@ -36,6 +36,7 @@
 #include "gc/z/zThread.inline.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "gc/z/zValue.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
