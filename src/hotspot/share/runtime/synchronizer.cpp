@@ -452,7 +452,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
     // and must not look locked either.
     lock->set_displaced_header(markWord::unused_mark());
   } else if (VerifyHeavyMonitors) {
-    assert(!obj->mark().has_locker(), "must not be stack-locked");
+    guarantee(!obj->mark().has_locker(), "must not be stack-locked");
   }
 
   // An async deflation can race after the inflate() call and before
@@ -509,7 +509,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
       }
     }
   } else if (VerifyHeavyMonitors) {
-    assert(!object->mark().has_locker(), "must not be stack-locked");
+    guarantee(!object->mark().has_locker(), "must not be stack-locked");
   }
 
   // We have to take the slow-path of possible inflation and then exit.
@@ -813,11 +813,9 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     markWord temp, test;
     intptr_t hash;
     markWord mark = read_stable_mark(obj);
-#ifdef ASSERT
     if (UseHeavyMonitors && VerifyHeavyMonitors) {
-      assert(!mark.has_locker(), "must not be stack locked");
+      guarantee(!mark.has_locker(), "must not be stack locked");
     }
-#endif
     if (mark.is_neutral()) {               // if this is a normal header
       hash = mark.hash();
       if (hash != 0) {                     // if it has a hash, just return it
