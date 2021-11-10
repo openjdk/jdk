@@ -39,14 +39,11 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NoResizeEventOnDMChangeTest {
     public static void main(String[] args) {
@@ -156,6 +153,7 @@ public class NoResizeEventOnDMChangeTest {
                                 Frame f = fsWin instanceof Frame ? (Frame) fsWin : (Frame) fsWin.getOwner();
                                 DisplayMode oldMode = f.getGraphicsConfiguration().getDevice().getDisplayMode();
                                 gd.setDisplayMode(dm1);
+                                sleep(2000);
                                 // Check if setting new display mode actually results in frame being
                                 // placed onto display with different resolution.
                                 DisplayMode newMode = f.getGraphicsConfiguration().getDevice().getDisplayMode();
