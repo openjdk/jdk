@@ -115,7 +115,7 @@ public final class DecimalStyle {
     /**
      * Lists all the locales that are supported.
      * <p>
-     * At a minimum, the returned Set must contain a {@code Locale} instance equal to
+     * At a minimum, the returned {@code Set} must contain a {@code Locale} instance equal to
      * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
      * {@link Locale#US Locale.US}.
      *
