@@ -498,6 +498,11 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
         obj->incr_age();
       }
       _age_table.add(age, word_sz);
+    } else {
+      // Currently we only have two destinations and we only need BOT updates for
+      // old. If the current allocation was done outside the PLAB this call will
+      // have no effect since the _top of the PLAB has not changed.
+      _plab_allocator->update_bot_for_plab_allocation(dest_attr, word_sz, node_index);
     }
 
     // Most objects are not arrays, so do one array check rather than
@@ -607,6 +612,9 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
   if (forward_ptr == NULL) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
+    // Records evac failure objs, this will help speed up iteration
+    // of these objs later in *remove self forward* phase of post evacuation.
+    r->record_evac_failure_obj(old);
 
     if (_evac_failure_regions->record(r->hrm_index())) {
       _g1h->hr_printer()->evac_failure(r);

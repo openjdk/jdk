@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,168 +85,6 @@ public class PerfDataFile {
     private static final PlatformSupport platSupport = PlatformSupport.getInstance();
 
     /**
-     * Get a File object for the instrumentation backing store file
-     * for the JVM identified by the given local Vm Identifier.
-     * <p>
-     * This method looks for the most up to date backing store file for
-     * the given {@code lvmid}. It will search all the user specific
-     * directories in the temporary directory for the host operating
-     * system, which may be influenced by platform specific environment
-     * variables.
-     *
-     * @param lvmid  the local Java Virtual Machine Identifier for the target
-     * @return File - a File object to the backing store file for the named
-     *                shared memory region of the target JVM.
-     * @see java.io.File
-     * @see #getTempDirectories()
-     */
-    public static File getFile(int lvmid) {
-        if (lvmid == 0) {
-            /*
-             * lvmid == 0 is used to indicate the current Java Virtual Machine.
-             * If the SDK provided an API to get a unique Java Virtual Machine
-             * identifier, then a filename could be constructed with that
-             * identifier. In absence of such an api, return null.
-             */
-            return null;
-        }
-
-        List<String> tmpDirs = getTempDirectories(null, lvmid);
-        File newest = null;
-
-        for (String dir : tmpDirs) {
-            /*
-             * iterate over all files in all directories in this tmpDir that
-             * match the file name patterns.
-             */
-            File tmpDir = new File(dir);
-            String[] files = tmpDir.list(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    if (!name.startsWith(dirNamePrefix)) {
-                        return false;
-                    }
-                    File candidate = new File(dir, name);
-                    return ((candidate.isDirectory() || candidate.isFile())
-                            && candidate.canRead());
-                }
-            });
-
-            long newestTime = 0;
-
-            for (String file : files) {
-                File f = new File(dir + file);
-                File candidate = null;
-
-                if (f.exists() && f.isDirectory()) {
-                    /*
-                     * found a directory matching the name patterns. This
-                     * is a 1.4.2 hsperfdata_<user> directory. Check for
-                     * file named <lvmid> in that directory
-                     */
-                    String name = f.getAbsolutePath() + File.separator + lvmid;
-                    candidate = new File(name);
-                    // Try NameSpace Id if Host Id doesn't exist.
-                    if (!candidate.exists()) {
-                        name = f.getAbsolutePath() + File.separator +
-                               platSupport.getNamespaceVmId(lvmid);
-                        candidate = new File(name);
-                    }
-                } else if (f.exists() && f.isFile()) {
-                    /*
-                     * found a file matching the name patterns. This
-                     * is a 1.4.1 hsperfdata_<lvmid> file.
-                     */
-                    candidate = f;
-
-                } else {
-                    // unexpected - let conditional below filter this one out
-                    candidate = f;
-                }
-
-                if (candidate.exists() && candidate.isFile()
-                        && candidate.canRead()) {
-                    long modTime = candidate.lastModified();
-                    if (modTime >= newestTime) {
-                        newestTime = modTime;
-                        newest = candidate;
-                    }
-                }
-            }
-        }
-        return newest;
-    }
-
-    /**
-     * Return the File object for the backing store file for the specified Java
-     * Virtual Machine.
-     * <p>
-     * This method looks for the most up to date backing store file for
-     * the JVM identified by the given user name and lvmid. The directory
-     * searched is the temporary directory for the host operating system,
-     * which may be influenced by environment variables.
-     *
-     * @param user   the user name
-     * @param lvmid  the local Java Virtual Machine Identifier for the target
-     * @return File - a File object to the backing store file for the named
-     *                shared memory region of the target JVM.
-     * @see java.io.File
-     * @see #getTempDirectories()
-     */
-    public static File getFile(String user, int lvmid) {
-        if (lvmid == 0) {
-            /*
-             * lvmid == 0 is used to indicate the current Java Virtual Machine.
-             * If the SDK provided an API to get a unique Java Virtual Machine
-             * identifier, then a filename could be constructed with that
-             * identifier. In absence of such an api, return null.
-             */
-            return null;
-        }
-
-        // first try for 1.4.2 and later JVMs
-        List<String> tmpDirs = getTempDirectories(user, lvmid);
-        String basename;
-        File f;
-
-        for (String dir : tmpDirs) {
-            basename = dir + lvmid;
-            f = new File(basename);
-            if (f.exists() && f.isFile() && f.canRead()) {
-                return f;
-            }
-            // Try NameSpace Id if Host Id doesn't exist.
-            basename = dir + platSupport.getNamespaceVmId(lvmid);
-            f = new File(basename);
-            if (f.exists() && f.isFile() && f.canRead()) {
-                return f;
-            }
-        }
-
-        // No hit on 1.4.2 JVMs, try 1.4.1 files
-        long newestTime = 0;
-        File newest = null;
-        for (int i = 0; i < 2; i++) {
-            if (i == 0) {
-                basename = getTempDirectory() + Integer.toString(lvmid);
-            } else {
-                basename = getTempDirectory() + Integer.toString(lvmid)
-                           + Integer.toString(i);
-            }
-
-            f = new File(basename);
-
-            if (f.exists() && f.isFile() && f.canRead()) {
-                long modTime = f.lastModified();
-                if (modTime >= newestTime) {
-                    newestTime = modTime;
-                    newest = f;
-                }
-            }
-        }
-        return newest;
-    }
-
-    /**
      * Method to extract a local Java Virtual Machine Identifier from the
      * file name of the given File object.
      *
@@ -295,22 +133,6 @@ public class PerfDataFile {
     }
 
     /**
-     * Return the name of the temporary directory to be searched
-     * for HotSpot PerfData backing store files for a given user.
-     * <p>
-     * This method generally returns the name of a subdirectory of
-     * the directory indicated in the java.io.tmpdir property. However,
-     * on some platforms it may return a different directory, as the
-     * JVM implementation may store the PerfData backing store files
-     * in a different directory for performance reasons.
-     *
-     * @return String - the name of the temporary directory.
-     */
-    public static String getTempDirectory(String user) {
-        return getTempDirectory() + dirNamePrefix + user + File.separator;
-    }
-
-    /**
      * Return the names of the temporary directories being searched for
      * HotSpot PerfData backing store files.
      * <p>
@@ -319,16 +141,7 @@ public class PerfDataFile {
      *
      * @return List<String> - A List of temporary directories to search.
      */
-    public static List<String> getTempDirectories(String userName, int vmid) {
-        List<String> list = platSupport.getTemporaryDirectories(vmid);
-        if (userName == null) {
-            return list;
-        }
-
-        List<String> nameList = list.stream()
-            .map(name -> name + dirNamePrefix + userName + File.separator)
-            .collect(Collectors.toList());
-
-        return nameList;
+    public static List<String> getTempDirectories(int vmid) {
+        return platSupport.getTemporaryDirectories(vmid);
     }
 }

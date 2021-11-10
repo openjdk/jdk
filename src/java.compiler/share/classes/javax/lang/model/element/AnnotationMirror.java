@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,8 @@ public interface AnnotationMirror {
      * The order of the map matches the order in which the
      * values appear in the annotation's source.
      *
-     * <p>Note that an annotation mirror of a marker annotation type
+     * @apiNote
+     * An annotation mirror of a marker annotation type
      * will by definition have an empty map.
      *
      * <p>To fill in default values, use {@link

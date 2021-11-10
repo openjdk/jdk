@@ -56,7 +56,7 @@ void G1EvacFailureRegions::post_collection() {
 
 void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
                                        HeapRegionClaimer* _hrclaimer,
-                                       uint worker_id) {
+                                       uint worker_id) const {
   G1CollectedHeap::heap()->par_iterate_regions_array(closure,
                                                      _hrclaimer,
                                                      _evac_failure_regions,

@@ -39,6 +39,7 @@ import java.security.PrivilegedAction;
 import sun.net.httpserver.HttpConnection.State;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static sun.net.httpserver.Utils.*;
 
 /**
  * Provides implementation for both HTTP and HTTPS
@@ -586,7 +587,7 @@ class ServerImpl implements TimeSource {
                 Headers headers = req.headers();
                 /* check key for illegal characters */
                 for (var k : headers.keySet()) {
-                    if (!isValidHeaderKey(k)) {
+                    if (!isValidName(k)) {
                         reject(Code.HTTP_BAD_REQUEST, requestLine,
                                 "Header key contains illegal characters");
                         return;
@@ -933,25 +934,5 @@ class ServerImpl implements TimeSource {
         } else {
             return secs * 1000;
         }
-    }
-
-    /*
-     * Validates a RFC 7230 header-key.
-     */
-    static boolean isValidHeaderKey(String token) {
-        if (token == null) return false;
-
-        boolean isValidChar;
-        char[] chars = token.toCharArray();
-        String validSpecialChars = "!#$%&'*+-.^_`|~";
-        for (char c : chars) {
-            isValidChar = ((c >= 'a') && (c <= 'z')) ||
-                          ((c >= 'A') && (c <= 'Z')) ||
-                          ((c >= '0') && (c <= '9'));
-            if (!isValidChar && validSpecialChars.indexOf(c) == -1) {
-                return false;
-            }
-        }
-        return !token.isEmpty();
     }
 }
