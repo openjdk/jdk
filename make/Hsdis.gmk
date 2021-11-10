@@ -52,7 +52,6 @@ ifeq ($(call isTargetOs, windows), true)
       $(error mingw sysroot not found)
     endif
   endif
-  SYSROOT_FLAGS := --sysroot=$(MINGW_SYSROOT)
 
   $(eval $(call DefineNativeToolchain, TOOLCHAIN_MINGW, \
       CC := $(MINGW_BASE)-gcc, \
