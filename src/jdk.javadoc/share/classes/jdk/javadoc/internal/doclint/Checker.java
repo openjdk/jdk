@@ -1238,8 +1238,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     boolean hasNonWhitespace(TextTree tree) {
         String s = tree.getBody();
         for (int i = 0; i < s.length(); i++) {
-            Character c = s.charAt(i);
-            if (!Character.isWhitespace(s.charAt(i)))
+            char c = s.charAt(i);
+            if (!Character.isWhitespace(c))
                 return true;
         }
         return false;
