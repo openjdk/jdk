@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP
+#define SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP
+
 #include "gc/g1/g1EvacFailureObjectsSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
@@ -33,3 +36,5 @@ void G1EvacFailureObjectsSet::record(oop obj) {
   OffsetInRegion* e = _offsets.allocate();
   *e = to_offset(obj);
 }
+
+#endif //SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP
