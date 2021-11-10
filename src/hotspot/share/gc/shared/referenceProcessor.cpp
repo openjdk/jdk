@@ -1067,10 +1067,9 @@ bool ReferenceProcessor::has_discovered_references() {
 void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_alive,
                                                         EnqueueDiscoveredFieldClosure* enqueue,
                                                         YieldClosure* yield,
-                                                        GCTimer* gc_timer) {
+                                                        GCTimer* gc_timer,
+                                                        uint worker_id) {
   Ticks preclean_start = Ticks::now();
-
-  uint worker_id = WorkerThread::current()->id();
 
   size_t soft_count    = _discoveredSoftRefs[worker_id].length();
   size_t weak_count    = _discoveredWeakRefs[worker_id].length();
