@@ -809,7 +809,6 @@ handleAppResumeBreakpoint(JNIEnv *env, EventInfo *evinfo,
                           struct bag *eventBag)
 {
     jthread resumer = evinfo->thread;
-    ThreadNode *node;
 
     debugMonitorEnter(threadLock);
 
@@ -819,7 +818,7 @@ handleAppResumeBreakpoint(JNIEnv *env, EventInfo *evinfo,
      * holding handlerLock which must not be released. See doPendingTasks().
      */
     if (resumer != NULL) {
-        node = findThread(&runningThreads, resumer);
+        ThreadNode* node = findThread(&runningThreads, resumer);
         if (node != NULL) {
             node->handlingAppResume = JNI_TRUE;
         }
@@ -2185,15 +2184,15 @@ doPendingTasks(JNIEnv *env, ThreadNode *node)
         jthread resumer = node->thread;
         jthread resumee = getResumee(resumer);
 
-        /*
-         * trackAppResume indirectly aquires handlerLock. For proper lock
-         * ordering handlerLock has to be acquired before threadLock.
-         */
-        debugMonitorExit(threadLock);
-        eventHandler_lock();
-        debugMonitorEnter(threadLock);
-
         if (resumer != NULL) {
+            /*
+             * trackAppResume indirectly aquires handlerLock. For proper lock
+             * ordering handlerLock has to be acquired before threadLock.
+             */
+            debugMonitorExit(threadLock);
+            eventHandler_lock();
+            debugMonitorEnter(threadLock);
+
             /*
              * Track the resuming thread by marking it as being within
              * a resume and by setting up for notification on
@@ -2204,16 +2203,16 @@ doPendingTasks(JNIEnv *env, ThreadNode *node)
              * suspends a thread it will remain suspended.
              */
             trackAppResume(resumer);
-        }
 
-        /*
-         * handlerLock is not needed anymore. We must release it before calling
-         * blockOnDebuggerSuspend() because it is required for resumes done by
-         * the debugger. If resumee is currently suspended by the debugger, then
-         * blockOnDebuggerSuspend() will block until a debugger resume is done.
-         * If it blocks while holding the handlerLock, then the resume will deadlock.
-         */
-        eventHandler_unlock();
+            /*
+             * handlerLock is not needed anymore. We must release it before calling
+             * blockOnDebuggerSuspend() because it is required for resumes done by
+             * the debugger. If resumee is currently suspended by the debugger, then
+             * blockOnDebuggerSuspend() will block until a debugger resume is done.
+             * If it blocks while holding the handlerLock, then the resume will deadlock.
+             */
+            eventHandler_unlock();
+        }
 
         if (resumee != NULL) {
             /*
