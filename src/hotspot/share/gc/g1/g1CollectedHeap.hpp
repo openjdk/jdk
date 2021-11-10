@@ -440,11 +440,11 @@ private:
   //   will satisfy them with a special path.
 
   HeapWord* allocate_new_tlab(size_t min_size,
-                                      size_t requested_size,
-                                      size_t* actual_size) override;
+                              size_t requested_size,
+                              size_t* actual_size) override;
 
   HeapWord* mem_allocate(size_t word_size,
-                                 bool*  gc_overhead_limit_was_exceeded) override;
+                         bool*  gc_overhead_limit_was_exceeded) override;
 
   // First-level mutator allocation attempt: try to allocate out of
   // the mutator alloc region without taking the Heap_lock. This
