@@ -166,10 +166,18 @@ public abstract class BaseOptions {
     private final List<Utils.Pair<String, String>> linkOfflineList = new ArrayList<>();
 
     /**
-     * Argument for command-line option {@code --link-modularity-mismatch}.
-     * True if warnings on external documentation with non-matching modularity should be omitted.
+     * An enum of policies for handling modularity mismatches in external documentation.
      */
-    private boolean linkModularityNoWarning = false;
+    public enum ModularityMismatchPolicy {
+        info,
+        warn
+    }
+
+    /**
+     * Argument for command-line option {@code --link-modularity-mismatch}.
+     * Describes how to handle external documentation with non-matching modularity.
+     */
+    private ModularityMismatchPolicy linkModularityMismatch = ModularityMismatchPolicy.warn;
 
     /**
      * Location of alternative platform link properties file.
@@ -414,8 +422,7 @@ public abstract class BaseOptions {
                     public boolean process(String opt, List<String> args) {
                         String s = args.get(0);
                         switch (s) {
-                            case "warn" -> linkModularityNoWarning = false;
-                            case "info" -> linkModularityNoWarning = true;
+                            case "warn", "info" -> linkModularityMismatch = ModularityMismatchPolicy.valueOf(s);
                             default -> {
                                 reporter.print(ERROR, resources.getText(
                                         "doclet.Option_invalid", s, "--link-modularity-mismatch"));
@@ -849,11 +856,10 @@ public abstract class BaseOptions {
 
     /**
      * Argument for command-line option {@code --link-modularity-mismatch}.
-     * True if warnings on external documentation with non-matching modularity
-     * should be omitted.
+     * Describes how to handle external documentation with non-matching modularity.
      */
-    public boolean linkModularityNoWarning() {
-        return linkModularityNoWarning;
+    public ModularityMismatchPolicy linkModularityMismatch() {
+        return linkModularityMismatch;
     }
 
     /**

@@ -659,10 +659,9 @@ public class Extern {
     }
 
     private void printModularityMismatchDiagnostic(String key, Object arg) {
-        if (configuration.getOptions().linkModularityNoWarning()) {
-            configuration.getMessages().notice(key, arg);
-        } else {
-            configuration.getMessages().warning(key, arg);
+        switch (configuration.getOptions().linkModularityMismatch()) {
+            case info -> configuration.getMessages().notice(key, arg);
+            case warn -> configuration.getMessages().warning(key, arg);
         }
     }
 }
