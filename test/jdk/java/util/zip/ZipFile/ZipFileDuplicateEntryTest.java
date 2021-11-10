@@ -514,7 +514,7 @@ public class ZipFileDuplicateEntryTest {
 
     /**
      * Method used to create a byte[] representing a Jar file with
-     * duplicate file entries.  The uses ZipArchiveOutputStream as ZipOutputStream
+     * duplicate file entries.  This uses ZipArchiveOutputStream as ZipOutputStream
      * will fail with a "java.util.zip.ZipException: duplicate entry".
      */
 //    public static void  createJarWithDuplicateFileEntries() throws IOException {
