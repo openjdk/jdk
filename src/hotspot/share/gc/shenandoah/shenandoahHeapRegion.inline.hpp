@@ -46,6 +46,9 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
   if (pointer_delta(end(), obj + unalignment_words) >= size) {
     if (unalignment_words > 0) {
       size_t pad_words = (alignment_in_bytes / HeapWordSize) - unalignment_words;
+      if (pad_words < ShenandoahHeap::min_fill_size()) {
+        pad_words += (alignment_in_bytes / HeapWordSize);
+      }
       ShenandoahHeap::fill_with_object(obj, pad_words);
       ShenandoahHeap::heap()->card_scan()->register_object(obj);
       obj += pad_words;
@@ -57,7 +60,7 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
     HeapWord* new_top = obj + size;
     set_top(new_top);
     assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
-    assert(((uintptr_t) obj) % (alignment_in_bytes) == 0, "obj is not aligned: " PTR_FORMAT, p2i(obj));
+    assert(is_aligned(obj, alignment_in_bytes), "obj is not aligned: " PTR_FORMAT, p2i(obj));
 
     return obj;
   } else {
