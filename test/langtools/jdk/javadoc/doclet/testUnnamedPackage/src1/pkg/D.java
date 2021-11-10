@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,7 @@
 
 package pkg;
 
-import java.lang.annotation.*;
-
 /**
- * This is just a test annotation type.
+ * This is class D in the package pkg.
  */
-@Documented public @interface AnnotationType {
-    int value();
-    String optional() default "";
-}
+public class D {}

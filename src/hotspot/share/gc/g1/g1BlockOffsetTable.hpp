@@ -108,6 +108,7 @@ public:
 
 class G1BlockOffsetTablePart {
   friend class G1BlockOffsetTable;
+  friend class HeapRegion;
   friend class VMStructs;
 private:
   // allocation boundary at which offset array must be updated
@@ -181,6 +182,9 @@ public:
 
   void verify() const;
 
+  // Given an address calculate where the next threshold needing an update is.
+  inline HeapWord* threshold_for_addr(const void* addr);
+
   // Returns the address of the start of the block containing "addr", or
   // else "null" if it is covered by no block.  (May have side effects,
   // namely updating of shared array entries that "point" too far
@@ -203,6 +207,11 @@ public:
   // Return the next threshold, the point at which the table should be
   // updated.
   HeapWord* threshold() const { return _next_offset_threshold; }
+
+  // Sets the threshold explicitly to keep it consistent with what has been
+  // updated. This needs to be done when the threshold is not used for updating
+  // the bot, for example when promoting to old in young collections.
+  void set_threshold(HeapWord* threshold) { _next_offset_threshold = threshold; }
 
   // These must be guaranteed to work properly (i.e., do nothing)
   // when "blk_start" ("blk" for second version) is "NULL".  In this

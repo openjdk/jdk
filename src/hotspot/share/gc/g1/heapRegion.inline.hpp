@@ -79,36 +79,6 @@ inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
   } while (true);
 }
 
-inline HeapWord* HeapRegion::allocate(size_t min_word_size,
-                                      size_t desired_word_size,
-                                      size_t* actual_size) {
-  HeapWord* res = allocate_impl(min_word_size, desired_word_size, actual_size);
-  if (res != NULL) {
-    _bot_part.alloc_block(res, *actual_size);
-  }
-  return res;
-}
-
-inline HeapWord* HeapRegion::allocate(size_t word_size) {
-  size_t temp;
-  return allocate(word_size, word_size, &temp);
-}
-
-inline HeapWord* HeapRegion::par_allocate(size_t word_size) {
-  size_t temp;
-  return par_allocate(word_size, word_size, &temp);
-}
-
-// Because of the requirement of keeping "_offsets" up to date with the
-// allocations, we sequentialize these with a lock.  Therefore, best if
-// this is used for larger LAB allocations only.
-inline HeapWord* HeapRegion::par_allocate(size_t min_word_size,
-                                          size_t desired_word_size,
-                                          size_t* actual_size) {
-  MutexLocker x(&_par_alloc_lock, Mutex::_no_safepoint_check_flag);
-  return allocate(min_word_size, desired_word_size, actual_size);
-}
-
 inline HeapWord* HeapRegion::block_start(const void* p) {
   return _bot_part.block_start(p);
 }
@@ -252,23 +222,50 @@ inline void HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarke
   assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
-inline HeapWord* HeapRegion::par_allocate_no_bot_updates(size_t min_word_size,
-                                                         size_t desired_word_size,
-                                                         size_t* actual_word_size) {
-  assert(is_young(), "we can only skip BOT updates on young regions");
+inline HeapWord* HeapRegion::par_allocate(size_t min_word_size,
+                                          size_t desired_word_size,
+                                          size_t* actual_word_size) {
   return par_allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline HeapWord* HeapRegion::allocate_no_bot_updates(size_t word_size) {
+inline HeapWord* HeapRegion::allocate(size_t word_size) {
   size_t temp;
-  return allocate_no_bot_updates(word_size, word_size, &temp);
+  return allocate(word_size, word_size, &temp);
 }
 
-inline HeapWord* HeapRegion::allocate_no_bot_updates(size_t min_word_size,
-                                                     size_t desired_word_size,
-                                                     size_t* actual_word_size) {
-  assert(is_young(), "we can only skip BOT updates on young regions");
+inline HeapWord* HeapRegion::allocate(size_t min_word_size,
+                                      size_t desired_word_size,
+                                      size_t* actual_word_size) {
   return allocate_impl(min_word_size, desired_word_size, actual_word_size);
+}
+
+inline HeapWord* HeapRegion::bot_threshold_for_addr(const void* addr) {
+  HeapWord* threshold = _bot_part.threshold_for_addr(addr);
+  assert(threshold >= addr,
+         "threshold must be at or after given address. " PTR_FORMAT " >= " PTR_FORMAT,
+         p2i(threshold), p2i(addr));
+  assert(is_old(),
+         "Should only calculate BOT threshold for old regions. addr: " PTR_FORMAT " region:" HR_FORMAT,
+         p2i(addr), HR_FORMAT_PARAMS(this));
+  return threshold;
+}
+
+inline void HeapRegion::update_bot_crossing_threshold(HeapWord** threshold, HeapWord* obj_start, HeapWord* obj_end) {
+  assert(is_old(), "should only do BOT updates for old regions");
+  assert(is_in(obj_start), "obj_start must be in this region: " HR_FORMAT
+         " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT " threshold " PTR_FORMAT,
+         HR_FORMAT_PARAMS(this),
+         p2i(obj_start), p2i(obj_end), p2i(*threshold));
+  _bot_part.alloc_block_work(threshold, obj_start, obj_end);
+}
+
+inline void HeapRegion::update_bot_at(HeapWord* obj_start, size_t obj_size) {
+  HeapWord* threshold = bot_threshold_for_addr(obj_start);
+  HeapWord* obj_end = obj_start + obj_size;
+
+  if (obj_end > threshold) {
+    update_bot_crossing_threshold(&threshold, obj_start, obj_end);
+  }
 }
 
 inline void HeapRegion::note_start_of_marking() {
