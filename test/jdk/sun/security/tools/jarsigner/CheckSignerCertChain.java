@@ -129,7 +129,7 @@ public class CheckSignerCertChain {
                 " a.jar ee")
                 .shouldContain("Signature algorithm: MD5withRSA (disabled), 2048-bit key")
                 .shouldContain("Signature algorithm: SHA256withRSA, 2048-bit key")
-                .shouldContain("Invalid certificate chain: Algorithm constraints check failed on signature algorithm: MD5withRSA")
+                .shouldContain("Invalid certificate chain: Algorithm constraints check failed on disabled algorithm: MD5 used with certificate: CN=EE")
                 .shouldHaveExitValue(0);
 
         kt("-exportcert -alias cacert -rfc -file cacert", "ks");
@@ -139,7 +139,7 @@ public class CheckSignerCertChain {
                 "-keystore caks1 -storepass changeit -verbose -debug")
                 .shouldContain("Signature algorithm: MD5withRSA (disabled), 2048-bit key")
                 .shouldContain("Signature algorithm: SHA256withRSA, 2048-bit key")
-                .shouldContain("Invalid certificate chain: Algorithm constraints check failed on signature algorithm: MD5withRSA")
+                .shouldContain("Invalid certificate chain: Algorithm constraints check failed on disabled algorithm: MD5 used with certificate: CN=EE")
                 .shouldHaveExitValue(0);
     }
 }

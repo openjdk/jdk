@@ -433,7 +433,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       }
       log_debug(gc, humongous)("Humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ") remset " SIZE_FORMAT " code roots " SIZE_FORMAT " marked %d reclaim candidate %d type array %d",
                                index,
-                               (size_t)cast_to_oop(hr->bottom())->size() * HeapWordSize,
+                               cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),
                                hr->rem_set()->occupied(),
                                hr->rem_set()->strong_code_roots_list_length(),

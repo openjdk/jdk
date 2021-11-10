@@ -28,6 +28,7 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.net.URI;
 import java.io.IOException;
@@ -171,6 +172,16 @@ public class TestProvider extends FileSystemProvider {
     {
         Path delegate = theFileSystem.unwrap(file);
         return defaultProvider.newByteChannel(delegate, options, attrs);
+    }
+
+    @Override
+    public FileChannel newFileChannel(Path file,
+                                      Set<? extends OpenOption> options,
+                                      FileAttribute<?>... attrs)
+        throws IOException
+    {
+        Path delegate = theFileSystem.unwrap(file);
+        return defaultProvider.newFileChannel(delegate, options, attrs);
     }
 
     @Override

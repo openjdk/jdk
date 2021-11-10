@@ -706,7 +706,6 @@ void SafepointSynchronize::block(JavaThread *thread) {
   }
 
   JavaThreadState state = thread->thread_state();
-  assert(is_a_block_safe_state(state), "Illegal threadstate encountered: %d", state);
   thread->frame_anchor()->make_walkable(thread);
 
   uint64_t safepoint_id = SafepointSynchronize::safepoint_counter();

@@ -154,8 +154,7 @@ uint G1SegmentedArray<Elem, flag>::elem_size() const {
 }
 
 template <class Elem, MEMFLAGS flag>
-G1SegmentedArray<Elem, flag>::G1SegmentedArray(const char* name,
-                                               const G1SegmentedArrayAllocOptions* buffer_options,
+G1SegmentedArray<Elem, flag>::G1SegmentedArray(const G1SegmentedArrayAllocOptions* buffer_options,
                                                G1SegmentedArrayBufferList<flag>* free_buffer_list) :
      _alloc_options(buffer_options),
      _first(nullptr),
@@ -166,6 +165,11 @@ G1SegmentedArray<Elem, flag>::G1SegmentedArray(const char* name,
      _num_available_nodes(0),
      _num_allocated_nodes(0) {
   assert(_free_buffer_list != nullptr, "precondition!");
+}
+
+template <class Elem, MEMFLAGS flag>
+G1SegmentedArray<Elem, flag>::~G1SegmentedArray() {
+  drop_all();
 }
 
 template <class Elem, MEMFLAGS flag>
@@ -231,6 +235,42 @@ Elem* G1SegmentedArray<Elem, flag>::allocate() {
 template <class Elem, MEMFLAGS flag>
 inline uint G1SegmentedArray<Elem, flag>::num_buffers() const {
   return Atomic::load(&_num_buffers);
+}
+
+#ifdef ASSERT
+template <MEMFLAGS flag>
+class LengthClosure {
+  uint _total;
+public:
+  LengthClosure() : _total(0) {}
+  void do_buffer(G1SegmentedArrayBuffer<flag>* node, uint limit) {
+    _total += limit;
+  }
+  uint length() const {
+    return _total;
+  }
+};
+
+template <class Elem, MEMFLAGS flag>
+uint G1SegmentedArray<Elem, flag>::calculate_length() const {
+  LengthClosure<flag> closure;
+  iterate_nodes(closure);
+  return closure.length();
+}
+#endif
+
+template <class Elem, MEMFLAGS flag>
+template <typename BufferClosure>
+void G1SegmentedArray<Elem, flag>::iterate_nodes(BufferClosure& closure) const {
+  G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
+
+  assert((cur != nullptr) == (_last != nullptr),
+         "If there is at least one element, there must be a last one");
+
+  while (cur != nullptr) {
+    closure.do_buffer(cur, cur->length());
+    cur = cur->next();
+  }
 }
 
 #endif //SHARE_GC_G1_G1SEGMENTEDARRAY_INLINE_HPP

@@ -2955,7 +2955,7 @@ public class Attr extends JCTree.Visitor {
                 }
 
                 if (resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
-                    isSerializable(clazztype)) {
+                    rs.isSerializable(clazztype)) {
                     localEnv.info.isSerializable = true;
                 }
 
@@ -3080,7 +3080,7 @@ public class Attr extends JCTree.Visitor {
         boolean needsRecovery =
                 resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK;
         try {
-            if (needsRecovery && isSerializable(pt())) {
+            if (needsRecovery && rs.isSerializable(pt())) {
                 localEnv.info.isSerializable = true;
                 localEnv.info.isSerializableLambda = true;
             }
@@ -3581,7 +3581,7 @@ public class Attr extends JCTree.Visitor {
 
             boolean isTargetSerializable =
                     resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
-                    isSerializable(pt());
+                    rs.isSerializable(pt());
             TargetInfo targetInfo = getTargetInfo(that, resultInfo, null);
             Type currentTarget = targetInfo.target;
             Type desc = targetInfo.descriptor;
@@ -5366,7 +5366,7 @@ public class Attr extends JCTree.Visitor {
                     log.error(env.tree.pos(), Errors.EnumTypesNotExtensible);
                 }
 
-                if (isSerializable(c.type)) {
+                if (rs.isSerializable(c.type)) {
                     env.info.isSerializable = true;
                 }
 
@@ -5501,12 +5501,12 @@ public class Attr extends JCTree.Visitor {
         // Check for cycles among annotation elements.
         chk.checkNonCyclicElements(tree);
 
-        // Check for proper use of serialVersionUID
+        // Check for proper use of serialVersionUID and other
+        // serialization-related fields and methods
         if (env.info.lint.isEnabled(LintCategory.SERIAL)
-                && isSerializable(c.type)
-                && (c.flags() & (Flags.ENUM | Flags.INTERFACE)) == 0
+                && rs.isSerializable(c.type)
                 && !c.isAnonymous()) {
-            checkSerialVersionUID(tree, c, env);
+            chk.checkSerialStructure(tree, c);
         }
         if (allowTypeAnnos) {
             // Correctly organize the positions of the type annotations
@@ -5525,59 +5525,6 @@ public class Attr extends JCTree.Visitor {
             }
 
             return null;
-        }
-
-        /** check if a type is a subtype of Serializable, if that is available. */
-        boolean isSerializable(Type t) {
-            try {
-                syms.serializableType.complete();
-            }
-            catch (CompletionFailure e) {
-                return false;
-            }
-            return types.isSubtype(t, syms.serializableType);
-        }
-
-        /** Check that an appropriate serialVersionUID member is defined. */
-        private void checkSerialVersionUID(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
-
-            // check for presence of serialVersionUID
-            VarSymbol svuid = null;
-            for (Symbol sym : c.members().getSymbolsByName(names.serialVersionUID)) {
-                if (sym.kind == VAR) {
-                    svuid = (VarSymbol)sym;
-                    break;
-                }
-            }
-
-            if (svuid == null) {
-                if (!c.isRecord())
-                    log.warning(LintCategory.SERIAL, tree.pos(), Warnings.MissingSVUID(c));
-                return;
-            }
-
-            // Check if @SuppressWarnings("serial") is an annotation of serialVersionUID.
-            // See JDK-8231622 for more information.
-            Lint lint = env.info.lint.augment(svuid);
-            if (lint.isSuppressed(LintCategory.SERIAL)) {
-                return;
-            }
-
-            // check that it is static final
-            if ((svuid.flags() & (STATIC | FINAL)) !=
-                (STATIC | FINAL))
-                log.warning(LintCategory.SERIAL,
-                        TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.ImproperSVUID(c));
-
-            // check that it is long
-            else if (!svuid.type.hasTag(LONG))
-                log.warning(LintCategory.SERIAL,
-                        TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.LongSVUID(c));
-
-            // check constant
-            else if (svuid.getConstValue() == null)
-                log.warning(LintCategory.SERIAL,
-                        TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.ConstantSVUID(c));
         }
 
     private Type capture(Type type) {

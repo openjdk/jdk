@@ -112,7 +112,7 @@ MIB_IFROW *getIF(jint index) {
         return NULL;
 
     count = GetIfTable(tableP, &size, TRUE);
-    if (count == ERROR_INSUFFICIENT_BUFFER || count == ERROR_BUFFER_OVERFLOW) {
+    if (count == ERROR_INSUFFICIENT_BUFFER) {
         MIB_IFTABLE* newTableP =  (MIB_IFTABLE *)realloc(tableP, size);
         if (newTableP == NULL) {
             free(tableP);
@@ -187,7 +187,7 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
     }
 
     ret = GetIfTable(tableP, &size, TRUE);
-    if (ret == ERROR_INSUFFICIENT_BUFFER || ret == ERROR_BUFFER_OVERFLOW) {
+    if (ret == ERROR_INSUFFICIENT_BUFFER) {
         MIB_IFTABLE * newTableP = (MIB_IFTABLE *)realloc(tableP, size);
         if (newTableP == NULL) {
             free(tableP);
@@ -200,9 +200,19 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
 
     if (ret != NO_ERROR) {
         free(tableP);
-
-        JNU_ThrowByName(env, "java/lang/Error",
-                "IP Helper Library GetIfTable function failed");
+        switch (ret) {
+            case ERROR_INVALID_PARAMETER:
+                JNU_ThrowInternalError(env,
+                    "IP Helper Library GetIfTable function failed: "
+                    "invalid parameter");
+                break;
+            default:
+                SetLastError(ret);
+                JNU_ThrowByNameWithMessageAndLastError(env,
+                    JNU_JAVANETPKG "SocketException",
+                    "IP Helper Library GetIfTable function failed");
+                break;
+        }
         // this different error code is to handle the case when we call
         // GetIpAddrTable in pure IPv6 environment
         return -2;
@@ -308,8 +318,8 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
             // it should not fail, because we have called it once before
             if (MultiByteToWideChar(CP_OEMCP, 0, ifrowP->bDescr,
                    ifrowP->dwDescrLen, curr->displayName, wlen) == 0) {
-                JNU_ThrowByName(env, "java/lang/Error",
-                       "Cannot get multibyte char for interface display name");
+                JNU_ThrowInternalError(env,
+                    "Cannot get multibyte char for interface display name");
                 free_netif(netifP);
                 free(tableP);
                 free(curr->name);
@@ -374,7 +384,7 @@ int lookupIPAddrTable(JNIEnv *env, MIB_IPADDRTABLE **tablePP)
     }
 
     ret = GetIpAddrTable(tableP, &size, FALSE);
-    if (ret == ERROR_INSUFFICIENT_BUFFER || ret == ERROR_BUFFER_OVERFLOW) {
+    if (ret == ERROR_INSUFFICIENT_BUFFER) {
         MIB_IPADDRTABLE * newTableP = (MIB_IPADDRTABLE *)realloc(tableP, size);
         if (newTableP == NULL) {
             free(tableP);
@@ -389,8 +399,19 @@ int lookupIPAddrTable(JNIEnv *env, MIB_IPADDRTABLE **tablePP)
         if (tableP != NULL) {
             free(tableP);
         }
-        JNU_ThrowByName(env, "java/lang/Error",
-                "IP Helper Library GetIpAddrTable function failed");
+        switch (ret) {
+            case ERROR_INVALID_PARAMETER:
+                JNU_ThrowInternalError(env,
+                    "IP Helper Library GetIpAddrTable function failed: "
+                    "invalid parameter");
+                break;
+            default:
+                SetLastError(ret);
+                JNU_ThrowByNameWithMessageAndLastError(env,
+                    JNU_JAVANETPKG "SocketException",
+                    "IP Helper Library GetIpAddrTable function failed");
+                break;
+        }
         // this different error code is to handle the case when we call
         // GetIpAddrTable in pure IPv6 environment
         return -2;

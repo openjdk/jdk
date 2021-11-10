@@ -296,12 +296,6 @@ public class HtmlConfiguration extends BaseConfiguration {
         } else {
             if (showModules) {
                 topFile = DocPath.empty.resolve(docPaths.moduleSummary(modules.first()));
-            } else if (packages.size() == 1 && packages.first().isUnnamed()) {
-                List<TypeElement> classes = new ArrayList<>(getIncludedTypeElements());
-                if (!classes.isEmpty()) {
-                    TypeElement te = getValidClass(classes);
-                    topFile = docPaths.forClass(te);
-                }
             } else if (!packages.isEmpty()) {
                 topFile = docPaths.forPackage(packages.first()).resolve(DocPaths.PACKAGE_SUMMARY);
             }

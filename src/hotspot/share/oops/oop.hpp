@@ -102,11 +102,11 @@ class oopDesc {
   inline bool is_a(Klass* k) const;
 
   // Returns the actual oop size of the object
-  inline int size();
+  inline size_t size();
 
   // Sometimes (for complicated concurrency-related reasons), it is useful
   // to be able to figure out the size of an object knowing its klass.
-  inline int size_given_klass(Klass* klass);
+  inline size_t size_given_klass(Klass* klass);
 
   // type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()            const;
@@ -272,10 +272,10 @@ class oopDesc {
   inline void oop_iterate(OopClosureType* cl, MemRegion mr);
 
   template <typename OopClosureType>
-  inline int oop_iterate_size(OopClosureType* cl);
+  inline size_t oop_iterate_size(OopClosureType* cl);
 
   template <typename OopClosureType>
-  inline int oop_iterate_size(OopClosureType* cl, MemRegion mr);
+  inline size_t oop_iterate_size(OopClosureType* cl, MemRegion mr);
 
   template <typename OopClosureType>
   inline void oop_iterate_backwards(OopClosureType* cl);

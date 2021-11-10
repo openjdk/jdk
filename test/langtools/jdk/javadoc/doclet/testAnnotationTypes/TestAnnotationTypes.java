@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4973609 8015249 8025633 8026567 6469561 8071982 8162363 8182765 8223364
-             8242056 8261976
+             8242056 8261976 8223358
  * @summary  Make sure that annotation types with 0 members does not have
  *           extra HR tags.
  * @library  ../../lib
@@ -72,27 +72,84 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationType.html", true,
                 """
+                    <ul class="sub-nav-list">
                     <li>Summary:&nbsp;</li>
-                    <li>Field&nbsp;|&nbsp;</li>""",
+                    <li>Field&nbsp;|&nbsp;</li>
+                    <li><a href="#annotation-interface-required-element-summary">Required</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#annotation-interface-optional-element-summary">Optional</a></li>
+                    </ul>""",
                 """
+                    <ul class="sub-nav-list">
                     <li>Detail:&nbsp;</li>
-                    <li>Field&nbsp;|&nbsp;</li>""");
+                    <li>Field&nbsp;|&nbsp;</li>
+                    <li><a href="#annotation-interface-element-detail">Element</a></li>
+                    </ul>""");
 
         checkOutput("pkg/AnnotationType.html", true,
-                    "<!-- ============ ANNOTATION INTERFACE MEMBER DETAIL =========== -->",
-                    "<ul class=\"member-list\">",
-                    "<li>",
-                    """
-                        <section class="details" id="annotation-interface-element-detail">""",
-                    "<h2>Element Details</h2>",
-                    "</a>",
-                    "<ul class=\"member-list\">",
-                    "<li>",
-                    """
-                        <section class="detail" id="value()">""",
-                    "<h3>value</h3>\n",
-                    """
-                        <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">value</span></div>""");
+                """
+                    <section class="summary">
+                    <ul class="summary-list">
+                    <!-- =========== ANNOTATION INTERFACE REQUIRED MEMBER SUMMARY =========== -->
+                    <li>
+                    <section class="member-summary" id="annotation-interface-required-element-summary">
+                    <h2>Required Element Summary</h2>
+                    <div class="caption"><span>Required Elements</span></div>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Required Element</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>int</code></div>
+                    <div class="col-second even-row-color"><code><a href="#value()" class="member-name-link">value</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>
+                    </section>
+                    </li>
+                    <!-- =========== ANNOTATION INTERFACE OPTIONAL MEMBER SUMMARY =========== -->
+                    <li>
+                    <section class="member-summary" id="annotation-interface-optional-element-summary">
+                    <h2>Optional Element Summary</h2>
+                    <div class="caption"><span>Optional Elements</span></div>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Optional Element</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>java.lang.String</code></div>
+                    <div class="col-second even-row-color"><code><a href="#optional()" class="member-name-link">optional</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>
+                    </section>
+                    </li>
+                    </ul>
+                    </section>""",
+                """
+                    <section class="details" id="annotation-interface-element-detail">
+                    <ul class="details-list">
+                    <!-- ============ ANNOTATION INTERFACE MEMBER DETAIL =========== -->
+                    <li>
+                    <section class="member-details">
+                    <h2>Element Details</h2>
+                    <ul class="member-list">
+                    <li>
+                    <section class="detail" id="value()">
+                    <h3>value</h3>
+                    <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">value</span></div>
+                    </section>
+                    </li>
+                    <li>
+                    <section class="detail" id="optional()">
+                    <h3>optional</h3>
+                    <div class="member-signature"><span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">optional</span></div>
+                    <dl class="notes">
+                    <dt>Default:</dt>
+                    <dd>""</dd>
+                    </dl>
+                    </section>
+                    </li>
+                    </ul>
+                    </section>
+                    </li>
+                    </ul>
+                    </section>""");
 
         checkOutput("pkg/AnnotationType.html", false,
                 """

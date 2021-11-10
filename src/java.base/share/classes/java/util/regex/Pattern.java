@@ -3445,7 +3445,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         int length = seq.length();
         int x = index;
         if (lengthInCodePoints >= 0) {
-            assert (index >= 0 && index < length);
+            assert ((length == 0 && index == 0) || index >= 0 && index < length);
             for (int i = 0; x < length && i < lengthInCodePoints; i++) {
                 if (Character.isHighSurrogate(seq.charAt(x++))) {
                     if (x < length && Character.isLowSurrogate(seq.charAt(x))) {
