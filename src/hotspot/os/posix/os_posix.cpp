@@ -1950,13 +1950,46 @@ int os::PlatformMonitor::wait(jlong millis) {
 
 char** os::get_environ() { return environ; }
 
+static int wait_for_pid(pid_t pid) {
+  // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
+  // care about the actual exit code, for now.
+  int status = 0;
+  errno = 0;
+
+  // Wait for the child process to exit.  This returns immediately if
+  // the child has already exited. */
+  while (::waitpid(pid, &status, 0) < 0) {
+    switch (errno) {
+      case ECHILD: fprintf(stderr, "ECHILD\n"); return 0;
+      case EINTR: break;
+      default: fprintf(stderr, "default\n"); return -1;
+    }
+  }
+
+  if (WIFEXITED(status)) {
+    // The child exited normally; get its exit code.
+    return WEXITSTATUS(status);
+  } else if (WIFSIGNALED(status)) {
+    // The child exited because of a signal
+    // The best value to return is 0x80 + signal number,
+    // because that is what all Unix shells do, and because
+    // it allows callers to distinguish between process exit and
+    // process death by signal.
+    return 0x80 + WTERMSIG(status);
+  } else {
+    // Unknown exit code; pass it through
+    return status;
+  }
+  return -1;
+}
+
 // Run the specified command in a separate process. Return its exit value,
 // or -1 on failure (e.g. can't fork a new process).
 // Notes: -Unlike system(), this function can be called from signal handler. It
 //         doesn't block SIGINT et al.
 //        -this function is unsafe to use in non-error situations, mainly
 //         because the child process will inherit all parent descriptors.
-int os::fork_and_exec(const char* cmd, bool prefer_vfork, int sleep_time) {
+int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
   const char * argv[4] = {"sh", "-c", cmd, NULL};
   char** env = os::get_environ();
 
@@ -1977,50 +2010,31 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork, int sleep_time) {
     // child process
 
 #ifdef __APPLE__
-    int status = ::posix_spawn(NULL, "/bin/sh", NULL, NULL, (char* const*)argv, env);
+    // Almost the same as execve, except no POSIX_SPAWN_SETEXEC
+    int status = ::posix_spawn(&pid, "/bin/sh", NULL, NULL, (char* const*)argv, env);
 #else
     int status = ::execve("/bin/sh", (char* const*)argv, env);
 #endif
+
+    if (status != 0) {
+      tty->print_cr("execve failed: %d", status);
+    }
 
     // execve failed
     ::_exit(status);
 
   } else  {
-    if (sleep_time > 0) {
-      sleep(sleep_time);
-    }
 
-    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
-    // care about the actual exit code, for now.
-
-    int status = 0;
-    errno = 0;
-
-    // Wait for the child process to exit.  This returns immediately if
-    // the child has already exited. */
-    while (::waitpid(pid, &status, 0) < 0) {
-      switch (errno) {
-      case ECHILD: return 0;
-      case EINTR: break;
-      default: return -1;
-      }
-    }
-
-    if (WIFEXITED(status)) {
-      // The child exited normally; get its exit code.
-      return WEXITSTATUS(status);
-    } else if (WIFSIGNALED(status)) {
-      // The child exited because of a signal
-      // The best value to return is 0x80 + signal number,
-      // because that is what all Unix shells do, and because
-      // it allows callers to distinguish between process exit and
-      // process death by signal.
-      return 0x80 + WTERMSIG(status);
-    } else {
-      // Unknown exit code; pass it through
-      return status;
-    }
+#ifdef __APPLE__
+    // On macOS we need to block the VM here to allow the user to enter password
+    // for the debugger to be able to attach (this also means that the VM process will
+    // need to be killed manually, after done debugging it, or it will stick around)
+    os::infinite_sleep();
+#else
+    return wait_for_pid(pid);
+#endif
   }
+  return -1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

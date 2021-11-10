@@ -518,10 +518,7 @@ class os: AllStatic {
   // The "prefer_vfork" argument is only used on POSIX platforms to
   // indicate whether vfork should be used instead of fork to spawn the
   // child process (ignored on AIX, which always uses vfork).
-  // On macOS the launched target process might require the user to fill out
-  // a password dialog, so we can use sleep_time (in seconds) value to wait
-  // before proceeding.
-  static int fork_and_exec(const char *cmd, bool prefer_vfork = false, int sleep_time = 0);
+  static int fork_and_exec(const char *cmd, bool prefer_vfork = false);
 
   // Call ::exit() on all platforms
   static void exit(int num);

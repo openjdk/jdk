@@ -2524,6 +2524,9 @@ bool os::start_debugging(char *buf, int buflen) {
              "\n\n"
              "Do you want to debug the problem?\n\n"
              "To debug, run '" TOOL_CMD "'; then switch to thread " INTX_FORMAT " (" INTPTR_FORMAT ")\n"
+#if defined(__APPLE__)
+             "(remember to kill the VM process from the debugger before quitting)\n"
+#endif
              "Enter 'yes' to launch %s automatically (PATH must include %s)\n"
              "Otherwise, press RETURN to abort...",
              os::current_process_id(),
@@ -2543,13 +2546,7 @@ bool os::start_debugging(char *buf, int buflen) {
 #endif
              os::current_process_id());
 
-    int sleep_time = 0;
-#ifdef __APPLE__
-    // give fork_and_exec chance to launch debugger and to give it the time to attach
-    sleep_time = 5;
-#endif
-
-    int err = os::fork_and_exec(buf, false, sleep_time);
+    int err = os::fork_and_exec(buf, false);
     yes = false;
   }
   return yes;
