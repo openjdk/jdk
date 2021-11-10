@@ -322,17 +322,22 @@ static bool find_initial_Java_frame(JavaThread* thread,
     RegisterMap map(thread, false, false);
 
     while (true) {
+      // Cannot walk this frame? Cannot do anything anymore.
       if (!candidate.safe_for_sender(thread)) {
         return false;
       }
 
       if (candidate.is_entry_frame()) {
+        // jcw is NULL if the java call wrapper could not be found
         JavaCallWrapper* jcw = candidate.entry_frame_call_wrapper_if_safe(thread);
+        // If initial frame is frame from StubGenerator and there is no
+        // previous anchor, there are no java frames associated with a method
         if (jcw == NULL || jcw->is_first_frame()) {
           return false;
         }
       }
 
+      // If we would a decipherable interpreted frame, this is our initial frame.
       if (candidate.is_interpreted_frame()) {
         if (is_decipherable_interpreted_frame(thread, &candidate, method_p, bci_p)) {
           *initial_frame_p = candidate;
@@ -340,9 +345,11 @@ static bool find_initial_Java_frame(JavaThread* thread,
         }
       }
 
+      // Walk some more.
       candidate = candidate.sender(&map);
     }
 
+    // No dice, report no initial frames.
     return false;
   }
 #endif
