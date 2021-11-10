@@ -887,20 +887,14 @@ AC_DEFUN([FLAGS_SETUP_GCC6_COMPILER_FLAGS],
 AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
 [
   # Is branch protection available?
-  BRANCH_PROTECTION_AVAILABLE=true
+  BRANCH_PROTECTION_AVAILABLE=false
   BRANCH_PROTECTION_FLAG="-mbranch-protection=standard"
 
-  AC_MSG_CHECKING([if branch protection is available])
-  if test "x$OPENJDK_TARGET_CPU" != xaarch64; then
-    AC_MSG_RESULT([no, does not work for $OPENJDK_TARGET_CPU])
-    BRANCH_PROTECTION_AVAILABLE=false
-  elif test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    # Check that the compiler actually supports branch protection.
-    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${BRANCH_PROTECTION_FLAG}],
-        IF_FALSE: [BRANCH_PROTECTION_AVAILABLE=false])
-  else
-    AC_MSG_RESULT([no, does not work for $TOOLCHAIN_TYPE])
-    BRANCH_PROTECTION_AVAILABLE=false
+  if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${BRANCH_PROTECTION_FLAG}],
+          IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
+    fi
   fi
 
   BRANCH_PROTECTION_CFLAGS=""
