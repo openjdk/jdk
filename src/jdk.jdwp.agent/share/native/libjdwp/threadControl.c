@@ -2186,7 +2186,7 @@ doPendingTasks(JNIEnv *env, ThreadNode *node)
         jthread resumee = getResumee(resumer);
 
         /*
-         * trackAppResume() (indirectly) aquires handlerLock. For proper lock
+         * trackAppResume indirectly aquires handlerLock. For proper lock
          * ordering handlerLock has to be acquired before threadLock.
          */
         debugMonitorExit(threadLock);
