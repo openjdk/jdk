@@ -204,8 +204,8 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   }
 
   markWord m = obj->mark();
-  if (m.is_forwarded()) {
-    obj = m.forwardee();
+  if (m.is_marked()) {
+    obj = cast_to_oop(m.decode_pointer());
   } else {
     obj = do_copy_to_survivor_space(region_attr, obj, m);
   }
