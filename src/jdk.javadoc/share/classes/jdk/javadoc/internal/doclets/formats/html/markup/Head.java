@@ -60,10 +60,11 @@ public class Head extends Content {
     private boolean showTimestamp;
     private DocPath mainStylesheet;
     private List<DocPath> additionalStylesheets = Collections.emptyList();
-    private List<DocPath> additionalScripts = Collections.emptyList();;
     private boolean index;
     private Script mainBodyScript;
     private final List<Script> scripts;
+    // Scripts added via --add-script option
+    private List<DocPath> additionalScripts = Collections.emptyList();
     private final List<Content> extraContent;
     private boolean addDefaultScript = true;
     private DocPath canonicalLink;
