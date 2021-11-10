@@ -1165,6 +1165,36 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
+    public void testNegativeExternalTagMarkup(Path base) throws Exception {
+        // External snippet issues are handled similarly to those of internal snippet
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+        addSnippetFile(srcDir, "pkg", "file.txt", """
+                                                  // @start
+                                                  """
+        );
+        ClassBuilder classBuilder = new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .addMembers(
+                        MethodBuilder
+                                .parse("public void case0() { }")
+                                .setComments("""
+                                             {@snippet file="file.txt"}
+                                             """));
+        classBuilder.write(srcDir);
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+        checkExit(Exit.ERROR);
+        checkOutput(Output.OUT, true,
+"""
+: error: snippet markup: missing attribute "region"
+// @start
+    ^""");
+        checkNoCrashes();
+    }
+
+    @Test
     public void testNegativeInlineTagAttributeConflict20(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
@@ -1882,7 +1912,7 @@ public class TestSnippetTag extends SnippetTester {
         checkNoCrashes();
     }
 
-  @Test
+    @Test
     public void testNegativeTagBlankRegion(Path base) throws Exception {
         // If a blank region were allowed, it could not be used without quotes
         record TestCase(String input, String expectedError) { }
