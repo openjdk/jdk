@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc,fixuphtml" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>The jcmd Command</title>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="../../resources/jdk-default.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+ <header class="draft-header">This specification is not final and is subject to change. Use is subject to <a href="https://www.oracle.com/java/javase/terms/license/java18speclicense.html">license terms</a>.</header>
+<header id="title-block-header">
+<h1 class="title">The jcmd Command</h1>
+</header>
+<nav id="TOC" title="Table Of Contents">
+<ul>
+<li><a href="#name">Name</a></li>
+<li><a href="#synopsis">Synopsis</a></li>
+<li><a href="#description">Description</a></li>
+<li><a href="#commands-for-jcmd">Commands for jcmd</a></li>
+</ul>
+</nav>
+<main><h2 id="name">Name</h2>
+<p>jcmd - send diagnostic command requests to a running Java Virtual Machine (JVM)</p>
+<h2 id="synopsis">Synopsis</h2>
+<p><code>jcmd</code> [<em>pid</em> | <em>main-class</em>] <em>command</em>... | <code>PerfCounter.print</code> | <code>-f</code> <em>filename</em></p>
+<p><code>jcmd</code> [<code>-l</code>]</p>
+<p><code>jcmd</code> <code>-h</code></p>
+<dl>
+<dt><em>pid</em></dt>
+<dd>When used, the <code>jcmd</code> utility sends the diagnostic command request to the process ID for the Java process.
+</dd>
+<dt><em>main-class</em></dt>
+<dd>When used, the <code>jcmd</code> utility sends the diagnostic command request to all Java processes with the specified name of the main class.
+</dd>
+<dt><em>command</em></dt>
+<dd>The <code>command</code> must be a valid <code>jcmd</code> command for the selected JVM. The list of available commands for <code>jcmd</code> is obtained by running the <code>help</code> command (<code>jcmd</code> <em>pid</em> <code>help</code>) where <em>pid</em> is the process ID for the running Java process. If the <em>pid</em> is <code>0</code>, commands will be sent to all Java processes. The main class argument will be used to match, either partially or fully, the class used to start Java. If no options are given, it lists the running Java process identifiers with the main class and command-line arguments that were used to launch the process (the same as using <code>-l</code>).
+</dd>
+<dt><code>Perfcounter.print</code></dt>
+<dd>Prints the performance counters exposed by the specified Java process.
+</dd>
+<dt><code>-f</code> <em>filename</em></dt>
+<dd>Reads and executes commands from a specified file, <em>filename</em>.
+</dd>
+<dt><code>-l</code></dt>
+<dd><p>Displays the list of Java Virtual Machine process identifiers that are not running in a separate docker process along with the main class and command-line arguments that were used to launch the process. If the JVM is in a docker process, you must use tools such as <code>ps</code> to look up the PID.</p>
+<p><strong>Note:</strong></p>
+<p>Using <code>jcmd</code> without arguments is the same as using <code>jcmd -l</code>.</p>
+</dd>
+<dt><code>-h</code></dt>
+<dd>Displays the <code>jcmd</code> utility's command-line help.
+</dd>
+</dl>
+<h2 id="description">Description</h2>
+<p>The <code>jcmd</code> utility is used to send diagnostic command requests to the JVM. It must be used on the same machine on which the JVM is running, and have the same effective user and group identifiers that were used to launch the JVM. Each diagnostic command has its own set of arguments. To display the description, syntax, and a list of available arguments for a diagnostic command, use the name of the command as the argument. For example:</p>
+<blockquote>
+<p><code>jcmd</code> <em>pid</em> <code>help</code> <em>command</em></p>
+</blockquote>
+<p>If arguments contain spaces, then you must surround them with single or double quotation marks (<code>'</code> or <code>&quot;</code>). In addition, you must escape single or double quotation marks with a backslash (<code>\</code>) to prevent the operating system shell from processing quotation marks. Alternatively, you can surround these arguments with single quotation marks and then with double quotation marks (or with double quotation marks and then with single quotation marks).</p>
+<p>If you specify the process identifier (<em>pid</em>) or the main class (<em>main-class</em>) as the first argument, then the <code>jcmd</code> utility sends the diagnostic command request to the Java process with the specified identifier or to all Java processes with the specified name of the main class. You can also send the diagnostic command request to all available Java processes by specifying <code>0</code> as the process identifier.</p>
+<h2 id="commands-for-jcmd">Commands for jcmd</h2>
+<p>The <em>command</em> must be a valid <code>jcmd</code> diagnostic command for the selected JVM. The list of available commands for <code>jcmd</code> is obtained by running the <code>help</code> command (<code>jcmd</code> <em>pid</em> <code>help</code>) where <em>pid</em> is the process ID for a running Java process. If the <em>pid</em> is <code>0</code>, commands will be sent to all Java processes. The main class argument will be used to match, either partially or fully, the class used to start Java. If no options are given, it lists the running Java process identifiers that are not in separate docker processes along with the main class and command-line arguments that were used to launch the process (the same as using <code>-l</code>).</p>
+<p>The following commands are available:</p>
+<dl>
+<dt><code>help</code> [<em>options</em>] [<em>arguments</em>]</dt>
+<dd><p>For more information about a specific command.</p>
+<p><em>arguments</em>:</p>
+<ul>
+<li><em>command name</em>: The name of the command for which we want help (STRING, no default value)</li>
+</ul>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><code>-all</code>: (Optional) Show help for all commands (BOOLEAN, false) .</li>
+</ul>
+</dd>
+<dt><code>Compiler.codecache</code></dt>
+<dd><p>Prints code cache layout and bounds.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>Compiler.codelist</code></dt>
+<dd><p>Prints all compiled methods in code cache that are alive.</p>
+<p>Impact: Medium</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>Compiler.perfmap</code> (Linux only)</dt>
+<dd><p>Write map file for Linux perf tool.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>Compiler.queue</code></dt>
+<dd><p>Prints methods queued for compilation.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>Compiler.directives_add *filename* *arguments*</code></dt>
+<dd><p>Adds compiler directives from a file.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><em>arguments</em>:</p>
+<p><em>filename</em>: The name of the directives file (STRING, no default value)</p>
+</dd>
+<dt><code>Compiler.directives_clear</code></dt>
+<dd><p>Remove all compiler directives.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>Compiler.directives_print</code></dt>
+<dd><p>Prints all active compiler directives.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>Compiler.directives_remove</code></dt>
+<dd><p>Remove latest added compiler directive.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>GC.class_histogram</code> [<em>options</em>]</dt>
+<dd><p>Provides statistics about the Java heap usage.</p>
+<p>Impact: High --- depends on Java heap size and content.</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><strong>Note:</strong></p>
+<p>The <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><code>-all</code>: (Optional) Inspects all objects, including unreachable objects (BOOLEAN, false)</li>
+<li><code>-parallel</code>: (Optional) Number of parallel threads to use for heap inspection. 0 (the default) means let the VM determine the number of threads to use. 1 means use one thread (disable parallelism). For any other value the VM will try to use the specified number of threads, but might use fewer. (INT, 0)</li>
+</ul>
+</dd>
+<dt><code>GC.finalizer_info</code></dt>
+<dd><p>Provides information about the Java finalization queue.</p>
+<p>Impact: Medium</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>GC.heap_dump</code> [<em>options</em>] [<em>arguments</em>]</dt>
+<dd><p>Generates a HPROF format dump of the Java heap.</p>
+<p>Impact: High --- depends on the Java heap size and content. Request a full GC unless the <code>-all</code> option is specified.</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><code>-all</code>: (Optional) Dump all objects, including unreachable objects (BOOLEAN, false)</li>
+<li><code>-gz</code>: (Optional) If specified, the heap dump is written in gzipped format using the given compression level. 1 (recommended) is the fastest, 9 the strongest compression. (INT, 1)</li>
+<li><code>-overwrite</code>: (Optional) If specified, the dump file will be overwritten if it exists (BOOLEAN, false)</li>
+</ul>
+<p><em>arguments</em>:</p>
+<ul>
+<li><em>filename</em>: The name of the dump file (STRING, no default value)</li>
+</ul>
+</dd>
+<dt><code>GC.heap_info</code></dt>
+<dd><p>Provides generic Java heap information.</p>
+<p>Impact: Medium</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>GC.run</code></dt>
+<dd><p>Calls <code>java.lang.System.gc()</code>.</p>
+<p>Impact: Medium --- depends on the Java heap size and content.</p>
+</dd>
+<dt><code>GC.run_finalization</code></dt>
+<dd><p>Calls <code>java.lang.System.runFinalization()</code>.</p>
+<p>Impact: Medium --- depends on the Java content.</p>
+</dd>
+<dt><code>JFR.check</code> [<em>options</em>]</dt>
+<dd><p>Show information about a running flight recording</p>
+<p>Impact: Low</p>
+<p><strong>Note:</strong></p>
+<p>The <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax. If no parameters are entered, information for all active recordings is shown.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><p><code>name</code>: (Optional) Name of the flight recording. (STRING, no default value)</p></li>
+<li><p><code>verbose</code>: (Optional) Flag for printing the event settings for the recording (BOOLEAN, false)</p></li>
+</ul>
+</dd>
+<dt><code>JFR.configure</code> [<em>options</em>]</dt>
+<dd><p>Set the parameters for a flight recording</p>
+<p>Impact: Low</p>
+<p><strong>Note:</strong></p>
+<p>The <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax. If no parameters are entered, the current settings are displayed.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><p><code>globalbuffercount</code>: (Optional) Number of global buffers. This option is a legacy option: change the <code>memorysize</code> parameter to alter the number of global buffers. This value cannot be changed once JFR has been initalized. (STRING, default determined by the value for <code>memorysize</code>)</p></li>
+<li><p><code>globalbuffersize</code>: (Optional) Size of the global buffers, in bytes. This option is a legacy option: change the <code>memorysize</code> parameter to alter the size of the global buffers. This value cannot be changed once JFR has been initalized. (STRING, default determined by the value for <code>memorysize</code>)</p></li>
+<li><p><code>maxchunksize</code>: (Optional) Maximum size of an individual data chunk in bytes if one of the following suffixes is not used: 'm' or 'M' for megabytes OR 'g' or 'G' for gigabytes. This value cannot be changed once JFR has been initialized. (STRING, 12M)</p></li>
+<li><p><code>memorysize</code>: (Optional) Overall memory size, in bytes if one of the following suffixes is not used: 'm' or 'M' for megabytes OR 'g' or 'G' for gigabytes. This value cannot be changed once JFR has been initialized. (STRING, 10M)</p></li>
+<li><p><code>repositorypath</code>: (Optional) Path to the location where recordings are stored until they are written to a permanent file. (STRING, The default location is the temporary directory for the operating system. On Linux operating systems, the temporary directory is <code>/tmp</code>. On Windwows, the temporary directory is specified by the <code>TMP</code> environment variable.)</p></li>
+<li><p><code>stackdepth</code>: (Optional) Stack depth for stack traces. Setting this value greater than the default of 64 may cause a performance degradation. This value cannot be changed once JFR has been initialized. (LONG, 64)</p></li>
+<li><p><code>thread_buffer_size</code>: (Optional) Local buffer size for each thread in bytes if one of the following suffixes is not used: 'k' or 'K' for kilobytes or 'm' or 'M' for megabytes. Overriding this parameter could reduce performance and is not recommended. This value cannot be changed once JFR has been initialized. (STRING, 8k)</p></li>
+<li><p><code>samplethreads</code>: (Optional) Flag for activating thread sampling. (BOOLEAN, true)</p></li>
+</ul>
+</dd>
+<dt><code>JFR.dump</code> [<em>options</em>]</dt>
+<dd><p>Write data to a file while a flight recording is running</p>
+<p>Impact: Low</p>
+<p><strong>Note:</strong></p>
+<p>The <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax. No options are required. The recording continues to run after the data is written.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><p><code>begin</code>: (Optional) Specify the time from which recording data will be included in the dump file. The format is specified as local time. (STRING, no default value)</p></li>
+<li><p><code>end</code>: (Optional) Specify the time to which recording data will be included in the dump file. The format is specified as local time. (STRING, no default value)</p>
+<p><strong>Note:</strong> For both <code>begin</code> and <code>end</code>, the time must be in a format that can be read by java.time.LocalTime::parse(STRING), java.time.LocalDateTime::parse(STRING) or java.time.Instant::parse(STRING). For example, &quot;13:20:15&quot;, &quot;2020-03-17T09:00:00&quot; or &quot;2020-03-17T09:00:00Z&quot;.</p>
+<p><strong>Note:</strong> <code>begin</code> and <code>end</code> times correspond to the timestamps found within the recorded information in the flight recording data.</p>
+<p>Another option is to use a time relative to the current time that is specified by a negative integer followed by &quot;s&quot;, &quot;m&quot; or &quot;h&quot;. For example, &quot;-12h&quot;, &quot;-15m&quot; or &quot;-30s&quot;</p></li>
+<li><p><code>filename</code>: (Optional) Name of the file to which the flight recording data is dumped. If no filename is given, a filename is generated from the PID and the current date. The filename may also be a directory in which case, the filename is generated from the PID and the current date in the specified directory. (STRING, no default value)</p></li>
+<li><p><code>maxage</code>: (Optional) Length of time for dumping the flight recording data to a file. (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for hours, no default value)</p></li>
+<li><p><code>maxsize</code>: (Optional) Maximum size for the amount of data to dump from a flight recording in bytes if one of the following suffixes is not used: 'm' or 'M' for megabytes OR 'g' or 'G' for gigabytes. (STRING, no default value)</p></li>
+<li><p><code>name</code>: (Optional) Name of the recording. If no name is given, data from all recordings is dumped. (STRING, no default value)</p></li>
+<li><p><code>path-to-gc-root</code>: (Optional) Flag for saving the path to garbage collection (GC) roots at the time the recording data is dumped. The path information is useful for finding memory leaks but collecting it can cause the application to pause for a short period of time. Turn on this flag only when you have an application that you suspect has a memory leak. (BOOLEAN, false)</p></li>
+</ul>
+</dd>
+<dt><code>JFR.start</code> [<em>options</em>]</dt>
+<dd><p>Start a flight recording</p>
+<p>Impact: Low</p>
+<p><strong>Note:</strong></p>
+<p>The <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax. If no parameters are entered, then a recording is started with default values.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><p><code>delay</code>: (Optional) Length of time to wait before starting to record (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for hours, 0s)</p></li>
+<li><p><code>disk</code>: (Optional) Flag for also writing the data to disk while recording (BOOLEAN, true)</p></li>
+<li><p><code>dumponexit</code>: (Optional) Flag for writing the recording to disk when the Java Virtual Machine (JVM) shuts down. If set to 'true' and no value is given for <code>filename</code>, the recording is written to a file in the directory where the process was started. The file name is a system-generated name that contains the process ID, the recording ID and the current time stamp. (For example: <code>id-1-2019_12_12_10_41.jfr</code>) (BOOLEAN, false)</p></li>
+<li><p><code>duration</code>: (Optional) Length of time to record. Note that <code>0s</code> means forever (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for hours, 0s)</p></li>
+<li><p><code>filename</code>: (Optional) Name of the file to which the flight recording data is written when the recording is stopped. If no filename is given, a filename is generated from the PID and the current date and is placed in the directory where the process was started. The filename may also be a directory in which case, the filename is generated from the PID and the current date in the specified directory. (STRING, no default value)</p></li>
+<li><p><code>maxage</code>: (Optional) Maximum time to keep the recorded data on disk. This parameter is valid only when the <code>disk</code> parameter is set to <code>true</code>. Note <code>0s</code> means forever. (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for hours, 0s)</p></li>
+<li><p><code>maxsize</code>: (Optional) Maximum size of the data to keep on disk in bytes if one of the following suffixes is not used: 'm' or 'M' for megabytes OR 'g' or 'G' for gigabytes. This parameter is valid only when the <code>disk</code> parameter is set to 'true'. The value must not be less than the value for the <code>maxchunksize</code> parameter set with the <code>JFR.configure</code> command. (STRING, 0 (no maximum size))</p></li>
+<li><p><code>name</code>: (Optional) Name of the recording. If no name is provided, a name is generated. Make note of the generated name that is shown in the response to the command so that you can use it with other commands. (STRING, system-generated default name)</p></li>
+<li><p><code>path-to-gc-root</code>: (Optional) Flag for saving the path to garbage collection (GC) roots at the end of a recording. The path information is useful for finding memory leaks but collecting it is time consuming. Turn on this flag only when you have an application that you suspect has a memory leak. If the <code>settings</code> parameter is set to 'profile', then the information collected includes the stack trace from where the potential leaking object was allocated. (BOOLEAN, false)</p></li>
+<li><p><code>settings</code>: (Optional) Name of the settings file that identifies which events to record. To specify more than one file, separate the names with a comma (','). Include the path if the file is not in <code>JAVA-HOME</code>/lib/jfr. The following profiles are included with the JDK in the <code>JAVA-HOME</code>/lib/jfr directory: 'default.jfc': collects a predefined set of information with low overhead, so it has minimal impact on performance and can be used with recordings that run continuously; 'profile.jfc': Provides more data than the 'default.jfc' profile, but with more overhead and impact on performance. Use this configuration for short periods of time when more information is needed. Use <code>none</code> to start a recording without a predefined configuration file. (STRING, <code>JAVA-HOME</code>/lib/jfr/default.jfc)</p></li>
+</ul>
+<p>Event settings and .jfc options can be specified using the following syntax:</p>
+<ul>
+<li><p><code>option</code>: (Optional) Specifies the option value to modify. To list available options, use the <code>JAVA_HOME</code>/bin/jfr tool.</p></li>
+<li><p><code>event-setting</code>: (Optional) Specifies the event setting value to modify. Use the form: <event-name>#<setting-name>=<value> To add a new event setting, prefix the event name with '+'.</p></li>
+</ul>
+<p>You can specify values for multiple event settings and .jfc options by separating them with a whitespace. In case of a conflict between a parameter and a .jfc option, the parameter will take precedence. The whitespace delimiter can be omitted for timespan values, i.e. 20ms. For more information about the settings syntax, see Javadoc of the jdk.jfr package.</p>
+</dd>
+<dt><code>JFR.stop</code> [<em>options</em>]</dt>
+<dd><p>Stop a flight recording</p>
+<p>Impact: Low</p>
+<p><strong>Note:</strong></p>
+<p>The <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax. If no parameters are entered, then no recording is stopped.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><p><code>filename</code>: (Optional) Name of the file to which the recording is written when the recording is stopped. If no path is provided, the data from the recording is discarded. (STRING, no default value)</p></li>
+<li><p><code>name</code>: (Optional) Name of the recording (STRING, no default value)</p></li>
+</ul>
+</dd>
+<dt><code>JVMTI.agent_load</code> [<em>arguments</em>]</dt>
+<dd><p>Loads JVMTI native agent.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(control)</code></p>
+<p><em>arguments</em>:</p>
+<ul>
+<li><p><em>library path</em>: Absolute path of the JVMTI agent to load. (STRING, no default value)</p></li>
+<li><p><em>agent option</em>: (Optional) Option string to pass the agent. (STRING, no default value)</p></li>
+</ul>
+</dd>
+<dt><code>JVMTI.data_dump</code></dt>
+<dd><p>Signals the JVM to do a data-dump request for JVMTI.</p>
+<p>Impact: High</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>ManagementAgent.start</code> [<em>options</em>]</dt>
+<dd><p>Starts remote management agent.</p>
+<p>Impact: Low --- no impact</p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><p><code>config.file</code>: (Optional) Sets <code>com.sun.management.config.file</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.host</code>: (Optional) Sets <code>com.sun.management.jmxremote.host</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.port</code>: (Optional) Sets <code>com.sun.management.jmxremote.port</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.rmi.port</code>: (Optional) Sets <code>com.sun.management.jmxremote.rmi.port</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.ssl</code>: (Optional) Sets <code>com.sun.management.jmxremote.ssl</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.registry.ssl</code>: (Optional) Sets <code>com.sun.management.jmxremote.registry.ssl</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.authenticate</code>: (Optional) Sets <code>com.sun.management.jmxremote.authenticate</code> (STRING, no default value)</p></li>
+<li><p>jmxremote.password.file: (Optional) Sets <code>com.sun.management.jmxremote.password.file</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.access.file</code>: (Optional) Sets <code>com.sun.management.jmxremote.acce ss.file</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.login.config</code>: (Optional) Sets <code>com.sun.management.jmxremote.log in.config</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.ssl.enabled.cipher.suites</code>: (Optional) Sets <code>com.sun.management</code>.</p></li>
+<li><p><code>jmxremote.ssl.enabled.cipher.suite</code>: (STRING, no default value)</p></li>
+<li><p><code>jmxremote.ssl.enabled.protocols</code>: (Optional) Sets <code>com.sun.management.jmxr emote.ssl.enabled.protocols</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.ssl.need.client.auth</code>: (Optional) Sets <code>com.sun.management.jmxre mote.need.client.auth</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.ssl.config.file</code>: (Optional) Sets <code>com.sun.management.jmxremote. ssl_config_file</code> (STRING, no default value)</p></li>
+<li><p><code>jmxremote.autodiscovery</code>: (Optional) Sets <code>com.sun.management.jmxremote.au todiscovery</code> (STRING, no default value)</p></li>
+<li><p><code>jdp.port</code>: (Optional) Sets <code>com.sun.management.jdp.port</code> (INT, no default value)</p></li>
+<li><p><code>jdp.address</code>: (Optional) Sets <code>com.sun.management.jdp.address</code> (STRING, no default value)</p></li>
+<li><p><code>jdp.source_addr</code>: (Optional) Sets <code>com.sun.management.jdp.source_addr</code> (STRING, no default value)</p></li>
+<li><p><code>jdp.ttl</code>: (Optional) Sets <code>com.sun.management.jdp.ttl</code> (INT, no default value)</p></li>
+<li><p><code>jdp.pause</code>: (Optional) Sets <code>com.sun.management.jdp.pause</code> (INT, no default value)</p></li>
+<li><p><code>jdp.name</code>: (Optional) Sets <code>com.sun.management.jdp.name</code> (STRING, no default value)</p></li>
+</ul>
+</dd>
+<dt><code>ManagementAgent.start_local</code></dt>
+<dd><p>Starts the local management agent.</p>
+<p>Impact: Low --- no impact</p>
+</dd>
+<dt><code>ManagementAgent.status</code></dt>
+<dd><p>Print the management agent status.</p>
+<p>Impact: Low --- no impact</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>ManagementAgent.stop</code></dt>
+<dd><p>Stops the remote management agent.</p>
+<p>Impact: Low --- no impact</p>
+</dd>
+<dt><code>System.trim_native_heap</code> (Linux only)</dt>
+<dd><p>Attempts to free up memory by trimming the C-heap.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(control)</code></p>
+</dd>
+<dt><code>Thread.print</code> [<em>options</em>]</dt>
+<dd><p>Prints all threads with stacktraces.</p>
+<p>Impact: Medium --- depends on the number of threads.</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><code>-e</code>: (Optional) Print extended thread information (BOOLEAN, false)</li>
+<li><code>-l</code>: (Optional) Prints <code>java.util.concurrent</code> locks (BOOLEAN, false)</li>
+</ul>
+</dd>
+<dt><code>VM.cds</code> [<em>arguments</em>]</dt>
+<dd><p>Dump a static or dynamic shared archive including all shareable classes.</p>
+<p>Impact: Medium --- pause time depends on number of loaded classes</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><em>arguments</em>:</p>
+<ul>
+<li><code>subcmd</code>: <code>static_dump</code> | <code>dynamic_dump</code> (STRING, no default value)</li>
+<li><code>filename</code>: (Optional) Name of the shared archive to be dumped (STRING, no default value)</li>
+</ul>
+</dd>
+<dt><code>VM.classloaders</code> [<em>options</em>]</dt>
+<dd><p>Prints classloader hierarchy.</p>
+<p>Impact: Medium --- Depends on number of class loaders and classes loaded.</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><code>show-classes</code>: (Optional) Print loaded classes. (BOOLEAN, false)</li>
+<li><code>verbose</code>: (Optional) Print detailed information. (BOOLEAN, false)</li>
+<li><code>fold</code>: (Optional) Show loaders of the same name and class as one. (BOOLEAN, true)</li>
+</ul>
+</dd>
+<dt><code>VM.classloader_stats</code></dt>
+<dd><p>Prints statistics about all ClassLoaders.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>VM.class_hierarchy</code> [<em>options</em>] [<em>arguments</em>]</dt>
+<dd><p>Prints a list of all loaded classes, indented to show the class hierarchy. The name of each class is followed by the ClassLoaderData* of its ClassLoader, or &quot;null&quot; if it is loaded by the bootstrap class loader.</p>
+<p>Impact: Medium --- depends on the number of loaded classes.</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><p><code>-i</code>: (Optional) Inherited interfaces should be printed. (BOOLEAN, false)</p></li>
+<li><p><code>-s</code>: (Optional) If a class name is specified, it prints the subclasses. If the class name is not specified, only the superclasses are printed. (BOOLEAN, false)</p></li>
+</ul>
+<p><em>arguments</em>:</p>
+<ul>
+<li><em>classname</em>: (Optional) The name of the class whose hierarchy should be printed. If not specified, all class hierarchies are printed. (STRING, no default value)</li>
+</ul>
+</dd>
+<dt><code>VM.command_line</code></dt>
+<dd><p>Prints the command line used to start this VM instance.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>VM.dynlibs</code></dt>
+<dd><p>Prints the loaded dynamic libraries.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>VM.events</code> [<em>options</em>]</dt>
+<dd><p>Print VM event logs</p>
+<p>Impact: Low --- Depends on event log size.</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><em>options</em>:</p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<ul>
+<li><code>log</code>: (Optional) Name of log to be printed. If omitted, all logs are printed. (STRING, no default value)</li>
+<li><code>max</code>: (Optional) Maximum number of events to be printed (newest first). If omitted, all events are printed. (STRING, no default value)</li>
+</ul>
+</dd>
+<dt><code>VM.info</code></dt>
+<dd><p>Prints information about the JVM environment and status.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+</dd>
+<dt><code>VM.log</code> [<em>options</em>]</dt>
+<dd><p>Lists current log configuration, enables/disables/configures a log output, or rotates all logs.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(control)</code></p>
+<p><em>options</em>:</p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<ul>
+<li><p><code>output</code>: (Optional) The name or index (#) of output to configure. (STRING, no default value)</p></li>
+<li><p><code>output_options</code>: (Optional) Options for the output. (STRING, no default value)</p></li>
+<li><p><code>what</code>: (Optional) Configures what tags to log. (STRING, no default value )</p></li>
+<li><p><code>decorators</code>: (Optional) Configures which decorators to use. Use 'none' or an empty value to remove all. (STRING, no default value)</p></li>
+<li><p><code>disable</code>: (Optional) Turns off all logging and clears the log configuration. (BOOLEAN, no default value)</p></li>
+<li><p><code>list</code>: (Optional) Lists current log configuration. (BOOLEAN, no default value)</p></li>
+<li><p><code>rotate</code>: (Optional) Rotates all logs. (BOOLEAN, no default value)</p></li>
+</ul>
+</dd>
+<dt><code>VM.flags</code> [<em>options</em>]</dt>
+<dd><p>Prints the VM flag options and their current values.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><code>-all</code>: (Optional) Prints all flags supported by the VM (BOOLEAN, false).</li>
+</ul>
+</dd>
+<dt><code>VM.metaspace</code> [<em>options</em>]</dt>
+<dd><p>Prints the statistics for the metaspace</p>
+<p>Impact: Medium --- Depends on number of classes loaded.</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><code>basic</code>: (Optional) Prints a basic summary (does not need a safepoint). (BOOLEAN, false)</li>
+<li><code>show-loaders</code>: (Optional) Shows usage by class loader. (BOOLEAN, false)</li>
+<li><code>show-classes</code>: (Optional) If show-loaders is set, shows loaded classes for each loader. (BOOLEAN, false)</li>
+<li><code>by-chunktype</code>: (Optional) Break down numbers by chunk type. (BOOLEAN, false)</li>
+<li><code>by-spacetype</code>: (Optional) Break down numbers by loader type. (BOOLEAN, false)</li>
+<li><code>vslist</code>: (Optional) Shows details about the underlying virtual space. (BOOLEAN, false)</li>
+<li><code>scale</code>: (Optional) Memory usage in which to scale. Valid values are: 1, KB, MB or GB (fixed scale) or &quot;dynamic&quot; for a dynamically chosen scale. (STRING, dynamic)</li>
+</ul>
+</dd>
+<dt><code>VM.native_memory</code> [<em>options</em>]</dt>
+<dd><p>Prints native memory usage</p>
+<p>Impact: Medium</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><p><code>summary</code>: (Optional) Requests runtime to report current memory summary, which includes total reserved and committed memory, along with memory usage summary by each subsystem. (BOOLEAN, false)</p></li>
+<li><p><code>detail</code>: (Optional) Requests runtime to report memory allocation &gt;= 1K by each callsite. (BOOLEAN, false)</p></li>
+<li><p><code>baseline</code>: (Optional) Requests runtime to baseline current memory usage, so it can be compared against in later time. (BOOLEAN, false)</p></li>
+<li><p><code>summary.diff</code>: (Optional) Requests runtime to report memory summary comparison against previous baseline. (BOOLEAN, false)</p></li>
+<li><p><code>detail.diff</code>: (Optional) Requests runtime to report memory detail comparison against previous baseline, which shows the memory allocation activities at different callsites. (BOOLEAN, false)</p></li>
+<li><p><code>shutdown</code>: (Optional) Requests runtime to shutdown itself and free the memory used by runtime. (BOOLEAN, false)</p></li>
+<li><p><code>statistics</code>: (Optional) Prints tracker statistics for tuning purpose. (BOOLEAN, false)</p></li>
+<li><p><code>scale</code>: (Optional) Memory usage in which scale, KB, MB or GB (STRING, KB)</p></li>
+</ul>
+</dd>
+<dt><code>VM.print_touched_methods</code></dt>
+<dd><p>Prints all methods that have ever been touched during the lifetime of this JVM.</p>
+<p>Impact: Medium --- depends on Java content.</p>
+</dd>
+<dt><code>VM.set_flag</code> [<em>arguments</em>]</dt>
+<dd><p>Sets the VM flag option by using the provided value.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(control)</code></p>
+<p><em>arguments</em>:</p>
+<ul>
+<li><p><em>flag name</em>: The name of the flag that you want to set (STRING, no default value)</p></li>
+<li><p><em>string value</em>: (Optional) The value that you want to set (STRING, no default value)</p></li>
+</ul>
+</dd>
+<dt><code>VM.stringtable</code> [<em>options</em>]</dt>
+<dd><p>Dumps the string table.</p>
+<p>Impact: Medium --- depends on the Java content.</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><code>-verbose</code>: (Optional) Dumps the content of each string in the table (BOOLEAN, false)</li>
+</ul>
+</dd>
+<dt><code>VM.symboltable</code> [<em>options</em>]</dt>
+<dd><p>Dumps the symbol table.</p>
+<p>Impact: Medium --- depends on the Java content.</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax).</p>
+<p><em>options</em>:</p>
+<ul>
+<li><code>-verbose</code>: (Optional) Dumps the content of each symbol in the table (BOOLEAN, false)</li>
+</ul>
+</dd>
+<dt><code>VM.systemdictionary</code></dt>
+<dd><p>Prints the statistics for dictionary hashtable sizes and bucket length.</p>
+<p>Impact: Medium</p>
+<p>Permission: <code>java.lang.management.ManagementPermission(monitor)</code></p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><code>verbose</code>: (Optional) Dump the content of each dictionary entry for all class loaders (BOOLEAN, false) .</li>
+</ul>
+</dd>
+<dt><code>VM.system_properties</code></dt>
+<dd><p>Prints the system properties.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.util.PropertyPermission(*, read)</code></p>
+</dd>
+<dt><code>VM.uptime</code> [<em>options</em>]</dt>
+<dd><p>Prints the VM uptime.</p>
+<p>Impact: Low</p>
+<p><strong>Note:</strong></p>
+<p>The following <em>options</em> must be specified using either <em>key</em> or <em>key</em><code>=</code><em>value</em> syntax.</p>
+<p><em>options</em>:</p>
+<ul>
+<li><code>-date</code>: (Optional) Adds a prefix with the current date (BOOLEAN, false)</li>
+</ul>
+</dd>
+<dt><code>VM.version</code></dt>
+<dd><p>Prints JVM version information.</p>
+<p>Impact: Low</p>
+<p>Permission: <code>java.util.PropertyPermission(java.vm.version, read)</code></p>
+</dd>
+</dl>
+</main><footer class="legal-footer"><hr/><a href="../../legal/copyright.html">Copyright</a> &copy; 1993, 2021, Oracle and/or its affiliates, 500 Oracle Parkway, Redwood Shores, CA 94065 USA.<br>All rights reserved. Use is subject to <a href="https://www.oracle.com/java/javase/terms/license/java18speclicense.html">license terms</a> and the <a href="https://www.oracle.com/technetwork/java/redist-137594.html">documentation redistribution policy</a>. <br><strong>DRAFT 18-internal+0-2021-08-26-1259143.daholme...</strong> <!-- Version 18-internal+0-2021-08-26-1259143.daholme... --></footer>
+</body>
+</html>
