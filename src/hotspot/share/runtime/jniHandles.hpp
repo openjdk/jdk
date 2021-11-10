@@ -164,7 +164,7 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
 
  public:
   // Handle allocation
-  jobject allocate_handle(oop obj, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+  jobject allocate_handle(JavaThread* caller, oop obj, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
   // Block allocation and block free list management
   static JNIHandleBlock* allocate_block(JavaThread* thread = NULL, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);

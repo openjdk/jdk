@@ -66,7 +66,7 @@ jobject JNIHandles::make_local(JavaThread* thread, oop obj, AllocFailType alloc_
   } else {
     assert(oopDesc::is_oop(obj), "not an oop");
     assert(!current_thread_in_native(), "must not be in native");
-    return thread->active_handles()->allocate_handle(obj, alloc_failmode);
+    return thread->active_handles()->allocate_handle(thread, obj, alloc_failmode);
   }
 }
 
@@ -336,7 +336,9 @@ void JNIHandleBlock::zap() {
 #endif // ASSERT
 
 JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType alloc_failmode)  {
-  assert(thread == NULL || thread == Thread::current(), "sanity check");
+  // The VM thread can allocate a handle block in behalf of another thread during a safepoint.
+  assert(thread == NULL || thread == Thread::current() || SafepointSynchronize::is_at_safepoint(),
+         "sanity check");
   JNIHandleBlock* block;
   // Check the thread-local free list for a block so we don't
   // have to acquire a mutex.
@@ -430,7 +432,7 @@ void JNIHandleBlock::oops_do(OopClosure* f) {
 }
 
 
-jobject JNIHandleBlock::allocate_handle(oop obj, AllocFailType alloc_failmode) {
+jobject JNIHandleBlock::allocate_handle(JavaThread* caller, oop obj, AllocFailType alloc_failmode) {
   assert(Universe::heap()->is_in(obj), "sanity check");
   if (_top == 0) {
     // This is the first allocation or the initial block got zapped when
@@ -478,26 +480,21 @@ jobject JNIHandleBlock::allocate_handle(oop obj, AllocFailType alloc_failmode) {
   if (_last->_next != NULL) {
     // update last and retry
     _last = _last->_next;
-    return allocate_handle(obj, alloc_failmode);
+    return allocate_handle(caller, obj, alloc_failmode);
   }
 
   // No space available, we have to rebuild free list or expand
   if (_allocate_before_rebuild == 0) {
       rebuild_free_list();        // updates _allocate_before_rebuild counter
   } else {
-    // Append new block
-    JavaThread* thread = JavaThread::current();
-    Handle obj_handle(thread, obj);
-    // This can block, so we need to preserve obj across call.
-    _last->_next = JNIHandleBlock::allocate_block(thread, alloc_failmode);
+    _last->_next = JNIHandleBlock::allocate_block(caller, alloc_failmode);
     if (_last->_next == NULL) {
       return NULL;
     }
     _last = _last->_next;
     _allocate_before_rebuild--;
-    obj = obj_handle();
   }
-  return allocate_handle(obj, alloc_failmode);  // retry
+  return allocate_handle(caller, obj, alloc_failmode);  // retry
 }
 
 void JNIHandleBlock::rebuild_free_list() {
