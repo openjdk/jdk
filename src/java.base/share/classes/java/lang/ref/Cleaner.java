@@ -86,7 +86,8 @@ import java.util.function.Function;
  * by the Cleaner when the CleaningExample instance has become phantom reachable.
  * <pre>{@code
  * public class CleaningExample implements AutoCloseable {
- *        // A cleaner, preferably one shared within a library
+ *        // A cleaner (preferably one shared within a library,
+          // but for the sake of example, a new one is created here)
  *        private static final Cleaner cleaner = Cleaner.create();
  *
  *        // State class captures information necessary for cleanup.
