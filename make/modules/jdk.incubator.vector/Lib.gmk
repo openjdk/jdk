@@ -28,15 +28,15 @@ include LibCommon.gmk
 ################################################################################
 
 ifeq ($(call isTargetOs, linux windows)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2), true+true+true)
-  $(eval $(call SetupJdkLibrary, BUILD_LIBSVML, \
-      NAME := svml, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJSVML, \
+      NAME := jsvml, \
       CFLAGS := $(CFLAGS_JDKLIB), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_windows := -defaultlib:msvcrt, \
   ))
 
-  TARGETS += $(BUILD_LIBSVML)
+  TARGETS += $(BUILD_LIBJSVML)
 endif
 
 ################################################################################

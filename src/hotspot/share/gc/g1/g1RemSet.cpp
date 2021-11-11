@@ -123,7 +123,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   size_t _num_total_scan_chunks;        // Total number of elements in _region_scan_chunks.
   uint8_t _scan_chunks_shift;           // For conversion between card index and chunk index.
 public:
-  uint scan_chunk_size() const { return (uint)1 << _scan_chunks_shift; }
+  uint scan_chunk_size_in_cards() const { return (uint)1 << _scan_chunks_shift; }
 
   // Returns whether the chunk corresponding to the given region/card in region contain a
   // dirty card, i.e. actually needs scanning.
@@ -368,10 +368,13 @@ public:
     return _next_dirty_regions->size() * HeapRegion::CardsPerRegion;
   }
 
-  void set_chunk_region_dirty(size_t const region_card_idx) {
+  void set_chunk_range_dirty(size_t const region_card_idx, size_t const card_length) {
     size_t chunk_idx = region_card_idx >> _scan_chunks_shift;
-    for (uint i = 0; i < _scan_chunks_per_region; i++) {
-      _region_scan_chunks[chunk_idx++] = true;
+    // Make sure that all chunks that contain the range are marked. Calculate the
+    // chunk of the last card that is actually marked.
+    size_t const end_chunk = (region_card_idx + card_length - 1) >> _scan_chunks_shift;
+    for (; chunk_idx <= end_chunk; chunk_idx++) {
+      _region_scan_chunks[chunk_idx] = true;
     }
   }
 
@@ -751,7 +754,7 @@ public:
   }
 
   uint value() const { return _cur_claim; }
-  uint size() const { return _scan_state->scan_chunk_size(); }
+  uint size() const { return _scan_state->scan_chunk_size_in_cards(); }
 };
 
 // Scans a heap region for dirty cards.
@@ -1208,11 +1211,9 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
 
     void do_card_range(uint const start_card_idx, uint const length) {
-      assert(start_card_idx == 0, "must be");
-      assert(length == HeapRegion::CardsPerRegion, "must be");
-      size_t num_dirtied = _ct->mark_range_dirty(_region_base_idx, HeapRegion::CardsPerRegion);
+      size_t num_dirtied = _ct->mark_range_dirty(_region_base_idx + start_card_idx, length);
       _stats.inc_cards_dirty(num_dirtied);
-      _scan_state->set_chunk_region_dirty(_region_base_idx);
+      _scan_state->set_chunk_range_dirty(_region_base_idx + start_card_idx, length);
     }
 
     // Helper to merge the cards in the card set for the given region onto the card

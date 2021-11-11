@@ -272,25 +272,43 @@ dnl             $1 $2 $3 $4 $5
 VECTOR_CAST_F2I(2, F, I, D, 2S)
 VECTOR_CAST_F2I(4, F, I, X, 4S)
 VECTOR_CAST_F2I(2, D, L, X, 2D)
-dnl
-define(`VECTOR_CAST_F2I_L', `
-instruct vcvt$1$2to$1$3`'(vec$4 dst, vec$5 src)
+
+instruct vcvt4Fto4S(vecD dst, vecX src)
 %{
-  predicate(n->as_Vector()->length() == $1 && n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($3));
-  match(Set dst (VectorCast$2`'2X src));
-  format %{ "fcvtzs  $dst, T$6, $src\n\t"
-            "xtn     $dst, T$7, $dst, T$6\t# convert $1$2 to $1$3 vector"
+  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
+  match(Set dst (VectorCastF2X src));
+  format %{ "fcvtzs  $dst, T4S, $src\n\t"
+            "xtn     $dst, T4H, $dst, T4S\t# convert 4F to 4S vector"
   %}
   ins_encode %{
-    __ fcvtzs(as_FloatRegister($dst$$reg), __ T$6, as_FloatRegister($src$$reg));
-    __ xtn(as_FloatRegister($dst$$reg), __ T$7, as_FloatRegister($dst$$reg), __ T$6);
+    __ fcvtzs(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
+    __ xtn(as_FloatRegister($dst$$reg), __ T4H, as_FloatRegister($dst$$reg), __ T4S);
   %}
   ins_pipe(pipe_slow);
-%}')dnl
-dnl               $1 $2 $3 $4 $5 $6  $7
-VECTOR_CAST_F2I_L(4, F, S, D, X, 4S, 4H)
-VECTOR_CAST_F2I_L(2, D, I, D, X, 2D, 2S)
-dnl
+%}
+
+instruct vcvt2Dto2I(vecD dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (VectorCastD2X src));
+  effect(TEMP_DEF dst);
+  format %{ "ins      $dst, D, $src, 0, 1\n\t"
+            "fcvtzdw  rscratch1, $src\n\t"
+            "fcvtzdw  rscratch2, $dst\n\t"
+            "fmovs    $dst, rscratch1\n\t"
+            "mov      $dst, T2S, 1, rscratch2\t#convert 2D to 2I vector"
+  %}
+  ins_encode %{
+    __ ins(as_FloatRegister($dst$$reg), __ D, as_FloatRegister($src$$reg), 0, 1);
+    // We can't use fcvtzs(vector, integer) instruction here because we need
+    // saturation arithmetic. See JDK-8276151.
+    __ fcvtzdw(rscratch1, as_FloatRegister($src$$reg));
+    __ fcvtzdw(rscratch2, as_FloatRegister($dst$$reg));
+    __ fmovs(as_FloatRegister($dst$$reg), rscratch1);
+    __ mov(as_FloatRegister($dst$$reg), __ T2S, 1, rscratch2);
+  %}
+  ins_pipe(pipe_slow);
+%}
 
 instruct vcvt4Fto4B(vecD dst, vecX src)
 %{

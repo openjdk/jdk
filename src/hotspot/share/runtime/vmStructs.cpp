@@ -885,10 +885,14 @@
   c2_nonstatic_field(Compile,                  _regalloc,                                     PhaseRegAlloc*)                        \
   c2_nonstatic_field(Compile,                  _method,                                       ciMethod*)                             \
   c2_nonstatic_field(Compile,                  _compile_id,                                   const int)                             \
-  c2_nonstatic_field(Compile,                  _subsume_loads,                                const bool)                            \
-  c2_nonstatic_field(Compile,                  _do_escape_analysis,                           const bool)                            \
-  c2_nonstatic_field(Compile,                  _eliminate_boxing,                             const bool)                            \
+  c2_nonstatic_field(Compile,                  _options,                                      const Options)                         \
   c2_nonstatic_field(Compile,                  _ilt,                                          InlineTree*)                           \
+                                                                                                                                     \
+  c2_nonstatic_field(Options,                  _subsume_loads,                                const bool)                            \
+  c2_nonstatic_field(Options,                  _do_escape_analysis,                           const bool)                            \
+  c2_nonstatic_field(Options,                  _eliminate_boxing,                             const bool)                            \
+  c2_nonstatic_field(Options,                  _do_locks_coarsening,                          const bool)                            \
+  c2_nonstatic_field(Options,                  _install_code,                                 const bool)                            \
                                                                                                                                      \
   c2_nonstatic_field(InlineTree,               _caller_jvms,                                  JVMState*)                             \
   c2_nonstatic_field(InlineTree,               _method,                                       ciMethod*)                             \
@@ -1441,6 +1445,7 @@
                                                                           \
   declare_c2_toplevel_type(Matcher)                                       \
   declare_c2_toplevel_type(Compile)                                       \
+  declare_c2_toplevel_type(Options)                                       \
   declare_c2_toplevel_type(InlineTree)                                    \
   declare_c2_toplevel_type(OptoRegPair)                                   \
   declare_c2_toplevel_type(JVMState)                                      \
