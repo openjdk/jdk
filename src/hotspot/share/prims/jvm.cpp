@@ -691,7 +691,7 @@ JVM_ENTRY(void, JVM_ReportFinalizationComplete(JNIEnv * env, jobject finalizee))
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsFinalizationEnabled(JNIEnv * env))
-  return FinalizationEnabled ? JNI_TRUE : JNI_FALSE;
+return InstanceKlass::finalization_enabled() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
 // java.io.File ///////////////////////////////////////////////////////////////
@@ -3869,4 +3869,3 @@ JVM_END
 JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))
   return os::get_signal_number(name);
 JVM_END
-

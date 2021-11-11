@@ -2049,8 +2049,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, TraceOptimizedUpcallStubs, false,                           \
                 "Trace optimized upcall stub generation")                   \
                                                                             \
-  product(bool, FinalizationEnabled, true,                                  \
-                "The GC finalization mechanism is enabled")                 \
 
 // end of RUNTIME_FLAGS
 

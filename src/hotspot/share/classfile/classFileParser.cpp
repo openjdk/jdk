@@ -2835,7 +2835,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                           annotation_default_length,
                           CHECK_NULL);
 
-  if (FinalizationEnabled &&
+  if (InstanceKlass::finalization_enabled() &&
       name == vmSymbols::finalize_method_name() &&
       signature == vmSymbols::void_method_signature()) {
     if (m->is_empty_method()) {
@@ -4172,7 +4172,8 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   bool f = false;
   const Method* const m = ik->lookup_method(vmSymbols::finalize_method_name(),
                                            vmSymbols::void_method_signature());
-  if (FinalizationEnabled && (m != NULL) && !m->is_empty_method()) {
+  if (InstanceKlass::finalization_enabled() &&
+      (m != NULL) && !m->is_empty_method()) {
       f = true;
   }
 
