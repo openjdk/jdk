@@ -294,7 +294,7 @@ public abstract class DCTree implements DocTree {
         };
     }
 
-    public static abstract class DCEndPosTree<T extends DCEndPosTree<T>> extends DCTree {
+    public abstract static class DCEndPosTree<T extends DCEndPosTree<T>> extends DCTree {
 
         private int endPos = NOPOS;
 
@@ -381,14 +381,14 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static abstract class DCBlockTag extends DCTree implements BlockTagTree {
+    public abstract static class DCBlockTag extends DCTree implements BlockTagTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public String getTagName() {
             return getKind().tagName;
         }
     }
 
-    public static abstract class DCInlineTag extends DCEndPosTree<DCInlineTag> implements InlineTagTree {
+    public abstract static class DCInlineTag extends DCEndPosTree<DCInlineTag> implements InlineTagTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public String getTagName() {
             return getKind().tagName;

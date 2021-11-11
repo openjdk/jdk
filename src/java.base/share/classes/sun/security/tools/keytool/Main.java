@@ -2847,6 +2847,23 @@ public final class Main {
         }
     }
 
+    private static String oneInManys(String label, int certNo, int certCnt, int signerNo,
+        int signerCnt) {
+        if (certCnt == 1 && signerCnt == 1) {
+            return label;
+        }
+        if (certCnt > 1 && signerCnt == 1) {
+            return String.format(rb.getString("one.in.many1"), label, certNo);
+        }
+        if (certCnt == 1 && signerCnt > 1) {
+            return String.format(rb.getString("one.in.many2"), label, signerNo);
+        }
+        if (certCnt > 1 && signerCnt > 1) {
+            return String.format(rb.getString("one.in.many3"), label, certNo, signerNo);
+        }
+        return label;
+    }
+
     private void doPrintCert(final PrintStream out) throws Exception {
         if (jarfile != null) {
             // reset "jdk.certpath.disabledAlgorithms" security property
@@ -2855,7 +2872,7 @@ public final class Main {
 
             JarFile jf = new JarFile(jarfile, true);
             Enumeration<JarEntry> entries = jf.entries();
-            Set<CodeSigner> ss = new HashSet<>();
+            LinkedHashSet<CodeSigner> ss = new LinkedHashSet<>();
             byte[] buffer = new byte[8192];
             int pos = 0;
             while (entries.hasMoreElements()) {
@@ -2872,45 +2889,56 @@ public final class Main {
                     for (CodeSigner signer: signers) {
                         if (!ss.contains(signer)) {
                             ss.add(signer);
-                            out.printf(rb.getString("Signer.d."), ++pos);
-                            out.println();
-                            out.println();
-                            out.println(rb.getString("Signature."));
-                            out.println();
-
-                            List<? extends Certificate> certs
-                                    = signer.getSignerCertPath().getCertificates();
-                            int cc = 0;
-                            for (Certificate cert: certs) {
-                                X509Certificate x = (X509Certificate)cert;
-                                if (rfc) {
-                                    out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
-                                    dumpCert(x, out);
-                                } else {
-                                    printX509Cert(x, out);
-                                }
-                                out.println();
-                                checkWeak(oneInMany(rb.getString("the.certificate"), cc++, certs.size()), x);
-                            }
-                            Timestamp ts = signer.getTimestamp();
-                            if (ts != null) {
-                                out.println(rb.getString("Timestamp."));
-                                out.println();
-                                certs = ts.getSignerCertPath().getCertificates();
-                                cc = 0;
-                                for (Certificate cert: certs) {
-                                    X509Certificate x = (X509Certificate)cert;
-                                    if (rfc) {
-                                        out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
-                                        dumpCert(x, out);
-                                    } else {
-                                        printX509Cert(x, out);
-                                    }
-                                    out.println();
-                                    checkWeak(oneInMany(rb.getString("the.tsa.certificate"), cc++, certs.size()), x);
-                                }
-                            }
                         }
+                    }
+                }
+            }
+
+            for (CodeSigner signer: ss) {
+                out.printf(rb.getString("Signer.d."), ++pos);
+                out.println();
+                out.println();
+
+                List<? extends Certificate> certs
+                        = signer.getSignerCertPath().getCertificates();
+                int cc = 0;
+                for (Certificate cert: certs) {
+                    out.printf(rb.getString("Certificate.d."), ++cc);
+                    out.println();
+                    X509Certificate x = (X509Certificate)cert;
+                    if (rfc) {
+                        out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
+                        dumpCert(x, out);
+                    } else {
+                        printX509Cert(x, out);
+                    }
+                    out.println();
+                    checkWeak(oneInManys(rb.getString(
+                            "the.certificate"), cc,
+                            certs.size(), pos,
+                            ss.size()), x);
+                }
+                Timestamp ts = signer.getTimestamp();
+                if (ts != null) {
+                    out.println(rb.getString("Timestamp."));
+                    out.println();
+                    certs = ts.getSignerCertPath().getCertificates();
+                    cc = 0;
+                    for (Certificate cert: certs) {
+                        out.printf(rb.getString("Certificate.d."), ++cc);
+                        out.println();
+                        X509Certificate x = (X509Certificate)cert;
+                        if (rfc) {
+                            out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
+                            dumpCert(x, out);
+                        } else {
+                            printX509Cert(x, out);
+                        }
+                        out.println();
+                        checkWeak(oneInManys(rb.getString(
+                                "the.tsa.certificate"), cc,
+                                certs.size(), pos,
+                                ss.size()), x);
                     }
                 }
             }

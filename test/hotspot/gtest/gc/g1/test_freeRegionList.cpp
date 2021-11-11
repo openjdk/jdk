@@ -22,7 +22,16 @@
  */
 
 #include "precompiled.hpp"
+
+#include "gc/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1RegionToSpaceMapper.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/heapRegionSet.hpp"
+#include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
+#include "memory/virtualspace.hpp"
 #include "unittest.hpp"
 
 // @requires UseG1GC

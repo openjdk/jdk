@@ -417,8 +417,7 @@ public class HtmlIds {
             case INTERFACE -> "interface";
             case CLASS -> "class";
             case ENUM -> "enum-class";
-            case EXCEPTION -> "exception";
-            case ERROR -> "error";
+            case EXCEPTION_CLASS -> "exception-class";
             case ANNOTATION_TYPE -> "annotation-interface";
             case FIELD -> "field";
             case METHOD -> "method";
@@ -443,6 +442,8 @@ public class HtmlIds {
             case FIELDS -> FIELD_SUMMARY;
             case CONSTRUCTORS -> CONSTRUCTOR_SUMMARY;
             case METHODS -> METHOD_SUMMARY;
+            // We generate separate summaries for optional and required annotation members
+            case ANNOTATION_TYPE_MEMBER -> throw new IllegalArgumentException("unsupported member kind");
             case ANNOTATION_TYPE_MEMBER_OPTIONAL -> ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY;
             case ANNOTATION_TYPE_MEMBER_REQUIRED -> ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY;
             case PROPERTIES -> PROPERTY_SUMMARY;

@@ -5,13 +5,13 @@ SwitchErrors.java:23:18: compiler.err.prob.found.req: (compiler.misc.inconvertib
 SwitchErrors.java:28:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.type.null, int)
 SwitchErrors.java:29:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, int)
 SwitchErrors.java:30:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.CharSequence)
-SwitchErrors.java:36:20: compiler.err.total.pattern.and.default
+SwitchErrors.java:36:13: compiler.err.total.pattern.and.default
 SwitchErrors.java:42:18: compiler.err.pattern.dominated
 SwitchErrors.java:42:24: compiler.err.total.pattern.and.default
 SwitchErrors.java:48:18: compiler.err.total.pattern.and.default
 SwitchErrors.java:54:18: compiler.err.duplicate.total.pattern
-SwitchErrors.java:60:20: compiler.err.duplicate.default.label
-SwitchErrors.java:66:20: compiler.err.duplicate.default.label
+SwitchErrors.java:60:13: compiler.err.duplicate.default.label
+SwitchErrors.java:66:13: compiler.err.duplicate.default.label
 SwitchErrors.java:71:27: compiler.err.duplicate.default.label
 SwitchErrors.java:77:18: compiler.err.duplicate.case.label
 SwitchErrors.java:82:24: compiler.err.duplicate.case.label

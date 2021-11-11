@@ -199,9 +199,11 @@ class Thread: public ThreadShadow {
   }
 
  public:
-  // Is the target JavaThread protected by the calling Thread
-  // or by some other mechanism:
-  static bool is_JavaThread_protected(const JavaThread* p);
+  // Is the target JavaThread protected by the calling Thread or by some other
+  // mechanism? If checkTLHOnly is true (default is false), then we only check
+  // if the target JavaThread is protected by a ThreadsList (if any) associated
+  // with the calling Thread.
+  static bool is_JavaThread_protected(const JavaThread* p, bool checkTLHOnly = false);
 
   void* operator new(size_t size) throw() { return allocate(size, true); }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {

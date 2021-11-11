@@ -181,10 +181,13 @@ public abstract class TagletWriter {
      *
      * @param element    The element that owns the doc comment
      * @param snippetTag the snippet tag
+     * @param id         the value of the id attribute, or null if not defined
+     * @param lang       the value of the lang attribute, or null if not defined
      *
      * @return the output
      */
-    protected abstract Content snippetTagOutput(Element element, SnippetTree snippetTag, StyledText text);
+    protected abstract Content snippetTagOutput(Element element, SnippetTree snippetTag, StyledText text,
+                                                String id, String lang);
 
     /**
      * Returns the output for a {@code {@systemProperty...}} tag.
