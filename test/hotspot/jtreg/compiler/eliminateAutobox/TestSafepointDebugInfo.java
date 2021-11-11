@@ -29,7 +29,6 @@
  *          replaced during incremental inlining.
  * @library /test/lib
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
- *                   -XX:CompileCommand=inline,java.lang.Integer.valueOf::valueOf
  *                   -XX:CompileCommand=compileonly,compiler.eliminateAutobox.TestSafepointDebugInfo::test*
  *                   compiler.eliminateAutobox.TestSafepointDebugInfo
  */
