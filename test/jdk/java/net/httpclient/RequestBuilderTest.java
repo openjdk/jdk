@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,10 @@ public class RequestBuilderTest {
         request = newBuilder(uri).DELETE().build();
         assertEquals(request.method(), "DELETE");
         assertTrue(!request.bodyPublisher().isPresent());
+
+        request = newBuilder(uri).HEAD().build();
+        assertEquals(request.method(), "HEAD");
+        assertFalse(request.bodyPublisher().isPresent());
 
         request = newBuilder(uri).GET().POST(BodyPublishers.ofString("")).build();
         assertEquals(request.method(), "POST");

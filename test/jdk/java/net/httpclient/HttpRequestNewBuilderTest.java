@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,7 @@ public class HttpRequestNewBuilderTest {
                         .headers("testName1", "z").build() },
                 // dedicated method
                 { HttpRequest.newBuilder(URI.create("https://method-1/")).GET().build() },
+                { HttpRequest.newBuilder(URI.create("https://method-1/")).HEAD().build() },
                 { HttpRequest.newBuilder(URI.create("https://method-2/")).DELETE().build() },
                 { HttpRequest.newBuilder(URI.create("https://method-3/")).POST(HttpRequest.BodyPublishers.ofString("testData")).build() },
                 { HttpRequest.newBuilder(URI.create("https://method-4/")).PUT(HttpRequest.BodyPublishers.ofString("testData")).build() },
