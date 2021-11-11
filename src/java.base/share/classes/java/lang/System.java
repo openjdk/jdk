@@ -192,6 +192,7 @@ public final class System {
     // It is initialized in `initPhase1()` before any charset providers
     // are initialized.
     private static boolean jnuEncodingSupported;
+    private static String jnuEncoding;
 
     // return true if a security manager is allowed
     private static boolean allowSecurityManager() {
@@ -2117,6 +2118,13 @@ public final class System {
         VM.saveProperties(tempProps);
         props = createProperties(tempProps);
 
+        // Force the jnu encoding to UTF-8, if it is not supported
+        jnuEncoding = props.getProperty("sun.jnu.encoding");
+        jnuEncodingSupported = jnuEncoding != null && Charset.isSupported(jnuEncoding);
+        if (!jnuEncodingSupported) {
+            props.setProperty("sun.jnu.encoding", "UTF-8");
+        }
+
         StaticProperty.javaHome();          // Load StaticProperty to cache the property values
 
         lineSeparator = props.getProperty("line.separator");
@@ -2144,9 +2152,6 @@ public final class System {
         // way as other threads; we must do it ourselves here.
         Thread current = Thread.currentThread();
         current.getThreadGroup().add(current);
-
-        var jnuEncoding = props.getProperty("sun.jnu.encoding");
-        jnuEncodingSupported = jnuEncoding != null && Charset.isSupported(jnuEncoding);
 
         // Subsystems that are invoked during initialization can invoke
         // VM.isBooted() in order to avoid doing things that should
@@ -2259,7 +2264,7 @@ public final class System {
             System.err.printf(
                     "WARNING: The encoding of the underlying platform's" +
                             " file system is not supported by the JVM: %s%n",
-                    props.getProperty("sun.jnu.encoding"));
+                    jnuEncoding);
         }
 
         initialErrStream = System.err;
