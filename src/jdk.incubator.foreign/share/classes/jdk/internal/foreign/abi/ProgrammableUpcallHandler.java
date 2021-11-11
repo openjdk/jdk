@@ -30,6 +30,8 @@ import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.ValueLayout;
+import jdk.internal.access.JavaLangInvokeAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.MemoryAddressImpl;
 import sun.security.action.GetPropertyAction;
 
@@ -65,6 +67,8 @@ public class ProgrammableUpcallHandler {
         GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC", "true"));
     private static final boolean USE_INTRINSICS = Boolean.parseBoolean(
         GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.ProgrammableUpcallHandler.USE_INTRINSICS", "true"));
+
+    private static final JavaLangInvokeAccess JLI = SharedSecrets.getJavaLangInvokeAccess();
 
     private static final VarHandle VH_LONG = ValueLayout.JAVA_LONG.varHandle();
 
@@ -120,7 +124,7 @@ public class ProgrammableUpcallHandler {
                 .anyMatch(s -> abi.arch.isStackType(s.type()));
         if (USE_INTRINSICS && isSimple && !usesStackArgs && supportsOptimizedUpcalls()) {
             checkPrimitive(doBindings.type());
-            doBindings = insertArguments(exactInvoker(doBindings.type()), 0, doBindings);
+            JLI.ensureCustomized(doBindings);
             VMStorage[] args = Arrays.stream(argMoves).map(Binding.Move::storage).toArray(VMStorage[]::new);
             VMStorage[] rets = Arrays.stream(retMoves).map(Binding.Move::storage).toArray(VMStorage[]::new);
             CallRegs conv = new CallRegs(args, rets);
