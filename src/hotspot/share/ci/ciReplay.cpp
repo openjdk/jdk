@@ -765,11 +765,15 @@ class CompileReplay : public StackObj {
         }
         int inline_late = parse_int("inline_late");
         if (had_error()) {
-          // Old format, ignore error and continue
-          _error_message = NULL;
-          inline_late = 0;
-          if (had_error()) {
-            // Pending exception?
+          if (_version < 2) {
+            // Old format, ignore error and continue
+            _error_message = NULL;
+            inline_late = 0;
+            if (had_error()) {
+              // Pending exception?
+              break;
+            }
+          } else {
             break;
           }
         }

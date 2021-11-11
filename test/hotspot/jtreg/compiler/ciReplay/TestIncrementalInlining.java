@@ -45,7 +45,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,21 +73,30 @@ public class TestIncrementalInlining extends InliningBase {
     @Override
     public void testAction() {
         positiveTest(commandLineReplay);
-        String entryString = getTestClass() + " " + "test";
-        inlineesNormal = parseLogFile(LOG_FILE_NORMAL, entryString, "compile_id='" + getCompileIdFromFile(getReplayFileName()), 5);
-        inlineesReplay = parseLogFile(LOG_FILE_REPLAY, entryString, "test ()V", 5);
-        verifyLists(inlineesNormal, inlineesReplay, 5);
+        inlineesNormal = parseLogFile(LOG_FILE_NORMAL, getTestClass() + " " + "test", "compile_id='" + getCompileIdFromFile(getReplayFileName()), 5);
+        verify(true);
 
-        checkInlining(true);
+        // Incremental inlining is supported in version 2+
+        // Test replay file version 1.
         removeIncrementalInlineInfo();
+        setNewVersionInReplayFile(1);
         positiveTest(commandLineReplay);
-        inlineesReplay = parseLogFile(LOG_FILE_REPLAY, entryString, "test ()V", 5);
+        verify(false);
+
+        // Test replay file without version.
+        removeVersionFromReplayFile();
+        positiveTest(commandLineReplay);
+        verify(false);
+    }
+
+    private void verify(boolean isNewFormat) {
+        inlineesReplay = parseLogFile(LOG_FILE_REPLAY, getTestClass() + " " + "test", "test ()V", 5);
         verifyLists(inlineesNormal, inlineesReplay, 5);
-        checkInlining(false);
+        checkInlining(isNewFormat);
     }
 
     // Check if inlining is done correctly in ciReplay.
-    private void checkInlining(boolean replayFileHasIncrementalInliningInfo) {
+    private void checkInlining(boolean isNewFormat) {
         String klass = getTestClass();
         Asserts.assertTrue(inlineesNormal.get(0).compare(klass, "level0", inlineesNormal.get(0).isForcedInline()));
         Asserts.assertTrue(inlineesReplay.get(0).compare(klass, "level0", inlineesReplay.get(0).isForcedByReplay()));
@@ -97,7 +105,7 @@ public class TestIncrementalInlining extends InliningBase {
         Asserts.assertTrue(inlineesNormal.get(2).compare(klass, "level2", inlineesNormal.get(2).isForcedInline()));
         Asserts.assertTrue(inlineesReplay.get(2).compare(klass, "level2", inlineesReplay.get(2).isForcedByReplay()));
         Asserts.assertTrue(inlineesNormal.get(3).compare(klass, "late", inlineesNormal.get(3).isForcedInline()));
-        Asserts.assertTrue(inlineesReplay.get(3).compare(klass, "late", replayFileHasIncrementalInliningInfo ?
+        Asserts.assertTrue(inlineesReplay.get(3).compare(klass, "late", isNewFormat ?
                 inlineesReplay.get(3).isForcedIncrementalInlineByReplay()
                 : inlineesReplay.get(3).isForcedByReplay()));
         Asserts.assertTrue(inlineesNormal.get(4).compare(klass, "level4", inlineesNormal.get(4).isTooDeep()));

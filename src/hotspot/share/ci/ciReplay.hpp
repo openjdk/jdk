@@ -135,6 +135,7 @@ class ciReplay {
 // 0: legacy (no version number)
 // 1: first instanceKlass sets protection domain (8275868)
 //    replace current_mileage with invocation_count (8276095)
-#define REPLAY_VERSION 1 // current version, bump up for incompatible changes
+// 2: incremental inlining support (8254108)
+#define REPLAY_VERSION 2 // current version, bump up for incompatible changes
 
 #endif // SHARE_CI_CIREPLAY_HPP

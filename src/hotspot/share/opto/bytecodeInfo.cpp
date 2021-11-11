@@ -129,7 +129,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   }
 
 #ifndef PRODUCT
-  int inline_depth = inline_level()+1;
+  int inline_depth = inline_level() + 1;
   if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth, should_delay)) {
     if (should_delay) {
       set_msg("force (incremental) inline by ciReplay");
@@ -237,8 +237,8 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
   }
 
 #ifndef PRODUCT
-  int inline_depth = inline_level()+1;
-if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth, should_delay)) {
+  int inline_depth = inline_level() + 1;
+  if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth, should_delay)) {
     if (should_delay) {
       set_msg("force (incremental) inline by ciReplay");
     } else {
