@@ -1480,13 +1480,15 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return NULL;
   }
 
+  const int cmp1_op = cmp1->Opcode();
+  const int cmp2_op = cmp2->Opcode();
+
   // Constant on left?
   Node *con = cmp1;
-  uint op2 = cmp2->Opcode();
   // Move constants to the right of compare's to canonicalize.
   // Do not muck with Opaque1 nodes, as this indicates a loop
   // guard that cannot change shape.
-  if( con->is_Con() && !cmp2->is_Con() && op2 != Op_Opaque1 &&
+  if( con->is_Con() && !cmp2->is_Con() && cmp2_op != Op_Opaque1 &&
       // Because of NaN's, CmpD and CmpF are not commutative
       cop != Op_CmpD && cop != Op_CmpF &&
       // Protect against swapping inputs to a compare when it is used by a
@@ -1529,38 +1531,35 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  const int cmp1_op = cmp1->Opcode();
-  const int cmp2_op = cmp2->Opcode();
-
-  // Change x +- Integer.MIN_VALUE <=> y +- Integer.MIN_VALUE into x u<=> y
-  if ((_test._test == BoolTest::lt || _test._test == BoolTest::le ||
-        _test._test == BoolTest::gt || _test._test == BoolTest::ge) &&
-      cop == Op_CmpI &&
-      (cmp1_op == Op_AddI || cmp1_op == Op_SubI) &&
+  // Change x + Integer.MIN_VALUE <=> y + Integer.MIN_VALUE into x u<=> y
+  // and x + Integer.MIN_VALUE <=> c into x u<=> c + Integer.MIN_VALUE
+  if (cop == Op_CmpI &&
+      (_test.is_less() || _test.is_greater()) &&
+      cmp1_op == Op_AddI &&
       phase->type(cmp1->in(2)) == TypeInt::MIN) {
     if (cmp2_op == Op_ConI) {
       Node *ncmp2 = phase->intcon(java_add(cmp2->get_int(), min_jint));
       Node *ncmp = phase->transform(new CmpUNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
-    } else if ((cmp2_op == Op_AddI || cmp2_op == Op_SubI) &&
-        phase->type(cmp2->in(2)) == TypeInt::MIN) {
+    } else if (cmp2_op == Op_AddI &&
+               phase->type(cmp2->in(2)) == TypeInt::MIN) {
       Node *ncmp = phase->transform(new CmpUNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
     }
   }
 
-  // Change x +- Long.MIN_VALUE <=> y +- Long.MIN_VALUE into x u<=> y
-  if ((_test._test == BoolTest::lt || _test._test == BoolTest::le ||
-        _test._test == BoolTest::gt || _test._test == BoolTest::ge) &&
-      cop == Op_CmpL &&
-      (cmp1_op == Op_AddL || cmp1_op == Op_SubL) &&
+  // Change x + Long.MIN_VALUE <=> y + Long.MIN_VALUE into x u<=> y
+  // and x + Long.MIN_VALUE <=> c into x u<=> c + Long.MIN_VALUE
+  if (cop == Op_CmpL &&
+      (_test.is_less() || _test.is_greater()) &&
+      cmp1_op == Op_AddL &&
       phase->type(cmp1->in(2)) == TypeLong::MIN) {
     if (cmp2_op == Op_ConL) {
       Node *ncmp2 = phase->longcon(java_add(cmp2->get_long(), min_jlong));
       Node *ncmp = phase->transform(new CmpULNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
-    } else if ((cmp2_op == Op_AddL || cmp2_op == Op_SubL) &&
-        phase->type(cmp2->in(2)) == TypeLong::MIN) {
+    } else if (cmp2_op == Op_AddL &&
+               phase->type(cmp2->in(2)) == TypeLong::MIN) {
       Node *ncmp = phase->transform(new CmpULNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
     }
