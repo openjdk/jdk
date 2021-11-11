@@ -3008,7 +3008,6 @@ bool AdapterHandlerEntry::compare_code(AdapterHandlerEntry* other) {
 void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
   nmethod* nm = NULL;
-  address critical_entry = NULL;
 
   assert(method->is_native(), "must be native");
   assert(method->is_method_handle_intrinsic() ||

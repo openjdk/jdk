@@ -1546,10 +1546,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // the hidden arguments as arg[0] and possibly arg[1] (static method)
 
   const int total_in_args = method->size_of_parameters();
-  int total_c_args = total_in_args+1;
-  if (method->is_static()) {
-    total_c_args++;
-  }
+  int total_c_args = total_in_args + (method->is_static() ? 2 : 1);
 
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair* out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
@@ -1790,7 +1787,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int i = arg_order.at(ai);
     int c_arg = arg_order.at(ai + 1);
     __ block_comment(err_msg("move %d -> %d", i, c_arg));
-    assert (c_arg != -1, "wrong direction");
 #ifdef ASSERT
     if (in_regs[i].first()->is_Register()) {
       assert(!reg_destroyed[in_regs[i].first()->as_Register()->encoding()], "destroyed reg!");

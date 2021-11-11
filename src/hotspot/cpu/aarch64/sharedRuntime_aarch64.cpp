@@ -1263,10 +1263,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // the hidden arguments as arg[0] and possibly arg[1] (static method)
 
   const int total_in_args = method->size_of_parameters();
-  int total_c_args = total_in_args + 1;
-  if (method->is_static()) {
-    total_c_args++;
-  }
+  int total_c_args = total_in_args + (method->is_static() ? 2 : 1);
 
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair* out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);

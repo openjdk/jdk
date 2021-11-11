@@ -1286,32 +1286,6 @@ static void move32_64(MacroAssembler *masm,
   }
 }
 
-static void move_ptr(MacroAssembler *masm,
-                     VMRegPair src,
-                     VMRegPair dst,
-                     int framesize_in_slots) {
-  int frame_offset = framesize_in_slots * VMRegImpl::stack_slot_size;
-
-  if (src.first()->is_stack()) {
-    if (dst.first()->is_stack()) {
-      // stack to stack
-      __ mem2reg_opt(Z_R0_scratch, Address(Z_SP, reg2offset(src.first()) + frame_offset));
-      __ reg2mem_opt(Z_R0_scratch, Address(Z_SP, reg2offset(dst.first())));
-    } else {
-      // stack to reg
-      __ mem2reg_opt(dst.first()->as_Register(),
-                     Address(Z_SP, reg2offset(src.first()) + frame_offset));
-    }
-  } else {
-    if (dst.first()->is_stack()) {
-      // reg to stack
-    __ reg2mem_opt(src.first()->as_Register(), Address(Z_SP, reg2offset(dst.first())));
-    } else {
-    __ lgr_if_needed(dst.first()->as_Register(), src.first()->as_Register());
-    }
-  }
-}
-
 //----------------------------------------------------------------------
 // Wrap a JNI call.
 //----------------------------------------------------------------------

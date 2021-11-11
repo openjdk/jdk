@@ -1533,26 +1533,6 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm, BasicType ret_ty
   }
 }
 
-static void move_ptr(MacroAssembler* masm, VMRegPair src, VMRegPair dst, Register r_caller_sp, Register r_temp) {
-  if (src.first()->is_stack()) {
-    if (dst.first()->is_stack()) {
-      // stack to stack
-      __ ld(r_temp, reg2offset(src.first()), r_caller_sp);
-      __ std(r_temp, reg2offset(dst.first()), R1_SP);
-    } else {
-      // stack to reg
-      __ ld(dst.first()->as_Register(), reg2offset(src.first()), r_caller_sp);
-    }
-  } else if (dst.first()->is_stack()) {
-    // reg to stack
-    __ std(src.first()->as_Register(), reg2offset(dst.first()), R1_SP);
-  } else {
-    if (dst.first() != src.first()) {
-      __ mr(dst.first()->as_Register(), src.first()->as_Register());
-    }
-  }
-}
-
 static void verify_oop_args(MacroAssembler* masm,
                             const methodHandle& method,
                             const BasicType* sig_bt,
@@ -1743,7 +1723,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //
   // NW     [ABI_REG_ARGS]             <-- 1) R1_SP
   //        [outgoing arguments]       <-- 2) R1_SP + out_arg_slot_offset
-  //        [oopHandle area]           <-- 3) R1_SP + oop_handle_offset (save area for critical natives) ?
+  //        [oopHandle area]           <-- 3) R1_SP + oop_handle_offset
   //        klass                      <-- 4) R1_SP + klass_offset
   //        lock                       <-- 5) R1_SP + lock_offset
   //        [workspace]                <-- 6) R1_SP + workspace_offset
