@@ -62,15 +62,18 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
     }
 
     static class Holder {
-        static final boolean enabled = isFinalizationEnabled();
+        static final boolean ENABLED = isFinalizationEnabled();
     }
 
     private static native boolean isFinalizationEnabled();
 
     /* Invoked by VM */
     static void register(Object finalizee) {
-        if (Holder.enabled)
+        if (Holder.ENABLED) {
             new Finalizer(finalizee);
+        } else {
+            throw new InternalError("unexpected call to Finalizer::register when finalization is disabled");
+        }
     }
 
     private void runFinalizer(JavaLangAccess jla) {
@@ -137,7 +140,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
 
     /* Called by Runtime.runFinalization() */
     static void runFinalization() {
-        if (VM.initLevel() == 0 || ! Holder.enabled) {
+        if (VM.initLevel() == 0 || ! Holder.ENABLED) {
             return;
         }
 
@@ -189,7 +192,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
     }
 
     static {
-        if (Holder.enabled) {
+        if (Holder.ENABLED) {
             ThreadGroup tg = Thread.currentThread().getThreadGroup();
             for (ThreadGroup tgn = tg;
                  tgn != null;
