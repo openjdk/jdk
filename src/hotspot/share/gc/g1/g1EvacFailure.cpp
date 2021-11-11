@@ -157,7 +157,6 @@ public:
     _worker_id(worker_id),
     DEBUG_ONLY(_num_failed_regions(num_failed_regions) COMMA)
     _evac_failure_regions(evac_failure_regions) {
-    // DEBUG_ONLY(_num_failed_regions = num_failed_regions;)
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
