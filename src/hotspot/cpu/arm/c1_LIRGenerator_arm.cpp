@@ -630,7 +630,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
     }
     rlock_result(x);
     assert(right_arg->is_constant() || right_arg->is_register(), "wrong state of right");
-    arithmetic_op_int(x->op(), x->operand(), left_arg->result(), right_arg->result(), LIR_OprFact::illegalOpr);
+    arithmetic_op_int(x->op(), x->operand(), left_arg->result(), right_arg->result(), LIR_OprFact::nullOpr);
   }
 }
 

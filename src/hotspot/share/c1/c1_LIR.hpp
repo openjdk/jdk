@@ -303,6 +303,7 @@ class LIR_Opr {
   };
 
   static inline LIR_Opr illegalOpr();
+  static inline LIR_Opr nullOpr();
 
   enum OprType {
       unknown_type  = 0 << type_shift    // means: not set (catch uninitialized types)
@@ -596,6 +597,7 @@ class LIR_OprFact: public AllStatic {
  public:
 
   static LIR_Opr illegalOpr;
+  static LIR_Opr nullOpr;
 
   static LIR_Opr single_cpu(int reg) {
     return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |
@@ -2473,5 +2475,7 @@ class LIR_OpVisitState: public StackObj {
 
 
 inline LIR_Opr LIR_OprDesc::illegalOpr()   { return LIR_OprFact::illegalOpr; };
+
+inline LIR_Opr LIR_OprDesc::nullOpr()   { return LIR_OprFact::nullOpr; };
 
 #endif // SHARE_C1_C1_LIR_HPP

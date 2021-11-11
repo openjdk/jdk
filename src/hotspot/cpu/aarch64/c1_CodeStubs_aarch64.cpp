@@ -95,7 +95,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   if (_throw_index_out_of_bounds_exception) {
     stub_id = Runtime1::throw_index_exception_id;
   } else {
-    assert(_array != LIR_Opr(), "sanity");
+    assert(_array != LIR_Opr::nullOpr(), "sanity");
     __ mov(rscratch2, _array->as_pointer_register());
     stub_id = Runtime1::throw_range_check_failed_id;
   }
