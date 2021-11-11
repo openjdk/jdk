@@ -141,24 +141,29 @@ public class TransferTo {
         // preparing two temporary files which will be compared at the end of the test
         Path sourceFile = Files.createTempFile(null, null);
         Path targetFile = Files.createTempFile(null, null);
+        try {
+            // writing 3 GB of random bytes into source file
+            for (int i = 0; i < NUM_WRITES; i++)
+                Files.write(sourceFile, createRandomBytes(BYTES_PER_WRITE, 0), StandardOpenOption.APPEND);
 
-        // writing 3 GB of random bytes into source file
-        for (int i = 0; i < NUM_WRITES; i++)
-            Files.write(sourceFile, createRandomBytes(BYTES_PER_WRITE, 0), StandardOpenOption.APPEND);
+            // performing actual transfer, effectively by multiple invocations of Filechannel.transferTo(FileChannel)
+            long count;
+            try (InputStream inputStream = Channels.newInputStream(FileChannel.open(sourceFile));
+                 OutputStream outputStream = Channels
+                         .newOutputStream(FileChannel.open(targetFile, StandardOpenOption.WRITE))) {
+                count = inputStream.transferTo(outputStream);
+            }
 
-        // performing actual transfer, effectively by multiple invocations of Filechannel.transferTo(FileChannel)
-        long count;
-        try (InputStream inputStream = Channels.newInputStream(FileChannel.open(sourceFile));
-                OutputStream outputStream = Channels
-                        .newOutputStream(FileChannel.open(targetFile, StandardOpenOption.WRITE))) {
-            count = inputStream.transferTo(outputStream);
+            // comparing reported transferred bytes, must be 3 GB
+            assertEquals(count, BYTES_WRITTEN);
+
+            // comparing content of both files, failing in case of any difference
+            assertEquals(Files.mismatch(sourceFile, targetFile), -1);
+        } finally {
+            System.out.printf("Cleaning up: %s, %s%n", sourceFile, targetFile);
+            Files.deleteIfExists(sourceFile);
+            Files.deleteIfExists(targetFile);
         }
-
-        // comparing reported transferred bytes, must be 3 GB
-        assertEquals(count, BYTES_WRITTEN);
-
-        // comparing content of both files, failing in case of any difference
-        assertEquals(Files.mismatch(sourceFile, targetFile), -1);
     }
 
     /*
