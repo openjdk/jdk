@@ -447,6 +447,8 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         data.put("APPLICATION_HOMEPAGE", Optional.ofNullable(
                 ABOUT_URL.fetchFrom(params)).map(value -> "Homepage: " + value).orElse(
                 ""));
+        data.put("APPLICATION_VERSION_WITH_RELEASE", String.format("%s%s",
+                VERSION.fetchFrom(params), releaseSuffix(params)));
 
         return data;
     }
