@@ -139,7 +139,7 @@ void VMThread::create() {
   }
 }
 
-VMThread::VMThread() : NamedThread() {
+VMThread::VMThread() : NamedThread(), _is_running(false) {
   set_name("VM Thread");
 }
 
