@@ -1892,7 +1892,7 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, jobjec
   return JVMCIENV->get_jobjectArray(methods);
 C2V_END
 
-C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object, jobject expected_type, long displacement, jobject kind_object))
+C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object, jobject expected_type, jlong displacement, jobject kind_object))
   if (object == NULL || kind_object == NULL) {
     JVMCI_THROW_0(NullPointerException);
   }

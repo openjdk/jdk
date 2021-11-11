@@ -3985,7 +3985,7 @@ void TemplateTable::_new() {
       __ cbz(Rtemp, Lcontinue);
 
       __ push(atos);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc), Robj);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), Robj);
       __ pop(atos);
 
       __ bind(Lcontinue);

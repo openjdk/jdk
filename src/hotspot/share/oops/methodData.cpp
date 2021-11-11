@@ -637,8 +637,10 @@ bool ParametersTypeData::profiling_enabled() {
 }
 
 void ParametersTypeData::print_data_on(outputStream* st, const char* extra) const {
-  st->print("parameter types"); // FIXME extra ignored?
+  print_shared(st, "ParametersTypeData", extra);
+  tab(st);
   _parameters.print_data_on(st);
+  st->cr();
 }
 
 void SpeculativeTrapData::print_data_on(outputStream* st, const char* extra) const {

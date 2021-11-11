@@ -75,7 +75,6 @@ abstract class AbstractDCmd {
         try {
             boolean log = Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG);
             if (log) {
-                System.out.println(arg);
                 Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing " + this.getClass().getSimpleName() + ": " + arg);
             }
             ArgumentParser parser = new ArgumentParser(getArgumentInfos(), arg, delimiter);

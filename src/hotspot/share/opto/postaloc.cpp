@@ -610,7 +610,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
         if( phi != x && u != x ) // Found a different input
           u = u ? NodeSentinel : x; // Capture unique input, or NodeSentinel for 2nd input
       }
-      if (u != NodeSentinel) {    // Junk Phi.  Remove
+      if (u != NodeSentinel || phi->outcnt() == 0) {    // Junk Phi.  Remove
         phi->replace_by(u);
         j -= yank_if_dead(phi, block, &value, &regnd);
         phi_dex--;

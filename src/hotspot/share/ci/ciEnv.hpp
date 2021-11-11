@@ -508,8 +508,8 @@ public:
   void record_lambdaform(Thread* thread, oop obj);
   void record_member(Thread* thread, oop obj);
   void record_mh(Thread* thread, oop obj);
-  void record_call_site_obj(Thread* thread, const constantPoolHandle& pool, const Handle appendix);
-  void record_call_site_method(Thread* thread, const constantPoolHandle& pool, Method* adapter);
+  void record_call_site_obj(Thread* thread, oop obj);
+  void record_call_site_method(Thread* thread, Method* adapter);
   void process_invokedynamic(const constantPoolHandle &cp, int index, JavaThread* thread);
   void process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread);
   void find_dynamic_call_sites();

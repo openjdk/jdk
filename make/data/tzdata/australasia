@@ -408,9 +408,22 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # "Minister for Employment, Parveen Bala says they had never thought of
 # stopping daylight saving. He says it was just to decide on when it should
 # start and end.  Bala says it is a short period..."
-# Since the end date is still in line with our ongoing predictions, assume for
-# now that the later-than-usual start date is a one-time departure from the
-# recent second Sunday in November pattern.
+#
+# From Tim Parenti (2021-10-11), per Jashneel Kumar (2021-10-11) and P Chan
+# (2021-10-12):
+# https://www.fiji.gov.fj/Media-Centre/Speeches/English/PM-BAINIMARAMA-S-COVID-19-ANNOUNCEMENT-10-10-21
+# https://www.fbcnews.com.fj/news/covid-19/curfew-moved-back-to-11pm/
+# In a 2021-10-10 speech concerning updated Covid-19 mitigation measures in
+# Fiji, prime minister Josaia Voreqe "Frank" Bainimarama announced the
+# suspension of DST for the 2021/2022 season: "Given that we are in the process
+# of readjusting in the midst of so many changes, we will also put Daylight
+# Savings Time on hold for this year. It will also make the reopening of
+# scheduled commercial air service much smoother if we don't have to be
+# concerned shifting arrival and departure times, which may look like a simple
+# thing but requires some significant logistical adjustments domestically and
+# internationally."
+# Assume for now that DST will resume with the recent pre-2020 rules for the
+# 2022/2023 season.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	-
@@ -422,10 +435,11 @@ Rule	Fiji	2011	only	-	Mar	Sun>=1	3:00	0	-
 Rule	Fiji	2012	2013	-	Jan	Sun>=18	3:00	0	-
 Rule	Fiji	2014	only	-	Jan	Sun>=18	2:00	0	-
 Rule	Fiji	2014	2018	-	Nov	Sun>=1	2:00	1:00	-
-Rule	Fiji	2015	max	-	Jan	Sun>=12	3:00	0	-
+Rule	Fiji	2015	2021	-	Jan	Sun>=12	3:00	0	-
 Rule	Fiji	2019	only	-	Nov	Sun>=8	2:00	1:00	-
 Rule	Fiji	2020	only	-	Dec	20	2:00	1:00	-
-Rule	Fiji	2021	max	-	Nov	Sun>=8	2:00	1:00	-
+Rule	Fiji	2022	max	-	Nov	Sun>=8	2:00	1:00	-
+Rule	Fiji	2023	max	-	Jan	Sun>=12	3:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26 # Suva
 			12:00	Fiji	+12/+13

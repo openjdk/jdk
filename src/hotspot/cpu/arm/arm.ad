@@ -4521,6 +4521,7 @@ instruct storeF( memoryF mem, regF src) %{
 // pattern-match out unnecessary membars
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(4*MEMORY_REF_COST);
 
   size(4);

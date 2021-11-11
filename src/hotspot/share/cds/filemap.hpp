@@ -243,14 +243,14 @@ public:
   int crc()                               const { return _generic_header._crc;      }
   int version()                           const { return _generic_header._version;  }
   unsigned int header_size()              const { return _generic_header._header_size;              }
-  unsigned int base_archive_path_offset() const { return _generic_header._base_archive_path_offset; }
+  unsigned int base_archive_name_offset() const { return _generic_header._base_archive_name_offset; }
   unsigned int base_archive_name_size()   const { return _generic_header._base_archive_name_size;   }
 
   void set_magic(unsigned int m)                    { _generic_header._magic = m;       }
   void set_crc(int crc_value)                       { _generic_header._crc = crc_value; }
   void set_version(int v)                           { _generic_header._version = v;     }
   void set_header_size(unsigned int s)              { _generic_header._header_size = s;              }
-  void set_base_archive_path_offset(unsigned int s) { _generic_header._base_archive_path_offset = s; }
+  void set_base_archive_name_offset(unsigned int s) { _generic_header._base_archive_name_offset = s; }
   void set_base_archive_name_size(unsigned int s)   { _generic_header._base_archive_name_size = s;   }
 
   size_t core_region_alignment()           const { return _core_region_alignment; }
@@ -313,7 +313,7 @@ public:
   }
 
   void populate(FileMapInfo *info, size_t core_region_alignment, size_t header_size,
-                size_t base_archive_name_size, size_t base_archive_path_offset);
+                size_t base_archive_name_size, size_t base_archive_name_offset);
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
   }

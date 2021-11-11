@@ -34,7 +34,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
@@ -473,12 +472,6 @@ void KlassHierarchy::print_class(outputStream* st, KlassInfoEntry* cie, bool pri
   print_classname(st, klass);
   if (klass->is_interface()) {
     st->print(" (intf)");
-  }
-  // Special treatment for generated core reflection accessor classes: print invocation target.
-  if (ReflectionAccessorImplKlassHelper::is_generated_accessor(klass)) {
-    st->print(" (invokes: ");
-    ReflectionAccessorImplKlassHelper::print_invocation_target(st, klass);
-    st->print(")");
   }
   st->print("\n");
 

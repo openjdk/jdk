@@ -1041,7 +1041,7 @@ public class JmodTask {
      * Specific subclasses should do whatever validation is required on the
      * individual path elements, if any.
      */
-    static abstract class AbstractPathConverter implements ValueConverter<List<Path>> {
+    abstract static class AbstractPathConverter implements ValueConverter<List<Path>> {
         @Override
         public List<Path> convert(String value) {
             List<Path> paths = new ArrayList<>();

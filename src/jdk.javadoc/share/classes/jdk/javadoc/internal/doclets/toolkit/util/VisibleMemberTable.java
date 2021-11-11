@@ -103,8 +103,9 @@ public class VisibleMemberTable {
         FIELDS,
         CONSTRUCTORS,
         METHODS,
-        ANNOTATION_TYPE_MEMBER_OPTIONAL,
+        ANNOTATION_TYPE_MEMBER,
         ANNOTATION_TYPE_MEMBER_REQUIRED,
+        ANNOTATION_TYPE_MEMBER_OPTIONAL,
         PROPERTIES;
 
         private static final EnumSet<Kind> defaultSummarySet = EnumSet.of(
@@ -112,11 +113,13 @@ public class VisibleMemberTable {
         private static final EnumSet<Kind> enumSummarySet = EnumSet.of(
                 NESTED_CLASSES, ENUM_CONSTANTS, FIELDS, METHODS);
         private static final EnumSet<Kind> annotationSummarySet = EnumSet.of(
-                FIELDS, ANNOTATION_TYPE_MEMBER_OPTIONAL, ANNOTATION_TYPE_MEMBER_REQUIRED);
+                FIELDS, ANNOTATION_TYPE_MEMBER_REQUIRED, ANNOTATION_TYPE_MEMBER_OPTIONAL);
         private static final EnumSet<Kind> defaultDetailSet = EnumSet.of(
                 FIELDS, CONSTRUCTORS, METHODS);
         private static final EnumSet<Kind> enumDetailSet = EnumSet.of(
                 ENUM_CONSTANTS, FIELDS, METHODS);
+        private static final EnumSet<Kind> annotationDetailSet = EnumSet.of(
+                FIELDS, ANNOTATION_TYPE_MEMBER);
 
         /**
          * {@return the set of possible member kinds for the summaries section of a type element}
@@ -135,9 +138,11 @@ public class VisibleMemberTable {
          * @param kind the kind of type element being documented
          */
         public static Set<Kind> forDetailsOf(ElementKind kind) {
-            return kind == ElementKind.ENUM
-                    ? enumDetailSet
-                    : defaultDetailSet;
+            return switch (kind) {
+                case ANNOTATION_TYPE -> annotationDetailSet;
+                case ENUM -> enumDetailSet;
+                default -> defaultDetailSet;
+            };
         }
     }
 
@@ -213,7 +218,7 @@ public class VisibleMemberTable {
      * @param kind the member kind
      * @return a list of all visible members
      */
-    public List<? extends Element> getAllVisibleMembers(Kind kind) {
+    public List<Element> getAllVisibleMembers(Kind kind) {
         ensureInitialized();
         return visibleMembers.getOrDefault(kind, Collections.emptyList());
     }
@@ -225,7 +230,7 @@ public class VisibleMemberTable {
      * @param p the predicate used to filter the output
      * @return a list of visible enclosed members
      */
-    public List<? extends Element> getVisibleMembers(Kind kind, Predicate<Element> p) {
+    public List<Element> getVisibleMembers(Kind kind, Predicate<Element> p) {
         ensureInitialized();
 
         return visibleMembers.getOrDefault(kind, Collections.emptyList()).stream()
@@ -240,7 +245,7 @@ public class VisibleMemberTable {
      * @param kind the member kind
      * @return a list of visible enclosed members
      */
-    public List<? extends Element> getVisibleMembers(Kind kind) {
+    public List<Element> getVisibleMembers(Kind kind) {
         Predicate<Element> declaredAndLeafMembers = e -> {
             TypeElement encl = utils.getEnclosingTypeElement(e);
             return encl == te || utils.isUndocumentedEnclosure(encl);
@@ -255,7 +260,7 @@ public class VisibleMemberTable {
      *
      * @return a list of visible enclosed members in this type
      */
-    public List<? extends Element> getMembers(Kind kind) {
+    public List<Element> getMembers(Kind kind) {
         Predicate<Element> onlyLocallyDeclaredMembers = e -> utils.getEnclosingTypeElement(e) == te;
         return getVisibleMembers(kind, onlyLocallyDeclaredMembers);
     }
@@ -777,6 +782,7 @@ public class VisibleMemberTable {
                     case METHOD:
                         if (utils.isAnnotationType(te)) {
                             ExecutableElement ee = (ExecutableElement) e;
+                            addMember(e, Kind.ANNOTATION_TYPE_MEMBER);
                             addMember(e, ee.getDefaultValue() == null
                                     ? Kind.ANNOTATION_TYPE_MEMBER_REQUIRED
                                     : Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);

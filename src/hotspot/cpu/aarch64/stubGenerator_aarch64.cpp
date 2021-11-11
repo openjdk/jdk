@@ -7375,12 +7375,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif // COMPILER2
 
-    // generate GHASH intrinsics code
-    if (UseGHASHIntrinsics) {
-      // StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
-      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks_wide();
-    }
-
     if (UseBASE64Intrinsics) {
         StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
         StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
@@ -7395,8 +7389,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
-      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
       StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
+    }
+    if (UseGHASHIntrinsics) {
+      // StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks_wide();
+    }
+    if (UseAESIntrinsics && UseGHASHIntrinsics) {
+      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
     }
 
     if (UseSHA1Intrinsics) {
