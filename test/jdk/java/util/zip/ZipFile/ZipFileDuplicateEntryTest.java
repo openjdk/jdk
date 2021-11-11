@@ -172,8 +172,6 @@ public class ZipFileDuplicateEntryTest {
             zos.putNextEntry(new ZipEntry(DIR_ENTRY.name));
             zos.write(DIR_ENTRY.bytes);
             zos.closeEntry();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         /**
@@ -197,8 +195,6 @@ public class ZipFileDuplicateEntryTest {
             zos.putNextEntry(new ZipEntry(DIR_ENTRY.name));
             zos.write(DIR_ENTRY.bytes);
             zos.closeEntry();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         /**

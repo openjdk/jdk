@@ -1639,7 +1639,7 @@ public class ZipFile implements ZipConstants, Closeable {
                         if (addSlash && nameLen + 1 == entryLen
                                 && entry.startsWith(name) &&
                                 entry.charAt(entryLen - 1) == '/') {
-                            // Now check for a match with a trailing slash
+                            // Found the entry "name+/", now find the CEN entry pos
                             int exactPos = getEntryPos(name, false);
                             return exactPos == -1 ? pos : exactPos;
                         }
