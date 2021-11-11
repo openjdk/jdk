@@ -121,7 +121,7 @@ class ciReplay {
   static bool is_loaded(Method* method);
 
   static bool should_not_inline(ciMethod* method);
-  static bool should_inline(void* data, ciMethod* method, int bci, int inline_depth);
+  static bool should_inline(void* data, ciMethod* method, int bci, int inline_depth, bool& should_delay);
   static bool should_not_inline(void* data, ciMethod* method, int bci, int inline_depth);
 #endif
 
