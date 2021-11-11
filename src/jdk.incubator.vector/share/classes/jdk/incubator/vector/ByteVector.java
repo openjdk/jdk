@@ -3905,8 +3905,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         // Virtual constructors
 
         @ForceInline
-        @Override final
-        public ByteVector fromArray(Object a, int offset) {
+        @Override public
+        final ByteVector fromArray(Object a, int offset) {
             // User entry point:  Be careful with inputs.
             return ByteVector
                 .fromArray(this, (byte[]) a, offset);

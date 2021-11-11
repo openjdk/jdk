@@ -3603,8 +3603,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
         // Virtual constructors
 
         @ForceInline
-        @Override final
-        public IntVector fromArray(Object a, int offset) {
+        @Override public
+        final IntVector fromArray(Object a, int offset) {
             // User entry point:  Be careful with inputs.
             return IntVector
                 .fromArray(this, (int[]) a, offset);

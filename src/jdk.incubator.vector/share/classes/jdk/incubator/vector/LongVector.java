@@ -3497,8 +3497,8 @@ public abstract class LongVector extends AbstractVector<Long> {
         // Virtual constructors
 
         @ForceInline
-        @Override final
-        public LongVector fromArray(Object a, int offset) {
+        @Override public
+        final LongVector fromArray(Object a, int offset) {
             // User entry point:  Be careful with inputs.
             return LongVector
                 .fromArray(this, (long[]) a, offset);

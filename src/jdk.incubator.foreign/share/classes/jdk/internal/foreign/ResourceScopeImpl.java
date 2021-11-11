@@ -296,7 +296,7 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Sco
             }
         }
 
-        public static abstract class ResourceCleanup {
+        public abstract static class ResourceCleanup {
             ResourceCleanup next;
 
             public abstract void cleanup();

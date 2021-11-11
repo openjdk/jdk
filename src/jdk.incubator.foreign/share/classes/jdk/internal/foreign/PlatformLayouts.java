@@ -278,7 +278,7 @@ public class PlatformLayouts {
          * used to mark variadic parameters on systems such as macOS which pass these
          * entirely on the stack. The attribute value must be a boolean.
          */
-        public final static String STACK_VARARGS_ATTRIBUTE_NAME = "abi/aarch64/stack_varargs";
+        public static final String STACK_VARARGS_ATTRIBUTE_NAME = "abi/aarch64/stack_varargs";
 
         /**
          * Return a new memory layout which describes a variadic parameter to be

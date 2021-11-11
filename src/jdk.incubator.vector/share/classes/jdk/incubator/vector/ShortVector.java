@@ -3900,8 +3900,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         // Virtual constructors
 
         @ForceInline
-        @Override final
-        public ShortVector fromArray(Object a, int offset) {
+        @Override public
+        final ShortVector fromArray(Object a, int offset) {
             // User entry point:  Be careful with inputs.
             return ShortVector
                 .fromArray(this, (short[]) a, offset);

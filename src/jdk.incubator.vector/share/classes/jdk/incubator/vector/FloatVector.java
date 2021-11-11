@@ -3485,8 +3485,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
         // Virtual constructors
 
         @ForceInline
-        @Override final
-        public FloatVector fromArray(Object a, int offset) {
+        @Override public
+        final FloatVector fromArray(Object a, int offset) {
             // User entry point:  Be careful with inputs.
             return FloatVector
                 .fromArray(this, (float[]) a, offset);

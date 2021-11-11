@@ -3498,8 +3498,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         // Virtual constructors
 
         @ForceInline
-        @Override final
-        public DoubleVector fromArray(Object a, int offset) {
+        @Override public
+        final DoubleVector fromArray(Object a, int offset) {
             // User entry point:  Be careful with inputs.
             return DoubleVector
                 .fromArray(this, (double[]) a, offset);

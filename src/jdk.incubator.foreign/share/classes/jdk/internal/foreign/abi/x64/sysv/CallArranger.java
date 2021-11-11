@@ -239,7 +239,7 @@ public class CallArranger {
         }
     }
 
-    static abstract class BindingCalculator {
+    abstract static class BindingCalculator {
         protected final StorageCalculator storageCalculator;
 
         protected BindingCalculator(boolean forArguments) {
