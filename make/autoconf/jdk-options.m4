@@ -199,6 +199,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
     AC_MSG_ERROR([Copyright year must have a value])
   elif test "x$with_copyright_year" != x; then
     COPYRIGHT_YEAR="$with_copyright_year"
+  elif test "x$SOURCE_DATE_EPOCH" != x; then
+    if test "x$IS_GNU_DATE" = xyes; then
+      COPYRIGHT_YEAR=`date --date=@$SOURCE_DATE_EPOCH +%Y`
+    else
+      COPYRIGHT_YEAR=`date -j -f %s $SOURCE_DATE_EPOCH +%Y`
+    fi
   else
     COPYRIGHT_YEAR=`$DATE +'%Y'`
   fi
