@@ -154,7 +154,7 @@ public:
   VMReg as_VMReg() const;
 
   // derived registers, offsets, and addresses
-  FloatRegister successor() const { return this + 1; }
+  FloatRegister successor() const { return as_FloatRegister((encoding() + 1) % 32); }
 
   // accessors
   bool is_valid() const           { return this >= first() && this < invalid(); }
