@@ -45,14 +45,41 @@ class AbstractRegisterImpl {
   int value() const                              { return (int)(intx)this; }
 };
 
+
+// Macros to help define all kinds of registers
+
+#ifndef USE_POINTERS_TO_REGISTER_IMPL_ARRAY
+
 #define AS_REGISTER(type,name)         ((type)name##_##type##EnumValue)
 
 #define CONSTANT_REGISTER_DECLARATION(type, name, value)        \
 const type name = ((type)value);                                \
 enum { name##_##type##EnumValue = (value) }
 
-#define REGISTER_DECLARATION(type, name, value)                 \
+
+#else // USE_POINTERS_TO_REGISTER_IMPL_ARRAY
+
+#define REGISTER_IMPL_DECLARATION(type, impl_type)                      \
+inline const type as_ ## type(int encoding) {                           \
+  assert(encoding <= impl_type::number_of_declared_registers, "invalid register"); \
+  return encoding == -1 ? impl_type::invalid() : impl_type::first() + encoding; \
+}                                                                       \
+extern impl_type all_ ## type ## s[impl_type::number_of_declared_registers] INTERNAL_VISIBILITY; \
+inline constexpr type impl_type::first() { return all_ ## type ## s; }
+
+#define REGISTER_IMPL_DEFINITION(type, impl_type)                    \
+impl_type all_ ## type ## s[impl_type::number_of_declared_registers];
+
+#undef CONSTANT_REGISTER_DECLARATION
+#define CONSTANT_REGISTER_DECLARATION(type, name, value)        \
+constexpr type name = all_ ## type ## s + value;
+
+#endif // USE_POINTERS_TO_REGISTER_IMPL_ARRAY
+
+
+#define REGISTER_DECLARATION(type, name, value) \
 const type name = ((type)value)
+
 
 // For definitions of RegisterImpl* instances. To be redefined in an
 // OS-specific way.

@@ -32,24 +32,6 @@
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
 
-// Macros to help define all kinds of registers
-
-#define REGISTER_IMPL_DECLARATION(type, impl_type)                      \
-inline const type as_ ## type(int encoding) {                           \
-  assert(encoding <= impl_type::number_of_declared_registers, "invalid register"); \
-  return encoding == -1 ? impl_type::invalid() : impl_type::first() + encoding; \
-}                                                                       \
-extern impl_type all_ ## type ## s[impl_type::number_of_declared_registers] INTERNAL_VISIBILITY; \
-inline constexpr type impl_type::first() { return all_ ## type ## s; }
-
-#define REGISTER_IMPL_DEFINITION(type, impl_type)                    \
-impl_type all_ ## type ## s[impl_type::number_of_declared_registers];
-
-#undef CONSTANT_REGISTER_DECLARATION
-#define CONSTANT_REGISTER_DECLARATION(type, name, value)        \
-constexpr type name = all_##type##s + value;
-
-
 // Use Register as shortcut
 class RegisterImpl;
 typedef const RegisterImpl* Register;
@@ -72,16 +54,16 @@ public:
   };
 
   // derived registers, offsets, and addresses
-  const Register successor() const     { return this + 1; }
+  const Register successor() const { return this + 1; }
 
   VMReg as_VMReg() const;
 
   // accessors
-  int encoding() const           { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  bool is_valid() const          { return this < invalid(); }
-  bool has_byte_register() const { return is_valid(); }
+  int encoding() const             { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
+  bool is_valid() const            { return this >= first() && this < invalid(); }
+  bool has_byte_register() const   { return is_valid(); }
   const char* name() const;
-  int encoding_nocheck() const   { return this - first(); }
+  int encoding_nocheck() const     { return this - first(); }
 };
 
 
@@ -172,10 +154,10 @@ public:
   VMReg as_VMReg() const;
 
   // derived registers, offsets, and addresses
-  FloatRegister successor() const { return as_FloatRegister(encoding() + 1); }
+  FloatRegister successor() const { return this + 1; }
 
   // accessors
-  bool is_valid() const           { return this < invalid(); }
+  bool is_valid() const           { return this >= first() && this < invalid(); }
   const char* name() const;
   int encoding() const            { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
   int encoding_nocheck() const    { return this - first(); }
@@ -186,7 +168,7 @@ REGISTER_IMPL_DECLARATION(FloatRegister, FloatRegisterImpl);
 
 // The float registers of the AARCH64 architecture
 
-CONSTANT_REGISTER_DECLARATION(FloatRegister, fnoreg , (FloatRegisterImpl::number_of_registers));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, fnoreg , (FloatRegisterImpl::number_of_declared_registers));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, v0     , ( 0));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, v1     , ( 1));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, v2     , ( 2));
@@ -278,15 +260,16 @@ private:
   VMReg as_VMReg() const;
 
   // derived registers, offsets, and addresses
-  PRegister successor() const    { return this + 1; }
+  PRegister successor() const     { return this + 1; }
 
   // accessors
-  int encoding() const           { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  int encoding_nocheck() const   { return this - first(); }
-  bool is_valid() const          { return this < invalid(); }
+  int encoding() const            { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
+  int encoding_nocheck() const    { return this - first(); }
+  bool is_valid() const           { return this >= first() && this < invalid(); }
+  bool is_governing() const       { return this < first() + number_of_governing_registers; }
   const char* name() const;
-  bool is_governing() const      { return this < first() + number_of_governing_registers; }
 };
+
 
 REGISTER_IMPL_DECLARATION(PRegister, PRegisterImpl);
 
