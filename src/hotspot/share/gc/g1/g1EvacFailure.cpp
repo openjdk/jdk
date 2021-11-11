@@ -146,8 +146,8 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   uint _worker_id;
 
-  G1EvacFailureRegions* _evac_failure_regions;
   DEBUG_ONLY(uint volatile* _num_failed_regions;)
+  G1EvacFailureRegions* _evac_failure_regions;
 
 public:
   RemoveSelfForwardPtrHRClosure(uint worker_id,
@@ -155,8 +155,9 @@ public:
                                 G1EvacFailureRegions* evac_failure_regions) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
+    DEBUG_ONLY(_num_failed_regions(num_failed_regions) COMMA)
     _evac_failure_regions(evac_failure_regions) {
-    DEBUG_ONLY(_num_failed_regions = num_failed_regions;)
+    // DEBUG_ONLY(_num_failed_regions = num_failed_regions;)
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
