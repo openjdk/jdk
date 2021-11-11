@@ -5181,44 +5181,62 @@ void MacroAssembler::leave()
 }
 
 // ROP Protection
+// Use the AArch64 PAC feature to add ROP protection for generated code. Use whenever creating/
+// destroying stack frames or whenever directly loading/storing the LR to memory.
+// If UseROPProtection is not set then these functions are no-ops.
+// For more details on PAC see pauth_aarch64.hpp.
 
+// Sign the LR. Use during construction of a stack frame, before storing the LR to memory.
+// Uses the FP as the modifier.
+//
 void MacroAssembler::protect_return_address() {
-  // Used before pushing the LR on the stack.
   if (UseROPProtection) {
     check_return_address();
-    // The standard convention here is to use paciasp as SP would equal FP. Thus when LR and FP
-    // are pushed to the stack, the modifier used to sign LR is the value before it on the stack.
-    // In JDK, SP and FP may not match, but we still want to sign using the value pushed to the
-    // stack (FP). Note this version of the instruction is not in the NOP space.
+    // The standard convention for C code is to use paciasp, which uses SP as the modifier. This
+    // works because in C code, FP and SP match on function entry. In the JDK, SP and FP may not
+    // match, so instead explicitly use the FP.
     pacia(lr, rfp);
   }
 }
 
-void MacroAssembler::protect_return_address(Register return_reg, Address modifier, Register temp_reg) {
+// Sign the return value in the given register. Use before updating the LR in the exisiting stack
+// frame for the current function.
+// Uses the FP from the start of the function as the modifier - which is stored at the address of
+// the current FP.
+//
+void MacroAssembler::protect_return_address(Register return_reg, Register temp_reg) {
   if (UseROPProtection) {
     check_return_address(return_reg);
-    ldr(temp_reg, modifier);
+    ldr(temp_reg, Address(rfp));
     pacia(return_reg, temp_reg);
   }
 }
 
+// Authenticate the LR. Use before function return, after restoring FP and loading LR from memory.
+//
 void MacroAssembler::authenticate_return_address() {
-  // Used after popping the LR off the stack.
   if (UseROPProtection) {
-    // Match with protect_return_address.
     autia(lr, rfp);
     check_return_address();
   }
 }
 
-void MacroAssembler::authenticate_return_address(Register return_reg, Address modifier, Register temp_reg) {
+// Authenticate the return value in the given register. Use before updating the LR in the exisiting
+// stack frame for the current function.
+// Uses the FP from the start of the function as the modifier - which is stored at the address of
+// the current FP.
+//
+void MacroAssembler::authenticate_return_address(Register return_reg, Register temp_reg) {
   if (UseROPProtection) {
-    ldr(temp_reg, modifier);
+    ldr(temp_reg, Address(rfp));
     autia(return_reg, temp_reg);
     check_return_address(return_reg);
   }
 }
 
+// Strip any PAC data from LR without performing any authentication. Use with caution - only if
+// there is no guaranteed way of authenticating the LR.
+//
 void MacroAssembler::strip_return_address() {
   if (UseROPProtection) {
     xpaclri();
@@ -5226,9 +5244,14 @@ void MacroAssembler::strip_return_address() {
 }
 
 #ifndef PRODUCT
+// PAC failures can be difficult to debug. After an authentication failure, a segfault will only
+// occur when the pointer is used - ie when the program returns to the invalid LR. At this point
+// it is difficult to debug back to the callee function.
+// This function simply loads from the address in the given register.
+// Use directly after authentication to catch authentication failures.
+// Also use before signing to check that the pointer is valid and hasn't already been signed.
+//
 void MacroAssembler::check_return_address(Register return_reg) {
-  // This load helps debugging sign/auth failures, as the segfault will happen here instead of
-  // after using the failed address.
   if (UseROPProtection) {
     ldr(zr, Address(return_reg));
   }

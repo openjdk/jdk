@@ -686,11 +686,11 @@ public:
   void enter();
   void leave();
 
-  //ROP Protection
+  // ROP Protection
   void protect_return_address();
-  void protect_return_address(Register return_reg, Address modifier, Register temp_reg);
+  void protect_return_address(Register return_reg, Register temp_reg);
   void authenticate_return_address();
-  void authenticate_return_address(Register return_reg, Address modifier, Register temp_reg);
+  void authenticate_return_address(Register return_reg, Register temp_reg);
   void strip_return_address();
   void check_return_address(Register return_reg=lr) PRODUCT_RETURN;
 

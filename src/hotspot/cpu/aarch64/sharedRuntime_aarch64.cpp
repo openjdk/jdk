@@ -373,7 +373,7 @@ static void patch_callers_callsite(MacroAssembler *masm) {
 
   __ mov(c_rarg0, rmethod);
   __ mov(c_rarg1, lr);
-  __ authenticate_return_address(c_rarg1, Address(rfp), rscratch1);
+  __ authenticate_return_address(c_rarg1, rscratch1);
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite)));
   __ blr(rscratch1);
 
@@ -2323,7 +2323,7 @@ void SharedRuntime::generate_deopt_blob() {
   // load throwing pc from JavaThread and patch it as the return address
   // of the current frame. Then clear the field in JavaThread
   __ ldr(r3, Address(rthread, JavaThread::exception_pc_offset()));
-  __ protect_return_address(r3, Address(rfp), rscratch1);
+  __ protect_return_address(r3, rscratch1);
   __ str(r3, Address(rfp, wordSize));
   __ str(zr, Address(rthread, JavaThread::exception_pc_offset()));
 
@@ -2795,7 +2795,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     // it later to determine if someone changed the return address for
     // us!
     __ ldr(r20, Address(rthread, JavaThread::saved_exception_pc_offset()));
-    __ protect_return_address(r20, Address(rfp), rscratch1);
+    __ protect_return_address(r20, rscratch1);
     __ str(r20, Address(rfp, wordSize));
   }
 
@@ -2836,7 +2836,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     __ ldr(rscratch1, Address(rfp, wordSize));
     __ cmp(r20, rscratch1);
     __ br(Assembler::NE, no_adjust);
-    __ authenticate_return_address(r20, Address(rfp), rscratch1);
+    __ authenticate_return_address(r20, rscratch1);
 
 #ifdef ASSERT
     // Verify the correct encoding of the poll we're about to skip.
@@ -2851,7 +2851,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 #endif
     // Adjust return pc forward to step over the safepoint poll instruction
     __ add(r20, r20, NativeInstruction::instruction_size);
-    __ protect_return_address(r20, Address(rfp), rscratch1);
+    __ protect_return_address(r20, rscratch1);
     __ str(r20, Address(rfp, wordSize));
   }
 
