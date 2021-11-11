@@ -258,7 +258,7 @@ java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 6849371 macosx-al
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java 8165863 macosx-all
 java/awt/Clipboard/HTMLTransferTest/HTMLTransferTest.java 8017454 macosx-all
-java/awt/Frame/MiscUndecorated/RepaintTest.java 8079267,8266244 windows-all,linux-all,macosx-aarch64
+java/awt/Frame/MiscUndecorated/RepaintTest.java 8266244 macosx-aarch64
 java/awt/Robot/ModifierRobotKey/ModifierRobotKeyTest.java 8157173 generic-all
 java/awt/Modal/FileDialog/FileDialogAppModal1Test.java 7186009 macosx-all
 java/awt/Modal/FileDialog/FileDialogAppModal2Test.java 7186009 macosx-all
