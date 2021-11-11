@@ -53,6 +53,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import builder.ClassBuilder;
 import toolbox.ToolBox;
 
 import static javax.tools.DocumentationTool.Location.DOCUMENTATION_OUTPUT;
@@ -210,6 +211,96 @@ public class TestSnippetMarkup extends SnippetTester {
                 )
         );
         testPositive(base, testCases);
+    }
+
+    /*
+     * For all but the last line of snippet source, next-line markup behaves
+     * as if that markup without the next-line modifier were put on that
+     * next line.
+     */
+//    @Test
+    public void testPositiveInlineExternalTagMarkupNextLine(Path base) throws Exception {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    /*
+     * If next-line markup is put on the last line of a snippet source,
+     * an error occurs.
+     */
+    @Test
+    public void testNegativeInlineExternalHybridTagMarkupNextLinePutOnLastLine(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+        var goodFile = "good.txt";
+        var badFile = "bad.txt";
+        var badFile2 = "bad2.txt"; // to workaround error deduplication
+        new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void inline() { }")
+                                .setComments("""
+                                             {@snippet :
+                                             First line // @highlight :
+                                             }
+                                             """))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void external() { }")
+                                .setComments("""
+                                             {@snippet file="%s"}
+                                             """.formatted(badFile)))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void hybrid1() { }")
+                                .setComments("""
+                                             {@snippet file="%s":
+                                             First line
+                                             }
+                                             """.formatted(badFile2)))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void hybrid2() { }")
+                                .setComments("""
+                                             {@snippet file="%s":
+                                             First line // @highlight :
+                                             }
+                                             """.formatted(goodFile)))
+                // TODO: these two hybrids are to test what *this* test should not test.
+                //  Add a test that checks that an error in either part
+                //  of a hybrid snippet causes the snippet to fail (property-based testing)
+                .write(srcDir);
+        addSnippetFile(srcDir, "pkg", goodFile, """
+First line // @highlight
+ """);
+        addSnippetFile(srcDir, "pkg", badFile, """
+First line // @highlight :
+ """);
+        addSnippetFile(srcDir, "pkg", badFile2, """
+First line // @highlight :
+ """);
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+        checkExit(Exit.ERROR);
+        checkOutput(Output.OUT, true,
+"""
+A.java:5: error: snippet markup: tag refers to non-existent lines
+First line // @highlight :
+               ^""",
+"""
+A.java:24: error: snippet markup: tag refers to non-existent lines
+First line // @highlight :
+               ^""",
+"""
+%s:1: error: snippet markup: tag refers to non-existent lines
+First line // @highlight :
+               ^""".formatted(badFile),
+"""
+%s:1: error: snippet markup: tag refers to non-existent lines
+First line // @highlight :
+               ^""".formatted(badFile2));
+        checkNoCrashes();
     }
 
     private void testPositive(Path base, List<TestCase> testCases)
