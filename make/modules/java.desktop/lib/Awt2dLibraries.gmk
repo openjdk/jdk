@@ -845,7 +845,7 @@ ifeq ($(call isTargetOs, macosx), true)
       DEPS := $(SHADERS_SRC), \
       OUTPUT_FILE := $(SHADERS_AIR), \
       SUPPORT_DIR := $(SHADERS_SUPPORT_DIR), \
-      COMMAND := $(METAL) -c -std=osx-metal2.0 -o $(SHADERS_AIR) $(SHADERS_SRC), \
+      COMMAND := $(METAL) -c -std=osx-metal2.0 -mmacosx-version-min=10.12.00 -o $(SHADERS_AIR) $(SHADERS_SRC), \
   ))
 
   $(eval $(call SetupExecute, metallib_shaders, \
