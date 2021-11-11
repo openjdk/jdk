@@ -2215,6 +2215,10 @@ public class Gen extends JCTree.Visitor {
                     opcode = opcode & 0xFF;
                 }
             }
+            // Pop the left operand if rhs is switch expression and the code generation is not enabled.
+            if (rhs.hasTag(SWITCH_EXPRESSION) && !code.isAlive()) {
+                code.state.pop(lhs.type);
+            }
             if (opcode >= ifeq && opcode <= if_acmpne ||
                 opcode == if_acmp_null || opcode == if_acmp_nonnull) {
                 return items.makeCondItem(opcode);
