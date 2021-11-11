@@ -698,6 +698,14 @@ bool LibraryCallKit::inline_vector_mask_operation() {
   ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* mask_box_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
   Node* mask_vec = unbox_vector(mask, mask_box_type, elem_bt, num_elem, true);
+  if (mask_vec == NULL) {
+    if (C->print_intrinsics()) {
+        tty->print_cr("  ** unbox failed mask=%s",
+                      NodeClassNames[argument(4)->Opcode()]);
+    }
+    return false;
+  }
+
   if (mask_vec->bottom_type()->isa_vectmask() == NULL) {
     mask_vec = gvn().transform(VectorStoreMaskNode::make(gvn(), mask_vec, elem_bt, num_elem));
   }
