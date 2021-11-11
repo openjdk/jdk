@@ -138,14 +138,11 @@ public class TransferTo {
      */
     @Test
     public void testMoreThanTwoGB() throws IOException {
-        Path sourceFile = null;
-        Path targetFile = null;
+        Path sourceFile = Files.createTempFile("test2GBSource", null);;
+        Path targetFile = Files.createTempFile("test2GBtarget", null);;
         try {
             // preparing two temporary files which will be compared at the end of the test
-             sourceFile = Files.createTempFile("test2GBSource", null);
              try {
-             targetFile = Files.createTempFile("test2GBtarget", null);
-
                 // writing 3 GB of random bytes into source file
                 for (int i = 0; i < NUM_WRITES; i++)
                     Files.write(sourceFile, createRandomBytes(BYTES_PER_WRITE, 0), StandardOpenOption.APPEND);
