@@ -120,7 +120,7 @@ public class TestSnippetPathOption extends SnippetTester {
         tb.writeFile(src.resolve("directoryB/mysnippet.txt"), "Hello, directoryB!");
         tb.writeJavaFiles(src, """
                                package pkg;
-                                                              
+
                                /** {@snippet file="mysnippet.txt"} */
                                public class X { }
                                """);
@@ -143,7 +143,7 @@ public class TestSnippetPathOption extends SnippetTester {
         Path src = Files.createDirectories(base.resolve("src"));
         tb.writeJavaFiles(src, """
                                package pkg;
-                                                              
+
                                /** {@snippet file="mysnippet.txt"} */
                                public class X { }
                                """);
