@@ -441,7 +441,7 @@ class LIR_Opr {
   RegNr xmm_regnrHi() const    { assert(is_double_xmm()   && !is_virtual(), "type check"); return (RegNr)hi_reg_half(); }
   int   vreg_number() const    { assert(is_virtual(),                       "type check"); return (RegNr)data(); }
 
-  LIR_OprPtr* pointer() const { assert(is_pointer(), "type check"); return (LIR_OprPtr*)_value; }
+  LIR_OprPtr* pointer() const { assert(_value != 0 && is_pointer(), "nullness and type check"); return (LIR_OprPtr*)_value; }
   LIR_Const* as_constant_ptr() const             { return pointer()->as_constant(); }
   LIR_Address* as_address_ptr() const            { return pointer()->as_address(); }
 
