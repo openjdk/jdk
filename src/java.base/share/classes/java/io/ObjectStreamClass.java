@@ -30,7 +30,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -372,7 +371,7 @@ public class ObjectStreamClass implements Serializable {
         EntryFuture future = null;
         if (entry == null) {
             EntryFuture newEntry = new EntryFuture();
-            Reference<?> newRef = new SoftReference<>(newEntry);
+            Reference<?> newRef = new WeakReference<>(newEntry);
             do {
                 if (ref != null) {
                     Caches.localDescs.remove(key, ref);
@@ -411,7 +410,7 @@ public class ObjectStreamClass implements Serializable {
                 entry = th;
             }
             if (future.set(entry)) {
-                Caches.localDescs.put(key, new SoftReference<>(entry));
+                Caches.localDescs.put(key, new WeakReference<>(entry));
             } else {
                 // nested lookup call already set future
                 entry = future.get();
@@ -2260,7 +2259,7 @@ public class ObjectStreamClass implements Serializable {
         EntryFuture future = null;
         if (entry == null) {
             EntryFuture newEntry = new EntryFuture();
-            Reference<?> newRef = new SoftReference<>(newEntry);
+            Reference<?> newRef = new WeakReference<>(newEntry);
             do {
                 if (ref != null) {
                     Caches.reflectors.remove(key, ref);
@@ -2286,7 +2285,7 @@ public class ObjectStreamClass implements Serializable {
                 entry = th;
             }
             future.set(entry);
-            Caches.reflectors.put(key, new SoftReference<>(entry));
+            Caches.reflectors.put(key, new WeakReference<>(entry));
         }
 
         if (entry instanceof FieldReflector) {
