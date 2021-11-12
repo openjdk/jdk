@@ -24,187 +24,115 @@ package org.openjdk.bench.vm.compiler;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.CompilerControl;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.infra.Blackhole;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Fork(2)
+@State(Scope.Thread)
 public class UnsignedComparison {
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean intEQ(int arg0, int arg1) {
-        return arg0 + Integer.MIN_VALUE == arg1 + Integer.MIN_VALUE;
-    }
+    private static final int ITERATIONS = 1000;
 
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean intNE(int arg0, int arg1) {
-        return arg0 + Integer.MIN_VALUE != arg1 + Integer.MIN_VALUE;
-    }
+    private static final int CONST_OPERAND = 4;
+    private static final int INT_MIN = Integer.MIN_VALUE;
+    private static final long LONG_MIN = Long.MIN_VALUE;
 
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean intLT(int arg0, int arg1) {
-        return arg0 + Integer.MIN_VALUE < arg1 + Integer.MIN_VALUE;
-    }
+    int arg0 = 0, arg1 = 4;
 
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean intLE(int arg0, int arg1) {
-        return arg0 + Integer.MIN_VALUE <= arg1 + Integer.MIN_VALUE;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean intGT(int arg0, int arg1) {
-        return arg0 + Integer.MIN_VALUE > arg1 + Integer.MIN_VALUE;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean intGE(int arg0, int arg1) {
-        return arg0 + Integer.MIN_VALUE >= arg1 + Integer.MIN_VALUE;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean intLibLT(int arg0, int arg1) {
-        return Integer.compareUnsigned(arg0, arg1) < 0;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean intLibGT(int arg0, int arg1) {
-        return Integer.compareUnsigned(arg0, arg1) > 0;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean longEQ(long arg0, long arg1) {
-        return arg0 + Long.MIN_VALUE == arg1 + Long.MIN_VALUE;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean longNE(long arg0, long arg1) {
-        return arg0 + Long.MIN_VALUE != arg1 + Long.MIN_VALUE;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean longLT(long arg0, long arg1) {
-        return arg0 + Long.MIN_VALUE < arg1 + Long.MIN_VALUE;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean longLE(long arg0, long arg1) {
-        return arg0 + Long.MIN_VALUE <= arg1 + Long.MIN_VALUE;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean longGT(long arg0, long arg1) {
-        return arg0 + Long.MIN_VALUE > arg1 + Long.MIN_VALUE;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean longGE(long arg0, long arg1) {
-        return arg0 + Long.MIN_VALUE >= arg1 + Long.MIN_VALUE;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean longLibLT(long arg0, long arg1) {
-        return Long.compareUnsigned(arg0, arg1) < 0;
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static boolean longLibGT(long arg0, long arg1) {
-        return Long.compareUnsigned(arg0, arg1) > 0;
+    @Setup(Level.Invocation)
+    public void toggle() {
+        arg0 = (arg0 + 1) & 7;
     }
 
     @Benchmark
-    public void runIntEQ() {
-        intEQ(0, 0);
-        intEQ(-1, 0);
+    public void intVarDirect(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(arg0 + INT_MIN < arg1 + INT_MIN);
+        }
     }
 
     @Benchmark
-    public void runIntNE() {
-        intNE(0, 0);
-        intNE(-1, 0);
+    public void intVarLibLT(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(Integer.compareUnsigned(arg0, arg1) < 0);
+        }
     }
 
     @Benchmark
-    public void runIntLT() {
-        intLT(0, -1);
-        intLT(-1, 0);
+    public void intVarLibGT(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(Integer.compareUnsigned(arg0, arg1) > 0);
+        }
     }
 
     @Benchmark
-    public void runIntLE() {
-        intLE(0, -1);
-        intLE(-1, 0);
+    public void intConDirect(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(arg0 + INT_MIN < CONST_OPERAND + INT_MIN);
+        }
     }
 
     @Benchmark
-    public void runIntGT() {
-        intGT(0, -1);
-        intGT(-1, 0);
+    public void intConLibLT(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(Integer.compareUnsigned(arg0, CONST_OPERAND) < 0);
+        }
     }
 
     @Benchmark
-    public void runIntGE() {
-        intGE(0, -1);
-        intGE(-1, 0);
+    public void intConLibGT(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(Integer.compareUnsigned(arg0, CONST_OPERAND) > 0);
+        }
     }
 
     @Benchmark
-    public void runIntLibLT() {
-        intLibLT(0, -1);
-        intLibLT(-1, 0);
+    public void longVarDirect(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(arg0 + LONG_MIN < arg1 + LONG_MIN);
+        }
     }
 
     @Benchmark
-    public void runIntLibGT() {
-        intLibGT(0, -1);
-        intLibGT(-1, 0);
+    public void longVarLibLT(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(Long.compareUnsigned(arg0, arg1) < 0);
+        }
     }
 
     @Benchmark
-    public void runLongEQ() {
-        longEQ(0, 0);
-        longEQ(-1, 0);
+    public void longVarLibGT(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(Long.compareUnsigned(arg0, arg1) > 0);
+        }
     }
 
     @Benchmark
-    public void runLongNE() {
-        longNE(0, 0);
-        longNE(-1, 0);
+    public void longConDirect(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(arg0 + LONG_MIN < CONST_OPERAND + LONG_MIN);
+        }
     }
 
     @Benchmark
-    public void runLongLT() {
-        longLT(0, -1);
-        longLT(-1, 0);
+    public void longConLibLT(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(Long.compareUnsigned(arg0, CONST_OPERAND) < 0);
+        }
     }
 
     @Benchmark
-    public void runLongLE() {
-        longLE(0, -1);
-        longLE(-1, 0);
-    }
-
-    @Benchmark
-    public void runLongGT() {
-        longGT(0, -1);
-        longGT(-1, 0);
-    }
-
-    @Benchmark
-    public void runLongGE() {
-        longGE(0, -1);
-        longGE(-1, 0);
-    }
-
-    @Benchmark
-    public void runLongLibLT() {
-        longLibLT(0, -1);
-        longLibLT(-1, 0);
-    }
-
-    @Benchmark
-    public void runLongLibGT() {
-        longLibGT(0, -1);
-        longLibGT(-1, 0);
+    public void longConLibGT(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume(Long.compareUnsigned(arg0, CONST_OPERAND) > 0);
+        }
     }
 }

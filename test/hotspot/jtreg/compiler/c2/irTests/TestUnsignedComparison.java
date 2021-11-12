@@ -38,6 +38,10 @@ public class TestUnsignedComparison {
     private static final String CMPU_REGEX = "(\\d+(\\s){2}(" + "Cmp(U|UL)" + ".*)+(\\s){2}===.*)";
     private static final String ADD_REGEX = "(\\d+(\\s){2}(" + "Add(I|L)" + ".*)+(\\s){2}===.*)";
 
+    private static final int INT_MIN = Integer.MIN_VALUE;
+    private static final long LONG_MIN = Long.MIN_VALUE;
+
+    // Integers are sorted in unsignedly increasing order
     private static final int[] INT_DATA = {
         0,
         1,
@@ -51,6 +55,7 @@ public class TestUnsignedComparison {
         0xFFFF_FFFF,
     };
 
+    // Longs are sorted in unsignedly increasing order
     private static final long[] LONG_DATA = {
         0L,
         1L,
@@ -68,6 +73,11 @@ public class TestUnsignedComparison {
         0xFFFFFFFF_FFFFFFFFL,
     };
 
+    // Constants to compare against, add MIN_VALUE beforehand for convenience
+    private static final int CONST_INDEX = 6;
+    private static final int INT_CONST = INT_DATA[CONST_INDEX] + INT_MIN;
+    private static final long LONG_CONST = LONG_DATA[CONST_INDEX] + LONG_MIN;
+
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
         framework.start();
@@ -76,100 +86,64 @@ public class TestUnsignedComparison {
     @Test
     @IR(failOn = {CMP_REGEX, ADD_REGEX})
     @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testIntEQ(int x, int y) {
-        return x + Integer.MIN_VALUE == y + Integer.MIN_VALUE;
+    public boolean testIntVarEQ(int x, int y) {
+        return x + INT_MIN == y + INT_MIN;
     }
 
-    @Run(test = "testIntEQ")
-    public void checkTestIntEQ() {
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testIntVarNE(int x, int y) {
+        return x + INT_MIN != y + INT_MIN;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testIntVarLT(int x, int y) {
+        return x + INT_MIN < y + INT_MIN;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testIntVarLE(int x, int y) {
+        return x + INT_MIN <= y + INT_MIN;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testIntVarGT(int x, int y) {
+        return x + INT_MIN > y + INT_MIN;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testIntVarGE(int x, int y) {
+        return x + INT_MIN >= y + INT_MIN;
+    }
+
+    @Run(test = {"testIntVarEQ", "testIntVarNE",
+                 "testIntVarLT", "testIntVarLE",
+                 "testIntVarGT", "testIntVarGE"})
+    public void checkTestIntVar() {
+        // Verify the transformation "cmp (add X min_jint) (add Y min_jint)"
+        // to "cmpu X Y"
         for (int i = 0; i < INT_DATA.length; i++) {
             for (int j = 0; j < INT_DATA.length; j++) {
-                Asserts.assertEquals(testIntEQ(INT_DATA[i], INT_DATA[j]),
+                Asserts.assertEquals(testIntVarEQ(INT_DATA[i], INT_DATA[j]),
                                      i == j);
-            }
-        }
-    }
-
-    @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testIntNE(int x, int y) {
-        return x + Integer.MIN_VALUE != y + Integer.MIN_VALUE;
-    }
-
-    @Run(test = "testIntNE")
-    public void checkTestIntNE() {
-        for (int i = 0; i < INT_DATA.length; i++) {
-            for (int j = 0; j < INT_DATA.length; j++) {
-                Asserts.assertEquals(testIntNE(INT_DATA[i], INT_DATA[j]),
+                Asserts.assertEquals(testIntVarNE(INT_DATA[i], INT_DATA[j]),
                                      i != j);
-            }
-        }
-    }
-
-    @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testIntLT(int x, int y) {
-        return x + Integer.MIN_VALUE < y + Integer.MIN_VALUE;
-    }
-
-    @Run(test = "testIntLT")
-    public void checkTestIntLT() {
-        for (int i = 0; i < INT_DATA.length; i++) {
-            for (int j = 0; j < INT_DATA.length; j++) {
-                Asserts.assertEquals(testIntLT(INT_DATA[i], INT_DATA[j]),
-                                     i < j);
-            }
-        }
-    }
-
-    @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testIntLE(int x, int y) {
-        return x + Integer.MIN_VALUE <= y + Integer.MIN_VALUE;
-    }
-
-    @Run(test = "testIntLE")
-    public void checkTestIntLE() {
-        for (int i = 0; i < INT_DATA.length; i++) {
-            for (int j = 0; j < INT_DATA.length; j++) {
-                Asserts.assertEquals(testIntLE(INT_DATA[i], INT_DATA[j]),
+                Asserts.assertEquals(testIntVarLT(INT_DATA[i], INT_DATA[j]),
+                                     i <  j);
+                Asserts.assertEquals(testIntVarLE(INT_DATA[i], INT_DATA[j]),
                                      i <= j);
-            }
-        }
-    }
-
-    @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testIntGT(int x, int y) {
-        return x + Integer.MIN_VALUE > y + Integer.MIN_VALUE;
-    }
-
-    @Run(test = "testIntGT")
-    public void checkTestIntGT() {
-        for (int i = 0; i < INT_DATA.length; i++) {
-            for (int j = 0; j < INT_DATA.length; j++) {
-                Asserts.assertEquals(testIntGT(INT_DATA[i], INT_DATA[j]),
-                                     i > j);
-            }
-        }
-    }
-
-    @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testIntGE(int x, int y) {
-        return x + Integer.MIN_VALUE >= y + Integer.MIN_VALUE;
-    }
-
-    @Run(test = "testIntGE")
-    public void checkTestIntGE() {
-        for (int i = 0; i < INT_DATA.length; i++) {
-            for (int j = 0; j < INT_DATA.length; j++) {
-                Asserts.assertEquals(testIntGE(INT_DATA[i], INT_DATA[j]),
+                Asserts.assertEquals(testIntVarGT(INT_DATA[i], INT_DATA[j]),
+                                     i >  j);
+                Asserts.assertEquals(testIntVarGE(INT_DATA[i], INT_DATA[j]),
                                      i >= j);
             }
         }
@@ -178,102 +152,194 @@ public class TestUnsignedComparison {
     @Test
     @IR(failOn = {CMP_REGEX, ADD_REGEX})
     @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testLongEQ(long x, long y) {
-        return x + Long.MIN_VALUE == y + Long.MIN_VALUE;
+    public boolean testIntConEQ(int x) {
+        return x + INT_MIN == INT_CONST;
     }
 
-    @Run(test = "testLongEQ")
-    public void checkTestLongEQ() {
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testIntConNE(int x) {
+        return x + INT_MIN != INT_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testIntConLT(int x) {
+        return x + INT_MIN < INT_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testIntConLE(int x) {
+        return x + INT_MIN <= INT_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testIntConGT(int x) {
+        return x + INT_MIN > INT_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testIntConGE(int x) {
+        return x + INT_MIN >= INT_CONST;
+    }
+
+    @Run(test = {"testIntConEQ", "testIntConNE",
+                 "testIntConLT", "testIntConLE",
+                 "testIntConGT", "testIntConGE"})
+    public void checkTestIntCon() {
+        // Verify the transformation "cmp (add X min_jint) c"
+        // to "cmpu X (c + min_jint)"
+        for (int i = 0; i < INT_DATA.length; i++) {
+            Asserts.assertEquals(testIntConEQ(INT_DATA[i]),
+                                 i == CONST_INDEX);
+            Asserts.assertEquals(testIntConNE(INT_DATA[i]),
+                                 i != CONST_INDEX);
+            Asserts.assertEquals(testIntConLT(INT_DATA[i]),
+                                 i <  CONST_INDEX);
+            Asserts.assertEquals(testIntConLE(INT_DATA[i]),
+                                 i <= CONST_INDEX);
+            Asserts.assertEquals(testIntConGT(INT_DATA[i]),
+                                 i >  CONST_INDEX);
+            Asserts.assertEquals(testIntConGE(INT_DATA[i]),
+                                 i >= CONST_INDEX);
+        }
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongVarEQ(long x, long y) {
+        return x + LONG_MIN == y + LONG_MIN;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongVarNE(long x, long y) {
+        return x + LONG_MIN != y + LONG_MIN;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongVarLT(long x, long y) {
+        return x + LONG_MIN < y + LONG_MIN;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongVarLE(long x, long y) {
+        return x + LONG_MIN <= y + LONG_MIN;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongVarGT(long x, long y) {
+        return x + LONG_MIN > y + LONG_MIN;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongVarGE(long x, long y) {
+        return x + LONG_MIN >= y + LONG_MIN;
+    }
+
+    @Run(test = {"testLongVarEQ", "testLongVarNE",
+                 "testLongVarLT", "testLongVarLE",
+                 "testLongVarGT", "testLongVarGE"})
+    public void checkTestLongVar() {
+        // Verify the transformation "cmp (add X min_jlong) (add Y min_jlong)"
+        // to "cmpu X Y"
         for (int i = 0; i < LONG_DATA.length; i++) {
             for (int j = 0; j < LONG_DATA.length; j++) {
-                Asserts.assertEquals(testLongEQ(LONG_DATA[i], LONG_DATA[j]),
+                Asserts.assertEquals(testLongVarEQ(LONG_DATA[i], LONG_DATA[j]),
                                      i == j);
-            }
-        }
-    }
-
-    @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testLongNE(long x, long y) {
-        return x + Long.MIN_VALUE != y + Long.MIN_VALUE;
-    }
-
-    @Run(test = "testLongNE")
-    public void checkTestLongNE() {
-        for (int i = 0; i < LONG_DATA.length; i++) {
-            for (int j = 0; j < LONG_DATA.length; j++) {
-                Asserts.assertEquals(testLongNE(LONG_DATA[i], LONG_DATA[j]),
+                Asserts.assertEquals(testLongVarNE(LONG_DATA[i], LONG_DATA[j]),
                                      i != j);
-            }
-        }
-    }
-
-    @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testLongLT(long x, long y) {
-        return x + Long.MIN_VALUE < y + Long.MIN_VALUE;
-    }
-
-    @Run(test = "testLongLT")
-    public void checkTestLongLT() {
-        for (int i = 0; i < LONG_DATA.length; i++) {
-            for (int j = 0; j < LONG_DATA.length; j++) {
-                Asserts.assertEquals(testLongLT(LONG_DATA[i], LONG_DATA[j]),
-                                     i < j);
-            }
-        }
-    }
-
-    @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testLongLE(long x, long y) {
-        return x + Long.MIN_VALUE <= y + Long.MIN_VALUE;
-    }
-
-    @Run(test = "testLongLE")
-    public void checkTestLongLE() {
-        for (int i = 0; i < LONG_DATA.length; i++) {
-            for (int j = 0; j < LONG_DATA.length; j++) {
-                Asserts.assertEquals(testLongLE(LONG_DATA[i], LONG_DATA[j]),
+                Asserts.assertEquals(testLongVarLT(LONG_DATA[i], LONG_DATA[j]),
+                                     i <  j);
+                Asserts.assertEquals(testLongVarLE(LONG_DATA[i], LONG_DATA[j]),
                                      i <= j);
-            }
-        }
-    }
-
-    @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testLongGT(long x, long y) {
-        return x + Long.MIN_VALUE > y + Long.MIN_VALUE;
-    }
-
-    @Run(test = "testLongGT")
-    public void checkTestLongGT() {
-        for (int i = 0; i < LONG_DATA.length; i++) {
-            for (int j = 0; j < LONG_DATA.length; j++) {
-                Asserts.assertEquals(testLongGT(LONG_DATA[i], LONG_DATA[j]),
-                                     i > j);
-            }
-        }
-    }
-
-    @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
-    public boolean testLongGE(long x, long y) {
-        return x + Long.MIN_VALUE >= y + Long.MIN_VALUE;
-    }
-
-    @Run(test = "testLongGE")
-    public void checkTestLongGE() {
-        for (int i = 0; i < LONG_DATA.length; i++) {
-            for (int j = 0; j < LONG_DATA.length; j++) {
-                Asserts.assertEquals(testLongGE(LONG_DATA[i], LONG_DATA[j]),
+                Asserts.assertEquals(testLongVarGT(LONG_DATA[i], LONG_DATA[j]),
+                                     i >  j);
+                Asserts.assertEquals(testLongVarGE(LONG_DATA[i], LONG_DATA[j]),
                                      i >= j);
             }
+        }
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongConEQ(long x) {
+        return x + LONG_MIN == LONG_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongConNE(long x) {
+        return x + LONG_MIN != LONG_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongConLT(long x) {
+        return x + LONG_MIN < LONG_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongConLE(long x) {
+        return x + LONG_MIN <= LONG_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongConGT(long x) {
+        return x + LONG_MIN > LONG_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_REGEX, ADD_REGEX})
+    @IR(counts = {CMPU_REGEX, "1"})
+    public boolean testLongConGE(long x) {
+        return x + LONG_MIN >= LONG_CONST;
+    }
+
+    @Run(test = {"testLongConEQ", "testLongConNE",
+                 "testLongConLT", "testLongConLE",
+                 "testLongConGT", "testLongConGE"})
+    public void checkTestLongConGE() {
+        // Verify the transformation "cmp (add X min_jlong) c"
+        // to "cmpu X (c + min_jlong)"
+        for (int i = 0; i < LONG_DATA.length; i++) {
+            Asserts.assertEquals(testLongConEQ(LONG_DATA[i]),
+                                 i == CONST_INDEX);
+            Asserts.assertEquals(testLongConNE(LONG_DATA[i]),
+                                 i != CONST_INDEX);
+            Asserts.assertEquals(testLongConLT(LONG_DATA[i]),
+                                 i <  CONST_INDEX);
+            Asserts.assertEquals(testLongConLE(LONG_DATA[i]),
+                                 i <= CONST_INDEX);
+            Asserts.assertEquals(testLongConGT(LONG_DATA[i]),
+                                 i >  CONST_INDEX);
+            Asserts.assertEquals(testLongConGE(LONG_DATA[i]),
+                                 i >= CONST_INDEX);
         }
     }
 }

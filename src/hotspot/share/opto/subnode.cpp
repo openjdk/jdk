@@ -1531,8 +1531,8 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Change "CmpI (AddI X min_jint) (AddI Y min_jint)" into "CmpU X Y"
-  // and    "CmpI (AddI X min_jint) C" into "CmpU X (C + min_jint)"
+  // Change "cmp (add X min_jint) (add Y min_jint)" into "cmpu X Y"
+  // and    "cmp (add X min_jint) c" into "cmpu X (c + min_jint)"
   if (cop == Op_CmpI &&
       cmp1_op == Op_AddI &&
       phase->type(cmp1->in(2)) == TypeInt::MIN) {
@@ -1547,8 +1547,8 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Change "CmpL (AddL X min_jlong) (AddL Y min_jlong)" into "CmpUL X Y"
-  // and    "CmpL (AddL X min_jlong) C" into "CmpUL X (C + min_jlong)"
+  // Change "cmp (add X min_jlong) (add Y min_jlong)" into "cmpu X Y"
+  // and    "cmp (add X min_jlong) c" into "cmpu X (c + min_jlong)"
   if (cop == Op_CmpL &&
       cmp1_op == Op_AddL &&
       phase->type(cmp1->in(2)) == TypeLong::MIN) {
