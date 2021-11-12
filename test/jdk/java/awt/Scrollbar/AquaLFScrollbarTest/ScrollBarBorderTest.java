@@ -1,8 +1,25 @@
-import java.awt.*;
+import javax.swing.JScrollBar;
+import javax.swing.JPanel;
+import javax.swing.JFrame;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
+import javax.swing.Box;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import java.awt.Frame;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Panel;
+import java.awt.TextArea;
+import java.awt.Button;
+import java.awt.Scrollbar;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Color;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.*; 
-import javax.swing.border.*;
 
 /*
  * @test
@@ -161,7 +178,7 @@ public class ScrollBarBorderTest implements ActionListener {
 
   // custom border 
   private static class CustomBorder implements Border {
-    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) { 
+    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
       g.setColor(new Color(255, 0, 0, 100)); 
       g.fillRect(width - 150, y, width, height); 
     } 
