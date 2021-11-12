@@ -190,7 +190,7 @@ class Eval {
      * @return usually a singleton list of Snippet, but may be empty or multiple
      */
     private List<Snippet> sourceToSnippets(String userSource) {
-        String compileSource = Util.trimEnd(new MaskCommentsAndModifiers(userSource, false).cleared());
+        String compileSource = new MaskCommentsAndModifiers(userSource, false).cleared().stripTrailing();
         if (compileSource.length() == 0) {
             return Collections.emptyList();
         }
@@ -440,7 +440,7 @@ class Eval {
      *   as explicit parameters of the constructor, and pass them to the super
      *   constructor
      * --if the code in the anonymous class captures any variables from the
-     *   enclosing context, make them an explicit paramters of the constructor
+     *   enclosing context, make them an explicit parameters of the constructor
      *   and assign to respective fields.
      * --if there are any explicit fields with initializers in the anonymous class,
      *   move the initializers at the end of the constructor (after the captured fields
@@ -850,7 +850,7 @@ class Eval {
         snip.setFailed(diags);
 
         // Install  wrapper for query by SourceCodeAnalysis.wrapper
-        String compileSource = Util.trimEnd(new MaskCommentsAndModifiers(userSource, true).cleared());
+        String compileSource = new MaskCommentsAndModifiers(userSource, true).cleared().stripTrailing();
         OuterWrap outer = switch (probableKind) {
             case IMPORT     -> state.outerMap.wrapImport(Wrap.simpleWrap(compileSource), snip);
             case EXPRESSION -> state.outerMap.wrapInTrialClass(Wrap.methodReturnWrap(compileSource));
@@ -1142,7 +1142,7 @@ class Eval {
                     ins, newDependencies, success);
             if (!ins.addAll(newDependencies) && success) {
                 // all classes that could not be directly loaded (because they
-                // are new) have been redefined, and no new dependnencies were
+                // are new) have been redefined, and no new dependencies were
                 // identified
                 ins.stream().forEach(Unit::finish);
                 return ins;

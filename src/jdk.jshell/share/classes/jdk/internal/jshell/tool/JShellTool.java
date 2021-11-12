@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -897,25 +897,6 @@ public class JShellTool implements MessageHandler {
         }
     }
 
-    /**
-     * Trim whitespace off end of string
-     *
-     * @param s
-     * @return
-     */
-    static String trimEnd(String s) {
-        int last = s.length() - 1;
-        int i = last;
-        while (i >= 0 && Character.isWhitespace(s.charAt(i))) {
-            --i;
-        }
-        if (i != last) {
-            return s.substring(0, i + 1);
-        } else {
-            return s;
-        }
-    }
-
     private String indent() {
         String indentValue = prefs.get(INDENT_KEY);
         if (indentValue == null) indentValue = Integer.toString(DEFAULT_INDENT);
@@ -1234,10 +1215,10 @@ public class JShellTool implements MessageHandler {
             // No remaining input after a command
             return "";
         } else {
-            // It is a snipet. Separate the source from the remaining. Evaluate
+            // It is a snippet. Separate the source from the remaining. Evaluate
             // the source
             CompletionInfo an = analysis.analyzeCompletion(src);
-            if (processSourceCatchingReset(trimEnd(an.source()))) {
+            if (processSourceCatchingReset(an.source().stripTrailing())) {
                 // Snippet was successful use any leftover source
                 return an.remaining();
             } else {

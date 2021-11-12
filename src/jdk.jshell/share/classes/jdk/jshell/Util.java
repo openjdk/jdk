@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,20 +115,6 @@ class Util {
         buf[charPos] = (char) ('A'-i);
 
         return new String(buf, charPos, (33 - charPos));
-    }
-
-
-    static String trimEnd(String s) {
-        int last = s.length() - 1;
-        int i = last;
-        while (i >= 0 && Character.isWhitespace(s.charAt(i))) {
-            --i;
-        }
-        if (i != last) {
-            return s.substring(0, i + 1);
-        } else {
-            return s;
-        }
     }
 
     static <T> Stream<T> stream(Iterable<T> iterable) {
