@@ -324,7 +324,7 @@ $(eval $(call SetupTarget, vscode-project-ccls, \
 # aren't built until after libjava and libjvm are available to link to.
 $(eval $(call SetupTarget, demos-jdk, \
     MAKEFILE := CompileDemos, \
-    DEPS := java.base-libs exploded-image buildtools-jdk, \
+    DEPS := java.base-libs exploded-image, \
 ))
 
 $(eval $(call SetupTarget, test-image-demos-jdk, \
@@ -383,12 +383,12 @@ bootcycle-images:
 
 $(eval $(call SetupTarget, zip-security, \
     MAKEFILE := ZipSecurity, \
-    DEPS := buildtools-jdk java.base-java java.security.jgss-java java.security.jgss-libs, \
+    DEPS := java.base-java java.security.jgss-java java.security.jgss-libs, \
 ))
 
 $(eval $(call SetupTarget, zip-source, \
     MAKEFILE := ZipSource, \
-    DEPS := buildtools-jdk gensrc, \
+    DEPS := gensrc, \
 ))
 
 $(eval $(call SetupTarget, jrtfs-jar, \
@@ -508,13 +508,13 @@ $(eval $(call SetupTarget, docs-jdk-index, \
 $(eval $(call SetupTarget, docs-zip, \
     MAKEFILE := Docs, \
     TARGET := docs-zip, \
-    DEPS :=  docs-jdk buildtools-jdk, \
+    DEPS :=  docs-jdk, \
 ))
 
 $(eval $(call SetupTarget, docs-specs-zip, \
     MAKEFILE := Docs, \
     TARGET := docs-specs-zip, \
-    DEPS := docs-jdk-specs buildtools-jdk, \
+    DEPS := docs-jdk-specs, \
 ))
 
 $(eval $(call SetupTarget, update-build-docs, \
