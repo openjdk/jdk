@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import jdk.jfr.RecordingContextKey;
 import jdk.jfr.internal.JVM;
@@ -141,7 +142,7 @@ public final class RecordingContextBinding implements AutoCloseable {
         private final long id;
         private final NativeBindingWrapper previous;
 
-        private volatile boolean closed = false;
+        private AtomicInteger ref = new AtomicInteger(1);
 
         public NativeBindingWrapper(
                 NativeBindingWrapper previous,
@@ -171,24 +172,40 @@ public final class RecordingContextBinding implements AutoCloseable {
                 JVM.getJVM().recordingContextSet(0);
             } else {
                 // synchronize setCurrent and close to avoid setting a closed context
-                synchronized (context) {
-                    if (context.closed) {
-                        throw new IllegalStateException("context is closed");
-                    }
+                incRef();
+                try {
+                    JVM.getJVM().recordingContextSet(context.id);
+                } finally {
+                    decRef();
                 }
-                JVM.getJVM().recordingContextSet(context.id);
             }
         }
 
         @Override
         public void close() {
-            if (!closed) {
-                // synchronize setCurrent and close to avoid setting a closed context
-                synchronized (this) {
-                    JVM.getJVM().recordingContextDelete(id);
-                    closed = true;
+            // synchronize setCurrent and close to avoid setting a closed context
+            decRef();
+        }
+
+        private void incRef() {
+            int oldref, newref;
+            do {
+                oldref = ref.get();
+                if (oldref == 0) {
+                    throw new IllegalStateException("context is closed");
                 }
+                newref = oldref + 1;
+            } while (!ref.compareAndSet(oldref, newref));
+        }
+
+        private void decRef() {
+            if (ref.decrementAndGet() == 0) {
+                delete();
             }
+        }
+
+        private void delete() {
+            JVM.getJVM().recordingContextDelete(id);
         }
     }
 
