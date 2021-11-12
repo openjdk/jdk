@@ -136,12 +136,12 @@ public final class RecordingContextBinding implements AutoCloseable {
         }
     }
 
-    static class NativeBindingWrapper implements AutoCloseable {
+    private static class NativeBindingWrapper implements AutoCloseable {
 
         private final long id;
         private final NativeBindingWrapper previous;
 
-        private boolean closed = false;
+        private volatile boolean closed = false;
 
         public NativeBindingWrapper(
                 NativeBindingWrapper previous,
@@ -166,16 +166,15 @@ public final class RecordingContextBinding implements AutoCloseable {
             public int i = 0;
         }
 
-        public boolean containsKey(String key) {
-            return JVM.getJVM().recordingContextContainsKey(id, Objects.requireNonNull(key));
-        }
-
         public static void setCurrent(NativeBindingWrapper context) {
             if (context == null) {
                 JVM.getJVM().recordingContextSet(0);
             } else {
-                if (context.closed) {
-                    throw new IllegalStateException("context is closed");
+                // synchronize setCurrent and close to avoid setting a closed context
+                synchronized (context) {
+                    if (context.closed) {
+                        throw new IllegalStateException("context is closed");
+                    }
                 }
                 JVM.getJVM().recordingContextSet(context.id);
             }
@@ -184,13 +183,16 @@ public final class RecordingContextBinding implements AutoCloseable {
         @Override
         public void close() {
             if (!closed) {
-                JVM.getJVM().recordingContextDelete(id);
-                closed = true;
+                // synchronize setCurrent and close to avoid setting a closed context
+                synchronized (this) {
+                    JVM.getJVM().recordingContextDelete(id);
+                    closed = true;
+                }
             }
         }
     }
 
-    static class NativeBindingCleaner implements Runnable {
+    private static class NativeBindingCleaner implements Runnable {
 
         private final NativeBindingWrapper nativeWrapper;
 
