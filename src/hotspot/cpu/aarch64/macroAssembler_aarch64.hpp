@@ -1106,10 +1106,6 @@ public:
   void push(Register src);
   void pop(Register dst);
 
-  // push all registers onto the stack
-  void pusha();
-  void popa();
-
   void repne_scan(Register addr, Register value, Register count,
                   Register scratch);
   void repne_scanw(Register addr, Register value, Register count,
@@ -1405,6 +1401,9 @@ public:
   }
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
+
+  // Code for java.lang.Thread::onSpinWait() intrinsic.
+  void spin_wait();
 
 private:
   // Check the current thread doesn't need a cross modify fence.

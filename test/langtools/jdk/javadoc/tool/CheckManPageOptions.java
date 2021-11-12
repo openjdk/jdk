@@ -62,6 +62,7 @@ public class CheckManPageOptions {
 
     // FIXME: JDK-8274295, JDK-8266666
     List<String> MISSING_IN_MAN_PAGE = List.of(
+            "--add-script",
             "--legal-notices",
             "--link-platform-properties",
             "--no-platform-links",

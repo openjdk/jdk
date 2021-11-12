@@ -37,6 +37,7 @@ import jdk.test.lib.process.ProcessTools;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * This class prepares, creates, and runs the "test" VM with verification of proper termination. The class also stores
@@ -97,9 +98,10 @@ public class TestVMProcess {
         cmds.add("-Xbootclasspath/a:.");
         cmds.add("-XX:+UnlockDiagnosticVMOptions");
         cmds.add("-XX:+WhiteBoxAPI");
-        String[] jtregVMFlags = Utils.getTestJavaOpts();
+        // Ignore CompileCommand flags which have an impact on the profiling information.
+        List<String> jtregVMFlags = Arrays.stream(Utils.getTestJavaOpts()).filter(s -> !s.contains("CompileThreshold")).collect(Collectors.toList());
         if (!PREFER_COMMAND_LINE_FLAGS) {
-            cmds.addAll(Arrays.asList(jtregVMFlags));
+            cmds.addAll(jtregVMFlags);
         }
         // Add server property flag that enables test VM to print encoding for IR verification last and debug messages.
         cmds.add(socket.getPortPropertyFlag());
@@ -111,7 +113,7 @@ public class TestVMProcess {
 
         if (PREFER_COMMAND_LINE_FLAGS) {
             // Prefer flags set via the command line over the ones set by scenarios.
-            cmds.addAll(Arrays.asList(jtregVMFlags));
+            cmds.addAll(jtregVMFlags);
         }
 
         if (WARMUP_ITERATIONS < 0 && defaultWarmup != -1) {
@@ -153,6 +155,8 @@ public class TestVMProcess {
         } catch (Exception e) {
             throw new TestFrameworkException("Error while executing Test VM", e);
         }
+
+        process.command().add(1, "-DReproduce=true"); // Add after "/path/to/bin/java" in order to rerun the test VM directly
         commandLine = "Command Line:" + System.lineSeparator() + String.join(" ", process.command())
                       + System.lineSeparator();
         hotspotPidFileName = String.format("hotspot_pid%d.log", oa.pid());

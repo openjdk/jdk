@@ -177,6 +177,9 @@ public:
   void set_next(G1CardSetContainer* next) {
     _next = next;
   }
+
+  // Log of largest card index that can be stored in any G1CardSetContainer
+  static uint LogCardsPerRegionLimit;
 };
 
 class G1CardSetArray : public G1CardSetContainer {
@@ -193,19 +196,19 @@ private:
   static const EntryCountType EntryMask = LockBitMask - 1;
 
   class G1CardSetArrayLocker : public StackObj {
-    EntryCountType volatile* _value;
-    EntryCountType volatile _original_value;
-    bool _success;
+    EntryCountType volatile* _num_entries_addr;
+    EntryCountType _local_num_entries;
   public:
     G1CardSetArrayLocker(EntryCountType volatile* value);
 
-    EntryCountType num_entries() const { return _original_value; }
-    void inc_num_entries() { _success = true; }
+    EntryCountType num_entries() const { return _local_num_entries; }
+    void inc_num_entries() {
+      assert(((_local_num_entries + 1) & EntryMask) == (EntryCountType)(_local_num_entries + 1), "no overflow" );
+      _local_num_entries++;
+    }
 
     ~G1CardSetArrayLocker() {
-      assert(((_original_value + _success) & EntryMask) == (EntryCountType)(_original_value + _success), "precondition!" );
-
-      Atomic::release_store(_value, (EntryCountType)(_original_value + _success));
+      Atomic::release_store(_num_entries_addr, _local_num_entries);
     }
   };
 

@@ -278,7 +278,7 @@ public class Object {
      * <li>By executing the body of a {@code synchronized} statement
      *     that synchronizes on the object.
      * <li>For objects of type {@code Class,} by executing a
-     *     synchronized static method of that class.
+     *     static synchronized method of that class.
      * </ul>
      * <p>
      * Only one thread at a time can own an object's monitor.

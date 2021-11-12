@@ -262,6 +262,7 @@ public final class Main {
             ADDPROVIDER, PROVIDERCLASS, PROVIDERPATH, V),
         SHOWINFO("showinfo.command.help",
             TLS, V),
+        VERSION("Prints.the.program.version"),
 
         // Undocumented start here, KEYCLONE is used a marker in -help;
 
@@ -717,7 +718,7 @@ public final class Main {
     }
 
     boolean isKeyStoreRelated(Command cmd) {
-        return cmd != PRINTCERTREQ && cmd != SHOWINFO;
+        return cmd != PRINTCERTREQ && cmd != SHOWINFO && cmd != VERSION;
     }
 
     /**
@@ -1337,6 +1338,8 @@ public final class Main {
             doPrintCRL(filename, out);
         } else if (command == SHOWINFO) {
             doShowInfo();
+        } else if (command == VERSION) {
+            doPrintVersion();
         }
 
         // If we need to save the keystore, do so.
@@ -1445,8 +1448,7 @@ public final class Main {
                                            X509CertInfo.DN_NAME);
 
         Date firstDate = getStartDate(startDate);
-        Date lastDate = new Date();
-        lastDate.setTime(firstDate.getTime() + validity*1000L*24L*60L*60L);
+        Date lastDate = getLastDate(firstDate, validity);
         CertificateValidity interval = new CertificateValidity(firstDate,
                                                                lastDate);
 
@@ -1558,11 +1560,9 @@ public final class Main {
                                                       X509CertInfo.DN_NAME);
 
         Date firstDate = getStartDate(startDate);
-        Date lastDate = (Date) firstDate.clone();
-        lastDate.setTime(lastDate.getTime() + validity*1000*24*60*60);
+        Date lastDate = getLastDate(firstDate, validity);
         CertificateValidity interval = new CertificateValidity(firstDate,
                                                                lastDate);
-
 
         PrivateKey privateKey =
                 (PrivateKey)recoverKey(alias, storePass, keyPass).fst;
@@ -2797,6 +2797,10 @@ public final class Main {
         }
     }
 
+    private void doPrintVersion() {
+        System.out.println("keytool " + System.getProperty("java.version"));
+    }
+
     private Collection<? extends Certificate> generateCertificates(InputStream in)
             throws CertificateException, IOException {
         byte[] data = in.readAllBytes();
@@ -2843,6 +2847,23 @@ public final class Main {
         }
     }
 
+    private static String oneInManys(String label, int certNo, int certCnt, int signerNo,
+        int signerCnt) {
+        if (certCnt == 1 && signerCnt == 1) {
+            return label;
+        }
+        if (certCnt > 1 && signerCnt == 1) {
+            return String.format(rb.getString("one.in.many1"), label, certNo);
+        }
+        if (certCnt == 1 && signerCnt > 1) {
+            return String.format(rb.getString("one.in.many2"), label, signerNo);
+        }
+        if (certCnt > 1 && signerCnt > 1) {
+            return String.format(rb.getString("one.in.many3"), label, certNo, signerNo);
+        }
+        return label;
+    }
+
     private void doPrintCert(final PrintStream out) throws Exception {
         if (jarfile != null) {
             // reset "jdk.certpath.disabledAlgorithms" security property
@@ -2851,7 +2872,7 @@ public final class Main {
 
             JarFile jf = new JarFile(jarfile, true);
             Enumeration<JarEntry> entries = jf.entries();
-            Set<CodeSigner> ss = new HashSet<>();
+            LinkedHashSet<CodeSigner> ss = new LinkedHashSet<>();
             byte[] buffer = new byte[8192];
             int pos = 0;
             while (entries.hasMoreElements()) {
@@ -2868,45 +2889,56 @@ public final class Main {
                     for (CodeSigner signer: signers) {
                         if (!ss.contains(signer)) {
                             ss.add(signer);
-                            out.printf(rb.getString("Signer.d."), ++pos);
-                            out.println();
-                            out.println();
-                            out.println(rb.getString("Signature."));
-                            out.println();
-
-                            List<? extends Certificate> certs
-                                    = signer.getSignerCertPath().getCertificates();
-                            int cc = 0;
-                            for (Certificate cert: certs) {
-                                X509Certificate x = (X509Certificate)cert;
-                                if (rfc) {
-                                    out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
-                                    dumpCert(x, out);
-                                } else {
-                                    printX509Cert(x, out);
-                                }
-                                out.println();
-                                checkWeak(oneInMany(rb.getString("the.certificate"), cc++, certs.size()), x);
-                            }
-                            Timestamp ts = signer.getTimestamp();
-                            if (ts != null) {
-                                out.println(rb.getString("Timestamp."));
-                                out.println();
-                                certs = ts.getSignerCertPath().getCertificates();
-                                cc = 0;
-                                for (Certificate cert: certs) {
-                                    X509Certificate x = (X509Certificate)cert;
-                                    if (rfc) {
-                                        out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
-                                        dumpCert(x, out);
-                                    } else {
-                                        printX509Cert(x, out);
-                                    }
-                                    out.println();
-                                    checkWeak(oneInMany(rb.getString("the.tsa.certificate"), cc++, certs.size()), x);
-                                }
-                            }
                         }
+                    }
+                }
+            }
+
+            for (CodeSigner signer: ss) {
+                out.printf(rb.getString("Signer.d."), ++pos);
+                out.println();
+                out.println();
+
+                List<? extends Certificate> certs
+                        = signer.getSignerCertPath().getCertificates();
+                int cc = 0;
+                for (Certificate cert: certs) {
+                    out.printf(rb.getString("Certificate.d."), ++cc);
+                    out.println();
+                    X509Certificate x = (X509Certificate)cert;
+                    if (rfc) {
+                        out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
+                        dumpCert(x, out);
+                    } else {
+                        printX509Cert(x, out);
+                    }
+                    out.println();
+                    checkWeak(oneInManys(rb.getString(
+                            "the.certificate"), cc,
+                            certs.size(), pos,
+                            ss.size()), x);
+                }
+                Timestamp ts = signer.getTimestamp();
+                if (ts != null) {
+                    out.println(rb.getString("Timestamp."));
+                    out.println();
+                    certs = ts.getSignerCertPath().getCertificates();
+                    cc = 0;
+                    for (Certificate cert: certs) {
+                        out.printf(rb.getString("Certificate.d."), ++cc);
+                        out.println();
+                        X509Certificate x = (X509Certificate)cert;
+                        if (rfc) {
+                            out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
+                            dumpCert(x, out);
+                        } else {
+                            printX509Cert(x, out);
+                        }
+                        out.println();
+                        checkWeak(oneInManys(rb.getString(
+                                "the.tsa.certificate"), cc,
+                                certs.size(), pos,
+                                ss.size()), x);
                     }
                 }
             }
@@ -3031,8 +3063,7 @@ public final class Main {
 
         // Extend its validity
         Date firstDate = getStartDate(startDate);
-        Date lastDate = new Date();
-        lastDate.setTime(firstDate.getTime() + validity*1000L*24L*60L*60L);
+        Date lastDate = getLastDate(firstDate, validity);
         CertificateValidity interval = new CertificateValidity(firstDate,
                                                                lastDate);
         certInfo.set(X509CertInfo.VALIDITY, interval);
@@ -4691,6 +4722,21 @@ public final class Main {
             throw new RuntimeException(e);
         }
         return result;
+    }
+
+    private Date getLastDate(Date firstDate, long validity)
+            throws Exception {
+        Date lastDate = new Date();
+        lastDate.setTime(firstDate.getTime() + validity*1000L*24L*60L*60L);
+
+        Calendar c = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        c.setTime(lastDate);
+        if (c.get(Calendar.YEAR) > 9999) {
+            throw new Exception("Validity period ends at calendar year " +
+                    c.get(Calendar.YEAR) + " which is greater than 9999");
+        }
+
+        return lastDate;
     }
 
     private boolean isTrustedCert(Certificate cert) throws KeyStoreException {

@@ -58,8 +58,6 @@ import jdk.jfr.internal.jfc.model.XmlInput;
 //Instantiated by native
 final class DCmdStart extends AbstractDCmd {
 
-    private Object source;
-
     @Override
     public void execute(ArgumentParser parser) throws DCmdException {
         String name = parser.getOption("name");

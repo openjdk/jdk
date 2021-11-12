@@ -1522,6 +1522,7 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["stxp",   "__ stxp(r4, zr, zr, r5);",                           "stxp\tw4, xzr, xzr, [x5]"],
                         ["stxpw",  "__ stxpw(r6, zr, zr, sp);",                          "stxp\tw6, wzr, wzr, [sp]"],
                         ["dup",    "__ dup(v0, __ T16B, zr);",                           "dup\tv0.16b, wzr"],
+                        ["dup",    "__ dup(v0, __ S, v1);",                              "dup\ts0, v1.s[0]"],
                         ["mov",    "__ mov(v1, __ T1D, 0, zr);",                         "mov\tv1.d[0], xzr"],
                         ["mov",    "__ mov(v1, __ T2S, 1, zr);",                         "mov\tv1.s[1], wzr"],
                         ["mov",    "__ mov(v1, __ T4H, 2, zr);",                         "mov\tv1.h[2], wzr"],
@@ -1535,6 +1536,7 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["umov",   "__ umov(r0, v1, __ B, 3);",                          "umov\tw0, v1.b[3]"],
                         ["fmov",   "__ fmovhid(r0, v1);",                                "fmov\tx0, v1.d[1]"],
                         ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
+                        ["fcvtzs", "__ fcvtzs(v0, __ T4S, v1);",                         "fcvtzs\tv0.4s, v1.4s"],
                         # SVE instructions
                         ["cpy",     "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],
                         ["cpy",     "__ sve_cpy(z0, __ B, p0, 127, true);",               "mov\tz0.b, p0/m, 127"],
@@ -1567,8 +1569,6 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["ld1b",    "__ sve_ld1b(z0, __ S, p2, Address(sp, r8));",        "ld1b\t{z0.s}, p2/z, [sp, x8]"],
                         ["ld1b",    "__ sve_ld1b(z0, __ D, p3, Address(sp, 7));",         "ld1b\t{z0.d}, p3/z, [sp, #7, MUL VL]"],
                         ["ld1h",    "__ sve_ld1h(z10, __ H, p1, Address(sp, -8));",       "ld1h\t{z10.h}, p1/z, [sp, #-8, MUL VL]"],
-                        ["ld1h",
-                         "__ sve_ld1h(z10, __ H, p0, Address(r4, r2, Address::lsl(1)));", "ld1h\t{z10.h}, p0/z, [x4, x2, LSL 1]"],
                         ["ld1w",    "__ sve_ld1w(z20, __ S, p2, Address(r0, 7));",        "ld1w\t{z20.s}, p2/z, [x0, #7, MUL VL]"],
                         ["ld1b",    "__ sve_ld1b(z30, __ B, p3, Address(sp, r8));",       "ld1b\t{z30.b}, p3/z, [sp, x8]"],
                         ["ld1w",    "__ sve_ld1w(z0, __ S, p4, Address(sp, r28));",       "ld1w\t{z0.s}, p4/z, [sp, x28, LSL #2]"],
@@ -1752,7 +1752,8 @@ while i < len(bytes):
      i += 4
      if i%16 == 0:
           print
-print "\n  };"
+print
+print "  };"
 print "// END  Generated code -- do not edit"
 
 infile.close()
