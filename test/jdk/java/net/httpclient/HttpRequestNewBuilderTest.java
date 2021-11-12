@@ -51,7 +51,7 @@ import static org.testng.Assert.fail;
 
 /**
 * @test
-* @bug 8252304
+* @bug 8252304 8276559
 * @summary HttpRequest.newBuilder(HttpRequest) API and behaviour checks
 * @run testng/othervm HttpRequestNewBuilderTest
 */

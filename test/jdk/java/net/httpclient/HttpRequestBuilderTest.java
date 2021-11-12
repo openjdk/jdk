@@ -36,7 +36,7 @@ import static java.net.http.HttpRequest.BodyPublishers.noBody;
 
 /**
  * @test
- * @bug 8170064
+ * @bug 8170064 8276559
  * @summary  HttpRequest[.Builder] API and behaviour checks
  */
 public class HttpRequestBuilderTest {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8203433
+ * @bug 8203433 8276559
  * @summary (httpclient) Add tests for HEAD and 304 responses.
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
@@ -139,21 +139,34 @@ public class HeadTest implements HttpServerAdapters {
     void test(String uriString, String method,
                         int expResp, HttpClient.Version version) throws Exception {
         out.printf("%n---- starting (%s) ----%n", uriString);
+        URI uri = URI.create(uriString);
+        HttpRequest.Builder requestBuilder = HttpRequest
+                .newBuilder(uri)
+                .method(method, HttpRequest.BodyPublishers.noBody());
+        if (version != null) {
+            requestBuilder.version(version);
+        }
+        doTest(requestBuilder.build(), expResp);
+        // repeat the test this time by building the request using convenience
+        // GET and HEAD methods
+        requestBuilder = HttpRequest.newBuilder(uri);
+        if (version != null) {
+            requestBuilder.version(version);
+        }
+        switch (method) {
+            case "GET" -> requestBuilder.GET();
+            case "HEAD" -> requestBuilder.HEAD();
+            default -> throw new IllegalArgumentException("Unexpected method " + method);
+        }
+        doTest(requestBuilder.build(), expResp);
+    }
+
+    // issue a request with no body and verify the response code is the expected response code
+    private void doTest(HttpRequest request, int expResp) throws Exception {
         HttpClient client = HttpClient.newBuilder()
                 .followRedirects(Redirect.ALWAYS)
                 .sslContext(sslContext)
                 .build();
-
-        URI uri = URI.create(uriString);
-
-        HttpRequest.Builder requestBuilder = HttpRequest
-                .newBuilder(uri)
-                .method(method, HttpRequest.BodyPublishers.noBody());
-
-        if (version != null) {
-            requestBuilder.version(version);
-        }
-        HttpRequest request = requestBuilder.build();
         out.println("Initial request: " + request.uri());
 
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
