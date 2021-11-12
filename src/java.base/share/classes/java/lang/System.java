@@ -1920,7 +1920,10 @@ public final class System {
      * @deprecated Finalization has been deprecated for removal.  See
      * {@link java.lang.Object#finalize} for background information and details
      * about migration options.
-     * 
+     * <p>
+     * When running in a JVM in which finalization has been disabled or removed,
+     * no objects will be pending finalization, so this method does nothing.
+     *
      * @see     java.lang.Runtime#runFinalization()
      */
     @Deprecated(since="18", forRemoval=true)
