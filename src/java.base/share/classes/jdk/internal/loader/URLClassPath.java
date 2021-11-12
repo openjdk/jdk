@@ -494,12 +494,12 @@ public class URLClassPath {
                                         file.endsWith("!/")) {
                                     // extract the nested URL
                                     URL nestedUrl = new URL(file.substring(0, file.length() - 2));
-                                    return new JarLoader(nestedUrl, jarHandler, lmap, acc);
+                                    return new JarLoader(nestedUrl, jarHandler, lmap, loaders, acc);
                                 } else {
                                     return new Loader(url);
                                 }
                             } else {
-                                return new JarLoader(url, jarHandler, lmap, acc);
+                                return new JarLoader(url, jarHandler, lmap, loaders, acc);
                             }
                         }
                     }, acc);
@@ -714,6 +714,7 @@ public class URLClassPath {
         private JarIndex index;
         private URLStreamHandler handler;
         private final HashMap<String, Loader> lmap;
+        private final List<Loader> loaders;
         @SuppressWarnings("removal")
         private final AccessControlContext acc;
         private boolean closed = false;
@@ -726,6 +727,7 @@ public class URLClassPath {
          */
         private JarLoader(URL url, URLStreamHandler jarHandler,
                           HashMap<String, Loader> loaderMap,
+                          List<Loader> loaders,
                           @SuppressWarnings("removal") AccessControlContext acc)
             throws IOException
         {
@@ -733,6 +735,7 @@ public class URLClassPath {
             csu = url;
             handler = jarHandler;
             lmap = loaderMap;
+            this.loaders = loaders;
             this.acc = acc;
 
             ensureOpen();
@@ -1008,7 +1011,7 @@ public class URLClassPath {
                                 new PrivilegedExceptionAction<>() {
                                     public JarLoader run() throws IOException {
                                         return new JarLoader(url, handler,
-                                            lmap, acc);
+                                            lmap, loaders, acc);
                                     }
                                 }, acc);
 
@@ -1022,7 +1025,8 @@ public class URLClassPath {
                                 newIndex.merge(this.index, (pos == -1 ?
                                     null : jarName.substring(0, pos + 1)));
                             }
-
+                            // add the Loader to the search path and track it for closing
+                            loaders.add(newLoader);
                             /* put it in the global hashtable */
                             lmap.put(urlNoFragString, newLoader);
                         }
