@@ -41,31 +41,30 @@ public class HttpHeaderParser {
     public HttpHeaderParser(InputStream is) throws IOException {
         this.is = is;
         String headerString = "";
-            BufferedReader br = new BufferedReader(new InputStreamReader(this.is));
-            //First line is either request line or status line
-            requestOrStatusLine = br.readLine().strip();
-
-            while(true) {
-                headerString = br.readLine();
-                if(headerString == null || headerString.isEmpty()) {
-                    break;
+        BufferedReader br = new BufferedReader(new InputStreamReader(this.is));
+        //First line is either request line or status line
+        requestOrStatusLine = br.readLine();
+        while(true) {
+            headerString = br.readLine();
+            if(headerString == null || headerString.isEmpty()) {
+                break;
+            }
+            if(headerString.contains(": ")) {
+                String key = headerString.substring(0, headerString.indexOf(": "));
+                List <String> values = new ArrayList<>();
+                String headerValue = headerString.substring(headerString.indexOf(": ") + 2);
+                String [] valueArray = headerValue.split(",");
+                for(String value : valueArray) {
+                    values.add(value.strip());
                 }
-                if(headerString.contains(": ")) {
-                    String key = headerString.substring(0, headerString.indexOf(": "));
-                    List <String> values = new ArrayList<>();
-                    String headerValue = headerString.substring(headerString.indexOf(": ") + 2);
-                    String [] valueArray = headerValue.split(",");
-                    for(String value : valueArray) {
-                        values.add(value.strip());
-                    }
-                    if(!headerMap.containsKey(key.strip())) {
-                        headerMap.put(key.strip(), values);
-                        keyList.add(key.strip());
-                    } else {
-                        headerMap.get(key.strip()).addAll(values);
-                    }
+                if(!headerMap.containsKey(key.strip())) {
+                    headerMap.put(key, values);
+                    keyList.add(key);
+                } else {
+                    headerMap.get(key).addAll(values);
                 }
             }
+        }
     }
     public List<String> getHeaderValue(String key) {
         if(headerMap.containsKey(key)) {
