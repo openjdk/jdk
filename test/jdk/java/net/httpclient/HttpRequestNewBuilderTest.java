@@ -120,8 +120,8 @@ public class HttpRequestNewBuilderTest {
                         .headers("testName1", "y")
                         .headers("testName1", "z").build() },
                 // dedicated method
+                { HttpRequest.newBuilder(URI.create("https://method-0/")).HEAD().build() },
                 { HttpRequest.newBuilder(URI.create("https://method-1/")).GET().build() },
-                { HttpRequest.newBuilder(URI.create("https://method-1/")).HEAD().build() },
                 { HttpRequest.newBuilder(URI.create("https://method-2/")).DELETE().build() },
                 { HttpRequest.newBuilder(URI.create("https://method-3/")).POST(HttpRequest.BodyPublishers.ofString("testData")).build() },
                 { HttpRequest.newBuilder(URI.create("https://method-4/")).PUT(HttpRequest.BodyPublishers.ofString("testData")).build() },
