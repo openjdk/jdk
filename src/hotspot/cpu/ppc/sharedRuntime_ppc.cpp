@@ -1533,57 +1533,6 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm, BasicType ret_ty
   }
 }
 
-static void move_ptr(MacroAssembler* masm, VMRegPair src, VMRegPair dst, Register r_caller_sp, Register r_temp) {
-  if (src.first()->is_stack()) {
-    if (dst.first()->is_stack()) {
-      // stack to stack
-      __ ld(r_temp, reg2offset(src.first()), r_caller_sp);
-      __ std(r_temp, reg2offset(dst.first()), R1_SP);
-    } else {
-      // stack to reg
-      __ ld(dst.first()->as_Register(), reg2offset(src.first()), r_caller_sp);
-    }
-  } else if (dst.first()->is_stack()) {
-    // reg to stack
-    __ std(src.first()->as_Register(), reg2offset(dst.first()), R1_SP);
-  } else {
-    if (dst.first() != src.first()) {
-      __ mr(dst.first()->as_Register(), src.first()->as_Register());
-    }
-  }
-}
-
-// Unpack an array argument into a pointer to the body and the length
-// if the array is non-null, otherwise pass 0 for both.
-static void unpack_array_argument(MacroAssembler* masm, VMRegPair reg, BasicType in_elem_type,
-                                  VMRegPair body_arg, VMRegPair length_arg, Register r_caller_sp,
-                                  Register tmp_reg, Register tmp2_reg) {
-  assert(!body_arg.first()->is_Register() || body_arg.first()->as_Register() != tmp_reg,
-         "possible collision");
-  assert(!length_arg.first()->is_Register() || length_arg.first()->as_Register() != tmp_reg,
-         "possible collision");
-
-  // Pass the length, ptr pair.
-  Label set_out_args;
-  VMRegPair tmp, tmp2;
-  tmp.set_ptr(tmp_reg->as_VMReg());
-  tmp2.set_ptr(tmp2_reg->as_VMReg());
-  if (reg.first()->is_stack()) {
-    // Load the arg up from the stack.
-    move_ptr(masm, reg, tmp, r_caller_sp, /*unused*/ R0);
-    reg = tmp;
-  }
-  __ li(tmp2_reg, 0); // Pass zeros if Array=null.
-  if (tmp_reg != reg.first()->as_Register()) __ li(tmp_reg, 0);
-  __ cmpdi(CCR0, reg.first()->as_Register(), 0);
-  __ beq(CCR0, set_out_args);
-  __ lwa(tmp2_reg, arrayOopDesc::length_offset_in_bytes(), reg.first()->as_Register());
-  __ addi(tmp_reg, reg.first()->as_Register(), arrayOopDesc::base_offset_in_bytes(in_elem_type));
-  __ bind(set_out_args);
-  move_ptr(masm, tmp, body_arg, r_caller_sp, /*unused*/ R0);
-  move_ptr(masm, tmp2, length_arg, r_caller_sp, /*unused*/ R0); // Same as move32_64 on PPC64.
-}
-
 static void verify_oop_args(MacroAssembler* masm,
                             const methodHandle& method,
                             const BasicType* sig_bt,
@@ -1685,8 +1634,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 int compile_id,
                                                 BasicType *in_sig_bt,
                                                 VMRegPair *in_regs,
-                                                BasicType ret_type,
-                                                address critical_entry) {
+                                                BasicType ret_type) {
   if (method->is_method_handle_intrinsic()) {
     vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t)__ pc();
@@ -1709,12 +1657,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                        (OopMapSet*)NULL);
   }
 
-  bool is_critical_native = true;
-  address native_func = critical_entry;
-  if (native_func == NULL) {
-    native_func = method->native_function();
-    is_critical_native = false;
-  }
+  address native_func = method->native_function();
   assert(native_func != NULL, "must have function");
 
   // First, create signature for outgoing C call
@@ -1733,19 +1676,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // some floating-point arguments must be passed in registers _and_
   // in stack locations.
   bool method_is_static = method->is_static();
-  int  total_c_args     = total_in_args;
-
-  if (!is_critical_native) {
-    int n_hidden_args = method_is_static ? 2 : 1;
-    total_c_args += n_hidden_args;
-  } else {
-    // No JNIEnv*, no this*, but unpacked arrays (base+length).
-    for (int i = 0; i < total_in_args; i++) {
-      if (in_sig_bt[i] == T_ARRAY) {
-        total_c_args++;
-      }
-    }
-  }
+  int  total_c_args     = total_in_args + (method_is_static ? 2 : 1);
 
   BasicType *out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair *out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
@@ -1759,44 +1690,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //      hidden arguments).
 
   int argc = 0;
-  if (!is_critical_native) {
-    out_sig_bt[argc++] = T_ADDRESS;
-    if (method->is_static()) {
-      out_sig_bt[argc++] = T_OBJECT;
-    }
+  out_sig_bt[argc++] = T_ADDRESS;
+  if (method->is_static()) {
+    out_sig_bt[argc++] = T_OBJECT;
+  }
 
-    for (int i = 0; i < total_in_args ; i++ ) {
-      out_sig_bt[argc++] = in_sig_bt[i];
-    }
-  } else {
-    in_elem_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
-    SignatureStream ss(method->signature());
-    int o = 0;
-    for (int i = 0; i < total_in_args ; i++, o++) {
-      if (in_sig_bt[i] == T_ARRAY) {
-        // Arrays are passed as int, elem* pair
-        ss.skip_array_prefix(1);  // skip one '['
-        assert(ss.is_primitive(), "primitive type expected");
-        in_elem_bt[o] = ss.type();
-      } else {
-        in_elem_bt[o] = T_VOID;
-      }
-      if (in_sig_bt[i] != T_VOID) {
-        assert(in_sig_bt[i] == ss.type() ||
-               in_sig_bt[i] == T_ARRAY, "must match");
-        ss.next();
-      }
-    }
-
-    for (int i = 0; i < total_in_args ; i++ ) {
-      if (in_sig_bt[i] == T_ARRAY) {
-        // Arrays are passed as int, elem* pair.
-        out_sig_bt[argc++] = T_INT;
-        out_sig_bt[argc++] = T_ADDRESS;
-      } else {
-        out_sig_bt[argc++] = in_sig_bt[i];
-      }
-    }
+  for (int i = 0; i < total_in_args ; i++ ) {
+    out_sig_bt[argc++] = in_sig_bt[i];
   }
 
 
@@ -1823,7 +1723,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //
   // NW     [ABI_REG_ARGS]             <-- 1) R1_SP
   //        [outgoing arguments]       <-- 2) R1_SP + out_arg_slot_offset
-  //        [oopHandle area]           <-- 3) R1_SP + oop_handle_offset (save area for critical natives)
+  //        [oopHandle area]           <-- 3) R1_SP + oop_handle_offset
   //        klass                      <-- 4) R1_SP + klass_offset
   //        lock                       <-- 5) R1_SP + lock_offset
   //        [workspace]                <-- 6) R1_SP + workspace_offset
@@ -1838,42 +1738,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Now the space for the inbound oop handle area.
   int total_save_slots = num_java_iarg_registers * VMRegImpl::slots_per_word;
-  if (is_critical_native) {
-    // Critical natives may have to call out so they need a save area
-    // for register arguments.
-    int double_slots = 0;
-    int single_slots = 0;
-    for (int i = 0; i < total_in_args; i++) {
-      if (in_regs[i].first()->is_Register()) {
-        const Register reg = in_regs[i].first()->as_Register();
-        switch (in_sig_bt[i]) {
-          case T_BOOLEAN:
-          case T_BYTE:
-          case T_SHORT:
-          case T_CHAR:
-          case T_INT:
-          // Fall through.
-          case T_ARRAY:
-          case T_LONG: double_slots++; break;
-          default:  ShouldNotReachHere();
-        }
-      } else if (in_regs[i].first()->is_FloatRegister()) {
-        switch (in_sig_bt[i]) {
-          case T_FLOAT:  single_slots++; break;
-          case T_DOUBLE: double_slots++; break;
-          default:  ShouldNotReachHere();
-        }
-      }
-    }
-    total_save_slots = double_slots * 2 + align_up(single_slots, 2); // round to even
-  }
 
   int oop_handle_slot_offset = stack_slots;
   stack_slots += total_save_slots;                                                // 3)
 
   int klass_slot_offset = 0;
   int klass_offset      = -1;
-  if (method_is_static && !is_critical_native) {                                  // 4)
+  if (method_is_static) {                                                         // 4)
     klass_slot_offset  = stack_slots;
     klass_offset       = klass_slot_offset * VMRegImpl::stack_slot_size;
     stack_slots       += VMRegImpl::slots_per_word;
@@ -1919,10 +1790,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   Register r_carg1_jnienv        = noreg;
   Register r_carg2_classorobject = noreg;
-  if (!is_critical_native) {
-    r_carg1_jnienv        = out_regs[0].first()->as_Register();
-    r_carg2_classorobject = out_regs[1].first()->as_Register();
-  }
+  r_carg1_jnienv        = out_regs[0].first()->as_Register();
+  r_carg2_classorobject = out_regs[1].first()->as_Register();
 
 
   // Generate the Unverified Entry Point (UEP).
@@ -2058,15 +1927,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
         long_move(masm, in_regs[in], out_regs[out], r_callers_sp, r_temp_1);
         break;
       case T_ARRAY:
-        if (is_critical_native) {
-          int body_arg = out;
-          out -= 1; // Point to length arg.
-          unpack_array_argument(masm, in_regs[in], in_elem_bt[in], out_regs[body_arg], out_regs[out],
-                                r_callers_sp, r_temp_1, r_temp_2);
-          break;
-        }
       case T_OBJECT:
-        assert(!is_critical_native, "no oop arguments");
         object_move(masm, stack_slots,
                     oop_map, oop_handle_slot_offset,
                     ((in == 0) && (!method_is_static)), &receiver_offset,
@@ -2098,7 +1959,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Pre-load a static method's oop into ARG2.
   // Used both by locking code and the normal JNI call code.
-  if (method_is_static && !is_critical_native) {
+  if (method_is_static) {
     __ set_oop_constant(JNIHandles::make_local(method->method_holder()->java_mirror()),
                         r_carg2_classorobject);
 
@@ -2109,9 +1970,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   }
 
   // Get JNIEnv* which is first argument to native.
-  if (!is_critical_native) {
-    __ addi(r_carg1_jnienv, R16_thread, in_bytes(JavaThread::jni_environment_offset()));
-  }
+  __ addi(r_carg1_jnienv, R16_thread, in_bytes(JavaThread::jni_environment_offset()));
 
   // NOTE:
   //
@@ -2140,7 +1999,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
 
   if (method->is_synchronized()) {
-    assert(!is_critical_native, "unhandled");
     ConditionRegister r_flag = CCR1;
     Register          r_oop  = r_temp_4;
     const Register    r_box  = r_temp_5;
@@ -2185,16 +2043,14 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // Use that pc we placed in r_return_pc a while back as the current frame anchor.
   __ set_last_Java_frame(R1_SP, r_return_pc);
 
-  if (!is_critical_native) {
-    // Publish thread state
-    // --------------------------------------------------------------------------
+  // Publish thread state
+  // --------------------------------------------------------------------------
 
-    // Transition from _thread_in_Java to _thread_in_native.
-    __ li(R0, _thread_in_native);
-    __ release();
-    // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
-    __ stw(R0, thread_(thread_state));
-  }
+  // Transition from _thread_in_Java to _thread_in_native.
+  __ li(R0, _thread_in_native);
+  __ release();
+  // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
+  __ stw(R0, thread_(thread_state));
 
 
   // The JNI call
@@ -2255,24 +2111,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   }
 
   Label after_transition;
-
-  // If this is a critical native, check for a safepoint or suspend request after the call.
-  // If a safepoint is needed, transition to native, then to native_trans to handle
-  // safepoints like the native methods that are not critical natives.
-  if (is_critical_native) {
-    Label needs_safepoint;
-    Register sync_state      = r_temp_5;
-    // Note: We should not reach here with active stack watermark. There's no safepoint between
-    //       start of the native wrapper and this check where it could have been added.
-    //       We don't check the watermark in the fast path.
-    __ safepoint_poll(needs_safepoint, sync_state, false /* at_return */, false /* in_nmethod */);
-
-    Register suspend_flags   = r_temp_6;
-    __ lwz(suspend_flags, thread_(suspend_flags));
-    __ cmpwi(CCR1, suspend_flags, 0);
-    __ beq(CCR1, after_transition);
-    __ bind(needs_safepoint);
-  }
 
   // Publish thread state
   // --------------------------------------------------------------------------
@@ -2443,7 +2281,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Reset handle block.
   // --------------------------------------------------------------------------
-  if (!is_critical_native) {
   __ ld(r_temp_1, thread_(active_handles));
   // TODO: PPC port assert(4 == JNIHandleBlock::top_size_in_bytes(), "unexpected field size");
   __ li(r_temp_2, 0);
@@ -2455,7 +2292,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ ld(r_temp_2, thread_(pending_exception));
   __ cmpdi(CCR0, r_temp_2, 0);
   __ bne(CCR0, handle_pending_exception);
-  }
 
   // Return
   // --------------------------------------------------------------------------
@@ -2470,14 +2306,12 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // Since this is a native call, we know the proper exception handler
   // is the empty function. We just pop this frame and then jump to
   // forward_exception_entry.
-  if (!is_critical_native) {
   __ bind(handle_pending_exception);
 
   __ pop_frame();
   __ restore_LR_CR(R11);
   __ b64_patchable((address)StubRoutines::forward_exception_entry(),
                        relocInfo::runtime_call_type);
-  }
 
   // Handler for a cache miss (out-of-line).
   // --------------------------------------------------------------------------

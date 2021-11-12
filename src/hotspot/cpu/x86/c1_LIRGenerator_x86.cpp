@@ -813,9 +813,15 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
 #endif
 
   switch(x->id()) {
-    case vmIntrinsics::_dabs:   __ abs  (calc_input, calc_result, tmp); break;
-    case vmIntrinsics::_dsqrt:  __ sqrt (calc_input, calc_result, LIR_OprFact::illegalOpr); break;
-    default:                    ShouldNotReachHere();
+    case vmIntrinsics::_dabs:
+      __ abs(calc_input, calc_result, tmp);
+      break;
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict:
+      __ sqrt(calc_input, calc_result, LIR_OprFact::illegalOpr);
+      break;
+    default:
+      ShouldNotReachHere();
   }
 
   if (use_fpu) {

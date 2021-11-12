@@ -312,7 +312,7 @@ public final class LdapClient implements PooledConnection {
      * @param auth The authentication mechanism
      *
      */
-    synchronized public LdapResult ldapBind(String dn, byte[]toServer,
+    public synchronized LdapResult ldapBind(String dn, byte[]toServer,
         Control[] bindCtls, String auth, boolean pauseAfterReceipt)
         throws java.io.IOException, NamingException {
 
@@ -486,7 +486,7 @@ public final class LdapClient implements PooledConnection {
     /*
      * Used by connection pooling to close physical connection.
      */
-    synchronized public void closeConnection() {
+    public synchronized void closeConnection() {
         forceClose(false); // this is a pool callback so no need to clean pool
     }
 

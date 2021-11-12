@@ -561,7 +561,7 @@ public interface ObjectInputFilter {
         /**
          * Lock object for filter and filter factory.
          */
-        private final static Object serialFilterLock = new Object();
+        private static final Object serialFilterLock = new Object();
 
         /**
          * The property name for the filter.
@@ -906,7 +906,7 @@ public interface ObjectInputFilter {
          * used for all ObjectInputStreams that do not set their own filters.
          *
          */
-        final static class Global implements ObjectInputFilter {
+        static final class Global implements ObjectInputFilter {
             /**
              * The pattern used to create the filter.
              */

@@ -254,7 +254,8 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
             case ENUM_CONSTANT -> new EnumConstantWriterImpl(this);
             case RECORD_COMPONENT ->
                 throw new AssertionError("Record components are not supported by SummaryListWriter!");
-            default -> new AnnotationTypeOptionalMemberWriterImpl(this, null);
+            default ->
+                throw new UnsupportedOperationException("Unsupported element kind: " + e.getKind());
         };
         return writer.getSummaryLink(e);
     }

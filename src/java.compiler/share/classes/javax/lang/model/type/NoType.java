@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import javax.lang.model.element.ExecutableElement;
  * @author Scott Seligman
  * @author Peter von der Ah&eacute;
  * @see ExecutableElement#getReturnType()
+ * @see javax.lang.model.util.Types#getNoType(TypeKind)
  * @since 1.6
  */
 

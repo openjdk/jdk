@@ -87,7 +87,7 @@ public final class ImagePluginStack {
         }
     }
 
-    private final static class CheckOrderResourcePoolManager extends ResourcePoolManager {
+    private static final class CheckOrderResourcePoolManager extends ResourcePoolManager {
 
         private final List<ResourcePoolEntry> orderedList;
         private int currentIndex;

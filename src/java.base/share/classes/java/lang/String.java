@@ -3329,10 +3329,10 @@ public final class String
      * Converts all of the characters in this {@code String} to lower
      * case using the rules of the given {@code Locale}.  Case mapping is based
      * on the Unicode Standard version specified by the {@link java.lang.Character Character}
-     * class. Since case mappings are not always 1:1 char mappings, the resulting
-     * {@code String} may be a different length than the original {@code String}.
+     * class. Since case mappings are not always 1:1 char mappings, the resulting {@code String}
+     * and this {@code String} may differ in length.
      * <p>
-     * Examples of lowercase  mappings are in the following table:
+     * Examples of lowercase mappings are in the following table:
      * <table class="plain">
      * <caption style="display:none">Lowercase mapping examples showing language code of locale, upper case, lower case, and description</caption>
      * <thead>
@@ -3386,7 +3386,7 @@ public final class String
 
     /**
      * Converts all of the characters in this {@code String} to lower
-     * case using the rules of the default locale. This is equivalent to calling
+     * case using the rules of the default locale. This method is equivalent to
      * {@code toLowerCase(Locale.getDefault())}.
      * <p>
      * <b>Note:</b> This method is locale sensitive, and may produce unexpected
@@ -3411,11 +3411,10 @@ public final class String
      * Converts all of the characters in this {@code String} to upper
      * case using the rules of the given {@code Locale}. Case mapping is based
      * on the Unicode Standard version specified by the {@link java.lang.Character Character}
-     * class. Since case mappings are not always 1:1 char mappings, the resulting
-     * {@code String} may be a different length than the original {@code String}.
+     * class. Since case mappings are not always 1:1 char mappings, the resulting {@code String}
+     * and this {@code String} may differ in length.
      * <p>
-     * Examples of locale-sensitive and 1:M case mappings are in the following table.
-     *
+     * Examples of locale-sensitive and 1:M case mappings are in the following table:
      * <table class="plain">
      * <caption style="display:none">Examples of locale-sensitive and 1:M case mappings. Shows Language code of locale, lower case, upper case, and description.</caption>
      * <thead>

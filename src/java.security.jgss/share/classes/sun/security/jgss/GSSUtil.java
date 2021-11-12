@@ -40,7 +40,6 @@ import java.util.HashSet;
 import java.util.Vector;
 import java.util.Iterator;
 import java.security.AccessController;
-import java.security.AccessControlContext;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import javax.security.auth.callback.CallbackHandler;
@@ -313,20 +312,18 @@ public class GSSUtil {
               (initiate? " INIT" : " ACCEPT") + " cred (" +
               (name == null? "<<DEF>>" : name.toString()) + ", " +
               credCls.getName() + ")");
-        @SuppressWarnings("removal")
-        final AccessControlContext acc = AccessController.getContext();
         try {
             @SuppressWarnings("removal")
             Vector<T> creds =
-                AccessController.doPrivileged
+                AccessController.doPrivilegedWithCombiner
                 (new PrivilegedExceptionAction<Vector<T>>() {
                     public Vector<T> run() throws Exception {
-                        Subject accSubj = Subject.getSubject(acc);
+                        Subject currSubj = Subject.current();
                         Vector<T> result = null;
-                        if (accSubj != null) {
+                        if (currSubj != null) {
                             result = new Vector<T>();
                             Iterator<GSSCredentialImpl> iterator =
-                                accSubj.getPrivateCredentials
+                                currSubj.getPrivateCredentials
                                 (GSSCredentialImpl.class).iterator();
                             while (iterator.hasNext()) {
                                 GSSCredentialImpl cred = iterator.next();

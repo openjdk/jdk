@@ -788,7 +788,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       return;
 #endif // __SOFTFP__
     }
-    case vmIntrinsics::_dsqrt: {
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict: {
 #ifdef __SOFTFP__
       runtime_func = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);
       break;
