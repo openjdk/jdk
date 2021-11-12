@@ -5444,8 +5444,9 @@ public class Arrays {
      * @since 1.8
      */
     public static <T> Stream<T> stream(T[] array, int startInclusive, int endExclusive) {
-        if (array != null && startInclusive >= 0 && startInclusive == endExclusive) return Stream.empty();
-        return StreamSupport.stream(spliterator(array, startInclusive, endExclusive), false);
+        var spliterator = spliterator(array, startInclusive, endExclusive);
+        if (startInclusive == endExclusive) return Stream.empty();
+        return StreamSupport.stream(spliterator, false);
     }
 
     /**
@@ -5475,8 +5476,9 @@ public class Arrays {
      * @since 1.8
      */
     public static IntStream stream(int[] array, int startInclusive, int endExclusive) {
-        if (array != null && startInclusive >= 0 && startInclusive == endExclusive) return IntStream.empty();
-        return StreamSupport.intStream(spliterator(array, startInclusive, endExclusive), false);
+        var spliterator = spliterator(array, startInclusive, endExclusive);
+        if (startInclusive == endExclusive) return IntStream.empty();
+        return StreamSupport.intStream(spliterator, false);
     }
 
     /**
@@ -5506,8 +5508,9 @@ public class Arrays {
      * @since 1.8
      */
     public static LongStream stream(long[] array, int startInclusive, int endExclusive) {
-        if (array != null && startInclusive >= 0 && startInclusive == endExclusive) return LongStream.empty();
-        return StreamSupport.longStream(spliterator(array, startInclusive, endExclusive), false);
+        var spliterator = spliterator(array, startInclusive, endExclusive);
+        if (startInclusive == endExclusive) return LongStream.empty();
+        return StreamSupport.longStream(spliterator, false);
     }
 
     /**
@@ -5537,8 +5540,9 @@ public class Arrays {
      * @since 1.8
      */
     public static DoubleStream stream(double[] array, int startInclusive, int endExclusive) {
-        if (array != null && startInclusive >= 0 && startInclusive == endExclusive) return DoubleStream.empty();
-        return StreamSupport.doubleStream(spliterator(array, startInclusive, endExclusive), false);
+        var spliterator = spliterator(array, startInclusive, endExclusive);
+        if (startInclusive == endExclusive) return DoubleStream.empty();
+        return StreamSupport.doubleStream(spliterator, false);
     }
 
 

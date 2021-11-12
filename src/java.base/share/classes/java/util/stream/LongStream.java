@@ -884,7 +884,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * @return an empty sequential stream
      */
     public static LongStream empty() {
-        return Streams.emptyLongStream();
+        return new Streams.EmptyLongStream(Spliterators.emptyLongSpliterator());
     }
 
     /**

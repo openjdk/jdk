@@ -895,7 +895,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      * @return an empty sequential stream
      */
     public static IntStream empty() {
-        return Streams.emptyIntStream();
+        return new Streams.EmptyIntStream(Spliterators.emptyIntSpliterator());
     }
 
     /**

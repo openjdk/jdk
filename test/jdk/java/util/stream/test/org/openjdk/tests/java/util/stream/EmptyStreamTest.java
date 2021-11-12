@@ -29,15 +29,18 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.Spliterators;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -57,380 +60,398 @@ public final class EmptyStreamTest extends EmptyBaseStreamTest {
     @Test
     public void testAll() {
         this.compare(Stream.class,
-                () -> StreamSupport.stream(Spliterators.emptySpliterator(), false),
-                Stream::empty);
+                Stream::empty,
+                () -> StreamSupport.stream(Spliterators.emptySpliterator(), false)
+        );
         this.compare(Stream.class,
-                () -> StreamSupport.stream(Spliterators.emptySpliterator(), true),
-                () -> Stream.empty().parallel());
+                () -> Stream.empty().parallel(),
+                () -> StreamSupport.stream(Spliterators.emptySpliterator(), true)
+        );
     }
 
-    public void testFilter(Stream<Integer> expected, Stream<Integer> actual) {
-        expected = expected.filter(failing(Predicate.class));
+    public void testFilter(Stream<Integer> actual, Stream<Integer> expected) {
         actual = actual.filter(failing(Predicate.class));
-        var expectedResult = expected.toList();
+        expected = expected.filter(failing(Predicate.class));
         var actualResult = actual.toList();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testFilterParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.filter(null));
-        assertThrows(NullPointerException.class, () -> actual.filter(null));
+    public void testFilterExceptions(Stream<?> actual, Stream<?> expected) {
+        checkExpectedExceptions(actual, expected, "filter", Predicate.class);
     }
 
-    public void testMap(Stream<Integer> expected, Stream<Integer> actual) {
-        Stream<String> expectedAsStrings = expected.map(failing(Function.class));
+    public void testMap(Stream<Integer> actual, Stream<Integer> expected) {
         Stream<String> actualAsStrings = actual.map(failing(Function.class));
-        var expectedResult = expectedAsStrings.toList();
+        Stream<String> expectedAsStrings = expected.map(failing(Function.class));
         var actualResult = actualAsStrings.toList();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expectedAsStrings.toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMapParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.map(null));
-        assertThrows(NullPointerException.class, () -> actual.map(null));
+    public void testMapExceptions(Stream<?> actual, Stream<?> expected) {
+        checkExpectedExceptions(actual, expected, "map", Function.class);
     }
 
-    public void testMapToInt(Stream<Integer> expected, Stream<Integer> actual) {
-        IntStream expectedAsIntStream = expected.mapToInt(failing(ToIntFunction.class));
+    public void testMapToInt(Stream<Integer> actual, Stream<Integer> expected) {
         IntStream actualAsIntStream = actual.mapToInt(failing(ToIntFunction.class));
-        var expectedResult = expectedAsIntStream.toArray();
+        IntStream expectedAsIntStream = expected.mapToInt(failing(ToIntFunction.class));
         var actualResult = actualAsIntStream.toArray();
-        compareResults(expectedResult, actualResult);
-        assertEquals(expected.isParallel(), expectedAsIntStream.isParallel());
+        var expectedResult = expectedAsIntStream.toArray();
+        compareResults(actualResult, expectedResult);
         assertEquals(actual.isParallel(), actualAsIntStream.isParallel());
+        assertEquals(expected.isParallel(), expectedAsIntStream.isParallel());
     }
 
-    public void testMapToIntParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.mapToInt(null));
-        assertThrows(NullPointerException.class, () -> actual.mapToInt(null));
+    public void testMapToIntExceptions(Stream<?> actual, Stream<?> expected) {
+        checkExpectedExceptions(actual, expected, "mapToInt", ToIntFunction.class);
     }
 
-    public void testMapToLong(Stream<Integer> expected, Stream<Integer> actual) {
-        LongStream expectedAsLongStream = expected.mapToLong(failing(ToLongFunction.class));
+    public void testMapToLong(Stream<Integer> actual, Stream<Integer> expected) {
         LongStream actualAsLongStream = actual.mapToLong(failing(ToLongFunction.class));
-        var expectedResult = expectedAsLongStream.toArray();
+        LongStream expectedAsLongStream = expected.mapToLong(failing(ToLongFunction.class));
         var actualResult = actualAsLongStream.toArray();
-        compareResults(expectedResult, actualResult);
-        assertEquals(expected.isParallel(), expectedAsLongStream.isParallel());
+        var expectedResult = expectedAsLongStream.toArray();
+        compareResults(actualResult, expectedResult);
         assertEquals(actual.isParallel(), actualAsLongStream.isParallel());
+        assertEquals(expected.isParallel(), expectedAsLongStream.isParallel());
     }
 
-    public void testMapToLongParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.mapToLong(null));
-        assertThrows(NullPointerException.class, () -> actual.mapToLong(null));
+    public void testMapToLongExceptions(Stream<Integer> actual, Stream<Integer> expected) {
+        checkExpectedExceptions(actual, expected, "mapToLong", ToLongFunction.class);
     }
 
-    public void testMapToDouble(Stream<Integer> expected, Stream<Integer> actual) {
-        DoubleStream expectedAsDoubleStream = expected.mapToDouble(failing(ToDoubleFunction.class));
+    public void testMapToDouble(Stream<Integer> actual, Stream<Integer> expected) {
         DoubleStream actualAsDoubleStream = actual.mapToDouble(failing(ToDoubleFunction.class));
-        var expectedResult = expectedAsDoubleStream.toArray();
+        DoubleStream expectedAsDoubleStream = expected.mapToDouble(failing(ToDoubleFunction.class));
         var actualResult = actualAsDoubleStream.toArray();
-        compareResults(expectedResult, actualResult);
-        assertEquals(expected.isParallel(), expectedAsDoubleStream.isParallel());
+        var expectedResult = expectedAsDoubleStream.toArray();
+        compareResults(actualResult, expectedResult);
         assertEquals(actual.isParallel(), actualAsDoubleStream.isParallel());
+        assertEquals(expected.isParallel(), expectedAsDoubleStream.isParallel());
     }
 
-    public void testMapToDoubleParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.mapToDouble(null));
-        assertThrows(NullPointerException.class, () -> actual.mapToDouble(null));
+    public void testMapToDoubleExceptions(Stream<Integer> actual, Stream<Integer> expected) {
+        checkExpectedExceptions(actual, expected, "mapToDouble", ToDoubleFunction.class);
     }
 
-    public void testFlatMap(Stream<Stream<Integer>> expected, Stream<Stream<Integer>> actual) {
-        var expectedResult = expected.flatMap(Function.identity())
-                .toList();
-        var actualResult = actual.flatMap(Function.identity())
-                .toList();
-        compareResults(expectedResult, actualResult);
+    public void testFlatMap(Stream<Stream<Integer>> actual, Stream<Stream<Integer>> expected) {
+        var actualResult = actual.flatMap(Function.identity()).toList();
+        var expectedResult = expected.flatMap(Function.identity()).toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testFlatMapParameters(Stream<Stream<Integer>> expected, Stream<Stream<Integer>> actual) {
-        assertThrows(NullPointerException.class, () -> expected.flatMap(null));
-        assertThrows(NullPointerException.class, () -> actual.flatMap(null));
+    public void testFlatMapExceptions(Stream<Stream<Integer>> actual, Stream<Stream<Integer>> expected) {
+        checkExpectedExceptions(actual, expected, "flatMap", Function.class);
     }
 
-    public void testFlatMapToInt(Stream<IntStream> expected, Stream<IntStream> actual) {
-        var expectedResult = expected.flatMapToInt(Function.identity())
-                .toArray();
-        var actualResult = actual.flatMapToInt(Function.identity())
-                .toArray();
-        compareResults(expectedResult, actualResult);
+    public void testFlatMapToInt(Stream<IntStream> actual, Stream<IntStream> expected) {
+        var actualResult = actual.flatMapToInt(Function.identity()).toArray();
+        var expectedResult = expected.flatMapToInt(Function.identity()).toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testFlatMapToIntParameters(Stream<IntStream> expected, Stream<IntStream> actual) {
-        assertThrows(NullPointerException.class, () -> expected.flatMapToInt(null));
-        assertThrows(NullPointerException.class, () -> actual.flatMapToInt(null));
+    public void testFlatMapToIntExceptions(Stream<IntStream> actual, Stream<IntStream> expected) {
+        checkExpectedExceptions(actual, expected, "flatMapToInt", Function.class);
     }
 
-    public void testFlatMapToLong(Stream<LongStream> expected, Stream<LongStream> actual) {
-        var expectedResult = expected.flatMapToLong(Function.identity())
-                .toArray();
-        var actualResult = actual.flatMapToLong(Function.identity())
-                .toArray();
-        compareResults(expectedResult, actualResult);
+    public void testFlatMapToLong(Stream<LongStream> actual, Stream<LongStream> expected) {
+        var actualResult = actual.flatMapToLong(Function.identity()).toArray();
+        var expectedResult = expected.flatMapToLong(Function.identity()).toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testFlatMapToLongParameters(Stream<LongStream> expected, Stream<LongStream> actual) {
-        assertThrows(NullPointerException.class, () -> expected.flatMapToLong(null));
-        assertThrows(NullPointerException.class, () -> actual.flatMapToLong(null));
+    public void testFlatMapToLongExceptions(Stream<LongStream> actual, Stream<LongStream> expected) {
+        checkExpectedExceptions(actual, expected, "flatMapToLong", Function.class);
     }
 
-    public void testFlatMapToDouble(Stream<DoubleStream> expected, Stream<DoubleStream> actual) {
-        var expectedResult = expected.flatMapToDouble(Function.identity())
-                .toArray();
-        var actualResult = actual.flatMapToDouble(Function.identity())
-                .toArray();
-        compareResults(expectedResult, actualResult);
+    public void testFlatMapToDouble(Stream<DoubleStream> actual, Stream<DoubleStream> expected) {
+        var actualResult = actual.flatMapToDouble(Function.identity()).toArray();
+        var expectedResult = expected.flatMapToDouble(Function.identity()).toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testFlatMapToDoubleParameters(Stream<DoubleStream> expected, Stream<DoubleStream> actual) {
-        assertThrows(NullPointerException.class, () -> expected.flatMapToDouble(null));
-        assertThrows(NullPointerException.class, () -> actual.flatMapToDouble(null));
+    public void testFlatMapToDoubleExceptions(Stream<DoubleStream> actual, Stream<DoubleStream> expected) {
+        checkExpectedExceptions(actual, expected, "flatMapToDouble", Function.class);
     }
 
-    public void testMapMulti(Stream<Number> expected, Stream<Number> actual) {
-        var expectedResult = expected.mapMulti(failing(BiConsumer.class))
-                .toList();
-        var actualResult = actual.mapMulti(failing(BiConsumer.class))
-                .toList();
-        compareResults(expectedResult, actualResult);
+    public void testMapMulti(Stream<Number> actual, Stream<Number> expected) {
+        var actualResult = actual.mapMulti(failing(BiConsumer.class)).toList();
+        var expectedResult = expected.mapMulti(failing(BiConsumer.class)).toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMapMultiParameters(Stream<Number> expected, Stream<Number> actual) {
-        assertThrows(NullPointerException.class, () -> expected.mapMulti(null));
-        assertThrows(NullPointerException.class, () -> actual.mapMulti(null));
+    public void testMapMultiExceptions(Stream<Number> actual, Stream<Number> expected) {
+        checkExpectedExceptions(actual, expected, "mapMulti", BiConsumer.class);
     }
 
-    public void testMapMultiToInt(Stream<Number> expected, Stream<Number> actual) {
-        var expectedResult = expected.mapMultiToInt(failing(BiConsumer.class))
-                .toArray();
-        var actualResult = actual.mapMultiToInt(failing(BiConsumer.class))
-                .toArray();
-        compareResults(expectedResult, actualResult);
+    public void testMapMultiToInt(Stream<Number> actual, Stream<Number> expected) {
+        var actualResult = actual.mapMultiToInt(failing(BiConsumer.class)).toArray();
+        var expectedResult = expected.mapMultiToInt(failing(BiConsumer.class)).toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMapMultiToIntParameters(Stream<Number> expected, Stream<Number> actual) {
-        assertThrows(NullPointerException.class, () -> expected.mapMultiToInt(null));
-        assertThrows(NullPointerException.class, () -> actual.mapMultiToInt(null));
+    public void testMapMultiToIntExceptions(Stream<Number> actual, Stream<Number> expected) {
+        checkExpectedExceptions(actual, expected, "mapMultiToInt", BiConsumer.class);
     }
 
-    public void testMapMultiToLong(Stream<Number> expected, Stream<Number> actual) {
-        var expectedResult = expected.mapMultiToLong(failing(BiConsumer.class))
-                .toArray();
-        var actualResult = actual.mapMultiToLong(failing(BiConsumer.class))
-                .toArray();
-
-        compareResults(expectedResult, actualResult);
+    public void testMapMultiToLong(Stream<Number> actual, Stream<Number> expected) {
+        var actualResult = actual.mapMultiToLong(failing(BiConsumer.class)).toArray();
+        var expectedResult = expected.mapMultiToLong(failing(BiConsumer.class)).toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMapMultiToLongParameters(Stream<Number> expected, Stream<Number> actual) {
-        assertThrows(NullPointerException.class, () -> expected.mapMultiToLong(null));
-        assertThrows(NullPointerException.class, () -> actual.mapMultiToLong(null));
+    public void testMapMultiToLongExceptions(Stream<Number> actual, Stream<Number> expected) {
+        checkExpectedExceptions(actual, expected, "mapMultiToLong", BiConsumer.class);
     }
 
-    public void testMapMultiToDouble(Stream<Number> expected, Stream<Number> actual) {
-        var expectedResult = expected.mapMultiToDouble(failing(BiConsumer.class))
-                .toArray();
-        var actualResult = actual.mapMultiToDouble(failing(BiConsumer.class))
-                .toArray();
-
-        compareResults(expectedResult, actualResult);
+    public void testMapMultiToDouble(Stream<Number> actual, Stream<Number> expected) {
+        var actualResult = actual.mapMultiToDouble(failing(BiConsumer.class)).toArray();
+        var expectedResult = expected.mapMultiToDouble(failing(BiConsumer.class)).toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMapMultiToDoubleParameters(Stream<Number> expected, Stream<Number> actual) {
-        assertThrows(NullPointerException.class, () -> expected.mapMultiToDouble(null));
-        assertThrows(NullPointerException.class, () -> actual.mapMultiToDouble(null));
+    public void testMapMultiToDoubleExceptions(Stream<Number> actual, Stream<Number> expected) {
+        checkExpectedExceptions(actual, expected, "mapMultiToDouble", BiConsumer.class);
     }
 
-    public void testDistinct(Stream<?> expected, Stream<?> actual) {
-        expected = expected.distinct();
+    public void testDistinct(Stream<?> actual, Stream<?> expected) {
         actual = actual.distinct();
-        var expectedResult = expected.toList();
+        expected = expected.distinct();
         var actualResult = actual.toList();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testSorted(Stream<Integer> expected, Stream<Integer> actual) {
-        expected = expected.sorted();
+    public void testDistinctExceptions(Stream<Number> actual, Stream<Number> expected) {
+        checkExpectedExceptions(actual, expected, "distinct");
+    }
+
+    public void testSorted(Stream<Integer> actual, Stream<Integer> expected) {
         actual = actual.sorted();
-        var expectedResult = expected.toList();
+        expected = expected.sorted();
         var actualResult = actual.toList();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testSortedComparator(Stream<Integer> expected, Stream<Integer> actual) {
-        expected = expected.sorted(Comparator.reverseOrder());
+    public void testSortedExceptions(Stream<Number> actual, Stream<Number> expected) {
+        checkExpectedExceptions(actual, expected, "sorted");
+    }
+
+    public void testSortedComparator(Stream<Integer> actual, Stream<Integer> expected) {
         actual = actual.sorted(Comparator.reverseOrder());
-        var expectedResult = expected.toList();
+        expected = expected.sorted(Comparator.reverseOrder());
         var actualResult = actual.toList();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testSortedComparatorParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.sorted(null));
-        assertThrows(NullPointerException.class, () -> actual.sorted(null));
+    public void testSortedComparatorNullPointerExceptions(Stream<Integer> actual, Stream<Integer> expected) {
+        checkExpectedExceptions(actual, expected, "sorted", Comparator.class);
     }
 
-    public void testPeek(Stream<Integer> expected, Stream<Integer> actual) {
-        expected.peek(failing(Consumer.class)).toList();
+    public void testPeek(Stream<Integer> actual, Stream<Integer> expected) {
         actual.peek(failing(Consumer.class)).toList();
+        expected.peek(failing(Consumer.class)).toList();
     }
 
-    public void testPeekParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.peek(null));
-        assertThrows(NullPointerException.class, () -> actual.peek(null));
+    public void testPeekExceptions(Stream<Integer> actual, Stream<Integer> expected) {
+        checkExpectedExceptions(actual, expected, "peek", Consumer.class);
     }
 
-    public void testSkip(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.skip(10).toList();
+    public void testSkip(Stream<Integer> actual, Stream<Integer> expected) {
         var actualResult = actual.skip(10).toList();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.skip(10).toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testSkipParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(IllegalArgumentException.class, () -> expected.skip(-1));
+    public void testSkipExceptions(Stream<Integer> actual, Stream<Integer> expected) {
         assertThrows(IllegalArgumentException.class, () -> actual.skip(-1));
+        assertThrows(IllegalArgumentException.class, () -> expected.skip(-1));
+
+        actual.skip(0); // should be ok
+        expected.skip(0); // should be ok
+        actual.skip(0); // should be ok
+        expected.skip(0); // should be ok
+
+        actual.skip(10);
+        expected.skip(10);
+        assertThrows(IllegalStateException.class, () -> actual.skip(10));
+        assertThrows(IllegalStateException.class, () -> expected.skip(10));
     }
 
-    public void testTakeWhile(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.takeWhile(failing(Predicate.class))
-                .toList();
-        var actualResult = actual.takeWhile(failing(Predicate.class))
-                .toList();
-        compareResults(expectedResult, actualResult);
+    public void testTakeWhile(Stream<Integer> actual, Stream<Integer> expected) {
+        var actualResult = actual.takeWhile(failing(Predicate.class)).toList();
+        var expectedResult = expected.takeWhile(failing(Predicate.class)).toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testTakeWhileParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.takeWhile(null));
-        assertThrows(NullPointerException.class, () -> actual.takeWhile(null));
+    public void testTakeWhileExceptions(Stream<Integer> actual, Stream<Integer> expected) {
+        checkExpectedExceptions(actual, expected, "takeWhile", Predicate.class);
     }
 
-    public void testDropWhile(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.dropWhile(failing(Predicate.class))
-                .toList();
-        var actualResult = actual.dropWhile(failing(Predicate.class))
-                .toList();
-        compareResults(expectedResult, actualResult);
+    public void testDropWhile(Stream<Integer> actual, Stream<Integer> expected) {
+        var actualResult = actual.dropWhile(failing(Predicate.class)).toList();
+        var expectedResult = expected.dropWhile(failing(Predicate.class)).toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testDropWhileParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.dropWhile(null));
-        assertThrows(NullPointerException.class, () -> actual.dropWhile(null));
+    public void testDropWhileExceptions(Stream<Integer> actual, Stream<Integer> expected) {
+        checkExpectedExceptions(actual, expected, "dropWhile", Predicate.class);
     }
 
-    public void testForEach(Stream<Integer> expected, Stream<Integer> actual) {
-        expected.forEach(failing(Consumer.class));
+    public void testForEach(Stream<Integer> actual, Stream<Integer> expected) {
         actual.forEach(failing(Consumer.class));
+        expected.forEach(failing(Consumer.class));
     }
 
-    public void testForEachParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.forEach(null));
+    public void testForEachExceptions(Stream<Integer> actual, Stream<Integer> expected) {
         assertThrows(NullPointerException.class, () -> actual.forEach(null));
+        assertThrows(NullPointerException.class, () -> expected.forEach(null));
+
+        var actualException = getThrowableType(() -> actual.forEach(null));
+        var expectedException = getThrowableType(() -> expected.forEach(null));
+        assertSame(actualException, expectedException);
+
+        actualException = getThrowableType(() -> actual.forEach(null));
+        expectedException = getThrowableType(() -> expected.forEach(null));
+        assertSame(actualException, expectedException);
+
+        actualException = getThrowableType(() -> actual.forEach(failing(Consumer.class)));
+        expectedException = getThrowableType(() -> expected.forEach(failing(Consumer.class)));
+        assertSame(actualException, expectedException);
+
+        actualException = getThrowableType(() -> actual.forEach(failing(Consumer.class)));
+        expectedException = getThrowableType(() -> expected.forEach(failing(Consumer.class)));
+        assertSame(actualException, expectedException);
     }
 
-    public void testForEachOrdered(Stream<Integer> expected, Stream<Integer> actual) {
-        expected.forEachOrdered(failing(Consumer.class));
+    public void testForEachOrdered(Stream<Integer> actual, Stream<Integer> expected) {
         actual.forEachOrdered(failing(Consumer.class));
+        expected.forEachOrdered(failing(Consumer.class));
     }
 
-    public void testForEachOrderedParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.forEachOrdered(null));
+    public void testForEachOrderedExceptions(Stream<Integer> actual, Stream<Integer> expected) {
         assertThrows(NullPointerException.class, () -> actual.forEachOrdered(null));
+        assertThrows(NullPointerException.class, () -> expected.forEachOrdered(null));
+
+        var actualException = getThrowableType(() -> actual.forEachOrdered(null));
+        var expectedException = getThrowableType(() -> expected.forEachOrdered(null));
+        assertSame(actualException, expectedException);
+
+        actualException = getThrowableType(() -> actual.forEachOrdered(null));
+        expectedException = getThrowableType(() -> expected.forEachOrdered(null));
+        assertSame(actualException, expectedException);
+
+        actualException = getThrowableType(() -> actual.forEachOrdered(failing(Consumer.class)));
+        expectedException = getThrowableType(() -> expected.forEachOrdered(failing(Consumer.class)));
+        assertSame(actualException, expectedException);
+
+        actualException = getThrowableType(() -> actual.forEachOrdered(failing(Consumer.class)));
+        expectedException = getThrowableType(() -> expected.forEachOrdered(failing(Consumer.class)));
+        assertSame(actualException, expectedException);
     }
 
-    public void testToArray(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.toArray();
+    public void testToArray(Stream<Integer> actual, Stream<Integer> expected) {
         var actualResult = actual.toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testToArrayFunction(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.toArray(Integer[]::new);
+    public void testToArrayExceptions(Stream<Integer> actual, Stream<Integer> expected) {
+        checkExpectedExceptions(actual, expected, "toArray");
+    }
+
+    public void testToArrayFunction(Stream<Integer> actual, Stream<Integer> expected) {
         var actualResult = actual.toArray(Integer[]::new);
-        compareResults(expectedResult, actualResult);
-        assertEquals(Integer.class, expectedResult.getClass()
-                .getComponentType());
+        var expectedResult = expected.toArray(Integer[]::new);
+        compareResults(actualResult, expectedResult);
+        assertEquals(Integer.class, expectedResult.getClass().getComponentType());
     }
 
-    public void testToArrayFunctionParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.toArray(null));
-        assertThrows(NullPointerException.class, () -> actual.toArray(null));
+    public void testToArrayFunctionExceptions(Stream<Integer> actual, Stream<Integer> expected) {
+        checkExpectedExceptions(actual, expected, "toArray", IntFunction.class);
     }
 
-    public void testReduceIdentityAccumulator(Stream<Object> expected, Stream<Object> actual) {
+    public void testToArrayFunctionReturnNullException(Stream<Integer> actual, Stream<Integer> expected) {
+        assertThrows(NullPointerException.class, () -> actual.toArray(i -> null));
+        assertThrows(NullPointerException.class, () -> expected.toArray(i -> null));
+    }
+
+    public void testReduceIdentityAccumulator(Stream<Object> actual, Stream<Object> expected) {
         var magicIdentity = new Object();
-        var expectedResult = expected.reduce(magicIdentity, failing(BinaryOperator.class));
         var actualResult = actual.reduce(magicIdentity, failing(BinaryOperator.class));
+        var expectedResult = expected.reduce(magicIdentity, failing(BinaryOperator.class));
 
-        assertSame(magicIdentity, expectedResult);
         assertSame(magicIdentity, actualResult);
+        assertSame(magicIdentity, expectedResult);
     }
 
-    public void testReduceIdentityAccumulatorParameters(Stream<Object> expected, Stream<Object> actual) {
-        // null identity should be fine
-        expected.reduce(null, failing(BinaryOperator.class));
-        actual.reduce(null, failing(BinaryOperator.class));
-        var magicIdentity = new Object();
-        assertThrows(NullPointerException.class, () -> expected.reduce(magicIdentity, null));
-        assertThrows(NullPointerException.class, () -> actual.reduce(magicIdentity, null));
+    public void testReduceIdentityAccumulatorExceptions(Stream<Object> actual, Stream<Object> expected) {
+        checkExpectedExceptions(actual, expected, "reduce", Object.class, BinaryOperator.class);
     }
 
-    public void testReduceAccumulator(Stream<Object> expected, Stream<Object> actual) {
-        var expectedResult = expected.reduce(failing(BinaryOperator.class));
+    public void testReduceAccumulator(Stream<Object> actual, Stream<Object> expected) {
         var actualResult = actual.reduce(failing(BinaryOperator.class));
+        var expectedResult = expected.reduce(failing(BinaryOperator.class));
 
-        compareResults(expectedResult, actualResult);
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testReduceAccumulatorParameters(Stream<Object> expected, Stream<Object> actual) {
-        assertThrows(NullPointerException.class, () -> expected.reduce(null));
-        assertThrows(NullPointerException.class, () -> actual.reduce(null));
+    public void testReduceAccumulatorExceptions(Stream<Object> actual, Stream<Object> expected) {
+        checkExpectedExceptions(actual, expected, "reduce", BinaryOperator.class);
     }
 
-    public void testReduceIdentityAccumulatorCombiner(Stream<Object> expected, Stream<Object> actual) {
+    public void testReduceIdentityAccumulatorCombiner(Stream<Object> actual, Stream<Object> expected) {
         var magicIdentity = new Object();
-        var expectedResult = expected.reduce(magicIdentity, failing(BinaryOperator.class), failing(BinaryOperator.class));
         var actualResult = actual.reduce(magicIdentity, failing(BinaryOperator.class), failing(BinaryOperator.class));
+        var expectedResult = expected.reduce(magicIdentity, failing(BinaryOperator.class), failing(BinaryOperator.class));
 
-        assertSame(magicIdentity, expectedResult);
         assertSame(magicIdentity, actualResult);
+        assertSame(magicIdentity, expectedResult);
     }
 
-    public void testReduceIdentityAccumulatorCombinerParameters(Stream<Object> expected, Stream<Object> actual) {
-        var accumulator = failing(BinaryOperator.class);
-        var combiner = failing(BinaryOperator.class);
-        // null identity should be fine
-        expected.reduce(null, accumulator, combiner);
-        actual.reduce(null, accumulator, combiner);
-        var magicIdentity = new Object();
-        assertThrows(NullPointerException.class, () -> expected.reduce(magicIdentity, null, combiner));
-        assertThrows(NullPointerException.class, () -> actual.reduce(magicIdentity, null, combiner));
-        assertThrows(NullPointerException.class, () -> expected.reduce(magicIdentity, accumulator, null));
-        assertThrows(NullPointerException.class, () -> actual.reduce(magicIdentity, accumulator, null));
+    public void testReduceIdentityAccumulatorCombinerExceptions(Stream<Object> actual, Stream<Object> expected) {
+        checkExpectedExceptions(actual, expected, "reduce", Object.class, BiFunction.class, BinaryOperator.class);
     }
 
-    public void testCollectSupplierAccumulatorCombiner(Stream<Integer> expected, Stream<Integer> actual) {
+    public void testCollectSupplierAccumulatorCombiner(Stream<Integer> actual, Stream<Integer> expected) {
         var magicIdentity = new Object();
-        var expectedResult = expected.collect(() -> magicIdentity, failing(BiConsumer.class), failing(BiConsumer.class));
         var actualResult = actual.collect(() -> magicIdentity, failing(BiConsumer.class), failing(BiConsumer.class));
+        var expectedResult = expected.collect(() -> magicIdentity, failing(BiConsumer.class), failing(BiConsumer.class));
 
-        assertSame(magicIdentity, expectedResult);
         assertSame(magicIdentity, actualResult);
+        assertSame(magicIdentity, expectedResult);
     }
 
-    public void testCollectSupplierAccumulatorCombinerParameters(Stream<Integer> expected, Stream<Integer> actual) {
+    public void testCollectSupplierAccumulatorCombinerExceptions(Stream<Integer> actual, Stream<Integer> expected) {
         var magicIdentity = new Object();
         Supplier<Object> supplier = () -> magicIdentity;
         var accumulator = failing(BiConsumer.class);
         var combiner = failing(BiConsumer.class);
-        assertThrows(NullPointerException.class, () -> expected.collect(null, accumulator, combiner));
         assertThrows(NullPointerException.class, () -> actual.collect(null, accumulator, combiner));
-        assertThrows(NullPointerException.class, () -> expected.collect(supplier, null, combiner));
+        assertThrows(NullPointerException.class, () -> expected.collect(null, accumulator, combiner));
         assertThrows(NullPointerException.class, () -> actual.collect(supplier, null, combiner));
-        assertThrows(NullPointerException.class, () -> expected.collect(supplier, accumulator, null));
+        assertThrows(NullPointerException.class, () -> expected.collect(supplier, null, combiner));
         assertThrows(NullPointerException.class, () -> actual.collect(supplier, accumulator, null));
+        assertThrows(NullPointerException.class, () -> expected.collect(supplier, accumulator, null));
+
+        actual.collect(supplier, accumulator, combiner);
+        expected.collect(supplier, accumulator, combiner);
+
+        assertThrows(NullPointerException.class, () -> actual.collect(null, accumulator, combiner));
+        assertThrows(NullPointerException.class, () -> expected.collect(null, accumulator, combiner));
+        assertThrows(NullPointerException.class, () -> actual.collect(supplier, null, combiner));
+        assertThrows(NullPointerException.class, () -> expected.collect(supplier, null, combiner));
+        assertThrows(NullPointerException.class, () -> actual.collect(supplier, accumulator, null));
+        assertThrows(NullPointerException.class, () -> expected.collect(supplier, accumulator, null));
+
+        assertThrows(IllegalStateException.class, () -> actual.collect(supplier, accumulator, combiner));
+        assertThrows(IllegalStateException.class, () -> expected.collect(supplier, accumulator, combiner));
     }
 
-    public void testCollectCollector(Stream<Object> expected, Stream<Object> actual) {
+    public void testCollectCollector(Stream<Object> actual, Stream<Object> expected) {
         var magicIdentity = new Object();
         var superMagicIdentity = new Object();
         Collector<Object, Object, Object> collector = new Collector<>() {
@@ -462,106 +483,131 @@ public final class EmptyStreamTest extends EmptyBaseStreamTest {
                 return Set.of();
             }
         };
-        var expectedResult = expected.collect(collector);
         var actualResult = actual.collect(collector);
+        var expectedResult = expected.collect(collector);
 
-        assertSame(superMagicIdentity, expectedResult);
         assertSame(superMagicIdentity, actualResult);
+        assertSame(superMagicIdentity, expectedResult);
     }
 
-    public void testCollectCollectorParameters(Stream<Object> expected, Stream<Object> actual) {
-        assertThrows(NullPointerException.class, () -> expected.collect(null));
+    public void testCollectCollectorExceptions(Stream<Object> actual, Stream<Object> expected) {
         assertThrows(NullPointerException.class, () -> actual.collect(null));
+        assertThrows(NullPointerException.class, () -> expected.collect(null));
+
+        actual.collect(Collectors.toList());
+        expected.collect(Collectors.toList());
+
+        assertThrows(NullPointerException.class, () -> actual.collect(null));
+        assertThrows(NullPointerException.class, () -> expected.collect(null));
+
+        assertThrows(IllegalStateException.class, () -> actual.collect(Collectors.toList()));
+        assertThrows(IllegalStateException.class, () -> expected.collect(Collectors.toList()));
     }
 
-    public void testToList(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.toList();
+    public void testToList(Stream<Integer> actual, Stream<Integer> expected) {
         var actualResult = actual.toList();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMin(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.min(Comparator.reverseOrder());
+    public void testToListExceptions(Stream<Object> actual, Stream<Object> expected) {
+        checkExpectedExceptions(actual, expected, "toList");
+    }
+
+    public void testMin(Stream<Integer> actual, Stream<Integer> expected) {
         var actualResult = actual.min(Comparator.reverseOrder());
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.min(Comparator.reverseOrder());
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMinParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.min(null));
-        assertThrows(NullPointerException.class, () -> actual.min(null));
+    public void testMinExceptions(Stream<Object> actual, Stream<Object> expected) {
+        checkExpectedExceptions(actual, expected, "min", Comparator.class);
     }
 
-    public void testMax(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.max(Comparator.reverseOrder());
+    public void testMax(Stream<Integer> actual, Stream<Integer> expected) {
         var actualResult = actual.max(Comparator.reverseOrder());
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.max(Comparator.reverseOrder());
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMaxParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(NullPointerException.class, () -> expected.max(null));
-        assertThrows(NullPointerException.class, () -> actual.max(null));
+    public void testMaxExceptions(Stream<Object> actual, Stream<Object> expected) {
+        checkExpectedExceptions(actual, expected, "max", Comparator.class);
     }
 
-    public void testCount(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.count();
+    public void testCount(Stream<Integer> actual, Stream<Integer> expected) {
         var actualResult = actual.count();
-        assertEquals(expectedResult, actualResult);
-        assertEquals(0L, actualResult);
+        var expectedResult = expected.count();
+        assertEquals(actualResult, expectedResult);
+        assertEquals(actualResult, 0L);
     }
 
-    public void testAnyMatch(Stream<?> expected, Stream<?> actual) {
-        var expectedResult = expected.anyMatch(failing(Predicate.class));
+    public void testCountExceptions(Stream<Object> actual, Stream<Object> expected) {
+        checkExpectedExceptions(actual, expected, "count");
+    }
+
+    public void testAnyMatch(Stream<?> actual, Stream<?> expected) {
         var actualResult = actual.anyMatch(failing(Predicate.class));
-        assertEquals(expectedResult, actualResult);
+        var expectedResult = expected.anyMatch(failing(Predicate.class));
+        assertEquals(actualResult, expectedResult);
     }
 
-    public void testAnyMatchParameters(Stream<?> expected, Stream<?> actual) {
-        assertThrows(NullPointerException.class, () -> expected.anyMatch(null));
-        assertThrows(NullPointerException.class, () -> actual.anyMatch(null));
+    public void testAnyMatchExceptions(Stream<?> actual, Stream<?> expected) {
+        checkExpectedExceptions(actual, expected, "anyMatch", Predicate.class);
     }
 
-    public void testAllMatch(Stream<?> expected, Stream<?> actual) {
-        var expectedResult = expected.allMatch(failing(Predicate.class));
+    public void testAllMatch(Stream<?> actual, Stream<?> expected) {
         var actualResult = actual.allMatch(failing(Predicate.class));
-        assertEquals(expectedResult, actualResult);
+        var expectedResult = expected.allMatch(failing(Predicate.class));
+        assertEquals(actualResult, expectedResult);
     }
 
-    public void testAllMatchParameters(Stream<?> expected, Stream<?> actual) {
-        assertThrows(NullPointerException.class, () -> expected.allMatch(null));
-        assertThrows(NullPointerException.class, () -> actual.allMatch(null));
+    public void testAllMatchExceptions(Stream<?> actual, Stream<?> expected) {
+        checkExpectedExceptions(actual, expected, "allMatch", Predicate.class);
     }
 
-    public void testNoneMatch(Stream<?> expected, Stream<?> actual) {
-        var expectedResult = expected.noneMatch(failing(Predicate.class));
+    public void testNoneMatch(Stream<?> actual, Stream<?> expected) {
         var actualResult = actual.noneMatch(failing(Predicate.class));
-        assertEquals(expectedResult, actualResult);
+        var expectedResult = expected.noneMatch(failing(Predicate.class));
+        assertEquals(actualResult, expectedResult);
     }
 
-    public void testNoneMatchParameters(Stream<?> expected, Stream<?> actual) {
-        assertThrows(NullPointerException.class, () -> expected.noneMatch(null));
-        assertThrows(NullPointerException.class, () -> actual.noneMatch(null));
+    public void testNoneMatchExceptions(Stream<?> actual, Stream<?> expected) {
+        checkExpectedExceptions(actual, expected, "noneMatch", Predicate.class);
     }
 
-    public void testFindFirst(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.findFirst();
+    public void testFindFirst(Stream<Integer> actual, Stream<Integer> expected) {
         var actualResult = actual.findFirst();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.findFirst();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testFindAny(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.findAny();
+    public void testFindFirstExceptions(Stream<?> actual, Stream<?> expected) {
+        checkExpectedExceptions(actual, expected, "findFirst");
+    }
+
+    public void testFindAny(Stream<Integer> actual, Stream<Integer> expected) {
         var actualResult = actual.findAny();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.findAny();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testLimit(Stream<Integer> expected, Stream<Integer> actual) {
-        var expectedResult = expected.limit(10).toList();
+    public void testFindAnyExceptions(Stream<?> actual, Stream<?> expected) {
+        checkExpectedExceptions(actual, expected, "findAny");
+    }
+
+    public void testLimit(Stream<Integer> actual, Stream<Integer> expected) {
         var actualResult = actual.limit(10).toList();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.limit(10).toList();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testLimitParameters(Stream<Integer> expected, Stream<Integer> actual) {
-        assertThrows(IllegalArgumentException.class, () -> expected.limit(-1));
+    public void testLimitExceptions(Stream<Integer> actual, Stream<Integer> expected) {
         assertThrows(IllegalArgumentException.class, () -> actual.limit(-1));
+        assertThrows(IllegalArgumentException.class, () -> expected.limit(-1));
+
+        actual.limit(10);
+        expected.limit(10);
+        assertThrows(IllegalStateException.class, () -> actual.limit(10));
+        assertThrows(IllegalStateException.class, () -> expected.limit(10));
     }
 }

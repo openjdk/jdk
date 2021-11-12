@@ -26,6 +26,7 @@ package java.util.stream;
 
 import java.util.Objects;
 import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Supplier;
 
 /**
@@ -314,5 +315,17 @@ public final class StreamSupport {
         return new DoublePipeline.Head<>(supplier,
                                          StreamOpFlag.fromCharacteristics(characteristics),
                                          parallel);
+    }
+
+    /**
+     * Creates a new sequential empty {@code Stream} with the
+     * characteristics of the provided {@code Spliterator}.
+     *
+     * @param <T> the type of stream elements
+     * @param spliterator a {@code Spliterator} describing the stream elements
+     * @return a new sequential empty {@code Stream}
+     */
+    public static <T> Stream<T> emptyStream(Spliterator<T> spliterator) {
+        return new Streams.EmptyStream<>(spliterator);
     }
 }

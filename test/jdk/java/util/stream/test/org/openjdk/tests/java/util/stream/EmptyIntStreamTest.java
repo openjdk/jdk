@@ -46,7 +46,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @summary Checks that the EmptyIntStream is equivalent to the
+ * @summary Checks that the EmptyInttream is equivalent to the
  * old way of creating it with StreamSupport.
  * @author Heinz Kabutz
  */
@@ -55,352 +55,418 @@ public final class EmptyIntStreamTest extends EmptyBaseStreamTest {
     @Test
     public void testAll() {
         this.compare(IntStream.class,
-                () -> StreamSupport.intStream(Spliterators.emptyIntSpliterator(), false),
-                IntStream::empty);
+                IntStream::empty, () -> StreamSupport.intStream(Spliterators.emptyIntSpliterator(), false)
+        );
         this.compare(IntStream.class,
-                () -> StreamSupport.intStream(Spliterators.emptyIntSpliterator(), true),
-                () -> IntStream.empty().parallel());
+                () -> IntStream.empty().parallel(), () -> StreamSupport.intStream(Spliterators.emptyIntSpliterator(), true)
+        );
     }
 
-    public void testFilter(IntStream expected, IntStream actual) {
-        expected = expected.filter(failing(IntPredicate.class));
+    public void testFilter(IntStream actual, IntStream expected) {
         actual = actual.filter(failing(IntPredicate.class));
-        var expectedResult = expected.toArray();
+        expected = expected.filter(failing(IntPredicate.class));
         var actualResult = actual.toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testFilterParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.filter(null));
-        assertThrows(NullPointerException.class, () -> actual.filter(null));
+    public void testFilterExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "filter", IntPredicate.class);
     }
 
-    public void testMap(IntStream expected, IntStream actual) {
-        IntStream expectedAsIntStream = expected.map(failing(IntUnaryOperator.class));
+    public void testMap(IntStream actual, IntStream expected) {
         IntStream actualAsIntStream = actual.map(failing(IntUnaryOperator.class));
-        var expectedResult = expectedAsIntStream.toArray();
+        IntStream expectedAsIntStream = expected.map(failing(IntUnaryOperator.class));
         var actualResult = actualAsIntStream.toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expectedAsIntStream.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMapParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.map(null));
-        assertThrows(NullPointerException.class, () -> actual.map(null));
+    public void testMapExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "map", IntUnaryOperator.class);
     }
 
-    public void testMapToObj(IntStream expected, IntStream actual) {
-        Stream<Integer> expectedAsStream = expected.mapToObj(failing(IntFunction.class));
+    public void testMapToObj(IntStream actual, IntStream expected) {
         Stream<Integer> actualAsStream = actual.mapToObj(failing(IntFunction.class));
-        var expectedResult = expectedAsStream.toArray();
+        Stream<Integer> expectedAsStream = expected.mapToObj(failing(IntFunction.class));
         var actualResult = actualAsStream.toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expectedAsStream.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMapToObjParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.mapToObj(null));
-        assertThrows(NullPointerException.class, () -> actual.mapToObj(null));
+    public void testMapToObjExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "mapToObj", IntFunction.class);
     }
 
-    public void testMapToLong(IntStream expected, IntStream actual) {
-        LongStream expectedAsLongStream = expected.mapToLong(failing(IntToLongFunction.class));
+    public void testMapToLong(IntStream actual, IntStream expected) {
         LongStream actualAsLongStream = actual.mapToLong(failing(IntToLongFunction.class));
-        var expectedResult = expectedAsLongStream.toArray();
+        LongStream expectedAsLongStream = expected.mapToLong(failing(IntToLongFunction.class));
         var actualResult = actualAsLongStream.toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expectedAsLongStream.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMapToLongParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.mapToLong(null));
-        assertThrows(NullPointerException.class, () -> actual.mapToLong(null));
+    public void testMapToLongExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "mapToLong", IntToLongFunction.class);
     }
 
-    public void testMapToDouble(IntStream expected, IntStream actual) {
-        DoubleStream expectedAsDoubleStream = expected.mapToDouble(failing(IntToDoubleFunction.class));
+    public void testMapToDouble(IntStream actual, IntStream expected) {
         DoubleStream actualAsDoubleStream = actual.mapToDouble(failing(IntToDoubleFunction.class));
-        var expectedResult = expectedAsDoubleStream.toArray();
+        DoubleStream expectedAsDoubleStream = expected.mapToDouble(failing(IntToDoubleFunction.class));
         var actualResult = actualAsDoubleStream.toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expectedAsDoubleStream.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMapToDoubleParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.mapToDouble(null));
-        assertThrows(NullPointerException.class, () -> actual.mapToDouble(null));
+    public void testMapToDoubleExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "mapToDouble", IntToDoubleFunction.class);
     }
 
-    public void testFlatMap(IntStream expected, IntStream actual) {
-        IntStream expectedAsIntStream = expected.flatMap(failing(IntFunction.class));
+    public void testFlatMap(IntStream actual, IntStream expected) {
         IntStream actualAsIntStream = actual.flatMap(failing(IntFunction.class));
-        var expectedResult = expectedAsIntStream.toArray();
+        IntStream expectedAsIntStream = expected.flatMap(failing(IntFunction.class));
         var actualResult = actualAsIntStream.toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expectedAsIntStream.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testFlatMapParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.flatMap(null));
-        assertThrows(NullPointerException.class, () -> actual.flatMap(null));
+    public void testFlatMapExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "flatMap", IntFunction.class);
     }
 
-    public void testDistinct(IntStream expected, IntStream actual) {
-        expected = expected.distinct();
+    public void testDistinct(IntStream actual, IntStream expected) {
         actual = actual.distinct();
-        var expectedResult = expected.toArray();
+        expected = expected.distinct();
         var actualResult = actual.toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testSorted(IntStream expected, IntStream actual) {
-        expected = expected.sorted();
+    public void testDistinctExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "distinct");
+    }
+
+    public void testSorted(IntStream actual, IntStream expected) {
         actual = actual.sorted();
-        var expectedResult = expected.toArray();
+        expected = expected.sorted();
         var actualResult = actual.toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testPeek(IntStream expected, IntStream actual) {
-        expected.peek(failing(IntConsumer.class)).toArray();
+    public void testSortedExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "sorted");
+    }
+
+    public void testPeek(IntStream actual, IntStream expected) {
         actual.peek(failing(IntConsumer.class)).toArray();
+        expected.peek(failing(IntConsumer.class)).toArray();
     }
 
-    public void testPeekParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.peek(null));
-        assertThrows(NullPointerException.class, () -> actual.peek(null));
+    public void testPeekExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "peek", IntConsumer.class);
     }
 
-    public void testLimit(IntStream expected, IntStream actual) {
-        var expectedResult = expected.limit(10).toArray();
+    public void testLimit(IntStream actual, IntStream expected) {
         var actualResult = actual.limit(10).toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.limit(10).toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testLimitParameters(IntStream expected, IntStream actual) {
-        assertThrows(IllegalArgumentException.class, () -> expected.limit(-1));
+    public void testLimitExceptions(IntStream actual, IntStream expected) {
         assertThrows(IllegalArgumentException.class, () -> actual.limit(-1));
+        assertThrows(IllegalArgumentException.class, () -> expected.limit(-1));
+
+        actual.limit(10);
+        expected.limit(10);
+        assertThrows(IllegalStateException.class, () -> actual.limit(10));
+        assertThrows(IllegalStateException.class, () -> expected.limit(10));
     }
 
-    public void testSkip(IntStream expected, IntStream actual) {
-        var expectedResult = expected.skip(10).toArray();
+    public void testSkip(IntStream actual, IntStream expected) {
         var actualResult = actual.skip(10).toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.skip(10).toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testSkipParameters(IntStream expected, IntStream actual) {
-        assertThrows(IllegalArgumentException.class, () -> expected.skip(-1));
+    public void testSkipExceptions(IntStream actual, IntStream expected) {
         assertThrows(IllegalArgumentException.class, () -> actual.skip(-1));
+        assertThrows(IllegalArgumentException.class, () -> expected.skip(-1));
+
+        actual.skip(0); // should be ok
+        expected.skip(0); // should be ok
+        actual.skip(0); // should be ok
+        expected.skip(0); // should be ok
+
+        actual.skip(10);
+        expected.skip(10);
+        assertThrows(IllegalStateException.class, () -> actual.skip(10));
+        assertThrows(IllegalStateException.class, () -> expected.skip(10));
     }
 
-    public void testForEach(IntStream expected, IntStream actual) {
-        expected.forEach(failing(IntConsumer.class));
+    public void testForEach(IntStream actual, IntStream expected) {
         actual.forEach(failing(IntConsumer.class));
+        expected.forEach(failing(IntConsumer.class));
     }
 
-    public void testForEachParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.forEach(null));
-        assertThrows(NullPointerException.class, () -> actual.forEach(null));
+    public void testForEachExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "forEach", IntConsumer.class);
     }
 
-    public void testForEachOrdered(IntStream expected, IntStream actual) {
-        expected.forEachOrdered(failing(IntConsumer.class));
+    public void testForEachOrdered(IntStream actual, IntStream expected) {
         actual.forEachOrdered(failing(IntConsumer.class));
+        expected.forEachOrdered(failing(IntConsumer.class));
     }
 
-    public void testForEachOrderedParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.forEachOrdered(null));
-        assertThrows(NullPointerException.class, () -> actual.forEachOrdered(null));
+    public void testForEachOrderedExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "forEachOrdered", IntConsumer.class);
     }
 
-    public void testToArray(IntStream expected, IntStream actual) {
-        var expectedResult = expected.toArray();
+    public void testToArray(IntStream actual, IntStream expected) {
         var actualResult = actual.toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testReduceIntBinaryOperator(IntStream expected, IntStream actual) {
-        var expectedResult = expected.reduce(failing(IntBinaryOperator.class));
+    public void testToArrayExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "toArray");
+    }
+
+    public void testReduceIntBinaryOperator(IntStream actual, IntStream expected) {
         var actualResult = actual.reduce(failing(IntBinaryOperator.class));
+        var expectedResult = expected.reduce(failing(IntBinaryOperator.class));
 
-        compareResults(expectedResult, actualResult);
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testReduceIntBinaryOperatorParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.reduce(null));
-        assertThrows(NullPointerException.class, () -> actual.reduce(null));
+    public void testReduceIntBinaryOperatorExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "reduce", IntBinaryOperator.class);
     }
 
-    public void testReduceIdentityIntBinaryOperator(IntStream expected, IntStream actual) {
+    public void testReduceIdentityIntBinaryOperator(IntStream actual, IntStream expected) {
         var magicIdentity = 42;
-        var expectedResult = expected.reduce(magicIdentity, failing(IntBinaryOperator.class));
         var actualResult = actual.reduce(magicIdentity, failing(IntBinaryOperator.class));
+        var expectedResult = expected.reduce(magicIdentity, failing(IntBinaryOperator.class));
 
-        assertEquals(magicIdentity, expectedResult);
-        assertEquals(magicIdentity, actualResult);
+        assertEquals(actualResult, magicIdentity);
+        assertEquals(expectedResult, magicIdentity);
     }
 
-    public void testReduceIdentityIntBinaryOperatorParameters(IntStream expected, IntStream actual) {
-        int magicInt = 42;
-        assertThrows(NullPointerException.class, () -> expected.reduce(magicInt, null));
-        assertThrows(NullPointerException.class, () -> actual.reduce(magicInt, null));
+    public void testReduceIdentityIntBinaryOperatorExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "reduce", int.class, IntBinaryOperator.class);
     }
 
-    public void testCollect(IntStream expected, IntStream actual) {
+    public void testCollect(IntStream actual, IntStream expected) {
         var magicIdentity = new Object();
-        var expectedResult = expected.collect(() -> magicIdentity, failing(ObjIntConsumer.class), failing(BiConsumer.class));
         var actualResult = actual.collect(() -> magicIdentity, failing(ObjIntConsumer.class), failing(BiConsumer.class));
+        var expectedResult = expected.collect(() -> magicIdentity, failing(ObjIntConsumer.class), failing(BiConsumer.class));
 
-        assertSame(magicIdentity, expectedResult);
         assertSame(magicIdentity, actualResult);
+        assertSame(magicIdentity, expectedResult);
     }
 
-    public void testCollectParameters(IntStream expected, IntStream actual) {
+    public void testCollectExceptions(IntStream actual, IntStream expected) {
         Supplier<Object> supplier = Object::new;
         var accumulator = failing(ObjIntConsumer.class);
         var combiner = failing(BiConsumer.class);
-        assertThrows(NullPointerException.class, () -> expected.collect(null, accumulator, combiner));
         assertThrows(NullPointerException.class, () -> actual.collect(null, accumulator, combiner));
-        assertThrows(NullPointerException.class, () -> expected.collect(supplier, null, combiner));
+        assertThrows(NullPointerException.class, () -> expected.collect(null, accumulator, combiner));
         assertThrows(NullPointerException.class, () -> actual.collect(supplier, null, combiner));
-        assertThrows(NullPointerException.class, () -> expected.collect(supplier, accumulator, null));
+        assertThrows(NullPointerException.class, () -> expected.collect(supplier, null, combiner));
         assertThrows(NullPointerException.class, () -> actual.collect(supplier, accumulator, null));
+        assertThrows(NullPointerException.class, () -> expected.collect(supplier, accumulator, null));
+
+        actual.collect(supplier, accumulator, combiner);
+        expected.collect(supplier, accumulator, combiner);
+
+        assertThrows(NullPointerException.class, () -> actual.collect(null, accumulator, combiner));
+        assertThrows(NullPointerException.class, () -> expected.collect(null, accumulator, combiner));
+        assertThrows(NullPointerException.class, () -> actual.collect(supplier, null, combiner));
+        assertThrows(NullPointerException.class, () -> expected.collect(supplier, null, combiner));
+        assertThrows(NullPointerException.class, () -> actual.collect(supplier, accumulator, null));
+        assertThrows(NullPointerException.class, () -> expected.collect(supplier, accumulator, null));
+
+        assertThrows(IllegalStateException.class, () -> actual.collect(supplier, accumulator, combiner));
+        assertThrows(IllegalStateException.class, () -> expected.collect(supplier, accumulator, combiner));
     }
 
-    public void testSum(IntStream expected, IntStream actual) {
-        var expectedResult = expected.sum();
+    public void testSum(IntStream actual, IntStream expected) {
         var actualResult = actual.sum();
+        var expectedResult = expected.sum();
 
-        assertEquals(expectedResult, actualResult);
-        assertEquals(0, actualResult);
+        assertEquals(actualResult, expectedResult);
+        assertEquals(actualResult, 0);
     }
 
-    public void testMin(IntStream expected, IntStream actual) {
-        var expectedResult = expected.min();
+    public void testSumExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "sum");
+    }
+
+    public void testMin(IntStream actual, IntStream expected) {
         var actualResult = actual.min();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.min();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMax(IntStream expected, IntStream actual) {
-        var expectedResult = expected.max();
+    public void testMinExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "min");
+    }
+
+    public void testMax(IntStream actual, IntStream expected) {
         var actualResult = actual.max();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.max();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testCount(IntStream expected, IntStream actual) {
-        var expectedResult = expected.count();
+    public void testMaxExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "max");
+    }
+
+    public void testCount(IntStream actual, IntStream expected) {
         var actualResult = actual.count();
-        assertEquals(expectedResult, actualResult);
-        assertEquals(0L, actualResult);
+        var expectedResult = expected.count();
+        assertEquals(actualResult, expectedResult);
+        assertEquals(actualResult, 0L);
     }
 
-    public void testAverage(IntStream expected, IntStream actual) {
-        var expectedResult = expected.average();
+    public void testCountExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "count");
+    }
+
+    public void testAverage(IntStream actual, IntStream expected) {
         var actualResult = actual.average();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.average();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testSummaryStatistics(IntStream expected, IntStream actual) {
-        var expectedResult = expected.summaryStatistics().toString();
+    public void testAverageExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "average");
+    }
+
+    public void testSummaryStatistics(IntStream actual, IntStream expected) {
         var actualResult = actual.summaryStatistics().toString();
-        assertEquals(expectedResult, actualResult);
+        var expectedResult = expected.summaryStatistics().toString();
+        assertEquals(actualResult, expectedResult);
     }
 
-    public void testAnyMatch(IntStream expected, IntStream actual) {
-        var expectedResult = expected.anyMatch(failing(IntPredicate.class));
+    public void testSummaryStatisticsExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "summaryStatistics");
+    }
+
+    public void testAnyMatch(IntStream actual, IntStream expected) {
         var actualResult = actual.anyMatch(failing(IntPredicate.class));
-        assertEquals(expectedResult, actualResult);
+        var expectedResult = expected.anyMatch(failing(IntPredicate.class));
+        assertEquals(actualResult, expectedResult);
     }
 
-    public void testAnyMatchParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.anyMatch(null));
-        assertThrows(NullPointerException.class, () -> actual.anyMatch(null));
+    public void testAnyMatchExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "anyMatch", IntPredicate.class);
     }
 
-    public void testAllMatch(IntStream expected, IntStream actual) {
-        var expectedResult = expected.allMatch(failing(IntPredicate.class));
+    public void testAllMatch(IntStream actual, IntStream expected) {
         var actualResult = actual.allMatch(failing(IntPredicate.class));
-        assertEquals(expectedResult, actualResult);
+        var expectedResult = expected.allMatch(failing(IntPredicate.class));
+        assertEquals(actualResult, expectedResult);
     }
 
-    public void testAllMatchParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.allMatch(null));
-        assertThrows(NullPointerException.class, () -> actual.allMatch(null));
+    public void testAllMatchExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "allMatch", IntPredicate.class);
     }
 
-    public void testNoneMatch(IntStream expected, IntStream actual) {
-        var expectedResult = expected.noneMatch(failing(IntPredicate.class));
+    public void testNoneMatch(IntStream actual, IntStream expected) {
         var actualResult = actual.noneMatch(failing(IntPredicate.class));
-        assertEquals(expectedResult, actualResult);
+        var expectedResult = expected.noneMatch(failing(IntPredicate.class));
+        assertEquals(actualResult, expectedResult);
     }
 
-    public void testNoneMatchParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.noneMatch(null));
-        assertThrows(NullPointerException.class, () -> actual.noneMatch(null));
+    public void testNoneMatchExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "noneMatch", IntPredicate.class);
     }
 
-    public void testFindFirst(IntStream expected, IntStream actual) {
-        var expectedResult = expected.findFirst();
+    public void testFindFirst(IntStream actual, IntStream expected) {
         var actualResult = actual.findFirst();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.findFirst();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testFindAny(IntStream expected, IntStream actual) {
-        var expectedResult = expected.findAny();
+    public void testFindFirstExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "findFirst");
+    }
+
+    public void testFindAny(IntStream actual, IntStream expected) {
         var actualResult = actual.findAny();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.findAny();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testAsLongStream(IntStream expected, IntStream actual) {
-        LongStream expectedAsLongStream = expected.asLongStream();
+    public void testFindAnyExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "findAny");
+    }
+
+    public void testAsLongStream(IntStream actual, IntStream expected) {
         LongStream actualAsLongStream = actual.asLongStream();
-        long[] expectedResult = expectedAsLongStream.toArray();
+        LongStream expectedAsLongStream = expected.asLongStream();
         long[] actualResult = actualAsLongStream.toArray();
-        compareResults(expectedResult, actualResult);
+        long[] expectedResult = expectedAsLongStream.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testAsDoubleStream(IntStream expected, IntStream actual) {
-        DoubleStream expectedAsDoubleStream = expected.asDoubleStream();
+    public void testAsLongStreamExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "asLongStream");
+    }
+
+    public void testAsDoubleStream(IntStream actual, IntStream expected) {
         DoubleStream actualAsDoubleStream = actual.asDoubleStream();
-        double[] expectedResult = expectedAsDoubleStream.toArray();
+        DoubleStream expectedAsDoubleStream = expected.asDoubleStream();
         double[] actualResult = actualAsDoubleStream.toArray();
-        compareResults(expectedResult, actualResult);
+        double[] expectedResult = expectedAsDoubleStream.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testBoxed(IntStream expected, IntStream actual) {
-        Stream<Integer> expectedAsStream = expected.boxed();
+    public void testAsDoubleStreamExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "asDoubleStream");
+    }
+
+    public void testBoxed(IntStream actual, IntStream expected) {
         Stream<Integer> actualAsStream = actual.boxed();
-        var expectedResult = expectedAsStream.toArray();
+        Stream<Integer> expectedAsStream = expected.boxed();
         var actualResult = actualAsStream.toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expectedAsStream.toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMapMulti(IntStream expected, IntStream actual) {
-        var expectedResult = expected.mapMulti(failing(IntStream.IntMapMultiConsumer.class)).toArray();
+    public void testBoxedExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "boxed");
+    }
+
+    public void testMapMulti(IntStream actual, IntStream expected) {
         var actualResult = actual.mapMulti(failing(IntStream.IntMapMultiConsumer.class)).toArray();
+        var expectedResult = expected.mapMulti(failing(IntStream.IntMapMultiConsumer.class)).toArray();
 
-        compareResults(expectedResult, actualResult);
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testMapMultiParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.mapMulti(null));
-        assertThrows(NullPointerException.class, () -> actual.mapMulti(null));
+    public void testMapMultiExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "mapMulti", IntStream.IntMapMultiConsumer.class);
     }
 
-    public void testTakeWhile(IntStream expected, IntStream actual) {
-        var expectedResult = expected.takeWhile(failing(IntPredicate.class)).toArray();
+    public void testTakeWhile(IntStream actual, IntStream expected) {
         var actualResult = actual.takeWhile(failing(IntPredicate.class)).toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.takeWhile(failing(IntPredicate.class)).toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testTakeWhileParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.takeWhile(null));
-        assertThrows(NullPointerException.class, () -> actual.takeWhile(null));
+    public void testTakeWhileExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "takeWhile", IntPredicate.class);
     }
 
-    public void testDropWhile(IntStream expected, IntStream actual) {
-        var expectedResult = expected.dropWhile(failing(IntPredicate.class)).toArray();
+    public void testDropWhile(IntStream actual, IntStream expected) {
         var actualResult = actual.dropWhile(failing(IntPredicate.class)).toArray();
-        compareResults(expectedResult, actualResult);
+        var expectedResult = expected.dropWhile(failing(IntPredicate.class)).toArray();
+        compareResults(actualResult, expectedResult);
     }
 
-    public void testDropWhileParameters(IntStream expected, IntStream actual) {
-        assertThrows(NullPointerException.class, () -> expected.dropWhile(null));
-        assertThrows(NullPointerException.class, () -> actual.dropWhile(null));
+    public void testDropWhileExceptions(IntStream actual, IntStream expected) {
+        checkExpectedExceptions(actual, expected, "dropWhile", IntPredicate.class);
     }
 }

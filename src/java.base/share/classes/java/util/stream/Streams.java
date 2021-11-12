@@ -930,179 +930,267 @@ final class Streams {
         };
     }
 
+    private static final int DISTINCT = Spliterator.DISTINCT; // 0x1
+    private static final int OPERATED_ON = 0x2;
+    private static final int SORTED = Spliterator.SORTED; // 0x4
+    private static final int CLOSED = 0x8;
+    private static final int ORDERED = Spliterator.ORDERED; // 0x10
+    private static final int PARALLEL = 0x20;
+    private static final int SIZED = Spliterator.SIZED; // 0x40
+    private static final int NONNULL = Spliterator.NONNULL; // 0x100
+    private static final int IMMUTABLE = Spliterator.IMMUTABLE; // 0x400
+    private static final int CONCURRENT = Spliterator.CONCURRENT; // 0x1000
+    private static final int SUBSIZED = Spliterator.SUBSIZED; // 0x4000
+    private static final int EXTRA_FLAGS = OPERATED_ON | CLOSED | PARALLEL;
 
-    private static final Stream<?> emptyStream = new EmptyStream<>();
-    private static final IntStream emptyIntStream = new EmptyIntStream();
-    private static final LongStream emptyLongStream = new EmptyLongStream();
-    private static final DoubleStream emptyDoubleStream = new EmptyDoubleStream();
+    private static sealed class EmptyBaseStream {
+        private int state = 0;
 
-    static <T> Stream<T> emptyStream() {
-        @SuppressWarnings("unchecked")
-        var stream = (Stream<T>) emptyStream;
-        return stream;
+        public EmptyBaseStream(EmptyBaseStream input) {
+            this.state = input.state & ~(OPERATED_ON);
+        }
+
+        public EmptyBaseStream(Spliterator<?> spliterator) {
+            this.state = spliterator.characteristics();
+        }
+
+        protected final void checkIfOperatedOnOrClosed() {
+            if ((state & (OPERATED_ON | CLOSED)) != 0) {
+                throw new IllegalStateException(
+                        "stream has already been operated upon or closed"
+                );
+            }
+        }
+
+        protected final void checkIfOperatedOnOrClosedAndChangeState() {
+            checkIfOperatedOnOrClosed();
+            state |= OPERATED_ON;
+        }
+
+        protected final void stateDistinct(boolean hasComparator) {
+            state |= DISTINCT;
+            state &= ~(SIZED | SUBSIZED | CONCURRENT | NONNULL | IMMUTABLE);
+            if (hasComparator)
+                state &= ~(SORTED);
+        }
+
+        protected final void stateDistinctPrimitiveStream() {
+            state &= ~(SIZED | SUBSIZED | IMMUTABLE | SORTED);
+        }
+
+        protected void stateSorted() {
+            state |= SORTED | ORDERED;
+            state &= ~(CONCURRENT | NONNULL | IMMUTABLE);
+        }
+
+        protected final boolean isSorted() {
+            return (state & SORTED) == SORTED;
+        }
+
+        protected boolean stateIsUnordered() {
+            return (state & ORDERED) == 0;
+        }
+
+        protected void stateUnordered() {
+            state &= ~ORDERED;
+        }
+
+        protected final int stateBareCharacteristics() {
+            return state & ~EXTRA_FLAGS;
+        }
+
+        public final void close() {
+            // nothing to do
+            state |= CLOSED;
+        }
     }
 
-    static IntStream emptyIntStream() {
-        return emptyIntStream;
-    }
-
-    static LongStream emptyLongStream() {
-        return emptyLongStream;
-    }
-
-    static DoubleStream emptyDoubleStream() {
-        return emptyDoubleStream;
-    }
 
     /**
      * EmptyStream is an optimization to reduce object allocation
      * during stream creation for empty streams. Most of the
      * methods such as filter() and map() will return "this".
      * We have tried to mirror the behavior of the previous
-     * Stream.empty() for spliterator characteristics. If someone
-     * calls parallel() or sorted() then we will create a new
-     * empty stream using the old way of StreamSupport.stream(
-     * spliterator(), false).
+     * Stream.empty() for spliterator characteristics, parallel()
+     * and
+     *
+     * @param <T>
      */
-    private static final class EmptyStream<T> implements Stream<T> {
-        private static <T> Stream<T> createOldEmpty() {
-            return StreamSupport.stream(Spliterators.<T>emptySpliterator(), false);
+    static final class EmptyStream<T> extends EmptyBaseStream implements Stream<T> {
+        private final Comparator<? super T> comparator;
+
+        public EmptyStream(EmptyBaseStream input) {
+            super(input);
+            comparator = null;
+        }
+
+        public EmptyStream(Spliterator<T> spliterator) {
+            super(spliterator);
+            comparator = spliterator.hasCharacteristics(Spliterator.SORTED) ?
+                    spliterator.getComparator() : null;
         }
 
         @Override
         public Stream<T> filter(Predicate<? super T> predicate) {
             Objects.requireNonNull(predicate);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public <R> Stream<R> map(Function<? super T, ? extends R> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public IntStream mapToInt(ToIntFunction<? super T> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyIntStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public LongStream mapToLong(ToLongFunction<? super T> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyLongStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public DoubleStream mapToDouble(ToDoubleFunction<? super T> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyDoubleStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public <R> Stream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyIntStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyLongStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyDoubleStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public <R> Stream<R> mapMulti(BiConsumer<? super T, ? super Consumer<R>> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public IntStream mapMultiToInt(BiConsumer<? super T, ? super IntConsumer> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyIntStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public LongStream mapMultiToLong(BiConsumer<? super T, ? super LongConsumer> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyLongStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public DoubleStream mapMultiToDouble(BiConsumer<? super T, ? super DoubleConsumer> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyDoubleStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public Stream<T> distinct() {
-            return EmptyStream.<T>createOldEmpty().distinct();
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateDistinct(comparator != null);
+            return new EmptyStream<>(this);
         }
 
         @Override
         public Stream<T> sorted() {
-            return EmptyStream.<T>createOldEmpty().sorted();
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateSorted();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public Stream<T> sorted(Comparator<? super T> comparator) {
+            // the check is the other way round to normal
+            checkIfOperatedOnOrClosedAndChangeState();
             Objects.requireNonNull(comparator);
-            return this;
+            return new EmptyStream<>(this);
         }
 
         @Override
         public Stream<T> peek(Consumer<? super T> action) {
             Objects.requireNonNull(action);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public Stream<T> limit(long maxSize) {
             if (maxSize < 0)
                 throw new IllegalArgumentException(Long.toString(maxSize));
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public Stream<T> skip(long n) {
             if (n < 0)
                 throw new IllegalArgumentException(Long.toString(n));
-            return this;
+            if (n == 0) return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public Stream<T> takeWhile(Predicate<? super T> predicate) {
             Objects.requireNonNull(predicate);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public Stream<T> dropWhile(Predicate<? super T> predicate) {
             Objects.requireNonNull(predicate);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public void forEach(Consumer<? super T> action) {
+            checkIfOperatedOnOrClosedAndChangeState();
             Objects.requireNonNull(action);
             // do nothing
         }
 
         @Override
         public void forEachOrdered(Consumer<? super T> action) {
+            checkIfOperatedOnOrClosedAndChangeState();
             Objects.requireNonNull(action);
             // do nothing
         }
@@ -1111,23 +1199,28 @@ final class Streams {
 
         @Override
         public Object[] toArray() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return EMPTY_ARRAY;
         }
 
         @Override
         public <A> A[] toArray(IntFunction<A[]> generator) {
-            return generator.apply(0);
+            checkIfOperatedOnOrClosedAndChangeState();
+            Objects.requireNonNull(generator);
+            return Objects.requireNonNull(generator.apply(0));
         }
 
         @Override
         public T reduce(T identity, BinaryOperator<T> accumulator) {
             Objects.requireNonNull(accumulator);
+            checkIfOperatedOnOrClosedAndChangeState();
             return identity;
         }
 
         @Override
         public Optional<T> reduce(BinaryOperator<T> accumulator) {
             Objects.requireNonNull(accumulator);
+            checkIfOperatedOnOrClosedAndChangeState();
             return Optional.empty();
         }
 
@@ -1135,6 +1228,7 @@ final class Streams {
         public <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner) {
             Objects.requireNonNull(accumulator);
             Objects.requireNonNull(combiner);
+            checkIfOperatedOnOrClosedAndChangeState();
             return identity;
         }
 
@@ -1143,74 +1237,91 @@ final class Streams {
             Objects.requireNonNull(supplier);
             Objects.requireNonNull(accumulator);
             Objects.requireNonNull(combiner);
+            checkIfOperatedOnOrClosedAndChangeState();
             return supplier.get();
         }
 
         @Override
         public <R, A> R collect(Collector<? super T, A, R> collector) {
             Objects.requireNonNull(collector);
+            checkIfOperatedOnOrClosedAndChangeState();
             return collector.finisher().apply(collector.supplier().get());
         }
 
         @Override
         public List<T> toList() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return List.of();
         }
 
         @Override
         public Optional<T> min(Comparator<? super T> comparator) {
             Objects.requireNonNull(comparator);
+            checkIfOperatedOnOrClosedAndChangeState();
             return Optional.empty();
         }
 
         @Override
         public Optional<T> max(Comparator<? super T> comparator) {
             Objects.requireNonNull(comparator);
+            checkIfOperatedOnOrClosedAndChangeState();
             return Optional.empty();
         }
 
         @Override
         public long count() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return 0L;
         }
 
         @Override
         public boolean anyMatch(Predicate<? super T> predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return false;
         }
 
         @Override
         public boolean allMatch(Predicate<? super T> predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return true;
         }
 
         @Override
         public boolean noneMatch(Predicate<? super T> predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return true;
         }
 
         @Override
         public Optional<T> findFirst() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return Optional.empty();
         }
 
         @Override
         public Optional<T> findAny() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return Optional.empty();
         }
 
         @Override
         public Iterator<T> iterator() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return Collections.emptyIterator();
         }
 
         @Override
         public Spliterator<T> spliterator() {
-            return Spliterators.emptySpliterator();
+            checkIfOperatedOnOrClosedAndChangeState();
+            if (isSorted())
+                return new EmptySpliterator.OfRefSorted<>(stateBareCharacteristics(), comparator);
+            else
+                return new EmptySpliterator.OfRef<>(stateBareCharacteristics());
         }
+
 
         @Override
         public boolean isParallel() {
@@ -1224,128 +1335,169 @@ final class Streams {
 
         @Override
         public Stream<T> parallel() {
-            return EmptyStream.<T>createOldEmpty().parallel();
+            return StreamSupport.stream(spliterator(), true);
         }
 
         @Override
         public Stream<T> unordered() {
-            // Since our characteristics are already not ORDERED,
-            // we do not need to change anything.
-            return this;
+            checkIfOperatedOnOrClosed();
+            if (super.stateIsUnordered()) return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateUnordered();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public Stream<T> onClose(Runnable closeHandler) {
-            return EmptyStream.<T>createOldEmpty().onClose(closeHandler);
-        }
-
-        @Override
-        public void close() {
-            // nothing to do
+            return StreamSupport.stream(
+                    spliterator(), isParallel()
+            ).onClose(closeHandler);
         }
     }
 
-    /**
-     * The EmptyIntStream is equivalent to the EmptyStream - to
-     * optimize empty stream processing, but for IntStreams.
-     */
-    private static final class EmptyIntStream implements IntStream {
-        private static IntStream createOldEmpty() {
-            return StreamSupport.intStream(
-                Spliterators.emptyIntSpliterator(), false);
+    static final class EmptyIntStream extends EmptyBaseStream implements IntStream {
+        public EmptyIntStream(EmptyBaseStream input) {
+            super(input);
+        }
+
+        public EmptyIntStream(Spliterator.OfInt spliterator) {
+            super(spliterator);
         }
 
         @Override
         public IntStream filter(IntPredicate predicate) {
             Objects.requireNonNull(predicate);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public IntStream map(IntUnaryOperator mapper) {
             Objects.requireNonNull(mapper);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public <U> Stream<U> mapToObj(IntFunction<? extends U> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public LongStream mapToLong(IntToLongFunction mapper) {
             Objects.requireNonNull(mapper);
-            return emptyLongStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public DoubleStream mapToDouble(IntToDoubleFunction mapper) {
             Objects.requireNonNull(mapper);
-            return emptyDoubleStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public IntStream flatMap(IntFunction<? extends IntStream> mapper) {
             Objects.requireNonNull(mapper);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
+        }
+
+        @Override
+        public IntStream mapMulti(IntMapMultiConsumer mapper) {
+            Objects.requireNonNull(mapper);
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public IntStream distinct() {
-            return createOldEmpty().distinct();
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateDistinctPrimitiveStream();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public IntStream sorted() {
-            return createOldEmpty().sorted();
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateSorted();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public IntStream peek(IntConsumer action) {
             Objects.requireNonNull(action);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public IntStream limit(long maxSize) {
             if (maxSize < 0)
-                throw new IllegalArgumentException("maxSize < 0");
-            return this;
+                throw new IllegalArgumentException(Long.toString(maxSize));
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public IntStream skip(long n) {
-            if (n < 0) throw new IllegalArgumentException("n < 0");
-            return this;
+            if (n < 0)
+                throw new IllegalArgumentException(Long.toString(n));
+            if (n == 0) return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
+        }
+
+        @Override
+        public IntStream takeWhile(IntPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
+        }
+
+        @Override
+        public IntStream dropWhile(IntPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public void forEach(IntConsumer action) {
+            checkIfOperatedOnOrClosedAndChangeState();
             Objects.requireNonNull(action);
+            // do nothing
         }
 
         @Override
         public void forEachOrdered(IntConsumer action) {
+            checkIfOperatedOnOrClosedAndChangeState();
             Objects.requireNonNull(action);
+            // do nothing
         }
 
-        private static final int[] EMPTY_INT_ARRAY = {};
+        private static final int[] EMPTY_ARRAY = {};
 
         @Override
         public int[] toArray() {
-            return EMPTY_INT_ARRAY;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return EMPTY_ARRAY;
         }
 
         @Override
         public int reduce(int identity, IntBinaryOperator op) {
             Objects.requireNonNull(op);
+            checkIfOperatedOnOrClosedAndChangeState();
             return identity;
         }
 
         @Override
         public OptionalInt reduce(IntBinaryOperator op) {
             Objects.requireNonNull(op);
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalInt.empty();
         }
 
@@ -1354,80 +1506,90 @@ final class Streams {
             Objects.requireNonNull(supplier);
             Objects.requireNonNull(accumulator);
             Objects.requireNonNull(combiner);
+            checkIfOperatedOnOrClosedAndChangeState();
             return supplier.get();
         }
 
         @Override
-        public int sum() {
-            return 0;
-        }
-
-        @Override
         public OptionalInt min() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalInt.empty();
         }
 
         @Override
         public OptionalInt max() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalInt.empty();
         }
 
         @Override
         public long count() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return 0L;
-        }
-
-        @Override
-        public OptionalDouble average() {
-            return OptionalDouble.empty();
-        }
-
-        @Override
-        public IntSummaryStatistics summaryStatistics() {
-            return new IntSummaryStatistics();
         }
 
         @Override
         public boolean anyMatch(IntPredicate predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return false;
         }
 
         @Override
         public boolean allMatch(IntPredicate predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return true;
         }
 
         @Override
         public boolean noneMatch(IntPredicate predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return true;
         }
 
         @Override
         public OptionalInt findFirst() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalInt.empty();
         }
 
         @Override
         public OptionalInt findAny() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalInt.empty();
         }
 
+        private static final PrimitiveIterator.OfInt EMPTY_ITERATOR =
+                new PrimitiveIterator.OfInt() {
+                    @Override
+                    public int nextInt() {
+                        throw new NoSuchElementException();
+                    }
+
+                    @Override
+                    public boolean hasNext() {
+                        return false;
+                    }
+                };
+
+
         @Override
-        public LongStream asLongStream() {
-            return emptyLongStream();
+        public PrimitiveIterator.OfInt iterator() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return EMPTY_ITERATOR;
         }
 
         @Override
-        public DoubleStream asDoubleStream() {
-            return emptyDoubleStream();
+        public Spliterator.OfInt spliterator() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptySpliterator.OfInt(stateBareCharacteristics());
         }
 
         @Override
-        public Stream<Integer> boxed() {
-            return emptyStream();
+        public boolean isParallel() {
+            return false;
         }
 
         @Override
@@ -1437,172 +1599,204 @@ final class Streams {
 
         @Override
         public IntStream parallel() {
-            return createOldEmpty().parallel();
-        }
-
-        private static final PrimitiveIterator.OfInt EMPTY_ITERATOR =
-            new PrimitiveIterator.OfInt() {
-                @Override
-                public int nextInt() {
-                    throw new NoSuchElementException();
-                }
-
-                @Override
-                public boolean hasNext() {
-                    return false;
-                }
-            };
-
-        @Override
-        public PrimitiveIterator.OfInt iterator() {
-            return EMPTY_ITERATOR;
-        }
-
-        @Override
-        public Spliterator.OfInt spliterator() {
-            return Spliterators.emptyIntSpliterator();
-        }
-
-        @Override
-        public boolean isParallel() {
-            return false;
+            return StreamSupport.intStream(spliterator(), true);
         }
 
         @Override
         public IntStream unordered() {
-            return this;
+            if (super.stateIsUnordered()) return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateUnordered();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public IntStream onClose(Runnable closeHandler) {
-            return createOldEmpty().onClose(closeHandler);
+            return StreamSupport.intStream(
+                    spliterator(), isParallel()
+            ).onClose(closeHandler);
         }
 
         @Override
-        public void close() {
-            // do nothing
+        public int sum() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return 0;
         }
 
         @Override
-        public IntStream mapMulti(IntMapMultiConsumer mapper) {
-            Objects.requireNonNull(mapper);
-            return this;
+        public OptionalDouble average() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return OptionalDouble.empty();
         }
 
         @Override
-        public IntStream takeWhile(IntPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            return this;
+        public IntSummaryStatistics summaryStatistics() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new IntSummaryStatistics();
         }
 
         @Override
-        public IntStream dropWhile(IntPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            return this;
+        public LongStream asLongStream() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
+        }
+
+        @Override
+        public DoubleStream asDoubleStream() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
+        }
+
+        @Override
+        public Stream<Integer> boxed() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
     }
 
-    /**
-     * The EmptyLongStream is equivalent to the EmptyStream - to
-     * optimize empty stream processing, but for LongStreams.
-     */
-    private static final class EmptyLongStream implements LongStream {
-        private static LongStream createOldEmpty() {
-            return StreamSupport.longStream(
-                Spliterators.emptyLongSpliterator(), false);
+    static final class EmptyLongStream extends EmptyBaseStream implements LongStream {
+        public EmptyLongStream(EmptyBaseStream input) {
+            super(input);
+        }
+
+        public EmptyLongStream(Spliterator.OfLong spliterator) {
+            super(spliterator);
         }
 
         @Override
         public LongStream filter(LongPredicate predicate) {
             Objects.requireNonNull(predicate);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public LongStream map(LongUnaryOperator mapper) {
             Objects.requireNonNull(mapper);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public <U> Stream<U> mapToObj(LongFunction<? extends U> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public IntStream mapToInt(LongToIntFunction mapper) {
             Objects.requireNonNull(mapper);
-            return emptyIntStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public DoubleStream mapToDouble(LongToDoubleFunction mapper) {
             Objects.requireNonNull(mapper);
-            return emptyDoubleStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public LongStream flatMap(LongFunction<? extends LongStream> mapper) {
             Objects.requireNonNull(mapper);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
+        }
+
+        @Override
+        public LongStream mapMulti(LongMapMultiConsumer mapper) {
+            Objects.requireNonNull(mapper);
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public LongStream distinct() {
-            return createOldEmpty().distinct();
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateDistinctPrimitiveStream();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public LongStream sorted() {
-            return createOldEmpty().sorted();
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateSorted();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public LongStream peek(LongConsumer action) {
             Objects.requireNonNull(action);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public LongStream limit(long maxSize) {
             if (maxSize < 0)
-                throw new IllegalArgumentException("maxSize < 0");
-            return this;
+                throw new IllegalArgumentException(Long.toString(maxSize));
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public LongStream skip(long n) {
-            if (n < 0) throw new IllegalArgumentException("n < 0");
-            return this;
+            if (n < 0)
+                throw new IllegalArgumentException(Long.toString(n));
+            if (n == 0) return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
+        }
+
+        @Override
+        public LongStream takeWhile(LongPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
+        }
+
+        @Override
+        public LongStream dropWhile(LongPredicate predicate) {
+            Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public void forEach(LongConsumer action) {
+            checkIfOperatedOnOrClosedAndChangeState();
             Objects.requireNonNull(action);
+            // do nothing
         }
 
         @Override
         public void forEachOrdered(LongConsumer action) {
+            checkIfOperatedOnOrClosedAndChangeState();
             Objects.requireNonNull(action);
+            // do nothing
         }
 
-        private static final long[] EMPTY_LONG_ARRAY = {};
+        private static final long[] EMPTY_ARRAY = {};
 
         @Override
         public long[] toArray() {
-            return EMPTY_LONG_ARRAY;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return EMPTY_ARRAY;
         }
 
         @Override
         public long reduce(long identity, LongBinaryOperator op) {
             Objects.requireNonNull(op);
+            checkIfOperatedOnOrClosedAndChangeState();
             return identity;
         }
 
         @Override
         public OptionalLong reduce(LongBinaryOperator op) {
             Objects.requireNonNull(op);
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalLong.empty();
         }
 
@@ -1611,75 +1805,90 @@ final class Streams {
             Objects.requireNonNull(supplier);
             Objects.requireNonNull(accumulator);
             Objects.requireNonNull(combiner);
+            checkIfOperatedOnOrClosedAndChangeState();
             return supplier.get();
         }
 
         @Override
-        public long sum() {
-            return 0;
-        }
-
-        @Override
         public OptionalLong min() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalLong.empty();
         }
 
         @Override
         public OptionalLong max() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalLong.empty();
         }
 
         @Override
         public long count() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return 0L;
-        }
-
-        @Override
-        public OptionalDouble average() {
-            return OptionalDouble.empty();
-        }
-
-        @Override
-        public LongSummaryStatistics summaryStatistics() {
-            return new LongSummaryStatistics();
         }
 
         @Override
         public boolean anyMatch(LongPredicate predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return false;
         }
 
         @Override
         public boolean allMatch(LongPredicate predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return true;
         }
 
         @Override
         public boolean noneMatch(LongPredicate predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return true;
         }
 
         @Override
         public OptionalLong findFirst() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalLong.empty();
         }
 
         @Override
         public OptionalLong findAny() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalLong.empty();
         }
 
+        private static final PrimitiveIterator.OfLong EMPTY_ITERATOR =
+                new PrimitiveIterator.OfLong() {
+                    @Override
+                    public long nextLong() {
+                        throw new NoSuchElementException();
+                    }
+
+                    @Override
+                    public boolean hasNext() {
+                        return false;
+                    }
+                };
+
+
         @Override
-        public DoubleStream asDoubleStream() {
-            return emptyDoubleStream();
+        public PrimitiveIterator.OfLong iterator() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return EMPTY_ITERATOR;
         }
 
         @Override
-        public Stream<Long> boxed() {
-            return emptyStream();
+        public Spliterator.OfLong spliterator() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptySpliterator.OfLong(stateBareCharacteristics());
+        }
+
+        @Override
+        public boolean isParallel() {
+            return false;
         }
 
         @Override
@@ -1689,172 +1898,198 @@ final class Streams {
 
         @Override
         public LongStream parallel() {
-            return createOldEmpty().parallel();
-        }
-
-        private static final PrimitiveIterator.OfLong EMPTY_ITERATOR =
-            new PrimitiveIterator.OfLong() {
-                @Override
-                public long nextLong() {
-                    throw new NoSuchElementException();
-                }
-
-                @Override
-                public boolean hasNext() {
-                    return false;
-                }
-            };
-
-        @Override
-        public PrimitiveIterator.OfLong iterator() {
-            return EMPTY_ITERATOR;
-        }
-
-        @Override
-        public Spliterator.OfLong spliterator() {
-            return Spliterators.emptyLongSpliterator();
-        }
-
-        @Override
-        public boolean isParallel() {
-            return false;
+            return StreamSupport.longStream(spliterator(), true);
         }
 
         @Override
         public LongStream unordered() {
-            return this;
+            if (super.stateIsUnordered()) return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateUnordered();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public LongStream onClose(Runnable closeHandler) {
-            return createOldEmpty().onClose(closeHandler);
+            return StreamSupport.longStream(
+                    spliterator(), isParallel()
+            ).onClose(closeHandler);
         }
 
         @Override
-        public void close() {
-            // do nothing
+        public long sum() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return 0;
         }
 
         @Override
-        public LongStream mapMulti(LongMapMultiConsumer mapper) {
-            Objects.requireNonNull(mapper);
-            return this;
+        public OptionalDouble average() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return OptionalDouble.empty();
         }
 
         @Override
-        public LongStream takeWhile(LongPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            return this;
+        public LongSummaryStatistics summaryStatistics() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new LongSummaryStatistics();
         }
 
         @Override
-        public LongStream dropWhile(LongPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            return this;
+        public DoubleStream asDoubleStream() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
+        }
+
+        @Override
+        public Stream<Long> boxed() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
     }
 
-    /**
-     * The EmptyDoubleStream is equivalent to the EmptyStream - to
-     * optimize empty stream processing, but for DoubleStreams.
-     */
-    private static final class EmptyDoubleStream implements DoubleStream {
-        private static DoubleStream createOldEmpty() {
-            return StreamSupport.doubleStream(
-                Spliterators.emptyDoubleSpliterator(), false);
+    static final class EmptyDoubleStream extends EmptyBaseStream implements DoubleStream {
+        public EmptyDoubleStream(EmptyBaseStream input) {
+            super(input);
+        }
+
+        public EmptyDoubleStream(Spliterator.OfDouble spliterator) {
+            super(spliterator);
         }
 
         @Override
         public DoubleStream filter(DoublePredicate predicate) {
             Objects.requireNonNull(predicate);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public DoubleStream map(DoubleUnaryOperator mapper) {
             Objects.requireNonNull(mapper);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public <U> Stream<U> mapToObj(DoubleFunction<? extends U> mapper) {
             Objects.requireNonNull(mapper);
-            return emptyStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
         }
 
         @Override
         public IntStream mapToInt(DoubleToIntFunction mapper) {
             Objects.requireNonNull(mapper);
-            return emptyIntStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyIntStream(this);
         }
 
         @Override
         public LongStream mapToLong(DoubleToLongFunction mapper) {
             Objects.requireNonNull(mapper);
-            return emptyLongStream();
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyLongStream(this);
         }
 
         @Override
         public DoubleStream flatMap(DoubleFunction<? extends DoubleStream> mapper) {
             Objects.requireNonNull(mapper);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
+        }
+
+        @Override
+        public DoubleStream mapMulti(DoubleMapMultiConsumer mapper) {
+            Objects.requireNonNull(mapper);
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public DoubleStream distinct() {
-            return createOldEmpty().distinct();
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateDistinctPrimitiveStream();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public DoubleStream sorted() {
-            return createOldEmpty().sorted();
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateSorted();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public DoubleStream peek(DoubleConsumer action) {
             Objects.requireNonNull(action);
-            return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public DoubleStream limit(long maxSize) {
             if (maxSize < 0)
-                throw new IllegalArgumentException("maxSize < 0");
-            return this;
+                throw new IllegalArgumentException(Double.toString(maxSize));
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public DoubleStream skip(long n) {
-            if (n < 0) throw new IllegalArgumentException("n < 0");
-            return this;
+            if (n < 0)
+                throw new IllegalArgumentException(Double.toString(n));
+            if (n == 0) return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
+        }
+
+        @Override
+        public DoubleStream takeWhile(DoublePredicate predicate) {
+            Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
+        }
+
+        @Override
+        public DoubleStream dropWhile(DoublePredicate predicate) {
+            Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public void forEach(DoubleConsumer action) {
+            checkIfOperatedOnOrClosedAndChangeState();
             Objects.requireNonNull(action);
+            // do nothing
         }
 
         @Override
         public void forEachOrdered(DoubleConsumer action) {
+            checkIfOperatedOnOrClosedAndChangeState();
             Objects.requireNonNull(action);
+            // do nothing
         }
 
-        private static final double[] EMPTY_DOUBLE_ARRAY = {};
+        private static final double[] EMPTY_ARRAY = {};
 
         @Override
         public double[] toArray() {
-            return EMPTY_DOUBLE_ARRAY;
+            checkIfOperatedOnOrClosedAndChangeState();
+            return EMPTY_ARRAY;
         }
 
         @Override
         public double reduce(double identity, DoubleBinaryOperator op) {
             Objects.requireNonNull(op);
+            checkIfOperatedOnOrClosedAndChangeState();
             return identity;
         }
 
         @Override
         public OptionalDouble reduce(DoubleBinaryOperator op) {
             Objects.requireNonNull(op);
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalDouble.empty();
         }
 
@@ -1863,70 +2098,90 @@ final class Streams {
             Objects.requireNonNull(supplier);
             Objects.requireNonNull(accumulator);
             Objects.requireNonNull(combiner);
+            checkIfOperatedOnOrClosedAndChangeState();
             return supplier.get();
         }
 
         @Override
-        public double sum() {
-            return 0;
-        }
-
-        @Override
         public OptionalDouble min() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalDouble.empty();
         }
 
         @Override
         public OptionalDouble max() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalDouble.empty();
         }
 
         @Override
         public long count() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return 0L;
-        }
-
-        @Override
-        public OptionalDouble average() {
-            return OptionalDouble.empty();
-        }
-
-        @Override
-        public DoubleSummaryStatistics summaryStatistics() {
-            return new DoubleSummaryStatistics();
         }
 
         @Override
         public boolean anyMatch(DoublePredicate predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return false;
         }
 
         @Override
         public boolean allMatch(DoublePredicate predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return true;
         }
 
         @Override
         public boolean noneMatch(DoublePredicate predicate) {
             Objects.requireNonNull(predicate);
+            checkIfOperatedOnOrClosedAndChangeState();
             return true;
         }
 
         @Override
         public OptionalDouble findFirst() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalDouble.empty();
         }
 
         @Override
         public OptionalDouble findAny() {
+            checkIfOperatedOnOrClosedAndChangeState();
             return OptionalDouble.empty();
         }
 
+        private static final PrimitiveIterator.OfDouble EMPTY_ITERATOR =
+                new PrimitiveIterator.OfDouble() {
+                    @Override
+                    public double nextDouble() {
+                        throw new NoSuchElementException();
+                    }
+
+                    @Override
+                    public boolean hasNext() {
+                        return false;
+                    }
+                };
+
+
         @Override
-        public Stream<Double> boxed() {
-            return emptyStream();
+        public PrimitiveIterator.OfDouble iterator() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return EMPTY_ITERATOR;
+        }
+
+        @Override
+        public Spliterator.OfDouble spliterator() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptySpliterator.OfDouble(stateBareCharacteristics());
+        }
+
+        @Override
+        public boolean isParallel() {
+            return false;
         }
 
         @Override
@@ -1936,68 +2191,125 @@ final class Streams {
 
         @Override
         public DoubleStream parallel() {
-            return createOldEmpty().parallel();
-        }
-
-        private static final PrimitiveIterator.OfDouble EMPTY_ITERATOR =
-            new PrimitiveIterator.OfDouble() {
-                @Override
-                public double nextDouble() {
-                    throw new NoSuchElementException();
-                }
-
-                @Override
-                public boolean hasNext() {
-                    return false;
-                }
-            };
-
-        @Override
-        public PrimitiveIterator.OfDouble iterator() {
-            return EMPTY_ITERATOR;
-        }
-
-        @Override
-        public Spliterator.OfDouble spliterator() {
-            return Spliterators.emptyDoubleSpliterator();
-        }
-
-        @Override
-        public boolean isParallel() {
-            return false;
+            return StreamSupport.doubleStream(spliterator(), true);
         }
 
         @Override
         public DoubleStream unordered() {
-            return this;
+            if (super.stateIsUnordered()) return this;
+            checkIfOperatedOnOrClosedAndChangeState();
+            super.stateUnordered();
+            return new EmptyDoubleStream(this);
         }
 
         @Override
         public DoubleStream onClose(Runnable closeHandler) {
-            return createOldEmpty().onClose(closeHandler);
+            return StreamSupport.doubleStream(
+                    spliterator(), isParallel()
+            ).onClose(closeHandler);
         }
 
         @Override
-        public void close() {
-            // do nothing
+        public double sum() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return 0;
         }
 
         @Override
-        public DoubleStream mapMulti(DoubleMapMultiConsumer mapper) {
-            Objects.requireNonNull(mapper);
-            return this;
+        public OptionalDouble average() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return OptionalDouble.empty();
         }
 
         @Override
-        public DoubleStream takeWhile(DoublePredicate predicate) {
-            Objects.requireNonNull(predicate);
-            return this;
+        public DoubleSummaryStatistics summaryStatistics() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new DoubleSummaryStatistics();
         }
 
         @Override
-        public DoubleStream dropWhile(DoublePredicate predicate) {
-            Objects.requireNonNull(predicate);
-            return this;
+        public Stream<Double> boxed() {
+            checkIfOperatedOnOrClosedAndChangeState();
+            return new EmptyStream<>(this);
+        }
+    }
+
+    private abstract static class EmptySpliterator<T, S extends Spliterator<T>, C> {
+        private final int characteristics;
+
+        EmptySpliterator(int characteristics) {
+            this.characteristics = characteristics;
+        }
+
+        public S trySplit() {
+            return null;
+        }
+
+        public boolean tryAdvance(C consumer) {
+            Objects.requireNonNull(consumer);
+            return false;
+        }
+
+        public void forEachRemaining(C consumer) {
+            Objects.requireNonNull(consumer);
+        }
+
+        public long estimateSize() {
+            return 0;
+        }
+
+        public int characteristics() {
+            return characteristics;
+        }
+
+        private static final class OfRef<T>
+                extends EmptySpliterator<T, Spliterator<T>, Consumer<? super T>>
+                implements Spliterator<T> {
+            OfRef(int characteristics) {
+                super(characteristics);
+            }
+        }
+
+        private static final class OfRefSorted<T>
+                extends EmptySpliterator<T, Spliterator<T>, Consumer<? super T>>
+                implements Spliterator<T> {
+            private final Comparator<? super T> comparator;
+
+            OfRefSorted(int characteristics, Comparator<? super T> comparator) {
+                super(characteristics);
+                if (!hasCharacteristics(SORTED))
+                    throw new IllegalArgumentException("Spliterator only for SORTED");
+                this.comparator = comparator;
+            }
+
+            @Override
+            public Comparator<? super T> getComparator() {
+                return comparator;
+            }
+        }
+
+        private static final class OfInt
+                extends EmptySpliterator<Integer, Spliterator.OfInt, IntConsumer>
+                implements Spliterator.OfInt {
+            OfInt(int characteristics) {
+                super(characteristics);
+            }
+        }
+
+        private static final class OfLong
+                extends EmptySpliterator<Long, Spliterator.OfLong, LongConsumer>
+                implements Spliterator.OfLong {
+            OfLong(int characteristics) {
+                super(characteristics);
+            }
+        }
+
+        private static final class OfDouble
+                extends EmptySpliterator<Double, Spliterator.OfDouble, DoubleConsumer>
+                implements Spliterator.OfDouble {
+            OfDouble(int characteristics) {
+                super(characteristics);
+            }
         }
     }
 }

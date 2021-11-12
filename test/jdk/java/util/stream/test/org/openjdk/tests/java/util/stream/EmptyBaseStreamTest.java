@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -41,11 +42,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.BaseStream;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static org.testng.Assert.*;
 
@@ -59,7 +60,8 @@ import static org.testng.Assert.*;
  * ensure that they are exactly the same as before.
  * <p>
  * Implementations of this class have to implement the testAll()
- * method, in which we would call {@link BaseStreamTest#compare(Class, Supplier, Supplier)}
+ * method, in which we would call
+ * {@link EmptyBaseStreamTest#compare(Class, Supplier, Supplier)}
  * The BaseStreamTest checks the methods in the BaseStream,
  * such as parallel(), unordered(), spliterator(), iterator(),
  * onClose(), etc. Subclasses implement the testAll() method
@@ -67,9 +69,9 @@ import static org.testng.Assert.*;
  *
  * @author Heinz Kabutz heinz@javaspecialists.eu
  */
-sealed abstract class EmptyBaseStreamTest permits
-        EmptyStreamTest, EmptyIntStreamTest,
-        EmptyLongStreamTest, EmptyDoubleStreamTest {
+
+sealed abstract class EmptyBaseStreamTest permits EmptyDoubleStreamTest,
+        EmptyIntStreamTest, EmptyLongStreamTest, EmptyStreamTest {
     @Test
     public abstract void testAll();
 
@@ -92,16 +94,16 @@ sealed abstract class EmptyBaseStreamTest permits
      *
      * @param type             the type of parameters to find test
      *                         methods for
-     * @param expectedSupplier creates the expected stream
      * @param actualSupplier   creates the actual stream
+     * @param expectedSupplier creates the expected stream
      * @throws ReflectiveOperationException
      */
-    protected final <E> void compare(Class<?> type,
-                                 Supplier<?> expectedSupplier,
-                                 Supplier<?> actualSupplier) {
+    protected final void compare(Class<?> type,
+                                 Supplier<?> actualSupplier,
+                                 Supplier<?> expectedSupplier) {
         if (type == null) return;
         for (Class<?> superInterface : type.getInterfaces()) {
-            compare(superInterface, expectedSupplier, actualSupplier);
+            compare(superInterface, actualSupplier, expectedSupplier);
         }
         try {
             Class<?>[] parameterTypes = {type, type};
@@ -110,8 +112,8 @@ sealed abstract class EmptyBaseStreamTest permits
                         method.getParameterCount() == 2 &&
                         Arrays.equals(parameterTypes,
                                 method.getParameterTypes())) {
-                    method.invoke(this, expectedSupplier.get(),
-                            actualSupplier.get());
+                    method.invoke(this, actualSupplier.get(),
+                            expectedSupplier.get());
                 }
             }
         } catch (InvocationTargetException e) {
@@ -127,30 +129,109 @@ sealed abstract class EmptyBaseStreamTest permits
         }
     }
 
-    protected final void compareResults(Object expected, Object actual) {
-        assertSame(expected.getClass(), actual.getClass());
-        if (expected instanceof List<?> expectedList
-                && actual instanceof List<?> actualList) {
-            assertEquals(expectedList, actualList);
+    private static final Map<Class<?>, Object> magicMap = Map.of(
+            int.class, 42,
+            long.class, 42L,
+            double.class, 42.0
+    );
+
+    private Object createMagic(Class<?> type) {
+        return magicMap.getOrDefault(type, magicMap.get(int.class));
+    }
+
+    protected final Class<? extends Throwable> getThrowableType(ThrowingRunnable runnable) {
+        try {
+            runnable.run();
+            return null;
+        } catch (Throwable e) {
+            return e.getClass();
+        }
+    }
+
+    protected final void checkExpectedExceptions(
+            BaseStream<?, ?> actual, BaseStream<?, ?> expected,
+            String methodName, Class<?>... parameterTypes) {
+        try {
+            Method method = findMethod(actual, methodName, parameterTypes);
+            Object[] parameters = Arrays.stream(parameterTypes)
+                    .map(type -> type.isInterface() ? failing(type) : createMagic(type))
+                    .toArray();
+            invokeWithNullParameters(actual, expected, method, parameters);
+            checkExceptionsAreTheSame(actual, expected, method, parameters);
+            invokeWithNullParameters(actual, expected, method, parameters);
+            checkExceptionsAreTheSame(actual, expected, method, parameters);
+            invokeWithNullParameters(actual, expected, method, parameters);
+            checkExceptionsAreTheSame(actual, expected, method, parameters);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private void checkExceptionsAreTheSame(BaseStream<?, ?> actual, BaseStream<?, ?> expected, Method method, Object[] parameters) {
+        var actualExceptionType = getThrowableType(actual, method, parameters);
+        var expectedExceptionType = getThrowableType(expected, method, parameters);
+        assertSame(actualExceptionType, expectedExceptionType,
+                getExpectedExceptionMessage(actualExceptionType, expectedExceptionType, method, parameters));
+    }
+
+    private String getExpectedExceptionMessage(Class<?> actualExceptionType, Class<?> expectedExceptionType, Method method, Object[] parameters) {
+        return "Got " + (actualExceptionType == null ? "no exception" : actualExceptionType.getName())
+                + " from method " + method.getName() +
+                (Arrays.stream(parameters).map(o -> o == null ? "null" : "?")
+                        .collect(Collectors.joining(", ", "(", ")"))) +
+                " but was hoping for " + (expectedExceptionType == null ? "no exception" : expectedExceptionType.getName());
+    }
+
+    private void invokeWithNullParameters(BaseStream<?, ?> actual, BaseStream<?, ?> expected,
+                                          Method method, Object[] parameters) {
+        for (int i = 0; i < parameters.length; i++) {
+            if (!(parameters[i] instanceof Number)) {
+                Object savedParameter = parameters[i];
+                parameters[i] = null;
+                var actualThrowable = getThrowableType(actual, method, parameters);
+                var expectedThrowable = getThrowableType(expected, method, parameters);
+                assertSame(actualThrowable, expectedThrowable,
+                        getExpectedExceptionMessage(actualThrowable, expectedThrowable, method, parameters));
+                parameters[i] = savedParameter;
+            }
+        }
+    }
+
+    private Class<?> getThrowableType(BaseStream<?, ?> stream, Method method, Object[] parameters) {
+        try {
+            method.invoke(stream, parameters);
+        } catch (InvocationTargetException ite) {
+            return ite.getCause().getClass();
+        } catch (IllegalAccessException e) {
+            return e.getClass();
+        }
+        return null;
+    }
+
+    protected final void compareResults(Object actual, Object expected) {
+        assertSame(actual.getClass(), expected.getClass());
+        if (actual instanceof List<?> actualList
+                && expected instanceof List<?> expectedList) {
+            assertEquals(actualList, expectedList);
             assertTrue(actualList.isEmpty());
-        } else if (expected.getClass().isArray() && actual.getClass()
-                .isArray()) {
-            assertEquals(Array.getLength(expected), Array.getLength(actual));
-        } else if (expected instanceof Optional<?> expectedOptional
-                && actual instanceof Optional<?> actualOptional) {
-            assertEquals(expectedOptional, actualOptional);
+        } else if (actual.getClass().isArray()
+                && expected.getClass().isArray()) {
+            assertEquals(Array.getLength(actual), Array.getLength(expected));
+        } else if (actual instanceof Optional<?> actualOptional
+                && expected instanceof Optional<?> expectedOptional) {
+            assertEquals(actualOptional, expectedOptional);
             assertTrue(actualOptional.isEmpty());
-        } else if (expected instanceof OptionalInt expectedOptional
-                && actual instanceof OptionalInt actualOptional) {
-            assertEquals(expectedOptional, actualOptional);
+        } else if (actual instanceof OptionalInt actualOptional
+                && expected instanceof OptionalInt expectedOptional) {
+            assertEquals(actualOptional, expectedOptional);
             assertTrue(actualOptional.isEmpty());
-        } else if (expected instanceof OptionalLong expectedOptional
-                && actual instanceof OptionalLong actualOptional) {
-            assertEquals(expectedOptional, actualOptional);
+        } else if (actual instanceof OptionalLong actualOptional
+                && expected instanceof OptionalLong expectedOptional) {
+            assertEquals(actualOptional, expectedOptional);
             assertTrue(actualOptional.isEmpty());
-        } else if (expected instanceof OptionalDouble expectedOptional
-                && actual instanceof OptionalDouble actualOptional) {
-            assertEquals(expectedOptional, actualOptional);
+        } else if (actual instanceof OptionalDouble actualOptional
+                && expected instanceof OptionalDouble expectedOptional) {
+            assertEquals(actualOptional, expectedOptional);
             assertTrue(actualOptional.isEmpty());
         } else {
             throw new IllegalArgumentException("Invalid parameter types");
@@ -159,99 +240,132 @@ sealed abstract class EmptyBaseStreamTest permits
 
     ///// Methods from BaseStream
 
-    public final void testIterator(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
-        var expectedResult = expected.iterator();
+    public final void testIterator(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         var actualResult = actual.iterator();
-        assertEquals(expectedResult.hasNext(), actualResult.hasNext());
-        assertThrows(NoSuchElementException.class, expectedResult::next);
+        var expectedResult = expected.iterator();
+        assertEquals(actualResult.hasNext(), expectedResult.hasNext());
         assertThrows(NoSuchElementException.class, actualResult::next);
-        try {
-            expectedResult.remove();
-            fail();
-        } catch (IllegalStateException | UnsupportedOperationException ignore) {
-        }
+        assertThrows(NoSuchElementException.class, expectedResult::next);
         try {
             actualResult.remove();
             fail();
         } catch (IllegalStateException | UnsupportedOperationException ignore) {
         }
+        try {
+            expectedResult.remove();
+            fail();
+        } catch (IllegalStateException | UnsupportedOperationException ignore) {
+        }
     }
 
-    public final void testSequential(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
-        expected = expected.sequential().parallel().sequential();
+    public final void testIteratorCannotBeCalledAgain(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
+        checkExpectedExceptions(actual, expected, "iterator");
+    }
+
+    public final void testSequential(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         actual = actual.sequential().parallel().sequential();
-        var expectedResult = expected.isParallel();
+        expected = expected.sequential().parallel().sequential();
         var actualResult = actual.isParallel();
-        assertEquals(expectedResult, actualResult);
+        var expectedResult = expected.isParallel();
+        assertEquals(actualResult, expectedResult);
         assertFalse(actualResult);
     }
 
-    public final void testSequentialIgnoringExpected(BaseStream<?, ?> ignored, BaseStream<?, ?> actual) {
+    public final void testSequentialIgnoringExpected(BaseStream<?, ?> actual, BaseStream<?, ?> ignored) {
         assertSame(actual, actual.sequential());
     }
 
-    public final void testParallelAndIsParallel(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testParallelAndIsParallel(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // The correct way of invoking parallel is to have it inside
         // a call chain, since we might return a new stream (in our
         // emptyStream() case we do)
-        expected = expected.parallel();
         actual = actual.parallel();
-        var expectedResult = expected.isParallel();
+        expected = expected.parallel();
         var actualResult = actual.isParallel();
-        assertEquals(expectedResult, actualResult);
+        var expectedResult = expected.isParallel();
+        assertEquals(actualResult, expectedResult);
         assertTrue(actualResult);
     }
 
-    public final void testUnordered(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
-        var expectedResult = expected.unordered().spliterator();
+    public final void testUnordered(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         var actualResult = actual.unordered().spliterator();
-        assertEquals(expectedResult.hasCharacteristics(Spliterator.ORDERED),
-                actualResult.hasCharacteristics(Spliterator.ORDERED));
+        var expectedResult = expected.unordered().spliterator();
+        assertEquals(actualResult.hasCharacteristics(Spliterator.ORDERED),
+                expectedResult.hasCharacteristics(Spliterator.ORDERED));
         assertFalse(actualResult.hasCharacteristics(Spliterator.ORDERED));
     }
 
-    public final void testOnCloseAndClose(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
-        var expectedResult = new AtomicBoolean(false);
+    public final void testUnorderedExceptions(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
+        checkExpectedExceptions(actual, expected, "unordered");
+    }
+
+    public final void testOnCloseAndClose(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         var actualResult = new AtomicBoolean(false);
-        expected.onClose(() -> expectedResult.set(true)).close();
+        var expectedResult = new AtomicBoolean(false);
         actual.onClose(() -> actualResult.set(true)).close();
-        assertEquals(expectedResult.get(), actualResult.get());
+        expected.onClose(() -> expectedResult.set(true)).close();
+        assertEquals(actualResult.get(), expectedResult.get());
         assertTrue(actualResult.get());
     }
 
-    public final void testOnCloseParameters(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
-        assertThrows(NullPointerException.class, () -> expected.onClose(null));
-        assertThrows(NullPointerException.class, () -> actual.onClose(null));
+    public final void testCloseAndOnClose(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
+        var actualResult = new AtomicBoolean(false);
+        var expectedResult = new AtomicBoolean(false);
+        actual.close();
+        expected.close();
+        assertThrows(IllegalStateException.class, () -> actual.onClose(failing(Runnable.class)));
+        assertThrows(IllegalStateException.class, () -> expected.onClose(failing(Runnable.class)));
     }
 
+    public final void testOnCloseExceptions(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
+        assertThrows(NullPointerException.class, () -> actual.onClose(null));
+        assertThrows(NullPointerException.class, () -> expected.onClose(null));
+    }
 
-    public final void testSpliterator(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testOnCloseCannotBeCalledAgain(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
+        var actualResult = actual.iterator();
+        var expectedResult = expected.iterator();
+        assertThrows(IllegalStateException.class, () -> actual.onClose(failing(Runnable.class)));
+        assertThrows(IllegalStateException.class, () -> expected.onClose(failing(Runnable.class)));
+    }
+
+    public final void testSpliterator(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         var actualResult = actual.spliterator();
+        var expectedResult = expected.spliterator();
 
-        assertTrue(actualResult.hasCharacteristics(Spliterator.SIZED));
-        assertTrue(actualResult.hasCharacteristics(Spliterator.SUBSIZED));
+        assertEquals(actualResult.characteristics(), expectedResult.characteristics());
+        assertTrue(actualResult.estimateSize() == 0 || actualResult.estimateSize() == Long.MAX_VALUE,
+                "actualResult.estimateSize() = " + actualResult.estimateSize());
+        assertTrue(expectedResult.estimateSize() == 0 || expectedResult.estimateSize() == Long.MAX_VALUE,
+                "expectedResult.estimateSize() = " + expectedResult.estimateSize());
 
-        assertFalse(actualResult.hasCharacteristics(Spliterator.CONCURRENT));
-        assertFalse(actualResult.hasCharacteristics(Spliterator.DISTINCT));
-        assertFalse(actualResult.hasCharacteristics(Spliterator.IMMUTABLE));
-        assertFalse(actualResult.hasCharacteristics(Spliterator.NONNULL));
-        assertFalse(actualResult.hasCharacteristics(Spliterator.ORDERED));
-        assertFalse(actualResult.hasCharacteristics(Spliterator.SORTED));
+//        assertTrue(actualResult.hasCharacteristics(Spliterator.SIZED));
+//        assertTrue(actualResult.hasCharacteristics(Spliterator.SUBSIZED));
+
+//        assertFalse(actualResult.hasCharacteristics(Spliterator.CONCURRENT));
+//        assertFalse(actualResult.hasCharacteristics(Spliterator.DISTINCT));
+//        assertFalse(actualResult.hasCharacteristics(Spliterator.IMMUTABLE));
+//        assertFalse(actualResult.hasCharacteristics(Spliterator.NONNULL));
+//        assertFalse(actualResult.hasCharacteristics(Spliterator.ORDERED));
+//        assertFalse(actualResult.hasCharacteristics(Spliterator.SORTED));
 
         assertNull(actualResult.trySplit());
         actualResult.tryAdvance(failing(Consumer.class));
         actualResult.forEachRemaining(failing(Consumer.class));
     }
 
-    private void compareCharacteristics(BaseStream<?, ?> expected, BaseStream<?, ?> actual, String... methodsToCall) {
+    public final void testSpliteratorExceptions(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
+        checkExpectedExceptions(actual, expected, "spliterator");
+    }
+
+    private void compareCharacteristics(BaseStream<?, ?> actual, BaseStream<?, ?> expected, String... methodsToCall) {
         try {
             for (String method : methodsToCall) {
-                expected = (BaseStream<?, ?>) findMethod(expected, method).invoke(expected);
                 actual = (BaseStream<?, ?>) findMethod(actual, method).invoke(actual);
+                expected = (BaseStream<?, ?>) findMethod(expected, method).invoke(expected);
             }
             var actualResult = actual.spliterator().characteristics();
-            var expectedResult = expected.spliterator()
-                    .characteristics();
+            var expectedResult = expected.spliterator().characteristics();
             assertEquals(actualResult, expectedResult);
         } catch (InvocationTargetException e) {
             try {
@@ -266,87 +380,88 @@ sealed abstract class EmptyBaseStreamTest permits
         }
     }
 
-    private Method findMethod(BaseStream<?, ?> stream, String method) throws NoSuchMethodException {
+    private Method findMethod(BaseStream<?, ?> stream,
+                              String method,
+                              Class<?>... parameterTypes) throws NoSuchMethodException {
         if (stream instanceof Stream)
-            return Stream.class.getMethod(method);
+            return Stream.class.getMethod(method, parameterTypes);
         if (stream instanceof IntStream)
-            return IntStream.class.getMethod(method);
+            return IntStream.class.getMethod(method, parameterTypes);
         if (stream instanceof LongStream)
-            return LongStream.class.getMethod(method);
+            return LongStream.class.getMethod(method, parameterTypes);
         if (stream instanceof DoubleStream)
-            return DoubleStream.class.getMethod(method);
+            return DoubleStream.class.getMethod(method, parameterTypes);
         throw new AssertionError();
     }
 
-    private void compareCharacteristics(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    private void compareCharacteristics(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         var actualResult = actual.spliterator().characteristics();
-        var expectedResult = expected.spliterator()
-                .characteristics();
+        var expectedResult = expected.spliterator().characteristics();
         assertEquals(actualResult, expectedResult);
     }
 
-    public final void testCharacteristicsDistinct(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsDistinct(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // distinct()
-        compareCharacteristics(expected, actual, "distinct");
+        compareCharacteristics(actual, expected, "distinct");
     }
 
-    public final void testCharacteristicsDistinctSorted(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsDistinctSorted(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // sorted().unordered().distinct()
-        compareCharacteristics(expected, actual, "sorted", "unordered", "distinct");
+        compareCharacteristics(actual, expected, "sorted", "unordered", "distinct");
     }
 
-    public final void testCharacteristicsDistinctOrderedSorted(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsDistinctOrderedSorted(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // distinct().sorted()
-        compareCharacteristics(expected, actual, "distinct", "sorted");
+        compareCharacteristics(actual, expected, "distinct", "sorted");
     }
 
-    public final void testCharacteristicsSizedSubsized(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsSizedSubsized(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // String.empty()
-        compareCharacteristics(expected, actual);
+        compareCharacteristics(actual, expected);
     }
 
-    public final void testCharacteristicsSizedSortedSubsized(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsSizedSortedSubsized(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // sorted().unordered()
-        compareCharacteristics(expected, actual, "sorted", "unordered");
+        compareCharacteristics(actual, expected, "sorted", "unordered");
     }
 
-    public final void testCharacteristicsOrderedSizedSortedSubsized(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsOrderedSizedSortedSubsized(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // sorted()
-        compareCharacteristics(expected, actual, "sorted");
+        compareCharacteristics(actual, expected, "sorted");
     }
 
-    public final void testCharacteristicsParallelDistinct(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsParallelDistinct(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // parallel().distinct()
-        compareCharacteristics(expected, actual, "parallel", "distinct");
+        compareCharacteristics(actual, expected, "parallel", "distinct");
     }
 
-    public final void testCharacteristicsParallelDistinctSorted(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsParallelDistinctSorted(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // parallel().sorted().unordered().distinct()
-        compareCharacteristics(expected, actual, "sorted", "unordered", "distinct");
+        compareCharacteristics(actual, expected, "sorted", "unordered", "distinct");
     }
 
-    public final void testCharacteristicsParallelSizedSubsized(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsParallelSizedSubsized(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // parallel()
-        compareCharacteristics(expected, actual, "parallel");
+        compareCharacteristics(actual, expected, "parallel");
     }
 
-    public final void testCharacteristicsParallelSizedSortedSubsized(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsParallelSizedSortedSubsized(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // parallel().sorted().unordered()
-        compareCharacteristics(expected, actual, "sorted", "unordered");
+        compareCharacteristics(actual, expected, "sorted", "unordered");
     }
 
-    public final void testCharacteristicsParallelDistinctSizedSortedSubsized(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsParallelDistinctSizedSortedSubsized(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // parallel().distinct().sorted().unordered()
-        compareCharacteristics(expected, actual, "distinct", "sorted", "unordered");
+        compareCharacteristics(actual, expected, "distinct", "sorted", "unordered");
     }
 
-    public final void testCharacteristicsParallelOrderedSizedSortedSubsized(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsParallelOrderedSizedSortedSubsized(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         // parallel().sorted()
-        compareCharacteristics(expected, actual, "parallel", "sorted");
+        compareCharacteristics(actual, expected, "parallel", "sorted");
     }
 
-    public final void testCharacteristicsParallelDistinctOrderedSizedSortedSubsized(BaseStream<?, ?> expected, BaseStream<?, ?> actual) {
+    public final void testCharacteristicsParallelDistinctOrderedSizedSortedSubsized(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
         //parallel().distinct().sorted()
-        compareCharacteristics(expected, actual, "parallel", "distinct", "sorted");
+        compareCharacteristics(actual, expected, "parallel", "distinct", "sorted");
     }
 }
