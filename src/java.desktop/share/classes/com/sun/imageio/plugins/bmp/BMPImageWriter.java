@@ -656,29 +656,29 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
 
                 if (compressionType == BI_RGB || compressionType == BI_BITFIELDS){
                     switch(dataType) {
-                        case DataBuffer.TYPE_BYTE:
-                            byte[] bdata =
-                                ((DataBufferByte)src.getDataBuffer()).getData();
-                            stream.write(bdata, pos, destScanlineLength);
-                            break;
+                    case DataBuffer.TYPE_BYTE:
+                        byte[] bdata =
+                            ((DataBufferByte)src.getDataBuffer()).getData();
+                        stream.write(bdata, pos, destScanlineLength);
+                        break;
 
-                        case DataBuffer.TYPE_SHORT:
-                            short[] sdata =
-                                ((DataBufferShort)src.getDataBuffer()).getData();
-                            stream.writeShorts(sdata, pos, destScanlineLength);
-                            break;
+                    case DataBuffer.TYPE_SHORT:
+                        short[] sdata =
+                            ((DataBufferShort)src.getDataBuffer()).getData();
+                        stream.writeShorts(sdata, pos, destScanlineLength);
+                        break;
 
-                        case DataBuffer.TYPE_USHORT:
-                            short[] usdata =
-                                ((DataBufferUShort)src.getDataBuffer()).getData();
-                            stream.writeShorts(usdata, pos, destScanlineLength);
-                            break;
+                    case DataBuffer.TYPE_USHORT:
+                        short[] usdata =
+                            ((DataBufferUShort)src.getDataBuffer()).getData();
+                        stream.writeShorts(usdata, pos, destScanlineLength);
+                        break;
 
-                        case DataBuffer.TYPE_INT:
-                            int[] idata =
-                                ((DataBufferInt)src.getDataBuffer()).getData();
-                            stream.writeInts(idata, pos, destScanlineLength);
-                            break;
+                    case DataBuffer.TYPE_INT:
+                        int[] idata =
+                            ((DataBufferInt)src.getDataBuffer()).getData();
+                        stream.writeInts(idata, pos, destScanlineLength);
+                        break;
                     }
 
                     for(int k=0; k<padding; k++) {
