@@ -84,6 +84,7 @@ public class ScrollBarBorderTest implements ActionListener {
         // create scroll bar
         scrollBar = new JScrollBar(Scrollbar.HORIZONTAL);
         scrollBar.setBorder(new CustomBorder());
+
         // create panel
         panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -91,6 +92,7 @@ public class ScrollBarBorderTest implements ActionListener {
         panel.add(new JLabel(UIManager.getLookAndFeel().toString()));
         panel.add(Box.createVerticalStrut(20));
         panel.add(scrollBar);
+
         // create frame
         frame = new JFrame("ScrollBarBorderTest");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
