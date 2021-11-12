@@ -172,11 +172,11 @@ public final class RecordingContextBinding implements AutoCloseable {
                 JVM.getJVM().recordingContextSet(0);
             } else {
                 // synchronize setCurrent and close to avoid setting a closed context
-                incRef();
+                context.incRef();
                 try {
                     JVM.getJVM().recordingContextSet(context.id);
                 } finally {
-                    decRef();
+                    context.decRef();
                 }
             }
         }
@@ -199,7 +199,16 @@ public final class RecordingContextBinding implements AutoCloseable {
         }
 
         private void decRef() {
-            if (ref.decrementAndGet() == 0) {
+            int oldref, newref;
+            do {
+                oldref = ref.get();
+                if (oldref == 0) {
+                    return;
+                }
+                newref = oldref - 1;
+            } while (!ref.compareAndSet(oldref, newref));
+
+            if (newref == 0) {
                 delete();
             }
         }
