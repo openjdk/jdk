@@ -208,6 +208,15 @@ public class TestSnippetMarkup extends SnippetTester {
                         """
                                 a*/
                                 """
+                ),
+                new TestCase( // This is how one might output markup, if required.
+                              // Append a no-op markup since only the rightmost markup is parsed.
+                        """
+                                // @highlight // @start region=throwaway @end
+                                """,
+                        """
+                                // @highlight
+                                """
                 )
         );
         testPositive(base, testCases);
