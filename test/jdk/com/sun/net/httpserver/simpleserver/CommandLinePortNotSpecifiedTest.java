@@ -23,9 +23,10 @@
 
 /*
  * @test
+ * @bug 8276848
  * @summary Tests the command-line tool with port not specified
- * @library /test/lib
  * @modules jdk.httpserver
+ * @library /test/lib
  * @run testng/othervm/manual CommandLinePortNotSpecifiedTest
  */
 
