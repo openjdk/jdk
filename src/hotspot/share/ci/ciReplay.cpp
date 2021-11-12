@@ -643,7 +643,7 @@ class CompileReplay : public StackObj {
     } else if (strcmp("version", cmd) == 0) {
       _version = parse_int("version");
       if (_version > REPLAY_VERSION) {
-        report_error("unrecognized version");
+        tty->print_cr("# unrecognized version %d, expected <= %d", _version, REPLAY_VERSION);
       }
     } else if (strcmp("compile", cmd) == 0) {
       process_compile(CHECK);
