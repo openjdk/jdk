@@ -48,43 +48,20 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Writer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.lang.System.out;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.net.HttpURLConnection.HTTP_OK;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 public class HeadTest implements HttpServerAdapters {
 
@@ -98,8 +75,6 @@ public class HeadTest implements HttpServerAdapters {
     String http2URI;
     String https2URI;
 
-    static final String MESSAGE = "Basic HeadTest message body";
-    static final int ITERATIONS = 3;
     static final String CONTENT_LEN = "300";
 
     /*
@@ -132,8 +107,6 @@ public class HeadTest implements HttpServerAdapters {
                 { httpsURI + "transfer/", "HEAD", HTTP_OK, HttpClient.Version.HTTP_2  }
         };
     }
-
-    static final AtomicLong requestCounter = new AtomicLong();
 
     @Test(dataProvider = "positive")
     void test(String uriString, String method,
