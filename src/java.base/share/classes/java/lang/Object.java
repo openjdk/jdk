@@ -557,9 +557,8 @@ public class Object {
      * <p>
      * When running in a JVM in which finalization has been disabled or removed,
      * the garbage collector will never schedule {@code finalize()} to be called.
-     * <p>
-     * Removal of this method may be delayed until finalizers have been removed
-     * from most existing code.
+     * This method will remain in place until finalizers have been removed from
+     * most existing code.
      * 
      * @throws Throwable the {@code Exception} raised by this method
      * @see java.lang.ref.WeakReference
