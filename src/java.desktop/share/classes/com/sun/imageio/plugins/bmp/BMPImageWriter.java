@@ -48,7 +48,6 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteOrder;
 import java.util.Iterator;
 
-import javax.imageio.IIOException;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageTypeSpecifier;
@@ -656,34 +655,30 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
                 }
 
                 if (compressionType == BI_RGB || compressionType == BI_BITFIELDS){
-                    try {
-                        switch(dataType) {
-                            case DataBuffer.TYPE_BYTE:
-                                byte[] bdata =
-                                    ((DataBufferByte)src.getDataBuffer()).getData();
-                                stream.write(bdata, pos, destScanlineLength);
-                                break;
+                    switch(dataType) {
+                        case DataBuffer.TYPE_BYTE:
+                            byte[] bdata =
+                                ((DataBufferByte)src.getDataBuffer()).getData();
+                            stream.write(bdata, pos, destScanlineLength);
+                            break;
 
-                            case DataBuffer.TYPE_SHORT:
-                                short[] sdata =
-                                    ((DataBufferShort)src.getDataBuffer()).getData();
-                                stream.writeShorts(sdata, pos, destScanlineLength);
-                                break;
+                        case DataBuffer.TYPE_SHORT:
+                            short[] sdata =
+                                ((DataBufferShort)src.getDataBuffer()).getData();
+                            stream.writeShorts(sdata, pos, destScanlineLength);
+                            break;
 
-                            case DataBuffer.TYPE_USHORT:
-                                short[] usdata =
-                                    ((DataBufferUShort)src.getDataBuffer()).getData();
-                                stream.writeShorts(usdata, pos, destScanlineLength);
-                                break;
+                        case DataBuffer.TYPE_USHORT:
+                            short[] usdata =
+                                ((DataBufferUShort)src.getDataBuffer()).getData();
+                            stream.writeShorts(usdata, pos, destScanlineLength);
+                            break;
 
-                            case DataBuffer.TYPE_INT:
-                                int[] idata =
-                                    ((DataBufferInt)src.getDataBuffer()).getData();
-                                stream.writeInts(idata, pos, destScanlineLength);
-                                break;
-                            }
-                    } catch (IndexOutOfBoundsException e) {
-                        throw new IIOException("Invalid buffer length", e);
+                        case DataBuffer.TYPE_INT:
+                            int[] idata =
+                                ((DataBufferInt)src.getDataBuffer()).getData();
+                            stream.writeInts(idata, pos, destScanlineLength);
+                            break;
                     }
 
                     for(int k=0; k<padding; k++) {
@@ -1461,6 +1456,9 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
         }
         int biType = imgType.getBufferedImageType();
         int bpp = imgType.getColorModel().getPixelSize();
+        if (bpp != 0 && bpp != 1 && bpp != 4 && bpp != 8 && bpp != 16 && bpp != 24 && bpp != 32) {
+            return false;
+        }
         if (compressionType == BI_RLE4 && bpp != 4) {
             // only 4bpp images can be encoded as BI_RLE4
             return false;

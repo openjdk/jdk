@@ -31,7 +31,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileInputStream;
-import javax.imageio.IIOException;
+import java.io.IOException;
 import java.io.InputStream;
 import javax.imageio.ImageIO;
 
@@ -48,7 +48,7 @@ public class TruncatedPngTest {
         try (InputStream is = new FileInputStream(inputFile)) {
             BufferedImage image = ImageIO.read(is);
             ImageIO.write(image, "bmp", new File("0.bmp"));
-        } catch (IIOException e) {
+        } catch (IOException e) {
             System.out.println("Test PASSED.");
             passed = true;
         } catch (Exception e) {
