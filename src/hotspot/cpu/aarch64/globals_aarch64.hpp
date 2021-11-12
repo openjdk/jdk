@@ -112,7 +112,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Value -1 means off.")                                        \
           range(-1, 4096)                                               \
   product(bool, UseROPProtection, false,                                \
-          "Use ROP based branch protection")                            \
+          "Protect branches against ROP attacks.")                      \
 
 // end of ARCH_FLAGS
 
