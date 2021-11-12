@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 ifndef _ZIP_ARCHIVE_GMK
 _ZIP_ARCHIVE_GMK := 1
-
-# Depends on build tools for MakeZipReproducible
-include ../ToolsJdk.gmk
 
 ifeq (,$(_MAKEBASE_GMK))
   $(error You must include MakeBase.gmk prior to including ZipArchive.gmk)
@@ -137,8 +134,6 @@ define SetupZipArchiveBody
   # dir is very small.
   # If zip has nothing to do, it returns 12 and would fail the build. Check for 12
   # and only fail if it's not.
-  # For reproducible builds set the zip access & modify times to SOURCE_DATE_EPOCH
-  # by using a ziptmp folder to generate final zip from using MakeZipReproducible.
   $$($1_ZIP) : $$($1_ALL_SRCS) $$($1_EXTRA_DEPS)
 	$$(call LogWarn, Updating $$($1_NAME))
 	$$(call MakeTargetDir)
@@ -168,18 +163,7 @@ define SetupZipArchiveBody
 	        $$($1_ZIP_EXCLUDES_$$s) \
 	        || test "$$$$?" = "12" \
 	    ))$$(NEWLINE) \
-	) true
-        ifeq ($(ENABLE_REPRODUCIBLE_BUILD), true)
-	    $$(call ExecuteWithLog, \
-		$$(SUPPORT_OUTPUTDIR)/makezipreproducible/$$(patsubst $$(OUTPUTDIR)/%,%, $$@), \
-		($(RM) $$(SUPPORT_OUTPUTDIR)/ziptmp/$1/tmp.zip && \
-		 $(MKDIR) -p $$(SUPPORT_OUTPUTDIR)/ziptmp/$1 && \
-		 $(TOOL_MAKEZIPREPRODUCIBLE) -f $$(SUPPORT_OUTPUTDIR)/ziptmp/$1/tmp.zip \
-			 		     -t $(SOURCE_DATE_EPOCH) $$@ && \
-		 $(RM) $$@ && \
-		 $(MV) $$(SUPPORT_OUTPUTDIR)/ziptmp/$1/tmp.zip $$@ \
-		))
-        endif
+	) true \
 	$(TOUCH) $$@
 
   # Add zip to target list
