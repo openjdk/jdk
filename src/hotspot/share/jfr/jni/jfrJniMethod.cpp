@@ -240,8 +240,8 @@ NO_TRANSITION(void, jfr_recording_context_filter_set(JNIEnv* env, jobject jvm, j
     JfrContextFilter::configure(NULL, -1);
     return;
   }
-  jsize matches_len = env->GetArrayLength(matches);
-  jint *matches_el = (jint*)env->GetPrimitiveArrayCritical(matches, 0);
+  int matches_len = env->GetArrayLength(matches);
+  int *matches_el = (int*)env->GetPrimitiveArrayCritical(matches, 0);
   JfrContextFilter::configure(matches_el, matches_len);
   env->ReleasePrimitiveArrayCritical(matches, matches_el, 0);
 NO_TRANSITION_END
