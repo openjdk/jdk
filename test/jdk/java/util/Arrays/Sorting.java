@@ -54,7 +54,7 @@ public class Sorting {
 
     // Initial random values for long run (default)
     private static final TestRandom[] LONG_RUN_RANDOMS = {
-        TestRandom.BABA, TestRandom.DEDA, TestRandom.C0FFEE };
+        TestRandom.DEDA, TestRandom.BABA, TestRandom.C0FFEE };
 
     // Initial random values for short run
     private static final TestRandom[] SHORT_RUN_RANDOMS = {
@@ -2063,8 +2063,8 @@ public class Sorting {
 
     private static class TestRandom extends Random {
 
-        private static final TestRandom BABA = new TestRandom(0xBABA);
         private static final TestRandom DEDA = new TestRandom(0xDEDA);
+        private static final TestRandom BABA = new TestRandom(0xBABA);
         private static final TestRandom C0FFEE = new TestRandom(0xC0FFEE);
 
         private TestRandom(long seed) {

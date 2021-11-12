@@ -46,7 +46,7 @@ import java.util.concurrent.RecursiveTask;
  *
  * @version 2020.06.14
  *
- * @since 1.7 * 14 & 18
+ * @since 1.7 * 14 ^ 18
  */
 final class DualPivotQuicksort {
 
@@ -131,21 +131,11 @@ final class DualPivotQuicksort {
     private static final int MAX_RECURSION_DEPTH = 64 * DEPTH;
 
     /**
-     * Calculates the double depth of parallel merging.
-     * Depth is negative, if tasks split before sorting.
-     *
-     * @param parallelism the parallelism level
-     * @param size the target size
-     * @return the depth of parallel merging
+     * Max length of additional buffer,
+     * limited by max_heap / 64 or 256m elements (2gb max).
      */
-    private static int getDepth(int parallelism, int size) {
-        int depth = 0;
-
-        while ((parallelism >>= 3) > 0 && (size >>= 2) > 0) {
-            depth -= 2;
-        }
-        return depth;
-    }
+    private static final int MAX_BUFFER_LENGTH =
+            (int) Math.min(Runtime.getRuntime().maxMemory() >> 6, 256L << 20);
 
     /**
      * Sorts the specified range of the array using parallel merge
@@ -242,6 +232,9 @@ final class DualPivotQuicksort {
             int e4 = (e3 + e5) >>> 1;
             int a3 = a[e3];
 
+            boolean isRandom =
+                a[e1] > a[e2] || a[e2] > a[e3] || a[e3] > a[e4] || a[e4] > a[e5];
+
             /*
              * Sort these elements in place by the combination
              * of 4-element sorting network and insertion sort.
@@ -278,10 +271,10 @@ final class DualPivotQuicksort {
             }
 
             /*
-             * Try Radix sort on large random data.
+             * Try Radix sort on large fully random data.
              */
             if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH || isRandom)
                     && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
                     && tryRadixSort(sorter, a, low, high)) {
                 return;
@@ -593,7 +586,7 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
-     * @return true if the array is finally sorted, false otherwise
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
     static boolean tryRadixSort(Sorter sorter, int[] a, int low, int high) {
         int[] b; int offset = low, size = high - low;
@@ -617,32 +610,29 @@ final class DualPivotQuicksort {
         /*
          * Count the number of all digits.
          */
-        int[] count1 = new int[256];
-        int[] count2 = new int[256];
-        int[] count3 = new int[256];
-        int[] count4 = new int[256];
+        int[] count1 = new int[1024];
+        int[] count2 = new int[2048];
+        int[] count3 = new int[2048];
 
         for (int i = low; i < high; ++i) {
-            count1[ a[i]         & 0xFF]--;
-            count2[(a[i] >>>  8) & 0xFF]--;
-            count3[(a[i] >>> 16) & 0xFF]--;
-            count4[(a[i] >>> 24) ^ 0x80]--; // Reverse the sign bit
+            count1[ a[i]         & 0x3FF]--;
+            count2[(a[i] >>> 10) & 0x7FF]--;
+            count3[(a[i] >>> 21) ^ 0x400]--; // Reverse the sign bit
         }
 
         /*
          * Detect digits to be processed.
          */
-        boolean processDigit1 = processDigit(count1, 255, -size, high);
-        boolean processDigit2 = processDigit(count2, 255, -size, high);
-        boolean processDigit3 = processDigit(count3, 255, -size, high);
-        boolean processDigit4 = processDigit(count4, 255, -size, high);
+        boolean processDigit1 = processDigit(count1, 1023, -size, high);
+        boolean processDigit2 = processDigit(count2, 2047, -size, high);
+        boolean processDigit3 = processDigit(count3, 2047, -size, high);
 
         /*
          * Process the 1-st digit.
          */
         if (processDigit1) {
             for (int i = low; i < high; ++i) {
-                b[count1[a[i] & 0xFF]++ - offset] = a[i];
+                b[count1[a[i] & 0x3FF]++ - offset] = a[i];
             }
         }
 
@@ -652,11 +642,11 @@ final class DualPivotQuicksort {
         if (processDigit2) {
             if (processDigit1) {
                 for (int i = start; i < last; ++i) {
-                    a[count2[(b[i] >>> 8) & 0xFF]++] = b[i];
+                    a[count2[(b[i] >>> 10) & 0x7FF]++] = b[i];
                 }
             } else {
                 for (int i = low; i < high; ++i) {
-                    b[count2[(a[i] >>> 8) & 0xFF]++ - offset] = a[i];
+                    b[count2[(a[i] >>> 10) & 0x7FF]++ - offset] = a[i];
                 }
             }
         }
@@ -667,26 +657,11 @@ final class DualPivotQuicksort {
         if (processDigit3) {
             if (processDigit1 ^ processDigit2) {
                 for (int i = start; i < last; ++i) {
-                    a[count3[(b[i] >>> 16) & 0xFF]++] = b[i];
+                    a[count3[(b[i] >>> 21) ^ 0x400]++] = b[i];
                 }
             } else {
                 for (int i = low; i < high; ++i) {
-                    b[count3[(a[i] >>> 16) & 0xFF]++ - offset] = a[i];
-                }
-            }
-        }
-
-        /*
-         * Process the 4-th digit.
-         */
-        if (processDigit4) {
-            if (processDigit1 ^ processDigit2 ^ processDigit3) {
-                for (int i = start; i < last; ++i) {
-                    a[count4[(b[i] >>> 24) ^ 0x80]++] = b[i];
-                }
-            } else {
-                for (int i = low; i < high; ++i) {
-                    b[count4[(a[i] >>> 24) ^ 0x80]++ - offset] = a[i];
+                    b[count3[(a[i] >>> 21) ^ 0x400]++ - offset] = a[i];
                 }
             }
         }
@@ -694,7 +669,7 @@ final class DualPivotQuicksort {
         /*
          * Copy the buffer to original array, if we process ood number of digits.
          */
-        if (processDigit1 ^ processDigit2 ^ processDigit3 ^ processDigit4) {
+        if (processDigit1 ^ processDigit2 ^ processDigit3) {
             System.arraycopy(b, low - offset, a, low, size);
         }
         return true;
@@ -707,7 +682,7 @@ final class DualPivotQuicksort {
      * @param last the last index of count array
      * @param total the total number of elements
      * @param high the index of the last element, exclusive
-     * @return false if the digit can be skipped, true otherwise
+     * @return {@code true} if the digit must be processed, otherwise {@code false}
      */
     private static boolean processDigit(int[] count, int last, int total, int high) {
 
@@ -715,13 +690,12 @@ final class DualPivotQuicksort {
          * Check if we can skip given digit.
          */
         for (int c : count) {
-            if (c == 0) {
-                continue;
-            }
             if (c == total) {
                 return false;
             }
-            break;
+            if (c < 0) {
+                break;
+            }
         }
 
         /*
@@ -786,7 +760,7 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      * @param low the index of the first element to be sorted
      * @param size the array size
-     * @return true if the array is finally sorted, false otherwise
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
     private static boolean tryMergingSort(Sorter sorter, int[] a, int low, int size) {
 
@@ -849,7 +823,7 @@ final class DualPivotQuicksort {
                     return false;
                 }
 
-                // Min 127, max 1023, extend to 5120
+                // Initial min 127, max 1023, extended to 5120
                 run = new int[((size >> 10) | 0x7F) & 0x3FF];
                 run[0] = low;
 
@@ -927,9 +901,7 @@ final class DualPivotQuicksort {
             if (aim >= 0) {
                 return a;
             }
-            for (int i = run[hi], j = i - offset, low = run[lo]; i > low;
-                b[--j] = a[--i]
-            );
+            System.arraycopy(a, run[lo], b, run[lo] - offset, run[hi] - run[lo]);
             return b;
         }
 
@@ -1024,6 +996,9 @@ final class DualPivotQuicksort {
                     }
                 }
 
+                /*
+                 * Reserve space for the left sub-parts.
+                 */
                 int d = mi2 - lo2 + mi1 - lo1;
 
                 /*
@@ -1154,6 +1129,9 @@ final class DualPivotQuicksort {
             int e4 = (e3 + e5) >>> 1;
             long a3 = a[e3];
 
+            boolean isRandom =
+                a[e1] > a[e2] || a[e2] > a[e3] || a[e3] > a[e4] || a[e4] > a[e5];
+
             /*
              * Sort these elements in place by the combination
              * of 4-element sorting network and insertion sort.
@@ -1190,10 +1168,10 @@ final class DualPivotQuicksort {
             }
 
             /*
-             * Try Radix sort on large random data.
+             * Try Radix sort on large fully random data.
              */
             if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH || isRandom)
                     && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
                     && tryRadixSort(sorter, a, low, high)) {
                 return;
@@ -1505,7 +1483,7 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
-     * @return true if the array is finally sorted, false otherwise
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
     static boolean tryRadixSort(Sorter sorter, long[] a, int low, int high) {
         long[] b; int offset = low, size = high - low;
@@ -1699,7 +1677,7 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      * @param low the index of the first element to be sorted
      * @param size the array size
-     * @return true if the array is finally sorted, false otherwise
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
     private static boolean tryMergingSort(Sorter sorter, long[] a, int low, int size) {
 
@@ -1762,7 +1740,7 @@ final class DualPivotQuicksort {
                     return false;
                 }
 
-                // Min 127, max 1023, extend to 5120
+                // Initial min 127, max 1023, extended to 5120
                 run = new int[((size >> 10) | 0x7F) & 0x3FF];
                 run[0] = low;
 
@@ -1840,9 +1818,7 @@ final class DualPivotQuicksort {
             if (aim >= 0) {
                 return a;
             }
-            for (int i = run[hi], j = i - offset, low = run[lo]; i > low;
-                b[--j] = a[--i]
-            );
+            System.arraycopy(a, run[lo], b, run[lo] - offset, run[hi] - run[lo]);
             return b;
         }
 
@@ -1937,6 +1913,9 @@ final class DualPivotQuicksort {
                     }
                 }
 
+                /*
+                 * Reserve space for the left sub-parts.
+                 */
                 int d = mi2 - lo2 + mi1 - lo1;
 
                 /*
@@ -2860,6 +2839,9 @@ final class DualPivotQuicksort {
             int e4 = (e3 + e5) >>> 1;
             float a3 = a[e3];
 
+            boolean isRandom =
+                a[e1] > a[e2] || a[e2] > a[e3] || a[e3] > a[e4] || a[e4] > a[e5];
+
             /*
              * Sort these elements in place by the combination
              * of 4-element sorting network and insertion sort.
@@ -2896,10 +2878,10 @@ final class DualPivotQuicksort {
             }
 
             /*
-             * Try Radix sort on large random data.
+             * Try Radix sort on large fully random data.
              */
             if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH || isRandom)
                     && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
                     && tryRadixSort(sorter, a, low, high)) {
                 return;
@@ -3211,7 +3193,7 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
-     * @return true if the array is finally sorted, false otherwise
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
     static boolean tryRadixSort(Sorter sorter, float[] a, int low, int high) {
         float[] b; int offset = low, size = high - low;
@@ -3235,32 +3217,29 @@ final class DualPivotQuicksort {
         /*
          * Count the number of all digits.
          */
-        int[] count1 = new int[256];
-        int[] count2 = new int[256];
-        int[] count3 = new int[256];
-        int[] count4 = new int[256];
+        int[] count1 = new int[1024];
+        int[] count2 = new int[2048];
+        int[] count3 = new int[2048];
 
         for (int i = low; i < high; ++i) {
-            count1[ fti(a[i])         & 0xFF]--;
-            count2[(fti(a[i]) >>>  8) & 0xFF]--;
-            count3[(fti(a[i]) >>> 16) & 0xFF]--;
-            count4[(fti(a[i]) >>> 24) & 0xFF]--;
+            count1[ fti(a[i])         & 0x3FF]--;
+            count2[(fti(a[i]) >>> 10) & 0x7FF]--;
+            count3[(fti(a[i]) >>> 21) & 0x7FF]--;
         }
 
         /*
          * Detect digits to be processed.
          */
-        boolean processDigit1 = processDigit(count1, 255, -size, high);
-        boolean processDigit2 = processDigit(count2, 255, -size, high);
-        boolean processDigit3 = processDigit(count3, 255, -size, high);
-        boolean processDigit4 = processDigit(count4, 255, -size, high);
+        boolean processDigit1 = processDigit(count1, 1023, -size, high);
+        boolean processDigit2 = processDigit(count2, 2047, -size, high);
+        boolean processDigit3 = processDigit(count3, 2047, -size, high);
 
         /*
          * Process the 1-st digit.
          */
         if (processDigit1) {
             for (int i = low; i < high; ++i) {
-                b[count1[fti(a[i]) & 0xFF]++ - offset] = a[i];
+                b[count1[fti(a[i]) & 0x3FF]++ - offset] = a[i];
             }
         }
 
@@ -3270,11 +3249,11 @@ final class DualPivotQuicksort {
         if (processDigit2) {
             if (processDigit1) {
                 for (int i = start; i < last; ++i) {
-                    a[count2[(fti(b[i]) >>> 8) & 0xFF]++] = b[i];
+                    a[count2[(fti(b[i]) >>> 10) & 0x7FF]++] = b[i];
                 }
             } else {
                 for (int i = low; i < high; ++i) {
-                    b[count2[(fti(a[i]) >>> 8) & 0xFF]++ - offset] = a[i];
+                    b[count2[(fti(a[i]) >>> 10) & 0x7FF]++ - offset] = a[i];
                 }
             }
         }
@@ -3285,26 +3264,11 @@ final class DualPivotQuicksort {
         if (processDigit3) {
             if (processDigit1 ^ processDigit2) {
                 for (int i = start; i < last; ++i) {
-                    a[count3[(fti(b[i]) >>> 16) & 0xFF]++] = b[i];
+                    a[count3[(fti(b[i]) >>> 21) & 0x7FF]++] = b[i];
                 }
             } else {
                 for (int i = low; i < high; ++i) {
-                    b[count3[(fti(a[i]) >>> 16) & 0xFF]++ - offset] = a[i];
-                }
-            }
-        }
-
-        /*
-         * Process the 4-th digit.
-         */
-        if (processDigit4) {
-            if (processDigit1 ^ processDigit2 ^ processDigit3) {
-                for (int i = start; i < last; ++i) {
-                    a[count4[(fti(b[i]) >>> 24) & 0xFF]++] = b[i];
-                }
-            } else {
-                for (int i = low; i < high; ++i) {
-                    b[count4[(fti(a[i]) >>> 24) & 0xFF]++ - offset] = a[i];
+                    b[count3[(fti(a[i]) >>> 21) & 0x7FF]++ - offset] = a[i];
                 }
             }
         }
@@ -3312,7 +3276,7 @@ final class DualPivotQuicksort {
         /*
          * Copy the buffer to original array, if we process ood number of digits.
          */
-        if (processDigit1 ^ processDigit2 ^ processDigit3 ^ processDigit4) {
+        if (processDigit1 ^ processDigit2 ^ processDigit3) {
             System.arraycopy(b, low - offset, a, low, size);
         }
         return true;
@@ -3380,7 +3344,7 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      * @param low the index of the first element to be sorted
      * @param size the array size
-     * @return true if the array is finally sorted, false otherwise
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
     private static boolean tryMergingSort(Sorter sorter, float[] a, int low, int size) {
 
@@ -3443,7 +3407,7 @@ final class DualPivotQuicksort {
                     return false;
                 }
 
-                // Min 127, max 1023, extend to 5120
+                // Initial min 127, max 1023, extended to 5120
                 run = new int[((size >> 10) | 0x7F) & 0x3FF];
                 run[0] = low;
 
@@ -3521,9 +3485,7 @@ final class DualPivotQuicksort {
             if (aim >= 0) {
                 return a;
             }
-            for (int i = run[hi], j = i - offset, low = run[lo]; i > low;
-                b[--j] = a[--i]
-            );
+            System.arraycopy(a, run[lo], b, run[lo] - offset, run[hi] - run[lo]);
             return b;
         }
 
@@ -3618,6 +3580,9 @@ final class DualPivotQuicksort {
                     }
                 }
 
+                /*
+                 * Reserve space for the left sub-parts.
+                 */
                 int d = mi2 - lo2 + mi1 - lo1;
 
                 /*
@@ -3800,6 +3765,9 @@ final class DualPivotQuicksort {
             int e4 = (e3 + e5) >>> 1;
             double a3 = a[e3];
 
+            boolean isRandom =
+                a[e1] > a[e2] || a[e2] > a[e3] || a[e3] > a[e4] || a[e4] > a[e5];
+
             /*
              * Sort these elements in place by the combination
              * of 4-element sorting network and insertion sort.
@@ -3836,10 +3804,10 @@ final class DualPivotQuicksort {
             }
 
             /*
-             * Try Radix sort on large random data.
+             * Try Radix sort on large fully random data.
              */
             if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH || isRandom)
                     && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
                     && tryRadixSort(sorter, a, low, high)) {
                 return;
@@ -4151,7 +4119,7 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
-     * @return true if the array is finally sorted, false otherwise
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
     static boolean tryRadixSort(Sorter sorter, double[] a, int low, int high) {
         double[] b; int offset = low, size = high - low;
@@ -4356,7 +4324,7 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      * @param low the index of the first element to be sorted
      * @param size the array size
-     * @return true if the array is finally sorted, false otherwise
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
     private static boolean tryMergingSort(Sorter sorter, double[] a, int low, int size) {
 
@@ -4419,7 +4387,7 @@ final class DualPivotQuicksort {
                     return false;
                 }
 
-                // Min 127, max 1023, extend to 5120
+                // Initial min 127, max 1023, extended to 5120
                 run = new int[((size >> 10) | 0x7F) & 0x3FF];
                 run[0] = low;
 
@@ -4497,9 +4465,7 @@ final class DualPivotQuicksort {
             if (aim >= 0) {
                 return a;
             }
-            for (int i = run[hi], j = i - offset, low = run[lo]; i > low;
-                b[--j] = a[--i]
-            );
+            System.arraycopy(a, run[lo], b, run[lo] - offset, run[hi] - run[lo]);
             return b;
         }
 
@@ -4594,6 +4560,9 @@ final class DualPivotQuicksort {
                     }
                 }
 
+                /*
+                 * Reserve space for the left sub-parts.
+                 */
                 int d = mi2 - lo2 + mi1 - lo1;
 
                 /*
@@ -4633,7 +4602,7 @@ final class DualPivotQuicksort {
      * This class implements parallel sorting.
      */
     private static final class Sorter extends CountedCompleter<Void> {
-        private static final long serialVersionUID = 20180818L;
+        private static final long serialVersionUID = 123456789L;
 
         @SuppressWarnings("serial")
         private final Object a, b;
@@ -4667,7 +4636,7 @@ final class DualPivotQuicksort {
                 } else if (a instanceof double[]) {
                     sort(this, (double[]) a, depth, low, low + size);
                 } else {
-                    throw new IllegalArgumentException("Unknown type: " + a.getClass().getName());
+                    throw new IllegalArgumentException("Unknown array: " + a.getClass().getName());
                 }
             }
             tryComplete();
@@ -4694,7 +4663,6 @@ final class DualPivotQuicksort {
 
         private void forkSorter(int depth, int low, int high) {
             addToPendingCount(1);
-            Object a = this.a; // Use local variable for better performance
             new Sorter(this, a, b, low, high - low, offset, depth).fork();
         }
     }
@@ -4703,7 +4671,7 @@ final class DualPivotQuicksort {
      * This class implements parallel merging.
      */
     private static final class Merger extends CountedCompleter<Void> {
-        private static final long serialVersionUID = 20180818L;
+        private static final long serialVersionUID = 123456789L;
 
         @SuppressWarnings("serial")
         private final Object dst, a1, a2;
@@ -4737,7 +4705,7 @@ final class DualPivotQuicksort {
                 mergeParts(this, (double[]) dst, k,
                     (double[]) a1, lo1, hi1, (double[]) a2, lo2, hi2);
             } else {
-                throw new IllegalArgumentException("Unknown type: " + dst.getClass().getName());
+                throw new IllegalArgumentException("Unknown array: " + dst.getClass().getName());
             }
             propagateCompletion();
         }
@@ -4753,7 +4721,7 @@ final class DualPivotQuicksort {
      * This class implements parallel merging of runs.
      */
     private static final class RunMerger extends RecursiveTask<Object> {
-        private static final long serialVersionUID = 20180818L;
+        private static final long serialVersionUID = 123456789L;
 
         @SuppressWarnings("serial")
         private final Object a, b;
@@ -4785,7 +4753,7 @@ final class DualPivotQuicksort {
             if (a instanceof double[]) {
                 return mergeRuns((double[]) a, (double[]) b, offset, aim, true, run, lo, hi);
             }
-            throw new IllegalArgumentException("Unknown type: " + a.getClass().getName());
+            throw new IllegalArgumentException("Unknown array: " + a.getClass().getName());
         }
 
         private RunMerger forkMe() {
@@ -4800,27 +4768,46 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Tries to allocate memory for new array.
+     * Calculates the negative double depth of parallel merging.
+     *
+     * @param parallelism the parallelism level
+     * @param size the target size
+     * @return the depth of parallel merging
+     */
+    private static int getDepth(int parallelism, int size) {
+        int depth = 0;
+
+        while ((parallelism >>= 1) > 0 && (size >>= 2) > 0) {
+            depth -= 2;
+        }
+        return depth;
+    }
+
+    /**
+     * Tries to allocate memory for additional buffer.
      *
      * @param a the array of given type
-     * @param size the new array size
-     * @return null if there is not enough memory, created array otherwise
+     * @param length the additional buffer length
+     * @return {@code null} if requested length is too large, otherwise created buffer
      */
-    private static Object tryAllocate(Object a, int size) {
+    private static Object tryAllocate(Object a, int length) {
+        if (length > MAX_BUFFER_LENGTH) {
+            return null;
+        }
         try {
             if (a instanceof int[]) {
-                return new int[size];
+                return new int[length];
             }
             if (a instanceof long[]) {
-                return new long[size];
+                return new long[length];
             }
             if (a instanceof float[]) {
-                return new float[size];
+                return new float[length];
             }
             if (a instanceof double[]) {
-                return new double[size];
+                return new double[length];
             }
-            throw new IllegalArgumentException("Unknown type: " + a.getClass().getName());
+            throw new IllegalArgumentException("Unknown array: " + a.getClass().getName());
         } catch (OutOfMemoryError e) {
             return null;
         }
