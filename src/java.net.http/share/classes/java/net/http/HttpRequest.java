@@ -373,7 +373,7 @@ public abstract class HttpRequest {
         request.bodyPublisher().ifPresentOrElse(
                 // if body is present, set it
                 bodyPublisher -> builder.method(method, bodyPublisher),
-                // otherwise, the body is absent, special case for GET/DELETE,
+                // otherwise, the body is absent, special case for GET/DELETE/HEAD,
                 // or else use empty body
                 () -> {
                     switch (method) {
