@@ -79,7 +79,7 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
     return NULL;
   }
   jmm_interface->GetDiagnosticCommandArgumentsInfo(env, command,
-                                                   dcmd_arg_info_array);
+                                                   dcmd_arg_info_array, num_arg);
   dcmdArgInfoCls = (*env)->FindClass(env,
                                      "com/sun/management/internal/DiagnosticCommandArgumentInfo");
   POP_EXCEPTION_CHECK_AND_FREE(0, dcmd_arg_info_array);
@@ -189,7 +189,7 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
       JNU_ThrowOutOfMemoryError(env, NULL);
       return NULL;
   }
-  jmm_interface->GetDiagnosticCommandInfo(env, commands, dcmd_info_array);
+  jmm_interface->GetDiagnosticCommandInfo(env, commands, dcmd_info_array, num_commands);
   for (i=0; i<num_commands; i++) {
       // Ensure capacity for 6 + 3 local refs:
       //  6 => jname, jdesc, jimpact, cmd, args, obj
