@@ -642,8 +642,8 @@ class CompileReplay : public StackObj {
       skip_remaining();
     } else if (strcmp("version", cmd) == 0) {
       _version = parse_int("version");
-      if (_version > REPLAY_VERSION) {
-        tty->print_cr("# unrecognized version %d, expected <= %d", _version, REPLAY_VERSION);
+      if (_version < 0 || _version > REPLAY_VERSION) {
+        tty->print_cr("# unrecognized version %d, expected 0 <= version <= %d", _version, REPLAY_VERSION);
       }
     } else if (strcmp("compile", cmd) == 0) {
       process_compile(CHECK);
