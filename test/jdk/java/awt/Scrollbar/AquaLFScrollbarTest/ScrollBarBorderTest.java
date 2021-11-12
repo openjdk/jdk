@@ -27,14 +27,14 @@ import java.awt.event.ActionListener;
  */
 public class ScrollBarBorderTest implements ActionListener {
 
-  // On macOS 10.12.6 using the Mac look and feel (com.apple.laf.AquaLookAndFeel) 
-  // the scroll bar ignores the custom border and allows the scroll thumb to move 
-  // beneath the border. Run with: 
-  // java ScrollBarBorderTest 
+  // On macOS 10.12.6 using the Mac look and feel (com.apple.laf.AquaLookAndFeel)
+  // the scroll bar ignores the custom border and allows the scroll thumb to move
+  // beneath the border. Run with:
+  // java ScrollBarBorderTest
 
-  // If run using any other look and feel (e.g. Metal) then the right side of 
-  // the scroll bar stops at the border as expected. Run with: 
-  // java -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel ScrollBarBorderTest 
+  // If run using any other look and feel (e.g. Metal) then the right side of
+  // the scroll bar stops at the border as expected. Run with:
+  // java -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel ScrollBarBorderTest
 
   // Java version: 1.8.0_151
 
