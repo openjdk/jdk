@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,6 @@ package sun.net.www.protocol.mailto;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import java.io.*;
-import sun.net.www.*;
-//import sun.net.www.protocol.news.ArticlePoster;
-import sun.net.smtp.SmtpClient;
 
 /** open an nntp input stream given a URL */
 public class Handler extends URLStreamHandler {
@@ -99,7 +95,7 @@ public class Handler extends URLStreamHandler {
 //     }
     */
 
-    public synchronized URLConnection openConnection(URL u) {
+    public URLConnection openConnection(URL u) {
         return new MailToURLConnection(u);
     }
 
