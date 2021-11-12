@@ -37,7 +37,7 @@ import java.util.zip.ZipOutputStream;
 
 /**
  * Generate a zip file in a "reproducible" manner from the input zip file.
- * Standard zip tools rely on OS file list querying whose ordering varies
+ * Standard zip tools rely on OS file list querying whose ordering can vary
  * by platform architecture, this class ensures the zip entries are ordered
  * and also supports SOURCE_DATE_EPOCH timestamps.
  */
