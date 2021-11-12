@@ -160,6 +160,7 @@ class CompileReplay : public StackObj {
     _iklass  = NULL;
     _entry_bci  = 0;
     _comp_level = 0;
+    _version = 0;
 
     test();
   }
