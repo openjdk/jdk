@@ -2156,10 +2156,6 @@ public abstract class Path2D implements Shape, Cloneable {
                         x_coeff[1] = 2.0 * dx21;                      // B = 2 (P2 - P1)
                         x_coeff[0] = lastX;                           // C = P1
 
-                        x_coeff[2] = lastX - 2.0 * coords[0] + coords[2];
-                        x_coeff[1] = -2.0 * lastX + 2.0 * coords[0];
-                        x_coeff[0] = lastX;
-
                         x_deriv_coeff[0] = x_coeff[1];
                         x_deriv_coeff[1] = 2.0 * x_coeff[2];
 
