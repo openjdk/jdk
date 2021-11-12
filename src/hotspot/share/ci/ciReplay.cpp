@@ -809,7 +809,7 @@ class CompileReplay : public StackObj {
     rec->_instructions_size = parse_int("instructions_size");
   }
 
-  // ciMethodData <klass> <name> <signature> <state> <current_mileage> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass>)* methods <length> (<offset> <klass> <name> <signature>)*
+  // ciMethodData <klass> <name> <signature> <state> <invocation_counter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass>)* methods <length> (<offset> <klass> <name> <signature>)*
   void process_ciMethodData(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
