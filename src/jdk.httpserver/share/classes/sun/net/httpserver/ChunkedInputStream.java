@@ -41,12 +41,12 @@ class ChunkedInputStream extends LeftOverInputStream {
 
     private boolean needToReadHeader = true;
 
-    final static char CR = '\r';
-    final static char LF = '\n';
+    static final char CR = '\r';
+    static final char LF = '\n';
     /*
      * Maximum chunk header size of 2KB + 2 bytes for CRLF
      */
-    private final static int MAX_CHUNK_HEADER_SIZE = 2050;
+    private static final int MAX_CHUNK_HEADER_SIZE = 2050;
 
     private int numeric (char[] arr, int nchars) throws IOException {
         assert arr.length >= nchars;
