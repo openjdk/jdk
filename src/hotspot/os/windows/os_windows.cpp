@@ -892,7 +892,7 @@ static SetThreadDescriptionFnPtr _SetThreadDescription = NULL;
 DEBUG_ONLY(static GetThreadDescriptionFnPtr _GetThreadDescription = NULL;)
 
 // forward decl.
-errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path);
+static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path);
 
 void os::set_native_thread_name(const char *name) {
 
