@@ -45,7 +45,7 @@ public class SystemLookup implements SymbolLookup {
 
     private SystemLookup() { }
 
-    final static SystemLookup INSTANCE = new SystemLookup();
+    static final SystemLookup INSTANCE = new SystemLookup();
 
     /*
      * On POSIX systems, dlsym will allow us to lookup symbol in library dependencies; the same trick doesn't work

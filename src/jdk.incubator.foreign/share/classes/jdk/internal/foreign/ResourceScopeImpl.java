@@ -250,7 +250,7 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Seg
             }
         }
 
-        public static abstract class ResourceCleanup {
+        public abstract static class ResourceCleanup {
             ResourceCleanup next;
 
             public abstract void cleanup();

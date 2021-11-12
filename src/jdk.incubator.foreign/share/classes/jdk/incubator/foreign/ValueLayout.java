@@ -68,7 +68,7 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
     private final Class<?> carrier;
     private final ByteOrder order;
 
-    private final static int ADDRESS_SIZE_BITS = Unsafe.ADDRESS_SIZE * 8;
+    private static final int ADDRESS_SIZE_BITS = Unsafe.ADDRESS_SIZE * 8;
 
     ValueLayout(Class<?> carrier, ByteOrder order, long size) {
         this(carrier, order, size, size, Optional.empty());
