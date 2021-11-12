@@ -238,12 +238,6 @@ class Thread: public ThreadShadow {
 #endif
 
  private:
-  // Active_handles points to a block of handles
-  JNIHandleBlock* _active_handles;
-
-  // One-element thread local free list
-  JNIHandleBlock* _free_handle_block;
-
   // Point to the last handle mark
   HandleMark* _last_handle_mark;
 
@@ -415,12 +409,6 @@ class Thread: public ThreadShadow {
 
   OSThread* osthread() const                     { return _osthread;   }
   void set_osthread(OSThread* thread)            { _osthread = thread; }
-
-  // JNI handle support
-  JNIHandleBlock* active_handles() const         { return _active_handles; }
-  void set_active_handles(JNIHandleBlock* block) { _active_handles = block; }
-  JNIHandleBlock* free_handle_block() const      { return _free_handle_block; }
-  void set_free_handle_block(JNIHandleBlock* block) { _free_handle_block = block; }
 
   // Internal handle support
   HandleArea* handle_area() const                { return _handle_area; }
@@ -607,7 +595,6 @@ protected:
   // Code generation
   static ByteSize exception_file_offset()        { return byte_offset_of(Thread, _exception_file); }
   static ByteSize exception_line_offset()        { return byte_offset_of(Thread, _exception_line); }
-  static ByteSize active_handles_offset()        { return byte_offset_of(Thread, _active_handles); }
 
   static ByteSize stack_base_offset()            { return byte_offset_of(Thread, _stack_base); }
   static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size); }
@@ -746,6 +733,13 @@ class JavaThread: public Thread {
   ObjectMonitor* volatile _current_pending_monitor;     // ObjectMonitor this thread is waiting to lock
   bool           _current_pending_monitor_is_from_java; // locking is from Java code
   ObjectMonitor* volatile _current_waiting_monitor;     // ObjectMonitor on which this thread called Object.wait()
+
+  // Active_handles points to a block of handles
+  JNIHandleBlock* _active_handles;
+
+  // One-element thread local free list
+  JNIHandleBlock* _free_handle_block;
+
  public:
   volatile intptr_t _Stalled;
 
@@ -772,6 +766,15 @@ class JavaThread: public Thread {
   void set_current_waiting_monitor(ObjectMonitor* monitor) {
     Atomic::store(&_current_waiting_monitor, monitor);
   }
+
+  // JNI handle support
+  JNIHandleBlock* active_handles() const         { return _active_handles; }
+  void set_active_handles(JNIHandleBlock* block) { _active_handles = block; }
+  JNIHandleBlock* free_handle_block() const      { return _free_handle_block; }
+  void set_free_handle_block(JNIHandleBlock* block) { _free_handle_block = block; }
+
+  void push_jni_handle_block();
+  void pop_jni_handle_block();
 
  private:
   MonitorChunk* _monitor_chunks;              // Contains the off stack monitors
@@ -1283,6 +1286,8 @@ class JavaThread: public Thread {
   static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
   static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
 
+  static ByteSize active_handles_offset()        { return byte_offset_of(JavaThread, _active_handles); }
+
   // StackOverflow offsets
   static ByteSize stack_overflow_limit_offset()  {
     return byte_offset_of(JavaThread, _stack_overflow_state._stack_overflow_limit);
@@ -1743,6 +1748,15 @@ class UnlockFlagSaver {
     ~UnlockFlagSaver() {
       _thread->set_do_not_unlock_if_synchronized(_do_not_unlock);
     }
+};
+
+class JNIHandleMark : public StackObj {
+  JavaThread* _thread;
+ public:
+  JNIHandleMark(JavaThread* thread) : _thread(thread) {
+    thread->push_jni_handle_block();
+  }
+  ~JNIHandleMark() { _thread->pop_jni_handle_block(); }
 };
 
 #endif // SHARE_RUNTIME_THREAD_HPP

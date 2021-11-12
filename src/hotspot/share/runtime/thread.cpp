@@ -220,8 +220,6 @@ Thread::Thread() {
   DEBUG_ONLY(_current_resource_mark = NULL;)
   set_handle_area(new (mtThread) HandleArea(NULL));
   set_metadata_handles(new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(30, mtClass));
-  set_active_handles(NULL);
-  set_free_handle_block(NULL);
   set_last_handle_mark(NULL);
   DEBUG_ONLY(_missed_ic_stub_refill_verifier = NULL);
 
@@ -536,9 +534,6 @@ bool Thread::claim_par_threads_do(uintx claim_token) {
 }
 
 void Thread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
-  if (active_handles() != NULL) {
-    active_handles()->oops_do(f);
-  }
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
@@ -1003,6 +998,8 @@ JavaThread::JavaThread() :
   _current_pending_monitor(NULL),
   _current_pending_monitor_is_from_java(true),
   _current_waiting_monitor(NULL),
+  _active_handles(NULL),
+  _free_handle_block(NULL),
   _Stalled(0),
 
   _monitor_chunks(nullptr),
@@ -1930,12 +1927,38 @@ void JavaThread::verify_frame_info() {
 }
 #endif
 
+// Push on a new block of JNI handles.
+void JavaThread::push_jni_handle_block() {
+  // Allocate a new block for JNI handles.
+  // Inlined code from jni_PushLocalFrame()
+  JNIHandleBlock* old_handles = active_handles();
+  JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(this);
+  assert(old_handles != NULL && new_handles != NULL, "should not be NULL");
+  new_handles->set_pop_frame_link(old_handles);  // make sure java handles get gc'd.
+  set_active_handles(new_handles);
+}
+
+// Pop off the current block of JNI handles.
+void JavaThread::pop_jni_handle_block() {
+  // Release our JNI handle block
+  JNIHandleBlock* old_handles = active_handles();
+  JNIHandleBlock* new_handles = old_handles->pop_frame_link();
+  assert(new_handles != nullptr, "should never set active handles to null");
+  set_active_handles(new_handles);
+  old_handles->set_pop_frame_link(NULL);
+  JNIHandleBlock::release_block(old_handles, this);
+}
+
 void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   // Verify that the deferred card marks have been flushed.
   assert(deferred_card_mark().is_empty(), "Should be empty during GC");
 
   // Traverse the GCHandles
   Thread::oops_do_no_frames(f, cf);
+
+  if (active_handles() != NULL) {
+    active_handles()->oops_do(f);
+  }
 
   DEBUG_ONLY(verify_frame_info();)
 
@@ -2830,7 +2853,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   { TraceTime timer("Start VMThread", TRACETIME_LOG(Info, startuptime));
 
     VMThread::create();
-    Thread* vmthread = VMThread::vm_thread();
+    VMThread* vmthread = VMThread::vm_thread();
 
     if (!os::create_thread(vmthread, os::vm_thread)) {
       vm_exit_during_initialization("Cannot create VM thread. "
@@ -2842,7 +2865,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     {
       MonitorLocker ml(Notify_lock);
       os::start_thread(vmthread);
-      while (vmthread->active_handles() == NULL) {
+      while (!vmthread->is_running()) {
         ml.wait();
       }
     }

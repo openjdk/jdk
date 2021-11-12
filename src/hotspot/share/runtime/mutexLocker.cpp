@@ -48,7 +48,6 @@ Mutex*   Module_lock                  = NULL;
 Mutex*   CompiledIC_lock              = NULL;
 Mutex*   InlineCacheBuffer_lock       = NULL;
 Mutex*   VMStatistic_lock             = NULL;
-Mutex*   JNIHandleBlockFreeList_lock  = NULL;
 Mutex*   JmethodIdCreation_lock       = NULL;
 Mutex*   JfieldIdCreation_lock        = NULL;
 Monitor* JNICritical_lock             = NULL;
@@ -259,7 +258,6 @@ void mutex_init() {
 
   def(SharedDictionary_lock        , PaddedMutex  , safepoint);
   def(VMStatistic_lock             , PaddedMutex  , safepoint);
-  def(JNIHandleBlockFreeList_lock  , PaddedMutex  , nosafepoint-1);      // handles are used by VM thread
   def(SignatureHandlerLibrary_lock , PaddedMutex  , safepoint);
   def(SymbolArena_lock             , PaddedMutex  , nosafepoint);
   def(ExceptionCache_lock          , PaddedMutex  , safepoint);
