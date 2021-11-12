@@ -1531,36 +1531,34 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Change x + Integer.MIN_VALUE <=> y + Integer.MIN_VALUE into x u<=> y
-  // and x + Integer.MIN_VALUE <=> c into x u<=> c + Integer.MIN_VALUE
+  // Change "CmpI (AddI X min_jint) (AddI Y min_jint)" into "CmpU X Y"
+  // and    "CmpI (AddI X min_jint) C" into "CmpU X (C + min_jint)"
   if (cop == Op_CmpI &&
-      (_test.is_less() || _test.is_greater()) &&
       cmp1_op == Op_AddI &&
       phase->type(cmp1->in(2)) == TypeInt::MIN) {
     if (cmp2_op == Op_ConI) {
-      Node *ncmp2 = phase->intcon(java_add(cmp2->get_int(), min_jint));
-      Node *ncmp = phase->transform(new CmpUNode(cmp1->in(1), ncmp2));
+      Node* ncmp2 = phase->intcon(java_add(cmp2->get_int(), min_jint));
+      Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
     } else if (cmp2_op == Op_AddI &&
                phase->type(cmp2->in(2)) == TypeInt::MIN) {
-      Node *ncmp = phase->transform(new CmpUNode(cmp1->in(1), cmp2->in(1)));
+      Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
     }
   }
 
-  // Change x + Long.MIN_VALUE <=> y + Long.MIN_VALUE into x u<=> y
-  // and x + Long.MIN_VALUE <=> c into x u<=> c + Long.MIN_VALUE
+  // Change "CmpL (AddL X min_jlong) (AddL Y min_jlong)" into "CmpUL X Y"
+  // and    "CmpL (AddL X min_jlong) C" into "CmpUL X (C + min_jlong)"
   if (cop == Op_CmpL &&
-      (_test.is_less() || _test.is_greater()) &&
       cmp1_op == Op_AddL &&
       phase->type(cmp1->in(2)) == TypeLong::MIN) {
     if (cmp2_op == Op_ConL) {
-      Node *ncmp2 = phase->longcon(java_add(cmp2->get_long(), min_jlong));
-      Node *ncmp = phase->transform(new CmpULNode(cmp1->in(1), ncmp2));
+      Node* ncmp2 = phase->longcon(java_add(cmp2->get_long(), min_jlong));
+      Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
     } else if (cmp2_op == Op_AddL &&
                phase->type(cmp2->in(2)) == TypeLong::MIN) {
-      Node *ncmp = phase->transform(new CmpULNode(cmp1->in(1), cmp2->in(1)));
+      Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
     }
   }
