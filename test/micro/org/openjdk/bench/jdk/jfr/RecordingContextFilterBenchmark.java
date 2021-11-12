@@ -92,7 +92,7 @@ public class RecordingContextFilterBenchmark {
     @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
     @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
     @State(Scope.Benchmark)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(value = 3)
     public static class Baseline extends Base {
 
@@ -116,7 +116,7 @@ public class RecordingContextFilterBenchmark {
     @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
     @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
     @State(Scope.Benchmark)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(value = 3)
     public static class One extends Base {
 
@@ -143,7 +143,7 @@ public class RecordingContextFilterBenchmark {
     @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
     @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
     @State(Scope.Benchmark)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(value = 3)
     public static class Two extends Base {
 
@@ -171,7 +171,7 @@ public class RecordingContextFilterBenchmark {
     @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
     @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
     @State(Scope.Benchmark)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(value = 3)
     public static class Three extends Base {
 
