@@ -472,6 +472,4 @@ void VM_Version::initialize() {
 #endif
 
   _spin_wait = get_spin_wait_desc();
-
-  UNSUPPORTED_OPTION(CriticalJNINatives);
 }
