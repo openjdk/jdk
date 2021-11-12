@@ -2117,6 +2117,16 @@ public abstract class Path2D implements Shape, Cloneable {
         double lastX = 0.0;
         double lastY = 0.0;
 
+        // Whenever we have to examine cubic or quadratic extrema that change
+        // our bounding box: we run the risk of machine error that may produce
+        // a box that is slightly too small. But the contract of this method
+        // says we should err on the side of being too large.
+        // So to address this: we take the difference between the control
+        // point and our calculated extrema, divide that difference by this
+        // constant, and then nudge our extrema by that amount.
+        // This will slightly expand the bounds to help overcome machine error.
+        double marginDivisor = 1000000000.0;
+
         for (; !pi.isDone(); pi.next()) {
             int type = pi.currentSegment(coords);
             switch (type) {
@@ -2160,8 +2170,14 @@ public abstract class Path2D implements Shape, Cloneable {
                         double t = -deriv_coeff[0] / deriv_coeff[1];
                         if (t > 0.0 && t < 1.0) {
                             double x = coeff[0] + t * (coeff[1] + t * coeff[2]);
-                            if (x < leftX) leftX = x;
-                            if (x > rightX) rightX = x;
+                            if (x < leftX) {
+                                double margin = (x - coords[0]) / marginDivisor;
+                                leftX = x - margin;
+                            }
+                            if (x > rightX) {
+                                double margin = (coords[0] - x) / marginDivisor;
+                                rightX = x + margin;
+                            }
                         }
                     }
                     if (coords[1] < topY || coords[1] > bottomY) {
@@ -2176,8 +2192,14 @@ public abstract class Path2D implements Shape, Cloneable {
                         double t = -deriv_coeff[0] / deriv_coeff[1];
                         if (t > 0.0 && t < 1.0) {
                             double y = coeff[0] + t * (coeff[1] + t * coeff[2]);
-                            if (y < topY) topY = y;
-                            if (y > bottomY) bottomY = y;
+                            if (y < topY) {
+                                double margin = (y - coords[1]) / marginDivisor;
+                                topY = y - margin;
+                            }
+                            if (y > bottomY) {
+                                double margin = (coords[1] - y) / marginDivisor;
+                                bottomY = y + margin;
+                            }
                         }
                     }
                     lastX = coords[2];
@@ -2206,8 +2228,24 @@ public abstract class Path2D implements Shape, Cloneable {
                             double t = tExtrema[i];
                             if (t > 0.0 && t < 1.0) {
                                 double x = coeff[0] + t * (coeff[1] + t * (coeff[2] + t * coeff[3]));
-                                if (x < leftX) leftX = x;
-                                if (x > rightX) rightX = x;
+                                if (x < leftX) {
+                                    double margin;
+                                    if (coords[0] < coords[2]) {
+                                        margin = (x - coords[0]) / marginDivisor;
+                                    } else {
+                                        margin = (x - coords[2]) / marginDivisor;
+                                    }
+                                    leftX = x - margin;
+                                }
+                                if (x > rightX) {
+                                    double margin;
+                                    if (coords[0] > coords[2]) {
+                                        margin = (coords[0] - x) / marginDivisor;
+                                    } else {
+                                        margin = (coords[2] - x) / marginDivisor;
+                                    }
+                                    rightX = x + margin;
+                                }
                             }
                         }
                     }
@@ -2228,8 +2266,24 @@ public abstract class Path2D implements Shape, Cloneable {
                             double t = tExtrema[i];
                             if (t > 0.0 && t < 1.0) {
                                 double y = coeff[0] + t * (coeff[1] + t * (coeff[2] + t * coeff[3]));
-                                if (y < topY) topY = y;
-                                if (y > bottomY) bottomY = y;
+                                if (y < topY) {
+                                    double margin;
+                                    if (coords[1] < coords[3]) {
+                                        margin = (y - coords[1]) / marginDivisor;
+                                    } else {
+                                        margin = (y - coords[3]) / marginDivisor;
+                                    }
+                                    topY = y - margin;
+                                }
+                                if (y > bottomY) {
+                                    double margin;
+                                    if (coords[1] > coords[3]) {
+                                        margin = (coords[1] - y) / marginDivisor;
+                                    } else {
+                                        margin = (coords[3] - y) / marginDivisor;
+                                    }
+                                    bottomY = y + margin;
+                                }
                             }
                         }
                     }

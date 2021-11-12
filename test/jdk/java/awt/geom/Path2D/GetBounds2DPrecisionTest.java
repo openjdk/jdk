@@ -7,49 +7,89 @@ import java.util.*;
 /*
  * @test
  * @bug 8176501
- * @summary This is not a test. This is an exploratory task to empirically
- *          identify how to expand a rectangle to comfortably fit just outside
- *          (and never inside) a precise bounding box.
+ * @summary This tests thousands of shapes and makes sure a high-precision bounding box fits inside the
+ * results of Path2D.getBounds(PathIterator)
  */
-
 public class GetBounds2DPrecisionTest {
 
-    /**
-     * This iterates through a million random CubicCurve2D and identifies the
-     * marginMultiplier constant needed to consistently expand the bounding box
-     * so it slightly exceeds a precise bounding box. The precise bounding box
-     * follows the same algorithm, but it uses BigDecimals to have several more
-     * digits of accuracy.
-     * <p>
-     * This currently suffers from a design flaw: the multiplier is applied to the
-     * ulp of the x or y value in question. So the size of that ulp varies based
-     * on how close x or y is to zero. This results in the multiplier being extremely
-     * large to compensate.
-     * </p>
-     */
     public static void main(String[] args) {
-        Random random = new Random(0);
-        for(int a = 0; a < 1000000; a++) {
-            test(a, random);
+        String msg1 = testSmallCubics();
+        if (msg1 != null) {
+            System.out.println("testSmallCubics: "+msg1);
+        } else {
+            System.out.println("testSmallCubics: passed");
         }
-        System.out.println("Final multiplier: " + marginMultiplier);
+
+        if (msg1 != null)
+            throw new RuntimeException("One or more tests failed; see System.out output for details.");
     }
 
-    static double marginMultiplier = 1;
+    /**
+     * @return a String describing the failure, or null if this test passed.
+     */
+    private static String testSmallCubics() {
+        int failureCtr = 0;
+        for(int a = 0; a < 1000; a++) {
+            CubicCurve2D cubicCurve2D = createSmallCubic(a);
+            if (!test(a, cubicCurve2D, getHorizontalEdges(cubicCurve2D)))
+                failureCtr++;
+        }
+        if (failureCtr > 0)
+            return failureCtr+" tests failed; see System.out for details";
+        return null;
+    }
 
-    private static void test(int trial, Random random) {
+    private static CubicCurve2D createSmallCubic(int trial) {
+        Random random = new Random(trial);
+
         double cx1 = random.nextDouble() * 10 - 5;
         double cy1 = random.nextDouble();
         double cx2 = random.nextDouble() * 10 - 5;
         double cy2 = random.nextDouble();
 
-        CubicCurve2D curve = new CubicCurve2D.Double(0, 0, cx1, cy1, cx2, cy2, 0, 1);
+        return new CubicCurve2D.Double(0, 0, cx1, cy1, cx2, cy2, 0, 1);
+    }
 
-        // The incoming data from a PathIterator is always represented by doubles, so that needs
-        // to be where we start. (That is: if there's machine error already baked into those
-        // doubles, then that's not something we can control for or accommodate.)
+    /**
+     * This returns true if the shape's getBounds2D() method returns a bounding box whose
+     * left & right edges matches or exceeds the horizontalEdges arguments.
+     */
+    private static boolean test(int trial, Shape shape, BigDecimal[] horizontalEdges) {
+        Rectangle2D bounds_doublePrecision = Path2D.getBounds2D(shape.getPathIterator(null));
 
-        // ... but everything that follows can, technically be calculated in really high precision:
+        Rectangle2D bounds_bigDecimalPrecision = new Rectangle2D.Double(
+                horizontalEdges[0].doubleValue(),
+                bounds_doublePrecision.getY(),
+                horizontalEdges[1].subtract(horizontalEdges[0]).doubleValue(),
+                bounds_doublePrecision.getHeight() );
+
+        boolean pass = true;
+        if (bounds_doublePrecision.getMinX() > bounds_bigDecimalPrecision.getMinX()) {
+            pass = false;
+            String x1a = toUniformString(bounds_bigDecimalPrecision.getX());
+            String x1b = toComparisonString(x1a, toUniformString(bounds_doublePrecision.getX()));
+            System.out.println("Left expected:\t"+x1a);
+            System.out.println("Left observed:\t"+x1b);
+        }
+
+        if (bounds_doublePrecision.getMaxX() < bounds_bigDecimalPrecision.getMaxX()) {
+            pass = false;
+            String x2a = toUniformString(bounds_bigDecimalPrecision.getMaxX());
+            String x2b = toComparisonString(x2a, toUniformString(bounds_doublePrecision.getMaxX()));
+            System.out.println("Right expected:\t"+x2a);
+            System.out.println("Right observed:\t"+x2b);
+        }
+        if (!pass)
+            System.out.println("\ttrial "+trial +" failed ("+toString(shape)+")");
+        return pass;
+    }
+
+    /**
+     * Return the left and right edges in high precision
+     */
+    private static BigDecimal[] getHorizontalEdges(CubicCurve2D curve) {
+        double cx1 = curve.getCtrlX1();
+        double cx2 = curve.getCtrlX2();
 
         BigDecimal[] coeff = new BigDecimal[4];
         BigDecimal[] deriv_coeff = new BigDecimal[3];
@@ -82,85 +122,40 @@ public class GetBounds2DPrecisionTest {
                 if (x.compareTo(rightX) > 0) rightX = x;
             }
         }
+        return new BigDecimal[] { leftX, rightX };
+    }
 
-        Result result = getResult(curve, leftX, rightX);
-        if (result == Result.PASSING)
-            return;
+    /**
+     * Return the left and right edges in high precision
+     */
+    private static BigDecimal[] getHorizontalEdges(QuadCurve2D curve) {
+        double cx = curve.getCtrlX();
 
-        System.out.println("Examining (trial #"+trial+"), "+result+", "+toString(curve));
+        BigDecimal[] coeff = new BigDecimal[3];
+        BigDecimal[] deriv_coeff = new BigDecimal[2];
 
-        String leftStr = toUniformString(leftX);
-        String rightStr = toUniformString(rightX);
-        if (result == Result.FAIL_BOTH) {
-            System.out.println("Exp:\t" + leftStr + "\t" + rightStr);
-        } else if (result == Result.FAIL_LEFT) {
-            System.out.println("Exp:\t" + leftStr);
-        } else if (result == Result.FAIL_RIGHT) {
-            System.out.println("Exp:\t" + rightStr);
-        }
+        BigDecimal dx21 = new BigDecimal(cx).subtract(new BigDecimal(curve.getX1()));
+        coeff[2] = new BigDecimal(curve.getX2()).subtract(new BigDecimal(cx)).subtract(dx21);  // A = P3 - P0 - 2 P2
+        coeff[1] = new BigDecimal(2.0).multiply(dx21);                      // B = 2 (P2 - P1)
+        coeff[0] = new BigDecimal(curve.getX1());                           // C = P1
 
-        double v = marginMultiplier;
-        marginMultiplier = 0;
-        Rectangle2D bounds = getBounds2D(curve.getPathIterator(null));
-        marginMultiplier = v;
-        String leftStr2 = toComparisonString(new BigDecimal(bounds.getMinX()), leftStr);
-        String rightStr2 = toComparisonString(new BigDecimal(bounds.getMaxX()), rightStr);
-        if (result == Result.FAIL_BOTH) {
-            System.out.println("Orig:\t"+leftStr2+"\t"+rightStr2);
-        } else if (result == Result.FAIL_LEFT) {
-            System.out.println("Orig:\t"+leftStr2);
-        } else if (result == Result.FAIL_RIGHT) {
-            System.out.println("Orig:\t"+rightStr2);
-        }
+        deriv_coeff[0] = coeff[1];
+        deriv_coeff[1] = new BigDecimal(2.0).multiply( coeff[2] );
 
-        bounds = getBounds2D(curve.getPathIterator(null));
-        leftStr2 = toComparisonString(new BigDecimal(bounds.getMinX()), leftStr);
-        rightStr2 = toComparisonString(new BigDecimal(bounds.getMaxX()), rightStr);
-        if (result == Result.FAIL_BOTH) {
-            System.out.println("Was:\t"+leftStr2+"\t"+rightStr2);
-        } else if (result == Result.FAIL_LEFT) {
-            System.out.println("Was:\t"+leftStr2);
-        } else if (result == Result.FAIL_RIGHT) {
-            System.out.println("Was:\t"+rightStr2);
-        }
+        BigDecimal leftX = BigDecimal.ZERO;
+        BigDecimal rightX = BigDecimal.ZERO;
 
-        double minMargin = marginMultiplier;
-        double maxMargin = marginMultiplier * 1000;
+        if (!deriv_coeff[1].equals(BigDecimal.ZERO)) {
+            BigDecimal t = deriv_coeff[0].negate().divide(deriv_coeff[1], RoundingMode.HALF_EVEN);
 
-        marginMultiplier = maxMargin;
-        while(getResult(curve, leftX, rightX) != Result.PASSING) {
-            minMargin = maxMargin;
-            maxMargin = maxMargin * 1000;
-            marginMultiplier = maxMargin;
-        }
-
-        int ctr = 0;
-        while(true) {
-            double newMargin = (maxMargin + minMargin) / 2;
-            if (newMargin == maxMargin || newMargin == minMargin || ctr > 1000) {
-                bounds = getBounds2D(curve.getPathIterator(null));
-                leftStr2 = toComparisonString(new BigDecimal(bounds.getMinX()), leftStr);
-                rightStr2 = toComparisonString(new BigDecimal(bounds.getMaxX()), rightStr);
-
-                if (result == Result.FAIL_BOTH) {
-                    System.out.println("Now:\t"+leftStr2+"\t"+rightStr2);
-                } else if (result == Result.FAIL_LEFT) {
-                    System.out.println("Now:\t"+leftStr2);
-                } else if (result == Result.FAIL_RIGHT) {
-                    System.out.println("Now:\t"+rightStr2);
-                }
-
-                System.out.println("New marginMultiplier = "+marginMultiplier);
-                return;
+            if (t.compareTo( BigDecimal.ZERO ) > 0 && t.compareTo(BigDecimal.ONE) < 0) {
+                BigDecimal x = coeff[0].add( t.multiply(coeff[1].add(t.multiply(coeff[2]))) );
+                if (x.compareTo(leftX) < 0) leftX = x;
+                if (x.compareTo(rightX) > 0) rightX = x;
             }
-            marginMultiplier= newMargin;
-            if (getResult(curve, leftX, rightX)==Result.PASSING) {
-                maxMargin = marginMultiplier;
-            } else {
-                minMargin = marginMultiplier;
-            }
-            ctr++;
         }
+
+        return new BigDecimal[] { leftX, rightX };
     }
 
     /**
@@ -188,7 +183,8 @@ public class GetBounds2DPrecisionTest {
         return returnValue.toString();
     }
 
-    private static String toUniformString(BigDecimal decimal) {
+    private static String toUniformString(double value) {
+        BigDecimal decimal = new BigDecimal(value);
         int DIGIT_COUNT = 40;
         String str = decimal.toPlainString();
         if (str.length() >= DIGIT_COUNT) {
@@ -200,16 +196,15 @@ public class GetBounds2DPrecisionTest {
         return str;
     }
 
-    private static String toComparisonString(BigDecimal target, String compareAgainst) {
-        String str = toUniformString(target);
-        for(int a = 0; a<str.length(); a++) {
-            char ch1 = str.charAt(a);
-            char ch2 = compareAgainst.charAt(a);
+    private static String toComparisonString(String target, String observed) {
+        for(int a = 0; a<target.length(); a++) {
+            char ch1 = target.charAt(a);
+            char ch2 = observed.charAt(a);
             if (ch1 != ch2) {
-                return str.substring(0,a) + createCircleDigit(ch1)+str.substring(a+1);
+                return observed.substring(0,a) + createCircleDigit(ch2)+observed.substring(a+1);
             }
         }
-        return str;
+        return observed;
     }
 
     /**
@@ -222,31 +217,6 @@ public class GetBounds2DPrecisionTest {
         if (ch == '0')
             return '\u24ea';
         return ch;
-    }
-
-    enum Result {
-        PASSING, FAIL_LEFT, FAIL_RIGHT, FAIL_BOTH;
-    }
-
-    /**
-     * Check to see if getBounds2D(..) is as big or larger than the precise bounds. If the left or right
-     * edge comes in too small then this returns a failing Result.
-     */
-    private static Result getResult(CubicCurve2D curve, BigDecimal preciseLeft, BigDecimal preciseRight) {
-        Rectangle2D r = getBounds2D(curve.getPathIterator(null));
-
-        BigDecimal observedLeftX = new BigDecimal(r.getMinX());
-        BigDecimal observedRightX = new BigDecimal(r.getMaxX());
-
-        boolean badLeft = observedLeftX.compareTo(preciseLeft) > 0;
-        boolean badRight = observedRightX.compareTo(preciseRight) < 0;
-        if (badLeft && badRight)
-            return Result.FAIL_BOTH;
-        if (badLeft)
-            return Result.FAIL_LEFT;
-        if (badRight)
-            return Result.FAIL_RIGHT;
-        return Result.PASSING;
     }
 
     private static int solveQuadratic(BigDecimal[] eqn, BigDecimal[] res) {
@@ -285,168 +255,5 @@ public class GetBounds2DPrecisionTest {
             }
         }
         return roots;
-    }
-
-    /**
-     * This is an adaptation of the existing Path2D.getBounds2D(PathIterator) draft that
-     * expands bounding box by <code>double margin = marginMultiplier * Math.ulp(v);</code>
-     */
-    public static Rectangle2D getBounds2D(final PathIterator pi) {
-        // define x and y parametric coefficients where:
-        // x(t) = x_coeff[0] + x_coeff[1] * t + x_coeff[2] * t^2 + x_coeff[3] * t^3
-        final double[] coeff = new double[4];
-
-        // define the derivative's coefficients
-        final double[] deriv_coeff = new double[3];
-
-        final double[] coords = new double[6];
-        final double[] tExtrema = new double[2];
-        boolean isDefined = false;
-        double leftX = 0.0;
-        double rightX = 0.0;
-        double topY = 0.0;
-        double bottomY = 0.0;
-        double lastX = 0.0;
-        double lastY = 0.0;
-
-        for (; !pi.isDone(); pi.next()) {
-            int type = pi.currentSegment(coords);
-            switch (type) {
-                case PathIterator.SEG_MOVETO:
-                    if (!isDefined) {
-                        isDefined = true;
-                        leftX = rightX = coords[0];
-                        topY = bottomY = coords[1];
-                    } else {
-                        if (coords[0] < leftX) leftX = coords[0];
-                        if (coords[0] > rightX) rightX = coords[0];
-                        if (coords[1] < topY) topY = coords[1];
-                        if (coords[1] > bottomY) bottomY = coords[1];
-                    }
-                    lastX = coords[0];
-                    lastY = coords[1];
-                    break;
-                case PathIterator.SEG_LINETO:
-                    if (coords[0] < leftX) leftX = coords[0];
-                    if (coords[0] > rightX) rightX = coords[0];
-                    if (coords[1] < topY) topY = coords[1];
-                    if (coords[1] > bottomY) bottomY = coords[1];
-                    lastX = coords[0];
-                    lastY = coords[1];
-                    break;
-                case PathIterator.SEG_QUADTO:
-                    if (coords[2] < leftX) leftX = coords[2];
-                    if (coords[2] > rightX) rightX = coords[2];
-                    if (coords[3] < topY) topY = coords[3];
-                    if (coords[3] > bottomY) bottomY = coords[3];
-
-                    if (coords[0] < leftX || coords[0] > rightX) {
-                        final double dx21 = (coords[0] - lastX);
-                        coeff[2] = (coords[2] - coords[0]) - dx21;  // A = P3 - P0 - 2 P2
-                        coeff[1] = 2.0 * dx21;                      // B = 2 (P2 - P1)
-                        coeff[0] = lastX;                           // C = P1
-
-                        coeff[2] = lastX - 2.0 * coords[0] + coords[2];
-                        coeff[1] = -2.0 * lastX + 2.0 * coords[0];
-                        coeff[0] = lastX;
-
-                        deriv_coeff[0] = coeff[1];
-                        deriv_coeff[1] = 2.0 * coeff[2];
-
-                        double t = -deriv_coeff[0] / deriv_coeff[1];
-                        if (t > 0.0 && t < 1.0) {
-                            double x = coeff[0] + t * (coeff[1] + t * coeff[2]);
-                            double margin = marginMultiplier * Math.ulp(x);
-                            if (x - margin < leftX) leftX = x - margin;
-                            if (x + margin> rightX) rightX = x + margin;
-                        }
-                    }
-                    if (coords[1] < topY || coords[1] > bottomY) {
-                        final double dy21 = (coords[1] - lastY);
-                        coeff[2] = (coords[3] - coords[1]) - dy21;
-                        coeff[1] = 2.0 * dy21;
-                        coeff[0] = lastY;
-
-                        deriv_coeff[0] = coeff[1];
-                        deriv_coeff[1] = 2.0 * coeff[2];
-
-                        double t = -deriv_coeff[0] / deriv_coeff[1];
-                        if (t > 0.0 && t < 1.0) {
-                            double y = coeff[0] + t * (coeff[1] + t * coeff[2]);
-                            double margin = marginMultiplier * Math.ulp(y);
-                            if (y - margin < topY) topY = y - margin;
-                            if (y + margin > bottomY) bottomY = y + margin;
-                        }
-                    }
-                    lastX = coords[2];
-                    lastY = coords[3];
-                    break;
-                case PathIterator.SEG_CUBICTO:
-                    if (coords[4] < leftX) leftX = coords[4];
-                    if (coords[4] > rightX) rightX = coords[4];
-                    if (coords[5] < topY) topY = coords[5];
-                    if (coords[5] > bottomY) bottomY = coords[5];
-
-                    if (coords[0] < leftX || coords[0] > rightX || coords[2] < leftX || coords[2] > rightX) {
-                        final double dx32 = 3.0 * (coords[2] - coords[0]);
-                        final double dx21 = 3.0 * (coords[0] - lastX);
-                        coeff[3] = (coords[4] - lastX) - dx32;  // A = P3 - P0 - 3 (P2 - P1) = (P3 - P0) + 3 (P1 - P2)
-                        coeff[2] = (dx32 - dx21);               // B = 3 (P2 - P1) - 3(P1 - P0) = 3 (P2 + P0) - 6 P1
-                        coeff[1] = dx21;                        // C = 3 (P1 - P0)
-                        coeff[0] = lastX;                       // D = P0
-
-                        deriv_coeff[0] = coeff[1];
-                        deriv_coeff[1] = 2.0 * coeff[2];
-                        deriv_coeff[2] = 3.0 * coeff[3];
-
-                        int tExtremaCount = QuadCurve2D.solveQuadratic(deriv_coeff, tExtrema);
-                        for (int i = 0; i < tExtremaCount; i++) {
-                            double t = tExtrema[i];
-                            if (t > 0.0 && t < 1.0) {
-                                double x = coeff[0] + t * (coeff[1] + t * (coeff[2] + t * coeff[3]));
-                                double margin = marginMultiplier * Math.ulp(x);
-                                if (x - margin < leftX) leftX = x - margin;
-                                if (x + margin > rightX) rightX = x + margin;
-                            }
-                        }
-                    }
-                    if (coords[1] < topY || coords[1] > bottomY || coords[3] < topY || coords[3] > bottomY) {
-                        final double dy32 = 3.0 * (coords[3] - coords[1]);
-                        final double dy21 = 3.0 * (coords[1] - lastY);
-                        coeff[3] = (coords[5] - lastY) - dy32;
-                        coeff[2] = (dy32 - dy21);
-                        coeff[1] = dy21;
-                        coeff[0] = lastY;
-
-                        deriv_coeff[0] = coeff[1];
-                        deriv_coeff[1] = 2.0 * coeff[2];
-                        deriv_coeff[2] = 3.0 * coeff[3];
-
-                        int tExtremaCount = QuadCurve2D.solveQuadratic(deriv_coeff, tExtrema);
-                        for (int i = 0; i < tExtremaCount; i++) {
-                            double t = tExtrema[i];
-                            if (t > 0.0 && t < 1.0) {
-                                double y = coeff[0] + t * (coeff[1] + t * (coeff[2] + t * coeff[3]));
-                                double margin = marginMultiplier * Math.ulp(y);
-                                if (y - margin < topY) topY = y - margin;
-                                if (y + margin > bottomY) bottomY = y + margin;
-                            }
-                        }
-                    }
-                    lastX = coords[4];
-                    lastY = coords[5];
-                    break;
-                case PathIterator.SEG_CLOSE:
-                default:
-                    continue;
-            }
-        }
-        if (isDefined) {
-            return new Rectangle2D.Double(leftX, topY, rightX - leftX, bottomY - topY);
-        }
-
-        // there's room to debate what should happen here, but historically we return a zeroed
-        // out rectangle here. So for backwards compatibility let's keep doing that:
-        return new Rectangle2D.Double();
     }
 }
