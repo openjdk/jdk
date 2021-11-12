@@ -280,7 +280,7 @@ public abstract class Enum<E extends Enum<E>>
      * {@link java.lang.Object#finalize} for background information and details
      * about migration options.
      */
-    @Deprecated(since="9", forRemoval=true)
+    @Deprecated(since="18", forRemoval=true)
     @SuppressWarnings("removal")
     protected final void finalize() { }
 
