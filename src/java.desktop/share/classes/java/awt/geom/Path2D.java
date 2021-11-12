@@ -2102,12 +2102,10 @@ public abstract class Path2D implements Shape, Cloneable {
     public static Rectangle2D getBounds2D(final PathIterator pi) {
         // define x and y parametric coefficients where:
         // x(t) = x_coeff[0] + x_coeff[1] * t + x_coeff[2] * t^2 + x_coeff[3] * t^3
-        final double[] x_coeff = new double[4];
-        final double[] y_coeff = new double[4];
+        final double[] coeff = new double[4];
 
         // define the derivative's coefficients
-        final double[] x_deriv_coeff = new double[3];
-        final double[] y_deriv_coeff = new double[3];
+        final double[] deriv_coeff = new double[3];
 
         final double[] coords = new double[6];
         final double[] tExtrema = new double[2];
@@ -2152,32 +2150,32 @@ public abstract class Path2D implements Shape, Cloneable {
 
                     if (coords[0] < leftX || coords[0] > rightX) {
                         final double dx21 = (coords[0] - lastX);
-                        x_coeff[2] = (coords[2] - coords[0]) - dx21;  // A = P3 - P0 - 2 P2
-                        x_coeff[1] = 2.0 * dx21;                      // B = 2 (P2 - P1)
-                        x_coeff[0] = lastX;                           // C = P1
+                        coeff[2] = (coords[2] - coords[0]) - dx21;  // A = P3 - P0 - 2 P2
+                        coeff[1] = 2.0 * dx21;                      // B = 2 (P2 - P1)
+                        coeff[0] = lastX;                           // C = P1
 
-                        x_deriv_coeff[0] = x_coeff[1];
-                        x_deriv_coeff[1] = 2.0 * x_coeff[2];
+                        deriv_coeff[0] = coeff[1];
+                        deriv_coeff[1] = 2.0 * coeff[2];
 
-                        double t = -x_deriv_coeff[0] / x_deriv_coeff[1];
+                        double t = -deriv_coeff[0] / deriv_coeff[1];
                         if (t > 0.0 && t < 1.0) {
-                            double x = x_coeff[0] + t * (x_coeff[1] + t * x_coeff[2]);
+                            double x = coeff[0] + t * (coeff[1] + t * coeff[2]);
                             if (x < leftX) leftX = x;
                             if (x > rightX) rightX = x;
                         }
                     }
                     if (coords[1] < topY || coords[1] > bottomY) {
                         final double dy21 = (coords[1] - lastY);
-                        y_coeff[2] = (coords[3] - coords[1]) - dy21;
-                        y_coeff[1] = 2.0 * dy21;
-                        y_coeff[0] = lastY;
+                        coeff[2] = (coords[3] - coords[1]) - dy21;
+                        coeff[1] = 2.0 * dy21;
+                        coeff[0] = lastY;
 
-                        y_deriv_coeff[0] = y_coeff[1];
-                        y_deriv_coeff[1] = 2.0 * y_coeff[2];
+                        deriv_coeff[0] = coeff[1];
+                        deriv_coeff[1] = 2.0 * coeff[2];
 
-                        double t = -y_deriv_coeff[0] / y_deriv_coeff[1];
+                        double t = -deriv_coeff[0] / deriv_coeff[1];
                         if (t > 0.0 && t < 1.0) {
-                            double y = y_coeff[0] + t * (y_coeff[1] + t * y_coeff[2]);
+                            double y = coeff[0] + t * (coeff[1] + t * coeff[2]);
                             if (y < topY) topY = y;
                             if (y > bottomY) bottomY = y;
                         }
@@ -2194,20 +2192,20 @@ public abstract class Path2D implements Shape, Cloneable {
                     if (coords[0] < leftX || coords[0] > rightX || coords[2] < leftX || coords[2] > rightX) {
                         final double dx32 = 3.0 * (coords[2] - coords[0]);
                         final double dx21 = 3.0 * (coords[0] - lastX);
-                        x_coeff[3] = (coords[4] - lastX) - dx32;  // A = P3 - P0 - 3 (P2 - P1) = (P3 - P0) + 3 (P1 - P2)
-                        x_coeff[2] = (dx32 - dx21);               // B = 3 (P2 - P1) - 3(P1 - P0) = 3 (P2 + P0) - 6 P1
-                        x_coeff[1] = dx21;                        // C = 3 (P1 - P0)
-                        x_coeff[0] = lastX;                       // D = P0
+                        coeff[3] = (coords[4] - lastX) - dx32;  // A = P3 - P0 - 3 (P2 - P1) = (P3 - P0) + 3 (P1 - P2)
+                        coeff[2] = (dx32 - dx21);               // B = 3 (P2 - P1) - 3(P1 - P0) = 3 (P2 + P0) - 6 P1
+                        coeff[1] = dx21;                        // C = 3 (P1 - P0)
+                        coeff[0] = lastX;                       // D = P0
 
-                        x_deriv_coeff[0] = x_coeff[1];
-                        x_deriv_coeff[1] = 2.0 * x_coeff[2];
-                        x_deriv_coeff[2] = 3.0 * x_coeff[3];
+                        deriv_coeff[0] = coeff[1];
+                        deriv_coeff[1] = 2.0 * coeff[2];
+                        deriv_coeff[2] = 3.0 * coeff[3];
 
-                        int tExtremaCount = QuadCurve2D.solveQuadratic(x_deriv_coeff, tExtrema);
+                        int tExtremaCount = QuadCurve2D.solveQuadratic(deriv_coeff, tExtrema);
                         for (int i = 0; i < tExtremaCount; i++) {
                             double t = tExtrema[i];
                             if (t > 0.0 && t < 1.0) {
-                                double x = x_coeff[0] + t * (x_coeff[1] + t * (x_coeff[2] + t * x_coeff[3]));
+                                double x = coeff[0] + t * (coeff[1] + t * (coeff[2] + t * coeff[3]));
                                 if (x < leftX) leftX = x;
                                 if (x > rightX) rightX = x;
                             }
@@ -2216,20 +2214,20 @@ public abstract class Path2D implements Shape, Cloneable {
                     if (coords[1] < topY || coords[1] > bottomY || coords[3] < topY || coords[3] > bottomY) {
                         final double dy32 = 3.0 * (coords[3] - coords[1]);
                         final double dy21 = 3.0 * (coords[1] - lastY);
-                        y_coeff[3] = (coords[5] - lastY) - dy32;
-                        y_coeff[2] = (dy32 - dy21);
-                        y_coeff[1] = dy21;
-                        y_coeff[0] = lastY;
+                        coeff[3] = (coords[5] - lastY) - dy32;
+                        coeff[2] = (dy32 - dy21);
+                        coeff[1] = dy21;
+                        coeff[0] = lastY;
 
-                        y_deriv_coeff[0] = y_coeff[1];
-                        y_deriv_coeff[1] = 2.0 * y_coeff[2];
-                        y_deriv_coeff[2] = 3.0 * y_coeff[3];
+                        deriv_coeff[0] = coeff[1];
+                        deriv_coeff[1] = 2.0 * coeff[2];
+                        deriv_coeff[2] = 3.0 * coeff[3];
 
-                        int tExtremaCount = QuadCurve2D.solveQuadratic(y_deriv_coeff, tExtrema);
+                        int tExtremaCount = QuadCurve2D.solveQuadratic(deriv_coeff, tExtrema);
                         for (int i = 0; i < tExtremaCount; i++) {
                             double t = tExtrema[i];
                             if (t > 0.0 && t < 1.0) {
-                                double y = y_coeff[0] + t * (y_coeff[1] + t * (y_coeff[2] + t * y_coeff[3]));
+                                double y = coeff[0] + t * (coeff[1] + t * (coeff[2] + t * coeff[3]));
                                 if (y < topY) topY = y;
                                 if (y > bottomY) bottomY = y;
                             }
