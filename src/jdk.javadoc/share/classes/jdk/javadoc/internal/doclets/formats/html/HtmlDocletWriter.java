@@ -895,7 +895,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -911,7 +911,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -928,7 +928,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -944,7 +944,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -1406,14 +1406,6 @@ public class HtmlDocletWriter {
         return false;
     }
 
-    boolean isAllWhiteSpace(String body) {
-        for (int i = 0 ; i < body.length(); i++) {
-            if (!Character.isWhitespace(body.charAt(i)))
-                return false;
-        }
-        return true;
-    }
-
     // Notify the next DocTree handler to take necessary action
     private boolean commentRemoved = false;
 
@@ -1504,7 +1496,7 @@ public class HtmlDocletWriter {
                 // Ignore any trailing whitespace OR whitespace after removed html comment
                 if ((isLastNode || commentRemoved)
                         && tag.getKind() == TEXT
-                        && isAllWhiteSpace(ch.getText(tag)))
+                        && ch.getText(tag).isBlank())
                     continue;
 
                 // Ignore any leading html comments
