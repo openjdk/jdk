@@ -896,8 +896,6 @@ class CompileReplay : public StackObj {
         _protection_domain = Handle(_thread, k->protection_domain());
       }
 
-      // Only initialize the protection domain handle with the protection domain of the very first entry.
-      // This also ensures that older replay files work.
       _protection_domain_initialized = true;
     }
 
