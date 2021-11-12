@@ -70,7 +70,7 @@ public:
   G1EvacFailureObjectsSet(uint region_idx, HeapWord* bottom);
 
   // Record an object that failed evacuation.
-  void record(oop obj);
+  inline void record(oop obj);
 
   // Apply the given ObjectClosure to all objects that failed evacuation and
   // empties the list after processing.

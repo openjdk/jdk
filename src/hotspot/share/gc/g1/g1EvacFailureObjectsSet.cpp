@@ -26,7 +26,6 @@
 #include "gc/g1/g1EvacFailureObjectsSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "utilities/quickSort.hpp"
 
@@ -60,13 +59,6 @@ G1EvacFailureObjectsSet::G1EvacFailureObjectsSet(uint region_idx, HeapWord* bott
   _bottom(bottom),
   _offsets(&_alloc_options, &_free_buffer_list)  {
   assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
-}
-
-void G1EvacFailureObjectsSet::record(oop obj) {
-  assert(obj != NULL, "must be");
-  assert(_region_idx == G1CollectedHeap::heap()->heap_region_containing(obj)->hrm_index(), "must be");
-  OffsetInRegion* e = _offsets.allocate();
-  *e = to_offset(obj);
 }
 
 // Helper class to join, sort and iterate over the previously collected segmented

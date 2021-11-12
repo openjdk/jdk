@@ -2373,6 +2373,8 @@ const bool Matcher::match_rule_supported(int opcode) {
 
   bool ret_value = true;
   switch (opcode) {
+    case Op_OnSpinWait:
+      return VM_Version::supports_on_spin_wait();
     case Op_CacheWB:
     case Op_CacheWBPreSync:
     case Op_CacheWBPostSync:
@@ -14331,6 +14333,18 @@ instruct signumF_reg(vRegF dst, vRegF src, vRegF zero, vRegF one) %{
     __ bsl(dst, __ T8B, one, src);
   %}
   ins_pipe(fp_uop_d);
+%}
+
+instruct onspinwait() %{
+  match(OnSpinWait);
+  ins_cost(INSN_COST);
+
+  format %{ "onspinwait" %}
+
+  ins_encode %{
+    __ spin_wait();
+  %}
+  ins_pipe(pipe_class_empty);
 %}
 
 // ============================================================================
