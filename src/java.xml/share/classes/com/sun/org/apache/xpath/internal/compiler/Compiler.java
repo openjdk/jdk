@@ -1109,7 +1109,7 @@ private static final boolean DEBUG = false;
   /**
    * Get the next available method id
    */
-  synchronized private long getNextMethodId()
+  private synchronized long getNextMethodId()
   {
     if (s_nextMethodId == Long.MAX_VALUE)
       s_nextMethodId = 0;

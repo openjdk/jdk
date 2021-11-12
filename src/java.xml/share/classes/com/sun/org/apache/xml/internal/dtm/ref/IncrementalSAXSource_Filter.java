@@ -115,7 +115,7 @@ implements IncrementalSAXSource, ContentHandler, DTDHandler, LexicalHandler, Err
   //
   // Factories
   //
-  static public IncrementalSAXSource createIncrementalSAXSource(CoroutineManager co, int controllerCoroutineID) {
+  public static IncrementalSAXSource createIncrementalSAXSource(CoroutineManager co, int controllerCoroutineID) {
     return new IncrementalSAXSource_Filter(co, controllerCoroutineID);
   }
 

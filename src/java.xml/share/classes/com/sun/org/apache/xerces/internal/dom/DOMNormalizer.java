@@ -97,14 +97,14 @@ public class DOMNormalizer implements XMLDocumentHandler {
     // constants
     //
     /** Debug normalize document*/
-    protected final static boolean DEBUG_ND = false;
+    protected static final boolean DEBUG_ND = false;
     /** Debug namespace fix up algorithm*/
-    protected final static boolean DEBUG = false;
+    protected static final boolean DEBUG = false;
     /** Debug document handler events */
-    protected final static boolean DEBUG_EVENTS = false;
+    protected static final boolean DEBUG_EVENTS = false;
 
     /** prefix added by namespace fixup algorithm should follow a pattern "NS" + index*/
-    protected final static String PREFIX = "NS";
+    protected static final String PREFIX = "NS";
 
     //
     // Data

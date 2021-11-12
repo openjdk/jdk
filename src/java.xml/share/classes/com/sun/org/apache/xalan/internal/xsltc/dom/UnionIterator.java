@@ -38,7 +38,7 @@ public final class UnionIterator extends MultiValuedNodeHeapIterator {
     /** wrapper for NodeIterators to support iterator
         comparison on the value of their next() method
     */
-    final private DOM _dom;
+    private final DOM _dom;
 
     private final class LookAheadIterator
             extends MultiValuedNodeHeapIterator.HeapNode

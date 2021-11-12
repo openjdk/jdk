@@ -65,7 +65,7 @@ class XPathFactoryFinder  {
     /**
      * <p>First time requires initialization overhead.</p>
      */
-    private volatile static boolean firstTime = true;
+    private static volatile boolean firstTime = true;
 
     /**
      * <p>Conditional debug printing.</p>

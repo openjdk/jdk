@@ -37,28 +37,28 @@ public interface XMLSchemaDescription extends XMLGrammarDescription {
      * Indicate that the current schema document is &lt;include&gt;d by another
      * schema document.
      */
-    public final static short CONTEXT_INCLUDE   = 0;
+    public static final short CONTEXT_INCLUDE   = 0;
     /**
      * Indicate that the current schema document is &lt;redefine&gt;d by another
      * schema document.
      */
-    public final static short CONTEXT_REDEFINE  = 1;
+    public static final short CONTEXT_REDEFINE  = 1;
     /**
      * Indicate that the current schema document is &lt;import&gt;ed by another
      * schema document.
      */
-    public final static short CONTEXT_IMPORT    = 2;
+    public static final short CONTEXT_IMPORT    = 2;
     /**
      * Indicate that the current schema document is being preparsed.
      */
-    public final static short CONTEXT_PREPARSE  = 3;
+    public static final short CONTEXT_PREPARSE  = 3;
     /**
      * Indicate that the parse of the current schema document is triggered
      * by xsi:schemaLocation/noNamespaceSchemaLocation attribute(s) in the
      * instance document. This value is only used if we don't defer the loading
      * of schema documents.
      */
-    public final static short CONTEXT_INSTANCE  = 4;
+    public static final short CONTEXT_INSTANCE  = 4;
     /**
      * Indicate that the parse of the current schema document is triggered by
      * the occurrence of an element whose namespace is the target namespace
@@ -66,7 +66,7 @@ public interface XMLSchemaDescription extends XMLGrammarDescription {
      * loading of schema documents until a component from that namespace is
      * referenced from the instance.
      */
-    public final static short CONTEXT_ELEMENT   = 5;
+    public static final short CONTEXT_ELEMENT   = 5;
     /**
      * Indicate that the parse of the current schema document is triggered by
      * the occurrence of an attribute whose namespace is the target namespace
@@ -74,7 +74,7 @@ public interface XMLSchemaDescription extends XMLGrammarDescription {
      * loading of schema documents until a component from that namespace is
      * referenced from the instance.
      */
-    public final static short CONTEXT_ATTRIBUTE = 6;
+    public static final short CONTEXT_ATTRIBUTE = 6;
     /**
      * Indicate that the parse of the current schema document is triggered by
      * the occurrence of an "xsi:type" attribute, whose value (a QName) has
@@ -82,7 +82,7 @@ public interface XMLSchemaDescription extends XMLGrammarDescription {
      * This value is only used if we do defer the loading of schema documents
      * until a component from that namespace is referenced from the instance.
      */
-    public final static short CONTEXT_XSITYPE   = 7;
+    public static final short CONTEXT_XSITYPE   = 7;
 
     /**
      * Get the context. The returned value is one of the pre-defined

@@ -267,7 +267,7 @@ class XPathLexer implements com.sun.java_cup.internal.runtime.Scanner {
                         throw new Error("Fatal Error.\n");
                 }
         }
-        static private int[][] unpackFromString(int size1, int size2, String st) {
+        private static int[][] unpackFromString(int size1, int size2, String st) {
                 int colonIndex = -1;
                 String lengthString;
                 int sequenceLength = 0;
@@ -540,7 +540,7 @@ class XPathLexer implements com.sun.java_cup.internal.runtime.Scanner {
                 /* 232 */ YY_NO_ANCHOR,
                 /* 233 */ YY_NO_ANCHOR
         };
-        static private int yy_cmap[] = unpackFromString(1,65538,
+        private static int yy_cmap[] = unpackFromString(1,65538,
 "54:9,27:2,54,27:2,54:18,27,17,53,54,15,54:2,55,25,26,1,3,11,4,13,2,56:10,10" +
 ",54,18,16,19,54,12,44,57:3,46,57:3,51,57:4,48,52,43,57,47,50,45,57:3,49,57:" +
 "2,41,54,42,54,58,54,35,38,29,5,21,39,33,36,6,57,20,37,8,28,9,30,57,31,32,23" +
@@ -574,7 +574,7 @@ class XPathLexer implements com.sun.java_cup.internal.runtime.Scanner {
 ":1008,54:17,58:64,57:84,58:12,57:90,58:10,57:40,58:31443,57:11172,58:92,54:" +
 "8448,58:1232,54:32,58:526,54:2,0:2")[0];
 
-        static private int yy_rmap[] = unpackFromString(1,234,
+        private static int yy_rmap[] = unpackFromString(1,234,
 "0,1:2,2,1:2,3,4,1,5,6,1:3,7,8,1:5,9,1,10:2,1:3,11,1:5,12,10,1,10:5,1:2,10,1" +
 ":2,13,1,10,1,14,10,15,16,1:2,10:4,17,1:2,18,19,20,21,22,23,24,25,26,27,1,25" +
 ",10,28:2,29,5,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,5" +
@@ -586,7 +586,7 @@ class XPathLexer implements com.sun.java_cup.internal.runtime.Scanner {
 ",156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,17" +
 "4,175,176,177,178,179,180,181")[0];
 
-        static private int yy_nxt[][] = unpackFromString(182,61,
+        private static int yy_nxt[][] = unpackFromString(182,61,
 "1,2,3,4,5,6,65,184,204,70,7,8,9,10,11,12,13,66,14,15,211,184:2,215,184,16,1" +
 "7,18,218,220,221,184,222,184:2,223,184:3,224,184,19,20,184:10,71,74,77,21,1" +
 "84:2,67,74,-1:63,22,-1:62,184:2,73,184:3,64,-1:2,76,-1:6,184,79,184:3,-1:3," +

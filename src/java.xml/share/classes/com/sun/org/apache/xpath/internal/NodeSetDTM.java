@@ -1102,7 +1102,7 @@ public class NodeSetDTM extends NodeVector
 
   /** If this node is being used as an iterator, the next index that nextNode()
    *  will return.  */
-  transient protected int m_next = 0;
+  protected transient int m_next = 0;
 
   /**
    * Get the current position, which is one less than
@@ -1158,11 +1158,11 @@ public class NodeSetDTM extends NodeVector
   }
 
   /** True if this list can be mutated.  */
-  transient protected boolean m_mutable = true;
+  protected transient boolean m_mutable = true;
 
   /** True if this list is cached.
    *  @serial  */
-  transient protected boolean m_cacheNodes = true;
+  protected transient boolean m_cacheNodes = true;
 
   /** The root of the iteration, if available. */
   protected int m_root = DTM.NULL;
@@ -1211,7 +1211,7 @@ public class NodeSetDTM extends NodeVector
     return m_mutable;
   }
 
-  transient private int m_last = 0;
+  private transient int m_last = 0;
 
   public int getLast()
   {

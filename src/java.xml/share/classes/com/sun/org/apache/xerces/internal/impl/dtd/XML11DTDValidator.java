@@ -38,7 +38,7 @@ public class XML11DTDValidator extends XMLDTDValidator {
     // Constants
     //
 
-    protected final static String DTD_VALIDATOR_PROPERTY =
+    protected static final String DTD_VALIDATOR_PROPERTY =
         Constants.XERCES_PROPERTY_PREFIX+Constants.DTD_VALIDATOR_PROPERTY;
 
     //

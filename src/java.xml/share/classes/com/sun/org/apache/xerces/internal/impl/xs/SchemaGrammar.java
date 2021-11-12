@@ -1176,7 +1176,7 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
 
     // anyType and anySimpleType: because there are so many places where
     // we need direct access to these two types
-    public final static XSComplexTypeDecl fAnyType = new XSAnyType();
+    public static final XSComplexTypeDecl fAnyType = new XSAnyType();
     private static class XSAnyType extends XSComplexTypeDecl {
         public XSAnyType () {
             fName = SchemaSymbols.ATTVAL_ANYTYPE;
@@ -1289,13 +1289,13 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
     } // class BuiltinAttrDecl
 
     // the grammars to hold components of the schema namespace
-    public final static BuiltinSchemaGrammar SG_SchemaNS = new BuiltinSchemaGrammar(GRAMMAR_XS, Constants.SCHEMA_VERSION_1_0);
-    private final static BuiltinSchemaGrammar SG_SchemaNSExtended = new BuiltinSchemaGrammar(GRAMMAR_XS, Constants.SCHEMA_VERSION_1_0_EXTENDED);
+    public static final BuiltinSchemaGrammar SG_SchemaNS = new BuiltinSchemaGrammar(GRAMMAR_XS, Constants.SCHEMA_VERSION_1_0);
+    private static final BuiltinSchemaGrammar SG_SchemaNSExtended = new BuiltinSchemaGrammar(GRAMMAR_XS, Constants.SCHEMA_VERSION_1_0_EXTENDED);
 
-    public final static XSSimpleType fAnySimpleType = (XSSimpleType)SG_SchemaNS.getGlobalTypeDecl(SchemaSymbols.ATTVAL_ANYSIMPLETYPE);
+    public static final XSSimpleType fAnySimpleType = (XSSimpleType)SG_SchemaNS.getGlobalTypeDecl(SchemaSymbols.ATTVAL_ANYSIMPLETYPE);
 
     // the grammars to hold components of the schema-instance namespace
-    public final static BuiltinSchemaGrammar SG_XSI = new BuiltinSchemaGrammar(GRAMMAR_XSI, Constants.SCHEMA_VERSION_1_0);
+    public static final BuiltinSchemaGrammar SG_XSI = new BuiltinSchemaGrammar(GRAMMAR_XSI, Constants.SCHEMA_VERSION_1_0);
 
     public static SchemaGrammar getS4SGrammar(short schemaVersion) {
         if (schemaVersion == Constants.SCHEMA_VERSION_1_0) {

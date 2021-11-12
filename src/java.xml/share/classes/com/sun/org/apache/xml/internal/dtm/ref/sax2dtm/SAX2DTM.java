@@ -108,40 +108,40 @@ public class SAX2DTM extends DTMDefaultBaseIterators
   /** The parent stack, needed only for construction.
    * Made protected rather than private so SAX2RTFDTM can access it.
    */
-  transient protected IntStack m_parents;
+  protected transient IntStack m_parents;
 
   /** The current previous node, needed only for construction time.
    * Made protected rather than private so SAX2RTFDTM can access it.
    */
-  transient protected int m_previous = 0;
+  protected transient int m_previous = 0;
 
   /** Namespace support, only relevent at construction time.
    * Made protected rather than private so SAX2RTFDTM can access it.
    */
-  transient protected Vector<String> m_prefixMappings = new Vector<>();
+  protected transient Vector<String> m_prefixMappings = new Vector<>();
 
   /** Namespace support, only relevent at construction time.
    * Made protected rather than private so SAX2RTFDTM can access it.
    */
-  transient protected IntStack m_contextIndexes;
+  protected transient IntStack m_contextIndexes;
 
   /** Type of next characters() event within text block in prgress. */
-  transient protected int m_textType = DTM.TEXT_NODE;
+  protected transient int m_textType = DTM.TEXT_NODE;
 
   /**
    * Type of coalesced text block. See logic in the characters()
    * method.
    */
-  transient protected int m_coalescedTextType = DTM.TEXT_NODE;
+  protected transient int m_coalescedTextType = DTM.TEXT_NODE;
 
   /** The SAX Document locator */
-  transient protected Locator m_locator = null;
+  protected transient Locator m_locator = null;
 
   /** The SAX Document system-id */
-  transient private String m_systemId = null;
+  private transient String m_systemId = null;
 
   /** We are inside the DTD.  This is used for ignoring comments.  */
-  transient protected boolean m_insideDTD = false;
+  protected transient boolean m_insideDTD = false;
 
   /** Tree Walker for dispatchToEvents. */
   protected DTMTreeWalker m_walker = new DTMTreeWalker();

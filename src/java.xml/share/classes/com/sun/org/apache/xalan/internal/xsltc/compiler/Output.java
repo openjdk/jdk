@@ -66,9 +66,9 @@ final class Output extends TopLevelElement {
     private boolean _disabled = false;
 
     // Some global constants
-    private final static String STRING_SIG = "Ljava/lang/String;";
-    private final static String XML_VERSION = "1.0";
-    private final static String HTML_VERSION = "4.0";
+    private static final String STRING_SIG = "Ljava/lang/String;";
+    private static final String XML_VERSION = "1.0";
+    private static final String HTML_VERSION = "4.0";
 
     /**
      * Displays the contents of this element (for debugging)

@@ -28,7 +28,7 @@ import java.util.ListResourceBundle;
  * and should be called XalanResourceBundle, or some such.
  * @xsl.usage internal
  */
-abstract public class XResourceBundleBase extends ListResourceBundle
+public abstract class XResourceBundleBase extends ListResourceBundle
 {
 
   /**
@@ -38,7 +38,7 @@ abstract public class XResourceBundleBase extends ListResourceBundle
    *
    * @return error string associated with the given error code
    */
-  abstract public String getMessageKey(int errorCode);
+  public abstract String getMessageKey(int errorCode);
 
   /**
    * Get the warning string associated with the error code
@@ -47,5 +47,5 @@ abstract public class XResourceBundleBase extends ListResourceBundle
    *
    * @return warning string associated with the given error code
    */
-  abstract public String getWarningKey(int errorCode);
+  public abstract String getWarningKey(int errorCode);
 }

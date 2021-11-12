@@ -517,7 +517,7 @@ public final class ToHTMLStream extends ToStream
     /**
      * Dummy element for elements not found.
      */
-    static private final ElemDesc m_dummy = new ElemDesc(0 | ElemDesc.BLOCK);
+    private static final ElemDesc m_dummy = new ElemDesc(0 | ElemDesc.BLOCK);
 
     /** True if URLs should be specially escaped with the %xx form. */
     private boolean m_specialEscapeURLs = true;

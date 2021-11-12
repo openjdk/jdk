@@ -41,7 +41,7 @@ public class XObjectFactory
    *
    * @return the right XObject based on the type of the object passed.
    */
-  static public XObject create(Object val)
+  public static XObject create(Object val)
   {
 
     XObject result;
@@ -80,7 +80,7 @@ public class XObjectFactory
    *
    * @return the right XObject based on the type of the object passed.
    */
-  static public XObject create(Object val, XPathContext xctxt)
+  public static XObject create(Object val, XPathContext xctxt)
   {
 
     XObject result;

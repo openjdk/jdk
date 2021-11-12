@@ -352,7 +352,7 @@ public class WalkerFactory
      * @param axis One of Axis.ANCESTOR, etc.
      * @return One of BIT_ANCESTOR, etc.
      */
-    static public int getAnalysisBitFromAxes(int axis)
+    public static int getAnalysisBitFromAxes(int axis)
     {
       switch (axis) // Generate new traverser
         {
@@ -1597,7 +1597,7 @@ public class WalkerFactory
    *
    * @throws javax.xml.transform.TransformerException
    */
-  static public boolean isNaturalDocOrder(int analysis)
+  public static boolean isNaturalDocOrder(int analysis)
   {
     if(canCrissCross(analysis) || isSet(analysis, BIT_NAMESPACE) ||
        walksFilteredList(analysis))

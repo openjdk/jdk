@@ -100,18 +100,18 @@ public class DOMSerializerImpl implements LSSerializer, DOMConfiguration {
      */
     protected short features = 0;
 
-    protected final static short NAMESPACES = 0x1 << 0;
-    protected final static short WELLFORMED = 0x1 << 1;
-    protected final static short ENTITIES = 0x1 << 2;
-    protected final static short CDATA = 0x1 << 3;
-    protected final static short SPLITCDATA = 0x1 << 4;
-    protected final static short COMMENTS = 0x1 << 5;
-    protected final static short DISCARDDEFAULT = 0x1 << 6;
-    protected final static short INFOSET = 0x1 << 7;
-    protected final static short XMLDECL = 0x1 << 8;
-    protected final static short NSDECL = 0x1 << 9;
-    protected final static short DOM_ELEMENT_CONTENT_WHITESPACE = 0x1 << 10;
-    protected final static short PRETTY_PRINT = 0x1 << 11;
+    protected static final short NAMESPACES = 0x1 << 0;
+    protected static final short WELLFORMED = 0x1 << 1;
+    protected static final short ENTITIES = 0x1 << 2;
+    protected static final short CDATA = 0x1 << 3;
+    protected static final short SPLITCDATA = 0x1 << 4;
+    protected static final short COMMENTS = 0x1 << 5;
+    protected static final short DISCARDDEFAULT = 0x1 << 6;
+    protected static final short INFOSET = 0x1 << 7;
+    protected static final short XMLDECL = 0x1 << 8;
+    protected static final short NSDECL = 0x1 << 9;
+    protected static final short DOM_ELEMENT_CONTENT_WHITESPACE = 0x1 << 10;
+    protected static final short PRETTY_PRINT = 0x1 << 11;
 
     // well-formness checking
     private DOMErrorHandler fErrorHandler = null;

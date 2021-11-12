@@ -31,7 +31,7 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 
 class DefaultValidationErrorHandler extends DefaultHandler {
-    static private int ERROR_COUNT_LIMIT = 10;
+    private static int ERROR_COUNT_LIMIT = 10;
     private int errorCount = 0;
     private Locale locale = Locale.getDefault();
 

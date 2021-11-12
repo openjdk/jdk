@@ -218,9 +218,9 @@ public final class JdkConstants {
     public static final String JDK_EXT_CLASSLOADER = "jdk.xml.extensionClassLoader";
 
     //legacy System Properties
-    public final static String ENTITY_EXPANSION_LIMIT = "entityExpansionLimit";
+    public static final String ENTITY_EXPANSION_LIMIT = "entityExpansionLimit";
     public static final String ELEMENT_ATTRIBUTE_LIMIT = "elementAttributeLimit" ;
-    public final static String MAX_OCCUR_LIMIT = "maxOccurLimit";
+    public static final String MAX_OCCUR_LIMIT = "maxOccurLimit";
 
     /**
      * A string "yes" that can be used for properties such as getEntityCountInfo
@@ -348,7 +348,7 @@ public final class JdkConstants {
      * Reset SymbolTable feature System property name is identical to feature
      * name
      */
-    public final static String RESET_SYMBOL_TABLE = "jdk.xml.resetSymbolTable";
+    public static final String RESET_SYMBOL_TABLE = "jdk.xml.resetSymbolTable";
     /**
      * Default value of RESET_SYMBOL_TABLE. This will read the System property
      */
@@ -370,7 +370,7 @@ public final class JdkConstants {
      * chunks that are larger than the specified size to ones that are equal to
      * or smaller than the size.
      */
-    public final static String CDATA_CHUNK_SIZE = "jdk.xml.cdataChunkSize";
+    public static final String CDATA_CHUNK_SIZE = "jdk.xml.cdataChunkSize";
     public static final int CDATA_CHUNK_SIZE_DEFAULT
             = SecuritySupport.getJAXPSystemProperty(Integer.class, CDATA_CHUNK_SIZE, "0");
 

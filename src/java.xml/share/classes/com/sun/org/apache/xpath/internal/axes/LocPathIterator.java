@@ -928,13 +928,13 @@ public abstract class LocPathIterator extends PredicatedNodeTest
    * because the hold running state, and thus the original iterator
    * expression from the stylesheet pool can not be used.
    */
-  transient protected IteratorPool m_clones = new IteratorPool(this);
+  protected transient IteratorPool m_clones = new IteratorPool(this);
 
   /**
    * The dtm of the context node.  Careful about using this... it may not
    * be the dtm of the current node.
    */
-  transient protected DTM m_cdtm;
+  protected transient DTM m_cdtm;
 
   /**
    * The stack frame index for this iterator.
@@ -950,13 +950,13 @@ public abstract class LocPathIterator extends PredicatedNodeTest
   private boolean m_isTopLevel = false;
 
   /** The last node that was fetched, usually by nextNode. */
-  transient public int m_lastFetched = DTM.NULL;
+  public transient int m_lastFetched = DTM.NULL;
 
   /**
    * The context node for this iterator, which doesn't change through
    * the course of the iteration.
    */
-  transient protected int m_context = DTM.NULL;
+  protected transient int m_context = DTM.NULL;
 
   /**
    * The node context from where the expression is being
@@ -964,14 +964,14 @@ public abstract class LocPathIterator extends PredicatedNodeTest
    * from m_context in that this is the context for the entire
    * expression, rather than the context for the subexpression.
    */
-  transient protected int m_currentContextNode = DTM.NULL;
+  protected transient int m_currentContextNode = DTM.NULL;
 
   /**
    * The current position of the context node.
    */
-  transient protected int m_pos = 0;
+  protected transient int m_pos = 0;
 
-  transient protected int m_length = -1;
+  protected transient int m_length = -1;
 
   /**
    * Fast access to the current prefix resolver.  It isn't really
@@ -985,7 +985,7 @@ public abstract class LocPathIterator extends PredicatedNodeTest
    * The XPathContext reference, needed for execution of many
    * operations.
    */
-  transient protected XPathContext m_execContext;
+  protected transient XPathContext m_execContext;
 
   /**
    * Returns true if all the nodes in the iteration well be returned in document

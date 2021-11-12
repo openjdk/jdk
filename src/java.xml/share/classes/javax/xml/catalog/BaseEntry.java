@@ -81,7 +81,7 @@ abstract class BaseEntry {
             return literal.equals(type);
         }
 
-        static public CatalogEntryType getType(String entryType) {
+        public static CatalogEntryType getType(String entryType) {
             for (CatalogEntryType type : CatalogEntryType.values()) {
                 if (type.isType(entryType)) {
                     return type;

@@ -46,9 +46,9 @@ import com.sun.org.apache.xerces.internal.xs.XSValue;
 public class XSAttributeDecl implements XSAttributeDeclaration {
 
     // scopes
-    public final static short     SCOPE_ABSENT        = 0;
-    public final static short     SCOPE_GLOBAL        = 1;
-    public final static short     SCOPE_LOCAL         = 2;
+    public static final short     SCOPE_ABSENT        = 0;
+    public static final short     SCOPE_GLOBAL        = 1;
+    public static final short     SCOPE_LOCAL         = 2;
 
     // the name of the attribute
     String fName = null;

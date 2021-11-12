@@ -54,7 +54,7 @@ class FactoryFinder {
     /**
      * Cache for properties in java.home/conf/jaxp.properties
      */
-    private final static Properties cacheProps = new Properties();
+    private static final Properties cacheProps = new Properties();
 
     /**
      * Flag indicating if properties from java.home/conf/jaxp.properties
@@ -93,7 +93,7 @@ class FactoryFinder {
      *
      * Use bootstrap classLoader if cl = null and useBSClsLoader is true
      */
-    static private Class<?> getProviderClass(String className, ClassLoader cl,
+    private static Class<?> getProviderClass(String className, ClassLoader cl,
             boolean doFallback, boolean useBSClsLoader) throws ClassNotFoundException
     {
         try {

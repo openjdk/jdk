@@ -116,7 +116,7 @@ public interface XPathEvaluationResult<T> {
          * @return the QName type that matches with the specified class type,
          * null if there is no match
          */
-            static public QName getQNameType(Class<?> clsType) {
+            public static QName getQNameType(Class<?> clsType) {
             for (XPathResultType type : XPathResultType.values()) {
                 if (type.equalsClassType(clsType)) {
                     return type.qnameType;

@@ -184,7 +184,7 @@ public class IncrementalSAXSource_Xerces
   //
   // Factories
   //
-  static public IncrementalSAXSource createIncrementalSAXSource()
+  public static IncrementalSAXSource createIncrementalSAXSource()
         {
                 try
                 {
@@ -200,7 +200,7 @@ public class IncrementalSAXSource_Xerces
                 }
   }
 
-  static public IncrementalSAXSource
+  public static IncrementalSAXSource
   createIncrementalSAXSource(SAXParser parser) {
                 try
                 {

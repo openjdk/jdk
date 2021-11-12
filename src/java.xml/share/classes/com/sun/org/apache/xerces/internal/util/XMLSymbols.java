@@ -38,7 +38,7 @@ public class XMLSymbols {
     /**
      * The empty string.
      */
-    public final static String EMPTY_STRING = "".intern();
+    public static final String EMPTY_STRING = "".intern();
 
     //==========================
     // Namespace prefixes/uris
@@ -47,12 +47,12 @@ public class XMLSymbols {
     /**
      * The internalized "xml" prefix.
      */
-    public final static String PREFIX_XML = "xml".intern();
+    public static final String PREFIX_XML = "xml".intern();
 
     /**
      * The internalized "xmlns" prefix.
      */
-    public final static String PREFIX_XMLNS = "xmlns".intern();
+    public static final String PREFIX_XMLNS = "xmlns".intern();
 
     //==========================
     // DTD symbols

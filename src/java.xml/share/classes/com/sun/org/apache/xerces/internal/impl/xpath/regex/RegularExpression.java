@@ -1748,7 +1748,7 @@ public class RegularExpression implements java.io.Serializable {
     transient BMPattern fixedStringTable = null;
     transient boolean fixedStringOnly = false;
 
-    static abstract class ExpressionTarget {
+    abstract static class ExpressionTarget {
         abstract char charAt(int index);
         abstract boolean regionMatches(boolean ignoreCase, int offset, int limit, String part, int partlen);
         abstract boolean regionMatches(boolean ignoreCase, int offset, int limit, int offset2, int partlen);

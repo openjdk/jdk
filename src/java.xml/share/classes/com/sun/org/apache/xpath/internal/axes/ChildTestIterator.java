@@ -37,7 +37,7 @@ public class ChildTestIterator extends BasicTestIterator
 {
     static final long serialVersionUID = -7936835957960705722L;
   /** The traverser to use to navigate over the descendants. */
-  transient protected DTMAxisTraverser m_traverser;
+  protected transient DTMAxisTraverser m_traverser;
 
   /** The extended type ID, not set until setRoot. */
 //  protected int m_extendedTypeID;

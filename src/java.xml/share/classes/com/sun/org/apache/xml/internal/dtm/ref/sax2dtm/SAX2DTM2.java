@@ -1774,16 +1774,16 @@ public class SAX2DTM2 extends SAX2DTM
    * doing this.
    */
   // The number of bits for the length of a Text node.
-  protected final static int TEXT_LENGTH_BITS = 10;
+  protected static final int TEXT_LENGTH_BITS = 10;
 
   // The number of bits for the offset of a Text node.
-  protected final static int TEXT_OFFSET_BITS = 21;
+  protected static final int TEXT_OFFSET_BITS = 21;
 
   // The maximum length value
-  protected final static int TEXT_LENGTH_MAX = (1<<TEXT_LENGTH_BITS) - 1;
+  protected static final int TEXT_LENGTH_MAX = (1<<TEXT_LENGTH_BITS) - 1;
 
   // The maximum offset value
-  protected final static int TEXT_OFFSET_MAX = (1<<TEXT_OFFSET_BITS) - 1;
+  protected static final int TEXT_OFFSET_MAX = (1<<TEXT_OFFSET_BITS) - 1;
 
   // True if we want to build the ID index table.
   protected boolean m_buildIdIndex = true;

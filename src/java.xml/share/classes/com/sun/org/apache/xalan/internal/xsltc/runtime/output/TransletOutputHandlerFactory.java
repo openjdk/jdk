@@ -74,7 +74,7 @@ public class TransletOutputHandlerFactory {
     private boolean _overrideDefaultParser;
     private ErrorListener _errListener;
 
-    static public TransletOutputHandlerFactory newInstance(boolean overrideDefaultParser,
+    public static TransletOutputHandlerFactory newInstance(boolean overrideDefaultParser,
             ErrorListener errListener) {
         return new TransletOutputHandlerFactory(overrideDefaultParser, errListener);
     }

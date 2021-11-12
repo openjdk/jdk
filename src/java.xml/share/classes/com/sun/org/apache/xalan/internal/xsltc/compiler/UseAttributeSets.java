@@ -41,7 +41,7 @@ import java.util.StringTokenizer;
 final class UseAttributeSets extends Instruction {
 
     // Only error that can occur:
-    private final static String ATTR_SET_NOT_FOUND =
+    private static final String ATTR_SET_NOT_FOUND =
         "";
 
     // Contains the names of all references attribute sets

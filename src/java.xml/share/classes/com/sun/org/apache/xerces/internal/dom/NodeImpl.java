@@ -144,16 +144,16 @@ public abstract class NodeImpl
 
     protected short flags;
 
-    protected final static short READONLY     = 0x1<<0;
-    protected final static short SYNCDATA     = 0x1<<1;
-    protected final static short SYNCCHILDREN = 0x1<<2;
-    protected final static short OWNED        = 0x1<<3;
-    protected final static short FIRSTCHILD   = 0x1<<4;
-    protected final static short SPECIFIED    = 0x1<<5;
-    protected final static short IGNORABLEWS  = 0x1<<6;
-    protected final static short HASSTRING    = 0x1<<7;
-    protected final static short NORMALIZED = 0x1<<8;
-    protected final static short ID           = 0x1<<9;
+    protected static final short READONLY     = 0x1<<0;
+    protected static final short SYNCDATA     = 0x1<<1;
+    protected static final short SYNCCHILDREN = 0x1<<2;
+    protected static final short OWNED        = 0x1<<3;
+    protected static final short FIRSTCHILD   = 0x1<<4;
+    protected static final short SPECIFIED    = 0x1<<5;
+    protected static final short IGNORABLEWS  = 0x1<<6;
+    protected static final short HASSTRING    = 0x1<<7;
+    protected static final short NORMALIZED = 0x1<<8;
+    protected static final short ID           = 0x1<<9;
 
     //
     // Constructors

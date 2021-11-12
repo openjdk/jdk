@@ -925,12 +925,12 @@ public class XPathParser extends lr_parser {
     /**
      * Used by function calls with no args.
      */
-    static public final List<Expression> EmptyArgs = new ArrayList<>(0);
+    public static final List<Expression> EmptyArgs = new ArrayList<>(0);
 
     /**
      * Reference to non-existing variable.
      */
-    static public final VariableRef DummyVarRef = null;
+    public static final VariableRef DummyVarRef = null;
 
     /**
      * Reference to the Parser class.

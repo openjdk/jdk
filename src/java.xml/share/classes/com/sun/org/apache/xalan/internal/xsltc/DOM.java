@@ -31,21 +31,21 @@ import org.w3c.dom.NodeList;
  * @author Santiago Pericas-Geertsen
  */
 public interface DOM {
-    public final static int  FIRST_TYPE             = 0;
+    public static final int  FIRST_TYPE             = 0;
 
-    public final static int  NO_TYPE                = -1;
+    public static final int  NO_TYPE                = -1;
 
     // 0 is reserved for NodeIterator.END
-    public final static int NULL     = 0;
+    public static final int NULL     = 0;
 
     // used by some node iterators to know which node to return
-    public final static int RETURN_CURRENT = 0;
-    public final static int RETURN_PARENT  = 1;
+    public static final int RETURN_CURRENT = 0;
+    public static final int RETURN_PARENT  = 1;
 
     // Constants used by getResultTreeFrag to indicate the types of the RTFs.
-    public final static int SIMPLE_RTF   = 0;
-    public final static int ADAPTIVE_RTF = 1;
-    public final static int TREE_RTF     = 2;
+    public static final int SIMPLE_RTF   = 0;
+    public static final int ADAPTIVE_RTF = 1;
+    public static final int TREE_RTF     = 2;
 
     /** returns singleton iterator containg the document root */
     public DTMAxisIterator getIterator();

@@ -58,7 +58,7 @@ public class XMLGrammarPreparser {
     //
 
     // feature:  continue-after-fatal-error
-    private final static String CONTINUE_AFTER_FATAL_ERROR =
+    private static final String CONTINUE_AFTER_FATAL_ERROR =
         Constants.XERCES_FEATURE_PREFIX + Constants.CONTINUE_AFTER_FATAL_ERROR_FEATURE;
 
     /** Property identifier: symbol table. */

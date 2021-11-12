@@ -71,47 +71,47 @@ class FunctionCall extends Expression {
     // Arguments to this function call (might not be any)
     private final List<Expression> _arguments;
     // Empty argument list, used for certain functions
-    private final static List<Expression> EMPTY_ARG_LIST = new ArrayList<>(0);
+    private static final List<Expression> EMPTY_ARG_LIST = new ArrayList<>(0);
 
     // Valid namespaces for Java function-call extension
-    protected final static String EXT_XSLTC =
+    protected static final String EXT_XSLTC =
         TRANSLET_URI;
 
-    protected final static String JAVA_EXT_XSLTC =
+    protected static final String JAVA_EXT_XSLTC =
         EXT_XSLTC + "/java";
 
-    protected final static String EXT_XALAN =
+    protected static final String EXT_XALAN =
         "http://xml.apache.org/xalan";
 
-    protected final static String JAVA_EXT_XALAN =
+    protected static final String JAVA_EXT_XALAN =
         "http://xml.apache.org/xalan/java";
 
-    protected final static String JAVA_EXT_XALAN_OLD =
+    protected static final String JAVA_EXT_XALAN_OLD =
         "http://xml.apache.org/xslt/java";
 
-    protected final static String EXSLT_COMMON =
+    protected static final String EXSLT_COMMON =
         "http://exslt.org/common";
 
-    protected final static String EXSLT_MATH =
+    protected static final String EXSLT_MATH =
         "http://exslt.org/math";
 
-    protected final static String EXSLT_SETS =
+    protected static final String EXSLT_SETS =
         "http://exslt.org/sets";
 
-    protected final static String EXSLT_DATETIME =
+    protected static final String EXSLT_DATETIME =
         "http://exslt.org/dates-and-times";
 
-    protected final static String EXSLT_STRINGS =
+    protected static final String EXSLT_STRINGS =
         "http://exslt.org/strings";
 
-    protected final static String XALAN_CLASSPACKAGE_NAMESPACE =
+    protected static final String XALAN_CLASSPACKAGE_NAMESPACE =
         "xalan://";
 
     // Namespace format constants
-    protected final static int NAMESPACE_FORMAT_JAVA = 0;
-    protected final static int NAMESPACE_FORMAT_CLASS = 1;
-    protected final static int NAMESPACE_FORMAT_PACKAGE = 2;
-    protected final static int NAMESPACE_FORMAT_CLASS_OR_PACKAGE = 3;
+    protected static final int NAMESPACE_FORMAT_JAVA = 0;
+    protected static final int NAMESPACE_FORMAT_CLASS = 1;
+    protected static final int NAMESPACE_FORMAT_PACKAGE = 2;
+    protected static final int NAMESPACE_FORMAT_CLASS_OR_PACKAGE = 3;
 
     // Namespace format
     private int _namespace_format = NAMESPACE_FORMAT_JAVA;

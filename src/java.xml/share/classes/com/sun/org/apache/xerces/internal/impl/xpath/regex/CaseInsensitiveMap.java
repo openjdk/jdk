@@ -44,7 +44,7 @@ final class CaseInsensitiveMap {
      *  Return a list of code point characters (not including the input value)
      *  that can be substituted in a case insensitive match
      */
-    static public int[] get(int codePoint) {
+    public static int[] get(int codePoint) {
         return (codePoint < 0x10000) ? getMapping(codePoint) : null;
     }
 

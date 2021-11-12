@@ -356,7 +356,7 @@ public class DescendantIterator extends LocPathIterator
 
 
   /** The traverser to use to navigate over the descendants. */
-  transient protected DTMAxisTraverser m_traverser;
+  protected transient DTMAxisTraverser m_traverser;
 
   /** The axis that we are traversing. */
   protected int m_axis;

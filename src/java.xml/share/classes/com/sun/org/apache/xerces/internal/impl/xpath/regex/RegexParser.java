@@ -76,9 +76,9 @@ class RegexParser {
     ResourceBundle resources;
     int chardata;
     int nexttoken;
-    static protected final int S_NORMAL = 0;
-    static protected final int S_INBRACKETS = 1;
-    static protected final int S_INXBRACKETS = 2;
+    protected static final int S_NORMAL = 0;
+    protected static final int S_INBRACKETS = 1;
+    protected static final int S_INXBRACKETS = 2;
     int context = S_NORMAL;
     int parenOpened = 1;
     int parennumber = 1;
@@ -1191,7 +1191,7 @@ class RegexParser {
         return c;
     }
 
-    static private final int hexChar(int ch) {
+    private static final int hexChar(int ch) {
         if (ch < '0')  return -1;
         if (ch > 'f')  return -1;
         if (ch <= '9')  return ch-'0';
@@ -1201,7 +1201,7 @@ class RegexParser {
         return ch-'a'+10;
     }
 
-    static protected final void addCaseInsensitiveChar(RangeToken tok, int c) {
+    protected static final void addCaseInsensitiveChar(RangeToken tok, int c) {
         final int[] caseMap = CaseInsensitiveMap.get(c);
         tok.addRange(c, c);
 
@@ -1213,7 +1213,7 @@ class RegexParser {
 
     }
 
-    static protected final void addCaseInsensitiveCharRange(RangeToken tok, int start, int end) {
+    protected static final void addCaseInsensitiveCharRange(RangeToken tok, int start, int end) {
         int[] caseMap;
         int r1, r2;
         if (start <= end) {

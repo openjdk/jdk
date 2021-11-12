@@ -74,7 +74,7 @@ public abstract class NodeIteratorBase implements NodeIterator {
      * restartable, then do nothing. If node is equal to END then
      * subsequent calls to next() must return END.
      */
-    abstract public NodeIterator setStartNode(int node);
+    public abstract NodeIterator setStartNode(int node);
 
     /**
      * Reset this iterator using state from last call to

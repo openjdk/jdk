@@ -517,7 +517,7 @@ public class CoreDOMImplementationImpl
         }
 
     /** NON-DOM: retrieve DTD loader */
-    synchronized final XMLDTDLoader getDTDLoader(String xmlVersion) {
+    final synchronized XMLDTDLoader getDTDLoader(String xmlVersion) {
         // return an instance of XML11DTDProcessor
         if ("1.1".equals(xmlVersion)) {
             while (freeXML11DTDLoaderIndex >= 0) {
@@ -553,7 +553,7 @@ public class CoreDOMImplementationImpl
     }
 
     /** NON-DOM: release DTD loader */
-    synchronized final void releaseDTDLoader(String xmlVersion, XMLDTDLoader loader) {
+    final synchronized void releaseDTDLoader(String xmlVersion, XMLDTDLoader loader) {
         // release an instance of XMLDTDLoader
         if ("1.1".equals(xmlVersion)) {
             ++freeXML11DTDLoaderIndex;

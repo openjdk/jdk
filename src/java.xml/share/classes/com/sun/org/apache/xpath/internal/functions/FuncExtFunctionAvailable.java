@@ -36,7 +36,7 @@ public class FuncExtFunctionAvailable extends FunctionOneArg
 {
     static final long serialVersionUID = 5118814314918592241L;
 
-    transient private FunctionTable m_functionTable = null;
+    private transient FunctionTable m_functionTable = null;
 
   /**
    * Execute the function.  The function must return

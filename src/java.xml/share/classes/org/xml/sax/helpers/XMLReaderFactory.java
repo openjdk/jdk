@@ -70,7 +70,7 @@ import org.xml.sax.XMLReader;
  * instead.
  */
 @Deprecated(since="9")
-final public class XMLReaderFactory
+public final class XMLReaderFactory
 {
     /**
      * Private constructor.

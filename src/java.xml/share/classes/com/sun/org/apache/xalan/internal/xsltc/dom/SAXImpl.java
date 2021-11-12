@@ -104,10 +104,10 @@ public final class SAXImpl extends SAX2DTM2
     /* ------------------------------------------------------------------- */
 
     // empty String for null attribute values
-    private final static String EMPTYSTRING = "";
+    private static final String EMPTYSTRING = "";
 
     // empty iterator to be returned when there are no children
-    private final static DTMAxisIterator EMPTYITERATOR = EmptyIterator.getInstance();
+    private static final DTMAxisIterator EMPTYITERATOR = EmptyIterator.getInstance();
     // The number of expanded names
     private int _namesSize = -1;
 
@@ -122,7 +122,7 @@ public final class SAXImpl extends SAX2DTM2
 
     // The URI to this document
     // private String _documentURI = null;
-    static private int _documentURIIndex = 0;
+    private static int _documentURIIndex = 0;
 
     // The owner Document when the input source is DOMSource.
     private Document _document;

@@ -67,12 +67,12 @@ public class JdkXmlUtils {
     /**
      * Catalog features
      */
-    public final static String USE_CATALOG = XMLConstants.USE_CATALOG;
-    public final static String SP_USE_CATALOG = "javax.xml.useCatalog";
-    public final static String CATALOG_FILES = CatalogFeatures.Feature.FILES.getPropertyName();
-    public final static String CATALOG_DEFER = CatalogFeatures.Feature.DEFER.getPropertyName();
-    public final static String CATALOG_PREFER = CatalogFeatures.Feature.PREFER.getPropertyName();
-    public final static String CATALOG_RESOLVE = CatalogFeatures.Feature.RESOLVE.getPropertyName();
+    public static final String USE_CATALOG = XMLConstants.USE_CATALOG;
+    public static final String SP_USE_CATALOG = "javax.xml.useCatalog";
+    public static final String CATALOG_FILES = CatalogFeatures.Feature.FILES.getPropertyName();
+    public static final String CATALOG_DEFER = CatalogFeatures.Feature.DEFER.getPropertyName();
+    public static final String CATALOG_PREFER = CatalogFeatures.Feature.PREFER.getPropertyName();
+    public static final String CATALOG_RESOLVE = CatalogFeatures.Feature.RESOLVE.getPropertyName();
 
 
 

@@ -259,23 +259,23 @@ public final class EncodingInfo extends Object
         /**
          * The encoding.
          */
-        final private String m_encoding;
+        private final String m_encoding;
         /**
          * m_first through m_last is the range of unicode
          * values that this object will return an answer on.
          * It may delegate to a similar object with a different
          * range
          */
-        final private int m_first;
+        private final int m_first;
 
         /**
          * m_explFirst through m_explLast is the range of unicode
          * value that this object handles explicitly and does not
          * delegate to a similar object.
          */
-        final private int m_explFirst;
-        final private int m_explLast;
-        final private int m_last;
+        private final int m_explFirst;
+        private final int m_explLast;
+        private final int m_last;
 
         /**
          * The object, of the same type as this one,
@@ -305,12 +305,12 @@ public final class EncodingInfo extends Object
          * A flag to record if we already know the answer
          * for the given unicode value.
          */
-        final private boolean m_alreadyKnown[] = new boolean[RANGE];
+        private final boolean m_alreadyKnown[] = new boolean[RANGE];
         /**
          * A table holding the answer on whether the given unicode
          * value is in the encoding.
          */
-        final private boolean m_isInEncoding[] = new boolean[RANGE];
+        private final boolean m_isInEncoding[] = new boolean[RANGE];
 
         private EncodingImpl() {
             // This object will answer whether any unicode value

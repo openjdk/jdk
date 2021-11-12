@@ -46,7 +46,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.Stylesheet;
  * @author Santiago Pericas-Geertsen
  */
 public class ClassGenerator extends ClassGen {
-    protected final static int TRANSLET_INDEX = 0;
+    protected static final int TRANSLET_INDEX = 0;
     protected static int INVALID_INDEX  = -1;
 
     private Stylesheet _stylesheet;

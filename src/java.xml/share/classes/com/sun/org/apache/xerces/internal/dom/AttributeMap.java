@@ -276,7 +276,7 @@ public class AttributeMap extends NamedNodeMapImpl {
      * Internal removeNamedItem method allowing to specify whether an exception
      * must be thrown if the specified name is not found.
      */
-    final protected Node internalRemoveNamedItem(String name, boolean raiseEx){
+    protected final Node internalRemoveNamedItem(String name, boolean raiseEx){
         if (isReadOnly()) {
                 String msg = DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "NO_MODIFICATION_ALLOWED_ERR", null);
                 throw new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR, msg);
@@ -388,7 +388,7 @@ public class AttributeMap extends NamedNodeMapImpl {
      * exception must be thrown if the specified local name and namespace URI
      * is not found.
      */
-    final protected Node internalRemoveNamedItemNS(String namespaceURI,
+    protected final Node internalRemoveNamedItemNS(String namespaceURI,
             String name,
             boolean raiseEx) {
 

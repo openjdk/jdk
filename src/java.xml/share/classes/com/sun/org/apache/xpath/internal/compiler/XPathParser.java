@@ -41,7 +41,7 @@ public class XPathParser
         // %REVIEW% Is there a better way of doing this?
         // Upside is minimum object churn. Downside is that we don't have a useful
         // backtrace in the exception itself -- but we don't expect to need one.
-        static public final String CONTINUE_AFTER_FATAL_ERROR="CONTINUE_AFTER_FATAL_ERROR";
+        public static final String CONTINUE_AFTER_FATAL_ERROR="CONTINUE_AFTER_FATAL_ERROR";
 
   /**
    * The XPath to be processed.
@@ -68,9 +68,9 @@ public class XPathParser
   /**
    * Results from checking FilterExpr syntax
    */
-  protected final static int FILTER_MATCH_FAILED     = 0;
-  protected final static int FILTER_MATCH_PRIMARY    = 1;
-  protected final static int FILTER_MATCH_PREDICATES = 2;
+  protected static final int FILTER_MATCH_FAILED     = 0;
+  protected static final int FILTER_MATCH_PRIMARY    = 1;
+  protected static final int FILTER_MATCH_PREDICATES = 2;
 
   // counts open predicates
   private int countPredicate;

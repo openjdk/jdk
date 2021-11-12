@@ -46,11 +46,11 @@ import java.util.StringTokenizer;
  */
 final class AttributeValueTemplate extends AttributeValue {
 
-    final static int OUT_EXPR = 0;
-    final static int IN_EXPR  = 1;
-    final static int IN_EXPR_SQUOTES = 2;
-    final static int IN_EXPR_DQUOTES = 3;
-    final static String DELIMITER = "\uFFFE";      // A Unicode nonchar
+    static final int OUT_EXPR = 0;
+    static final int IN_EXPR  = 1;
+    static final int IN_EXPR_SQUOTES = 2;
+    static final int IN_EXPR_DQUOTES = 3;
+    static final String DELIMITER = "\uFFFE";      // A Unicode nonchar
 
     public AttributeValueTemplate(String value, Parser parser,
         SyntaxTreeNode parent)

@@ -596,7 +596,7 @@ public abstract class PredicatedNodeTest extends NodeTest implements SubContextL
     }
 
   /** This is true if nextNode returns null. */
-  transient protected boolean m_foundLast = false;
+  protected transient boolean m_foundLast = false;
 
   /** The owning location path iterator.
    *  @serial */
@@ -617,7 +617,7 @@ public abstract class PredicatedNodeTest extends NodeTest implements SubContextL
    * An array of counts that correspond to the number
    * of predicates the step contains.
    */
-  transient protected int[] m_proximityPositions;
+  protected transient int[] m_proximityPositions;
 
   /** If true, diagnostic messages about predicate execution will be posted.  */
   static final boolean DEBUG_PREDICATECOUNTING = false;

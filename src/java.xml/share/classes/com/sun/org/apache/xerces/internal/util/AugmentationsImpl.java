@@ -104,17 +104,17 @@ public class AugmentationsImpl implements Augmentations{
     }
 
     abstract class AugmentationsItemsContainer {
-        abstract public Object putItem(Object key, Object item);
-        abstract public Object getItem(Object key);
-        abstract public Object removeItem(Object key);
-        abstract public Enumeration<Object> keys();
-        abstract public void clear();
-        abstract public boolean isFull();
-        abstract public AugmentationsItemsContainer expand();
+        public abstract Object putItem(Object key, Object item);
+        public abstract Object getItem(Object key);
+        public abstract Object removeItem(Object key);
+        public abstract Enumeration<Object> keys();
+        public abstract void clear();
+        public abstract boolean isFull();
+        public abstract AugmentationsItemsContainer expand();
     }
 
     class SmallContainer extends AugmentationsItemsContainer {
-        final static int SIZE_LIMIT = 10;
+        static final int SIZE_LIMIT = 10;
         final Object[] fAugmentations = new Object[SIZE_LIMIT*2];
         int fNumEntries = 0;
 

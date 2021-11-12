@@ -167,7 +167,7 @@ class Token implements java.io.Serializable {
         if (COUNTTOKENS)  Token.tokens ++;
         return new Token.CharToken(Token.CHAR, ch);
     }
-    static private Token.CharToken createAnchor(int ch) {
+    private static Token.CharToken createAnchor(int ch) {
         if (COUNTTOKENS)  Token.tokens ++;
         return new Token.CharToken(Token.ANCHOR, ch);
     }
@@ -742,7 +742,7 @@ class Token implements java.io.Serializable {
     };
     private static final int NONBMP_BLOCK_START = 84;
 
-    static protected RangeToken getRange(String name, boolean positive) {
+    protected static RangeToken getRange(String name, boolean positive) {
         // use local variable for better performance
         Map<String, Token> localCat = Token.categories;
         if (localCat == null) {
@@ -983,7 +983,7 @@ class Token implements java.io.Serializable {
         return positive ? (RangeToken)localCat.get(name)
             : (RangeToken)Token.categories2.get(name);
     }
-    static protected RangeToken getRange(String name, boolean positive, boolean xs) {
+    protected static RangeToken getRange(String name, boolean positive, boolean xs) {
         RangeToken range = Token.getRange(name, positive);
         if (xs && range != null && Token.isRegisterNonXS(name))
             range = null;
@@ -995,11 +995,11 @@ class Token implements java.io.Serializable {
      * This method is called by only getRange().
      * So this method need not MT-safe.
      */
-    static protected void registerNonXS(String name) {
+    protected static void registerNonXS(String name) {
         Token.nonxs.add(name);
     }
 
-    static protected boolean isRegisterNonXS(String name) {
+    protected static boolean isRegisterNonXS(String name) {
         return Token.nonxs.contains(name);
     }
 
@@ -1031,7 +1031,7 @@ class Token implements java.io.Serializable {
     +"\u0E3A"//;THAI CHARACTER PHINTHU;Mn;9;ON;;;;;N;THAI VOWEL SIGN PHINTHU;;;;
     +"\u0F84";//;TIBETAN MARK HALANTA;Mn;9;ON;;;;;N;TIBETAN VIRAMA;;;;
 
-    static private Token token_grapheme = null;
+    private static Token token_grapheme = null;
     static synchronized Token getGraphemePattern() {
         if (Token.token_grapheme != null)
             return Token.token_grapheme;
@@ -1070,7 +1070,7 @@ class Token implements java.io.Serializable {
     /**
      * Combing Character Sequence in Perl 5.6.
      */
-    static private Token token_ccs = null;
+    private static Token token_ccs = null;
     static synchronized Token getCombiningCharacterSequence() {
         if (Token.token_ccs != null)
             return Token.token_ccs;

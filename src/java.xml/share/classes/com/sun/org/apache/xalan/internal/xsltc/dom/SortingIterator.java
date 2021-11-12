@@ -31,7 +31,7 @@ import com.sun.org.apache.xml.internal.dtm.ref.DTMAxisIteratorBase;
  * @author Morten Jorgensen
  */
 public final class SortingIterator extends DTMAxisIteratorBase {
-    private final static int INIT_DATA_SIZE = 16;
+    private static final int INIT_DATA_SIZE = 16;
 
     private DTMAxisIterator _source;
     private NodeSortRecordFactory _factory;

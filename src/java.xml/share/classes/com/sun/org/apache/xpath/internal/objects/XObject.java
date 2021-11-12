@@ -162,7 +162,7 @@ public class XObject extends Expression implements Serializable, Cloneable
    *
    * @return the right XObject based on the type of the object passed.
    */
-  static public XObject create(Object val)
+  public static XObject create(Object val)
   {
     return XObjectFactory.create(val);
   }
@@ -177,7 +177,7 @@ public class XObject extends Expression implements Serializable, Cloneable
    *
    * @return the right XObject based on the type of the object passed.
    */
-  static public XObject create(Object val, XPathContext xctxt)
+  public static XObject create(Object val, XPathContext xctxt)
   {
     return XObjectFactory.create(val, xctxt);
   }

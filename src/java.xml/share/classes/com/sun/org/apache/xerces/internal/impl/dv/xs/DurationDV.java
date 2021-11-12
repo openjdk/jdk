@@ -49,7 +49,7 @@ public class DurationDV extends AbstractDateTimeDV {
     // see 3.2.6 duration W3C schema datatype specs
     //
     // the dates are in format: {CCYY,MM,DD, H, S, M, MS, timezone}
-    private final static DateTimeData[] DATETIMES= {
+    private static final DateTimeData[] DATETIMES= {
         new DateTimeData(1696, 9, 1, 0, 0, 0, 'Z', null, true, null),
         new DateTimeData(1697, 2, 1, 0, 0, 0, 'Z', null, true, null),
         new DateTimeData(1903, 3, 1, 0, 0, 0, 'Z', null, true, null),

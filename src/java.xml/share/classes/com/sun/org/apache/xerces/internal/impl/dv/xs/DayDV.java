@@ -38,7 +38,7 @@ import com.sun.org.apache.xerces.internal.impl.dv.ValidationContext;
 public class DayDV extends AbstractDateTimeDV {
 
     //size without time zone: ---09
-    private final static int DAY_SIZE=5;
+    private static final int DAY_SIZE=5;
 
     public Object getActualValue(String content, ValidationContext context) throws InvalidDatatypeValueException {
         try{

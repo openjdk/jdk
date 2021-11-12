@@ -198,15 +198,15 @@ public class XMLGregorianCalendarImpl
         implements Serializable, Cloneable {
 
     /** Backup values **/
-    transient private BigInteger orig_eon;
-    transient private int orig_year = DatatypeConstants.FIELD_UNDEFINED;
-    transient private int orig_month = DatatypeConstants.FIELD_UNDEFINED;
-    transient private int orig_day = DatatypeConstants.FIELD_UNDEFINED;
-    transient private int orig_hour = DatatypeConstants.FIELD_UNDEFINED;
-    transient private int orig_minute = DatatypeConstants.FIELD_UNDEFINED;
-    transient private int orig_second = DatatypeConstants.FIELD_UNDEFINED;
-    transient private BigDecimal orig_fracSeconds;
-    transient private int orig_timezone = DatatypeConstants.FIELD_UNDEFINED;
+    private transient BigInteger orig_eon;
+    private transient int orig_year = DatatypeConstants.FIELD_UNDEFINED;
+    private transient int orig_month = DatatypeConstants.FIELD_UNDEFINED;
+    private transient int orig_day = DatatypeConstants.FIELD_UNDEFINED;
+    private transient int orig_hour = DatatypeConstants.FIELD_UNDEFINED;
+    private transient int orig_minute = DatatypeConstants.FIELD_UNDEFINED;
+    private transient int orig_second = DatatypeConstants.FIELD_UNDEFINED;
+    private transient BigDecimal orig_fracSeconds;
+    private transient int orig_timezone = DatatypeConstants.FIELD_UNDEFINED;
 
     /**
      * <p>Eon of this <code>XMLGregorianCalendar</code>.</p>

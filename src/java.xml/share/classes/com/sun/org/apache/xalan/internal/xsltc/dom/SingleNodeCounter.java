@@ -32,7 +32,7 @@ import com.sun.org.apache.xml.internal.dtm.Axis;
  * @author Santiago Pericas-Geertsen
  */
 public abstract class SingleNodeCounter extends NodeCounter {
-    static private final int[] EmptyArray = new int[] { };
+    private static final int[] EmptyArray = new int[] { };
     DTMAxisIterator _countSiblings = null;
 
     public SingleNodeCounter(Translet translet,

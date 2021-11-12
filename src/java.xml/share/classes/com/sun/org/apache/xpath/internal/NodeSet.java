@@ -716,7 +716,7 @@ public class NodeSet
 
   /** If this node is being used as an iterator, the next index that nextNode()
    *  will return.  */
-  transient protected int m_next = 0;
+  protected transient int m_next = 0;
 
   /**
    * Get the current position, which is one less than
@@ -768,11 +768,11 @@ public class NodeSet
   }
 
   /** True if this list can be mutated.  */
-  transient protected boolean m_mutable = true;
+  protected transient boolean m_mutable = true;
 
   /** True if this list is cached.
    *  @serial  */
-  transient protected boolean m_cacheNodes = true;
+  protected transient boolean m_cacheNodes = true;
 
   /**
    * Get whether or not this is a cached node set.
@@ -808,7 +808,7 @@ public class NodeSet
   }
 
 
-  transient private int m_last = 0;
+  private transient int m_last = 0;
 
   public int getLast()
   {

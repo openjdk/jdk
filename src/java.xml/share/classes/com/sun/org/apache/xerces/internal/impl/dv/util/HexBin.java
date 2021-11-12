@@ -31,10 +31,10 @@ package com.sun.org.apache.xerces.internal.impl.dv.util;
  * @author Jeffrey Rodriguez
  */
 public final class  HexBin {
-    static private final int  BASELENGTH   = 128;
-    static private final int  LOOKUPLENGTH = 16;
-    static final private byte [] hexNumberTable    = new byte[BASELENGTH];
-    static final private char [] lookUpHexAlphabet = new char[LOOKUPLENGTH];
+    private static final int  BASELENGTH   = 128;
+    private static final int  LOOKUPLENGTH = 16;
+    private static final byte [] hexNumberTable    = new byte[BASELENGTH];
+    private static final char [] lookUpHexAlphabet = new char[LOOKUPLENGTH];
 
 
     static {
@@ -65,7 +65,7 @@ public final class  HexBin {
      * @param binaryData array of byte to encode
      * @return return encoded string
      */
-    static public String encode(byte[] binaryData) {
+    public static String encode(byte[] binaryData) {
         if (binaryData == null)
             return null;
         int lengthData   = binaryData.length;
@@ -88,7 +88,7 @@ public final class  HexBin {
      * @param encoded encoded string
      * @return return array of byte to encode
      */
-    static public byte[] decode(String encoded) {
+    public static byte[] decode(String encoded) {
         if (encoded == null)
             return null;
         int lengthData = encoded.length();

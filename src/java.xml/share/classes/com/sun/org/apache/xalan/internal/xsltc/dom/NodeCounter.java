@@ -57,13 +57,13 @@ public abstract class NodeCounter {
     private int _nSepars  = 0;
     private int _nFormats = 0;
 
-    private final static String[] Thousands =
+    private static final String[] Thousands =
         {"", "m", "mm", "mmm" };
-    private final static String[] Hundreds =
+    private static final String[] Hundreds =
     {"", "c", "cc", "ccc", "cd", "d", "dc", "dcc", "dccc", "cm"};
-    private final static String[] Tens =
+    private static final String[] Tens =
     {"", "x", "xx", "xxx", "xl", "l", "lx", "lxx", "lxxx", "xc"};
-    private final static String[] Ones =
+    private static final String[] Ones =
     {"", "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix"};
 
     private StringBuilder _tempBuffer = new StringBuilder();
@@ -92,7 +92,7 @@ public abstract class NodeCounter {
      * Set the start node for this counter. The same <tt>NodeCounter</tt>
      * object can be used multiple times by resetting the starting node.
      */
-    abstract public NodeCounter setStartNode(int node);
+    public abstract NodeCounter setStartNode(int node);
 
     /**
      * If the user specified a value attribute, use this instead of
@@ -248,7 +248,7 @@ public abstract class NodeCounter {
      * Returns the position of <tt>node</tt> according to the level and
      * the from and count patterns.
      */
-    abstract public String getCounter();
+    public abstract String getCounter();
 
     /**
      * Returns the position of <tt>node</tt> according to the level and

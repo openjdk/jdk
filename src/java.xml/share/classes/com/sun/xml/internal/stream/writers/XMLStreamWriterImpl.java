@@ -149,7 +149,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
 
     private ElementStack fElementStack = new ElementStack(); //Change this .-Venu
 
-    final private String DEFAULT_PREFIX = fSymbolTable.addSymbol("");
+    private final String DEFAULT_PREFIX = fSymbolTable.addSymbol("");
 
     private final ReadOnlyIterator<String> fReadOnlyIterator = new ReadOnlyIterator<>();
 

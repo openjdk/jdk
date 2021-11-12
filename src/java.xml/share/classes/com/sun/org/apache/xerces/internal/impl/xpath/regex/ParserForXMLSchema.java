@@ -369,9 +369,9 @@ class ParserForXMLSchema extends RegexParser {
         return c;
     }
 
-    static private Map<String, Token> ranges = null;
-    static private Map<String, Token> ranges2 = null;
-    static synchronized protected RangeToken getRange(String name, boolean positive) {
+    private static Map<String, Token> ranges = null;
+    private static Map<String, Token> ranges2 = null;
+    protected static synchronized RangeToken getRange(String name, boolean positive) {
         if (ranges == null) {
             ranges = new HashMap<>();
             ranges2 = new HashMap<>();

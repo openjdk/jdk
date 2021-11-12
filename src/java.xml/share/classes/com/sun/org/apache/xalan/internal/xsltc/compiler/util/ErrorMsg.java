@@ -175,10 +175,10 @@ public final class ErrorMsg {
     // This array and the following 4 strings are read from that bundle.
     private static ResourceBundle _bundle;
 
-    public final static String ERROR_MESSAGES_KEY   = "ERROR_MESSAGES_KEY";
-    public final static String COMPILER_ERROR_KEY   = "COMPILER_ERROR_KEY";
-    public final static String COMPILER_WARNING_KEY = "COMPILER_WARNING_KEY";
-    public final static String RUNTIME_ERROR_KEY    = "RUNTIME_ERROR_KEY";
+    public static final String ERROR_MESSAGES_KEY   = "ERROR_MESSAGES_KEY";
+    public static final String COMPILER_ERROR_KEY   = "COMPILER_ERROR_KEY";
+    public static final String COMPILER_WARNING_KEY = "COMPILER_WARNING_KEY";
+    public static final String RUNTIME_ERROR_KEY    = "RUNTIME_ERROR_KEY";
 
     static {
         _bundle = SecuritySupport.getResourceBundle(

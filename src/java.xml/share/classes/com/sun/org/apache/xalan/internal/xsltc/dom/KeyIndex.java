@@ -501,7 +501,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
     /**
      * Used to represent an empty node set.
      */
-    final private static IntegerArray EMPTY_NODES = new IntegerArray(0);
+    private static final IntegerArray EMPTY_NODES = new IntegerArray(0);
 
 
     /**

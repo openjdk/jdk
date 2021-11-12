@@ -55,7 +55,7 @@ public class ListDV extends TypeValidator{
         return ((ListData)value).getLength();
     }
 
-    final static class ListData extends AbstractList<Object> implements ObjectList {
+    static final class ListData extends AbstractList<Object> implements ObjectList {
         final Object[] data;
         private String canonical;
         public ListData(Object[] data) {

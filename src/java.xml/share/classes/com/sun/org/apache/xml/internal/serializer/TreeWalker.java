@@ -49,15 +49,15 @@ public final class TreeWalker
 {
 
   /** Local reference to a ContentHandler          */
-  final private ContentHandler m_contentHandler;
+  private final ContentHandler m_contentHandler;
   /**
    * If m_contentHandler is a SerializationHandler, then this is
    * a reference to the same object.
    */
-  final private SerializationHandler m_Serializer;
+  private final SerializationHandler m_Serializer;
 
   /** Locator object for this TreeWalker          */
-  final private LocatorImpl m_locator = new LocatorImpl();
+  private final LocatorImpl m_locator = new LocatorImpl();
 
   /**
    * Get the ContentHandler used for the tree walk.

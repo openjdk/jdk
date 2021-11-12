@@ -150,8 +150,8 @@ public class CoroutineManager
   Object m_yield=null;
 
   // Expose???
-  final static int NOBODY=-1;
-  final static int ANYBODY=-1;
+  static final int NOBODY=-1;
+  static final int ANYBODY=-1;
 
   /** Internal field used to confirm that the coroutine now waking up is
    * in fact the one we intended to resume. Some such selection mechanism

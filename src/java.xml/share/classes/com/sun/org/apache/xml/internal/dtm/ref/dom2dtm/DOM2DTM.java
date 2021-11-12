@@ -75,7 +75,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
 
   /** The current position in the DOM tree. Last node examined for
    * possible copying to DTM. */
-  transient private Node m_pos;
+  private transient Node m_pos;
   /** The current position in the DTM tree. Who children get appended to. */
   private int m_last_parent=0;
   /** The current position in the DTM tree. Who children reference as their
@@ -85,7 +85,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
   /** The top of the subtree.
    * %REVIEW%: 'may not be the same as m_context if "//foo" pattern.'
    * */
-  transient private Node m_root;
+  private transient Node m_root;
 
   /** True iff the first element has been processed. This is used to control
       synthesis of the implied xml: namespace declaration node. */
@@ -94,7 +94,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
   /** true if ALL the nodes in the m_root subtree have been processed;
    * false if our incremental build has not yet finished scanning the
    * DOM tree.  */
-  transient private boolean m_nodesAreProcessed;
+  private transient boolean m_nodesAreProcessed;
 
   /** The node objects.  The instance part of the handle indexes
    * directly into this vector.  Each DTM node may actually be

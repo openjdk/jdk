@@ -291,7 +291,7 @@ public final class OutputPropertiesFactory
      *
      * @return Properties object that holds the defaults for the given method.
      */
-    static public final Properties getDefaultMethodProperties(String method)
+    public static final Properties getDefaultMethodProperties(String method)
     {
         Properties defaultProperties = null;
 
@@ -348,7 +348,7 @@ public final class OutputPropertiesFactory
      * @param values values corresponding to the keys
      * @param defaults Default properties, which may be null.
      */
-    static private Properties initProperties(String[] keys, String[] values, Properties defaults)
+    private static Properties initProperties(String[] keys, String[] values, Properties defaults)
     {
         Properties props = new Properties(defaults);
 

@@ -894,7 +894,7 @@ public abstract class DTMDefaultBase implements DTM
    * @param nodeIdentity Internal offset to this node's records.
    * @return NodeHandle (external representation of node)
    * */
-  final public int makeNodeHandle(int nodeIdentity)
+  public final int makeNodeHandle(int nodeIdentity)
   {
     if(NULL==nodeIdentity) return NULL;
 
@@ -921,7 +921,7 @@ public abstract class DTMDefaultBase implements DTM
    * @param nodeHandle (external representation of node)
    * @return nodeIdentity Internal offset to this node's records.
    * */
-  final public int makeNodeIdentity(int nodeHandle)
+  public final int makeNodeIdentity(int nodeHandle)
   {
     if(NULL==nodeHandle) return NULL;
 

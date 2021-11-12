@@ -65,7 +65,7 @@ import org.xml.sax.SAXException;
  */
 public final class BasisLibrary {
 
-    private final static String EMPTYSTRING = "";
+    private static final String EMPTYSTRING = "";
 
     /**
      * Re-use a single instance of StringBuffer (per thread) in the basis library.
@@ -1602,7 +1602,7 @@ public final class BasisLibrary {
     // All error messages are localized and are stored in resource bundles.
     private static ResourceBundle m_bundle;
 
-    public final static String ERROR_MESSAGES_KEY = "error-messages";
+    public static final String ERROR_MESSAGES_KEY = "error-messages";
 
     static {
         String resource = "com.sun.org.apache.xalan.internal.xsltc.runtime.ErrorMessages";

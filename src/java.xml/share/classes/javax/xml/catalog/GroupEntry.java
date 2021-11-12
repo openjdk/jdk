@@ -118,7 +118,7 @@ class GroupEntry extends BaseEntry {
             this.literal = literal;
         }
 
-        static public ResolveType getType(String resolveType) {
+        public static ResolveType getType(String resolveType) {
             for (ResolveType type : ResolveType.values()) {
                 if (type.isType(resolveType)) {
                     return type;

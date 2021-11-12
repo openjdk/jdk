@@ -215,28 +215,28 @@ public abstract class XMLScanner
     // symbols
 
     /** Symbol: "version". */
-    protected final static String fVersionSymbol = "version".intern();
+    protected static final String fVersionSymbol = "version".intern();
 
     /** Symbol: "encoding". */
-    protected final static String fEncodingSymbol = "encoding".intern();
+    protected static final String fEncodingSymbol = "encoding".intern();
 
     /** Symbol: "standalone". */
-    protected final static String fStandaloneSymbol = "standalone".intern();
+    protected static final String fStandaloneSymbol = "standalone".intern();
 
     /** Symbol: "amp". */
-    protected final static String fAmpSymbol = "amp".intern();
+    protected static final String fAmpSymbol = "amp".intern();
 
     /** Symbol: "lt". */
-    protected final static String fLtSymbol = "lt".intern();
+    protected static final String fLtSymbol = "lt".intern();
 
     /** Symbol: "gt". */
-    protected final static String fGtSymbol = "gt".intern();
+    protected static final String fGtSymbol = "gt".intern();
 
     /** Symbol: "quot". */
-    protected final static String fQuotSymbol = "quot".intern();
+    protected static final String fQuotSymbol = "quot".intern();
 
     /** Symbol: "apos". */
-    protected final static String fAposSymbol = "apos".intern();
+    protected static final String fAposSymbol = "apos".intern();
 
     // temporary variables
 

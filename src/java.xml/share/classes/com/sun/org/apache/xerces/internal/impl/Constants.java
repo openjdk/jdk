@@ -493,17 +493,17 @@ public final class Constants {
     // general constants
 
     /** Element PSVI is stored in augmentations using string "ELEMENT_PSVI" */
-    public final static String ELEMENT_PSVI = "ELEMENT_PSVI";
+    public static final String ELEMENT_PSVI = "ELEMENT_PSVI";
 
     /** Attribute PSVI is stored in augmentations using string "ATTRIBUTE_PSVI" */
-    public final static String ATTRIBUTE_PSVI = "ATTRIBUTE_PSVI";
+    public static final String ATTRIBUTE_PSVI = "ATTRIBUTE_PSVI";
 
     /**
      * Boolean indicating whether an attribute is declared in the DTD is stored
      * in augmentations using the string "ATTRIBUTE_DECLARED". The absence of this
      * augmentation indicates that the attribute was not declared in the DTD.
      */
-    public final static String ATTRIBUTE_DECLARED = "ATTRIBUTE_DECLARED";
+    public static final String ATTRIBUTE_DECLARED = "ATTRIBUTE_DECLARED";
 
 
     /**
@@ -515,7 +515,7 @@ public final class Constants {
      * {@link org.w3c.dom.Attr#getSchemaTypeInfo()} and
      * {@link org.w3c.dom.Element#getSchemaTypeInfo()} and
      */
-    public final static String TYPEINFO = "org.w3c.dom.TypeInfo";
+    public static final String TYPEINFO = "org.w3c.dom.TypeInfo";
 
     /**
      * Whether an attribute is an id or not is stored in augmentations
@@ -525,7 +525,7 @@ public final class Constants {
      * This will ultimately controls {@link com.sun.org.apache.xerces.internal.parsers.AbstractDOMParser}
      * about whether it will mark an attribute as ID or not.
      */
-    public final static String ID_ATTRIBUTE = "ID_ATTRIBUTE";
+    public static final String ID_ATTRIBUTE = "ID_ATTRIBUTE";
 
     // XML version constants
 
@@ -535,7 +535,7 @@ public final class Constants {
      * The absence of this augmentation indicates that the entity had a
      * declaration and was expanded.
      */
-    public final static String ENTITY_SKIPPED = "ENTITY_SKIPPED";
+    public static final String ENTITY_SKIPPED = "ENTITY_SKIPPED";
 
     /**
      * Boolean indicating whether a character is a probable white space
@@ -544,7 +544,7 @@ public final class Constants {
      * The absence of this augmentation indicates that the character is not
      * probable white space and/or was not included from a character reference.
      */
-    public final static String CHAR_REF_PROBABLE_WS = "CHAR_REF_PROBABLE_WS";
+    public static final String CHAR_REF_PROBABLE_WS = "CHAR_REF_PROBABLE_WS";
 
     /** Boolean indicating if this entity is the last opened entity.
      *
@@ -552,25 +552,25 @@ public final class Constants {
      *@see com.sun.org.apache.xerces.internal.impl.XMLDocumentScannerImpl#endEntity()
      *@see com.sun.org.apache.xerces.internal.impl.XMLDTDScannerImpl#endEntity()
      */
-    public final static String LAST_ENTITY = "LAST_ENTITY";
+    public static final String LAST_ENTITY = "LAST_ENTITY";
 
     // XML version constants
-    public final static short XML_VERSION_ERROR = -1;
-    public final static short XML_VERSION_1_0 = 1;
-    public final static short XML_VERSION_1_1 = 2;
+    public static final short XML_VERSION_ERROR = -1;
+    public static final short XML_VERSION_1_0 = 1;
+    public static final short XML_VERSION_1_1 = 2;
 
 
 
     // DOM related constants
-    public final static String ANONYMOUS_TYPE_NAMESPACE =
+    public static final String ANONYMOUS_TYPE_NAMESPACE =
         "http://apache.org/xml/xmlschema/1.0/anonymousTypes";
 
 
 
     // Constant to enable Schema 1.1 support
-    public final static boolean SCHEMA_1_1_SUPPORT = false;
-    public final static short SCHEMA_VERSION_1_0          = 1;
-    public final static short SCHEMA_VERSION_1_0_EXTENDED = 2;
+    public static final boolean SCHEMA_1_1_SUPPORT = false;
+    public static final short SCHEMA_VERSION_1_0          = 1;
+    public static final short SCHEMA_VERSION_1_0_EXTENDED = 2;
 
     // private
 

@@ -56,7 +56,7 @@ import org.xml.sax.SAXException;
  * @xsl.usage internal
  * @LastModified: June 2021
  */
-abstract public class ToStream extends SerializerBase {
+public abstract class ToStream extends SerializerBase {
 
     private static final String COMMENT_BEGIN = "<!--";
     private static final String COMMENT_END = "-->";
@@ -1538,7 +1538,7 @@ abstract public class ToStream extends SerializerBase {
      * @param isText indicates whether the node to be traversed is text
      * @throws org.xml.sax.SAXException
      */
-    final protected void flushCharactersBuffer(boolean isText) throws SAXException {
+    protected final void flushCharactersBuffer(boolean isText) throws SAXException {
         try {
             if (shouldFormatOutput() && m_charactersBuffer.isAnyCharactersBuffered()) {
                 if (m_elemContext.m_isCdataSection) {
@@ -3133,7 +3133,7 @@ abstract public class ToStream extends SerializerBase {
      * the same code.
      */
     private class WritertoStringBuffer extends Writer {
-        final private StringBuffer m_stringbuf;
+        private final StringBuffer m_stringbuf;
 
         /**
          * @see java.io.Writer#write(char[], int, int)

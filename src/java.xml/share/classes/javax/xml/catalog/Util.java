@@ -47,12 +47,12 @@ import jdk.xml.internal.SecuritySupport;
  */
 class Util {
 
-    final static String URN = "urn:publicid:";
-    final static String PUBLICID_PREFIX = "-//";
-    final static String PUBLICID_PREFIX_ALT = "+//";
-    final static String SCHEME_FILE = "file";
-    final static String SCHEME_JAR = "jar";
-    final static String SCHEME_JARFILE = "jar:file:";
+    static final String URN = "urn:publicid:";
+    static final String PUBLICID_PREFIX = "-//";
+    static final String PUBLICID_PREFIX_ALT = "+//";
+    static final String SCHEME_FILE = "file";
+    static final String SCHEME_JAR = "jar";
+    static final String SCHEME_JARFILE = "jar:file:";
 
     /**
      * Finds an entry in the catalog that matches with the publicId or systemId.

@@ -353,7 +353,7 @@ public class XNumber extends XObject
    *
    * @return a string of '0' with the given length
    */
-  static private String zeros(int n)
+  private static String zeros(int n)
   {
     if (n < 1)
       return "";

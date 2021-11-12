@@ -70,7 +70,7 @@ import org.w3c.dom.Text;
 final class DOMResultBuilder implements DOMDocumentHandler {
 
     /** Table for quick check of child insertion. */
-    private final static int[] kidOK;
+    private static final int[] kidOK;
 
     static {
         kidOK = new int[13];
