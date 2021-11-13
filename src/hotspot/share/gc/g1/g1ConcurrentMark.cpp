@@ -909,7 +909,7 @@ class G1CMConcurrentMarkingTask : public WorkerTask {
   G1ConcurrentMark*     _cm;
   ReferenceProcessor*   _cm_rp;
 
-  void do_mark_step(G1CMTask* task) {
+  void do_marking(G1CMTask* task) {
     do {
       task->do_marking_step(G1ConcMarkStepDurationMillis,
                             true  /* do_termination */,
@@ -941,7 +941,7 @@ public:
       G1CMTask* task = _cm->task(worker_id);
       task->record_start_time();
       if (!_cm->has_aborted()) {
-        do_mark_step(task);
+        do_marking(task);
 
         // Marking is complete; preclean non-strong references
         if (G1UseReferencePrecleaning) {

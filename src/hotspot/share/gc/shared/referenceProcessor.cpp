@@ -1070,18 +1070,20 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
                                                         GCTimer* gc_timer) {
   Ticks preclean_start = Ticks::now();
 
-  ReferenceType ref_type_arr[4] = { REF_SOFT, REF_WEAK, REF_FINAL, REF_PHANTOM };
-  size_t ref_count_arr[4] = {};
+  constexpr int ref_kinds = 4;
+  ReferenceType ref_type_arr[] = { REF_SOFT, REF_WEAK, REF_FINAL, REF_PHANTOM };
+  static_assert(ARRAY_SIZE(ref_type_arr) == ref_kinds, "invariant");
+  size_t ref_count_arr[ref_kinds] = {};
 
   if (discovery_is_mt()) {
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < ref_kinds; ++i) {
       ReferenceType ref_type = ref_type_arr[i];
       DiscoveredList* list = get_discovered_list(ref_type);
       ref_count_arr[i] = list->length();
       preclean_discovered_reflist(*list, is_alive, enqueue, yield);
     }
   } else {
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < ref_kinds; ++i) {
       ReferenceType ref_type = ref_type_arr[i];
       // When discovery is *not* multi-threaded, discovered refs are stored in
       // list[0.._num_queues-1]. Loop _num_queues times to cover all lists.
