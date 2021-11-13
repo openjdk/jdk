@@ -188,7 +188,7 @@ public class TestIRMatching {
                  BadFailOnConstraint.create(Traps.class, "unstableIf(boolean)",  2, "CallStaticJava", "uncommon_trap", "unstable_if"),
                  GoodRuleConstraint.create(Traps.class, "unstableIf(boolean)", 3),
                  BadFailOnConstraint.create(Traps.class, "classCheck()", 1, "CallStaticJava", "uncommon_trap"),
-                 BadFailOnConstraint.create(Traps.class, "classCheck()", 2, "CallStaticJava", "uncommon_trap", "class_check"),
+                 BadFailOnConstraint.create(Traps.class, "classCheck()", 2, "CallStaticJava", "uncommon_trap", "unhandled"),
                  BadFailOnConstraint.create(Traps.class, "classCheck()", 3, "CallStaticJava", "uncommon_trap", "null_check"),
                  GoodRuleConstraint.create(Traps.class, "classCheck()", 4),
                  BadFailOnConstraint.create(Traps.class, "rangeCheck()", 1, "CallStaticJava", "uncommon_trap"),
@@ -1119,7 +1119,7 @@ class Traps {
 
     @Test
     @IR(failOn = IRNode.TRAP) // fails
-    @IR(failOn = IRNode.CLASS_CHECK_TRAP) // fails
+    @IR(failOn = IRNode.UNHANDLED_TRAP) // fails (slow-path allocation of implicit ClassCastException)
     @IR(failOn = IRNode.NULL_CHECK_TRAP) // fails
     @IR(failOn = {IRNode.PREDICATE_TRAP,
                   IRNode.UNSTABLE_IF_TRAP,
@@ -1127,7 +1127,7 @@ class Traps {
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.INTRINSIC_TRAP,
                   IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
-                  IRNode.UNHANDLED_TRAP})
+                  IRNode.CLASS_CHECK_TRAP})
     public void classCheck() {
         try {
             myClassSub = (MyClassSub) myClass;
