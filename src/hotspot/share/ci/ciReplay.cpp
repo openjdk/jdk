@@ -467,6 +467,7 @@ class CompileReplay : public StackObj {
       }
       {
         bool found_it;
+        ik->link_class(CHECK_NULL);
         obj = cp->find_cached_constant_at(cpi, found_it, thread);
       }
     }
@@ -927,6 +928,7 @@ class CompileReplay : public StackObj {
   void process_ciInstanceKlass(TRAPS) {
     InstanceKlass* k = (InstanceKlass*)parse_klass(CHECK);
     if (k == NULL) {
+      skip_remaining();
       return;
     }
     int is_linked = parse_int("is_linked");
