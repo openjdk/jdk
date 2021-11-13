@@ -41,15 +41,50 @@ public class FinalizationOption {
         new FinalizationOption();
     }
 
-    public static void main(String[] args) {
-        boolean expectFinalizerToBeCalled = switch (args[0]) {
-            case "yes" -> true;
-            case "no"  -> false;
-            default -> {
-                throw new AssertionError("usage: FinalizationOption yes|no");
-            }
-        };
+    /**
+     * Checks whether the finalizer thread is or is not running. The finalizer thread
+     * is a thread in the root thread group whose named is "Finalizer".
+     * @param expected boolean indicating whether a finalizer thread should exist
+     * @return boolean indicating whether the expectation was met
+     */
+    static boolean checkFinalizerThread(boolean expected) {
+        ThreadGroup root = Thread.currentThread().getThreadGroup();
+        for (ThreadGroup parent = root;
+             parent != null;
+             root = parent, parent = root.getParent())
+            ;
 
+        int nt = 100;
+        Thread[] threads;
+        while (true) {
+            threads = new Thread[nt];
+            nt = root.enumerate(threads);
+            if (nt < threads.length)
+                break;
+            threads = new Thread[nt + 100];
+        }
+
+        Thread ft = null;
+        for (int i = 0; i < nt; i++) {
+            if ("Finalizer".equals(threads[i].getName())) {
+                ft = threads[i];
+                break;
+            }
+        }
+
+        String msg = (ft == null) ? "(none)" : ft.toString();
+        boolean passed = (ft != null) == expected;
+        System.out.printf("Finalizer thread.    Expected: %s   Actual: %s   %s%n",
+            expected, msg, passed ? "Passed." : "FAILED!");
+        return passed;
+    }
+
+    /**
+     * Checks whether there was a call to the finalize() method.
+     * @param expected boolean whether finalize() should be called
+     * @return boolean indicating whether the expecation was met
+     */
+    static boolean checkFinalizerCalled(boolean expected) {
         create();
         for (int i = 0; i < 100; i++) {
             System.gc();
@@ -62,13 +97,26 @@ public class FinalizationOption {
                 break;
             }
         }
-        boolean passed = (expectFinalizerToBeCalled == finalizerWasCalled);
-
-        System.out.printf("expectFinalizerToBeCalled: %s   finalizerWasCalled: %s   %s%n",
-            expectFinalizerToBeCalled, finalizerWasCalled,
+        boolean passed = (expected == finalizerWasCalled);
+        System.out.printf("Call to finalize().  Expected: %s   Actual: %s   %s%n",
+            expected, finalizerWasCalled,
             passed ? "Passed." : "FAILED!");
+        return passed;
+    }
 
-        if (! passed)
-            throw new AssertionError();
+    public static void main(String[] args) {
+        boolean finalizationEnabled = switch (args[0]) {
+            case "yes" -> true;
+            case "no"  -> false;
+            default -> {
+                throw new AssertionError("usage: FinalizationOption yes|no");
+            }
+        };
+
+        boolean threadPass = checkFinalizerThread(finalizationEnabled);
+        boolean calledPass = checkFinalizerCalled(finalizationEnabled);
+
+        if (!threadPass || !calledPass)
+            throw new AssertionError("Test failed.");
     }
 }
