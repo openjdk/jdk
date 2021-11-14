@@ -2117,10 +2117,11 @@ public final class System {
         VM.saveProperties(tempProps);
         props = createProperties(tempProps);
 
-        // Check if sun.jnu.encoding is supporetd or not
+        // Check if sun.jnu.encoding is supported. If not, replace it with UTF-8.
         var jnuEncoding = props.getProperty("sun.jnu.encoding");
         if (jnuEncoding == null || !Charset.isSupported(jnuEncoding)) {
             notSupportedJnuEncoding = jnuEncoding == null ? "null" : jnuEncoding;
+            props.setProperty("sun.jnu.encoding", "UTF-8");
         }
 
         StaticProperty.javaHome();          // Load StaticProperty to cache the property values
@@ -2257,13 +2258,12 @@ public final class System {
                     WARNING: The Security Manager is deprecated and will be removed in a future release""");
         }
 
-        // Emit a warning if `sun.jnu.encoding` is not supported, and replace it with UTF-8
+        // Emit a warning if `sun.jnu.encoding` is not supported.
         if (notSupportedJnuEncoding != null) {
             System.err.println(
                     "WARNING: The encoding of the underlying platform's" +
                     " file system is not supported: " +
                     notSupportedJnuEncoding);
-            props.setProperty("sun.jnu.encoding", "UTF-8");
         }
 
         initialErrStream = System.err;
