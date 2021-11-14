@@ -1,25 +1,3 @@
-/*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
 package org.openjdk.bench.java.util.stream;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -39,7 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.Spliterators;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -53,9 +31,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * Benchmark for checking that the new empty stream
- * implementations are faster than the old way of creating
- * empty streams from empty spliterators.
+ * Benchmark for checking that having mixed types for the 
+ * streams does not make performance worse. We test this by
+ * having collections of length 0 .. 3.
  *
  * @author Heinz Kabutz, heinz@javaspecialists.eu
  */
@@ -65,28 +43,40 @@ import java.util.stream.StreamSupport;
 @Warmup(iterations = 20, time = 3, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 10, time = 3, timeUnit = TimeUnit.SECONDS)
 @State(Scope.Thread)
-public class EmptyStreams {
-    @Param({"0", "1", "10", "100"})
-    private int a_length;
+public class EmptyStreamsMixedLength {
+    private static final int MAXIMUM_STREAM_LENGTH = 3;
+    private static byte[] lengths = new byte[64 * 1024];
+    static {
+        int[] ints = new Random(0).ints(lengths.length, 0, MAXIMUM_STREAM_LENGTH + 1)
+                .toArray();
+        for (int i = 0; i < lengths.length; i++) {
+            lengths[i] = (byte) ints[i];
+        }
+    }
+
+    private int length_pos = 0;
+
+    private int nextLength() {
+        int nextIndex = length_pos++;
+        if (length_pos == lengths.length) length_pos = 0;
+        return lengths[nextIndex];
+    }
 
     @Param({"ArrayList", "ConcurrentLinkedQueue", "ConcurrentSkipListSet", "CopyOnWriteArrayList", "ConcurrentHashMap"})
-    private String b_typeOfCollection;
+    private String a_typeOfCollection;
 
     @Param({"minimal", "basic", "complex", "crossover"})
-    private String c_typeOfStreamDecoration;
+    private String b_typeOfStreamDecoration;
 
     @Param({"old", "new"})
-    private String d_streamCreation;
+    private String c_streamCreation;
 
     private static final Map<Integer/*length*/, Map<String/*typeOfCollection*/, Collection<Integer>>> collectionData =
             Map.ofEntries(
                     makeMapEntries(0),
                     makeMapEntries(1),
-                    makeMapEntries(3),
-                    makeMapEntries(5),
-                    makeMapEntries(10),
-                    makeMapEntries(20),
-                    makeMapEntries(100)
+                    makeMapEntries(2),
+                    makeMapEntries(3)
             );
 
     private static Map.Entry<Integer, Map<String, Collection<Integer>>> makeMapEntries(int length) {
@@ -104,8 +94,8 @@ public class EmptyStreams {
     }
 
     private Stream<Integer> createStream() {
-        Collection<Integer> collection = collectionData.get(a_length).get(b_typeOfCollection);
-        return switch (d_streamCreation) {
+        Collection<Integer> collection = collectionData.get(nextLength()).get(a_typeOfCollection);
+        return switch (c_streamCreation) {
             case "old" -> StreamSupport.stream(collection.spliterator(), false);
             case "new" -> collection.stream();
             default -> throw new AssertionError();
@@ -113,7 +103,7 @@ public class EmptyStreams {
     }
 
     private Optional<Integer> decorateStream(Stream<Integer> stream) {
-        return streamDecorators.get(c_typeOfStreamDecoration).apply(stream);
+        return streamDecorators.get(b_typeOfStreamDecoration).apply(stream);
     }
 
     private static final Map<String, Function<Stream<Integer>, Optional<Integer>>> streamDecorators =
@@ -132,7 +122,7 @@ public class EmptyStreams {
                             .filter(Objects::nonNull)
                             .map(Function.identity())
                             .filter(Objects::nonNull)
-                            .sorted()
+                            .sorted() // causes it to change to old empty stream
                             .distinct()
                             .max(Integer::compare),
                     // we crossover from an Object Stream to an IntStream, LongStream,
