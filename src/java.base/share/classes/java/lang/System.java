@@ -188,11 +188,10 @@ public final class System {
     @SuppressWarnings("removal")
     private static volatile SecurityManager security;   // read by VM
 
-    // A boolean indicating `sun.jnu.encoding` is supported by the JVM or not.
+    // `sun.jnu.encoding` if it is not supported. Otherwise null.
     // It is initialized in `initPhase1()` before any charset providers
     // are initialized.
-    private static boolean jnuEncodingSupported;
-    private static String jnuEncoding;
+    private static String notSupportedJnuEncoding;
 
     // return true if a security manager is allowed
     private static boolean allowSecurityManager() {
@@ -2118,11 +2117,10 @@ public final class System {
         VM.saveProperties(tempProps);
         props = createProperties(tempProps);
 
-        // Force the jnu encoding to UTF-8, if it is not supported
-        jnuEncoding = props.getProperty("sun.jnu.encoding");
-        jnuEncodingSupported = jnuEncoding != null && Charset.isSupported(jnuEncoding);
-        if (!jnuEncodingSupported) {
-            props.setProperty("sun.jnu.encoding", "UTF-8");
+        // Check if sun.jnu.encoding is supporetd or not
+        var jnuEncoding = props.getProperty("sun.jnu.encoding");
+        if (jnuEncoding == null || !Charset.isSupported(jnuEncoding)) {
+            notSupportedJnuEncoding = jnuEncoding == null ? "null" : jnuEncoding;
         }
 
         StaticProperty.javaHome();          // Load StaticProperty to cache the property values
@@ -2259,12 +2257,13 @@ public final class System {
                     WARNING: The Security Manager is deprecated and will be removed in a future release""");
         }
 
-        // Emit a warning if `sun.jnu.encoding` is not supported
-        if (!jnuEncodingSupported) {
-            System.err.printf(
+        // Emit a warning if `sun.jnu.encoding` is not supported, and replace it with UTF-8
+        if (notSupportedJnuEncoding != null) {
+            System.err.println(
                     "WARNING: The encoding of the underlying platform's" +
-                            " file system is not supported by the JVM: %s%n",
-                    jnuEncoding);
+                    " file system is not supported: " +
+                    notSupportedJnuEncoding);
+                    props.setProperty("sun.jnu.encoding", "UTF-8");
         }
 
         initialErrStream = System.err;
