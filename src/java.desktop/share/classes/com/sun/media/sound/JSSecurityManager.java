@@ -112,7 +112,6 @@ final class JSSecurityManager {
                                final boolean isDaemon, final int priority,
                                final boolean doStart)
     {
-        String name = (threadName != null) ? threadName : "JSSM Thread";
         Thread thread = new Thread(null, runnable, threadName, 0, false);
 
         thread.setDaemon(isDaemon);
