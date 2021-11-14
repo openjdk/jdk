@@ -2263,7 +2263,7 @@ public final class System {
                     "WARNING: The encoding of the underlying platform's" +
                     " file system is not supported: " +
                     notSupportedJnuEncoding);
-                    props.setProperty("sun.jnu.encoding", "UTF-8");
+            props.setProperty("sun.jnu.encoding", "UTF-8");
         }
 
         initialErrStream = System.err;
