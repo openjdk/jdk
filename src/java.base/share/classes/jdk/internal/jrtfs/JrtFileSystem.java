@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -64,7 +63,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import jdk.internal.jimage.ImageReader.Node;
-import static java.util.stream.Collectors.toList;
 
 /**
  * jrt file system implementation built on System jimage files.
@@ -175,7 +173,7 @@ class JrtFileSystem extends FileSystem {
     @Override
     public PathMatcher getPathMatcher(String syntaxAndInput) {
         int pos = syntaxAndInput.indexOf(':');
-        if (pos <= 0 || pos == syntaxAndInput.length()) {
+        if (pos <= 0) {
             throw new IllegalArgumentException("pos is " + pos);
         }
         String syntax = syntaxAndInput.substring(0, pos);
@@ -274,7 +272,7 @@ class JrtFileSystem extends FileSystem {
 
     // check that the options passed are supported by (read-only) jrt file system
     static void checkOptions(Set<? extends OpenOption> options) {
-        // check for options of null type and option is an intance of StandardOpenOption
+        // check for options of null type and option is an instance of StandardOpenOption
         for (OpenOption option : options) {
             Objects.requireNonNull(option);
             if (!(option instanceof StandardOpenOption)) {

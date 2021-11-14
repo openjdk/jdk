@@ -2029,13 +2029,8 @@ public final class URI
                 String doquote = authority, dontquote = "";
                 if (end != -1 && authority.indexOf(':') != -1) {
                     // the authority contains an IPv6 address
-                    if (end == authority.length()) {
-                        dontquote = authority;
-                        doquote = "";
-                    } else {
-                        dontquote = authority.substring(0 , end + 1);
-                        doquote = authority.substring(end + 1);
-                    }
+                    dontquote = authority.substring(0 , end + 1);
+                    doquote = authority.substring(end + 1);
                 }
                 sb.append(dontquote);
                 sb.append(quote(doquote,
@@ -2065,15 +2060,9 @@ public final class URI
             if (opaquePart.startsWith("//[")) {
                 int end =  opaquePart.indexOf(']');
                 if (end != -1 && opaquePart.indexOf(':')!=-1) {
-                    String doquote, dontquote;
-                    if (end == opaquePart.length()) {
-                        dontquote = opaquePart;
-                        doquote = "";
-                    } else {
-                        dontquote = opaquePart.substring(0,end+1);
-                        doquote = opaquePart.substring(end+1);
-                    }
-                    sb.append (dontquote);
+                    String dontquote = opaquePart.substring(0, end + 1);
+                    String doquote = opaquePart.substring(end + 1);
+                    sb.append(dontquote);
                     sb.append(quote(doquote, L_URIC, H_URIC));
                 }
             } else {

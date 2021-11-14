@@ -377,15 +377,9 @@ public final class ParseUtil {
             if (authority.startsWith("[")) {
                 int end = authority.indexOf(']');
                 if (end != -1 && authority.indexOf(':')!=-1) {
-                    String doquote, dontquote;
-                    if (end == authority.length()) {
-                        dontquote = authority;
-                        doquote = "";
-                    } else {
-                        dontquote = authority.substring(0,end+1);
-                        doquote = authority.substring(end+1);
-                    }
-                    sb.append (dontquote);
+                    String dontquote = authority.substring(0, end + 1);
+                    String doquote = authority.substring(end + 1);
+                    sb.append(dontquote);
                     sb.append(quote(doquote,
                             L_REG_NAME | L_SERVER,
                             H_REG_NAME | H_SERVER));

@@ -1987,7 +1987,7 @@ public final class Files {
         if (pos == -1) {
             name = attribute;
         } else {
-            name = (pos == attribute.length()) ? "" : attribute.substring(pos+1);
+            name = attribute.substring(pos + 1);
         }
         return map.get(name);
     }

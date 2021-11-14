@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.net;
 
-import java.net.*;
 import java.util.Formatter;
 import java.util.Locale;
 import sun.net.util.IPAddressUtil;
@@ -100,11 +99,11 @@ class HostPortrange {
             // not IPv6 therefore ':' is the port separator
 
             int sep = str.indexOf(':');
-            if (sep != -1 && str.length() > sep) {
+            if (sep != -1) {
                 hoststr = str.substring(0, sep);
                 portstr = str.substring(sep + 1);
             } else {
-                hoststr = sep == -1 ? str : str.substring(0, sep);
+                hoststr = str;
             }
             // is this a domain wildcard specification?
             if (hoststr.lastIndexOf('*') > 0) {
