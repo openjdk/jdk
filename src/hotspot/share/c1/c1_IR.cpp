@@ -1295,16 +1295,13 @@ class PredecessorValidator : public BlockClosure {
 
   virtual void block_do(BlockBegin* block) {
     _blocks->append(block);
-    BlockEnd* be = block->end();
-    int n = be->number_of_sux();
-    for (int i = 0; i < n; i++) {
-      BlockBegin* sux = be->sux_at(i);
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      BlockBegin* sux = block->end()->sux_at(i);
       assert(!sux->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
       collect_predecessor(block, sux);
     }
 
-    int m = block->number_of_exception_handlers();
-    for (int i = 0; i < m; i++) {
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
       BlockBegin* sux = block->exception_handler_at(i);
       assert(sux->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
       collect_predecessor(block, sux);
