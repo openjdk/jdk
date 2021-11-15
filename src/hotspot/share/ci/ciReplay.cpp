@@ -113,6 +113,7 @@ class CompileReplay : public StackObj {
   FILE*   _stream;
   Thread* _thread;
   Handle  _protection_domain;
+  bool    _protection_domain_initialized;
   Handle  _loader;
 
   GrowableArray<ciMethodRecord*>     _ci_method_records;
@@ -128,7 +129,6 @@ class CompileReplay : public StackObj {
   char* _bufptr;
   char* _buffer;
   int   _buffer_length;
-  int   _buffer_pos;
 
   // "compile" data
   ciKlass* _iklass;
@@ -141,6 +141,7 @@ class CompileReplay : public StackObj {
     _thread = THREAD;
     _loader = Handle(_thread, SystemDictionary::java_system_loader());
     _protection_domain = Handle();
+    _protection_domain_initialized = false;
 
     _stream = fopen(filename, "rt");
     if (_stream == NULL) {
@@ -153,7 +154,6 @@ class CompileReplay : public StackObj {
     _buffer_length = 32;
     _buffer = NEW_RESOURCE_ARRAY(char, _buffer_length);
     _bufptr = _buffer;
-    _buffer_pos = 0;
 
     _imethod = NULL;
     _iklass  = NULL;
@@ -189,10 +189,6 @@ class CompileReplay : public StackObj {
 
   void report_error(const char* msg) {
     _error_message = msg;
-    // Restore the _buffer contents for error reporting
-    for (int i = 0; i < _buffer_pos; i++) {
-      if (_buffer[i] == '\0') _buffer[i] = ' ';
-    }
   }
 
   int parse_int(const char* label) {
@@ -232,6 +228,10 @@ class CompileReplay : public StackObj {
     }
   }
 
+  // Ignore the rest of the line
+  void skip_remaining() {
+    _bufptr = &_bufptr[strlen(_bufptr)]; // skip ahead to terminator
+  }
 
   char* scan_and_terminate(char delim) {
     char* str = _bufptr;
@@ -581,8 +581,9 @@ class CompileReplay : public StackObj {
   }
 
   int get_line(int c) {
+    int buffer_pos = 0;
     while(c != EOF) {
-      if (_buffer_pos + 1 >= _buffer_length) {
+      if (buffer_pos + 1 >= _buffer_length) {
         int new_length = _buffer_length * 2;
         // Next call will throw error in case of OOM.
         _buffer = REALLOC_RESOURCE_ARRAY(char, _buffer, _buffer_length, new_length);
@@ -594,13 +595,12 @@ class CompileReplay : public StackObj {
       } else if (c == '\r') {
         // skip LF
       } else {
-        _buffer[_buffer_pos++] = c;
+        _buffer[buffer_pos++] = c;
       }
       c = getc(_stream);
     }
     // null terminate it, reset the pointer
-    _buffer[_buffer_pos] = '\0'; // NL or EOF
-    _buffer_pos = 0;
+    _buffer[buffer_pos] = '\0'; // NL or EOF
     _bufptr = _buffer;
     return c;
   }
@@ -614,7 +614,8 @@ class CompileReplay : public StackObj {
       c = get_line(c);
       process_command(THREAD);
       if (had_error()) {
-        tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
+        int pos = _bufptr - _buffer + 1;
+        tty->print_cr("Error while parsing line %d at position %d: %s\n", line_no, pos, _error_message);
         if (ReplayIgnoreInitErrors) {
           CLEAR_PENDING_EXCEPTION;
           _error_message = NULL;
@@ -632,7 +633,11 @@ class CompileReplay : public StackObj {
       return;
     }
     if (strcmp("#", cmd) == 0) {
-      // ignore
+      // comment line, print or ignore
+      if (Verbose) {
+        tty->print_cr("# %s", _bufptr);
+      }
+      skip_remaining();
     } else if (strcmp("compile", cmd) == 0) {
       process_compile(CHECK);
     } else if (strcmp("ciMethod", cmd) == 0) {
@@ -651,6 +656,9 @@ class CompileReplay : public StackObj {
 #endif // INCLUDE_JVMTI
     } else {
       report_error("unknown command");
+    }
+    if (!had_error() && *_bufptr != '\0') {
+      report_error("line not properly terminated");
     }
   }
 
@@ -868,6 +876,18 @@ class CompileReplay : public StackObj {
   void process_instanceKlass(TRAPS) {
     // just load the referenced class
     Klass* k = parse_klass(CHECK);
+    if (!_protection_domain_initialized && k != NULL) {
+      assert(_protection_domain() == NULL, "must be uninitialized");
+      // The first entry is the holder class of the method for which a replay compilation is requested.
+      // Use the same protection domain to load all subsequent classes in order to resolve all classes
+      // in signatures of inlinees. This ensures that inlining can be done as stated in the replay file.
+      _protection_domain = Handle(_thread, k->protection_domain());
+    }
+
+    // Only initialize the protection domain handle with the protection domain of the very first entry.
+    // This also ensures that older replay files work.
+    _protection_domain_initialized = true;
+
     if (k == NULL) {
       return;
     }
@@ -877,9 +897,13 @@ class CompileReplay : public StackObj {
       report_error("hidden class with comment expected");
       return;
     }
-    if (is_comment && Verbose) {
-      const char* hidden = parse_string();
-      tty->print_cr("Found %s for %s", k->name()->as_quoted_ascii(), hidden);
+    // comment, print or ignore
+    if (is_comment) {
+      if (Verbose) {
+        const char* hidden = parse_string();
+        tty->print_cr("Found %s for %s", k->name()->as_quoted_ascii(), hidden);
+      }
+      skip_remaining();
     }
   }
 
@@ -990,6 +1014,7 @@ class CompileReplay : public StackObj {
 
     if (k == NULL || ReplaySuppressInitializers == 0 ||
         (ReplaySuppressInitializers == 2 && k->class_loader() == NULL)) {
+      skip_remaining();
       return;
     }
 

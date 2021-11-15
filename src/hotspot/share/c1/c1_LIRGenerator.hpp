@@ -309,7 +309,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr atomic_add(BasicType type, LIR_Opr addr, LIRItem& new_value);
 
 #ifdef CARDTABLEBARRIERSET_POST_BARRIER_HELPER
-  virtual void CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base);
+  virtual void CardTableBarrierSet_post_barrier_helper(LIR_Opr addr, LIR_Const* card_table_base);
 #endif
 
   // specific implementations

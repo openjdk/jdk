@@ -798,8 +798,6 @@ void GenCollectedHeap::full_process_roots(bool is_adjust_phase,
 
 void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
   WeakProcessor::oops_do(root_closure);
-  _young_gen->ref_processor()->weak_oops_do(root_closure);
-  _old_gen->ref_processor()->weak_oops_do(root_closure);
 }
 
 bool GenCollectedHeap::no_allocs_since_save_marks() {
@@ -1239,7 +1237,7 @@ oop GenCollectedHeap::handle_failed_promotion(Generation* old_gen,
                                               oop obj,
                                               size_t obj_size) {
   guarantee(old_gen == _old_gen, "We only get here with an old generation");
-  assert(obj_size == (size_t)obj->size(), "bad obj_size passed in");
+  assert(obj_size == obj->size(), "bad obj_size passed in");
   HeapWord* result = NULL;
 
   result = old_gen->expand_and_allocate(obj_size, false);

@@ -1074,7 +1074,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // If the loop is a candidate for range check elimination,
   // delay splitting through it's phi until a later loop optimization
-  if (n_blk->is_CountedLoop()) {
+  if (n_blk->is_BaseCountedLoop()) {
     IdealLoopTree *lp = get_loop(n_blk);
     if (lp && lp->_rce_candidate) {
       return n;

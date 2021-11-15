@@ -76,6 +76,7 @@
 #include "runtime/signature.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
+#include "services/finalizerService.hpp"
 #include "services/threadService.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
@@ -1600,7 +1601,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
     if (unloading_occurred) {
       MutexLocker ml2(is_concurrent ? Module_lock : NULL);
       JFR_ONLY(Jfr::on_unloading_classes();)
-
+      MANAGEMENT_ONLY(FinalizerService::purge_unloaded();)
       MutexLocker ml1(is_concurrent ? SystemDictionary_lock : NULL);
       ClassLoaderDataGraph::clean_module_and_package_info();
       constraints()->purge_loader_constraints();
@@ -1624,6 +1625,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
       assert(_pd_cache_table->number_of_entries() == 0, "should be empty");
     }
 
+    MutexLocker ml(is_concurrent ? ClassInitError_lock : NULL);
     InstanceKlass::clean_initialization_error_table();
   }
 
@@ -2351,11 +2353,10 @@ void SystemDictionary::invoke_bootstrap_method(BootstrapInfo& bootstrap_specifie
     assert(appendix_box->obj_at(0) == NULL, "");
   }
 
-  // call condy: java.lang.invoke.MethodHandleNatives::linkDynamicConstant(caller, condy_index, bsm, type, info)
-  //       indy: java.lang.invoke.MethodHandleNatives::linkCallSite(caller, indy_index, bsm, name, mtype, info, &appendix)
+  // call condy: java.lang.invoke.MethodHandleNatives::linkDynamicConstant(caller, bsm, type, info)
+  //       indy: java.lang.invoke.MethodHandleNatives::linkCallSite(caller, bsm, name, mtype, info, &appendix)
   JavaCallArguments args;
   args.push_oop(Handle(THREAD, bootstrap_specifier.caller_mirror()));
-  args.push_int(bootstrap_specifier.bss_index());
   args.push_oop(bootstrap_specifier.bsm());
   args.push_oop(bootstrap_specifier.name_arg());
   args.push_oop(bootstrap_specifier.type_arg());

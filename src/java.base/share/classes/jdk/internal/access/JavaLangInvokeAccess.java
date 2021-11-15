@@ -28,8 +28,11 @@ package jdk.internal.access;
 import jdk.internal.invoke.NativeEntryPoint;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Map;
@@ -139,4 +142,43 @@ public interface JavaLangInvokeAccess {
      * @param mh the method handle
      */
     void ensureCustomized(MethodHandle mh);
+
+    /**
+     * Produces a method handle unreflecting from a {@code Constructor} with
+     * the trusted lookup
+     */
+    MethodHandle unreflectConstructor(Constructor<?> ctor) throws IllegalAccessException;
+
+    /**
+     * Produces a method handle unreflecting from a {@code Field} with
+     * the trusted lookup
+     */
+    MethodHandle unreflectField(Field field, boolean isSetter) throws IllegalAccessException;
+
+    /**
+     * Produces a method handle of a virtual method with the trusted lookup.
+     */
+    MethodHandle findVirtual(Class<?> defc, String name, MethodType type) throws IllegalAccessException;
+
+    /**
+     * Produces a method handle of a static method with the trusted lookup.
+     */
+    MethodHandle findStatic(Class<?> defc, String name, MethodType type) throws IllegalAccessException;
+
+    /**
+     * Returns a method handle of an invoker class injected for core reflection
+     * implementation with the following signature:
+     *     reflect_invoke_V(MethodHandle mh, Object target, Object[] args)
+     *
+     * The invoker class is a hidden class which has the same
+     * defining class loader, runtime package, and protection domain
+     * as the given caller class.
+     */
+    MethodHandle reflectiveInvoker(Class<?> caller);
+
+    /**
+     * Defines a hidden class of the given name and bytes with class data.
+     * The given bytes is trusted.
+     */
+    Lookup defineHiddenClassWithClassData(Lookup caller, String name, byte[] bytes, Object classData, boolean initialize);
 }

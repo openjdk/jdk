@@ -21,8 +21,6 @@
  * questions.
  */
 
-import static java.lang.String.format;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,13 +37,22 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
 import jdk.test.lib.RandomFactory;
+
+import static java.lang.String.format;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
 
 /*
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run main TransferTo
+ * @run testng/othervm/timeout=180 TransferTo
  * @bug 8265891
  * @summary tests whether sun.nio.ChannelInputStream.transferTo conforms to the
  *          InputStream.transferTo contract defined in the javadoc
@@ -57,42 +64,58 @@ public class TransferTo {
 
     private static final int ITERATIONS = 10;
 
+    private static final int NUM_WRITES = 3 * 1024;
+    private static final int BYTES_PER_WRITE = 1024 * 1024;
+    private static final long BYTES_WRITTEN = (long) NUM_WRITES * BYTES_PER_WRITE;
+
     private static final Random RND = RandomFactory.getRandom();
 
-    public static void main(String[] args) throws Exception {
-        test(fileChannelInput(), fileChannelOutput());
-        test(readableByteChannelInput(), defaultOutput());
+    /*
+     * Provides test scenarios, i. e. combinations of input and output streams to be tested.
+     */
+    @DataProvider
+    public static Object[][] streamCombinations() throws Exception {
+        return new Object[][] {
+            // tests FileChannel.transferTo(FileChannel) optimized case
+            { fileChannelInput(), fileChannelOutput() },
+
+            // tests InputStream.transferTo(OutputStream) default case
+            { readableByteChannelInput(), defaultOutput() }
+        };
     }
 
-    private static void test(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider)
-            throws Exception {
-        testNullPointerException(inputStreamProvider);
-        testStreamContents(inputStreamProvider, outputStreamProvider);
-    }
-
-    private static void testNullPointerException(InputStreamProvider inputStreamProvider) throws Exception {
-        try (InputStream in = inputStreamProvider.input()) {
-            assertThrowsNPE(() -> in.transferTo(null), "out");
-        }
-
-        try (InputStream in = inputStreamProvider.input((byte) 1)) {
-            assertThrowsNPE(() -> in.transferTo(null), "out");
-        }
-
-        try (InputStream in = inputStreamProvider.input((byte) 1, (byte) 2)) {
-            assertThrowsNPE(() -> in.transferTo(null), "out");
-        }
-    }
-
-    private static void testStreamContents(InputStreamProvider inputStreamProvider,
+    /*
+     * Testing API compliance: Input stream must throw NullPointerException when parameter "out" is null.
+     */
+    @Test(dataProvider = "streamCombinations")
+    public void testNullPointerException(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider) throws Exception {
+        // tests empty input stream
+        assertThrows(NullPointerException.class, () -> inputStreamProvider.input().transferTo(null));
+
+        // tests single-byte input stream
+        assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1).transferTo(null));
+
+        // tests dual-byte input stream
+        assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1, (byte) 2).transferTo(null));
+    }
+
+    /*
+     * Testing API compliance: Complete content of input stream must be transferred to output stream.
+     */
+    @Test(dataProvider = "streamCombinations")
+    public void testStreamContents(InputStreamProvider inputStreamProvider,
+            OutputStreamProvider outputStreamProvider) throws Exception {
+        // tests empty input stream
         checkTransferredContents(inputStreamProvider, outputStreamProvider, new byte[0]);
+
+        // tests input stream with a length between 1k and 4k
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(1024, 4096));
 
-        // to span through several batches
+        // tests input stream with several data chunks, as 16k is more than a single chunk can hold
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(16384, 16384));
 
-        // randomly chosen starting positions within source and target
+        // tests randomly chosen starting positions within source and target stream
         for (int i = 0; i < ITERATIONS; i++) {
             byte[] inBytes = createRandomBytes(MIN_SIZE, MAX_SIZE_INCR);
             int posIn = RND.nextInt(inBytes.length);
@@ -100,18 +123,67 @@ public class TransferTo {
             checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut);
         }
 
-        // beyond source EOF
+        // tests reading beyond source EOF (must not transfer any bytes)
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 4096, 0);
 
-        // beyond target EOF
+        // tests writing beyond target EOF (must extend output stream)
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 0, 4096);
     }
 
+    /*
+     * Special test for file-to-file transfer of more than two GB.
+     * This test covers multiple iterations of FileChannel.transerTo(FileChannel),
+     * which ChannelInputStream.transferTo() only applies in this particular case,
+     * and cannot get tested using a single byte[] due to size limitation of arrays.
+     */
+    @Test
+    public void testMoreThanTwoGB() throws IOException {
+        Path sourceFile = Files.createTempFile("test2GBSource", null);
+        try {
+            // preparing two temporary files which will be compared at the end of the test
+            Path targetFile = Files.createTempFile("test2GBtarget", null);
+            try {
+                // writing 3 GB of random bytes into source file
+                for (int i = 0; i < NUM_WRITES; i++)
+                    Files.write(sourceFile, createRandomBytes(BYTES_PER_WRITE, 0), StandardOpenOption.APPEND);
+
+                // performing actual transfer, effectively by multiple invocations of Filechannel.transferTo(FileChannel)
+                long count;
+                try (InputStream inputStream = Channels.newInputStream(FileChannel.open(sourceFile));
+                     OutputStream outputStream = Channels
+                             .newOutputStream(FileChannel.open(targetFile, StandardOpenOption.WRITE))) {
+                    count = inputStream.transferTo(outputStream);
+                }
+
+                // comparing reported transferred bytes, must be 3 GB
+                assertEquals(count, BYTES_WRITTEN);
+
+                // comparing content of both files, failing in case of any difference
+                assertEquals(Files.mismatch(sourceFile, targetFile), -1);
+
+            } finally {
+                 Files.delete(targetFile);
+            }
+        } finally {
+            Files.delete(sourceFile);
+        }
+    }
+
+    /*
+     * Asserts that the transferred content is correct, i. e. compares the actually transferred bytes
+     * to the expected assumption. The position of the input and output stream before the transfer is
+     * the start of stream (BOF).
+     */
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider, byte[] inBytes) throws Exception {
         checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, 0, 0);
     }
 
+    /*
+     * Asserts that the transferred content is correct, i. e. compares the actually transferred bytes
+     * to the expected assumption. The position of the input and output stream before the transfer is
+     * provided by the caller.
+     */
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn, int posOut) throws Exception {
         AtomicReference<Supplier<byte[]>> recorder = new AtomicReference<>();
@@ -124,17 +196,17 @@ public class TransferTo {
             long reported = in.transferTo(out);
             int count = inBytes.length - posIn;
 
-            if (reported != count)
-                throw new AssertionError(
-                        format("reported %d bytes but should report %d", reported, count));
+            assertEquals(reported, count, format("reported %d bytes but should report %d", reported, count));
 
             byte[] outBytes = recorder.get().get();
-            if (!Arrays.equals(inBytes, posIn, posIn + count, outBytes, posOut, posOut + count))
-                throw new AssertionError(
-                        format("inBytes.length=%d, outBytes.length=%d", count, outBytes.length));
+            assertTrue(Arrays.equals(inBytes, posIn, posIn + count, outBytes, posOut, posOut + count),
+                format("inBytes.length=%d, outBytes.length=%d", count, outBytes.length));
         }
     }
 
+    /*
+     * Creates an array of random size (between min and min + maxRandomAdditive) filled with random bytes
+     */
     private static byte[] createRandomBytes(int min, int maxRandomAdditive) {
         byte[] bytes = new byte[min + (maxRandomAdditive == 0 ? 0 : RND.nextInt(maxRandomAdditive))];
         RND.nextBytes(bytes);
@@ -149,6 +221,9 @@ public class TransferTo {
         OutputStream output(Consumer<Supplier<byte[]>> spy) throws Exception;
     }
 
+    /*
+     * Creates a provider for an output stream which does not wrap a channel
+     */
     private static OutputStreamProvider defaultOutput() {
         return new OutputStreamProvider() {
             @Override
@@ -160,6 +235,9 @@ public class TransferTo {
         };
     }
 
+    /*
+     * Creates a provider for an input stream which wraps a file channel
+     */
     private static InputStreamProvider fileChannelInput() {
         return new InputStreamProvider() {
             @Override
@@ -172,6 +250,9 @@ public class TransferTo {
         };
     }
 
+    /*
+     * Creates a provider for an input stream which wraps a readable byte channel but is not a file channel
+     */
     private static InputStreamProvider readableByteChannelInput() {
         return new InputStreamProvider() {
             @Override
@@ -181,6 +262,9 @@ public class TransferTo {
         };
     }
 
+    /*
+     * Creates a provider for an output stream which wraps a file channel
+     */
     private static OutputStreamProvider fileChannelOutput() {
         return new OutputStreamProvider() {
             public OutputStream output(Consumer<Supplier<byte[]>> spy) throws Exception {
@@ -198,31 +282,4 @@ public class TransferTo {
         };
     }
 
-    public interface Thrower {
-        public void run() throws Throwable;
-    }
-
-    public static void assertThrowsNPE(Thrower thrower, String message) {
-        assertThrows(thrower, NullPointerException.class, message);
-    }
-
-    public static <T extends Throwable> void assertThrows(Thrower thrower, Class<T> throwable, String message) {
-        Throwable thrown;
-        try {
-            thrower.run();
-            thrown = null;
-        } catch (Throwable caught) {
-            thrown = caught;
-        }
-
-        if (!throwable.isInstance(thrown)) {
-            String caught = thrown == null ? "nothing" : thrown.getClass().getCanonicalName();
-            throw new AssertionError(format("Expected to catch %s, but caught %s", throwable, caught), thrown);
-        }
-
-        if (thrown != null && !message.equals(thrown.getMessage())) {
-            throw new AssertionError(
-                    format("Expected exception message to be '%s', but it's '%s'", message, thrown.getMessage()));
-        }
-    }
 }

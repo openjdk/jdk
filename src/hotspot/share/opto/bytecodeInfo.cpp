@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
@@ -152,8 +153,8 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   int inline_small_code_size  = InlineSmallCode / 4;
   int max_inline_size         = default_max_inline_size;
 
-  int call_site_count  = method()->scale_count(profile.count());
-  int invoke_count     = method()->interpreter_invocation_count();
+  int call_site_count  = caller_method->scale_count(profile.count());
+  int invoke_count     = caller_method->interpreter_invocation_count();
 
   assert(invoke_count != 0, "require invocation count greater than zero");
   double freq = (double)call_site_count / (double)invoke_count;
@@ -192,10 +193,8 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
 
 
 // negative filter: should callee NOT be inlined?
-bool InlineTree::should_not_inline(ciMethod *callee_method,
-                                   ciMethod* caller_method,
-                                   JVMState* jvms) {
-
+bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_method,
+                                   int caller_bci, ciCallProfile& profile) {
   const char* fail_msg = NULL;
 
   // First check all inlining restrictions which are required for correctness
@@ -233,7 +232,6 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
   }
 
 #ifndef PRODUCT
-  int caller_bci = jvms->bci();
   int inline_depth = inline_level()+1;
   if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth)) {
     set_msg("force inline by ciReplay");
@@ -289,7 +287,6 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
 
   // don't use counts with -Xcomp
   if (UseInterpreter) {
-
     if (!callee_method->has_compiled_code() &&
         !callee_method->was_executed_more_than(0)) {
       set_msg("never executed");
@@ -299,15 +296,23 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     if (is_init_with_ea(callee_method, caller_method, C)) {
       // Escape Analysis: inline all executed constructors
       return false;
-    } else {
-      intx counter_high_value;
-      // Tiered compilation uses a different "high value" than non-tiered compilation.
-      // Determine the right value to use.
-      if (TieredCompilation) {
-        counter_high_value = InvocationCounter::count_limit / 2;
-      } else {
-        counter_high_value = CompileThreshold / 2;
+    }
+
+    if (MinInlineFrequencyRatio > 0) {
+      int call_site_count  = caller_method->scale_count(profile.count());
+      int invoke_count     = caller_method->interpreter_invocation_count();
+      assert(invoke_count != 0, "require invocation count greater than zero");
+      double freq = (double)call_site_count / (double)invoke_count;
+      double min_freq = MAX2(MinInlineFrequencyRatio, 1.0 / CompilationPolicy::min_invocations());
+
+      if (freq < min_freq) {
+        set_msg("low call site frequency");
+        return true;
       }
+    }
+
+    if (MinInliningThreshold > 0) { // Deprecated heuristic
+      intx counter_high_value = TieredCompilation ? InvocationCounter::count_limit / 2 : CompileThreshold / 2;
       if (!callee_method->was_executed_more_than(MIN2(MinInliningThreshold, counter_high_value))) {
         set_msg("executed < MinInliningThreshold times");
         return true;
@@ -367,7 +372,7 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
   if (!should_inline(callee_method, caller_method, caller_bci, profile)) {
     return false;
   }
-  if (should_not_inline(callee_method, caller_method, jvms)) {
+  if (should_not_inline(callee_method, caller_method, caller_bci, profile)) {
     return false;
   }
 

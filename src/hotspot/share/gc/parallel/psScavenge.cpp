@@ -654,8 +654,6 @@ bool PSScavenge::invoke_no_policy() {
     DerivedPointerTable::update_pointers();
 #endif
 
-    NOT_PRODUCT(reference_processor()->verify_no_references_recorded());
-
     // Re-verify object start arrays
     if (VerifyObjectStartArray &&
         VerifyAfterGC) {

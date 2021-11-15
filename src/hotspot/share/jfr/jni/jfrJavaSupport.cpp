@@ -71,7 +71,7 @@ static void check_new_unstarted_java_thread(JavaThread* t) {
  */
 jobject JfrJavaSupport::local_jni_handle(const oop obj, JavaThread* t) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
-  return t->active_handles()->allocate_handle(obj);
+  return t->active_handles()->allocate_handle(t, obj);
 }
 
 jobject JfrJavaSupport::local_jni_handle(const jobject handle, JavaThread* t) {
@@ -383,7 +383,7 @@ static void read_specialized_field(JavaValue* result, const Handle& h_oop, field
   }
 }
 
-static bool find_field(InstanceKlass* ik,
+static bool find_field(const InstanceKlass* ik,
                        Symbol* name_symbol,
                        Symbol* signature_symbol,
                        fieldDescriptor* fd,
@@ -395,29 +395,32 @@ static bool find_field(InstanceKlass* ik,
   return ik->find_local_field(name_symbol, signature_symbol, fd);
 }
 
-static void lookup_field(JfrJavaArguments* args, InstanceKlass* klass, fieldDescriptor* fd, bool static_field) {
+static void lookup_field(JfrJavaArguments* args, const InstanceKlass* ik, fieldDescriptor* fd, bool static_field) {
   assert(args != NULL, "invariant");
-  assert(klass != NULL, "invariant");
-  assert(klass->is_initialized(), "invariant");
+  assert(ik != NULL, "invariant");
+  assert(ik->is_initialized(), "invariant");
   assert(fd != NULL, "invariant");
-  find_field(klass, args->name(), args->signature(), fd, static_field, true);
+  find_field(ik, args->name(), args->signature(), fd, static_field, true);
+}
+
+static void read_field(JfrJavaArguments* args, JavaValue* result, Thread* thread) {
+  const bool static_field = !args->has_receiver();
+  fieldDescriptor fd;
+  const InstanceKlass* const ik = static_cast<InstanceKlass*>(args->klass());
+  lookup_field(args, ik, &fd, static_field);
+  assert(fd.offset() > 0, "invariant");
+  HandleMark hm(thread);
+  Handle h_oop(static_field ? Handle(thread, ik->java_mirror()) : Handle(thread, args->receiver()));
+  read_specialized_field(result, h_oop, &fd);
 }
 
 static void read_field(JfrJavaArguments* args, JavaValue* result, TRAPS) {
   assert(args != NULL, "invariant");
   assert(result != NULL, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-
   InstanceKlass* const klass = static_cast<InstanceKlass*>(args->klass());
   klass->initialize(CHECK);
-  const bool static_field = !args->has_receiver();
-  fieldDescriptor fd;
-  lookup_field(args, klass, &fd, static_field);
-  assert(fd.offset() > 0, "invariant");
-
-  HandleMark hm(THREAD);
-  Handle h_oop(static_field ? Handle(THREAD, klass->java_mirror()) : Handle(THREAD, args->receiver()));
-  read_specialized_field(result, h_oop, &fd);
+  read_field(args, result, static_cast<Thread*>(THREAD));
 }
 
 static void write_field(JfrJavaArguments* args, JavaValue* result, TRAPS) {
@@ -446,6 +449,11 @@ void JfrJavaSupport::set_field(JfrJavaArguments* args, TRAPS) {
 void JfrJavaSupport::get_field(JfrJavaArguments* args, TRAPS) {
   assert(args != NULL, "invariant");
   read_field(args, args->result(), THREAD);
+}
+
+void JfrJavaSupport::get_field(JfrJavaArguments* args, Thread* thread) {
+  assert(args != NULL, "invariant");
+  read_field(args, args->result(), thread);
 }
 
 void JfrJavaSupport::get_field_local_ref(JfrJavaArguments* args, TRAPS) {
@@ -487,20 +495,18 @@ Klass* JfrJavaSupport::klass(const jobject handle) {
   return obj->klass();
 }
 
-static char* allocate_string(bool c_heap, int length, JavaThread* jt) {
+static char* allocate_string(bool c_heap, int length, Thread* thread) {
   return c_heap ? NEW_C_HEAP_ARRAY(char, length, mtTracing) :
-                  NEW_RESOURCE_ARRAY_IN_THREAD(jt, char, length);
+                  NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, length);
 }
 
-const char* JfrJavaSupport::c_str(oop string, JavaThread* t, bool c_heap /* false */) {
-  DEBUG_ONLY(check_java_thread_in_vm(t));
+const char* JfrJavaSupport::c_str(oop string, Thread* thread, bool c_heap /* false */) {
   char* str = NULL;
   const typeArrayOop value = java_lang_String::value(string);
   if (value != NULL) {
     const int length = java_lang_String::utf8_length(string, value);
-    str = allocate_string(c_heap, length + 1, t);
+    str = allocate_string(c_heap, length + 1, thread);
     if (str == NULL) {
-      JfrJavaSupport::throw_out_of_memory_error("Unable to allocate native memory", t);
       return NULL;
     }
     java_lang_String::as_utf8_string(string, value, str, length + 1);
@@ -508,9 +514,8 @@ const char* JfrJavaSupport::c_str(oop string, JavaThread* t, bool c_heap /* fals
   return str;
 }
 
-const char* JfrJavaSupport::c_str(jstring string, JavaThread* t, bool c_heap /* false */) {
-  DEBUG_ONLY(check_java_thread_in_vm(t));
-  return string != NULL ? c_str(resolve_non_null(string), t, c_heap) : NULL;
+const char* JfrJavaSupport::c_str(jstring string, Thread* thread, bool c_heap /* false */) {
+  return string != NULL ? c_str(resolve_non_null(string), thread, c_heap) : NULL;
 }
 
 /*

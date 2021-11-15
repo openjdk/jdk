@@ -107,7 +107,7 @@ public final class ImageResourcesTree {
          * A reference to a package. Empty packages can be located inside one or
          * more modules. A package with classes exist in only one module.
          */
-        final static class PackageReference {
+        static final class PackageReference {
 
             private final String name;
             private final boolean isEmpty;
