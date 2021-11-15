@@ -110,7 +110,7 @@ public class EmptyStreamsMixedLength {
             case "ArrayList" -> ArrayList::new;
             case "ConcurrentLinkedQueue" -> ConcurrentLinkedQueue::new;
             case "ConcurrentSkipListSet" -> ConcurrentSkipListSet::new;
-            case "CopyOnWriteArrayist" -> CopyOnWriteArrayList::new;
+            case "CopyOnWriteArrayList" -> CopyOnWriteArrayList::new;
             case "ConcurrentHashMap" -> ConcurrentHashMap::newKeySet;
             default -> throw new AssertionError("Incorrect collection type : " + b_typeOfCollection);
         };
