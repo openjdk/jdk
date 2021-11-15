@@ -29,20 +29,22 @@
 
 package java.math;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamField;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.io.Serial;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Random;
+import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Immutable arbitrary-precision integers.  All operations behave as if
@@ -1065,7 +1067,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         for (int i=k.bitLength()-2; i >= 0; i--) {
             u2 = u.multiply(v).mod(n);
 
-            v2 = v.square().add(d.multiply(u.square())).mod(n);
+            v2 = v.square(false).add(d.multiply(u.square(false))).mod(n);
             if (v2.testBit(0))
                 v2 = v2.subtract(n);
 
@@ -1581,7 +1583,22 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this * val}
      */
     public BigInteger multiply(BigInteger val) {
-        return multiply(val, false);
+        return multiply(val, false, false);
+    }
+
+    /**
+     * Returns a BigInteger whose value is {@code (this * val)}.
+     * When both {@code this} and {@code val} are large, typically
+     * in the thousands of bits, parallel multiply might be used.
+     *
+     * @implNote An implementation may offer better algorithmic
+     * performance when {@code val == this}.
+     *
+     * @param  val value to be multiplied by this BigInteger.
+     * @return {@code this * val}
+     */
+    public BigInteger parallelMultiply(BigInteger val) {
+        return multiply(val, false, true);
     }
 
     /**
@@ -1590,16 +1607,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param  val value to be multiplied by this BigInteger.
      * @param  isRecursion whether this is a recursive invocation
+     * @param  parallel whether the multiply should be done in parallel
      * @return {@code this * val}
      */
-    private BigInteger multiply(BigInteger val, boolean isRecursion) {
+    private BigInteger multiply(BigInteger val, boolean isRecursion, boolean parallel) {
         if (val.signum == 0 || signum == 0)
             return ZERO;
 
         int xlen = mag.length;
 
         if (val == this && xlen > MULTIPLY_SQUARE_THRESHOLD) {
-            return square();
+            return square(parallel);
         }
 
         int ylen = val.mag.length;
@@ -1677,7 +1695,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     }
                 }
 
-                return multiplyToomCook3(this, val);
+                return multiplyToomCook3(this, val, parallel);
             }
         }
     }
@@ -1844,6 +1862,33 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
     }
 
+    private static final class RecursiveMultiply extends RecursiveTask<BigInteger> {
+        @Serial
+        private static final long serialVersionUID = 0L;
+        private final BigInteger a;
+        private final BigInteger b;
+        private final boolean isRecursive;
+        private final boolean parallel;
+
+        private RecursiveMultiply(BigInteger a, BigInteger b, boolean isRecursive, boolean parallel) {
+            this.a = a;
+            this.b = b;
+            this.isRecursive = isRecursive;
+            this.parallel = parallel;
+        }
+
+        @Override
+        protected BigInteger compute() {
+            return a.multiply(b, isRecursive, parallel);
+        }
+
+        public static RecursiveMultiply create(BigInteger a, BigInteger b, boolean isRecursive, boolean parallel) {
+            var result = new RecursiveMultiply(a, b, isRecursive, parallel);
+            if (parallel) result.fork(); else result.invoke();
+            return result;
+        }
+    }
+
     /**
      * Multiplies two BigIntegers using a 3-way Toom-Cook multiplication
      * algorithm.  This is a recursive divide-and-conquer algorithm which is
@@ -1872,7 +1917,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * LNCS #4547. Springer, Madrid, Spain, June 21-22, 2007.
      *
      */
-    private static BigInteger multiplyToomCook3(BigInteger a, BigInteger b) {
+    private static BigInteger multiplyToomCook3(BigInteger a, BigInteger b, boolean parallel) {
         int alen = a.mag.length;
         int blen = b.mag.length;
 
@@ -1896,16 +1941,22 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         BigInteger v0, v1, v2, vm1, vinf, t1, t2, tm1, da1, db1;
 
-        v0 = a0.multiply(b0, true);
+        var v0_task = RecursiveMultiply.create(a0, b0, true, parallel);
+//        v0 = a0.multiply(b0, true, parallel);
         da1 = a2.add(a0);
         db1 = b2.add(b0);
-        vm1 = da1.subtract(a1).multiply(db1.subtract(b1), true);
+        var vm1_task = RecursiveMultiply.create(da1.subtract(a1), db1.subtract(b1), true, parallel);
+//        vm1 = da1.subtract(a1).multiply(db1.subtract(b1), true, parallel);
         da1 = da1.add(a1);
         db1 = db1.add(b1);
-        v1 = da1.multiply(db1, true);
+        var v1_task = RecursiveMultiply.create(da1, db1, true, parallel);
+//        v1 = da1.multiply(db1, true, parallel);
         v2 = da1.add(a2).shiftLeft(1).subtract(a0).multiply(
-             db1.add(b2).shiftLeft(1).subtract(b0), true);
-        vinf = a2.multiply(b2, true);
+             db1.add(b2).shiftLeft(1).subtract(b0), true, parallel);
+        vinf = a2.multiply(b2, true, parallel);
+        v0 = v0_task.join();
+        vm1 = vm1_task.join();
+        v1 = v1_task.join();
 
         // The algorithm requires two divisions by 2 and one by 3.
         // All divisions are known to be exact, that is, they do not produce
@@ -2070,8 +2121,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @return <code>this<sup>2</sup></code>
      */
-    private BigInteger square() {
-        return square(false);
+    private BigInteger square(boolean parallel) {
+        return square(false, parallel);
     }
 
     /**
@@ -2081,7 +2132,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param isRecursion whether this is a recursive invocation
      * @return <code>this<sup>2</sup></code>
      */
-    private BigInteger square(boolean isRecursion) {
+    private BigInteger square(boolean isRecursion, boolean parallel) {
         if (signum == 0) {
             return ZERO;
         }
@@ -2103,7 +2154,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     }
                 }
 
-                return squareToomCook3();
+                return squareToomCook3(parallel);
             }
         }
     }
@@ -2223,11 +2274,36 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         BigInteger xl = getLower(half);
         BigInteger xh = getUpper(half);
 
-        BigInteger xhs = xh.square();  // xhs = xh^2
-        BigInteger xls = xl.square();  // xls = xl^2
+        BigInteger xhs = xh.square(false);  // xhs = xh^2
+        BigInteger xls = xl.square(false);  // xls = xl^2
 
         // xh^2 << 64  +  (((xl+xh)^2 - (xh^2 + xl^2)) << 32) + xl^2
-        return xhs.shiftLeft(half*32).add(xl.add(xh).square().subtract(xhs.add(xls))).shiftLeft(half*32).add(xls);
+        return xhs.shiftLeft(half*32).add(xl.add(xh).square(false).subtract(xhs.add(xls))).shiftLeft(half*32).add(xls);
+    }
+
+    private static final class RecursiveSquare extends RecursiveTask<BigInteger> {
+        @Serial
+        private static final long serialVersionUID = 0L;
+        private final BigInteger num;
+        private final boolean isRecursive;
+        private final boolean parallel;
+
+        private RecursiveSquare(BigInteger a, boolean isRecursive, boolean parallel) {
+            this.num = a;
+            this.isRecursive = isRecursive;
+            this.parallel = parallel;
+        }
+
+        @Override
+        protected BigInteger compute() {
+            return num.square(isRecursive, parallel);
+        }
+
+        public static RecursiveSquare create(BigInteger a, boolean isRecursive, boolean parallel) {
+            var result = new RecursiveSquare(a, isRecursive, parallel);
+            if (parallel) result.fork(); else result.invoke();
+            return result;
+        }
     }
 
     /**
@@ -2237,7 +2313,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * that has better asymptotic performance than the algorithm used in
      * squareToLen or squareKaratsuba.
      */
-    private BigInteger squareToomCook3() {
+    private BigInteger squareToomCook3(boolean parallel) {
         int len = mag.length;
 
         // k is the size (in ints) of the lower-order slices.
@@ -2254,13 +2330,19 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         a0 = getToomSlice(k, r, 2, len);
         BigInteger v0, v1, v2, vm1, vinf, t1, t2, tm1, da1;
 
-        v0 = a0.square(true);
+        var v0_fork = RecursiveSquare.create(a0, true, parallel);
+//        v0 = a0.square(true, parallel);
         da1 = a2.add(a0);
-        vm1 = da1.subtract(a1).square(true);
+        var vm1_fork = RecursiveSquare.create(da1.subtract(a1), true, parallel);
+//        vm1 = da1.subtract(a1).square(true, parallel);
         da1 = da1.add(a1);
-        v1 = da1.square(true);
-        vinf = a2.square(true);
-        v2 = da1.add(a2).shiftLeft(1).subtract(a0).square(true);
+        var v1_fork = RecursiveSquare.create(da1, true, parallel);
+//        v1 = da1.square(true, parallel);
+        vinf = a2.square(true, parallel);
+        v2 = da1.add(a2).shiftLeft(1).subtract(a0).square(true, parallel);
+        v0 = v0_fork.join();
+        vm1 = vm1_fork.join();
+        v1 = v1_fork.join();
 
         // The algorithm requires two divisions by 2 and one by 3.
         // All divisions are known to be exact, that is, they do not produce
@@ -2515,7 +2597,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 }
 
                 if ((workingExponent >>>= 1) != 0) {
-                    partToSquare = partToSquare.square();
+                    partToSquare = partToSquare.square(false);
                 }
             }
             // Multiply back the (exponentiated) powers of two (quickly,
@@ -2574,7 +2656,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     public BigInteger[] sqrtAndRemainder() {
         BigInteger s = sqrt();
-        BigInteger r = this.subtract(s.square());
+        BigInteger r = this.subtract(s.square(false));
         assert r.compareTo(BigInteger.ZERO) >= 0;
         return new BigInteger[] {s, r};
     }
@@ -3250,7 +3332,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 result = result.multiply(baseToPow2).mod2(p);
             expOffset++;
             if (expOffset < limit)
-                baseToPow2 = baseToPow2.square().mod2(p);
+                baseToPow2 = baseToPow2.square(false).mod2(p);
         }
 
         return result;
