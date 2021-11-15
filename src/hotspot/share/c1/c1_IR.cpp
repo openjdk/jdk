@@ -1279,38 +1279,34 @@ class PredecessorValidator : public BlockClosure {
     _predecessors = new BlockListList(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL);
     _blocks = new BlockList();
 
-    int i;
     hir->start()->iterate_preorder(this);
     if (hir->code() != NULL) {
       assert(hir->code()->length() == _blocks->length(), "must match");
-      for (i = 0; i < _blocks->length(); i++) {
+      for (int i = 0; i < _blocks->length(); i++) {
         assert(hir->code()->contains(_blocks->at(i)), "should be in both lists");
       }
     }
 
-    for (i = 0; i < _blocks->length(); i++) {
+    for (int i = 0; i < _blocks->length(); i++) {
       BlockBegin* block = _blocks->at(i);
       BlockList* preds = _predecessors->at(block->block_id());
       if (preds == NULL) {
         assert(block->number_of_preds() == 0, "should be the same");
         continue;
       }
+      assert(preds->length() == block->number_of_preds(), "should be the same");
 
       // clone the pred list so we can mutate it
       BlockList* pred_copy = new BlockList();
-      int j;
-      for (j = 0; j < block->number_of_preds(); j++) {
+      for (int j = 0; j < block->number_of_preds(); j++) {
         pred_copy->append(block->pred_at(j));
       }
       // sort them in the same order
       preds->sort(cmp);
       pred_copy->sort(cmp);
-      int length = MIN2(preds->length(), block->number_of_preds());
-      for (j = 0; j < block->number_of_preds(); j++) {
+      for (int j = 0; j < block->number_of_preds(); j++) {
         assert(preds->at(j) == pred_copy->at(j), "must match");
       }
-
-      assert(preds->length() == block->number_of_preds(), "should be the same");
     }
   }
 
@@ -1318,8 +1314,7 @@ class PredecessorValidator : public BlockClosure {
     _blocks->append(block);
     BlockEnd* be = block->end();
     int n = be->number_of_sux();
-    int i;
-    for (i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
       BlockBegin* sux = be->sux_at(i);
       assert(!sux->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
 
@@ -1331,8 +1326,8 @@ class PredecessorValidator : public BlockClosure {
       preds->append(block);
     }
 
-    n = block->number_of_exception_handlers();
-    for (i = 0; i < n; i++) {
+    int m = block->number_of_exception_handlers();
+    for (int i = 0; i < m; i++) {
       BlockBegin* sux = block->exception_handler_at(i);
       assert(sux->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
 
