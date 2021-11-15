@@ -1300,30 +1300,27 @@ class PredecessorValidator : public BlockClosure {
     for (int i = 0; i < n; i++) {
       BlockBegin* sux = be->sux_at(i);
       assert(!sux->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
-
-      BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
-      if (preds == NULL) {
-        preds = new BlockList();
-        _predecessors->at_put(sux->block_id(), preds);
-      }
-      preds->append(block);
+      collect_predecessor(block, sux);
     }
 
     int m = block->number_of_exception_handlers();
     for (int i = 0; i < m; i++) {
       BlockBegin* sux = block->exception_handler_at(i);
       assert(sux->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
-
-      BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
-      if (preds == NULL) {
-        preds = new BlockList();
-        _predecessors->at_put(sux->block_id(), preds);
-      }
-      preds->append(block);
+      collect_predecessor(block, sux);
     }
   }
 
  private:
+  void collect_predecessor(BlockBegin * const pred, const BlockBegin *sux) {
+    BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
+    if (preds == NULL) {
+      preds = new BlockList();
+      _predecessors->at_put(sux->block_id(), preds);
+    }
+    preds->append(pred);
+  }
+
   void verify_block_preds_against_collected_preds(const BlockBegin *block) const {
     BlockList* preds = _predecessors->at(block->block_id());
     if (preds == NULL) {
