@@ -839,9 +839,10 @@ endif
 # pipeline only on Macosx >=10.14. For Macosx versions <10.14 even if
 # we enable Metal pipeline using -Dsun.java2d.metal=true, at
 # runtime we force it to use OpenGL pipeline. And MACOSX_VERSION_MIN
-# for aarch64 is 11.00.00 at the time of introducing MACOSX_METAL_VERSION_MIN.
+# for aarch64 has always been >10.14 so we use continue to use
+# MACOSX_VERSION_MIN for aarch64.
 ifeq ($(OPENJDK_TARGET_CPU_ARCH), xaarch64)
-    MACOSX_METAL_VERSION_MIN=11.00.00
+    MACOSX_METAL_VERSION_MIN=$(MACOSX_VERSION_MIN)
 else
     MACOSX_METAL_VERSION_MIN=10.14.0
 endif
