@@ -98,10 +98,10 @@ public:
     _log_card_region_size(log_card_region_size) {
   }
 
-  void do_cardsetptr(uint region_idx, size_t num_occupied, G1CardSet::CardSetPtr card_set) override {
+  void do_cardsetptr(uint card_region_idx, size_t num_occupied, G1CardSet::CardSetPtr card_set) override {
     CardOrRanges<Closure> cl(_iter,
-                             region_idx >> _log_card_regions_per_region,
-                             (region_idx & _card_regions_per_region_mask) << _log_card_region_size);
+                             card_region_idx >> _log_card_regions_per_region,
+                             (card_region_idx & _card_regions_per_region_mask) << _log_card_region_size);
     _card_set->iterate_cards_or_ranges_in_container(card_set, cl);
   }
 };
@@ -111,7 +111,7 @@ inline void HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
   G1HeapRegionRemSetMergeCardIterator<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(&_card_set,
                                                                                         cl,
                                                                                         _card_set.config()->log2_card_region_per_heap_region(),
-                                                                                        _card_set.config()->log2_card_region_size());
+                                                                                        _card_set.config()->log2_cards_per_card_region_size());
   _card_set.iterate_containers(&cl2, true /* at_safepoint */);
 }
 

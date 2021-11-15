@@ -64,7 +64,7 @@ G1CardSetConfiguration::G1CardSetConfiguration() :
                          (uint)HeapRegion::CardsPerRegion,                          /* max_cards_in_cardset */
                          default_log2_card_region_per_region())                     /* log2_card_region_per_region */
 {
-  assert((_log2_card_region_per_heap_region + _log2_card_region_size) == (uint)HeapRegion::LogCardsPerRegion,
+  assert((_log2_card_region_per_heap_region + _log2_cards_per_card_region_size) == (uint)HeapRegion::LogCardsPerRegion,
          "inconsistent heap region virtualization setup");
 }
 
@@ -102,7 +102,7 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
   _log2_num_cards_in_howl_bitmap(log2i_exact(_num_cards_in_howl_bitmap)),
   _bitmap_hash_mask(~(~(0) << _log2_num_cards_in_howl_bitmap)),
   _log2_card_region_per_heap_region(log2_card_region_per_heap_region),
-  _log2_card_region_size(log2i_exact(_max_cards_in_card_set) - _log2_card_region_per_heap_region) {
+  _log2_cards_per_card_region_size(log2i_exact(_max_cards_in_card_set) - _log2_card_region_per_heap_region) {
 
   assert(is_power_of_2(_max_cards_in_card_set),
          "max_cards_in_card_set must be a power of 2: %u", _max_cards_in_card_set);
@@ -129,13 +129,13 @@ void G1CardSetConfiguration::log_configuration() {
                           "Array Of Cards #elems %u size %zu "
                           "Howl #buckets %u coarsen threshold %u "
                           "Howl Bitmap #elems %u size %zu coarsen threshold %u "
-                          "Card regions per heap region %u card region size %u",
+                          "Card regions per heap region %u cards per card region %u",
                           num_cards_in_inline_ptr(), sizeof(void*),
                           num_cards_in_array(), G1CardSetArray::size_in_bytes(num_cards_in_array()),
                           num_buckets_in_howl(), cards_in_howl_threshold(),
                           num_cards_in_howl_bitmap(), G1CardSetBitMap::size_in_bytes(num_cards_in_howl_bitmap()), cards_in_howl_bitmap_threshold(),
                           (uint)1 << log2_card_region_per_heap_region(),
-                          (uint)1 << log2_card_region_size());
+                          (uint)1 << log2_cards_per_card_region_size());
 }
 
 uint G1CardSetConfiguration::num_cards_in_inline_ptr() const {
