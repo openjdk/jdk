@@ -445,11 +445,13 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   // r0: handler address
   //      will be the deopt blob if nmethod was deoptimized while we looked up
   //      handler regardless of whether handler existed in the nmethod.
-  //      Move it into LR ready for returning.
-  __ mov(lr, r0);
 
   // only r0 is valid at this time, all other registers have been destroyed by the runtime call
   __ invalidate_registers(false, true, true, true, true, true);
+
+  // patch the return address, this stub will directly return to the exception handler
+  __ protect_return_address(r0, rscratch1);
+  __ str(r0, Address(rfp, 1*BytesPerWord));
 
   switch (id) {
   case forward_exception_id:
@@ -462,11 +464,6 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
     break;
   default:  ShouldNotReachHere();
   }
-
-  // Restore the frame (without overwriting lr), and return.
-  __ mov(sp, rfp);
-  __ ldr(rfp, Address(__ post(sp, 2 * wordSize)));
-  __ ret(lr);
 
   return oop_maps;
 }
@@ -626,6 +623,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case forward_exception_id:
       {
         oop_maps = generate_handle_exception(id, sasm);
+        __ leave();
+        __ ret(lr);
       }
       break;
 
@@ -1050,13 +1049,13 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case handle_exception_nofpu_id:
     case handle_exception_id:
-      { StubFrame f(sasm, "handle_exception", dont_gc_arguments, does_not_return);
+      { StubFrame f(sasm, "handle_exception", dont_gc_arguments);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;
 
     case handle_exception_from_callee_id:
-      { StubFrame f(sasm, "handle_exception_from_callee", dont_gc_arguments, does_not_return);
+      { StubFrame f(sasm, "handle_exception_from_callee", dont_gc_arguments);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;
