@@ -123,7 +123,7 @@ public abstract class CertPath implements Serializable {
     private static final long serialVersionUID = 6068470306649138683L;
 
     /** The type of certificates in this chain. */
-    private String type;
+    private final transient String type;
 
     /**
      * Creates a {@code CertPath} of the specified type.
