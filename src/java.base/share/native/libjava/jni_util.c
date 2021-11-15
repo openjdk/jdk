@@ -639,21 +639,6 @@ static jmethodID String_getBytes_ID;    /* String.getBytes(enc) */
 static jfieldID String_coder_ID;        /* String.coder */
 static jfieldID String_value_ID;        /* String.value */
 
-static jboolean isJNUEncodingSupported = JNI_FALSE;
-static jboolean jnuEncodingSupported(JNIEnv *env) {
-    jboolean exe;
-    if (isJNUEncodingSupported == JNI_TRUE) {
-        return JNI_TRUE;
-    }
-    isJNUEncodingSupported = (jboolean) JNU_CallStaticMethodByName (
-                                    env, &exe,
-                                    "java/nio/charset/Charset",
-                                    "isSupported",
-                                    "(Ljava/lang/String;)Z",
-                                    jnuEncoding).z;
-    return isJNUEncodingSupported;
-}
-
 /* Create a new string by converting str to a heap-allocated byte array and
  * calling the appropriate String constructor.
  */
@@ -671,18 +656,8 @@ newSizedStringJava(JNIEnv *env, const char *str, const int len)
         jclass strClazz = JNU_ClassString(env);
         CHECK_NULL_RETURN(strClazz, 0);
         (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte *)str);
-        if (jnuEncodingSupported(env)) {
-            result = (*env)->NewObject(env, strClazz,
-                                       String_init_ID, bytes, jnuEncoding);
-        } else {
-            /*If the encoding specified in sun.jnu.encoding is not endorsed
-              by "Charset.isSupported" we have to fall back to use UTF-8
-             */
-            jstring utf8 = (*env)->NewStringUTF(env, "UTF-8");
-            result = (*env)->NewObject(env, strClazz,
-                                       String_init_ID, bytes, utf8);
-            (*env)->DeleteLocalRef(env, utf8);
-        }
+        result = (*env)->NewObject(env, strClazz,
+                                   String_init_ID, bytes, jnuEncoding);
         (*env)->DeleteLocalRef(env, bytes);
         return result;
     }
@@ -762,12 +737,30 @@ InitializeEncoding(JNIEnv *env, const char *encname)
             strcmp(encname, "utf-16le") == 0) {
             fastEncoding = FAST_CP1252;
         } else {
+            jboolean exe;
             jstring enc = (*env)->NewStringUTF(env, encname);
             if (enc == NULL)
                 return;
             fastEncoding = NO_FAST_ENCODING;
             jnuEncoding = (jstring)(*env)->NewGlobalRef(env, enc);
             (*env)->DeleteLocalRef(env, enc);
+
+            // Replace jnuEncoding with UTF-8, if it is not supported
+            if ((jboolean) JNU_CallStaticMethodByName (
+                                            env, &exe,
+                                            "java/nio/charset/Charset",
+                                            "isSupported",
+                                            "(Ljava/lang/String;)Z",
+                                            jnuEncoding).z == JNI_FALSE) {
+                jstring utf8 = (*env)->NewStringUTF(env, "UTF-8");
+                if (utf8 == NULL) {
+                    return;
+                }
+                (*env)->DeleteGlobalRef(env, jnuEncoding);
+                fastEncoding = FAST_UTF_8;
+                jnuEncoding = (jstring)(*env)->NewGlobalRef(env, utf8);
+                (*env)->DeleteLocalRef(env, utf8);
+            }
         }
     } else {
         JNU_ThrowInternalError(env, "platform encoding undefined");
@@ -818,32 +811,22 @@ static const char* getStringBytes(JNIEnv *env, jstring jstr) {
     if ((*env)->EnsureLocalCapacity(env, 2) < 0)
         return 0;
 
-    if (jnuEncodingSupported(env)) {
-        hab = (*env)->CallObjectMethod(env, jstr, String_getBytes_ID, jnuEncoding);
-    } else {
-        jmethodID mid;
-        jclass strClazz = JNU_ClassString(env);
-        CHECK_NULL_RETURN(strClazz, 0);
-        mid = (*env)->GetMethodID(env, strClazz,
-                                       "getBytes", "()[B");
-        if (mid != NULL) {
-            hab = (*env)->CallObjectMethod(env, jstr, mid);
+    hab = (*env)->CallObjectMethod(env, jstr, String_getBytes_ID, jnuEncoding);
+    if (hab != 0) {
+        if (!(*env)->ExceptionCheck(env)) {
+            jint len = (*env)->GetArrayLength(env, hab);
+            result = MALLOC_MIN4(len);
+            if (result == 0) {
+                JNU_ThrowOutOfMemoryError(env, 0);
+                (*env)->DeleteLocalRef(env, hab);
+                return 0;
+            }
+            (*env)->GetByteArrayRegion(env, hab, 0, len, (jbyte *)result);
+            result[len] = 0; /* NULL-terminate */
         }
-    }
 
-    if (!(*env)->ExceptionCheck(env)) {
-        jint len = (*env)->GetArrayLength(env, hab);
-        result = MALLOC_MIN4(len);
-        if (result == 0) {
-            JNU_ThrowOutOfMemoryError(env, 0);
-            (*env)->DeleteLocalRef(env, hab);
-            return 0;
-        }
-        (*env)->GetByteArrayRegion(env, hab, 0, len, (jbyte *)result);
-        result[len] = 0; /* NULL-terminate */
+        (*env)->DeleteLocalRef(env, hab);
     }
-
-    (*env)->DeleteLocalRef(env, hab);
     return result;
 }
 
