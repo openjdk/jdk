@@ -40,7 +40,7 @@ public class CodeCacheFullCountTest {
         if (args.length == 1) {
             wasteCodeCache();
         } else {
-            runtest();
+            runTest();
         }
     }
 
@@ -53,7 +53,7 @@ public class CodeCacheFullCountTest {
         }
     }
 
-    public static void runtest() throws Throwable {
+    public static void runTest() throws Throwable {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
           "-XX:ReservedCodeCacheSize=2496k", "-XX:-UseCodeCacheFlushing", "CodeCacheFullCountTest", "WasteCodeCache");
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
@@ -68,7 +68,7 @@ public class CodeCacheFullCountTest {
                 throw new RuntimeException("the value of full_count is wrong.");
             }
         } else {
-            throw new RuntimeException("codecache shortage was not occured.");
+            throw new RuntimeException("codecache shortage did not occur.");
         }
     }
 
@@ -95,18 +95,22 @@ public class CodeCacheFullCountTest {
 abstract class Foo {
     public abstract int foo();
 }
+
 class Foo1 extends Foo {
     private int a;
     public int foo() { return a; }
 }
+
 class Foo2 extends Foo {
     private int a;
     public int foo() { return a; }
 }
+
 class Foo3 extends Foo {
     private int a;
     public int foo() { return a; }
 }
+
 class Foo4 extends Foo {
     private int a;
     public int foo() { return a; }
