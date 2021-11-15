@@ -50,7 +50,7 @@ class Commands {
      */
     protected static final int LIST_LINE_LOOKBEHIND = 4;
 
-    abstract class AsyncExecution {
+    abstract static class AsyncExecution {
         abstract void action();
 
         AsyncExecution() {
