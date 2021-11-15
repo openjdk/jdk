@@ -165,6 +165,29 @@ abstract class CKeyStore extends KeyStoreSpi {
             }
             certChain = chain;
         }
+
+        public void delete() throws KeyStoreException {
+            // Get end-entity certificate and remove from system cert store
+            X509Certificate[] certChain = getCertificateChain();
+            if (certChain != null && certChain.length > 0) {
+                try {
+                    byte[] encoding = certChain[0].getEncoded();
+                    removeCertificate(getName(), getAlias(), encoding,
+                            encoding.length);
+                } catch (CertificateException e) {
+                    throw new KeyStoreException("Cannot remove entry: ", e);
+                }
+            }
+            CKey privateKey = getPrivateKey();
+            if (privateKey != null) {
+                if (privateKey.getHCryptKey() != 0) {
+                    destroyKeyContainer(
+                            CKey.getContainerName(privateKey.getHCryptProvider()));
+                } else {
+                    removeCngKey(privateKey.getHCryptProvider());
+                }
+            }
+        }
     }
 
     /*
@@ -368,8 +391,6 @@ abstract class CKeyStore extends KeyStoreSpi {
 
         if (key instanceof RSAPrivateCrtKey) {
 
-            KeyEntry entry = entries.get(alias);
-
             X509Certificate[] xchain;
             if (chain != null) {
                 if (chain instanceof X509Certificate[]) {
@@ -382,26 +403,20 @@ abstract class CKeyStore extends KeyStoreSpi {
                 xchain = null;
             }
 
-            if (entry == null) {
-                entry =
-                    //TODO new KeyEntry(alias, key, (X509Certificate[]) chain);
-                    new KeyEntry(alias, null, xchain);
-                storeWithUniqueAlias(alias, entry);
-            }
-
-            entry.setAlias(alias);
+            KeyEntry oldEntry = entries.get(alias);
 
             try {
-                entry.setRSAPrivateKey(key);
-                entry.setCertificateChain(xchain);
-
-            } catch (CertificateException ce) {
-                throw new KeyStoreException(ce);
-
-            } catch (InvalidKeyException ike) {
-                throw new KeyStoreException(ike);
+                KeyEntry newEntry = new KeyEntry(alias, null, xchain);
+                newEntry.setRSAPrivateKey(key);
+                newEntry.setCertificateChain(xchain);
+                entries.put(alias, newEntry);
+            } catch (CertificateException | InvalidKeyException e) {
+                throw new KeyStoreException(e);
             }
 
+            if (oldEntry != null) {
+                oldEntry.delete();
+            }
         } else {
             throw new UnsupportedOperationException(
                 "Cannot assign the key to the given alias.");
@@ -463,25 +478,23 @@ abstract class CKeyStore extends KeyStoreSpi {
             // TODO - build CryptoAPI chain?
             X509Certificate[] chain =
                 new X509Certificate[]{ (X509Certificate) cert };
-            KeyEntry entry = entries.get(alias);
 
-            if (entry == null) {
-                entry =
-                    new KeyEntry(alias, null, chain);
-                storeWithUniqueAlias(alias, entry);
+            KeyEntry oldEntry = entries.get(alias);
+            if (oldEntry != null && oldEntry.privateKey != null) {
+                throw new KeyStoreException("Cannot overwrite key entry");
             }
 
-            if (entry.getPrivateKey() == null) { // trusted-cert entry
-                entry.setAlias(alias);
-
-                try {
-                    entry.setCertificateChain(chain);
-
-                } catch (CertificateException ce) {
-                    throw new KeyStoreException(ce);
-                }
+            try {
+                KeyEntry newEntry = new KeyEntry(alias, null, chain);
+                newEntry.setCertificateChain(chain);
+                entries.put(alias, newEntry);
+            } catch (CertificateException ce) {
+                throw new KeyStoreException(ce);
             }
 
+            if (oldEntry != null) {
+                oldEntry.delete();
+            }
         } else {
             throw new UnsupportedOperationException(
                 "Cannot assign the certificate to the given alias.");
@@ -502,25 +515,7 @@ abstract class CKeyStore extends KeyStoreSpi {
 
         KeyEntry entry = entries.remove(alias);
         if (entry != null) {
-            // Get end-entity certificate and remove from system cert store
-            X509Certificate[] certChain = entry.getCertificateChain();
-            if (certChain != null && certChain.length > 0) {
-
-                try {
-
-                    byte[] encoding = certChain[0].getEncoded();
-                    removeCertificate(getName(), entry.getAlias(), encoding,
-                            encoding.length);
-
-                } catch (CertificateException e) {
-                    throw new KeyStoreException("Cannot remove entry: ", e);
-                }
-            }
-            CKey privateKey = entry.getPrivateKey();
-            if (privateKey != null) {
-                destroyKeyContainer(
-                    CKey.getContainerName(privateKey.getHCryptProvider()));
-            }
+            entry.delete();
         }
     }
 
@@ -876,6 +871,13 @@ abstract class CKeyStore extends KeyStoreSpi {
      */
     private native void destroyKeyContainer(String keyContainerName)
         throws KeyStoreException;
+
+    /**
+     * Removes a CNG key.
+     *
+     * @param k the handle of the key
+     */
+    private native void removeCngKey(long k) throws KeyStoreException;
 
     /**
      * Generates a private-key BLOB from a key's components.

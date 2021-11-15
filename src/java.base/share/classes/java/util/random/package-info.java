@@ -223,7 +223,7 @@
  * lifetime of a particular Java SE release. Changing the deprecation status of
  * an algorithm is <em>not</em> a specification change.
  *
- * <table style="padding:0px 20px 0px 0px">
+ * <table class="striped">
  *  <caption>Available Algorithms</caption>
  *  <thead>
  *  <tr>
@@ -236,91 +236,91 @@
  *  </thead>
  *  <tbody>
  *  <tr>
- *      <td style="text-align:left">L128X1024MixRandom</td>
+ *      <th scope="row" style="text-align:left">L128X1024MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(1024).subtract(BigInteger.ONE).shiftLeft(128)</td>
  *      <td style="text-align:right">1152</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L128X128MixRandom</td>
+ *      <th scope="row" style="text-align:left">L128X128MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(128)</td>
  *      <td style="text-align:right">256</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L128X256MixRandom</td>
+ *      <th scope="row" style="text-align:left">L128X256MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE).shiftLeft(128)</td>
  *      <td style="text-align:right">384</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L32X64MixRandom</td>
+ *      <th scope="row" style="text-align:left">L32X64MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE).shiftLeft(32)</td>
  *      <td style="text-align:right">96</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L64X1024MixRandom</td>
+ *      <th scope="row" style="text-align:left">L64X1024MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(1024).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">1088</td>
  *      <td style="text-align:right">16</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L64X128MixRandom</td>
+ *      <th scope="row" style="text-align:left">L64X128MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">192</td>
  *      <td style="text-align:right">2</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L64X128StarStarRandom</td>
+ *      <th scope="row" style="text-align:left">L64X128StarStarRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">192</td>
  *      <td style="text-align:right">2</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L64X256MixRandom</td>
+ *      <th scope="row" style="text-align:left">L64X256MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">320</td>
  *      <td style="text-align:right">4</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">Random</td>
+ *      <th scope="row" style="text-align:left">Random</th>
  *      <td style="text-align:left">Legacy</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(48)</td>
  *      <td style="text-align:right">48</td>
  *      <td style="text-align:right">0</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">SplittableRandom</td>
+ *      <th scope="row" style="text-align:left">SplittableRandom</th>
  *      <td style="text-align:left">Legacy</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64)</td>
  *      <td style="text-align:right">64</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">ThreadLocalRandom <sup>*</sup></td>
+ *      <th scope="row" style="text-align:left">ThreadLocalRandom <sup>*</sup></th>
  *      <td style="text-align:left">Legacy</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64)</td>
  *      <td style="text-align:right">64</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">Xoroshiro128PlusPlus</td>
+ *      <th scope="row" style="text-align:left">Xoroshiro128PlusPlus</th>
  *      <td style="text-align:left">Xoroshiro</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE)</td>
  *      <td style="text-align:right">128</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">Xoshiro256PlusPlus</td>
+ *      <th scope="row" style="text-align:left">Xoshiro256PlusPlus</th>
  *      <td style="text-align:left">Xoshiro</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE)</td>
  *      <td style="text-align:right">256</td>
@@ -466,7 +466,7 @@
  * 1-bit), and equidistribution property for each of the specific LXM algorithms
  * used in this package.
  *
- * <table style="padding:0px 20px 0px 0px">
+ * <table class="striped">
  * <caption>Algorithm Properties</caption>
  * <thead>
  *   <tr><th style="text-align:left">Implementation</th>
@@ -476,42 +476,42 @@
  *       <th style="text-align:left">{@link RandomGenerator#nextLong nextLong()} values are</th></tr>
  * </thead>
  * <tbody>
- *   <tr><td style="text-align:left">"L32X64MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L32X64MixRandom"</th>
  *       <td style="text-align:right">2<sup>32</sup>(2<sup>64</sup>&minus;1)</td>
  *       <td style="text-align:right">96 bits</td>
  *       <td style="text-align:right">32 bits</td>
  *       <td style="text-align:left"></td></tr>
- *   <tr><td style="text-align:left">"L64X128StarStarRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X128StarStarRandom"</th>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>128</sup>&minus;1)</td>
  *       <td style="text-align:right">192 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">2-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L64X128MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X128MixRandom"</th>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>128</sup>&minus;1)</td>
  *       <td style="text-align:right">192 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">2-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L64X256MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X256MixRandom"</th>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>256</sup>&minus;1)</td>
  *       <td style="text-align:right">320 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">4-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L64X1024MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X1024MixRandom"</th>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>1024</sup>&minus;1)</td>
  *       <td style="text-align:right">1088 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">16-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L128X128MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L128X128MixRandom"</th>
  *       <td style="text-align:right">2<sup>128</sup>(2<sup>128</sup>&minus;1)</td>
  *       <td style="text-align:right">256 bits</td>
  *       <td style="text-align:right">128 bits</td>
  *       <td style="text-align:left">exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L128X256MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L128X256MixRandom"</th>
  *       <td style="text-align:right">2<sup>128</sup>(2<sup>256</sup>&minus;1)</td>
  *       <td style="text-align:right">384 bits</td>
  *       <td style="text-align:right">128 bits</td>
  *       <td style="text-align:left">exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L128X1024MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L128X1024MixRandom"</th>
  *       <td style="text-align:right">2<sup>128</sup>(2<sup>1024</sup>&minus;1)</td>
  *       <td style="text-align:right">1152 bits</td>
  *       <td style="text-align:right">128 bits</td>
@@ -575,7 +575,7 @@
  * missing 1-bit is handled through special coding of the multiply-add algorithm
  * used in the LCG.)
  *
- * <table style="padding:0px 20px 0px 0px">
+ * <table class="striped">
  * <caption>LXM Multipliers</caption>
  * <thead>
  *   <tr><th style="text-align:left">Implementation</th>
@@ -585,42 +585,42 @@
  *       <th style="text-align:left">Mixing function</th></tr>
  * </thead>
  * <tbody>
- *   <tr><td style="text-align:left">"L32X64MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L32X64MixRandom"</th>
  *       <td style="text-align:right">{@code 0xadb4a92d}</td>
  *       <td style="text-align:left">{@code xoroshiro64}, version 1.0</td>
  *       <td style="text-align:left">{@code (26, 9, 13)}</td>
  *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L64X128StarStarRandom" </td>
+ *   <tr><th scope="row" style="text-align:left">"L64X128StarStarRandom" </th>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoroshiro128}, version 1.0</td>
  *       <td style="text-align:left">{@code (24, 16, 37)}</td>
  *       <td style="text-align:left">{@code Long.rotateLeft((s+x0)* 5, 7) * 9}</td></tr>
- *   <tr><td style="text-align:left">"L64X128MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X128MixRandom"</th>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoroshiro128}, version 1.0</td>
  *       <td style="text-align:left">{@code (24, 16, 37)}</td>
  *       <td style="text-align:left">mixLea64{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L64X256MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X256MixRandom"</th>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoshiro256}, version 1.0</td>
  *       <td style="text-align:left">{@code (17, 45)}</td>
  *       <td style="text-align:left">mixLea64{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L64X1024MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X1024MixRandom"</th>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoroshiro1024}, version 1.0</td>
  *       <td style="text-align:left">{@code (25, 27, 36)}</td>
  *       <td style="text-align:left">mixLea64{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L128X128MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L128X128MixRandom"</th>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoroshiro128}, version 1.0</td>
  *       <td style="text-align:left">{@code (24, 16, 37)}</td>
  *       <td style="text-align:left">mixLea64{@code (sh+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L128X256MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L128X256MixRandom"</th>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoshiro256}, version 1.0</td>
  *       <td style="text-align:left">{@code (17, 45)}</td>
  *       <td style="text-align:left">mixLea64{@code (sh+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L128X1024MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L128X1024MixRandom"</th>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoroshiro1024}, version 1.0</td>
  *       <td style="text-align:left">{@code (25, 27, 36)}</td>

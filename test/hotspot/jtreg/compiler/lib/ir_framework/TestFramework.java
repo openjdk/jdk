@@ -122,6 +122,7 @@ public class TestFramework {
                     "BackgroundCompilation",
                     "Xbatch",
                     "TieredCompilation",
+                    "CompileThreshold",
                     "Xmixed",
                     "server",
                     "Xlog",

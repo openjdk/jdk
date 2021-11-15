@@ -331,7 +331,7 @@ public final class System {
     private static class CallersHolder {
         // Remember callers of setSecurityManager() here so that warning
         // is only printed once for each different caller
-        final static Map<Class<?>, Boolean> callers
+        static final Map<Class<?>, Boolean> callers
             = Collections.synchronizedMap(new WeakHashMap<>());
     }
 
@@ -361,9 +361,11 @@ public final class System {
      * the method simply returns.
      *
      * @implNote In the JDK implementation, if the Java virtual machine is
-     * started with the system property {@code java.security.manager} set to
+     * started with the system property {@code java.security.manager} not set or set to
      * the special token "{@code disallow}" then the {@code setSecurityManager}
-     * method cannot be used to set a security manager.
+     * method cannot be used to set a security manager. See the following
+     * <a href="SecurityManager.html#set-security-manager">section of the
+     * {@code SecurityManager} class specification</a> for more details.
      *
      * @param  sm the security manager or {@code null}
      * @throws SecurityException
@@ -1593,7 +1595,7 @@ public final class System {
      *
      * @since 9
      */
-    public static abstract class LoggerFinder {
+    public abstract static class LoggerFinder {
         /**
          * The {@code RuntimePermission("loggerFinder")} is
          * necessary to subclass and instantiate the {@code LoggerFinder} class,
@@ -2237,7 +2239,7 @@ public final class System {
                     allowSecurityManager = MAYBE;
             }
         } else {
-            allowSecurityManager = MAYBE;
+            allowSecurityManager = NEVER;
         }
 
         if (needWarning) {

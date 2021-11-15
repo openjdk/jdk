@@ -59,7 +59,7 @@ public class VerifyCACerts {
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "CC:AD:BB:49:70:97:3F:42:AD:73:91:A0:A2:C4:B8:AA:D1:95:59:F3:B3:22:09:2A:1F:2C:AB:04:47:08:EF:AA";
+            = "0D:9C:40:8F:CE:B1:C7:27:89:54:FD:80:DA:B6:91:F4:C9:94:15:C4:8D:25:62:34:D4:70:32:60:1A:6F:13:27";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();

@@ -86,12 +86,12 @@
 // MANAGEABLE flags are writeable external product flags.
 //    They are dynamically writeable through the JDK management interface
 //    (com.sun.management.HotSpotDiagnosticMXBean API) and also through JConsole.
-//    These flags are external exported interface (see CCC).  The list of
+//    These flags are external exported interface (see CSR).  The list of
 //    manageable flags can be queried programmatically through the management
 //    interface.
 //
 //    A flag can be made as "manageable" only if
-//    - the flag is defined in a CCC as an external exported interface.
+//    - the flag is defined in a CSR request as an external exported interface.
 //    - the VM implementation supports dynamic setting of the flag.
 //      This implies that the VM must *always* query the flag variable
 //      and not reuse state related to the flag state at any given time.
@@ -313,9 +313,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, InlineUnsafeOps, true, DIAGNOSTIC,                          \
           "Inline memory ops (native methods) from Unsafe")                 \
-                                                                            \
-  product(bool, CriticalJNINatives, false,                                  \
-          "(Deprecated) Check for critical JNI entry points")               \
                                                                             \
   product(bool, UseAESIntrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for AES versions of crypto")                      \
@@ -1091,9 +1088,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, DebugVtables, false,                                        \
           "add debugging code to vtable dispatch")                          \
                                                                             \
-  notproduct(bool, PrintVtableStats, false,                                 \
-          "print vtables stats at end of run")                              \
-                                                                            \
   develop(bool, TraceCreateZombies, false,                                  \
           "trace creation of zombie nmethods")                              \
                                                                             \
@@ -1336,6 +1330,10 @@ const intx ObjectAlignmentInBytes = 8;
   develop(intx, StackPrintLimit, 100,                                       \
           "number of stack frames to print in VM-level stack dump")         \
                                                                             \
+  product(int, ErrorLogPrintCodeLimit, 3, DIAGNOSTIC,                       \
+          "max number of compiled code units to print in error log")        \
+          range(0, VMError::max_error_log_print_code)                       \
+                                                                            \
   notproduct(intx, MaxElementPrintSize, 256,                                \
           "maximum number of elements to print")                            \
                                                                             \
@@ -1347,9 +1345,9 @@ const intx ObjectAlignmentInBytes = 8;
           "(using CompileCommand or marked w/ @ForceInline)")               \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, MinInliningThreshold, 250,                                  \
-          "The minimum invocation count a method needs to have to be "      \
-          "inlined")                                                        \
+  product(intx, MinInliningThreshold, 0,                                    \
+          "(Deprecated) The minimum invocation count a method needs to"     \
+          "have to be inlined")                                             \
           range(0, max_jint)                                                \
                                                                             \
   develop(intx, MethodHistogramCutoff, 100,                                 \
@@ -1403,6 +1401,10 @@ const intx ObjectAlignmentInBytes = 8;
   product(double, InlineFrequencyRatio, 0.25, DIAGNOSTIC,                   \
           "Ratio of call site execution to caller method invocation")       \
                                                                             \
+  product(double, MinInlineFrequencyRatio, 0.0085, DIAGNOSTIC,               \
+          "Minimum ratio of call site execution to caller method"           \
+          "invocation to be considered for inlining")                       \
+                                                                            \
   develop(intx, InlineThrowCount,    50,                                    \
           "Force inlining of interpreted methods that throw this often")    \
           range(0, max_jint)                                                \
@@ -1437,9 +1439,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, MetaspaceGuardAllocations, false,                           \
           "Metapace allocations are guarded.")                              \
-                                                                            \
-  develop(bool, MetaspaceHandleDeallocations, true,                         \
-          "Switch off Metapace deallocation handling.")                     \
                                                                             \
   product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \
           "The minimum percentage of heap free after GC to avoid expansion."\

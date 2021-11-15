@@ -56,7 +56,7 @@ public class CLIHelp {
                 case MAC:
                     types = "{\"app-image\", \"dmg\", \"pkg\"}";
                     pLaunchOptions = I18N.getString("MSG_Help_mac_launcher");
-                    pInstallOptions = "";
+                    pInstallOptions = I18N.getString("MSG_Help_mac_install");
                     pInstallDir
                             = I18N.getString("MSG_Help_mac_linux_install_dir");
                     break;
@@ -79,7 +79,8 @@ public class CLIHelp {
                     pLaunchOptions = I18N.getString("MSG_Help_win_launcher")
                             + I18N.getString("MSG_Help_mac_launcher");
                     pInstallOptions = I18N.getString("MSG_Help_win_install")
-                            + I18N.getString("MSG_Help_linux_install");
+                            + I18N.getString("MSG_Help_linux_install")
+                            + I18N.getString("MSG_Help_mac_install");
                     pInstallDir
                             = I18N.getString("MSG_Help_default_install_dir");
                     break;

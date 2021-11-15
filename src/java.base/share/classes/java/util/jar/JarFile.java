@@ -749,7 +749,7 @@ public class JarFile extends ZipFile {
                 }
                 if (mev == null) {
                     mev = new ManifestEntryVerifier
-                        (getManifestFromReference());
+                        (getManifestFromReference(), jv.manifestName);
                 }
                 if (name.equalsIgnoreCase(MANIFEST_NAME)) {
                     b = jv.manifestRawBytes;
@@ -801,7 +801,7 @@ public class JarFile extends ZipFile {
         try (InputStream is = super.getInputStream(ze)) {
             long uncompressedSize = ze.getSize();
             if (uncompressedSize > MAX_ARRAY_SIZE) {
-                throw new OutOfMemoryError("Required array size too large");
+                throw new IOException("Unsupported size: " + uncompressedSize);
             }
             int len = (int)uncompressedSize;
             int bytesRead;

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -53,7 +54,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/ticks.hpp"
@@ -269,7 +270,7 @@ ReferenceProcessor* G1YoungCollector::ref_processor_stw() const {
   return _g1h->ref_processor_stw();
 }
 
-WorkGang* G1YoungCollector::workers() const {
+WorkerThreads* G1YoungCollector::workers() const {
   return _g1h->workers();
 }
 
@@ -322,7 +323,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   }
 }
 
-class G1PrepareEvacuationTask : public AbstractGangTask {
+class G1PrepareEvacuationTask : public WorkerTask {
   class G1PrepareRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1PrepareEvacuationTask* _parent_task;
@@ -432,7 +433,7 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
       }
       log_debug(gc, humongous)("Humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ") remset " SIZE_FORMAT " code roots " SIZE_FORMAT " marked %d reclaim candidate %d type array %d",
                                index,
-                               (size_t)cast_to_oop(hr->bottom())->size() * HeapWordSize,
+                               cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),
                                hr->rem_set()->occupied(),
                                hr->rem_set()->strong_code_roots_list_length(),
@@ -459,7 +460,7 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
 
 public:
   G1PrepareEvacuationTask(G1CollectedHeap* g1h) :
-    AbstractGangTask("Prepare Evacuation"),
+    WorkerTask("Prepare Evacuation"),
     _g1h(g1h),
     _claimer(_g1h->workers()->active_workers()),
     _humongous_total(0),
@@ -494,18 +495,18 @@ public:
   }
 };
 
-Tickspan G1YoungCollector::run_task_timed(AbstractGangTask* task) {
+Tickspan G1YoungCollector::run_task_timed(WorkerTask* task) {
   Ticks start = Ticks::now();
   workers()->run_task(task);
   return Ticks::now() - start;
 }
 
 void G1YoungCollector::set_young_collection_default_active_worker_threads(){
-  uint active_workers = WorkerPolicy::calc_active_workers(workers()->total_workers(),
+  uint active_workers = WorkerPolicy::calc_active_workers(workers()->max_workers(),
                                                           workers()->active_workers(),
                                                           Threads::number_of_non_daemon_threads());
-  active_workers = workers()->update_active_workers(active_workers);
-  log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
+  active_workers = workers()->set_active_workers(active_workers);
+  log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
@@ -624,7 +625,7 @@ public:
   size_t term_attempts() const { return _term_attempts; }
 };
 
-class G1EvacuateRegionsBaseTask : public AbstractGangTask {
+class G1EvacuateRegionsBaseTask : public WorkerTask {
 protected:
   G1CollectedHeap* _g1h;
   G1ParScanThreadStateSet* _per_thread_states;
@@ -672,7 +673,7 @@ public:
                             G1ParScanThreadStateSet* per_thread_states,
                             G1ScannerTasksQueueSet* task_queues,
                             uint num_workers) :
-    AbstractGangTask(name),
+    WorkerTask(name),
     _g1h(G1CollectedHeap::heap()),
     _per_thread_states(per_thread_states),
     _task_queues(task_queues),
@@ -756,7 +757,7 @@ void G1YoungCollector::evacuate_initial_collection_set(G1ParScanThreadStateSet* 
                                       has_optional_evacuation_work);
     task_time = run_task_timed(&g1_par_task);
     // Closing the inner scope will execute the destructor for the
-    // G1RootProcessor object. By subtracting the WorkGang task from the total
+    // G1RootProcessor object. By subtracting the WorkerThreads task from the total
     // time of this scope, we get the "NMethod List Cleanup" time. This list is
     // constructed during "STW two-phase nmethod root processing", see more in
     // nmethod.hpp
@@ -911,6 +912,31 @@ class G1STWRefProcProxyTask : public RefProcProxyTask {
   TaskTerminator _terminator;
   G1ScannerTasksQueueSet& _task_queues;
 
+  // Special closure for enqueuing discovered fields: during enqueue the card table
+  // may not be in shape to properly handle normal barrier calls (e.g. card marks
+  // in regions that failed evacuation, scribbling of various values by card table
+  // scan code). Additionally the regular barrier enqueues into the "global"
+  // DCQS, but during GC we need these to-be-refined entries in the GC local queue
+  // so that after clearing the card table, the redirty cards phase will properly
+  // mark all dirty cards to be picked up by refinement.
+  class G1EnqueueDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
+    G1CollectedHeap* _g1h;
+    G1ParScanThreadState* _pss;
+
+  public:
+    G1EnqueueDiscoveredFieldClosure(G1CollectedHeap* g1h, G1ParScanThreadState* pss) : _g1h(g1h), _pss(pss) { }
+
+    void enqueue(HeapWord* discovered_field_addr, oop value) override {
+      assert(_g1h->is_in(discovered_field_addr), PTR_FORMAT " is not in heap ", p2i(discovered_field_addr));
+      // Store the value first, whatever it is.
+      RawAccess<>::oop_store(discovered_field_addr, value);
+      if (value == nullptr) {
+        return;
+      }
+      _pss->write_ref_field_post(discovered_field_addr, value);
+    }
+  };
+
 public:
   G1STWRefProcProxyTask(uint max_workers, G1CollectedHeap& g1h, G1ParScanThreadStateSet& pss, G1ScannerTasksQueueSet& task_queues)
     : RefProcProxyTask("G1STWRefProcProxyTask", max_workers),
@@ -928,7 +954,7 @@ public:
 
     G1STWIsAliveClosure is_alive(&_g1h);
     G1CopyingKeepAliveClosure keep_alive(&_g1h, pss);
-    BarrierEnqueueDiscoveredFieldClosure enqueue;
+    G1EnqueueDiscoveredFieldClosure enqueue(&_g1h, pss);
     G1ParEvacuateFollowersClosure complete_gc(&_g1h, pss, &_task_queues, _tm == RefProcThreadModel::Single ? nullptr : &_terminator, G1GCPhaseTimes::ObjCopy);
     _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
 
@@ -957,8 +983,6 @@ void G1YoungCollector::process_discovered_references(G1ParScanThreadStateSet* pe
   gc_tracer_stw()->report_gc_reference_stats(stats);
 
   _g1h->make_pending_list_reachable();
-
-  rp->verify_no_references_recorded();
 
   phase_times()->record_ref_proc_time((Ticks::now() - start).seconds() * MILLIUNITS);
 }
@@ -1078,12 +1102,12 @@ void G1YoungCollector::collect() {
   // Young GC internal pause timing
   G1YoungGCNotifyPauseMark npm(this);
 
-  // Verification may use the gang workers, so they must be set up before.
+  // Verification may use the workers, so they must be set up before.
   // Individual parallel phases may override this.
   set_young_collection_default_active_worker_threads();
 
   // Wait for root region scan here to make sure that it is done before any
-  // use of the STW work gang to maximize cpu use (i.e. all cores are available
+  // use of the STW workers to maximize cpu use (i.e. all cores are available
   // just to do that).
   wait_for_root_region_scanning();
 

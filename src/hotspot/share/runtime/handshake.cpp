@@ -342,13 +342,23 @@ void Handshake::execute(HandshakeClosure* hs_cl) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
+  // tlh == nullptr means we rely on a ThreadsListHandle somewhere
+  // in the caller's context (and we sanity check for that).
+  Handshake::execute(hs_cl, nullptr, target);
+}
+
+void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThread* target) {
   JavaThread* self = JavaThread::current();
   HandshakeOperation op(hs_cl, target, Thread::current());
 
   jlong start_time_ns = os::javaTimeNanos();
 
-  ThreadsListHandle tlh;
-  if (tlh.includes(target)) {
+  guarantee(target != nullptr, "must be");
+  if (tlh == nullptr) {
+    guarantee(Thread::is_JavaThread_protected_by_TLH(target),
+              "missing ThreadsListHandle in calling context.");
+    target->handshake_state()->add_operation(&op);
+  } else if (tlh->includes(target)) {
     target->handshake_state()->add_operation(&op);
   } else {
     char buf[128];
@@ -396,19 +406,25 @@ void Handshake::execute(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
   jlong start_time_ns = os::javaTimeNanos();
   AsyncHandshakeOperation* op = new AsyncHandshakeOperation(hs_cl, target, start_time_ns);
 
-  ThreadsListHandle tlh;
-  if (tlh.includes(target)) {
-    target->handshake_state()->add_operation(op);
-  } else {
-    log_handshake_info(start_time_ns, op->name(), 0, 0, "(thread dead)");
-    delete op;
+  guarantee(target != nullptr, "must be");
+
+  Thread* current = Thread::current();
+  if (current != target) {
+    // Another thread is handling the request and it must be protecting
+    // the target.
+    guarantee(Thread::is_JavaThread_protected_by_TLH(target),
+              "missing ThreadsListHandle in calling context.");
   }
+  // Implied else:
+  // The target is handling the request itself so it can't be dead.
+
+  target->handshake_state()->add_operation(op);
 }
 
 HandshakeState::HandshakeState(JavaThread* target) :
   _handshakee(target),
   _queue(),
-  _lock(Monitor::nosafepoint, "HandshakeState_lock", Monitor::_safepoint_check_never),
+  _lock(Monitor::nosafepoint, "HandshakeState_lock"),
   _active_handshaker(),
   _suspended(false),
   _async_suspend_handshake(false)

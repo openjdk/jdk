@@ -106,6 +106,7 @@ class ciReplay {
  public:
   // Replay specified compilation and exit VM.
   static void replay(TRAPS);
+  static bool no_replay_state();
   // Load inlining decisions from file and use them
   // during compilation of specified method.
   static void* load_inline_data(ciMethod* method, int entry_bci, int comp_level);
@@ -114,7 +115,9 @@ class ciReplay {
   // replay file when replaying compiles.
   static void initialize(ciMethodData* method);
   static void initialize(ciMethod* method);
+  static void initialize(ciInstanceKlass* ciKlass, InstanceKlass* ik);
 
+  static bool is_klass_unresolved(const InstanceKlass* klass);
   static bool is_loaded(Method* method);
 
   static bool should_not_inline(ciMethod* method);

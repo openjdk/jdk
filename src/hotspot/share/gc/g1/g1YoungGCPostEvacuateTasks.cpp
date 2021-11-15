@@ -102,16 +102,10 @@ class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : publi
   G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions) :
+  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr),
-    _task(rdcqs, evac_failure_regions),
+    _task(evac_failure_regions),
     _evac_failure_regions(evac_failure_regions) { }
-
-  ~RemoveSelfForwardPtrsTask() {
-    assert(_task.num_failed_regions() == _evac_failure_regions->num_regions_failed_evacuation(),
-           "Removed regions %u inconsistent with expected %u",
-           _task.num_failed_regions(), _evac_failure_regions->num_regions_failed_evacuation());
-  }
 
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
@@ -125,7 +119,7 @@ public:
 
 G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
-  G1BatchedGangTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
+  G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
   bool evacuation_failed = evac_failure_regions->evacuation_failed();
 
@@ -135,7 +129,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
   if (evacuation_failed) {
-    add_parallel_task(new RemoveSelfForwardPtrsTask(per_thread_states->rdcqs(), evac_failure_regions));
+    add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions));
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
 }
@@ -204,7 +198,7 @@ public:
 
     log_debug(gc, humongous)("Reclaimed humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ")",
                              region_idx,
-                             (size_t)obj->size() * HeapWordSize,
+                             obj->size() * HeapWordSize,
                              p2i(r->bottom())
                             );
 
@@ -306,7 +300,7 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask : public G1AbstractSubTask {
   PreservedMarksSet* _preserved_marks;
-  AbstractGangTask* _task;
+  WorkerTask* _task;
 
 public:
   RestorePreservedMarksTask(PreservedMarksSet* preserved_marks) :
@@ -672,7 +666,7 @@ public:
 G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
                                                                                  G1EvacInfo* evacuation_info,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
-  G1BatchedGangTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
+  G1BatchedTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {
   add_serial_task(new ResetHotCardCacheTask());
   add_serial_task(new PurgeCodeRootsTask());

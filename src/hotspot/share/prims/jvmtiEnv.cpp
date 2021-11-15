@@ -1072,7 +1072,7 @@ JvmtiEnv::StopThread(JavaThread* java_thread, jobject exception) {
   oop e = JNIHandles::resolve_external_guard(exception);
   NULL_CHECK(e, JVMTI_ERROR_NULL_POINTER);
 
-  JavaThread::send_async_exception(java_thread->threadObj(), e);
+  JavaThread::send_async_exception(java_thread, e);
 
   return JVMTI_ERROR_NONE;
 
@@ -1560,7 +1560,7 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
     }
 
     GetSingleStackTraceClosure op(this, current_thread, *thread_list, max_frame_count);
-    Handshake::execute(&op, java_thread);
+    Handshake::execute(&op, &tlh, java_thread);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
       *stack_info_ptr = op.stack_info();

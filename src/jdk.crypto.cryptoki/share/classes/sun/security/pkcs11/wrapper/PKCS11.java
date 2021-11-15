@@ -57,7 +57,7 @@ import java.security.PrivilegedAction;
 import sun.security.util.Debug;
 
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * This is the default implementation of the PKCS11 interface. IT connects to
@@ -169,7 +169,7 @@ public class PKCS11 {
                 } catch (PKCS11Exception e) {
                     // ignore already-initialized error code
                     // rethrow all other errors
-                    if (e.getErrorCode() != CKR_CRYPTOKI_ALREADY_INITIALIZED) {
+                    if (!e.match(CKR_CRYPTOKI_ALREADY_INITIALIZED)) {
                         throw e;
                     }
                 }

@@ -184,8 +184,6 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   friend class VMStructs;
 
 private:
-  size_t _header_size;
-
   // The following fields record the states of the VM during dump time.
   // They are compared with the runtime states to see if the archive
   // can be used.
@@ -203,15 +201,12 @@ private:
   size_t  _serialized_data_offset;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
   address _heap_begin;              // heap begin at dump time.
   address _heap_end;                // heap end at dump time.
-  bool _base_archive_is_default;    // indicates if the base archive is the system default one
   bool _has_non_jar_in_classpath;   // non-jar file entry exists in classpath
 
   // The following fields are all sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
   // invoked with.
   char  _jvm_ident[JVM_IDENT_MAX];  // identifier string of the jvm that created this dump
-  // size of the base archive name including NULL terminator
-  size_t _base_archive_name_size;
 
   // The following is a table of all the boot/app/module path entries that were used
   // during dumping. At run time, we validate these entries according to their
@@ -243,17 +238,21 @@ private:
   }
   void set_as_offset(char* p, size_t *offset);
 public:
-  // Accessors -- fields declared in CDSFileMapHeaderBase
-  unsigned int magic()                    const { return _magic; }
-  int crc()                               const { return _crc; }
-  int version()                           const { return _version; }
+  // Accessors -- fields declared in GenericCDSFileMapHeader
+  unsigned int magic()                    const { return _generic_header._magic;    }
+  int crc()                               const { return _generic_header._crc;      }
+  int version()                           const { return _generic_header._version;  }
+  unsigned int header_size()              const { return _generic_header._header_size;              }
+  unsigned int base_archive_name_offset() const { return _generic_header._base_archive_name_offset; }
+  unsigned int base_archive_name_size()   const { return _generic_header._base_archive_name_size;   }
 
-  void set_crc(int crc_value)                   { _crc = crc_value; }
-  void set_version(int v)                       { _version = v; }
+  void set_magic(unsigned int m)                    { _generic_header._magic = m;       }
+  void set_crc(int crc_value)                       { _generic_header._crc = crc_value; }
+  void set_version(int v)                           { _generic_header._version = v;     }
+  void set_header_size(unsigned int s)              { _generic_header._header_size = s;              }
+  void set_base_archive_name_offset(unsigned int s) { _generic_header._base_archive_name_offset = s; }
+  void set_base_archive_name_size(unsigned int s)   { _generic_header._base_archive_name_size = s;   }
 
-  // Accessors -- fields declared in FileMapHeader
-
-  size_t header_size()                     const { return _header_size; }
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
   address narrow_oop_base()                const { return _narrow_oop_base; }
@@ -267,9 +266,7 @@ public:
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
   address heap_begin()                     const { return _heap_begin; }
   address heap_end()                       const { return _heap_end; }
-  bool base_archive_is_default()           const { return _base_archive_is_default; }
   const char* jvm_ident()                  const { return _jvm_ident; }
-  size_t base_archive_name_size()          const { return _base_archive_name_size; }
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
@@ -287,12 +284,10 @@ public:
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
-  void set_base_archive_name_size(size_t s)      { _base_archive_name_size = s; }
-  void set_base_archive_is_default(bool b)       { _base_archive_is_default = b; }
-  void set_header_size(size_t s)                 { _header_size = s; }
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_obj_roots(narrowOop r)           { _heap_obj_roots = r; }
+  void copy_base_archive_name(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
     set_as_offset((char*)table.table(), &_shared_path_table_offset);
@@ -317,8 +312,8 @@ public:
     return FileMapRegion::cast(&_space[i]);
   }
 
-  void populate(FileMapInfo* info, size_t core_region_alignment);
-
+  void populate(FileMapInfo *info, size_t core_region_alignment, size_t header_size,
+                size_t base_archive_name_size, size_t base_archive_name_offset);
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
   }
@@ -363,7 +358,7 @@ private:
 
 public:
   static bool get_base_archive_name_from_header(const char* archive_name,
-                                                int* size, char** base_archive_name);
+                                                char** base_archive_name);
   static bool check_archive(const char* archive_name, bool is_static);
   static SharedPathTable shared_path_table() {
     return _shared_path_table;
@@ -397,9 +392,6 @@ public:
   address narrow_klass_base()  const { return header()->narrow_klass_base(); }
   int     narrow_klass_shift() const { return header()->narrow_klass_shift(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
-
-  void   set_header_base_archive_name_size(size_t size)      { header()->set_base_archive_name_size(size); }
-  void   set_header_base_archive_is_default(bool is_default) { header()->set_base_archive_is_default(is_default); }
 
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
   jshort app_module_paths_start_index()       const { return header()->app_module_paths_start_index(); }

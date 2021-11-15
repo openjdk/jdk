@@ -295,6 +295,9 @@ public final class Channels {
             if (!isOpen()) {
                 throw new ClosedChannelException();
             }
+            if (dst.isReadOnly()) {
+                throw new IllegalArgumentException();
+            }
 
             int len = dst.remaining();
             int totalRead = 0;
