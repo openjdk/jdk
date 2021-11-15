@@ -503,7 +503,7 @@ java/awt/Frame/DisposeParentGC/DisposeParentGC.java 8079786 macosx-all
 java/awt/FullScreen/NoResizeEventOnDMChangeTest/NoResizeEventOnDMChangeTest.java 8169468 macosx-all
 java/awt/TextArea/AutoScrollOnSelectAndAppend/AutoScrollOnSelectAndAppend.java 8213120 macosx-all
 
-java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 7099223 linux-all,windows-all
+java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 7099223,8274106 macosx-aarch64,linux-all,windows-all
 java/awt/Window/WindowResizing/DoubleClickTitleBarTest.java 8233557 macosx-all
 java/awt/Window/WindowOwnedByEmbeddedFrameTest/WindowOwnedByEmbeddedFrameTest.java 8233558 macosx-all
 java/awt/keyboard/AllKeyCode/AllKeyCode.java 8242930 macosx-all
@@ -750,7 +750,6 @@ javax/swing/JButton/8151303/PressedIconTest.java 8266246 macosx-aarch64
 javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8273573 macosx-all
 
 # Several tests which fail on some hidpi systems
-java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 8274106 macosx-aarch64
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64

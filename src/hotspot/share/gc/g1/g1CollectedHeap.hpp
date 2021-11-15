@@ -64,7 +64,7 @@
 // Forward declarations
 class G1Allocator;
 class G1ArchiveAllocator;
-class G1BatchedGangTask;
+class G1BatchedTask;
 class G1CardTableEntryClosure;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
@@ -83,7 +83,7 @@ class MemoryPool;
 class nmethod;
 class ReferenceProcessor;
 class STWGCTimer;
-class WorkGang;
+class WorkerThreads;
 
 typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
@@ -145,7 +145,7 @@ private:
   G1ServiceTask* _periodic_gc_task;
   G1CardSetFreeMemoryTask* _free_card_set_memory_task;
 
-  WorkGang* _workers;
+  WorkerThreads* _workers;
   G1CardTable* _card_table;
 
   Ticks _collection_pause_end;
@@ -538,10 +538,10 @@ public:
 
   G1ServiceThread* service_thread() const { return _service_thread; }
 
-  WorkGang* workers() const { return _workers; }
+  WorkerThreads* workers() const { return _workers; }
 
-  // Run the given batch task using the work gang.
-  void run_batch_task(G1BatchedGangTask* cl);
+  // Run the given batch task using the workers.
+  void run_batch_task(G1BatchedTask* cl);
 
   G1Allocator* allocator() {
     return _allocator;
@@ -572,7 +572,7 @@ public:
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.
   // (Rounds up to a HeapRegion boundary.)
-  bool expand(size_t expand_bytes, WorkGang* pretouch_workers = NULL, double* expand_time_ms = NULL);
+  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers = NULL, double* expand_time_ms = NULL);
   bool expand_single_region(uint node_index);
 
   // Returns the PLAB statistics for a given destination.
@@ -605,6 +605,7 @@ public:
   void register_young_region_with_region_attr(HeapRegion* r) {
     _region_attr.set_in_young(r->hrm_index());
   }
+  inline void register_new_survivor_region_with_region_attr(HeapRegion* r);
   inline void register_region_with_region_attr(HeapRegion* r);
   inline void register_old_region_with_region_attr(HeapRegion* r);
   inline void register_optional_region_with_region_attr(HeapRegion* r);
@@ -1316,7 +1317,7 @@ public:
   // WhiteBox testing support.
   virtual bool supports_concurrent_gc_breakpoints() const;
 
-  virtual WorkGang* safepoint_workers() { return _workers; }
+  virtual WorkerThreads* safepoint_workers() { return _workers; }
 
   virtual bool is_archived_object(oop object) const;
 

@@ -3861,7 +3861,7 @@ public class Container extends Component {
          * Number of PropertyChangeListener objects registered. It's used
          * to add/remove ContainerListener to track target Container's state.
          */
-        private transient volatile int propertyListenersCount = 0;
+        private transient volatile int propertyListenersCount;
 
         /**
          * The handler to fire {@code PropertyChange}

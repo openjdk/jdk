@@ -28,7 +28,7 @@
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/instanceRefKlass.hpp"
 
@@ -47,15 +47,16 @@ class RefProcProxyTask;
 // at the point of invocation.
 class EnqueueDiscoveredFieldClosure {
 public:
-  // For the given j.l.ref.Reference reference, set the discovered field to value.
-  virtual void enqueue(oop reference, oop value) = 0;
+  // For the given j.l.ref.Reference discovered field address, set the discovered
+  // field to value and apply any barriers to it.
+  virtual void enqueue(HeapWord* discovered_field_addr, oop value) = 0;
 };
 
 // EnqueueDiscoveredFieldClosure that executes the default barrier on the discovered
-// field of the j.l.ref.Reference reference with the given value.
+// field of the j.l.ref.Reference with the given value.
 class BarrierEnqueueDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
 public:
-  void enqueue(oop reference, oop value) override;
+  void enqueue(HeapWord* discovered_field_addr, oop value) override;
 };
 
 // List of discovered references.
@@ -588,7 +589,7 @@ public:
  * of RefProcTask that will handle reference processing in a generic way for Serial,
  * Parallel and G1. This proxy will add the relevant closures, task terminators etc.
  */
-class RefProcProxyTask : public AbstractGangTask {
+class RefProcProxyTask : public WorkerTask {
 protected:
   const uint _max_workers;
   RefProcTask* _rp_task;
@@ -597,7 +598,7 @@ protected:
   bool _marks_oops_alive;
 
 public:
-  RefProcProxyTask(const char* name, uint max_workers) : AbstractGangTask(name), _max_workers(max_workers), _rp_task(nullptr),_tm(RefProcThreadModel::Single), _queue_count(0), _marks_oops_alive(false) {}
+  RefProcProxyTask(const char* name, uint max_workers) : WorkerTask(name), _max_workers(max_workers), _rp_task(nullptr),_tm(RefProcThreadModel::Single), _queue_count(0), _marks_oops_alive(false) {}
 
   void prepare_run_task(RefProcTask& rp_task, uint queue_count, RefProcThreadModel tm, bool marks_oops_alive) {
     _rp_task = &rp_task;

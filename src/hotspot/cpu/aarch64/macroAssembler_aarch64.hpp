@@ -1106,10 +1106,6 @@ public:
   void push(Register src);
   void pop(Register dst);
 
-  // push all registers onto the stack
-  void pusha();
-  void popa();
-
   void repne_scan(Register addr, Register value, Register count,
                   Register scratch);
   void repne_scanw(Register addr, Register value, Register count,

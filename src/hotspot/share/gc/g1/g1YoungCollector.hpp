@@ -30,9 +30,9 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskqueue.hpp"
 
-class AbstractGangTask;
+class WorkerTask;
 class G1Allocator;
-class G1BatchedGangTask;
+class G1BatchedTask;
 class G1CardSetMemoryStats;
 class G1CollectedHeap;
 class G1CollectionSet;
@@ -52,7 +52,7 @@ class G1RemSet;
 class G1SurvivorRegions;
 class G1YoungGCEvacFailureInjector;
 class STWGCTimer;
-class WorkGang;
+class WorkerThreads;
 
 class outputStream;
 
@@ -78,7 +78,7 @@ class G1YoungCollector {
   G1ScannerTasksQueueSet* task_queues() const;
   G1SurvivorRegions* survivor_regions() const;
   ReferenceProcessor* ref_processor_stw() const;
-  WorkGang* workers() const;
+  WorkerThreads* workers() const;
   G1YoungGCEvacFailureInjector* evac_failure_injector() const;
 
   GCCause::Cause _gc_cause;
@@ -89,9 +89,9 @@ class G1YoungCollector {
   // Evacuation failure tracking.
   G1EvacFailureRegions _evac_failure_regions;
 
-  // Runs the given AbstractGangTask with the current active workers,
+  // Runs the given WorkerTask with the current active workers,
   // returning the total time taken.
-  Tickspan run_task_timed(AbstractGangTask* task);
+  Tickspan run_task_timed(WorkerTask* task);
 
   void wait_for_root_region_scanning();
 
@@ -142,7 +142,6 @@ class G1YoungCollector {
 #endif // TASKQUEUE_STATS
 
 public:
-
   G1YoungCollector(GCCause::Cause gc_cause,
                    double target_pause_time_ms);
   void collect();

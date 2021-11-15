@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,22 +141,16 @@ final class XDropTargetRegistry {
         }
         public long[] getSites() {
             long[] ret = new long[sites.size()];
-            Iterator<Long> iter = sites.iterator();
             int index = 0;
-            while (iter.hasNext()) {
-                Long l = iter.next();
-                ret[index++] = l.longValue();
+            for (long window : sites) {
+                ret[index++] = window;
             }
             return ret;
         }
         public long getSite(int x, int y) {
             assert XToolkit.isAWTLockHeldByCurrentThread();
 
-            Iterator<Long> iter = sites.iterator();
-            while (iter.hasNext()) {
-                Long l = iter.next();
-                long window = l.longValue();
-
+            for (long window : sites) {
                 Point p = XBaseWindow.toOtherWindow(getRoot(), window, x, y);
 
                 if (p == null) {

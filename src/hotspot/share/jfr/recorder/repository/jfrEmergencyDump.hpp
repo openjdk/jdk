@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,14 @@
 // Responsible for creating an hs_err<pid>.jfr file in exceptional shutdown situations (crash, OOM)
 //
 class JfrEmergencyDump : AllStatic {
+ private:
+  static char _dump_path[JVM_MAXPATHLEN];
+
+  static bool open_emergency_dump_file();
+
  public:
+  static void set_dump_path(const char* dump_path);
+  static const char* get_dump_path();
   static const char* chunk_path(const char* repository_path);
   static void on_vm_error(const char* repository_path);
   static void on_vm_error_report(outputStream* st, const char* repository_path);

@@ -1336,6 +1336,10 @@ const intx ObjectAlignmentInBytes = 8;
   develop(intx, StackPrintLimit, 100,                                       \
           "number of stack frames to print in VM-level stack dump")         \
                                                                             \
+  product(int, ErrorLogPrintCodeLimit, 3, DIAGNOSTIC,                       \
+          "max number of compiled code units to print in error log")        \
+          range(0, VMError::max_error_log_print_code)                       \
+                                                                            \
   notproduct(intx, MaxElementPrintSize, 256,                                \
           "maximum number of elements to print")                            \
                                                                             \
