@@ -43,6 +43,7 @@ class RegisterImpl: public AbstractRegisterImpl {
 
   static constexpr Register first();
   static constexpr Register invalid() { return first() + number_of_registers; }
+  static constexpr Register no_reg()  { return first() + number_of_declared_registers; }
 
 public:
   enum {
@@ -138,6 +139,7 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
 
   static constexpr FloatRegister first();
   static constexpr FloatRegister invalid() { return first() + number_of_registers; }
+  static constexpr FloatRegister no_reg()  { return first() + number_of_registers; }
 
 public:
   enum {
@@ -244,6 +246,7 @@ class PRegisterImpl: public AbstractRegisterImpl {
 
   static constexpr PRegister first();
   static constexpr PRegister invalid() { return first() + number_of_registers; }
+  static constexpr PRegister no_reg()  { return first() + number_of_registers; }
 
  public:
   enum {

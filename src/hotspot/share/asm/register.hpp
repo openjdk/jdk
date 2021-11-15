@@ -61,7 +61,7 @@ enum { name##_##type##EnumValue = (value) }
 
 #define REGISTER_IMPL_DECLARATION(type, impl_type, reg_count)           \
 inline const type as_ ## type(int encoding) {                           \
-  return encoding == -1 ? impl_type::invalid() : impl_type::first() + encoding; \
+  return encoding == -1 ? impl_type::no_reg() : impl_type::first() + encoding; \
 }                                                                       \
 extern impl_type all_ ## type ## s[reg_count + 1] INTERNAL_VISIBILITY;  \
 inline constexpr type impl_type::first() { return all_ ## type ## s; }
