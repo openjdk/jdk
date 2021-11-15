@@ -59,7 +59,7 @@ class G1CardSetConfiguration {
   uint _log2_num_cards_in_howl_bitmap;
   size_t _bitmap_hash_mask;
   uint _log2_card_region_per_heap_region;
-  uint _log2_cards_per_card_region_size;
+  uint _log2_cards_per_card_region;
 
   G1CardSetAllocOptions* _card_set_alloc_options;
 
@@ -131,7 +131,7 @@ public:
   uint log2_card_region_per_heap_region() const { return _log2_card_region_per_heap_region; }
   // The log2 of the number of cards per card region. This is calculated from max_cards_in_region()
   // and above.
-  uint log2_cards_per_card_region_size() const { return _log2_cards_per_card_region_size; }
+  uint log2_cards_per_card_region() const { return _log2_cards_per_card_region; }
 
   // Memory object types configuration
   // Number of distinctly sized memory objects on the card set heap.
