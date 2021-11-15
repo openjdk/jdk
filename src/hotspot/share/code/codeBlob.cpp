@@ -741,6 +741,8 @@ OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb,
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
 
+  trace_new_stub(blob, "OptimizedEntryBlob");
+
   return blob;
 }
 
