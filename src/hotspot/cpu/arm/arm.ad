@@ -983,6 +983,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return ret_value;  // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }

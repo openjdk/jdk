@@ -48,6 +48,7 @@ address StubRoutines::x86::_vector_int_to_byte_mask = NULL;
 address StubRoutines::x86::_vector_int_to_short_mask = NULL;
 address StubRoutines::x86::_vector_all_bits_set = NULL;
 address StubRoutines::x86::_vector_byte_shuffle_mask = NULL;
+address StubRoutines::x86::_vector_int_mask_cmp_bits = NULL;
 address StubRoutines::x86::_vector_short_shuffle_mask = NULL;
 address StubRoutines::x86::_vector_int_shuffle_mask = NULL;
 address StubRoutines::x86::_vector_long_shuffle_mask = NULL;

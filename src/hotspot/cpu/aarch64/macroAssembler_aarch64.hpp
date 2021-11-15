@@ -455,6 +455,9 @@ private:
   int push_fp(unsigned int bitset, Register stack);
   int pop_fp(unsigned int bitset, Register stack);
 
+  int push_p(unsigned int bitset, Register stack);
+  int pop_p(unsigned int bitset, Register stack);
+
   void mov(Register dst, Address a);
 
 public:
@@ -465,6 +468,9 @@ public:
   void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
 
   static RegSet call_clobbered_registers();
+
+  void push_p(PRegSet regs, Register stack) { if (regs.bits()) push_p(regs.bits(), stack); }
+  void pop_p(PRegSet regs, Register stack) { if (regs.bits()) pop_p(regs.bits(), stack); }
 
   // Push and pop everything that might be clobbered by a native
   // runtime call except rscratch1 and rscratch2.  (They are always
@@ -865,9 +871,9 @@ public:
   DEBUG_ONLY(void verify_heapbase(const char* msg);)
 
   void push_CPU_state(bool save_vectors = false, bool use_sve = false,
-                      int sve_vector_size_in_bytes = 0);
+                      int sve_vector_size_in_bytes = 0, int total_predicate_in_bytes = 0);
   void pop_CPU_state(bool restore_vectors = false, bool use_sve = false,
-                      int sve_vector_size_in_bytes = 0);
+                     int sve_vector_size_in_bytes = 0, int total_predicate_in_bytes = 0);
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);
@@ -1361,9 +1367,14 @@ public:
   void spill(FloatRegister Vx, SIMD_RegVariant T, int offset) {
     str(Vx, T, spill_address(1 << (int)T, offset));
   }
+
   void spill_sve_vector(FloatRegister Zx, int offset, int vector_reg_size_in_bytes) {
     sve_str(Zx, sve_spill_address(vector_reg_size_in_bytes, offset));
   }
+  void spill_sve_predicate(PRegister pr, int offset, int predicate_reg_size_in_bytes) {
+    sve_str(pr, sve_spill_address(predicate_reg_size_in_bytes, offset));
+  }
+
   void unspill(Register Rx, bool is64, int offset) {
     if (is64) {
       ldr(Rx, spill_address(8, offset));
@@ -1374,9 +1385,14 @@ public:
   void unspill(FloatRegister Vx, SIMD_RegVariant T, int offset) {
     ldr(Vx, T, spill_address(1 << (int)T, offset));
   }
+
   void unspill_sve_vector(FloatRegister Zx, int offset, int vector_reg_size_in_bytes) {
     sve_ldr(Zx, sve_spill_address(vector_reg_size_in_bytes, offset));
   }
+  void unspill_sve_predicate(PRegister pr, int offset, int predicate_reg_size_in_bytes) {
+    sve_ldr(pr, sve_spill_address(predicate_reg_size_in_bytes, offset));
+  }
+
   void spill_copy128(int src_offset, int dst_offset,
                      Register tmp1=rscratch1, Register tmp2=rscratch2) {
     if (src_offset < 512 && (src_offset & 7) == 0 &&
@@ -1398,6 +1414,12 @@ public:
       src_offset += 16;
       dst_offset += 16;
     }
+  }
+  void spill_copy_sve_predicate_stack_to_stack(int src_offset, int dst_offset,
+                                               int sve_predicate_reg_size_in_bytes) {
+    sve_ldr(ptrue, sve_spill_address(sve_predicate_reg_size_in_bytes, src_offset));
+    sve_str(ptrue, sve_spill_address(sve_predicate_reg_size_in_bytes, dst_offset));
+    reinitialize_ptrue();
   }
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
