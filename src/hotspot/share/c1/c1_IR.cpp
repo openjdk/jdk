@@ -1266,7 +1266,7 @@ typedef GrowableArray<BlockList*> BlockListList;
 
 class PredecessorValidator : public BlockClosure {
  private:
-  BlockListList* _predecessors;
+  BlockListList* _predecessors; // Each index i will hold predecessors of block with id i
   BlockList*     _blocks;
 
   static int cmp(BlockBegin** a, BlockBegin** b) {
@@ -1277,7 +1277,7 @@ class PredecessorValidator : public BlockClosure {
   PredecessorValidator(IR* hir) {
     ResourceMark rm;
     _predecessors = new BlockListList(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL);
-    _blocks = new BlockList();
+    _blocks = new BlockList(BlockBegin::number_of_blocks());
 
     hir->start()->iterate_preorder(this);
     if (hir->code() != NULL) {
