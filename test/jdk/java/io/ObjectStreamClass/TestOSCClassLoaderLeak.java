@@ -31,10 +31,14 @@ import java.io.Serializable;
 import java.util.Arrays;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+
+import jdk.test.lib.util.ForceGC;
 
 /* @test
  * @bug 8277072
+ * @library /test/lib/
+ * @build jdk.test.lib.util.ForceGC
  * @summary ObjectStreamClass caches keep ClassLoaders alive
  * @run testng TestOSCClassLoaderLeak
  */
@@ -57,15 +61,8 @@ public class TestOSCClassLoaderLeak {
         con = null;
         assertNotNull(myOwnClassLoaderWeakReference.get());
 
-        gc();
-
-        assertNull(myOwnClassLoaderWeakReference.get());
-
-    }
-
-    private static void gc() {
-        System.runFinalization();
-        System.gc();
+        ForceGC gc = new ForceGC();
+        assertTrue(gc.await(() -> myOwnClassLoaderWeakReference.get() == null));
     }
 }
 
