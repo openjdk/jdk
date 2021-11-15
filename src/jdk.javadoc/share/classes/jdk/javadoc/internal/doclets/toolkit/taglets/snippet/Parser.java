@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import jdk.javadoc.internal.doclets.toolkit.Resources;
+import jdk.javadoc.internal.doclets.toolkit.taglets.SnippetTaglet;
 
 /*
  * Semantics of a EOL comment; plus
@@ -76,10 +77,47 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
  */
 public final class Parser {
 
-    // next-line tag behaves as if it were specified on the next line
+    // Without this interface regular expressions that describe comments would have to
+    // to be standardized or needlessly complex.
 
-    private String eolMarker;
-    private Matcher markedUpLine;
+    private interface CoarseParser {
+        boolean parse(String line);
+        int payloadEnd();
+        int markupStart();
+    }
+
+    private final class JavaCommentCoarseParser implements CoarseParser {
+        private final Matcher m = Pattern.compile("^(.*)(//(\\s*@\\s*\\w+.+?))$").matcher("");
+
+        @Override
+        public boolean parse(String line) {return m.reset(line).matches();}
+
+        @Override
+        public int payloadEnd() {return m.end(1);}
+
+        @Override
+        public int markupStart() {return m.start(3);}
+    }
+
+    private final class PropertiesCommentCoarseParser implements CoarseParser {
+
+        private final Matcher m = Pattern.compile("^([ \t]*[#!](.*[#!])?)(\\s*@\\s*\\w+.+?)$").matcher("");
+
+        @Override
+        public boolean parse(String line) {
+            return m.reset(line).matches();
+        }
+
+        @Override
+        public int payloadEnd() {
+            return m.start(3) - 1;
+        }
+
+        @Override
+        public int markupStart() {
+            return m.start(3);
+        }
+    }
 
     private final Resources resources;
     private final MarkupParser markupParser;
@@ -93,32 +131,21 @@ public final class Parser {
         this.markupParser = new MarkupParser(resources);
     }
 
-    public Result parse(String source) throws ParseException {
-        return parse("//", source);
+    public Result parse(Optional<SnippetTaglet.Language> language, String source) throws ParseException {
+        SnippetTaglet.Language lang = language.orElse(SnippetTaglet.Language.JAVA);
+        var p = switch (lang) {
+            case JAVA -> new JavaCommentCoarseParser();
+            case PROPERTIES -> new PropertiesCommentCoarseParser();
+        };
+        return parse(p, source);
     }
 
     /*
      * Newline characters in the returned text are of the \n form.
      */
-    public Result parse(String eolMarker, String source) throws ParseException {
-        Objects.requireNonNull(eolMarker);
+    private Result parse(CoarseParser parser, String source) throws ParseException {
+        Objects.requireNonNull(parser);
         Objects.requireNonNull(source);
-        if (!Objects.equals(eolMarker, this.eolMarker)) {
-            if (eolMarker.length() < 1) {
-                throw new IllegalArgumentException();
-            }
-            for (int i = 0; i < eolMarker.length(); i++) {
-                switch (eolMarker.charAt(i)) {
-                    case '\f', '\n', '\r' -> throw new IllegalArgumentException();
-                }
-            }
-            this.eolMarker = eolMarker;
-            // capture the rightmost eolMarker (e.g. "//")
-            // The below Pattern.compile should never throw PatternSyntaxException
-            Pattern pattern = Pattern.compile("^(.*)(" + Pattern.quote(eolMarker)
-                    + "(\\s*@\\s*\\w+.+?))$");
-            this.markedUpLine = pattern.matcher(""); // reusable matcher
-        }
 
         tags.clear();
         regions.clear();
@@ -147,21 +174,20 @@ public final class Parser {
             String rawLine = next.line();
             boolean addLineTerminator = iterator.hasNext() || trailingNewline;
             String line;
-            markedUpLine.reset(rawLine);
-            if (!markedUpLine.matches()) { // (1)
+            if (!parser.parse(rawLine)) { // (1)
                 line = rawLine + (addLineTerminator ? "\n" : "");
             } else {
-                String maybeMarkup = markedUpLine.group(3);
+                String maybeMarkup = rawLine.substring(parser.markupStart());
                 List<Tag> parsedTags;
                 try {
                     parsedTags = markupParser.parse(maybeMarkup);
                 } catch (ParseException e) {
                     // translate error position from markup to file line
-                    throw new ParseException(e::getMessage, markedUpLine.start(3) + e.getPosition());
+                    throw new ParseException(e::getMessage, parser.markupStart() + e.getPosition());
                 }
                 for (Tag t : parsedTags) {
                     t.lineSourceOffset = next.offset();
-                    t.markupLineOffset = markedUpLine.start(3);
+                    t.markupLineOffset = parser.markupStart();
                 }
                 thisLineTags.addAll(parsedTags);
                 for (var tagIterator = thisLineTags.iterator(); tagIterator.hasNext(); ) {
@@ -176,7 +202,7 @@ public final class Parser {
                     // TODO: log this with NOTICE;
                     line = rawLine + (addLineTerminator ? "\n" : "");
                 } else { // (3)
-                    String payload = markedUpLine.group(1);
+                    String payload = rawLine.substring(0, parser.payloadEnd());
                     line = payload + (addLineTerminator ? "\n" : "");
                 }
             }

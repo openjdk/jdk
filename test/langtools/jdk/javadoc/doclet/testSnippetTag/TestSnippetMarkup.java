@@ -373,6 +373,9 @@ First line // @highlight :
         testPositive(base, testCases);
     }
 
+    // @replace on a blank line will not do anything bad!
+
+
     private static String link(boolean linkPlain,
                                String targetReference,
                                String content)
