@@ -24,8 +24,10 @@
 /*
  * @test
  * @bug      4749567 8071982 8175200 8186332 8185371 8182765 8217034 8261976 8261976
- * @summary  Test the output for -header, -footer, -nooverview, -nodeprecatedlist, -nonavbar, -notree,
- *           -stylesheetfile, --main-stylesheet, --add-stylesheet options.
+ *           8275786
+ * @summary  Test the output for -header, -footer, -nooverview, -nodeprecatedlist,
+ *           -nonavbar, -notree, -stylesheetfile, --main-stylesheet, --add-stylesheet,
+ *           --add-script options.
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*
@@ -176,6 +178,37 @@ public class TestOptions extends JavadocTester {
         checkOutput(Output.OUT, true,
                 "error: File not found:",
                 "additional-stylesheet-4.css");
+    }
+
+    @Test
+    public void testAdditionalScriptFile() {
+        javadoc("-d", "out-additional-script",
+                "--add-script", new File(testSrc, "additional-script-1.js").getAbsolutePath(),
+                "--add-script", new File(testSrc, "additional-script-2.js").getAbsolutePath(),
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("script-dir/additional-script-1.js", true, "Additional script file 1");
+        checkOutput("script-dir/additional-script-2.js", true, "Additional script file 2");
+        checkOutput("pkg/Foo.html", true,
+                """
+                    <script type="text/javascript" src="../script-dir/additional-script-1.js"></script>
+                    <script type="text/javascript" src="../script-dir/additional-script-2.js"></script>
+                    """);
+    }
+
+    @Test
+    public void testInvalidAdditionalScriptFile() {
+        javadoc("-d", "out-invalid-additional-script",
+                "--add-script", new File(testSrc, "additional-script-3.js").getAbsolutePath(),
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                "error: File not found:",
+                "additional-script-3.js");
     }
 
     @Test

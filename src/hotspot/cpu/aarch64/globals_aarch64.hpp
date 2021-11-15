@@ -111,6 +111,14 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use prfm hint with specified distance in compiled code."     \
           "Value -1 means off.")                                        \
           range(-1, 4096)                                               \
+  product(ccstr, OnSpinWaitInst, "none", DIAGNOSTIC,                    \
+          "The instruction to use to implement "                        \
+          "java.lang.Thread.onSpinWait()."                              \
+          "Options: none, nop, isb, yield.")                            \
+  product(uint, OnSpinWaitInstCount, 1, DIAGNOSTIC,                     \
+          "The number of OnSpinWaitInst instructions to generate."      \
+          "It cannot be used with OnSpinWaitInst=none.")                \
+          range(1, 99)                                                  \
   product(bool, UseROPProtection, false,                                \
           "Protect branches against ROP attacks.")                      \
 
