@@ -41,7 +41,6 @@ inline const Register as_Register(int encoding);
 class RegisterImpl: public AbstractRegisterImpl {
   inline friend const Register as_Register(int encoding);
 
-private:
   static constexpr Register first();
   static constexpr Register invalid() { return first() + number_of_registers; }
 
