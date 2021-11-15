@@ -29,6 +29,7 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.StringConcatFactory;
 import java.lang.invoke.TypeDescriptor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -36,6 +37,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -251,44 +253,47 @@ public class ObjectMethods {
      * @param names           the names
      * @return the method handle
      */
-    private static MethodHandle makeToString(Class<?> receiverClass,
-                                            List<MethodHandle> getters,
+    private static MethodHandle makeToString(MethodHandles.Lookup lookup,
+                                            Class<?> receiverClass,
+                                            MethodHandle[] getters,
                                             List<String> names) {
-        // This is a pretty lousy algorithm; we spread the receiver over N places,
-        // apply the N getters, apply N toString operations, and concat the result with String.format
-        // Better to use String.format directly, or delegate to StringConcatFactory
-        // Also probably want some quoting around String components
-
-        assert getters.size() == names.size();
-
-        int[] invArgs = new int[getters.size()];
-        Arrays.fill(invArgs, 0);
-        MethodHandle[] filters = new MethodHandle[getters.size()];
-        StringBuilder sb = new StringBuilder();
-        sb.append(receiverClass.getSimpleName()).append("[");
-        for (int i=0; i<getters.size(); i++) {
-            MethodHandle getter = getters.get(i); // (R)T
-            MethodHandle stringify = stringifier(getter.type().returnType()); // (T)String
-            MethodHandle stringifyThisField = MethodHandles.filterArguments(stringify, 0, getter);    // (R)String
-            filters[i] = stringifyThisField;
-            sb.append(names.get(i)).append("=%s");
-            if (i != getters.size() - 1)
-                sb.append(", ");
-        }
-        sb.append(']');
-        String formatString = sb.toString();
-        MethodHandle formatter = MethodHandles.insertArguments(STRING_FORMAT, 0, formatString)
-                                              .asCollector(String[].class, getters.size()); // (R*)String
-        if (getters.size() == 0) {
-            // Add back extra R
-            formatter = MethodHandles.dropArguments(formatter, 0, receiverClass);
-        }
-        else {
-            MethodHandle filtered = MethodHandles.filterArguments(formatter, 0, filters);
-            formatter = MethodHandles.permuteArguments(filtered, MethodType.methodType(String.class, receiverClass), invArgs);
+        assert getters.length == names.size();
+        Class<?>[] types = Stream.of(getters)
+                .map(g -> g.type().returnType())
+                .toList()
+                .toArray(new Class<?>[getters.length]);
+        MethodType concatMethodType = MethodType.methodType(String.class, types);
+        String recipe = "\2" + (getters.length > 0 ?
+                        "\2\1\2".repeat(getters.length - 1) + "\2\1" :
+                        "") + "\2";
+        String[] constants = new String[2 + (getters.length > 0 ? 2 * getters.length - 1 : 0)];
+        constants[0] = receiverClass.getSimpleName() + "[";
+        constants[constants.length - 1] = "]";
+        for (int i = 0; i < names.size(); i++) {
+            constants[1 + 2 * i] = names.get(i) + "=";
+            if (i != names.size() - 1) {
+                constants[1 + 2 * i + 1] = ", ";
+            }
         }
 
-        return formatter;
+        MethodHandle mh;
+        try {
+            mh = StringConcatFactory.makeConcatWithConstants(
+                    lookup, "",
+                    concatMethodType,
+                    recipe,
+                    (Object[]) constants
+            ).getTarget();
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+        mh = MethodHandles.filterArguments(mh, 0, getters);
+        mh = MethodHandles.permuteArguments(
+                mh,
+                MethodType.methodType(String.class, receiverClass),
+                new int[getters.length]
+        );
+        return mh;
     }
 
     /**
@@ -367,7 +372,7 @@ public class ObjectMethods {
                 List<String> nameList = "".equals(names) ? List.of() : List.of(names.split(";"));
                 if (nameList.size() != getterList.size())
                     throw new IllegalArgumentException("Name list and accessor list do not match");
-                yield makeToString(recordClass, getterList, nameList);
+                yield makeToString(lookup, recordClass, getters, nameList);
             }
             default -> throw new IllegalArgumentException(methodName);
         };
