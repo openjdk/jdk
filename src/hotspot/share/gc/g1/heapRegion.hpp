@@ -571,7 +571,7 @@ public:
   void record_evac_failure_obj(oop obj);
   // Applies the given closure to all previously recorded objects
   // that failed evacuation in ascending address order.
-  void iterate_evac_failure_objs(ObjectClosure* closure);
+  void process_and_drop_evac_failure_objs(ObjectClosure* closure);
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for

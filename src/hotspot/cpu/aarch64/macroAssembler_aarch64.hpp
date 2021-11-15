@@ -1402,6 +1402,9 @@ public:
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
 
+  // Code for java.lang.Thread::onSpinWait() intrinsic.
+  void spin_wait();
+
 private:
   // Check the current thread doesn't need a cross modify fence.
   void verify_cross_modify_fence_not_required() PRODUCT_RETURN;

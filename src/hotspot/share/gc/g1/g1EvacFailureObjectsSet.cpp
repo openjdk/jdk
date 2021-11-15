@@ -26,7 +26,6 @@
 #include "gc/g1/g1EvacFailureObjectsSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "utilities/quickSort.hpp"
 
@@ -62,13 +61,6 @@ G1EvacFailureObjectsSet::G1EvacFailureObjectsSet(uint region_idx, HeapWord* bott
   assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
 }
 
-void G1EvacFailureObjectsSet::record(oop obj) {
-  assert(obj != NULL, "must be");
-  assert(_region_idx == G1CollectedHeap::heap()->heap_region_containing(obj)->hrm_index(), "must be");
-  OffsetInRegion* e = _offsets.allocate();
-  *e = to_offset(obj);
-}
-
 // Helper class to join, sort and iterate over the previously collected segmented
 // array of objects that failed evacuation.
 class G1EvacFailureObjectsIterationHelper {
@@ -89,7 +81,7 @@ class G1EvacFailureObjectsIterationHelper {
     QuickSort::sort(_offset_array, _array_length, order_oop, true);
   }
 
-  void iterate_internal(ObjectClosure* closure) {
+  void iterate(ObjectClosure* closure) {
     for (uint i = 0; i < _array_length; i++) {
       oop cur = _objects_set->from_offset(_offset_array[i]);
       closure->do_object(cur);
@@ -103,13 +95,13 @@ public:
     _offset_array(nullptr),
     _array_length(0) { }
 
-  void iterate(ObjectClosure* closure) {
+  void process_and_drop(ObjectClosure* closure) {
     uint num = _segments->num_allocated_nodes();
     _offset_array = NEW_C_HEAP_ARRAY(OffsetInRegion, num, mtGC);
 
     join_and_sort();
     assert(_array_length == num, "must be %u, %u", _array_length, num);
-    iterate_internal(closure);
+    iterate(closure);
 
     FREE_C_HEAP_ARRAY(OffsetInRegion, _offset_array);
   }
@@ -121,11 +113,11 @@ public:
   }
 };
 
-void G1EvacFailureObjectsSet::iterate(ObjectClosure* closure) {
+void G1EvacFailureObjectsSet::process_and_drop(ObjectClosure* closure) {
   assert_at_safepoint();
 
   G1EvacFailureObjectsIterationHelper helper(this);
-  helper.iterate(closure);
+  helper.process_and_drop(closure);
 
   _offsets.drop_all();
 }

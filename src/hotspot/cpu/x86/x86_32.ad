@@ -7204,7 +7204,7 @@ instruct castLL( eRegL dst ) %{
 %}
 
 instruct castFF( regF dst ) %{
-  predicate(UseSSE >= 2);
+  predicate(UseSSE >= 1);
   match(Set dst (CastFF dst));
   format %{ "#castFF of $dst" %}
   ins_encode( /*empty encoding*/ );
@@ -7222,7 +7222,7 @@ instruct castDD( regD dst ) %{
 %}
 
 instruct castFF_PR( regFPR dst ) %{
-  predicate(UseSSE < 2);
+  predicate(UseSSE < 1);
   match(Set dst (CastFF dst));
   format %{ "#castFF of $dst" %}
   ins_encode( /*empty encoding*/ );

@@ -210,7 +210,8 @@ void G1CardSetTest::cardset_basic_test() {
                                 BitmapCoarsenThreshold,
                                 8,
                                 FullCardSetThreshold,
-                                CardsPerRegion);
+                                CardsPerRegion,
+                                0);
   G1CardSetFreePool free_pool(config.num_mem_object_types());
   G1CardSetMemoryManager mm(&config, &free_pool);
 
@@ -428,7 +429,8 @@ void G1CardSetTest::cardset_mt_test() {
                                 BitmapCoarsenThreshold,
                                 8,
                                 FullCardSetThreshold,
-                                CardsPerRegion);
+                                CardsPerRegion,
+                                0);
   G1CardSetFreePool free_pool(config.num_mem_object_types());
   G1CardSetMemoryManager mm(&config, &free_pool);
 

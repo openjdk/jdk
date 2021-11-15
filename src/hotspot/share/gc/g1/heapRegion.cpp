@@ -65,8 +65,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   size_t region_size = G1HeapRegionSize;
   // G1HeapRegionSize = 0 means decide ergonomically.
   if (region_size == 0) {
-    region_size = MAX2(max_heap_size / HeapRegionBounds::target_number(),
-                       HeapRegionBounds::min_size());
+    region_size = clamp(max_heap_size / HeapRegionBounds::target_number(),
+                        HeapRegionBounds::min_size(),
+                        HeapRegionBounds::max_ergonomics_size());
   }
 
   // Make sure region size is a power of 2. Rounding up since this
@@ -106,8 +107,8 @@ void HeapRegion::handle_evacuation_failure() {
   _next_marked_bytes = 0;
 }
 
-void HeapRegion::iterate_evac_failure_objs(ObjectClosure* closure) {
-  _evac_failure_objs.iterate(closure);
+void HeapRegion::process_and_drop_evac_failure_objs(ObjectClosure* closure) {
+  _evac_failure_objs.process_and_drop(closure);
 }
 
 void HeapRegion::unlink_from_list() {

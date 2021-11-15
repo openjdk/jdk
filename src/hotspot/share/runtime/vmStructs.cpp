@@ -704,7 +704,6 @@
   nonstatic_field(ThreadShadow,                _pending_exception,                            oop)                                   \
   nonstatic_field(ThreadShadow,                _exception_file,                               const char*)                           \
   nonstatic_field(ThreadShadow,                _exception_line,                               int)                                   \
-  nonstatic_field(Thread,                      _active_handles,                               JNIHandleBlock*)                       \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
@@ -728,6 +727,7 @@
   nonstatic_field(JavaThread,                  _stack_size,                                   size_t)                                \
   nonstatic_field(JavaThread,                  _vframe_array_head,                            vframeArray*)                          \
   nonstatic_field(JavaThread,                  _vframe_array_last,                            vframeArray*)                          \
+  nonstatic_field(JavaThread,                  _active_handles,                               JNIHandleBlock*)                       \
   volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
   nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
