@@ -1295,20 +1295,29 @@ class PredecessorValidator : public BlockClosure {
 
   virtual void block_do(BlockBegin* block) {
     _blocks->append(block);
-    for (int i = 0; i < block->end()->number_of_sux(); i++) {
-      BlockBegin* sux = block->end()->sux_at(i);
-      assert(!sux->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
-      collect_predecessor(block, sux);
-    }
-
-    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
-      BlockBegin* sux = block->exception_handler_at(i);
-      assert(sux->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
-      collect_predecessor(block, sux);
-    }
+    verify_successor_xentry_flag(block);
+    collect_predecessors(block);
   }
 
  private:
+  void verify_successor_xentry_flag(const BlockBegin *block) const {
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      assert(!block->end()->sux_at(i)->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
+    }
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+      assert(block->exception_handler_at(i)->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
+    }
+  }
+
+  void collect_predecessors(BlockBegin *block) {
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      collect_predecessor(block, block->end()->sux_at(i));
+    }
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+      collect_predecessor(block, block->exception_handler_at(i));
+    }
+  }
+
   void collect_predecessor(BlockBegin * const pred, const BlockBegin *sux) {
     BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
     if (preds == NULL) {
