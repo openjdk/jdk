@@ -24,11 +24,12 @@
 /**
  * @test
  * @bug 8193682
- * @summary Test DeflatorOutputStream for infinite loop while writing on closed GZipOutputStream and ZipOutputStream.
+ * @summary Test DeflatorOutputStream for infinite loop while writing on closed GZipOutputStream , ZipOutputStream and JarOutputStream.
  * @run testng GZipLoopTest
  */
 import java.io.*;
 import java.util.Random;
+import java.util.jar.JarOutputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipEntry;
@@ -59,14 +60,24 @@ public class GZipLoopTest {
     private static Random rand = new Random();
 
     @DataProvider(name = "testgzipinput")
-      public Object[][] testInput() {
-       //testGZip will close the GZipOutputStream using close() method when the boolean
-       //useCloseMethod is set to true and finish() method if the value is set to false
-       return new Object[][] {
-        { GZIPOutputStream.class, true },
-        { GZIPOutputStream.class, false },
-       };
-      }
+    public Object[][] testGZipInput() {
+     //testGZip will close the GZipOutputStream using close() method when the boolean
+     //useCloseMethod is set to true and finish() method if the value is set to false
+     return new Object[][] {
+      { GZIPOutputStream.class, true },
+      { GZIPOutputStream.class, false },
+     };
+    }
+
+    @DataProvider(name = "testzipjarinput")
+    public Object[][] testZipAndJarInput() {
+     //testZipAndJarInput will perfrom write/closeEntry operations on JarOutputStream when the boolean
+     //useJar is set to true and on ZipOutputStream if the value is set to false
+     return new Object[][] {
+      { JarOutputStream.class, true },
+      { ZipOutputStream.class, false },
+     };
+    }
 
     @BeforeTest
     public void before_test()
@@ -101,10 +112,15 @@ public class GZipLoopTest {
         }
     }
 
-    //Test for infinite loop by writing bytes to closed ZipOutputStream
-    @Test
-    public void testZipCloseEntry() throws IOException {
-        ZipOutputStream zip = new ZipOutputStream(outStream);
+    //Test for infinite loop by writing bytes to closed ZipOutputStream/JarOutputStream
+    @Test(dataProvider = "testzipjarinput")
+    public void testZipCloseEntry(Class<?> type,boolean useJar) throws IOException {
+        ZipOutputStream zip = null;
+        if(useJar) {
+           zip = new JarOutputStream(outStream);
+        } else {
+           zip = new ZipOutputStream(outStream);
+        }
         try {
             zip.putNextEntry(new ZipEntry(""));
         } catch (IOException e) {
