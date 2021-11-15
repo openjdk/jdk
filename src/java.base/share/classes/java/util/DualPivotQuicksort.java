@@ -324,11 +324,11 @@ final class DualPivotQuicksort {
                  *             |       |                            |
                  *           lower     k                          upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
+                 *     all in (low, lower]  <  pivot1
+                 *     all in (k, upper)   in [pivot1, pivot2]
+                 *     all in [upper, end)  >  pivot2
                  *
                  * Pointer k is the last index of ?-part
                  */
@@ -390,7 +390,7 @@ final class DualPivotQuicksort {
                 a[e3] = a[lower];
 
                 /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
+                 * Dutch National Flag partitioning
                  *
                  *   left part                 central part    right part
                  * +------------------------------------------------------+
@@ -400,11 +400,11 @@ final class DualPivotQuicksort {
                  *              |           |                |
                  *            lower         k              upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
+                 *     all in (low, lower]  <  pivot
+                 *     all in (k, upper)   ==  pivot
+                 *     all in [upper, end]  >  pivot
                  *
                  * Pointer k is the last index of ?-part
                  */
@@ -1221,11 +1221,11 @@ final class DualPivotQuicksort {
                  *             |       |                            |
                  *           lower     k                          upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
+                 *     all in (low, lower]  <  pivot1
+                 *     all in (k, upper)   in [pivot1, pivot2]
+                 *     all in [upper, end)  >  pivot2
                  *
                  * Pointer k is the last index of ?-part
                  */
@@ -1287,7 +1287,7 @@ final class DualPivotQuicksort {
                 a[e3] = a[lower];
 
                 /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
+                 * Dutch National Flag partitioning
                  *
                  *   left part                 central part    right part
                  * +------------------------------------------------------+
@@ -1297,11 +1297,11 @@ final class DualPivotQuicksort {
                  *              |           |                |
                  *            lower         k              upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
+                 *     all in (low, lower]  <  pivot
+                 *     all in (k, upper)   ==  pivot
+                 *     all in [upper, end]  >  pivot
                  *
                  * Pointer k is the last index of ?-part
                  */
@@ -2184,11 +2184,11 @@ final class DualPivotQuicksort {
                  *             |       |                            |
                  *           lower     k                          upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
+                 *     all in (low, lower]  <  pivot1
+                 *     all in (k, upper)   in [pivot1, pivot2]
+                 *     all in [upper, end)  >  pivot2
                  *
                  * Pointer k is the last index of ?-part
                  */
@@ -2245,7 +2245,7 @@ final class DualPivotQuicksort {
                 a[e3] = a[lower];
 
                 /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
+                 * Dutch National Flag partitioning
                  *
                  *   left part                 central part    right part
                  * +------------------------------------------------------+
@@ -2255,11 +2255,11 @@ final class DualPivotQuicksort {
                  *              |           |                |
                  *            lower         k              upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
+                 *     all in (low, lower]  <  pivot
+                 *     all in (k, upper)   ==  pivot
+                 *     all in [upper, end]  >  pivot
                  *
                  * Pointer k is the last index of ?-part
                  */
@@ -2506,11 +2506,11 @@ final class DualPivotQuicksort {
                  *             |       |                            |
                  *           lower     k                          upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
+                 *     all in (low, lower]  <  pivot1
+                 *     all in (k, upper)   in [pivot1, pivot2]
+                 *     all in [upper, end)  >  pivot2
                  *
                  * Pointer k is the last index of ?-part
                  */
@@ -2567,7 +2567,7 @@ final class DualPivotQuicksort {
                 a[e3] = a[lower];
 
                 /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
+                 * Dutch National Flag partitioning
                  *
                  *   left part                 central part    right part
                  * +------------------------------------------------------+
@@ -2577,11 +2577,11 @@ final class DualPivotQuicksort {
                  *              |           |                |
                  *            lower         k              upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
+                 *     all in (low, lower]  <  pivot
+                 *     all in (k, upper)   ==  pivot
+                 *     all in [upper, end]  >  pivot
                  *
                  * Pointer k is the last index of ?-part
                  */
@@ -2931,11 +2931,11 @@ final class DualPivotQuicksort {
                  *             |       |                            |
                  *           lower     k                          upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
+                 *     all in (low, lower]  <  pivot1
+                 *     all in (k, upper)   in [pivot1, pivot2]
+                 *     all in [upper, end)  >  pivot2
                  *
                  * Pointer k is the last index of ?-part
                  */
@@ -2997,7 +2997,7 @@ final class DualPivotQuicksort {
                 a[e3] = a[lower];
 
                 /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
+                 * Dutch National Flag partitioning
                  *
                  *   left part                 central part    right part
                  * +------------------------------------------------------+
@@ -3007,11 +3007,11 @@ final class DualPivotQuicksort {
                  *              |           |                |
                  *            lower         k              upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
+                 *     all in (low, lower]  <  pivot
+                 *     all in (k, upper)   ==  pivot
+                 *     all in [upper, end]  >  pivot
                  *
                  * Pointer k is the last index of ?-part
                  */
@@ -3857,11 +3857,11 @@ final class DualPivotQuicksort {
                  *             |       |                            |
                  *           lower     k                          upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
+                 *     all in (low, lower]  <  pivot1
+                 *     all in (k, upper)   in [pivot1, pivot2]
+                 *     all in [upper, end)  >  pivot2
                  *
                  * Pointer k is the last index of ?-part
                  */
@@ -3923,7 +3923,7 @@ final class DualPivotQuicksort {
                 a[e3] = a[lower];
 
                 /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
+                 * Dutch National Flag partitioning
                  *
                  *   left part                 central part    right part
                  * +------------------------------------------------------+
@@ -3933,11 +3933,11 @@ final class DualPivotQuicksort {
                  *              |           |                |
                  *            lower         k              upper
                  *
-                 * Invariants:
+                 * Invariants
                  *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
+                 *     all in (low, lower]  <  pivot
+                 *     all in (k, upper)   ==  pivot
+                 *     all in [upper, end]  >  pivot
                  *
                  * Pointer k is the last index of ?-part
                  */
