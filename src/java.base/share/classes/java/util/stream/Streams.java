@@ -967,11 +967,10 @@ final class Streams {
             state |= OPERATED_ON;
         }
 
-        protected final void stateDistinct(boolean hasComparator) {
+        protected final void stateDistinct() {
             state |= DISTINCT;
             state &= ~(SIZED | SUBSIZED | CONCURRENT | NONNULL | IMMUTABLE);
-            if (hasComparator)
-                state &= ~(SORTED);
+            if (hasComparator()) state &= ~SORTED;
         }
 
         protected final void stateDistinctPrimitiveStream() {
@@ -987,12 +986,14 @@ final class Streams {
             return (state & SORTED) == SORTED;
         }
 
-        protected boolean stateIsUnordered() {
-            return (state & ORDERED) == 0;
-        }
-
-        protected void stateUnordered() {
-            state &= ~ORDERED;
+        protected boolean unorderedSame() {
+            if ((state & ORDERED) == ORDERED) {
+                state &= ~(CONCURRENT | NONNULL | ORDERED | IMMUTABLE);
+                if (hasComparator()) state &= ~SORTED;
+                state |= OPERATED_ON;
+                return false;
+            }
+            return true;
         }
 
         protected final int stateBareCharacteristics() {
@@ -1002,6 +1003,58 @@ final class Streams {
         public final void close() {
             // nothing to do
             state |= CLOSED;
+        }
+
+        public boolean isParallel() {
+            return false;
+        }
+
+        protected final void checkParametersAndThenState(Object parameter) {
+            Objects.requireNonNull(parameter);
+            checkIfOperatedOnOrClosedAndChangeState();
+        }
+
+        protected final void checkParametersAndThenState(Object parameter1, Object parameter2) {
+            Objects.requireNonNull(parameter1);
+            Objects.requireNonNull(parameter2);
+            checkIfOperatedOnOrClosedAndChangeState();
+        }
+
+        protected final void checkParametersAndThenState(Object parameter1, Object parameter2, Object parameter3) {
+            Objects.requireNonNull(parameter1);
+            Objects.requireNonNull(parameter2);
+            Objects.requireNonNull(parameter3);
+            checkIfOperatedOnOrClosedAndChangeState();
+        }
+
+        protected final void checkStateAndThenParameters(Object parameter) {
+            // for some of the methods, we first check the state and then the parameter
+            checkIfOperatedOnOrClosedAndChangeState();
+            Objects.requireNonNull(parameter);
+        }
+
+        protected final <R> EmptyStream<R> nextEmptyStream(Object parameter) {
+            checkParametersAndThenState(parameter);
+            return new EmptyStream<>(this);
+        }
+
+        protected final EmptyIntStream nextEmptyIntStream(Object parameter) {
+            checkParametersAndThenState(parameter);
+            return new EmptyIntStream(this);
+        }
+
+        protected final EmptyLongStream nextEmptyLongStream(Object parameter) {
+            checkParametersAndThenState(parameter);
+            return new EmptyLongStream(this);
+        }
+
+        protected final EmptyDoubleStream nextEmptyDoubleStream(Object parameter) {
+            checkParametersAndThenState(parameter);
+            return new EmptyDoubleStream(this);
+        }
+
+        protected boolean hasComparator() {
+            return false;
         }
     }
 
@@ -1032,100 +1085,79 @@ final class Streams {
 
         @Override
         public Stream<T> filter(Predicate<? super T> predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyStream<>(this);
+            return nextEmptyStream(predicate);
         }
 
         @Override
         public <R> Stream<R> map(Function<? super T, ? extends R> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyStream<>(this);
+            return nextEmptyStream(mapper);
         }
 
         @Override
         public IntStream mapToInt(ToIntFunction<? super T> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(mapper);
         }
 
         @Override
         public LongStream mapToLong(ToLongFunction<? super T> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(mapper);
         }
 
         @Override
         public DoubleStream mapToDouble(ToDoubleFunction<? super T> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyDoubleStream(this);
+            return nextEmptyDoubleStream(mapper);
         }
 
         @Override
         public <R> Stream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyStream<>(this);
+            return nextEmptyStream(mapper);
         }
 
         @Override
         public IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(mapper);
         }
 
         @Override
         public LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(mapper);
         }
 
         @Override
         public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyDoubleStream(this);
+            return nextEmptyDoubleStream(mapper);
         }
 
         @Override
         public <R> Stream<R> mapMulti(BiConsumer<? super T, ? super Consumer<R>> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyStream<>(this);
+            return nextEmptyStream(mapper);
         }
 
         @Override
         public IntStream mapMultiToInt(BiConsumer<? super T, ? super IntConsumer> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(mapper);
         }
 
         @Override
         public LongStream mapMultiToLong(BiConsumer<? super T, ? super LongConsumer> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(mapper);
         }
 
         @Override
         public DoubleStream mapMultiToDouble(BiConsumer<? super T, ? super DoubleConsumer> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyDoubleStream(this);
+            return nextEmptyDoubleStream(mapper);
         }
 
         @Override
         public Stream<T> distinct() {
             checkIfOperatedOnOrClosedAndChangeState();
-            super.stateDistinct(comparator != null);
+            super.stateDistinct();
             return new EmptyStream<>(this);
+        }
+
+        @Override
+        protected boolean hasComparator() {
+            return comparator != null;
         }
 
         @Override
@@ -1137,17 +1169,13 @@ final class Streams {
 
         @Override
         public Stream<T> sorted(Comparator<? super T> comparator) {
-            // the check is the other way round to normal
-            checkIfOperatedOnOrClosedAndChangeState();
-            Objects.requireNonNull(comparator);
+            checkStateAndThenParameters(comparator);
             return new EmptyStream<>(this);
         }
 
         @Override
         public Stream<T> peek(Consumer<? super T> action) {
-            Objects.requireNonNull(action);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyStream<>(this);
+            return nextEmptyStream(action);
         }
 
         @Override
@@ -1169,29 +1197,23 @@ final class Streams {
 
         @Override
         public Stream<T> takeWhile(Predicate<? super T> predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyStream<>(this);
+            return nextEmptyStream(predicate);
         }
 
         @Override
         public Stream<T> dropWhile(Predicate<? super T> predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyStream<>(this);
+            return nextEmptyStream(predicate);
         }
 
         @Override
         public void forEach(Consumer<? super T> action) {
-            checkIfOperatedOnOrClosedAndChangeState();
-            Objects.requireNonNull(action);
+            checkStateAndThenParameters(action);
             // do nothing
         }
 
         @Override
         public void forEachOrdered(Consumer<? super T> action) {
-            checkIfOperatedOnOrClosedAndChangeState();
-            Objects.requireNonNull(action);
+            checkStateAndThenParameters(action);
             // do nothing
         }
 
@@ -1205,46 +1227,37 @@ final class Streams {
 
         @Override
         public <A> A[] toArray(IntFunction<A[]> generator) {
-            checkIfOperatedOnOrClosedAndChangeState();
-            Objects.requireNonNull(generator);
+            checkStateAndThenParameters(generator);
             return Objects.requireNonNull(generator.apply(0));
         }
 
         @Override
         public T reduce(T identity, BinaryOperator<T> accumulator) {
-            Objects.requireNonNull(accumulator);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(accumulator);
             return identity;
         }
 
         @Override
         public Optional<T> reduce(BinaryOperator<T> accumulator) {
-            Objects.requireNonNull(accumulator);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(accumulator);
             return Optional.empty();
         }
 
         @Override
         public <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner) {
-            Objects.requireNonNull(accumulator);
-            Objects.requireNonNull(combiner);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(accumulator, combiner);
             return identity;
         }
 
         @Override
         public <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
-            Objects.requireNonNull(supplier);
-            Objects.requireNonNull(accumulator);
-            Objects.requireNonNull(combiner);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(supplier, accumulator, combiner);
             return supplier.get();
         }
 
         @Override
         public <R, A> R collect(Collector<? super T, A, R> collector) {
-            Objects.requireNonNull(collector);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(collector);
             return collector.finisher().apply(collector.supplier().get());
         }
 
@@ -1256,15 +1269,13 @@ final class Streams {
 
         @Override
         public Optional<T> min(Comparator<? super T> comparator) {
-            Objects.requireNonNull(comparator);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(comparator);
             return Optional.empty();
         }
 
         @Override
         public Optional<T> max(Comparator<? super T> comparator) {
-            Objects.requireNonNull(comparator);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(comparator);
             return Optional.empty();
         }
 
@@ -1276,22 +1287,19 @@ final class Streams {
 
         @Override
         public boolean anyMatch(Predicate<? super T> predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return false;
         }
 
         @Override
         public boolean allMatch(Predicate<? super T> predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return true;
         }
 
         @Override
         public boolean noneMatch(Predicate<? super T> predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return true;
         }
 
@@ -1322,12 +1330,6 @@ final class Streams {
                 return new EmptySpliterator.OfRef<>(stateBareCharacteristics());
         }
 
-
-        @Override
-        public boolean isParallel() {
-            return false;
-        }
-
         @Override
         public Stream<T> sequential() {
             return this;
@@ -1341,10 +1343,8 @@ final class Streams {
         @Override
         public Stream<T> unordered() {
             checkIfOperatedOnOrClosed();
-            if (super.stateIsUnordered()) return this;
-            checkIfOperatedOnOrClosedAndChangeState();
-            super.stateUnordered();
-            return new EmptyStream<>(this);
+            if (super.unorderedSame()) return this;
+            else return new EmptyStream<>(this);
         }
 
         @Override
@@ -1366,51 +1366,37 @@ final class Streams {
 
         @Override
         public IntStream filter(IntPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(predicate);
         }
 
         @Override
         public IntStream map(IntUnaryOperator mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(mapper);
         }
 
         @Override
         public <U> Stream<U> mapToObj(IntFunction<? extends U> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyStream<>(this);
+            return nextEmptyStream(mapper);
         }
 
         @Override
         public LongStream mapToLong(IntToLongFunction mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(mapper);
         }
 
         @Override
         public DoubleStream mapToDouble(IntToDoubleFunction mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyDoubleStream(this);
+            return nextEmptyDoubleStream(mapper);
         }
 
         @Override
         public IntStream flatMap(IntFunction<? extends IntStream> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(mapper);
         }
 
         @Override
         public IntStream mapMulti(IntMapMultiConsumer mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(mapper);
         }
 
         @Override
@@ -1429,9 +1415,7 @@ final class Streams {
 
         @Override
         public IntStream peek(IntConsumer action) {
-            Objects.requireNonNull(action);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(action);
         }
 
         @Override
@@ -1453,29 +1437,23 @@ final class Streams {
 
         @Override
         public IntStream takeWhile(IntPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(predicate);
         }
 
         @Override
         public IntStream dropWhile(IntPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(predicate);
         }
 
         @Override
         public void forEach(IntConsumer action) {
-            checkIfOperatedOnOrClosedAndChangeState();
-            Objects.requireNonNull(action);
+            checkStateAndThenParameters(action);
             // do nothing
         }
 
         @Override
         public void forEachOrdered(IntConsumer action) {
-            checkIfOperatedOnOrClosedAndChangeState();
-            Objects.requireNonNull(action);
+            checkStateAndThenParameters(action);
             // do nothing
         }
 
@@ -1489,24 +1467,19 @@ final class Streams {
 
         @Override
         public int reduce(int identity, IntBinaryOperator op) {
-            Objects.requireNonNull(op);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(op);
             return identity;
         }
 
         @Override
         public OptionalInt reduce(IntBinaryOperator op) {
-            Objects.requireNonNull(op);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(op);
             return OptionalInt.empty();
         }
 
         @Override
         public <R> R collect(Supplier<R> supplier, ObjIntConsumer<R> accumulator, BiConsumer<R, R> combiner) {
-            Objects.requireNonNull(supplier);
-            Objects.requireNonNull(accumulator);
-            Objects.requireNonNull(combiner);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(supplier, accumulator, combiner);
             return supplier.get();
         }
 
@@ -1530,22 +1503,19 @@ final class Streams {
 
         @Override
         public boolean anyMatch(IntPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return false;
         }
 
         @Override
         public boolean allMatch(IntPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return true;
         }
 
         @Override
         public boolean noneMatch(IntPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return true;
         }
 
@@ -1588,11 +1558,6 @@ final class Streams {
         }
 
         @Override
-        public boolean isParallel() {
-            return false;
-        }
-
-        @Override
         public IntStream sequential() {
             return this;
         }
@@ -1604,10 +1569,9 @@ final class Streams {
 
         @Override
         public IntStream unordered() {
-            if (super.stateIsUnordered()) return this;
-            checkIfOperatedOnOrClosedAndChangeState();
-            super.stateUnordered();
-            return new EmptyIntStream(this);
+            checkIfOperatedOnOrClosed();
+            if (super.unorderedSame()) return this;
+            else return new EmptyIntStream(this);
         }
 
         @Override
@@ -1665,51 +1629,37 @@ final class Streams {
 
         @Override
         public LongStream filter(LongPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(predicate);
         }
 
         @Override
         public LongStream map(LongUnaryOperator mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(mapper);
         }
 
         @Override
         public <U> Stream<U> mapToObj(LongFunction<? extends U> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyStream<>(this);
+            return nextEmptyStream(mapper);
         }
 
         @Override
         public IntStream mapToInt(LongToIntFunction mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(mapper);
         }
 
         @Override
         public DoubleStream mapToDouble(LongToDoubleFunction mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyDoubleStream(this);
+            return nextEmptyDoubleStream(mapper);
         }
 
         @Override
         public LongStream flatMap(LongFunction<? extends LongStream> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(mapper);
         }
 
         @Override
         public LongStream mapMulti(LongMapMultiConsumer mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(mapper);
         }
 
         @Override
@@ -1728,9 +1678,7 @@ final class Streams {
 
         @Override
         public LongStream peek(LongConsumer action) {
-            Objects.requireNonNull(action);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(action);
         }
 
         @Override
@@ -1752,29 +1700,23 @@ final class Streams {
 
         @Override
         public LongStream takeWhile(LongPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(predicate);
         }
 
         @Override
         public LongStream dropWhile(LongPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(predicate);
         }
 
         @Override
         public void forEach(LongConsumer action) {
-            checkIfOperatedOnOrClosedAndChangeState();
-            Objects.requireNonNull(action);
+            checkStateAndThenParameters(action);
             // do nothing
         }
 
         @Override
         public void forEachOrdered(LongConsumer action) {
-            checkIfOperatedOnOrClosedAndChangeState();
-            Objects.requireNonNull(action);
+            checkStateAndThenParameters(action);
             // do nothing
         }
 
@@ -1788,24 +1730,19 @@ final class Streams {
 
         @Override
         public long reduce(long identity, LongBinaryOperator op) {
-            Objects.requireNonNull(op);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(op);
             return identity;
         }
 
         @Override
         public OptionalLong reduce(LongBinaryOperator op) {
-            Objects.requireNonNull(op);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(op);
             return OptionalLong.empty();
         }
 
         @Override
         public <R> R collect(Supplier<R> supplier, ObjLongConsumer<R> accumulator, BiConsumer<R, R> combiner) {
-            Objects.requireNonNull(supplier);
-            Objects.requireNonNull(accumulator);
-            Objects.requireNonNull(combiner);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(supplier, accumulator, combiner);
             return supplier.get();
         }
 
@@ -1829,22 +1766,19 @@ final class Streams {
 
         @Override
         public boolean anyMatch(LongPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return false;
         }
 
         @Override
         public boolean allMatch(LongPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return true;
         }
 
         @Override
         public boolean noneMatch(LongPredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return true;
         }
 
@@ -1887,11 +1821,6 @@ final class Streams {
         }
 
         @Override
-        public boolean isParallel() {
-            return false;
-        }
-
-        @Override
         public LongStream sequential() {
             return this;
         }
@@ -1903,10 +1832,9 @@ final class Streams {
 
         @Override
         public LongStream unordered() {
-            if (super.stateIsUnordered()) return this;
-            checkIfOperatedOnOrClosedAndChangeState();
-            super.stateUnordered();
-            return new EmptyLongStream(this);
+            checkIfOperatedOnOrClosed();
+            if (super.unorderedSame()) return this;
+            else return new EmptyLongStream(this);
         }
 
         @Override
@@ -1958,51 +1886,37 @@ final class Streams {
 
         @Override
         public DoubleStream filter(DoublePredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyDoubleStream(this);
+            return nextEmptyDoubleStream(predicate);
         }
 
         @Override
         public DoubleStream map(DoubleUnaryOperator mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyDoubleStream(this);
+            return nextEmptyDoubleStream(mapper);
         }
 
         @Override
         public <U> Stream<U> mapToObj(DoubleFunction<? extends U> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyStream<>(this);
+            return nextEmptyStream(mapper);
         }
 
         @Override
         public IntStream mapToInt(DoubleToIntFunction mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyIntStream(this);
+            return nextEmptyIntStream(mapper);
         }
 
         @Override
         public LongStream mapToLong(DoubleToLongFunction mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyLongStream(this);
+            return nextEmptyLongStream(mapper);
         }
 
         @Override
         public DoubleStream flatMap(DoubleFunction<? extends DoubleStream> mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyDoubleStream(this);
+            return nextEmptyDoubleStream(mapper);
         }
 
         @Override
         public DoubleStream mapMulti(DoubleMapMultiConsumer mapper) {
-            Objects.requireNonNull(mapper);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyDoubleStream(this);
+            return nextEmptyDoubleStream(mapper);
         }
 
         @Override
@@ -2021,8 +1935,7 @@ final class Streams {
 
         @Override
         public DoubleStream peek(DoubleConsumer action) {
-            Objects.requireNonNull(action);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(action);
             return new EmptyDoubleStream(this);
         }
 
@@ -2045,29 +1958,23 @@ final class Streams {
 
         @Override
         public DoubleStream takeWhile(DoublePredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyDoubleStream(this);
+            return nextEmptyDoubleStream(predicate);
         }
 
         @Override
         public DoubleStream dropWhile(DoublePredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
-            return new EmptyDoubleStream(this);
+            return nextEmptyDoubleStream(predicate);
         }
 
         @Override
         public void forEach(DoubleConsumer action) {
-            checkIfOperatedOnOrClosedAndChangeState();
-            Objects.requireNonNull(action);
+            checkStateAndThenParameters(action);
             // do nothing
         }
 
         @Override
         public void forEachOrdered(DoubleConsumer action) {
-            checkIfOperatedOnOrClosedAndChangeState();
-            Objects.requireNonNull(action);
+            checkStateAndThenParameters(action);
             // do nothing
         }
 
@@ -2081,24 +1988,19 @@ final class Streams {
 
         @Override
         public double reduce(double identity, DoubleBinaryOperator op) {
-            Objects.requireNonNull(op);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(op);
             return identity;
         }
 
         @Override
         public OptionalDouble reduce(DoubleBinaryOperator op) {
-            Objects.requireNonNull(op);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(op);
             return OptionalDouble.empty();
         }
 
         @Override
         public <R> R collect(Supplier<R> supplier, ObjDoubleConsumer<R> accumulator, BiConsumer<R, R> combiner) {
-            Objects.requireNonNull(supplier);
-            Objects.requireNonNull(accumulator);
-            Objects.requireNonNull(combiner);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(supplier, accumulator, combiner);
             return supplier.get();
         }
 
@@ -2122,22 +2024,19 @@ final class Streams {
 
         @Override
         public boolean anyMatch(DoublePredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return false;
         }
 
         @Override
         public boolean allMatch(DoublePredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return true;
         }
 
         @Override
         public boolean noneMatch(DoublePredicate predicate) {
-            Objects.requireNonNull(predicate);
-            checkIfOperatedOnOrClosedAndChangeState();
+            checkParametersAndThenState(predicate);
             return true;
         }
 
@@ -2180,11 +2079,6 @@ final class Streams {
         }
 
         @Override
-        public boolean isParallel() {
-            return false;
-        }
-
-        @Override
         public DoubleStream sequential() {
             return this;
         }
@@ -2196,10 +2090,9 @@ final class Streams {
 
         @Override
         public DoubleStream unordered() {
-            if (super.stateIsUnordered()) return this;
-            checkIfOperatedOnOrClosedAndChangeState();
-            super.stateUnordered();
-            return new EmptyDoubleStream(this);
+            checkIfOperatedOnOrClosed();
+            if (super.unorderedSame()) return this;
+            else return new EmptyDoubleStream(this);
         }
 
         @Override
@@ -2312,4 +2205,5 @@ final class Streams {
             }
         }
     }
+
 }

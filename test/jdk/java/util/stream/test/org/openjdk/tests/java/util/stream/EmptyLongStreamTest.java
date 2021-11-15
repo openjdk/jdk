@@ -25,8 +25,11 @@ package org.openjdk.tests.java.util.stream;
 
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
+import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
@@ -54,11 +57,22 @@ import static org.testng.Assert.*;
 public final class EmptyLongStreamTest extends EmptyBaseStreamTest {
     @Test
     public void testAll() {
+        Function<Spliterator.OfLong, LongStream> emptyStreamCreator =
+                StreamSupport::emptyLongStream;
+        Function<Spliterator.OfLong, LongStream> traditionalStreamCreator =
+                spliterator -> StreamSupport.longStream(spliterator, false);
+
         this.compare(LongStream.class,
-                LongStream::empty, () -> StreamSupport.longStream(Spliterators.emptyLongSpliterator(), false)
+                () -> emptyStreamCreator.apply(Spliterators.emptyLongSpliterator()),
+                () -> traditionalStreamCreator.apply(Spliterators.emptyLongSpliterator())
         );
         this.compare(LongStream.class,
-                () -> LongStream.empty().parallel(), () -> StreamSupport.longStream(Spliterators.emptyLongSpliterator(), true)
+                () -> emptyStreamCreator.apply(Spliterators.emptyLongSpliterator()).parallel(),
+                () -> traditionalStreamCreator.apply(Spliterators.emptyLongSpliterator()).parallel()
+        );
+        this.compare(LongStream.class,
+                () -> emptyStreamCreator.apply(Arrays.spliterator(new long[0])),
+                () -> traditionalStreamCreator.apply(Arrays.spliterator(new long[0]))
         );
     }
 

@@ -25,6 +25,8 @@ package org.openjdk.tests.java.util.stream;
 
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
+import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiConsumer;
 import java.util.function.DoubleBinaryOperator;
@@ -34,6 +36,7 @@ import java.util.function.DoublePredicate;
 import java.util.function.DoubleToIntFunction;
 import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.Function;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
@@ -54,11 +57,22 @@ import static org.testng.Assert.*;
 public final class EmptyDoubleStreamTest extends EmptyBaseStreamTest {
     @Test
     public void testAll() {
+        Function<Spliterator.OfDouble, DoubleStream> emptyStreamCreator =
+                StreamSupport::emptyDoubleStream;
+        Function<Spliterator.OfDouble, DoubleStream> traditionalStreamCreator =
+                spliterator -> StreamSupport.doubleStream(spliterator, false);
+
         this.compare(DoubleStream.class,
-                DoubleStream::empty, () -> StreamSupport.doubleStream(Spliterators.emptyDoubleSpliterator(), false)
+                () -> emptyStreamCreator.apply(Spliterators.emptyDoubleSpliterator()),
+                () -> traditionalStreamCreator.apply(Spliterators.emptyDoubleSpliterator())
         );
         this.compare(DoubleStream.class,
-                () -> DoubleStream.empty().parallel(), () -> StreamSupport.doubleStream(Spliterators.emptyDoubleSpliterator(), true)
+                () -> emptyStreamCreator.apply(Spliterators.emptyDoubleSpliterator()).parallel(),
+                () -> traditionalStreamCreator.apply(Spliterators.emptyDoubleSpliterator()).parallel()
+        );
+        this.compare(DoubleStream.class,
+                () -> emptyStreamCreator.apply(Arrays.spliterator(new double[0])),
+                () -> traditionalStreamCreator.apply(Arrays.spliterator(new double[0]))
         );
     }
 

@@ -25,8 +25,11 @@ package org.openjdk.tests.java.util.stream;
 
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
+import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
@@ -54,11 +57,22 @@ import static org.testng.Assert.*;
 public final class EmptyIntStreamTest extends EmptyBaseStreamTest {
     @Test
     public void testAll() {
+        Function<Spliterator.OfInt, IntStream> emptyStreamCreator =
+                StreamSupport::emptyIntStream;
+        Function<Spliterator.OfInt, IntStream> traditionalStreamCreator =
+                spliterator -> StreamSupport.intStream(spliterator, false);
+
         this.compare(IntStream.class,
-                IntStream::empty, () -> StreamSupport.intStream(Spliterators.emptyIntSpliterator(), false)
+                () -> emptyStreamCreator.apply(Spliterators.emptyIntSpliterator()),
+                () -> traditionalStreamCreator.apply(Spliterators.emptyIntSpliterator())
         );
         this.compare(IntStream.class,
-                () -> IntStream.empty().parallel(), () -> StreamSupport.intStream(Spliterators.emptyIntSpliterator(), true)
+                () -> emptyStreamCreator.apply(Spliterators.emptyIntSpliterator()).parallel(),
+                () -> traditionalStreamCreator.apply(Spliterators.emptyIntSpliterator()).parallel()
+        );
+        this.compare(IntStream.class,
+                () -> emptyStreamCreator.apply(Arrays.spliterator(new int[0])),
+                () -> traditionalStreamCreator.apply(Arrays.spliterator(new int[0]))
         );
     }
 

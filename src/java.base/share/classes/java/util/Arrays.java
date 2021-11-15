@@ -5445,7 +5445,7 @@ public class Arrays {
      */
     public static <T> Stream<T> stream(T[] array, int startInclusive, int endExclusive) {
         var spliterator = spliterator(array, startInclusive, endExclusive);
-        if (startInclusive == endExclusive) return Stream.empty();
+        if (startInclusive == endExclusive) return StreamSupport.emptyStream(spliterator);
         return StreamSupport.stream(spliterator, false);
     }
 
@@ -5477,7 +5477,7 @@ public class Arrays {
      */
     public static IntStream stream(int[] array, int startInclusive, int endExclusive) {
         var spliterator = spliterator(array, startInclusive, endExclusive);
-        if (startInclusive == endExclusive) return IntStream.empty();
+        if (startInclusive == endExclusive) return StreamSupport.emptyIntStream(spliterator);
         return StreamSupport.intStream(spliterator, false);
     }
 
@@ -5509,7 +5509,7 @@ public class Arrays {
      */
     public static LongStream stream(long[] array, int startInclusive, int endExclusive) {
         var spliterator = spliterator(array, startInclusive, endExclusive);
-        if (startInclusive == endExclusive) return LongStream.empty();
+        if (startInclusive == endExclusive) return StreamSupport.emptyLongStream(spliterator);
         return StreamSupport.longStream(spliterator, false);
     }
 
@@ -5541,7 +5541,7 @@ public class Arrays {
      */
     public static DoubleStream stream(double[] array, int startInclusive, int endExclusive) {
         var spliterator = spliterator(array, startInclusive, endExclusive);
-        if (startInclusive == endExclusive) return DoubleStream.empty();
+        if (startInclusive == endExclusive) return StreamSupport.emptyDoubleStream(spliterator);
         return StreamSupport.doubleStream(spliterator, false);
     }
 

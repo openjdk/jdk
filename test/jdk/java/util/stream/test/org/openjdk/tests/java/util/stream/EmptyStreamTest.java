@@ -25,9 +25,35 @@ package org.openjdk.tests.java.util.stream;
 
 import org.testng.annotations.Test;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.TreeSet;
+import java.util.Vector;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -59,14 +85,69 @@ import static org.testng.Assert.*;
 public final class EmptyStreamTest extends EmptyBaseStreamTest {
     @Test
     public void testAll() {
+        Function<Spliterator<?>, Stream<?>> emptyStreamCreator =
+                StreamSupport::emptyStream;
+        Function<Spliterator<?>, Stream<?>> traditionalStreamCreator =
+                spliterator -> StreamSupport.stream(spliterator, false);
+
         this.compare(Stream.class,
-                Stream::empty,
-                () -> StreamSupport.stream(Spliterators.emptySpliterator(), false)
+                () -> emptyStreamCreator.apply(Spliterators.emptySpliterator()),
+                () -> traditionalStreamCreator.apply(Spliterators.emptySpliterator())
         );
         this.compare(Stream.class,
-                () -> Stream.empty().parallel(),
-                () -> StreamSupport.stream(Spliterators.emptySpliterator(), true)
+                () -> emptyStreamCreator.apply(Spliterators.emptySpliterator()).parallel(),
+                () -> traditionalStreamCreator.apply(Spliterators.emptySpliterator()).parallel()
         );
+        this.compare(Stream.class,
+                () -> emptyStreamCreator.apply(Arrays.spliterator(new Object[0])),
+                () -> traditionalStreamCreator.apply(Arrays.spliterator(new Object[0]))
+        );
+
+        List<Supplier<Collection<?>>> suppliers = List.of(
+                ArrayList::new,
+                LinkedList::new,
+                Vector::new,
+                CopyOnWriteArrayList::new,
+
+                HashSet::new,
+                TreeSet::new,
+                ConcurrentSkipListSet::new,
+                ConcurrentHashMap::newKeySet,
+                LinkedHashSet::new,
+                CopyOnWriteArraySet::new,
+
+                () -> new ArrayBlockingQueue<>(10),
+                LinkedBlockingQueue::new,
+                LinkedBlockingDeque::new,
+                ArrayDeque::new,
+                ConcurrentLinkedQueue::new,
+                ConcurrentLinkedDeque::new,
+                DelayQueue::new,
+                LinkedTransferQueue::new,
+                PriorityQueue::new,
+                PriorityBlockingQueue::new,
+                SynchronousQueue::new,
+                () -> new ConcurrentSkipListSet<>(Comparator.reverseOrder()),
+                () -> new TreeSet<>(Comparator.reverseOrder()),
+                List::of,
+                Set::of,
+                Collections::emptyList,
+                Collections::emptySet,
+                Collections::emptyNavigableSet,
+                Collections::emptySortedSet,
+                Arrays::asList,
+                () -> Collections.unmodifiableCollection(new ArrayList<>()),
+                () -> Collections.synchronizedCollection(new ArrayList<>()),
+                () -> Collections.checkedCollection(new ArrayList<>(), Integer.class)
+        );
+
+        for (Supplier<Collection<?>> supplier : suppliers) {
+            var collection = supplier.get();
+            this.compare(Stream.class,
+                    () -> emptyStreamCreator.apply(collection.spliterator()),
+                    () -> traditionalStreamCreator.apply(collection.spliterator())
+            );
+        }
     }
 
     public void testFilter(Stream<Integer> actual, Stream<Integer> expected) {

@@ -293,6 +293,7 @@ sealed abstract class EmptyBaseStreamTest permits EmptyDoubleStreamTest,
         assertEquals(actualResult.hasCharacteristics(Spliterator.ORDERED),
                 expectedResult.hasCharacteristics(Spliterator.ORDERED));
         assertFalse(actualResult.hasCharacteristics(Spliterator.ORDERED));
+        assertEquals(actualResult.characteristics(), expectedResult.characteristics());
     }
 
     public final void testUnorderedExceptions(BaseStream<?, ?> actual, BaseStream<?, ?> expected) {
