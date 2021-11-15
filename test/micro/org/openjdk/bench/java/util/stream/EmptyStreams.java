@@ -152,20 +152,6 @@ public class EmptyStreams {
                             .max(Integer::compare)
             );
 
-    private static OptionalInt addStreamFilters(Stream<String> stream) {
-        return stream
-                .filter(Objects::nonNull)
-                .filter(s -> s.length() > 0)
-                .mapToInt(Integer::parseInt)
-                .map(i -> i * 2)
-                .mapToLong(i -> i + 1000)
-                .mapToDouble(i -> i * 3.5)
-                .boxed()
-                .mapToLong(Double::intValue)
-                .mapToInt(d -> (int) d)
-                .max();
-    }
-
     @Benchmark
     public void mixOfCollectionsAndSizesAndStreams() {
         decorateStream(createStream());
