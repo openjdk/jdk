@@ -245,7 +245,7 @@ void mutex_init() {
   def(RawMonitor_lock              , PaddedMutex  , nosafepoint-1);
 
   def(Metaspace_lock               , PaddedMutex  , nosafepoint-3);
-  def(MetaspaceCritical_lock       , PaddedMonitor, nosafepoint-2, true);
+  def(MetaspaceCritical_lock       , PaddedMonitor, nosafepoint-1, true);
 
   def(Patching_lock                , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
   def(MonitorDeflation_lock        , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations
