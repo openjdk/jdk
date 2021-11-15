@@ -136,7 +136,6 @@ inline const FloatRegister as_FloatRegister(int encoding);
 class FloatRegisterImpl: public AbstractRegisterImpl {
   inline friend const FloatRegister as_FloatRegister(int encoding);
 
-private:
   static constexpr FloatRegister first();
   static constexpr FloatRegister invalid() { return first() + number_of_registers; }
 
@@ -243,7 +242,6 @@ const PRegister as_PRegister(int encoding);
 class PRegisterImpl: public AbstractRegisterImpl {
   friend const PRegister as_PRegister(int encoding);
 
-private:
   static constexpr PRegister first();
   static constexpr PRegister invalid() { return first() + number_of_registers; }
 
