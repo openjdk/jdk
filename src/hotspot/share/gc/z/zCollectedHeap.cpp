@@ -155,10 +155,10 @@ MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* lo
                                                              size_t size,
                                                              Metaspace::MetadataType mdtype) {
   // Start asynchronous GC
-  Universe::heap()->collect(GCCause::_metadata_GC_threshold);
+  collect(GCCause::_metadata_GC_threshold);
 
   // Expand and retry allocation
-  MetaWord* result = loader_data->metaspace_non_null()->expand_and_allocate(size, mdtype);
+  MetaWord* const result = loader_data->metaspace_non_null()->expand_and_allocate(size, mdtype);
   if (result != NULL) {
     return result;
   }
