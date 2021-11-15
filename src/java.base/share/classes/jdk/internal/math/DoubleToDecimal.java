@@ -42,7 +42,7 @@ final public class DoubleToDecimal {
      * For full details about this code see the following references:
      *
      * [1] Giulietti, "The Schubfach way to render doubles",
-     *     https://drive.google.com/open?id=1luHhyQF9zKlM8yJ1nebU0OgVYhfC6CBN
+     *     https://drive.google.com/file/d/1IEeATSVnEE6TkrHlCYNY2GjaraBjOT4f
      *
      * [2] IEEE Computer Society, "IEEE Standard for Floating-Point Arithmetic"
      *
@@ -71,14 +71,14 @@ final public class DoubleToDecimal {
     /* 10^(E_MAX - 1) <= MAX_VALUE < 10^E_MAX */
     static final int E_MAX = 309;
 
-    /* Threshold to detect tiny values, as in section 8.1.1 of [1] */
+    /* Threshold to detect tiny values, as in section 8.2.1 of [1] */
     static final long C_TINY = 3;
 
     /* The minimum and maximum k, as in section 8 of [1] */
     static final int K_MIN = -324;
     static final int K_MAX = 292;
 
-    /* H is as in section 8 of [1] */
+    /* H is as in section 8.1 of [1] */
     static final int H = 17;
 
     /* Minimum value of the significand of a normal value: 2^(P-1) */
@@ -332,7 +332,7 @@ final public class DoubleToDecimal {
                 /* normal value. Here mq = -q */
                 int mq = -Q_MIN + 1 - bq;
                 long c = C_MIN | t;
-                /* The fast path discussed in section 8.2 of [1] */
+                /* The fast path discussed in section 8.3 of [1] */
                 if (0 < mq & mq < P) {
                     long f = c >> mq;
                     if (f << mq == c) {
@@ -357,8 +357,8 @@ final public class DoubleToDecimal {
 
     private int toDecimal(int q, long c, int dk) {
         /*
-         * The skeleton corresponds to figure 4 of [1].
-         * The efficient computations are those summarized in figure 7.
+         * The skeleton corresponds to figure 7 of [1].
+         * The efficient computations are those summarized in figure 9.
          *
          * Here's a correspondence between Java names and names in [1],
          * expressed as approximate LaTeX source code and informally.
@@ -394,7 +394,7 @@ final public class DoubleToDecimal {
         }
         int h = q + flog2pow10(-k) + 2;
 
-        /* g1 and g0 are as in section 9.9.3 of [1], so g = g1 2^63 + g0 */
+        /* g1 and g0 are as in section 9.8.3 of [1], so g = g1 2^63 + g0 */
         long g1 = g1(k);
         long g0 = g0(k);
 
@@ -413,7 +413,7 @@ final public class DoubleToDecimal {
              * tp10 = 10 t'
              * upin    iff    u' = sp10 10^k in Rv
              * wpin    iff    w' = tp10 10^k in Rv
-             * See section 9.4 of [1].
+             * See section 9.3 of [1].
              */
             long sp10 = 10 * multiplyHigh(s, 115_292_150_460_684_698L << 4);
             long tp10 = sp10 + 10;
@@ -428,7 +428,7 @@ final public class DoubleToDecimal {
          * 10 <= s < 100    or    s >= 100  and  u', w' not in Rv
          * uin    iff    u = s 10^k in Rv
          * win    iff    w = t 10^k in Rv
-         * See section 9.4 of [1].
+         * See section 9.3 of [1].
          */
         long t = s + 1;
         boolean uin = vbl + out <= s << 2;
@@ -439,7 +439,7 @@ final public class DoubleToDecimal {
         }
         /*
          * Both u and w lie in Rv: determine the one closest to v.
-         * See section 9.4 of [1].
+         * See section 9.3 of [1].
          */
         long cmp = vb - (s + t << 1);
         return toChars(cmp < 0 || cmp == 0 && (s & 0x1) == 0 ? s : t, k + dk);
@@ -447,7 +447,7 @@ final public class DoubleToDecimal {
 
     /*
      * Computes rop(cp g 2^(-127)), where g = g1 2^63 + g0
-     * See section 9.10 and figure 5 of [1].
+     * See section 9.9 and figure 8 of [1].
      */
     private static long rop(long g1, long g0, long cp) {
         long x1 = multiplyHigh(g0, cp);

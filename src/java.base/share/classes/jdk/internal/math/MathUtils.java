@@ -37,7 +37,7 @@ final class MathUtils {
      * For full details about this code see the following reference:
      *
      *     Giulietti, "The Schubfach way to render doubles",
-     *     https://drive.google.com/open?id=1luHhyQF9zKlM8yJ1nebU0OgVYhfC6CBN
+     *     https://drive.google.com/file/d/1IEeATSVnEE6TkrHlCYNY2GjaraBjOT4f
      */
 
     /*
@@ -101,11 +101,11 @@ final class MathUtils {
      * 10<sup><i>k</i></sup> &le; 2<sup>{@code e}</sup>
      * &lt; 10<sup><i>k</i>+1</sup>.
      * <p>
-     * The result is correct when |{@code e}| &le; 5_456_721.
+     * The result is correct when |{@code e}| &le; 6_432_162.
      * Otherwise the result is undefined.
      *
      * @param e The exponent of 2, which should meet
-     *          |{@code e}| &le; 5_456_721 for safe results.
+     *          |{@code e}| &le; 6_432_162 for safe results.
      * @return &lfloor;log<sub>10</sub>2<sup>{@code e}</sup>&rfloor;.
      */
     static int flog10pow2(int e) {
@@ -118,11 +118,11 @@ final class MathUtils {
      * &lt; 10<sup><i>k</i>+1</sup>.
      * <p>
      * The result is correct when
-     * -2_956_395 &le; {@code e} &le; 2_500_325.
+     * -3_606_689 &le; {@code e} &le; 3_150_619.
      * Otherwise the result is undefined.
      *
      * @param e The exponent of 2, which should meet
-     *          -2_956_395 &le; {@code e} &le; 2_500_325 for safe results.
+     *          -3_606_689 &le; {@code e} &le; 3_150_619 for safe results.
      * @return &lfloor;log<sub>10</sub>(3/4 &middot;
      * 2<sup>{@code e}</sup>)&rfloor;.
      */
