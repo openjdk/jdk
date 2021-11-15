@@ -1289,24 +1289,7 @@ class PredecessorValidator : public BlockClosure {
 
     for (int i = 0; i < _blocks->length(); i++) {
       BlockBegin* block = _blocks->at(i);
-      BlockList* preds = _predecessors->at(block->block_id());
-      if (preds == NULL) {
-        assert(block->number_of_preds() == 0, "should be the same");
-        continue;
-      }
-      assert(preds->length() == block->number_of_preds(), "should be the same");
-
-      // clone the pred list so we can mutate it
-      BlockList* pred_copy = new BlockList();
-      for (int j = 0; j < block->number_of_preds(); j++) {
-        pred_copy->append(block->pred_at(j));
-      }
-      // sort them in the same order
-      preds->sort(cmp);
-      pred_copy->sort(cmp);
-      for (int j = 0; j < block->number_of_preds(); j++) {
-        assert(preds->at(j) == pred_copy->at(j), "must match");
-      }
+      verify_block_preds_against_collected_preds(block);
     }
   }
 
@@ -1337,6 +1320,28 @@ class PredecessorValidator : public BlockClosure {
         _predecessors->at_put(sux->block_id(), preds);
       }
       preds->append(block);
+    }
+  }
+
+ private:
+  void verify_block_preds_against_collected_preds(const BlockBegin *block) const {
+    BlockList* preds = _predecessors->at(block->block_id());
+    if (preds == NULL) {
+      assert(block->number_of_preds() == 0, "should be the same");
+      return;
+    }
+    assert(preds->length() == block->number_of_preds(), "should be the same");
+
+    // clone the pred list so we can mutate it
+    BlockList* pred_copy = new BlockList();
+    for (int j = 0; j < block->number_of_preds(); j++) {
+      pred_copy->append(block->pred_at(j));
+    }
+    // sort them in the same order
+    preds->sort(cmp);
+    pred_copy->sort(cmp);
+    for (int j = 0; j < block->number_of_preds(); j++) {
+      assert(preds->at(j) == pred_copy->at(j), "must match");
     }
   }
 };
