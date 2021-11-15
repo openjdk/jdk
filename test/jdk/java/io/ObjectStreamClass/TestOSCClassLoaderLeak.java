@@ -37,71 +37,71 @@ import java.util.Arrays;
  */
 public class TestOSCClassLoaderLeak {
 
-	public static void main(String[] args) throws Exception {
-		TestClassLoader myOwnClassLoader = new TestClassLoader();
-		Class<?> loadClass = myOwnClassLoader.loadClass("ObjectStreamClass_MemoryLeakExample");
+    public static void main(String[] args) throws Exception {
+        TestClassLoader myOwnClassLoader = new TestClassLoader();
+        Class<?> loadClass = myOwnClassLoader.loadClass("ObjectStreamClass_MemoryLeakExample");
         Constructor con = loadClass.getConstructor();
         con.setAccessible(true);
-		Object objectStreamClass_MemoryLeakExample = con.newInstance();
-		objectStreamClass_MemoryLeakExample.toString();
+        Object objectStreamClass_MemoryLeakExample = con.newInstance();
+        objectStreamClass_MemoryLeakExample.toString();
 
-		WeakReference<Object> myOwnClassLoaderWeakReference = new WeakReference<>(myOwnClassLoader);
-		assert myOwnClassLoaderWeakReference.get() != null;
-		objectStreamClass_MemoryLeakExample = null;
-		myOwnClassLoader = null;
-		loadClass = null;
-		con = null;
-		assert myOwnClassLoaderWeakReference.get() != null;
+        WeakReference<Object> myOwnClassLoaderWeakReference = new WeakReference<>(myOwnClassLoader);
+        assert myOwnClassLoaderWeakReference.get() != null;
+        objectStreamClass_MemoryLeakExample = null;
+        myOwnClassLoader = null;
+        loadClass = null;
+        con = null;
+        assert myOwnClassLoaderWeakReference.get() != null;
 
-		gc();
+        gc();
 
-		assert myOwnClassLoaderWeakReference.get() == null;
+        assert myOwnClassLoaderWeakReference.get() == null;
 
-	}
+    }
 
-	private static void gc() {
-		System.runFinalization();
-		System.gc();
-	}
+    private static void gc() {
+        System.runFinalization();
+        System.gc();
+    }
 }
 
 class ObjectStreamClass_MemoryLeakExample {
-	private static final ObjectStreamField[] fields = ObjectStreamClass.lookup(TestClass.class).getFields();
-	public ObjectStreamClass_MemoryLeakExample() {
-	}
+    private static final ObjectStreamField[] fields = ObjectStreamClass.lookup(TestClass.class).getFields();
+    public ObjectStreamClass_MemoryLeakExample() {
+    }
 
-	@Override
-	public String toString() {
-		return Arrays.toString(fields);
-	}
+    @Override
+    public String toString() {
+        return Arrays.toString(fields);
+    }
 }
 
 class TestClassLoader extends ClassLoader {
 
-	@Override
-	public Class<?> loadClass(String name) throws ClassNotFoundException {
-		if (name.equals("TestClass") || name.equals("ObjectStreamClass_MemoryLeakExample")) {
-			byte[] bt = loadClassData(name);
-			return defineClass(name, bt, 0, bt.length);
-		} else {
-			return super.loadClass(name);
-		}
-	}
+    @Override
+    public Class<?> loadClass(String name) throws ClassNotFoundException {
+        if (name.equals("TestClass") || name.equals("ObjectStreamClass_MemoryLeakExample")) {
+            byte[] bt = loadClassData(name);
+            return defineClass(name, bt, 0, bt.length);
+        } else {
+            return super.loadClass(name);
+        }
+    }
 
-	private static byte[] loadClassData(String className) {
-		ByteArrayOutputStream byteSt = new ByteArrayOutputStream();
-		try (InputStream is = TestClassLoader.class.getClassLoader().getResourceAsStream(className.replace(".", "/") + ".class")) {
-			int len = 0;
-			while ((len = is.read()) != -1) {
-				byteSt.write(len);
-			}
-		} catch (java.io.IOException e) {
-			e.printStackTrace();
-		}
-		return byteSt.toByteArray();
-	}
+    private static byte[] loadClassData(String className) {
+        ByteArrayOutputStream byteSt = new ByteArrayOutputStream();
+        try (InputStream is = TestClassLoader.class.getClassLoader().getResourceAsStream(className.replace(".", "/") + ".class")) {
+            int len = 0;
+            while ((len = is.read()) != -1) {
+                byteSt.write(len);
+            }
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+        return byteSt.toByteArray();
+    }
 }
 
 class TestClass implements Serializable {
-	public String x;
+    public String x;
 }
