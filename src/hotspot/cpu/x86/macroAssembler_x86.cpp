@@ -4786,8 +4786,6 @@ void MacroAssembler::encode_and_move_klass_not_null(Register dst, Register src) 
   }
 }
 
-// !!! If the instructions that get generated here change then function
-// instr_size_for_decode_klass_not_null() needs to get updated.
 void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
   assert_different_registers(r, tmp);
   // Note: it will change flags
