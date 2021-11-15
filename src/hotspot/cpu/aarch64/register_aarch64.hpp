@@ -43,7 +43,7 @@ class RegisterImpl: public AbstractRegisterImpl {
 
 private:
   static constexpr Register first();
-  static constexpr Register invalid() { return first() + number_of_declared_registers; }
+  static constexpr Register invalid() { return first() + number_of_registers; }
 
 public:
   enum {
@@ -67,7 +67,7 @@ public:
 };
 
 
-REGISTER_IMPL_DECLARATION(Register, RegisterImpl);
+REGISTER_IMPL_DECLARATION(Register, RegisterImpl, RegisterImpl::number_of_declared_registers);
 
 // The integer registers of the aarch64 architecture
 
@@ -139,12 +139,11 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
 
 private:
   static constexpr FloatRegister first();
-  static constexpr FloatRegister invalid() { return first() + number_of_declared_registers; }
+  static constexpr FloatRegister invalid() { return first() + number_of_registers; }
 
 public:
   enum {
     number_of_registers = 32,
-    number_of_declared_registers = 32,
     max_slots_per_register = 8,
     save_slots_per_register = 2,
     slots_per_neon_register = 4,
@@ -163,12 +162,12 @@ public:
   int encoding_nocheck() const    { return this - first(); }
 };
 
-REGISTER_IMPL_DECLARATION(FloatRegister, FloatRegisterImpl);
+REGISTER_IMPL_DECLARATION(FloatRegister, FloatRegisterImpl, FloatRegisterImpl::number_of_registers);
 
 
 // The float registers of the AARCH64 architecture
 
-CONSTANT_REGISTER_DECLARATION(FloatRegister, fnoreg , (FloatRegisterImpl::number_of_declared_registers));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, fnoreg , (FloatRegisterImpl::number_of_registers));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, v0     , ( 0));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, v1     , ( 1));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, v2     , ( 2));
@@ -247,12 +246,11 @@ class PRegisterImpl: public AbstractRegisterImpl {
 
 private:
   static constexpr PRegister first();
-  static constexpr PRegister invalid() { return first() + number_of_declared_registers; }
+  static constexpr PRegister invalid() { return first() + number_of_registers; }
 
  public:
   enum {
     number_of_registers = 16,
-    number_of_declared_registers = 16,
     number_of_governing_registers = 8,
     max_slots_per_register = 1
   };
@@ -271,7 +269,7 @@ private:
 };
 
 
-REGISTER_IMPL_DECLARATION(PRegister, PRegisterImpl);
+REGISTER_IMPL_DECLARATION(PRegister, PRegisterImpl, PRegisterImpl::number_of_registers);
 
 // The predicate registers of SVE.
 CONSTANT_REGISTER_DECLARATION(PRegister, p0,  ( 0));
