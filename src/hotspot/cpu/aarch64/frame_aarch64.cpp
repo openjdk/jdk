@@ -134,7 +134,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       sender_sp = (intptr_t*) addr_at(sender_sp_offset);
       sender_unextended_sp = (intptr_t*) this->fp()[interpreter_frame_sender_sp_offset];
       saved_fp = (intptr_t*) this->fp()[link_offset];
-      sender_pc = pauth_authenticate_or_strip_return_address((address) this->fp()[return_addr_offset], (address)saved_fp);
+      sender_pc = pauth_strip_verifiable((address) this->fp()[return_addr_offset], (address)saved_fp);
 
     } else {
       // must be some sort of compiled/runtime frame
@@ -153,7 +153,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       sender_unextended_sp = sender_sp;
       // Note: frame::sender_sp_offset is only valid for compiled frame
       saved_fp = (intptr_t*) *(sender_sp - frame::sender_sp_offset);
-      sender_pc = pauth_authenticate_or_strip_return_address((address) *(sender_sp-1), (address)saved_fp);
+      sender_pc = pauth_strip_verifiable((address) *(sender_sp-1), (address)saved_fp);
     }
 
 
@@ -277,7 +277,7 @@ void frame::patch_pc(Thread* thread, address pc) {
 
   // Either the return address is the original one or we are going to
   // patch in the same address that's already there.
-  address pc_old = pauth_authenticate_or_strip_return_address(*pc_addr, (address)signing_sp);
+  address pc_old = pauth_strip_verifiable(*pc_addr, (address)signing_sp);
   assert(_pc == pc_old || pc == pc_old, "must be");
   *pc_addr = signed_pc;
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
@@ -456,7 +456,7 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 #endif // COMPILER2_OR_JVMCI
 
   // For ROP protection, Interpreter will have signed the sender_pc, but there is no requirement to authenticate it here.
-  address sender_pc = pauth_authenticate_or_strip_return_address(sender_pc_maybe_signed(), (address)link());
+  address sender_pc = pauth_strip_verifiable(sender_pc_maybe_signed(), (address)link());
 
   return frame(sender_sp, unextended_sp, link(), sender_pc);
 }
@@ -475,7 +475,7 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   // the return_address is always the word on the stack
 
   // For ROP protection, C1/C2 will have signed the sender_pc, but there is no requirement to authenticate it here.
-  address sender_pc = pauth_authenticate_or_strip_return_address((address) *(l_sender_sp-1), (address) *(l_sender_sp-2));
+  address sender_pc = pauth_strip_verifiable((address) *(l_sender_sp-1), (address) *(l_sender_sp-2));
 
   intptr_t** saved_fp_addr = (intptr_t**) (l_sender_sp - frame::sender_sp_offset);
 

@@ -70,10 +70,10 @@ inline bool pauth_ptr_is_raw(address ptr) {
   return ptr == pauth_strip_pointer(ptr);
 }
 
-// Authenticate or strip a return value. Use for efficiency and only when the safety of the data
-// isn't an issue - for example when viewing the stack.
+// Strip a return value (same as pauth_strip_pointer). When debug is enabled then authenticate
+// instead.
 //
-inline address pauth_authenticate_or_strip_return_address(address ret_addr, address modifier) {
+inline address pauth_strip_verifiable(address ret_addr, address modifier) {
   if (UseROPProtection) {
     DEBUG_ONLY(ret_addr = pauth_authenticate_return_address(ret_addr, modifier);)
     NOT_DEBUG(ret_addr = pauth_strip_pointer(ret_addr));
