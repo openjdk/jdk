@@ -34,7 +34,10 @@ import java.util.function.BinaryOperator;
 /**
  * This is a simple test class created to ensure that the results
  * of multiply() are the same as multiplyParallel(). We calculate
- * the Fibonacci numbers using
+ * the Fibonacci numbers using Dijkstra's sum of squares to get
+ * very large numbers (hundreds of thousands of bits).
+ *
+ * @author Heinz Kabutz, heinz@javaspecialists.eu
  */
 public class BigIntegerParallelMultiplyTest {
     public static BigInteger fibonacci(int n, BinaryOperator<BigInteger> multiplyOperator) {

@@ -16,9 +16,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BinaryOperator;
 
 /**
- * Benchmark for checking that the new empty stream
- * implementations are faster than the old way of creating
- * empty streams from empty spliterators.
+ * Benchmark for checking performance difference between
+ * sequential and parallel multiply methods in BigInteger,
+ * using a large Fibonacci calculation of up to n = 100 million.
  *
  * @author Heinz Kabutz, heinz@javaspecialists.eu
  */
