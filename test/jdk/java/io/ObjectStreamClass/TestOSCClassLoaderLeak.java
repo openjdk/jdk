@@ -29,15 +29,19 @@ import java.io.ObjectStreamClass;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
 import java.util.Arrays;
+import org.testng.annotations.Test;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 
 /* @test
  * @bug 8277072
  * @summary ObjectStreamClass caches keep ClassLoaders alive
- * @run main/othervm -XX:+UseParallelGC TestOSCClassLoaderLeak
+ * @run testng TestOSCClassLoaderLeak
  */
 public class TestOSCClassLoaderLeak {
 
-    public static void main(String[] args) throws Exception {
+    @Test
+    public void run() throws Exception {
         TestClassLoader myOwnClassLoader = new TestClassLoader();
         Class<?> loadClass = myOwnClassLoader.loadClass("ObjectStreamClass_MemoryLeakExample");
         Constructor con = loadClass.getConstructor();
@@ -46,16 +50,16 @@ public class TestOSCClassLoaderLeak {
         objectStreamClass_MemoryLeakExample.toString();
 
         WeakReference<Object> myOwnClassLoaderWeakReference = new WeakReference<>(myOwnClassLoader);
-        assert myOwnClassLoaderWeakReference.get() != null;
+        assertNotNull(myOwnClassLoaderWeakReference.get());
         objectStreamClass_MemoryLeakExample = null;
         myOwnClassLoader = null;
         loadClass = null;
         con = null;
-        assert myOwnClassLoaderWeakReference.get() != null;
+        assertNotNull(myOwnClassLoaderWeakReference.get());
 
         gc();
 
-        assert myOwnClassLoaderWeakReference.get() == null;
+        assertNull(myOwnClassLoaderWeakReference.get());
 
     }
 
