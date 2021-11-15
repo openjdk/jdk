@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.io.Serializable;
+
 public class InnerClasses {
 
     public Class<?> localCapturesParameter(final int x) {
@@ -102,5 +104,27 @@ public class InnerClasses {
                 }
             }
         }
+    }
+
+    class SerializableCapture implements Serializable {
+      void f() {
+        System.err.println(InnerClasses.this);
+      }
+    }
+
+    class SerializableWithSerialVersionUID implements Serializable {
+      private static final long serialVersionUID = 0;
+    }
+
+    class SerializableWithInvalidSerialVersionUIDType implements Serializable {
+      private static final int serialVersionUID = 0;
+    }
+
+    class SerializableWithInvalidSerialVersionUIDNonFinal implements Serializable {
+      private static long serialVersionUID = 0;
+    }
+
+    class SerializableWithInvalidSerialVersionUIDNonStatic implements Serializable {
+      private final long serialVersionUID = 0;
     }
 }

@@ -2243,8 +2243,7 @@ public class Lower extends TreeTranslator {
         }
         // If this$n was accessed, add the field definition and
         // update initial constructors to initialize it
-        if (currentClass.hasOuterInstance()
-            && (((outerThisStack.head.flags_field & NOOUTERTHIS) == 0) || !optimizeOuterThis)) {
+        if (currentClass.hasOuterInstance() && shouldEmitOuterThis(currentClass)) {
             tree.defs = tree.defs.prepend(otdef);
             enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
 
@@ -2270,6 +2269,39 @@ public class Lower extends TreeTranslator {
 
         // Return empty block {} as a placeholder for an inner class.
         result = make_at(tree.pos()).Block(SYNTHETIC, List.nil());
+    }
+
+    private boolean shouldEmitOuterThis(ClassSymbol sym) {
+      if (!optimizeOuterThis) {
+        // Optimization is disabled
+        return true;
+      }
+      if ((outerThisStack.head.flags_field & NOOUTERTHIS) == 0)  {
+        // Enclosing instance field is used
+        return true;
+      }
+      if (rs.isSerializable(sym.type) && !hasSerialVersionUID(sym)) {
+        // Class is serializable and does not have a stable serialVersionUID
+        return true;
+      }
+      return false;
+    }
+
+    private boolean hasSerialVersionUID(ClassSymbol sym) {
+      VarSymbol svuid = (VarSymbol) sym.members().findFirst(names.serialVersionUID, f -> f.kind == VAR);
+      if (svuid == null) {
+        return false;
+      }
+      if ((svuid.flags() & (STATIC | FINAL)) != (STATIC | FINAL)) {
+        return false;
+      }
+      if (!svuid.type.hasTag(LONG)) {
+        return false;
+      }
+      if (svuid.getConstValue() == null) {
+        return false;
+      }
+      return true;
     }
 
     List<JCTree> generateMandatedAccessors(JCClassDecl tree) {

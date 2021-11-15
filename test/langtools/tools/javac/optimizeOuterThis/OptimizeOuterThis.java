@@ -62,6 +62,12 @@ public class OptimizeOuterThis extends InnerClasses {
         checkInner(N0.N1.N2.N3.class, true);
         checkInner(N0.N1.N2.N3.N4.class, false);
         checkInner(N0.N1.N2.N3.N4.N5.class, false);
+
+        checkInner(SerializableCapture.class, true);
+        checkInner(SerializableWithSerialVersionUID.class, false);
+        checkInner(SerializableWithInvalidSerialVersionUIDType.class, true);
+        checkInner(SerializableWithInvalidSerialVersionUIDNonFinal.class, true);
+        checkInner(SerializableWithInvalidSerialVersionUIDNonStatic.class, true);
     }
 
     private static void checkInner(Class<?> clazz, boolean expectOuterThis) {
@@ -76,7 +82,7 @@ public class OptimizeOuterThis extends InnerClasses {
         } else {
             if (outerThis.isPresent()) {
                 throw new AssertionError(
-                        String.format("%s had an unexpected enclosing instance", clazz.getName()));
+                        String.format("%s had an unexpected enclosing instance %s", clazz.getName(), outerThis.get()));
             }
         }
     }

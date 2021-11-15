@@ -57,6 +57,12 @@ public class DontOptimizeOuterThis extends InnerClasses {
         checkInner(N0.N1.N2.N3.class, true);
         checkInner(N0.N1.N2.N3.N4.class, true);
         checkInner(N0.N1.N2.N3.N4.N5.class, true);
+
+        checkInner(SerializableCapture.class, true);
+        checkInner(SerializableWithSerialVersionUID.class, true);
+        checkInner(SerializableWithInvalidSerialVersionUIDType.class, true);
+        checkInner(SerializableWithInvalidSerialVersionUIDNonFinal.class, true);
+        checkInner(SerializableWithInvalidSerialVersionUIDNonStatic.class, true);
     }
 
     private static void checkInner(Class<?> clazz, boolean expectOuterThis) {
