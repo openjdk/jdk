@@ -156,6 +156,7 @@ Mutex*   Bootclasspath_lock           = NULL;
 Monitor* JVMCI_lock                   = NULL;
 #endif
 
+Mutex* CpCacheIndy_lock               = NULL;
 
 #define MAX_NUM_MUTEX 128
 static Mutex* _mutex_array[MAX_NUM_MUTEX];
@@ -333,6 +334,7 @@ void mutex_init() {
 #endif // INCLUDE_CDS
   def(Bootclasspath_lock           , PaddedMutex  , nosafepoint);
   def(Zip_lock                     , PaddedMonitor, nosafepoint-1); // Holds DumpTimeTable_lock
+  def(CpCacheIndy_lock             , PaddedMutex  , safepoint);
 
 #if INCLUDE_JVMCI
   def(JVMCI_lock                   , PaddedMonitor, safepoint, true);

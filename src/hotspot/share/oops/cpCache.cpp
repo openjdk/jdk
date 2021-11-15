@@ -380,7 +380,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // or MethodType constant pool cache entries.
   assert(resolved_references() != NULL,
          "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, current);
+  MutexLocker ml(current, CpCacheIndy_lock);
   if (!is_f1_null()) {
     return;
   }
@@ -399,7 +399,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
     guarantee(index >= 0, "Didn't find cpCache entry!");
     int encoded_index = ResolutionErrorTable::encode_cpcache_index(
                           ConstantPool::encode_invokedynamic_index(index));
-    JavaThread* THREAD = JavaThread::current(); // For exception macros.
+    JavaThread* THREAD = current;
     ConstantPool::throw_resolution_error(cpool, encoded_index, THREAD);
     return;
   }
@@ -486,7 +486,7 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   objArrayHandle resolved_references(current, cpool->resolved_references());
   assert(resolved_references() != NULL,
          "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, current);
+  MutexLocker ml(current, CpCacheIndy_lock);
 
   // if f1 is not null or the indy_resolution_failed flag is set then another
   // thread either succeeded in resolving the method or got a LinkageError
