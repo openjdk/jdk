@@ -178,7 +178,7 @@ HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
         // Otherwise, it is possible that the object starting on the dirty
         // card spans the entire card, and that the store happened on a
         // later card.  Figure out where the object ends.
-        assert(_sp->block_size(top_obj) == (size_t) cast_to_oop(top_obj)->size(),
+        assert(_sp->block_size(top_obj) == cast_to_oop(top_obj)->size(),
           "Block size and object size mismatch");
         top = top_obj + cast_to_oop(top_obj)->size();
       }
@@ -364,7 +364,7 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
     }
     compact_top = cp->space->bottom();
     cp->space->set_compaction_top(compact_top);
-    cp->threshold = cp->space->initialize_threshold();
+    cp->space->initialize_threshold();
     compaction_max_size = pointer_delta(cp->space->end(), compact_top);
   }
 
@@ -381,12 +381,10 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
 
   compact_top += size;
 
-  // we need to update the offset table so that the beginnings of objects can be
+  // We need to update the offset table so that the beginnings of objects can be
   // found during scavenge.  Note that we are updating the offset table based on
   // where the object will be once the compaction phase finishes.
-  if (compact_top > cp->threshold)
-    cp->threshold =
-      cp->space->cross_threshold(compact_top - size, compact_top);
+  cp->space->alloc_block(compact_top - size, compact_top);
   return compact_top;
 }
 
@@ -402,10 +400,9 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
 
   if (cp->space == NULL) {
     assert(cp->gen != NULL, "need a generation");
-    assert(cp->threshold == NULL, "just checking");
     assert(cp->gen->first_compaction_space() == this, "just checking");
     cp->space = cp->gen->first_compaction_space();
-    cp->threshold = cp->space->initialize_threshold();
+    cp->space->initialize_threshold();
     cp->space->set_compaction_top(cp->space->bottom());
   }
 
@@ -765,20 +762,18 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
   }
 }
 
-HeapWord* OffsetTableContigSpace::initialize_threshold() {
-  return _offsets.initialize_threshold();
+void OffsetTableContigSpace::initialize_threshold() {
+  _offsets.initialize_threshold();
 }
 
-HeapWord* OffsetTableContigSpace::cross_threshold(HeapWord* start, HeapWord* end) {
+void OffsetTableContigSpace::alloc_block(HeapWord* start, HeapWord* end) {
   _offsets.alloc_block(start, end);
-  return _offsets.threshold();
 }
 
 OffsetTableContigSpace::OffsetTableContigSpace(BlockOffsetSharedArray* sharedOffsetArray,
                                                MemRegion mr) :
   _offsets(sharedOffsetArray, mr),
-  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock",
-                  Mutex::_safepoint_check_always, true)
+  _par_alloc_lock(Mutex::safepoint, "OffsetTableContigSpaceParAlloc_lock", true)
 {
   _offsets.set_contig_space(this);
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);

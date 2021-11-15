@@ -412,7 +412,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     ="element-name">m1</span><wbr><span class="parameters">(java.lang.Class&lt;? ext\
                     ends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -437,7 +437,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     ="element-name">m1</span><wbr><span class="parameters">(java.lang.Class&lt;? ext\
                     ends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -460,7 +460,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     /span>&nbsp;<span class="element-name">m1</span><wbr><span class="parameters">(j\
                     ava.lang.Class&lt;? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -484,7 +484,7 @@ public class TestOverrideMethods  extends JavadocTester {
                      <a href="A.html" title="annotation interface in pkg7">@A</a> java.lang.Class&lt\
                     ;? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -507,7 +507,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     ass="parameters">(java.lang.Class&lt;<a href="A.html" title="annotation interfac\
                     e in pkg7">@A</a> ? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -530,7 +530,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     ass="parameters">(java.lang.Class&lt;? extends <a href="A.html" title="annotatio\
                     n interface in pkg7">@A</a> java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -553,7 +553,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     ass="parameters">(java.lang.Class&lt;? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int <a href="A.html" title="annotation interface in pkg7">@A</a> []&nbsp;p2)</s\
                     pan></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>

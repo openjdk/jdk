@@ -493,6 +493,11 @@ void ZDriver::run_service() {
     // Run GC
     gc(request);
 
+    if (should_terminate()) {
+      // Abort
+      break;
+    }
+
     // Notify GC completed
     _gc_cycle_port.ack();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,6 +277,10 @@ public abstract class BaseCalendar extends AbstractCalendar {
             long xm = 1L - month;
             year -= (int)((xm / 12) + 1);
             month = 13 - (xm % 12);
+            if (month == 13) {
+                year++;
+                month = 1;
+            }
             bdate.setNormalizedYear(year);
             bdate.setMonth((int) month);
         } else if (month > DECEMBER) {

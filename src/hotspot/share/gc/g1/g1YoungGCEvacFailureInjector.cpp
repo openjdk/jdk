@@ -28,7 +28,7 @@
 #include "gc/g1/g1YoungGCEvacFailureInjector.inline.hpp"
 #include "gc/g1/g1_globals.hpp"
 
-#ifndef PRODUCT
+#if EVAC_FAILURE_INJECTOR
 
 bool G1YoungGCEvacFailureInjector::arm_if_needed_for_gc_type(bool for_young_gc,
                                                              bool during_concurrent_start,
@@ -72,11 +72,8 @@ void G1YoungGCEvacFailureInjector::arm_if_needed() {
 }
 
 void G1YoungGCEvacFailureInjector::reset() {
-  if (G1EvacuationFailureALot) {
-    _last_collection_with_evacuation_failure = G1CollectedHeap::heap()->total_collections();
-    _evacuation_failure_object_count = 0;
-    _inject_evacuation_failure_for_current_gc = false;
-  }
+  _last_collection_with_evacuation_failure = G1CollectedHeap::heap()->total_collections();
+  _inject_evacuation_failure_for_current_gc = false;
 }
 
-#endif // #ifndef PRODUCT
+#endif // #if EVAC_FAILURE_INJECTOR

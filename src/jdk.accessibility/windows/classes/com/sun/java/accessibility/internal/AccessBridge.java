@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Note: This class has to be public.  It's loaded from the VM like this:
  *       Class.forName(atName).newInstance();
  */
-final public class AccessBridge {
+public final class AccessBridge {
 
     private static AccessBridge theAccessBridge;
     private ObjectReferences references;
@@ -314,15 +314,15 @@ final public class AccessBridge {
     }
 
     // hash table of native window handle to AccessibleContext mappings
-    static private ConcurrentHashMap<Integer,AccessibleContext> windowHandleToContextMap = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Integer,AccessibleContext> windowHandleToContextMap = new ConcurrentHashMap<>();
 
     // hash table of AccessibleContext to native window handle mappings
-    static private ConcurrentHashMap<AccessibleContext,Integer> contextToWindowHandleMap = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<AccessibleContext,Integer> contextToWindowHandleMap = new ConcurrentHashMap<>();
 
     /*
      * adds a virtual window handler to our hash tables
      */
-    static private void registerVirtualFrame(final Accessible a,
+    private static void registerVirtualFrame(final Accessible a,
                                              Integer nativeWindowHandle ) {
         if (a != null) {
             AccessibleContext ac = InvocationUtils.invokeAndWait(new Callable<AccessibleContext>() {
@@ -339,7 +339,7 @@ final public class AccessBridge {
     /*
      * removes a virtual window handler to our hash tables
      */
-    static private void revokeVirtualFrame(final Accessible a,
+    private static void revokeVirtualFrame(final Accessible a,
                                            Integer nativeWindowHandle ) {
         AccessibleContext ac = InvocationUtils.invokeAndWait(new Callable<AccessibleContext>() {
             @Override
@@ -5240,7 +5240,7 @@ final public class AccessBridge {
                     accessBridge.debugString("[INFO]: AccessibleContext: " + ac);
                     String propertyName = e.getPropertyName();
 
-                    if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_CARET_PROPERTY) == 0) {
+                    if (propertyName.equals(AccessibleContext.ACCESSIBLE_CARET_PROPERTY)) {
                         int oldValue = 0;
                         int newValue = 0;
 
@@ -5253,7 +5253,7 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyCaretChange()   old value: " + oldValue + "new value: " + newValue);
                         accessBridge.propertyCaretChange(e, ac, oldValue, newValue);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY)) {
                         String oldValue = null;
                         String newValue = null;
 
@@ -5266,7 +5266,7 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyDescriptionChange()   old value: " + oldValue + "new value: " + newValue);
                         accessBridge.propertyDescriptionChange(e, ac, oldValue, newValue);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_NAME_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_NAME_PROPERTY)) {
                         String oldValue = null;
                         String newValue = null;
 
@@ -5279,12 +5279,12 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyNameChange()   old value: " + oldValue + " new value: " + newValue);
                         accessBridge.propertyNameChange(e, ac, oldValue, newValue);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_SELECTION_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_SELECTION_PROPERTY)) {
                         accessBridge.debugString("[INFO]:  - about to call propertySelectionChange() " + ac +  "   " + Thread.currentThread() + "   " + e.getSource());
 
                         accessBridge.propertySelectionChange(e, ac);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_STATE_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_STATE_PROPERTY)) {
                         String oldValue = null;
                         String newValue = null;
 
@@ -5301,11 +5301,11 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyStateChange()");
                         accessBridge.propertyStateChange(e, ac, oldValue, newValue);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_TEXT_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_TEXT_PROPERTY)) {
                         accessBridge.debugString("[INFO]:  - about to call propertyTextChange()");
                         accessBridge.propertyTextChange(e, ac);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_VALUE_PROPERTY) == 0) {  // strings 'cause of floating point, etc.
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_VALUE_PROPERTY)) {  // strings 'cause of floating point, etc.
                         String oldValue = null;
                         String newValue = null;
 
@@ -5318,10 +5318,10 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyDescriptionChange()");
                         accessBridge.propertyValueChange(e, ac, oldValue, newValue);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_VISIBLE_DATA_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_VISIBLE_DATA_PROPERTY)) {
                         accessBridge.propertyVisibleDataChange(e, ac);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_CHILD_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_CHILD_PROPERTY)) {
                         AccessibleContext oldAC = null;
                         AccessibleContext newAC = null;
                         Accessible a;
@@ -5337,7 +5337,7 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyChildChange()   old AC: " + oldAC + "new AC: " + newAC);
                         accessBridge.propertyChildChange(e, ac, oldAC, newAC);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY)) {
                         handleActiveDescendentEvent(e, ac);
                     }
                 }

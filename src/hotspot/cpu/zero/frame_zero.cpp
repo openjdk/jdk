@@ -396,5 +396,4 @@ frame::frame(void* sp, void* fp, void* pc) {
   Unimplemented();
 }
 
-void frame::pd_ps() {}
 #endif

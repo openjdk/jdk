@@ -85,7 +85,7 @@ jint ParallelScavengeHeap::initialize() {
   ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
 
-  // Set up WorkGang
+  // Set up WorkerThreads
   _workers.initialize_workers();
 
   // Create and initialize the generations.

@@ -975,4 +975,5 @@ appendBootClassPath( JPLISAgent* agent,
     if (haveBasePath && parent != canonicalPath) {
         free(parent);
     }
+    free(paths);
 }

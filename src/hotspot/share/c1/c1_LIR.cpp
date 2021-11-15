@@ -46,6 +46,7 @@ Register LIR_OprDesc::as_register_hi() const {
 }
 
 LIR_Opr LIR_OprFact::illegalOpr = LIR_OprFact::illegal();
+LIR_Opr LIR_OprFact::nullOpr = LIR_Opr();
 
 LIR_Opr LIR_OprFact::value_type(ValueType* type) {
   ValueTag tag = type->tag();

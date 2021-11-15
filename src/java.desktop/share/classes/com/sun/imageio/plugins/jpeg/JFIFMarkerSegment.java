@@ -41,7 +41,6 @@ import java.awt.image.WritableRaster;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.imageio.IIOException;
@@ -159,9 +158,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         JFIFMarkerSegment newGuy = (JFIFMarkerSegment) super.clone();
         if (!extSegments.isEmpty()) { // Clone the list with a deep copy
             newGuy.extSegments = new ArrayList<>();
-            for (Iterator<JFIFExtensionMarkerSegment> iter =
-                    extSegments.iterator(); iter.hasNext();) {
-                JFIFExtensionMarkerSegment jfxx = iter.next();
+            for (JFIFExtensionMarkerSegment jfxx : extSegments) {
                 newGuy.extSegments.add((JFIFExtensionMarkerSegment) jfxx.clone());
             }
         }
@@ -231,9 +228,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         if (!extSegments.isEmpty()) {
             IIOMetadataNode JFXXnode = new IIOMetadataNode("JFXX");
             node.appendChild(JFXXnode);
-            for (Iterator<JFIFExtensionMarkerSegment> iter =
-                    extSegments.iterator(); iter.hasNext();) {
-                JFIFExtensionMarkerSegment seg = iter.next();
+            for (JFIFExtensionMarkerSegment seg : extSegments) {
                 JFXXnode.appendChild(seg.getNativeNode());
             }
         }
@@ -622,8 +617,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         printTag("JFIF");
         System.out.print("Version ");
         System.out.print(majorVersion);
-        System.out.println(".0"
-                           + Integer.toString(minorVersion));
+        System.out.println(".0" + minorVersion);
         System.out.print("Resolution units: ");
         System.out.println(resUnits);
         System.out.print("X density: ");
@@ -635,9 +629,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         System.out.print("Thumbnail Height: ");
         System.out.println(thumbHeight);
         if (!extSegments.isEmpty()) {
-            for (Iterator<JFIFExtensionMarkerSegment> iter =
-                    extSegments.iterator(); iter.hasNext();) {
-                JFIFExtensionMarkerSegment extSegment = iter.next();
+            for (JFIFExtensionMarkerSegment extSegment : extSegments) {
                 extSegment.print();
             }
         }

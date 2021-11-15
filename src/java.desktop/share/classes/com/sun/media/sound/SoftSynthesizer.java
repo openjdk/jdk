@@ -76,7 +76,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
         public SoftAudioPusher pusher = null;
         public AudioInputStream jitter_stream = null;
         public SourceDataLine sourceDataLine = null;
-        public volatile long silent_samples = 0;
+        public volatile long silent_samples;
         private int framesize = 0;
         private final WeakReference<AudioInputStream> weak_stream_link;
         private final AudioFloatConverter converter;
@@ -289,12 +289,11 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                     c.current_instrument = null;
                     c.current_director = null;
                 }
-            for (Instrument instrument : instruments) {
+            for (ModelInstrument instrument : instruments) {
                 String pat = patchToString(instrument.getPatch());
-                SoftInstrument softins
-                        = new SoftInstrument((ModelInstrument) instrument);
+                SoftInstrument softins = new SoftInstrument(instrument);
                 inslist.put(pat, softins);
-                loadedlist.put(pat, (ModelInstrument) instrument);
+                loadedlist.put(pat, instrument);
             }
         }
 

@@ -2108,8 +2108,12 @@ void PhaseOutput::ScheduleAndBundle() {
     return;
 
   // Scheduling code works only with pairs (8 bytes) maximum.
-  if (C->max_vector_size() > 8)
+  // And when the scalable vector register is used, we may spill/unspill
+  // the whole reg regardless of the max vector size.
+  if (C->max_vector_size() > 8 ||
+      (C->max_vector_size() > 0 && Matcher::supports_scalable_vector())) {
     return;
+  }
 
   Compile::TracePhase tp("isched", &timers[_t_instrSched]);
 
@@ -2910,6 +2914,16 @@ static void add_prec_edge_from_to( Node *from, Node *to ) {
 void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is_def ) {
   if( !OptoReg::is_valid(def_reg) ) // Ignore stores & control flow
     return;
+
+  if (OptoReg::is_reg(def_reg)) {
+    VMReg vmreg = OptoReg::as_VMReg(def_reg);
+    if (vmreg->is_reg() && !vmreg->is_concrete() && !vmreg->prev()->is_concrete()) {
+      // This is one of the high slots of a vector register.
+      // ScheduleAndBundle already checked there are no live wide
+      // vectors in this method so it can be safely ignored.
+      return;
+    }
+  }
 
   Node *pinch = _reg_node[def_reg]; // Get pinch point
   if ((pinch == NULL) || _cfg->get_block_for_node(pinch) != b || // No pinch-point yet?
