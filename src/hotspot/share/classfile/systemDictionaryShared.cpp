@@ -214,7 +214,7 @@ bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClass
   }
 
   if (!info->has_checked_exclusion()) {
-    if (check_for_exclusion_impl(k, false)) {
+    if (check_for_exclusion_impl(k)) {
       info->set_excluded();
     }
     info->set_has_checked_exclusion();
@@ -224,11 +224,9 @@ bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClass
 }
 
 // Returns true so the caller can do:    return warn_excluded(".....");
-bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason, bool silent) {
-  if (!silent) {
-    ResourceMark rm;
-    log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
-  }
+bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
+  ResourceMark rm;
+  log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
   return true;
 }
 
@@ -269,41 +267,41 @@ bool SystemDictionaryShared::is_hidden_lambda_proxy(InstanceKlass* ik) {
   }
 }
 
-bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k, bool silent) {
+bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   if (k->is_in_error_state()) {
-    return warn_excluded(k, "In error state", silent);
+    return warn_excluded(k, "In error state");
   }
   if (k->is_scratch_class()) {
-    return warn_excluded(k, "A scratch class", silent);
+    return warn_excluded(k, "A scratch class");
   }
   if (!k->is_loaded()) {
-    return warn_excluded(k, "Not in loaded state", silent);
+    return warn_excluded(k, "Not in loaded state");
   }
   if (has_been_redefined(k)) {
-    return warn_excluded(k, "Has been redefined", silent);
+    return warn_excluded(k, "Has been redefined");
   }
   if (!k->is_hidden() && k->shared_classpath_index() < 0 && is_builtin(k)) {
     // These are classes loaded from unsupported locations (such as those loaded by JVMTI native
     // agent during dump time).
-    return warn_excluded(k, "Unsupported location", silent);
+    return warn_excluded(k, "Unsupported location");
   }
   if (k->signers() != NULL) {
     // We cannot include signed classes in the archive because the certificates
     // used during dump time may be different than those used during
     // runtime (due to expiration, etc).
-    return warn_excluded(k, "Signed JAR", silent);
+    return warn_excluded(k, "Signed JAR");
   }
   if (is_jfr_event_class(k)) {
     // We cannot include JFR event classes because they need runtime-specific
     // instrumentation in order to work with -XX:FlightRecorderOptions:retransform=false.
     // There are only a small number of these classes, so it's not worthwhile to
     // support them and make CDS more complicated.
-    return warn_excluded(k, "JFR event class", silent);
+    return warn_excluded(k, "JFR event class");
   }
 
   if (!k->is_linked()) {
     if (has_class_failed_verification(k)) {
-      return warn_excluded(k, "Failed verification", silent);
+      return warn_excluded(k, "Failed verification");
     }
   } else {
     if (!k->can_be_verified_at_dumptime()) {
@@ -313,7 +311,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k, bool sil
       // won't work at runtime.
       // As a result, we cannot store this class. It must be loaded and fully verified
       // at runtime.
-      return warn_excluded(k, "Old class has been linked", silent);
+      return warn_excluded(k, "Old class has been linked");
     }
   }
 
@@ -335,6 +333,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k, bool sil
   for (int i = 0; i < len; i++) {
     InstanceKlass* intf = interfaces->at(i);
     if (check_for_exclusion(intf, NULL)) {
+      ResourceMark rm;
       log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
@@ -642,7 +641,7 @@ public:
       InstanceKlass* k = _list.at(i);
       bool i_am_first = SystemDictionaryShared::add_unregistered_class(_thread, k);
       if (!i_am_first) {
-        SystemDictionaryShared::warn_excluded(k, "Duplicated unregistered class", false);
+        SystemDictionaryShared::warn_excluded(k, "Duplicated unregistered class");
         SystemDictionaryShared::set_excluded_locked(k);
       }
     }
@@ -1615,10 +1614,7 @@ class CleanupDumpTimeLambdaProxyClassTable: StackObj {
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
     assert_lock_strong(DumpTimeTable_lock);
     InstanceKlass* caller_ik = key.caller_ik();
-    if (SystemDictionaryShared::check_for_exclusion_impl(caller_ik, true)) {
-      // Note that SystemDictionaryShared::is_excluded_class() cannot be used because during
-      // dynamic dump, the caller_ik could be in the base archive and the function
-      // will not return the correct result.
+    if (SystemDictionaryShared::check_for_exclusion(caller_ik, NULL)) {
       // If the caller class is excluded, unregister all the associated lambda proxy classes
       // so that they will not be included in the CDS archive.
       for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
@@ -1628,7 +1624,7 @@ class CleanupDumpTimeLambdaProxyClassTable: StackObj {
     }
     for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
       InstanceKlass* ik = info._proxy_klasses->at(i);
-      if (SystemDictionaryShared::check_for_exclusion_impl(ik, true)) {
+      if (SystemDictionaryShared::check_for_exclusion(ik, NULL)) {
         SystemDictionaryShared::reset_registered_lambda_proxy_class(ik);
         info._proxy_klasses->remove_at(i);
       }

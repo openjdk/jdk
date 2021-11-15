@@ -178,7 +178,7 @@ private:
   static void reset_registered_lambda_proxy_class(InstanceKlass* ik);
   static bool is_jfr_event_class(InstanceKlass *k);
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
-  static bool check_for_exclusion_impl(InstanceKlass* k, bool silent);
+  static bool check_for_exclusion_impl(InstanceKlass* k);
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
 
@@ -286,7 +286,7 @@ public:
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);
   static void set_excluded_locked(InstanceKlass* k);
-  static bool warn_excluded(InstanceKlass* k, const char* reason, bool silent);
+  static bool warn_excluded(InstanceKlass* k, const char* reason);
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static size_t estimate_size_for_archive();
   static void write_to_archive(bool is_static_archive = true);
