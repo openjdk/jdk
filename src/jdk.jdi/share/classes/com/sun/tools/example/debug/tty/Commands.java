@@ -708,9 +708,9 @@ class Commands {
         }
         String expr = t.nextToken("");
         Value val = evaluate(expr);
-        if ((val != null) && (val instanceof ObjectReference)) {
+        if (val instanceof ObjectReference object) {
             try {
-                thread.stop((ObjectReference)val);
+                thread.stop(object);
                 MessageOutput.println("killed", thread.toString());
             } catch (InvalidTypeException e) {
                 MessageOutput.println("Invalid exception object");
@@ -1804,8 +1804,7 @@ class Commands {
         Value val = evaluate(expr);
 
         try {
-            if ((val != null) && (val instanceof ObjectReference)) {
-                ObjectReference object = (ObjectReference)val;
+            if (val instanceof ObjectReference object) {
                 String strVal = getStringValue();
                 if (strVal != null) {
                     MessageOutput.println("Monitor information for expr",
@@ -1900,8 +1899,7 @@ class Commands {
 
         String expr = t.nextToken("");
         Value val = evaluate(expr);
-        if ((val != null) && (val instanceof ObjectReference)) {
-            ObjectReference object = (ObjectReference)val;
+        if (val instanceof ObjectReference object) {
             object.disableCollection();
             String strVal = getStringValue();
             if (strVal != null) {
@@ -1929,8 +1927,7 @@ class Commands {
 
         String expr = t.nextToken("");
         Value val = evaluate(expr);
-        if ((val != null) && (val instanceof ObjectReference)) {
-            ObjectReference object = (ObjectReference)val;
+        if (val instanceof ObjectReference object) {
             object.enableCollection();
             String strVal = getStringValue();
             if (strVal != null) {
