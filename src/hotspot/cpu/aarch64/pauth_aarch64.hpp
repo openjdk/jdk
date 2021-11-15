@@ -25,12 +25,10 @@
 #ifndef CPU_AARCH64_PAUTH_AARCH64_HPP
 #define CPU_AARCH64_PAUTH_AARCH64_HPP
 
-#ifdef __APPLE__
-#include <ptrauth.h>
-#endif
+#include OS_CPU_HEADER_INLINE(pauth)
 
 // Support for ROP Protection in VM code.
-// This is provided by via the AArch64 PAC feature.
+// This is provided via the AArch64 PAC feature.
 // For more details on PAC see The Arm ARM, section "Pointer authentication in AArch64 state".
 //
 // PAC provides a method to sign and authenticate pointer values. Signing combines the register
@@ -52,32 +50,13 @@
 //
 // All generated code is protected via the ROP functions provided in macroAssembler.
 //
-// In addition, the VM needs to be aware of PAC whenever viewing or editing the stack. We should
-// assume all stack frames for generated code have signed return values. Rewriting the stack
-// should ensure new values are correctly signed. However, we cannot make any assumptions about
-// how (or if) native code uses PAC - here we should limit access to viewing via stripping.
+// In addition, the VM needs to be aware of PAC whenever viewing or editing the stack. Functions
+// are provided here and in the OS specific files. We should assume all stack frames for generated
+// code have signed return values. Rewriting the stack should ensure new values are correctly
+// signed. However, we cannot make any assumptions about how (or if) native code uses PAC - here
+// we should limit access to viewing via stripping.
 //
 
-// Use only the PAC instructions in the NOP space. This ensures the binaries work on systems
-// without PAC. Write these instructions using their alternate "hint" instructions to ensure older
-// compilers can still be used. For Apple, instead use the recommended pauth interface.
-#define XPACLRI   "hint #0x7;"
-#define PACIA1716 "hint #0x8;"
-#define AUTIA1716 "hint #0xc;"
-
-
-// Strip an address. Use with caution - only if there is no guaranteed way of authenticating the
-// value.
-//
-inline address pauth_strip_pointer(address ptr) {
-#ifdef __APPLE__
-  return ptrauth_strip(ptr, ptrauth_key_asib);
-#else
-  register address result __asm__("x30") = ptr;
-  asm (XPACLRI : "+r"(result));
-  return result;
-#endif
-}
 
 // Confirm the given pointer has not been signed - ie none of the high bits are set.
 //
@@ -91,42 +70,6 @@ inline bool pauth_ptr_is_raw(address ptr) {
   return ptr == pauth_strip_pointer(ptr);
 }
 
-// Sign a return value, using the given modifier.
-//
-inline address pauth_sign_return_address(address ret_addr, address modifier) {
-  if (UseROPProtection) {
-    // A pointer cannot be double signed.
-    assert(pauth_ptr_is_raw(ret_addr), "Return address is already signed");
-#ifdef __APPLE__
-    ret_addr = ptrauth_sign_unauthenticated(ret_addr, ptrauth_key_asib, modifier);
-#else
-    register address r17 __asm("r17") = ret_addr;
-    register address r16 __asm("r16") = modifier;
-    asm volatile (PACIA1716 : "+r"(r17) : "r"(r16));
-    ret_addr = r17;
-#endif
-  }
-  return ret_addr;
-}
-
-// Authenticate a return value, using the given modifier.
-//
-inline address pauth_authenticate_return_address(address ret_addr, address modifier) {
-  if (UseROPProtection) {
-#ifdef __APPLE__
-    ret_addr = ptrauth_auth_data(ret_addr, ptrauth_key_asib, modifier);
-#else
-    register address r17 __asm("r17") = ret_addr;
-    register address r16 __asm("r16") = modifier;
-    asm volatile (AUTIA1716 : "+r"(r17) : "r"(r16));
-    ret_addr = r17;
-#endif
-    // Ensure that the pointer authenticated.
-    assert(pauth_ptr_is_raw(ret_addr), "Return address did not authenticate");
-  }
-  return ret_addr;
-}
-
 // Authenticate or strip a return value. Use for efficiency and only when the safety of the data
 // isn't an issue - for example when viewing the stack.
 //
@@ -137,9 +80,5 @@ inline address pauth_authenticate_or_strip_return_address(address ret_addr, addr
   }
   return ret_addr;
 }
-
-#undef XPACLRI
-#undef PACIA1716
-#undef AUTIA1716
 
 #endif // CPU_AARCH64_PAUTH_AARCH64_HPP
