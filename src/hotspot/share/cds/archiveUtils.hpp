@@ -144,7 +144,7 @@ public:
     : _name(name), _base(NULL), _top(NULL), _end(NULL),
       _max_delta(max_delta), _is_packed(false) {}
 
-  char* expand_top_to(char* newtop);
+  void expand_top_to(char* newtop);
   char* allocate(size_t num_bytes);
 
   void append_intptr_t(intptr_t n, bool need_to_mark = false);

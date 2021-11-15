@@ -144,7 +144,7 @@ void ArchivePtrMarker::compact(size_t max_non_null_offset) {
   _compacted = true;
 }
 
-char* DumpRegion::expand_top_to(char* newtop) {
+void DumpRegion::expand_top_to(char* newtop) {
   assert(is_allocatable(), "must be initialized and not packed");
   assert(newtop >= _top, "must not grow backwards");
   if (newtop > _end) {
@@ -165,8 +165,6 @@ char* DumpRegion::expand_top_to(char* newtop) {
                                     "Please reduce the number of shared classes.");
     }
   }
-
-  return _top;
 }
 
 void DumpRegion::commit_to(char* newtop) {
