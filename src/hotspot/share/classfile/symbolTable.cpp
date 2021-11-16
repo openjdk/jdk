@@ -134,7 +134,7 @@ public:
   // We use default allocation/deallocation but counted
   static void* allocate_node(void* context, size_t size, Value const& value) {
     SymbolTable::item_added();
-    if (_lookup_shared_first && (_items_count > 1024)) {
+    if (_lookup_shared_first && (_items_count > 1024)) { // enough local symbols to change search order
         _lookup_shared_first = false;
     }
     return AllocateHeap(size, mtSymbol);
