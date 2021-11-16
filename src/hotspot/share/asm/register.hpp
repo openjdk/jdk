@@ -56,21 +56,20 @@ class AbstractRegisterImpl {
 const type name = ((type)value);                                        \
 enum { name##_##type##EnumValue = (value) }
 
-
 #else // USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
 #define REGISTER_IMPL_DECLARATION(type, impl_type, reg_count)           \
-inline const type as_ ## type(int encoding) {                           \
-  return encoding == -1 ? impl_type::no_reg() : impl_type::first() + encoding; \
+inline constexpr type as_ ## type(int encoding) {                       \
+  return impl_type::first() + encoding;                                 \
 }                                                                       \
 extern impl_type all_ ## type ## s[reg_count + 1] INTERNAL_VISIBILITY;  \
-inline constexpr type impl_type::first() { return all_ ## type ## s; }
+inline constexpr type impl_type::first() { return all_ ## type ## s + 1; }
 
 #define REGISTER_IMPL_DEFINITION(type, impl_type, reg_count)            \
 impl_type all_ ## type ## s[reg_count + 1];
 
 #define CONSTANT_REGISTER_DECLARATION(type, name, value)                \
-constexpr type name = all_ ## type ## s + value;
+constexpr type name = as_ ## type(value);
 
 #endif // USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 

@@ -36,14 +36,10 @@ typedef VMRegImpl* VMReg;
 class RegisterImpl;
 typedef const RegisterImpl* Register;
 
-inline const Register as_Register(int encoding);
+inline constexpr Register as_Register(int encoding);
 
 class RegisterImpl: public AbstractRegisterImpl {
-  inline friend const Register as_Register(int encoding);
-
   static constexpr Register first();
-  static constexpr Register invalid() { return first() + number_of_registers; }
-  static constexpr Register no_reg()  { return first() + number_of_declared_registers; }
 
 public:
   enum {
@@ -56,12 +52,15 @@ public:
   // derived registers, offsets, and addresses
   const Register successor() const { return this + 1; }
 
+  // construction
+  inline friend constexpr Register as_Register(int encoding);
+
   VMReg as_VMReg() const;
 
   // accessors
   int encoding() const             { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  bool is_valid() const            { return this >= first() && this < invalid(); }
-  bool has_byte_register() const   { return is_valid(); }
+  bool is_valid() const            { return this >= first() && this - first() < number_of_registers; }
+  bool has_byte_register() const   { return this >= first() && this - first() < number_of_byte_registers; }
   const char* name() const;
   int encoding_nocheck() const     { return this - first(); }
 };
@@ -71,7 +70,7 @@ REGISTER_IMPL_DECLARATION(Register, RegisterImpl, RegisterImpl::number_of_declar
 
 // The integer registers of the aarch64 architecture
 
-CONSTANT_REGISTER_DECLARATION(Register, noreg, (RegisterImpl::number_of_declared_registers));
+CONSTANT_REGISTER_DECLARATION(Register, noreg, (-1));
 
 CONSTANT_REGISTER_DECLARATION(Register, r0,    (0));
 CONSTANT_REGISTER_DECLARATION(Register, r1,    (1));
@@ -131,15 +130,11 @@ const Register dummy_reg = r31_sp;
 class FloatRegisterImpl;
 typedef const FloatRegisterImpl* FloatRegister;
 
-inline const FloatRegister as_FloatRegister(int encoding);
+inline constexpr FloatRegister as_FloatRegister(int encoding);
 
 // The implementation of floating point registers for the architecture
 class FloatRegisterImpl: public AbstractRegisterImpl {
-  inline friend const FloatRegister as_FloatRegister(int encoding);
-
   static constexpr FloatRegister first();
-  static constexpr FloatRegister invalid() { return first() + number_of_registers; }
-  static constexpr FloatRegister no_reg()  { return first() + number_of_registers; }
 
 public:
   enum {
@@ -150,16 +145,19 @@ public:
     extra_save_slots_per_neon_register = slots_per_neon_register - save_slots_per_register
   };
 
+  // construction
+  inline friend constexpr FloatRegister as_FloatRegister(int encoding);
+
   VMReg as_VMReg() const;
 
   // derived registers, offsets, and addresses
   FloatRegister successor() const { return as_FloatRegister((encoding() + 1) % 32); }
 
   // accessors
-  bool is_valid() const           { return this >= first() && this < invalid(); }
+  int encoding() const             { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
+  bool is_valid() const            { return this >= first() && this - first() < number_of_registers; }
   const char* name() const;
-  int encoding() const            { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  int encoding_nocheck() const    { return this - first(); }
+  int encoding_nocheck() const     { return this - first(); }
 };
 
 REGISTER_IMPL_DECLARATION(FloatRegister, FloatRegisterImpl, FloatRegisterImpl::number_of_registers);
@@ -167,7 +165,8 @@ REGISTER_IMPL_DECLARATION(FloatRegister, FloatRegisterImpl, FloatRegisterImpl::n
 
 // The float registers of the AARCH64 architecture
 
-CONSTANT_REGISTER_DECLARATION(FloatRegister, fnoreg , (FloatRegisterImpl::number_of_registers));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, fnoreg , (-1));
+
 CONSTANT_REGISTER_DECLARATION(FloatRegister, v0     , ( 0));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, v1     , ( 1));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, v2     , ( 2));
@@ -238,15 +237,11 @@ CONSTANT_REGISTER_DECLARATION(FloatRegister, z31    , (31));
 
 class PRegisterImpl;
 typedef const PRegisterImpl* PRegister;
-const PRegister as_PRegister(int encoding);
+inline constexpr PRegister as_PRegister(int encoding);
 
 // The implementation of predicate registers for the architecture
 class PRegisterImpl: public AbstractRegisterImpl {
-  friend const PRegister as_PRegister(int encoding);
-
   static constexpr PRegister first();
-  static constexpr PRegister invalid() { return first() + number_of_registers; }
-  static constexpr PRegister no_reg()  { return first() + number_of_registers; }
 
  public:
   enum {
@@ -255,16 +250,19 @@ class PRegisterImpl: public AbstractRegisterImpl {
     max_slots_per_register = 1
   };
 
+  // construction
+  inline friend constexpr PRegister as_PRegister(int encoding);
+
   VMReg as_VMReg() const;
 
   // derived registers, offsets, and addresses
   PRegister successor() const     { return this + 1; }
 
   // accessors
-  int encoding() const            { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  int encoding_nocheck() const    { return this - first(); }
-  bool is_valid() const           { return this >= first() && this < invalid(); }
-  bool is_governing() const       { return this < first() + number_of_governing_registers; }
+  int encoding() const             { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
+  int encoding_nocheck() const     { return this - first(); }
+  bool is_valid() const            { return this >= first() && this - first() < number_of_registers; }
+  bool  is_governing() const       { return first() <= this && this - first() < number_of_governing_registers; }
   const char* name() const;
 };
 
