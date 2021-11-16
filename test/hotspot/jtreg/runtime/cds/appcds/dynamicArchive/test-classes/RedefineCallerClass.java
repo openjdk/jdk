@@ -21,23 +21,45 @@
  * questions.
  *
  */
-public class LambdaContainsOldInfApp {
-    public static void main(final String... args) {
-        getProvider();
-        if (args.length == 1 && args[0].equals("addLambda")) {
-            getProvider2();
-        }
-    }
 
-    public static OldProvider getProvider() {
+class SimpleLambda {
+    public Runnable getRunnable() {
+        return () -> {};
+    }
+    public OldProvider getProvider() {
         return () -> {
             return null;
         };
     }
+}
 
-    public static OldProvider getProvider2() {
-        return () -> {
-            return null;
-        };
+public class RedefineCallerClass {
+
+    public static String newClass =
+        " class SimpleLambda { " +
+        "     public Runnable getRunnable() { " +
+        "         return () -> {}; " +
+        "     } " +
+        "     public OldProvider getProvider() { " +
+        "         return () -> { " +
+        "             return null; " +
+        "         }; " +
+        "     } " +
+        " } ";
+
+    public static void main(String args[]) throws Exception {
+      String mode = "both";
+      if (args.length == 1) {
+          mode = args[0];
+      }
+      SimpleLambda s = new SimpleLambda();
+      if (mode.equals("both") || mode.equals("useOldInf")) {
+          System.out.println(s.getProvider());
+      } else {
+          System.out.println(s.getRunnable());
+      }
+      if (mode.equals("both") || mode.equals("redefineCaller")) {
+          RedefineClassHelper.redefineClass(s.getClass(), newClass);
+      }
     }
 }
