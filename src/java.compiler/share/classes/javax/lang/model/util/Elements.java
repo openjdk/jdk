@@ -792,9 +792,13 @@ public interface Elements {
      * have any {@code package-info} file even if the package is
      * (implicitly) created during an annotation processing run from
      * the creation of source or class files in that package.
+     * An {@linkplain PackageElement#isUnnamed unnamed package} will have a
+     * null file since it cannot be declared in a compilation unit.
      *
      * <p>If it has a file object, the file object for a module will
      * be a {@code module-info} file.
+     * An {@linkplain ModuleElement#isUnnamed unnamed module} will have a
+     * null file since it cannot be declared in a compilation unit.
      *
      * <p>For other kinds of elements, if they have a file object, the
      * file object will be the object associated with the {@linkplain
