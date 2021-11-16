@@ -30,6 +30,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public interface JavaIORandomAccessFileAccess {
-    public RandomAccessFile openAndDelete(File file, String mode)
+    public RandomAccessFile open(File file, String mode, boolean openAndDelete)
         throws IOException;
 }

@@ -1305,16 +1305,14 @@ public class ZipFile implements ZipConstants, Closeable {
         private Source(Key key, boolean toDelete, ZipCoder zc) throws IOException {
             this.zc = zc;
             this.key = key;
-            if (toDelete) {
-                if (isWindows) {
-                    this.zfile = SharedSecrets.getJavaIORandomAccessFileAccess()
-                                              .openAndDelete(key.file, "r");
-                } else {
-                    this.zfile = new RandomAccessFile(key.file, "r");
-                    key.file.delete();
-                }
+            if (isWindows) {
+                this.zfile = SharedSecrets.getJavaIORandomAccessFileAccess()
+                        .open(key.file, "r", toDelete);
             } else {
                 this.zfile = new RandomAccessFile(key.file, "r");
+                if (toDelete) {
+                    key.file.delete();
+                }
             }
             try {
                 initCEN(-1);

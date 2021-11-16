@@ -78,7 +78,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private static final int O_RDWR =   2;
     private static final int O_SYNC =   4;
     private static final int O_DSYNC =  8;
+
+    // non-standard
     private static final int O_TEMPORARY =  16;
+    private static final int FILE_SHARE_DELETE =  32;
 
     /**
      * Creates a random access file stream to read from, and optionally
@@ -210,10 +213,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     public RandomAccessFile(File file, String mode)
         throws FileNotFoundException
     {
-        this(file, mode, false);
+        this(file, mode, false, false);
     }
 
-    private RandomAccessFile(File file, String mode, boolean openAndDelete)
+    private RandomAccessFile(File file, String mode, boolean openAndDelete, boolean fileShareDelete)
         throws FileNotFoundException
     {
         String name = (file != null ? file.getPath() : null);
@@ -239,6 +242,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
                                                + "\" must be one of "
                                                + "\"r\", \"rw\", \"rws\","
                                                + " or \"rwd\"");
+        if (fileShareDelete) {
+            imode |= FILE_SHARE_DELETE;
+        }
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
@@ -1189,12 +1195,13 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         initIDs();
         SharedSecrets.setJavaIORandomAccessFileAccess(new JavaIORandomAccessFileAccess()
         {
-            // This is for j.u.z.ZipFile.OPEN_DELETE. The O_TEMPORARY flag
-            // is only implemented/supported on windows.
-            public RandomAccessFile openAndDelete(File file, String mode)
+            // This is for j.u.z.ZipFile to support OPEN_DELETE and FILE_SHARE_DELETE.
+            // The O_TEMPORARY and the FILE_SHARE_DELETE flags are only implemented/supported
+            // on windows.
+            public RandomAccessFile open(File file, String mode, boolean openAndDelete)
                 throws IOException
             {
-                return new RandomAccessFile(file, mode, true);
+                return new RandomAccessFile(file, mode, openAndDelete, true);
             }
         });
     }

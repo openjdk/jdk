@@ -63,6 +63,8 @@ Java_java_io_RandomAccessFile_open0(JNIEnv *env,
 #ifdef WIN32
     if (mode & java_io_RandomAccessFile_O_TEMPORARY)
         flags |= O_TEMPORARY;
+    if (mode & java_io_RandomAccessFile_FILE_SHARE_DELETE)
+        flags |= FILE_SHARE_DELETE;
 #endif
     fileOpen(env, this, path, raf_fd, flags);
 }

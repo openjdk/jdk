@@ -220,6 +220,8 @@ FD winFileHandleOpen(JNIEnv *env, jstring path, int flags)
         (flags & O_RDWR)   ? (GENERIC_READ | GENERIC_WRITE) :
         GENERIC_READ;
     const DWORD sharing =
+        (flags & FILE_SHARE_DELETE) ?
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE :
         FILE_SHARE_READ | FILE_SHARE_WRITE;
     const DWORD disposition =
         /* Note: O_TRUNC overrides O_CREAT */
