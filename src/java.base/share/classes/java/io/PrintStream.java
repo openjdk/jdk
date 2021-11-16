@@ -68,7 +68,7 @@ public class PrintStream extends FilterOutputStream
     private final boolean autoFlush;
     private boolean trouble = false;
     private Formatter formatter;
-    private Charset charset;
+    private final Charset charset;
 
     /**
      * Track both the text- and character-output streams, so that their buffers
@@ -106,12 +106,12 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Returns the charset used in this PrintStream instance. Called from
-     * OutputStreamWriter and PrintWriter via the package-private access.
+     * Returns the charset used in this {@code PrintStream} instance.
      *
-     * @return the charset
+     * @since 18
+     * @return the charset used in this {@code PrintStream} instance
      */
-    Charset charset() {
+    public Charset charset() {
         return charset;
     }
 
@@ -136,8 +136,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Creates a new print stream, without automatic line flushing, with the
      * specified OutputStream. Characters written to the stream are converted
-     * to bytes using the charset in {@code out} if it is a {@code PrintStream},
-     * or using the default charset.
+     * to bytes using the default charset, or where {@code out} is a
+     * {@code PrintStream}, the charset used by the print stream.
      *
      * @param  out        The output stream to which values and objects will be
      *                    printed
@@ -152,8 +152,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Creates a new print stream, with the specified OutputStream and line
      * flushing. Characters written to the stream are converted to bytes using
-     * the charset in {@code out} if it is a {@code PrintStream}, or using
-     * the default charset.
+     * the default charset, or where {@code out} is a {@code PrintStream},
+     * the charset used by the print stream.
      *
      * @param  out        The output stream to which values and objects will be
      *                    printed

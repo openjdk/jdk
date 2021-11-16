@@ -118,8 +118,8 @@ public class PrintWriter extends Writer {
      * Creates a new PrintWriter, without automatic line flushing, from an
      * existing OutputStream.  This convenience constructor creates the
      * necessary intermediate OutputStreamWriter, which will convert characters
-     * into bytes using the charset in {@code out} if it is a {@code PrintStream},
-     * or using the default charset.
+     * into bytes using the default charset, or where {@code out} is a
+     * {@code PrintStream}, the charset used by the print stream.
      *
      * @param  out        An output stream
      *
@@ -134,8 +134,8 @@ public class PrintWriter extends Writer {
      * Creates a new PrintWriter from an existing OutputStream.  This
      * convenience constructor creates the necessary intermediate
      * OutputStreamWriter, which will convert characters into bytes using
-     * the charset in {@code out} if it is a {@code PrintStream}, or using
-     * the default charset.
+     * the default charset, or where {@code out} is a {@code PrintStream},
+     * the charset used by the print stream.
      *
      * @param  out        An output stream
      * @param  autoFlush  A boolean; if true, the {@code println},

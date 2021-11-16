@@ -76,10 +76,11 @@ public class InheritEncodingTest {
 
     @Test (dataProvider = "encodings")
     public void testPrintWriter(Charset stdCharset) throws IOException {
-        // tests roundtrip result
         var ba = new ByteArrayOutputStream();
         var ps = new PrintStream(ba, true, stdCharset);
         var expected = new String(testString.getBytes(stdCharset), stdCharset);
+
+        // tests roundtrip result
         var pw = new PrintWriter(ps);
         pw.write(testString);
         pw.flush();
@@ -89,11 +90,15 @@ public class InheritEncodingTest {
 
     @Test (dataProvider = "encodings")
     public void testPrintStream(Charset stdCharset) throws IOException {
-        // tests roundtrip result
         var ba = new ByteArrayOutputStream();
         var ps = new PrintStream(ba, true, stdCharset);
         var expected = new String(testString.getBytes(stdCharset), stdCharset);
+
+        // tests PrintStream's charset explicitly
         var psWrapper = new PrintStream(ps);
+        assertEquals(psWrapper.charset(), stdCharset);
+
+        // tests roundtrip result
         psWrapper.print(testString);
         psWrapper.flush();
         var result = ba.toString(stdCharset);
