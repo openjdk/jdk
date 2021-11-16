@@ -132,6 +132,12 @@ public interface ExecutableElement extends Element, Parameterizable {
     AnnotationValue getDefaultValue();
 
     /**
+     * {@return the class or interface defining the executable}
+     */
+    @Override
+    Element getEnclosingElement();
+
+    /**
      * {@return the simple name of a constructor, method, or
      * initializer}  For a constructor, the name {@code "<init>"} is
      * returned, for a static initializer, the name {@code "<clinit>"}

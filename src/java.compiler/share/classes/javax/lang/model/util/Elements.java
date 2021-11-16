@@ -800,16 +800,42 @@ public interface Elements {
      * An {@linkplain ModuleElement#isUnnamed unnamed module} will have a
      * null file since it cannot be declared in a compilation unit.
      *
-     * <p>For other kinds of elements, if they have a file object, the
-     * file object will be the object associated with the {@linkplain
-     * #getOutermostTypeElement(Element) outermost class or interface
-     * of the element}. For top-level classes and interfaces, the name
-     * of the file object will commonly contain the name of the
-     * top-level class or interface. For example, for class {@code
-     * Foo}, its file name could contain "{@code Foo.java}". Note
-     * however that a single source file can contain multiple
-     * top-level files so this pattern so this relationship does not
-     * always hold.
+     * <p>If it has a file object, the file object for a top-level
+     * {@code public} class or interface will be a source or class
+     * file corresponding to that class or interface. In this case,
+     * typically the leading portion of the name of the file will match
+     * the name of the class or interface. A single compilation unit
+     * can define multiple top-level classes and interfaces, such as a
+     * primary {@code public} class or interfaces whose name
+     * corresponds to the file name and one or more <em>auxiliary</em>
+     * classes or interfaces whose names do not correspond to the file
+     * name. If a source file is providing the reference
+     * representation of an auxiliary class or interface, the file
+     * for the primary class is returned. If a class file is providing
+     * the reference representation of an auxiliary class or interface,
+     * the separate class file for the auxiliary class is returned.
+     *
+     * <p>For a nested class or interface, if it has a file object:
+     *
+     * <ul>
+     *
+     * <li>if a source file is providing the reference representation,
+     * the file object will be that of the {@linkplain
+     * #getOutermostTypeElement(Element) outermost enclosing} class or
+     * interface
+     *
+     * <li>if a class file is providing the reference representation,
+     * the file object for be for the nested class or interface itself
+     *
+     * </ul>
+     *
+     * <p>For other lexically enclosed elements, such as {@linkplain
+     * VariableElement#getEnclosingElement() variables}, {@linkplain
+     * ExecutableElement#getEnclosingElement() methods, and
+     * constructors}, if they have a file object, the file object will
+     * be the object associated with the {@linkplain
+     * Element#getEnclosingElement() enclosing element} of the nested
+     * element.
      *
      * @implSpec The default implementation unconditionally throws
      * {@link UnsupportedOperationException}.
