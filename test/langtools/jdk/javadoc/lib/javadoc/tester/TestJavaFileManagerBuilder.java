@@ -44,7 +44,7 @@ import java.util.function.Predicate;
  * that can call user-provided functions in place of the normal methods for the file object.
  *
  * The file objects that are returned as "test file objects" are filtered by a predicate
- * on the file object. For these file objects, functions can be specified that are called 
+ * on the file object. For these file objects, functions can be specified that are called
  * in place of individual methods on the file object.
  *
  * A common use case is to throw an exception when a specific method is called on a
