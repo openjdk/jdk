@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
+#include "gc/g1/g1EvacFailureParScanTask.hpp"
 
 class FreeCSetStats;
 
@@ -46,6 +47,8 @@ class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedTask {
   class RecalculateUsedTask;
   class SampleCollectionSetCandidatesTask;
   class RemoveSelfForwardPtrsTask;
+
+  G1EvacFailureParScanTasksQueueSet* _queues;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,

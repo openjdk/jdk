@@ -614,7 +614,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     HeapRegion* r = _g1h->heap_region_containing(old);
     // Records evac failure objs, this will help speed up iteration
     // of these objs later in *remove self forward* phase of post evacuation.
-    r->record_evac_failure_obj(old);
+    r->record_evac_failure_obj(old, word_sz);
 
     if (_evac_failure_regions->record(r->hrm_index())) {
       _g1h->hr_printer()->evac_failure(r);

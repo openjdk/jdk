@@ -564,11 +564,13 @@ public:
   // Mark in the previous bitmap. Caution: the prev bitmap is usually read-only, so use
   // this carefully.
   inline void mark_in_prev_bitmap(oop p);
+  inline void par_mark_in_prev_bitmap(oop p);
 
   // Clears marks for all objects in the given range, for the prev or
   // next bitmaps.  Caution: the previous bitmap is usually
   // read-only, so use this carefully!
   void clear_range_in_prev_bitmap(MemRegion mr);
+  void par_clear_range_in_prev_bitmap(MemRegion mr);
 
   inline bool is_marked_in_prev_bitmap(oop p) const;
 

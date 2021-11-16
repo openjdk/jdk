@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_G1_G1EVACFAILURE_HPP
 #define SHARE_GC_G1_G1EVACFAILURE_HPP
 
-#include "gc/g1/g1OopClosures.hpp"
+#include "gc/g1/g1EvacFailureParScanTask.hpp"
 #include "gc/g1/heapRegionManager.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -37,18 +38,20 @@ class G1EvacFailureRegions;
 // installed as a result of an evacuation failure.
 class G1ParRemoveSelfForwardPtrsTask: public WorkerTask {
 protected:
-  G1CollectedHeap* _g1h;
   HeapRegionClaimer _hrclaimer;
+  HeapRegionClaimer _hrclaimer_2;
 
   G1EvacFailureRegions* _evac_failure_regions;
-  uint volatile _num_failed_regions;
+
+  G1EvacFailureParScanTasksQueueSet* _task_queues;
+
+  TaskTerminator _terminator;
 
 public:
   G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions);
+  ~G1ParRemoveSelfForwardPtrsTask();
 
   void work(uint worker_id);
-
-  uint num_failed_regions() const;
 };
 
 #endif // SHARE_GC_G1_G1EVACFAILURE_HPP

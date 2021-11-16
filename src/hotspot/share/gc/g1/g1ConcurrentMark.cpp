@@ -1874,6 +1874,10 @@ void G1ConcurrentMark::clear_range_in_prev_bitmap(MemRegion mr) {
   _prev_mark_bitmap->clear_range(mr);
 }
 
+void G1ConcurrentMark::par_clear_range_in_prev_bitmap(MemRegion mr) {
+  _prev_mark_bitmap->par_clear_range(mr);
+}
+
 HeapRegion*
 G1ConcurrentMark::claim_region(uint worker_id) {
   // "checkpoint" the finger

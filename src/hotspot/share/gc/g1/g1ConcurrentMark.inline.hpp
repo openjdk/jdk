@@ -273,6 +273,11 @@ inline void G1ConcurrentMark::mark_in_prev_bitmap(oop p) {
  _prev_mark_bitmap->mark(p);
 }
 
+inline void G1ConcurrentMark::par_mark_in_prev_bitmap(oop p) {
+  assert(!_prev_mark_bitmap->is_marked(p), "sanity");
+  _prev_mark_bitmap->par_mark(p);
+}
+
 bool G1ConcurrentMark::is_marked_in_prev_bitmap(oop p) const {
   assert(p != NULL && oopDesc::is_oop(p), "expected an oop");
   return _prev_mark_bitmap->is_marked(cast_from_oop<HeapWord*>(p));

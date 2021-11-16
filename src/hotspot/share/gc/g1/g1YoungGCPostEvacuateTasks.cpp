@@ -98,19 +98,14 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : public G1AbstractSubTask {
-  G1ParRemoveSelfForwardPtrsTask _task;
   G1EvacFailureRegions* _evac_failure_regions;
+  G1ParRemoveSelfForwardPtrsTask _task;
 
 public:
-  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
+  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions, G1EvacFailureParScanTasksQueueSet* queues) :
     G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr),
-    _task(evac_failure_regions),
-    _evac_failure_regions(evac_failure_regions) { }
-
-  ~RemoveSelfForwardPtrsTask() {
-    assert(_task.num_failed_regions() == _evac_failure_regions->num_regions_failed_evacuation(),
-           "Removed regions %u inconsistent with expected %u",
-           _task.num_failed_regions(), _evac_failure_regions->num_regions_failed_evacuation());
+    _evac_failure_regions(evac_failure_regions),
+    _task(_evac_failure_regions) {
   }
 
   double worker_cost() const override {
@@ -135,7 +130,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
   if (evacuation_failed) {
-    add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions));
+    add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions, _queues));
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
 }

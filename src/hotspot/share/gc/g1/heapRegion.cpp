@@ -106,10 +106,22 @@ void HeapRegion::handle_evacuation_failure() {
   _next_marked_bytes = 0;
 }
 
+size_t HeapRegion::prepare_evac_failure_objs(G1EvacFailureParScanTasksQueue* queue) {
+  return _evac_failure_objs.pre_iteration(queue);
+}
+
+void HeapRegion::iterate_evac_failure_objs(ObjectClosure* closure, G1EvacFailureParScanTask& task) {
+  _evac_failure_objs.iterate(closure, task);
+}
+
+void HeapRegion::reset_evac_failure_objs() {
+  _evac_failure_objs.post_iteration();
+}
+/*
 void HeapRegion::process_and_drop_evac_failure_objs(ObjectClosure* closure) {
   _evac_failure_objs.process_and_drop(closure);
 }
-
+*/
 void HeapRegion::unlink_from_list() {
   set_next(NULL);
   set_prev(NULL);
