@@ -58,6 +58,8 @@ class G1CardSetConfiguration {
   uint _cards_in_howl_bitmap_threshold;
   uint _log2_num_cards_in_howl_bitmap;
   size_t _bitmap_hash_mask;
+  uint _log2_card_region_per_heap_region;
+  uint _log2_cards_per_card_region;
 
   G1CardSetAllocOptions* _card_set_alloc_options;
 
@@ -66,7 +68,8 @@ class G1CardSetConfiguration {
                          double cards_in_bitmap_threshold_percent,
                          uint num_buckets_in_howl,
                          double cards_in_howl_threshold_percent,
-                         uint max_cards_in_card_set);
+                         uint max_cards_in_card_set,
+                         uint log2_card_region_per_heap_region);
   void init_card_set_alloc_options();
 
   void log_configuration();
@@ -75,12 +78,13 @@ public:
   // Initialize card set configuration from globals.
   G1CardSetConfiguration();
   // Initialize card set configuration from parameters.
-  // Only for test
+  // Testing only.
   G1CardSetConfiguration(uint num_cards_in_array,
                          double cards_in_bitmap_threshold_percent,
                          uint max_buckets_in_howl,
                          double cards_in_howl_threshold_percent,
-                         uint max_cards_in_card_set);
+                         uint max_cards_in_cardset,
+                         uint log2_card_region_per_region);
 
   ~G1CardSetConfiguration();
 
@@ -114,6 +118,20 @@ public:
   // Maximum number of cards in a non-full card set for a single region. Card sets
   // with more entries per region are coarsened to Full.
   uint max_cards_in_region() const { return _max_cards_in_card_set; }
+
+  // Heap region virtualization: there are some limitations to how many cards the
+  // containers can cover to save memory for the common case. Heap region virtualization
+  // allows to use multiple entries in the G1CardSet hash table per area covered
+  // by the remembered set (e.g. heap region); each such entry is called "card_region".
+  //
+  // The next two members give information about how many card regions are there
+  // per area (heap region) and how many cards each card region has.
+
+  // The log2 of the amount of card regions per heap region configured.
+  uint log2_card_region_per_heap_region() const { return _log2_card_region_per_heap_region; }
+  // The log2 of the number of cards per card region. This is calculated from max_cards_in_region()
+  // and above.
+  uint log2_cards_per_card_region() const { return _log2_cards_per_card_region; }
 
   // Memory object types configuration
   // Number of distinctly sized memory objects on the card set heap.
@@ -170,9 +188,6 @@ public:
 class G1CardSet : public CHeapObj<mtGCCardSet> {
   friend class G1CardSetTest;
   friend class G1CardSetMtTestTask;
-
-  template <typename Closure, template <typename> class CardorRanges>
-  friend class G1CardSetMergeCardIterator;
 
   friend class G1TransferCard;
 
@@ -278,23 +293,6 @@ private:
   template <class CardVisitor>
   void iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& found);
 
-  // Iterate over the container, calling a method on every card or card range contained
-  // in the card container.
-  // For every container, first calls
-  //
-  //   void start_iterate(uint tag, uint region_idx);
-  //
-  // Then for every card or card range it calls
-  //
-  //   void do_card(uint card_idx);
-  //   void do_card_range(uint card_idx, uint length);
-  //
-  // where card_idx is the card index within that region_idx passed before in
-  // start_iterate().
-  //
-  template <class CardOrRangeVisitor>
-  void iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& found);
-
   uint card_set_type_to_mem_object_type(uintptr_t type) const;
   uint8_t* allocate_mem_object(uintptr_t type);
   void free_mem_object(CardSetPtr card_set);
@@ -340,7 +338,23 @@ public:
 
   void print(outputStream* os);
 
-  // Various iterators - should be made inlineable somehow.
+  // Iterate over the container, calling a method on every card or card range contained
+  // in the card container.
+  // For every container, first calls
+  //
+  //   void start_iterate(uint tag, uint region_idx);
+  //
+  // Then for every card or card range it calls
+  //
+  //   void do_card(uint card_idx);
+  //   void do_card_range(uint card_idx, uint length);
+  //
+  // where card_idx is the card index within that region_idx passed before in
+  // start_iterate().
+  //
+  template <class CardOrRangeVisitor>
+  void iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& found);
+
   class G1CardSetPtrIterator {
   public:
     virtual void do_cardsetptr(uint region_idx, size_t num_occupied, CardSetPtr card_set) = 0;
@@ -354,11 +368,6 @@ public:
   };
 
   void iterate_cards(G1CardSetCardIterator& iter);
-
-  // Iterate all cards for card set merging. Must be a CardOrRangeVisitor as
-  // explained above.
-  template <class CardOrRangeVisitor>
-  void iterate_for_merge(CardOrRangeVisitor& cl);
 };
 
 class G1CardSetHashTableValue {
