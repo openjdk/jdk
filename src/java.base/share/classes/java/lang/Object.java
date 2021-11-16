@@ -553,14 +553,14 @@ public class Object {
      * and reliability. See <a href="https://openjdk.java.net/jeps/421">JEP 421</a>
      * for discussion and alternatives.
      * <p>
-     * Subclasses that override {@code finalize} in order to perform cleanup
-     * should be modified to use alternative cleanup mechanisms and to remove
-     * the overriding {@code finalize} method.
-     * {@link java.lang.ref.Cleaner} and
-     * {@link java.lang.ref.PhantomReference} provide ways to release resources
-     * when an object becomes unreachable. Or, add a {@code close()} method to
-     * explicitly release resources, and implement {@code AutoCloseable} to
-     * enable the object to be used with a {@code try}-with-resources statement.
+     * Subclasses that override {@code finalize} to perform cleanup should use
+     * alternative cleanup mechanisms and remove the {@code finalize} method.
+     * Use {@link java.lang.ref.Cleaner} and
+     * {@link java.lang.ref.PhantomReference} as safer ways to release resources
+     * when an object becomes unreachable. Alternatively, add a {@code close}
+     * method to explicitly release resources, and implement
+     * {@code AutoCloseable} to enable use of the {@code try}-with-resources
+     * statement.
      * <p>
      * This method will remain in place until finalizers have been removed from
      * most existing code.
