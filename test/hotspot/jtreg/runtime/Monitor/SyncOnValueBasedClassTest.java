@@ -47,8 +47,8 @@ public class SyncOnValueBasedClassTest {
         {"-Xcomp", "-XX:TieredStopAtLevel=1", "-XX:+UseBiasedLocking"},
         {"-Xcomp", "-XX:TieredStopAtLevel=1", "-XX:-UseBiasedLocking"},
         {"-Xcomp", "-XX:-TieredCompilation", "-XX:-UseBiasedLocking"},
-        {"-Xcomp", "-XX:-TieredCompilation", "-XX:+UseBiasedLocking", "-XX:+UseOptoBiasInlining"},
-        {"-Xcomp", "-XX:-TieredCompilation", "-XX:+UseBiasedLocking", "-XX:-UseOptoBiasInlining"}
+        {"-Xcomp", "-XX:-TieredCompilation", "-XX:+UseBiasedLocking", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UseOptoBiasInlining"},
+        {"-Xcomp", "-XX:-TieredCompilation", "-XX:+UseBiasedLocking", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseOptoBiasInlining"}
     };
 
     private static void initTestObjects() {
