@@ -259,10 +259,10 @@ class PRegisterImpl: public AbstractRegisterImpl {
   PRegister successor() const     { return this + 1; }
 
   // accessors
-  int encoding() const             { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  int encoding_nocheck() const     { return this - first(); }
-  bool is_valid() const            { return this >= first() && this - first() < number_of_registers; }
-  bool  is_governing() const       { return first() <= this && this - first() < number_of_governing_registers; }
+  int encoding() const            { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
+  int encoding_nocheck() const    { return this - first(); }
+  bool is_valid() const           { return this >= first() && this - first() < number_of_registers; }
+  bool  is_governing() const      { return first() <= this && this - first() < number_of_governing_registers; }
   const char* name() const;
 };
 
