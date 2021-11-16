@@ -105,16 +105,6 @@ public class PrintStream extends FilterOutputStream
         }
     }
 
-    /**
-     * Returns the charset used in this {@code PrintStream} instance.
-     *
-     * @since 18
-     * @return the charset used in this {@code PrintStream} instance
-     */
-    public Charset charset() {
-        return charset;
-    }
-
     /* Private constructors */
     private PrintStream(boolean autoFlush, OutputStream out) {
         super(out);
@@ -1389,4 +1379,12 @@ public class PrintStream extends FilterOutputStream
         return this;
     }
 
+    /**
+     * {@return the charset used in this {@code PrintStream} instance}
+     *
+     * @since 18
+     */
+    public Charset charset() {
+        return charset;
+    }
 }
