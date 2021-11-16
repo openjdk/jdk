@@ -38,7 +38,6 @@ class name javax/lang/model/SourceVersion
 field name RELEASE_17 descriptor Ljavax/lang/model/SourceVersion; flags 4019
 
 class name javax/lang/model/element/Modifier
-header extends java/lang/Enum sealed true flags 4021 signature Ljava/lang/Enum<Ljavax/lang/model/element/Modifier;>;
 -field name SEALED descriptor Ljavax/lang/model/element/Modifier;
 -field name NON_SEALED descriptor Ljavax/lang/model/element/Modifier;
 field name SEALED descriptor Ljavax/lang/model/element/Modifier; flags 4019
