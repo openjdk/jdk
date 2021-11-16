@@ -972,28 +972,219 @@ void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
   }
 }
 
-void C2_MacroAssembler::sve_vmask_reduction(int opc, Register dst, SIMD_RegVariant size, FloatRegister src,
-                                            PRegister pg, PRegister pn, int length) {
+// Get index of the last mask lane that is set
+void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp) {
+  SIMD_RegVariant size = elemType_to_regVariant(bt);
+  sve_rev(ptmp, size, src);
+  sve_brkb(ptmp, ptrue, ptmp, false);
+  sve_cntp(dst, size, ptrue, ptmp);
+  movw(rscratch1, MaxVectorSize / type2aelembytes(bt) - 1);
+  subw(dst, rscratch1, dst);
+}
+
+void C2_MacroAssembler::sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
+                                          FloatRegister src, SIMD_RegVariant src_size) {
+  assert(dst_size > src_size && dst_size <= D && src_size <= S, "invalid element size");
+  if (src_size == B) {
+    switch (dst_size) {
+    case H:
+      sve_sunpklo(dst, H, src);
+      break;
+    case S:
+      sve_sunpklo(dst, H, src);
+      sve_sunpklo(dst, S, dst);
+      break;
+    case D:
+      sve_sunpklo(dst, H, src);
+      sve_sunpklo(dst, S, dst);
+      sve_sunpklo(dst, D, dst);
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+  } else if (src_size == H) {
+    if (dst_size == S) {
+      sve_sunpklo(dst, S, src);
+    } else { // D
+      sve_sunpklo(dst, S, src);
+      sve_sunpklo(dst, D, dst);
+    }
+  } else if (src_size == S) {
+    sve_sunpklo(dst, D, src);
+  }
+}
+
+// Vector narrow from src to dst with specified element sizes.
+// High part of dst vector will be filled with zero.
+void C2_MacroAssembler::sve_vector_narrow(FloatRegister dst, SIMD_RegVariant dst_size,
+                                          FloatRegister src, SIMD_RegVariant src_size,
+                                          FloatRegister tmp) {
+  assert(dst_size < src_size && dst_size <= S && src_size <= D, "invalid element size");
+  sve_dup(tmp, src_size, 0);
+  if (src_size == D) {
+    switch (dst_size) {
+    case S:
+      sve_uzp1(dst, S, src, tmp);
+      break;
+    case H:
+      sve_uzp1(dst, S, src, tmp);
+      sve_uzp1(dst, H, dst, tmp);
+      break;
+    case B:
+      sve_uzp1(dst, S, src, tmp);
+      sve_uzp1(dst, H, dst, tmp);
+      sve_uzp1(dst, B, dst, tmp);
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+  } else if (src_size == S) {
+    if (dst_size == H) {
+      sve_uzp1(dst, H, src, tmp);
+    } else { // B
+      sve_uzp1(dst, H, src, tmp);
+      sve_uzp1(dst, B, dst, tmp);
+    }
+  } else if (src_size == H) {
+    sve_uzp1(dst, B, src, tmp);
+  }
+}
+
+// Extend src predicate to dst predicate with the same lane count but larger
+// element size, e.g. 64Byte -> 512Long
+void C2_MacroAssembler::sve_vmaskcast_extend(PRegister dst, PRegister src,
+                                             uint dst_element_length_in_bytes,
+                                             uint src_element_length_in_bytes) {
+  if (dst_element_length_in_bytes == 2 * src_element_length_in_bytes) {
+    sve_punpklo(dst, src);
+  } else if (dst_element_length_in_bytes == 4 * src_element_length_in_bytes) {
+    sve_punpklo(dst, src);
+    sve_punpklo(dst, dst);
+  } else if (dst_element_length_in_bytes == 8 * src_element_length_in_bytes) {
+    sve_punpklo(dst, src);
+    sve_punpklo(dst, dst);
+    sve_punpklo(dst, dst);
+  } else {
+    assert(false, "unsupported");
+    ShouldNotReachHere();
+  }
+}
+
+// Narrow src predicate to dst predicate with the same lane count but
+// smaller element size, e.g. 512Long -> 64Byte
+void C2_MacroAssembler::sve_vmaskcast_narrow(PRegister dst, PRegister src,
+                                             uint dst_element_length_in_bytes, uint src_element_length_in_bytes) {
+  // The insignificant bits in src predicate are expected to be zero.
+  if (dst_element_length_in_bytes * 2 == src_element_length_in_bytes) {
+    sve_uzp1(dst, B, src, src);
+  } else if (dst_element_length_in_bytes * 4 == src_element_length_in_bytes) {
+    sve_uzp1(dst, H, src, src);
+    sve_uzp1(dst, B, dst, dst);
+  } else if (dst_element_length_in_bytes * 8 == src_element_length_in_bytes) {
+    sve_uzp1(dst, S, src, src);
+    sve_uzp1(dst, H, dst, dst);
+    sve_uzp1(dst, B, dst, dst);
+  } else {
+    assert(false, "unsupported");
+    ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
+                                            FloatRegister src2, PRegister pg, FloatRegister tmp) {
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
   assert(pg->is_governing(), "This register has to be a governing predicate register");
-  // The conditional flags will be clobbered by this function
-  sve_cmp(Assembler::NE, pn, size, pg, src, 0);
+  assert_different_registers(src1, dst);
+  // Register "dst" and "tmp" are to be clobbered, and "src1" and "src2" should be preserved.
+  Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
   switch (opc) {
-    case Op_VectorMaskTrueCount:
-      sve_cntp(dst, size, ptrue, pn);
+    case Op_AddReductionVI: {
+      sve_uaddv(tmp, size, pg, src2);
+      smov(dst, tmp, size, 0);
+      if (bt == T_BYTE) {
+        addw(dst, src1, dst, ext::sxtb);
+      } else if (bt == T_SHORT) {
+        addw(dst, src1, dst, ext::sxth);
+      } else {
+        addw(dst, dst, src1);
+      }
       break;
-    case Op_VectorMaskFirstTrue:
-      sve_brkb(pn, pg, pn, false);
-      sve_cntp(dst, size, ptrue, pn);
+    }
+    case Op_AddReductionVL: {
+      sve_uaddv(tmp, size, pg, src2);
+      umov(dst, tmp, size, 0);
+      add(dst, dst, src1);
       break;
-    case Op_VectorMaskLastTrue:
-      sve_rev(pn, size, pn);
-      sve_brkb(pn, ptrue, pn, false);
-      sve_cntp(dst, size, ptrue, pn);
-      movw(rscratch1, length - 1);
-      subw(dst, rscratch1, dst);
+    }
+    case Op_AndReductionV: {
+      sve_andv(tmp, size, pg, src2);
+      if (bt == T_LONG) {
+        umov(dst, tmp, size, 0);
+        andr(dst, dst, src1);
+      } else {
+        smov(dst, tmp, size, 0);
+        andw(dst, dst, src1);
+      }
       break;
+    }
+    case Op_OrReductionV: {
+      sve_orv(tmp, size, pg, src2);
+      if (bt == T_LONG) {
+        umov(dst, tmp, size, 0);
+        orr(dst, dst, src1);
+      } else {
+        smov(dst, tmp, size, 0);
+        orrw(dst, dst, src1);
+      }
+      break;
+    }
+    case Op_XorReductionV: {
+      sve_eorv(tmp, size, pg, src2);
+      if (bt == T_LONG) {
+        umov(dst, tmp, size, 0);
+        eor(dst, dst, src1);
+      } else {
+        smov(dst, tmp, size, 0);
+        eorw(dst, dst, src1);
+      }
+      break;
+    }
+    case Op_MaxReductionV: {
+      sve_smaxv(tmp, size, pg, src2);
+      if (bt == T_LONG) {
+        umov(dst, tmp, size, 0);
+        cmp(dst, src1);
+        csel(dst, dst, src1, Assembler::GT);
+      } else {
+        smov(dst, tmp, size, 0);
+        cmpw(dst, src1);
+        cselw(dst, dst, src1, Assembler::GT);
+      }
+      break;
+    }
+    case Op_MinReductionV: {
+      sve_sminv(tmp, size, pg, src2);
+      if (bt == T_LONG) {
+        umov(dst, tmp, size, 0);
+        cmp(dst, src1);
+        csel(dst, dst, src1, Assembler::LT);
+      } else {
+        smov(dst, tmp, size, 0);
+        cmpw(dst, src1);
+        cselw(dst, dst, src1, Assembler::LT);
+      }
+      break;
+    }
     default:
       assert(false, "unsupported");
       ShouldNotReachHere();
+  }
+
+  if (opc == Op_AndReductionV || opc == Op_OrReductionV || opc == Op_XorReductionV) {
+    if (bt == T_BYTE) {
+      sxtb(dst, dst);
+    } else if (bt == T_SHORT) {
+      sxth(dst, dst);
+    }
   }
 }

@@ -53,10 +53,6 @@ public class ClassLoaderHierarchyTest {
 //      |     |
 //      |     +-- "app", jdk.internal.loader.ClassLoaders$AppClassLoader
 //      |
-//      +-- jdk.internal.reflect.DelegatingClassLoader
-//      |
-//      +-- "Kevin", ClassLoaderHierarchyTest$TestClassLoader
-//      |
 //      +-- ClassLoaderHierarchyTest$TestClassLoader
 //            |
 //            +-- "Bill", ClassLoaderHierarchyTest$TestClassLoader

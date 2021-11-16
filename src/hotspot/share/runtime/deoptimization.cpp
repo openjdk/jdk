@@ -201,7 +201,7 @@ static void print_objects(JavaThread* deoptee_thread,
     if (obj.is_null()) {
       st.print(" allocation failed");
     } else {
-      st.print(" allocated (%d bytes)", obj->size() * HeapWordSize);
+      st.print(" allocated (" SIZE_FORMAT " bytes)", obj->size() * HeapWordSize);
     }
     st.cr();
 

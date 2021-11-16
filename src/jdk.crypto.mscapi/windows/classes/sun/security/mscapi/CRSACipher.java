@@ -290,19 +290,19 @@ public final class CRSACipher extends CipherSpi {
             switch (mode) {
             case MODE_SIGN:
                 return encryptDecrypt(data, bufOfs,
-                    privateKey.getHCryptKey(), true);
+                    privateKey, true);
 
             case MODE_VERIFY:
                 return encryptDecrypt(data, bufOfs,
-                    publicKey.getHCryptKey(), false);
+                    publicKey, false);
 
             case MODE_ENCRYPT:
                 return encryptDecrypt(data, bufOfs,
-                    publicKey.getHCryptKey(), true);
+                    publicKey, true);
 
             case MODE_DECRYPT:
                 return encryptDecrypt(data, bufOfs,
-                    privateKey.getHCryptKey(), false);
+                    privateKey, false);
 
             default:
                 throw new AssertionError("Internal error");
@@ -493,10 +493,20 @@ public final class CRSACipher extends CipherSpi {
     }
 
     /*
-     * Encrypt/decrypt a data buffer using Microsoft Crypto API with HCRYPTKEY.
+     * Encrypt/decrypt a data buffer using Microsoft Crypto API or CNG.
      * It expects and returns ciphertext data in big-endian form.
      */
-    private native static byte[] encryptDecrypt(byte[] data, int dataSize,
-        long hCryptKey, boolean doEncrypt) throws KeyException;
+    private static byte[] encryptDecrypt(byte[] data, int dataSize,
+            CKey key, boolean doEncrypt) throws KeyException {
+        if (key.getHCryptKey() != 0) {
+            return encryptDecrypt(data, dataSize, key.getHCryptKey(), doEncrypt);
+        } else {
+            return cngEncryptDecrypt(data, dataSize, key.getHCryptProvider(), doEncrypt);
+        }
+    }
 
+    private static native byte[] encryptDecrypt(byte[] data, int dataSize,
+            long key, boolean doEncrypt) throws KeyException;
+    private static native byte[] cngEncryptDecrypt(byte[] data, int dataSize,
+            long key, boolean doEncrypt) throws KeyException;
 }

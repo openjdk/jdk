@@ -193,5 +193,5 @@ public abstract class NotificationEmitterSupport implements NotificationEmitter 
      */
     private List<ListenerInfo> listenerList = Collections.emptyList();
 
-    abstract public MBeanNotificationInfo[] getNotificationInfo();
+    public abstract MBeanNotificationInfo[] getNotificationInfo();
 }

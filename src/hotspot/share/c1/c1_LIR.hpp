@@ -46,26 +46,23 @@ class FpuStackSim;
 
 //---------------------------------------------------------------------
 //                 LIR Operands
-//  LIR_OprDesc
 //    LIR_OprPtr
 //      LIR_Const
 //      LIR_Address
 //---------------------------------------------------------------------
-class LIR_OprDesc;
 class LIR_OprPtr;
 class LIR_Const;
 class LIR_Address;
 class LIR_OprVisitor;
+class LIR_Opr;
 
-
-typedef LIR_OprDesc* LIR_Opr;
 typedef int          RegNr;
 
 typedef GrowableArray<LIR_Opr> LIR_OprList;
 typedef GrowableArray<LIR_Op*> LIR_OpArray;
 typedef GrowableArray<LIR_Op*> LIR_OpList;
 
-// define LIR_OprPtr early so LIR_OprDesc can refer to it
+// define LIR_OprPtr early so LIR_Opr can refer to it
 class LIR_OprPtr: public CompilationResourceObj {
  public:
   bool is_oop_pointer() const                    { return (type() == T_OBJECT); }
@@ -184,14 +181,21 @@ class LIR_Const: public LIR_OprPtr {
 
 //---------------------LIR Operand descriptor------------------------------------
 //
-// The class LIR_OprDesc represents a LIR instruction operand;
+// The class LIR_Opr represents a LIR instruction operand;
 // it can be a register (ALU/FPU), stack location or a constant;
 // Constants and addresses are represented as resource area allocated
-// structures (see above).
-// Registers and stack locations are inlined into the this pointer
+// structures (see above), and pointers are stored in the _value field (cast to
+// an intptr_t).
+// Registers and stack locations are represented inline as integers.
 // (see value function).
 
-class LIR_OprDesc: public CompilationResourceObj {
+// Previously, this class was derived from CompilationResourceObj.
+// However, deriving from any of the "Obj" types in allocation.hpp seems
+// detrimental, since in some build modes it would add a vtable to this class,
+// which make it no longer be a 1-word trivially-copyable wrapper object,
+// which is the entire point of it.
+
+class LIR_Opr {
  public:
   // value structure:
   //     data       opr-type opr-kind
@@ -206,8 +210,9 @@ class LIR_OprDesc: public CompilationResourceObj {
  private:
   friend class LIR_OprFact;
 
+  intptr_t _value;
   // Conversion
-  intptr_t value() const                         { return (intptr_t) this; }
+  intptr_t value() const                         { return _value; }
 
   bool check_value_mask(intptr_t mask, intptr_t masked_value) const {
     return (value() & mask) == masked_value;
@@ -279,12 +284,26 @@ class LIR_OprDesc: public CompilationResourceObj {
   static char type_char(BasicType t);
 
  public:
+  LIR_Opr() : _value(0) {}
+  LIR_Opr(intptr_t val) : _value(val) {}
+  LIR_Opr(LIR_OprPtr *val) : _value(reinterpret_cast<intptr_t>(val)) {}
+  bool operator==(const LIR_Opr &other) const { return _value == other._value; }
+  bool operator!=(const LIR_Opr &other) const { return _value != other._value; }
+  explicit operator bool() const { return _value != 0; }
+
+  // UGLY HACK: make this value object look like a pointer (to itself). This
+  // operator overload should be removed, and all callers updated from
+  // `opr->fn()` to `opr.fn()`.
+  const LIR_Opr* operator->() const { return this; }
+  LIR_Opr* operator->() { return this; }
+
   enum {
     vreg_base = ConcreteRegisterImpl::number_of_registers,
     vreg_max = (1 << data_bits) - 1
   };
 
   static inline LIR_Opr illegalOpr();
+  static inline LIR_Opr nullOpr();
 
   enum OprType {
       unknown_type  = 0 << type_shift    // means: not set (catch uninitialized types)
@@ -343,7 +362,7 @@ class LIR_OprDesc: public CompilationResourceObj {
 
   char type_char() const                         { return type_char((is_pointer()) ? pointer()->type() : type()); }
 
-  bool is_equal(LIR_Opr opr) const         { return this == opr; }
+  bool is_equal(LIR_Opr opr) const         { return *this == opr; }
   // checks whether types are same
   bool is_same_type(LIR_Opr opr) const     {
     assert(type_field() != unknown_type &&
@@ -422,7 +441,7 @@ class LIR_OprDesc: public CompilationResourceObj {
   RegNr xmm_regnrHi() const    { assert(is_double_xmm()   && !is_virtual(), "type check"); return (RegNr)hi_reg_half(); }
   int   vreg_number() const    { assert(is_virtual(),                       "type check"); return (RegNr)data(); }
 
-  LIR_OprPtr* pointer()  const                   { assert(is_pointer(), "type check");      return (LIR_OprPtr*)this; }
+  LIR_OprPtr* pointer() const { assert(_value != 0 && is_pointer(), "nullness and type check"); return (LIR_OprPtr*)_value; }
   LIR_Const* as_constant_ptr() const             { return pointer()->as_constant(); }
   LIR_Address* as_address_ptr() const            { return pointer()->as_address(); }
 
@@ -459,6 +478,14 @@ class LIR_OprDesc: public CompilationResourceObj {
   void print(outputStream* out) const PRODUCT_RETURN;
 };
 
+// TODO: Remove this hack.
+// UGLY HACK: add a type alias. `LIR_Opr` is not actually equivalent to the
+// previous `LIR_OprDesc` (`LIR_Opr` is like more similar to previous
+// `LIR_OprDesc*`). The only purpose of this typedef is so that the various
+// `LIR_OprDesc::enum_value` scattered everywhere don't need to be
+// modified. This should be removed, and a textual replacement of
+// `LIR_OprDesc::` to `LIR_Opr::` done throughout the code.
+typedef LIR_Opr LIR_OprDesc;
 
 inline LIR_OprDesc::OprType as_OprType(BasicType type) {
   switch (type) {
@@ -570,6 +597,7 @@ class LIR_OprFact: public AllStatic {
  public:
 
   static LIR_Opr illegalOpr;
+  static LIR_Opr nullOpr;
 
   static LIR_Opr single_cpu(int reg) {
     return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |
@@ -2447,5 +2475,7 @@ class LIR_OpVisitState: public StackObj {
 
 
 inline LIR_Opr LIR_OprDesc::illegalOpr()   { return LIR_OprFact::illegalOpr; };
+
+inline LIR_Opr LIR_OprDesc::nullOpr()   { return LIR_OprFact::nullOpr; };
 
 #endif // SHARE_C1_C1_LIR_HPP

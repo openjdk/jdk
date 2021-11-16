@@ -78,8 +78,8 @@ import java.security.PrivilegedAction;
  */
 public class ReliableLog {
 
-    public final static int PreferredMajorVersion = 0;
-    public final static int PreferredMinorVersion = 2;
+    public static final int PreferredMajorVersion = 0;
+    public static final int PreferredMinorVersion = 2;
 
     // sun.rmi.log.debug=false
     private boolean Debug = false;

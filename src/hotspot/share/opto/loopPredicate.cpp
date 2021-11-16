@@ -712,7 +712,8 @@ class Invariance : public StackObj {
 // Returns true if the predicate of iff is in "scale*iv + offset u< load_range(ptr)" format
 // Note: this function is particularly designed for loop predication. We require load_range
 //       and offset to be loop invariant computed on the fly by "invar"
-bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const {
+bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicType bt, Node *iv, Node *&range,
+                                      Node *&offset, jlong &scale) const {
   if (!is_loop_exit(iff)) {
     return false;
   }
@@ -727,48 +728,60 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
     return false;
   }
   const CmpNode *cmp = bol->in(1)->as_Cmp();
-  if (cmp->Opcode() != Op_CmpU) {
+  if (!(cmp->is_Cmp() && cmp->operates_on(bt, false))) {
     return false;
   }
-  Node* range = cmp->in(2);
-  if (range->Opcode() != Op_LoadRange && !iff->is_RangeCheck()) {
-    const TypeInt* tint = phase->_igvn.type(range)->isa_int();
-    if (tint == NULL || tint->empty() || tint->_lo < 0) {
+  range = cmp->in(2);
+  if (range->Opcode() != Op_LoadRange) {
+    const TypeInteger* tinteger = phase->_igvn.type(range)->isa_integer(bt);
+    if (tinteger == NULL || tinteger->empty() || tinteger->lo_as_long() < 0) {
       // Allow predication on positive values that aren't LoadRanges.
       // This allows optimization of loops where the length of the
       // array is a known value and doesn't need to be loaded back
       // from the array.
       return false;
     }
+  } else {
+    assert(bt == T_INT, "no LoadRange for longs");
   }
-  if (!invar.is_invariant(range)) {
+  scale  = 0;
+  offset = NULL;
+  if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, &scale, &offset, bt)) {
     return false;
   }
-  Node *iv     = _head->as_CountedLoop()->phi();
-  int   scale  = 0;
-  Node *offset = NULL;
-  if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, &scale, &offset)) {
-    return false;
-  }
-  if (offset && !invar.is_invariant(offset)) { // offset must be invariant
-    return false;
-  }
-#ifdef ASSERT
-  if (offset && phase->has_ctrl(offset)) {
-    Node* offset_ctrl = phase->get_ctrl(offset);
-    if (phase->get_loop(predicate_proj) == phase->get_loop(offset_ctrl) &&
-        phase->is_dominator(predicate_proj, offset_ctrl)) {
-      // If the control of offset is loop predication promoted by previous pass,
-      // then it will lead to cyclic dependency.
-      // Previously promoted loop predication is in the same loop of predication
-      // point.
-      // This situation can occur when pinning nodes too conservatively - can we do better?
-      assert(false, "cyclic dependency prevents range check elimination, idx: offset %d, offset_ctrl %d, predicate_proj %d",
-             offset->_idx, offset_ctrl->_idx, predicate_proj->_idx);
-    }
-  }
-#endif
   return true;
+}
+
+bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const {
+  Node* range = NULL;
+  Node* offset = NULL;
+  jlong scale = 0;
+  Node* iv = _head->as_BaseCountedLoop()->phi();
+  if (is_range_check_if(iff, phase, T_INT, iv, range, offset, scale)) {
+    if (!invar.is_invariant(range)) {
+      return false;
+    }
+    if (offset && !invar.is_invariant(offset)) { // offset must be invariant
+      return false;
+    }
+#ifdef ASSERT
+    if (offset && phase->has_ctrl(offset)) {
+      Node* offset_ctrl = phase->get_ctrl(offset);
+      if (phase->get_loop(predicate_proj) == phase->get_loop(offset_ctrl) &&
+          phase->is_dominator(predicate_proj, offset_ctrl)) {
+        // If the control of offset is loop predication promoted by previous pass,
+        // then it will lead to cyclic dependency.
+        // Previously promoted loop predication is in the same loop of predication
+        // point.
+        // This situation can occur when pinning nodes too conservatively - can we do better?
+        assert(false, "cyclic dependency prevents range check elimination, idx: offset %d, offset_ctrl %d, predicate_proj %d",
+               offset->_idx, offset_ctrl->_idx, predicate_proj->_idx);
+      }
+    }
+#endif
+    return true;
+  }
+  return false;
 }
 
 //------------------------------rc_predicate-----------------------------------
@@ -789,7 +802,7 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
 BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
                                        int scale, Node* offset,
                                        Node* init, Node* limit, jint stride,
-                                       Node* range, bool upper, bool &overflow) {
+                                       Node* range, bool upper, bool &overflow, bool negate) {
   jint con_limit  = (limit != NULL && limit->is_Con())  ? limit->get_int()  : 0;
   jint con_init   = init->is_Con()   ? init->get_int()   : 0;
   jint con_offset = offset->is_Con() ? offset->get_int() : 0;
@@ -915,7 +928,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
     cmp = new CmpUNode(max_idx_expr, range);
   }
   register_new_node(cmp, ctrl);
-  BoolNode* bol = new BoolNode(cmp, BoolTest::lt);
+  BoolNode* bol = new BoolNode(cmp, negate ? BoolTest::ge : BoolTest::lt);
   register_new_node(bol, ctrl);
 
   if (TraceLoopPredicate) {
@@ -1282,36 +1295,26 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
     }
     // If predicate expressions may overflow in the integer range, longs are used.
     bool overflow = false;
+    bool negate = (proj->_con != predicate_proj->_con);
 
     // Test the lower bound
-    BoolNode* lower_bound_bol = rc_predicate(loop, ctrl, scale, offset, init, limit, stride, rng, false, overflow);
-    // Negate test if necessary
-    bool negated = false;
-    if (proj->_con != predicate_proj->_con) {
-      lower_bound_bol = new BoolNode(lower_bound_bol->in(1), lower_bound_bol->_test.negate());
-      register_new_node(lower_bound_bol, ctrl);
-      negated = true;
-    }
+    BoolNode* lower_bound_bol = rc_predicate(loop, ctrl, scale, offset, init, limit, stride, rng, false, overflow, negate);
+
     ProjNode* lower_bound_proj = create_new_if_for_predicate(predicate_proj, NULL, reason, overflow ? Op_If : iff->Opcode());
     IfNode* lower_bound_iff = lower_bound_proj->in(0)->as_If();
     _igvn.hash_delete(lower_bound_iff);
     lower_bound_iff->set_req(1, lower_bound_bol);
-    if (TraceLoopPredicate) tty->print_cr("lower bound check if: %s %d ", negated ? " negated" : "", lower_bound_iff->_idx);
+    if (TraceLoopPredicate) tty->print_cr("lower bound check if: %s %d ", negate ? " negated" : "", lower_bound_iff->_idx);
 
     // Test the upper bound
-    BoolNode* upper_bound_bol = rc_predicate(loop, lower_bound_proj, scale, offset, init, limit, stride, rng, true, overflow);
-    negated = false;
-    if (proj->_con != predicate_proj->_con) {
-      upper_bound_bol = new BoolNode(upper_bound_bol->in(1), upper_bound_bol->_test.negate());
-      register_new_node(upper_bound_bol, ctrl);
-      negated = true;
-    }
+    BoolNode* upper_bound_bol = rc_predicate(loop, lower_bound_proj, scale, offset, init, limit, stride, rng, true, overflow, negate);
+
     ProjNode* upper_bound_proj = create_new_if_for_predicate(predicate_proj, NULL, reason, overflow ? Op_If : iff->Opcode());
     assert(upper_bound_proj->in(0)->as_If()->in(0) == lower_bound_proj, "should dominate");
     IfNode* upper_bound_iff = upper_bound_proj->in(0)->as_If();
     _igvn.hash_delete(upper_bound_iff);
     upper_bound_iff->set_req(1, upper_bound_bol);
-    if (TraceLoopPredicate) tty->print_cr("upper bound check if: %s %d ", negated ? " negated" : "", lower_bound_iff->_idx);
+    if (TraceLoopPredicate) tty->print_cr("upper bound check if: %s %d ", negate ? " negated" : "", lower_bound_iff->_idx);
 
     // Fall through into rest of the clean up code which will move
     // any dependent nodes onto the upper bound test.
@@ -1357,10 +1360,10 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
                                                             Node* rng, bool &overflow,
                                                             Deoptimization::DeoptReason reason) {
   // First predicate for the initial value on first loop iteration
-  assert(proj->_con && predicate_proj->_con, "not a range check?");
   Node* opaque_init = new OpaqueLoopInitNode(C, init);
   register_new_node(opaque_init, upper_bound_proj);
-  BoolNode* bol = rc_predicate(loop, upper_bound_proj, scale, offset, opaque_init, limit, stride, rng, (stride > 0) != (scale > 0), overflow);
+  bool negate = (proj->_con != predicate_proj->_con);
+  BoolNode* bol = rc_predicate(loop, upper_bound_proj, scale, offset, opaque_init, limit, stride, rng, (stride > 0) != (scale > 0), overflow, negate);
   Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1)); // This will go away once loop opts are over
   C->add_skeleton_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, upper_bound_proj);
@@ -1378,7 +1381,7 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
   register_new_node(max_value, new_proj);
   max_value = new AddINode(opaque_init, max_value);
   register_new_node(max_value, new_proj);
-  bol = rc_predicate(loop, new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0), overflow);
+  bol = rc_predicate(loop, new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0), overflow, negate);
   opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
   C->add_skeleton_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, new_proj);
