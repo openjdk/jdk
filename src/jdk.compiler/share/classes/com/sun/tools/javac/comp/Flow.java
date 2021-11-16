@@ -794,7 +794,6 @@ public class Flow {
                 }
                 return false;
             } catch (CompletionFailure cf) {
-                cf.printStackTrace();
                 chk.completionError(pos, cf);
                 return true;
             }
