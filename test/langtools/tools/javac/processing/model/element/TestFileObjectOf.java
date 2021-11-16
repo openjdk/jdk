@@ -241,7 +241,7 @@ public class TestFileObjectOf extends TestRunner {
                     "TestEnum: " + testEnumSource,
                     "TestClass2: " + testClass2Source,
                     "<init>: " + testClassSource,
-                    "InnerClass: " + testClassSource,
+                    "InnerClass: " + testInnerClassSource,
                     "fieldTestClass: " + testClassSource,
                     "methodTestClass: " + testClassSource,
                     "<clinit>: " + testEnumSource,
@@ -250,9 +250,9 @@ public class TestFileObjectOf extends TestRunner {
                     "valueOf: " + testEnumSource,
                     "values: " + testEnumSource,
                     "<init>: " + testClass2Source,
-                    "<init>: " + testClassSource,
-                    "fieldInnerClass: " + testClassSource,
-                    "methodInnerClass: " + testClassSource
+                    "<init>: " + testInnerClassSource,
+                    "fieldInnerClass: " + testInnerClassSource,
+                    "methodInnerClass: " + testInnerClassSource
             );
 
             if (!expected.equals(log))
