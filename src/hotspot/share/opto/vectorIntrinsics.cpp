@@ -523,10 +523,11 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
      }
   } else {
     const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_klass));
+    bool is_var_shift = VectorNode::is_shift_opcode(opc);
     switch (n) {
       case 1:
       case 2: {
-        operation = VectorNode::make(sopc, opd1, opd2, vt, is_vector_mask(vbox_klass));
+        operation = VectorNode::make(sopc, opd1, opd2, vt, is_vector_mask(vbox_klass), is_var_shift);
         break;
       }
       case 3: {
