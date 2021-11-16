@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8276787
  * @summary Some negative tests for the SharedArchiveFile option
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes

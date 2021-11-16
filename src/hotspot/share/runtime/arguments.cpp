@@ -3494,7 +3494,7 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
 }
 
 void Arguments::init_shared_archive_paths() {
-  if (ArchiveClassesAtExit != NULL) {
+  if (ArchiveClassesAtExit != nullptr) {
     assert(!RecordDynamicDumpInfo, "already checked");
     if (DumpSharedSpaces) {
       vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
@@ -3502,7 +3502,7 @@ void Arguments::init_shared_archive_paths() {
     check_unsupported_dumping_properties();
   }
 
-  if (SharedArchiveFile == NULL) {
+  if (SharedArchiveFile == nullptr) {
     SharedArchivePath = get_default_shared_archive_path();
   } else {
     int archives = num_archives(SharedArchiveFile);
