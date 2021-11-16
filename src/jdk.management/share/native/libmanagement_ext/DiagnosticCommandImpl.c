@@ -189,7 +189,7 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
       JNU_ThrowOutOfMemoryError(env, NULL);
       return NULL;
   }
-  jmm_interface->GetDiagnosticCommandInfo(env, commands, dcmd_info_array, num_commands);
+  jmm_interface->GetDiagnosticCommandInfo(env, commands, dcmd_info_array);
   for (i=0; i<num_commands; i++) {
       // Ensure capacity for 6 + 3 local refs:
       //  6 => jname, jdesc, jimpact, cmd, args, obj

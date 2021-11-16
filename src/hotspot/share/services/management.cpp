@@ -1965,7 +1965,7 @@ JVM_ENTRY(jobjectArray, jmm_GetDiagnosticCommands(JNIEnv *env))
 JVM_END
 
 JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
-          dcmdInfo* infoArray, jint count))
+          dcmdInfo* infoArray))
   if (cmds == NULL || infoArray == NULL) {
     THROW(vmSymbols::java_lang_NullPointerException());
   }
@@ -1984,11 +1984,7 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
 
   GrowableArray<DCmdInfo *>* info_list = DCmdFactory::DCmdInfo_list(DCmd_Source_MBean);
 
-  const int num_cmds = cmds_ah->length();
-  if (num_cmds != count) {
-    assert(false, "GetDiagnosticCommandInfo count mismatch (%d vs %d)", count, num_cmds);
-    THROW_MSG(vmSymbols::java_lang_InternalError(), "GetDiagnosticCommandInfo count mismatch");
-  }
+  int num_cmds = cmds_ah->length();
   for (int i = 0; i < num_cmds; i++) {
     oop cmd = cmds_ah->obj_at(i);
     if (cmd == NULL) {
