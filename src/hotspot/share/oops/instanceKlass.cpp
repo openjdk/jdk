@@ -728,7 +728,6 @@ oop InstanceKlass::protection_domain() const {
   return java_lang_Class::protection_domain(java_mirror());
 }
 
-// To remove these from requires an incompatible change and CSR review.
 objArrayOop InstanceKlass::signers() const {
   // return the signers from the mirror
   return java_lang_Class::signers(java_mirror());
@@ -2599,6 +2598,11 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 // retrieved during dump time.
 // Verification of archived old classes will be performed during run time.
 bool InstanceKlass::can_be_verified_at_dumptime() const {
+  if (MetaspaceShared::is_in_shared_metaspace(this)) {
+    // This is a class that was dumped into the base archive, so we know
+    // it was verified at dump time.
+    return true;
+  }
   if (major_version() < 50 /*JAVA_6_VERSION*/) {
     return false;
   }

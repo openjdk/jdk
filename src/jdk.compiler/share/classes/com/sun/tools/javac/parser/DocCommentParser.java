@@ -1115,7 +1115,7 @@ public class DocCommentParser {
         return new String(buf, start, end - start);
     }
 
-    private static abstract class TagParser {
+    private abstract static class TagParser {
         enum Kind { INLINE, BLOCK, EITHER }
 
         final Kind kind;

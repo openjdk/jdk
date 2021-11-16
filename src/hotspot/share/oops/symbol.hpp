@@ -155,7 +155,7 @@ class Symbol : public MetaspaceObj {
   // Returns the largest size symbol we can safely hold.
   static int max_length() { return max_symbol_length; }
   unsigned identity_hash() const {
-    unsigned addr_bits = (unsigned)((uintptr_t)this >> (LogBytesPerWord + 3));
+    unsigned addr_bits = (unsigned)((uintptr_t)this >> LogBytesPerWord);
     return ((unsigned)extract_hash(_hash_and_refcount) & 0xffff) |
            ((addr_bits ^ (length() << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
   }

@@ -1635,7 +1635,8 @@ void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
     // Slow-path call
     int size = TypeFunc::Parms + 2;
     CallLeafNode *call = new CallLeafNode(OptoRuntime::dtrace_object_alloc_Type(),
-                                          CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc_base),
+                                          CAST_FROM_FN_PTR(address,
+                                          static_cast<int (*)(Thread*, oopDesc*)>(SharedRuntime::dtrace_object_alloc)),
                                           "dtrace_object_alloc",
                                           TypeRawPtr::BOTTOM);
 

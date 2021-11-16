@@ -37,7 +37,6 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.security.Provider;
 import java.security.AccessController;
-import java.security.AccessControlContext;
 import java.security.Key;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -641,16 +640,12 @@ class Krb5Context implements GSSContextSpi {
                      * for this service in the Subject and reuse it
                      */
 
-                    @SuppressWarnings("removal")
-                    final AccessControlContext acc =
-                        AccessController.getContext();
-
                     if (GSSUtil.useSubjectCredsOnly(caller)) {
                         KerberosTicket kerbTicket = null;
                         try {
                            // get service ticket from caller's subject
                            @SuppressWarnings("removal")
-                           var tmp = AccessController.doPrivileged(
+                           var tmp = AccessController.doPrivilegedWithCombiner(
                                 new PrivilegedExceptionAction<KerberosTicket>() {
                                 public KerberosTicket run() throws Exception {
                                     // XXX to be cleaned
@@ -665,8 +660,7 @@ class Krb5Context implements GSSContextSpi {
                                         second == null ?
                                             myName.getKrb5PrincipalName().getName():
                                             second.getName().getKrb5PrincipalName().getName(),
-                                        peerName.getKrb5PrincipalName().getName(),
-                                        acc);
+                                        peerName.getKrb5PrincipalName().getName());
                                 }});
                             kerbTicket = tmp;
                         } catch (PrivilegedActionException e) {
@@ -710,10 +704,10 @@ class Krb5Context implements GSSContextSpi {
                         if (GSSUtil.useSubjectCredsOnly(caller)) {
                             @SuppressWarnings("removal")
                             final Subject subject =
-                                AccessController.doPrivileged(
+                                AccessController.doPrivilegedWithCombiner(
                                 new java.security.PrivilegedAction<Subject>() {
                                     public Subject run() {
-                                        return (Subject.getSubject(acc));
+                                        return (Subject.current());
                                     }
                                 });
                             if (subject != null &&

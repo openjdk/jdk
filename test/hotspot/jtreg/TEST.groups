@@ -211,7 +211,6 @@ tier1_gc_1 = \
 
 tier1_gc_2 = \
   gc/ \
-  -gc/CriticalNativeArgs.java \
   -gc/g1/ \
   -gc/logging/TestUnifiedLoggingSwitchStress.java \
   -gc/stress \
@@ -226,9 +225,7 @@ hotspot_gc_epsilon = \
 tier1_gc_epsilon = \
   gc/epsilon/
 
-tier2_gc_epsilon = \
-  gc/CriticalNativeArgs.java \
-  gc/stress/CriticalNativeStress.java
+tier2_gc_epsilon =
 
 tier1_gc_gcold = \
   gc/stress/gcold/TestGCOldWithG1.java \
@@ -267,8 +264,6 @@ tier2_gc_shenandoah = \
   gc/logging/TestUnifiedLoggingSwitchStress.java \
   runtime/Metaspace/DefineClass.java \
   gc/shenandoah/ \
-  gc/CriticalNativeArgs.java \
-  gc/stress/CriticalNativeStress.java \
   serviceability/sa/TestHeapDumpForInvokeDynamic.java \
   -gc/shenandoah/TestStringDedupStress.java \
   -:tier1_gc_shenandoah

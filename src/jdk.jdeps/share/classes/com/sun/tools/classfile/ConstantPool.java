@@ -370,7 +370,7 @@ public class ConstantPool {
         R visitUtf8(CONSTANT_Utf8_info info, P p);
     }
 
-    public static abstract class CPInfo {
+    public abstract static class CPInfo {
         CPInfo() {
             this.cp = null;
         }
@@ -394,7 +394,7 @@ public class ConstantPool {
         protected final ConstantPool cp;
     }
 
-    public static abstract class CPRefInfo extends CPInfo {
+    public abstract static class CPRefInfo extends CPInfo {
         protected CPRefInfo(ConstantPool cp, ClassReader cr, int tag) throws IOException {
             super(cp);
             this.tag = tag;
