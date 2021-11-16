@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,10 @@ public class referringObjects002 extends HeapwalkingDebugger {
 
     public void checkClassObjectReferrersCount(ClassObjectReference classObjectReference, int expectedCount) {
         int referrersCount = classObjectReference.referringObjects(0).size();
+        log.complain("References:");
+        for (ObjectReference ref: classObjectReference.referringObjects(0)) {
+            log.complain(ref);
+        }
 
         if (referrersCount != expectedCount) {
             setSuccess(false);
@@ -119,7 +123,8 @@ public class referringObjects002 extends HeapwalkingDebugger {
         // +1 referrer is classloader
         // +1 referrer is debugee class unloader
         // +1 self-reference from this_class index
-        int expectedReferrersCount = createInstances + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size() + 3;
+        // +1 referrer is MethodType from MethodHandle created by reflective call
+        int expectedReferrersCount = createInstances + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size() + 4;
 
         ClassObjectReference classObjectReference = debuggee.classByName(className).classObject();
 
@@ -134,7 +139,8 @@ public class referringObjects002 extends HeapwalkingDebugger {
         // 1 referrer is classloader
         // 1 referrer is debugee class unloader
         // 1 self-reference from this_class index
-        expectedReferrersCount = 3;
+        // 1 referrer is MethodType from MethodHandle created by reflective call
+        expectedReferrersCount = 4;
 
         checkClassObjectReferrersCount(classObjectReference, expectedReferrersCount);
 
