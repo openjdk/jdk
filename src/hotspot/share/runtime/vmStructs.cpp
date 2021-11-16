@@ -824,7 +824,6 @@
   nonstatic_field(ciMethodData,                _arg_local,                                    intx)                                  \
   nonstatic_field(ciMethodData,                _arg_stack,                                    intx)                                  \
   nonstatic_field(ciMethodData,                _arg_returned,                                 intx)                                  \
-  nonstatic_field(ciMethodData,                _current_mileage,                              int)                                   \
   nonstatic_field(ciMethodData,                _orig,                                         MethodData::CompilerCounters)          \
                                                                                                                                      \
   nonstatic_field(ciField,                     _holder,                                       ciInstanceKlass*)                      \
@@ -1850,6 +1849,10 @@
   declare_c2_type(VectorUnboxNode, VectorNode)                            \
   declare_c2_type(VectorReinterpretNode, VectorNode)                      \
   declare_c2_type(VectorMaskCastNode, VectorNode)                         \
+  declare_c2_type(MaskAllNode, VectorNode)                                \
+  declare_c2_type(AndVMaskNode, VectorNode)                               \
+  declare_c2_type(OrVMaskNode, VectorNode)                                \
+  declare_c2_type(XorVMaskNode, VectorNode)                               \
   declare_c2_type(VectorBoxNode, Node)                                    \
   declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
   declare_c2_type(VectorTestNode, Node)                                   \

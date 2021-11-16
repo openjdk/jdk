@@ -2134,7 +2134,8 @@ void Compile::Optimize() {
   if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp("", &timers[_t_renumberLive]);
     initial_gvn()->replace_with(&igvn);
-    for_igvn()->clear();
+    Unique_Node_List* old_worklist = for_igvn();
+    old_worklist->clear();
     Unique_Node_List new_worklist(C->comp_arena());
     {
       ResourceMark rm;
@@ -2144,7 +2145,7 @@ void Compile::Optimize() {
     set_for_igvn(&new_worklist);
     igvn = PhaseIterGVN(initial_gvn());
     igvn.optimize();
-    set_for_igvn(save_for_igvn);
+    set_for_igvn(old_worklist); // new_worklist is dead beyond this point
   }
 
   // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
@@ -2358,6 +2359,7 @@ bool Compile::has_vbox_nodes() {
 
 static bool is_vector_unary_bitwise_op(Node* n) {
   return n->Opcode() == Op_XorV &&
+         n->req() == 2 &&
          VectorNode::is_vector_bitwise_not_pattern(n);
 }
 
@@ -2365,7 +2367,7 @@ static bool is_vector_binary_bitwise_op(Node* n) {
   switch (n->Opcode()) {
     case Op_AndV:
     case Op_OrV:
-      return true;
+      return n->req() == 2;
 
     case Op_XorV:
       return !is_vector_unary_bitwise_op(n);
@@ -3424,6 +3426,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_StoreVector:
   case Op_LoadVectorGather:
   case Op_StoreVectorScatter:
+  case Op_LoadVectorGatherMasked:
+  case Op_StoreVectorScatterMasked:
   case Op_VectorCmpMasked:
   case Op_VectorMaskGen:
   case Op_LoadVectorMasked:
