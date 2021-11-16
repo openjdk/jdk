@@ -468,19 +468,19 @@ public class Parser {
                 return;
             }
 
-            if (lookahead.sval.compareTo(DATA) == 0) {
+            if (lookahead.sval.equals(DATA)) {
                 dataStmt(cf);
-            } else if (lookahead.sval.compareTo(HEADER) == 0) {
+            } else if (lookahead.sval.equals(HEADER)) {
                 headerStmt(cf);
-            } else if (lookahead.sval.compareTo(WIDTH) == 0) {
+            } else if (lookahead.sval.equals(WIDTH)) {
                 widthStmt(cf);
-            } else if (lookahead.sval.compareTo(FORMAT) == 0) {
+            } else if (lookahead.sval.equals(FORMAT)) {
                 formatStmt(cf);
-            } else if (lookahead.sval.compareTo(ALIGN) == 0) {
+            } else if (lookahead.sval.equals(ALIGN)) {
                 alignStmt(cf);
-            } else if (lookahead.sval.compareTo(SCALE) == 0) {
+            } else if (lookahead.sval.equals(SCALE)) {
                 scaleStmt(cf);
-            } else if (lookahead.sval.compareTo(REQUIRED) == 0) {
+            } else if (lookahead.sval.equals(REQUIRED)) {
                 requiredStmt(cf);
             } else {
                 return;
@@ -539,7 +539,7 @@ public class Parser {
         while (lookahead.ttype != StreamTokenizer.TT_EOF) {
             // look for the start symbol
             if ((lookahead.ttype != StreamTokenizer.TT_WORD)
-                    || (lookahead.sval.compareTo(START) != 0)) {
+                    || (!lookahead.sval.equals(START))) {
                 // skip tokens until a start symbol is found
                 nextToken();
                 continue;
@@ -569,7 +569,7 @@ public class Parser {
         while (lookahead.ttype != StreamTokenizer.TT_EOF) {
             // look for the start symbol
             if ((lookahead.ttype != StreamTokenizer.TT_WORD)
-                    || (lookahead.sval.compareTo(START) != 0)) {
+                    || (!lookahead.sval.equals(START))) {
                 // skip tokens until a start symbol is found
                 nextToken();
                 continue;
