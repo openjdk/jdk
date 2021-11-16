@@ -84,7 +84,7 @@ static void setBlendingFactors(
                                  vertexShaderId:(NSString *)vertexShaderId
                                fragmentShaderId:(NSString *)fragmentShaderId
 {
-    RenderOptions defaultOptions = {JNI_FALSE, JNI_FALSE, 0/*unused*/, {JNI_FALSE, JNI_TRUE}, {JNI_FALSE, JNI_TRUE}, JNI_FALSE, JNI_FALSE, JNI_FALSE};
+    RenderOptions defaultOptions = {JNI_FALSE, JNI_FALSE, 0/*unused*/, {JNI_FALSE, JNI_TRUE}, JNI_FALSE, JNI_FALSE, JNI_FALSE};
     return [self getPipelineState:pipelineDescriptor
                    vertexShaderId:vertexShaderId
                  fragmentShaderId:fragmentShaderId
@@ -98,7 +98,7 @@ static void setBlendingFactors(
                                fragmentShaderId:(NSString *)fragmentShaderId
                                stencilNeeded:(bool)stencilNeeded
 {
-    RenderOptions defaultOptions = {JNI_FALSE, JNI_FALSE, 0/*unused*/, {JNI_FALSE, JNI_TRUE}, {JNI_FALSE, JNI_TRUE}, JNI_FALSE, JNI_FALSE, JNI_FALSE};
+    RenderOptions defaultOptions = {JNI_FALSE, JNI_FALSE, 0/*unused*/, {JNI_FALSE, JNI_TRUE}, JNI_FALSE, JNI_FALSE, JNI_FALSE};
     return [self getPipelineState:pipelineDescriptor
                    vertexShaderId:vertexShaderId
                  fragmentShaderId:fragmentShaderId
@@ -106,6 +106,16 @@ static void setBlendingFactors(
                     renderOptions:&defaultOptions
                     stencilNeeded:stencilNeeded];
 }
+
+// Bits in pipeline state index
+enum state_index_bits {
+  ST_SRC_PRE_BIT,
+  ST_SRC_OPQ_BIT,
+  ST_STN_BIT,
+  ST_AA_BIT,
+  ST_EXTA_BIT,
+  ST_MAX_BIT
+};
 
 // Base method to obtain MTLRenderPipelineState.
 // NOTE: parameters compositeRule, srcFlags, dstFlags are used to set MTLRenderPipelineColorAttachmentDescriptor multipliers
@@ -130,30 +140,26 @@ static void setBlendingFactors(
     else {
         if (useComposite) {
             if (!renderOptions->srcFlags.isPremultiplied)
-                subIndex |= 1;
+                subIndex |= 1 << ST_SRC_PRE_BIT;
             if (renderOptions->srcFlags.isOpaque)
-                subIndex |= 1 << 1;
-            if (!renderOptions->dstFlags.isPremultiplied)
-                subIndex |= 1 << 2;
-            if (renderOptions->dstFlags.isOpaque)
-                subIndex |= 1 << 3;
+                subIndex |= 1 << ST_SRC_OPQ_BIT;
         } else
             compositeRule = RULE_Src;
     }
 
     if (stencilNeeded) {
-        subIndex |= 1 << 4;
+        subIndex |= 1 << ST_STN_BIT;
     }
 
     if (renderOptions->isAA) {
-        subIndex |= 1 << 5;
+        subIndex |= 1 << ST_AA_BIT;
     }
 
     if ((composite != nil && FLT_LT([composite getExtraAlpha], 1.0f))) {
-        subIndex |= 1 << 6;
+        subIndex |= 1 << ST_EXTA_BIT;
     }
 
-    int index = compositeRule*128 + subIndex;
+    int index = (compositeRule << ST_MAX_BIT) + subIndex;
 
     NSPointerArray * subStates = [self getSubStates:vertexShaderId fragmentShader:fragmentShaderId];
 
