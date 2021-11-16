@@ -253,6 +253,9 @@ private:
   DiscoveredList* _discoveredFinalRefs;
   DiscoveredList* _discoveredPhantomRefs;
 
+  // Workers to process the discovered non-strong references.
+  WorkerThreads* _workers;
+
   void run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive);
 
   // Drop Soft/Weak/Final references with a NULL or live referent, and clear
@@ -376,7 +379,8 @@ public:
                      uint mt_processing_degree = 1,
                      uint mt_discovery_degree  = 1,
                      bool concurrent_discovery = false,
-                     BoolObjectClosure* is_alive_non_header = NULL);
+                     BoolObjectClosure* is_alive_non_header = nullptr,
+                     WorkerThreads* workers = nullptr);
 
   // RefDiscoveryPolicy values
   enum DiscoveryPolicy {

@@ -89,11 +89,13 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
                                        uint      mt_processing_degree,
                                        uint      mt_discovery_degree,
                                        bool      concurrent_discovery,
-                                       BoolObjectClosure* is_alive_non_header)  :
+                                       BoolObjectClosure* is_alive_non_header,
+                                       WorkerThreads* workers)  :
   _is_subject_to_discovery(is_subject_to_discovery),
   _discovering_refs(false),
   _next_id(0),
-  _is_alive_non_header(is_alive_non_header)
+  _is_alive_non_header(is_alive_non_header),
+  _workers(workers)
 {
   assert(is_subject_to_discovery != NULL, "must be set");
 
@@ -707,12 +709,11 @@ void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_tas
 
   proxy_task.prepare_run_task(task, num_queues(), processing_is_mt() ? RefProcThreadModel::Multi : RefProcThreadModel::Single, marks_oops_alive);
   if (processing_is_mt()) {
-    WorkerThreads* workers = Universe::heap()->safepoint_workers();
-    assert(workers != NULL, "can not dispatch multi threaded without workers");
-    assert(workers->active_workers() >= num_queues(),
+    assert(_workers != nullptr, "can not dispatch multi threaded without workers");
+    assert(_workers->active_workers() >= num_queues(),
            "Ergonomically chosen workers(%u) should be less than or equal to active workers(%u)",
-           num_queues(), workers->active_workers());
-    workers->run_task(&proxy_task, num_queues());
+           num_queues(), _workers->active_workers());
+    _workers->run_task(&proxy_task, num_queues());
   } else {
     for (unsigned i = 0; i < _max_num_queues; ++i) {
       proxy_task.work(i);

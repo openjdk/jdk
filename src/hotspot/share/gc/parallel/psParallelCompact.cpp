@@ -854,7 +854,8 @@ public:
       ParallelGCThreads,   // mt processing degree
       ParallelGCThreads,   // mt discovery degree
       true,                // atomic_discovery
-      is_alive_non_header) {
+      is_alive_non_header,
+      &ParallelScavengeHeap::heap()->workers()) {
   }
 
   template<typename T> bool discover(oop obj, ReferenceType type) {
