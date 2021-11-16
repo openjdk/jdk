@@ -97,9 +97,9 @@ public class referringObjects002 extends HeapwalkingDebugger {
 
     public void checkClassObjectReferrersCount(ClassObjectReference classObjectReference, int expectedCount) {
         int referrersCount = classObjectReference.referringObjects(0).size();
-        log.complain("References:");
+        log.display("References:");
         for (ObjectReference ref: classObjectReference.referringObjects(0)) {
-            log.complain(ref);
+            log.display(ref);
         }
 
         if (referrersCount != expectedCount) {
