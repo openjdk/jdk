@@ -519,6 +519,7 @@ Node* PhaseCFG::select(
   int idx = -1;     // Index in worklist
   int cand_cnt = 0; // Candidate count
   bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
+  Node *last_n = block->get_node(--sched_slot);
 
   for( uint i=0; i<cnt; i++ ) { // Inspect entire worklist
     // Order in worklist is used to break ties.
@@ -599,6 +600,17 @@ Node* PhaseCFG::select(
     // MachTemps should be scheduled last so they are near their uses
     if (n->is_MachTemp()) {
       n_choice = 1;
+    }
+
+    // If n is related to the last_n(last selected node)
+    // and the latency of last_n is greater than 1, another node can be inserted between the n and last_n.
+    if (last_n) {
+      for (uint j = 0; j < n->req() ; j++) {
+        if ((n->in(j) == last_n) && (n->latency(j) > 1)) { //relate && latency is large
+          n_choice = 1;
+          break;
+        }
+      }
     }
 
     uint n_latency = get_latency_for_node(n);
