@@ -98,6 +98,7 @@ import jdk.internal.net.http.hpack.DecodingCallback;
  */
 class Stream<T> extends ExchangeImpl<T> {
 
+    private static final String COOKIE_HEADER = "Cookie";
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
     final ConcurrentLinkedQueue<Http2Frame> inputQ = new ConcurrentLinkedQueue<>();
@@ -655,8 +656,9 @@ class Stream<T> extends ExchangeImpl<T> {
 
         // Don't override Cookie values that have been set by the CookieHandler.
         final HttpHeaders uh = userh;
-        BiPredicate<String, String> overrides = (k, v) -> "Cookie".equalsIgnoreCase(k)
-                || uh.firstValue(k).isEmpty();
+        BiPredicate<String, String> overrides =
+                (k, v) -> COOKIE_HEADER.equalsIgnoreCase(k)
+                          || uh.firstValue(k).isEmpty();
 
         // Filter any headers from systemHeaders that are set in userHeaders
         //   except for "Cookies" - user cookies will be appended to system
