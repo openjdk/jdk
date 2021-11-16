@@ -698,13 +698,6 @@ const intx ObjectAlignmentInBytes = 8;
           "for use with MonitorUsedDeflationThreshold (0 is off).")         \
           range(0, max_uintx)                                               \
                                                                             \
-  /* notice: the max range value here is max_jint, not max_intx  */         \
-  /* because of overflow issue                                   */         \
-  product(intx, MonitorDeflationMax, 1000000, DIAGNOSTIC,                   \
-          "The maximum number of monitors to deflate, unlink and delete "   \
-          "at one time (minimum is 1024).")                      \
-          range(1024, max_jint)                                             \
-                                                                            \
   product(intx, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,              \
           "Percentage of used monitors before triggering deflation (0 is "  \
           "off). The check is performed on GuaranteedSafepointInterval "    \

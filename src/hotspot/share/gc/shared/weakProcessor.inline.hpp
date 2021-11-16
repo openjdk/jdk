@@ -33,7 +33,9 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/weakProcessorTimes.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/resolvedMethodTable.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 
@@ -65,7 +67,9 @@ public:
       _keep_alive->do_oop(p);
       ++_live;
     } else {
+      oop v = *p;
       *p = NULL;
+      ObjectMonitor::maybe_deflate_dead(v, p);
       ++_new_dead;
     }
   }

@@ -135,6 +135,8 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 
   static OopStorage* _oop_storage;
 
+  static int _deflated_count;
+
   // The sync code expects the header field to be at offset zero (0).
   // Enforced by the assert() in header_addr().
   volatile markWord _header;        // displaced object header word - mark
@@ -298,7 +300,9 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 
   oop       object() const;
   oop       object_peek() const;
-
+  oop*      object_ptr_raw() const {
+    return _object.ptr_raw();
+  }
   // Returns true if the specified thread owns the ObjectMonitor. Otherwise
   // returns false and throws IllegalMonitorStateException (IMSE).
   bool      check_owner(TRAPS);
@@ -321,7 +325,7 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
     void operator()(JavaThread* current);
   };
  public:
-  bool      enter(JavaThread* current);
+  void      enter(JavaThread* current);
   void      exit(JavaThread* current, bool not_suspended = true);
   void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
@@ -335,7 +339,17 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 
   // Use the following at your own risk
   intx      complete_exit(JavaThread* current);
-  bool      reenter(intx recursions, JavaThread* current);
+  void      reenter(intx recursions, JavaThread* current);
+
+  static void maybe_deflate_dead(oop obj, oop* p);
+
+  static bool deflated_count() {
+    return Atomic::load(&_deflated_count);
+  }
+
+  static void reset_deflated_count() {
+    Atomic::store(&_deflated_count, 0);
+  }
 
  private:
   void      AddWaiter(ObjectWaiter* waiter);

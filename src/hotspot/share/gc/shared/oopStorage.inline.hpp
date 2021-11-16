@@ -30,7 +30,8 @@
 #include "memory/allocation.hpp"
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/isConst.hpp"
-#include "oops/oop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
@@ -263,6 +264,7 @@ public:
         result = _f(ptr);
       } else {
         *ptr = NULL;            // Clear dead value.
+        ObjectMonitor::maybe_deflate_dead(v, ptr);
       }
     }
     return result;
