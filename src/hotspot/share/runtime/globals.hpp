@@ -291,6 +291,12 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, UseInlineCaches, true,                                      \
           "Use Inline Caches for virtual calls ")                           \
                                                                             \
+  product(bool, FixInlineCachesBug, false,                                  \
+          "Fix  Inline Caches Bug")                                         \
+                                                                            \
+  product(bool, ForceInlineCachesCleaning, false,                           \
+          "Force InlineCache cleaning")                                     \
+                                                                            \
   product(bool, InlineArrayCopy, true, DIAGNOSTIC,                          \
           "Inline arraycopy native that is known to be part of "            \
           "base library DLL")                                               \

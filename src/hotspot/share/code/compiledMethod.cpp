@@ -478,6 +478,10 @@ bool CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic) {
       } else {
         ShouldNotReachHere();
       }
+    } else {
+      if (FixInlineCachesBug) {
+        return true;
+      }
     }
   }
 
@@ -609,6 +613,8 @@ void CompiledMethod::cleanup_inline_caches(bool clean_all) {
 bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all) {
   assert(CompiledICLocker::is_safe(this), "mt unsafe call");
   ResourceMark rm;
+
+  unloading_occurred = unloading_occurred || ForceInlineCachesCleaning;
 
   // Find all calls in an nmethod and clear the ones that point to non-entrant,
   // zombie and unloaded nmethods.
