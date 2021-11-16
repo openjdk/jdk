@@ -336,10 +336,10 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
 }
 
 class VM_PopulateDynamicDumpSharedSpace: public VM_GC_Sync_Operation {
-  DynamicArchiveBuilder builder;
+  DynamicArchiveBuilder _builder;
 public:
   VM_PopulateDynamicDumpSharedSpace(const char* archive_name)
-  : VM_GC_Sync_Operation(), builder(archive_name) {}
+  : VM_GC_Sync_Operation(), _builder(archive_name) {}
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;
@@ -353,7 +353,7 @@ public:
     }
     FileMapInfo::check_nonempty_dir_in_shared_path_table();
 
-    builder.doit();
+    _builder.doit();
   }
 };
 
