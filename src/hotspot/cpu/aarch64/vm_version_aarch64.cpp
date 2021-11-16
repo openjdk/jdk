@@ -205,6 +205,7 @@ void VM_Version::initialize() {
 
     if (FLAG_IS_DEFAULT(OnSpinWaitInst) && FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
       FLAG_SET_DEFAULT(OnSpinWaitInst, "isb");
+      FLAG_SET_DEFAULT(OnSpinWaitInstCount, 1);
     }
   }
 
