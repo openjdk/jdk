@@ -478,6 +478,11 @@ public class Object {
      * A subclass overrides the {@code finalize} method to dispose of
      * system resources or to perform other cleanup.
      * <p>
+     * When running in a JVM in which finalization has been disabled or removed,
+     * the garbage collector will never call {@code finalize()}. In a JVM in
+     * which finalization is enabled, the GC might call {@code finalize} only
+     * after an indefinite delay.
+     * <p>
      * The general contract of {@code finalize} is that it is invoked
      * if and when the Java virtual
      * machine has determined that there is no longer any
@@ -548,15 +553,15 @@ public class Object {
      * and reliability. See <a href="https://openjdk.java.net/jeps/421">JEP 421</a>
      * for discussion and alternatives.
      * <p>
-     * Classes whose instances hold non-heap resources should provide a method
-     * to enable explicit release of those resources, and they should also
-     * implement {@link AutoCloseable} if appropriate.
-     * {@link java.lang.ref.Cleaner} and {@link java.lang.ref.PhantomReference}
-     * provide more flexible and efficient ways to release resources when an object
-     * becomes unreachable.
+     * Subclasses that override {@code finalize} in order to perform cleanup
+     * should be modified to use alternative cleanup mechanisms and to remove
+     * the overriding {@code finalize} method.
+     * {@link java.lang.ref.Cleaner} and
+     * {@link java.lang.ref.PhantomReference} provide ways to release resources
+     * when an object becomes unreachable. Or, add a {@code close()} method to
+     * explicitly release resources, and implement {@code AutoCloseable} to
+     * enable the object to be used with a {@code try}-with-resources statement.
      * <p>
-     * When running in a JVM in which finalization has been disabled or removed,
-     * the garbage collector will never schedule {@code finalize()} to be called.
      * This method will remain in place until finalizers have been removed from
      * most existing code.
      * 
