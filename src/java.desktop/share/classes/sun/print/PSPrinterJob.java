@@ -613,7 +613,7 @@ public class PSPrinterJob extends RasterPrinterJob {
             int cnt = Integer.parseInt(mFontProps.getProperty("font.num", "9"));
             for (int i = 0; i < cnt; i++){
                 mPSStream.println("    /" + mFontProps.getProperty
-                           ("font." + String.valueOf(i), "Courier ISOF"));
+                           ("font." + i, "Courier ISOF"));
             }
         }
         mPSStream.println("] D");

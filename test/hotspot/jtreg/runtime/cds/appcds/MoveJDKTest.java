@@ -27,6 +27,7 @@
  * @summary Test that CDS still works when the JDK is moved to a new directory
  * @bug 8272345
  * @requires vm.cds
+ * @requires vm.flagless
  * @comment This test doesn't work on Windows because it depends on symlinks
  * @requires os.family != "windows"
  * @library /test/lib

@@ -63,6 +63,7 @@ class OSContainer: AllStatic {
   static int cpu_shares();
 
   static jlong pids_max();
+  static jlong pids_current();
 };
 
 inline bool OSContainer::is_containerized() {

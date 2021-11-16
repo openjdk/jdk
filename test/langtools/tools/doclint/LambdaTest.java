@@ -41,7 +41,7 @@ import java.util.function.Function;
  */
 public final class LambdaTest
 {
-    /** */ LambdaTest() { }
+    /** . */ LambdaTest() { }
 
     /**
      * The field itself has docs.

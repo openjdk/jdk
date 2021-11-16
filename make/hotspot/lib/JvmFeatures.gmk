@@ -58,6 +58,10 @@ else
   JVM_EXCLUDE_PATTERNS += /zero/
 endif
 
+ifeq ($(JVM_VARIANT), core)
+  JVM_CFLAGS_FEATURES += -DVMTYPE=\"Core\"
+endif
+
 ifeq ($(JVM_VARIANT), custom)
   JVM_CFLAGS_FEATURES += -DVMTYPE=\"Custom\"
 endif

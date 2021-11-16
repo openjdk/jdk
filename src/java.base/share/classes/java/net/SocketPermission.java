@@ -873,7 +873,7 @@ public final class SocketPermission extends Permission
 
     /**
      * Checks if the incoming Permission's action are a proper subset of
-     * the this object's actions.
+     * this object's actions.
      * <P>
      * Check, in the following order:
      * <ul>
@@ -1297,7 +1297,7 @@ public final class SocketPermission extends Permission
     /*
     public String toString()
     {
-        StringBuffer s = new StringBuffer(super.toString() + "\n" +
+        StringBuilder s = new StringBuilder(super.toString() + "\n" +
             "cname = " + cname + "\n" +
             "wildcard = " + wildcard + "\n" +
             "invalid = " + invalid + "\n" +

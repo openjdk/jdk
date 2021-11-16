@@ -57,18 +57,15 @@ public class BuypassCA {
 
         ValidatePathWithParams pathValidator = new ValidatePathWithParams(null);
 
-        boolean ocspEnabled = true;
-
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
             pathValidator.enableCRLCheck();
-            ocspEnabled = false;
         } else {
             // OCSP check by default
             pathValidator.enableOCSPCheck();
         }
 
         new BuypassClass2().runTest(pathValidator);
-        new BuypassClass3().runTest(pathValidator, ocspEnabled);
+        new BuypassClass3().runTest(pathValidator);
     }
 }
 
@@ -320,8 +317,7 @@ class BuypassClass3 {
             "BJmiWd5uUxev0nVw0saqvlo4yAEBq4rI/DieKcQI4qEI8myzoS0R0azMfLM=\n" +
             "-----END CERTIFICATE-----";
 
-    public void runTest(ValidatePathWithParams pathValidator, boolean ocspEnabled)
-            throws Exception {
+    public void runTest(ValidatePathWithParams pathValidator) throws Exception {
         // Validate valid
         pathValidator.validate(new String[]{VALID_CLASS_3, INT_CLASS_3},
                 ValidatePathWithParams.Status.GOOD, null, System.out);

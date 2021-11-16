@@ -237,9 +237,8 @@ class java_lang_String : AllStatic {
   static Symbol* as_symbol(oop java_string);
   static Symbol* as_symbol_or_null(oop java_string);
 
-  // Testers
-  static bool is_instance(oop obj);
-  static inline bool is_instance_inlined(oop obj);
+  // Tester
+  static inline bool is_instance(oop obj);
 
   // Debugging
   static void print(oop java_string, outputStream* st);
@@ -366,8 +365,8 @@ class java_lang_Class : AllStatic {
   static oop source_file(oop java_class);
   static void set_source_file(oop java_class, oop source_file);
 
-  static int oop_size(oop java_class);
-  static void set_oop_size(HeapWord* java_class, int size);
+  static size_t oop_size(oop java_class);
+  static void set_oop_size(HeapWord* java_class, size_t size);
   static int static_oop_field_count(oop java_class);
   static void set_static_oop_field_count(oop java_class, int size);
 
@@ -563,6 +562,10 @@ class java_lang_Throwable: AllStatic {
   static void fill_in_stack_trace(Handle throwable, const methodHandle& method = methodHandle());
   // Programmatic access to stack trace
   static void get_stack_trace_elements(Handle throwable, objArrayHandle stack_trace, TRAPS);
+
+  // For recreating class initialization error exceptions.
+  static Handle get_cause_with_stack_trace(Handle throwable, TRAPS);
+
   // Printing
   static void print(oop throwable, outputStream* st);
   static void print_stack_trace(Handle throwable, outputStream* st);

@@ -61,7 +61,7 @@ class ShenandoahMonitoringSupport;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
 class ShenandoahVerifier;
-class ShenandoahWorkGang;
+class ShenandoahWorkerThreads;
 class VMStructs;
 
 // Used for buffering per-region liveness data.
@@ -207,15 +207,15 @@ public:
 //
 private:
   uint _max_workers;
-  ShenandoahWorkGang* _workers;
-  ShenandoahWorkGang* _safepoint_workers;
+  ShenandoahWorkerThreads* _workers;
+  ShenandoahWorkerThreads* _safepoint_workers;
 
 public:
   uint max_workers();
   void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
 
-  WorkGang* workers() const;
-  WorkGang* safepoint_workers();
+  WorkerThreads* workers() const;
+  WorkerThreads* safepoint_workers();
 
   void gc_threads_do(ThreadClosure* tcl) const;
 

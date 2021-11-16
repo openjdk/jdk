@@ -239,7 +239,9 @@ void Dependencies::assert_common_2(DepType dept,
       }
     }
   } else {
-    if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
+    bool dep_seen_x0 = note_dep_seen(dept, x0); // records x0 for future queries
+    bool dep_seen_x1 = note_dep_seen(dept, x1); // records x1 for future queries
+    if (dep_seen_x0 && dep_seen_x1) {
       // look in this bucket for redundant assertions
       const int stride = 2;
       for (int i = deps->length(); (i -= stride) >= 0; ) {
@@ -266,7 +268,10 @@ void Dependencies::assert_common_4(DepType dept,
   GrowableArray<ciBaseObject*>* deps = _deps[dept];
 
   // see if the same (or a similar) dep is already recorded
-  if (note_dep_seen(dept, x1) && note_dep_seen(dept, x2) && note_dep_seen(dept, x3)) {
+  bool dep_seen_x1 = note_dep_seen(dept, x1); // records x1 for future queries
+  bool dep_seen_x2 = note_dep_seen(dept, x2); // records x2 for future queries
+  bool dep_seen_x3 = note_dep_seen(dept, x3); // records x3 for future queries
+  if (dep_seen_x1 && dep_seen_x2 && dep_seen_x3) {
     // look in this bucket for redundant assertions
     const int stride = 4;
     for (int i = deps->length(); (i -= stride) >= 0; ) {
@@ -339,7 +344,9 @@ void Dependencies::assert_common_2(DepType dept,
       }
     }
   } else {
-    if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
+    bool dep_seen_x0 = note_dep_seen(dept, x0); // records x0 for future queries
+    bool dep_seen_x1 = note_dep_seen(dept, x1); // records x1 for future queries
+    if (dep_seen_x0 && dep_seen_x1) {
       // look in this bucket for redundant assertions
       const int stride = 2;
       for (int i = deps->length(); (i -= stride) >= 0; ) {
@@ -1835,6 +1842,26 @@ Klass* Dependencies::find_witness_AME(InstanceKlass* ctxk, Method* m, KlassDepCh
   return NULL;
 }
 
+// This function is used by find_unique_concrete_method(non vtable based)
+// to check whether subtype method overrides the base method.
+static bool overrides(Method* sub_m, Method* base_m) {
+  assert(base_m != NULL, "base method should be non null");
+  if (sub_m == NULL) {
+    return false;
+  }
+  /**
+   *  If base_m is public or protected then sub_m always overrides.
+   *  If base_m is !public, !protected and !private (i.e. base_m is package private)
+   *  then sub_m should be in the same package as that of base_m.
+   *  For package private base_m this is conservative approach as it allows only subset of all allowed cases in
+   *  the jvm specification.
+   **/
+  if (base_m->is_public() || base_m->is_protected() ||
+      base_m->method_holder()->is_same_class_package(sub_m->method_holder())) {
+    return true;
+  }
+  return false;
+}
 
 // Find the set of all non-abstract methods under ctxk that match m.
 // (The method m must be defined or inherited in ctxk.)
@@ -1871,6 +1898,9 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
     }
   } else if (Dependencies::find_witness_AME(ctxk, fm) != NULL) {
     // Found a concrete subtype which does not override abstract root method.
+    return NULL;
+  } else if (!overrides(fm, m)) {
+    // Found method doesn't override abstract root method.
     return NULL;
   }
   assert(Dependencies::is_concrete_root_method(fm, ctxk) == Dependencies::is_concrete_method(m, ctxk), "mismatch");

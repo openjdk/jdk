@@ -233,8 +233,13 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
   if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
-  assert( iff->is_If(), "" );
-  assert(iff->Opcode() == Op_If || iff->Opcode() == Op_CountedLoopEnd || iff->Opcode() == Op_RangeCheck, "Check this code when new subtype is added");
+  assert(iff->is_If(), "must be");
+  assert(iff->Opcode() == Op_If ||
+         iff->Opcode() == Op_CountedLoopEnd ||
+         iff->Opcode() == Op_LongCountedLoopEnd ||
+         iff->Opcode() == Op_RangeCheck,
+        "Check this code when new subtype is added");
+
   int pop = prevdom->Opcode();
   assert( pop == Op_IfFalse || pop == Op_IfTrue, "" );
   if (flip) {
@@ -1069,7 +1074,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // If the loop is a candidate for range check elimination,
   // delay splitting through it's phi until a later loop optimization
-  if (n_blk->is_CountedLoop()) {
+  if (n_blk->is_BaseCountedLoop()) {
     IdealLoopTree *lp = get_loop(n_blk);
     if (lp && lp->_rce_candidate) {
       return n;
@@ -1387,7 +1392,8 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       Node *prevdom = n;
       Node *dom = idom(prevdom);
       while (dom != cutoff) {
-        if (dom->req() > 1 && dom->in(1) == bol && prevdom->in(0) == dom) {
+        if (dom->req() > 1 && dom->in(1) == bol && prevdom->in(0) == dom &&
+            safe_for_if_replacement(dom)) {
           // It's invalid to move control dependent data nodes in the inner
           // strip-mined loop, because:
           //  1) break validation of LoopNode::verify_strip_mined()
@@ -1425,20 +1431,54 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
   }
 }
 
+bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
+  if (!dom->is_CountedLoopEnd()) {
+    return true;
+  }
+  CountedLoopEndNode* le = dom->as_CountedLoopEnd();
+  CountedLoopNode* cl = le->loopnode();
+  if (cl == NULL) {
+    return true;
+  }
+  if (!cl->is_main_loop()) {
+    return true;
+  }
+  if (cl->is_canonical_loop_entry() == NULL) {
+    return true;
+  }
+  // Further unrolling is possible so loop exit condition might change
+  return false;
+}
+
 // See if a shared loop-varying computation has no loop-varying uses.
 // Happens if something is only used for JVM state in uncommon trap exits,
 // like various versions of induction variable+offset.  Clone the
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
+  bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
+                            n->in(1)->bottom_type()->isa_rawptr() &&
+                            !n->bottom_type()->isa_rawptr();
   if (has_ctrl(n) &&
       !n->is_Phi() &&
       !n->is_Bool() &&
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
-      n->Opcode() != Op_Opaque4) {
+      !is_raw_to_oop_cast && // don't extend live ranges of raw oops
+      n->Opcode() != Op_Opaque4 &&
+      !n->is_Type()) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
+
+    if (n->in(0) != NULL) {
+      IdealLoopTree* loop_ctrl = get_loop(n->in(0));
+      if (n_loop != loop_ctrl && n_loop->is_member(loop_ctrl)) {
+        // n has a control input inside a loop but get_ctrl() is member of an outer loop. This could happen, for example,
+        // for Div nodes inside a loop (control input inside loop) without a use except for an UCT (outside the loop).
+        // Rewire control of n to right outside of the loop, regardless if its input(s) are later sunk or not.
+        _igvn.replace_input_of(n, 0, place_outside_loop(n_ctrl, loop_ctrl));
+      }
+    }
     if (n_loop != _ltree_root && n->outcnt() > 1) {
       // Compute early control: needed for anti-dependence analysis. It's also possible that as a result of
       // previous transformations in this loop opts round, the node can be hoisted now: early control will tell us.

@@ -245,6 +245,7 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     virtual int cpu_period() = 0;
     virtual int cpu_shares() = 0;
     virtual jlong pids_max() = 0;
+    virtual jlong pids_current() = 0;
     virtual jlong memory_usage_in_bytes() = 0;
     virtual jlong memory_and_swap_limit_in_bytes() = 0;
     virtual jlong memory_soft_limit_in_bytes() = 0;

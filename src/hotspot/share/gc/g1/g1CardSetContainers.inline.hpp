@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 inline G1CardSetInlinePtr::CardSetPtr G1CardSetInlinePtr::merge(CardSetPtr orig_value, uint card_in_region, uint idx, uint bits_per_card) {
   assert((idx & (SizeFieldMask >> SizeFieldPos)) == idx, "Index %u too large to fit into size field", idx);
@@ -47,10 +48,14 @@ inline G1CardSetInlinePtr::CardSetPtr G1CardSetInlinePtr::merge(CardSetPtr orig_
 inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card, uint max_cards_in_inline_ptr) {
   assert(_value_addr != nullptr, "No value address available, cannot add to set.");
 
+  uint cur_idx = 0;
   while (true) {
     uint num_elems = num_cards_in(_value);
+    if (num_elems > 0) {
+      cur_idx = find(card_idx, bits_per_card, cur_idx, num_elems);
+    }
     // Check if the card is already stored in the pointer.
-    if (contains(card_idx, bits_per_card)) {
+    if (cur_idx < num_elems) {
       return Found;
     }
     // Check if there is actually enough space.
@@ -72,19 +77,29 @@ inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card
   }
 }
 
-inline bool G1CardSetInlinePtr::contains(uint card_idx, uint bits_per_card) {
-  uint num_elems = num_cards_in(_value);
-  uintptr_t const card_mask = (1 << bits_per_card) - 1;
+inline uint G1CardSetInlinePtr::find(uint card_idx, uint bits_per_card, uint start_at, uint num_elems) {
+  assert(start_at < num_elems, "Precondition!");
 
-  uintptr_t value = ((uintptr_t)_value) >> card_pos_for(0, bits_per_card);
+  uintptr_t const card_mask = (1 << bits_per_card) - 1;
+  uintptr_t value = ((uintptr_t)_value) >> card_pos_for(start_at, bits_per_card);
+
   // Check if the card is already stored in the pointer.
-  for (uint cur_idx = 0; cur_idx < num_elems; cur_idx++) {
+  for (uint cur_idx = start_at; cur_idx < num_elems; cur_idx++) {
     if ((value & card_mask) == card_idx) {
-      return true;
+      return cur_idx;
     }
     value >>= bits_per_card;
   }
-  return false;
+  return num_elems;
+}
+
+inline bool G1CardSetInlinePtr::contains(uint card_idx, uint bits_per_card) {
+  uint num_elems = num_cards_in(_value);
+  if (num_elems == 0) {
+    return false;
+  }
+  uint cur_idx = find(card_idx, bits_per_card, 0, num_elems);
+  return cur_idx < num_elems;
 }
 
 template <class CardVisitor>
@@ -130,22 +145,21 @@ inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_el
   _data[0] = card_in_region;
 }
 
-inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType volatile* value) :
-  _value(value),
-  _success(false) {
+inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType volatile* num_entries_addr) :
+  _num_entries_addr(num_entries_addr) {
   SpinYield s;
-  EntryCountType original_value = (*_value) & EntryMask;
+  EntryCountType num_entries = Atomic::load(_num_entries_addr) & EntryMask;
   while (true) {
-    EntryCountType old_value = Atomic::cmpxchg(_value,
-                                               original_value,
-                                               (EntryCountType)(original_value | LockBitMask));
-    if (old_value == original_value) {
+    EntryCountType old_value = Atomic::cmpxchg(_num_entries_addr,
+                                               num_entries,
+                                               (EntryCountType)(num_entries | LockBitMask));
+    if (old_value == num_entries) {
       // Succeeded locking the array.
-      _original_value = original_value;
+      _local_num_entries = num_entries;
       break;
     }
     // Failed. Retry (with the lock bit stripped again).
-    original_value = old_value & EntryMask;
+    num_entries = old_value & EntryMask;
     s.wait();
   }
 }
@@ -313,12 +327,10 @@ inline void G1CardSetHowl::iterate_cardset(CardSetPtr const card_set, uint index
       return;
     }
     case G1CardSet::CardSetHowl: { // actually FullCardSet
+      assert(card_set == G1CardSet::FullCardSet, "Must be");
       if (found.start_iterate(G1GCPhaseTimes::MergeRSHowlFull)) {
-        assert(card_set == G1CardSet::FullCardSet, "Must be");
         uint offset = index << config->log2_num_cards_in_howl_bitmap();
-        for (uint i = 0; i < config->max_cards_in_region(); i++) {
-          found((offset | (uint)i));
-        }
+        found(offset, config->num_cards_in_howl_bitmap());
       }
       return;
     }

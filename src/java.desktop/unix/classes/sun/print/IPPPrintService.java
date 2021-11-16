@@ -927,7 +927,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                                 gifImagesAdded = true;
                             } else if (mimeType.equals("image/jpeg")) {
                                 jpgImagesAdded = true;
-                            } else if (mimeType.indexOf("postscript") != -1) {
+                            } else if (mimeType.contains("postscript")) {
                                 psSupported = true;
                             }
                             break;
@@ -1555,7 +1555,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                     return mediaSizeNames[defaultMediaIndex];
                 } else {
                     for (int i=0; i< mediaSizeNames.length; i++) {
-                        if (mediaSizeNames[i].toString().indexOf(name) != -1) {
+                        if (mediaSizeNames[i].toString().contains(name)) {
                             defaultMediaIndex = i;
                             return mediaSizeNames[defaultMediaIndex];
                         }

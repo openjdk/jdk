@@ -28,28 +28,37 @@ import compiler.lib.ir_framework.driver.IRViolationException;
 import compiler.lib.ir_framework.shared.TestRunException;
 import jdk.test.lib.Asserts;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.Arrays;
 
 /*
  * @test
- * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
+ * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler1.enabled & vm.compiler2.enabled & vm.flagless
  * @summary Test different custom run tests.
- * @library /test/lib /
+ * @library /test/lib /testlibrary_tests /
  * @run driver ir_framework.tests.TestRunTests
  */
 
 public class TestRunTests {
 
     public static void main(String[] args) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        PrintStream oldOut = System.out;
+        System.setOut(ps);
+
         TestFramework.run();
         try {
             TestFramework.run(BadStandalone.class);
-            throw new RuntimeException("Should not reach");
+            Utils.shouldHaveThrownException(baos.toString());
         } catch (IRViolationException e) {
+            System.setOut(oldOut);
             String[] matches = { "test(int)", "test2(int)", "Failed IR Rules (2)"};
             Arrays.stream(matches).forEach(m -> Asserts.assertTrue(e.getExceptionInfo().contains(m)));
             Asserts.assertEQ(e.getExceptionInfo().split("STANDALONE mode", -1).length - 1, 2);
         }
+        System.setOut(oldOut);
         new TestFramework(SkipCompilation.class).addFlags("-XX:-UseCompiler").start();
         new TestFramework(SkipCompilation.class).addFlags("-Xint").start();
         new TestFramework(SkipC2Compilation.class).addFlags("-XX:TieredStopAtLevel=1").start();

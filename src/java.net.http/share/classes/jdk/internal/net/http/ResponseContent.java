@@ -489,7 +489,6 @@ class ResponseContent {
                     debug.log("already closed: " + closedExceptionally);
                 return;
             }
-            boolean completed = false;
             try {
                 if (debug.on())
                     debug.log("Parser got %d bytes ", b.remaining());
@@ -506,9 +505,7 @@ class ResponseContent {
             } catch (Throwable t) {
                 if (debug.on()) debug.log("Unexpected exception", t);
                 closedExceptionally = t;
-                if (!completed) {
-                    onComplete.accept(t);
-                }
+                onComplete.accept(t);
             }
         }
 

@@ -79,7 +79,7 @@ public class Platform {
     }
 
     public static boolean isTieredSupported() {
-        return compiler.contains("Tiered Compilers");
+        return (compiler != null) && compiler.contains("Tiered Compilers");
     }
 
     public static boolean isInt() {
@@ -364,6 +364,8 @@ public class Platform {
             return "client";
         } else if (Platform.isMinimal()) {
             return "minimal";
+        } else if (Platform.isZero()) {
+            return "zero";
         } else {
             throw new Error("TESTBUG: unsupported vm variant");
         }
@@ -385,6 +387,6 @@ public class Platform {
      * This should match the #if condition in ClassListParser::load_class_from_source().
      */
     public static boolean areCustomLoadersSupportedForCDS() {
-        return (is64bit() && (isLinux() || isOSX()));
+        return (is64bit() && (isLinux() || isOSX() || isWindows()));
     }
 }

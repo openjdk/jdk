@@ -25,6 +25,7 @@
 /*
  * @test LoaderConstraintsTest
  * @bug 8149996
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib classes
  * @build test.Empty

@@ -256,9 +256,14 @@ public final class KdcComm {
             } catch (Exception e) {
                 // OK
             }
-            if (ke != null && ke.getErrorCode() ==
+            if (ke != null) {
+                if (ke.getErrorCode() ==
                     Krb5.KRB_ERR_RESPONSE_TOO_BIG) {
-                ibuf = send(obuf, tempKdc, true);
+                    ibuf = send(obuf, tempKdc, true);
+                } else if (ke.getErrorCode() ==
+                        Krb5.KDC_ERR_SVC_UNAVAILABLE) {
+                    throw new KrbException("A service is not available");
+                }
             }
             KdcAccessibility.removeBad(tempKdc);
             return ibuf;

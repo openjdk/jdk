@@ -1645,21 +1645,6 @@ void Method::init_intrinsic_id(vmSymbolID klass_id) {
 
   // A few slightly irregular cases:
   switch (klass_id) {
-  case VM_SYMBOL_ENUM_NAME(java_lang_StrictMath):
-    // Second chance: check in regular Math.
-    switch (name_id) {
-    case VM_SYMBOL_ENUM_NAME(min_name):
-    case VM_SYMBOL_ENUM_NAME(max_name):
-    case VM_SYMBOL_ENUM_NAME(sqrt_name):
-      // pretend it is the corresponding method in the non-strict class:
-      klass_id = VM_SYMBOL_ENUM_NAME(java_lang_Math);
-      id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
-      break;
-    default:
-      break;
-    }
-    break;
-
   // Signature-polymorphic methods: MethodHandle.invoke*, InvokeDynamic.*., VarHandle
   case VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle):
   case VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle):

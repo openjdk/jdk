@@ -78,7 +78,8 @@ protected:
                             ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
                                 ciMethod* caller_method,
-                                JVMState* jvms);
+                                int caller_bci,
+                                ciCallProfile& profile);
   bool        is_not_reached(ciMethod* callee_method,
                              ciMethod* caller_method,
                              int caller_bci,

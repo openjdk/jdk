@@ -647,7 +647,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
 
     assert(klass->is_loaded(), "must be loaded");
     // allocate space for instance
-    assert(klass->size_helper() >= 0, "illegal instance size");
+    assert(klass->size_helper() > 0, "illegal instance size");
     const int instance_size = align_object_size(klass->size_helper());
     __ allocate_object(dst, scratch1, scratch2, scratch3, scratch4,
                        oopDesc::header_size(), instance_size, klass_reg, !klass->is_initialized(), slow_path);
@@ -1865,7 +1865,7 @@ void LIRGenerator::do_PreconditionsCheckIndex(Intrinsic* x, BasicType type) {
   CodeEmitInfo* info = state_for(x, state);
 
   LIR_Opr len = length.result();
-  LIR_Opr zero = NULL;
+  LIR_Opr zero;
   if (type == T_INT) {
     zero = LIR_OprFact::intConst(0);
     if (length.result()->is_constant()){
@@ -2122,10 +2122,10 @@ void LIRGenerator::do_UnsafeGet(UnsafeGet* x) {
     LIR_Opr offset = off.result();
 #endif
     LIR_Address* addr = new LIR_Address(src.result(), offset, type);
-    if (type == T_LONG || type == T_DOUBLE) {
-      __ move(addr, result);
+    if (is_reference_type(type)) {
+      __ move_wide(addr, result);
     } else {
-      access_load(IN_NATIVE, type, LIR_OprFact::address(addr), result);
+      __ move(addr, result);
     }
   }
 }
@@ -2951,6 +2951,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_dlog10:         // fall through
   case vmIntrinsics::_dabs:           // fall through
   case vmIntrinsics::_dsqrt:          // fall through
+  case vmIntrinsics::_dsqrt_strict:   // fall through
   case vmIntrinsics::_dtan:           // fall through
   case vmIntrinsics::_dsin :          // fall through
   case vmIntrinsics::_dcos :          // fall through
@@ -2983,6 +2984,9 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     break;
   case vmIntrinsics::_storeFence:
     __ membar_release();
+    break;
+  case vmIntrinsics::_storeStoreFence:
+    __ membar_storestore();
     break;
   case vmIntrinsics::_fullFence :
     __ membar();
@@ -3267,7 +3271,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   assert(level > CompLevel_simple, "Shouldn't be here");
 
   int offset = -1;
-  LIR_Opr counter_holder = NULL;
+  LIR_Opr counter_holder;
   if (level == CompLevel_limited_profile) {
     MethodCounters* counters_adr = method->ensure_method_counters();
     if (counters_adr == NULL) {

@@ -257,6 +257,7 @@ private:
   static const TypeFunc* cipherBlockChaining_aescrypt_Type();
   static const TypeFunc* electronicCodeBook_aescrypt_Type();
   static const TypeFunc* counterMode_aescrypt_Type();
+  static const TypeFunc* galoisCounterMode_aescrypt_Type();
 
   static const TypeFunc* digestBase_implCompress_Type(bool is_sha3);
   static const TypeFunc* digestBase_implCompressMB_Type(bool is_sha3);

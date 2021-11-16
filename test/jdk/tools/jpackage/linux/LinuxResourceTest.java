@@ -81,7 +81,7 @@ public class LinuxResourceTest {
                     .predicate(String::contains)
                     .apply(result.getOutput().stream());
             TKit.assertTextStream(
-                    "Expected value of \"Version\" property is [1.0-1]. Actual value in output package is [1.2.3-R2]")
+                    "Expected value of \"Version\" property is [1.0]. Actual value in output package is [1.2.3-R2]")
                     .predicate(String::contains)
                     .apply(result.getOutput().stream());
             TKit.assertTextStream(String.format(

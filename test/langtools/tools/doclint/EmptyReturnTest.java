@@ -10,6 +10,9 @@
 
 /** . */
 public class EmptyReturnTest { /** . */ EmptyReturnTest() { }
-    /** @return */
+    /**
+     * .
+     * @return
+     */
     int emptyReturn() { return 0; }
 }

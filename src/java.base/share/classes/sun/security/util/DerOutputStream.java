@@ -37,7 +37,10 @@ import java.util.Comparator;
 import java.util.Arrays;
 import java.util.Locale;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Output stream marshaling DER-encoded data.  This is eventually provided

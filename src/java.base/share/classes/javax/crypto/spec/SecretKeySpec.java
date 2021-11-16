@@ -157,12 +157,15 @@ public class SecretKeySpec implements KeySpec, SecretKey {
         if (key.length == 0) {
             throw new IllegalArgumentException("Empty key");
         }
-        if (key.length-offset < len) {
-            throw new IllegalArgumentException
-                ("Invalid offset/length combination");
+        if (offset < 0) {
+            throw new ArrayIndexOutOfBoundsException("offset is negative");
         }
         if (len < 0) {
             throw new ArrayIndexOutOfBoundsException("len is negative");
+        }
+        if (key.length - offset < len) {
+            throw new IllegalArgumentException
+                ("Invalid offset/length combination");
         }
         this.key = new byte[len];
         System.arraycopy(key, offset, this.key, 0, len);

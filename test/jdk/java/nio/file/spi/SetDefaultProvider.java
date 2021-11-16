@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8266345
+ * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940
  * @modules jdk.jartool
  * @library /test/lib
  * @build SetDefaultProvider TestProvider m/* jdk.test.lib.process.ProcessTools
@@ -37,11 +37,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.spi.ToolProvider;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jdk.test.lib.process.ProcessTools;
 
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
@@ -71,6 +74,45 @@ public class SetDefaultProvider {
         String classpath = moduleClasses + File.pathSeparator + testClasses;
         int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath, "p.Main");
         assertTrue(exitValue == 0);
+    }
+
+    /**
+     * Test override of default FileSystemProvider with a
+     * FileSystemProvider jar and the main application on the class path.
+     */
+    public void testClassPathWithFileSystemProviderJar() throws Exception {
+        String testClasses = System.getProperty("test.classes");
+        Path jar = Path.of("testFileSystemProvider.jar");
+        Files.deleteIfExists(jar);
+        createFileSystemProviderJar(jar, Path.of(testClasses));
+        String classpath = jar + File.pathSeparator + testClasses
+                + File.separator + "modules" + File.separator + "m";
+        int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath, "p.Main");
+        assertTrue(exitValue == 0);
+    }
+
+    /**
+     * Creates a JAR containing the FileSystemProvider used to override the
+     * default FileSystemProvider
+     */
+    private void createFileSystemProviderJar(Path jar, Path dir) throws IOException {
+
+        List<String>  args = new ArrayList<>();
+        args.add("--create");
+        args.add("--file=" + jar);
+        try (Stream<Path> stream = Files.list(dir)) {
+            List<String> paths = stream
+                    .map(path -> path.getFileName().toString())
+                    .filter(f -> f.startsWith("TestProvider"))
+                    .toList();
+            for(var p : paths) {
+                args.add("-C");
+                args.add(dir.toString());
+                args.add(p);
+            }
+        }
+        int ret = JAR_TOOL.run(System.out, System.out, args.toArray(new String[0]));
+        assertTrue(ret == 0);
     }
 
     /**

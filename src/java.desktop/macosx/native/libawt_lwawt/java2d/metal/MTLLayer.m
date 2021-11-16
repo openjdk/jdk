@@ -71,7 +71,7 @@
     self.leftInset = 0;
     self.framebufferOnly = NO;
     self.nextDrawableCount = 0;
-    self.opaque = FALSE;
+    self.opaque = YES;
     CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
     CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
     return self;
@@ -287,4 +287,18 @@ Java_sun_java2d_metal_MTLLayer_blitTexture
     }
 
     [layer blitTexture];
+}
+
+JNIEXPORT void JNICALL
+Java_sun_java2d_metal_MTLLayer_nativeSetOpaque
+(JNIEnv *env, jclass cls, jlong layerPtr, jboolean opaque)
+{
+    JNI_COCOA_ENTER(env);
+
+    MTLLayer *mtlLayer = OBJC(layerPtr);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        [mtlLayer setOpaque:(opaque == JNI_TRUE)];
+    }];
+
+    JNI_COCOA_EXIT(env);
 }

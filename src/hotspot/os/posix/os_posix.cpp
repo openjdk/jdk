@@ -60,6 +60,9 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
+#include <spawn.h>
+#include <sys/time.h>
+#include <sys/times.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
@@ -86,6 +89,10 @@
 
 #define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
 #define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
+
+static jlong initial_time_count = 0;
+
+static int clock_tics_per_sec = 100;
 
 // Check core dump limit and report possible place where core can be found
 void os::check_dump_limit(char* buffer, size_t bufferSize) {
@@ -160,12 +167,6 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   return num_of_frames;
 }
 
-
-bool os::unsetenv(const char* name) {
-  assert(name != NULL, "Null pointer");
-  return (::unsetenv(name) == 0);
-}
-
 int os::get_last_error() {
   return errno;
 }
@@ -181,6 +182,12 @@ size_t os::lasterror(char *buf, size_t len) {
   ::strncpy(buf, s, n);
   buf[n] = '\0';
   return n;
+}
+
+// Return true if user is running as root.
+bool os::have_special_privileges() {
+  static bool privileges = (getuid() != geteuid()) || (getgid() != getegid());
+  return privileges;
 }
 
 void os::wait_for_keypress_at_exit(void) {
@@ -633,6 +640,21 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
 #endif
 }
 
+void* os::get_default_process_handle() {
+#ifdef __APPLE__
+  // MacOS X needs to use RTLD_FIRST instead of RTLD_LAZY
+  // to avoid finding unexpected symbols on second (or later)
+  // loads of a library.
+  return (void*)::dlopen(NULL, RTLD_FIRST);
+#else
+  return (void*)::dlopen(NULL, RTLD_LAZY);
+#endif
+}
+
+void* os::dll_lookup(void* handle, const char* name) {
+  return dlsym(handle, name);
+}
+
 void os::dll_unload(void *lib) {
   ::dlclose(lib);
 }
@@ -724,6 +746,10 @@ struct hostent* os::get_host_by_name(char* name) {
 
 void os::exit(int num) {
   ::exit(num);
+}
+
+void os::_exit(int num) {
+  ::_exit(num);
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
@@ -979,8 +1005,7 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
                       _compiler_thread_min_stack_allowed);
     break;
   case os::vm_thread:
-  case os::pgc_thread:
-  case os::cgc_thread:
+  case os::gc_thread:
   case os::watcher_thread:
   default:  // presume the unknown thr_type is a VM internal
     if (req_stack_size == 0 && VMThreadStackSize > 0) {
@@ -1225,7 +1250,11 @@ static bool _use_clock_monotonic_condattr = false;
 // Determine what POSIX API's are present and do appropriate
 // configuration.
 void os::Posix::init(void) {
-
+#if defined(_ALLBSD_SOURCE)
+  clock_tics_per_sec = CLK_TCK;
+#else
+  clock_tics_per_sec = sysconf(_SC_CLK_TCK);
+#endif
   // NOTE: no logging available when this is called. Put logging
   // statements in init_2().
 
@@ -1257,6 +1286,8 @@ void os::Posix::init(void) {
       _use_clock_monotonic_condattr = true;
     }
   }
+
+  initial_time_count = javaTimeNanos();
 }
 
 void os::Posix::init_2(void) {
@@ -1424,8 +1455,58 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
 }
-
 #endif // ! APPLE && !AIX
+
+// Time since start-up in seconds to a fine granularity.
+double os::elapsedTime() {
+  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
+}
+
+jlong os::elapsed_counter() {
+  return os::javaTimeNanos() - initial_time_count;
+}
+
+jlong os::elapsed_frequency() {
+  return NANOSECS_PER_SEC; // nanosecond resolution
+}
+
+bool os::supports_vtime() { return true; }
+
+// Return the real, user, and system times in seconds from an
+// arbitrary fixed point in the past.
+bool os::getTimesSecs(double* process_real_time,
+                      double* process_user_time,
+                      double* process_system_time) {
+  struct tms ticks;
+  clock_t real_ticks = times(&ticks);
+
+  if (real_ticks == (clock_t) (-1)) {
+    return false;
+  } else {
+    double ticks_per_second = (double) clock_tics_per_sec;
+    *process_user_time = ((double) ticks.tms_utime) / ticks_per_second;
+    *process_system_time = ((double) ticks.tms_stime) / ticks_per_second;
+    *process_real_time = ((double) real_ticks) / ticks_per_second;
+
+    return true;
+  }
+}
+
+char * os::local_time_string(char *buf, size_t buflen) {
+  struct tm t;
+  time_t long_time;
+  time(&long_time);
+  localtime_r(&long_time, &t);
+  jio_snprintf(buf, buflen, "%d-%02d-%02d %02d:%02d:%02d",
+               t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+               t.tm_hour, t.tm_min, t.tm_sec);
+  return buf;
+}
+
+struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
+  return localtime_r(clock, res);
+}
+
 
 // Shared pthread_mutex/cond based PlatformEvent implementation.
 // Not currently usable by Solaris.
@@ -1875,36 +1956,16 @@ char** os::get_environ() { return environ; }
 //         doesn't block SIGINT et al.
 //        -this function is unsafe to use in non-error situations, mainly
 //         because the child process will inherit all parent descriptors.
-int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
-  const char * argv[4] = {"sh", "-c", cmd, NULL};
-
-  pid_t pid ;
-
+int os::fork_and_exec(const char* cmd) {
+  const char* argv[4] = {"sh", "-c", cmd, NULL};
+  pid_t pid = -1;
   char** env = os::get_environ();
-
-  // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
-  // Otherwise leave it up to the caller.
-  AIX_ONLY(prefer_vfork = true;)
-  pid = prefer_vfork ? ::vfork() : ::fork();
-
-  if (pid < 0) {
-    // fork failed
-    return -1;
-
-  } else if (pid == 0) {
-    // child process
-
-    ::execve("/bin/sh", (char* const*)argv, env);
-
-    // execve failed
-    ::_exit(-1);
-
-  } else  {
-    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
-    // care about the actual exit code, for now.
-
+  // Note: cast is needed because posix_spawn() requires - for compatibility with ancient
+  // C-code - a non-const argv/envp pointer array. But it is fine to hand in literal
+  // strings and just cast the constness away. See also ProcessImpl_md.c.
+  int rc = ::posix_spawn(&pid, "/bin/sh", NULL, NULL, (char**) argv, env);
+  if (rc == 0) {
     int status;
-
     // Wait for the child process to exit.  This returns immediately if
     // the child has already exited. */
     while (::waitpid(pid, &status, 0) < 0) {
@@ -1914,7 +1975,6 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
       default: return -1;
       }
     }
-
     if (WIFEXITED(status)) {
       // The child exited normally; get its exit code.
       return WEXITSTATUS(status);
@@ -1929,6 +1989,9 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
       // Unknown exit code; pass it through
       return status;
     }
+  } else {
+    // Don't log, we are inside error handling
+    return -1;
   }
 }
 

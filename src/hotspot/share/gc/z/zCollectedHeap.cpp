@@ -80,9 +80,8 @@ void ZCollectedHeap::initialize_serviceability() {
 class ZStopConcurrentGCThreadClosure : public ThreadClosure {
 public:
   virtual void do_thread(Thread* thread) {
-    if (thread->is_ConcurrentGC_thread() &&
-        !thread->is_GC_task_thread()) {
-      static_cast<ConcurrentGCThread*>(thread)->stop();
+    if (thread->is_ConcurrentGC_thread()) {
+      ConcurrentGCThread::cast(thread)->stop();
     }
   }
 };
@@ -137,7 +136,7 @@ HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_si
   return (HeapWord*)addr;
 }
 
-oop ZCollectedHeap::array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS) {
+oop ZCollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
   if (!do_zero) {
     return CollectedHeap::array_allocate(klass, size, length, false /* do_zero */, THREAD);
   }
@@ -267,7 +266,7 @@ void ZCollectedHeap::verify_nmethod(nmethod* nm) {
   // Does nothing
 }
 
-WorkGang* ZCollectedHeap::safepoint_workers() {
+WorkerThreads* ZCollectedHeap::safepoint_workers() {
   return _runtime_workers.workers();
 }
 

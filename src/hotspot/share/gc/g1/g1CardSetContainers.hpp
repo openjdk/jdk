@@ -36,6 +36,37 @@
 
 #include "runtime/thread.inline.hpp"
 
+// A helper class to encode a few card indexes within a CardSetPtr.
+//
+// The pointer value (either 32 or 64 bits) is split into two areas:
+//
+// - Header containing identifying tag and number of encoded cards.
+// - Data area containing the card indexes themselves
+//
+// The header starts (from LSB) with the identifying tag (two bits,
+// always 00), and three bits size. The size stores the number of
+// valid card indexes after the header.
+//
+// The data area makes up the remainder of the word, with card indexes
+// put one after another at increasing bit positions. The separate
+// card indexes use just enough space (bits) to represent the whole
+// range of cards needed for covering the whole range of values
+// (typically in a region). There may be unused space at the top of
+// the word.
+//
+// Example:
+//
+//   64 bit pointer size, with 8M-size regions (8M == 2^23)
+// -> 2^14 (2^23 / 2^9) cards; each card represents 512 bytes in a region
+// -> 14 bits per card; must have enough bits to hold the max card index
+// -> may encode up to 4 cards into it, using 61 bits (5 bits header + 4 * 14)
+//
+// M                                                     L
+// S                                                     S
+// B                                                     B
+// +------+         +---------------+--------------+-----+
+// |unused|   ...   |  card_index1  | card_index0  |SSS00|
+// +------+         +---------------+--------------+-----+
 class G1CardSetInlinePtr : public StackObj {
   friend class G1CardSetContainersTest;
 
@@ -63,6 +94,9 @@ class G1CardSetInlinePtr : public StackObj {
     uint result = ((uintptr_t)value >> card_pos) & (((uintptr_t)1 << bits_per_card) - 1);
     return result;
   }
+
+  uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_elems);
+
 public:
   G1CardSetInlinePtr() : _value_addr(nullptr), _value((CardSetPtr)G1CardSet::CardSetInlinePtr) { }
 
@@ -143,6 +177,9 @@ public:
   void set_next(G1CardSetContainer* next) {
     _next = next;
   }
+
+  // Log of largest card index that can be stored in any G1CardSetContainer
+  static uint LogCardsPerRegionLimit;
 };
 
 class G1CardSetArray : public G1CardSetContainer {
@@ -159,19 +196,19 @@ private:
   static const EntryCountType EntryMask = LockBitMask - 1;
 
   class G1CardSetArrayLocker : public StackObj {
-    EntryCountType volatile* _value;
-    EntryCountType volatile _original_value;
-    bool _success;
+    EntryCountType volatile* _num_entries_addr;
+    EntryCountType _local_num_entries;
   public:
     G1CardSetArrayLocker(EntryCountType volatile* value);
 
-    EntryCountType num_entries() const { return _original_value; }
-    void inc_num_entries() { _success = true; }
+    EntryCountType num_entries() const { return _local_num_entries; }
+    void inc_num_entries() {
+      assert(((_local_num_entries + 1) & EntryMask) == (EntryCountType)(_local_num_entries + 1), "no overflow" );
+      _local_num_entries++;
+    }
 
     ~G1CardSetArrayLocker() {
-      assert(((_original_value + _success) & EntryMask) == (EntryCountType)(_original_value + _success), "precondition!" );
-
-      Atomic::release_store(_value, (EntryCountType)(_original_value + _success));
+      Atomic::release_store(_num_entries_addr, _local_num_entries);
     }
   };
 

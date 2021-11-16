@@ -359,26 +359,26 @@ public class VM {
      if (System.getProperty("sun.jvm.hotspot.runtime.VM.disableVersionCheck") == null) {
         // read sa build version.
         String versionProp = "sun.jvm.hotspot.runtime.VM.saBuildVersion";
-        String saVersion = saProps.getProperty(versionProp);
-        if (saVersion == null)
+        String versionPropVal = saProps.getProperty(versionProp);
+        if (versionPropVal == null) {
            throw new RuntimeException("Missing property " + versionProp);
+        }
 
-        // Strip nonproduct VM version substring (note: saVersion doesn't have it).
-        String vmVersion = vmRelease.replaceAll("(-fastdebug)|(-debug)|(-jvmg)|(-optimized)|(-profiled)","");
+        var saVersion = Runtime.Version.parse(versionPropVal);
+        var vmVersion = Runtime.Version.parse(vmRelease);
 
         if (saVersion.equals(vmVersion)) {
            // Exact match
            return;
         }
-        if (saVersion.indexOf('-') == saVersion.lastIndexOf('-') &&
-            vmVersion.indexOf('-') == vmVersion.lastIndexOf('-')) {
+        if (!saVersion.equalsIgnoreOptional(vmVersion)) {
            // Throw exception if different release versions:
-           // <major>.<minor>-b<n>
-           throw new VMVersionMismatchException(saVersion, vmRelease);
+           // <version>+<build>
+           throw new VMVersionMismatchException(saVersion, vmVersion);
         } else {
            // Otherwise print warning to allow mismatch not release versions
            // during development.
-           System.err.println("WARNING: Hotspot VM version " + vmRelease +
+           System.err.println("WARNING: Hotspot VM version " + vmVersion +
                               " does not match with SA version " + saVersion +
                               "." + " You may see unexpected results. ");
         }
@@ -652,7 +652,7 @@ public class VM {
   }
 
   // Convenience function for conversions
-  static public long getAddressValue(Address addr) {
+  public static long getAddressValue(Address addr) {
     return VM.getVM().getDebugger().getAddressValue(addr);
   }
 
