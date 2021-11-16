@@ -176,7 +176,7 @@ void SymbolTable::create_table ()  {
   } else {
     _arena = new (mtSymbol) Arena(mtSymbol, symbol_alloc_arena_size);
   }
-  
+
 #if INCLUDE_CDS
   _lookup_shared_first = !_shared_table.empty();
 #else
