@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class Parser {
     };
 
 
-    private static Set<String> reservedWords;
+    private static final Set<String> reservedWords = Set.of(otherKeyWords);
 
     private StreamTokenizer st;
     private String filename;
@@ -103,17 +103,12 @@ public class Parser {
         st.slashSlashComments(true);
         st.slashStarComments(true);
 
-        reservedWords = new HashSet<String>();
-        for (int i = 0; i < otherKeyWords.length; i++) {
-            reservedWords.add(otherKeyWords[i]);
+        for (char delimiter : delimiters) {
+            st.ordinaryChar(delimiter);
         }
 
-        for (int i = 0; i < delimiters.length; i++ ) {
-            st.ordinaryChar(delimiters[i]);
-        }
-
-        for (int i = 0; i < infixOps.length; i++ ) {
-            st.ordinaryChar(infixOps[i]);
+        for (char infixOp : infixOps) {
+            st.ordinaryChar(infixOp);
         }
     }
 
@@ -231,8 +226,8 @@ public class Parser {
      * determine if the give work is a reserved key word
      */
     private boolean isInfixOperator(char op) {
-        for (int i = 0; i < infixOps.length; i++) {
-            if (op == infixOps[i]) {
+        for (char infixOp : infixOps) {
+            if (op == infixOp) {
                 return true;
             }
         }
