@@ -31,11 +31,7 @@ import java.beans.PropertyChangeListener;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
-import javax.swing.JProgressBar;
 import javax.swing.JTabbedPane;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY;
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_CARET_PROPERTY;
@@ -75,6 +71,8 @@ class CAccessible extends CFRetainedResource implements Accessible {
     private static native void menuOpened(long ptr);
     private static native void menuClosed(long ptr);
     private static native void menuItemSelected(long ptr);
+    private static native void treeNodeExpanded(long ptr);
+    private static native void treeNodeCollapsed(long ptr);
 
     private Accessible accessible;
 
@@ -137,6 +135,13 @@ class CAccessible extends CFRetainedResource implements Accessible {
                     if (parentAccessible != null) {
                         parentRole = parentAccessible.getAccessibleContext().getAccessibleRole();
                     }
+
+                    if (newValue == AccessibleState.EXPANDED) {
+                        treeNodeExpanded(ptr);
+                    } else if (newValue == AccessibleState.COLLAPSED) {
+                        treeNodeCollapsed(ptr);
+                    }
+
                     // At least for now don't handle combo box menu state changes.
                     // This may change when later fixing issues which currently
                     // exist for combo boxes, but for now the following is only
