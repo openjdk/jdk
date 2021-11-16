@@ -63,7 +63,6 @@ import java.util.function.Predicate;
  * An alternative, more expensive, implementation would be to group the functions
  * by method and predicate and then dynamically build the set of methods to be used for
  * a file object by filtering the methods by their applicable predicate.
- *
  */
 public class TestJavaFileManagerBuilder {
     private final StandardJavaFileManager fm;

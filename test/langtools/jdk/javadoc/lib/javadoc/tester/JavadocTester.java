@@ -373,11 +373,6 @@ public abstract class JavadocTester {
         StreamOutput sysErr = new StreamOutput(System.err, System::setErr);
 
         try {
-            /*
-            exitCode = useStandardStreams
-                    ? jdk.javadoc.internal.tool.Main.execute(args)              // use sysOut, sysErr
-                    : jdk.javadoc.internal.tool.Main.execute(args, outOut.pw);  // default
-             */
             jdk.javadoc.internal.tool.Main main = new jdk.javadoc.internal.tool.Main();
             if (useStandardStreams) {
                 // use sysOut, sysErr

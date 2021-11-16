@@ -116,7 +116,7 @@ public class Main {
     }
 
     /**
-     * Sets the file manager to be used to when running javadoc.
+     * Sets the file manager to be used when running javadoc.
      * A value of {@code null} means to use the default file manager.
      *
      * @param fileManager the file manager to use
@@ -131,7 +131,7 @@ public class Main {
     /**
      * Runs javadoc with preconfigured values and a given set of arguments.
      * Any errors will be reported to the error stream, or to {@link System#err}
-     * if not error stream has been specified with {@code setStreams}.
+     * if no error stream has been specified with {@code setStreams}.
      *
      * @param args the arguments
      *
