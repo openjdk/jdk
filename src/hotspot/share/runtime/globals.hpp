@@ -291,10 +291,7 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, UseInlineCaches, true,                                      \
           "Use Inline Caches for virtual calls ")                           \
                                                                             \
-  product(bool, FixInlineCachesBug, false,                                  \
-          "Fix  Inline Caches Bug")                                         \
-                                                                            \
-  product(bool, ForceInlineCachesCleaning, false,                           \
+  product(bool, ForceInlineCachesCleaning, true,                            \
           "Force InlineCache cleaning")                                     \
                                                                             \
   product(bool, InlineArrayCopy, true, DIAGNOSTIC,                          \

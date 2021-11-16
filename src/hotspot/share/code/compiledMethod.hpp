@@ -388,6 +388,7 @@ public:
   address oops_reloc_begin() const;
 
  private:
+  bool static is_metadata_dead(CompiledIC *ic);
   bool static clean_ic_if_metadata_is_dead(CompiledIC *ic);
 
  public:
