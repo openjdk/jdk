@@ -351,7 +351,7 @@ class EndEntityChecker {
 
     /**
      * Check whether this certificate can be used by a time stamping authority
-     * server (see RFC 3161, section 2.3).
+     * server. RFC 3161 section 2.3 only requires EKU with id-kp-timeStamping.
      * @throws CertificateException if not.
      */
     private void checkTSAServer(X509Certificate cert, Set<String> exts)
