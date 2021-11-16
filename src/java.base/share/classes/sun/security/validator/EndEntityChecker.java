@@ -356,12 +356,6 @@ class EndEntityChecker {
      */
     private void checkTSAServer(X509Certificate cert, Set<String> exts)
             throws CertificateException {
-        if (checkKeyUsage(cert, KU_SIGNATURE) == false) {
-            throw new ValidatorException
-                ("KeyUsage does not allow digital signatures",
-                ValidatorException.T_EE_EXTENSIONS, cert);
-        }
-
         if (cert.getExtendedKeyUsage() == null) {
             throw new ValidatorException
                 ("Certificate does not contain an extended key usage " +
