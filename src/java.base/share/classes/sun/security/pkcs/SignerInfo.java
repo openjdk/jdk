@@ -746,11 +746,10 @@ public class SignerInfo implements DerEncoder {
 
         Set<String> enabledAlgorithms = new HashSet<>();
         try {
-            for (Map.Entry<AlgorithmId, AlgorithmInfo> algorithm :
-                    algorithms.entrySet()) {
-                AlgorithmInfo info = algorithm.getValue();
+            for (var algEntry : algorithms.entrySet()) {
+                AlgorithmInfo info = algEntry.getValue();
                 params.setExtendedExceptionMsg(name, info.field());
-                AlgorithmId algId = algorithm.getKey();
+                AlgorithmId algId = algEntry.getKey();
                 JAR_DISABLED_CHECK.permits(algId.getName(),
                     algId.getParameters(), params, info.checkKey());
                 enabledAlgorithms.add(algId.getName());

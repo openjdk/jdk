@@ -357,15 +357,8 @@ public class TimestampCheck {
                 // sign with RSAkeysize < 1024
                 signVerbose("normal", "sign1.jar", "sign2.jar", "disabledkeysize")
                         .shouldContain("Algorithm constraints check failed on keysize")
-                        .shouldNotContain("The SHA-256 algorithm specified " +
-                            "for the -digestalg option is considered a " +
-                            "security risk and is disabled")
-                        .shouldNotContain("The SHA256withRSA algorithm " +
-                            "specified for the -sigalg option is considered " +
-                            "a security risk and is disabled")
-                        .shouldNotContain("The SHA-256 algorithm specified " +
-                            "for the -tsadigestalg option is considered a " +
-                            "security risk and is disabled")
+                        .shouldNotContain("option is considered a security " +
+                            "risk and is disabled")
                         .shouldHaveExitValue(4);
                 checkMultiple("sign2.jar");
 
