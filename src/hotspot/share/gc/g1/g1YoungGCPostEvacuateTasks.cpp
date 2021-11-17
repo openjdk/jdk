@@ -102,7 +102,7 @@ class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : publi
   G1ParRemoveSelfForwardPtrsTask _task;
 
 public:
-  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions, G1EvacFailureParScanTasksQueueSet* queues) :
+  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr),
     _evac_failure_regions(evac_failure_regions),
     _task(_evac_failure_regions) {
@@ -130,7 +130,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
   if (evacuation_failed) {
-    add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions, _queues));
+    add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions));
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
 }

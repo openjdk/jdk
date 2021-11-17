@@ -35,8 +35,9 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegi
     _hrclaimer(G1CollectedHeap::heap()->workers()->active_workers()),
     _hrclaimer_2(G1CollectedHeap::heap()->workers()->active_workers()),
     _evac_failure_regions(evac_failure_regions),
-    _task_queues(new G1EvacFailureParScanTasksQueueSet(_evac_failure_regions->num_regions_failed_evacuation())),
-    _terminator(MIN2(_task_queues->size(), G1CollectedHeap::heap()->workers()->active_workers()), _task_queues) {
+    _length(MIN2(_evac_failure_regions->num_regions_failed_evacuation(), G1CollectedHeap::heap()->workers()->active_workers())),
+    _task_queues(new G1EvacFailureParScanTasksQueueSet(_length)),
+    _terminator(_length, _task_queues) {
   for (uint i = 0; i < _task_queues->size(); i++) {
     G1EvacFailureParScanTasksQueue* q = new G1EvacFailureParScanTasksQueue();
     _task_queues->register_queue(i, q);

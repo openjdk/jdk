@@ -43,6 +43,8 @@ protected:
 
   G1EvacFailureRegions* _evac_failure_regions;
 
+  const uint _length;
+
   G1EvacFailureParScanTasksQueueSet* _task_queues;
 
   TaskTerminator _terminator;
