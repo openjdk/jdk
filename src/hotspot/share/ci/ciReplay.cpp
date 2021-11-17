@@ -763,18 +763,11 @@ class CompileReplay : public StackObj {
         if (had_error()) {
           break;
         }
-        int inline_late = parse_int("inline_late");
-        if (had_error()) {
-          if (_version < 2) {
-            // Old format, ignore error and continue
-            _error_message = NULL;
-            inline_late = 0;
-            if (had_error()) {
-              // Pending exception?
+        int inline_late = 0;
+        if (_version >= 2) {
+          inline_late = parse_int("inline_late");
+          if (had_error()) {
               break;
-            }
-          } else {
-            break;
           }
         }
 

@@ -378,9 +378,12 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
   }
 
   _forced_inline = false; // Reset
+
+  // 'should_delay' can be overridden during replay compilation
   if (!should_inline(callee_method, caller_method, caller_bci, NOT_PRODUCT_ARG(should_delay) profile)) {
     return false;
   }
+  // 'should_delay' can be overridden during replay compilation
   if (should_not_inline(callee_method, caller_method, caller_bci, NOT_PRODUCT_ARG(should_delay) profile)) {
     return false;
   }
@@ -567,7 +570,7 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
 bool InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallProfile& profile,
                               bool& should_delay) {
   assert(callee_method != NULL, "caller checks for optimized virtual!");
-  assert(!should_delay, "should be initialized to false");
+  assert(!should_delay || AlwaysIncrementalInline, "should be initialized to false");
 #ifdef ASSERT
   // Make sure the incoming jvms has the same information content as me.
   // This means that we can eventually make this whole class AllStatic.
@@ -605,7 +608,8 @@ bool InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallPro
     }
     print_inlining(callee_method, caller_bci, caller_method, true /* success */);
     InlineTree* callee_tree = build_inline_tree_for_callee(callee_method, jvms, caller_bci);
-    if (should_delay || AlwaysIncrementalInline) {
+    if (should_delay) {
+      // Record late inlining decision in order to dump it for compiler replay
       callee_tree->set_late_inline();
     }
     return true;
