@@ -749,10 +749,6 @@ void Metaspace::global_initialize() {
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
   }
-
-  if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
-    vm_exit_during_initialization("DynamicDumpSharedSpaces is unsupported when base CDS archive is not loaded", NULL);
-  }
 #endif // INCLUDE_CDS
 
 #ifdef _LP64
