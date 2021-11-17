@@ -811,9 +811,10 @@ public interface Elements {
      * classes or interfaces whose names do not correspond to the file
      * name. If a source file is providing the reference
      * representation of an auxiliary class or interface, the file
-     * for the primary class is returned. (An auxiliary class can also
-     * be defined in a {@code package-info} source file, in which case
-     * the file for the {@code package-info} file is returned.)
+     * for the primary class is returned. (An auxiliary class or
+     * interface can also be defined in a {@code package-info} source
+     * file, in which case the file for the {@code package-info} file
+     * is returned.)
      * If a class file is providing
      * the reference representation of an auxiliary class or interface,
      * the separate class file for the auxiliary class is returned.
