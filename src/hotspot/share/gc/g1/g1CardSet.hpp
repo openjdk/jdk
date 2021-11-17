@@ -355,19 +355,19 @@ public:
   template <class CardOrRangeVisitor>
   void iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& found);
 
-  class G1CardSetPtrIterator {
+  class CardSetPtrClosure {
   public:
     virtual void do_cardsetptr(uint region_idx, size_t num_occupied, CardSetPtr card_set) = 0;
   };
 
-  void iterate_containers(G1CardSetPtrIterator* iter, bool safepoint = false);
+  void iterate_containers(CardSetPtrClosure* iter, bool safepoint = false);
 
-  class G1CardSetCardIterator {
+  class CardClosure {
   public:
     virtual void do_card(uint region_idx, uint card_idx) = 0;
   };
 
-  void iterate_cards(G1CardSetCardIterator& iter);
+  void iterate_cards(CardClosure& iter);
 };
 
 class G1CardSetHashTableValue {
