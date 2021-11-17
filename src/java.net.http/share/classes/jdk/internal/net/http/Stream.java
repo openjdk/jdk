@@ -35,7 +35,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -247,7 +246,7 @@ class Stream<T> extends ExchangeImpl<T> {
                         debug.log("already completed: dropping error %s", (Object) t);
                 }
             } catch (Throwable x) {
-                Log.logError("Subscriber::onError threw exception: {0}", (Object) t);
+                Log.logError("Subscriber::onError threw exception: {0}", t);
             } finally {
                 cancelImpl(t);
                 drainInputQueue();
@@ -330,10 +329,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("streamid: ")
-                .append(streamid);
-        return sb.toString();
+        return "streamid: " + streamid;
     }
 
     private void receiveDataFrame(DataFrame df) {
@@ -400,7 +396,6 @@ class Stream<T> extends ExchangeImpl<T> {
         return sendBodyImpl().thenApply( v -> this);
     }
 
-    @SuppressWarnings("unchecked")
     Stream(Http2Connection connection,
            Exchange<T> e,
            WindowController windowController)
@@ -457,7 +452,7 @@ class Stream<T> extends ExchangeImpl<T> {
             case ResetFrame.TYPE        ->  incoming_reset((ResetFrame) frame);
             case PriorityFrame.TYPE     ->  incoming_priority((PriorityFrame) frame);
 
-            default -> throw new IOException("Unexpected frame: " + frame.toString());
+            default -> throw new IOException("Unexpected frame: " + frame);
         }
     }
 
@@ -663,7 +658,7 @@ class Stream<T> extends ExchangeImpl<T> {
         // Filter any headers from systemHeaders that are set in userHeaders
         //   except for "Cookies" - user cookies will be appended to system
         //   cookies
-        final HttpHeaders sh = HttpHeaders.of(sysh.map(), overrides);
+        sysh = HttpHeaders.of(sysh.map(), overrides);
 
         OutgoingHeaders<Stream<T>> f = new OutgoingHeaders<>(sysh, userh, this);
         if (contentLength == 0) {
