@@ -203,8 +203,11 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
 
-    if (FLAG_IS_DEFAULT(OnSpinWaitInst) && FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
+    if (FLAG_IS_DEFAULT(OnSpinWaitInst)) {
       FLAG_SET_DEFAULT(OnSpinWaitInst, "isb");
+    }
+
+    if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
       FLAG_SET_DEFAULT(OnSpinWaitInstCount, 1);
     }
   }
