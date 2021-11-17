@@ -799,6 +799,8 @@ public interface Elements {
      * be a {@code module-info} file.
      * An {@linkplain ModuleElement#isUnnamed unnamed module} will have a
      * null file since it cannot be declared in a compilation unit.
+     * An {@linkplain #isAutomaticModule automatic module} will have a
+     * null file since it is implicitly declared.
      *
      * <p>If it has a file object, the file object for a top-level
      * {@code public} class or interface will be a source or class
