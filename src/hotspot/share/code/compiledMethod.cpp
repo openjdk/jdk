@@ -449,37 +449,38 @@ class CheckClass : public MetadataClosure {
 };
 #endif // ASSERT
 
-bool CompiledMethod::is_metadata_dead(CompiledIC *ic) {
-  if (ic->is_icholder_call()) {
-    return !ic->cached_icholder()->is_loader_alive();
-  }
-
-  Metadata* ic_metdata = ic->cached_metadata();
-  if (ic_metdata == NULL) {
-    return false;
-  }
-
-  if (ic_metdata->is_klass()) {
-    return !((Klass*)ic_metdata)->is_loader_alive();
-  }
-
-  if (ic_metdata->is_method()) {
-    Method* method = (Method*)ic_metdata;
-    assert(!method->is_old(), "old method should have been cleaned");
-    return !method->method_holder()->is_loader_alive();
-  }
-
-  ShouldNotReachHere();
-  return false;
-}
 
 bool CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic) {
   if (ic->is_clean()) {
     return true;
   }
+  if (ic->is_icholder_call()) {
+    // The only exception is compiledICHolder metdata which may
+    // yet be marked below. (We check this further below).
+    CompiledICHolder* cichk_metdata = ic->cached_icholder();
 
-  if (!is_metadata_dead(ic)) {
-    return true;
+    if (cichk_metdata->is_loader_alive()) {
+      return true;
+    }
+  } else {
+    Metadata* ic_metdata = ic->cached_metadata();
+    if (ic_metdata != NULL) {
+      if (ic_metdata->is_klass()) {
+        if (((Klass*)ic_metdata)->is_loader_alive()) {
+          return true;
+        }
+      } else if (ic_metdata->is_method()) {
+        Method* method = (Method*)ic_metdata;
+        assert(!method->is_old(), "old method should have been cleaned");
+        if (method->method_holder()->is_loader_alive()) {
+          return true;
+        }
+      } else {
+        ShouldNotReachHere();
+      }
+    } else {
+      return true;
+    }
   }
 
   return ic->set_to_clean();
@@ -610,8 +611,6 @@ void CompiledMethod::cleanup_inline_caches(bool clean_all) {
 bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all) {
   assert(CompiledICLocker::is_safe(this), "mt unsafe call");
   ResourceMark rm;
-
-  unloading_occurred = unloading_occurred || ForceInlineCachesCleaning;
 
   // Find all calls in an nmethod and clear the ones that point to non-entrant,
   // zombie and unloaded nmethods.
