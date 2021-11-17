@@ -45,6 +45,13 @@
  * @run main/timeout=1600 MapLoops
  */
 
+/*
+ * @test
+ * @summary Exercise multithreaded maps, using only heavy monitors.
+ * @library /test/lib
+ * @run main/othervm/timeout=1600 -XX:+IgnoreUnrecognizedVMOptions -XX:+UseHeavyMonitors MapLoops
+ */
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.List;
