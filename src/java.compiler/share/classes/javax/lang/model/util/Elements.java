@@ -767,12 +767,14 @@ public interface Elements {
      * {@return the file object for this element or {@code null} if
      * there is no such file object}
      *
-     * <p>The returned file object is for the <a href="../element/package-summary.html#accurate_model">reference representation</a>
-     * of the information used to construct the element. For example,
-     * if during compilation or annotation processing, a source file
-     * for class {@code Foo} is compiled into a class file, the file
-     * object returned for the element representing {@code Foo} would
-     * be for the source file and <em>not</em> for the class file.
+     * <p>The returned file object is for the <a
+     * href="../element/package-summary.html#accurate_model">reference
+     * representation</a> of the information used to construct the
+     * element. For example, if during compilation or annotation
+     * processing, a source file for class {@code Foo} is compiled
+     * into a class file, the file object returned for the element
+     * representing {@code Foo} would be for the source file and
+     * <em>not</em> for the class file.
      *
      * <p>An implementation may choose to not support the
      * functionality of this method, in which case {@link
@@ -781,45 +783,44 @@ public interface Elements {
      * <p>In the context of annotation processing, a non-{@code null}
      * value is returned if the element was included as part of the
      * initial inputs or the containing file was created during the
-     * run of the annotation processing tool. Otherwise, a {@code null}
-     * may be returned. In annotation processing, if a {@linkplain
-     * javax.annotation.processing.Filer#createClassFile class file is
-     * created}, that class file can serve as the reference
-     * representation for elements.
+     * run of the annotation processing tool. Otherwise, a {@code
+     * null} may be returned. In annotation processing, if a
+     * {@linkplain javax.annotation.processing.Filer#createClassFile
+     * class file is created}, that class file can serve as the
+     * reference representation for elements.
      *
      * <p>If it has a file object, the file object for a package will
      * be a {@code package-info} file. A package may exist and not
      * have any {@code package-info} file even if the package is
      * (implicitly) created during an annotation processing run from
-     * the creation of source or class files in that package.
-     * An {@linkplain PackageElement#isUnnamed unnamed package} will have a
-     * null file since it cannot be declared in a compilation unit.
+     * the creation of source or class files in that package.  An
+     * {@linkplain PackageElement#isUnnamed unnamed package} will have
+     * a null file since it cannot be declared in a compilation unit.
      *
      * <p>If it has a file object, the file object for a module will
-     * be a {@code module-info} file.
-     * An {@linkplain ModuleElement#isUnnamed unnamed module} will have a
-     * null file since it cannot be declared in a compilation unit.
-     * An {@linkplain #isAutomaticModule automatic module} will have a
+     * be a {@code module-info} file.  An {@linkplain
+     * ModuleElement#isUnnamed unnamed module} will have a null file
+     * since it cannot be declared in a compilation unit.  An
+     * {@linkplain #isAutomaticModule automatic module} will have a
      * null file since it is implicitly declared.
      *
      * <p>If it has a file object, the file object for a top-level
      * {@code public} class or interface will be a source or class
      * file corresponding to that class or interface. In this case,
-     * typically the leading portion of the name of the file will match
-     * the name of the class or interface. A single compilation unit
-     * can define multiple top-level classes and interfaces, such as a
-     * primary {@code public} class or interfaces whose name
+     * typically the leading portion of the name of the file will
+     * match the name of the class or interface. A single compilation
+     * unit can define multiple top-level classes and interfaces, such
+     * as a primary {@code public} class or interfaces whose name
      * corresponds to the file name and one or more <em>auxiliary</em>
      * classes or interfaces whose names do not correspond to the file
      * name. If a source file is providing the reference
-     * representation of an auxiliary class or interface, the file
-     * for the primary class is returned. (An auxiliary class or
-     * interface can also be defined in a {@code package-info} source
-     * file, in which case the file for the {@code package-info} file
-     * is returned.)
-     * If a class file is providing
-     * the reference representation of an auxiliary class or interface,
-     * the separate class file for the auxiliary class is returned.
+     * representation of an auxiliary class or interface, the file for
+     * the primary class is returned. (An auxiliary class or interface
+     * can also be defined in a {@code package-info} source file, in
+     * which case the file for the {@code package-info} file is
+     * returned.)  If a class file is providing the reference
+     * representation of an auxiliary class or interface, the separate
+     * class file for the auxiliary class is returned.
      *
      * <p>For a nested class or interface, if it has a file object:
      *
@@ -847,7 +848,8 @@ public interface Elements {
      * @implSpec The default implementation unconditionally throws
      * {@link UnsupportedOperationException}.
      *
-     * @throws UnsupportedOperationException if this functionality is not supported
+     * @throws UnsupportedOperationException if this functionality is
+     * not supported
      *
      * @param e the element to find a file object for
      * @since 18
