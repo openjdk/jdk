@@ -3920,13 +3920,12 @@ encode %{
     __ cmp(rscratch1, rthread);
     __ br(Assembler::NE, cont);
 
-    __ cmp(disp_hdr, (u1)0);
-    __ br(Assembler::EQ, notRecursive);
+    __ cbz(disp_hdr, notRecursive);
 
     // Recursive lock
     __ sub(disp_hdr, disp_hdr, 1u);
     __ str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
-    __ cmp(rthread, rthread); // Reset flag == EQ for success;
+    // flag == EQ was set in the ownership check above
     __ b(cont);
 
     __ bind(notRecursive);
