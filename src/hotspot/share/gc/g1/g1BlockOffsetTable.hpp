@@ -108,6 +108,7 @@ public:
 
 class G1BlockOffsetTablePart {
   friend class G1BlockOffsetTable;
+  friend class HeapRegion;
   friend class VMStructs;
 private:
   // allocation boundary at which offset array must be updated
@@ -140,26 +141,11 @@ private:
   // Returns the address of a block whose start is at most "addr".
   inline HeapWord* block_at_or_preceding(const void* addr) const;
 
+  // Return the address of the beginning of the block that contains "addr".
   // "q" is a block boundary that is <= "addr"; "n" is the address of the
-  // next block (or the end of the space.)  Return the address of the
-  // beginning of the block that contains "addr".  Does so without side
-  // effects (see, e.g., spec of  block_start.)
-  inline HeapWord* forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
-                                                          const void* addr) const;
-
-  // "q" is a block boundary that is <= "addr"; return the address of the
-  // beginning of the block that contains "addr".  May have side effects
-  // on "this", by updating imprecise entries.
-  inline HeapWord* forward_to_block_containing_addr(HeapWord* q,
-                                                    const void* addr);
-
-  // "q" is a block boundary that is <= "addr"; "n" is the address of the
-  // next block (or the end of the space.)  Return the address of the
-  // beginning of the block that contains "addr".  May have side effects
-  // on "this", by updating imprecise entries.
-  HeapWord* forward_to_block_containing_addr_slow(HeapWord* q,
-                                                  HeapWord* n,
-                                                  const void* addr);
+  // next block (or the end of the space.)
+  inline HeapWord* forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
+                                                    const void* addr) const;
 
   // Requires that "*threshold_" be the first array entry boundary at or
   // above "blk_start".  If the block starts at or crosses "*threshold_", records
@@ -180,6 +166,9 @@ public:
   void update();
 
   void verify() const;
+
+  // Given an address calculate where the next threshold needing an update is.
+  inline HeapWord* threshold_for_addr(const void* addr);
 
   // Returns the address of the start of the block containing "addr", or
   // else "null" if it is covered by no block.  (May have side effects,
@@ -203,6 +192,11 @@ public:
   // Return the next threshold, the point at which the table should be
   // updated.
   HeapWord* threshold() const { return _next_offset_threshold; }
+
+  // Sets the threshold explicitly to keep it consistent with what has been
+  // updated. This needs to be done when the threshold is not used for updating
+  // the bot, for example when promoting to old in young collections.
+  void set_threshold(HeapWord* threshold) { _next_offset_threshold = threshold; }
 
   // These must be guaranteed to work properly (i.e., do nothing)
   // when "blk_start" ("blk" for second version) is "NULL".  In this

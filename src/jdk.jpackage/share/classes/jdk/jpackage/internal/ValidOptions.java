@@ -119,6 +119,7 @@ class ValidOptions {
             options.put(CLIOptions.MAC_APP_STORE.getId(), USE.ALL);
             options.put(CLIOptions.MAC_CATEGORY.getId(), USE.ALL);
             options.put(CLIOptions.MAC_ENTITLEMENTS.getId(), USE.ALL);
+            options.put(CLIOptions.DMG_CONTENT.getId(), USE.INSTALL);
         }
 
         if (Platform.getPlatform() == Platform.LINUX) {

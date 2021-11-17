@@ -144,7 +144,7 @@ public class RequiredModelMBean
 
     private static final JavaSecurityAccess javaSecurityAccess = SharedSecrets.getJavaSecurityAccess();
     @SuppressWarnings("removal")
-    final private AccessControlContext acc = AccessController.getContext();
+    private final AccessControlContext acc = AccessController.getContext();
 
     /*************************************/
     /* constructors                      */

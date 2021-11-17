@@ -652,7 +652,7 @@ public class VM {
   }
 
   // Convenience function for conversions
-  static public long getAddressValue(Address addr) {
+  public static long getAddressValue(Address addr) {
     return VM.getVM().getDebugger().getAddressValue(addr);
   }
 

@@ -134,8 +134,8 @@ public class CommandLinePositiveTest {
 
     @Test(dataProvider = "bindOptions")
     public void testBindAllInterfaces(String opt) throws Throwable {
-        out.println("\n--- testPort, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "0.0.0.0")
+        out.println("\n--- testBindAllInterfaces, opt=\"%s\" ".formatted(opt));
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "0.0.0.0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
                 .shouldContain("URL http://" + InetAddress.getLocalHost().getHostAddress());

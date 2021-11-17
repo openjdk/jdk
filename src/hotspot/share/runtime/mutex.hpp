@@ -88,24 +88,19 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   Thread* volatile _owner;
   void raw_set_owner(Thread* new_owner) { Atomic::store(&_owner, new_owner); }
 
-  // Embed pointers for mutex array for error reporting.
-  Mutex* _next_mutex;
-  Mutex* _prev_mutex;
-
-  void add_to_global_list();
-  void remove_from_global_list();
-
  protected:                              // Monitor-Mutex metadata
   os::PlatformMonitor _lock;             // Native monitor implementation
   const char* _name;                     // Name of mutex/monitor
 
-  // Debugging fields for naming, deadlock detection, etc.
+  // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
+#ifndef PRODUCT
+  bool    _allow_vm_block;
+#endif
 #ifdef ASSERT
   Rank    _rank;                 // rank (to avoid/detect potential deadlocks)
   Mutex*  _next;                 // Used by a Thread to link up owned locks
   Thread* _last_owner;           // the last thread to own the lock
-  bool    _skip_rank_check;      // read only by owner when doing rank checks
-  bool    _allow_vm_block;
+  bool _skip_rank_check;         // read only by owner when doing rank checks
 
   static bool contains(Mutex* locks, Mutex* lock);
   static Mutex* get_least_ranked_lock(Mutex* locks);
@@ -194,11 +189,11 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
   const char *name() const                  { return _name; }
 
-  // Print all mutexes/monitors that are currently owned by a thread; called
-  // by fatal error handler.
-  static void print_owned_locks_on_error(outputStream* st);
-  void print_on(outputStream* st) const;
-  void print() const { print_on(::tty); }
+  void print_on_error(outputStream* st) const;
+  #ifndef PRODUCT
+    void print_on(outputStream* st) const;
+    void print() const                      { print_on(::tty); }
+  #endif
 };
 
 class Monitor : public Mutex {

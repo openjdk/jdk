@@ -65,8 +65,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   size_t region_size = G1HeapRegionSize;
   // G1HeapRegionSize = 0 means decide ergonomically.
   if (region_size == 0) {
-    region_size = MAX2(max_heap_size / HeapRegionBounds::target_number(),
-                       HeapRegionBounds::min_size());
+    region_size = clamp(max_heap_size / HeapRegionBounds::target_number(),
+                        HeapRegionBounds::min_size(),
+                        HeapRegionBounds::max_ergonomics_size());
   }
 
   // Make sure region size is a power of 2. Rounding up since this
@@ -84,8 +85,6 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   LogOfHRGrainBytes = region_size_log;
 
   guarantee(GrainBytes == 0, "we should only set it once");
-  // The cast to int is safe, given that we've bounded region_size by
-  // MIN_REGION_SIZE and MAX_REGION_SIZE.
   GrainBytes = region_size;
 
   guarantee(GrainWords == 0, "we should only set it once");
@@ -106,6 +105,10 @@ void HeapRegion::handle_evacuation_failure() {
   clear_young_index_in_cset();
   set_old();
   _next_marked_bytes = 0;
+}
+
+void HeapRegion::process_and_drop_evac_failure_objs(ObjectClosure* closure) {
+  _evac_failure_objs.process_and_drop(closure);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -233,7 +236,6 @@ HeapRegion::HeapRegion(uint hrm_index,
   _top(NULL),
   _compaction_top(NULL),
   _bot_part(bot, this),
-  _par_alloc_lock(Mutex::service-2, "HeapRegionParAlloc_lock"),
   _pre_dummy_top(NULL),
   _rem_set(NULL),
   _hrm_index(hrm_index),
@@ -248,7 +250,8 @@ HeapRegion::HeapRegion(uint hrm_index,
   _prev_marked_bytes(0), _next_marked_bytes(0),
   _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
-  _node_index(G1NUMA::UnknownNodeIndex)
+  _node_index(G1NUMA::UnknownNodeIndex),
+  _evac_failure_objs(hrm_index, _bottom)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -814,4 +817,13 @@ void HeapRegion::object_iterate(ObjectClosure* blk) {
     }
     p += block_size(p);
   }
+}
+
+void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap) {
+  // Keep the BOT in sync for old generation regions.
+  if (is_old()) {
+    update_bot_at(address, word_size);
+  }
+  // Fill in the object.
+  CollectedHeap::fill_with_object(address, word_size, zap);
 }

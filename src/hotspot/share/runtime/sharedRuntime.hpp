@@ -271,8 +271,9 @@ class SharedRuntime: AllStatic {
   static void register_finalizer(JavaThread* thread, oopDesc* obj);
 
   // dtrace notifications
-  static int dtrace_object_alloc(oopDesc* o, int size);
-  static int dtrace_object_alloc_base(Thread* thread, oopDesc* o, int size);
+  static int dtrace_object_alloc(oopDesc* o);
+  static int dtrace_object_alloc(Thread* thread, oopDesc* o);
+  static int dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size);
   static int dtrace_method_entry(JavaThread* thread, Method* m);
   static int dtrace_method_exit(JavaThread* thread, Method* m);
 
@@ -473,15 +474,13 @@ class SharedRuntime: AllStatic {
   // returns.
   //
   // The wrapper may contain special-case code if the given method
-  // is a JNI critical method, or a compiled method handle adapter,
-  // such as _invokeBasic, _linkToVirtual, etc.
+  // is a compiled method handle adapter, such as _invokeBasic, _linkToVirtual, etc.
   static nmethod* generate_native_wrapper(MacroAssembler* masm,
                                           const methodHandle& method,
                                           int compile_id,
                                           BasicType* sig_bt,
                                           VMRegPair* regs,
-                                          BasicType ret_type,
-                                          address critical_entry);
+                                          BasicType ret_type);
 
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.

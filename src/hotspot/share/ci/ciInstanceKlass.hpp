@@ -61,8 +61,6 @@ private:
   bool                   _is_record;
 
   ciFlags                _flags;
-  jint                   _nonstatic_field_size;
-  jint                   _nonstatic_oop_map_size;
 
   // Lazy fields get filled in only upon request.
   ciInstanceKlass*       _super;
@@ -173,15 +171,9 @@ public:
     return (Klass::layout_helper_size_in_bytes(layout_helper())
             >> LogHeapWordSize);
   }
-  jint                   nonstatic_field_size()  {
-    assert(is_loaded(), "must be loaded");
-    return _nonstatic_field_size; }
   jint                   has_nonstatic_fields()  {
     assert(is_loaded(), "must be loaded");
     return _has_nonstatic_fields; }
-  jint                   nonstatic_oop_map_size()  {
-    assert(is_loaded(), "must be loaded");
-    return _nonstatic_oop_map_size; }
   ciInstanceKlass*       super();
   jint                   nof_implementors() {
     ciInstanceKlass* impl;
@@ -283,7 +275,6 @@ public:
 
   // What kind of ciObject is this?
   bool is_instance_klass() const { return true; }
-  bool is_java_klass() const     { return true; }
 
   virtual ciKlass* exact_klass() {
     if (is_loaded() && is_final() && !is_interface()) {

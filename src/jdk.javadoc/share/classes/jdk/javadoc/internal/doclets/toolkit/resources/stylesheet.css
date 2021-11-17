@@ -586,10 +586,10 @@ ul.ui-autocomplete {
     position:fixed;
     z-index:999999;
 }
-ul.ui-autocomplete  li {
+ul.ui-autocomplete li {
     float:left;
     clear:both;
-    width:100%;
+    min-width:100%;
 }
 .result-highlight {
     font-weight:bold;
@@ -933,7 +933,61 @@ pre.snippet {
     overflow: auto;
     white-space: pre;
 }
-
+div.snippet-container {
+    position: relative;
+}
+button.snippet-copy {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    height: 1.7em;
+    opacity: 50%;
+    transition: opacity 0.2s;
+    padding: 2px;
+    border: none;
+    cursor: pointer;
+    background: none;
+}
+button.snippet-copy img {
+    width: 18px;
+    height: 18px;
+    padding: 0.05em 0;
+    background: none;
+}
+div.snippet-container:hover button.snippet-copy {
+    opacity: 80%;
+}
+div.snippet-container button.snippet-copy:hover {
+    opacity: 100%;
+}
+button.snippet-copy span {
+    color: #3d3d3d;
+    content: attr(aria-label);
+    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;
+    font-size: 85%;
+    line-height: 1.2em;
+    padding: 0.2em;
+    position: relative;
+    white-space: nowrap;
+    top: -0.5em;
+    display: none;
+}
+div.snippet-container:hover button.snippet-copy span {
+    display: inline;
+}
+button.snippet-copy:active {
+    background: #d3d3d3;
+    opacity: 100%;
+}
+@media screen and (max-width: 800px) {
+    pre.snippet {
+        padding-top: 26px;
+    }
+    button.snippet-copy {
+        top: 4px;
+        right: 4px;
+    }
+}
 pre.snippet .italic {
     font-style: italic;
 }

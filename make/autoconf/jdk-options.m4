@@ -817,26 +817,53 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
       BINUTILS_DIR="$with_binutils"
     fi
 
-    AC_MSG_CHECKING([for binutils to use with hsdis])
-    if test "x$BINUTILS_DIR" != x; then
+    binutils_system_error=""
+    HSDIS_LIBS=""
+    if test "x$BINUTILS_DIR" = xsystem; then
+      AC_CHECK_LIB(bfd, bfd_openr, [ HSDIS_LIBS="-lbfd" ], [ binutils_system_error="libbfd not found" ])
+      AC_CHECK_LIB(opcodes, disassembler, [ HSDIS_LIBS="$HSDIS_LIBS -lopcodes" ], [ binutils_system_error="libopcodes not found" ])
+      AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ], [ binutils_system_error="libiberty not found" ])
+      AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], [ binutils_system_error="libz not found" ])
+    elif test "x$BINUTILS_DIR" != x; then
       if test -e $BINUTILS_DIR/bfd/libbfd.a && \
           test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
           test -e $BINUTILS_DIR/libiberty/libiberty.a; then
-        AC_MSG_RESULT([$BINUTILS_DIR])
         HSDIS_CFLAGS="-I$BINUTILS_DIR/include -I$BINUTILS_DIR/bfd -DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
         HSDIS_LIBS="$BINUTILS_DIR/bfd/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a"
-      else
-        AC_MSG_RESULT([invalid])
-        AC_MSG_ERROR([$BINUTILS_DIR does not contain a proper binutils installation])
       fi
-    else
-      AC_MSG_RESULT([missing])
-      AC_MSG_NOTICE([--with-hsdis=binutils requires specifying a binutils installation.])
-      AC_MSG_NOTICE([Download binutils from https://www.gnu.org/software/binutils and unpack it,])
-      AC_MSG_NOTICE([and point --with-binutils-src to the resulting directory, or use])
-      AC_MSG_NOTICE([--with-binutils to point to a pre-built binutils installation.])
-      AC_MSG_ERROR([Cannot continue])
     fi
+
+    AC_MSG_CHECKING([for binutils to use with hsdis])
+    case "x$BINUTILS_DIR" in
+      xsystem)
+        if test "x$OPENJDK_TARGET_OS" != xlinux; then
+          AC_MSG_RESULT([invalid])
+          AC_MSG_ERROR([binutils on system is supported for Linux only])
+        elif test "x$binutils_system_error" = x; then
+          AC_MSG_RESULT([system])
+          HSDIS_CFLAGS="-DSYSTEM_BINUTILS"
+        else
+          AC_MSG_RESULT([invalid])
+          AC_MSG_ERROR([$binutils_system_error])
+        fi
+        ;;
+      x)
+        AC_MSG_RESULT([missing])
+        AC_MSG_NOTICE([--with-hsdis=binutils requires specifying a binutils installation.])
+        AC_MSG_NOTICE([Download binutils from https://www.gnu.org/software/binutils and unpack it,])
+        AC_MSG_NOTICE([and point --with-binutils-src to the resulting directory, or use])
+        AC_MSG_NOTICE([--with-binutils to point to a pre-built binutils installation.])
+        AC_MSG_ERROR([Cannot continue])
+        ;;
+      *)
+        if test "x$HSDIS_LIBS" != x; then
+          AC_MSG_RESULT([$BINUTILS_DIR])
+        else
+          AC_MSG_RESULT([invalid])
+          AC_MSG_ERROR([$BINUTILS_DIR does not contain a proper binutils installation])
+        fi
+        ;;
+    esac
   else
     AC_MSG_RESULT([invalid])
     AC_MSG_ERROR([Incorrect hsdis backend "$with_hsdis"])
