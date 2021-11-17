@@ -254,9 +254,9 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * @throws    IOException if an I/O error has occurred
      */
     public void closeEntry() throws IOException {
-        try {
-            ensureOpen();
-            if (current != null) {
+        ensureOpen();
+        if (current != null) {
+            try {
                 ZipEntry e = current.entry;
                 switch (e.method) {
                     case DEFLATED - > {
@@ -309,11 +309,11 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                 }
                 crc.reset();
                 current = null;
+            } catch (IOException e) {
+                if (usesDefaultDeflater)
+                    def.end();
+                throw e;
             }
-        } catch (IOException e) {
-            if (usesDefaultDeflater)
-                def.end();
-            throw e;
         }
     }
 

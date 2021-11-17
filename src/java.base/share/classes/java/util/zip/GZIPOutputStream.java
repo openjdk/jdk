@@ -156,8 +156,8 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * @throws    IOException if an I/O error has occurred
      */
     public void finish() throws IOException {
-        try {
-            if (!def.finished()) {
+        if (!def.finished()) {
+            try {
                 def.finish();
                 while (!def.finished()) {
                     int len = def.deflate(buf, 0, buf.length);
@@ -176,11 +176,11 @@ public class GZIPOutputStream extends DeflaterOutputStream {
                 byte[] trailer = new byte[TRAILER_SIZE];
                 writeTrailer(trailer, 0);
                 out.write(trailer);
+            } catch (IOException e) {
+                if (usesDefaultDeflater)
+                    def.end();
+                throw e;
             }
-        } catch (IOException e) {
-            if (usesDefaultDeflater)
-                def.end();
-            throw e;
         }
     }
 
