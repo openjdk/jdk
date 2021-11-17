@@ -5501,8 +5501,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see java.io.ObjectInputStream#registerValidation
      * @see SwingUtilities#updateComponentTreeUI
      */
-    private static class ReadObjectCallback implements ObjectInputValidation
-    {
+    private static class ReadObjectCallback implements ObjectInputValidation {
         private final Vector<JComponent> roots = new Vector<JComponent>(1);
         private final ObjectInputStream inputStream;
 
