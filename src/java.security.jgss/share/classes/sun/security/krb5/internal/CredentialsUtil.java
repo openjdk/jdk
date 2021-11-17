@@ -102,7 +102,8 @@ public class CredentialsUtil {
         }
         if (!creds.isForwardable() && !Credentials.S4U2PROXY_ACCEPT_NON_FORWARDABLE) {
             throw new KrbException("S4U2self ticket must be FORWARDABLE");
-        }        return creds;
+        }
+        return creds;
     }
 
     /**

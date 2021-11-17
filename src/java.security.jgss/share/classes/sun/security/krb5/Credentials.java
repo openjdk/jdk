@@ -484,7 +484,7 @@ public class Credentials {
      *
      * @param service the name of service principal using format
      * components@realm
-     * @param ccreds client's initial credential.
+     * @param initCreds client's initial credential.
      * @exception IOException if an error occurs in reading the credentials
      * cache
      * @exception KrbException if an error occurs specific to Kerberos
@@ -492,9 +492,9 @@ public class Credentials {
      */
 
     public static Credentials acquireServiceCreds(String service,
-                                                  Credentials ccreds)
+                                                  Credentials initCreds)
         throws KrbException, IOException {
-        return CredentialsUtil.acquireServiceCreds(service, ccreds);
+        return CredentialsUtil.acquireServiceCreds(service, initCreds);
     }
 
     public static Credentials acquireS4U2selfCreds(PrincipalName user,
@@ -503,10 +503,10 @@ public class Credentials {
     }
 
     public static Credentials acquireS4U2proxyCreds(String service,
-            Credentials userCreds, PrincipalName client, Credentials ccreds)
+            Credentials userCreds, PrincipalName client, Credentials middleTGT)
         throws KrbException, IOException {
         return CredentialsUtil.acquireS4U2proxyCreds(
-                service, userCreds, client, ccreds);
+                service, userCreds, client, middleTGT);
     }
 
     /*

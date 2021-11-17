@@ -119,6 +119,10 @@ class Krb5Context implements GSSContextSpi {
     // XXX See if the required info from these can be extracted and
     // stored elsewhere
     private Credentials tgt;
+
+    // On the Initiator side, contains the final TGS to a service on both
+    // delegation and no-delegation scenarios.
+    // On the Acceptor side, contains a user TGS usable for delegation.
     private Credentials serviceCreds;
     private KrbApReq apReq;
     private final GSSCaller caller;
