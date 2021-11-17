@@ -26,15 +26,15 @@
  * @bug 8276422
  * @summary Invalid/missing values for the finalization option should be rejected
  * @library /test/lib
- * @run main InvalidFinalizationFlag none
- * @run main InvalidFinalizationFlag empty
- * @run main InvalidFinalizationFlag invalid
+ * @run main InvalidFinalizationOption none
+ * @run main InvalidFinalizationOption empty
+ * @run main InvalidFinalizationOption invalid
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class InvalidFinalizationFlag {
+public class InvalidFinalizationOption {
     public static void main(String[] args) throws Exception {
         record TestData(String arg, String expected) { }
 
