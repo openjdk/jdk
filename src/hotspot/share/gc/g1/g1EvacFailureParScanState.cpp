@@ -241,7 +241,6 @@ void G1EvacFailureParScanState::trim_queue(G1RemoveSelfForwardClosure& closure) 
 }
 
 void G1EvacFailureParScanState::steal_and_trim_queue(G1RemoveSelfForwardClosure& closure) {
-
   G1EvacFailureParScanTask stolen_task;
   while (_task_queues->steal(_worker_id, stolen_task)) {
     dispatch_task(stolen_task, closure);

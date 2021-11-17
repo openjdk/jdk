@@ -37,6 +37,14 @@ G1EvacFailureParScanTask::G1EvacFailureParScanTask(HeapRegion* region,
   _end(end),
   _last(last) { }
 
+G1EvacFailureParScanTask::G1EvacFailureParScanTask(const G1EvacFailureParScanTask& o) {
+  this->_region = o._region;
+  this->_previous_object_end = o._previous_object_end;
+  this->_start = o._start;
+  this->_end = o._end;
+  this->_last = o._last;
+}
+
 G1EvacFailureParScanTask& G1EvacFailureParScanTask::operator=(const G1EvacFailureParScanTask& o) {
   this->_region = o._region;
   this->_previous_object_end = o._previous_object_end;

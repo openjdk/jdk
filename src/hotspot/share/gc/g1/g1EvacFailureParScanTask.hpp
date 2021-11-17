@@ -51,6 +51,8 @@ public:
                            uint end = -1,
                            bool last = false);
 
+  G1EvacFailureParScanTask(const G1EvacFailureParScanTask& o);
+
   G1EvacFailureParScanTask& operator=(const G1EvacFailureParScanTask& o);
 
   HeapRegion* region() { return _region; }

@@ -29,6 +29,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
 
 const G1SegmentedArrayAllocOptions G1EvacFailureObjectsSet::_alloc_options =
@@ -154,9 +155,7 @@ size_t G1EvacFailureObjectsSet::pre_iteration(G1EvacFailureParScanTasksQueue* qu
 
   _helper.prepare(queue);
 
-  size_t res = Atomic::load(&_word_size);
-  Atomic::store(&_word_size, size_t(0));
-  return res;
+  return Atomic::load(&_word_size) * HeapWordSize;
 }
 
 void G1EvacFailureObjectsSet::iterate(ObjectClosure* closure, G1EvacFailureParScanTask& task) {
@@ -166,4 +165,5 @@ void G1EvacFailureObjectsSet::iterate(ObjectClosure* closure, G1EvacFailureParSc
 void G1EvacFailureObjectsSet::post_iteration() {
   _helper.reset();
   _offsets.drop_all();
+  Atomic::store(&_word_size, size_t(0));
 }

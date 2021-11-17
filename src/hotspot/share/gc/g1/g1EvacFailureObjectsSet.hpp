@@ -92,6 +92,7 @@ class G1EvacFailureObjectsSet {
 
   G1EvacFailureObjectsIterationHelper _helper;
 
+  // Live words in the evacuation failure region.
   volatile size_t _word_size;
 
   void assert_is_valid_offset(size_t offset) const NOT_DEBUG_RETURN;
@@ -105,11 +106,16 @@ public:
   // Record an object that failed evacuation.
   void record(oop obj, size_t word_size);
 
+  // Prepare parallel iteration by building and sorting list of evacuation
+  // failure objects, and constructing parallelizable tasks.
+  // Return live bytes in the evacuation failure region.
   size_t pre_iteration(G1EvacFailureParScanTasksQueue* queue);
   // Apply the given ObjectClosure to all objects in the task
   // that failed evacuation.
   // Objects are passed in increasing address order.
   void iterate(ObjectClosure* closure, G1EvacFailureParScanTask& task);
+  // Empty the list of evacuation failure objects.
+  // Reset live words in the evacuation failure region.
   void post_iteration();
 };
 
