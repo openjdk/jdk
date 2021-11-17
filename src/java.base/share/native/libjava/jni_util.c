@@ -741,26 +741,27 @@ InitializeEncoding(JNIEnv *env, const char *encname)
             jstring enc = (*env)->NewStringUTF(env, encname);
             if (enc == NULL)
                 return;
-            fastEncoding = NO_FAST_ENCODING;
-            jnuEncoding = (jstring)(*env)->NewGlobalRef(env, enc);
-            (*env)->DeleteLocalRef(env, enc);
 
-            // Replace jnuEncoding with UTF-8, if it is not supported
             if ((jboolean) JNU_CallStaticMethodByName (
                                             env, &exe,
                                             "java/nio/charset/Charset",
                                             "isSupported",
                                             "(Ljava/lang/String;)Z",
-                                            jnuEncoding).z == JNI_FALSE) {
+                                            enc).z == JNI_TRUE) {
+                fastEncoding = NO_FAST_ENCODING;
+                jnuEncoding = (jstring)(*env)->NewGlobalRef(env, enc);
+            } else {
+                // jnuEncoding falls back to UTF-8
                 jstring utf8 = (*env)->NewStringUTF(env, "UTF-8");
                 if (utf8 == NULL) {
+                    (*env)->DeleteLocalRef(env, enc);
                     return;
                 }
-                (*env)->DeleteGlobalRef(env, jnuEncoding);
                 fastEncoding = FAST_UTF_8;
                 jnuEncoding = (jstring)(*env)->NewGlobalRef(env, utf8);
                 (*env)->DeleteLocalRef(env, utf8);
             }
+            (*env)->DeleteLocalRef(env, enc);
         }
     } else {
         JNU_ThrowInternalError(env, "platform encoding undefined");
