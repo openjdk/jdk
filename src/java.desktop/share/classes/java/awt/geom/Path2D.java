@@ -2104,6 +2104,8 @@ public abstract class Path2D implements Shape, Cloneable {
         final double[] deriv_coeff = new double[3];
 
         final double[] coords = new double[6];
+
+        // bounds are stored as {leftX, rightX, topY, bottomY}
         double[] bounds = null;
         double lastX = 0.0;
         double lastY = 0.0;
@@ -2115,7 +2117,7 @@ public abstract class Path2D implements Shape, Cloneable {
             switch (type) {
                 case PathIterator.SEG_MOVETO:
                     if (bounds == null) {
-                        bounds = new double[] { coords[0], coords[1], coords[0], coords[1] };
+                        bounds = new double[] { coords[0], coords[0], coords[1], coords[1] };
                     }
                     endX = coords[0];
                     endY = coords[1];
@@ -2138,26 +2140,28 @@ public abstract class Path2D implements Shape, Cloneable {
             }
 
             if (endX < bounds[0]) bounds[0] = endX;
-            if (endX > bounds[2]) bounds[2] = endX;
-            if (endY < bounds[1]) bounds[1] = endY;
+            if (endX > bounds[1]) bounds[1] = endX;
+            if (endY < bounds[2]) bounds[2] = endY;
             if (endY > bounds[3]) bounds[3] = endY;
 
             switch (type) {
                 case PathIterator.SEG_QUADTO:
-                    Curve.accumulateExtremaBoundsForQuad(bounds, lastX, lastY, coords, coeff, deriv_coeff);
+                    Curve.accumulateExtremaBoundsForQuad(bounds, 0, lastX, coords[0], coords[2], coeff, deriv_coeff);
+                    Curve.accumulateExtremaBoundsForQuad(bounds, 2, lastY, coords[1], coords[3], coeff, deriv_coeff);
                     break;
                 case PathIterator.SEG_CUBICTO:
-                    Curve.accumulateExtremaBoundsForCubic(bounds, lastX, lastY, coords, coeff, deriv_coeff);
+                    Curve.accumulateExtremaBoundsForCubic(bounds, 0, lastX, coords[0], coords[2], coords[4], coeff, deriv_coeff);
+                    Curve.accumulateExtremaBoundsForCubic(bounds, 2, lastY, coords[1], coords[3], coords[5], coeff, deriv_coeff);
                     break;
                 default:
-                    // intentionally empty
+                    break;
             }
 
             lastX = endX;
             lastY = endY;
         }
         if (bounds != null) {
-            return new Rectangle2D.Double(bounds[0], bounds[1], bounds[2] - bounds[0], bounds[3] - bounds[1]);
+            return new Rectangle2D.Double(bounds[0], bounds[2], bounds[1] - bounds[0], bounds[3] - bounds[2]);
         }
 
         // there's room to debate what should happen here, but historically we return a zeroed

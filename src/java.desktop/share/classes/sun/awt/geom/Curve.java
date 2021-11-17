@@ -713,7 +713,11 @@ public abstract class Curve {
     }
 
     /**
-     * Accumulate the quadratic extrema into the pre-existing bounding box.
+     * Accumulate the quadratic extrema into the pre-existing bounding array.
+     * <p>
+     * This method focuses on one dimension at a time, so to get both the x and y
+     * dimensions you'll need to call this method twice.
+     * </p>
      * <p>
      * Whenever we have to examine cubic or quadratic extrema that change our bounding
      * box: we run the risk of machine error that may produce a box that is slightly
@@ -723,51 +727,50 @@ public abstract class Curve {
      * scheme).
      * </p>
      *
-     * @param bounds the bounds to update, which are expressed as: { left_x, top_y, right_x, bottom_y }
-     * @param startX the initial x value of the bezier quadratic curve
-     * @param startY the initial y value of the bezier quadratic curve
-     * @param coords the two (x,y) coordinates returned by {@link PathIterator#currentSegment(double[])}
+     * @param bounds the bounds to update, which are expressed as: { minX, maxX }
+     * @param boundsOffset the index in boundsof the minimum value
+     * @param x1 the starting value of the bezier curve where t = 0.0
+     * @param ctrlX the control value of the bezier curve
+     * @param x2 the ending value of the bezier curve where t = 1.0
      * @param coeff an array of at least 3 elements that will be overwritten and reused
      * @param deriv_coeff an array of at least 2 elements that will be overwritten and reused
      */
-    public static void accumulateExtremaBoundsForQuad(double[] bounds, double startX, double startY, double[] coords, double[] coeff, double[] deriv_coeff) {
-        // when arrayOffset = 0 we look at x values; when arrayOffset = 1 we look at y values
-        for(int arrayOffset = 0; arrayOffset < 2; arrayOffset++) {
-            if (coords[0 + arrayOffset] < bounds[0 + arrayOffset] ||
-                    coords[0 + arrayOffset] > bounds[2 + arrayOffset]) {
-                final double start = arrayOffset == 0 ? startX : startY;
-                final double ctrl = coords[0 + arrayOffset];
-                final double end = coords[2 + arrayOffset];
+    public static void accumulateExtremaBoundsForQuad(double[] bounds, int boundsOffset, double x1, double ctrlX, double x2, double[] coeff, double[] deriv_coeff) {
+        if (ctrlX < bounds[boundsOffset] ||
+                ctrlX > bounds[boundsOffset + 1]) {
 
-                final double dx21 = ctrl - start;
-                coeff[2] = (end - ctrl) - dx21;  // A = P3 - P0 - 2 P2
-                coeff[1] = 2.0 * dx21;           // B = 2 (P2 - P1)
-                coeff[0] = start;                // C = P1
+            final double dx21 = ctrlX - x1;
+            coeff[2] = (x2 - ctrlX) - dx21;  // A = P3 - P0 - 2 P2
+            coeff[1] = 2.0 * dx21;           // B = 2 (P2 - P1)
+            coeff[0] = x1;                   // C = P1
 
-                deriv_coeff[0] = coeff[1];
-                deriv_coeff[1] = 2.0 * coeff[2];
+            deriv_coeff[0] = coeff[1];
+            deriv_coeff[1] = 2.0 * coeff[2];
 
-                final double t = -deriv_coeff[0] / deriv_coeff[1];
-                if (t > 0.0 && t < 1.0) {
-                    final double v = coeff[0] + t * (coeff[1] + t * coeff[2]);
+            final double t = -deriv_coeff[0] / deriv_coeff[1];
+            if (t > 0.0 && t < 1.0) {
+                final double v = coeff[0] + t * (coeff[1] + t * coeff[2]);
 
-                    // error condition = sum ( abs (coeff) ):
-                    final double margin = Math.ulp(Math.abs(coeff[0])
-                            + Math.abs(coeff[1]) + Math.abs(coeff[2]));
+                // error condition = sum ( abs (coeff) ):
+                final double margin = Math.ulp(Math.abs(coeff[0])
+                        + Math.abs(coeff[1]) + Math.abs(coeff[2]));
 
-                    if (v - margin < bounds[0 + arrayOffset]) {
-                        bounds[0 + arrayOffset] = v - margin;
-                    }
-                    if (v + margin > bounds[2 + arrayOffset]) {
-                        bounds[2 + arrayOffset] = v + margin;
-                    }
+                if (v - margin < bounds[boundsOffset]) {
+                    bounds[boundsOffset] = v - margin;
+                }
+                if (v + margin > bounds[boundsOffset + 1]) {
+                    bounds[boundsOffset + 1] = v + margin;
                 }
             }
         }
     }
 
     /**
-     * Accumulate the cubic extrema into the pre-existing bounding box.
+     * Accumulate the cubic extrema into the pre-existing bounding array.
+     * <p>
+     * This method focuses on one dimension at a time, so to get both the x and y
+     * dimensions you'll need to call this method twice.
+     * </p>
      * <p>
      * Whenever we have to examine cubic or quadratic extrema that change our bounding
      * box: we run the risk of machine error that may produce a box that is slightly
@@ -777,57 +780,49 @@ public abstract class Curve {
      * scheme).
      * </p>
      *
-     * @param bounds the bounds to update, which are expressed as: { left_x, top_y, right_x, bottom_y }
-     * @param startX the initial x value of the bezier cubic curve
-     * @param startY the initial y value of the bezier cubic curve
-     * @param coords the three (x,y) coordinates returned by {@link PathIterator#currentSegment(double[])}
-     * @param coeff an array of at least 4 elements that will be overwritten and reused
-     * @param deriv_coeff an array of at least 3 elements that will be overwritten and reused
+     * @param bounds the bounds to update, which are expressed as: { minX, maxX }
+     * @param boundsOffset the index in boundsof the minimum value
+     * @param x1 the starting value of the bezier curve where t = 0.0
+     * @param ctrlX1 the first control value of the bezier curve
+     * @param ctrlX1 the second control value of the bezier curve
+     * @param x2 the ending value of the bezier curve where t = 1.0
+     * @param coeff an array of at least 3 elements that will be overwritten and reused
+     * @param deriv_coeff an array of at least 2 elements that will be overwritten and reused
      */
-    public static void accumulateExtremaBoundsForCubic(double[] bounds, double startX, double startY, double[] coords, double[] coeff, double[] deriv_coeff) {
-        // when arrayOffset = 0 we look at x values; when arrayOffset = 1 we look at y values
-        for (int arrayOffset = 0; arrayOffset < 2; arrayOffset++) {
-            if (coords[arrayOffset] < bounds[0 + arrayOffset] ||
-                    coords[arrayOffset] > bounds[2 + arrayOffset] ||
-                    coords[2 + arrayOffset] < bounds[0 + arrayOffset] ||
-                    coords[2 + arrayOffset] > bounds[2 + arrayOffset]) {
-                final double start = arrayOffset == 0 ? startX : startY;
-                final double ctrl1 = coords[0 + arrayOffset];
-                final double ctrl2 = coords[2 + arrayOffset];
-                final double end = coords[4 + arrayOffset];
+    public static void accumulateExtremaBoundsForCubic(double[] bounds, int boundsOffset, double x1, double ctrlX1, double ctrlX2, double x2, double[] coeff, double[] deriv_coeff) {
+        if (ctrlX1 < bounds[boundsOffset] ||
+                ctrlX1 > bounds[boundsOffset + 1]) {
+            final double dx32 = 3.0 * (ctrlX2 - ctrlX1);
+            final double dx21 = 3.0 * (ctrlX1 - x1);
+            coeff[3] = (x2 - x1) - dx32;  // A = P3 - P0 - 3 (P2 - P1) = (P3 - P0) + 3 (P1 - P2)
+            coeff[2] = (dx32 - dx21);         // B = 3 (P2 - P1) - 3(P1 - P0) = 3 (P2 + P0) - 6 P1
+            coeff[1] = dx21;                  // C = 3 (P1 - P0)
+            coeff[0] = x1;                 // D = P0
 
-                final double dx32 = 3.0 * (ctrl2 - ctrl1);
-                final double dx21 = 3.0 * (ctrl1 - start);
-                coeff[3] = (end - start) - dx32;  // A = P3 - P0 - 3 (P2 - P1) = (P3 - P0) + 3 (P1 - P2)
-                coeff[2] = (dx32 - dx21);         // B = 3 (P2 - P1) - 3(P1 - P0) = 3 (P2 + P0) - 6 P1
-                coeff[1] = dx21;                  // C = 3 (P1 - P0)
-                coeff[0] = start;                 // D = P0
+            deriv_coeff[0] = coeff[1];
+            deriv_coeff[1] = 2.0 * coeff[2];
+            deriv_coeff[2] = 3.0 * coeff[3];
 
-                deriv_coeff[0] = coeff[1];
-                deriv_coeff[1] = 2.0 * coeff[2];
-                deriv_coeff[2] = 3.0 * coeff[3];
+            // reuse this array, give it a new name for readability:
+            final double[] tExtrema = deriv_coeff;
 
-                // reuse this array, give it a new name for readability:
-                final double[] tExtrema = deriv_coeff;
+            // solveQuadratic should be improved to get correct t extrema (1 ulp):
+            final int tExtremaCount = QuadCurve2D.solveQuadratic(deriv_coeff, tExtrema);
+            if (tExtremaCount > 0) {
+                // error condition = sum ( abs (coeff) ):
+                final double margin = Math.ulp(Math.abs(coeff[0])
+                        + Math.abs(coeff[1]) + Math.abs(coeff[2])
+                        + Math.abs(coeff[3]));
 
-                // solveQuadratic should be improved to get correct t extrema (1 ulp):
-                final int tExtremaCount = QuadCurve2D.solveQuadratic(deriv_coeff, tExtrema);
-                if (tExtremaCount > 0) {
-                    // error condition = sum ( abs (coeff) ):
-                    final double margin = Math.ulp(Math.abs(coeff[0])
-                            + Math.abs(coeff[1]) + Math.abs(coeff[2])
-                            + Math.abs(coeff[3]));
-
-                    for (int i = 0; i < tExtremaCount; i++) {
-                        final double t = tExtrema[i];
-                        if (t > 0.0 && t < 1.0) {
-                            final double v = coeff[0] + t * (coeff[1] + t * (coeff[2] + t * coeff[3]));
-                            if (v - margin < bounds[0 + arrayOffset]) {
-                                bounds[0 + arrayOffset] = v - margin;
-                            }
-                            if (v + margin > bounds[2 + arrayOffset]) {
-                                bounds[2 + arrayOffset] = v + margin;
-                            }
+                for (int i = 0; i < tExtremaCount; i++) {
+                    final double t = tExtrema[i];
+                    if (t > 0.0 && t < 1.0) {
+                        final double v = coeff[0] + t * (coeff[1] + t * (coeff[2] + t * coeff[3]));
+                        if (v - margin < bounds[boundsOffset]) {
+                            bounds[boundsOffset] = v - margin;
+                        }
+                        if (v + margin > bounds[boundsOffset + 1]) {
+                            bounds[boundsOffset + 1] = v + margin;
                         }
                     }
                 }
