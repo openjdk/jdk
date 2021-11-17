@@ -60,6 +60,7 @@ public class NonStandardNames {
         PKCS9Attributes authed = new PKCS9Attributes(new PKCS9Attribute[]{
             new PKCS9Attribute(PKCS9Attribute.CONTENT_TYPE_OID, ContentInfo.DATA_OID),
             new PKCS9Attribute(PKCS9Attribute.MESSAGE_DIGEST_OID, md.digest(data)),
+            new PKCS9Attribute(PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_OID, "test".getBytes())
         });
 
         // test PKCS9Attributes.toString(), PKCS9Attributes.getAttributes()
