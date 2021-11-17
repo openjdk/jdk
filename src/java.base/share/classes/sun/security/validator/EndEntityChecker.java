@@ -105,6 +105,7 @@ class EndEntityChecker {
 
     // bit numbers in the key usage extension
     private static final int KU_SIGNATURE = 0;
+    private static final int KU_NON_REPUDIATION = 1;
     private static final int KU_KEY_ENCIPHERMENT = 2;
     private static final int KU_KEY_AGREEMENT = 4;
 
@@ -351,11 +352,19 @@ class EndEntityChecker {
 
     /**
      * Check whether this certificate can be used by a time stamping authority
-     * server. RFC 3161 section 2.3 only requires EKU with id-kp-timeStamping.
+     * server (see RFC 3161, section 2.3).
      * @throws CertificateException if not.
      */
     private void checkTSAServer(X509Certificate cert, Set<String> exts)
             throws CertificateException {
+        // KU and EKU should be consistent
+        if (!checkKeyUsage(cert, KU_SIGNATURE)
+                && !checkKeyUsage(cert, KU_NON_REPUDIATION)) {
+            throw new ValidatorException
+                ("KeyUsage does not allow digital signatures or non repudiation",
+                ValidatorException.T_EE_EXTENSIONS, cert);
+        }
+
         if (cert.getExtendedKeyUsage() == null) {
             throw new ValidatorException
                 ("Certificate does not contain an extended key usage " +
