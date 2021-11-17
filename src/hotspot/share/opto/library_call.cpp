@@ -308,6 +308,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsU:                  return inline_string_equals(StrIntrinsicNode::UU);
+  case vmIntrinsics::_hashCodeL:                return inline_string_hashCode(StrIntrinsicNode::L);
+  case vmIntrinsics::_hashCodeU:                return inline_string_hashCode(StrIntrinsicNode::U);
 
   case vmIntrinsics::_toBytesStringU:           return inline_string_toBytesU();
   case vmIntrinsics::_getCharsStringU:          return inline_string_getCharsU();
@@ -991,6 +993,224 @@ bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
   record_for_igvn(region);
 
   set_result(_gvn.transform(phi));
+  return true;
+}
+
+//------------------------------inline_string_hashCode-------------------------
+// int StringLatin1.hashCode(byte[] array)
+// int StringUTF16 .hashCode(byte[] array)
+bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
+  BasicType bt = ae == StrIntrinsicNode::L ? T_BYTE : T_SHORT;
+  int vector_length = MIN2(Matcher::max_vector_size(T_INT), Matcher::max_vector_size(bt));
+  int cast_node_op = bt == T_BYTE ? Op_VectorCastB2X : Op_VectorCastS2X;
+  if (!Matcher::match_rule_supported_vector(Op_LoadVector,     vector_length, bt)    ||
+      !Matcher::match_rule_supported_vector(cast_node_op,      vector_length, T_INT) ||
+      !Matcher::match_rule_supported_vector(Op_AndV,           vector_length, T_INT) ||
+      !Matcher::match_rule_supported_vector(Op_MulVI,          vector_length, T_INT) ||
+      !Matcher::match_rule_supported_vector(Op_AddVI,          vector_length, T_INT) ||
+      !Matcher::match_rule_supported_vector(Op_AddReductionVI, vector_length, T_INT)) {
+    return false;
+  }
+
+  Node* array = must_be_not_null(argument(0), true);
+  Node* array_length = load_array_length(array);
+
+  // if (str.length() >= vector_length * 2) -> Vector loop
+  // if string is short, using vectors is both unnecessary and inefficient
+  const TypeVect* svt = TypeVect::make(bt, vector_length);
+  const TypeVect* lvt = TypeVect::make(T_BYTE, svt->length_in_bytes());
+  const TypeVect* dvt = TypeVect::make(T_INT, vector_length);
+  Node* has_vector_loop_cmp = CmpI(array_length, intcon(vector_length * 2 * type2aelembytes(bt)));
+  Node* has_vector_loop_bol = Bool(has_vector_loop_cmp, BoolTest::ge);
+  IfNode* has_vector_loop_if = create_and_map_if(control(), has_vector_loop_bol, PROB_FAIR, COUNT_UNKNOWN);
+  Node* has_vector_loop = IfTrue(has_vector_loop_if);
+  Node* no_vector_loop = IfFalse(has_vector_loop_if);
+
+  // Vector loop
+  // This loop essentially divides the first 'vector_length * k' elements of the char array into 'vector_length'
+  // interleaved sequence, cumulates polynomial hash of those strides separately and combine them after the final
+  // iterations, the array indices in the following formulla is denoted backward for simplicity.
+  //   h = a_0 * 31**0 + a_1 * 31**1 + ...
+  //     = (a_0 * 31**0 + a_vl       * 31**vl       + ...)   +
+  //       (a_1 * 31**1 + a_(vl + 1) * 31**(vl + 1) + ...)   +
+  //                        ...
+  //     = 31**0 * (a_0 * 31**0 + a_vl       * 31**vl + ...) +
+  //       31**1 * (a_1 * 31**0 + a_(vl + 1) * 31**vl * ...) +
+  //                        ...
+  // with a_i = a[vl * k - 1 - i]
+  //
+  // Which may be executed as
+  //     int[] strides = new int[vl];
+  //     for (int i = 0; i < vl; i++) {
+  //       int currentStride = 0;
+  //       for (int j = 0; j < k; j++) {
+  //         currentStride = currentStride * 31**vl + array[vl * j + i];
+  //       }
+  //       strides[i] = currentStride;
+  //     }
+  //     sum = strides[vl - 1] * 31**0 + strides[vl - 2] * 31**1 + ... + strides[0] * 31**(vl - 1);
+  // Vector operations pack the strides together and iterate simutanneously
+
+  set_control(has_vector_loop);
+  
+  // vector_loop_bound = vl * k
+  // The highest multiple of 'vector_length' not larger than 'array.length'
+  Node* vector_loop_bound = AndI(array_length, intcon(java_add(min_jint, -lvt->length())));
+
+  // vector_comb_coef = {31**(vl - 1), 31**(vl - 2), ..., 31**0};
+  ciInstanceKlass* string_klass = static_cast<ciInstanceKlass*>(callee()->holder()
+                                      ->find_klass(ciSymbol::make("java/lang/String")));
+  Node* vector_comb_coef_array = load_field_from_object(nullptr, "HASH_COMBINATION_COEFS","[I",
+                                      IN_HEAP, true, string_klass);
+  Node* vector_comb_coef_array_length = load_array_length(vector_comb_coef_array);
+  assert(16 >= vector_length, "coef array too short");
+  Node* vector_comb_coef_addr = array_element_address(vector_comb_coef_array,
+                                      SubI(vector_comb_coef_array_length, intcon(vector_length)), T_INT);
+  Node* vector_comb_coef = new LoadVectorNode(nullptr, memory(vector_comb_coef_addr),
+                                      vector_comb_coef_addr, TypeAryPtr::INTS, dvt);
+  vector_comb_coef = _gvn.transform(vector_comb_coef);
+
+  // The mask used to execute the cast, will be removed when we have VectorUCast
+  Node* vector_mask = VectorNode::scalar2vector(intcon(bt == T_BYTE ? 0xff : 0xffff), vector_length, TypeInt::INT);
+  vector_mask = _gvn.transform(vector_mask);
+  
+  // vector_iter_coef = {31**vl} * vl;  
+  jint vector_iter_coef_val = 1;
+  for (int i = 0; i < vector_length; i++) {
+    vector_iter_coef_val = java_multiply(vector_iter_coef_val, 31);
+  }
+  Node* vector_iter_coef = VectorNode::scalar2vector(intcon(vector_iter_coef_val), vector_length, TypeInt::INT);
+  vector_iter_coef = _gvn.transform(vector_iter_coef);
+
+  // Loop node
+  RegionNode* vector_loop = new RegionNode(3);
+  vector_loop->init_req(1, has_vector_loop);
+  _gvn.set_type(vector_loop, Type::CONTROL);
+  record_for_igvn(vector_loop);
+  set_control(vector_loop);
+
+  // vector_sum = {0} * vl;
+  Node* vector_sum_start = _gvn.transform(VectorNode::scalar2vector(intcon(0), vector_length, TypeInt::INT));
+  PhiNode* vector_sum = new PhiNode(vector_loop, dvt);
+  vector_sum->init_req(1, vector_sum_start);
+  _gvn.set_type(vector_sum, dvt);
+  record_for_igvn(vector_sum);
+
+  // for (int j = 0; j < k; j++)
+  PhiNode* vector_index = new PhiNode(vector_loop, TypeInt::POS);
+  vector_index->init_req(1, intcon(0));
+  _gvn.set_type(vector_index, TypeInt::POS);
+  record_for_igvn(vector_index);
+  vector_index->init_req(2, AddI(vector_index, intcon(lvt->length())));
+  
+  // Change this to CmpU seems to rule out the possibility of overflowing, enable the loop to be transformed
+  // to a CountedLoop, however, optimiser seems to overly unroll the vector loop.
+  Node* vector_loop_cmp = CmpI(vector_index, vector_loop_bound);
+  Node* vector_loop_test = Bool(vector_loop_cmp, BoolTest::lt);
+  IfNode* vector_loop_end = create_and_map_if(control(), vector_loop_test, PROB_FAIR, COUNT_UNKNOWN);
+
+  Node* vector_continue = IfTrue(vector_loop_end);
+  Node* vector_break = IfFalse(vector_loop_end);
+  vector_loop->init_req(2, vector_continue);
+  set_control(vector_continue);
+
+  // vector_iter = {a[j * vl], a[j * vl + 1], ..., a[j * vl + (vl - 1)]};
+  Node* vector_iter_addr = array_element_address(array, vector_index, T_BYTE);
+  Node* vector_iter = new LoadVectorNode(control(), memory(vector_iter_addr),
+                                         vector_iter_addr, TypeAryPtr::BYTES, lvt);
+  vector_iter = _gvn.transform(vector_iter);
+  if (bt != T_BYTE) {
+    vector_iter = _gvn.transform(new VectorReinterpretNode(vector_iter, lvt, svt));
+  }
+  vector_iter = VectorCastNode::make(VectorCastNode::opcode(bt), vector_iter, T_INT, vector_length);
+  vector_iter = _gvn.transform(vector_iter);
+  vector_iter = _gvn.transform(new AndVNode(vector_iter, vector_mask, dvt));
+
+  // vector_sum = vector_sum * 31**vl + vector_iter
+  Node* vector_sum_next = _gvn.transform(new MulVINode(vector_sum, vector_iter_coef, dvt));
+  vector_sum_next = _gvn.transform(new AddVINode(vector_sum_next, vector_iter, dvt));
+  vector_sum->init_req(2, vector_sum_next);
+
+  set_control(vector_break);
+  // vector_sum _scalar = vector_sum[0] * 31**(vl - 1) + vector_sum[1] * 31**(vl - 2) + ...
+  Node* vector_sum_weighted = _gvn.transform(new MulVINode(vector_sum, vector_comb_coef, dvt));
+  Node* vector_sum_scalar = _gvn.transform(new AddReductionVINode(nullptr, intcon(0), vector_sum_weighted));
+
+  // Merge the calculated sum and cumulated indices with the case where vector operations are not needed,
+  // prepare for tail executions
+  RegionNode* vector_region = new RegionNode(3);
+  _gvn.set_type(vector_region, Type::CONTROL);
+  vector_region->init_req(1, no_vector_loop);
+  vector_region->init_req(2, vector_break);
+  record_for_igvn(vector_region);
+  
+  PhiNode* sum_mid = new PhiNode(vector_region, TypeInt::INT);
+  sum_mid->init_req(1, intcon(0));
+  sum_mid->init_req(2, vector_sum_scalar);
+  _gvn.set_type(sum_mid, TypeInt::INT);
+  record_for_igvn(sum_mid);
+
+  PhiNode* scalar_index_start = new PhiNode(vector_region, TypeInt::POS);
+  scalar_index_start->init_req(1, intcon(0));
+  scalar_index_start->init_req(2, vector_loop_bound);
+  _gvn.set_type(scalar_index_start, TypeInt::POS);
+  record_for_igvn(scalar_index_start);
+
+  // Scalar loop
+  // This loop executes the cumulation of the remaining elements of the array, the execution
+  // can be expressed as follow:
+  //     int sum = has_vector_loop ? vector_sum_scalar : 0;
+  //     for (int i = (has_vector_loop ? vl * k : 0); i < array.length; i++) {
+  //         sum = sum * 31 + a[i];
+  //     }
+  //     return sum;
+  RegionNode* scalar_loop = new RegionNode(3);
+  _gvn.set_type(scalar_loop, Type::CONTROL);
+  scalar_loop->init_req(1, vector_region);
+  record_for_igvn(scalar_loop);
+  set_control(scalar_loop);
+
+  // for (int i = (has_vector_loop ? vl * k : 0); i < array.length; i++)
+  PhiNode* scalar_index = new PhiNode(scalar_loop, TypeInt::POS);
+  scalar_index->init_req(1, scalar_index_start);
+  _gvn.set_type(scalar_index, TypeInt::POS);
+  record_for_igvn(scalar_index);
+  scalar_index->init_req(2, AddI(scalar_index, intcon(type2aelembytes(bt))));
+  // Same as above, the JIT seems to over unroll the loop if it can be transformed into a
+  // CountedLoop
+  Node* scalar_loop_cmp = CmpI(scalar_index, array_length);
+  Node* scalar_loop_test = Bool(scalar_loop_cmp, BoolTest::lt);
+  IfNode* scalar_loop_end = create_and_map_if(control(), scalar_loop_test, PROB_LIKELY_MAG(1), COUNT_UNKNOWN);
+
+  Node* scalar_continue = IfTrue(scalar_loop_end);
+  Node* scalar_break = IfFalse(scalar_loop_end);
+  scalar_loop->init_req(2, scalar_continue);
+  set_control(scalar_continue);
+
+  // sum = sum * 31 + a[i];
+  PhiNode* sum = new PhiNode(scalar_loop, TypeInt::INT);
+  sum->init_req(1, sum_mid);
+  _gvn.set_type(sum, TypeInt::INT);
+  record_for_igvn(sum);
+
+  Node* sum_next = MulI(sum, intcon(31));
+  Node* scalar_elem;
+  if (bt == T_BYTE) {
+    scalar_elem = load_array_element(array, scalar_index, TypeAryPtr::BYTES, true);
+    scalar_elem = AndI(scalar_elem, intcon(0xff));
+  } else {
+    Node* scalar_addr = array_element_address(array, scalar_index, T_BYTE);
+    scalar_elem = access_load_at(array, scalar_addr, TypeAryPtr::BYTES, TypeInt::CHAR, T_CHAR,
+                                 IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD);
+  }
+  sum->init_req(2, AddI(sum_next, scalar_elem));
+
+  set_control(scalar_break);
+  set_result(sum);
+  C->set_has_loops(true);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), dvt->length_in_bytes()));
+  clear_upper_avx();
+
   return true;
 }
 

@@ -526,6 +526,8 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_indexOfIUL:
   case vmIntrinsics::_indexOfU_char:
   case vmIntrinsics::_indexOfL_char:
+  case vmIntrinsics::_hashCodeL:
+  case vmIntrinsics::_hashCodeU:
   case vmIntrinsics::_toBytesStringU:
   case vmIntrinsics::_getCharsStringU:
   case vmIntrinsics::_getCharStringU:

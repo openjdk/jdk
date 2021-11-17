@@ -188,6 +188,7 @@ final class StringLatin1 {
         return len1 - len2;
     }
 
+    @IntrinsicCandidate
     public static int hashCode(byte[] value) {
         int h = 0;
         for (byte v : value) {
