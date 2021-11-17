@@ -59,9 +59,6 @@ public class CredentialsUtil {
      */
     public static Credentials acquireS4U2selfCreds(PrincipalName user,
             Credentials middleTGT) throws KrbException, IOException {
-        if (!middleTGT.isForwardable()) {
-            throw new KrbException("S4U2self needs a FORWARDABLE ticket");
-        }
         PrincipalName sname = middleTGT.getClient();
         String uRealm = user.getRealmString();
         String localRealm = middleTGT.getClient().getRealmString();
