@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8193682
- * @summary Test DeflatorOutputStream for infinite loop while writing on closed GZipOutputStream , ZipOutputStream and JarOutputStream.
+ * @summary Test Infinite loop while writing on closed GZipOutputStream , ZipOutputStream and JarOutputStream.
  * @run testng GZipLoopTest
  */
 import java.io.*;

@@ -259,7 +259,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             try {
                 ZipEntry e = current.entry;
                 switch (e.method) {
-                    case DEFLATED - > {
+                    case DEFLATED -> {
                         def.finish();
                         while (!def.finished()) {
                             deflate();
@@ -291,7 +291,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                         def.reset();
                         written += e.csize;
                     }
-                    case STORED - > {
+                    case STORED -> {
                         // we already know that both e.size and e.csize are the same
                         if (e.size != written - locoff) {
                             throw new ZipException(
@@ -305,7 +305,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                                 Long.toHexString(crc.getValue()) + ")");
                         }
                     }
-                    default - > throw new ZipException("invalid compression method");
+                    default -> throw new ZipException("invalid compression method");
                 }
                 crc.reset();
                 current = null;
