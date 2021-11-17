@@ -162,7 +162,7 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
      * operation.
      */
     @SuppressWarnings("serial") // JDK-implementation class
-     static class ScrollEvent extends PeerEvent {
+    static class ScrollEvent extends PeerEvent {
         ScrollEvent(Object source, Runnable runnable) {
             super(source, runnable, 0L);
         }

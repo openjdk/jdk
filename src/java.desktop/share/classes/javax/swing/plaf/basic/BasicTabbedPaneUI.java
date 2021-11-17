@@ -3945,8 +3945,8 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class ScrollableTabButton extends BasicArrowButton implements UIResource,
-                                                                            SwingConstants {
+    private static class ScrollableTabButton extends BasicArrowButton
+            implements UIResource, SwingConstants {
         public ScrollableTabButton(int direction) {
             super(direction,
                   UIManager.getColor("TabbedPane.selected"),
