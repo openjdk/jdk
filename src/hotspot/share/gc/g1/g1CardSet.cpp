@@ -800,7 +800,7 @@ void G1CardSet::print_info(outputStream* st, uint card_region, uint card_in_regi
 }
 
 template <class CardVisitor>
-void G1CardSet::iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& found) {
+void G1CardSet::iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& cl) {
   uint type = card_set_type(card_set);
   assert(type == CardSetInlinePtr || type == CardSetArrayOfCards,
          "invalid card set type %d to transfer from",
@@ -809,11 +809,11 @@ void G1CardSet::iterate_cards_during_transfer(CardSetPtr const card_set, CardVis
   switch (type) {
     case CardSetInlinePtr: {
       G1CardSetInlinePtr ptr(card_set);
-      ptr.iterate(found, _config->inline_ptr_bits_per_card());
+      ptr.iterate(cl, _config->inline_ptr_bits_per_card());
       return;
     }
     case CardSetArrayOfCards : {
-      card_set_ptr<G1CardSetArray>(card_set)->iterate(found);
+      card_set_ptr<G1CardSetArray>(card_set)->iterate(cl);
       return;
     }
     default:
@@ -821,32 +821,32 @@ void G1CardSet::iterate_cards_during_transfer(CardSetPtr const card_set, CardVis
   }
 }
 
-void G1CardSet::iterate_containers(CardSetPtrClosure* found, bool at_safepoint) {
+void G1CardSet::iterate_containers(CardSetPtrClosure* cl, bool at_safepoint) {
   if (at_safepoint) {
-    _table->iterate_safepoint(found);
+    _table->iterate_safepoint(cl);
   } else {
-    _table->iterate(found);
+    _table->iterate(cl);
   }
 }
 
 // Applied to all card (ranges) of the containers.
 template <typename Closure>
 class G1ContainerCardsClosure {
-  Closure& _iter;
+  Closure& _cl;
   uint _region_idx;
 
 public:
-  G1ContainerCardsClosure(Closure& iter, uint region_idx) : _iter(iter), _region_idx(region_idx) { }
+  G1ContainerCardsClosure(Closure& cl, uint region_idx) : _cl(cl), _region_idx(region_idx) { }
 
   bool start_iterate(uint tag) { return true; }
 
   void operator()(uint card_idx) {
-    _iter.do_card(_region_idx, card_idx);
+    _cl.do_card(_region_idx, card_idx);
   }
 
   void operator()(uint card_idx, uint length) {
     for (uint i = 0; i < length; i++) {
-      _iter.do_card(_region_idx, card_idx);
+      _cl.do_card(_region_idx, card_idx);
     }
   }
 };
@@ -854,24 +854,24 @@ public:
 template <typename Closure, template <typename> class CardOrRanges>
 class G1CardSetContainersClosure : public G1CardSet::CardSetPtrClosure {
   G1CardSet* _card_set;
-  Closure& _iter;
+  Closure& _cl;
 
 public:
 
   G1CardSetContainersClosure(G1CardSet* card_set,
-                             Closure& iter) :
+                             Closure& cl) :
     _card_set(card_set),
-    _iter(iter) { }
+    _cl(cl) { }
 
   void do_cardsetptr(uint region_idx, size_t num_occupied, G1CardSet::CardSetPtr card_set) override {
-    CardOrRanges<Closure> cl(_iter, region_idx);
+    CardOrRanges<Closure> cl(_cl, region_idx);
     _card_set->iterate_cards_or_ranges_in_container(card_set, cl);
   }
 };
 
-void G1CardSet::iterate_cards(CardClosure& iter) {
-  G1CardSetContainersClosure<CardClosure, G1ContainerCardsClosure> cl(this, iter);
-  iterate_containers(&cl);
+void G1CardSet::iterate_cards(CardClosure& cl) {
+  G1CardSetContainersClosure<CardClosure, G1ContainerCardsClosure> cl2(this, cl);
+  iterate_containers(&cl2);
 }
 
 bool G1CardSet::occupancy_less_or_equal_to(size_t limit) const {
