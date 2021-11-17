@@ -224,6 +224,14 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_StoreVector;
   case Op_MulAddS2I:
     return Op_MulAddVS2VI;
+  case Op_ConvI2F:
+    return Op_VectorCastI2X;
+  case Op_ConvL2D:
+    return Op_VectorCastL2X;
+  case Op_ConvF2I:
+    return Op_VectorCastF2X;
+  case Op_ConvD2L:
+    return Op_VectorCastD2X;
 
   default:
     return 0; // Unimplemented
