@@ -478,10 +478,11 @@ public class Object {
      * A subclass overrides the {@code finalize} method to dispose of
      * system resources or to perform other cleanup.
      * <p>
-     * When running in a JVM in which finalization has been disabled or removed,
-     * the garbage collector will never call {@code finalize()}. In a JVM in
-     * which finalization is enabled, the GC might call {@code finalize} only
-     * after an indefinite delay.
+     * <b>When running in a Java virtual machine in which finalization has been
+     * disabled or removed, the garbage collector will never call
+     * {@code finalize()}. In a Java virtual machine in which finalization is
+     * enabled, the garbage collector might call {@code finalize} only after an
+     * indefinite delay.</b>
      * <p>
      * The general contract of {@code finalize} is that it is invoked
      * if and when the Java virtual
@@ -548,10 +549,11 @@ public class Object {
      *     }
      * }</pre>
      *
-     * @deprecated Finalization has been deprecated for removal in a future
-     * release. Finalization can lead to problems with security, performance,
-     * and reliability. See <a href="https://openjdk.java.net/jeps/421">JEP 421</a>
-     * for discussion and alternatives.
+     * @deprecated Finalization is deprecated and subject to removal in a future
+     * release. The use of finalization can lead to problems with security,
+     * performance, and reliability.
+     * See <a href="https://openjdk.java.net/jeps/421">JEP 421</a> for
+     * discussion and alternatives.
      * <p>
      * Subclasses that override {@code finalize} to perform cleanup should use
      * alternative cleanup mechanisms and remove the {@code finalize} method.
