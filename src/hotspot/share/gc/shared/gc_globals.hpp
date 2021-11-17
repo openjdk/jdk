@@ -696,7 +696,7 @@
                                                                             \
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \
-          range(512, 1024)                                                  \
+          range(128, 1024)                                                  \
           constraint(GCCardSizeInBytesConstraintFunc, AfterErgo)            \
   // end of GC_FLAGS
 

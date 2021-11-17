@@ -90,9 +90,8 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
 
-  // Initialize card size based on the region size.
-  // Maximum no. of cards per region is 2^16.
-  CardTable::initialize_card_size(G1CardTable::min_card_size(region_size));
+  // Initialize card size
+  CardTable::initialize_card_size();
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift;

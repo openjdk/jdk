@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_G1CARDTABLE_HPP
 
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
-#include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/macros.hpp"
@@ -76,7 +75,6 @@ public:
 
   static const size_t WordAllClean = SIZE_MAX;
   static const size_t WordAllDirty = 0;
-  static const size_t LogOfMaxCardsPerRegion = BitsPerByte * sizeof(G1CardSetArray::EntryDataType);
 
   STATIC_ASSERT(BitsPerByte == 8);
   static const size_t WordAlreadyScanned = (SIZE_MAX / 255) * g1_card_already_scanned;
@@ -87,8 +85,6 @@ public:
 
   static CardValue g1_young_card_val() { return g1_young_gen; }
   static CardValue g1_scanned_card_val() { return g1_card_already_scanned; }
-
-  static uint min_card_size(size_t region_size);
 
   void verify_g1_young_region(MemRegion mr) PRODUCT_RETURN;
   void g1_mark_as_young(const MemRegion& mr);

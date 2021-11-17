@@ -40,12 +40,12 @@ uint CardTable::card_shift = 0;
 uint CardTable::card_size = 0;
 uint CardTable::card_size_in_words = 0;
 
-void CardTable::initialize_card_size(uint min_card_size) {
+void CardTable::initialize_card_size() {
   assert(UseG1GC || UseParallelGC || UseSerialGC,
          "Initialize card size should only be called by card based collectors.");
 
   // Card size is the max. of minimum permissible value and GCCardSizeInBytes
-  card_size = MAX2(min_card_size, GCCardSizeInBytes);
+  card_size = GCCardSizeInBytes;
   card_shift = log2i_exact(card_size);
   card_size_in_words = card_size / sizeof(HeapWord);
 
@@ -57,15 +57,7 @@ void CardTable::initialize_card_size(uint min_card_size) {
   ObjectStartArray::initialize_block_size(card_shift);
 #endif
 
-  if (GCCardSizeInBytes != card_size) {
-    FLAG_SET_ERGO(GCCardSizeInBytes, card_size);
-  }
-
   log_info_p(gc, init)("CardTable entry size: " UINT32_FORMAT,  card_size);
-}
-
-void CardTable::initialize_card_size() {
-  initialize_card_size(CardSizeMin);
 }
 
 size_t CardTable::compute_byte_map_size() {
@@ -75,7 +67,6 @@ size_t CardTable::compute_byte_map_size() {
   const size_t granularity = os::vm_allocation_granularity();
   return align_up(_guard_index + 1, MAX2(_page_size, granularity));
 }
-
 
 CardTable::CardTable(MemRegion whole_heap) :
   _whole_heap(whole_heap),
@@ -462,8 +453,8 @@ MemRegion CardTable::dirty_card_range_after_reset(MemRegion mr,
 }
 
 uintx CardTable::ct_max_alignment_constraint() {
-  // CardTable max alignment is computed with card_size_max
-  return CardSizeMax * os::vm_page_size();
+  // CardTable max alignment is computed with _card_size_max
+  return _card_size_max * os::vm_page_size();
 }
 
 void CardTable::verify_guard() {

@@ -233,18 +233,14 @@ public:
   static uint card_size;
   static uint card_size_in_words;
 
-  // min and max permissible card sizes
-  static const uint CardSizeMin = 512;
-  static const uint CardSizeMax = 1024;
+  // max permissible card size
+  static const uint _card_size_max = 1024;
 
   static constexpr CardValue clean_card_val()          { return clean_card; }
   static constexpr CardValue dirty_card_val()          { return dirty_card; }
   static intptr_t clean_card_row_val()   { return clean_card_row; }
 
-  // Initialize card size based on the min_card_size value
-  static void initialize_card_size(uint min_card_size);
-
-  //Initialize card size based on CardTable::card_size_min
+  // Initialize card size
   static void initialize_card_size();
 
   // Card marking array base (adjusted for heap low boundary)
