@@ -658,6 +658,7 @@ BITWISE_OP_IMM(vxorH, XorV, H, S, sve_eor)
 BITWISE_OP_IMM(vxorS, XorV, S, I, sve_eor)
 BITWISE_OP_IMM(vxorD, XorV, D, L, sve_eor)
 dnl
+dnl
 dnl BINARY_OP_UNSIZED($1,        $2,      $3  )
 dnl BINARY_OP_UNSIZED(insn_name, op_name, insn)
 define(`BINARY_OP_UNSIZED', `
