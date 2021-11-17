@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,11 @@ class PRegisterImpl: public AbstractRegisterImpl {
   enum {
     number_of_registers = 16,
     number_of_governing_registers = 8,
+    // p0-p7 are governing predicates for load/store and arithmetic, but p7 is
+    // preserved as an all-true predicate in OpenJDK. And since we don't support
+    // non-governing predicate registers allocation for non-temp register, the
+    // predicate registers to be saved are p0-p6.
+    number_of_saved_registers = number_of_governing_registers - 1,
     max_slots_per_register = 1
   };
 
@@ -377,6 +382,7 @@ public:
 
 typedef AbstractRegSet<Register> RegSet;
 typedef AbstractRegSet<FloatRegister> FloatRegSet;
+typedef AbstractRegSet<PRegister> PRegSet;
 
 template <class RegImpl>
 class RegSetIterator {

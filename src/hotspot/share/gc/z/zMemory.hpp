@@ -86,7 +86,6 @@ public:
   uintptr_t alloc_low_address(size_t size);
   uintptr_t alloc_low_address_at_most(size_t size, size_t* allocated);
   uintptr_t alloc_high_address(size_t size);
-  uintptr_t alloc_high_address_at_most(size_t size, size_t* allocated);
 
   void free(uintptr_t start, size_t size);
 };

@@ -1001,11 +1001,15 @@ jlong SharedRuntime::get_java_tid(Thread* thread) {
  * it gets turned into a tail-call on sparc, which runs into dtrace bug
  * 6254741.  Once that is fixed we can remove the dummy return value.
  */
-int SharedRuntime::dtrace_object_alloc(oopDesc* o, int size) {
-  return dtrace_object_alloc_base(Thread::current(), o, size);
+int SharedRuntime::dtrace_object_alloc(oopDesc* o) {
+  return dtrace_object_alloc(Thread::current(), o, o->size());
 }
 
-int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o, int size) {
+int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o) {
+  return dtrace_object_alloc(thread, o, o->size());
+}
+
+int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size) {
   assert(DTraceAllocProbes, "wrong call");
   Klass* klass = o->klass();
   Symbol* name = klass->name();
@@ -3004,16 +3008,10 @@ bool AdapterHandlerEntry::compare_code(AdapterHandlerEntry* other) {
 void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
   nmethod* nm = NULL;
-  address critical_entry = NULL;
 
   assert(method->is_native(), "must be native");
   assert(method->is_method_handle_intrinsic() ||
          method->has_native_function(), "must have something valid to call!");
-
-  if (CriticalJNINatives && !method->is_method_handle_intrinsic()) {
-    // We perform the I/O with transition to native before acquiring AdapterHandlerLibrary_lock.
-    critical_entry = NativeLookup::lookup_critical_entry(method);
-  }
 
   {
     // Perform the work while holding the lock, but perform any printing outside the lock
@@ -3057,7 +3055,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
 
       // Generate the compiled-to-native wrapper code
-      nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type, critical_entry);
+      nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
 
       if (nm != NULL) {
         {

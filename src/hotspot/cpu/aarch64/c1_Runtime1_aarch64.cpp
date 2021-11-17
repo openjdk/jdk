@@ -1091,7 +1091,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         StubFrame f(sasm, "dtrace_object_alloc", dont_gc_arguments);
         save_live_registers(sasm);
 
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc), c_rarg0);
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), c_rarg0);
 
         restore_live_registers(sasm);
       }

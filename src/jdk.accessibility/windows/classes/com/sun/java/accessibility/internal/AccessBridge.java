@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Note: This class has to be public.  It's loaded from the VM like this:
  *       Class.forName(atName).newInstance();
  */
-final public class AccessBridge {
+public final class AccessBridge {
 
     private static AccessBridge theAccessBridge;
     private ObjectReferences references;
@@ -314,15 +314,15 @@ final public class AccessBridge {
     }
 
     // hash table of native window handle to AccessibleContext mappings
-    static private ConcurrentHashMap<Integer,AccessibleContext> windowHandleToContextMap = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Integer,AccessibleContext> windowHandleToContextMap = new ConcurrentHashMap<>();
 
     // hash table of AccessibleContext to native window handle mappings
-    static private ConcurrentHashMap<AccessibleContext,Integer> contextToWindowHandleMap = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<AccessibleContext,Integer> contextToWindowHandleMap = new ConcurrentHashMap<>();
 
     /*
      * adds a virtual window handler to our hash tables
      */
-    static private void registerVirtualFrame(final Accessible a,
+    private static void registerVirtualFrame(final Accessible a,
                                              Integer nativeWindowHandle ) {
         if (a != null) {
             AccessibleContext ac = InvocationUtils.invokeAndWait(new Callable<AccessibleContext>() {
@@ -339,7 +339,7 @@ final public class AccessBridge {
     /*
      * removes a virtual window handler to our hash tables
      */
-    static private void revokeVirtualFrame(final Accessible a,
+    private static void revokeVirtualFrame(final Accessible a,
                                            Integer nativeWindowHandle ) {
         AccessibleContext ac = InvocationUtils.invokeAndWait(new Callable<AccessibleContext>() {
             @Override

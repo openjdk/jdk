@@ -43,10 +43,7 @@ void G1AllocRegion::setup(G1CollectedHeap* g1h, HeapRegion* dummy_region) {
 
   // Make sure that any allocation attempt on this region will fail
   // and will not trigger any asserts.
-  assert(dummy_region->allocate_no_bot_updates(1) == NULL, "should fail");
-  assert(dummy_region->allocate(1) == NULL, "should fail");
   DEBUG_ONLY(size_t assert_tmp);
-  assert(dummy_region->par_allocate_no_bot_updates(1, 1, &assert_tmp) == NULL, "should fail");
   assert(dummy_region->par_allocate(1, 1, &assert_tmp) == NULL, "should fail");
 
   _g1h = g1h;
@@ -77,8 +74,9 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
   while (free_word_size >= min_word_size_to_fill) {
     HeapWord* dummy = par_allocate(alloc_region, free_word_size);
     if (dummy != NULL) {
-      // If the allocation was successful we should fill in the space.
-      CollectedHeap::fill_with_object(dummy, free_word_size);
+      // If the allocation was successful we should fill in the space. If the
+      // allocation was in old any necessary BOT updates will be done.
+      alloc_region->fill_with_dummy_object(dummy, free_word_size);
       alloc_region->set_pre_dummy_top(dummy);
       result += free_word_size * HeapWordSize;
       break;
@@ -256,7 +254,6 @@ G1AllocRegion::G1AllocRegion(const char* name,
   : _alloc_region(NULL),
     _count(0),
     _used_bytes_before(0),
-    _bot_updates(bot_updates),
     _name(name),
     _node_index(node_index)
  { }
@@ -389,7 +386,7 @@ HeapRegion* OldGCAllocRegion::release() {
       // original problem cannot occur.
       if (to_allocate_words >= G1CollectedHeap::min_fill_size()) {
         HeapWord* dummy = attempt_allocation(to_allocate_words);
-        CollectedHeap::fill_with_object(dummy, to_allocate_words);
+        cur->fill_with_dummy_object(dummy, to_allocate_words);
       }
     }
   }

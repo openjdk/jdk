@@ -6659,6 +6659,7 @@ instruct unnecessary_membar_volatile() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(0);
 
   size(0);
@@ -7203,6 +7204,7 @@ instruct castLL( eRegL dst ) %{
 %}
 
 instruct castFF( regF dst ) %{
+  predicate(UseSSE >= 1);
   match(Set dst (CastFF dst));
   format %{ "#castFF of $dst" %}
   ins_encode( /*empty encoding*/ );
@@ -7211,6 +7213,25 @@ instruct castFF( regF dst ) %{
 %}
 
 instruct castDD( regD dst ) %{
+  predicate(UseSSE >= 2);
+  match(Set dst (CastDD dst));
+  format %{ "#castDD of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
+%}
+
+instruct castFF_PR( regFPR dst ) %{
+  predicate(UseSSE < 1);
+  match(Set dst (CastFF dst));
+  format %{ "#castFF of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
+%}
+
+instruct castDD_PR( regDPR dst ) %{
+  predicate(UseSSE < 2);
   match(Set dst (CastDD dst));
   format %{ "#castDD of $dst" %}
   ins_encode( /*empty encoding*/ );

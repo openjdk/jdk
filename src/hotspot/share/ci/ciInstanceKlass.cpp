@@ -87,7 +87,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
     (void)CURRENT_ENV->get_object(holder);
   }
 
-  Thread *thread = Thread::current();
+  JavaThread *thread = JavaThread::current();
   if (ciObjectFactory::is_initialized()) {
     _loader = JNIHandles::make_local(thread, ik->class_loader());
     _protection_domain = JNIHandles::make_local(thread,

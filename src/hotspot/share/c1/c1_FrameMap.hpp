@@ -62,10 +62,6 @@ class CallingConvention;
 //  ABI  = ABI area (SPARC) or nothing (i486)
 
 
-class LIR_OprDesc;
-typedef LIR_OprDesc* LIR_Opr;
-
-
 class FrameMap : public CompilationResourceObj {
  public:
   enum {
@@ -83,7 +79,7 @@ class FrameMap : public CompilationResourceObj {
 
 #include CPU_HEADER(c1_FrameMap)
 
-  friend class LIR_OprDesc;
+  friend class LIR_Opr;
 
  private:
   static bool         _init_done;

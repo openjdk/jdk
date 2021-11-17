@@ -31,7 +31,7 @@ import java.util.spi.ToolProvider;
 
 /**
  * @test
- * @summary Tests that the SVML shared library is present in an image only when jdk.incubator.vector is present
+ * @summary Tests that the JSVML shared library is present in an image only when jdk.incubator.vector is present
  * @requires vm.compiler2.enabled
  * @requires os.arch == "x86_64" | os.arch == "amd64"
  * @requires os.family == "linux" | os.family == "windows"
@@ -46,9 +46,9 @@ public class ImageTest {
                     new RuntimeException("jlink tool not found")
             );
 
-    static final String SVML_LIBRARY_NAME = Platform.isWindows()
-            ? "svml.dll"
-            : "libsvml.so";
+    static final String JSVML_LIBRARY_NAME = Platform.isWindows()
+            ? "jsvml.dll"
+            : "libjsvml.so";
 
     static void link(String module, Path output) {
         int e = JLINK_TOOL.run(System.out, System.err,
@@ -60,14 +60,14 @@ public class ImageTest {
         }
     }
 
-    static void checkSVML(Path image, boolean shouldBepresent) {
-        Path libsvml = Platform.libDir(image).resolve(SVML_LIBRARY_NAME);
+    static void checkJSVML(Path image, boolean shouldBepresent) {
+        Path libjsvml = Platform.libDir(image).resolve(JSVML_LIBRARY_NAME);
 
-        boolean exists = Files.exists(libsvml);
+        boolean exists = Files.exists(libjsvml);
         if (shouldBepresent) {
-            Assert.assertTrue(exists, libsvml + " should be present");
+            Assert.assertTrue(exists, libjsvml + " should be present");
         } else {
-            Assert.assertFalse(exists, libsvml + "should be absent");
+            Assert.assertFalse(exists, libjsvml + "should be absent");
         }
     }
 
@@ -76,13 +76,13 @@ public class ImageTest {
     public void withVectorModule() {
         Path output = Path.of("withVectorModuleImage");
         link("jdk.incubator.vector", output);
-        checkSVML(output, true);
+        checkJSVML(output, true);
     }
 
     @Test
     public void withoutVectorModule() {
         Path output = Path.of("withoutVectorModuleImage");
         link("java.base", output);
-        checkSVML(output, false);
+        checkJSVML(output, false);
     }
 }

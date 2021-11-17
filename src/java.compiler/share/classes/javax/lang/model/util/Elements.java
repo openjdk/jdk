@@ -427,6 +427,7 @@ public interface Elements {
          *
          * @jls 8.8.9 Default Constructor
          * @jls 8.9.3 Enum Members
+         * @jls 8.10.3 Record Members
          * @jls 9.6.3 Repeatable Annotation Types
          * @jls 9.7.5 Multiple Annotations of the Same Interface
          */
@@ -543,7 +544,7 @@ public interface Elements {
      * element and therefore {@code null} is returned for those kinds
      * of elements.
      *
-     * A {@link NestingKind#TOP_LEVEL top-level} class or
+     * A {@linkplain NestingKind#TOP_LEVEL top-level} class or
      * interface is its own outermost type element.
      *
      * @implSpec

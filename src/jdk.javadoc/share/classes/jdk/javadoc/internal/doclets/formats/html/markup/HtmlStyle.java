@@ -52,6 +52,16 @@ import java.util.regex.Pattern;
  */
 public enum HtmlStyle {
 
+    /**
+     * The class of the {@code div} element containing a snippet element.
+     */
+    snippetContainer,
+
+    /**
+     * The class of the {@code a} element to copy snippet content to the clipboard.
+     */
+    snippetCopy,
+
     //<editor-fold desc="navigation bar">
     //
     // The following constants are used for the main navigation bar that appears in the

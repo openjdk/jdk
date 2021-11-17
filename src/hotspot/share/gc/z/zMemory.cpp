@@ -172,31 +172,6 @@ uintptr_t ZMemoryManager::alloc_high_address(size_t size) {
   return UINTPTR_MAX;
 }
 
-uintptr_t ZMemoryManager::alloc_high_address_at_most(size_t size, size_t* allocated) {
-  ZLocker<ZLock> locker(&_lock);
-
-  ZMemory* area = _freelist.last();
-  if (area != NULL) {
-    if (area->size() <= size) {
-      // Smaller than or equal to requested, remove area
-      const uintptr_t start = area->start();
-      *allocated = area->size();
-      _freelist.remove(area);
-      destroy(area);
-      return start;
-    } else {
-      // Larger than requested, shrink area
-      shrink_from_back(area, size);
-      *allocated = size;
-      return area->end();
-    }
-  }
-
-  // Out of memory
-  *allocated = 0;
-  return UINTPTR_MAX;
-}
-
 void ZMemoryManager::free(uintptr_t start, size_t size) {
   assert(start != UINTPTR_MAX, "Invalid address");
   const uintptr_t end = start + size;

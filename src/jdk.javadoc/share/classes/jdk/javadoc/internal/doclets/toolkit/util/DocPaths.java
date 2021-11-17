@@ -97,11 +97,11 @@ public class DocPaths {
     /** The name of the default javascript file. */
     public static final DocPath JAVASCRIPT = DocPath.create("script.js");
 
+    /** The name of the copy-to-clipboard icon file. */
+    public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
+
     /** The name of the stylesheet file overriding jQuery UI stylesheet. */
     public static final DocPath JQUERY_OVERRIDES_CSS = DocPath.create("jquery-ui.overrides.css");
-
-    /** The name of the directory for the jQuery files. */
-    public static final DocPath JQUERY_FILES = DocPath.create("script-dir");
 
     /** The name of the default jQuery javascript file. */
     public static final DocPath JQUERY_JS = DocPath.create("jquery-3.5.1.min.js");
@@ -120,6 +120,9 @@ public class DocPaths {
 
     /** The name of the module search index js file. */
     public static final DocPath MODULE_SEARCH_INDEX_JS = DocPath.create("module-search-index.js");
+
+    /** The name of the file for new elements. */
+    public static final DocPath NEW_LIST = DocPath.create("new-list.html");
 
     /** The name of the file for the overview summary. */
     public static final DocPath OVERVIEW_SUMMARY = DocPath.create("overview-summary.html");
@@ -145,8 +148,8 @@ public class DocPaths {
     /** The name of the file for preview elements. */
     public static final DocPath PREVIEW_LIST = DocPath.create("preview-list.html");
 
-    /** The name of the file for new elements. */
-    public static final DocPath NEW_LIST = DocPath.create("new-list.html");
+    /** The name of the directory for the script files. */
+    public static final DocPath SCRIPT_DIR = DocPath.create("script-dir");
 
     /** The name of the file for all system properties. */
     public static final DocPath SYSTEM_PROPERTIES = DocPath.create("system-properties.html");

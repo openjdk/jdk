@@ -219,7 +219,7 @@ public class CheckResourceKeys {
             // special handling for code strings synthesized in
             // jdk.javadoc.internal.doclets.toolkit.util.Utils.getTypeName
             String[] extras = {
-                "AnnotationType", "Class", "Enum", "EnumClass", "Error", "Exception", "Interface", "RecordClass"
+                "AnnotationType", "Class", "Enum", "EnumClass", "ExceptionClass", "Interface", "RecordClass"
             };
             for (String s: extras) {
                 if (results.contains("doclet." + s))

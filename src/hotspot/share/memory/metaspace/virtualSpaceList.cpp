@@ -200,15 +200,6 @@ bool VirtualSpaceList::contains(const MetaWord* p) const {
   return false;
 }
 
-// Returns true if the vslist is not expandable and no more root chunks
-// can be allocated.
-bool VirtualSpaceList::is_full() const {
-  if (!_can_expand && _first_node != NULL && _first_node->free_words() == 0) {
-    return true;
-  }
-  return false;
-}
-
 // Convenience methods to return the global class-space chunkmanager
 //  and non-class chunkmanager, respectively.
 VirtualSpaceList* VirtualSpaceList::vslist_class() {
