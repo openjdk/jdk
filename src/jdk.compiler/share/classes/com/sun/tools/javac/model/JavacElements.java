@@ -732,17 +732,22 @@ public class JavacElements implements Elements {
         Symbol sym = (Symbol) e;
         return switch(sym.kind) {
             case PCK -> {
-                if (((PackageSymbol) sym).package_info == null) {
+                PackageSymbol psym = (PackageSymbol) sym;
+                if (psym.package_info == null) {
                     yield null;
                 }
-                yield ((PackageSymbol) sym).package_info.classfile;
+                yield psym.package_info.classfile;
             }
+
             case MDL -> {
                 ModuleSymbol msym = (ModuleSymbol) sym;
+                if (msym.module_info == null) {
+                    yield null;
+                }
                 yield msym.module_info.classfile;
             }
-            case TYP -> ((ClassSymbol) sym).classfile;
-            default -> sym.enclClass().classfile;
+            case TYP -> ((ClassSymbol) sym).outermostClass().classfile;
+            default -> sym.outermostClass().classfile;
         };
     }
 

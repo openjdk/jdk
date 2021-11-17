@@ -51,6 +51,7 @@ import javax.lang.model.util.Elements;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import javax.tools.JavaFileObject;
+import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.TestRunner;
@@ -296,6 +297,277 @@ public class TestFileObjectOf extends TestRunner {
                     case MODULE -> {
                         q.add(elements.getPackageElement("test"));
                         q.add(elements.getPackageElement("test2"));
+                    }
+                    default ->
+                        currentElement.getEnclosedElements()
+                                      .stream()
+                                      .sorted((e1, e2) -> e1.getSimpleName().toString().compareTo(e2.getSimpleName().toString()))
+                                      .forEach(q::add);
+                }
+            }
+
+            return false;
+        }
+
+        void handleDeclaration(Element el) {
+            Elements elements = processingEnv.getElementUtils();
+            JavaFileObject fileObjects = elements.getFileObjectOf(el);
+            System.out.println(el.getSimpleName() + ": " + (fileObjects != null ? fileObjects.toUri().toString() : "<null>"));
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latestSupported();
+        }
+
+    }
+
+    @Test
+    public void testUnnamed(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                          """
+                          public class TestClass {
+                          }
+                          """);
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        //from source, implicit:
+        {
+            String testClassSource = src.resolve("TestClass.java").toUri().toString();
+
+            List<String> log;
+
+            log = new JavacTask(tb)
+                .options("-Xpkginfo:always",
+                         "-classpath", "",
+                         "-processorpath", System.getProperty("test.classes"),
+                         "-processor", UnnamedPrintFiles.class.getName(),
+                         "-sourcepath", src.toString())
+                .outdir(classes)
+                .classes("java.lang.Object")
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.STDOUT);
+
+            List<String> expected = List.of(
+                    ": " + "<null>",
+                    ": " + "<null>",
+                    "TestClass: " + testClassSource,
+                    "<init>: " + testClassSource
+            );
+
+            if (!expected.equals(log))
+                throw new AssertionError("expected output not found: " + log);
+        }
+
+        tb.cleanDirectory(classes);
+
+        //from source, explicit:
+        {
+            String testClassSource = src.resolve("TestClass.java").toUri().toString();
+
+            List<String> log;
+
+            log = new JavacTask(tb)
+                .options("-Xpkginfo:always",
+                         "-classpath", "",
+                         "-processorpath", System.getProperty("test.classes"),
+                         "-processor", UnnamedPrintFiles.class.getName())
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.STDOUT);
+
+            List<String> expected = List.of(
+                    ": " + "<null>",
+                    ": " + "<null>",
+                    "TestClass: " + testClassSource,
+                    "<init>: " + testClassSource
+            );
+
+            if (!expected.equals(log))
+                throw new AssertionError("expected output not found: " + log);
+        }
+
+        //from class:
+        {
+            String testClassSource = classes.resolve("TestClass.class").toUri().toString();
+
+            List<String> log;
+
+            log = new JavacTask(tb)
+                .options("-processorpath", System.getProperty("test.classes"),
+                         "-processor", UnnamedPrintFiles.class.getName(),
+                         "-classpath", classes.toString())
+                .outdir(classes)
+                .classes("java.lang.Object")
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.STDOUT);
+
+            List<String> expected = List.of(
+                    ": " + "<null>",
+                    ": " + "<null>",
+                    "TestClass: " + testClassSource,
+                    "<init>: " + testClassSource
+            );
+
+            if (!expected.equals(log))
+                throw new AssertionError("expected output not found: " + log);
+        }
+    }
+
+    @SupportedAnnotationTypes("*")
+    @SupportedOptions("fromClass")
+    public static final class UnnamedPrintFiles extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (!roundEnv.processingOver())
+                return false;
+
+            Elements elements = processingEnv.getElementUtils();
+            Trees trees = Trees.instance(processingEnv);
+            Queue<Element> q = new ArrayDeque<>();
+            q.add(elements.getModuleElement(""));
+
+            while (!q.isEmpty()) {
+                Element currentElement = q.remove();
+
+                handleDeclaration(currentElement);
+
+                switch (currentElement.getKind()) {
+                    case METHOD -> {
+                        ExecutableElement method = (ExecutableElement) currentElement;
+                        TreePath tp = trees.getPath(method);
+                        if (tp != null) {
+                            new TreePathScanner<>() {
+                                @Override
+                                public Object visitVariable(VariableTree node, Object p) {
+                                    Element el = trees.getElement(getCurrentPath());
+                                    handleDeclaration(el);
+                                    return super.visitVariable(node, p);
+                                }
+                            }.scan(tp, null);
+                        }
+                    }
+                    case MODULE -> {
+                        q.add(elements.getPackageElement(""));
+                    }
+                    default ->
+                        currentElement.getEnclosedElements()
+                                      .stream()
+                                      .sorted((e1, e2) -> e1.getSimpleName().toString().compareTo(e2.getSimpleName().toString()))
+                                      .forEach(q::add);
+                }
+            }
+
+            return false;
+        }
+
+        void handleDeclaration(Element el) {
+            Elements elements = processingEnv.getElementUtils();
+            JavaFileObject fileObjects = elements.getFileObjectOf(el);
+            System.out.println(el.getSimpleName() + ": " + (fileObjects != null ? fileObjects.toUri().toString() : "<null>"));
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latestSupported();
+        }
+
+    }
+
+    @Test
+    public void testAutomaticModule(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          public class TestClass {
+                          }
+                          """);
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        Path module = base.resolve("m.jar");
+
+        new JavacTask(tb)
+            .options("-classpath", "")
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run()
+            .writeAll();
+        new JarTask(tb, module)
+            .baseDir(classes)
+            .files(".")
+            .run();
+
+        String testClassSource = "jar:file://" + module.toAbsolutePath().toString() + "!/test/TestClass.class";
+
+        List<String> log;
+
+        log = new JavacTask(tb)
+            .options("-processorpath", System.getProperty("test.classes"),
+                     "-processor", AutomaticModulePrintFiles.class.getName(),
+                     "--module-path", module.toString(),
+                     "--add-modules", "m")
+            .outdir(classes)
+            .classes("java.lang.Object")
+            .run()
+            .writeAll()
+            .getOutputLines(Task.OutputKind.STDOUT);
+
+        List<String> expected = List.of(
+                "m: " + "<null>",
+                "test: " + "<null>",
+                "TestClass: " + testClassSource,
+                "<init>: " + testClassSource
+        );
+
+        if (!expected.equals(log))
+            throw new AssertionError("expected output not found: " + log);
+    }
+
+    @SupportedAnnotationTypes("*")
+    @SupportedOptions("fromClass")
+    public static final class AutomaticModulePrintFiles extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (!roundEnv.processingOver())
+                return false;
+
+            Elements elements = processingEnv.getElementUtils();
+            Trees trees = Trees.instance(processingEnv);
+            Queue<Element> q = new ArrayDeque<>();
+            q.add(elements.getModuleElement("m"));
+
+            while (!q.isEmpty()) {
+                Element currentElement = q.remove();
+
+                handleDeclaration(currentElement);
+
+                switch (currentElement.getKind()) {
+                    case METHOD -> {
+                        ExecutableElement method = (ExecutableElement) currentElement;
+                        TreePath tp = trees.getPath(method);
+                        if (tp != null) {
+                            new TreePathScanner<>() {
+                                @Override
+                                public Object visitVariable(VariableTree node, Object p) {
+                                    Element el = trees.getElement(getCurrentPath());
+                                    handleDeclaration(el);
+                                    return super.visitVariable(node, p);
+                                }
+                            }.scan(tp, null);
+                        }
+                    }
+                    case MODULE -> {
+                        q.add(elements.getPackageElement("test"));
                     }
                     default ->
                         currentElement.getEnclosedElements()
