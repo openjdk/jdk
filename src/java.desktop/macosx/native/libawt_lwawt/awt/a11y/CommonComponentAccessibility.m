@@ -1269,7 +1269,8 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuOpened
     JNI_COCOA_ENTER(env);
         [ThreadUtilities performOnMainThread:@selector(postMenuOpened)
                          on:(CommonComponentAccessibility *)jlong_to_ptr(element)
-                         withObject:nil waitUntilDone:NO];
+                         withObject:nil
+                         waitUntilDone:NO];
     JNI_COCOA_EXIT(env);
 }
 
