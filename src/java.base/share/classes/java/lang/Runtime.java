@@ -715,6 +715,7 @@ public class Runtime {
      * no objects will be pending finalization, so this method does nothing.
      *
      * @see     java.lang.Object#finalize()
+     * @jls 12.6 Finalization of Class Instances
      */
     @Deprecated(since="18", forRemoval=true)
     public void runFinalization() {
