@@ -24,7 +24,7 @@ import java.util.function.BinaryOperator;
  */
 @BenchmarkMode(Mode.SingleShotTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 2, jvmArgsAppend = {"-XX:+UseParallelGC", "-Xmx16g", "-Xms16g", "-XX:+AlwaysPreTouch", "-XX:NewRatio=1", "-XX:SurvivorRatio=1"})
+@Fork(value = 2)
 @Warmup(iterations = 2)
 @Measurement(iterations = 2) // only 2 iterations because each one takes very long
 @State(Scope.Thread)
