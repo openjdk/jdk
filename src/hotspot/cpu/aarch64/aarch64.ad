@@ -3867,9 +3867,7 @@ encode %{
     __ br(Assembler::NE, cont); // Check for recursive locking
 
     // Recursive lock case
-    __ ldr(tmp, Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value));
-    __ add(tmp, tmp, 1u);
-    __ str(tmp, Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value));
+    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1);
     // flag == EQ still from the cmp above, checking if this is a reentrant lock
 
     __ bind(cont);
