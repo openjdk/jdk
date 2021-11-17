@@ -105,7 +105,7 @@ bool Klass::is_subclass_of(const Klass* k) const {
   return false;
 }
 
-void Klass::release_C_heap_structures() {
+void Klass::release_C_heap_structures(bool release_constant_pool) {
   if (_name != NULL) _name->decrement_refcount();
 }
 

@@ -2015,7 +2015,7 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
 JVM_END
 
 JVM_ENTRY(void, jmm_GetDiagnosticCommandArgumentsInfo(JNIEnv *env,
-          jstring command, dcmdArgInfo* infoArray))
+          jstring command, dcmdArgInfo* infoArray, jint count))
   ResourceMark rm(THREAD);
   oop cmd = JNIHandles::resolve_external_guard(command);
   if (cmd == NULL) {
@@ -2039,10 +2039,12 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandArgumentsInfo(JNIEnv *env,
   }
   DCmdMark mark(dcmd);
   GrowableArray<DCmdArgumentInfo*>* array = dcmd->argument_info_array();
-  if (array->length() == 0) {
-    return;
+  const int num_args = array->length();
+  if (num_args != count) {
+    assert(false, "jmm_GetDiagnosticCommandArgumentsInfo count mismatch (%d vs %d)", count, num_args);
+    THROW_MSG(vmSymbols::java_lang_InternalError(), "jmm_GetDiagnosticCommandArgumentsInfo count mismatch");
   }
-  for (int i = 0; i < array->length(); i++) {
+  for (int i = 0; i < num_args; i++) {
     infoArray[i].name = array->at(i)->name();
     infoArray[i].description = array->at(i)->description();
     infoArray[i].type = array->at(i)->type();

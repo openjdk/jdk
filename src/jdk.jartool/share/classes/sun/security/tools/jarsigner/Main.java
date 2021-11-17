@@ -163,6 +163,7 @@ public class Main {
     String tSAPolicyID;
     String tSADigestAlg;
     boolean verify = false; // verify the jar
+    boolean version = false; // print the program version
     String verbose = null; // verbose output when signing/verifying
     boolean showcerts = false; // show certs when verifying
     boolean debug = false; // debug
@@ -479,6 +480,8 @@ public class Main {
                 externalSF = false;
             } else if (collator.compare(flags, "-verify") ==0) {
                 verify = true;
+            } else if (collator.compare(flags, "-version") ==0) {
+                version = true;
             } else if (collator.compare(flags, "-verbose") ==0) {
                 verbose = (modifier != null) ? modifier : "all";
             } else if (collator.compare(flags, "-sigalg") ==0) {
@@ -504,6 +507,14 @@ public class Main {
                         rb.getString("Illegal.option.") + flags);
                 usage();
             }
+        }
+
+        /*
+         * When `-version` is specified but `-help` is not specified, jarsigner
+         * will only print the program version and ignore other options if any.
+         */
+        if (version) {
+            doPrintVersion();
         }
 
         // -certs must always be specified with -verbose
@@ -597,11 +608,18 @@ public class Main {
         System.exit(1);
     }
 
+    static void doPrintVersion() {
+        System.out.println("jarsigner " + System.getProperty("java.version"));
+        System.exit(0);
+    }
+
     static void fullusage() {
         System.out.println(rb.getString
                 ("Usage.jarsigner.options.jar.file.alias"));
         System.out.println(rb.getString
                 (".jarsigner.verify.options.jar.file.alias."));
+        System.out.println(rb.getString
+                (".jarsigner.version"));
         System.out.println();
         System.out.println(rb.getString
                 (".keystore.url.keystore.location"));
@@ -632,6 +650,9 @@ public class Main {
         System.out.println();
         System.out.println(rb.getString
                 (".verify.verify.a.signed.JAR.file"));
+        System.out.println();
+        System.out.println(rb.getString
+                (".version.print.the.program.version"));
         System.out.println();
         System.out.println(rb.getString
                 (".verbose.suboptions.verbose.output.when.signing.verifying."));

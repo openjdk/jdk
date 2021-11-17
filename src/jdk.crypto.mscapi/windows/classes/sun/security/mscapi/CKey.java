@@ -83,7 +83,7 @@ abstract class CKey implements Key, Length {
     }
 
     // Native method to cleanup the key handle.
-    private native static void cleanUp(long hCryptProv, long hCryptKey);
+    private static native void cleanUp(long hCryptProv, long hCryptKey);
 
     @Override
     public int length() {
@@ -102,9 +102,9 @@ abstract class CKey implements Key, Length {
         return algorithm;
     }
 
-    protected native static String getContainerName(long hCryptProv);
+    protected static native String getContainerName(long hCryptProv);
 
-    protected native static String getKeyType(long hCryptKey);
+    protected static native String getKeyType(long hCryptKey);
 
     // This java method generates EC BLOBs for public key or private key.
     // See https://docs.microsoft.com/en-us/windows/desktop/api/bcrypt/ns-bcrypt-_bcrypt_ecckey_blob

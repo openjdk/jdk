@@ -65,7 +65,7 @@ typedef struct _ciMethodDataRecord {
   const char* _signature;
 
   int _state;
-  int _current_mileage;
+  int _invocation_counter;
 
   intptr_t* _data;
   char*     _orig_data;
@@ -113,7 +113,9 @@ class CompileReplay : public StackObj {
   FILE*   _stream;
   Thread* _thread;
   Handle  _protection_domain;
+  bool    _protection_domain_initialized;
   Handle  _loader;
+  int     _version;
 
   GrowableArray<ciMethodRecord*>     _ci_method_records;
   GrowableArray<ciMethodDataRecord*> _ci_method_data_records;
@@ -140,6 +142,7 @@ class CompileReplay : public StackObj {
     _thread = THREAD;
     _loader = Handle(_thread, SystemDictionary::java_system_loader());
     _protection_domain = Handle();
+    _protection_domain_initialized = false;
 
     _stream = fopen(filename, "rt");
     if (_stream == NULL) {
@@ -157,6 +160,7 @@ class CompileReplay : public StackObj {
     _iklass  = NULL;
     _entry_bci  = 0;
     _comp_level = 0;
+    _version = 0;
 
     test();
   }
@@ -463,6 +467,7 @@ class CompileReplay : public StackObj {
       }
       {
         bool found_it;
+        ik->link_class(CHECK_NULL);
         obj = cp->find_cached_constant_at(cpi, found_it, thread);
       }
     }
@@ -636,6 +641,11 @@ class CompileReplay : public StackObj {
         tty->print_cr("# %s", _bufptr);
       }
       skip_remaining();
+    } else if (strcmp("version", cmd) == 0) {
+      _version = parse_int("version");
+      if (_version < 0 || _version > REPLAY_VERSION) {
+        tty->print_cr("# unrecognized version %d, expected 0 <= version <= %d", _version, REPLAY_VERSION);
+      }
     } else if (strcmp("compile", cmd) == 0) {
       process_compile(CHECK);
     } else if (strcmp("ciMethod", cmd) == 0) {
@@ -800,7 +810,7 @@ class CompileReplay : public StackObj {
     rec->_instructions_size = parse_int("instructions_size");
   }
 
-  // ciMethodData <klass> <name> <signature> <state> <current_mileage> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass>)* methods <length> (<offset> <klass> <name> <signature>)*
+  // ciMethodData <klass> <name> <signature> <state> <invocation_counter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass>)* methods <length> (<offset> <klass> <name> <signature>)*
   void process_ciMethodData(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -825,7 +835,11 @@ class CompileReplay : public StackObj {
     // collect and record all the needed information for later
     ciMethodDataRecord* rec = new_ciMethodData(method);
     rec->_state = parse_int("state");
-    rec->_current_mileage = parse_int("current_mileage");
+    if (_version < 1) {
+      parse_int("current_mileage");
+    } else {
+      rec->_invocation_counter = parse_int("invocation_counter");
+    }
 
     rec->_orig_data = parse_data("orig", rec->_orig_data_length);
     if (rec->_orig_data == NULL) {
@@ -874,6 +888,19 @@ class CompileReplay : public StackObj {
   void process_instanceKlass(TRAPS) {
     // just load the referenced class
     Klass* k = parse_klass(CHECK);
+
+    if (_version >= 1) {
+      if (!_protection_domain_initialized && k != NULL) {
+        assert(_protection_domain() == NULL, "must be uninitialized");
+        // The first entry is the holder class of the method for which a replay compilation is requested.
+        // Use the same protection domain to load all subsequent classes in order to resolve all classes
+        // in signatures of inlinees. This ensures that inlining can be done as stated in the replay file.
+        _protection_domain = Handle(_thread, k->protection_domain());
+      }
+
+      _protection_domain_initialized = true;
+    }
+
     if (k == NULL) {
       return;
     }
@@ -901,6 +928,7 @@ class CompileReplay : public StackObj {
   void process_ciInstanceKlass(TRAPS) {
     InstanceKlass* k = (InstanceKlass*)parse_klass(CHECK);
     if (k == NULL) {
+      skip_remaining();
       return;
     }
     int is_linked = parse_int("is_linked");
@@ -1399,7 +1427,7 @@ void ciReplay::initialize(ciMethodData* m) {
     tty->cr();
   } else {
     m->_state = rec->_state;
-    m->_current_mileage = rec->_current_mileage;
+    m->_invocation_counter = rec->_invocation_counter;
     if (rec->_data_length != 0) {
       assert(m->_data_size + m->_extra_data_size == rec->_data_length * (int)sizeof(rec->_data[0]) ||
              m->_data_size == rec->_data_length * (int)sizeof(rec->_data[0]), "must agree");
