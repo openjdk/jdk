@@ -831,7 +831,8 @@ public interface Elements {
      * interface
      *
      * <li>if a class file is providing the reference representation,
-     * the file object for be for the nested class or interface itself
+     * the file object will be that of the nested class or interface
+     * itself
      *
      * </ul>
      *
@@ -840,8 +841,8 @@ public interface Elements {
      * ExecutableElement#getEnclosingElement() methods, and
      * constructors}, if they have a file object, the file object will
      * be the object associated with the {@linkplain
-     * Element#getEnclosingElement() enclosing element} of the nested
-     * element.
+     * Element#getEnclosingElement() enclosing element} of the
+     * lexically enclosed element.
      *
      * @implSpec The default implementation unconditionally throws
      * {@link UnsupportedOperationException}.
