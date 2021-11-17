@@ -33,11 +33,11 @@ import java.lang.invoke.StringConcatFactory;
 import java.lang.invoke.TypeDescriptor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -53,6 +53,8 @@ import static java.util.Objects.requireNonNull;
 public class ObjectMethods {
 
     private ObjectMethods() { }
+
+    private static final int MAX_INDY_CONCAT_ARG_SLOTS = 200;
 
     private static final MethodType DESCRIPTOR_MT = MethodType.methodType(MethodType.class);
     private static final MethodType NAMES_MT = MethodType.methodType(List.class);
@@ -258,42 +260,104 @@ public class ObjectMethods {
                                             MethodHandle[] getters,
                                             List<String> names) {
         assert getters.length == names.size();
-        Class<?>[] types = Stream.of(getters)
-                .map(g -> g.type().returnType())
-                .toList()
-                .toArray(new Class<?>[getters.length]);
-        MethodType concatMethodType = MethodType.methodType(String.class, types);
-        String recipe = "\2" + (getters.length > 0 ?
-                        "\2\1\2".repeat(getters.length - 1) + "\2\1" :
-                        "") + "\2";
-        String[] constants = new String[2 + (getters.length > 0 ? 2 * getters.length - 1 : 0)];
-        constants[0] = receiverClass.getSimpleName() + "[";
-        constants[constants.length - 1] = "]";
-        for (int i = 0; i < names.size(); i++) {
-            constants[1 + 2 * i] = names.get(i) + "=";
-            if (i != names.size() - 1) {
-                constants[1 + 2 * i + 1] = ", ";
-            }
+        if (getters.length == 0) {
+            // special case
+            MethodHandle emptyRecordCase = MethodHandles.constant(String.class, receiverClass.getSimpleName() + "[]");
+            emptyRecordCase = MethodHandles.dropArguments(emptyRecordCase, 0, receiverClass); // (R)S
+            return emptyRecordCase;
         }
 
-        MethodHandle mh;
-        try {
-            mh = StringConcatFactory.makeConcatWithConstants(
-                    lookup, "",
-                    concatMethodType,
-                    recipe,
-                    (Object[]) constants
-            ).getTarget();
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
+        boolean firstTime = true;
+        MethodHandle[] mhs;
+        List<List<MethodHandle>> splits;
+        MethodHandle[] toSplit = getters;
+        int namesIndex = 0;
+        do {
+            /* StringConcatFactory::makeConcatWithConstants can only deal with 200 spots, longs and double occupy two
+             * the rest 1 spot, we need to chop the current `getters` into chuncks, it could be that for records with
+             * a lot of components that we need to do a couple of iterations. The main diference between the first
+             * iteration and the rest would be on the recipe
+             */
+            splits = split(toSplit);
+            mhs = new MethodHandle[splits.size()];
+            for (int splitIndex = 0; splitIndex < splits.size(); splitIndex++) {
+                String recipe = "";
+                if (firstTime && splitIndex == 0) {
+                    recipe = receiverClass.getSimpleName() + "[";
+                }
+                for (int i = 0; i < splits.get(splitIndex).size(); i++) {
+                    recipe += firstTime ? names.get(namesIndex) + "=" + "\1" : "\1";
+                    if (firstTime && namesIndex != names.size() - 1) {
+                        recipe += ", ";
+                    }
+                    namesIndex++;
+                }
+                if (firstTime && splitIndex == splits.size() - 1) {
+                    recipe += "]";
+                }
+                Class<?>[] concatTypeArgs = new Class<?>[splits.get(splitIndex).size()];
+                // special case: no need to create another getters if there is only one split
+                MethodHandle[] currentSplitGetters = new MethodHandle[splits.get(splitIndex).size()];
+                for (int j = 0; j < splits.get(splitIndex).size(); j++) {
+                    concatTypeArgs[j] = splits.get(splitIndex).get(j).type().returnType();
+                    currentSplitGetters[j] = splits.get(splitIndex).get(j);
+                }
+                MethodType concatMT = MethodType.methodType(String.class, concatTypeArgs);
+                try {
+                    mhs[splitIndex] = StringConcatFactory.makeConcatWithConstants(
+                            lookup, "",
+                            concatMT,
+                            recipe,
+                            new Object[0]
+                    ).getTarget();
+                    mhs[splitIndex] = MethodHandles.filterArguments(mhs[splitIndex], 0, currentSplitGetters);
+                    mhs[splitIndex] = MethodHandles.permuteArguments(
+                            mhs[splitIndex],
+                            MethodType.methodType(String.class, receiverClass),
+                            new int[splits.get(splitIndex).size()]
+                    );
+                } catch (Throwable t) {
+                    throw new RuntimeException(t);
+                }
+            }
+            toSplit = mhs;
+            firstTime = false;
+        } while (splits.size() > 1);
+        return mhs[0];
+    }
+
+    /**
+     * Chops the getters into smaller chunks according to the maximum number of spots
+     * StringConcatFactory::makeConcatWithConstants can chew
+     * @param getters the current getters
+     * @return chunks that wont surpass the maximum number of spots StringConcatFactory::makeConcatWithConstants can chew
+     */
+    private static List<List<MethodHandle>> split(MethodHandle[] getters) {
+        List<List<MethodHandle>> splits = new ArrayList<>();
+
+        int slots = 0;
+
+        // Need to peel, so that neither call has more than acceptable number
+        // of slots for the arguments.
+        List<MethodHandle> cArgs = new ArrayList<>();
+        for (MethodHandle methodHandle : getters) {
+            Class<?> returnType = methodHandle.type().returnType();
+            int needSlots = (returnType == long.class || returnType == double.class) ? 2 : 1;
+            if (slots + needSlots > MAX_INDY_CONCAT_ARG_SLOTS) {
+                splits.add(cArgs);
+                cArgs = new ArrayList<>();
+                slots = 0;
+            }
+            cArgs.add(methodHandle);
+            slots += needSlots;
         }
-        mh = MethodHandles.filterArguments(mh, 0, getters);
-        mh = MethodHandles.permuteArguments(
-                mh,
-                MethodType.methodType(String.class, receiverClass),
-                new int[getters.length]
-        );
-        return mh;
+
+        // Flush the tail slice
+        if (!cArgs.isEmpty()) {
+            splits.add(cArgs);
+        }
+
+        return splits;
     }
 
     /**
