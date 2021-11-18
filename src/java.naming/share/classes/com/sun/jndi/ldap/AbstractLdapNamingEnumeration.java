@@ -199,6 +199,9 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         if (!hasMoreCalled) {
             hasMore();
         }
+        if (!more) {
+            throw new NoSuchElementException();
+        }
         hasMoreCalled = false;
         return nextImpl();
     }
