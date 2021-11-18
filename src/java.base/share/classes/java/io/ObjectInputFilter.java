@@ -524,9 +524,11 @@ public interface ObjectInputFilter {
      * If the system property is not defined, and the {@link java.security.Security} property
      * {@code jdk.serialFilter} is defined then it is used to configure the filter.
      * The filter is created as if {@link #createFilter(String) createFilter} is called;
-     * if the filter string is invalid, an {@link ExceptionInInitializerError} is thrown.
-     * Otherwise, the filter is not configured during initialization and
-     * can be set with {@link #setSerialFilter(ObjectInputFilter) Config.setSerialFilter}.
+     * if the filter string is invalid, an {@link ExceptionInInitializerError} is thrown
+     * and the initialization fails; subsequent attempts to use the configuration or
+     * serialization will fail with an implementation specific exception.
+     * If the system property {@code jdk.serialFilter} is not set on the command line
+     * it can be set with {@link #setSerialFilter(ObjectInputFilter) Config.setSerialFilter}.
      * Setting the {@code jdk.serialFilter} with {@link System#setProperty(String, String)
      * System.setProperty} <em>does not set the filter</em>.
      * The syntax for the property value is the same as for the
