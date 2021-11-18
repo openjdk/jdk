@@ -68,7 +68,7 @@ public class CallArranger {
         16,
         0, //no shadow space
         r10, // target addr reg
-        r11  // imr addr reg
+        r11  // ret buf addr reg
     );
 
     // record

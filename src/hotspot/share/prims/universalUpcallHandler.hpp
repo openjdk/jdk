@@ -32,30 +32,18 @@ class JavaThread;
 
 class ProgrammableUpcallHandler {
 private:
-  static constexpr CodeBuffer::csize_t upcall_stub_size = 1024;
-
-  struct UpcallMethod {
-    Klass* klass;
-    Symbol* name;
-    Symbol* sig;
-  } upcall_method;
-
-  ProgrammableUpcallHandler();
-
-  static const ProgrammableUpcallHandler& instance();
-
-  static void upcall_helper(JavaThread* thread, jobject rec, address buff);
-  static void attach_thread_and_do_upcall(jobject rec, address buff);
-
   static void handle_uncaught_exception(oop exception);
   static JavaThread* maybe_attach_and_get_thread();
 
   static JavaThread* on_entry(OptimizedEntryBlob::FrameData* context);
   static void on_exit(OptimizedEntryBlob::FrameData* context);
 public:
-  static address generate_optimized_upcall_stub(jobject mh, Method* entry, jobject jabi, jobject jconv);
-  static address generate_upcall_stub(jobject rec, jobject abi, jobject buffer_layout);
-  static bool supports_optimized_upcalls();
+  static address generate_optimized_upcall_stub(jobject mh, Method* entry,
+                                                BasicType* in_sig_bt, int total_in_args,
+                                                BasicType* out_sig_bt, int total_out_args,
+                                                BasicType ret_type,
+                                                jobject jabi, jobject jconv,
+                                                bool needs_return_buffer, int ret_buf_size);
 };
 
 #endif // SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP

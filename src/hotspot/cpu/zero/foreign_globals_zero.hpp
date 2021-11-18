@@ -24,7 +24,6 @@
 #ifndef CPU_ZERO_VM_FOREIGN_GLOBALS_ZERO_HPP
 #define CPU_ZERO_VM_FOREIGN_GLOBALS_ZERO_HPP
 
-class BufferLayout {};
 class ABIDescriptor {};
 
 #endif // CPU_ZERO_VM_FOREIGN_GLOBALS_ZERO_HPP

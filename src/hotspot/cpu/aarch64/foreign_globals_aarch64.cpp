@@ -72,50 +72,6 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) cons
   return abi;
 }
 
-const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) const {
-  oop layout_oop = JNIHandles::resolve_non_null(jlayout);
-  BufferLayout layout;
-
-  layout.stack_args_bytes = layout_oop->long_field(BL.stack_args_bytes_offset);
-  layout.stack_args = layout_oop->long_field(BL.stack_args_offset);
-  layout.arguments_next_pc = layout_oop->long_field(BL.arguments_next_pc_offset);
-
-  typeArrayOop input_offsets = oop_cast<typeArrayOop>(layout_oop->obj_field(BL.input_type_offsets_offset));
-  layout.arguments_integer = (size_t) input_offsets->long_at(INTEGER_TYPE);
-  layout.arguments_vector = (size_t) input_offsets->long_at(VECTOR_TYPE);
-
-  typeArrayOop output_offsets = oop_cast<typeArrayOop>(layout_oop->obj_field(BL.output_type_offsets_offset));
-  layout.returns_integer = (size_t) output_offsets->long_at(INTEGER_TYPE);
-  layout.returns_vector = (size_t) output_offsets->long_at(VECTOR_TYPE);
-
-  layout.buffer_size = layout_oop->long_field(BL.size_offset);
-
-  return layout;
-}
-
-const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
-  oop conv_oop = JNIHandles::resolve_non_null(jconv);
-  objArrayOop arg_regs_oop = oop_cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.arg_regs_offset));
-  objArrayOop ret_regs_oop = oop_cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.ret_regs_offset));
-
-  CallRegs result;
-  result._args_length = arg_regs_oop->length();
-  result._arg_regs = NEW_RESOURCE_ARRAY(VMReg, result._args_length);
-
-  result._rets_length = ret_regs_oop->length();
-  result._ret_regs = NEW_RESOURCE_ARRAY(VMReg, result._rets_length);
-
-  for (int i = 0; i < result._args_length; i++) {
-    result._arg_regs[i] = parse_vmstorage(arg_regs_oop->obj_at(i));
-  }
-
-  for (int i = 0; i < result._rets_length; i++) {
-    result._ret_regs[i] = parse_vmstorage(ret_regs_oop->obj_at(i));
-  }
-
-  return result;
-}
-
 enum class RegType {
   INTEGER = 0,
   VECTOR = 1,

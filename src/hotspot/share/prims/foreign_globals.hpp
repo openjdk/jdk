@@ -63,15 +63,6 @@ private:
   } VMS;
 
   struct {
-    int size_offset;
-    int arguments_next_pc_offset;
-    int stack_args_bytes_offset;
-    int stack_args_offset;
-    int input_type_offsets_offset;
-    int output_type_offsets_offset;
-  } BL;
-
-  struct {
     int arg_regs_offset;
     int ret_regs_offset;
   } CallConvOffsets;
@@ -84,13 +75,11 @@ private:
   void loadArray(objArrayOop jarray, int type_index, GrowableArray<T>& array, Func converter) const;
 
   const ABIDescriptor parse_abi_descriptor_impl(jobject jabi) const;
-  const BufferLayout parse_buffer_layout_impl(jobject jlayout) const;
   const CallRegs parse_call_regs_impl(jobject jconv) const;
 
   VMReg parse_vmstorage(oop storage) const;
 public:
   static const ABIDescriptor parse_abi_descriptor(jobject jabi);
-  static const BufferLayout parse_buffer_layout(jobject jlayout);
   static const CallRegs parse_call_regs(jobject jconv);
 
   static VMReg vmstorage_to_vmreg(int type, int index);

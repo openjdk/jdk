@@ -753,3 +753,9 @@ void OptimizedEntryBlob::oops_do(OopClosure* f, const frame& frame) {
 JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
   return &frame_data_for_frame(frame)->jfa;
 }
+
+void OptimizedEntryBlob::free(OptimizedEntryBlob* blob) {
+  assert(blob != nullptr, "caller must check for NULL");
+  JNIHandles::destroy_global(blob->receiver());
+  BufferBlob::free(blob);
+}

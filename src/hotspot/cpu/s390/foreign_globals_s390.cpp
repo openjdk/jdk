@@ -30,11 +30,6 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) cons
   return {};
 }
 
-const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) const {
-  Unimplemented();
-  return {};
-}
-
 const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
   Unimplemented();
   return {};

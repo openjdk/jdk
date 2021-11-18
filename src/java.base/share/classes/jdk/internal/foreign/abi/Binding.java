@@ -396,6 +396,10 @@ public abstract class Binding {
         return new ToSegment(layout.byteSize());
     }
 
+    public static ToSegment toSegment(long byteSize) {
+        return new ToSegment(byteSize);
+    }
+
     public static Dup dup() {
         return Dup.INSTANCE;
     }

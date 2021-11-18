@@ -69,7 +69,7 @@ public class CallArranger {
         16,
         32,
         r10, // target addr reg
-        r11  // imr addr reg
+        r11  // ret buf addr reg
     );
 
     // record

@@ -25,7 +25,6 @@
 #ifndef CPU_PPC_VM_FOREIGN_GLOBALS_PPC_HPP
 #define CPU_PPC_VM_FOREIGN_GLOBALS_PPC_HPP
 
-class BufferLayout {};
 class ABIDescriptor {};
 
 #endif // CPU_PPC_VM_FOREIGN_GLOBALS_PPC_HPP

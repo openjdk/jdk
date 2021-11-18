@@ -765,6 +765,8 @@ class OptimizedEntryBlob: public BufferBlob {
                                     intptr_t exception_handler_offset, jobject receiver,
                                     ByteSize frame_data_offset);
 
+  static void free(OptimizedEntryBlob* blob);
+
   address exception_handler() { return code_begin() + _exception_handler_offset; }
   jobject receiver() { return _receiver; }
 

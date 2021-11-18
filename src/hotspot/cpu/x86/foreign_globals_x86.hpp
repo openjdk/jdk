@@ -51,16 +51,4 @@ struct ABIDescriptor {
   bool is_volatile_reg(XMMRegister reg) const;
 };
 
-struct BufferLayout {
-  size_t stack_args_bytes;
-  size_t stack_args;
-  size_t arguments_vector;
-  size_t arguments_integer;
-  size_t arguments_next_pc;
-  size_t returns_vector;
-  size_t returns_integer;
-  size_t returns_x87;
-  size_t buffer_size;
-};
-
 #endif // CPU_X86_VM_FOREIGN_GLOBALS_X86_HPP

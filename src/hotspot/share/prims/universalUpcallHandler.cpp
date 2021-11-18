@@ -31,6 +31,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
 
@@ -55,21 +56,6 @@ struct UpcallContext {
 };
 
 APPROVED_CPP_THREAD_LOCAL UpcallContext threadContext;
-
-void ProgrammableUpcallHandler::upcall_helper(JavaThread* thread, jobject rec, address buff) {
-  JavaThread* THREAD = thread; // For exception macros.
-  ThreadInVMfromNative tiv(THREAD);
-  const UpcallMethod& upcall_method = instance().upcall_method;
-
-  ResourceMark rm(THREAD);
-  JavaValue result(T_VOID);
-  JavaCallArguments args(2); // long = 2 slots
-
-  args.push_jobject(rec);
-  args.push_long((jlong) buff);
-
-  JavaCalls::call_static(&result, upcall_method.klass, upcall_method.name, upcall_method.sig, &args, CATCH);
-}
 
 JavaThread* ProgrammableUpcallHandler::maybe_attach_and_get_thread() {
   JavaThread* thread = JavaThread::current_or_null();
@@ -143,36 +129,6 @@ void ProgrammableUpcallHandler::on_exit(OptimizedEntryBlob::FrameData* context) 
   assert(!thread->has_pending_exception(), "Upcall can not throw an exception");
 }
 
-void ProgrammableUpcallHandler::attach_thread_and_do_upcall(jobject rec, address buff) {
-  JavaThread* thread = maybe_attach_and_get_thread();
-
-  {
-    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
-    upcall_helper(thread, rec, buff);
-  }
-}
-
-const ProgrammableUpcallHandler& ProgrammableUpcallHandler::instance() {
-  static ProgrammableUpcallHandler handler;
-  return handler;
-}
-
-ProgrammableUpcallHandler::ProgrammableUpcallHandler() {
-  JavaThread* THREAD = JavaThread::current(); // For exception macros.
-  ResourceMark rm(THREAD);
-  Symbol* sym = SymbolTable::new_symbol(FOREIGN_ABI "ProgrammableUpcallHandler");
-  Klass* k = SystemDictionary::resolve_or_null(sym, Handle(), Handle(), CATCH);
-  k->initialize(CATCH);
-
-  upcall_method.klass = k;
-  upcall_method.name = SymbolTable::new_symbol("invoke");
-  upcall_method.sig = SymbolTable::new_symbol("(Ljava/lang/invoke/MethodHandle;J)V");
-
-  assert(upcall_method.klass->lookup_method(upcall_method.name, upcall_method.sig) != nullptr,
-    "Could not find upcall method: %s.%s%s", upcall_method.klass->external_name(),
-    upcall_method.name->as_C_string(), upcall_method.sig->as_C_string());
-}
-
 void ProgrammableUpcallHandler::handle_uncaught_exception(oop exception) {
   ResourceMark rm;
   // Based on CATCH macro
@@ -181,13 +137,9 @@ void ProgrammableUpcallHandler::handle_uncaught_exception(oop exception) {
   ShouldNotReachHere();
 }
 
-JVM_ENTRY(jlong, PUH_AllocateUpcallStub(JNIEnv *env, jclass unused, jobject rec, jobject abi, jobject buffer_layout))
-  Handle receiver(THREAD, JNIHandles::resolve(rec));
-  jobject global_rec = JNIHandles::make_global(receiver);
-  return (jlong) ProgrammableUpcallHandler::generate_upcall_stub(global_rec, abi, buffer_layout);
-JNI_END
-
-JVM_ENTRY(jlong, PUH_AllocateOptimizedUpcallStub(JNIEnv *env, jclass unused, jobject mh, jobject abi, jobject conv))
+JVM_ENTRY(jlong, PUH_AllocateOptimizedUpcallStub(JNIEnv *env, jclass unused, jobject mh, jobject abi, jobject conv,
+                                                 jboolean needs_return_buffer, jlong ret_buf_size))
+  ResourceMark rm(THREAD);
   Handle mh_h(THREAD, JNIHandles::resolve(mh));
   jobject mh_j = JNIHandles::make_global(mh_h);
 
@@ -199,20 +151,37 @@ JVM_ENTRY(jlong, PUH_AllocateOptimizedUpcallStub(JNIEnv *env, jclass unused, job
   assert(entry->method_holder()->is_initialized(), "no clinit barrier");
   CompilationPolicy::compile_if_required(mh_entry, CHECK_0);
 
-  return (jlong) ProgrammableUpcallHandler::generate_optimized_upcall_stub(mh_j, entry, abi, conv);
-JVM_END
+  assert(entry->is_static(), "static only");
+  // Fill in the signature array, for the calling-convention call.
+  const int total_out_args = entry->size_of_parameters();
+  assert(total_out_args > 0, "receiver arg");
 
-JVM_ENTRY(jboolean, PUH_SupportsOptimizedUpcalls(JNIEnv *env, jclass unused))
-  return (jboolean) ProgrammableUpcallHandler::supports_optimized_upcalls();
+  BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_out_args);
+  BasicType ret_type;
+  {
+    int i = 0;
+    SignatureStream ss(entry->signature());
+    for (; !ss.at_return_type(); ss.next()) {
+      out_sig_bt[i++] = ss.type();  // Collect remaining bits of signature
+      if (ss.type() == T_LONG || ss.type() == T_DOUBLE)
+        out_sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
+    }
+    assert(i == total_out_args, "");
+    ret_type = ss.type();
+  }
+  // skip receiver
+  BasicType* in_sig_bt = out_sig_bt + 1;
+  int total_in_args = total_out_args - 1;
+
+  return (jlong) ProgrammableUpcallHandler::generate_optimized_upcall_stub(
+    mh_j, entry, in_sig_bt, total_in_args, out_sig_bt, total_out_args, ret_type, abi, conv, needs_return_buffer, checked_cast<int>(ret_buf_size));
 JVM_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod PUH_methods[] = {
-  {CC "allocateUpcallStub", CC "(" "Ljava/lang/invoke/MethodHandle;" "L" FOREIGN_ABI "ABIDescriptor;" "L" FOREIGN_ABI "BufferLayout;" ")J", FN_PTR(PUH_AllocateUpcallStub)},
-  {CC "allocateOptimizedUpcallStub", CC "(" "Ljava/lang/invoke/MethodHandle;" "L" FOREIGN_ABI "ABIDescriptor;" "L" FOREIGN_ABI "ProgrammableUpcallHandler$CallRegs;" ")J", FN_PTR(PUH_AllocateOptimizedUpcallStub)},
-  {CC "supportsOptimizedUpcalls", CC "()Z", FN_PTR(PUH_SupportsOptimizedUpcalls)},
+  {CC "allocateOptimizedUpcallStub", CC "(" "Ljava/lang/invoke/MethodHandle;" "L" FOREIGN_ABI "ABIDescriptor;" "L" FOREIGN_ABI "ProgrammableUpcallHandler$CallRegs;" "ZJ)J", FN_PTR(PUH_AllocateOptimizedUpcallStub)},
 };
 
 /**

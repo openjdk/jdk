@@ -28,8 +28,8 @@
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/foreign_globals.inline.hpp"
-#include "runtime/fieldDescriptor.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
 
@@ -55,9 +55,6 @@ const ForeignGlobals& ForeignGlobals::instance() {
 
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   return instance().parse_abi_descriptor_impl(jabi);
-}
-const BufferLayout ForeignGlobals::parse_buffer_layout(jobject jlayout) {
-  return instance().parse_buffer_layout_impl(jlayout);
 }
 
 const CallRegs ForeignGlobals::parse_call_regs(jobject jconv) {
@@ -87,21 +84,35 @@ ForeignGlobals::ForeignGlobals() {
   VMS.index_offset = field_offset(k_VMS, "index", vmSymbols::int_signature());
   VMS.type_offset = field_offset(k_VMS, "type", vmSymbols::int_signature());
 
-  // BufferLayout
-  InstanceKlass* k_BL = find_InstanceKlass(FOREIGN_ABI "BufferLayout", current_thread);
-  BL.size_offset = field_offset(k_BL, "size", vmSymbols::long_signature());
-  BL.arguments_next_pc_offset = field_offset(k_BL, "arguments_next_pc", vmSymbols::long_signature());
-  BL.stack_args_bytes_offset = field_offset(k_BL, "stack_args_bytes", vmSymbols::long_signature());
-  BL.stack_args_offset = field_offset(k_BL, "stack_args", vmSymbols::long_signature());
-  BL.input_type_offsets_offset = field_offset(k_BL, "input_type_offsets", vmSymbols::long_array_signature());
-  BL.output_type_offsets_offset = field_offset(k_BL, "output_type_offsets", vmSymbols::long_array_signature());
-
   // CallRegs
   const char* strVMSArray = "[L" FOREIGN_ABI "VMStorage;";
   Symbol* symVMSArray = SymbolTable::new_symbol(strVMSArray);
   InstanceKlass* k_CC = find_InstanceKlass(FOREIGN_ABI "ProgrammableUpcallHandler$CallRegs", current_thread);
   CallConvOffsets.arg_regs_offset = field_offset(k_CC, "argRegs", symVMSArray);
   CallConvOffsets.ret_regs_offset = field_offset(k_CC, "retRegs", symVMSArray);
+}
+
+const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
+  oop conv_oop = JNIHandles::resolve_non_null(jconv);
+  objArrayOop arg_regs_oop = oop_cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.arg_regs_offset));
+  objArrayOop ret_regs_oop = oop_cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.ret_regs_offset));
+
+  CallRegs result;
+  result._args_length = arg_regs_oop->length();
+  result._arg_regs = NEW_RESOURCE_ARRAY(VMReg, result._args_length);
+
+  result._rets_length = ret_regs_oop->length();
+  result._ret_regs = NEW_RESOURCE_ARRAY(VMReg, result._rets_length);
+
+  for (int i = 0; i < result._args_length; i++) {
+    result._arg_regs[i] = parse_vmstorage(arg_regs_oop->obj_at(i));
+  }
+
+  for (int i = 0; i < result._rets_length; i++) {
+    result._ret_regs[i] = parse_vmstorage(ret_regs_oop->obj_at(i));
+  }
+
+  return result;
 }
 
 VMReg ForeignGlobals::parse_vmstorage(oop storage) const {

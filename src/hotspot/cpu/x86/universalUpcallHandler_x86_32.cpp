@@ -24,16 +24,12 @@
 #include "precompiled.hpp"
 #include "prims/universalUpcallHandler.hpp"
 
-address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi, jobject jlayout) {
-  Unimplemented();
-  return nullptr;
-}
-
-address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject mh, Method* entry, jobject jabi, jobject jconv) {
+address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiver, Method* entry,
+                                                                  BasicType* in_sig_bt, int total_in_args,
+                                                                  BasicType* out_sig_bt, int total_out_args,
+                                                                  BasicType ret_type,
+                                                                  jobject jabi, jobject jconv,
+                                                                  bool needs_return_buffer, int ret_buf_size) {
   ShouldNotCallThis();
   return nullptr;
-}
-
-bool ProgrammableUpcallHandler::supports_optimized_upcalls() {
-  return false;
 }
