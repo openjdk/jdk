@@ -3869,3 +3869,4 @@ JVM_END
 JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))
   return os::get_signal_number(name);
 JVM_END
+
