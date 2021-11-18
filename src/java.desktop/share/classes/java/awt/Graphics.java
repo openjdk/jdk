@@ -1165,7 +1165,7 @@ public abstract class Graphics {
      * @deprecated Finalization has been deprecated for removal.  See
      * {@link java.lang.Object#finalize} for background information and details
      * about migration options.
-     * 
+     *
      * @see #dispose
      */
     @Deprecated(since="9", forRemoval=true)

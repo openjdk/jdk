@@ -566,7 +566,7 @@ public class Object {
      * <p>
      * This method will remain in place until finalizers have been removed from
      * most existing code.
-     * 
+     *
      * @throws Throwable the {@code Exception} raised by this method
      * @see java.lang.ref.WeakReference
      * @see java.lang.ref.PhantomReference
