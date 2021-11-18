@@ -26,9 +26,7 @@
  * @bug 8276422
  * @summary Invalid/missing values for the finalization option should be rejected
  * @library /test/lib
- * @run driver InvalidFinalizationOption none
- * @run driver InvalidFinalizationOption empty
- * @run driver InvalidFinalizationOption invalid
+ * @run driver InvalidFinalizationOption
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -38,16 +36,17 @@ public class InvalidFinalizationOption {
     public static void main(String[] args) throws Exception {
         record TestData(String arg, String expected) { }
 
-        var data = switch (args[0]) {
-            case "none"    -> new TestData("--finalization",        "Unrecognized option");
-            case "empty"   -> new TestData("--finalization=",       "Invalid finalization value");
-            case "invalid" -> new TestData("--finalization=azerty", "Invalid finalization value");
-            default        -> throw new AssertionError("bad argument passed to test class");
+        TestData[] testData = {
+            new TestData("--finalization",        "Unrecognized option"),
+            new TestData("--finalization=",       "Invalid finalization value"),
+            new TestData("--finalization=azerty", "Invalid finalization value")
         };
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(data.arg);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain(data.expected);
-        output.shouldHaveExitValue(1);
+        for (var data : testData) {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(data.arg);
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            output.shouldContain(data.expected);
+            output.shouldHaveExitValue(1);
+        }
     }
 }
