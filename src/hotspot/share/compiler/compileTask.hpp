@@ -104,7 +104,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
  public:
   CompileTask() : _failure_reason(NULL), _failure_reason_on_C_heap(false) {
-    _lock = new Monitor(Mutex::safepoint, "CompileTask_lock");
+    // May hold MethodCompileQueue_lock
+    _lock = new Monitor(Mutex::safepoint-1, "CompileTask_lock");
   }
 
   void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
