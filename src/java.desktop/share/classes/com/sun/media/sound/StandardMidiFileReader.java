@@ -146,8 +146,9 @@ public final class StandardMidiFileReader extends MidiFileReader {
 
     @Override
     public MidiFileFormat getMidiFileFormat(URL url) throws InvalidMidiDataException, IOException {
-        try (InputStream urlStream = url.openStream()) { // throws IOException
-            BufferedInputStream bis = new BufferedInputStream(urlStream, bisBufferSize);
+        try (InputStream urlStream = url.openStream(); // throws IOException
+             BufferedInputStream bis = new BufferedInputStream(urlStream, bisBufferSize))
+        {
             MidiFileFormat fileFormat = getMidiFileFormat(bis); // throws InvalidMidiDataException
             return fileFormat;
         }
@@ -155,9 +156,9 @@ public final class StandardMidiFileReader extends MidiFileReader {
 
     @Override
     public MidiFileFormat getMidiFileFormat(File file) throws InvalidMidiDataException, IOException {
-        try (FileInputStream fis = new FileInputStream(file)) { // throws IOException
-            BufferedInputStream bis = new BufferedInputStream(fis, bisBufferSize);
-
+        try (FileInputStream fis = new FileInputStream(file); // throws IOException
+             BufferedInputStream bis = new BufferedInputStream(fis, bisBufferSize))
+        {
             // $$fb 2002-04-17: part of fix for 4635286: MidiSystem.getMidiFileFormat() returns format having invalid length
             long length = file.length();
             if (length > Integer.MAX_VALUE) {
@@ -196,8 +197,9 @@ public final class StandardMidiFileReader extends MidiFileReader {
 
     @Override
     public Sequence getSequence(URL url) throws InvalidMidiDataException, IOException {
-        try (InputStream is = url.openStream()) {  // throws IOException
-            BufferedInputStream bis = new BufferedInputStream(is, bisBufferSize);
+        try (InputStream is = url.openStream(); // throws IOException
+             BufferedInputStream bis = new BufferedInputStream(is, bisBufferSize))
+        {
             Sequence seq = getSequence(bis);
             return seq;
         }
@@ -205,8 +207,9 @@ public final class StandardMidiFileReader extends MidiFileReader {
 
     @Override
     public Sequence getSequence(File file) throws InvalidMidiDataException, IOException {
-        try (InputStream is = new FileInputStream(file)) { // throws IOException
-            BufferedInputStream bis = new BufferedInputStream(is, bisBufferSize);
+        try (InputStream is = new FileInputStream(file); // throws IOException
+             BufferedInputStream bis = new BufferedInputStream(is, bisBufferSize))
+        {
             Sequence seq = getSequence(bis);
             return seq;
         }

@@ -455,9 +455,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         if (defaultStyles == null) {
             defaultStyles = new StyleSheet();
             appContext.put(DEFAULT_STYLES_KEY, defaultStyles);
-            try (InputStream is = HTMLEditorKit.getResourceAsStream(DEFAULT_CSS)) {
-                Reader r = new BufferedReader(
-                        new InputStreamReader(is, ISO_8859_1));
+            try (InputStream is = HTMLEditorKit.getResourceAsStream(DEFAULT_CSS);
+                 Reader r = new BufferedReader(new InputStreamReader(is, ISO_8859_1)))
+            {
                 defaultStyles.loadRules(r, null);
             } catch (Throwable e) {
                 // on error we simply have no styles... the html
