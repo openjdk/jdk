@@ -4149,9 +4149,9 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister
       break;
     case Op_VectorMaskLastTrue:
       if (VM_Version::supports_lzcnt()) {
-        lzcntl(dst, tmp);
-        notl(dst);
-        addl(dst, 32);
+        lzcntl(tmp, tmp);
+        movl(dst, 31);
+        subl(dst, tmp);
       } else {
         movl(dst, -1);
         bsrl(tmp, tmp);
