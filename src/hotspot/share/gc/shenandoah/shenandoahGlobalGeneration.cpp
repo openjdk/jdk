@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 
 const char* ShenandoahGlobalGeneration::name() const {
@@ -64,6 +65,7 @@ void ShenandoahGlobalGeneration::set_concurrent_mark_in_progress(bool in_progres
     // any stale state in the old generation.
     heap->purge_old_satb_buffers(true /* abandon */);
     heap->old_generation()->cancel_marking();
+    heap->young_generation()->set_old_gen_task_queues(nullptr);
   }
 
   heap->set_concurrent_young_mark_in_progress(in_progress);
