@@ -746,8 +746,8 @@ public class JavacElements implements Elements {
                 }
                 yield msym.module_info.classfile;
             }
-            case TYP -> ((ClassSymbol) sym).outermostClass().classfile;
-            default -> sym.outermostClass().classfile;
+            case TYP -> ((ClassSymbol) sym).classfile;
+            default -> sym.enclClass().classfile;
         };
     }
 
