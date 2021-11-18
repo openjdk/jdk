@@ -275,11 +275,13 @@ public class PKCS9Attributes {
      */
     public PKCS9Attribute[] getAttributes() {
         PKCS9Attribute[] attribs = new PKCS9Attribute[attributes.size()];
-        ObjectIdentifier oid;
 
         int j = 0;
         for (int i=1; i < PKCS9Attribute.PKCS9_OIDS.length &&
                       j < attribs.length; i++) {
+            if (PKCS9Attribute.PKCS9_OIDS[i] == null) {
+                continue;
+            }
             attribs[j] = getAttribute(PKCS9Attribute.PKCS9_OIDS[i]);
 
             if (attribs[j] != null)
@@ -323,11 +325,13 @@ public class PKCS9Attributes {
         StringBuilder sb = new StringBuilder(200);
         sb.append("PKCS9 Attributes: [\n\t");
 
-        ObjectIdentifier oid;
         PKCS9Attribute value;
 
         boolean first = true;
         for (int i = 1; i < PKCS9Attribute.PKCS9_OIDS.length; i++) {
+            if (PKCS9Attribute.PKCS9_OIDS[i] == null) {
+                continue;
+            }
             value = getAttribute(PKCS9Attribute.PKCS9_OIDS[i]);
 
             if (value == null) continue;
@@ -338,7 +342,7 @@ public class PKCS9Attributes {
             else
                 sb.append(";\n\t");
 
-            sb.append(value.toString());
+            sb.append(value);
         }
 
         sb.append("\n\t] (end PKCS9 Attributes)");

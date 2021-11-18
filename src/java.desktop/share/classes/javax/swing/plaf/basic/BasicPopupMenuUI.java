@@ -28,26 +28,18 @@ package javax.swing.plaf.basic;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
-import javax.swing.border.*;
 
 import java.applet.Applet;
 
 import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.KeyboardFocusManager;
 import java.awt.Window;
 import java.awt.event.*;
 import java.awt.AWTEvent;
 import java.awt.Toolkit;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-
 import java.util.*;
 
-import sun.swing.DefaultLookup;
 import sun.swing.UIAction;
 
 import sun.awt.AppContext;
@@ -294,7 +286,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
      *
      * @since 1.4
      */
-    private class BasicPopupMenuListener implements PopupMenuListener {
+    private static class BasicPopupMenuListener implements PopupMenuListener {
         public void popupMenuCanceled(PopupMenuEvent e) {
         }
 
