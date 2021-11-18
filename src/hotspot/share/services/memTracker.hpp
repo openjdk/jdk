@@ -267,6 +267,8 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
+      ThreadCritical tc;
+      if (MemTracker::tracking_level() < NMT_summary) return;
       ThreadStackTracker::new_thread_stack((address)addr, size, CALLER_PC);
     }
   }
@@ -275,6 +277,8 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
+      ThreadCritical tc;
+      if (MemTracker::tracking_level() < NMT_summary) return;
       ThreadStackTracker::delete_thread_stack((address)addr, size);
     }
   }

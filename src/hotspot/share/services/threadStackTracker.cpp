@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,14 +63,12 @@ void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeC
   assert(MemTracker::tracking_level() >= NMT_summary, "Must be");
   assert(base != NULL, "Should have been filtered");
   if (track_as_vm()) {
-    ThreadCritical tc;
     VirtualMemoryTracker::add_reserved_region((address)base, size, stack, mtThreadStack);
     _thread_count ++;
   } else {
     // Use a slot in mallocMemorySummary for thread stack bookkeeping
     MallocMemorySummary::record_malloc(size, mtThreadStack);
     if (MemTracker::tracking_level() == NMT_detail) {
-      ThreadCritical tc;
       assert(_simple_thread_stacks != NULL, "Must be initialized");
       SimpleThreadStackSite site((address)base, size, stack);
       _simple_thread_stacks->add(site);
@@ -82,14 +80,12 @@ void ThreadStackTracker::delete_thread_stack(void* base, size_t size) {
   assert(MemTracker::tracking_level() >= NMT_summary, "Must be");
   assert(base != NULL, "Should have been filtered");
   if(track_as_vm()) {
-    ThreadCritical tc;
     VirtualMemoryTracker::remove_released_region((address)base, size);
     _thread_count--;
   } else {
     // Use a slot in mallocMemorySummary for thread stack bookkeeping
     MallocMemorySummary::record_free(size, mtThreadStack);
     if (MemTracker::tracking_level() == NMT_detail) {
-      ThreadCritical tc;
       assert(_simple_thread_stacks != NULL, "Must be initialized");
       SimpleThreadStackSite site((address)base, size, NativeCallStack::empty_stack()); // Fake object just to serve as compare target for delete
       bool removed = _simple_thread_stacks->remove(site);
@@ -103,6 +99,11 @@ bool ThreadStackTracker::walk_simple_thread_stack_site(MallocSiteWalker* walker)
     LinkedListImpl<MallocSite> _sites;
     {
       ThreadCritical tc;
+      if (_simple_thread_stacks != NULL) {
+        assert(MemTracker::tracking_level() < NMT_summary, "Must be");
+        return false;
+      }
+
       assert(_simple_thread_stacks != NULL, "Must be initialized");
       LinkedListIterator<SimpleThreadStackSite> itr(_simple_thread_stacks->head());
       const SimpleThreadStackSite* ts = itr.next();

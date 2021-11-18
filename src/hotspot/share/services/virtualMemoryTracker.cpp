@@ -668,8 +668,11 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
       }
       head = head->next();
     }
-   }
-  return true;
+    return true;
+  } else {
+    assert(MemTracker::tracking_level() < NMT_summary, "Must be");
+    return false;
+  }
 }
 
 // Transition virtual memory tracking level.
