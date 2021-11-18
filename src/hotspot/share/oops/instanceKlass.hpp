@@ -366,10 +366,6 @@ class InstanceKlass: public Klass {
     _misc_flags |= _misc_shared_loading_failed;
   }
 
-  void clear_shared_loading_failed() {
-    _misc_flags &= ~_misc_shared_loading_failed;
-  }
-
   void set_shared_class_loader_type(s2 loader_type);
 
   void assign_class_loader_type();
@@ -378,10 +374,9 @@ class InstanceKlass: public Klass {
     return (_misc_flags & _misc_has_nonstatic_fields) != 0;
   }
   void set_has_nonstatic_fields(bool b)    {
+    assert(!has_nonstatic_fields(), "set once");
     if (b) {
       _misc_flags |= _misc_has_nonstatic_fields;
-    } else {
-      _misc_flags &= ~_misc_has_nonstatic_fields;
     }
   }
 
@@ -563,10 +558,9 @@ public:
     return (_misc_flags & _misc_should_verify_class) != 0;
   }
   void set_should_verify_class(bool value) {
+    assert(!should_verify_class(), "set once");
     if (value) {
       _misc_flags |= _misc_should_verify_class;
-    } else {
-      _misc_flags &= ~_misc_should_verify_class;
     }
   }
 
@@ -695,10 +689,9 @@ public:
     return (_misc_flags & _misc_is_contended) != 0;
   }
   void set_is_contended(bool value)        {
+    assert(!is_contended(), "set once");
     if (value) {
       _misc_flags |= _misc_is_contended;
-    } else {
-      _misc_flags &= ~_misc_is_contended;
     }
   }
 
@@ -733,10 +726,9 @@ public:
     return ((_misc_flags & _misc_has_contended_annotations) != 0);
   }
   void set_has_contended_annotations(bool value)  {
+    assert(!has_contended_annotations(), "set once");
     if (value) {
       _misc_flags |= _misc_has_contended_annotations;
-    } else {
-      _misc_flags &= ~_misc_has_contended_annotations;
     }
   }
 
@@ -862,10 +854,9 @@ public:
     return (_misc_flags & _misc_has_nonstatic_concrete_methods) != 0;
   }
   void set_has_nonstatic_concrete_methods(bool b) {
+    assert(!has_nonstatic_concrete_methods(), "set once");
     if (b) {
       _misc_flags |= _misc_has_nonstatic_concrete_methods;
-    } else {
-      _misc_flags &= ~_misc_has_nonstatic_concrete_methods;
     }
   }
 
@@ -873,10 +864,9 @@ public:
     return (_misc_flags & _misc_declares_nonstatic_concrete_methods) != 0;
   }
   void set_declares_nonstatic_concrete_methods(bool b) {
+    assert(!declares_nonstatic_concrete_methods(), "set once");
     if (b) {
       _misc_flags |= _misc_declares_nonstatic_concrete_methods;
-    } else {
-      _misc_flags &= ~_misc_declares_nonstatic_concrete_methods;
     }
   }
 
