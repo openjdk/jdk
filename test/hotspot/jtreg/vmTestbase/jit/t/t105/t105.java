@@ -30,11 +30,12 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm -XX:-OmitStackTraceInFastThrow jit.t.t105.t105
- * @run main/othervm -XX:-OmitStackTraceInFastThrow -Xbatch -XX:Tier0BackedgeNotifyFreqLog=0 -XX:Tier2BackedgeNotifyFreqLog=0 -XX:Tier3BackedgeNotifyFreqLog=0 -XX:Tier2BackEdgeThreshold=1 -XX:Tier3BackEdgeThreshold=1 -XX:Tier4BackEdgeThreshold=1 jit.t.t105.t105
+ * @run main/othervm -XX:-OmitStackTraceInFastThrow -XX:-OptimizeImplicitExceptions jit.t.t105.t105
+ * @run main/othervm -XX:-OmitStackTraceInFastThrow -XX:-OptimizeImplicitExceptions -Xbatch -XX:Tier0BackedgeNotifyFreqLog=0 -XX:Tier2BackedgeNotifyFreqLog=0 -XX:Tier3BackedgeNotifyFreqLog=0 -XX:Tier2BackEdgeThreshold=1 -XX:Tier3BackEdgeThreshold=1 -XX:Tier4BackEdgeThreshold=1 jit.t.t105.t105
  *
- * This test must be run with OmitStackTraceInFastThrow disabled to avoid preallocated
- * exceptions. They don't have the detailed message that this test relies on.
+ * This test must be run with OmitStackTraceInFastThrow and OptimizeImplicitExceptions
+ * disabled to avoid preallocated exceptions. They don't have the detailed message
+ * that this test relies on.
  */
 
 package jit.t.t105;
