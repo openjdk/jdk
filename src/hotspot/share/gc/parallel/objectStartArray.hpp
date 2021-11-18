@@ -58,8 +58,8 @@ class ObjectStartArray : public CHeapObj<mtGC> {
 
   // Maximum size an offset table entry can cover. This maximum is derived from that
   // we need an extra bit for possible offsets in the byte for backskip values, leaving 2^7 possible offsets.
-  // Mininum object alignment is 8 bytes (2^3), so we can at most represent 2^10 offsets within a BOT value.
-  static const uint _max_block_size = 1024;
+  // Minimum object alignment is 8 bytes (2^3), so we can at most represent 2^10 offsets within a BOT value.
+  static const uint MaxBlockSize = 1024;
 
   // Initialize block size based on card size
   static void initialize_block_size(uint card_shift);

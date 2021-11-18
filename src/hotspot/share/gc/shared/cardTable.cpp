@@ -23,16 +23,18 @@
  */
 
 #include "precompiled.hpp"
+#if INCLUDE_PARALLELGC
+#include "gc/parallel/objectStartArray.hpp"
+#endif
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/space.inline.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
-#include "gc/parallel/objectStartArray.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
-#include "runtime/globals_extension.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 
@@ -44,7 +46,6 @@ void CardTable::initialize_card_size() {
   assert(UseG1GC || UseParallelGC || UseSerialGC,
          "Initialize card size should only be called by card based collectors.");
 
-  // Card size is the max. of minimum permissible value and GCCardSizeInBytes
   card_size = GCCardSizeInBytes;
   card_shift = log2i_exact(card_size);
   card_size_in_words = card_size / sizeof(HeapWord);
@@ -453,8 +454,7 @@ MemRegion CardTable::dirty_card_range_after_reset(MemRegion mr,
 }
 
 uintx CardTable::ct_max_alignment_constraint() {
-  // CardTable max alignment is computed with _card_size_max
-  return _card_size_max * os::vm_page_size();
+  return GCCardSizeInBytes * os::vm_page_size();
 }
 
 void CardTable::verify_guard() {
