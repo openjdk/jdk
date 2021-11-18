@@ -401,6 +401,7 @@ public class TagletWriterImpl extends TagletWriter {
                 Element e = null;
                 String t = null;
                 boolean linkEncountered = false;
+                boolean markupEncountered = false;
                 Set<String> classes = new HashSet<>();
                 for (Style s : styles) {
                     if (s instanceof Style.Name n) {
@@ -414,6 +415,7 @@ public class TagletWriterImpl extends TagletWriter {
                             // TODO: diagnostic output
                         }
                     } else if (s instanceof Style.Markup) {
+                        markupEncountered = true;
                     } else {
                         // TODO: transform this if...else into an exhaustive
                         // switch over the sealed Style hierarchy when "Pattern
@@ -437,9 +439,11 @@ public class TagletWriterImpl extends TagletWriter {
                     // underline decoration.
                     c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
                     // We don't care about trailing whitespace.
-                } else {
+                } else if (!markupEncountered) {
                     c = HtmlTree.SPAN(Text.of(utils.normalizeNewlines(sequence)));
                     classes.forEach(((HtmlTree) c)::addStyle);
+                } else {
+                    return;
                 }
                 code.add(c);
             }

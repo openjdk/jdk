@@ -67,7 +67,6 @@ public class TestLangProperties extends SnippetTester {
                                     tea=black
                                     """.formatted(markup),
                             """
-
                                     <span class="bold">coffee=espresso
                                     </span>tea=black
                                     """);
