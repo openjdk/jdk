@@ -323,8 +323,8 @@ public  class XPathFactoryImpl extends XPathFactory {
 
         // property name not recognized
         String fmsg = XSLMessages.createXPATHMessage(
-                XPATHErrorResources.ER_GETTING_UNKNOWN_PROPERTY,
-                new Object[] {name, CLASS_NAME} );
+                XPATHErrorResources.ER_PROPERTY_UNKNOWN,
+                new Object[] {name, CLASS_NAME, value} );
         throw new IllegalArgumentException(fmsg);
     }
 

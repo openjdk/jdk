@@ -387,7 +387,7 @@ public abstract class XPathFactory {
      * or the value can not be assigned
      * @throws UnsupportedOperationException if the implementation does not
      * support the method
-     * @throws NullPointerException if the {@code name} is {@code null}.
+     * @throws NullPointerException if the {@code name} is {@code null}
      *
      * @since 18
      */
@@ -412,7 +412,7 @@ public abstract class XPathFactory {
      * @throws IllegalArgumentException if the property name is not recognized
      * @throws UnsupportedOperationException if the implementation does not
      * support the method
-     * @throws NullPointerException if the {@code name} is {@code null}.
+     * @throws NullPointerException if the {@code name} is {@code null}
      *
      * @since 18
      */
