@@ -48,9 +48,9 @@ public class VMDeprecatedOptions {
         {"TLABStats",                 "false"},
         {"AllowRedefinitionToAddDeleteMethods", "true"},
         {"UseSharedSpaces",           "false"},
-        {"RequireSharedSpaces",       "true"},
-        {"DumpSharedSpaces",          "true"},
-        {"DynamicDumpSharedSpaces",   "true"},
+        {"RequireSharedSpaces",       "false"},
+        {"DumpSharedSpaces",          "false"},
+        {"DynamicDumpSharedSpaces",   "false"},
 
         // deprecated alias flags (see also aliased_jvm_flags):
         {"DefaultMaxRAMFraction", "4"},
