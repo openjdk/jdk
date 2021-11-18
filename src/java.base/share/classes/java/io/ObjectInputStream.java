@@ -301,7 +301,7 @@ public class ObjectInputStream
          * Property to control {@link GetField#get(String, Object)} conversion of
          * {@link ClassNotFoundException} to {@code null}. If set to {@code true}
          * {@link GetField#get(String, Object)} returns null otherwise
-         * throwing @link ClassNotFoundException}.
+         * throwing {@link ClassNotFoundException}.
          */
         private static final boolean GETFIELD_CNFE_RETURNS_NULL = GetBooleanAction
                 .privilegedGetProperty("jdk.serialGetFieldCnfeReturnsNull");
