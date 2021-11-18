@@ -310,7 +310,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                 crc.reset();
                 current = null;
             } catch (IOException e) {
-                if (usesDefaultDeflater)
+                if (usesDefaultDeflater && !(e instanceof ZipException))
                     def.end();
                 throw e;
             }
