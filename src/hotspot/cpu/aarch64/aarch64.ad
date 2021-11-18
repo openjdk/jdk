@@ -3945,7 +3945,7 @@ encode %{
     // Try to CAS m->owner from NULL to current thread.
     __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markWord::monitor_value));
     __ cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
-               /*release*/ true, /*weak*/ false, noreg); // Sets flags for result
+               /*release*/ true, /*weak*/ false, rscratch1); // Sets flags for result
 
     // Store a non-null value into the box to avoid looking like a re-entrant
     // lock. The fast-path monitor unlock code checks for
@@ -3953,6 +3953,15 @@ encode %{
     // relevant bit set, and also matches ObjectSynchronizer::enter.
     __ mov(tmp, (address)markWord::unused_mark().value());
     __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+
+    __ br(Assembler::EQ, cont); // CAS success means locking succeeded
+
+    __ cmp(rscratch1, rthread);
+    __ br(Assembler::NE, cont); // Check for recursive locking
+
+    // Recursive lock case
+    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1);
+    // flag == EQ still from the cmp above, checking if this is a reentrant lock
 
     __ bind(cont);
     // flag == EQ indicates success
@@ -3997,11 +4006,20 @@ encode %{
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
     __ ldr(rscratch1, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
-    __ eor(rscratch1, rscratch1, rthread); // Will be 0 if we are the owner.
-    __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if there are 0 recursions
-    __ cmp(rscratch1, zr); // Sets flags for result
+
+    Label notRecursive;
+    __ cmp(rscratch1, rthread);
     __ br(Assembler::NE, cont);
 
+    __ cbz(disp_hdr, notRecursive);
+
+    // Recursive lock
+    __ sub(disp_hdr, disp_hdr, 1u);
+    __ str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
+    // flag == EQ was set in the ownership check above
+    __ b(cont);
+
+    __ bind(notRecursive);
     __ ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset_in_bytes()));
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset_in_bytes()));
     __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if both are 0.
