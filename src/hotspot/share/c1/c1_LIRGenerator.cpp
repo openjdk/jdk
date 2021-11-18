@@ -1019,12 +1019,12 @@ LIR_Opr LIRGenerator::new_register(BasicType type) {
   int vreg_num = _virtual_register_number;
   // Add a little fudge factor for the bailout since the bailout is only checked periodically. This allows us to hand out
   // a few extra registers before we really run out which helps to avoid to trip over assertions.
-  if (vreg_num + 20 >= LIR_OprDesc::vreg_max) {
+  if (vreg_num + 20 >= LIR_Opr::vreg_max) {
     bailout("out of virtual registers in LIR generator");
-    if (vreg_num + 2 >= LIR_OprDesc::vreg_max) {
+    if (vreg_num + 2 >= LIR_Opr::vreg_max) {
       // Wrap it around and continue until bailout really happens to avoid hitting assertions.
-      _virtual_register_number = LIR_OprDesc::vreg_base;
-      vreg_num = LIR_OprDesc::vreg_base;
+      _virtual_register_number = LIR_Opr::vreg_base;
+      vreg_num = LIR_Opr::vreg_base;
     }
   }
   _virtual_register_number += 1;
