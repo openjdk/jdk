@@ -2685,12 +2685,55 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   return true;
 }
 
+bool can_combine_with_imm(Node* binary_node, Node* replicate_node) {
+  if (UseSVE == 0 || !VectorNode::is_invariant_vector(replicate_node)){
+    return false;
+  }
+  Node* imm_node = replicate_node->in(1);
+  if (!imm_node->is_Con()) {
+    return false;
+  }
+
+  const Type* t = imm_node->bottom_type();
+  if (!(t->isa_int() || t->isa_long())) {
+    return false;
+  }
+
+  switch (binary_node->Opcode()) {
+  case Op_AndV:
+  case Op_OrV:
+  case Op_XorV: {
+    Assembler::SIMD_RegVariant T = Assembler::elemType_to_regVariant(Matcher::vector_element_basic_type(binary_node));
+    uint64_t value = t->isa_long() ? (uint64_t)imm_node->get_long() : (uint64_t)imm_node->get_int();
+    return Assembler::operand_valid_for_sve_logical_immediate(Assembler::regVariant_to_elemBits(T), value);
+  }
+  case Op_AddVB:
+    return (imm_node->get_int() <= 255 && imm_node->get_int() >= -255);
+  case Op_AddVS:
+  case Op_AddVI:
+    return Assembler::operand_valid_for_sve_add_sub_immediate((int64_t)imm_node->get_int());
+  case Op_AddVL:
+    return Assembler::operand_valid_for_sve_add_sub_immediate(imm_node->get_long());
+  default:
+    return false;
+  }
+}
+
+bool is_vector_arith_imm_pattern(Node* n, Node* m) {
+  if (n != NULL && m != NULL) {
+    return can_combine_with_imm(n, m);
+  }
+  return false;
+}
+
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   // ShiftV src (ShiftCntV con)
   // StoreVector (VectorStoreMask src)
+  // Binary src (Replicate con)
   if (is_vshift_con_pattern(n, m) ||
-      (UseSVE > 0 && m->Opcode() == Op_VectorStoreMask && n->Opcode() == Op_StoreVector)) {
+      (UseSVE > 0 && m->Opcode() == Op_VectorStoreMask && n->Opcode() == Op_StoreVector) ||
+      is_vector_arith_imm_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }
@@ -4611,6 +4654,17 @@ operand immL8_shift8()
   interface(CONST_INTER);
 %}
 
+// 8 bit integer valid for vector add sub immediate
+operand immBAddSubV()
+%{
+  predicate(n->get_int() <= 255 && n->get_int() >= -255);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // 32 bit integer valid for add sub immediate
 operand immIAddSub()
 %{
@@ -4621,8 +4675,39 @@ operand immIAddSub()
   interface(CONST_INTER);
 %}
 
+// 32 bit integer valid for vector add sub immediate
+operand immIAddSubV()
+%{
+  predicate(Assembler::operand_valid_for_sve_add_sub_immediate((int64_t)n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // 32 bit unsigned integer valid for logical immediate
-// TODO -- check this is right when e.g the mask is 0x80000000
+
+operand immBLog()
+%{
+  predicate(Assembler::operand_valid_for_sve_logical_immediate(BitsPerByte, (uint64_t)n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immSLog()
+%{
+  predicate(Assembler::operand_valid_for_sve_logical_immediate(BitsPerShort, (uint64_t)n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immILog()
 %{
   predicate(Assembler::operand_valid_for_logical_immediate(/*is32*/true, (uint64_t)n->get_int()));
@@ -4695,6 +4780,17 @@ operand immLAddSub()
 %{
   predicate(Assembler::operand_valid_for_add_sub_immediate(n->get_long()));
   match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 64 bit integer valid for addv subv immediate
+operand immLAddSubV()
+%{
+  predicate(Assembler::operand_valid_for_sve_add_sub_immediate(n->get_long()));
+  match(ConL);
+
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
