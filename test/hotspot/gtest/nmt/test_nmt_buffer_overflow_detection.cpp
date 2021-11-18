@@ -66,8 +66,8 @@ DEFINE_TEST(test_overwrite_back, "footer canary broken")
 
 ///////
 
-// this should generate two hex dumps, one with the front header, one with the overwritten
-// portion.
+// A overwriter farther away from the NMT header; the report should show the hex dump split up
+// in two parts, containing both header and corruption site.
 static void test_overwrite_back_long() {
   address p = (address) os::malloc(0x2000, mtTest);
   *(p + 0x2000) = 'a';

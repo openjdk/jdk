@@ -128,23 +128,30 @@ void MallocHeader::release() {
 }
 
 void MallocHeader::print_block_on_error(outputStream* st, address bad_address) const {
+  assert(bad_address >= (address)this, "sanity");
+
+  // This function prints block information, including hex dump, in case of a detected
+  // corruption. The hex dump should show the both block header and the corruption site
+  // (which may or may not be close together or identical). Plus some surrounding area.
+  //
+  // Note that we use os::print_hex_dump(), which is able to cope with unmapped
+  // memory (it uses SafeFetch).
+
   st->print_cr("NMT Block at " PTR_FORMAT ", corruption at: " PTR_FORMAT ": ",
                p2i(this), p2i(bad_address));
-  address from = align_down((address)this, sizeof(void*)) - 8;
-  address to = from + 64;
-  // Note: print_hex_dump uses SafeFetch, so it should be able to handle unmapped memory.
-  os::print_hex_dump(st, from, to, 1);
-  assert(bad_address >= from, "sanity");
-  // if the corruption is in the block body of in the footer, print out that part too
-  // unless it has been part of the first hexdump
-  address from2 = align_down(bad_address, sizeof(void*)) - 8;
-  from2 = MAX2(to, from2);
-  address to2 = from2 + 96;
-  if (to2 > to) {
-    if (from2 > to) {
-      st->print_cr("...");
-    }
+  static const size_t min_dump_length = 256;
+  address from1 = align_down((address)this, sizeof(void*)) - (min_dump_length / 2);
+  address to1 = from1 + min_dump_length;
+  address from2 = align_down(bad_address, sizeof(void*)) - (min_dump_length / 2);
+  address to2 = from2 + min_dump_length;
+  if (from2 > to1) {
+    // Dump gets too large, split up in two sections.
+    os::print_hex_dump(st, from1, to1, 1);
+    st->print_cr("...");
     os::print_hex_dump(st, from2, to2, 1);
+  } else {
+    // print one hex dump
+    os::print_hex_dump(st, from1, to2, 1);
   }
 }
 
@@ -164,13 +171,20 @@ void MallocHeader::check_block_integrity() const {
   }
 
   // From here on we assume the block pointer to be valid. We could
-  //  use SafeFetch but since this is a hot path we don't. If we are
-  //  wrong, we will crash when accessing the canary, which hopefully
-  //  generates distinct crash report.
+  // use SafeFetch but since this is a hot path we don't. If we are
+  // wrong, we will crash when accessing the canary, which hopefully
+  // generates distinct crash report.
 
-  // Also weed out unaligned addresses. Note that the alignment requirements
-  // we check here are the bare minimum of what we know will malloc() give us
-  // (which is 64-bit even on 32-bit platforms).
+  // Weed out obviously unaligned addresses. NMT blocks, being the result of
+  // malloc calls, should adhere to malloc() alignment. Malloc alignment is
+  // specified by the standard by this requirement:
+  // "malloc returns a pointer which is suitably aligned for any built-in type"
+  // For us it means that it is *at least* 64-bit on all of our 32-bit and
+  // 64-bit platforms since we have native 64-bit types. It very probably is
+  // larger than that, since there exist scalar types larger than 64bit. Here,
+  // we test the smallest alignment we know.
+  // Should we ever start using std::max_align_t, this would be one place to
+  // fix up.
   if (!is_aligned(this, sizeof(uint64_t))) {
     print_block_on_error(tty, (address)this);
     fatal("Block at " PTR_FORMAT ": block address is unaligned", p2i(this));
