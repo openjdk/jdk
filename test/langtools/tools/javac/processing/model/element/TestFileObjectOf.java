@@ -506,7 +506,7 @@ public class TestFileObjectOf extends TestRunner {
             .files(".")
             .run();
 
-        String testClassSource = "jar:file://" + module.toAbsolutePath().toString() + "!/test/TestClass.class";
+        String testClassSource = "jar:" + module.toUri().toString() + "!/test/TestClass.class";
 
         List<String> log;
 
