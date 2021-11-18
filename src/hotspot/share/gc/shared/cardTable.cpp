@@ -23,9 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#if INCLUDE_PARALLELGC
-#include "gc/parallel/objectStartArray.hpp"
-#endif
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
@@ -37,6 +34,9 @@
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#if INCLUDE_PARALLELGC
+#include "gc/parallel/objectStartArray.hpp"
+#endif
 
 uint CardTable::card_shift = 0;
 uint CardTable::card_size = 0;
