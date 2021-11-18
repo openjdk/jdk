@@ -2752,6 +2752,12 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
 void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   Register obj = op->obj()->as_pointer_register();
   Register result = op->result_opr()->as_pointer_register();
+
+  CodeEmitInfo* info = op->info();
+  if (info != NULL) {
+    add_debug_info_for_null_check_here(info);
+  }
+
   if (UseCompressedClassPointers) {
     __ z_llgf(result, Address(obj, oopDesc::klass_offset_in_bytes()));
     __ decode_klass_not_null(result);
