@@ -1865,16 +1865,23 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
                 log->identify(target),
                 Bytecodes::name(code));
 
-  // invoke-special-super
+  // Additional receiver subtype checks for interface calls via invokespecial or invokeinterface.
+  ciKlass* receiver_constraint = nullptr;
   if (bc_raw == Bytecodes::_invokespecial && !target->is_object_initializer()) {
-    ciInstanceKlass* sender_klass = calling_klass;
-    if (sender_klass->is_interface()) {
-      int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
-      Value receiver = state()->stack_at(index);
-      CheckCast* c = new CheckCast(sender_klass, receiver, copy_state_before());
-      c->set_invokespecial_receiver_check();
-      state()->stack_at_put(index, append_split(c));
+    if (calling_klass->is_interface()) {
+      receiver_constraint = calling_klass;
     }
+  } else if (bc_raw == Bytecodes::_invokeinterface && target->is_loaded() && target->is_private()) {
+    assert(holder->is_interface(), "How did we get a non-interface method here!");
+    receiver_constraint = holder;
+  }
+
+  if (receiver_constraint != nullptr) {
+    int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
+    Value receiver = state()->stack_at(index);
+    CheckCast* c = new CheckCast(receiver_constraint, receiver, copy_state_before());
+    c->set_invokespecial_receiver_check();
+    state()->stack_at_put(index, append_split(c));
   }
 
   // Some methods are obviously bindable without any type checks so
