@@ -56,6 +56,8 @@
  * @build nsk.jdi.ObjectReference.referringObjects.referringObjects002.referringObjects002
  *        nsk.jdi.ObjectReference.referringObjects.referringObjects002.referringObjects002a
  *        nsk.share.jdi.TestClass1
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/native
  *      nsk.jdi.ObjectReference.referringObjects.referringObjects002.referringObjects002
  *      -verbose
@@ -63,7 +65,8 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      -debugee.vmkeys="-Xmx256M ${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="-Xmx256M -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                       -XX:+WhiteBoxAPI  ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
  */
 
@@ -123,8 +126,7 @@ public class referringObjects002 extends HeapwalkingDebugger {
         // +1 referrer is classloader
         // +1 referrer is debugee class unloader
         // +1 self-reference from this_class index
-        // +1 referrer is MethodType from MethodHandle created by reflective call
-        int expectedReferrersCount = createInstances + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size() + 4;
+        int expectedReferrersCount = createInstances + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size() + 3;
 
         ClassObjectReference classObjectReference = debuggee.classByName(className).classObject();
 
@@ -139,11 +141,9 @@ public class referringObjects002 extends HeapwalkingDebugger {
         // 1 referrer is classloader
         // 1 referrer is debugee class unloader
         // 1 self-reference from this_class index
-        // 1 referrer is MethodType from MethodHandle created by reflective call
-        expectedReferrersCount = 4;
+        expectedReferrersCount = 3;
 
         checkClassObjectReferrersCount(classObjectReference, expectedReferrersCount);
-
         // disable collection and try unload class object
         classObjectReference.disableCollection();
 
