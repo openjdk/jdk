@@ -135,7 +135,9 @@ static uint64_t halfsiphash_finish64(uint32_t v[4], int rounds) {
 }
 
 // HalfSipHash-2-4 (32-bit output) for Symbols
-uint32_t AltHashing::halfsiphash_32(uint64_t seed, const uint8_t* data, int len) {
+uint32_t AltHashing::halfsiphash_32(uint64_t seed, const void* in, int len) {
+
+  const unsigned char* data = (const unsigned char*)in;
   uint32_t v[4];
   uint32_t newdata;
   int off = 0;
