@@ -71,11 +71,12 @@ final class SimpleFileServerImpl {
      *
      * @param  writer the writer to which output should be written
      * @param  args the command line options
+     * @param launcher the launcher the server is started from
      * @throws NullPointerException if any of the arguments are {@code null},
      *         or if there are any {@code null} values in the {@code args} array
      * @return startup status code
      */
-    static int start(PrintWriter writer, String[] args) {
+    static int start(PrintWriter writer, String launcher, String[] args) {
         Objects.requireNonNull(args);
         for (var arg : args) {
             Objects.requireNonNull(arg);
@@ -96,7 +97,7 @@ final class SimpleFileServerImpl {
                 option = options.next();
                 switch (option) {
                     case "-h", "-?", "--help" -> {
-                        out.showHelp();
+                        out.showHelp(launcher);
                         return Startup.OK.statusCode;
                     }
                     case "-b", "--bind-address" -> {
@@ -173,8 +174,8 @@ final class SimpleFileServerImpl {
             writer.println(ResourceBundleHelper.getMessage("usage"));
         }
 
-        void showHelp() {
-            writer.println(ResourceBundleHelper.getMessage("usage"));
+        void showHelp(String launcher) {
+            writer.println(ResourceBundleHelper.getMessage("usage." + launcher));
             writer.println(ResourceBundleHelper.getMessage("options", LOOPBACK_ADDR.getHostAddress()));
         }
 
