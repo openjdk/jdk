@@ -845,7 +845,7 @@ public class TimestampCheck {
         gencert("weakkeysize");
         gencert("disabledkeysize");
         gencert("badku", "-ext ku:critical=keyAgreement");
-        gencert("ts", "-ext eku:critical=ts -validity 500");
+        gencert("ts", "-ext eku:critical=ts -ext ku=nonrep -validity 500");
 
         gencert("expired", "-validity 10 -startdate -12d");
         gencert("expiring", "-validity 178");

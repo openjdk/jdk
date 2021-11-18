@@ -603,7 +603,61 @@ BINARY_OP_PREDICATE(vaddI, AddVI, S, sve_add)
 BINARY_OP_PREDICATE(vaddL, AddVL, D, sve_add)
 BINARY_OP_PREDICATE(vaddF, AddVF, S, sve_fadd)
 BINARY_OP_PREDICATE(vaddD, AddVD, D, sve_fadd)
+dnl
+dnl ADD_IMM($1,          $2,   $3      )
+dnl ADD_IMM(name_suffix, size, imm_type)
+define(`ADD_IMM', `
+instruct vaddImm$1(vReg dst_src, $3 con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (AddV$1 dst_src (Replicate$1 con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_add $dst_src, $dst_src, $con\t # vector (sve) ($2)" %}
+  ins_encode %{
+    int32_t val = $con$$constant;
+    if (val > 0){
+      __ sve_add(as_FloatRegister($dst_src$$reg), __ $2, val);
+    } else if (val < 0){
+      __ sve_sub(as_FloatRegister($dst_src$$reg), __ $2, -val);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
 
+// vector add reg imm (unpredicated)
+ADD_IMM(B, B, immBAddSubV)
+ADD_IMM(S, H, immIAddSubV)
+ADD_IMM(I, S, immIAddSubV)
+ADD_IMM(L, D, immLAddSubV)
+dnl
+dnl BITWISE_OP_IMM($1,        $2        $3,   $4    $5      )
+dnl BITWISE_OP_IMM(insn_name, op_name1, size, type, op_name2)
+define(`BITWISE_OP_IMM', `
+instruct $1(vReg dst_src, imm$4Log con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src ($2 dst_src (Replicate$4 con)));
+  ins_cost(SVE_COST);
+  format %{ "$5 $dst_src, $dst_src, $con\t # vector (sve) ($3)" %}
+  ins_encode %{
+    __ $5(as_FloatRegister($dst_src$$reg), __ $3,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+
+// vector binary op reg imm (unpredicated)
+BITWISE_OP_IMM(vandB, AndV, B, B, sve_and)
+BITWISE_OP_IMM(vandH, AndV, H, S, sve_and)
+BITWISE_OP_IMM(vandS, AndV, S, I, sve_and)
+BITWISE_OP_IMM(vandD, AndV, D, L, sve_and)
+BITWISE_OP_IMM(vorB,  OrV,  B, B, sve_orr)
+BITWISE_OP_IMM(vorH,  OrV,  H, S, sve_orr)
+BITWISE_OP_IMM(vorS,  OrV,  S, I, sve_orr)
+BITWISE_OP_IMM(vorD,  OrV,  D, L, sve_orr)
+BITWISE_OP_IMM(vxorB, XorV, B, B, sve_eor)
+BITWISE_OP_IMM(vxorH, XorV, H, S, sve_eor)
+BITWISE_OP_IMM(vxorS, XorV, S, I, sve_eor)
+BITWISE_OP_IMM(vxorD, XorV, D, L, sve_eor)
+dnl
 dnl
 dnl BINARY_OP_UNSIZED($1,        $2,      $3  )
 dnl BINARY_OP_UNSIZED(insn_name, op_name, insn)

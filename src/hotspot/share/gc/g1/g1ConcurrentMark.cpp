@@ -1618,10 +1618,6 @@ void G1ConcurrentMark::weak_refs_work() {
     uint active_workers = (ParallelRefProcEnabled ? _g1h->workers()->active_workers() : 1U);
     active_workers = clamp(active_workers, 1u, _max_num_tasks);
 
-    // Set the concurrency level. The phase was already set prior to
-    // executing the remark task.
-    set_concurrency(active_workers);
-
     // Set the degree of MT processing here.  If the discovery was done MT,
     // the number of threads involved during discovery could differ from
     // the number of active workers.  This is OK as long as the discovered
