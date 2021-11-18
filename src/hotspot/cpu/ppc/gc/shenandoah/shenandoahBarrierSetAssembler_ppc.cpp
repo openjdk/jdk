@@ -529,11 +529,6 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_impl(
   }
 
   __ bind(skip_barrier);
-
-#ifdef ASSERT
-  if (!preserve_gp_registers) { __ clobber_volatile_gprs(dst); }
-  if (!needs_frame) { __ clobber_carg_stack_slots(tmp1); }
-#endif
 }
 
 // base:           Base register of the reference's address.
