@@ -479,6 +479,8 @@ bool CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic) {
         ShouldNotReachHere();
       }
     } else {
+      // This inline cache is a megamorphic vtable call. Those ICs never hold
+      // any Metadata and should therefore never be cleaned by this function.
       return true;
     }
   }
