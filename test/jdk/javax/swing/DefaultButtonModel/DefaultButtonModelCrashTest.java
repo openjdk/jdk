@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8182577
  * @summary  Verifies if moving focus via custom ButtonModel causes crash
@@ -31,13 +31,11 @@
 
 import java.awt.BorderLayout;
 import java.awt.Container;
-import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import javax.swing.ButtonModel;
 import javax.swing.DefaultButtonModel;
 import javax.swing.JCheckBox;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -45,8 +43,6 @@ import javax.swing.SwingUtilities;
 
 public class DefaultButtonModelCrashTest {
     private JFrame frame = null;
-    private JPanel panel;
-    private volatile Point p = null;
 
     public static void main(String[] args) throws Exception {
         new DefaultButtonModelCrashTest();
@@ -64,12 +60,15 @@ public class DefaultButtonModelCrashTest {
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
         } finally {
-            if (frame != null) { SwingUtilities.invokeAndWait(()->frame.dispose()); }
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
     private void go() {
-
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         Container contentPane = frame.getContentPane();
@@ -77,7 +76,7 @@ public class DefaultButtonModelCrashTest {
 
         JCheckBox check = new JCheckBox("a bit broken");
         check.setModel(model);
-        panel = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout());
         panel.add(new JTextField("Press Tab (twice?)"), BorderLayout.NORTH);
         panel.add(check);
         contentPane.add(panel);
