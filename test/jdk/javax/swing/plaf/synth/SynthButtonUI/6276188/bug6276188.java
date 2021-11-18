@@ -80,7 +80,7 @@ public class bug6276188 {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
 
-            Color color = robot.getPixelColor(p.x - OFFSET_X, p.y - OFFSET_y);
+            Color color = robot.getPixelColor(p.x - OFFSET_X, p.y - OFFSET_Y);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
             boolean red = color.getRed() > 0 && color.getGreen() == 0 && color.getBlue() == 0;
