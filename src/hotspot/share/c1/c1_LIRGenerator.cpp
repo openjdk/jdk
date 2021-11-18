@@ -1865,7 +1865,7 @@ void LIRGenerator::do_PreconditionsCheckIndex(Intrinsic* x, BasicType type) {
   CodeEmitInfo* info = state_for(x, state);
 
   LIR_Opr len = length.result();
-  LIR_Opr zero = NULL;
+  LIR_Opr zero;
   if (type == T_INT) {
     zero = LIR_OprFact::intConst(0);
     if (length.result()->is_constant()){
@@ -3271,7 +3271,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   assert(level > CompLevel_simple, "Shouldn't be here");
 
   int offset = -1;
-  LIR_Opr counter_holder = NULL;
+  LIR_Opr counter_holder;
   if (level == CompLevel_limited_profile) {
     MethodCounters* counters_adr = method->ensure_method_counters();
     if (counters_adr == NULL) {
