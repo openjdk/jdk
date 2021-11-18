@@ -69,8 +69,8 @@ public:
                             G1EvacFailureParScanTasksQueueSet* queues,
                             TaskTerminator* terminator,
                             uint worker_id,
-                            HeapRegionClaimer* claimer_1,
-                            HeapRegionClaimer* claimer_2);
+                            HeapRegionClaimer* pre_claimer,
+                            HeapRegionClaimer* post_claimer);
 
   void do_void();
 };

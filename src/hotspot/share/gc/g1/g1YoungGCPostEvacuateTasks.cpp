@@ -30,13 +30,20 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
+#include "gc/g1/g1EvacFailureParScanState.hpp"
+#include "gc/g1/g1EvacFailureParScanTask.hpp"
+#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
+#include "gc/g1/heapRegionManager.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "utilities/stack.inline.hpp"
 #include "utilities/ticks.hpp"
 
 class G1PostEvacuateCollectionSetCleanupTask1::MergePssTask : public G1AbstractSubTask {
@@ -99,13 +106,36 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : public G1AbstractSubTask {
   G1EvacFailureRegions* _evac_failure_regions;
-  G1ParRemoveSelfForwardPtrsTask _task;
+
+  HeapRegionClaimer _pre_hrclaimer;
+  HeapRegionClaimer _post_hrclaimer;
+
+  const uint _length;
+
+  G1EvacFailureParScanTasksQueueSet* _task_queues;
+  TaskTerminator _terminator;
 
 public:
   RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr),
     _evac_failure_regions(evac_failure_regions),
-    _task(_evac_failure_regions) {
+    _pre_hrclaimer(G1CollectedHeap::heap()->workers()->active_workers()),
+    _post_hrclaimer(G1CollectedHeap::heap()->workers()->active_workers()),
+    _length(MIN2(_evac_failure_regions->num_regions_failed_evacuation(), G1CollectedHeap::heap()->workers()->active_workers())),
+    _task_queues(new G1EvacFailureParScanTasksQueueSet(_length)),
+    _terminator(_length, _task_queues) {
+    for (uint i = 0; i < _task_queues->size(); i++) {
+      G1EvacFailureParScanTasksQueue* q = new G1EvacFailureParScanTasksQueue();
+      _task_queues->register_queue(i, q);
+    }
+  }
+
+  ~RemoveSelfForwardPtrsTask() {
+    if (_task_queues == nullptr) return;
+    for (uint i = 0; i < _task_queues->size(); i++) {
+      delete _task_queues->queue(i);
+    }
+    delete _task_queues;
   }
 
   double worker_cost() const override {
@@ -114,7 +144,11 @@ public:
   }
 
   void do_work(uint worker_id) override {
-    _task.work(worker_id);
+    if (worker_id >= _length) {
+      return;
+    }
+    G1EvacFailureParScanState scan_state(_evac_failure_regions, _task_queues, &_terminator, worker_id, &_pre_hrclaimer, &_post_hrclaimer);
+    scan_state.do_void();
   }
 };
 

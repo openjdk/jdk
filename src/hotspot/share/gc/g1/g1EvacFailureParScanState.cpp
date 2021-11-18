@@ -85,14 +85,6 @@ public:
   }
 };
 
-class G1PostRemoveSelfForwardClosure: public HeapRegionClosure {
-
-  bool do_heap_region(HeapRegion *hr) {
-    hr->reset_evac_failure_objs();
-    return false;
-  }
-};
-
 class G1RemoveSelfForwardClosure: public ObjectClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
@@ -207,6 +199,14 @@ public:
   }
 };
 
+class G1PostRemoveSelfForwardClosure: public HeapRegionClosure {
+
+  bool do_heap_region(HeapRegion *hr) {
+    hr->reset_evac_failure_objs();
+    return false;
+  }
+};
+
 void G1EvacFailureParScanState::dispatch_task(G1EvacFailureParScanTask& task, G1RemoveSelfForwardClosure& closure) {
   DEBUG_ONLY(task.verify();)
   HeapRegion* region = G1CollectedHeap::heap()->region_at(task._region->hrm_index());
@@ -275,15 +275,15 @@ G1EvacFailureParScanState::G1EvacFailureParScanState(G1EvacFailureRegions* evac_
                                                      G1EvacFailureParScanTasksQueueSet* queues,
                                                      TaskTerminator* terminator,
                                                      uint worker_id,
-                                                     HeapRegionClaimer* claimer_1,
-                                                     HeapRegionClaimer* claimer_2) :
+                                                     HeapRegionClaimer* pre_claimer,
+                                                     HeapRegionClaimer* post_claimer) :
   _evac_failure_regions(evac_failure_regions),
   _task_queues(queues),
   _worker_id(worker_id),
   _task_queue(queues->queue(_worker_id)),
   _terminator(terminator),
-  _prev_claimer(claimer_1),
-  _post_claimer(claimer_2) { }
+  _prev_claimer(pre_claimer),
+  _post_claimer(post_claimer) { }
 
 void G1EvacFailureParScanState::do_void() {
   prev_scan();
