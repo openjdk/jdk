@@ -335,7 +335,7 @@ class InstanceKlass: public Klass {
  public:
 
   // Queries finalization state
-  static bool finalization_enabled() { return _finalization_enabled; }
+  static bool is_finalization_enabled() { return _finalization_enabled; }
 
   // Sets finalization state
   static void set_finalization_enabled(bool val) { _finalization_enabled = val; }

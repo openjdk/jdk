@@ -691,7 +691,7 @@ JVM_ENTRY(void, JVM_ReportFinalizationComplete(JNIEnv * env, jobject finalizee))
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsFinalizationEnabled(JNIEnv * env))
-return InstanceKlass::finalization_enabled() ? JNI_TRUE : JNI_FALSE;
+  return InstanceKlass::is_finalization_enabled();
 JVM_END
 
 // java.io.File ///////////////////////////////////////////////////////////////
