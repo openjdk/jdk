@@ -106,6 +106,7 @@ runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/jni/checked/TestPrimitiveArrayCriticalWithBadParam.java 8277350 macosx-x64
+runtime/CommandLine/VMDeprecatedOptions.java 8277404 windows-x64
 
 applications/jcstress/copy.java 8229852 linux-all
 
