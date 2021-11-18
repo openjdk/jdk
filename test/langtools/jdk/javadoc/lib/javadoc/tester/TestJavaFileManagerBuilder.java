@@ -24,11 +24,13 @@
 package javadoc.tester;
 
 import javax.tools.FileObject;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -40,41 +42,77 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 /**
- * A builder to create "test file managers" that can return "test file objects"
- * that can call user-provided functions in place of the normal methods for the file object.
+ * A builder to create "test file managers" that can return "test file objects".
+ * All such objects can throw user-provided exceptions when specified methods
+ * are called. This is done by registering "handlers" to be associated with individual
+ * methods.
  *
  * The file objects that are returned as "test file objects" are filtered by a predicate
- * on the file object. For these file objects, functions can be specified that are called
- * in place of individual methods on the file object.
- *
- * A common use case is to throw an exception when a specific method is called on a
- * given file object, that might otherwise be difficult to cause to occur.
+ * on the file object.
  *
  * Note that "test file objects" passed as arguments to methods on the "test file manager"
  * that created them are unwrapped, and replaced by the original file object.
  * This ensures that the underlying file manager sees the underlying file objects,
  * for cases when the identity of the file objects is important.
  * However, it does mean that methods on file objects called internally by a
- * file manager will not use the replacement functions.
+ * file manager will not throw any user-provided exceptions.
  *
- * For now, the functions are simply grouped by predicate and then by method,
- * and the group of methods used for a "test file object" is determined by the
+ * For now, the handlers for a file object are simply grouped by predicate and then by
+ * method, and the group of methods used for a "test file object" is determined by the
  * first predicate that matches.
- * An alternative, more expensive, implementation would be to group the functions
+ * An alternative, more expensive, implementation would be to group the handlers
  * by method and predicate and then dynamically build the set of methods to be used for
  * a file object by filtering the methods by their applicable predicate.
  */
 public class TestJavaFileManagerBuilder {
     private final StandardJavaFileManager fm;
-    private final Map<Predicate<JavaFileObject>, Map<Method, BiFunction<Object, Object[], Object>>> handlers;
+    private Map<Method, BiFunction<JavaFileManager, Object[], Throwable>> fileManagerHandlers;
+    private final Map<Predicate<JavaFileObject>, Map<Method, BiFunction<JavaFileObject, Object[], Throwable>>> fileObjectHandlers;
 
     public TestJavaFileManagerBuilder(StandardJavaFileManager fm) {
         this.fm = fm;
-        handlers = new LinkedHashMap<>();
+        fileManagerHandlers = new LinkedHashMap<>();
+        fileObjectHandlers = new LinkedHashMap<>();
     }
 
     /**
-     * Provides a function to handle a given method on file objects that match a given predicate.
+     * Provides a function to be called when a given file manager method is called.
+     * The function should either return an exception to be thrown, or {@code null}
+     * to indicate that no exception should be thrown.
+     *
+     * It is an error for the function to return a checked exception that is not
+     * declared by the method. This error will result in {@link UndeclaredThrowableException}
+     * being thrown when the method is called.
+     *
+     * @param method  the method for which to invoke the handler
+     * @param handler the handler
+     *
+     * @return this object
+     * @throws IllegalArgumentException if the method is not declared in {@code JavaFileManager}
+     * @throws IllegalStateException if a handler is already registered for this method
+     */
+    public TestJavaFileManagerBuilder handle(Method method,
+                                             BiFunction<JavaFileManager, Object[], Throwable> handler) {
+        if (!JavaFileManager.class.isAssignableFrom(method.getDeclaringClass())) {
+            throw new IllegalArgumentException(("not a method on JavaFileManager: " + method));
+        }
+
+        var prev = fileManagerHandlers.put(method, handler);
+        if (prev != null) {
+            throw new IllegalStateException("handler already registered for method " + method);
+        }
+        return this;
+    }
+
+    /**
+     * Provides a function to be called when a given file object method is called,
+     * for file objects that match a given predicate.
+     * The function should either return an exception to be thrown, or {@code null}
+     * to indicate that no exception should be thrown.
+     *
+     * It is an error for the function to return a checked exception that is not
+     * declared by the method. This error will result in {@link UndeclaredThrowableException}
+     * being thrown when the method is called.
      *
      * @apiNote Examples of predicates include:
      * <ul>
@@ -89,10 +127,18 @@ public class TestJavaFileManagerBuilder {
      * @param handler the handler
      *
      * @return this object
+     * @throws IllegalArgumentException if the method is not declared in a class that is assignable
+     *          to {@code FileObject}
      * @throws IllegalStateException if a handler is already registered for this predicate and method
      */
-    public TestJavaFileManagerBuilder handle(Predicate<JavaFileObject> filter, Method method, BiFunction<Object, Object[], Object> handler) {
-        var map = handlers.computeIfAbsent(filter, p_ -> new HashMap<>());
+    public TestJavaFileManagerBuilder handle(Predicate<JavaFileObject> filter,
+                                             Method method,
+                                             BiFunction<JavaFileObject, Object[], Throwable> handler) {
+        if (!FileObject.class.isAssignableFrom(method.getDeclaringClass())) {
+            throw new IllegalArgumentException(("not a method on FileObject: " + method));
+        }
+
+        var map = fileObjectHandlers.computeIfAbsent(filter, p_ -> new HashMap<>());
         var prev = map.put(method, handler);
         if (prev != null) {
             throw new IllegalStateException("handler already registered for '" + filter + "' method " + method);
@@ -119,7 +165,7 @@ public class TestJavaFileManagerBuilder {
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            Object result = method.invoke(fm, unwrap(args));
+            Object result = handleMethod(fm, method, unwrap(args));
 
             if (result instanceof Iterable iterable) {
                 // All methods on StandardJavaFileManager that return Iterable<T> for some T
@@ -127,6 +173,8 @@ public class TestJavaFileManagerBuilder {
                 // If the result is empty, return it unchanged; otherwise check the first
                 // element to determine the type of the iterable, and if it is an iterable of
                 // file objects, post-process the result to use proxy file objects where appropriate.
+                // Note 1: this assumes that no methods return a mixture of FileObject and JavaFileObject.
+                // Note 2: all file objects returned by the standard file manager are instances of javaFileObject
                 Iterator<?> iter = iterable.iterator();
                 if (iter.hasNext() && iter.next() instanceof JavaFileObject) {
                     List<JavaFileObject> list = new ArrayList<>();
@@ -153,7 +201,7 @@ public class TestJavaFileManagerBuilder {
          * @return the proxy file object
          */
         private JavaFileObject wrap(JavaFileObject jfo) {
-            return handlers.entrySet().stream()
+            return fileObjectHandlers.entrySet().stream()
                     .filter(e -> e.getKey().test(jfo))
                     .findFirst()
                     .map(e -> cache.computeIfAbsent(jfo, jfo_ -> createProxyFileObject(jfo_, e.getValue())))
@@ -170,7 +218,7 @@ public class TestJavaFileManagerBuilder {
          * @return the proxy file object
          */
         private JavaFileObject createProxyFileObject(JavaFileObject jfo,
-                                                     Map<Method, BiFunction<Object, Object[], Object>> handlers) {
+                                                     Map<Method, BiFunction<JavaFileObject, Object[], Throwable>> handlers) {
             return (JavaFileObject) Proxy.newProxyInstance(getClass().getClassLoader(),
                     new Class<?>[] { JavaFileObject.class },
                     new JavaFileObject_InvocationHandler(jfo, handlers));
@@ -215,6 +263,18 @@ public class TestJavaFileManagerBuilder {
             }
             return false;
         }
+
+        private Object handleMethod(JavaFileManager fm, Method method, Object[] args) throws Throwable {
+            var handler = fileManagerHandlers.get(method);
+            if (handler != null) {
+                Throwable t = handler.apply(fm, args);
+                if (t != null) {
+                    throw t;
+                }
+            }
+
+            return method.invoke(fm, args);
+        }
     }
 
     /**
@@ -224,17 +284,23 @@ public class TestJavaFileManagerBuilder {
      * would otherwise be hard to create.
      */
     private record JavaFileObject_InvocationHandler(JavaFileObject jfo,
-                                                    Map<Method, BiFunction<Object, Object[], Object>> handlers)
+                                                    Map<Method, BiFunction<JavaFileObject, Object[], Throwable>> handlers)
             implements InvocationHandler {
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            return handleMethod(jfo, method, args);
+        }
+
+        private Object handleMethod(JavaFileObject jfo, Method method, Object[] args) throws Throwable {
             var handler = handlers.get(method);
             if (handler != null) {
-                return handler.apply(jfo, args);
-            } else {
-                return method.invoke(jfo, args);
+                Throwable t =  handler.apply(jfo, args);
+                if (t != null) {
+                    throw t;
+                }
             }
+            return method.invoke(jfo, args);
         }
     }
 }

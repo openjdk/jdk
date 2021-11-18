@@ -34,11 +34,14 @@
 
 
 import javax.tools.DocumentationTool;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 import javadoc.tester.JavadocTester;
@@ -75,10 +78,13 @@ public class TestTFMBuilder extends JavadocTester {
         ToolBox tb = new ToolBox();
         tb.writeJavaFiles(srcDir, """
                 package p;
-                /** Dummy class, to be read by javadoc. */
+                /** Dummy class, to be read by javadoc. {@snippet file="C.properties" } */
                 public class C {
                     private C() { }
                 }""");
+        tb.writeFile(srcDir.resolve("p").resolve("snippet-files").resolve("C.properties"), """
+                dummy content
+                """);
         return this;
     }
 
@@ -100,9 +106,7 @@ public class TestTFMBuilder extends JavadocTester {
             StandardJavaFileManager tfm = new TestJavaFileManagerBuilder(fm)
                     .handle(jfo -> jfo.equals(someFileObject),
                             JavaFileObject.class.getMethod("getCharContent", boolean.class),
-                            (fo, args) -> {
-                                throw new TestException((JavaFileObject) fo);
-                            })
+                            (fo, args) -> new TestException(fo.getName()))
                     .build();
 
             // access the "same" file object via the test file manager
@@ -138,16 +142,49 @@ public class TestTFMBuilder extends JavadocTester {
     }
 
     @Test
-    public void testFileManagerRead(Path base) throws Exception {
+    public void testFileManagerAccess(Path base) throws Exception {
+        try (StandardJavaFileManager fm = getFileManager()) {
+
+            // build a file manager that throws an exception when a specific source file is accessed
+            Method getFileForInput_method = JavaFileManager.class.getMethod("getFileForInput",
+                    JavaFileManager.Location.class, String.class, String.class);
+            StandardJavaFileManager tfm = new TestJavaFileManagerBuilder(fm)
+                    .handle(getFileForInput_method,
+                            (fm_, args) -> {
+                                var relativeName = (String) args[2];
+                                return (relativeName.endsWith("C.properties"))
+                                    ? new TestException("getFileForInput: " + Arrays.asList(args))
+                                    :  null;
+                            })
+                    .build();
+
+            try {
+                setFileManager(tfm);
+                javadoc("-d", base.resolve("api").toString(),
+                        "-sourcepath", srcDir.toString(),
+                        "p");
+                checkExit((Exit.ERROR)); // Ideally, this should be ABNORMAL, but right now, the doclet has no way to indicate that
+                checkOutput(Output.OUT, true,
+                        """
+                                error: An internal exception has occurred.
+                                  \t(##EXC##: getFileForInput: [SOURCE_PATH, p, snippet-files/C.properties])
+                                1 error"""
+                                .replace("##EXC##", TestException.class.getName()));
+            } finally {
+                setFileManager(null);
+            }
+        }
+    }
+
+    @Test
+    public void testFileObjectRead(Path base) throws Exception {
         try (StandardJavaFileManager fm = getFileManager()) {
 
             // build a file manager that throws an exception when any *.java is read
             StandardJavaFileManager tfm = new TestJavaFileManagerBuilder(fm)
                     .handle(jfo -> jfo.getName().endsWith(".java"),
                             JavaFileObject.class.getMethod("getCharContent", boolean.class),
-                            (fo, args) -> {
-                                throw new TestException((JavaFileObject) fo);
-                            })
+                            (fo, args) -> new TestException(fo.getName()))
                     .build();
 
             try {
@@ -170,7 +207,7 @@ public class TestTFMBuilder extends JavadocTester {
     }
 
     @Test
-    public void testFileManagerWrite(Path base) throws Exception {
+    public void testFileObjectWrite(Path base) throws Exception {
         try (StandardJavaFileManager fm = getFileManager()) {
             Path outDir = base.resolve("api");
 
@@ -179,9 +216,7 @@ public class TestTFMBuilder extends JavadocTester {
                     .handle(jfo -> fm.asPath(jfo).startsWith(outDir.toAbsolutePath())
                                     && jfo.getName().endsWith(".html"),
                             JavaFileObject.class.getMethod("openOutputStream"),
-                            (fo, args) -> {
-                                throw new TestException((JavaFileObject) fo);
-                            })
+                            (fo, args) -> new TestException(fo.getName()))
                     .build();
 
             try {
