@@ -181,8 +181,7 @@ class WindowsPath implements Path {
         return getPathForWin32Calls(true);
     }
 
-    String getPathForWin32Calls(boolean alwaysAddPrefix)
-        throws WindowsException {
+    String getPathForWin32Calls(boolean alwaysAddPrefix) throws WindowsException {
         // short absolute paths can be used directly
         if (isAbsolute() && path.length() <= MAX_PATH)
             return alwaysAddPrefix ? addPrefixIfAbsent(path) : path;
@@ -310,6 +309,8 @@ class WindowsPath implements Path {
     static String addPrefixIfAbsent(String path) {
         if (!path.startsWith("\\\\")) {
             path = "\\\\?\\" + path;
+        } else if (path.charAt(2) != '?') {
+            path = "\\\\?\\UNC" + path.substring(1);
         }
         return path;
     }

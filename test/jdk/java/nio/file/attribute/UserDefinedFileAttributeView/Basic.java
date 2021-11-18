@@ -251,18 +251,31 @@ public class Basic {
             // Make sure the directory exists.
             Files.createDirectory(longPath);
 
-            try {
-                // Try to set absolute path as extended attribute; expect IAE
-                tryCatch(IllegalArgumentException.class, new Task() {
-                    public void run() throws IOException {
-                        setEA(longPath, "user:C:\\");
-                    }});
+            String[] elts = longPath.toString().split(":");
+            String uncName = "\\\\localhost\\" + elts[0] + "$" + elts[1];
+            Path uncPath = Path.of(uncName);
 
-                // Try to set an extended attribute on it.
-                setEA(longPath, "user:short");
-                setEA(longPath, "user:reallyquitelonglongattrname");
-            } finally {
-                Files.delete(longPath);
+            boolean exceptionCaught = false;
+            for (Path p : new Path[] {longPath, uncPath}) {
+                System.out.println("Testing " + p);
+
+                try {
+                    // Try to set absolute path as extended attribute; expect IAE
+                    tryCatch(IllegalArgumentException.class, new Task() {
+                        public void run() throws IOException {
+                            setEA(p, "user:C:\\");
+                        }
+                    });
+
+                    // Try to set an extended attribute on it.
+                    setEA(p, "user:short");
+                    setEA(p, "user:reallyquitelonglongattrname");
+                } catch (Exception e) {
+                    exceptionCaught = true;
+                } finally {
+                    if (exceptionCaught || p == uncPath)
+                        Files.delete(p);
+                }
             }
         }
     }
