@@ -738,7 +738,7 @@ ZStatSubPhase::ZStatSubPhase(const char* name) :
 
 void ZStatSubPhase::register_start(const Ticks& start) const {
   if (ZThread::is_worker()) {
-    LogTarget(Debug, gc, phases, thread, start) log;
+    LogTarget(Trace, gc, phases, start) log;
     log_start(log, true /* thread */);
   } else {
     LogTarget(Debug, gc, phases, start) log;
@@ -757,7 +757,7 @@ void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
   ZStatSample(_sampler, duration.value());
 
   if (ZThread::is_worker()) {
-    LogTarget(Debug, gc, phases, thread) log;
+    LogTarget(Trace, gc, phases) log;
     log_end(log, duration, true /* thread */);
   } else {
     LogTarget(Debug, gc, phases) log;
