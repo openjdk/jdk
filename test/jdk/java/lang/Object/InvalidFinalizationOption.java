@@ -26,9 +26,9 @@
  * @bug 8276422
  * @summary Invalid/missing values for the finalization option should be rejected
  * @library /test/lib
- * @run main InvalidFinalizationOption none
- * @run main InvalidFinalizationOption empty
- * @run main InvalidFinalizationOption invalid
+ * @run driver InvalidFinalizationOption none
+ * @run driver InvalidFinalizationOption empty
+ * @run driver InvalidFinalizationOption invalid
  */
 
 import jdk.test.lib.process.ProcessTools;
