@@ -36,7 +36,7 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
       # This test is not guaranteed, but there is no documented way of
       # distinguishing between WSL1 and WSL2.
       # Check whether "Hyper-V" appears in /proc/interrupts because WSL2 runs on Hyper-V.
-      grep Hyper-V /proc/interrupts > /dev/null 2>&1
+      $GREP -q Hyper-V /proc/interrupts
       if test $? -eq 0; then
         OPENJDK_BUILD_OS_ENV=windows.wsl2
       else
