@@ -91,7 +91,12 @@ static volatile bool   _has_items_to_clean = false;
 
 
 static volatile bool _alt_hash = false;
+
+#ifdef USE_LIBRARY_BASED_TLS_ONLY
 static volatile bool _lookup_shared_first = false;
+#else
+static THREAD_LOCAL bool _lookup_shared_first = false;
+#endif
 
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = NULL;
@@ -134,9 +139,6 @@ public:
   // We use default allocation/deallocation but counted
   static void* allocate_node(void* context, size_t size, Value const& value) {
     SymbolTable::item_added();
-    if (_lookup_shared_first && (_items_count > 1024)) { // enough local symbols to change search order
-        _lookup_shared_first = false;
-    }
     return AllocateHeap(size, mtSymbol);
   }
   static void free_node(void* context, void* memory, Value const& value) {
@@ -176,12 +178,6 @@ void SymbolTable::create_table ()  {
   } else {
     _arena = new (mtSymbol) Arena(mtSymbol, symbol_alloc_arena_size);
   }
-
-#if INCLUDE_CDS
-  _lookup_shared_first = !_shared_table.empty();
-#else
-  _lookup_shared_first = false;
-#endif
 }
 
 void SymbolTable::delete_symbol(Symbol* sym) {
@@ -323,12 +319,16 @@ Symbol* SymbolTable::lookup_common(const char* name,
   if (_lookup_shared_first) {
     sym = lookup_shared(name, len, hash);
     if (sym == NULL) {
+      _lookup_shared_first = false;
       sym = lookup_dynamic(name, len, hash);
     }
   } else {
     sym = lookup_dynamic(name, len, hash);
     if (sym == NULL) {
       sym = lookup_shared(name, len, hash);
+      if (sym != NULL) {
+        _lookup_shared_first = true;
+      }
     }
   }
   return sym;
