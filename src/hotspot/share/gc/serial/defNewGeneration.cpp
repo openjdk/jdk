@@ -680,7 +680,7 @@ void DefNewGeneration::restore_preserved_marks() {
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
-  log_debug(gc, promotion)("Promotion failure size = %d) ", old->size());
+  log_debug(gc, promotion)("Promotion failure size = " SIZE_FORMAT ") ", old->size());
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());

@@ -113,7 +113,7 @@ public:
 
   // Print coarsening stats.
   void print_coarsen_stats();
-  // Creates a gang task for cleaining up temporary data structures and the
+  // Creates a task for cleaining up temporary data structures and the
   // card table, removing temporary duplicate detection information.
   G1AbstractSubTask* create_cleanup_after_scan_heap_roots_task();
   // Excludes the given region from heap root scanning.
@@ -149,8 +149,8 @@ public:
   void print_periodic_summary_info(const char* header, uint period_count);
 
   // Rebuilds the remembered set by scanning from bottom to TARS for all regions
-  // using the given work gang.
-  void rebuild_rem_set(G1ConcurrentMark* cm, WorkGang* workers, uint worker_id_offset);
+  // using the given workers.
+  void rebuild_rem_set(G1ConcurrentMark* cm, WorkerThreads* workers, uint worker_id_offset);
 };
 
 #endif // SHARE_GC_G1_G1REMSET_HPP

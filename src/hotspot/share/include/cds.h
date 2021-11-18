@@ -67,12 +67,12 @@ typedef struct GenericCDSFileMapHeader {
   int          _crc;                      // header crc checksum
   int          _version;                  // CURRENT_CDS_ARCHIVE_VERSION of the jdk that dumped the this archive
   unsigned int _header_size;              // total size of the header, in bytes
-  unsigned int _base_archive_path_offset; // offset where the base archive name is stored
+  unsigned int _base_archive_name_offset; // offset where the base archive name is stored
                                           //   static archive:  0
                                           //   dynamic archive:
                                           //     0 for default base archive
                                           //     non-zero for non-default base archive
-                                          //       (char*)this + _base_archive_path_offset
+                                          //       (char*)this + _base_archive_name_offset
                                           //       points to a 0-terminated string for the base archive name
   unsigned int _base_archive_name_size;   // size of base archive name including ending '\0'
                                           //   static:  0

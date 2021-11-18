@@ -2200,7 +2200,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   }
 
   // Allocate a new set of JNI handles.
-  push_jni_handle_block();
+  JNIHandleMark jhm(thread);
   Method* target_handle = task->method();
   int compilable = ciEnv::MethodCompilable;
   const char* failure_reason = NULL;
@@ -2319,9 +2319,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       post_compilation_event(event, task);
     }
   }
-  // Remove the JNI handle block after the ciEnv destructor has run in
-  // the previous block.
-  pop_jni_handle_block();
 
   if (failure_reason != NULL) {
     task->set_failure_reason(failure_reason, failure_reason_on_C_heap);
@@ -2480,38 +2477,6 @@ void CompileBroker::update_compile_perf_data(CompilerThread* thread, const metho
   CompilerCounters* counters = thread->counters();
   counters->set_current_method(current_method);
   counters->set_compile_type((jlong) last_compile_type);
-}
-
-// ------------------------------------------------------------------
-// CompileBroker::push_jni_handle_block
-//
-// Push on a new block of JNI handles.
-void CompileBroker::push_jni_handle_block() {
-  JavaThread* thread = JavaThread::current();
-
-  // Allocate a new block for JNI handles.
-  // Inlined code from jni_PushLocalFrame()
-  JNIHandleBlock* java_handles = thread->active_handles();
-  JNIHandleBlock* compile_handles = JNIHandleBlock::allocate_block(thread);
-  assert(compile_handles != NULL && java_handles != NULL, "should not be NULL");
-  compile_handles->set_pop_frame_link(java_handles);  // make sure java handles get gc'd.
-  thread->set_active_handles(compile_handles);
-}
-
-
-// ------------------------------------------------------------------
-// CompileBroker::pop_jni_handle_block
-//
-// Pop off the current block of JNI handles.
-void CompileBroker::pop_jni_handle_block() {
-  JavaThread* thread = JavaThread::current();
-
-  // Release our JNI handle block
-  JNIHandleBlock* compile_handles = thread->active_handles();
-  JNIHandleBlock* java_handles = compile_handles->pop_frame_link();
-  thread->set_active_handles(java_handles);
-  compile_handles->set_pop_frame_link(NULL);
-  JNIHandleBlock::release_block(compile_handles, thread); // may block
 }
 
 // ------------------------------------------------------------------

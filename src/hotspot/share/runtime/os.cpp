@@ -907,7 +907,7 @@ bool os::print_function_and_library_name(outputStream* st,
       addr = addr2;
     }
   }
-#endif // HANDLE_FUNCTION_DESCRIPTORS
+#endif // HAVE_FUNCTION_DESCRIPTORS
 
   if (have_function_name) {
     // Print function name, optionally demangled
@@ -1169,13 +1169,6 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       st->print_cr(INTPTR_FORMAT " is a weak global jni handle", p2i(addr));
       return;
     }
-#ifndef PRODUCT
-    // we don't keep the block list in product mode
-    if (JNIHandles::is_local_handle((jobject) addr)) {
-      st->print_cr(INTPTR_FORMAT " is a local jni handle", p2i(addr));
-      return;
-    }
-#endif
   }
 
   // Check if addr belongs to a Java thread.

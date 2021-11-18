@@ -27,7 +27,7 @@
 
 #include "gc/shared/blockOffsetTable.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"

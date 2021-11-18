@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1BatchedGangTask.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
@@ -106,14 +106,14 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   // within a region to claim. Dependent on the region size as proxy for the heap
   // size, we limit the total number of chunks to limit memory usage and maintenance
   // effort of that table vs. granularity of distributing scanning work.
-  // Testing showed that 8 for 1M/2M region, 16 for 4M/8M regions, 32 for 16/32M regions
-  // seems to be such a good trade-off.
+  // Testing showed that 8 for 1M/2M region, 16 for 4M/8M regions, 32 for 16/32M regions,
+  // and so on seems to be such a good trade-off.
   static uint get_chunks_per_region(uint log_region_size) {
     // Limit the expected input values to current known possible values of the
     // (log) region size. Adjust as necessary after testing if changing the permissible
     // values for region size.
-    assert(log_region_size >= 20 && log_region_size <= 25,
-           "expected value in [20,25], but got %u", log_region_size);
+    assert(log_region_size >= 20 && log_region_size <= 29,
+           "expected value in [20,29], but got %u", log_region_size);
     return 1u << (log_region_size / 2 - 7);
   }
 
@@ -123,7 +123,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   size_t _num_total_scan_chunks;        // Total number of elements in _region_scan_chunks.
   uint8_t _scan_chunks_shift;           // For conversion between card index and chunk index.
 public:
-  uint scan_chunk_size() const { return (uint)1 << _scan_chunks_shift; }
+  uint scan_chunk_size_in_cards() const { return (uint)1 << _scan_chunks_shift; }
 
   // Returns whether the chunk corresponding to the given region/card in region contain a
   // dirty card, i.e. actually needs scanning.
@@ -368,10 +368,13 @@ public:
     return _next_dirty_regions->size() * HeapRegion::CardsPerRegion;
   }
 
-  void set_chunk_region_dirty(size_t const region_card_idx) {
+  void set_chunk_range_dirty(size_t const region_card_idx, size_t const card_length) {
     size_t chunk_idx = region_card_idx >> _scan_chunks_shift;
-    for (uint i = 0; i < _scan_chunks_per_region; i++) {
-      _region_scan_chunks[chunk_idx++] = true;
+    // Make sure that all chunks that contain the range are marked. Calculate the
+    // chunk of the last card that is actually marked.
+    size_t const end_chunk = (region_card_idx + card_length - 1) >> _scan_chunks_shift;
+    for (; chunk_idx <= end_chunk; chunk_idx++) {
+      _region_scan_chunks[chunk_idx] = true;
     }
   }
 
@@ -406,7 +409,7 @@ public:
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    WorkGang* workers = g1h->workers();
+    WorkerThreads* workers = g1h->workers();
     uint const max_workers = workers->active_workers();
 
     uint const start_pos = num_regions * worker_id / max_workers;
@@ -751,7 +754,7 @@ public:
   }
 
   uint value() const { return _cur_claim; }
-  uint size() const { return _scan_state->scan_chunk_size(); }
+  uint size() const { return _scan_state->scan_chunk_size_in_cards(); }
 };
 
 // Scans a heap region for dirty cards.
@@ -1102,7 +1105,7 @@ public:
   }
 };
 
-class G1MergeHeapRootsTask : public AbstractGangTask {
+class G1MergeHeapRootsTask : public WorkerTask {
 
   class G1MergeCardSetStats {
     size_t _merged[G1GCPhaseTimes::MergeRSContainersSentinel];
@@ -1208,11 +1211,9 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
     }
 
     void do_card_range(uint const start_card_idx, uint const length) {
-      assert(start_card_idx == 0, "must be");
-      assert(length == HeapRegion::CardsPerRegion, "must be");
-      size_t num_dirtied = _ct->mark_range_dirty(_region_base_idx, HeapRegion::CardsPerRegion);
+      size_t num_dirtied = _ct->mark_range_dirty(_region_base_idx + start_card_idx, length);
       _stats.inc_cards_dirty(num_dirtied);
-      _scan_state->set_chunk_region_dirty(_region_base_idx);
+      _scan_state->set_chunk_range_dirty(_region_base_idx + start_card_idx, length);
     }
 
     // Helper to merge the cards in the card set for the given region onto the card
@@ -1289,7 +1290,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
       r->rem_set()->set_state_complete();
 #ifdef ASSERT
       G1HeapRegionAttr region_attr = g1h->region_attr(r->hrm_index());
-      assert(region_attr.needs_remset_update(), "must be");
+      assert(region_attr.remset_is_tracked(), "must be");
 #endif
       assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
 
@@ -1371,7 +1372,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
 
 public:
   G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
-    AbstractGangTask("G1 Merge Heap Roots"),
+    WorkerTask("G1 Merge Heap Roots"),
     _hr_claimer(num_workers),
     _scan_state(scan_state),
     _dirty_card_buffers(),
@@ -1490,7 +1491,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
     }
   }
 
-  WorkGang* workers = g1h->workers();
+  WorkerThreads* workers = g1h->workers();
   size_t const increment_length = g1h->collection_set()->increment_length();
 
   uint const num_workers = initial_evacuation ? workers->active_workers() :
@@ -1738,7 +1739,7 @@ void G1RemSet::print_summary_info() {
   }
 }
 
-class G1RebuildRemSetTask: public AbstractGangTask {
+class G1RebuildRemSetTask: public WorkerTask {
   // Aggregate the counting data that was constructed concurrently
   // with marking.
   class G1RebuildRemSetHeapRegionClosure : public HeapRegionClosure {
@@ -1974,7 +1975,7 @@ public:
   G1RebuildRemSetTask(G1ConcurrentMark* cm,
                       uint n_workers,
                       uint worker_id_offset) :
-      AbstractGangTask("G1 Rebuild Remembered Set"),
+      WorkerTask("G1 Rebuild Remembered Set"),
       _hr_claimer(n_workers),
       _cm(cm),
       _worker_id_offset(worker_id_offset) {
@@ -1991,7 +1992,7 @@ public:
 };
 
 void G1RemSet::rebuild_rem_set(G1ConcurrentMark* cm,
-                               WorkGang* workers,
+                               WorkerThreads* workers,
                                uint worker_id_offset) {
   uint num_workers = workers->active_workers();
 

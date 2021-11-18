@@ -51,7 +51,7 @@ import jdk.jfr.internal.management.EventSettingsModifier;
  * java.lang.reflect.
  */
 public abstract class PrivateAccess {
-    private volatile static PrivateAccess instance;
+    private static volatile PrivateAccess instance;
 
     public static PrivateAccess getInstance() {
         // Can't be initialized in <clinit> because it may

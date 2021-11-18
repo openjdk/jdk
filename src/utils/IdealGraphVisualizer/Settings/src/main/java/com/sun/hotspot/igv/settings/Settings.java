@@ -32,18 +32,18 @@ import java.util.prefs.Preferences;
  */
 public class Settings {
 
-    public final static String NODE_TEXT = "nodeText";
-    public final static String NODE_TEXT_DEFAULT = "[idx] [name]";
-    public final static String NODE_SHORT_TEXT = "nodeShortText";
-    public final static String NODE_SHORT_TEXT_DEFAULT = "[idx] [name]";
-    public final static String NODE_WIDTH = "nodeWidth";
-    public final static String NODE_WIDTH_DEFAULT = "100";
-    public final static String PORT = "port";
-    public final static String PORT_BINARY = "portBinary";
-    public final static String PORT_DEFAULT = "4444";
-    public final static String PORT_BINARY_DEFAULT = "4445";
-    public final static String DIRECTORY = "directory";
-    public final static String DIRECTORY_DEFAULT = System.getProperty("user.dir");
+    public static final String NODE_TEXT = "nodeText";
+    public static final String NODE_TEXT_DEFAULT = "[idx] [name]";
+    public static final String NODE_SHORT_TEXT = "nodeShortText";
+    public static final String NODE_SHORT_TEXT_DEFAULT = "[idx] [name]";
+    public static final String NODE_WIDTH = "nodeWidth";
+    public static final String NODE_WIDTH_DEFAULT = "100";
+    public static final String PORT = "port";
+    public static final String PORT_BINARY = "portBinary";
+    public static final String PORT_DEFAULT = "4444";
+    public static final String PORT_BINARY_DEFAULT = "4445";
+    public static final String DIRECTORY = "directory";
+    public static final String DIRECTORY_DEFAULT = System.getProperty("user.dir");
 
     public static Preferences get() {
         return Preferences.userNodeForPackage(Settings.class);

@@ -105,7 +105,7 @@ inline void AdjustPointerClosure::do_oop(oop* p)       { do_oop_work(p); }
 inline void AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 
-inline int MarkSweep::adjust_pointers(const SlidingForwarding* const forwarding, oop obj) {
+inline size_t MarkSweep::adjust_pointers(const SlidingForwarding* const forwarding, oop obj) {
   AdjustPointerClosure cl(forwarding);
   return obj->oop_iterate_size(&cl);
 }

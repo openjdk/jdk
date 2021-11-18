@@ -158,7 +158,7 @@ ShenandoahConcurrentRootScanner::ShenandoahConcurrentRootScanner(uint n_workers,
   _codecache_snapshot(NULL),
   _phase(phase) {
   if (!ShenandoahHeap::heap()->unload_classes()) {
-    CodeCache_lock->lock_without_safepoint_check();
+    MutexLocker locker(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     _codecache_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
   }
   update_tlab_stats();
@@ -167,8 +167,9 @@ ShenandoahConcurrentRootScanner::ShenandoahConcurrentRootScanner(uint n_workers,
 
 ShenandoahConcurrentRootScanner::~ShenandoahConcurrentRootScanner() {
   if (!ShenandoahHeap::heap()->unload_classes()) {
+    MonitorLocker locker(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     ShenandoahCodeRoots::table()->finish_iteration(_codecache_snapshot);
-    CodeCache_lock->unlock();
+    locker.notify_all();
   }
 }
 
