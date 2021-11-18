@@ -1267,7 +1267,7 @@ public class GroupLayout implements LayoutManager2 {
      * min/max/pref.  If the min/pref/max has internally changes, or needs
      * to be updated you must invoke clear.
      */
-    private abstract class Spring {
+    private abstract static class Spring {
         private int size;
         private int min;
         private int max;
@@ -3167,7 +3167,7 @@ public class GroupLayout implements LayoutManager2 {
     /**
      * Spring represented a certain amount of space.
      */
-    private class GapSpring extends Spring {
+    private static class GapSpring extends Spring {
         private final int min;
         private final int pref;
         private final int max;
