@@ -110,9 +110,8 @@ public:
   // failure objects, and constructing parallelizable tasks.
   // Return live bytes in the evacuation failure region.
   size_t pre_iteration(G1EvacFailureParScanTasksQueue* queue);
-  // Apply the given ObjectClosure to all objects in the task
-  // that failed evacuation.
-  // Objects are passed in increasing address order.
+  // Apply the given ObjectClosure to all previously recorded objects in the task
+  // that failed evacuation in ascending address order.
   void iterate(ObjectClosure* closure, G1EvacFailureParScanTask& task);
   // Empty the list of evacuation failure objects.
   // Reset live words in the evacuation failure region.

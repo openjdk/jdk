@@ -570,12 +570,16 @@ public:
   void handle_evacuation_failure();
   // Record an object that failed evacuation within this region.
   void record_evac_failure_obj(oop obj, size_t word_size);
+  // Prepare parallel iteration of all previously recorded objects
+  // that failed evacuation.
+  // Return live bytes in the evacuation failure region.
   size_t prepare_evac_failure_objs(G1EvacFailureParScanTasksQueue* queue);
-  void iterate_evac_failure_objs(ObjectClosure* closure, G1EvacFailureParScanTask& task);
-  void reset_evac_failure_objs();
-  // Applies the given closure to all previously recorded objects
+  // Apply the given ObjectClosure to all previously recorded objects in the task
   // that failed evacuation in ascending address order.
-  // void process_and_drop_evac_failure_objs(ObjectClosure* closure);
+  void iterate_evac_failure_objs(ObjectClosure* closure, G1EvacFailureParScanTask& task);
+  // Release resources used in previous iteration of objects
+  // that failed evacuation.
+  void reset_evac_failure_objs();
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for

@@ -40,7 +40,6 @@ class G1PreRemoveSelfForwardClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   uint _worker_id;
 
-  uint volatile* _num_failed_regions;
   G1EvacFailureRegions* _evac_failure_regions;
 
   G1EvacFailureParScanTasksQueue* _task_queue;
@@ -81,8 +80,6 @@ public:
       hr->rem_set()->clear_locked(true);
 
       hr->note_self_forwarding_removal_end(live_bytes);
-
-      Atomic::inc(_num_failed_regions, memory_order_relaxed);
     }
     return false;
   }

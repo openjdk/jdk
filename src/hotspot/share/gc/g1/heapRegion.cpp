@@ -117,11 +117,7 @@ void HeapRegion::iterate_evac_failure_objs(ObjectClosure* closure, G1EvacFailure
 void HeapRegion::reset_evac_failure_objs() {
   _evac_failure_objs.post_iteration();
 }
-/*
-void HeapRegion::process_and_drop_evac_failure_objs(ObjectClosure* closure) {
-  _evac_failure_objs.process_and_drop(closure);
-}
-*/
+
 void HeapRegion::unlink_from_list() {
   set_next(NULL);
   set_prev(NULL);
