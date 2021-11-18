@@ -741,6 +741,79 @@ static markWord read_stable_mark(oop obj) {
   }
 }
 
+// Safely load a mark word from an object, even with racing stack-locking or monitor inflation.
+// The protocol is a partial inflation-protocol: it installs INFLATING into the object's mark
+// word in order to prevent an stack-locks or inflations from interferring (or detect such
+// interference and retry), but then, instead of creating and installing a monitor, simply
+// read and return the real mark word.
+markWord ObjectSynchronizer::safe_load_mark(oop object) {
+  for (;;) {
+    const markWord mark = object->mark_acquire();
+
+    // The mark can be in one of the following states:
+    // *  Inflated     - just return mark from inflated monitor
+    // *  Stack-locked - coerce it to inflating, and then return displaced mark
+    // *  INFLATING    - busy wait for conversion to complete
+    // *  Neutral      - return mark
+
+    // CASE: inflated
+    if (mark.has_monitor()) {
+      ObjectMonitor* inf = mark.monitor();
+      markWord dmw = inf->header();
+      assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
+      return dmw;
+    }
+
+    // CASE: inflation in progress - inflating over a stack-lock.
+    // Some other thread is converting from stack-locked to inflated.
+    // Only that thread can complete inflation -- other threads must wait.
+    // The INFLATING value is transient.
+    // Currently, we spin/yield/park and poll the markword, waiting for inflation to finish.
+    // We could always eliminate polling by parking the thread on some auxiliary list.
+    if (mark == markWord::INFLATING()) {
+      read_stable_mark(object);
+      continue;
+    }
+
+    // CASE: stack-locked
+    // Could be stack-locked either by this thread or by some other thread.
+    if (mark.has_locker()) {
+      markWord cmp = object->cas_set_mark(markWord::INFLATING(), mark);
+      if (cmp != mark) {
+        continue;       // Interference -- just retry
+      }
+
+      // We've successfully installed INFLATING (0) into the mark-word.
+      // This is the only case where 0 will appear in a mark-word.
+      // Only the singular thread that successfully swings the mark-word
+      // to 0 can perform (or more precisely, complete) inflation.
+
+      // fetch the displaced mark from the owner's stack.
+      // The owner can't die or unwind past the lock while our INFLATING
+      // object is in the mark.  Furthermore the owner can't complete
+      // an unlock on the object, either.
+      markWord dmw = mark.displaced_mark_helper();
+      // Catch if the object's header is not neutral (not locked and
+      // not marked is what we care about here).
+      assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
+
+      // Must preserve store ordering. The monitor state must
+      // be stable at the time of publishing the monitor address.
+      guarantee(object->mark() == markWord::INFLATING(), "invariant");
+      // Release semantics so that above set_object() is seen first.
+      object->release_set_mark(mark);
+
+      return dmw;
+    }
+
+    // CASE: neutral
+    // Catch if the object's header is not neutral (not locked and
+    // not marked is what we care about here).
+    assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
+    return mark;
+  }
+}
+
 markWord ObjectSynchronizer::stable_mark(const oop obj) {
   markWord mark = read_stable_mark(obj);
   if (!mark.is_neutral() && !mark.is_marked()) {
@@ -755,8 +828,7 @@ markWord ObjectSynchronizer::stable_mark(const oop obj) {
       mark = mark.displaced_mark_helper();
       assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
     } else {
-      ObjectMonitor* monitor = inflate(Thread::current(), obj, inflate_cause_vm_internal);
-      mark = monitor->header();
+      mark = safe_load_mark(obj);
       assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
       assert(!mark.is_marked(), "no forwarded objects here");
     }
