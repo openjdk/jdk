@@ -569,9 +569,8 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
 //------------------------------ok_to_inline-----------------------------------
 bool InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallProfile& profile,
                               bool& should_delay) {
-  assert(callee_method != NULL, "caller checks for optimized virtual!");
-  assert(!should_delay || AlwaysIncrementalInline, "should be initialized to false");
 #ifdef ASSERT
+  assert(callee_method != NULL, "caller checks for optimized virtual!");
   // Make sure the incoming jvms has the same information content as me.
   // This means that we can eventually make this whole class AllStatic.
   if (jvms->caller() == NULL) {
