@@ -1393,7 +1393,7 @@ SetForceEarlyReturn::doit(Thread *target, bool self) {
   Thread* current_thread = Thread::current();
   HandleMark   hm(current_thread);
 
-  if (java_thread->is_exiting() || java_thread->threadObj() == NULL) {
+  if (java_thread->is_exiting()) {
     return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
   }
   if (!self) {
@@ -1527,7 +1527,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   HandleMark hm(current_thread);
   JavaThread* java_thread = JavaThread::cast(target);
 
-  if (java_thread->is_exiting() || java_thread->threadObj() == NULL) {
+  if (java_thread->is_exiting()) {
     return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
   }
   assert(java_thread == _state->get_thread(), "Must be");
@@ -1619,7 +1619,7 @@ SetFramePopClosure::doit(Thread *target, bool self) {
   ResourceMark rm;
   JavaThread* java_thread = JavaThread::cast(target);
 
-  if (java_thread->is_exiting() || java_thread->threadObj() == NULL) {
+  if (java_thread->is_exiting()) {
     return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
   }
   assert(_state->get_thread() == java_thread, "Must be");
