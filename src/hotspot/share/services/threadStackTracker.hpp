@@ -27,6 +27,7 @@
 
 #if INCLUDE_NMT
 
+#include "runtime/atomic.hpp"
 #include "services/allocationSite.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/nmtCommon.hpp"
@@ -74,11 +75,12 @@ public:
   static bool initialize(NMT_TrackingLevel level);
   static bool transition(NMT_TrackingLevel from, NMT_TrackingLevel to);
 
+  // Require ThreadCritical lock held
   static void new_thread_stack(void* base, size_t size, const NativeCallStack& stack);
   static void delete_thread_stack(void* base, size_t size);
 
   static bool   track_as_vm()  { return AIX_ONLY(false) NOT_AIX(true); }
-  static size_t thread_count() { return _thread_count; }
+  static size_t thread_count() { return Atomic::load(&_thread_count); }
 
   // Snapshot support. Piggyback thread stack data in malloc slot, NMT always handles
   // thread stack slot specially since beginning.

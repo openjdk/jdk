@@ -60,11 +60,10 @@ int ThreadStackTracker::compare_thread_stack_base(const SimpleThreadStackSite& s
 }
 
 void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeCallStack& stack) {
-  assert(MemTracker::tracking_level() >= NMT_summary, "Must be");
   assert(base != NULL, "Should have been filtered");
   if (track_as_vm()) {
     VirtualMemoryTracker::add_reserved_region((address)base, size, stack, mtThreadStack);
-    _thread_count ++;
+    Atomic::inc(&_thread_count, memory_order_relaxed);
   } else {
     // Use a slot in mallocMemorySummary for thread stack bookkeeping
     MallocMemorySummary::record_malloc(size, mtThreadStack);
@@ -77,11 +76,10 @@ void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeC
 }
 
 void ThreadStackTracker::delete_thread_stack(void* base, size_t size) {
-  assert(MemTracker::tracking_level() >= NMT_summary, "Must be");
   assert(base != NULL, "Should have been filtered");
   if(track_as_vm()) {
     VirtualMemoryTracker::remove_released_region((address)base, size);
-    _thread_count--;
+    Atomic::dec(&_thread_count, memory_order_relaxed);
   } else {
     // Use a slot in mallocMemorySummary for thread stack bookkeeping
     MallocMemorySummary::record_free(size, mtThreadStack);
@@ -99,12 +97,11 @@ bool ThreadStackTracker::walk_simple_thread_stack_site(MallocSiteWalker* walker)
     LinkedListImpl<MallocSite> _sites;
     {
       ThreadCritical tc;
-      if (_simple_thread_stacks != NULL) {
+      if (_simple_thread_stacks == NULL) {
         assert(MemTracker::tracking_level() < NMT_summary, "Must be");
         return false;
       }
 
-      assert(_simple_thread_stacks != NULL, "Must be initialized");
       LinkedListIterator<SimpleThreadStackSite> itr(_simple_thread_stacks->head());
       const SimpleThreadStackSite* ts = itr.next();
       // Consolidate sites and convert to MallocSites, so we can piggyback into
