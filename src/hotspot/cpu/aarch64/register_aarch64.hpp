@@ -44,7 +44,6 @@ class RegisterImpl: public AbstractRegisterImpl {
 public:
   enum {
     number_of_registers         =   32,
-    number_of_byte_registers      = 32,
     number_of_declared_registers  = 34,  // Including SP and ZR.
     max_slots_per_register = 2
   };
@@ -60,7 +59,6 @@ public:
   // accessors
   int encoding() const             { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
   bool is_valid() const            { return (unsigned)encoding_nocheck() < number_of_registers; }
-  bool has_byte_register() const   { return this >= first() && this - first() < number_of_byte_registers; }
   const char* name() const;
   int encoding_nocheck() const     { return this - first(); }
 };
