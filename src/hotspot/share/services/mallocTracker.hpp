@@ -243,22 +243,20 @@ class MallocMemorySummary : AllStatic {
  * If NMT is active (state >= minimal), we need to track allocations. A simple and cheap way to
  * do this is by using malloc headers.
  *
- * The user allocation is preceded by a header and followed by a single footer canary byte:
+ * The user allocation is preceded by a header and is immediately followed by a (possibly unaligned)
+ *  footer canary:
  *
  * +--------------+-------------  ....  ------------------+-----+
  * |    header    |               user                    | can |
  * |              |             allocation                | ary |
  * +--------------+-------------  ....  ------------------+-----+
- *     16 bytes              user size                      1 byte
+ *     16 bytes              user size                      2 byte
  *
  * Alignment:
  *
- * The start of the user allocation needs to adhere to malloc alignment. We assume 2 words
- * (16 bytes/8 bytes on 64-bit/32-bit) to be enough for that (todo: it may not be enough on 32bit).
- *
- * That dictates a minimum alignment of the size of a malloc header of 2 words. However, since
- * 8 bytes are not enough to hold all information we need, we have to enlarge the malloc header on
- * 32-bit. So the malloc header is 16 bytes long on both 32-bit and 64-bit.
+ * The start of the user allocation needs to adhere to malloc alignment. We assume 128 bits
+ * on both 64-bit/32-bit to be enough for that. So the malloc header is 16 bytes long on both
+ * 32-bit and 64-bit.
  *
  * Layout on 64-bit:
  *
@@ -289,8 +287,8 @@ class MallocMemorySummary : AllStatic {
  *   catch negative buffer overflows.
  * - On 32-bit, due to the smaller size_t, we have some bits to spare. So we also have a second
  *   canary at the very start of the malloc header (generously sized 32 bits).
- * - The footer canary is just one byte since this is still enough to catch overflows, and it
- *   allows us to not care about aligned accesses.
+ * - The footer canary consists of two bytes. Since the footer location may be unaligned to 16 bits,
+ *   the bytes are stored individually.
  */
 
 class MallocHeader {
@@ -306,12 +304,12 @@ class MallocHeader {
 #define MAX_MALLOCSITE_TABLE_SIZE (USHRT_MAX - 1)
 #define MAX_BUCKET_LENGTH         (USHRT_MAX - 1)
 
-  static const uint16_t _header_canary_life_mark = 0xFA1F;
-  static const uint16_t _header_canary_dead_mark = 0xFB1F;
-  static const uint8_t  _footer_canary_life_mark = 0xFA;
-  static const uint8_t  _footer_canary_dead_mark = 0xFB;
-  NOT_LP64(static const uint32_t _header_alt_canary_life_mark = 0xFAFA1F1F;)
-  NOT_LP64(static const uint32_t _header_alt_canary_dead_mark = 0xFBFB1F1F;)
+  static const uint16_t _header_canary_life_mark = 0xE99E;
+  static const uint16_t _header_canary_dead_mark = 0xD99D;
+  static const uint16_t _footer_canary_life_mark = 0xE88E;
+  static const uint16_t _footer_canary_dead_mark = 0xD88D;
+  NOT_LP64(static const uint32_t _header_alt_canary_life_mark = 0xE99EE99E;)
+  NOT_LP64(static const uint32_t _header_alt_canary_dead_mark = 0xD88DD88D;)
 
   // We discount sizes larger than these
   static const size_t max_reasonable_malloc_size = LP64_ONLY(256 * G) NOT_LP64(3500 * M);
@@ -323,9 +321,11 @@ class MallocHeader {
   void print_block_on_error(outputStream* st, address bad_address) const;
   void mark_block_as_dead();
 
-  uint8_t* footer_address() const { return ((address)this) + sizeof(MallocHeader) + _size; }
-  uint8_t get_footer_byte() const { return *footer_address(); }
-  void set_footer_byte(uint8_t b) { (*footer_address()) = b; }
+  static uint16_t build_footer(uint8_t b1, uint8_t b2) { return ((uint16_t)b1 << 8) | (uint16_t)b2; }
+
+  uint8_t* footer_address() const   { return ((address)this) + sizeof(MallocHeader) + _size; }
+  uint16_t get_footer() const       { return build_footer(footer_address()[0], footer_address()[1]); }
+  void set_footer(uint16_t v)       { footer_address()[0] = v >> 8; footer_address()[1] = (uint8_t)v; }
 
  public:
 
@@ -355,7 +355,7 @@ class MallocHeader {
     // On 32-bit we have some bits more, use them for a second canary
     // guarding the start of the header.
     NOT_LP64(_alt_canary = _header_alt_canary_life_mark;)
-    set_footer_byte(_footer_canary_life_mark); // set after initializing _size
+    set_footer(_footer_canary_life_mark); // set after initializing _size
 
     MallocMemorySummary::record_malloc(size, flags);
     MallocMemorySummary::record_new_malloc_header(sizeof(MallocHeader));
@@ -395,7 +395,7 @@ class MallocTracker : AllStatic {
 
   // malloc tracking footer size for specific tracking level
   static inline size_t malloc_footer_size(NMT_TrackingLevel level) {
-    return (level == NMT_off) ? 0 : 1;
+    return (level == NMT_off) ? 0 : sizeof(uint16_t);
   }
 
   // Parameter name convention:

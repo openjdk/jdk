@@ -109,7 +109,7 @@ void MallocMemorySummary::initialize() {
 void MallocHeader::mark_block_as_dead() {
   _canary = _header_canary_dead_mark;
   NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
-  set_footer_byte(_footer_canary_dead_mark);
+  set_footer(_footer_canary_dead_mark);
 }
 
 void MallocHeader::release() {
@@ -211,7 +211,7 @@ void MallocHeader::check_block_integrity() const {
   }
 
   // Check footer canary
-  if (get_footer_byte() != _footer_canary_life_mark) {
+  if (get_footer() != _footer_canary_life_mark) {
     print_block_on_error(tty, footer_address());
     fatal("Block at " PTR_FORMAT ": footer canary broken at " PTR_FORMAT " (buffer overflow?)",
           p2i(this), p2i(footer_address()));
