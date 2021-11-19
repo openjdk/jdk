@@ -129,7 +129,7 @@ public class Main {
     // There's also a files array per version
     // base version is the first entry and then follow with the version given
     // from the --release option in the command-line order.
-    // The value of each entry is the files given in the command-line order. 
+    // The value of each entry is the files given in the command-line order.
     Map<Integer,String[]> filesMap = new LinkedHashMap<>();
 
     // Do we think this is a multi-release jar?  Set to true

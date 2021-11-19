@@ -29,7 +29,7 @@
  * @modules jdk.jartool
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
- * @run testng CreateJarBenchmark 
+ * @run testng CreateJarBenchmark
  */
 
 import org.testng.Assert;
@@ -86,7 +86,7 @@ public class CreateJarBenchmark {
         onCompletion = () -> rm("test.jar", "testjar");
 
         // Perform 100x jar creations
-        long start = System.currentTimeMillis(); 
+        long start = System.currentTimeMillis();
         for(int i = 0; i < 100; i++) {
             jar("cf test.jar testjar");
             rm("test.jar");
