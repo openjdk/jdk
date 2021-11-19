@@ -56,18 +56,17 @@ void jni_handles_init() {
 }
 
 jobject JNIHandles::make_local(oop obj) {
-  return make_local(Thread::current(), obj);
+  return make_local(JavaThread::current(), obj);
 }
 
 // Used by NewLocalRef which requires NULL on out-of-memory
-jobject JNIHandles::make_local(Thread* thread, oop obj, AllocFailType alloc_failmode) {
+jobject JNIHandles::make_local(JavaThread* thread, oop obj, AllocFailType alloc_failmode) {
   if (obj == NULL) {
     return NULL;                // ignore null handles
   } else {
     assert(oopDesc::is_oop(obj), "not an oop");
-    assert(thread->is_Java_thread(), "not a Java thread");
     assert(!current_thread_in_native(), "must not be in native");
-    return thread->active_handles()->allocate_handle(obj, alloc_failmode);
+    return thread->active_handles()->allocate_handle(thread, obj, alloc_failmode);
   }
 }
 
@@ -187,7 +186,7 @@ inline bool is_storage_handle(const OopStorage* storage, const oop* ptr) {
 }
 
 
-jobjectRefType JNIHandles::handle_type(Thread* thread, jobject handle) {
+jobjectRefType JNIHandles::handle_type(JavaThread* thread, jobject handle) {
   assert(handle != NULL, "precondition");
   jobjectRefType result = JNIInvalidRefType;
   if (is_jweak(handle)) {
@@ -205,9 +204,7 @@ jobjectRefType JNIHandles::handle_type(Thread* thread, jobject handle) {
 
     case OopStorage::INVALID_ENTRY:
       // Not in global storage.  Might be a local handle.
-      if (is_local_handle(thread, handle) ||
-          (thread->is_Java_thread() &&
-           is_frame_handle(JavaThread::cast(thread), handle))) {
+      if (is_local_handle(thread, handle) || is_frame_handle(thread, handle)) {
         result = JNILocalRefType;
       }
       break;
@@ -220,7 +217,7 @@ jobjectRefType JNIHandles::handle_type(Thread* thread, jobject handle) {
 }
 
 
-bool JNIHandles::is_local_handle(Thread* thread, jobject handle) {
+bool JNIHandles::is_local_handle(JavaThread* thread, jobject handle) {
   assert(handle != NULL, "precondition");
   JNIHandleBlock* block = thread->active_handles();
 
@@ -305,12 +302,7 @@ bool JNIHandles::current_thread_in_native() {
           JavaThread::cast(thread)->thread_state() == _thread_in_native);
 }
 
-
-int             JNIHandleBlock::_blocks_allocated     = 0;
-JNIHandleBlock* JNIHandleBlock::_block_free_list      = NULL;
-#ifndef PRODUCT
-JNIHandleBlock* JNIHandleBlock::_block_list           = NULL;
-#endif
+int JNIHandleBlock::_blocks_allocated = 0;
 
 static inline bool is_tagged_free_list(uintptr_t value) {
   return (value & 1u) != 0;
@@ -343,44 +335,28 @@ void JNIHandleBlock::zap() {
 }
 #endif // ASSERT
 
-JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread, AllocFailType alloc_failmode)  {
-  assert(thread == NULL || thread == Thread::current(), "sanity check");
+JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType alloc_failmode)  {
+  // The VM thread can allocate a handle block in behalf of another thread during a safepoint.
+  assert(thread == NULL || thread == Thread::current() || SafepointSynchronize::is_at_safepoint(),
+         "sanity check");
   JNIHandleBlock* block;
   // Check the thread-local free list for a block so we don't
   // have to acquire a mutex.
   if (thread != NULL && thread->free_handle_block() != NULL) {
     block = thread->free_handle_block();
     thread->set_free_handle_block(block->_next);
-  }
-  else {
-    // locking with safepoint checking introduces a potential deadlock:
-    // - we would hold JNIHandleBlockFreeList_lock and then Threads_lock
-    // - another would hold Threads_lock (jni_AttachCurrentThread) and then
-    //   JNIHandleBlockFreeList_lock (JNIHandleBlock::allocate_block)
-    MutexLocker ml(JNIHandleBlockFreeList_lock,
-                   Mutex::_no_safepoint_check_flag);
-    if (_block_free_list == NULL) {
-      // Allocate new block
-      if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
-        block = new (std::nothrow) JNIHandleBlock();
-        if (block == NULL) {
-          return NULL;
-        }
-      } else {
-        block = new JNIHandleBlock();
+  } else {
+    // Allocate new block
+    if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
+      block = new (std::nothrow) JNIHandleBlock();
+      if (block == NULL) {
+        return NULL;
       }
-      _blocks_allocated++;
-      block->zap();
-      #ifndef PRODUCT
-      // Link new block to list of all allocated blocks
-      block->_block_list_link = _block_list;
-      _block_list = block;
-      #endif
     } else {
-      // Get block from free list
-      block = _block_free_list;
-      _block_free_list = _block_free_list->_next;
+      block = new JNIHandleBlock();
     }
+    Atomic::inc(&_blocks_allocated);
+    block->zap();
   }
   block->_top = 0;
   block->_next = NULL;
@@ -394,7 +370,7 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread, AllocFailType all
 }
 
 
-void JNIHandleBlock::release_block(JNIHandleBlock* block, Thread* thread) {
+void JNIHandleBlock::release_block(JNIHandleBlock* block, JavaThread* thread) {
   assert(thread == NULL || thread == Thread::current(), "sanity check");
   JNIHandleBlock* pop_frame_link = block->pop_frame_link();
   // Put returned block at the beginning of the thread-local free list.
@@ -415,20 +391,8 @@ void JNIHandleBlock::release_block(JNIHandleBlock* block, Thread* thread) {
     block = NULL;
   }
   if (block != NULL) {
-    // Return blocks to free list
-    // locking with safepoint checking introduces a potential deadlock:
-    // - we would hold JNIHandleBlockFreeList_lock and then Threads_lock
-    // - another would hold Threads_lock (jni_AttachCurrentThread) and then
-    //   JNIHandleBlockFreeList_lock (JNIHandleBlock::allocate_block)
-    MutexLocker ml(JNIHandleBlockFreeList_lock,
-                   Mutex::_no_safepoint_check_flag);
-    while (block != NULL) {
-      block->zap();
-      JNIHandleBlock* next = block->_next;
-      block->_next = _block_free_list;
-      _block_free_list = block;
-      block = next;
-    }
+    Atomic::dec(&_blocks_allocated);
+    delete block;
   }
   if (pop_frame_link != NULL) {
     // As a sanity check we release blocks pointed to by the pop_frame_link.
@@ -468,7 +432,7 @@ void JNIHandleBlock::oops_do(OopClosure* f) {
 }
 
 
-jobject JNIHandleBlock::allocate_handle(oop obj, AllocFailType alloc_failmode) {
+jobject JNIHandleBlock::allocate_handle(JavaThread* caller, oop obj, AllocFailType alloc_failmode) {
   assert(Universe::heap()->is_in(obj), "sanity check");
   if (_top == 0) {
     // This is the first allocation or the initial block got zapped when
@@ -516,26 +480,21 @@ jobject JNIHandleBlock::allocate_handle(oop obj, AllocFailType alloc_failmode) {
   if (_last->_next != NULL) {
     // update last and retry
     _last = _last->_next;
-    return allocate_handle(obj, alloc_failmode);
+    return allocate_handle(caller, obj, alloc_failmode);
   }
 
   // No space available, we have to rebuild free list or expand
   if (_allocate_before_rebuild == 0) {
       rebuild_free_list();        // updates _allocate_before_rebuild counter
   } else {
-    // Append new block
-    Thread* thread = Thread::current();
-    Handle obj_handle(thread, obj);
-    // This can block, so we need to preserve obj across call.
-    _last->_next = JNIHandleBlock::allocate_block(thread, alloc_failmode);
+    _last->_next = JNIHandleBlock::allocate_block(caller, alloc_failmode);
     if (_last->_next == NULL) {
       return NULL;
     }
     _last = _last->_next;
     _allocate_before_rebuild--;
-    obj = obj_handle();
   }
-  return allocate_handle(obj, alloc_failmode);  // retry
+  return allocate_handle(caller, obj, alloc_failmode);  // retry
 }
 
 void JNIHandleBlock::rebuild_free_list() {
@@ -612,46 +571,3 @@ const size_t JNIHandleBlock::get_number_of_live_handles() {
 size_t JNIHandleBlock::memory_usage() const {
   return length() * sizeof(JNIHandleBlock);
 }
-
-
-#ifndef PRODUCT
-
-bool JNIHandles::is_local_handle(jobject handle) {
-  return JNIHandleBlock::any_contains(handle);
-}
-
-bool JNIHandleBlock::any_contains(jobject handle) {
-  assert(handle != NULL, "precondition");
-  for (JNIHandleBlock* current = _block_list; current != NULL; current = current->_block_list_link) {
-    if (current->contains(handle)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-void JNIHandleBlock::print_statistics() {
-  int used_blocks = 0;
-  int free_blocks = 0;
-  int used_handles = 0;
-  int free_handles = 0;
-  JNIHandleBlock* block = _block_list;
-  while (block != NULL) {
-    if (block->_top > 0) {
-      used_blocks++;
-    } else {
-      free_blocks++;
-    }
-    used_handles += block->_top;
-    free_handles += (block_size_in_oops - block->_top);
-    block = block->_block_list_link;
-  }
-  tty->print_cr("JNIHandleBlocks statistics");
-  tty->print_cr("- blocks allocated: %d", used_blocks + free_blocks);
-  tty->print_cr("- blocks in use:    %d", used_blocks);
-  tty->print_cr("- blocks free:      %d", free_blocks);
-  tty->print_cr("- handles in use:   %d", used_handles);
-  tty->print_cr("- handles free:     %d", free_handles);
-}
-
-#endif

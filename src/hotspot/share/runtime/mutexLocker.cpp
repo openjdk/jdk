@@ -48,7 +48,6 @@ Mutex*   Module_lock                  = NULL;
 Mutex*   CompiledIC_lock              = NULL;
 Mutex*   InlineCacheBuffer_lock       = NULL;
 Mutex*   VMStatistic_lock             = NULL;
-Mutex*   JNIHandleBlockFreeList_lock  = NULL;
 Mutex*   JmethodIdCreation_lock       = NULL;
 Mutex*   JfieldIdCreation_lock        = NULL;
 Monitor* JNICritical_lock             = NULL;
@@ -132,6 +131,7 @@ Mutex*   UnsafeJlong_lock             = NULL;
 Mutex*   CodeHeapStateAnalytics_lock  = NULL;
 
 Mutex*   Metaspace_lock               = NULL;
+Monitor* MetaspaceCritical_lock       = NULL;
 Mutex*   ClassLoaderDataGraph_lock    = NULL;
 Monitor* ThreadsSMRDelete_lock        = NULL;
 Mutex*   ThreadIdTableCreate_lock     = NULL;
@@ -244,6 +244,7 @@ void mutex_init() {
   def(RawMonitor_lock              , PaddedMutex  , nosafepoint-1);
 
   def(Metaspace_lock               , PaddedMutex  , nosafepoint-3);
+  def(MetaspaceCritical_lock       , PaddedMonitor, nosafepoint-1);
 
   def(Patching_lock                , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
   def(MonitorDeflation_lock        , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations
@@ -259,7 +260,6 @@ void mutex_init() {
 
   def(SharedDictionary_lock        , PaddedMutex  , safepoint);
   def(VMStatistic_lock             , PaddedMutex  , safepoint);
-  def(JNIHandleBlockFreeList_lock  , PaddedMutex  , nosafepoint-1);      // handles are used by VM thread
   def(SignatureHandlerLibrary_lock , PaddedMutex  , safepoint);
   def(SymbolArena_lock             , PaddedMutex  , nosafepoint);
   def(ExceptionCache_lock          , PaddedMutex  , safepoint);

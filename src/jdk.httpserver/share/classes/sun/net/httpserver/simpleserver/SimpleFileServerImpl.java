@@ -144,7 +144,7 @@ final class SimpleFileServerImpl {
         return Startup.OK.statusCode;
     }
 
-    private final static class Out {
+    private static final class Out {
         private final PrintWriter writer;
         private Out() { throw new AssertionError(); }
 

@@ -260,6 +260,9 @@ void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
 
 }
 
+bool NativeCall::is_displacement_aligned() {
+  return (uintptr_t) displacement_address() % 4 == 0;
+}
 
 // Similar to replace_mt_safe, but just changes the destination.  The
 // important thing is that free-running threads are able to execute this
@@ -282,8 +285,7 @@ void NativeCall::set_destination_mt_safe(address dest) {
          CompiledICLocker::is_safe(instruction_address()), "concurrent code patching");
   // Both C1 and C2 should now be generating code which aligns the patched address
   // to be within a single cache line.
-  bool is_aligned = ((uintptr_t)displacement_address() + 0) / cache_line_size ==
-                    ((uintptr_t)displacement_address() + 3) / cache_line_size;
+  bool is_aligned = is_displacement_aligned();
 
   guarantee(is_aligned, "destination must be aligned");
 

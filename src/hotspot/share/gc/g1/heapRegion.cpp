@@ -65,8 +65,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   size_t region_size = G1HeapRegionSize;
   // G1HeapRegionSize = 0 means decide ergonomically.
   if (region_size == 0) {
-    region_size = MAX2(max_heap_size / HeapRegionBounds::target_number(),
-                       HeapRegionBounds::min_size());
+    region_size = clamp(max_heap_size / HeapRegionBounds::target_number(),
+                        HeapRegionBounds::min_size(),
+                        HeapRegionBounds::max_ergonomics_size());
   }
 
   // Make sure region size is a power of 2. Rounding up since this

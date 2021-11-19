@@ -26,7 +26,6 @@
 #include "gc/g1/g1EvacFailureObjectsSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
