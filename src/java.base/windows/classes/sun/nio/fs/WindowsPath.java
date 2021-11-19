@@ -181,46 +181,41 @@ class WindowsPath implements Path {
         return getPathForWin32Calls(true);
     }
 
-    String getPathForWin32Calls(boolean alwaysAddPrefix) throws WindowsException {
+    private String getPathForWin32Calls(boolean forceLongPrefix) throws WindowsException {
         // short absolute paths can be used directly
         if (isAbsolute() && path.length() <= MAX_PATH)
-            return alwaysAddPrefix ? addPrefixIfAbsent(path) : path;
+            return forceLongPrefix ? addPrefix(path) : path;
 
-        // return cached values if available
-        WeakReference<String> ref = pathForWin32Calls;
-        String resolved = (ref != null) ? ref.get() : null;
-        if (resolved != null) {
-            // Win32 path already available
-            return alwaysAddPrefix ? addPrefixIfAbsent(resolved) : resolved;
+        // return cached value if available
+        if (!forceLongPrefix) {
+            WeakReference<String> ref = pathForWin32Calls;
+            String cached = (ref != null) ? ref.get() : null;
+            if (cached != null) {
+                // Win32 path already available
+                return cached;
+            }
         }
 
         // resolve against default directory
-        resolved = getAbsolutePath();
+        String resolved = getAbsolutePath();
 
         // Long paths need to have "." and ".." removed and be prefixed with
         // "\\?\". Note that it is okay to remove ".." even when it follows
         // a link - for example, it is okay for foo/link/../bar to be changed
         // to foo/bar. The reason is that Win32 APIs to access foo/link/../bar
         // will access foo/bar anyway (which differs to Unix systems)
-        boolean eligibleToCache = true;
-        if (resolved.length() > MAX_PATH || alwaysAddPrefix) {
+        if (resolved.length() > MAX_PATH || forceLongPrefix) {
             if (resolved.length() > MAX_LONG_PATH) {
                 throw new WindowsException("Cannot access file with path exceeding "
                     + MAX_LONG_PATH + " characters");
             }
-            String prefixed = addPrefixIfNeeded(GetFullPathName(resolved));
-            if (prefixed != resolved) {
-                resolved = prefixed;
-            } else if (alwaysAddPrefix) {
-                resolved = addPrefixIfAbsent(resolved);
-                eligibleToCache = false;
-            }
+            resolved = addPrefix(GetFullPathName(resolved));
         }
 
         // cache the resolved path (except drive relative paths as the working
         // directory on removal media devices can change during the lifetime
         // of the VM)
-        if (eligibleToCache && type != WindowsPathType.DRIVE_RELATIVE) {
+        if (!forceLongPrefix && type != WindowsPathType.DRIVE_RELATIVE) {
             synchronized (this) {
                 pathForWin32Calls = new WeakReference<String>(resolved);
             }
@@ -294,6 +289,16 @@ class WindowsPath implements Path {
                Character.toUpperCase(root2.charAt(0));
     }
 
+    // Add long path prefix to path
+    static String addPrefix(String path) {
+        if (path.startsWith("\\\\")) {
+            path = "\\\\?\\UNC" + path.substring(1, path.length());
+        } else {
+            path = "\\\\?\\" + path;
+        }
+        return path;
+    }
+
     // Add long path prefix to path if required
     static String addPrefixIfNeeded(String path) {
         if (path.length() > MAX_PATH) {
@@ -302,15 +307,6 @@ class WindowsPath implements Path {
             } else {
                 path = "\\\\?\\" + path;
             }
-        }
-        return path;
-    }
-
-    static String addPrefixIfAbsent(String path) {
-        if (!path.startsWith("\\\\")) {
-            path = "\\\\?\\" + path;
-        } else if (path.charAt(2) != '?') {
-            path = "\\\\?\\UNC" + path.substring(1);
         }
         return path;
     }
