@@ -21,6 +21,18 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8266666
+ * @summary Implementation for snippets
+ * @library /tools/lib ../../lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.javadoc/jdk.javadoc.internal.tool
+ * @build javadoc.tester.* toolbox.ToolBox toolbox.ModuleBuilder builder.ClassBuilder
+ * @run main TestSnippetMarkup
+ */
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -58,22 +70,7 @@ import toolbox.ToolBox;
 
 import static javax.tools.DocumentationTool.Location.DOCUMENTATION_OUTPUT;
 
-/*
- * @test
- * @bug 8266666
- * @summary Implementation for snippets
- * @library /tools/lib ../../lib
- * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.javadoc/jdk.javadoc.internal.tool
- * @build javadoc.tester.* toolbox.ToolBox toolbox.ModuleBuilder builder.ClassBuilder
- * @run main TestSnippetMarkup
- */
 public class TestSnippetMarkup extends SnippetTester {
-
-    private final ToolBox tb = new ToolBox();
-
-    private TestSnippetMarkup() {}
 
     public static void main(String... args) throws Exception {
         new TestSnippetMarkup().runTests(m -> new Object[]{Paths.get(m.getName())});
@@ -228,7 +225,7 @@ public class TestSnippetMarkup extends SnippetTester {
      * next line.
      */
 //    @Test
-    public void testPositiveInlineExternalTagMarkupNextLine(Path base) throws Exception {
+    public void testPositiveInlineExternalTagMarkup_NextLine(Path base) throws Exception {
         throw new RuntimeException("Not yet implemented");
     }
 
@@ -237,7 +234,7 @@ public class TestSnippetMarkup extends SnippetTester {
      * an error occurs.
      */
     @Test
-    public void testNegativeInlineExternalHybridTagMarkupNextLinePutOnLastLine(Path base) throws Exception {
+    public void testNegativeInlineExternalHybridTagMarkup_NextLinePutOnLastLine(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var goodFile = "good.txt";
