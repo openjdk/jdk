@@ -2272,17 +2272,16 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Phi(...MergeMem(m0, m1:AT1, m2:AT2)...) into
         //     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
         PhaseIterGVN* igvn = phase->is_IterGVN();
+        Node* hook = new Node(1);
         PhiNode* new_base = (PhiNode*) clone();
         // Must eagerly register phis, since they participate in loops.
         if (igvn) {
           igvn->register_new_node_with_optimizer(new_base);
-        } else {
-          phase->record_for_igvn(new_base);
+          hook->add_req(new_base);
         }
-
         MergeMemNode* result = MergeMemNode::make(new_base);
         for (uint i = 1; i < req(); ++i) {
-          Node* ii = in(i);
+          Node *ii = in(i);
           if (ii->is_MergeMem()) {
             MergeMemNode* n = ii->as_MergeMem();
             for (MergeMemStream mms(result, n); mms.next_non_empty2(); ) {
@@ -2293,8 +2292,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
                 made_new_phi = true;
                 if (igvn) {
                   igvn->register_new_node_with_optimizer(new_phi);
-                } else {
-                  phase->record_for_igvn(new_phi);
+                  hook->add_req(new_phi);
                 }
                 mms.set_memory(new_phi);
               }
@@ -2313,9 +2311,22 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             }
           }
         }
-        // Replace self with the result without transforming the new phi nodes now. This prevents a
-        // potential dead loop because this phi is still alive during the transformations and could
-        // let a dead loop check fail even though there is one without this phi.
+
+        if (igvn) {
+          // Already replace this phi node to cut it off from the graph to not interfere in dead loop checks during the
+          // transformations of the new phi nodes below. Otherwise, we could wrongly conclude that there is no dead loop
+          // because we are finding this phi node again. Also set the type of the new MergeMem node in case we are also
+          // visiting it in the transformations below.
+          igvn->replace_node(this, result);
+          igvn->set_type(result, result->bottom_type());
+        }
+        // now transform the new nodes, and return the mergemem
+        for (MergeMemStream mms(result); mms.next_non_empty(); ) {
+          Node* phi = mms.memory();
+          mms.set_memory(phase->transform(phi));
+        }
+        hook->destruct(igvn);
+        // Replace self with the result.
         return result;
       }
     }
