@@ -298,7 +298,7 @@ public:
                   rem_set->occupied());
 
     HeapRegionRemSet::print_static_mem_size(out);
-    G1BufferListFreePool<mtGCCardSet>::free_list_pool()->print_on(out);
+    G1SegmentedArrayFreePool<mtGCCardSet>::free_list_pool()->print_on(out);
 
     // Strong code root statistics
     HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();

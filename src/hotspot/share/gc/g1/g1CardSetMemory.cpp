@@ -142,7 +142,7 @@ void G1CardSetAllocator<Elem>::print(outputStream* os) {
 }
 
 G1CardSetMemoryManager::G1CardSetMemoryManager(G1CardSetConfiguration* config,
-                                               G1BufferListFreePool<mtGCCardSet>* free_list_pool) : _config(config) {
+                                               G1SegmentedArrayFreePool<mtGCCardSet>* free_list_pool) : _config(config) {
 
   _allocators = NEW_C_HEAP_ARRAY(G1CardSetAllocator<G1CardSetContainer>,
                                  _config->num_mem_object_types(),
@@ -202,8 +202,8 @@ size_t G1CardSetMemoryManager::wasted_mem_size() const {
   return result;
 }
 
-G1BufferListMemoryStats G1CardSetMemoryManager::memory_stats() const {
-  G1BufferListMemoryStats result;
+G1SegmentedArrayMemoryStats G1CardSetMemoryManager::memory_stats() const {
+  G1SegmentedArrayMemoryStats result;
   for (uint i = 0; i < num_mem_object_types(); i++) {
     result._num_mem_sizes[i] += _allocators[i].mem_size();
     result._num_buffers[i] += _allocators[i].num_buffers();

@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
-#include "gc/g1/g1BufferListFreeMemoryTask.hpp"
+#include "gc/g1/g1SegmentedArrayFreeMemoryTask.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -65,7 +65,7 @@
 class G1Allocator;
 class G1ArchiveAllocator;
 class G1BatchedTask;
-class G1BufferListFreeMemoryTask;
+class G1SegmentedArrayFreeMemoryTask;
 class G1CardTableEntryClosure;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
@@ -144,7 +144,7 @@ class G1CollectedHeap : public CollectedHeap {
 private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
-  G1BufferListFreeMemoryTask* _free_card_set_memory_task;
+  G1SegmentedArrayFreeMemoryTask* _free_card_set_memory_task;
 
   WorkerThreads* _workers;
   G1CardTable* _card_table;
@@ -161,9 +161,9 @@ private:
   HeapRegionSet _humongous_set;
 
   // Young gen memory statistics before GC.
-  G1BufferListMemoryStats _young_gen_card_set_stats;
+  G1SegmentedArrayMemoryStats _young_gen_card_set_stats;
   // Collection set candidates memory statistics after GC.
-  G1BufferListMemoryStats _collection_set_candidates_card_set_stats;
+  G1SegmentedArrayMemoryStats _collection_set_candidates_card_set_stats;
 
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
@@ -260,8 +260,8 @@ public:
   void set_humongous_stats(uint num_humongous_total, uint num_humongous_candidates);
 
   bool should_sample_collection_set_candidates() const;
-  void set_collection_set_candidates_stats(G1BufferListMemoryStats& stats);
-  void set_young_gen_card_set_stats(const G1BufferListMemoryStats& stats);
+  void set_collection_set_candidates_stats(G1SegmentedArrayMemoryStats& stats);
+  void set_young_gen_card_set_stats(const G1SegmentedArrayMemoryStats& stats);
 
 private:
 

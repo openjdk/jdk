@@ -33,7 +33,7 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
-#include "gc/g1/g1BufferListFreeMemoryTask.hpp"
+#include "gc/g1/g1SegmentedArrayFreeMemoryTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
@@ -1723,7 +1723,7 @@ jint G1CollectedHeap::initialize() {
   _periodic_gc_task = new G1PeriodicGCTask("Periodic GC Task");
   _service_thread->register_task(_periodic_gc_task);
 
-  _free_card_set_memory_task = new G1BufferListFreeMemoryTask("Card Set Free Memory Task");
+  _free_card_set_memory_task = new G1SegmentedArrayFreeMemoryTask("Card Set Free Memory Task");
   _service_thread->register_task(_free_card_set_memory_task);
 
   {
@@ -2943,11 +2943,11 @@ bool G1CollectedHeap::should_sample_collection_set_candidates() const {
   return candidates != NULL && candidates->num_remaining() > 0;
 }
 
-void G1CollectedHeap::set_collection_set_candidates_stats(G1BufferListMemoryStats& stats) {
+void G1CollectedHeap::set_collection_set_candidates_stats(G1SegmentedArrayMemoryStats& stats) {
   _collection_set_candidates_card_set_stats = stats;
 }
 
-void G1CollectedHeap::set_young_gen_card_set_stats(const G1BufferListMemoryStats& stats) {
+void G1CollectedHeap::set_young_gen_card_set_stats(const G1SegmentedArrayMemoryStats& stats) {
   _young_gen_card_set_stats = stats;
 }
 
