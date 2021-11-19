@@ -87,7 +87,6 @@ void ReferenceProcessor::enable_discovery(bool check_no_refs) {
 
 ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                                        uint      mt_processing_degree,
-                                       bool      mt_discovery,
                                        uint      mt_discovery_degree,
                                        bool      concurrent_discovery,
                                        BoolObjectClosure* is_alive_non_header)  :
@@ -99,7 +98,7 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
   assert(is_subject_to_discovery != NULL, "must be set");
 
   _discovery_is_concurrent = concurrent_discovery;
-  _discovery_is_mt         = mt_discovery;
+  _discovery_is_mt         = (mt_discovery_degree > 1);
   _num_queues              = MAX2(1U, mt_processing_degree);
   _max_num_queues          = MAX2(_num_queues, mt_discovery_degree);
   _discovered_refs         = NEW_C_HEAP_ARRAY(DiscoveredList,

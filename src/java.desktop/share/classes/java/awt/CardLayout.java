@@ -74,7 +74,7 @@ public class CardLayout implements LayoutManager2,
     /**
      * A pair of component and string that represents its name.
      */
-    class Card implements Serializable {
+    static class Card implements Serializable {
 
         /**
          * Use serialVersionUID from JDK 1.4 for interoperability.

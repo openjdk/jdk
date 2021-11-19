@@ -180,10 +180,14 @@ public class SharedArchiveFileOption extends DynamicArchiveTestBase {
             .assertAbnormalExit("-XX:ArchiveClassesAtExit is unsupported when a dynamic CDS archive is specified in -XX:SharedArchiveFile:");
 
         testcase("A dynamic archive is already loaded when -XX:+RecordDynamicDumpInfo is specified");
-        run2(null, topArchiveName,
-             "-XX:+RecordDynamicDumpInfo",
-             "-cp", appJar, mainClass)
-            .assertAbnormalExit("-XX:+RecordDynamicDumpInfo is unsupported when a dynamic CDS archive is specified in -XX:SharedArchiveFile:");
+        if (isUseSharedSpacesDisabled()) {
+            System.out.println("This test is not applicable when JTREG tests are executed with -Xshare:off, or if the JDK doesn't have a default archive.");
+        } else {
+          run2(null, topArchiveName,
+               "-XX:+RecordDynamicDumpInfo",
+               "-cp", appJar, mainClass)
+              .assertAbnormalExit("-XX:+RecordDynamicDumpInfo is unsupported when a dynamic CDS archive is specified in -XX:SharedArchiveFile:");
+        }
 
         testcase("-XX:+RecordDynamicDumpInfo cannot be used with -XX:ArchiveClassesAtExit");
         dump2(baseArchiveName,

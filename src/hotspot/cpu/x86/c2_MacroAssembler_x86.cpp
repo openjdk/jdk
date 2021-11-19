@@ -574,8 +574,13 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   // Unconditionally set box->_displaced_header = markWord::unused_mark().
   // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
   movptr(Address(boxReg, 0), (int32_t)intptr_t(markWord::unused_mark().value()));
-  // Intentional fall-through into DONE_LABEL ...
   // Propagate ICC.ZF from CAS above into DONE_LABEL.
+  jcc(Assembler::equal, DONE_LABEL);           // CAS above succeeded; propagate ZF = 1 (success)
+
+  cmpptr(r15_thread, rax);                     // Check if we are already the owner (recursive lock)
+  jcc(Assembler::notEqual, DONE_LABEL);        // If not recursive, ZF = 0 at this point (fail)
+  incq(Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+  xorq(rax, rax); // Set ZF = 1 (success) for recursive lock, denoting locking success
 #endif // _LP64
 #if INCLUDE_RTM_OPT
   } // use_rtm()
@@ -670,10 +675,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // Refer to the comments in synchronizer.cpp for how we might encode extra
   // state in _succ so we can avoid fetching EntryList|cxq.
   //
-  // I'd like to add more cases in fast_lock() and fast_unlock() --
-  // such as recursive enter and exit -- but we have to be wary of
-  // I$ bloat, T$ effects and BP$ effects.
-  //
   // If there's no contention try a 1-0 exit.  That is, exit without
   // a costly MEMBAR or CAS.  See synchronizer.cpp for details on how
   // we detect and recover from the race that the 1-0 exit admits.
@@ -721,9 +722,16 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   bind (CheckSucc);
 #else // _LP64
   // It's inflated
-  xorptr(boxReg, boxReg);
-  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-  jccb  (Assembler::notZero, DONE_LABEL);
+  Label LNotRecursive, LSuccess, LGoSlowPath;
+
+  cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 0);
+  jccb(Assembler::equal, LNotRecursive);
+
+  // Recursive inflated unlock
+  decq(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+  jmpb(LSuccess);
+
+  bind(LNotRecursive);
   movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
   orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
   jccb  (Assembler::notZero, CheckSucc);
@@ -732,7 +740,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   jmpb  (DONE_LABEL);
 
   // Try to avoid passing control into the slow_path ...
-  Label LSuccess, LGoSlowPath ;
   bind  (CheckSucc);
 
   // The following optional optimization can be elided if necessary

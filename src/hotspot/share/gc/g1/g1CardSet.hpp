@@ -291,7 +291,7 @@ private:
   //
   // on the given class.
   template <class CardVisitor>
-  void iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& found);
+  void iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& vl);
 
   uint card_set_type_to_mem_object_type(uintptr_t type) const;
   uint8_t* allocate_mem_object(uintptr_t type);
@@ -353,21 +353,21 @@ public:
   // start_iterate().
   //
   template <class CardOrRangeVisitor>
-  void iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& found);
+  void iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& cl);
 
-  class G1CardSetPtrIterator {
+  class CardSetPtrClosure {
   public:
     virtual void do_cardsetptr(uint region_idx, size_t num_occupied, CardSetPtr card_set) = 0;
   };
 
-  void iterate_containers(G1CardSetPtrIterator* iter, bool safepoint = false);
+  void iterate_containers(CardSetPtrClosure* cl, bool safepoint = false);
 
-  class G1CardSetCardIterator {
+  class CardClosure {
   public:
     virtual void do_card(uint region_idx, uint card_idx) = 0;
   };
 
-  void iterate_cards(G1CardSetCardIterator& iter);
+  void iterate_cards(CardClosure& cl);
 };
 
 class G1CardSetHashTableValue {
