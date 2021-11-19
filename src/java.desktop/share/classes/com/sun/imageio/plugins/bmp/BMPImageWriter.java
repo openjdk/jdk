@@ -327,7 +327,8 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
 
         if (!canEncodeImage(compressionType, colorModel, sampleModel)) {
             throw new IOException("Image can not be encoded with compression type "
-                                  + BMPCompressionTypes.getName(compressionType));
+                                  + BMPCompressionTypes.getName(compressionType)
+                                  + " and " + colorModel.getPixelSize() + " bits per pixel");
         }
 
         byte[] r = null, g = null, b = null, a = null;
