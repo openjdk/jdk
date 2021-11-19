@@ -25,11 +25,8 @@
 package jdk.jpackage.internal;
 
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -40,7 +37,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.imageio.ImageIO;
@@ -56,16 +52,16 @@ import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
-import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;;
+import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 
 /**
  * Helper to create files for desktop integration.
  */
-final class DesktopIntegration {
+final class DesktopIntegration extends ShellCustomAction {
 
-    static final String DESKTOP_COMMANDS_INSTALL = "DESKTOP_COMMANDS_INSTALL";
-    static final String DESKTOP_COMMANDS_UNINSTALL = "DESKTOP_COMMANDS_UNINSTALL";
-    static final String UTILITY_SCRIPTS = "UTILITY_SCRIPTS";
+    private static final String COMMANDS_INSTALL = "DESKTOP_COMMANDS_INSTALL";
+    private static final String COMMANDS_UNINSTALL = "DESKTOP_COMMANDS_UNINSTALL";
+    private static final String SCRIPTS = "DESKTOP_SCRIPTS";
 
     private DesktopIntegration(PlatformPackage thePackage,
             Map<String, ? super Object> params,
@@ -179,12 +175,19 @@ final class DesktopIntegration {
         return new DesktopIntegration(thePackage, params, null);
     }
 
+    @Override
     List<String> requiredPackages() {
         return Stream.of(List.of(this), nestedIntegrations).flatMap(
                 List::stream).map(DesktopIntegration::requiredPackagesSelf).flatMap(
                 List::stream).distinct().toList();
     }
 
+    @Override
+    List<String> replacementStringIds() {
+        return List.of(COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS);
+    }
+
+    @Override
     Map<String, String> create() throws IOException {
         associations.forEach(assoc -> assoc.data.verify());
 
@@ -230,9 +233,9 @@ final class DesktopIntegration {
         // of the additional launchers and append them to the corresponding
         // commands of the main launcher.
         List<String> installShellCmds = new ArrayList<>(Arrays.asList(
-                data.get(DESKTOP_COMMANDS_INSTALL)));
+                data.get(COMMANDS_INSTALL)));
         List<String> uninstallShellCmds = new ArrayList<>(Arrays.asList(
-                data.get(DESKTOP_COMMANDS_UNINSTALL)));
+                data.get(COMMANDS_UNINSTALL)));
         for (var integration: nestedIntegrations) {
             if (!integration.associations.isEmpty()) {
                 needCleanupScripts = true;
@@ -240,26 +243,16 @@ final class DesktopIntegration {
 
             Map<String, String> launcherData = integration.create();
 
-            installShellCmds.add(launcherData.get(DESKTOP_COMMANDS_INSTALL));
-            uninstallShellCmds.add(launcherData.get(
-                    DESKTOP_COMMANDS_UNINSTALL));
+            installShellCmds.add(launcherData.get(COMMANDS_INSTALL));
+            uninstallShellCmds.add(launcherData.get(COMMANDS_UNINSTALL));
         }
 
-        data.put(DESKTOP_COMMANDS_INSTALL, stringifyShellCommands(
-                installShellCmds));
-        data.put(DESKTOP_COMMANDS_UNINSTALL, stringifyShellCommands(
-                uninstallShellCmds));
+        data.put(COMMANDS_INSTALL, stringifyShellCommands(installShellCmds));
+        data.put(COMMANDS_UNINSTALL, stringifyShellCommands(uninstallShellCmds));
 
         if (needCleanupScripts) {
-            // Pull in utils.sh scrips library.
-            try (InputStream is = OverridableResource.readDefault("utils.sh");
-                    InputStreamReader isr = new InputStreamReader(is);
-                    BufferedReader reader = new BufferedReader(isr)) {
-                data.put(UTILITY_SCRIPTS, reader.lines().collect(
-                        Collectors.joining(System.lineSeparator())));
-            }
-        } else {
-            data.put(UTILITY_SCRIPTS, "");
+            // Pull in desktop_utils.sh scrips library.
+            data.put(SCRIPTS, stringifyTextFile("desktop_utils.sh"));
         }
 
         return data;
@@ -280,14 +273,9 @@ final class DesktopIntegration {
         data.put("APPLICATION_ICON",
                 iconFile != null ? iconFile.installPath().toString() : null);
         data.put("DEPLOY_BUNDLE_CATEGORY", MENU_GROUP.fetchFrom(params));
-
-        String appLauncher = thePackage.installedApplicationLayout().launchersDirectory().resolve(
-                LinuxAppImageBuilder.getLauncherName(params)).toString();
-        if (Pattern.compile("\\s").matcher(appLauncher).find()) {
-            // Path contains whitespace(s). Enclose in double quotes.
-            appLauncher = "\"" + appLauncher + "\"";
-        }
-        data.put("APPLICATION_LAUNCHER", appLauncher);
+        data.put("APPLICATION_LAUNCHER",
+                escapedInstalledLauncherPath(thePackage,
+                        LinuxAppImageBuilder.getLauncherName(params)));
 
         return data;
     }
@@ -356,13 +344,13 @@ final class DesktopIntegration {
             cmds.add(registerDesktopFileCmd);
             cmds.add(registerFileAssociationsCmd);
             cmds.addAll(registerIconCmds);
-            data.put(DESKTOP_COMMANDS_INSTALL, stringifyShellCommands(cmds));
+            data.put(COMMANDS_INSTALL, stringifyShellCommands(cmds));
 
             cmds.clear();
             cmds.add(unregisterDesktopFileCmd);
             cmds.add(unregisterFileAssociationsCmd);
             cmds.addAll(unregisterIconCmds);
-            data.put(DESKTOP_COMMANDS_UNINSTALL, stringifyShellCommands(cmds));
+            data.put(COMMANDS_UNINSTALL, stringifyShellCommands(cmds));
         }
 
         private String registerDesktopFileCmd;
@@ -524,15 +512,6 @@ final class DesktopIntegration {
         }
 
         return commonIconSize;
-    }
-
-    private static String stringifyShellCommands(String... commands) {
-        return stringifyShellCommands(Arrays.asList(commands));
-    }
-
-    private static String stringifyShellCommands(List<String> commands) {
-        return String.join(System.lineSeparator(), commands.stream().filter(
-                s -> s != null && !s.isEmpty()).toList());
     }
 
     private static class LinuxFileAssociation {

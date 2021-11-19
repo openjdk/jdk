@@ -32,6 +32,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -48,6 +49,7 @@ import org.xml.sax.SAXException;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
@@ -150,6 +152,8 @@ public class AppImageFile {
                 xml.writeAttribute("shortcut",
                         SHORTCUT_HINT.fetchFrom(sl).toString());
                 xml.writeAttribute("menu", MENU_HINT.fetchFrom(sl).toString());
+                xml.writeAttribute("service",
+                        LAUNCHER_AS_SERVICE.fetchFrom(sl).toString());
                 xml.writeEndElement();
             }
         });
@@ -190,14 +194,7 @@ public class AppImageFile {
                     XPathConstants.NODESET);
 
             for (int i = 0; i != launcherNodes.getLength(); i++) {
-                 Node item = launcherNodes.item(i);
-                 String name = getAttribute(item, "name");
-                 String shortcut = getAttribute(item, "shortcut");
-                 String menu = getAttribute(item, "menu");
-
-                 launcherInfos.add(new LauncherInfo(name,
-                         !("false".equals(shortcut)),
-                         !("false".equals(menu))));
+                 launcherInfos.add(new LauncherInfo(launcherNodes.item(i)));
             }
 
             AppImageFile file = new AppImageFile(
@@ -246,8 +243,8 @@ public class AppImageFile {
         try {
             AppImageFile appImageInfo = AppImageFile.load(appImageDir);
             if (appImageInfo != null) {
-                launchers.add(new LauncherInfo(
-                        appImageInfo.getLauncherName(), true, true));
+                launchers.add(new LauncherInfo(appImageInfo.getLauncherName(),
+                        params));
                 launchers.addAll(appImageInfo.getAddLaunchers());
                 return launchers;
             }
@@ -261,11 +258,12 @@ public class AppImageFile {
                     "warning.invalid-app-image"), appImageDir));
 
         }
+
         // this should never be the case, but maintaining behavior of
         // creating default launchers without AppImageFile present
-
+        launchers.add(new LauncherInfo(APP_NAME.fetchFrom(params), params));
         ADD_LAUNCHERS.fetchFrom(params).stream().map(APP_NAME::fetchFrom).map(
-                name -> new LauncherInfo(name, true, true)).forEach(launchers::add);
+                name -> new LauncherInfo(name, params)).forEach(launchers::add);
         return launchers;
     }
 
@@ -290,7 +288,7 @@ public class AppImageFile {
     }
 
     private static String getVersion() {
-        return System.getProperty("java.version");
+        return "1.0";
     }
 
     private static String getPlatform() {
@@ -301,25 +299,44 @@ public class AppImageFile {
         if (launcherName == null || launcherName.length() == 0) {
             return false;
         }
+
         for (var launcher : addLauncherInfos) {
             if ("".equals(launcher.getName())) {
                 return false;
             }
         }
 
+        if (!Objects.equals(getVersion(), creatorVersion)) {
+            return false;
+        }
+
+        if (!Objects.equals(getPlatform(), creatorPlatform)) {
+            return false;
+        }
+
         return true;
     }
 
     static class LauncherInfo {
-        private String name;
-        private boolean shortcut;
-        private boolean menu;
+        private final String name;
+        private final boolean shortcut;
+        private final boolean menu;
+        private final boolean service;
 
-        public LauncherInfo(String name, boolean shortcut, boolean menu) {
+        private LauncherInfo(String name, Map<String, ? super Object> params) {
             this.name = name;
-            this.shortcut = shortcut;
-            this.menu = menu;
+            this.shortcut = SHORTCUT_HINT.fetchFrom(params);
+            this.menu = MENU_HINT.fetchFrom(params);
+            this.service = LAUNCHER_AS_SERVICE.fetchFrom(params);
         }
+
+        private LauncherInfo(Node node) {
+            this.name = getAttribute(node, "name");
+            this.shortcut = !"false".equals(getAttribute(node, "shortcut"));
+            this.menu = !"false".equals(getAttribute(node, "menu"));
+            this.service = !"false".equals(getAttribute(node, "service"));
+        }
+
         public String getName() {
             return name;
         }
@@ -328,6 +345,9 @@ public class AppImageFile {
         }
         public boolean isMenu() {
             return menu;
+        }
+        public boolean isService() {
+            return service;
         }
     }
 
