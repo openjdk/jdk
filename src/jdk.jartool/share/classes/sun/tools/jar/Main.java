@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,9 @@ public class Main {
     static final String VERSION = "1.0";
     static final int VERSIONS_DIR_LENGTH = VERSIONS_DIR.length();
     private static ResourceBundle rsrc;
+
+    /* Source date option for entry timestamps */
+    long sourceDate = -1;
 
     /**
      * If true, maintain compatibility with JDK releases prior to 6.0 by
@@ -846,12 +849,12 @@ public class Main {
                     output(getMsg("out.added.manifest"));
                 }
                 ZipEntry e = new ZipEntry(MANIFEST_DIR);
-                e.setTime(System.currentTimeMillis());
+                e.setTime(getSourceDate());
                 e.setSize(0);
                 e.setCrc(0);
                 zos.putNextEntry(e);
                 e = new ZipEntry(MANIFEST_NAME);
-                e.setTime(System.currentTimeMillis());
+                e.setTime(getSourceDate());
                 if (flag0) {
                     crc32Manifest(e, manifest);
                 }
@@ -951,7 +954,7 @@ public class Main {
                     // do our own compression
                     ZipEntry e2 = new ZipEntry(name);
                     e2.setMethod(e.getMethod());
-                    e2.setTime(e.getTime());
+                    e2.setTime(getSourceDate(e.getTime()));
                     e2.setComment(e.getComment());
                     e2.setExtra(e.getExtra());
                     if (e.getMethod() == ZipEntry.STORED) {
@@ -1017,7 +1020,7 @@ public class Main {
         throws IOException
     {
         ZipEntry e = new ZipEntry(INDEX_NAME);
-        e.setTime(System.currentTimeMillis());
+        e.setTime(getSourceDate());
         if (flag0) {
             CRC32OutputStream os = new CRC32OutputStream();
             index.write(os);
@@ -1036,7 +1039,7 @@ public class Main {
             String name = mi.getKey();
             byte[] bytes = mi.getValue();
             ZipEntry e = new ZipEntry(name);
-            e.setTime(System.currentTimeMillis());
+            e.setTime(getSourceDate());
             if (flag0) {
                 crc32ModuleInfo(e, bytes);
             }
@@ -1061,7 +1064,7 @@ public class Main {
             addMultiRelease(m);
         }
         ZipEntry e = new ZipEntry(MANIFEST_NAME);
-        e.setTime(System.currentTimeMillis());
+        e.setTime(getSourceDate());
         if (flag0) {
             crc32Manifest(e, m);
         }
@@ -1182,7 +1185,7 @@ public class Main {
             out.print(formatMsg("out.adding", name));
         }
         ZipEntry e = new ZipEntry(name);
-        e.setTime(file.lastModified());
+        e.setTime(getSourceDate(file.lastModified()));
         if (size == 0) {
             e.setMethod(ZipEntry.STORED);
             e.setSize(0);
@@ -2261,4 +2264,17 @@ public class Main {
     static Comparator<ZipEntry> ENTRY_COMPARATOR =
         Comparator.comparing(ZipEntry::getName, ENTRYNAME_COMPARATOR);
 
+    // Return sourceDate if specified othewise the current time
+    private long getSourceDate() {
+        return getSourceDate(System.currentTimeMillis());
+    }
+
+    // Return the sourceDate if specified otherwise the original time
+    private long getSourceDate(long origTime) {
+        if (sourceDate != -1) {
+          return sourceDate;
+        } else {
+          return origTime;
+        }
+    }
 }

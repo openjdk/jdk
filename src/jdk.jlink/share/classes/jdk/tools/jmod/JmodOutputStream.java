@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,15 +54,17 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
      * This method creates (or overrides, if exists) the JMOD file,
      * returning the the output stream to write to the JMOD file.
      */
-    static JmodOutputStream newOutputStream(Path file) throws IOException {
+    static JmodOutputStream newOutputStream(Path file, long sourceDate) throws IOException {
         OutputStream out = Files.newOutputStream(file);
         BufferedOutputStream bos = new BufferedOutputStream(out);
-        return new JmodOutputStream(bos);
+        return new JmodOutputStream(bos, sourceDate);
     }
 
     private final ZipOutputStream zos;
-    private JmodOutputStream(OutputStream out) {
+    private final long            sourceDate;
+    private JmodOutputStream(OutputStream out, long sourceDate) {
         this.zos = new ZipOutputStream(out);
+        this.sourceDate = sourceDate;
         try {
             JmodFile.writeMagicNumber(out);
         } catch (IOException e) {
@@ -104,7 +106,11 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
         // sun.tools.jar.Main.update()
         ZipEntry e2 = new ZipEntry(e1.getName());
         e2.setMethod(e1.getMethod());
-        e2.setTime(e1.getTime());
+        if (sourceDate != -1) {
+            e2.setTime(sourceDate);
+        } else {
+            e2.setTime(e1.getTime());
+        }
         e2.setComment(e1.getComment());
         e2.setExtra(e1.getExtra());
         if (e1.getMethod() == ZipEntry.STORED) {
@@ -124,7 +130,11 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
         String name = Paths.get(prefix, path).toString()
                            .replace(File.separatorChar, '/');
         entries.get(section).add(path);
-        return new ZipEntry(name);
+        ZipEntry zipEntry = new ZipEntry(name);
+        if (sourceDate != -1) {
+            zipEntry.setTime(sourceDate);
+        }
+        return zipEntry;
     }
 
     public boolean contains(Section section, String path) {

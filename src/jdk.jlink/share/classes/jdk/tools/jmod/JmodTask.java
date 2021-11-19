@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,7 @@ public class JmodTask {
         boolean dryrun;
         List<PathMatcher> excludes;
         Path extractDir;
+        long sourceDate;
     }
 
     public int run(String[] args) {
@@ -427,7 +428,7 @@ public class JmodTask {
         Path target = options.jmodFile;
         Path tempTarget = jmodTempFilePath(target);
         try {
-            try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget)) {
+            try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.sourceDate)) {
                 jmod.write(jos);
             }
             Files.move(tempTarget, target);
@@ -973,7 +974,11 @@ public class JmodTask {
                         if (e.getName().equals(MODULE_INFO)) {
                             // what about module-info.class in versioned entries?
                             ZipEntry ze = new ZipEntry(e.getName());
-                            ze.setTime(System.currentTimeMillis());
+                            if (options.sourceDate != -1) {
+                                ze.setTime(options.sourceDate);
+                            } else {
+                                ze.setTime(System.currentTimeMillis());
+                            }
                             jos.putNextEntry(ze);
                             recordHashes(in, jos, moduleHashes);
                             jos.closeEntry();
@@ -1001,7 +1006,7 @@ public class JmodTask {
         {
 
             try (JmodFile jf = new JmodFile(target);
-                 JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget))
+                 JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.sourceDate))
             {
                 jf.stream().forEach(e -> {
                     try (InputStream in = jf.getInputStream(e.section(), e.name())) {
@@ -1134,6 +1139,21 @@ public class JmodTask {
         @Override public Class<Version> valueType() { return Version.class; }
 
         @Override public String valuePattern() { return "module-version"; }
+    }
+
+    static class SourceDateConverter implements ValueConverter<Long> {
+        @Override
+        public Long convert(String value) {
+            try {
+                return Long.valueOf(value);
+            } catch (NumberFormatException x) {
+                throw new CommandException("err.invalid.source.date", x.getMessage());
+            }
+        }
+
+        @Override public Class<Long> valueType() { return Long.class; }
+
+        @Override public String valuePattern() { return "source-date"; }
     }
 
     static class WarnIfResolvedReasonConverter
@@ -1371,6 +1391,11 @@ public class JmodTask {
         OptionSpec<Void> version
                 = parser.accepts("version", getMessage("main.opt.version"));
 
+        OptionSpec<Long> sourceDate 
+                = parser.accepts("source-date", getMessage("main.opt.source-date"))
+                        .withRequiredArg()
+                        .withValuesConvertedBy(new SourceDateConverter());
+
         NonOptionArgumentSpec<String> nonOptions
                 = parser.nonOptions();
 
@@ -1414,6 +1439,10 @@ public class JmodTask {
                 options.manPages = getLastElement(opts.valuesOf(manPages));
             if (opts.has(legalNotices))
                 options.legalNotices = getLastElement(opts.valuesOf(legalNotices));
+            if (opts.has(sourceDate))
+                options.sourceDate = opts.valueOf(sourceDate).longValue();
+            else
+                options.sourceDate = -1;
             if (opts.has(modulePath)) {
                 Path[] dirs = getLastElement(opts.valuesOf(modulePath)).toArray(new Path[0]);
                 options.moduleFinder = ModulePath.of(Runtime.version(), true, dirs);

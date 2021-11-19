@@ -1,4 +1,4 @@
-.\" Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,12 @@ Specifies the module version to record in the module\-info.class file.
 .B \f[CB]\-\-module\-path\f[R] \f[I]path\f[R] or \f[CB]\-p\f[R] \f[I]path\f[R]
 Specifies the module path.
 This option is required if you also specify \f[CB]\-\-hash\-modules\f[R].
+.RS
+.RE
+.TP
+.B \f[CB]\-\-source\-date=\f[R]\f[I]TIMESTAMP\f[R]
+The timestamp in milliseconds since the epoch to use for all created
+or updated jmod entries.
 .RS
 .RE
 .TP

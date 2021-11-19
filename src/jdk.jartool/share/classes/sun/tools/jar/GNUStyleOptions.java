@@ -188,6 +188,15 @@ class GNUStyleOptions {
                     jartool.flag0 = true;
                 }
             },
+            new Option(true, OptionType.CREATE_UPDATE_INDEX, "--source-date") {
+                void process(Main jartool, String opt, String arg) throws BadArgs {
+                    try {
+                        jartool.sourceDate = Long.parseLong(arg);
+                    } catch (NumberFormatException x) {
+                        throw new BadArgs("error.source.date.notnumber", arg);
+                    }
+                }
+            },
 
             // Hidden options
             new Option(false, OptionType.OTHER, "-P") {

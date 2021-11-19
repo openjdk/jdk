@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4225317 6969651
+ * @bug 4225317 6969651 8276766
  * @modules jdk.jartool
  * @summary Check extracted files have date as per those in the .jar file
  */
@@ -85,6 +85,7 @@ public class JarEntryTime {
         File dirOuter = new File("outer");
         File dirInner = new File(dirOuter, "inner");
         File jarFile = new File("JarEntryTime.jar");
+        File jarFileSourceDate = new File("JarEntryTimeSourceDate.jar");
         File testFile = new File("JarEntryTimeTest.txt");
 
         // Remove any leftovers from prior run
@@ -122,6 +123,16 @@ public class JarEntryTime {
         check(JAR_TOOL.run(System.out, System.err,
                            "cf", jarFile.getName(), dirOuter.getName()) == 0);
         check(jarFile.exists());
+
+        // Make a jar file from that directory structure with
+        // --source-date set to 1647302400000 (15/03/2022)
+        long sourceDate = 1647302400000L;
+        check(JAR_TOOL.run(System.out, System.err,
+                           "--create",
+                           "--file", jarFileSourceDate.getName(),
+                           "--source-date", String.valueOf(sourceDate),
+                           dirOuter.getName()) == 0);
+        check(jarFileSourceDate.exists());
 
         check(cleanup(dirInner));
         check(cleanup(dirOuter));
@@ -162,7 +173,20 @@ public class JarEntryTime {
         check(cleanup(dirInner));
         check(cleanup(dirOuter));
 
+        // Extract jarFileSourceDate and check last modified values
+        extractJar(jarFileSourceDate, false);
+        check(dirOuter.exists());
+        check(dirInner.exists());
+        check(fileInner.exists());
+        checkFileTime(dirOuter.lastModified(), sourceDate);
+        checkFileTime(dirInner.lastModified(), sourceDate);
+        checkFileTime(fileInner.lastModified(), sourceDate);
+
+        check(cleanup(dirInner));
+        check(cleanup(dirOuter));
+
         check(jarFile.delete());
+        check(jarFileSourceDate.delete());
         check(testFile.delete());
     }
 
