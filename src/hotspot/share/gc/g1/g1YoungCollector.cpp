@@ -987,12 +987,6 @@ void G1YoungCollector::process_discovered_references(G1ParScanThreadStateSet* pe
   phase_times()->record_ref_proc_time((Ticks::now() - start).seconds() * MILLIUNITS);
 }
 
-bool G1STWIsAliveClosure::do_object_b(oop p) {
-  // An object is reachable if it is outside the collection set,
-  // or is inside and copied.
-  return !_g1h->is_in_cset(p) || p->is_forwarded();
-}
-
 void G1YoungCollector::post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states) {
   Ticks start = Ticks::now();
   {

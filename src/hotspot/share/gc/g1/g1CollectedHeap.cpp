@@ -2902,6 +2902,12 @@ void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
   workers()->run_task(&unlink_task);
 }
 
+bool G1STWIsAliveClosure::do_object_b(oop p) {
+  // An object is reachable if it is outside the collection set,
+  // or is inside and copied.
+  return !_g1h->is_in_cset(p) || p->is_forwarded();
+}
+
 bool G1STWSubjectToDiscoveryClosure::do_object_b(oop obj) {
   assert(obj != NULL, "must not be NULL");
   assert(_g1h->is_in_reserved(obj), "Trying to discover obj " PTR_FORMAT " not in heap", p2i(obj));
