@@ -127,7 +127,9 @@ public class Main {
     Map<Integer,Set<String>> pathsMap = new HashMap<>();
 
     // There's also a files array per version
-    // Use a LinkedHashMap to keep original insertion ordering
+    // filesMap key entries are created in the order the versions are
+    // specified on the cmd line, hence LinkedHashMap keeps that order.
+    // String[] values for each version are also in cmd line order.
     Map<Integer,String[]> filesMap = new LinkedHashMap<>();
 
     // Do we think this is a multi-release jar?  Set to true
@@ -773,15 +775,17 @@ public class Main {
     private void expand(File dir, String[] files, Set<String> cpaths, int version)
         throws IOException
     {
-        if (files == null)
+        if (files == null) {
             return;
+        }
 
         for (int i = 0; i < files.length; i++) {
             File f;
-            if (dir == null)
+            if (dir == null) {
                 f = new File(files[i]);
-            else
+            } else {
                 f = new File(dir, files[i]);
+            }
 
             boolean isDir = f.isDirectory();
             String name = toEntryName(f.getPath(), cpaths, isDir);
@@ -803,11 +807,13 @@ public class Main {
                 Entry e = new Entry(f, name, false);
                 if (isModuleInfoEntry(name)) {
                     moduleInfos.putIfAbsent(name, Files.readAllBytes(f.toPath()));
-                    if (uflag)
+                    if (uflag) {
                         entryMap.put(name, e);
+                    }
                 } else if (entries.add(e)) {
-                    if (uflag)
+                    if (uflag) {
                         entryMap.put(name, e);
+                    }
                 }
             } else if (isDir) {
                 Entry e = new Entry(f, name, true);
@@ -825,8 +831,9 @@ public class Main {
                     }
                     String[] dirFiles = f.list();
                     // Ensure files list is sorted for reproducible jar content
-                    if (dirFiles != null)
+                    if (dirFiles != null) {
                         Arrays.sort(dirFiles);
+                    }
                     expand(f, dirFiles, cpaths, version);
                 }
             } else {

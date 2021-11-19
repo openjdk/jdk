@@ -24,12 +24,12 @@
 /*
  * @test
  * @bug 8276764
- * @summary test that the jar content ordering is sorted
+ * @summary perform a jar creation benchmark
  * @library /test/lib
  * @modules jdk.jartool
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
- * @run testng ContentOrder
+ * @run testng CreateJarBenchmark 
  */
 
 import org.testng.Assert;
@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,13 +53,12 @@ import java.util.zip.ZipException;
 
 import jdk.test.lib.util.FileUtils;
 
-public class ContentOrder {
+public class CreateJarBenchmark {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
         .orElseThrow(() ->
             new RuntimeException("jar tool not found")
         );
 
-    private final String nl = System.lineSeparator();
     private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     private final PrintStream out = new PrintStream(baos);
     private Runnable onCompletion;
@@ -76,34 +76,51 @@ public class ContentOrder {
     }
 
     @Test
-    public void test1() throws IOException {
-        mkdir("testjar/Ctest1", "testjar/Btest2/subdir1", "testjar/Atest3");
-        touch("testjar/Ctest1/testfile1", "testjar/Ctest1/testfile2", "testjar/Ctest1/testfile3");
-        touch("testjar/Btest2/subdir1/testfileC", "testjar/Btest2/subdir1/testfileB", "testjar/Btest2/subdir1/testfileA");
-        touch("testjar/Atest3/fileZ", "testjar/Atest3/fileY", "testjar/Atest3/fileX");
+    public void testSingleDir() throws IOException {
+        // Create a single testjar directory containing 10000 files
+        mkdir("testjar");
+        for(int i = 0; i < 10000; i++) {
+            createFile("testjar/testfile"+i);
+        }
 
         onCompletion = () -> rm("test.jar", "testjar");
 
-        jar("cf test.jar testjar");
-        jar("tf test.jar");
-        println();
-        String output = "META-INF/" + nl +
-                "META-INF/MANIFEST.MF" + nl +
-                "testjar/" + nl +
-                "testjar/Atest3/" + nl +
-                "testjar/Atest3/fileX" + nl +
-                "testjar/Atest3/fileY" + nl +
-                "testjar/Atest3/fileZ" + nl +
-                "testjar/Btest2/" + nl +
-                "testjar/Btest2/subdir1/" + nl +
-                "testjar/Btest2/subdir1/testfileA" + nl +
-                "testjar/Btest2/subdir1/testfileB" + nl +
-                "testjar/Btest2/subdir1/testfileC" + nl +
-                "testjar/Ctest1/" + nl +
-                "testjar/Ctest1/testfile1" + nl +
-                "testjar/Ctest1/testfile2" + nl +
-                "testjar/Ctest1/testfile3" + nl;
-        Assert.assertEquals(baos.toByteArray(), output.getBytes());
+        // Perform 100x jar creations
+        long start = System.currentTimeMillis(); 
+        for(int i = 0; i < 100; i++) {
+            jar("cf test.jar testjar");
+            rm("test.jar");
+        }
+        long finish = System.currentTimeMillis();
+
+        System.out.println("single directory jar creation benchmark = " + (finish-start) + "ms");
+    }
+
+    @Test
+    public void testMultiDir() throws IOException {
+        // Create a nested 10x20 set of sub-dirs each containing 50 files
+        mkdir("testjar");
+        for(int i = 0; i < 10; i++) {
+            mkdir("testjar/testdir" + i);
+            for(int j = 0; j < 20; j++) {
+                mkdir("testjar/testdir" + i + "/subdir" + j);
+                for(int k = 0; k < 50; k++) {
+                    createFile("testjar/testdir" + i + "/subdir" + j + "/testfile" + k);
+                }
+            }
+        }
+
+        onCompletion = () -> rm("test.jar", "testjar");
+
+        // Perform 100x jar creations
+        long start = System.currentTimeMillis();
+        for(int i = 0; i < 100; i++) {
+            jar("cf test.jar testjar");
+            rm("test.jar");
+        }
+        long finish = System.currentTimeMillis();
+
+        System.out.println("multi directory jar creation benchmark = " + (finish-start) + "ms");
     }
 
     private Stream<Path> mkpath(String... args) {
@@ -111,7 +128,6 @@ public class ContentOrder {
     }
 
     private void mkdir(String... dirs) {
-        System.out.println("mkdir -p " + Arrays.toString(dirs));
         Arrays.stream(dirs).forEach(p -> {
             try {
                 Files.createDirectories((new File(p)).toPath());
@@ -121,11 +137,15 @@ public class ContentOrder {
         });
     }
 
-    private void touch(String... files) {
-        System.out.println("touch " + Arrays.toString(files));
+    private void createFile(String... files) {
         Arrays.stream(files).forEach(p -> {
             try {
-                Files.createFile((new File(p)).toPath());
+                try (FileOutputStream fos = new FileOutputStream(p)) {
+                    // Create file with fixed content
+                    byte[] bytes = new byte[10000];
+                    Arrays.fill(bytes, (byte)0x41);
+                    fos.write(bytes);
+                }
             } catch (IOException x) {
                 throw new UncheckedIOException(x);
             }
@@ -133,7 +153,6 @@ public class ContentOrder {
     }
 
     private void rm(String... files) {
-        System.out.println("rm -rf " + Arrays.toString(files));
         Arrays.stream(files).forEach(p -> {
             try {
                 Path path = (new File(p)).toPath();
@@ -166,9 +185,5 @@ public class ContentOrder {
             }
             throw new IOException(s);
         }
-    }
-
-    private void println() throws IOException {
-        System.out.println(new String(baos.toByteArray()));
     }
 }
