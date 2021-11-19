@@ -331,10 +331,11 @@ UNSAFE_LEAF(void, Unsafe_FullFence(JNIEnv *env, jobject unsafe)) {
 
 UNSAFE_ENTRY(jobject, Unsafe_AllocateInstance(JNIEnv *env, jobject unsafe, jclass cls)) {
   instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(cls), CHECK_NULL);
+  jobject res = JNIHandles::make_local(THREAD, i);
   if (JvmtiExport::should_post_vm_object_alloc()) {
     JvmtiExport::post_vm_object_alloc(thread, i);
   }
-  return JNIHandles::make_local(THREAD, i);
+  return res;
 } UNSAFE_END
 
 UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong size)) {
