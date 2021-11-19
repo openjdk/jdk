@@ -50,9 +50,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     LinuxPackageBundler(BundlerParamInfo<String> packageName) {
         this.packageName = packageName;
         appImageBundler = new LinuxAppBundler().setDependentTask(true);
-        customActions = List.of(new CustomActionInstance(
-                DesktopIntegration::create), new CustomActionInstance(
-                LaunchersAsServices::create));
+        customActions = List.of(new CustomActionInstance(DesktopIntegration::create));
     }
 
     @Override
@@ -148,13 +146,10 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                 }
             }
 
-            for (var ca : customActions) {
-                ca.init(thePackage, params);
-            }
-
             Map<String, String> data = createDefaultReplacementData(params);
 
             for (var ca : customActions) {
+                ca.init(thePackage, params);
                 if (ca.instance != null) {
                     ca.instance.replacementStringIds().forEach(v -> data.put(v,
                             ""));
