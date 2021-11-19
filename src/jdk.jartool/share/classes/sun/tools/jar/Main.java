@@ -127,9 +127,9 @@ public class Main {
     Map<Integer,Set<String>> pathsMap = new HashMap<>();
 
     // There's also a files array per version
-    // filesMap key entries are created in the order the versions are
-    // specified on the cmd line, hence LinkedHashMap keeps that order.
-    // String[] values for each version are also in cmd line order.
+    // base version is the first entry and then follow with the version given
+    // from the --release option in the command-line order.
+    // The value of each entry is the files given in the command-line order. 
     Map<Integer,String[]> filesMap = new LinkedHashMap<>();
 
     // Do we think this is a multi-release jar?  Set to true
