@@ -133,8 +133,7 @@ public class SslRMIClientSocketFactory
             try {
                 sslSocket.setEnabledCipherSuites(enabledCipherSuitesList);
             } catch (IllegalArgumentException e) {
-                throw (IOException)
-                    new IOException(e.getMessage()).initCause(e);
+                throw new IOException(e.getMessage(), e);
             }
         }
         // Set the SSLSocket Enabled Protocols
@@ -151,8 +150,7 @@ public class SslRMIClientSocketFactory
             try {
                 sslSocket.setEnabledProtocols(enabledProtocolsList);
             } catch (IllegalArgumentException e) {
-                throw (IOException)
-                    new IOException(e.getMessage()).initCause(e);
+                throw new IOException(e.getMessage(), e);
             }
         }
         // Return the preconfigured SSLSocket
