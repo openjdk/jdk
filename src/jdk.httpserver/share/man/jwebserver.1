@@ -18,48 +18,77 @@ For detailed descriptions of the options, see:
 .RE
 .SH DESCRIPTION
 .PP
-\f[CB]jwebserver\f[R], the Java Simple Web Server tool, is a command\-line
-tool to run
+The \f[CB]jwebserver\f[R] tool provides a minimal HTTP server, designed to
+be used
 .PD 0
 .P
 .PD
-a minimal HTTP static file server, designed to be used for prototyping,
+for prototyping, testing, and debugging.
+It serves a single directory
 .PD 0
 .P
 .PD
-testing, and debugging.
-It was added to the jdk.httpserver module in JDK 18.
+hierarchy, and only serves static files.
+Only HTTP/1.1 is supported;
+.PD 0
+.P
+.PD
+HTTP/2 and HTTPS are not supported.
 .PP
-\f[CB]jwebserver\f[R] serves a single directory hierarchy and only serves
-static
+Only idempotent HEAD and GET requests are served.
+Any other requests receive
 .PD 0
 .P
 .PD
-files.
-It only supports HTTP/1.1, HTTP/2 and HTTPS are not supported.
+a \f[CB]501\ \-\ Not\ Implemented\f[R] or a \f[CB]405\ \-\ Not\ Allowed\f[R]
+response.
+GET requests are
 .PD 0
 .P
 .PD
-The server is based on the web server implementation in the
+mapped to the directory being served, as follows:
+.IP \[bu] 2
+If the requested resource is a file, its content is served.
+.IP \[bu] 2
+If the requested resource is a directory that contains an index file,
 .PD 0
 .P
 .PD
-com.sun.net.httpserver package, which has been included in the JDK
+the content of the index file is served.
+.IP \[bu] 2
+Otherwise, the names of all files and subdirectories of the directory
+are
 .PD 0
 .P
 .PD
-since 2006 and is officially supported.
+listed.
+Symbolic links and hidden files are not listed or served.
 .PP
-A default server implementation is provided via the command\-line, along
-with
+MIME types are configured automatically.
+For example, \f[CB]\&.html\f[R] files are
 .PD 0
 .P
 .PD
-an API for programmatic creation and customization of the server and its
+served as \f[CB]text/html\f[R] and \f[CB]\&.java\f[R] files are served as
+\f[CB]text/plain\f[R].
+This can
 .PD 0
 .P
 .PD
-components (see jdk.httpserver/com.sun.net.httpserver.SimpleFileServer).
+be customized via the \f[CB]java.net.URLConnection::getFileNameMap\f[R]
+API.
+.PP
+\f[CB]jwebserver\f[R] is located in the jdk.httpserver module, and can
+alternatively
+.PD 0
+.P
+.PD
+be started with \f[CB]java\ \-m\ jdk.httpserver\f[R].
+It is based on the web server
+.PD 0
+.P
+.PD
+implementation in the \f[CB]com.sun.net.httpserver\f[R] package.
 .SH USAGE
 .IP
 .nf
@@ -140,7 +169,9 @@ By default, the server runs in the foreground and binds to the loopback
 .PD
 address and port 8000.
 This can be changed with the \f[CB]\-b\f[R] and \f[CB]\-p\f[R] options.
-??
+.PD 0
+.P
+.PD
 For example, to bind the Simple Web Server to all interfaces, use:
 .IP
 .nf
@@ -162,9 +193,6 @@ sensitive
 .P
 .PD
 information.\f[R]
-.PD 0
-.P
-.PD
 .PP
 As another example, use the following command to run on port 9000:
 .IP
@@ -180,46 +208,6 @@ A different
 .P
 .PD
 directory can be specified with the \f[CB]\-d\f[R] option.
-.PP
-Only idempotent \f[CB]HEAD\f[R] and \f[CB]GET\f[R] requests are served.
-Any other requests
-.PD 0
-.P
-.PD
-receive a \f[CB]501\ \-\ Not\ Implemented\f[R] or a
-\f[CB]405\ \-\ Not\ Allowed\f[R] response.
-.PD 0
-.P
-.PD
-\f[CB]GET\f[R] requests are mapped to the directory being served, as
-follows:
-.IP \[bu] 2
-If the requested resource is a file, its content is served.
-.IP \[bu] 2
-If the requested resource is a directory that contains an index file,
-.PD 0
-.P
-.PD
-the content of the index file is served.
-.IP \[bu] 2
-Otherwise, the names of all files and subdirectories of the directory
-are ??
-listed.
-Symbolic links and hidden files are not listed or served.
-.PP
-MIME types are configured automatically.
-For example, \f[CB]\&.html\f[R] files are
-.PD 0
-.P
-.PD
-served as \f[CB]text/html\f[R] and \f[CB]\&.java\f[R] files are served as
-\f[CB]text/plain\f[R].
-This can
-.PD 0
-.P
-.PD
-be customized via the \f[CB]java.net.URLConnection::getFileNameMap\f[R]
-API.
 .PP
 By default, every request is logged on the console.
 The output looks like
@@ -241,7 +229,10 @@ The default setting is
 .PD
 \f[CB]info\f[R].
 The \f[CB]verbose\f[R] setting additionally includes the request and
-response ??
+response
+.PD 0
+.P
+.PD
 headers as well as the absolute path of the requested resource.
 .SH STOPPING THE SERVER
 .PP
@@ -258,9 +249,9 @@ signal
 (\f[CB]Ctrl+C\f[R] in a terminal window).
 .SH HELP OPTION
 .PP
-The \f[CB]\-h\f[R] option displays a help message listing usage and
-options of
+The \f[CB]\-h\f[R] option displays a help message describing the usage and
+the options
 .PD 0
 .P
 .PD
-the Simple Web Server.
+of the \f[CB]jwebserver\f[R].
