@@ -100,7 +100,7 @@ class G1STWIsAliveClosure : public BoolObjectClosure {
   G1CollectedHeap* _g1h;
 public:
   G1STWIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) {}
-  bool do_object_b(oop p);
+  inline bool do_object_b(oop p);
 };
 
 class G1STWSubjectToDiscoveryClosure : public BoolObjectClosure {

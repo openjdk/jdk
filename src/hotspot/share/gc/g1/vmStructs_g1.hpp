@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_VMSTRUCTS_G1_HPP
 #define SHARE_GC_G1_VMSTRUCTS_G1_HPP
 
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "utilities/macros.hpp"
