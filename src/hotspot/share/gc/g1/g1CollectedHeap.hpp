@@ -65,7 +65,6 @@
 class G1Allocator;
 class G1ArchiveAllocator;
 class G1BatchedTask;
-class G1SegmentedArrayFreeMemoryTask;
 class G1CardTableEntryClosure;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
@@ -144,7 +143,7 @@ class G1CollectedHeap : public CollectedHeap {
 private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
-  G1SegmentedArrayFreeMemoryTask* _free_card_set_memory_task;
+  G1SegmentedArrayFreeMemoryTask* _free_segmented_array_memory_task;
 
   WorkerThreads* _workers;
   G1CardTable* _card_table;

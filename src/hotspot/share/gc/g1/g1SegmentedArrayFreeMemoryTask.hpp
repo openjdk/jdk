@@ -32,7 +32,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"
 
-// Task handling deallocation of free card set memory.
+// Task handling deallocation of free segmented array memory.
 class G1SegmentedArrayFreeMemoryTask : public G1ServiceTask {
 
   enum class State : uint {
@@ -53,7 +53,7 @@ class G1SegmentedArrayFreeMemoryTask : public G1ServiceTask {
 
   State _state;
 
-  // Current total card set memory usage.
+  // Current total segmented array memory usage.
   G1SegmentedArrayMemoryStats _total_used;
 
   typedef G1SegmentedArrayFreePool<mtGCCardSet>::G1ReturnMemoryProcessor G1ReturnMemoryProcessor;
@@ -71,9 +71,9 @@ class G1SegmentedArrayFreeMemoryTask : public G1ServiceTask {
   bool return_memory_to_os(jlong deadline);
   bool cleanup_return_infos();
 
-  // Free excess card set memory, main method. Returns true if there is more work
+  // Free excess segmented array memory, main method. Returns true if there is more work
   // to do.
-  bool free_excess_card_set_memory();
+  bool free_excess_segmented_array_memory();
 
   void set_state(State new_state);
   // Returns whether we are currently processing a recent request.

@@ -111,7 +111,7 @@ bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_vm(jlong
   _source->bulk_add(*_first, *last, keep_num, keep_size);
   _first = cur;
 
-  log_trace(gc, task)("Card Set Free Memory: Returned to VM %zu buffers size %zu", keep_num, keep_size);
+  log_trace(gc, task)("Segmented Array Free Memory: Returned to VM %zu buffers size %zu", keep_num, keep_size);
 
   // _return_to_vm_size may be larger than what is available in the list at the
   // time we actually get the list. I.e. the list and _return_to_vm_size may be
@@ -147,7 +147,7 @@ bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_os(jlong
     }
   }
 
-  log_trace(gc, task)("Card Set Free Memory: Return to OS %zu buffers size %zu", num_delete, mem_size_deleted);
+  log_trace(gc, task)("Segmented Array Free Memory: Return to OS %zu buffers size %zu", num_delete, mem_size_deleted);
 
   return _first != nullptr;
 }

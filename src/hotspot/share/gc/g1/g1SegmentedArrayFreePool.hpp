@@ -54,7 +54,8 @@ public:
   uint num_pools() const { return G1CardSetConfiguration::num_mem_object_types(); }
 };
 
-// A set of free lists holding memory buffers for use by G1CardSetAllocators.
+// A set of free lists holding memory buffers for use by G1SegmentedArray,
+// e.g. G1CardSetAllocators::SegmentedArray
 template<MEMFLAGS flag>
 class G1SegmentedArrayFreePool {
   // The global free pool.
@@ -104,9 +105,9 @@ public:
     _source(nullptr), _return_to_vm_size(return_to_vm), _first(nullptr), _unlinked_bytes(0), _num_unlinked(0) {
   }
 
-  // Updates the instance members about the given card set buffer list for the purpose
-  // of giving back memory. Only necessary members are updated, e.g. if there is
-  // nothing to return to the VM, do not set the source list.
+  // Updates the instance members about the given segmented array buffer list for
+  // the purpose of giving back memory. Only necessary members are updated,
+  // e.g. if there is nothing to return to the VM, do not set the source list.
   void visit_free_list(G1SegmentedArrayBufferList<flag>* source);
 
   bool finished_return_to_vm() const { return _return_to_vm_size == 0; }

@@ -106,7 +106,7 @@ bool G1SegmentedArrayFreeMemoryTask::cleanup_return_infos() {
   return false;
 }
 
-bool G1SegmentedArrayFreeMemoryTask::free_excess_card_set_memory() {
+bool G1SegmentedArrayFreeMemoryTask::free_excess_segmented_array_memory() {
   jlong start = os::elapsed_counter();
   jlong end = start +
               (os::elapsed_frequency() / 1000) * G1RemSetFreeMemoryStepDurationMillis;
@@ -164,7 +164,7 @@ bool G1SegmentedArrayFreeMemoryTask::free_excess_card_set_memory() {
 }
 
 void G1SegmentedArrayFreeMemoryTask::set_state(State new_state) {
-  log_trace(gc, task)("Card Set Free Memory: State change from %s to %s",
+  log_trace(gc, task)("Segmented Array Free Memory: State change from %s to %s",
                       get_state_name(_state),
                       get_state_name(new_state));
   _state = new_state;
@@ -184,7 +184,7 @@ G1SegmentedArrayFreeMemoryTask::G1SegmentedArrayFreeMemoryTask(const char* name)
 void G1SegmentedArrayFreeMemoryTask::execute() {
   SuspendibleThreadSetJoiner sts;
 
-  if (free_excess_card_set_memory()) {
+  if (free_excess_segmented_array_memory()) {
     schedule(reschedule_delay_ms());
   }
 }
