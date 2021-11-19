@@ -69,6 +69,7 @@ enum {
   JVM_ACC_IS_SHARED_CLASS         = 0x02000000,     // True if klass is shared
   JVM_ACC_IS_HIDDEN_CLASS         = 0x04000000,     // True if klass is hidden
   JVM_ACC_IS_VALUE_BASED_CLASS    = 0x08000000,     // True if klass is marked as a ValueBased class
+  JVM_ACC_IS_BEING_REDEFINED      = 0x00100000,     // True if the klass is being redefined.
 
   // Klass* and Method* flags
   JVM_ACC_HAS_LOCAL_VARIABLE_TABLE= 0x00200000,
@@ -158,6 +159,10 @@ class AccessFlags {
   bool has_localvariable_table () const { return (_flags & JVM_ACC_HAS_LOCAL_VARIABLE_TABLE) != 0; }
   void set_has_localvariable_table()    { atomic_set_bits(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE); }
   void clear_has_localvariable_table()  { atomic_clear_bits(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE); }
+
+  bool is_being_redefined() const       { return (_flags & JVM_ACC_IS_BEING_REDEFINED) != 0; }
+  void set_is_being_redefined()         { atomic_set_bits(JVM_ACC_IS_BEING_REDEFINED); }
+  void clear_is_being_redefined()       { atomic_clear_bits(JVM_ACC_IS_BEING_REDEFINED); }
 
   // field flags
   bool is_field_access_watched() const  { return (_flags & JVM_ACC_FIELD_ACCESS_WATCHED) != 0; }

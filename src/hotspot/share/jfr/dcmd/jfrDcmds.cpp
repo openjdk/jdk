@@ -55,53 +55,6 @@ bool register_jfr_dcmds() {
   return true;
 }
 
-// JNIHandle management
-
-// ------------------------------------------------------------------
-// push_jni_handle_block
-//
-// Push on a new block of JNI handles.
-static void push_jni_handle_block(JavaThread* const thread) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
-
-  // Allocate a new block for JNI handles.
-  // Inlined code from jni_PushLocalFrame()
-  JNIHandleBlock* prev_handles = thread->active_handles();
-  JNIHandleBlock* entry_handles = JNIHandleBlock::allocate_block(thread);
-  assert(entry_handles != NULL && prev_handles != NULL, "should not be NULL");
-  entry_handles->set_pop_frame_link(prev_handles);  // make sure prev handles get gc'd.
-  thread->set_active_handles(entry_handles);
-}
-
-// ------------------------------------------------------------------
-// pop_jni_handle_block
-//
-// Pop off the current block of JNI handles.
-static void pop_jni_handle_block(JavaThread* const thread) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
-
-  // Release our JNI handle block
-  JNIHandleBlock* entry_handles = thread->active_handles();
-  JNIHandleBlock* prev_handles = entry_handles->pop_frame_link();
-  // restore
-  thread->set_active_handles(prev_handles);
-  entry_handles->set_pop_frame_link(NULL);
-  JNIHandleBlock::release_block(entry_handles, thread); // may block
-}
-
-class JNIHandleBlockManager : public StackObj {
- private:
-  JavaThread* const _thread;
- public:
-  JNIHandleBlockManager(JavaThread* thread) : _thread(thread) {
-    push_jni_handle_block(_thread);
-  }
-
-  ~JNIHandleBlockManager() {
-    pop_jni_handle_block(_thread);
-  }
-};
-
 static bool is_module_available(outputStream* output, TRAPS) {
   return JfrJavaSupport::is_jdk_jfr_module_available(output, THREAD);
 }
@@ -223,7 +176,7 @@ void JfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
   constructor_args.set_klass(javaClass(), CHECK);
 
   HandleMark hm(THREAD);
-  JNIHandleBlockManager jni_handle_management(THREAD);
+  JNIHandleMark jni_handle_management(THREAD);
 
   const oop dcmd = construct_dcmd_instance(&constructor_args, CHECK);
 
@@ -494,7 +447,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   }
 
   HandleMark hm(THREAD);
-  JNIHandleBlockManager jni_handle_management(THREAD);
+  JNIHandleMark jni_handle_management(THREAD);
 
   JavaValue result(T_OBJECT);
   JfrJavaArguments constructor_args(&result);

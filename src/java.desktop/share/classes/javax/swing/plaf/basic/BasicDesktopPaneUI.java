@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,14 @@ import javax.swing.plaf.*;
 import java.beans.*;
 
 import java.awt.event.*;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Insets;
+import java.awt.FocusTraversalPolicy;
 import java.awt.Graphics;
 import java.awt.KeyboardFocusManager;
-import java.awt.*;
+import java.awt.Point;
 
 import sun.swing.DefaultLookup;
 import sun.swing.UIAction;
@@ -347,7 +350,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
      * The default DesktopManager installed by the UI.
      */
     @SuppressWarnings("serial") // JDK-implementation class
-    private class BasicDesktopManager extends DefaultDesktopManager
+    private static class BasicDesktopManager extends DefaultDesktopManager
             implements UIResource {
     }
 

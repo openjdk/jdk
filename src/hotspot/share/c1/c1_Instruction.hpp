@@ -35,8 +35,6 @@ class ciField;
 class ValueStack;
 class InstructionPrinter;
 class IRScope;
-class LIR_OprDesc;
-typedef LIR_OprDesc* LIR_Opr;
 
 
 // Instruction class hierarchy

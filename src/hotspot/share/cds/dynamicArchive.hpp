@@ -59,9 +59,11 @@ public:
 
 class DynamicArchive : AllStatic {
 public:
-  static void prepare_for_dynamic_dumping();
+  static void check_for_dynamic_dump();
+  static bool should_dump_at_vm_exit();
+  static void prepare_for_dump_at_exit();
+  static void dump_for_jcmd(const char* archive_name, TRAPS);
   static void dump(const char* archive_name, TRAPS);
-  static void dump(TRAPS);
   static bool is_mapped() { return FileMapInfo::dynamic_info() != NULL; }
   static bool validate(FileMapInfo* dynamic_info);
 };
