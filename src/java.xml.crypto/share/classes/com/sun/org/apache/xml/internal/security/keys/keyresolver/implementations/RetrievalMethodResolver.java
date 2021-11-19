@@ -51,7 +51,6 @@ import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolver;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverContext;
-import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverException;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -259,18 +258,12 @@ public class RetrievalMethodResolver extends KeyResolverSpi {
         // Apply the transforms
         Transforms transforms = rm.getTransforms();
         ResourceResolverContext resContext = new ResourceResolverContext(uri, baseURI, secureValidation);
-        if (resContext.isURISafeToResolve()) {
-            XMLSignatureInput resource = ResourceResolver.resolve(resContext);
-            if (transforms != null) {
-                LOG.debug("We have Transforms");
-                resource = transforms.performTransforms(resource);
-            }
-            return resource;
+        XMLSignatureInput resource = ResourceResolver.resolve(resContext);
+        if (transforms != null) {
+            LOG.debug("We have Transforms");
+            resource = transforms.performTransforms(resource);
         }
-        String uriToResolve = uri != null ? uri.getValue() : null;
-        Object[] exArgs = { uriToResolve != null ? uriToResolve : "null", baseURI };
-
-        throw new ResourceResolverException("utils.resolver.noClass", exArgs, uriToResolve, baseURI);
+        return resource;
     }
 
     /** {@inheritDoc} */

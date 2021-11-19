@@ -22,19 +22,12 @@
  */
 package com.sun.org.apache.xml.internal.security.utils.resolver;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
 
 import org.w3c.dom.Attr;
 
 public class ResourceResolverContext {
-
-    @SuppressWarnings("removal")
-    private static boolean allowUnsafeResourceResolving =
-            AccessController.doPrivileged(
-                    (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("com.sun.org.apache.xml.internal.security.allowUnsafeResourceResolving"));
 
     private final Map<String, String> properties;
 
@@ -61,21 +54,4 @@ public class ResourceResolverContext {
     public Map<String, String> getProperties() {
         return properties;
     }
-
-    public boolean isURISafeToResolve() {
-        if (allowUnsafeResourceResolving) {
-            return true;
-        }
-        if (uriToResolve != null) {
-            if (uriToResolve.startsWith("file:") || uriToResolve.startsWith("http:")) {
-                return false;
-            }
-            if (!uriToResolve.isEmpty() && uriToResolve.charAt(0) != '#' &&
-                    baseUri != null && (baseUri.startsWith("file:") || baseUri.startsWith("http:"))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
 }

@@ -114,7 +114,7 @@ public class KeyInfo extends SignatureElementProxy {
      */
     private List<KeyResolverSpi> internalKeyResolvers = new ArrayList<>();
 
-    private boolean secureValidation = true;
+    private boolean secureValidation;
 
     /**
      * Constructor KeyInfo

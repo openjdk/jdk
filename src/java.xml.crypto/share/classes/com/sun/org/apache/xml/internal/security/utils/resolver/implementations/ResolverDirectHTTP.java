@@ -219,7 +219,8 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
         LOG.debug("I was asked whether I can resolve {}", context.uriToResolve);
 
         if (context.uriToResolve.startsWith("http:") ||
-            context.baseUri != null && context.baseUri.startsWith("http:")) {
+            context.uriToResolve.startsWith("https:") ||
+            context.baseUri != null && (context.baseUri.startsWith("http:") || context.baseUri.startsWith("https:"))) {
             LOG.debug("I state that I can resolve {}", context.uriToResolve);
             return true;
         }
