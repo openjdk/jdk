@@ -355,7 +355,7 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
 
   guarantee(target != nullptr, "must be");
   if (tlh == nullptr) {
-    guarantee(Thread::is_JavaThread_protected(target, /* checkTLHOnly */ true),
+    guarantee(Thread::is_JavaThread_protected_by_TLH(target),
               "missing ThreadsListHandle in calling context.");
     target->handshake_state()->add_operation(&op);
   } else if (tlh->includes(target)) {
@@ -412,7 +412,7 @@ void Handshake::execute(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
   if (current != target) {
     // Another thread is handling the request and it must be protecting
     // the target.
-    guarantee(Thread::is_JavaThread_protected(target, /* checkTLHOnly */ true),
+    guarantee(Thread::is_JavaThread_protected_by_TLH(target),
               "missing ThreadsListHandle in calling context.");
   }
   // Implied else:

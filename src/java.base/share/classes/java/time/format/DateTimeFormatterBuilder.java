@@ -688,8 +688,8 @@ public final class DateTimeFormatterBuilder {
      * If the value is negative an exception will be thrown.
      * If the field does not have a fixed set of valid values then an
      * exception will be thrown.
-     * If the field value in the date-time to be printed is invalid it
-     * cannot be printed and an exception will be thrown.
+     * If the field value in the date-time to be printed is outside the
+     * range of valid values then an exception will be thrown.
      *
      * @param field  the field to append, not null
      * @param minWidth  the minimum width of the field excluding the decimal point, from 0 to 9

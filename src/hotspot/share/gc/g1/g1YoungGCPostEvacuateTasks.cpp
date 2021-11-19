@@ -107,12 +107,6 @@ public:
     _task(evac_failure_regions),
     _evac_failure_regions(evac_failure_regions) { }
 
-  ~RemoveSelfForwardPtrsTask() {
-    assert(_task.num_failed_regions() == _evac_failure_regions->num_regions_failed_evacuation(),
-           "Removed regions %u inconsistent with expected %u",
-           _task.num_failed_regions(), _evac_failure_regions->num_regions_failed_evacuation());
-  }
-
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
     return _evac_failure_regions->num_regions_failed_evacuation();
