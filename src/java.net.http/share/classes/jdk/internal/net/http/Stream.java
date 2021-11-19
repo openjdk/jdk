@@ -656,7 +656,7 @@ class Stream<T> extends ExchangeImpl<T> {
                           || uh.firstValue(k).isEmpty();
 
         // Filter any headers from systemHeaders that are set in userHeaders
-        //   except for "Cookies" - user cookies will be appended to system
+        //   except for "Cookie:" - user cookies will be appended to system
         //   cookies
         sysh = HttpHeaders.of(sysh.map(), overrides);
 
