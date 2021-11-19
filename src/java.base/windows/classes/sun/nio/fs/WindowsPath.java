@@ -302,11 +302,7 @@ class WindowsPath implements Path {
     // Add long path prefix to path if required
     static String addPrefixIfNeeded(String path) {
         if (path.length() > MAX_PATH) {
-            if (path.startsWith("\\\\")) {
-                path = "\\\\?\\UNC" + path.substring(1, path.length());
-            } else {
-                path = "\\\\?\\" + path;
-            }
+            return addPrefix(path);
         }
         return path;
     }

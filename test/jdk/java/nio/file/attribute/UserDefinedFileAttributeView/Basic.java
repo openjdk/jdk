@@ -251,31 +251,20 @@ public class Basic {
             // Make sure the directory exists.
             Files.createDirectory(longPath);
 
-            String[] elts = longPath.toString().split(":");
-            //String uncName = "\\\\localhost\\" + elts[0] + "$" + elts[1];
-            String host = java.net.InetAddress.getLocalHost().getHostName();
-            String uncName = "\\\\" + host + "\\" + elts[0] + "$" + elts[1];
-            Path uncPath = Path.of(uncName);
-
-            System.out.printf("host: %s; dir: %s%n", host,
-                System.getProperty("user.dir"));
-
             try {
-                for (Path p : new Path[] {longPath, uncPath}) {
-                    System.out.println("Testing " + p);
+                System.out.println("Testing " + longPath);
 
-                    // Try to set absolute path as extended attribute;
-                    // expect IAE
-                    tryCatch(IllegalArgumentException.class, new Task() {
-                        public void run() throws IOException {
-                            setEA(p, "user:C:\\");
-                        }
-                    });
+                // Try to set absolute path as extended attribute;
+                // expect IAE
+                tryCatch(IllegalArgumentException.class, new Task() {
+                    public void run() throws IOException {
+                        setEA(longPath, "user:C:\\");
+                    }
+                });
 
-                    // Try to set an extended attribute on it.
-                    setEA(p, "user:short");
-                    setEA(p, "user:reallyquitelonglongattrname");
-                }
+                // Try to set an extended attribute on it.
+                setEA(longPath, "user:short");
+                setEA(longPath, "user:reallyquitelonglongattrname");
             } finally {
                 Files.delete(longPath);
             }
