@@ -526,6 +526,18 @@ $(eval $(call SetupTarget, update-x11wrappers, \
     DEPS := java.base-copy buildtools-jdk, \
 ))
 
+ifneq ($(HSDIS_BACKEND), none)
+  $(eval $(call SetupTarget, build-hsdis, \
+      MAKEFILE := Hsdis, \
+      TARGET := build, \
+  ))
+
+  $(eval $(call SetupTarget, install-hsdis, \
+      MAKEFILE := Hsdis, \
+      TARGET := install, \
+  ))
+endif
+
 ################################################################################
 # Cross compilation support
 

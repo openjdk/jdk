@@ -1992,7 +1992,7 @@ public final class ExifTIFFTagSet extends TIFFTagSet {
      *
      * @return an {@code ExifTIFFTagSet} instance.
      */
-    public synchronized static ExifTIFFTagSet getInstance() {
+    public static synchronized ExifTIFFTagSet getInstance() {
         if (theInstance == null) {
             initTags();
             theInstance = new ExifTIFFTagSet();

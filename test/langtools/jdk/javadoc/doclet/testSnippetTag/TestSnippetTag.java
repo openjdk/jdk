@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666
+ * @bug 8266666 8275788
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -84,139 +84,235 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     /*
-     * While the "id" and "lang" attributes are advertised in JEP 413, they are
-     * currently unused by the implementation. The goal of this test is to make
-     * sure that specifying these attributes causes no errors and exhibits no
-     * unexpected behavior.
+     * Make sure the "id" and "lang" attributes defined in JEP 413 are rendered
+     * properly as recommended by the HTML5 specification.
      */
     @Test
     public void testIdAndLangAttributes(Path base) throws IOException {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
+
+        // A record of a snippet content and matching expected attribute values
+        record SnippetAttributes(String content, String id, String lang) {
+            public String idAttribute() {
+                return id == null ? "" : " id=\"" + id + "\"";
+            }
+            public String langAttribute() {
+                return lang == null ? "" : " class=\"language-" + lang + "\"";
+            }
+        }
+
         final var snippets = List.of(
-                """
-                {@snippet id="foo" :
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet id="foo":
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet id='foo' :
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet id='foo':
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet id=foo :
-                    Hello, Snippet!
-                }
-                """,
+                new SnippetAttributes("""
+                    {@snippet id="foo1" :
+                        Hello, Snippet!
+                    }
+                    """, "foo1", null),
+                new SnippetAttributes("""
+                    {@snippet id="foo2":
+                        Hello, Snippet!
+                    }
+                    """, "foo2", null),
+                new SnippetAttributes("""
+                    {@snippet id='foo3' :
+                        Hello, Snippet!
+                    }
+                    """, "foo3", null),
+                new SnippetAttributes("""
+                    {@snippet id='foo4':
+                        Hello, Snippet!
+                    }
+                    """, "foo4", null),
+                new SnippetAttributes("""
+                    {@snippet id=foo5 :
+                        Hello, Snippet!
+                    }
+                    """, "foo5", null),
 // (1) Haven't yet decided on this one. It's a consistency issue. On the one
 // hand, `:` is considered a part of a javadoc tag's name (e.g. JDK-4750173);
 // on the other hand, snippet markup treats `:` (next-line modifier) as a value
 // terminator.
-//                """
-//                {@snippet id=foo:
-//                    Hello, Snippet!
-//                }
-//                """,
-                """
-                {@snippet id="" :
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet id="":
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet id='':
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet id=:
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet lang="java" :
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet lang="java":
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet lang='java' :
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet lang='java':
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet lang=java :
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet lang="properties" :
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet lang="text" :
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet lang="" :
-                    Hello, Snippet!
-                }
-                """,
-                """
-                {@snippet lang="foo" id="bar" :
-                    Hello, Snippet!
-                }
-                """
+//                new SnippetAttributes("""
+//                    {@snippet id=foo6:
+//                        Hello, Snippet!
+//                    }
+//                    """, "foo6", null),
+
+                new SnippetAttributes("""
+                    {@snippet id="" :
+                        Hello, Snippet!
+                    }
+                    """, null, null),
+                new SnippetAttributes("""
+                    {@snippet id="":
+                        Hello, Snippet!
+                    }
+                    """, null, null),
+                new SnippetAttributes("""
+                    {@snippet id='':
+                        Hello, Snippet!
+                    }
+                    """, null, null),
+                new SnippetAttributes("""
+                    {@snippet id=:
+                        Hello, Snippet!
+                    }
+                    """, null, null),
+                new SnippetAttributes("""
+                    {@snippet lang="java" :
+                        Hello, Snippet!
+                    }
+                    """, null, "java"),
+                new SnippetAttributes("""
+                    {@snippet lang="java":
+                        Hello, Snippet!
+                    }
+                    """, null, "java"),
+                new SnippetAttributes("""
+                    {@snippet lang='java' :
+                        Hello, Snippet!
+                    }
+                    """, null, "java"),
+                new SnippetAttributes("""
+                    {@snippet lang='java':
+                        Hello, Snippet!
+                    }
+                    """, null, "java"),
+                new SnippetAttributes("""
+                    {@snippet lang=java :
+                        Hello, Snippet!
+                    }
+                    """, null, "java"),
+                new SnippetAttributes("""
+                    {@snippet lang="properties" :
+                        Hello, Snippet!
+                    }
+                    """, null, "properties"),
+                new SnippetAttributes("""
+                    {@snippet lang="text" :
+                        Hello, Snippet!
+                    }
+                    """, null, "text"),
+                new SnippetAttributes("""
+                    {@snippet lang="" :
+                        Hello, Snippet!
+                    }
+                    """, null, null),
+                new SnippetAttributes("""
+                    {@snippet lang="foo" id="bar" :
+                        Hello, Snippet!
+                    }
+                    """, "bar", "foo")
         );
         ClassBuilder classBuilder = new ClassBuilder(tb, "pkg.A")
                 .setModifiers("public", "class");
         forEachNumbered(snippets, (s, i) -> {
             classBuilder.addMembers(
                     MethodBuilder.parse("public void case%s() { }".formatted(i))
-                            .setComments(s));
+                            .setComments("A method.", s.content()));
         });
         classBuilder.write(srcDir);
         javadoc("-d", outDir.toString(),
                 "-sourcepath", srcDir.toString(),
                 "pkg");
         checkExit(Exit.OK);
+        checkLinks();
         for (int j = 0; j < snippets.size(); j++) {
+            SnippetAttributes snippet = snippets.get(j);
             checkOutput("pkg/A.html", true,
                         """
                         <span class="element-name">case%s</span>()</div>
-                        <div class="block">
-                        <pre class="snippet">
-                            Hello, Snippet!
-                        </pre>
+                        <div class="block">A method.
+                         \s
+                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
+                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
+                        t="Copy"></button>
+                        <pre class="snippet"%s><code%s>    Hello, Snippet!
+                        </code></pre>
                         </div>
-                        """.formatted(j));
+                        """.formatted(j, snippet.idAttribute(), snippet.langAttribute()));
         }
+    }
+
+    /*
+     * Make sure the lang attribute is derived correctly from the snippet source file
+     * for external snippets when it is not defined in the snippet. Defining the lang
+     * attribute in the snippet should always override this mechanism.
+     */
+    @Test
+    public void testExternalImplicitAttributes(Path base) throws IOException {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+
+        ClassBuilder classBuilder = new ClassBuilder(tb, "com.example.Cls")
+                .setModifiers("public", "class");
+        classBuilder.setComments("""
+                {@snippet class="Snippets" region="code" id="snippet1"}
+                {@snippet file="Snippets.java" region="code" id="snippet2"}
+                {@snippet class="Snippets" region="code" id="snippet3" lang="none"}
+                {@snippet file="Snippets.java" region="code" id="snippet4" lang="none"}
+                {@snippet class="Snippets" region="code" id="snippet5" lang=""}
+                {@snippet file="Snippets.java" region="code" id="snippet6" lang=""}
+                {@snippet file="user.properties" id="snippet7"}
+                {@snippet file="user.properties" id="snippet8" lang="none"}
+                {@snippet file="user.properties" id="snippet9" lang=""}
+                """);
+        addSnippetFile(srcDir, "com.example", "Snippets.java", """
+                public class Snippets {
+                    public static void printMessage(String msg) {
+                        // @start region="code"
+                        System.out.println(msg);
+                        // @end
+                    }
+                }
+                """);
+        addSnippetFile(srcDir, "com.example", "user.properties", """
+                user=jane
+                home=/home/jane
+                """);
+        classBuilder.write(srcDir);
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "com.example");
+        checkExit(Exit.OK);
+        checkLinks();
+        checkOutput("com/example/Cls.html", true,
+                """
+                    <pre class="snippet" id="snippet1"><code class="language-java">
+                    System.out.println(msg);
+                    </code></pre>""",
+                """
+                    <pre class="snippet" id="snippet2"><code class="language-java">
+                    System.out.println(msg);
+                    </code></pre>""",
+                """
+                    <pre class="snippet" id="snippet3"><code class="language-none">
+                    System.out.println(msg);
+                    </code></pre>""",
+                """
+                    <pre class="snippet" id="snippet4"><code class="language-none">
+                    System.out.println(msg);
+                    </code></pre>""",
+                """
+                    <pre class="snippet" id="snippet5"><code>
+                    System.out.println(msg);
+                    </code></pre>""",
+                """
+                    <pre class="snippet" id="snippet6"><code>
+                    System.out.println(msg);
+                    </code></pre>""",
+                """
+                    <pre class="snippet" id="snippet7"><code class="language-properties">user=jane
+                    home=/home/jane
+                    </code></pre>""",
+                """
+                    <pre class="snippet" id="snippet8"><code class="language-none">user=jane
+                    home=/home/jane
+                    </code></pre>""",
+                """
+                    <pre class="snippet" id="snippet9"><code>user=jane
+                    home=/home/jane
+                    </code></pre>""");
     }
 
     /*
@@ -288,7 +384,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: unexpected content
                 {@snippet :}
-                ^
+                          ^
                 """),
             new Capture.TestCase(
                 """
@@ -297,7 +393,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: unexpected content
                 {@snippet : }
-                ^
+                          ^
                 """),
             new Capture.TestCase(
                 """
@@ -306,7 +402,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: unexpected content
                 {@snippet :a}
-                ^
+                          ^
                 """),
             new Capture.TestCase(
                 """
@@ -315,7 +411,7 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
+                :}
                 ^
                 """),
             new Capture.TestCase(
@@ -325,7 +421,7 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
+                : }
                 ^
                 """),
             new Capture.TestCase(
@@ -335,7 +431,7 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
+                :a}
                 ^
                 """),
             new Capture.TestCase(
@@ -345,8 +441,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
-                ^
+                 :}
+                 ^
                 """),
             new Capture.TestCase(
                 """
@@ -355,8 +451,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
-                ^
+                 : }
+                 ^
                 """),
             new Capture.TestCase(
                 """
@@ -365,8 +461,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
-                ^
+                 :a}
+                 ^
                 """),
             // </editor-fold>
             // <editor-fold desc="unexpected end of attribute">
@@ -381,7 +477,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file="}
-                ^
+                                ^
                 """),
             new Capture.TestCase(
                 """
@@ -390,7 +486,7 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: no content
-                {@snippet file="
+                }
                 ^
                 """),
             new Capture.TestCase(
@@ -400,7 +496,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file='}
-                ^
+                                ^
                 """),
             new Capture.TestCase(
                 """
@@ -409,7 +505,7 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: no content
-                {@snippet file='
+                }
                 ^
                 """),
             new Capture.TestCase(
@@ -419,8 +515,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: no content
-                {@snippet file='
-                ^
+                    }
+                    ^
                 """),
             new Capture.TestCase(
                 """
@@ -430,8 +526,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: no content
-                {@snippet
-                ^
+                    }
+                    ^
                 """),
             new Capture.TestCase(
                 """
@@ -440,8 +536,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: no content
-                {@snippet
-                ^
+                file='}
+                      ^
                 """),
             // </editor-fold>
             // <editor-fold desc="missing attribute value">
@@ -484,7 +580,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: unexpected content
                 {@snippet file=:}
-                ^
+                               ^
                 """),
             new Capture.TestCase(
                 """
@@ -493,7 +589,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet
-                ^
+                        ^
                 """),
             new Capture.TestCase(
                 """
@@ -502,7 +598,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file
-                ^
+                             ^
                 """),
             new Capture.TestCase(
                 """
@@ -511,7 +607,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file=
-                ^
+                              ^
                 """),
             new Capture.TestCase(
                 """
@@ -520,7 +616,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file="
-                ^
+                               ^
                 """),
             new Capture.TestCase(
                 """
@@ -529,7 +625,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file='
-                ^
+                               ^
                 """),
             new Capture.TestCase(
                 """
@@ -537,7 +633,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet :*/
-                ^
+                          ^
                 """),
             new Capture.TestCase(
                 """
@@ -545,8 +641,8 @@ public class TestSnippetTag extends JavadocTester {
                     Hello, World!""",
                 """
                 error: unterminated inline tag
-                {@snippet :
-                ^
+                    Hello, World!*/
+                                ^
                 """),
             new Capture.TestCase(
                 """
@@ -555,7 +651,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file="gibberish" :*/
-                ^
+                                           ^
                 """),
             new Capture.TestCase(
                 """
@@ -564,7 +660,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: unterminated inline tag
                 {@snippet file="gibberish" :
-                ^
+                                           ^
                 """)
             // </editor-fold>
         ));
@@ -852,8 +948,10 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <pre class="snippet">
-                        %s</pre>
+                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
+                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
+                        t="Copy"></button>
+                        <pre class="snippet"><code>%s</code></pre>
                         </div>""".formatted(id, t.expectedOutput()));
         });
     }
@@ -946,8 +1044,10 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <pre class="snippet">
-                        %s</pre>
+                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
+                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
+                        t="Copy"></button>
+                        <pre class="snippet"><code>%s</code></pre>
                         </div>""".formatted(index, expectedOutput));
         });
     }
@@ -1505,8 +1605,10 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <pre class="snippet">
-                        %s</pre>
+                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
+                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
+                        t="Copy"></button>
+                        <pre class="snippet"><code>%s</code></pre>
                         </div>""".formatted(index, t.expectedOutput()));
         });
     }
@@ -1620,15 +1722,19 @@ public class TestSnippetTag extends JavadocTester {
                     """
                     <span class="element-name">case0</span>()</div>
                     <div class="block">
-                    <pre class="snippet">
-                    </pre>
+                    <div class="snippet-container"><button class="snippet-copy" onclick="copySnippet\
+                    (this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" alt="Copy"\
+                    ></button>
+                    <pre class="snippet"><code></code></pre>
                     </div>""");
         checkOutput("pkg/A.html", true,
                     """
                     <span class="element-name">case1</span>()</div>
                     <div class="block">
-                    <pre class="snippet">
-                    </pre>
+                    <div class="snippet-container"><button class="snippet-copy" onclick="copySnippet\
+                    (this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" alt="Copy"\
+                    ></button>
+                    <pre class="snippet"><code></code></pre>
                     </div>""");
     }
 
@@ -1726,8 +1832,10 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <pre class="snippet">
-                        2</pre>
+                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
+                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
+                        t="Copy"></button>
+                        <pre class="snippet"><code>2</code></pre>
                         </div>
                         """.formatted(j));
         }
@@ -1808,8 +1916,10 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <pre class="snippet">
-                        %s</pre>
+                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
+                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
+                        t="Copy"></button>
+                        <pre class="snippet"><code>%s</code></pre>
                         </div>""".formatted(index, t.expectedOutput()));
         });
     }
@@ -2138,8 +2248,10 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <pre class="snippet">
-                        %s</pre>
+                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
+                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
+                        t="Copy"></button>
+                        <pre class="snippet"><code>%s</code></pre>
                         </div>""".formatted(index, t.expectedOutput()));
         });
     }

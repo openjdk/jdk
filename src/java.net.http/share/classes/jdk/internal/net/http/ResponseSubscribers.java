@@ -362,7 +362,7 @@ public class ResponseSubscribers {
             result.completeExceptionally(throwable);
         }
 
-        static private byte[] join(List<ByteBuffer> bytes) {
+        private static byte[] join(List<ByteBuffer> bytes) {
             int size = Utils.remaining(bytes, Integer.MAX_VALUE);
             byte[] res = new byte[size];
             int from = 0;
@@ -396,7 +396,7 @@ public class ResponseSubscribers {
     public static class HttpResponseInputStream extends InputStream
         implements TrustedSubscriber<InputStream>
     {
-        final static int MAX_BUFFERS_IN_QUEUE = 1;  // lock-step with the producer
+        static final int MAX_BUFFERS_IN_QUEUE = 1;  // lock-step with the producer
 
         // An immutable ByteBuffer sentinel to mark that the last byte was received.
         private static final ByteBuffer LAST_BUFFER = ByteBuffer.wrap(new byte[0]);
@@ -882,7 +882,7 @@ public class ResponseSubscribers {
         // A subscription that wraps an upstream subscription and
         // holds a reference to a subscriber. The subscriber reference
         // is cleared when the subscription is cancelled
-        final static class SubscriptionRef implements Flow.Subscription {
+        static final class SubscriptionRef implements Flow.Subscription {
             final Flow.Subscription subscription;
             final SubscriberRef subscriberRef;
             SubscriptionRef(Flow.Subscription subscription,

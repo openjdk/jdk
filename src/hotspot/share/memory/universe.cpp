@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
@@ -523,15 +524,20 @@ static void reinitialize_vtables() {
   }
 }
 
-
-static void initialize_itable_for_klass(InstanceKlass* k) {
-  k->itable().initialize_itable();
-}
-
-
 static void reinitialize_itables() {
+
+  class ReinitTableClosure : public KlassClosure {
+   public:
+    void do_klass(Klass* k) {
+      if (k->is_instance_klass()) {
+         InstanceKlass::cast(k)->itable().initialize_itable();
+      }
+    }
+  };
+
   MutexLocker mcld(ClassLoaderDataGraph_lock);
-  ClassLoaderDataGraph::dictionary_classes_do(initialize_itable_for_klass);
+  ReinitTableClosure cl;
+  ClassLoaderDataGraph::classes_do(&cl);
 }
 
 
@@ -760,6 +766,7 @@ jint universe_init() {
   Universe::_do_stack_walk_cache = new LatestMethodCache();
 
 #if INCLUDE_CDS
+  DynamicArchive::check_for_dynamic_dump();
   if (UseSharedSpaces) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.).  After that, access to

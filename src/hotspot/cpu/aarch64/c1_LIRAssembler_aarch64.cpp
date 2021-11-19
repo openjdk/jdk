@@ -1564,7 +1564,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     assert(op->addr()->is_address(), "what else?");
     LIR_Address* addr_ptr = op->addr()->as_address_ptr();
     assert(addr_ptr->disp() == 0, "need 0 disp");
-    assert(addr_ptr->index() == LIR_OprDesc::illegalOpr(), "need 0 index");
+    assert(addr_ptr->index() == LIR_Opr::illegalOpr(), "need 0 index");
     addr = as_reg(addr_ptr->base());
   }
   Register newval = as_reg(op->new_value());
@@ -2984,7 +2984,7 @@ void LIR_Assembler::membar_loadstore() { __ membar(MacroAssembler::LoadStore); }
 void LIR_Assembler::membar_storeload() { __ membar(MacroAssembler::StoreLoad); }
 
 void LIR_Assembler::on_spin_wait() {
-  Unimplemented();
+  __ spin_wait();
 }
 
 void LIR_Assembler::get_thread(LIR_Opr result_reg) {

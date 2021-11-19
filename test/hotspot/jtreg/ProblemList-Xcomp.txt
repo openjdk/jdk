@@ -38,3 +38,5 @@ vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 82456
 vmTestbase/vm/mlvm/hiddenloader/stress/oome/heap/Test.java 8273095 generic-all
 
 serviceability/sa/TestJhsdbJstackMixed.java 8248675 linux-aarch64
+
+compiler/codegen/aes/TestAESMain.java 8274323 linux-x64,windows-x64

@@ -29,9 +29,9 @@
 
 vmTestbase/jit/escape/AdaptiveBlocking/AdaptiveBlocking001/AdaptiveBlocking001.java 8260303 windows-x64
 
-resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8220624   generic-all
-serviceability/sa/CDSJMapClstats.java                         8220624   generic-all
-serviceability/sa/ClhsdbJhisto.java                           8220624   generic-all
+resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8276539   generic-all
+serviceability/sa/CDSJMapClstats.java                         8276539   generic-all
+serviceability/sa/ClhsdbJhisto.java                           8276539   generic-all
 
 serviceability/sa/ClhsdbCDSCore.java                          8268722   macosx-x64
 serviceability/sa/ClhsdbFindPC.java#xcomp-core                8268722   macosx-x64
@@ -44,6 +44,3 @@ serviceability/sa/TestJmapCoreMetaspace.java                  8268722,8268636   
 serviceability/sa/TestJhsdbJstackMixed.java                   8248912   generic-all
 serviceability/sa/ClhsdbPstack.java#process                   8248912   generic-all
 serviceability/sa/ClhsdbPstack.java#core                      8248912   generic-all
-
-serviceability/dcmd/gc/HeapDumpAllTest.java                   8274196   generic-all
-serviceability/dcmd/gc/HeapDumpTest.java                      8274196   generic-all

@@ -48,7 +48,7 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
  */
 public final class MarkupParser {
 
-    private final static int EOI = 0x1A;
+    private static final int EOI = 0x1A;
     private char[] buf;
     private int bp;
     private int buflen;

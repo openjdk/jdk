@@ -1309,6 +1309,13 @@ public:
   virtual int Opcode() const;
 };
 
+class StoreStoreFenceNode: public MemBarNode {
+public:
+  StoreStoreFenceNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
 // Ordering between a volatile store and a following volatile load.
 // Requires multi-CPU visibility?
 class MemBarVolatileNode: public MemBarNode {

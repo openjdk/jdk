@@ -1019,12 +1019,12 @@ LIR_Opr LIRGenerator::new_register(BasicType type) {
   int vreg_num = _virtual_register_number;
   // Add a little fudge factor for the bailout since the bailout is only checked periodically. This allows us to hand out
   // a few extra registers before we really run out which helps to avoid to trip over assertions.
-  if (vreg_num + 20 >= LIR_OprDesc::vreg_max) {
+  if (vreg_num + 20 >= LIR_Opr::vreg_max) {
     bailout("out of virtual registers in LIR generator");
-    if (vreg_num + 2 >= LIR_OprDesc::vreg_max) {
+    if (vreg_num + 2 >= LIR_Opr::vreg_max) {
       // Wrap it around and continue until bailout really happens to avoid hitting assertions.
-      _virtual_register_number = LIR_OprDesc::vreg_base;
-      vreg_num = LIR_OprDesc::vreg_base;
+      _virtual_register_number = LIR_Opr::vreg_base;
+      vreg_num = LIR_Opr::vreg_base;
     }
   }
   _virtual_register_number += 1;
@@ -1865,7 +1865,7 @@ void LIRGenerator::do_PreconditionsCheckIndex(Intrinsic* x, BasicType type) {
   CodeEmitInfo* info = state_for(x, state);
 
   LIR_Opr len = length.result();
-  LIR_Opr zero = NULL;
+  LIR_Opr zero;
   if (type == T_INT) {
     zero = LIR_OprFact::intConst(0);
     if (length.result()->is_constant()){
@@ -2951,6 +2951,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_dlog10:         // fall through
   case vmIntrinsics::_dabs:           // fall through
   case vmIntrinsics::_dsqrt:          // fall through
+  case vmIntrinsics::_dsqrt_strict:   // fall through
   case vmIntrinsics::_dtan:           // fall through
   case vmIntrinsics::_dsin :          // fall through
   case vmIntrinsics::_dcos :          // fall through
@@ -2983,6 +2984,9 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     break;
   case vmIntrinsics::_storeFence:
     __ membar_release();
+    break;
+  case vmIntrinsics::_storeStoreFence:
+    __ membar_storestore();
     break;
   case vmIntrinsics::_fullFence :
     __ membar();
@@ -3267,7 +3271,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   assert(level > CompLevel_simple, "Shouldn't be here");
 
   int offset = -1;
-  LIR_Opr counter_holder = NULL;
+  LIR_Opr counter_holder;
   if (level == CompLevel_limited_profile) {
     MethodCounters* counters_adr = method->ensure_method_counters();
     if (counters_adr == NULL) {

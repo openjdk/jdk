@@ -884,6 +884,7 @@ public:
   static bool supports_avx512bw()     { return (_features & CPU_AVX512BW) != 0; }
   static bool supports_avx512vl()     { return (_features & CPU_AVX512VL) != 0; }
   static bool supports_avx512vlbw()   { return (supports_evex() && supports_avx512bw() && supports_avx512vl()); }
+  static bool supports_avx512bwdq()   { return (supports_evex() && supports_avx512bw() && supports_avx512dq()); }
   static bool supports_avx512vldq()   { return (supports_evex() && supports_avx512dq() && supports_avx512vl()); }
   static bool supports_avx512vlbwdq() { return (supports_evex() && supports_avx512vl() &&
                                                 supports_avx512bw() && supports_avx512dq()); }

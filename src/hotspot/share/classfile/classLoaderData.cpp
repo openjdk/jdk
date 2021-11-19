@@ -55,6 +55,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -133,8 +134,7 @@ void ClassLoaderData::initialize_name(Handle class_loader) {
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder) :
   _metaspace(NULL),
-  _metaspace_lock(new Mutex(Mutex::nosafepoint-2, "MetaspaceAllocation_lock",
-                            Mutex::_safepoint_check_never)),
+  _metaspace_lock(new Mutex(Mutex::nosafepoint-2, "MetaspaceAllocation_lock")),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
   _modified_oops(true),
   // A non-strong hidden class loader data doesn't have anything to keep
@@ -353,6 +353,9 @@ void ClassLoaderData::methods_do(void f(Method*)) {
 }
 
 void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
+  // To call this, one must have the MultiArray_lock held, but the _klasses list still has lock free reads.
+  assert_locked_or_safepoint(MultiArray_lock);
+
   // Lock-free access requires load_acquire
   for (Klass* k = Atomic::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
     // Do not filter ArrayKlass oops here...
@@ -885,6 +888,8 @@ void ClassLoaderData::free_deallocate_list_C_heap_structures() {
       // Remove the class so unloading events aren't triggered for
       // this class (scratch or error class) in do_unloading().
       remove_class(ik);
+      // But still have to remove it from the dumptime_table.
+      SystemDictionaryShared::handle_class_unloading(ik);
     }
   }
 }

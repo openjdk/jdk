@@ -27,14 +27,14 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "unittest.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class G1CardSetTest : public ::testing::Test {
 
-  class G1CountCardsClosure : public G1CardSet::G1CardSetCardIterator {
+  class G1CountCardsClosure : public G1CardSet::CardClosure {
   public:
     size_t _num_cards;
 
@@ -44,15 +44,15 @@ class G1CardSetTest : public ::testing::Test {
     }
   };
 
-  static WorkGang* _workers;
+  static WorkerThreads* _workers;
   static uint _max_workers;
 
-  static WorkGang* workers() {
+  static WorkerThreads* workers() {
     if (_workers == NULL) {
       _max_workers = os::processor_count();
-      _workers = new WorkGang("G1CardSetTest Work Gang", _max_workers);
+      _workers = new WorkerThreads("G1CardSetTest Workers", _max_workers);
       _workers->initialize_workers();
-      _workers->update_active_workers(_max_workers);
+      _workers->set_active_workers(_max_workers);
     }
     return _workers;
   }
@@ -82,10 +82,10 @@ public:
 
   static void translate_cards(uint cards_per_region, uint region_idx, uint* cards, uint num_cards);
 
-  static void iterate_cards(G1CardSet* card_set, G1CardSet::G1CardSetCardIterator* cl);
+  static void iterate_cards(G1CardSet* card_set, G1CardSet::CardClosure* cl);
 };
 
-WorkGang* G1CardSetTest::_workers = NULL;
+WorkerThreads* G1CardSetTest::_workers = NULL;
 uint G1CardSetTest::_max_workers = 0;
 
 void G1CardSetTest::add_cards(G1CardSet* card_set, uint cards_per_region, uint* cards, uint num_cards, G1AddCardResult* results) {
@@ -101,7 +101,7 @@ void G1CardSetTest::add_cards(G1CardSet* card_set, uint cards_per_region, uint* 
   }
 }
 
-class G1CheckCardClosure : public G1CardSet::G1CardSetCardIterator {
+class G1CheckCardClosure : public G1CardSet::CardClosure {
   G1CardSet* _card_set;
 
   uint _cards_per_region;
@@ -163,7 +163,7 @@ void G1CardSetTest::translate_cards(uint cards_per_region, uint region_idx, uint
   }
 }
 
-class G1CountCardsOccupied : public G1CardSet::G1CardSetPtrIterator {
+class G1CountCardsOccupied : public G1CardSet::CardSetPtrClosure {
   size_t _num_occupied;
 
 public:
@@ -178,7 +178,7 @@ public:
 
 void G1CardSetTest::check_iteration(G1CardSet* card_set, const size_t expected, const bool single_threaded) {
 
-  class CheckIterator : public G1CardSet::G1CardSetCardIterator {
+  class CheckIterator : public G1CardSet::CardClosure {
   public:
     G1CardSet* _card_set;
     size_t _num_found;
@@ -206,7 +206,12 @@ void G1CardSetTest::cardset_basic_test() {
   const double FullCardSetThreshold = 0.8;
   const double BitmapCoarsenThreshold = 0.9;
 
-  G1CardSetConfiguration config(log2i_exact(CardsPerRegion), 28, BitmapCoarsenThreshold, 8, FullCardSetThreshold, CardsPerRegion);
+  G1CardSetConfiguration config(28,
+                                BitmapCoarsenThreshold,
+                                8,
+                                FullCardSetThreshold,
+                                CardsPerRegion,
+                                0);
   G1CardSetFreePool free_pool(config.num_mem_object_types());
   G1CardSetMemoryManager mm(&config, &free_pool);
 
@@ -376,7 +381,7 @@ void G1CardSetTest::cardset_basic_test() {
   }
 }
 
-class G1CardSetMtTestTask : public AbstractGangTask {
+class G1CardSetMtTestTask : public WorkerTask {
   G1CardSet* _card_set;
 
   size_t _added;
@@ -384,7 +389,7 @@ class G1CardSetMtTestTask : public AbstractGangTask {
 
 public:
   G1CardSetMtTestTask(G1CardSet* card_set) :
-    AbstractGangTask(""),
+    WorkerTask(""),
     _card_set(card_set),
     _added(0),
     _found(0) { }
@@ -420,7 +425,12 @@ void G1CardSetTest::cardset_mt_test() {
   const double FullCardSetThreshold = 1.0;
   const uint BitmapCoarsenThreshold = 1.0;
 
-  G1CardSetConfiguration config(log2i_exact(CardsPerRegion), 120, BitmapCoarsenThreshold, 8, FullCardSetThreshold, CardsPerRegion);
+  G1CardSetConfiguration config(120,
+                                BitmapCoarsenThreshold,
+                                8,
+                                FullCardSetThreshold,
+                                CardsPerRegion,
+                                0);
   G1CardSetFreePool free_pool(config.num_mem_object_types());
   G1CardSetMemoryManager mm(&config, &free_pool);
 
