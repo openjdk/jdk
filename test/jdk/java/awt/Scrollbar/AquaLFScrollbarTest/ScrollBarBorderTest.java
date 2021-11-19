@@ -32,14 +32,13 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
 
 /*
  * @test
  * @bug 8190264
  * @summary JScrollBar ignores its border when using macOS Mac OS X Aqua look and feel
- * @run main/manual ScrollBarBorderTest
+ * @run main ScrollBarBorderTest
  */
 public class ScrollBarBorderTest {
 
