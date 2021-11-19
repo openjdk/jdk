@@ -87,6 +87,7 @@ class ValidOptions {
         options.put(CLIOptions.LICENSE_FILE.getId(), USE.INSTALL);
         options.put(CLIOptions.INSTALL_DIR.getId(), USE.INSTALL);
         options.put(CLIOptions.PREDEFINED_APP_IMAGE.getId(), USE.INSTALL);
+        options.put(CLIOptions.LAUNCHER_AS_SERVICE.getId(), USE.INSTALL);
 
         options.put(CLIOptions.ABOUT_URL.getId(), USE.INSTALL);
 
