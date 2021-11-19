@@ -33,27 +33,21 @@
  * @run main TestSnippetTag
  */
 
-import builder.ClassBuilder;
-import builder.ClassBuilder.MethodBuilder;
-import javadoc.tester.JavadocTester;
-import toolbox.ModuleBuilder;
-import toolbox.ToolBox;
-
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.function.ObjIntConsumer;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
+
+import builder.ClassBuilder;
+import builder.ClassBuilder.MethodBuilder;
+import toolbox.ModuleBuilder;
 
 // FIXME
 //   0. Add tests for snippets in all types of elements: e.g., fields
@@ -63,7 +57,22 @@ import java.util.stream.Stream;
 //   3. Add tests for hybrid snippets
 
 /*
- * General notes.
+ * General notes
+ * =============
+ *
+ * To simplify maintenance of this test suite, a test name uses a convention.
+ * By convention, a test name is a concatenation of the following parts:
+ *
+ *    1. "test"
+ *    2. ("Positive", "Negative")
+ *    3. ("Inline", "External", "Hybrid")
+ *    4. ("Tag", "Markup")
+ *    5. <custom string>
+ *
+ * A test can be either positive or negative; it cannot be both or neither.
+ * A test can exercise inline, external or hybrid variant or any combination
+ * thereof, including none at all. A test can exercise tag syntax, markup syntax
+ * or both.
  *
  * 1. Some of the below tests could benefit from using a combinatorics library
  * as they are otherwise very wordy.
@@ -73,35 +82,27 @@ import java.util.stream.Stream;
  * if x is passed to that method additionally N times: JavadocTester.checkOutput(x, x, ..., x).
  * This is because a single occurrence of x in the output will be matched N times.
  */
-public class TestSnippetTag extends JavadocTester {
-
-    private final ToolBox tb = new ToolBox();
-
-    private TestSnippetTag() { }
+public class TestSnippetTag extends SnippetTester {
 
     public static void main(String... args) throws Exception {
         new TestSnippetTag().runTests(m -> new Object[]{Paths.get(m.getName())});
     }
 
     /*
-     * Make sure the "id" and "lang" attributes defined in JEP 413 are rendered
-     * properly as recommended by the HTML5 specification.
+     * Make sure the "id" and "lang" attributes defined in JEP 413 are translated
+     * to HTML. In particular, verify that the "lang" attribute is translated
+     * to a value added to the "class" attribute as recommended by the HTML5 specification:
+     * https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
      */
     @Test
-    public void testIdAndLangAttributes(Path base) throws IOException {
+    public void testPositiveInlineTag_IdAndLangAttributes(Path base) throws IOException {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
 
         // A record of a snippet content and matching expected attribute values
-        record SnippetAttributes(String content, String id, String lang) {
-            public String idAttribute() {
-                return id == null ? "" : " id=\"" + id + "\"";
-            }
-            public String langAttribute() {
-                return lang == null ? "" : " class=\"language-" + lang + "\"";
-            }
-        }
+        record SnippetAttributes(String content, String id, String lang) { }
 
+        // TODO: use combinatorial methods, e.g. just like in TestSnippetMarkup
         final var snippets = List.of(
                 new SnippetAttributes("""
                     {@snippet id="foo1" :
@@ -218,29 +219,29 @@ public class TestSnippetTag extends JavadocTester {
         checkExit(Exit.OK);
         checkLinks();
         for (int j = 0; j < snippets.size(); j++) {
-            SnippetAttributes snippet = snippets.get(j);
+            var attr = snippets.get(j);
+            var snippetHtml = getSnippetHtmlRepresentation("pkg/A.html", "    Hello, Snippet!\n",
+                    Optional.ofNullable(attr.lang()), Optional.ofNullable(attr.id()));
             checkOutput("pkg/A.html", true,
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">A method.
                          \s
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"%s><code%s>    Hello, Snippet!
-                        </code></pre>
-                        </div>
-                        """.formatted(j, snippet.idAttribute(), snippet.langAttribute()));
+                        %s
+                        """.formatted(j, snippetHtml));
         }
     }
 
     /*
-     * Make sure the lang attribute is derived correctly from the snippet source file
-     * for external snippets when it is not defined in the snippet. Defining the lang
-     * attribute in the snippet should always override this mechanism.
+     * If the "lang" attribute is absent in the snippet tag for an external snippet,
+     * then the "class" attribute is derived from the snippet source file extension.
+     *
+     * If the "class" attribute can be derived both from the "lang" attribute and
+     * the file extension, then it is derived from the "lang" attribute.
      */
+    // TODO: restructure this as a list of TestCase records
     @Test
-    public void testExternalImplicitAttributes(Path base) throws IOException {
+    public void testPositiveInlineExternalTagMarkup_ImplicitAttributes(Path base) throws IOException {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
 
@@ -276,60 +277,28 @@ public class TestSnippetTag extends JavadocTester {
                 "com.example");
         checkExit(Exit.OK);
         checkLinks();
-        checkOutput("com/example/Cls.html", true,
-                """
-                    <pre class="snippet" id="snippet1"><code class="language-java">
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet2"><code class="language-java">
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet3"><code class="language-none">
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet4"><code class="language-none">
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet5"><code>
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet6"><code>
-                    System.out.println(msg);
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet7"><code class="language-properties">user=jane
-                    home=/home/jane
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet8"><code class="language-none">user=jane
-                    home=/home/jane
-                    </code></pre>""",
-                """
-                    <pre class="snippet" id="snippet9"><code>user=jane
-                    home=/home/jane
-                    </code></pre>""");
-    }
+        final var javaContent = """
 
-    /*
-     * This is a convenience method to iterate through a list.
-     * Unlike List.forEach, this method provides the consumer not only with an
-     * element but also that element's index.
-     *
-     * See JDK-8184707.
-     */
-    private static <T> void forEachNumbered(List<T> list, ObjIntConsumer<? super T> action) {
-        for (var iterator = list.listIterator(); iterator.hasNext(); ) {
-            action.accept(iterator.next(), iterator.previousIndex());
-        }
+                System.out.println(msg);
+                """;
+        final var propertiesContent = """
+                user=jane
+                home=/home/jane
+                """;
+        checkOutput("com/example/Cls.html", true,
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.of("java"), Optional.of("snippet1")),
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.of("java"), Optional.of("snippet2")),
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.of("none"), Optional.of("snippet3")),
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.of("none"), Optional.of("snippet4")),
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.empty(), Optional.of("snippet5")),
+                getSnippetHtmlRepresentation("com/example/Cls.html", javaContent, Optional.empty(), Optional.of("snippet6")),
+                getSnippetHtmlRepresentation("com/example/user.properties", propertiesContent, Optional.of("properties"), Optional.of("snippet7")),
+                getSnippetHtmlRepresentation("com/example/user.properties", propertiesContent, Optional.of("none"), Optional.of("snippet8")),
+                getSnippetHtmlRepresentation("com/example/user.properties", propertiesContent, Optional.empty(), Optional.of("snippet9")));
     }
 
     @Test
-    public void testBadTagSyntax(Path base) throws IOException {
+    public void testNegativeInlineTag_BadTagSyntax(Path base) throws IOException {
         // TODO consider improving diagnostic output by providing more specific
         //  error messages and better positioning the caret (depends on JDK-8273244)
 
@@ -666,50 +635,13 @@ public class TestSnippetTag extends JavadocTester {
         ));
     }
 
-    // TODO This is a temporary method; it should be removed after JavadocTester has provided similar functionality (JDK-8273154).
-    private void checkOrder(Output output, String... strings) {
-        String outputString = getOutput(output);
-        int prevIndex = -1;
-        for (String s : strings) {
-            s = s.replace("\n", NL); // normalize new lines
-            int currentIndex = outputString.indexOf(s, prevIndex + 1);
-            checking("output: " + output + ": " + s + " at index " + currentIndex);
-            if (currentIndex == -1) {
-                failed(output + ": " + s + " not found.");
-                continue;
-            }
-            if (currentIndex > prevIndex) {
-                passed(output + ": " + " is in the correct order");
-            } else {
-                failed(output + ": " + " is in the wrong order.");
-            }
-            prevIndex = currentIndex;
-        }
-    }
-
-    /*
-     * When checking for errors, it is important not to confuse one error with
-     * another. This method checks that there are no crashes (which are also
-     * errors) by checking for stack traces. We never expect crashes.
-     */
-    private void checkNoCrashes() {
-        checking("check crashes");
-        Matcher matcher = Pattern.compile("\s*at.*\\(.*\\.java:\\d+\\)")
-                .matcher(getOutput(Output.STDERR));
-        if (!matcher.find()) {
-            passed("");
-        } else {
-            failed("Looks like a stacktrace: " + matcher.group());
-        }
-    }
-
     /*
      * A colon that is not separated from a tag name by whitespace is considered
      * a part of that name. This behavior is historical. For more context see,
      * for example, JDK-4750173.
      */
     @Test
-    public void testUnknownTag(Path base) throws IOException {
+    public void testNegativeInlineTagUnknownTag(Path base) throws IOException {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         final var unknownTags = List.of(
@@ -746,7 +678,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testInline(Path base) throws Exception {
+    public void testPositiveInlineTag(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
 
@@ -948,16 +880,12 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>%s</code></pre>
-                        </div>""".formatted(id, t.expectedOutput()));
+                        %s""".formatted(id, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
         });
     }
 
     @Test
-    public void testExternalFile(Path base) throws Exception {
+    public void testPositiveExternalTag_File(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
 
@@ -1044,30 +972,12 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>%s</code></pre>
-                        </div>""".formatted(index, expectedOutput));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", expectedOutput)));
         });
     }
 
-    // TODO:
-    //   Explore the toolbox.ToolBox.writeFile and toolbox.ToolBox.writeJavaFiles methods:
-    //   see if any of them could be used instead of this one
-    private void addSnippetFile(Path srcDir, String packageName, String fileName, String content) throws UncheckedIOException {
-        String[] components = packageName.split("\\.");
-        Path snippetFiles = Path.of(components[0], Arrays.copyOfRange(components, 1, components.length)).resolve("snippet-files");
-        try {
-            Path p = Files.createDirectories(srcDir.resolve(snippetFiles));
-            Files.writeString(p.resolve(fileName), content, StandardOpenOption.CREATE_NEW);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     @Test
-    public void testInlineSnippetInDocFiles(Path base) throws IOException {
+    public void testPositiveInlineTag_InDocFiles(Path base) throws IOException {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         // If there is no *.java files, javadoc will not create an output
@@ -1109,7 +1019,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testExternalSnippetInDocFiles(Path base) throws IOException {
+    public void testPositiveExternalTag_InDocFiles(Path base) throws IOException {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         // If there is no *.java files, javadoc will not create an output
@@ -1151,7 +1061,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testExternalFileNotFound(Path base) throws Exception {
+    public void testNegativeExternalTag_FileNotFound(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1174,8 +1084,8 @@ public class TestSnippetTag extends JavadocTester {
         checkNoCrashes();
     }
 
-    @Test // TODO perhaps this could be unified with testExternalFile
-    public void testExternalFileModuleSourcePath(Path base) throws Exception {
+    @Test // TODO perhaps this could be unified with testPositiveExternalTagFile
+    public void testNegativeExternalTag_FileModuleSourcePath(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "snippet.txt";
@@ -1200,8 +1110,8 @@ public class TestSnippetTag extends JavadocTester {
         checkExit(Exit.OK);
     }
 
-    @Test // TODO perhaps this could be unified with testExternalFileNotFound
-    public void testExternalFileNotFoundModuleSourcePath(Path base) throws Exception {
+    @Test // TODO perhaps this could be unified with testNegativeExternalTagFileNotFound
+    public void testNegativeExternalTag_FileNotFoundModuleSourcePath(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1230,7 +1140,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testNoContents(Path base) throws Exception {
+    public void testNegativeTag_NoContents(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1250,7 +1160,37 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testConflict20(Path base) throws Exception {
+    public void testNegativeExternalTagMarkup(Path base) throws Exception {
+        // External snippet issues are handled similarly to those of internal snippet
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+        addSnippetFile(srcDir, "pkg", "file.txt", """
+                                                  // @start
+                                                  """
+        );
+        ClassBuilder classBuilder = new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .addMembers(
+                        MethodBuilder
+                                .parse("public void case0() { }")
+                                .setComments("""
+                                             {@snippet file="file.txt"}
+                                             """));
+        classBuilder.write(srcDir);
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+        checkExit(Exit.ERROR);
+        checkOutput(Output.OUT, true,
+"""
+: error: snippet markup: missing attribute "region"
+// @start
+    ^""");
+        checkNoCrashes();
+    }
+
+    @Test
+    public void testNegativeInlineTag_AttributeConflict20(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1276,7 +1216,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testConflict30(Path base) throws Exception {
+    public void testNegativeInlineTag_AttributeConflict30(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1297,21 +1237,8 @@ public class TestSnippetTag extends JavadocTester {
         checkNoCrashes();
     }
 
-    // TODO: perhaps this method could be added to JavadocTester
-    private void checkOutputEither(Output out, String first, String... other) {
-        checking("checkOutputEither");
-        String output = getOutput(out);
-        Stream<String> strings = Stream.concat(Stream.of(first), Stream.of(other));
-        Optional<String> any = strings.filter(output::contains).findAny();
-        if (any.isPresent()) {
-            passed(": following text is found:\n" + any.get());
-        } else {
-            failed(": nothing found");
-        }
-    }
-
     @Test
-    public void testConflict60(Path base) throws Exception {
+    public void testNegativeInlineTag_AttributeConflict60(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1331,7 +1258,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testConflict70(Path base) throws Exception {
+    public void testNegativeInlineTag_AttributeConflict70(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1351,7 +1278,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testConflict80(Path base) throws Exception {
+    public void testNegativeInlineTag_AttributeConflict80(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1375,7 +1302,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testConflict90(Path base) throws Exception {
+    public void testNegativeInlineTag_AttributeConflict90(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1399,7 +1326,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testErrorPositionResolution(Path base) throws Exception {
+    public void testNegativeTag_PositionResolution(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1427,7 +1354,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testRegion(Path base) throws Exception {
+    public void testPositiveInlineTag_AttributeConflictRegion(Path base) throws Exception {
         record TestCase(Snippet snippet, String expectedOutput) { }
         final var testCases = List.of(
                 new TestCase(newSnippetBuilder()
@@ -1605,11 +1532,7 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>%s</code></pre>
-                        </div>""".formatted(index, t.expectedOutput()));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
         });
     }
 
@@ -1647,7 +1570,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testAttributeValueSyntaxUnquotedCurly(Path base) throws Exception {
+    public void testNegativeInlineTagMarkup_AttributeValueSyntaxUnquotedCurly(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         /*
@@ -1681,7 +1604,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testAttributeValueSyntaxCurly(Path base) throws Exception {
+    public void testPositiveInlineTagMarkup_SyntaxCurly(Path base) throws Exception {
         /*
          * The snippet has to be external, otherwise its content would
          * interfere with the test: that internal closing curly would
@@ -1722,24 +1645,16 @@ public class TestSnippetTag extends JavadocTester {
                     """
                     <span class="element-name">case0</span>()</div>
                     <div class="block">
-                    <div class="snippet-container"><button class="snippet-copy" onclick="copySnippet\
-                    (this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" alt="Copy"\
-                    ></button>
-                    <pre class="snippet"><code></code></pre>
-                    </div>""");
+                    """ + getSnippetHtmlRepresentation("pkg/A.html", ""));
         checkOutput("pkg/A.html", true,
                     """
                     <span class="element-name">case1</span>()</div>
                     <div class="block">
-                    <div class="snippet-container"><button class="snippet-copy" onclick="copySnippet\
-                    (this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" alt="Copy"\
-                    ></button>
-                    <pre class="snippet"><code></code></pre>
-                    </div>""");
+                    """ + getSnippetHtmlRepresentation("pkg/A.html", ""));
     }
 
-    @Test
-    public void testAttributeValueSyntax(Path base) throws Exception {
+    @Test // TODO: use combinatorial methods
+    public void testPositiveExternalTagMarkup_AttributeValueSyntax(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         // Test most expected use cases for external snippet
@@ -1832,17 +1747,13 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>2</code></pre>
-                        </div>
-                        """.formatted(j));
+                        %s
+                        """.formatted(j, getSnippetHtmlRepresentation("pkg/A.html", "2")));
         }
     }
 
     @Test
-    public void testComment(Path base) throws Exception {
+    public void testPositiveInlineTagMarkup_Comment(Path base) throws Exception {
         record TestCase(Snippet snippet, String expectedOutput) { }
         final var testCases = List.of(
                 new TestCase(newSnippetBuilder()
@@ -1916,16 +1827,12 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>%s</code></pre>
-                        </div>""".formatted(index, t.expectedOutput()));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
         });
     }
 
     @Test
-    public void testRedundantFileNotFound(Path base) throws Exception {
+    public void testNegativeHybridTag_FileNotFound(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1950,7 +1857,110 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testRedundantRegionNotFound(Path base) throws Exception {
+    public void testNegativeTag_ValuelessAttributes(Path base) throws IOException {
+        // none of these attributes should ever be valueless
+        record TestCase(String input, String expectedError) { }
+        var testCases = new ArrayList<TestCase>();
+        for (String attrName : List.of("class", "file", "id", "lang", "region")) {
+            // special case: valueless region attribute
+            TestCase t = new TestCase("""
+{@snippet %s:
+    First line
+      Second line
+}
+""".formatted(attrName),
+"""
+: error: missing value for attribute "%s"
+{@snippet %s:
+          ^""".formatted(attrName, attrName));
+            testCases.add(t);
+        }
+
+        List<String> inputs = testCases.stream().map(s -> s.input).toList();
+        StringBuilder methods = new StringBuilder();
+        forEachNumbered(inputs, (i, n) -> {
+            methods.append(
+                    """
+
+                    /**
+                    %s*/
+                    public void case%s() {}
+                    """.formatted(i, n));
+        });
+
+        String classString =
+                """
+                public class A {
+                %s
+                }
+                """.formatted(methods.toString());
+
+        Path src = Files.createDirectories(base.resolve("src"));
+        tb.writeJavaFiles(src, classString);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                src.resolve("A.java").toString());
+        checkExit(Exit.ERROR);
+        // use the facility from JDK-8273154 when it becomes available
+        checkOutput(Output.OUT, true, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
+        checkNoCrashes();
+    }
+
+    @Test
+    public void testNegativeTag_BlankRegion(Path base) throws Exception {
+        // If a blank region were allowed, it could not be used without quotes
+        record TestCase(String input, String expectedError) { }
+
+      var testCases = new ArrayList<TestCase>();
+      for (String quote : List.of("", "'", "\""))
+          for (String value : List.of("", " ")) {
+              var t = new TestCase("""
+{@snippet region=%s%s%s:
+    First line
+      Second line
+}
+""".formatted(quote, value, quote),
+                      """
+: error: illegal value for attribute "region": "%s"
+{@snippet region=%s%s%s:
+          ^""".formatted(quote.isEmpty() ? "" : value, quote, value, quote)); // unquoted whitespace translates to empty string
+              testCases.add(t);
+          }
+
+        List<String> inputs = testCases.stream().map(s -> s.input).toList();
+        StringBuilder methods = new StringBuilder();
+        forEachNumbered(inputs, (i, n) -> {
+            methods.append(
+                    """
+
+                    /**
+                    %s*/
+                    public void case%s() {}
+                    """.formatted(i, n));
+        });
+
+        String classString =
+                """
+                public class A {
+                %s
+                }
+                """.formatted(methods.toString());
+
+        Path src = Files.createDirectories(base.resolve("src"));
+        tb.writeJavaFiles(src, classString);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                src.resolve("A.java").toString());
+        checkExit(Exit.ERROR);
+        // use the facility from JDK-8273154 when it becomes available
+        checkOutput(Output.OUT, true, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
+        checkNoCrashes();
+    }
+
+    @Test
+    public void testNegativeHybridTagMarkup_RegionNotFound(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1981,7 +1991,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testRedundantMismatch(Path base) throws Exception {
+    public void testNegativeHybridTag_Mismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -2010,7 +2020,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testRedundantRegionRegionMismatch(Path base) throws Exception {
+    public void testNegativeHybridTagMarkup_RegionRegionMismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -2050,7 +2060,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testRedundantRegion1Mismatch(Path base) throws Exception {
+    public void testNegativeHybridTagMarkup_Region1Mismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -2084,7 +2094,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testRedundantRegion2Mismatch(Path base) throws Exception {
+    public void testNegativeHybridTagMarkup_Region2Mismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -2121,7 +2131,7 @@ public class TestSnippetTag extends JavadocTester {
     }
 
     @Test
-    public void testRedundant(Path base) throws Exception {
+    public void testPositiveHybridTagMarkup(Path base) throws Exception {
         record TestCase(Snippet snippet, String expectedOutput) { }
         final var testCases = List.of(
                 new TestCase(newSnippetBuilder()
@@ -2248,16 +2258,12 @@ public class TestSnippetTag extends JavadocTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        <div class="snippet-container"><button class="snippet-copy" onclick="copySni\
-                        ppet(this)"><span data-copied="Copied!">Copy</span><img src="../copy.svg" al\
-                        t="Copy"></button>
-                        <pre class="snippet"><code>%s</code></pre>
-                        </div>""".formatted(index, t.expectedOutput()));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
         });
     }
 
     @Test
-    public void testInvalidRegexDiagnostics(Path base) throws Exception {
+    public void testNegativeInlineTagMarkup_InvalidRegexDiagnostics(Path base) throws Exception {
 
         record TestCase(String input, String expectedError) { }
 
@@ -2341,7 +2347,7 @@ hello there //   @highlight  type="italics" regex ="  ["
     }
 
     @Test
-    public void testErrorMessages(Path base) throws Exception {
+    public void testNegativeInlineTagMarkup_ErrorMessages(Path base) throws Exception {
 
         record TestCase(String input, String expectedError) { }
 

@@ -429,7 +429,7 @@ public class TagletWriterImpl extends TagletWriter {
                     String strippedLine = line.strip();
                     int idx = line.indexOf(strippedLine);
                     assert idx >= 0; // because the stripped line is a substring of the line being stripped
-                    Text whitespace = Text.of(line.substring(0, idx));
+                    Text whitespace = Text.of(utils.normalizeNewlines(line.substring(0, idx)));
                     // If the leading whitespace is not excluded from the link,
                     // browsers might exhibit unwanted behavior. For example, a
                     // browser might display hand-click cursor while user hovers
@@ -438,7 +438,7 @@ public class TagletWriterImpl extends TagletWriter {
                     c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
                     // We don't care about trailing whitespace.
                 } else {
-                    c = HtmlTree.SPAN(Text.of(sequence));
+                    c = HtmlTree.SPAN(Text.of(utils.normalizeNewlines(sequence)));
                     classes.forEach(((HtmlTree) c)::addStyle);
                 }
                 code.add(c);
