@@ -116,7 +116,7 @@ public class Reference extends SignatureElementProxy {
      */
     public static final int MAXIMUM_TRANSFORM_COUNT = 5;
 
-    private boolean secureValidation;
+    private boolean secureValidation = true;
 
     /**
      * Look up useC14N11 system property. If true, an explicit C14N11 transform

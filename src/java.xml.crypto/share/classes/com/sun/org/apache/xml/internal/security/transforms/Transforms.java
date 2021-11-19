@@ -107,7 +107,7 @@ public class Transforms extends SignatureElementProxy {
 
     protected Transforms() { }
 
-    private boolean secureValidation;
+    private boolean secureValidation = true;
 
     /**
      * Constructs {@link Transforms}.

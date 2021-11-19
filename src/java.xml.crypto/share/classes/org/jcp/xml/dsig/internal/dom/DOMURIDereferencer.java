@@ -137,16 +137,19 @@ public final class DOMURIDereferencer implements URIDereferencer {
             }
         }
 
-        try {
-            ResourceResolverContext resContext = new ResourceResolverContext(uriAttr, baseURI, false);
-            XMLSignatureInput in = ResourceResolver.resolve(resContext);
-            if (in.isOctetStream()) {
-                return new ApacheOctetStreamData(in);
-            } else {
-                return new ApacheNodeSetData(in);
+        ResourceResolverContext resContext = new ResourceResolverContext(uriAttr, baseURI, secVal);
+        if ((uriRef instanceof javax.xml.crypto.dsig.Reference) || resContext.isURISafeToResolve()) {
+            try {
+                XMLSignatureInput in = ResourceResolver.resolve(resContext);
+                if (in.isOctetStream()) {
+                    return new ApacheOctetStreamData(in);
+                } else {
+                    return new ApacheNodeSetData(in);
+                }
+            } catch (Exception e) {
+                throw new URIReferenceException(e);
             }
-        } catch (Exception e) {
-            throw new URIReferenceException(e);
         }
+        throw new URIReferenceException("URI " + uri + " is forbidden");
     }
 }

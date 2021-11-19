@@ -122,8 +122,8 @@ public class ResourceResolver {
 
         List<ResourceResolverSpi> resourceResolversToAdd = new ArrayList<>(classNames.size());
         for (String className : classNames) {
-            ResourceResolverSpi resourceResolverSpi = (ResourceResolverSpi)JavaUtils
-                    .newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, ResourceResolver.class));
+            ResourceResolverSpi resourceResolverSpi = (ResourceResolverSpi)
+                JavaUtils.newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, ResourceResolver.class));
             resourceResolversToAdd.add(resourceResolverSpi);
         }
         resolverList.addAll(resourceResolversToAdd);
@@ -137,9 +137,9 @@ public class ResourceResolver {
         if (defaultResolversAdded.compareAndSet(false, true)) {
             List<ResourceResolverSpi> resourceResolversToAdd = new ArrayList<>();
             resourceResolversToAdd.add(new ResolverFragment());
-            resourceResolversToAdd.add(new ResolverLocalFilesystem());
+//            resourceResolversToAdd.add(new ResolverLocalFilesystem());
             resourceResolversToAdd.add(new ResolverXPointer());
-            resourceResolversToAdd.add(new ResolverDirectHTTP());
+//            resourceResolversToAdd.add(new ResolverDirectHTTP());
 
             resolverList.addAll(resourceResolversToAdd);
         }
