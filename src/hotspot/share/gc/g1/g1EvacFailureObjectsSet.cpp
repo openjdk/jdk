@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1EvacFailureObjectsSet.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/heapRegion.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
@@ -62,14 +62,6 @@ G1EvacFailureObjectsSet::G1EvacFailureObjectsSet(uint region_idx, HeapWord* bott
   _helper(this, _region_idx),
   _word_size(0) {
   assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
-}
-
-void G1EvacFailureObjectsSet::record(oop obj, size_t word_size) {
-  assert(obj != NULL, "must be");
-  assert(_region_idx == G1CollectedHeap::heap()->heap_region_containing(obj)->hrm_index(), "must be");
-  OffsetInRegion* e = _offsets.allocate();
-  *e = to_offset(obj);
-  Atomic::add(&_word_size, word_size);
 }
 
 int G1EvacFailureObjectsSet::G1EvacFailureObjectsIterationHelper::order_oop(OffsetInRegion a, OffsetInRegion b) {

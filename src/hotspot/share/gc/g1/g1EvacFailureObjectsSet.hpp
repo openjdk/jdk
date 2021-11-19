@@ -104,7 +104,7 @@ public:
   G1EvacFailureObjectsSet(uint region_idx, HeapWord* bottom);
 
   // Record an object that failed evacuation.
-  void record(oop obj, size_t word_size);
+  inline void record(oop obj, size_t word_size);
 
   // Prepare parallel iteration by building and sorting list of evacuation
   // failure objects, and constructing parallelizable tasks.
