@@ -345,6 +345,16 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> s
     );
 
+    static final StandardBundlerParam<Boolean> LAUNCHER_AS_SERVICE =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.LAUNCHER_AS_SERVICE.getId(),
+                    Boolean.class,
+                    params -> false,
+                    // valueOf(null) is false, and we actually do want null
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                            true : Boolean.valueOf(s)
+            );
+
 
     @SuppressWarnings("unchecked")
     static final StandardBundlerParam<List<Map<String, ? super Object>>> ADD_LAUNCHERS =
