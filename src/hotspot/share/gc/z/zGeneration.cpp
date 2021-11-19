@@ -43,7 +43,7 @@ void ZGeneration::decrease_used(size_t size) {
   Atomic::sub(&_used, size, memory_order_relaxed);
 }
 
-size_t ZGeneration::used_total() const {
+size_t ZGeneration::used() const {
   return Atomic::load(&_used);
 }
 
@@ -76,8 +76,8 @@ void ZYoungGeneration::retire_pages() {
   _survivor_allocator.retire_pages();
 }
 
-size_t ZYoungGeneration::used() const {
-  return _object_allocator.used() + _survivor_allocator.used();
+size_t ZYoungGeneration::tlab_used() const {
+  return _object_allocator.used();
 }
 
 size_t ZYoungGeneration::remaining() const {
@@ -107,10 +107,6 @@ void ZOldGeneration::retire_pages() {
 
 void ZOldGeneration::reset_promoted() {
   _object_allocator.reset_promoted();
-}
-
-size_t ZOldGeneration::used() const {
-  return _object_allocator.used();
 }
 
 size_t ZOldGeneration::remaining() const {

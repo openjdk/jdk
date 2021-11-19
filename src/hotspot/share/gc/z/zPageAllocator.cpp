@@ -334,7 +334,7 @@ ZPageAllocatorStats ZPageAllocator::stats(ZCollector* collector) const {
                              _used,
                              collector->used_high(),
                              collector->used_low(),
-                             generation->used_total(),
+                             generation->used(),
                              collector->reclaimed(),
                              collector->promoted(),
                              collector->relocated());

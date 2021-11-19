@@ -39,8 +39,8 @@ struct ZMemoryUsageInfo {
 
 static ZMemoryUsageInfo compute_memory_usage_info() {
   const size_t capacity = ZHeap::heap()->capacity();
-  const size_t old_used = ZHeap::heap()->old_generation()->used_total();
-  const size_t young_used = ZHeap::heap()->young_generation()->used_total();
+  const size_t old_used = ZHeap::heap()->old_generation()->used();
+  const size_t young_used = ZHeap::heap()->young_generation()->used();
 
   ZMemoryUsageInfo info;
   info._old_used = MIN2(old_used, capacity);
@@ -148,7 +148,7 @@ void ZServiceabilityCounters::update_sizes(ZCollectorId collector_id) {
     _generation(generation) {}
 
 size_t ZServiceabilityMemoryPool::used_in_bytes() {
-  return _generation->used_total();
+  return _generation->used();
 }
 
 MemoryUsage ZServiceabilityMemoryPool::get_memory_usage() {

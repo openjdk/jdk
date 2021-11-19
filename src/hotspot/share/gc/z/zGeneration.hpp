@@ -44,7 +44,7 @@ public:
   void increase_used(size_t size);
   void decrease_used(size_t size);
 
-  size_t used_total() const;
+  size_t used() const;
 
   bool is_young() const;
   bool is_old() const;
@@ -85,7 +85,7 @@ public:
   void retire_pages();
 
   // Statistics
-  size_t used() const;
+  size_t tlab_used() const;
   size_t remaining() const;
   size_t relocated() const;
 
@@ -103,7 +103,6 @@ public:
 
   // Statistics
   void reset_promoted();
-  size_t used() const;
   size_t remaining() const;
   size_t relocated() const;
   size_t promoted() const;

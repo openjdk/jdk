@@ -121,7 +121,7 @@ size_t ZHeap::tlab_capacity() const {
 }
 
 size_t ZHeap::tlab_used() const {
-  return _young_generation.used();
+  return _young_generation.tlab_used();
 }
 
 size_t ZHeap::max_tlab_size() const {
