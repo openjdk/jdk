@@ -1199,8 +1199,6 @@ private:
   void initialize_impl                           (TRAPS);
   void initialize_super_interfaces               (TRAPS);
   void eager_initialize_impl                     ();
-  /* jni_id_for_impl for jfieldID only */
-  JNIid* jni_id_for_impl                         (int offset);
 
   void add_initialization_error(JavaThread* current, Handle exception);
   oop get_initialization_error(JavaThread* current);
