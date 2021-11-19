@@ -32,12 +32,11 @@
 
 class ZGeneration {
 protected:
-  ZGenerationId    _generation_id;
-  size_t           _used;
-  ZObjectAllocator _object_allocator;
+  ZGenerationId _generation_id;
+  size_t        _used;
 
 public:
-  ZGeneration(ZGenerationId generation_id, ZPageAge age);
+  ZGeneration(ZGenerationId generation_id);
 
   ZGenerationId generation_id() const;
 
@@ -50,17 +49,14 @@ public:
   bool is_old() const;
 
   // Allocation
-  zaddress alloc_tlab(size_t size);
-  zaddress alloc_object(size_t size);
-  zaddress alloc_object_non_blocking(size_t size);
   virtual zaddress alloc_object_for_relocation(size_t size, bool promotion) = 0;
   virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion) = 0;
-  void undo_alloc_object(zaddress addr, size_t size);
 };
 
 class ZYoungGeneration : public ZGeneration {
 private:
   ZRemembered      _remembered;
+  ZObjectAllocator _eden_allocator;
   ZObjectAllocator _survivor_allocator;
 
 public:
@@ -80,8 +76,11 @@ public:
   // and switch over to empty remembered sets.
   void flip_remembered_sets();
 
-  zaddress alloc_object_for_relocation(size_t size, bool promotion);
-  void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
+  // Allocation
+  zaddress alloc_tlab(size_t size);
+  zaddress alloc_object(size_t size);
+  virtual zaddress alloc_object_for_relocation(size_t size, bool promotion);
+  virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
   void retire_pages();
 
   // Statistics
@@ -94,11 +93,15 @@ public:
 };
 
 class ZOldGeneration : public ZGeneration {
+private:
+  ZObjectAllocator _old_allocator;
+
 public:
   ZOldGeneration();
 
-  zaddress alloc_object_for_relocation(size_t size, bool promotion);
-  void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
+  // Allocation
+  virtual zaddress alloc_object_for_relocation(size_t size, bool promotion);
+  virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
   void retire_pages();
 
   // Statistics

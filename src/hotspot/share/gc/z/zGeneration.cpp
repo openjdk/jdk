@@ -27,10 +27,9 @@
 
 static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootRemset("Concurrent Young Mark Root Remset");
 
-ZGeneration::ZGeneration(ZGenerationId generation_id, ZPageAge age) :
+ZGeneration::ZGeneration(ZGenerationId generation_id) :
     _generation_id(generation_id),
-    _used(0),
-    _object_allocator(generation_id, age) {
+    _used(0) {
 }
 
 void ZGeneration::increase_used(size_t size) {
@@ -48,8 +47,9 @@ size_t ZGeneration::used() const {
 }
 
 ZYoungGeneration::ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-  ZGeneration(ZGenerationId::young, ZPageAge::eden),
+    ZGeneration(ZGenerationId::young),
     _remembered(page_table, page_allocator),
+    _eden_allocator(ZGenerationId::young, ZPageAge::eden),
     _survivor_allocator(ZGenerationId::young, ZPageAge::survivor) {
 }
 
@@ -72,51 +72,52 @@ void ZYoungGeneration::undo_alloc_object_for_relocation(zaddress addr, size_t si
 }
 
 void ZYoungGeneration::retire_pages() {
-  _object_allocator.retire_pages();
+  _eden_allocator.retire_pages();
   _survivor_allocator.retire_pages();
 }
 
 size_t ZYoungGeneration::tlab_used() const {
-  return _object_allocator.used();
+  return _eden_allocator.used();
 }
 
 size_t ZYoungGeneration::remaining() const {
-  return _object_allocator.remaining() + _survivor_allocator.remaining();
+  return _eden_allocator.remaining() + _survivor_allocator.remaining();
 }
 
 size_t ZYoungGeneration::relocated() const {
-  return _object_allocator.relocated() + _survivor_allocator.relocated();
+  return _eden_allocator.relocated() + _survivor_allocator.relocated();
 }
 
 ZOldGeneration::ZOldGeneration() :
-  ZGeneration(ZGenerationId::old, ZPageAge::old) {
+    ZGeneration(ZGenerationId::old),
+    _old_allocator(ZGenerationId::old, ZPageAge::old) {
 }
 
 zaddress ZOldGeneration::alloc_object_for_relocation(size_t size, bool promotion) {
-  return _object_allocator.alloc_object_for_relocation(size, promotion);
+  return _old_allocator.alloc_object_for_relocation(size, promotion);
 }
 
 void ZOldGeneration::undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion) {
   ZPage* const page = ZHeap::heap()->page(addr);
-  _object_allocator.undo_alloc_object_for_relocation(page, addr, size, promotion);
+  _old_allocator.undo_alloc_object_for_relocation(page, addr, size, promotion);
 }
 
 void ZOldGeneration::retire_pages() {
-  _object_allocator.retire_pages();
+  _old_allocator.retire_pages();
 }
 
 void ZOldGeneration::reset_promoted() {
-  _object_allocator.reset_promoted();
+  _old_allocator.reset_promoted();
 }
 
 size_t ZOldGeneration::remaining() const {
-  return _object_allocator.remaining();
+  return _old_allocator.remaining();
 }
 
 size_t ZOldGeneration::relocated() const {
-  return _object_allocator.relocated();
+  return _old_allocator.relocated();
 }
 
 size_t ZOldGeneration::promoted() const {
-  return _object_allocator.promoted();
+  return _old_allocator.promoted();
 }

@@ -41,13 +41,13 @@ inline bool ZGeneration::is_old() const {
   return _generation_id == ZGenerationId::old;
 }
 
-inline zaddress ZGeneration::alloc_tlab(size_t size) {
+inline zaddress ZYoungGeneration::alloc_tlab(size_t size) {
   guarantee(size <= ZHeap::heap()->max_tlab_size(), "TLAB too large");
-  return _object_allocator.alloc_object(size);
+  return _eden_allocator.alloc_object(size);
 }
 
-inline zaddress ZGeneration::alloc_object(size_t size) {
-  zaddress addr = _object_allocator.alloc_object(size);
+inline zaddress ZYoungGeneration::alloc_object(size_t size) {
+  zaddress addr = _eden_allocator.alloc_object(size);
 
   if (is_null(addr)) {
     ZHeap::heap()->out_of_memory();
