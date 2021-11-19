@@ -1391,7 +1391,7 @@ public class JmodTask {
         OptionSpec<Void> version
                 = parser.accepts("version", getMessage("main.opt.version"));
 
-        OptionSpec<Long> sourceDate 
+        OptionSpec<Long> sourceDate
                 = parser.accepts("source-date", getMessage("main.opt.source-date"))
                         .withRequiredArg()
                         .withValuesConvertedBy(new SourceDateConverter());
