@@ -1452,9 +1452,9 @@ size_t ZStatHeap::reclaimed(size_t reclaimed, size_t relocated, size_t promoted)
   return reclaimed - relocated - promoted;
 }
 
-void ZStatHeap::set_at_initialize(const ZPageAllocatorStats& stats) {
-  _at_initialize.min_capacity = stats.min_capacity();
-  _at_initialize.max_capacity = stats.max_capacity();
+void ZStatHeap::set_at_initialize(size_t min_capacity, size_t max_capacity) {
+  _at_initialize.min_capacity = min_capacity;
+  _at_initialize.max_capacity = max_capacity;
 }
 
 void ZStatHeap::set_at_collection_start(const ZPageAllocatorStats& stats) {

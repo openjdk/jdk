@@ -643,7 +643,7 @@ private:
   size_t reclaimed(size_t reclaimed, size_t relocated, size_t promoted);
 
 public:
-  void set_at_initialize(const ZPageAllocatorStats& stats);
+  void set_at_initialize(size_t min_capacity, size_t max_capacity);
   void set_at_collection_start(const ZPageAllocatorStats& stats);
   void set_at_generation_collection_start(const ZPageAllocatorStats& stats);
   void set_at_mark_start(const ZPageAllocatorStats& stats);

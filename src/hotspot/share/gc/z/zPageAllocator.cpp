@@ -325,15 +325,6 @@ size_t ZPageAllocator::unused() const {
 }
 
 ZPageAllocatorStats ZPageAllocator::stats(ZCollector* collector) const {
-  if (collector == NULL) {
-    // The collector is NULL during bootstrapping
-    return ZPageAllocatorStats(_min_capacity,
-                               _max_capacity,
-                               soft_max_capacity(),
-                               _capacity,
-                               _used,
-                               0, 0, 0, 0, 0, 0);
-  }
   ZGeneration* generation = ZHeap::heap()->generation(collector->id());
   ZLocker<ZLock> locker(&_lock);
   return ZPageAllocatorStats(_min_capacity,
