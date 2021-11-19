@@ -35,7 +35,7 @@ import javax.imageio.ImageIO;
 
 public class BMPBitsPerPixelTest {
 
-    public static void main(String[] args) {    
+    public static void main(String[] args) {
         test(1, false);
         test(2, true);
         test(3, true);
