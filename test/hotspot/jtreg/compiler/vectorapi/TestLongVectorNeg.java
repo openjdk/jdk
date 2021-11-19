@@ -30,6 +30,7 @@ import jdk.incubator.vector.LongVector;
  * @bug 8275643
  * @summary Test that LongVector.neg is properly handled by the _VectorUnaryOp C2 intrinsic
  * @modules jdk.incubator.vector
+ * @requires vm.debug
  * @run main/othervm -XX:-TieredCompilation -XX:+AlwaysIncrementalInline -Xbatch
  *                   -XX:CompileCommand=dontinline,compiler.vectorapi.TestLongVectorNeg::test
  *                   compiler.vectorapi.TestLongVectorNeg
