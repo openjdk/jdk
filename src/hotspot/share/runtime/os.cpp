@@ -763,7 +763,10 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   if (ptr != NULL ) {
     GuardedMemory guarded(MemTracker::malloc_base(memblock));
     // Guard's user data contains NMT header
-    size_t memblock_size = guarded.get_user_size() - MemTracker::malloc_header_size(memblock);
+    NMT_TrackingLevel level = MemTracker::tracking_level();
+    const size_t nmt_overhead =
+        MemTracker::malloc_header_size(level) + MemTracker::malloc_footer_size(level);
+    size_t memblock_size = guarded.get_user_size() - nmt_overhead;
     memcpy(ptr, memblock, MIN2(size, memblock_size));
     if (paranoid) {
       verify_memory(MemTracker::malloc_base(ptr));

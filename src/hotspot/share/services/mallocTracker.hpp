@@ -432,11 +432,6 @@ class MallocTracker : AllStatic {
     return header->flags();
   }
 
-  // Get header size
-  static inline size_t get_header_size(void* memblock) {
-    return (memblock == NULL) ? 0 : sizeof(MallocHeader);
-  }
-
   static inline void record_new_arena(MEMFLAGS flags) {
     MallocMemorySummary::record_new_arena(flags);
   }

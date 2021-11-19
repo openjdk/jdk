@@ -163,13 +163,6 @@ class MemTracker : AllStatic {
     return MallocTracker::malloc_footer_size(level);
   }
 
-  static size_t malloc_header_size(void* memblock) {
-    if (tracking_level() != NMT_off) {
-      return MallocTracker::get_header_size(memblock);
-    }
-    return 0;
-  }
-
   // To malloc base address, which is the starting address
   // of malloc tracking header if tracking is enabled.
   // Otherwise, it returns the same address.
