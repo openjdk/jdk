@@ -2733,7 +2733,13 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 
   CodeEmitInfo* info = op->info();
   if (info != NULL) {
-    add_debug_info_for_null_check_here(info);
+    if (info != NULL) {
+      if (!os::zero_page_read_protected() || !ImplicitNullChecks) {
+        explicit_null_check(obj, info);
+      } else {
+        add_debug_info_for_null_check_here(info);
+      }
+    }
   }
 
   if (UseCompressedClassPointers) {
