@@ -248,9 +248,12 @@ public class GetBounds2DPrecisionTest {
                 d = d.negate();
             }
             BigDecimal q = b.add(d).divide(new BigDecimal(-2.0));
+            q = q.setScale(40, RoundingMode.HALF_EVEN);
+
             // We already tested a for being 0 above
             res[roots++] = q.divide(a, RoundingMode.HALF_EVEN);
             if (!q.equals(BigDecimal.ZERO)) {
+                c = c.setScale(40, RoundingMode.HALF_EVEN);
                 res[roots++] = c.divide(q, RoundingMode.HALF_EVEN);
             }
         }
