@@ -73,7 +73,7 @@ DEFINE_TEST(test_overwrite_back, "footer canary broken")
 
 ///////
 
-// A overwriter farther away from the NMT header; the report should show the hex dump split up
+// A overwrite farther away from the NMT header; the report should show the hex dump split up
 // in two parts, containing both header and corruption site.
 static void test_overwrite_back_long(size_t distance) {
   address p = (address) os::malloc(distance, mtTest);

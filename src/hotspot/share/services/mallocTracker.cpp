@@ -131,7 +131,7 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address) c
   assert(bad_address >= (address)this, "sanity");
 
   // This function prints block information, including hex dump, in case of a detected
-  // corruption. The hex dump should show the both block header and the corruption site
+  // corruption. The hex dump should show both block header and corruption site
   // (which may or may not be close together or identical). Plus some surrounding area.
   //
   // Note that we use os::print_hex_dump(), which is able to cope with unmapped
