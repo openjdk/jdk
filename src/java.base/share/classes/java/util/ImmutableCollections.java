@@ -1062,7 +1062,6 @@ class ImmutableCollections {
 
     // ---------- Map Implementations ----------
 
-    @jdk.internal.ValueBased
     abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
         @Override public void clear() { throw uoe(); }
         @Override public V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
@@ -1093,7 +1092,6 @@ class ImmutableCollections {
         }
     }
 
-    @jdk.internal.ValueBased
     static final class Map1<K,V> extends AbstractImmutableMap<K,V> {
         @Stable
         private final K k0;
@@ -1160,7 +1158,6 @@ class ImmutableCollections {
      * @param <K> the key type
      * @param <V> the value type
      */
-    @jdk.internal.ValueBased
     static final class MapN<K,V> extends AbstractImmutableMap<K,V> {
 
         @Stable
