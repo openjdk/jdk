@@ -30,19 +30,10 @@ import javax.swing.Box;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import java.awt.Frame;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Panel;
-import java.awt.TextArea;
-import java.awt.Button;
-import java.awt.Scrollbar;
-import java.awt.Component;
-import java.awt.Graphics;
-import java.awt.Color;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseEvent;
 
 /*
  * @test
@@ -50,7 +41,7 @@ import java.awt.event.ActionListener;
  * @summary JScrollBar ignores its border when using macOS Mac OS X Aqua look and feel
  * @run main/manual ScrollBarBorderTest
  */
-public class ScrollBarBorderTest implements ActionListener {
+public class ScrollBarBorderTest {
 
     // On macOS 10.12.6 using the Mac look and feel (com.apple.laf.AquaLookAndFeel)
     // the scroll bar ignores the custom border and allows the scroll thumb to move
@@ -66,24 +57,22 @@ public class ScrollBarBorderTest implements ActionListener {
     private static JScrollBar scrollBar;
     private static JPanel panel;
     private static JFrame frame;
-    private static Frame instructionFrame;
-    private static GridBagLayout layout;
-    private static Panel mainControlPanel;
-    private static Panel resultButtonPanel;
-    private static TextArea instructionTextArea;
-    private static Button passButton;
-    private static Button failButton;
-    private static Thread mainThread = null;
-    private static boolean testPassed = false;
-    private static boolean isInterrupted = false;
-    private static final int testTimeOut = 300000;
-    private static String testFailMessage = "Test Failed. Thumb was able to move into border.";
-
+    private static Robot robot;
+    private int thumbPressed = 0;
 
     public void createAndShowGUI() {
         // create scroll bar
         scrollBar = new JScrollBar(Scrollbar.HORIZONTAL);
         scrollBar.setBorder(new CustomBorder());
+        scrollBar.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) throws RuntimeException {
+                thumbPressed++;
+                if(thumbPressed > 1) {
+                    throw new RuntimeException("Thumb was able to move into the border.");
+                }
+            }
+        });
 
         // create panel
         panel = new JPanel();
@@ -101,104 +90,41 @@ public class ScrollBarBorderTest implements ActionListener {
         frame.setVisible(true);
     }
 
-    private void createInstructionUI() {
-        instructionFrame = new Frame("Scrollbar");
-        layout = new GridBagLayout();
-        mainControlPanel = new Panel(layout);
-        resultButtonPanel = new Panel(layout);
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        String instructions
-                = "\nINSTRUCTIONS:\n"
-                + "\n   Try to drag the thumb of the scrollbar into the red zone."
-                + "\n   If the thumb is able to go into the red zone, click fail."
-                + "\n   Otherwise, pass.";
-
-        instructionTextArea = new TextArea(7, 70);
-        instructionTextArea.setText(instructions);
-        instructionTextArea.setEnabled(false);
-        instructionTextArea.setBackground(Color.white);
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 0.5;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        mainControlPanel.add(instructionTextArea, gbc);
-
-        passButton = new Button("Pass");
-        passButton.setName("Pass");
-        passButton.addActionListener((ActionListener) this);
-
-        failButton = new Button("Fail");
-        failButton.setName("Fail");
-        failButton.addActionListener((ActionListener) this);
-
-        setButtonEnable(true);
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        resultButtonPanel.add(passButton, gbc);
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        resultButtonPanel.add(failButton, gbc);
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        mainControlPanel.add(resultButtonPanel, gbc);
-
-        instructionFrame.add(mainControlPanel);
-        instructionFrame.pack();
-        instructionFrame.setVisible(true);
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent ae) {
-        if (ae.getSource() instanceof Button) {
-            Button btn = (Button) ae.getSource();
-            switch (btn.getName()) {
-                case "Pass":
-                    testPassed = true;
-                    isInterrupted = true;
-                    mainThread.interrupt();
-                    break;
-                case "Fail":
-                    testPassed = false;
-                    isInterrupted = true;
-                    mainThread.interrupt();
-                    break;
-            }
-        }
-    }
-
-    private static void setButtonEnable(boolean status) {
-        passButton.setEnabled(status);
-        failButton.setEnabled(status);
-    }
 
     private static void cleanUp() {
         frame.dispose();
-        instructionFrame.dispose();
     }
 
     public static void main(String[] args) {
         ScrollBarBorderTest borderTest = new ScrollBarBorderTest();
-        borderTest.createInstructionUI();
         borderTest.createAndShowGUI();
 
-        mainThread = Thread.currentThread();
         try {
-            mainThread.sleep(testTimeOut);
-        } catch (InterruptedException ex) {
-            if (!testPassed) {
-                throw new RuntimeException(testFailMessage);
-            }
-        } finally {
-            cleanUp();
+            robot = new Robot();
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to create Robot.");
         }
+        robot.setAutoDelay(50);
+        robot.waitForIdle();
 
-        if (!isInterrupted) {
-            throw new RuntimeException("Test Timed out after "
-                    + testTimeOut / 1000 + " seconds");
-        }
+        Point p = frame.getLocationOnScreen();
+
+        robot.mouseMove(p.x + 40, p.y + 95);
+        robot.mousePress(MouseEvent.getMaskForButton(MouseEvent.BUTTON1));
+        robot.waitForIdle();
+
+        robot.mouseMove(p.x + 480, p.y + 95);
+        robot.mouseRelease(MouseEvent.getMaskForButton(MouseEvent.BUTTON1));
+        robot.waitForIdle();
+
+        robot.mousePress(MouseEvent.getMaskForButton(MouseEvent.BUTTON1));
+        robot.waitForIdle();
+
+        robot.mouseRelease(MouseEvent.getMaskForButton(MouseEvent.BUTTON1));
+        robot.waitForIdle();
+
+
+        cleanUp();
     }
 
 
