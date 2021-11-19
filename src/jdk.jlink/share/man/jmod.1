@@ -104,6 +104,12 @@ This enables a package to be exported to one or more specifically\-named
 modules and to no others through qualified exports.
 The runtime verifies if the recorded hash of a module matches the one
 resolved at run time; if not, the runtime returns an error.
+.PP
+\f[B]Note:\f[R]
+.PP
+When creating a jmod the files and directories within each class\-path
+directory will be sorted, this will ensure a deterministic jmod content
+ordering.
 .SH OPTIONS FOR JMOD
 .TP
 .B \f[CB]\-\-class\-path\f[R] \f[I]path\f[R]

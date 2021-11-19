@@ -75,6 +75,7 @@ public class ContentOrder {
         }
     }
 
+    // Test that the jar content ordering when processing a single directory is sorted
     @Test
     public void testSingleDir() throws IOException {
         mkdir("testjar/Ctest1", "testjar/Btest2/subdir1", "testjar/Atest3");
@@ -106,6 +107,9 @@ public class ContentOrder {
         Assert.assertEquals(baos.toByteArray(), output.getBytes());
     }
 
+    // Test that when specifying multiple directories or releases that the sort
+    // ordering is done on each directory and release, reserving the order of
+    // the directories/releases specified on the command line
     @Test
     public void testMultiDirWithReleases() throws IOException {
         mkdir("testjar/foo/classes",
