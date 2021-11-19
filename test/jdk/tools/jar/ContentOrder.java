@@ -76,7 +76,7 @@ public class ContentOrder {
     }
 
     @Test
-    public void test1() throws IOException {
+    public void testSingleDir() throws IOException {
         mkdir("testjar/Ctest1", "testjar/Btest2/subdir1", "testjar/Atest3");
         touch("testjar/Ctest1/testfile1", "testjar/Ctest1/testfile2", "testjar/Ctest1/testfile3");
         touch("testjar/Btest2/subdir1/testfileC", "testjar/Btest2/subdir1/testfileB", "testjar/Btest2/subdir1/testfileA");
@@ -86,7 +86,7 @@ public class ContentOrder {
 
         jar("cf test.jar testjar");
         jar("tf test.jar");
-        println();
+        System.out.println(new String(baos.toByteArray()));
         String output = "META-INF/" + nl +
                 "META-INF/MANIFEST.MF" + nl +
                 "testjar/" + nl +
@@ -103,6 +103,46 @@ public class ContentOrder {
                 "testjar/Ctest1/testfile1" + nl +
                 "testjar/Ctest1/testfile2" + nl +
                 "testjar/Ctest1/testfile3" + nl;
+        Assert.assertEquals(baos.toByteArray(), output.getBytes());
+    }
+
+    @Test
+    public void testMultiDirWithReleases() throws IOException {
+        mkdir("testjar/foo/classes",
+              "testjar/foo11/classes/Zclasses",
+              "testjar/foo11/classes/Yclasses",
+              "testjar/foo17/classes/Bclasses",
+              "testjar/foo17/classes/Aclasses");
+        touch("testjar/foo/classes/testfile1", "testjar/foo/classes/testfile2");
+        touch("testjar/foo11/classes/Zclasses/testfile1", "testjar/foo11/classes/Zclasses/testfile2");
+        touch("testjar/foo11/classes/Yclasses/testfileA", "testjar/foo11/classes/Yclasses/testfileB");
+        touch("testjar/foo17/classes/Bclasses/testfile1", "testjar/foo17/classes/Bclasses/testfile2");
+        touch("testjar/foo17/classes/Aclasses/testfileA", "testjar/foo17/classes/Aclasses/testfileB");
+
+        onCompletion = () -> rm("test.jar", "testjar");
+
+        jar("cf test.jar -C testjar/foo classes " +
+            "--release 17 -C testjar/foo17 classes/Bclasses -C testjar/foo17 classes/Aclasses " +
+            "--release 11 -C testjar/foo11 classes/Zclasses -C testjar/foo11 classes/Yclasses");
+        jar("tf test.jar");
+        System.out.println(new String(baos.toByteArray()));
+        String output = "META-INF/" + nl +
+                "META-INF/MANIFEST.MF" + nl +
+                "classes/" + nl +
+                "classes/testfile1" + nl +
+                "classes/testfile2" + nl +
+                "META-INF/versions/17/classes/Bclasses/" + nl +
+                "META-INF/versions/17/classes/Bclasses/testfile1" + nl +
+                "META-INF/versions/17/classes/Bclasses/testfile2" + nl +
+                "META-INF/versions/17/classes/Aclasses/" + nl +
+                "META-INF/versions/17/classes/Aclasses/testfileA" + nl +
+                "META-INF/versions/17/classes/Aclasses/testfileB" + nl +
+                "META-INF/versions/11/classes/Zclasses/" + nl +
+                "META-INF/versions/11/classes/Zclasses/testfile1" + nl +
+                "META-INF/versions/11/classes/Zclasses/testfile2" + nl +
+                "META-INF/versions/11/classes/Yclasses/" + nl +
+                "META-INF/versions/11/classes/Yclasses/testfileA" + nl +
+                "META-INF/versions/11/classes/Yclasses/testfileB" + nl;
         Assert.assertEquals(baos.toByteArray(), output.getBytes());
     }
 
@@ -166,9 +206,5 @@ public class ContentOrder {
             }
             throw new IOException(s);
         }
-    }
-
-    private void println() throws IOException {
-        System.out.println(new String(baos.toByteArray()));
     }
 }
