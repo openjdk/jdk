@@ -454,6 +454,7 @@ MemRegion CardTable::dirty_card_range_after_reset(MemRegion mr,
 }
 
 uintx CardTable::ct_max_alignment_constraint() {
+  // Calculate maximum alignment using GCCardSizeInBytes as card_size hasn't been set yet
   return GCCardSizeInBytes * os::vm_page_size();
 }
 
