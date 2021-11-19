@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Path;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -255,6 +257,13 @@ public abstract class BaseFileManager implements JavaFileManager {
         return (o == null) ? -1 : o.hasArg() ? 1 : 0;
     }
 
+    @SuppressWarnings("removal")
+    private String getNativeEncoding() {
+        return AccessController.doPrivileged(
+            (PrivilegedAction<String>) ()
+            -> System.getProperty("native.encoding"));
+    }
+
     protected String multiReleaseValue;
 
     /**
@@ -267,6 +276,12 @@ public abstract class BaseFileManager implements JavaFileManager {
         switch (option) {
             case ENCODING:
                 encodingName = value;
+                if ("COMPAT".equals(encodingName)) {
+                    String enc = getNativeEncoding();
+                    if (enc != null) {
+                        encodingName = enc;
+                    }
+                }
                 return true;
 
             case MULTIRELEASE:
