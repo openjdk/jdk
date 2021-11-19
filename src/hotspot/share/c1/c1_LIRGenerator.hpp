@@ -502,7 +502,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIRGenerator(Compilation* compilation, ciMethod* method)
     : _compilation(compilation)
     , _method(method)
-    , _virtual_register_number(LIR_OprDesc::vreg_base)
+    , _virtual_register_number(LIR_Opr::vreg_base)
     , _vreg_flags(num_vreg_flags)
     , _barrier_set(BarrierSet::barrier_set()->barrier_set_c1()) {
   }
