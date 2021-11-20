@@ -68,17 +68,15 @@ abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
      * IllegalArgumentException because Field::get on the specified object, which
      * is not an instance of the class or interface declaring the underlying method
      */
-    protected IllegalArgumentException newGetIllegalArgumentException(Class<?> type) {
-        return new IllegalArgumentException(getMessage(true, type.getName()));
+    protected IllegalArgumentException newGetIllegalArgumentException(Object o) {
+        return new IllegalArgumentException(getMessage(true, o != null ? o.getClass().getName() : ""));
     }
 
     /**
      * IllegalArgumentException because Field::set on the specified object, which
      * is not an instance of the class or interface declaring the underlying method
      */
-    protected IllegalArgumentException newSetIllegalArgumentException(Class<?> type) {
-        return new IllegalArgumentException(getMessage(false, type.getName()));
+    protected IllegalArgumentException newSetIllegalArgumentException(Object o) {
+        return new IllegalArgumentException(getMessage(false, o != null ? o.getClass().getName() : ""));
     }
-
-
 }
