@@ -202,6 +202,14 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
+
+    if (FLAG_IS_DEFAULT(OnSpinWaitInst)) {
+      FLAG_SET_DEFAULT(OnSpinWaitInst, "isb");
+    }
+
+    if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
+      FLAG_SET_DEFAULT(OnSpinWaitInstCount, 1);
+    }
   }
 
   if (_cpu == CPU_ARM) {
@@ -472,6 +480,4 @@ void VM_Version::initialize() {
 #endif
 
   _spin_wait = get_spin_wait_desc();
-
-  UNSUPPORTED_OPTION(CriticalJNINatives);
 }

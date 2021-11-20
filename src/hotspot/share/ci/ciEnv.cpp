@@ -1643,6 +1643,7 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   NoSafepointVerifier no_safepoint;
   ResourceMark rm;
 
+  out->print_cr("version %d", REPLAY_VERSION);
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
   out->print_cr("JvmtiExport can_hotswap_or_post_breakpoint %d", _jvmti_can_hotswap_or_post_breakpoint);
@@ -1680,8 +1681,8 @@ void ciEnv::dump_replay_data(outputStream* out) {
 }
 
 void ciEnv::dump_replay_data(int compile_id) {
-  static char buffer[O_BUFLEN];
-  int ret = jio_snprintf(buffer, O_BUFLEN, "replay_pid%p_compid%d.log", os::current_process_id(), compile_id);
+  char buffer[64];
+  int ret = jio_snprintf(buffer, sizeof(buffer), "replay_pid%d_compid%d.log", os::current_process_id(), compile_id);
   if (ret > 0) {
     int fd = os::open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (fd != -1) {
@@ -1698,8 +1699,8 @@ void ciEnv::dump_replay_data(int compile_id) {
 }
 
 void ciEnv::dump_inline_data(int compile_id) {
-  static char buffer[O_BUFLEN];
-  int ret = jio_snprintf(buffer, O_BUFLEN, "inline_pid%p_compid%d.log", os::current_process_id(), compile_id);
+  char buffer[64];
+  int ret = jio_snprintf(buffer, sizeof(buffer), "inline_pid%d_compid%d.log", os::current_process_id(), compile_id);
   if (ret > 0) {
     int fd = os::open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (fd != -1) {

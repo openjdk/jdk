@@ -26,7 +26,6 @@
 package sun.print;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dialog;
@@ -35,9 +34,7 @@ import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
-import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -61,13 +58,9 @@ import javax.print.*;
 import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.text.NumberFormatter;
@@ -2835,7 +2828,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * placed to the left of the radio button.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class IconRadioButton extends JPanel {
+    private static class IconRadioButton extends JPanel {
 
         private JRadioButton rb;
         private JLabel lbl;
@@ -2889,7 +2882,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * user selects a file that already exists.
      */
     @SuppressWarnings("serial") // JDK implementation class
-    private class ValidatingFileChooser extends JFileChooser {
+    private static class ValidatingFileChooser extends JFileChooser {
         public void approveSelection() {
             File selected = getSelectedFile();
             boolean exists;
