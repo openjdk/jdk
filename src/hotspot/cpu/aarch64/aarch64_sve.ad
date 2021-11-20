@@ -935,6 +935,217 @@ instruct vaddD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector add reg imm (unpredicated)
+
+instruct vaddImmB(vReg dst_src, immBAddSubV con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (AddVB dst_src (ReplicateB con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_add $dst_src, $dst_src, $con\t # vector (sve) (B)" %}
+  ins_encode %{
+    int32_t val = $con$$constant;
+    if (val > 0){
+      __ sve_add(as_FloatRegister($dst_src$$reg), __ B, val);
+    } else if (val < 0){
+      __ sve_sub(as_FloatRegister($dst_src$$reg), __ B, -val);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vaddImmS(vReg dst_src, immIAddSubV con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (AddVS dst_src (ReplicateS con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_add $dst_src, $dst_src, $con\t # vector (sve) (H)" %}
+  ins_encode %{
+    int32_t val = $con$$constant;
+    if (val > 0){
+      __ sve_add(as_FloatRegister($dst_src$$reg), __ H, val);
+    } else if (val < 0){
+      __ sve_sub(as_FloatRegister($dst_src$$reg), __ H, -val);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vaddImmI(vReg dst_src, immIAddSubV con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (AddVI dst_src (ReplicateI con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_add $dst_src, $dst_src, $con\t # vector (sve) (S)" %}
+  ins_encode %{
+    int32_t val = $con$$constant;
+    if (val > 0){
+      __ sve_add(as_FloatRegister($dst_src$$reg), __ S, val);
+    } else if (val < 0){
+      __ sve_sub(as_FloatRegister($dst_src$$reg), __ S, -val);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vaddImmL(vReg dst_src, immLAddSubV con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (AddVL dst_src (ReplicateL con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_add $dst_src, $dst_src, $con\t # vector (sve) (D)" %}
+  ins_encode %{
+    int32_t val = $con$$constant;
+    if (val > 0){
+      __ sve_add(as_FloatRegister($dst_src$$reg), __ D, val);
+    } else if (val < 0){
+      __ sve_sub(as_FloatRegister($dst_src$$reg), __ D, -val);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector binary op reg imm (unpredicated)
+
+instruct vandB(vReg dst_src, immBLog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (AndV dst_src (ReplicateB con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_and $dst_src, $dst_src, $con\t # vector (sve) (B)" %}
+  ins_encode %{
+    __ sve_and(as_FloatRegister($dst_src$$reg), __ B,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vandH(vReg dst_src, immSLog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (AndV dst_src (ReplicateS con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_and $dst_src, $dst_src, $con\t # vector (sve) (H)" %}
+  ins_encode %{
+    __ sve_and(as_FloatRegister($dst_src$$reg), __ H,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vandS(vReg dst_src, immILog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (AndV dst_src (ReplicateI con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_and $dst_src, $dst_src, $con\t # vector (sve) (S)" %}
+  ins_encode %{
+    __ sve_and(as_FloatRegister($dst_src$$reg), __ S,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vandD(vReg dst_src, immLLog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (AndV dst_src (ReplicateL con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_and $dst_src, $dst_src, $con\t # vector (sve) (D)" %}
+  ins_encode %{
+    __ sve_and(as_FloatRegister($dst_src$$reg), __ D,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vorB(vReg dst_src, immBLog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (OrV dst_src (ReplicateB con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_orr $dst_src, $dst_src, $con\t # vector (sve) (B)" %}
+  ins_encode %{
+    __ sve_orr(as_FloatRegister($dst_src$$reg), __ B,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vorH(vReg dst_src, immSLog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (OrV dst_src (ReplicateS con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_orr $dst_src, $dst_src, $con\t # vector (sve) (H)" %}
+  ins_encode %{
+    __ sve_orr(as_FloatRegister($dst_src$$reg), __ H,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vorS(vReg dst_src, immILog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (OrV dst_src (ReplicateI con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_orr $dst_src, $dst_src, $con\t # vector (sve) (S)" %}
+  ins_encode %{
+    __ sve_orr(as_FloatRegister($dst_src$$reg), __ S,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vorD(vReg dst_src, immLLog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (OrV dst_src (ReplicateL con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_orr $dst_src, $dst_src, $con\t # vector (sve) (D)" %}
+  ins_encode %{
+    __ sve_orr(as_FloatRegister($dst_src$$reg), __ D,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vxorB(vReg dst_src, immBLog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (XorV dst_src (ReplicateB con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_eor $dst_src, $dst_src, $con\t # vector (sve) (B)" %}
+  ins_encode %{
+    __ sve_eor(as_FloatRegister($dst_src$$reg), __ B,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vxorH(vReg dst_src, immSLog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (XorV dst_src (ReplicateS con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_eor $dst_src, $dst_src, $con\t # vector (sve) (H)" %}
+  ins_encode %{
+    __ sve_eor(as_FloatRegister($dst_src$$reg), __ H,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vxorS(vReg dst_src, immILog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (XorV dst_src (ReplicateI con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_eor $dst_src, $dst_src, $con\t # vector (sve) (S)" %}
+  ins_encode %{
+    __ sve_eor(as_FloatRegister($dst_src$$reg), __ S,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vxorD(vReg dst_src, immLLog con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (XorV dst_src (ReplicateL con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_eor $dst_src, $dst_src, $con\t # vector (sve) (D)" %}
+  ins_encode %{
+    __ sve_eor(as_FloatRegister($dst_src$$reg), __ D,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
 // vector and
 
 instruct vand(vReg dst, vReg src1, vReg src2) %{
