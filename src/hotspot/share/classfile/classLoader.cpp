@@ -1337,10 +1337,10 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik, const Cl
       }
     }
 
-    // No path entry found for this class. Must be a shared class loaded by the
+    // No path entry found for this class: most likely a shared class loaded by the
     // user defined classloader.
-    if (classpath_index < 0) {
-      assert(ik->shared_classpath_index() < 0, "Sanity");
+    if (classpath_index < 0 && !SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+      assert(ik->shared_classpath_index() < 0, "not assigned yet");
       ik->set_shared_classpath_index(UNREGISTERED_INDEX);
       SystemDictionaryShared::set_shared_class_misc_info(ik, (ClassFileStream*)stream);
       return;
