@@ -28,7 +28,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.Pipe;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -177,6 +181,29 @@ public class TransferTo {
         } finally {
             Files.delete(sourceFile);
         }
+    }
+
+    /*
+     * Special test whether selectable channel based transfer throws blocking mode exception.
+     */
+    @Test
+    public void testIllegalBlockingMode() throws IOException {
+        // preparing empty file input and non-blocking selectable output
+        FileChannel fc = FileChannel.open(Files.createTempFile(null, null));
+        InputStream is1 = Channels.newInputStream(fc);
+        SelectableChannel sc = Pipe.open().sink().configureBlocking(false);
+        OutputStream os1 = Channels.newOutputStream((WritableByteChannel) sc);
+
+        // IllegalBlockingMode must be thrown when trying to perform a transfer
+        assertThrows(IllegalBlockingModeException.class, () -> is1.transferTo(os1));
+
+        // preparing non-blocking selectable input and some arbitrary output
+        sc = Pipe.open().source().configureBlocking(false);
+        InputStream is2 = Channels.newInputStream((ReadableByteChannel) sc);
+        OutputStream os2 = new ByteArrayOutputStream();
+
+        // IllegalBlockingMode must be thrown when trying to perform a transfer
+        assertThrows(IllegalBlockingModeException.class, () -> is2.transferTo(os2));
     }
 
     /*
