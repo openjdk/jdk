@@ -2805,7 +2805,7 @@ run:
         UPDATE_PC_AND_TOS_AND_CONTINUE(4, 1);
       }
 
-      CASE(_fast_faccess_0): {
+      CASE(_fast_iaccess_0): {
         u2 index = Bytes::get_native_u2(pc+2);
         ConstantPoolCacheEntry* cache = cp->entry_at(index);
         int field_offset = cache->f2_as_index();
@@ -2820,7 +2820,7 @@ run:
         UPDATE_PC_AND_TOS_AND_CONTINUE(4, 1);
       }
 
-      CASE(_fast_iaccess_0): {
+      CASE(_fast_faccess_0): {
         u2 index = Bytes::get_native_u2(pc+2);
         ConstantPoolCacheEntry* cache = cp->entry_at(index);
         int field_offset = cache->f2_as_index();
