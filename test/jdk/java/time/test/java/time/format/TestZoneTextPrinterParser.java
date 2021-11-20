@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8081022 8151876 8166875 8189784 8206980
+ * @bug 8081022 8151876 8166875 8177819 8189784 8206980 8277049
  * @key randomness
  */
 
@@ -236,4 +236,28 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                  .withDecimalStyle(DecimalStyle.of(locale));
     }
 
+    @DataProvider(name="roundTripAtOverlap")
+    Object[][] data_roundTripAtOverlap() {
+        return new Object[][] {
+            {"yyyy-MM-dd HH:mm:ss.SSS z",       "2021-10-31 02:30:00.000 CET"},
+            {"yyyy-MM-dd HH:mm:ss.SSS z",       "2021-10-31 02:30:00.000 CEST"},
+            {"yyyy-MM-dd HH:mm:ss.SSS z",       "2021-11-07 01:30:00.000 EST"},
+            {"yyyy-MM-dd HH:mm:ss.SSS z",       "2021-11-07 01:30:00.000 EDT"},
+            {"yyyy-MM-dd HH:mm:ss.SSS zzzz",    "2021-10-31 02:30:00.000 Central European Standard Time"},
+            {"yyyy-MM-dd HH:mm:ss.SSS zzzz",    "2021-10-31 02:30:00.000 Central European Summer Time"},
+            {"yyyy-MM-dd HH:mm:ss.SSS zzzz",    "2021-11-07 01:30:00.000 Eastern Standard Time"},
+            {"yyyy-MM-dd HH:mm:ss.SSS zzzz",    "2021-11-07 01:30:00.000 Eastern Daylight Time"},
+
+            {"yyyy-MM-dd HH:mm:ss.SSS v",       "2021-10-31 02:30:00.000 CET"},
+            {"yyyy-MM-dd HH:mm:ss.SSS v",       "2021-11-07 01:30:00.000 ET"},
+            {"yyyy-MM-dd HH:mm:ss.SSS vvvv",    "2021-10-31 02:30:00.000 Central European Time"},
+            {"yyyy-MM-dd HH:mm:ss.SSS vvvv",    "2021-11-07 01:30:00.000 Eastern Time"},
+        };
+    }
+
+    @Test(dataProvider="roundTripAtOverlap")
+    public void test_roundTripAtOverlap(String pattern, String input) {
+        var dtf = DateTimeFormatter.ofPattern(pattern);
+        assertEquals(dtf.format(ZonedDateTime.parse(input, dtf)), input);
+    }
 }

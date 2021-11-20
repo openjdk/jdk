@@ -4433,11 +4433,11 @@ public final class DateTimeFormatterBuilder {
                         nonRegionIds.add(zid);
                         continue;
                     }
-                    tree.add(zid, zid);    // don't convert zid -> metazone
+                    tree.add(zid, zid, -1);    // don't convert zid -> metazone
                     zid = ZoneName.toZid(zid, locale);
                     int i = textStyle == TextStyle.FULL ? 1 : 2;
                     for (; i < names.length; i += 2) {
-                        tree.add(names[i], zid);
+                        tree.add(names[i], zid, (i - 1) / 2);
                     }
                 }
 
@@ -4450,7 +4450,7 @@ public final class DateTimeFormatterBuilder {
                         int i = textStyle == TextStyle.FULL ? 1 : 2;
                         for (; i < cidNames.length; i += 2) {
                             if (cidNames[i] != null && !cidNames[i].isEmpty()) {
-                                t.add(cidNames[i], cid);
+                                t.add(cidNames[i], cid, (i - 1) / 2);
                             }
                         }
                     });
@@ -4465,7 +4465,7 @@ public final class DateTimeFormatterBuilder {
                         }
                         int i = textStyle == TextStyle.FULL ? 1 : 2;
                         for (; i < names.length; i += 2) {
-                            tree.add(names[i], zid);
+                            tree.add(names[i], zid, (i - 1) / 2);
                        }
                     }
                 }
@@ -4571,15 +4571,16 @@ public final class DateTimeFormatterBuilder {
             // parse
             PrefixTree tree = getTree(context);
             ParsePosition ppos = new ParsePosition(position);
-            String parsedZoneId = tree.match(text, ppos);
-            if (parsedZoneId == null) {
+            PrefixTree parsedZoneId = tree.match(text, ppos);
+            if (parsedZoneId.value == null) {
                 if (context.charEquals(nextChar, 'Z')) {
                     context.setParsed(ZoneOffset.UTC);
                     return position + 1;
                 }
                 return ~position;
             }
-            context.setParsed(ZoneId.of(parsedZoneId));
+            context.setParsed(ZoneId.of(parsedZoneId.value));
+            context.setParsedZoneNameType(parsedZoneId.type);
             return ppos.getIndex();
         }
 
@@ -4641,14 +4642,16 @@ public final class DateTimeFormatterBuilder {
     static class PrefixTree {
         protected String key;
         protected String value;
+        protected int type;
         protected char c0;    // performance optimization to avoid the
                               // boundary check cost of key.charat(0)
         protected PrefixTree child;
         protected PrefixTree sibling;
 
-        private PrefixTree(String k, String v, PrefixTree child) {
+        private PrefixTree(String k, String v, int type, PrefixTree child) {
             this.key = k;
             this.value = v;
+            this.type = type;
             this.child = child;
             if (k.isEmpty()) {
                 c0 = 0xffff;
@@ -4668,9 +4671,9 @@ public final class DateTimeFormatterBuilder {
             //    return new LENIENT("", null, null);
             //}
             if (context.isCaseSensitive()) {
-                return new PrefixTree("", null, null);
+                return new PrefixTree("", null, -1, null);
             }
-            return new CI("", null, null);
+            return new CI("", null, -1, null);
         }
 
         /**
@@ -4683,7 +4686,7 @@ public final class DateTimeFormatterBuilder {
         public static  PrefixTree newTree(Set<String> keys, DateTimeParseContext context) {
             PrefixTree tree = newTree(context);
             for (String k : keys) {
-                tree.add0(k, k);
+                tree.add0(k, k, -1);
             }
             return tree;
         }
@@ -4692,7 +4695,7 @@ public final class DateTimeFormatterBuilder {
          * Clone a copy of this tree
          */
         public PrefixTree copyTree() {
-            PrefixTree copy = new PrefixTree(key, value, null);
+            PrefixTree copy = new PrefixTree(key, value, type, null);
             if (child != null) {
                 copy.child = child.copyTree();
             }
@@ -4710,11 +4713,11 @@ public final class DateTimeFormatterBuilder {
          * @param v  the value, not null
          * @return  true if the pair is added successfully
          */
-        public boolean add(String k, String v) {
-            return add0(k, v);
+        public boolean add(String k, String v, int t) {
+            return add0(k, v, t);
         }
 
-        private boolean add0(String k, String v) {
+        private boolean add0(String k, String v, int t) {
             k = toKey(k);
             int prefixLen = prefixLength(k);
             if (prefixLen == key.length()) {
@@ -4723,12 +4726,12 @@ public final class DateTimeFormatterBuilder {
                     PrefixTree c = child;
                     while (c != null) {
                         if (isEqual(c.c0, subKey.charAt(0))) {
-                            return c.add0(subKey, v);
+                            return c.add0(subKey, v, t);
                         }
                         c = c.sibling;
                     }
                     // add the node as the child of the current node
-                    c = newNode(subKey, v, null);
+                    c = newNode(subKey, v, t, null);
                     c.sibling = child;
                     child = c;
                     return true;
@@ -4738,18 +4741,20 @@ public final class DateTimeFormatterBuilder {
                 //    return false;
                 //}
                 value = v;
+                type = t;
                 return true;
             }
             // split the existing node
-            PrefixTree n1 = newNode(key.substring(prefixLen), value, child);
+            PrefixTree n1 = newNode(key.substring(prefixLen), value, type, child);
             key = k.substring(0, prefixLen);
             child = n1;
             if (prefixLen < k.length()) {
-                PrefixTree n2 = newNode(k.substring(prefixLen), v, null);
+                PrefixTree n2 = newNode(k.substring(prefixLen), v, t, null);
                 child.sibling = n2;
                 value = null;
             } else {
                 value = v;
+                type = t;
             }
             return true;
         }
@@ -4760,9 +4765,9 @@ public final class DateTimeFormatterBuilder {
          * @param text  the input text to parse, not null
          * @param off  the offset position to start parsing at
          * @param end  the end position to stop parsing
-         * @return the resulting string, or null if no match found.
+         * @return the resulting tree, or null if no match found.
          */
-        public String match(CharSequence text, int off, int end) {
+        public PrefixTree match(CharSequence text, int off, int end) {
             if (!prefixOf(text, off, end)){
                 return null;
             }
@@ -4770,16 +4775,16 @@ public final class DateTimeFormatterBuilder {
                 PrefixTree c = child;
                 do {
                     if (isEqual(c.c0, text.charAt(off))) {
-                        String found = c.match(text, off, end);
+                        PrefixTree found = c.match(text, off, end);
                         if (found != null) {
                             return found;
                         }
-                        return value;
+                        return this;
                     }
                     c = c.sibling;
                 } while (c != null);
             }
-            return value;
+            return this;
         }
 
         /**
@@ -4789,9 +4794,9 @@ public final class DateTimeFormatterBuilder {
          * @param pos  the position to start parsing at, from 0 to the text
          *  length. Upon return, position will be updated to the new parse
          *  position, or unchanged, if no match found.
-         * @return the resulting string, or null if no match found.
+         * @return the resulting tree, or null if no match found.
          */
-        public String match(CharSequence text, ParsePosition pos) {
+        public PrefixTree match(CharSequence text, ParsePosition pos) {
             int off = pos.getIndex();
             int end = text.length();
             if (!prefixOf(text, off, end)){
@@ -4803,7 +4808,7 @@ public final class DateTimeFormatterBuilder {
                 do {
                     if (isEqual(c.c0, text.charAt(off))) {
                         pos.setIndex(off);
-                        String found = c.match(text, pos);
+                        PrefixTree found = c.match(text, pos);
                         if (found != null) {
                             return found;
                         }
@@ -4813,15 +4818,15 @@ public final class DateTimeFormatterBuilder {
                 } while (c != null);
             }
             pos.setIndex(off);
-            return value;
+            return this;
         }
 
         protected String toKey(String k) {
             return k;
         }
 
-        protected PrefixTree newNode(String k, String v, PrefixTree child) {
-            return new PrefixTree(k, v, child);
+        protected PrefixTree newNode(String k, String v, int t, PrefixTree child) {
+            return new PrefixTree(k, v, t, child);
         }
 
         protected boolean isEqual(char c1, char c2) {
@@ -4861,13 +4866,13 @@ public final class DateTimeFormatterBuilder {
          */
         private static class CI extends PrefixTree {
 
-            private CI(String k, String v, PrefixTree child) {
-                super(k, v, child);
+            private CI(String k, String v, int t, PrefixTree child) {
+                super(k, v, t, child);
             }
 
             @Override
-            protected CI newNode(String k, String v, PrefixTree child) {
-                return new CI(k, v, child);
+            protected CI newNode(String k, String v, int t, PrefixTree child) {
+                return new CI(k, v, t, child);
             }
 
             @Override
@@ -4897,13 +4902,13 @@ public final class DateTimeFormatterBuilder {
          */
         private static class LENIENT extends CI {
 
-            private LENIENT(String k, String v, PrefixTree child) {
-                super(k, v, child);
+            private LENIENT(String k, String v, int t, PrefixTree child) {
+                super(k, v, t, child);
             }
 
             @Override
-            protected CI newNode(String k, String v, PrefixTree child) {
-                return new LENIENT(k, v, child);
+            protected CI newNode(String k, String v, int t, PrefixTree child) {
+                return new LENIENT(k, v, t, child);
             }
 
             private boolean isLenientChar(char c) {
@@ -4929,7 +4934,7 @@ public final class DateTimeFormatterBuilder {
             }
 
             @Override
-            public String match(CharSequence text, ParsePosition pos) {
+            public PrefixTree match(CharSequence text, ParsePosition pos) {
                 int off = pos.getIndex();
                 int end = text.length();
                 int len = key.length();
@@ -4956,7 +4961,7 @@ public final class DateTimeFormatterBuilder {
                         do {
                             if (isEqual(c.c0, text.charAt(off0))) {
                                 pos.setIndex(off0);
-                                String found = c.match(text, pos);
+                                PrefixTree found = c.match(text, pos);
                                 if (found != null) {
                                     return found;
                                 }
@@ -4967,7 +4972,7 @@ public final class DateTimeFormatterBuilder {
                     }
                 }
                 pos.setIndex(off);
-                return value;
+                return this;
             }
         }
     }
