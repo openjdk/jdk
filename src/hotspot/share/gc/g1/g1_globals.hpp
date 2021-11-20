@@ -257,7 +257,7 @@
                                                                             \
   product(size_t, G1HeapRegionSize, 0,                                      \
           "Size of the G1 regions.")                                        \
-          range(0, 32*M)                                                    \
+          range(0, NOT_LP64(32*M) LP64_ONLY(512*M))                         \
           constraint(G1HeapRegionSizeConstraintFunc,AfterMemoryInit)        \
                                                                             \
   product(uint, G1ConcRefinementThreads, 0,                                 \

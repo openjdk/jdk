@@ -709,11 +709,7 @@ TEST_VM(os, pagesizes_test_print) {
   ASSERT_EQ(strcmp(expected, buffer), 0);
 }
 
-#if defined(__APPLE__)  // See JDK-8273967.
-  TEST_VM(os, DISABLED_dll_address_to_function_and_library_name) {
-#else
-  TEST_VM(os, dll_address_to_function_and_library_name) {
-#endif
+TEST_VM(os, dll_address_to_function_and_library_name) {
   char tmp[1024];
   char output[1024];
   stringStream st(output, sizeof(output));
@@ -726,8 +722,10 @@ TEST_VM(os, pagesizes_test_print) {
 #define LOG(...)
 
   // Invalid addresses
+  LOG("os::print_function_and_library_name(st, -1) expects FALSE.");
   address addr = (address)(intptr_t)-1;
   EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
+  LOG("os::print_function_and_library_name(st, NULL) expects FALSE.");
   addr = NULL;
   EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
 

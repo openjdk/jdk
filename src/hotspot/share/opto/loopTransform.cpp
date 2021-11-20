@@ -2589,7 +2589,7 @@ Node* PhaseIdealLoop::add_range_check_predicate(IdealLoopTree* loop, CountedLoop
                                                 Node* predicate_proj, int scale_con, Node* offset,
                                                 Node* limit, jint stride_con, Node* value) {
   bool overflow = false;
-  BoolNode* bol = rc_predicate(loop, predicate_proj, scale_con, offset, value, NULL, stride_con, limit, (stride_con > 0) != (scale_con > 0), overflow);
+  BoolNode* bol = rc_predicate(loop, predicate_proj, scale_con, offset, value, NULL, stride_con, limit, (stride_con > 0) != (scale_con > 0), overflow, false);
   Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
   register_new_node(opaque_bol, predicate_proj);
   IfNode* new_iff = NULL;

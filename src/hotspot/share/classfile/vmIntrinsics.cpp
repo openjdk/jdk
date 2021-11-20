@@ -33,13 +33,13 @@
 // These are flag-matching functions:
 inline bool match_F_R(jshort flags) {
   const int req = 0;
-  const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED;
+  const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 
 inline bool match_F_Y(jshort flags) {
   const int req = JVM_ACC_SYNCHRONIZED;
-  const int neg = JVM_ACC_STATIC;
+  const int neg = JVM_ACC_STATIC | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 
@@ -51,7 +51,7 @@ inline bool match_F_RN(jshort flags) {
 
 inline bool match_F_S(jshort flags) {
   const int req = JVM_ACC_STATIC;
-  const int neg = JVM_ACC_SYNCHRONIZED;
+  const int neg = JVM_ACC_SYNCHRONIZED | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 

@@ -239,7 +239,7 @@ void MemAllocator::Allocation::notify_allocation_dtrace_sampler() {
     Klass* klass = obj()->klass();
     size_t word_size = _allocator._word_size;
     if (klass != NULL && klass->name() != NULL) {
-      SharedRuntime::dtrace_object_alloc(obj(), (int)word_size);
+      SharedRuntime::dtrace_object_alloc(Thread::current(), obj(), word_size);
     }
   }
 }

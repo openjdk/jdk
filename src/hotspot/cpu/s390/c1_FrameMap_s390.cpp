@@ -138,8 +138,8 @@ LIR_Opr FrameMap::Z_F0_opr;
 LIR_Opr FrameMap::Z_F0_double_opr;
 
 
-LIR_Opr FrameMap::_caller_save_cpu_regs[] = { 0, };
-LIR_Opr FrameMap::_caller_save_fpu_regs[] = { 0, };
+LIR_Opr FrameMap::_caller_save_cpu_regs[] = {};
+LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 
 
 // c1 rnr -> FloatRegister

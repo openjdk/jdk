@@ -41,7 +41,7 @@ class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   HeapRegion* _hr;
-  size_t _marked_bytes;
+  size_t _marked_words;
   bool _during_concurrent_start;
   uint _worker_id;
   HeapWord* _last_forwarded_object_end;
@@ -53,12 +53,12 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _cm(_g1h->concurrent_mark()),
     _hr(hr),
-    _marked_bytes(0),
+    _marked_words(0),
     _during_concurrent_start(during_concurrent_start),
     _worker_id(worker_id),
     _last_forwarded_object_end(hr->bottom()) { }
 
-  size_t marked_bytes() { return _marked_bytes; }
+  size_t marked_bytes() { return _marked_words * HeapWordSize; }
 
   // Iterate over the live objects in the region to find self-forwarded objects
   // that need to be kept live. We need to update the remembered sets of these
@@ -68,40 +68,40 @@ public:
   // dead too) already.
   void do_object(oop obj) {
     HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
+    assert(_last_forwarded_object_end <= obj_addr, "should iterate in ascending address order");
     assert(_hr->is_in(obj_addr), "sanity");
 
-    if (obj->is_forwarded() && obj->forwardee() == obj) {
-      // The object failed to move.
+    // The object failed to move.
+    assert(obj->is_forwarded() && obj->forwardee() == obj, "sanity");
 
-      zap_dead_objects(_last_forwarded_object_end, obj_addr);
-      // We consider all objects that we find self-forwarded to be
-      // live. What we'll do is that we'll update the prev marking
-      // info so that they are all under PTAMS and explicitly marked.
-      if (!_cm->is_marked_in_prev_bitmap(obj)) {
-        _cm->mark_in_prev_bitmap(obj);
-      }
-      if (_during_concurrent_start) {
-        // For the next marking info we'll only mark the
-        // self-forwarded objects explicitly if we are during
-        // concurrent start (since, normally, we only mark objects pointed
-        // to by roots if we succeed in copying them). By marking all
-        // self-forwarded objects we ensure that we mark any that are
-        // still pointed to be roots. During concurrent marking, and
-        // after concurrent start, we don't need to mark any objects
-        // explicitly and all objects in the CSet are considered
-        // (implicitly) live. So, we won't mark them explicitly and
-        // we'll leave them over NTAMS.
-        _cm->mark_in_next_bitmap(_worker_id, _hr, obj);
-      }
-      size_t obj_size = obj->size();
-
-      _marked_bytes += (obj_size * HeapWordSize);
-      PreservedMarks::init_forwarded_mark(obj);
-
-      HeapWord* obj_end = obj_addr + obj_size;
-      _last_forwarded_object_end = obj_end;
-      _hr->alloc_block_in_bot(obj_addr, obj_end);
+    zap_dead_objects(_last_forwarded_object_end, obj_addr);
+    // We consider all objects that we find self-forwarded to be
+    // live. What we'll do is that we'll update the prev marking
+    // info so that they are all under PTAMS and explicitly marked.
+    if (!_cm->is_marked_in_prev_bitmap(obj)) {
+      _cm->mark_in_prev_bitmap(obj);
     }
+    if (_during_concurrent_start) {
+      // For the next marking info we'll only mark the
+      // self-forwarded objects explicitly if we are during
+      // concurrent start (since, normally, we only mark objects pointed
+      // to by roots if we succeed in copying them). By marking all
+      // self-forwarded objects we ensure that we mark any that are
+      // still pointed to be roots. During concurrent marking, and
+      // after concurrent start, we don't need to mark any objects
+      // explicitly and all objects in the CSet are considered
+      // (implicitly) live. So, we won't mark them explicitly and
+      // we'll leave them over NTAMS.
+      _cm->mark_in_next_bitmap(_worker_id, _hr, obj);
+    }
+    size_t obj_size = obj->size();
+
+    _marked_words += obj_size;
+    PreservedMarks::init_forwarded_mark(obj);
+
+    HeapWord* obj_end = obj_addr + obj_size;
+    _last_forwarded_object_end = obj_end;
+    _hr->alloc_block_in_bot(obj_addr, obj_end);
   }
 
   // Fill the memory area from start to end with filler objects, and update the BOT
@@ -146,16 +146,13 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   uint _worker_id;
 
-  uint volatile* _num_failed_regions;
   G1EvacFailureRegions* _evac_failure_regions;
 
 public:
   RemoveSelfForwardPtrHRClosure(uint worker_id,
-                                uint volatile* num_failed_regions,
                                 G1EvacFailureRegions* evac_failure_regions) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _num_failed_regions(num_failed_regions),
     _evac_failure_regions(evac_failure_regions) {
   }
 
@@ -164,7 +161,8 @@ public:
     RemoveSelfForwardPtrObjClosure rspc(hr,
                                         during_concurrent_start,
                                         _worker_id);
-    hr->object_iterate(&rspc);
+    // Iterates evac failure objs which are recorded during evacuation.
+    hr->process_and_drop_evac_failure_objs(&rspc);
     // Need to zap the remainder area of the processed region.
     rspc.zap_remainder();
 
@@ -193,8 +191,6 @@ public:
       hr->rem_set()->clear_locked(true);
 
       hr->note_self_forwarding_removal_end(live_bytes);
-
-      Atomic::inc(_num_failed_regions, memory_order_relaxed);
     }
     return false;
   }
@@ -204,16 +200,15 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegi
   WorkerTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
   _hrclaimer(_g1h->workers()->active_workers()),
-  _evac_failure_regions(evac_failure_regions),
-  _num_failed_regions(0) { }
+  _evac_failure_regions(evac_failure_regions) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, &_num_failed_regions, _evac_failure_regions);
+  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, _evac_failure_regions);
 
   // Iterate through all regions that failed evacuation during the entire collection.
   _evac_failure_regions->par_iterate(&rsfp_cl, &_hrclaimer, worker_id);
 }
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {
-  return Atomic::load(&_num_failed_regions);
+  return _evac_failure_regions->num_regions_failed_evacuation();
 }

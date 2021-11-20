@@ -57,7 +57,7 @@ public class AlgorithmDecomposer {
         String[] transTokens = algorithm.split("/");
 
         for (String transToken : transTokens) {
-            if (transToken == null || transToken.isEmpty()) {
+            if (transToken.isEmpty()) {
                 continue;
             }
 
@@ -70,7 +70,7 @@ public class AlgorithmDecomposer {
             String[] tokens = PATTERN.split(transToken);
 
             for (String token : tokens) {
-                if (token == null || token.isEmpty()) {
+                if (token.isEmpty()) {
                     continue;
                 }
 

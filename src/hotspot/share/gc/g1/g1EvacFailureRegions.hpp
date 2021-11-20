@@ -56,7 +56,7 @@ public:
   bool contains(uint region_idx) const;
   void par_iterate(HeapRegionClosure* closure,
                    HeapRegionClaimer* _hrclaimer,
-                   uint worker_id);
+                   uint worker_id) const;
 
   uint num_regions_failed_evacuation() const {
     return Atomic::load(&_evac_failure_regions_cur_length);
