@@ -188,25 +188,31 @@ public class TransferTo {
      */
     @Test
     public void testIllegalBlockingMode() throws IOException {
-        // testing arbitrary input (here: empty file) to non-blocking selectable output
-        try (FileChannel fc = FileChannel.open(Files.createTempFile(null, null));
-                InputStream is = Channels.newInputStream(fc);
-                SelectableChannel sc = Pipe.open().sink().configureBlocking(false);
-                OutputStream os = Channels.newOutputStream((WritableByteChannel) sc)) {
+        Pipe pipe = Pipe.open();
+        try {
+            // testing arbitrary input (here: empty file) to non-blocking selectable output
+            try (FileChannel fc = FileChannel.open(Files.createTempFile(null, null));
+                    InputStream is = Channels.newInputStream(fc);
+                    SelectableChannel sc = pipe.sink().configureBlocking(false);
+                    OutputStream os = Channels.newOutputStream((WritableByteChannel) sc)) {
 
-            // IllegalBlockingMode must be thrown when trying to perform a transfer
-            assertThrows(IllegalBlockingModeException.class, () -> is.transferTo(os));
+                // IllegalBlockingMode must be thrown when trying to perform a transfer
+                assertThrows(IllegalBlockingModeException.class, () -> is.transferTo(os));
+            }
+
+            // testing non-blocking selectable input to arbitrary output (here: byte array)
+            try (SelectableChannel sc = pipe.source().configureBlocking(false);
+                    InputStream is = Channels.newInputStream((ReadableByteChannel) sc);
+                    OutputStream os = new ByteArrayOutputStream()) {
+
+                // IllegalBlockingMode must be thrown when trying to perform a transfer
+                assertThrows(IllegalBlockingModeException.class, () -> is.transferTo(os));
+            }
+        } finally {
+            pipe.source().close();
+            pipe.sink().close();
         }
-
-        // testing non-blocking selectable input to arbitrary output (here: byte array)
-        try (SelectableChannel sc = Pipe.open().source().configureBlocking(false);
-                InputStream is = Channels.newInputStream((ReadableByteChannel) sc);
-                OutputStream os = new ByteArrayOutputStream()) {
-
-            // IllegalBlockingMode must be thrown when trying to perform a transfer
-            assertThrows(IllegalBlockingModeException.class, () -> is.transferTo(os));
-        }
-    }
+}
 
     /*
      * Asserts that the transferred content is correct, i. e. compares the actually transferred bytes
