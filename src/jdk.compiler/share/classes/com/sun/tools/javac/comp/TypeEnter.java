@@ -1337,9 +1337,25 @@ public class TypeEnter implements Completer {
 
         @Override
         public MethodSymbol constructorSymbol() {
+            // we should do this only once
+            boolean copyConstAnnos = constructorSymbol == null;
             MethodSymbol csym = super.constructorSymbol();
             csym.flags_field |= ANONCONSTR | (constr.flags() & VARARGS);
             csym.flags_field |= based ? ANONCONSTR_BASED : 0;
+
+            ListBuffer<Attribute.Compound> paramAttrs;
+            if (copyConstAnnos) {
+                csym.appendAttributes(constr.getRawAttributes());
+                /*paramAttrs = new ListBuffer<>();
+                for (Attribute.Compound compound : constr.getRawAttributes()) {
+                    Attribute.Compound newAttr = new Attribute.Compound(compound.type, compound.values, compound.position);
+                    paramAttrs.add(newAttr);
+                }
+                if (paramAttrs.size() > 0) {
+                    csym.appendAttributes(paramAttrs.toList());
+                }*/
+            }
+
             ListBuffer<VarSymbol> params = new ListBuffer<>();
             List<Type> argtypes = constructorType().getParameterTypes();
             if (!enclosingType().hasTag(NONE)) {
@@ -1348,7 +1364,19 @@ public class TypeEnter implements Completer {
             }
             if (constr.params != null) {
                 for (VarSymbol p : constr.params) {
-                    params.add(new VarSymbol(PARAMETER | p.flags(), p.name, argtypes.head, csym));
+                    VarSymbol param = new VarSymbol(PARAMETER | p.flags(), p.name, argtypes.head, csym);
+                    param.appendAttributes(p.getRawAttributes());
+
+                    /*paramAttrs = new ListBuffer<>();
+                    //ListBuffer<Attribute.Compound> paramAttrs = new ListBuffer<>();
+                    for (Attribute.Compound compound : p.getRawAttributes()) {
+                        Attribute.Compound newAttr = new Attribute.Compound(compound.type, compound.values, compound.position);
+                        paramAttrs.add(newAttr);
+                    }
+                    if (paramAttrs.size() > 0) {
+                        param.appendAttributes(paramAttrs.toList());
+                    }*/
+                    params.add(param);
                     argtypes = argtypes.tail;
                 }
             }
