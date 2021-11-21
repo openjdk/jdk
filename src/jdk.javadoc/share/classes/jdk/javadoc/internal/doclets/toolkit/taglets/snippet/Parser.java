@@ -152,15 +152,15 @@ public final class Parser {
                 line = rawLine + (addLineTerminator ? "\n" : "");
             } else {
                 String maybeMarkup = markedUpLine.group(3);
-                List<Tag> parsedTags = null;
+                List<Tag> parsedTags;
                 try {
                     parsedTags = markupParser.parse(maybeMarkup);
                 } catch (ParseException e) {
-                    // adjust index
+                    // translate error position from markup to file line
                     throw new ParseException(e::getMessage, markedUpLine.start(3) + e.getPosition());
                 }
                 for (Tag t : parsedTags) {
-                    t.lineSourceOffset = next.offset;
+                    t.lineSourceOffset = next.offset();
                     t.markupLineOffset = markedUpLine.start(3);
                 }
                 thisLineTags.addAll(parsedTags);

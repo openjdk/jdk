@@ -1564,7 +1564,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     assert(op->addr()->is_address(), "what else?");
     LIR_Address* addr_ptr = op->addr()->as_address_ptr();
     assert(addr_ptr->disp() == 0, "need 0 disp");
-    assert(addr_ptr->index() == LIR_OprDesc::illegalOpr(), "need 0 index");
+    assert(addr_ptr->index() == LIR_Opr::illegalOpr(), "need 0 index");
     addr = as_reg(addr_ptr->base());
   }
   Register newval = as_reg(op->new_value());
