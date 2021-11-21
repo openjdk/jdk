@@ -762,7 +762,6 @@ public interface Elements {
         return null;
     }
 
-
     /**
      * {@return the file object for this element or {@code null} if
      * there is no such file object}
@@ -795,14 +794,15 @@ public interface Elements {
      * (implicitly) created during an annotation processing run from
      * the creation of source or class files in that package.  An
      * {@linkplain PackageElement#isUnnamed unnamed package} will have
-     * a null file since it cannot be declared in a compilation unit.
+     * a {@code null} file since it cannot be declared in a
+     * compilation unit.
      *
      * <p>If it has a file object, the file object for a module will
      * be a {@code module-info} file.  An {@linkplain
-     * ModuleElement#isUnnamed unnamed module} will have a null file
-     * since it cannot be declared in a compilation unit.  An
-     * {@linkplain #isAutomaticModule automatic module} will have a
-     * null file since it is implicitly declared.
+     * ModuleElement#isUnnamed unnamed module} will have a {@code
+     * null} file since it cannot be declared in a compilation unit.
+     * An {@linkplain #isAutomaticModule automatic module} will have a
+     * {@code null} file since it is implicitly declared.
      *
      * <p>If it has a file object, the file object for a top-level
      * {@code public} class or interface will be a source or class

@@ -36,19 +36,20 @@
  * appearing inside method bodies, such as local variables and
  * anonymous classes.
  *
- * <p><a id="accurate_model">When used in the context of annotation processing, an accurate
- * model of the element being represented must be returned.  As this
- * is a language model, the source code provides the fiducial
- * (reference) representation of the construct in question rather than
- * a representation in an executable output like a class file.
- * Executable output may serve as the basis for creating a modeling
- * element.  However, the process of translating source code to
- * executable output may not permit recovering some aspects of the
- * source code representation.  For example, annotations with
- * {@linkplain java.lang.annotation.RetentionPolicy#SOURCE source}
- * {@linkplain java.lang.annotation.Retention retention} cannot be
- * recovered from class files and class files might not be able to
- * provide source position information.</a>
+ * <p id="accurate_model">When used in the context of annotation
+ * processing, an accurate model of the element being represented must
+ * be returned.  As this is a language model, the source code provides
+ * the fiducial (reference) representation of the construct in
+ * question rather than a representation in an executable output like
+ * a class file.  Executable output may serve as the basis for
+ * creating a modeling element.  However, the process of translating
+ * source code to executable output may not permit recovering some
+ * aspects of the source code representation.  For example,
+ * annotations with {@linkplain
+ * java.lang.annotation.RetentionPolicy#SOURCE source} {@linkplain
+ * java.lang.annotation.Retention retention} cannot be recovered from
+ * class files and class files might not be able to provide source
+ * position information.
  *
  * Names of {@linkplain
  * javax.lang.model.element.ExecutableElement#getParameters()
