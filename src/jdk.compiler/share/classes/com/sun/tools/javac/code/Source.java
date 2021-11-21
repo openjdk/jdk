@@ -117,7 +117,12 @@ public enum Source {
     /**
       * 18, tbd
       */
-    JDK18("18");
+    JDK18("18"),
+
+    /**
+      * 19, tbd
+      */
+    JDK19("19");
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -169,6 +174,7 @@ public enum Source {
 
     public Target requiredTarget() {
         return switch(this) {
+        case JDK19  -> Target.JDK1_19;
         case JDK18  -> Target.JDK1_18;
         case JDK17  -> Target.JDK1_17;
         case JDK16  -> Target.JDK1_16;
@@ -313,6 +319,7 @@ public enum Source {
         case JDK16  -> RELEASE_16;
         case JDK17  -> RELEASE_17;
         case JDK18  -> RELEASE_18;
+        case JDK19  -> RELEASE_19;
         default     -> null;
         };
     }
