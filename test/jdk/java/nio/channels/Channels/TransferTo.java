@@ -188,22 +188,24 @@ public class TransferTo {
      */
     @Test
     public void testIllegalBlockingMode() throws IOException {
-        // preparing empty file input and non-blocking selectable output
-        FileChannel fc = FileChannel.open(Files.createTempFile(null, null));
-        InputStream is1 = Channels.newInputStream(fc);
-        SelectableChannel sc = Pipe.open().sink().configureBlocking(false);
-        OutputStream os1 = Channels.newOutputStream((WritableByteChannel) sc);
+        // testing arbitrary input (here: empty file) to non-blocking selectable output
+        try (FileChannel fc = FileChannel.open(Files.createTempFile(null, null));
+                InputStream is = Channels.newInputStream(fc);
+                SelectableChannel sc = Pipe.open().sink().configureBlocking(false);
+                OutputStream os = Channels.newOutputStream((WritableByteChannel) sc)) {
 
-        // IllegalBlockingMode must be thrown when trying to perform a transfer
-        assertThrows(IllegalBlockingModeException.class, () -> is1.transferTo(os1));
+            // IllegalBlockingMode must be thrown when trying to perform a transfer
+            assertThrows(IllegalBlockingModeException.class, () -> is.transferTo(os));
+        }
 
-        // preparing non-blocking selectable input and some arbitrary output
-        sc = Pipe.open().source().configureBlocking(false);
-        InputStream is2 = Channels.newInputStream((ReadableByteChannel) sc);
-        OutputStream os2 = new ByteArrayOutputStream();
+        // testing non-blocking selectable input to arbitrary output (here: byte array)
+        try (SelectableChannel sc = Pipe.open().source().configureBlocking(false);
+                InputStream is = Channels.newInputStream((ReadableByteChannel) sc);
+                OutputStream os = new ByteArrayOutputStream()) {
 
-        // IllegalBlockingMode must be thrown when trying to perform a transfer
-        assertThrows(IllegalBlockingModeException.class, () -> is2.transferTo(os2));
+            // IllegalBlockingMode must be thrown when trying to perform a transfer
+            assertThrows(IllegalBlockingModeException.class, () -> is.transferTo(os));
+        }
     }
 
     /*
