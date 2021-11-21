@@ -54,7 +54,7 @@ public class ObjectMethods {
 
     private ObjectMethods() { }
 
-    private static final int MAX_INDY_CONCAT_ARG_SLOTS = 200;
+    private static final int MAX_STRING_CONCAT_SLOTS = 20;
 
     private static final MethodType DESCRIPTOR_MT = MethodType.methodType(MethodType.class);
     private static final MethodType NAMES_MT = MethodType.methodType(List.class);
@@ -343,7 +343,7 @@ public class ObjectMethods {
         for (MethodHandle methodHandle : getters) {
             Class<?> returnType = methodHandle.type().returnType();
             int needSlots = (returnType == long.class || returnType == double.class) ? 2 : 1;
-            if (slots + needSlots > MAX_INDY_CONCAT_ARG_SLOTS) {
+            if (slots + needSlots > MAX_STRING_CONCAT_SLOTS) {
                 splits.add(cArgs);
                 cArgs = new ArrayList<>();
                 slots = 0;
