@@ -379,6 +379,13 @@ public class HtmlConfiguration extends BaseConfiguration {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    public List<DocPath> getAdditionalScripts() {
+        return options.additionalScripts().stream()
+                .map(sf -> DocFile.createFileForInput(this, sf))
+                .map(file -> DocPath.create(file.getName()))
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
     @Override
     public JavaFileManager getFileManager() {
         return docEnv.getJavaFileManager();

@@ -320,6 +320,7 @@ GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num, E& t) {
 
 template<class T, MEMFLAGS F> bool
 GenericTaskQueueSet<T, F>::steal(uint queue_num, E& t) {
+  assert(queue_num < _n, "index out of range.");
   for (uint i = 0; i < 2 * _n; i++) {
     TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt());
     if (steal_best_of_2(queue_num, t)) {

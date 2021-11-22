@@ -804,12 +804,12 @@ public:
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
-  static const TypeVect *make(const BasicType elem_bt, uint length) {
+  static const TypeVect *make(const BasicType elem_bt, uint length, bool is_mask = false) {
     // Use bottom primitive type.
-    return make(get_const_basic_type(elem_bt), length);
+    return make(get_const_basic_type(elem_bt), length, is_mask);
   }
   // Used directly by Replicate nodes to construct singleton vector.
-  static const TypeVect *make(const Type* elem, uint length);
+  static const TypeVect *make(const Type* elem, uint length, bool is_mask = false);
 
   static const TypeVect *makemask(const BasicType elem_bt, uint length) {
     // Use bottom primitive type.

@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -84,6 +83,45 @@ public class SnippetTaglet extends BaseTaglet {
      */
     @Override
     public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter writer) {
+        try {
+            return generateContent(holder, tag, writer);
+        } catch (BadSnippetException e) {
+            error(writer, holder, e.tag(), e.key(), e.args());
+            return badSnippet(writer);
+        }
+    }
+
+    private static final class BadSnippetException extends Exception {
+
+        @java.io.Serial
+        private static final long serialVersionUID = 1;
+
+        private final transient DocTree tag;
+        private final String key;
+        private final transient Object[] args;
+
+        BadSnippetException(DocTree tag, String key, Object... args) {
+            this.tag = tag;
+            this.key = key;
+            this.args = args;
+        }
+
+        DocTree tag() {
+            return tag;
+        }
+
+        String key() {
+            return key;
+        }
+
+        Object[] args() {
+            return args;
+        }
+    }
+
+    private Content generateContent(Element holder, DocTree tag, TagletWriter writer)
+            throws BadSnippetException
+    {
         SnippetTree snippetTag = (SnippetTree) tag;
 
         // organize snippet attributes in a map, performing basic checks along the way
@@ -98,9 +136,8 @@ public class SnippetTaglet extends BaseTaglet {
             // two like-named attributes found; although we report on the most
             // recently encountered of the two, the iteration order might differ
             // from the source order (see JDK-8266826)
-            error(writer, holder, a, "doclet.tag.attribute.repeated",
-                a.getName().toString());
-            return badSnippet(writer);
+            throw new BadSnippetException(a, "doclet.tag.attribute.repeated",
+                    a.getName().toString());
         }
 
         final String CLASS = "class";
@@ -111,22 +148,19 @@ public class SnippetTaglet extends BaseTaglet {
         final boolean containsBody = snippetTag.getBody() != null;
 
         if (containsClass && containsFile) {
-            error(writer, holder, attributes.get(CLASS),
-                "doclet.snippet.contents.ambiguity.external");
-            return badSnippet(writer);
+            throw new BadSnippetException(attributes.get(CLASS),
+                    "doclet.snippet.contents.ambiguity.external");
         } else if (!containsClass && !containsFile && !containsBody) {
-            error(writer, holder, tag, "doclet.snippet.contents.none");
-            return badSnippet(writer);
+            throw new BadSnippetException(tag, "doclet.snippet.contents.none");
         }
 
         String regionName = null;
         AttributeTree region = attributes.get("region");
         if (region != null) {
-            regionName = stringOf(region.getValue());
+            regionName = stringValueOf(region);
             if (regionName.isBlank()) {
-                error(writer, holder, region, "doclet.tag.attribute.value.illegal",
-                    "region", region.getValue());
-                return badSnippet(writer);
+                throw new BadSnippetException(region, "doclet.tag.attribute.value.illegal",
+                        "region", region.getValue());
             }
         }
 
@@ -141,12 +175,12 @@ public class SnippetTaglet extends BaseTaglet {
         if (containsFile || containsClass) {
             AttributeTree a;
             String v = containsFile
-                ? stringOf((a = attributes.get(FILE)).getValue())
-                : stringOf((a = attributes.get(CLASS)).getValue()).replace(".", "/") + ".java";
+                    ? stringValueOf((a = attributes.get(FILE)))
+                    : stringValueOf((a = attributes.get(CLASS))).replace(".", "/") + ".java";
 
             if (v.isBlank()) {
-                error(writer, holder, a, "doclet.tag.attribute.value.illegal",
-                    containsFile ? FILE : CLASS, v);
+                throw new BadSnippetException(a, "doclet.tag.attribute.value.illegal",
+                        containsFile ? FILE : CLASS, v);
             }
 
             // we didn't create JavaFileManager, so we won't close it; even if an error occurs
@@ -165,24 +199,21 @@ public class SnippetTaglet extends BaseTaglet {
                 if (fileObject == null && fileManager.hasLocation(Location.SNIPPET_PATH)) {
                     fileObject = fileManager.getFileForInput(Location.SNIPPET_PATH, "", v);
                 }
-            } catch (IOException | IllegalArgumentException e) {
+            } catch (IOException | IllegalArgumentException e) { // TODO: test this when JDK-8276892 is integrated
                 // JavaFileManager.getFileForInput can throw IllegalArgumentException in certain cases
-                error(writer, holder, a, "doclet.exception.read.file", v, e.getCause());
-                return badSnippet(writer);
+                throw new BadSnippetException(a, "doclet.exception.read.file", v, e.getCause());
             }
 
             if (fileObject == null) {
                 // i.e. the file does not exist
-                error(writer, holder, a, "doclet.File_not_found", v);
-                return badSnippet(writer);
+                throw new BadSnippetException(a, "doclet.File_not_found", v);
             }
 
             try {
                 externalContent = fileObject.getCharContent(true).toString();
-            } catch (IOException e) {
-                error(writer, holder, a, "doclet.exception.read.file",
-                    fileObject.getName(), e.getCause());
-                return badSnippet(writer);
+            } catch (IOException e) {  // TODO: test this when JDK-8276892 is integrated
+                throw new BadSnippetException(a, "doclet.exception.read.file",
+                        fileObject.getName(), e.getCause());
             }
         }
 
@@ -197,12 +228,12 @@ public class SnippetTaglet extends BaseTaglet {
             }
         } catch (ParseException e) {
             var path = writer.configuration().utils.getCommentHelper(holder)
-                .getDocTreePath(snippetTag.getBody());
+                    .getDocTreePath(snippetTag.getBody());
             // TODO: there should be a method in Messages; that method should mirror Reporter's; use that method instead accessing Reporter.
             String msg = writer.configuration().getDocResources()
-                .getText("doclet.snippet.markup", e.getMessage());
+                    .getText("doclet.snippet.markup", e.getMessage());
             writer.configuration().getReporter().print(Diagnostic.Kind.ERROR,
-                path, e.getPosition(), e.getPosition(), e.getPosition(), msg);
+                    path, e.getPosition(), e.getPosition(), e.getPosition(), msg);
             return badSnippet(writer);
         }
 
@@ -213,7 +244,7 @@ public class SnippetTaglet extends BaseTaglet {
         } catch (ParseException e) {
             assert fileObject != null;
             writer.configuration().getMessages().error(fileObject, e.getPosition(),
-                e.getPosition(), e.getPosition(), "doclet.snippet.markup", e.getMessage());
+                    e.getPosition(), e.getPosition(), "doclet.snippet.markup", e.getMessage());
             return badSnippet(writer);
         }
 
@@ -235,8 +266,7 @@ public class SnippetTaglet extends BaseTaglet {
                 }
             }
             if (r1 == null && r2 == null) {
-                error(writer, holder, tag, "doclet.snippet.region.not_found", regionName);
-                return badSnippet(writer);
+                throw new BadSnippetException(tag, "doclet.snippet.region.not_found", regionName);
             }
         }
 
@@ -252,9 +282,7 @@ public class SnippetTaglet extends BaseTaglet {
             String inlineStr = inlineSnippet.asCharSequence().toString();
             String externalStr = externalSnippet.asCharSequence().toString();
             if (!Objects.equals(inlineStr, externalStr)) {
-                error(writer, holder, tag, "doclet.snippet.contents.mismatch", diff(inlineStr, externalStr));
-                // output one above the other
-                return badSnippet(writer);
+                throw new BadSnippetException(tag, "doclet.snippet.contents.mismatch", diff(inlineStr, externalStr));
             }
         }
 
@@ -263,17 +291,17 @@ public class SnippetTaglet extends BaseTaglet {
 
         String lang = null;
         AttributeTree langAttr = attributes.get("lang");
-        if (langAttr != null && langAttr.getValueKind() != AttributeTree.ValueKind.EMPTY) {
-            lang = stringOf(langAttr.getValue());
+        if (langAttr != null) {
+            lang = stringValueOf(langAttr);
         } else if (containsClass) {
             lang = "java";
         } else if (containsFile) {
             lang = languageFromFileName(fileObject.getName());
         }
         AttributeTree idAttr = attributes.get("id");
-        String id = idAttr == null || idAttr.getValueKind() == AttributeTree.ValueKind.EMPTY
-                        ? null
-                        : stringOf(idAttr.getValue());
+        String id = idAttr == null
+                ? null
+                : stringValueOf(idAttr);
 
         return writer.snippetTagOutput(holder, snippetTag, text, id, lang);
     }
@@ -304,8 +332,12 @@ public class SnippetTaglet extends BaseTaglet {
         return result.text();
     }
 
-    private static String stringOf(List<? extends DocTree> value) {
-        return value.stream()
+    private static String stringValueOf(AttributeTree at) throws BadSnippetException {
+        if (at.getValueKind() == AttributeTree.ValueKind.EMPTY) {
+            throw new BadSnippetException(at, "doclet.tag.attribute.value.missing",
+                    at.getName().toString());
+        }
+        return at.getValue().stream()
             // value consists of TextTree or ErroneousTree nodes;
             // ErroneousTree is a subtype of TextTree
             .map(t -> ((TextTree) t).getBody())

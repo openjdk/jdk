@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1EVACUATIONFAILUREOBJSINHR_HPP
-#define SHARE_GC_G1_G1EVACUATIONFAILUREOBJSINHR_HPP
+#ifndef SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_HPP
+#define SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_HPP
 
 #include "gc/g1/g1SegmentedArray.hpp"
 #include "memory/iterator.hpp"
@@ -70,7 +70,7 @@ public:
   G1EvacFailureObjectsSet(uint region_idx, HeapWord* bottom);
 
   // Record an object that failed evacuation.
-  void record(oop obj);
+  inline void record(oop obj);
 
   // Apply the given ObjectClosure to all objects that failed evacuation and
   // empties the list after processing.
@@ -79,4 +79,4 @@ public:
 };
 
 
-#endif //SHARE_GC_G1_G1EVACUATIONFAILUREOBJSINHR_HPP
+#endif //SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_HPP

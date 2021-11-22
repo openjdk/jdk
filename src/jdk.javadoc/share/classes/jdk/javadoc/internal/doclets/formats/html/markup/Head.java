@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,8 @@ public class Head extends Content {
     private boolean index;
     private Script mainBodyScript;
     private final List<Script> scripts;
+    // Scripts added via --add-script option
+    private List<DocPath> additionalScripts = Collections.emptyList();
     private final List<Content> extraContent;
     private boolean addDefaultScript = true;
     private DocPath canonicalLink;
@@ -165,6 +167,19 @@ public class Head extends Content {
     public Head setStylesheets(DocPath main, List<DocPath> additional) {
         this.mainStylesheet = main;
         this.additionalStylesheets = additional;
+        return this;
+    }
+
+    /**
+     * Sets the list of additional script files to be added to the HEAD element.
+     * The path for the script files must be relative to the root of the generated
+     * documentation hierarchy.
+     *
+     * @param scripts the list of additional script files
+     * @return this object
+     */
+    public Head setAdditionalScripts(List<DocPath> scripts) {
+        this.additionalScripts = scripts;
         return this;
     }
 
@@ -315,7 +330,7 @@ public class Head extends Content {
 
         if (index) {
             // The order of the addStylesheet(...) calls is important
-            addStylesheet(tree, DocPaths.JQUERY_FILES.resolve(DocPaths.JQUERY_UI_CSS));
+            addStylesheet(tree, DocPaths.SCRIPT_DIR.resolve(DocPaths.JQUERY_UI_CSS));
             addStylesheet(tree, DocPaths.JQUERY_OVERRIDES_CSS);
         }
     }
@@ -337,16 +352,19 @@ public class Head extends Content {
                         .append(";\n")
                         .append("loadScripts(document, 'script');");
             }
-            addJQueryFile(tree, DocPaths.JQUERY_JS);
-            addJQueryFile(tree, DocPaths.JQUERY_UI_JS);
+            addScriptElement(tree, DocPaths.JQUERY_JS);
+            addScriptElement(tree, DocPaths.JQUERY_UI_JS);
+        }
+        for (DocPath path : additionalScripts) {
+            addScriptElement(tree, path);
         }
         for (Script script : scripts) {
             tree.add(script.asContent());
         }
     }
 
-    private void addJQueryFile(HtmlTree tree, DocPath filePath) {
-        DocPath jqueryFile = pathToRoot.resolve(DocPaths.JQUERY_FILES.resolve(filePath));
-        tree.add(HtmlTree.SCRIPT(jqueryFile.getPath()));
+    private void addScriptElement(HtmlTree tree, DocPath filePath) {
+        DocPath scriptFile = pathToRoot.resolve(DocPaths.SCRIPT_DIR).resolve(filePath);
+        tree.add(HtmlTree.SCRIPT(scriptFile.getPath()));
     }
 }
