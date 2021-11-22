@@ -337,7 +337,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
         }
       }
 
-      // If we would a decipherable interpreted frame, this is our initial frame.
+      // If we find a decipherable interpreted frame, this is our initial frame.
       if (candidate.is_interpreted_frame()) {
         if (is_decipherable_interpreted_frame(thread, &candidate, method_p, bci_p)) {
           *initial_frame_p = candidate;
