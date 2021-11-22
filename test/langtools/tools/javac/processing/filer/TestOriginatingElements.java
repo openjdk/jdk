@@ -64,7 +64,6 @@ import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaFileManager;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardLocation;
-import jdk.dynalink.linker.support.Lookup;
 import toolbox.JavacTask;
 import toolbox.TestRunner;
 import toolbox.TestRunner.Test;
