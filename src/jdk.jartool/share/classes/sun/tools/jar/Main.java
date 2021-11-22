@@ -802,9 +802,9 @@ public class Main {
             if (f.isFile()) {
                 Entry e = new Entry(f, name, false);
                 if (isModuleInfoEntry(name)) {
-                    FileTime lastModified = f.lastModified() == 0 ? null : FileTime.fromMillis(f.lastModified());
-                    byte[] fileContent = Files.readAllBytes(f.toPath());
-                    ModuleInfoEntry mie = new StreamedModuleInfoEntry(name, fileContent, lastModified);
+                    Path path = f.toPath();
+                    byte[] fileContent = Files.readAllBytes(path);
+                    ModuleInfoEntry mie = new StreamedModuleInfoEntry(name, fileContent, Files.getLastModifiedTime(path));
                     moduleInfos.putIfAbsent(name, mie);
                     if (uflag)
                         entryMap.put(name, e);
@@ -948,8 +948,7 @@ public class Main {
                     return false;
                 }
             } else if (moduleInfos != null && isModuleInfoEntry) {
-                FileTime lastModified = e.getTime() == -1 ? null : FileTime.fromMillis(e.getTime());
-                moduleInfos.putIfAbsent(name, new StreamedModuleInfoEntry(name, zis.readAllBytes(), lastModified));
+                moduleInfos.putIfAbsent(name, new StreamedModuleInfoEntry(name, zis.readAllBytes(), e.getLastModifiedTime()));
             } else {
                 boolean isDir = e.isDirectory();
                 if (!entryMap.containsKey(name)) { // copy the old stuff
@@ -1039,10 +1038,11 @@ public class Main {
         String fmt = uflag ? "out.update.module-info": "out.added.module-info";
         for (Map.Entry<String, ModuleInfoEntry> mi : moduleInfos.entrySet()) {
             String name = mi.getKey();
-            byte[] bytes = mi.getValue().readAllBytes();
+            ModuleInfoEntry mie = mi.getValue();
+            byte[] bytes = mie.readAllBytes();
             ZipEntry e = new ZipEntry(name);
-            FileTime lastModified = mi.getValue().getLastModifiedTime();
-            e.setTime(lastModified == null ? System.currentTimeMillis() : lastModified.toMillis());
+            FileTime lastModified = mie.getLastModifiedTime();
+            e.setLastModifiedTime(lastModified != null ? lastModified : FileTime.fromMillis(System.currentTimeMillis()));
             if (flag0) {
                 crc32ModuleInfo(e, bytes);
             }
@@ -1770,7 +1770,7 @@ public class Main {
 
         @Override
         public FileTime getLastModifiedTime() {
-            return entry.getTime() == -1 ? null : FileTime.fromMillis(entry.getTime());
+            return entry.getLastModifiedTime();
         }
 
         /** Returns an optional containing the effective URI. */
@@ -1857,8 +1857,7 @@ public class Main {
             while ((e = zis.getNextEntry()) != null) {
                 String ename = e.getName();
                 if (isModuleInfoEntry(ename)) {
-                    FileTime lastModified = e.getTime() == -1 ? null : FileTime.fromMillis(e.getTime());
-                    infos.add(new StreamedModuleInfoEntry(ename, zis.readAllBytes(), lastModified));
+                    infos.add(new StreamedModuleInfoEntry(ename, zis.readAllBytes(), e.getLastModifiedTime()));
                 }
             }
         }
