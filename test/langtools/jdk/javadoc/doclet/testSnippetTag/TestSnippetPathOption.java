@@ -21,15 +21,6 @@
  * questions.
  */
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import toolbox.ToolBox;
-
 /*
  * @test
  * @bug 8266666
@@ -41,11 +32,15 @@ import toolbox.ToolBox;
  * @build javadoc.tester.* toolbox.ToolBox toolbox.ModuleBuilder builder.ClassBuilder
  * @run main TestSnippetPathOption
  */
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 public class TestSnippetPathOption extends SnippetTester {
-
-    private final ToolBox tb = new ToolBox();
-
-    private TestSnippetPathOption() {}
 
     public static void main(String... args) throws Exception {
         new TestSnippetPathOption().runTests(m -> new Object[]{Paths.get(m.getName())});
