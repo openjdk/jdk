@@ -46,7 +46,7 @@ private:
   WorkerDataArray<size_t>* _thread_work_items[MaxThreadWorkItems];
 
  public:
-  WorkerDataArray(const char* short_name, const char* title, uint length, bool is_serial = false);
+  WorkerDataArray(const char* short_name, const char* title, uint length);
   ~WorkerDataArray();
 
   // Create an integer sub-item at the given index to this WorkerDataArray. If length_override
