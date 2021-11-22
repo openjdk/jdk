@@ -650,7 +650,7 @@ static char* describe_beginthreadex_attributes(char* buf, size_t buflen,
                                                size_t stacksize, unsigned initflag) {
   stringStream ss(buf, buflen);
   if (stacksize == 0) {
-    ss.print("stacksize: default, ");
+    ss.print("stacksize: " SIZE_FORMAT "k, ", os::win32::default_stack_size() / 1024);
   } else {
     ss.print("stacksize: " SIZE_FORMAT "k, ", stacksize / 1024);
   }
