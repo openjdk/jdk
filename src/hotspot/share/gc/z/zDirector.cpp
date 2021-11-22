@@ -320,18 +320,6 @@ static ZDriverRequest rule_major_timer() {
   return GCCause::_z_major_timer;
 }
 
-static ZDriverRequest rule_major_allocation_stall() {
-  // Perform GC if we've observed at least one allocation stall since
-  // the last GC started.
-  if (!ZHeap::heap()->has_alloc_stalled()) {
-    return GCCause::_no_gc;
-  }
-
-  log_debug(gc, director)("Rule Major: Allocation Stall Observed");
-
-  return GCCause::_z_major_allocation_stall;
-}
-
 static ZDriverRequest rule_major_warmup() {
   if (ZHeap::heap()->old_collector()->stat_cycle()->is_warm()) {
     // Rule disabled
@@ -502,7 +490,6 @@ static ZDriverRequest make_major_gc_decision() {
   // List of rules
   using ZDirectorRule = ZDriverRequest (*)();
   const ZDirectorRule rules[] = {
-    rule_major_allocation_stall,
     rule_major_warmup,
     rule_major_timer,
     rule_major_proactive,
