@@ -6196,7 +6196,7 @@ instruct vshiftcnt(vec dst, rRegI cnt) %{
 
 // Byte vector shift
 instruct vshiftB(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
-  predicate(Matcher::vector_length(n) <= 8 && VectorNode::is_vshift_cnt(n->in(2)));
+  predicate(Matcher::vector_length(n) <= 8 && !n->as_ShiftV()->is_var_shift());
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
@@ -6216,7 +6216,7 @@ instruct vshiftB(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
 %}
 
 instruct vshift16B(vec dst, vec src, vec shift, vec tmp1, vec tmp2, rRegI scratch) %{
-  predicate(Matcher::vector_length(n) == 16 && VectorNode::is_vshift_cnt(n->in(2)) &&
+  predicate(Matcher::vector_length(n) == 16 && !n->as_ShiftV()->is_var_shift() &&
             UseAVX <= 1);
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
@@ -6241,7 +6241,7 @@ instruct vshift16B(vec dst, vec src, vec shift, vec tmp1, vec tmp2, rRegI scratc
 %}
 
 instruct vshift16B_avx(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
-  predicate(Matcher::vector_length(n) == 16 && VectorNode::is_vshift_cnt(n->in(2)) &&
+  predicate(Matcher::vector_length(n) == 16 && !n->as_ShiftV()->is_var_shift() &&
             UseAVX > 1);
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
@@ -6262,7 +6262,7 @@ instruct vshift16B_avx(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
 %}
 
 instruct vshift32B_avx(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
-  predicate(Matcher::vector_length(n) == 32 && VectorNode::is_vshift_cnt(n->in(2)));
+  predicate(Matcher::vector_length(n) == 32 && !n->as_ShiftV()->is_var_shift());
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
@@ -6287,7 +6287,7 @@ instruct vshift32B_avx(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
 %}
 
 instruct vshift64B_avx(vec dst, vec src, vec shift, vec tmp1, vec tmp2, rRegI scratch) %{
-  predicate(Matcher::vector_length(n) == 64 && VectorNode::is_vshift_cnt(n->in(2)));
+  predicate(Matcher::vector_length(n) == 64 && !n->as_ShiftV()->is_var_shift());
   match(Set dst ( LShiftVB src shift));
   match(Set dst  (RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
@@ -6320,7 +6320,7 @@ instruct vshift64B_avx(vec dst, vec src, vec shift, vec tmp1, vec tmp2, rRegI sc
 // unsigned values.
 // Shorts/Chars vector left shift
 instruct vshiftS(vec dst, vec src, vec shift) %{
-  predicate(VectorNode::is_vshift_cnt(n->in(2)));
+  predicate(!n->as_ShiftV()->is_var_shift());
   match(Set dst ( LShiftVS src shift));
   match(Set dst ( RShiftVS src shift));
   match(Set dst (URShiftVS src shift));
@@ -6351,7 +6351,7 @@ instruct vshiftS(vec dst, vec src, vec shift) %{
 
 // Integers vector left shift
 instruct vshiftI(vec dst, vec src, vec shift) %{
-  predicate(VectorNode::is_vshift_cnt(n->in(2)));
+  predicate(!n->as_ShiftV()->is_var_shift());
   match(Set dst ( LShiftVI src shift));
   match(Set dst ( RShiftVI src shift));
   match(Set dst (URShiftVI src shift));
@@ -6405,7 +6405,7 @@ instruct vshiftI_imm(vec dst, vec src, immI8 shift) %{
 
 // Longs vector shift
 instruct vshiftL(vec dst, vec src, vec shift) %{
-  predicate(VectorNode::is_vshift_cnt(n->in(2)));
+  predicate(!n->as_ShiftV()->is_var_shift());
   match(Set dst ( LShiftVL src shift));
   match(Set dst (URShiftVL src shift));
   effect(TEMP dst, USE src, USE shift);
@@ -6446,7 +6446,7 @@ instruct vshiftL_imm(vec dst, vec src, immI8 shift) %{
 // -------------------ArithmeticRightShift -----------------------------------
 // Long vector arithmetic right shift
 instruct vshiftL_arith_reg(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
-  predicate(VectorNode::is_vshift_cnt(n->in(2)) && UseAVX <= 2);
+  predicate(!n->as_ShiftV()->is_var_shift() && UseAVX <= 2);
   match(Set dst (RShiftVL src shift));
   effect(TEMP dst, TEMP tmp, TEMP scratch);
   format %{ "vshiftq $dst,$src,$shift" %}
@@ -6475,7 +6475,7 @@ instruct vshiftL_arith_reg(vec dst, vec src, vec shift, vec tmp, rRegI scratch) 
 %}
 
 instruct vshiftL_arith_reg_evex(vec dst, vec src, vec shift) %{
-  predicate(VectorNode::is_vshift_cnt(n->in(2)) && UseAVX > 2);
+  predicate(!n->as_ShiftV()->is_var_shift() && UseAVX > 2);
   match(Set dst (RShiftVL src shift));
   format %{ "vshiftq $dst,$src,$shift" %}
   ins_encode %{
@@ -6489,7 +6489,7 @@ instruct vshiftL_arith_reg_evex(vec dst, vec src, vec shift) %{
 // Byte variable shift
 instruct vshift8B_var_nobw(vec dst, vec src, vec shift, vec vtmp, rRegP scratch) %{
   predicate(Matcher::vector_length(n) <= 8 &&
-            !VectorNode::is_vshift_cnt(n->in(2)) &&
+            n->as_ShiftV()->is_var_shift() &&
             !VM_Version::supports_avx512bw());
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
@@ -6509,7 +6509,7 @@ instruct vshift8B_var_nobw(vec dst, vec src, vec shift, vec vtmp, rRegP scratch)
 
 instruct vshift16B_var_nobw(vec dst, vec src, vec shift, vec vtmp1, vec vtmp2, rRegP scratch) %{
   predicate(Matcher::vector_length(n) == 16 &&
-            !VectorNode::is_vshift_cnt(n->in(2)) &&
+            n->as_ShiftV()->is_var_shift() &&
             !VM_Version::supports_avx512bw());
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
@@ -6537,7 +6537,7 @@ instruct vshift16B_var_nobw(vec dst, vec src, vec shift, vec vtmp1, vec vtmp2, r
 
 instruct vshift32B_var_nobw(vec dst, vec src, vec shift, vec vtmp1, vec vtmp2, vec vtmp3, vec vtmp4, rRegP scratch) %{
   predicate(Matcher::vector_length(n) == 32 &&
-            !VectorNode::is_vshift_cnt(n->in(2)) &&
+            n->as_ShiftV()->is_var_shift() &&
             !VM_Version::supports_avx512bw());
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
@@ -6573,7 +6573,7 @@ instruct vshift32B_var_nobw(vec dst, vec src, vec shift, vec vtmp1, vec vtmp2, v
 
 instruct vshiftB_var_evex_bw(vec dst, vec src, vec shift, vec vtmp, rRegP scratch) %{
   predicate(Matcher::vector_length(n) <= 32 &&
-            !VectorNode::is_vshift_cnt(n->in(2)) &&
+            n->as_ShiftV()->is_var_shift() &&
             VM_Version::supports_avx512bw());
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
@@ -6592,7 +6592,7 @@ instruct vshiftB_var_evex_bw(vec dst, vec src, vec shift, vec vtmp, rRegP scratc
 
 instruct vshift64B_var_evex_bw(vec dst, vec src, vec shift, vec vtmp1, vec vtmp2, rRegP scratch) %{
   predicate(Matcher::vector_length(n) == 64 &&
-            !VectorNode::is_vshift_cnt(n->in(2)) &&
+            n->as_ShiftV()->is_var_shift() &&
             VM_Version::supports_avx512bw());
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
@@ -6616,7 +6616,7 @@ instruct vshift64B_var_evex_bw(vec dst, vec src, vec shift, vec vtmp1, vec vtmp2
 // Short variable shift
 instruct vshift8S_var_nobw(vec dst, vec src, vec shift, vec vtmp, rRegP scratch) %{
   predicate(Matcher::vector_length(n) <= 8 &&
-            !VectorNode::is_vshift_cnt(n->in(2)) &&
+            n->as_ShiftV()->is_var_shift() &&
             !VM_Version::supports_avx512bw());
   match(Set dst ( LShiftVS src shift));
   match(Set dst ( RShiftVS src shift));
@@ -6641,7 +6641,7 @@ instruct vshift8S_var_nobw(vec dst, vec src, vec shift, vec vtmp, rRegP scratch)
 
 instruct vshift16S_var_nobw(vec dst, vec src, vec shift, vec vtmp1, vec vtmp2, rRegP scratch) %{
   predicate(Matcher::vector_length(n) == 16 &&
-            !VectorNode::is_vshift_cnt(n->in(2)) &&
+            n->as_ShiftV()->is_var_shift() &&
             !VM_Version::supports_avx512bw());
   match(Set dst ( LShiftVS src shift));
   match(Set dst ( RShiftVS src shift));
@@ -6676,7 +6676,7 @@ instruct vshift16S_var_nobw(vec dst, vec src, vec shift, vec vtmp1, vec vtmp2, r
 %}
 
 instruct vshift16S_var_evex_bw(vec dst, vec src, vec shift) %{
-  predicate(!VectorNode::is_vshift_cnt(n->in(2)) &&
+  predicate(n->as_ShiftV()->is_var_shift() &&
             VM_Version::supports_avx512bw());
   match(Set dst ( LShiftVS src shift));
   match(Set dst ( RShiftVS src shift));
@@ -6697,7 +6697,7 @@ instruct vshift16S_var_evex_bw(vec dst, vec src, vec shift) %{
 
 //Integer variable shift
 instruct vshiftI_var(vec dst, vec src, vec shift) %{
-  predicate(!VectorNode::is_vshift_cnt(n->in(2)));
+  predicate(n->as_ShiftV()->is_var_shift());
   match(Set dst ( LShiftVI src shift));
   match(Set dst ( RShiftVI src shift));
   match(Set dst (URShiftVI src shift));
@@ -6714,7 +6714,7 @@ instruct vshiftI_var(vec dst, vec src, vec shift) %{
 
 //Long variable shift
 instruct vshiftL_var(vec dst, vec src, vec shift) %{
-  predicate(!VectorNode::is_vshift_cnt(n->in(2)));
+  predicate(n->as_ShiftV()->is_var_shift());
   match(Set dst ( LShiftVL src shift));
   match(Set dst (URShiftVL src shift));
   format %{ "vector_varshift_long $dst,$src,$shift\t!" %}
@@ -6731,7 +6731,7 @@ instruct vshiftL_var(vec dst, vec src, vec shift) %{
 //Long variable right shift arithmetic
 instruct vshiftL_arith_var(vec dst, vec src, vec shift, vec vtmp) %{
   predicate(Matcher::vector_length(n) <= 4 &&
-            !VectorNode::is_vshift_cnt(n->in(2)) &&
+            n->as_ShiftV()->is_var_shift() &&
             UseAVX == 2);
   match(Set dst (RShiftVL src shift));
   effect(TEMP dst, TEMP vtmp);
@@ -6746,7 +6746,7 @@ instruct vshiftL_arith_var(vec dst, vec src, vec shift, vec vtmp) %{
 %}
 
 instruct vshiftL_arith_var_evex(vec dst, vec src, vec shift) %{
-  predicate(!VectorNode::is_vshift_cnt(n->in(2)) &&
+  predicate(n->as_ShiftV()->is_var_shift() &&
             UseAVX > 2);
   match(Set dst (RShiftVL src shift));
   format %{ "vector_varfshift_long $dst,$src,$shift\t!" %}
@@ -9033,6 +9033,7 @@ instruct vlshift_imm_masked(vec dst, immI8 shift, kReg mask) %{
 %}
 
 instruct vlshift_reg_masked(vec dst, vec src2, kReg mask) %{
+  predicate(!n->as_ShiftV()->is_var_shift());
   match(Set dst (LShiftVS (Binary dst src2) mask));
   match(Set dst (LShiftVI (Binary dst src2) mask));
   match(Set dst (LShiftVL (Binary dst src2) mask));
@@ -9041,9 +9042,24 @@ instruct vlshift_reg_masked(vec dst, vec src2, kReg mask) %{
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
     int opc = this->ideal_Opcode();
-    bool is_varshift = !VectorNode::is_vshift_cnt_opcode(in(2)->isa_Mach()->ideal_Opcode());
     __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, is_varshift);
+                   $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, false);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vlshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
+  predicate(n->as_ShiftV()->is_var_shift());
+  match(Set dst (LShiftVS (Binary dst src2) mask));
+  match(Set dst (LShiftVI (Binary dst src2) mask));
+  match(Set dst (LShiftVL (Binary dst src2) mask));
+  format %{ "vplshiftv_masked $dst, $dst, $src2, $mask\t! lshift masked operation" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int opc = this->ideal_Opcode();
+    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
+                   $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, true);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9079,6 +9095,7 @@ instruct vrshift_imm_masked(vec dst, immI8 shift, kReg mask) %{
 %}
 
 instruct vrshift_reg_masked(vec dst, vec src2, kReg mask) %{
+  predicate(!n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVS (Binary dst src2) mask));
   match(Set dst (RShiftVI (Binary dst src2) mask));
   match(Set dst (RShiftVL (Binary dst src2) mask));
@@ -9087,9 +9104,24 @@ instruct vrshift_reg_masked(vec dst, vec src2, kReg mask) %{
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
     int opc = this->ideal_Opcode();
-    bool is_varshift = !VectorNode::is_vshift_cnt_opcode(in(2)->isa_Mach()->ideal_Opcode());
     __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, is_varshift);
+                   $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, false);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vrshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
+  predicate(n->as_ShiftV()->is_var_shift());
+  match(Set dst (RShiftVS (Binary dst src2) mask));
+  match(Set dst (RShiftVI (Binary dst src2) mask));
+  match(Set dst (RShiftVL (Binary dst src2) mask));
+  format %{ "vprshiftv_masked $dst, $dst, $src2, $mask\t! rshift masked operation" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int opc = this->ideal_Opcode();
+    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
+                   $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, true);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9125,6 +9157,7 @@ instruct vurshift_imm_masked(vec dst, immI8 shift, kReg mask) %{
 %}
 
 instruct vurshift_reg_masked(vec dst, vec src2, kReg mask) %{
+  predicate(!n->as_ShiftV()->is_var_shift());
   match(Set dst (URShiftVS (Binary dst src2) mask));
   match(Set dst (URShiftVI (Binary dst src2) mask));
   match(Set dst (URShiftVL (Binary dst src2) mask));
@@ -9133,9 +9166,24 @@ instruct vurshift_reg_masked(vec dst, vec src2, kReg mask) %{
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
     int opc = this->ideal_Opcode();
-    bool is_varshift = !VectorNode::is_vshift_cnt_opcode(in(2)->isa_Mach()->ideal_Opcode());
     __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, is_varshift);
+                   $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, false);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vurshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
+  predicate(n->as_ShiftV()->is_var_shift());
+  match(Set dst (URShiftVS (Binary dst src2) mask));
+  match(Set dst (URShiftVI (Binary dst src2) mask));
+  match(Set dst (URShiftVL (Binary dst src2) mask));
+  format %{ "vpurshiftv_masked $dst, $dst, $src2, $mask\t! urshift masked operation" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int opc = this->ideal_Opcode();
+    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
+                   $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, true);
   %}
   ins_pipe( pipe_slow );
 %}
