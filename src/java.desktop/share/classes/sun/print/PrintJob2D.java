@@ -54,7 +54,6 @@ import java.util.Properties;
 import javax.print.PrintService;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
-import javax.print.attribute.ResolutionSyntax;
 import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
@@ -64,7 +63,6 @@ import javax.print.attribute.standard.DialogOwner;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.PrintQuality;
-import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Sides;
 import javax.print.attribute.standard.Media;
@@ -72,8 +70,6 @@ import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PageRanges;
 
-import sun.print.SunPageSelection;
-import sun.print.SunMinMaxPage;
 
 /**
  * A class which initiates and executes a print job using
@@ -1033,7 +1029,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
         graphicsDrawn.close();
     }
 
-    private class MessageQ {
+    private static class MessageQ {
 
         private String qid="noname";
 

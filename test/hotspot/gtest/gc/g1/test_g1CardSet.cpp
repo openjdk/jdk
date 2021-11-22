@@ -34,7 +34,7 @@
 
 class G1CardSetTest : public ::testing::Test {
 
-  class G1CountCardsClosure : public G1CardSet::G1CardSetCardIterator {
+  class G1CountCardsClosure : public G1CardSet::CardClosure {
   public:
     size_t _num_cards;
 
@@ -82,7 +82,7 @@ public:
 
   static void translate_cards(uint cards_per_region, uint region_idx, uint* cards, uint num_cards);
 
-  static void iterate_cards(G1CardSet* card_set, G1CardSet::G1CardSetCardIterator* cl);
+  static void iterate_cards(G1CardSet* card_set, G1CardSet::CardClosure* cl);
 };
 
 WorkerThreads* G1CardSetTest::_workers = NULL;
@@ -101,7 +101,7 @@ void G1CardSetTest::add_cards(G1CardSet* card_set, uint cards_per_region, uint* 
   }
 }
 
-class G1CheckCardClosure : public G1CardSet::G1CardSetCardIterator {
+class G1CheckCardClosure : public G1CardSet::CardClosure {
   G1CardSet* _card_set;
 
   uint _cards_per_region;
@@ -163,7 +163,7 @@ void G1CardSetTest::translate_cards(uint cards_per_region, uint region_idx, uint
   }
 }
 
-class G1CountCardsOccupied : public G1CardSet::G1CardSetPtrIterator {
+class G1CountCardsOccupied : public G1CardSet::CardSetPtrClosure {
   size_t _num_occupied;
 
 public:
@@ -178,7 +178,7 @@ public:
 
 void G1CardSetTest::check_iteration(G1CardSet* card_set, const size_t expected, const bool single_threaded) {
 
-  class CheckIterator : public G1CardSet::G1CardSetCardIterator {
+  class CheckIterator : public G1CardSet::CardClosure {
   public:
     G1CardSet* _card_set;
     size_t _num_found;

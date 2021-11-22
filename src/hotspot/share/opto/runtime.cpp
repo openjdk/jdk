@@ -1280,6 +1280,11 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
 // directly from compiled code. Compiled code will call the C++ method following.
 // We can't allow async exception to be installed during  exception processing.
 JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* current, nmethod* &nm))
+  // The frame we rethrow the exception to might not have been processed by the GC yet.
+  // The stack watermark barrier takes care of detecting that and ensuring the frame
+  // has updated oops.
+  StackWatermarkSet::after_unwind(current);
+
   // Do not confuse exception_oop with pending_exception. The exception_oop
   // is only used to pass arguments into the method. Not for general
   // exception handling.  DO NOT CHANGE IT to use pending_exception, since
@@ -1422,7 +1427,7 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
   // deoptimized frame
 
   if (nm != NULL) {
-    RegisterMap map(current, false);
+    RegisterMap map(current, false /* update_map */, false /* process_frames */);
     frame caller = current->last_frame().sender(&map);
 #ifdef ASSERT
     assert(caller.is_compiled_frame(), "must be");
@@ -1464,17 +1469,8 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
   // ret_pc will have been loaded from the stack, so for AArch64 will be signed.
   // This needs authenticating, but to do that here requires the fp of the previous frame.
   // A better way of doing it would be authenticate in the caller by adding a
-  // AuthPAuthNode and using it in GraphKit::gen_stub:
-  // if (return_pc) {             // Return PC, if asked for.
-  //   call->init_req(cnt++, _gvn.transform(new AuthPAuthNode(returnadr())));
-  // }
-  // For now, just strip it.
+  // AuthPAuthNode and using it in GraphKit::gen_stub. For now, just strip it.
   AARCH64_ONLY(ret_pc=pauth_strip_pointer(ret_pc));
-
-  // The frame we rethrow the exception to might not have been processed by the GC yet.
-  // The stack watermark barrier takes care of detecting that and ensuring the frame
-  // has updated oops.
-  StackWatermarkSet::after_unwind(thread);
 
 #ifndef PRODUCT
   SharedRuntime::_rethrow_ctr++;               // count rethrows

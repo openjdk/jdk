@@ -497,7 +497,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
       return SharedRuntime::deopt_blob()->unpack_with_exception();
     } else {
       // The deferred StackWatermarkSet::after_unwind check will be performed in
-      // * OptoRuntime::rethrow_C for C2 code
+      // * OptoRuntime::handle_exception_C_helper for C2 code
       // * exception_handler_for_pc_helper via Runtime1::handle_exception_from_callee_id for C1 code
       return nm->exception_begin();
     }
