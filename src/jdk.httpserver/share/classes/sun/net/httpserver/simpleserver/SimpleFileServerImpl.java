@@ -100,6 +100,10 @@ final class SimpleFileServerImpl {
                         out.showHelp(launcher);
                         return Startup.OK.statusCode;
                     }
+                    case "-version", "--version" -> {
+                        out.showVersion(launcher);
+                        return Startup.OK.statusCode;
+                    }
                     case "-b", "--bind-address" -> {
                         addr = InetAddress.getByName(optionArg = options.next());
                         addrSpecified = true;
@@ -172,6 +176,10 @@ final class SimpleFileServerImpl {
 
         void showUsage() {
             writer.println(ResourceBundleHelper.getMessage("usage"));
+        }
+
+        void showVersion(String launcher) {
+            writer.println(ResourceBundleHelper.getMessage("version", launcher, System.getProperty("java.version")));
         }
 
         void showHelp(String launcher) {
