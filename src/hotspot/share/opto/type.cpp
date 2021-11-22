@@ -1413,6 +1413,30 @@ const TypeInteger* TypeInteger::bottom(BasicType bt) {
   return TypeLong::LONG;
 }
 
+const TypeInteger* TypeInteger::zero(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::ZERO;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::ZERO;
+}
+
+const TypeInteger* TypeInteger::one(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::ONE;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::ONE;
+}
+
+const TypeInteger* TypeInteger::minus_1(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::MINUS_1;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::MINUS_1;
+}
+
 //=============================================================================
 // Convience common pre-built types.
 const TypeInt *TypeInt::MAX;    // INT_MAX
