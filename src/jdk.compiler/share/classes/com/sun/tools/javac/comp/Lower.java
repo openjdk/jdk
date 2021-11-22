@@ -2248,12 +2248,11 @@ public class Lower extends TreeTranslator {
             enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
 
            for (JCTree def : tree.defs) {
-                if (!TreeInfo.isInitialConstructor(def)) {
-                    continue;
+                if (TreeInfo.isInitialConstructor(def)) {
+                  JCMethodDecl mdef = (JCMethodDecl) def;
+                  mdef.body.stats = mdef.body.stats.prepend(
+                      initOuterThis(mdef.body.pos, mdef.params.head.sym));
                 }
-                JCMethodDecl mdef = (JCMethodDecl) def;
-                mdef.body.stats = mdef.body.stats.prepend(
-                    initOuterThis(mdef.body.pos, mdef.params.head.sym));
             }
         }
 
