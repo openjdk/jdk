@@ -24,6 +24,8 @@
 // key: compiler.err.cannot.generate.class
 // key: compiler.misc.synthetic.name.conflict
 
+import java.util.Objects;
+
 class ErrSyntheticNameConflict {
 
     static class Outer {
@@ -33,7 +35,7 @@ class ErrSyntheticNameConflict {
     public class Inner extends Outer {
         {
             // access enclosing instance so this$0 field is generated
-            ErrSyntheticNameConflict.this.toString();
+            Objects.requireNonNull(ErrSyntheticNameConflict.this);
         }
     }
 }

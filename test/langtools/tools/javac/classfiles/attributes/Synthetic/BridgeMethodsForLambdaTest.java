@@ -32,7 +32,7 @@
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build SyntheticTestDriver ExpectedClass ExpectedClasses
- * @compile -XDdeduplicateLambdas=false BridgeMethodsForLambdaTest.java
+ * @compile BridgeMethodsForLambdaTest.java
  * @run main SyntheticTestDriver BridgeMethodsForLambdaTest
  */
 
@@ -55,19 +55,16 @@ import java.util.stream.IntStream;
 @ExpectedClass(className = "BridgeMethodsForLambdaTest$Inner1",
         expectedMethods = {"<init>(BridgeMethodsForLambdaTest)", "function()", "run()"},
         expectedFields = "lambda1",
-        expectedNumberOfSyntheticMethods = 1,
-        expectedNumberOfSyntheticFields = 1)
+        expectedNumberOfSyntheticMethods = 1)
 @ExpectedClass(className = "BridgeMethodsForLambdaTest$Inner2",
         expectedMethods = {"<init>()", "staticFunction()"},
         expectedFields = "lambda1",
         expectedNumberOfSyntheticMethods = 1)
 @ExpectedClass(className = "BridgeMethodsForLambdaTest$Inner3",
-        expectedMethods = {"<init>(BridgeMethodsForLambdaTest)", "function()"},
-        expectedNumberOfSyntheticFields = 1)
+        expectedMethods = {"<init>(BridgeMethodsForLambdaTest)", "function()"})
 @ExpectedClass(className = "BridgeMethodsForLambdaTest$Inner4",
         expectedMethods = {"<init>(BridgeMethodsForLambdaTest)", "function()"},
-        expectedNumberOfSyntheticMethods = 1,
-        expectedNumberOfSyntheticFields = 1)
+        expectedNumberOfSyntheticMethods = 1)
 public class BridgeMethodsForLambdaTest {
 
     private class Inner1 implements Runnable {
@@ -79,11 +76,6 @@ public class BridgeMethodsForLambdaTest {
         }
         @Override
         public void run() {
-        }
-
-        {
-            // access enclosing instance so this$0 field is generated
-            BridgeMethodsForLambdaTest.this.toString();
         }
     }
 
@@ -97,22 +89,12 @@ public class BridgeMethodsForLambdaTest {
     private class Inner3 {
         public void function() {
         }
-
-        {
-            // access enclosing instance so this$0 field is generated
-            BridgeMethodsForLambdaTest.this.toString();
-        }
     }
 
     private class Inner4 extends Inner3 {
         @Override
         public void function() {
             Runnable r = super::function;
-        }
-
-        {
-            // access enclosing instance so this$0 field is generated
-            BridgeMethodsForLambdaTest.this.toString();
         }
     }
 

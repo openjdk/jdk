@@ -44,14 +44,11 @@
                 "<init>(AccessToPrivateInnerClassConstructorsTest)",
                 "<init>(AccessToPrivateInnerClassConstructorsTest, " +
                        "AccessToPrivateInnerClassConstructorsTest$1)"},
-        expectedNumberOfSyntheticFields = 1,
         expectedNumberOfSyntheticMethods = 0)
 @ExpectedClass(className = "AccessToPrivateInnerClassConstructorsTest$1Local",
-        expectedMethods = {"<init>(AccessToPrivateInnerClassConstructorsTest)"},
-        expectedNumberOfSyntheticFields = 1)
+        expectedMethods = {"<init>(AccessToPrivateInnerClassConstructorsTest)"})
 @ExpectedClass(className = "AccessToPrivateInnerClassConstructorsTest$2Local",
-        expectedMethods = {"<init>(AccessToPrivateInnerClassConstructorsTest)"},
-        expectedNumberOfSyntheticFields = 1)
+        expectedMethods = {"<init>(AccessToPrivateInnerClassConstructorsTest)"})
 public class AccessToPrivateInnerClassConstructorsTest {
 
     public static void main(String... args) {
@@ -61,33 +58,18 @@ public class AccessToPrivateInnerClassConstructorsTest {
     private class A {
         private A() { }
         private A(AccessToPrivateInnerClassConstructorsTest$1 o) { }
-
-        {
-            // access enclosing instance so this$0 field is generated
-            AccessToPrivateInnerClassConstructorsTest.this.toString();
-        }
     }
 
     void f() {
         new A();
         new A(null);
 
-        class Local {
-            {
-                // access enclosing instance so this$0 field is generated
-                AccessToPrivateInnerClassConstructorsTest.this.toString();
-            }
-        };
+        class Local {};
         new Local();
     }
 
     void g() {
-        class Local {
-            {
-                // access enclosing instance so this$0 field is generated
-                AccessToPrivateInnerClassConstructorsTest.this.toString();
-            }
-        };
+        class Local {};
         new Local();
     }
 }
