@@ -383,7 +383,7 @@ public class SignatureFileVerifier {
             try {
                 params.setExtendedExceptionMsg(name + ".SF", key + " attribute");
                 DisabledAlgorithmConstraints
-                    .jarConstraints().permits(algorithm, params);
+                    .jarConstraints().permits(algorithm, params, false);
             } catch (GeneralSecurityException e) {
                 permittedAlgs.put(algorithm, Boolean.FALSE);
                 permittedAlgs.put(key.toUpperCase(), Boolean.FALSE);
@@ -543,6 +543,10 @@ public class SignatureFileVerifier {
                 MessageDigest digest = getDigest(algorithm);
                 if (digest != null) {
                     ManifestDigester.Entry mde = md.getMainAttsEntry(false);
+                    if (mde == null) {
+                        throw new SignatureException("Manifest Main Attribute check " +
+                                "failed due to missing main attributes entry");
+                    }
                     byte[] computedHash = mde.digest(digest);
                     byte[] expectedHash =
                         Base64.getMimeDecoder().decode((String)se.getValue());

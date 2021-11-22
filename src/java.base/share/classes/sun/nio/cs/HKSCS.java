@@ -42,9 +42,9 @@ public class HKSCS {
         static int b2Min = 0x40;
         static int b2Max = 0xfe;
 
-        private char[][] b2cBmp;
-        private char[][] b2cSupp;
-        private DoubleByte.Decoder big5Dec;
+        private final char[][] b2cBmp;
+        private final char[][] b2cSupp;
+        private final DoubleByte.Decoder big5Dec;
 
         protected Decoder(Charset cs,
                           DoubleByte.Decoder big5Dec,
@@ -94,7 +94,6 @@ public class HKSCS {
                     int b1 = sa[sp] & 0xff;
                     char c = decodeSingle(b1);
                     int inSize = 1, outSize = 1;
-                    char[] cc = null;
                     if (c == UNMAPPABLE_DECODING) {
                         if (sl - sp < 2)
                             return CoderResult.UNDERFLOW;
@@ -137,7 +136,6 @@ public class HKSCS {
             int mark = src.position();
             try {
                 while (src.hasRemaining()) {
-                    char[] cc = null;
                     int b1 = src.get() & 0xff;
                     int inSize = 1, outSize = 1;
                     char c = decodeSingle(b1);
@@ -230,9 +228,9 @@ public class HKSCS {
     }
 
     public static class Encoder extends DoubleByte.Encoder {
-        private DoubleByte.Encoder big5Enc;
-        private char[][] c2bBmp;
-        private char[][] c2bSupp;
+        private final DoubleByte.Encoder big5Enc;
+        private final char[][] c2bBmp;
+        private final char[][] c2bSupp;
 
         protected Encoder(Charset cs,
                           DoubleByte.Encoder big5Enc,

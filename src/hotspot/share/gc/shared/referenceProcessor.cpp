@@ -87,7 +87,6 @@ void ReferenceProcessor::enable_discovery(bool check_no_refs) {
 
 ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                                        uint      mt_processing_degree,
-                                       bool      mt_discovery,
                                        uint      mt_discovery_degree,
                                        bool      concurrent_discovery,
                                        BoolObjectClosure* is_alive_non_header)  :
@@ -99,7 +98,7 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
   assert(is_subject_to_discovery != NULL, "must be set");
 
   _discovery_is_concurrent = concurrent_discovery;
-  _discovery_is_mt         = mt_discovery;
+  _discovery_is_mt         = (mt_discovery_degree > 1);
   _num_queues              = MAX2(1U, mt_processing_degree);
   _max_num_queues          = MAX2(_num_queues, mt_discovery_degree);
   _discovered_refs         = NEW_C_HEAP_ARRAY(DiscoveredList,
@@ -215,6 +214,9 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
   }
 
   phase_times.set_total_time_ms((os::elapsedTime() - start_time) * 1000);
+
+  // Elements on discovered lists were pushed to the pending list.
+  verify_no_references_recorded();
 
   return stats;
 }
@@ -1062,9 +1064,7 @@ bool ReferenceProcessor::has_discovered_references() {
 }
 
 void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_alive,
-                                                        OopClosure* keep_alive,
                                                         EnqueueDiscoveredFieldClosure* enqueue,
-                                                        VoidClosure* complete_gc,
                                                         YieldClosure* yield,
                                                         GCTimer* gc_timer) {
   // These lists can be handled here in any order and, indeed, concurrently.
@@ -1078,7 +1078,7 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
         return;
       }
       if (preclean_discovered_reflist(_discoveredSoftRefs[i], is_alive,
-                                      keep_alive, enqueue, complete_gc, yield)) {
+                                      enqueue, yield)) {
         log_reflist("SoftRef abort: ", _discoveredSoftRefs, _max_num_queues);
         return;
       }
@@ -1095,7 +1095,7 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
         return;
       }
       if (preclean_discovered_reflist(_discoveredWeakRefs[i], is_alive,
-                                      keep_alive, enqueue, complete_gc, yield)) {
+                                      enqueue, yield)) {
         log_reflist("WeakRef abort: ", _discoveredWeakRefs, _max_num_queues);
         return;
       }
@@ -1112,7 +1112,7 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
         return;
       }
       if (preclean_discovered_reflist(_discoveredFinalRefs[i], is_alive,
-                                      keep_alive, enqueue, complete_gc, yield)) {
+                                      enqueue, yield)) {
         log_reflist("FinalRef abort: ", _discoveredFinalRefs, _max_num_queues);
         return;
       }
@@ -1129,7 +1129,7 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
         return;
       }
       if (preclean_discovered_reflist(_discoveredPhantomRefs[i], is_alive,
-                                      keep_alive, enqueue, complete_gc, yield)) {
+                                      enqueue, yield)) {
         log_reflist("PhantomRef abort: ", _discoveredPhantomRefs, _max_num_queues);
         return;
       }
@@ -1138,22 +1138,11 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
   }
 }
 
-// Walk the given discovered ref list, and remove all reference objects whose
-// referents are still alive or NULL. NOTE: When we are precleaning the
-// ref lists, we do not disable refs discovery to honor the correct semantics of
-// java.lang.Reference. Therefore, as we iterate over the discovered list (DL)
-// and drop elements from it, newly discovered refs can be discovered and added
-// to the DL. Because precleaning is implemented single-threaded today, for
-// each per-thread DL, the insertion of refs (calling `complete_gc`) happens
-// after the iteration. The clear separation means no special synchronization
-// is needed.
 bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
                                                      BoolObjectClosure* is_alive,
-                                                     OopClosure*        keep_alive,
                                                      EnqueueDiscoveredFieldClosure* enqueue,
-                                                     VoidClosure*       complete_gc,
                                                      YieldClosure*      yield) {
-  DiscoveredListIterator iter(refs_list, keep_alive, is_alive, enqueue);
+  DiscoveredListIterator iter(refs_list, nullptr /* keep_alive */, is_alive, enqueue);
   while (iter.has_next()) {
     if (yield->should_return_fine_grain()) {
       return true;
@@ -1165,17 +1154,12 @@ bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_lis
       iter.move_to_next();
     } else if (iter.is_referent_alive()) {
       log_preclean_ref(iter, "reachable");
-      // Remove Reference object from list
       iter.remove();
-      // Keep alive its cohort.
-      iter.make_referent_alive();
       iter.move_to_next();
     } else {
       iter.next();
     }
   }
-  // Close the reachable set
-  complete_gc->do_void();
 
   if (iter.processed() > 0) {
     log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " Refs out of " SIZE_FORMAT " Refs in discovered list " INTPTR_FORMAT,

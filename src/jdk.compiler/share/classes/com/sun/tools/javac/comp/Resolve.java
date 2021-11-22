@@ -3908,6 +3908,17 @@ public class Resolve {
         }
     }
 
+    /** check if a type is a subtype of Serializable, if that is available.*/
+    boolean isSerializable(Type t) {
+        try {
+            syms.serializableType.complete();
+        }
+        catch (CompletionFailure e) {
+            return false;
+        }
+        return types.isSubtype(t, syms.serializableType);
+    }
+
     /**
      * Root class for resolution errors. Subclass of ResolveError
      * represent a different kinds of resolution error - as such they must

@@ -143,7 +143,7 @@ public final class PlatformRecorder {
         return Collections.unmodifiableList(new ArrayList<PlatformRecording>(recordings));
     }
 
-    public synchronized static void addListener(FlightRecorderListener changeListener) {
+    public static synchronized void addListener(FlightRecorderListener changeListener) {
         @SuppressWarnings("removal")
         AccessControlContext context = AccessController.getContext();
         SecureRecorderListener sl = new SecureRecorderListener(context, changeListener);
@@ -157,7 +157,7 @@ public final class PlatformRecorder {
         }
     }
 
-    public synchronized static boolean removeListener(FlightRecorderListener changeListener) {
+    public static synchronized boolean removeListener(FlightRecorderListener changeListener) {
         for (SecureRecorderListener s : new ArrayList<>(changeListeners)) {
             if (s.getChangeListener() == changeListener) {
                 changeListeners.remove(s);

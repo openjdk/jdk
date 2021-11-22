@@ -150,16 +150,12 @@ instruct reinterpretD2X(vecX dst, vecD src)
             n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 8);
   match(Set dst (VectorReinterpret src));
   ins_cost(INSN_COST);
-  format %{ " # reinterpret $dst,$src\t# D2X" %}
+  format %{ " # reinterpret $dst,$src\t# D to X" %}
   ins_encode %{
-    // If registers are the same, no register move is required - the
-    // upper 64 bits of 'src' are expected to have been initialized
-    // to zero.
-    if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
-      __ orr(as_FloatRegister($dst$$reg), __ T8B,
-             as_FloatRegister($src$$reg),
-             as_FloatRegister($src$$reg));
-    }
+    // The higher 64-bits of the "dst" register must be cleared to zero.
+    __ orr(as_FloatRegister($dst$$reg), __ T8B,
+           as_FloatRegister($src$$reg),
+           as_FloatRegister($src$$reg));
   %}
   ins_pipe(vlogical64);
 %}
@@ -170,10 +166,9 @@ instruct reinterpretX2D(vecD dst, vecX src)
             n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 16);
   match(Set dst (VectorReinterpret src));
   ins_cost(INSN_COST);
-  format %{ " # reinterpret $dst,$src\t# X2D" %}
+  format %{ " # reinterpret $dst,$src\t# X to D" %}
   ins_encode %{
-    // Resize the vector from 128-bits to 64-bits. The higher 64-bits of
-    // the "dst" register must be cleared to zero.
+    // The higher 64-bits of the "dst" register must be cleared to zero.
     __ orr(as_FloatRegister($dst$$reg), __ T8B,
            as_FloatRegister($src$$reg),
            as_FloatRegister($src$$reg));
@@ -181,18 +176,63 @@ instruct reinterpretX2D(vecD dst, vecX src)
   ins_pipe(vlogical64);
 %}
 
-// ------------------------------ Vector cast -------------------------------
-
-instruct vcvt4Bto4S(vecD dst, vecD src)
+instruct reinterpretS2X(vecX dst, vecD src)
 %{
-  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorCastB2X src));
-  format %{ "sxtl  $dst, T8H, $src, T8B\t# convert 4B to 4S vector" %}
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 16 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 4);
+  match(Set dst (VectorReinterpret src));
+  ins_cost(INSN_COST);
+  format %{ " # reinterpret $dst,$src\t# S to X" %}
   ins_encode %{
-    __ sxtl(as_FloatRegister($dst$$reg), __ T8H, as_FloatRegister($src$$reg), __ T8B);
+    // The higher bits of the "dst" register must be cleared to zero.
+    __ dup(as_FloatRegister($dst$$reg), __ S, as_FloatRegister($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_slow);
 %}
+
+instruct reinterpretX2S(vecD dst, vecX src)
+%{
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 4 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 16);
+  match(Set dst (VectorReinterpret src));
+  ins_cost(INSN_COST);
+  format %{ " # reinterpret $dst,$src\t# X to S" %}
+  ins_encode %{
+    // The higher bits of the "dst" register must be cleared to zero.
+    __ dup(as_FloatRegister($dst$$reg), __ S, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reinterpretS2D(vecD dst, vecD src)
+%{
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 8 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 4);
+  match(Set dst (VectorReinterpret src));
+  ins_cost(INSN_COST);
+  format %{ " # reinterpret $dst,$src\t# S to D" %}
+  ins_encode %{
+    // The higher bits of the "dst" register must be cleared to zero.
+    __ dup(as_FloatRegister($dst$$reg), __ S, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reinterpretD2S(vecD dst, vecD src)
+%{
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 4 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 8);
+  match(Set dst (VectorReinterpret src));
+  ins_cost(INSN_COST);
+  format %{ " # reinterpret $dst,$src\t# D to S" %}
+  ins_encode %{
+    // The higher bits of the "dst" register must be cleared to zero.
+    __ dup(as_FloatRegister($dst$$reg), __ S, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------------ Vector cast -------------------------------
 
 instruct vcvt8Bto8S(vecX dst, vecD src)
 %{
@@ -205,13 +245,13 @@ instruct vcvt8Bto8S(vecX dst, vecD src)
   ins_pipe(pipe_class_default);
 %}
 
-instruct vcvt4Sto4B(vecD dst, vecD src)
+instruct vcvt4Bto4S(vecD dst, vecD src)
 %{
-  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (VectorCastS2X src));
-  format %{ "xtn  $dst, T8B, $src, T8H\t# convert 4S to 4B vector" %}
+  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
+  match(Set dst (VectorCastB2X src));
+  format %{ "sxtl  $dst, T8H, $src, T8B\t# convert 4B to 4S vector" %}
   ins_encode %{
-    __ xtn(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($src$$reg), __ T8H);
+    __ sxtl(as_FloatRegister($dst$$reg), __ T8H, as_FloatRegister($src$$reg), __ T8B);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -221,6 +261,17 @@ instruct vcvt8Sto8B(vecD dst, vecX src)
   predicate(n->as_Vector()->length() == 8 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
   match(Set dst (VectorCastS2X src));
   format %{ "xtn  $dst, T8B, $src, T8H\t# convert 8S to 8B vector" %}
+  ins_encode %{
+    __ xtn(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($src$$reg), __ T8H);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vcvt4Sto4B(vecD dst, vecD src)
+%{
+  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  match(Set dst (VectorCastS2X src));
+  format %{ "xtn  $dst, T8B, $src, T8H\t# convert 4S to 4B vector" %}
   ins_encode %{
     __ xtn(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($src$$reg), __ T8H);
   %}
@@ -271,20 +322,6 @@ instruct vcvt2Lto2I(vecD dst, vecX src)
   ins_pipe(pipe_class_default);
 %}
 
-instruct vcvt4Bto4I(vecX dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorCastB2X src));
-  format %{ "sxtl  $dst, T8H, $src, T8B\n\t"
-            "sxtl  $dst, T4S, $dst, T4H\t# convert 4B to 4I vector"
-  %}
-  ins_encode %{
-    __ sxtl(as_FloatRegister($dst$$reg), __ T8H, as_FloatRegister($src$$reg), __ T8B);
-    __ sxtl(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($dst$$reg), __ T4H);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct vcvt4Ito4B(vecD dst, vecX src)
 %{
   predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
@@ -296,49 +333,33 @@ instruct vcvt4Ito4B(vecD dst, vecX src)
     __ xtn(as_FloatRegister($dst$$reg), __ T4H, as_FloatRegister($src$$reg), __ T4S);
     __ xtn(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($dst$$reg), __ T8H);
   %}
-  ins_pipe(pipe_slow);
+  ins_pipe(pipe_class_default);
 %}
 
-instruct vcvt4Bto4F(vecX dst, vecD src)
+instruct vcvt4Bto4I(vecX dst, vecD src)
 %{
-  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (VectorCastB2X src));
   format %{ "sxtl  $dst, T8H, $src, T8B\n\t"
-            "sxtl  $dst, T4S, $dst, T4H\n\t"
-            "scvtfv  T4S, $dst, $dst\t# convert 4B to 4F vector"
+            "sxtl  $dst, T4S, $dst, T4H\t# convert 4B to 4I vector"
   %}
   ins_encode %{
     __ sxtl(as_FloatRegister($dst$$reg), __ T8H, as_FloatRegister($src$$reg), __ T8B);
     __ sxtl(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($dst$$reg), __ T4H);
-    __ scvtfv(__ T4S, as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg));
   %}
-  ins_pipe(pipe_slow);
+  ins_pipe(pipe_class_default);
 %}
 
-instruct vcvt4Sto4F(vecX dst, vecD src)
+instruct vcvt2Lto2F(vecD dst, vecX src)
 %{
-  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorCastS2X src));
-  format %{ "sxtl    $dst, T4S, $src, T4H\n\t"
-            "scvtfv  T4S, $dst, $dst\t# convert 4S to 4F vector"
+  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (VectorCastL2X src));
+  format %{ "scvtfv  T2D, $dst, $src\n\t"
+            "fcvtn   $dst, T2S, $dst, T2D\t# convert 2L to 2F vector"
   %}
   ins_encode %{
-    __ sxtl(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg), __ T4H);
-    __ scvtfv(__ T4S, as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcvt2Ito2D(vecX dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst (VectorCastI2X src));
-  format %{ "sxtl    $dst, T2D, $src, T2S\n\t"
-            "scvtfv  T2D, $dst, $dst\t# convert 2I to 2D vector"
-  %}
-  ins_encode %{
-    __ sxtl(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg), __ T2S);
-    __ scvtfv(__ T2D, as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg));
+    __ scvtfv(__ T2D, as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg));
+    __ fcvtn(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($dst$$reg), __ T2D);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -376,6 +397,150 @@ instruct vcvt2Lto2D(vecX dst, vecX src)
   ins_pipe(pipe_class_default);
 %}
 
+instruct vcvt4Sto4F(vecX dst, vecD src)
+%{
+  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (VectorCastS2X src));
+  format %{ "sxtl    $dst, T4S, $src, T4H\n\t"
+            "scvtfv  T4S, $dst, $dst\t# convert 4S to 4F vector"
+  %}
+  ins_encode %{
+    __ sxtl(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg), __ T4H);
+    __ scvtfv(__ T4S, as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcvt2Ito2D(vecX dst, vecD src)
+%{
+  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  match(Set dst (VectorCastI2X src));
+  format %{ "sxtl    $dst, T2D, $src, T2S\n\t"
+            "scvtfv  T2D, $dst, $dst\t# convert 2I to 2D vector"
+  %}
+  ins_encode %{
+    __ sxtl(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg), __ T2S);
+    __ scvtfv(__ T2D, as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcvt4Bto4F(vecX dst, vecD src)
+%{
+  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (VectorCastB2X src));
+  format %{ "sxtl    $dst, T8H, $src, T8B\n\t"
+            "sxtl    $dst, T4S, $dst, T4H\n\t"
+            "scvtfv  T4S, $dst, $dst\t# convert 4B to 4F vector"
+  %}
+  ins_encode %{
+    __ sxtl(as_FloatRegister($dst$$reg), __ T8H, as_FloatRegister($src$$reg), __ T8B);
+    __ sxtl(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($dst$$reg), __ T4H);
+    __ scvtfv(__ T4S, as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcvt2Fto2L(vecX dst, vecD src)
+%{
+  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_LONG);
+  match(Set dst (VectorCastF2X src));
+  format %{ "fcvtl   $dst, T2D, $src, T2S\n\t"
+            "fcvtzs  $dst, T2D, $dst\t# convert 2F to 2L vector"
+  %}
+  ins_encode %{
+    __ fcvtl(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg), __ T2S);
+    __ fcvtzs(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($dst$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcvt2Fto2I(vecD dst, vecD src)
+%{
+  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (VectorCastF2X src));
+  format %{ "fcvtzs  $dst, T2S, $src\t# convert 2F to 2I vector" %}
+  ins_encode %{
+    __ fcvtzs(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vcvt4Fto4I(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (VectorCastF2X src));
+  format %{ "fcvtzs  $dst, T4S, $src\t# convert 4F to 4I vector" %}
+  ins_encode %{
+    __ fcvtzs(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vcvt2Dto2L(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_LONG);
+  match(Set dst (VectorCastD2X src));
+  format %{ "fcvtzs  $dst, T2D, $src\t# convert 2D to 2L vector" %}
+  ins_encode %{
+    __ fcvtzs(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vcvt4Fto4S(vecD dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
+  match(Set dst (VectorCastF2X src));
+  format %{ "fcvtzs  $dst, T4S, $src\n\t"
+            "xtn     $dst, T4H, $dst, T4S\t# convert 4F to 4S vector"
+  %}
+  ins_encode %{
+    __ fcvtzs(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
+    __ xtn(as_FloatRegister($dst$$reg), __ T4H, as_FloatRegister($dst$$reg), __ T4S);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcvt2Dto2I(vecD dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (VectorCastD2X src));
+  effect(TEMP_DEF dst);
+  format %{ "ins      $dst, D, $src, 0, 1\n\t"
+            "fcvtzdw  rscratch1, $src\n\t"
+            "fcvtzdw  rscratch2, $dst\n\t"
+            "fmovs    $dst, rscratch1\n\t"
+            "mov      $dst, T2S, 1, rscratch2\t#convert 2D to 2I vector"
+  %}
+  ins_encode %{
+    __ ins(as_FloatRegister($dst$$reg), __ D, as_FloatRegister($src$$reg), 0, 1);
+    // We can't use fcvtzs(vector, integer) instruction here because we need
+    // saturation arithmetic. See JDK-8276151.
+    __ fcvtzdw(rscratch1, as_FloatRegister($src$$reg));
+    __ fcvtzdw(rscratch2, as_FloatRegister($dst$$reg));
+    __ fmovs(as_FloatRegister($dst$$reg), rscratch1);
+    __ mov(as_FloatRegister($dst$$reg), __ T2S, 1, rscratch2);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcvt4Fto4B(vecD dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  match(Set dst (VectorCastF2X src));
+  format %{ "fcvtzs  $dst, T4S, $src\n\t"
+            "xtn     $dst, T4H, $dst, T4S\n\t"
+            "xtn     $dst, T8B, $dst, T8H\t# convert 4F to 4B vector"
+  %}
+  ins_encode %{
+    __ fcvtzs(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
+    __ xtn(as_FloatRegister($dst$$reg), __ T4H, as_FloatRegister($dst$$reg), __ T4S);
+    __ xtn(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($dst$$reg), __ T8H);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vcvt2Fto2D(vecX dst, vecD src)
 %{
   predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
@@ -396,20 +561,6 @@ instruct vcvt2Dto2F(vecD dst, vecX src)
     __ fcvtn(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg), __ T2D);
   %}
   ins_pipe(pipe_class_default);
-%}
-
-instruct vcvt2Lto2F(vecD dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorCastL2X src));
-  format %{ "scvtfv  T2D, $dst, $src\n\t"
-            "fcvtn   $dst, T2S, $dst, T2D\t# convert 2L to 2F vector"
-  %}
-  ins_encode %{
-    __ scvtfv(__ T2D, as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg));
-    __ fcvtn(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($dst$$reg), __ T2D);
-  %}
-  ins_pipe(pipe_slow);
 %}
 
 // ------------------------------ Reduction -------------------------------
@@ -1887,7 +2038,7 @@ instruct vmul2L(vecX dst, vecX src1, vecX src2, iRegLNoSp tmp1, iRegLNoSp tmp2)
             "umov   $tmp1, $src1, D, 1\n\t"
             "umov   $tmp2, $src2, D, 1\n\t"
             "mul    $tmp2, $tmp2, $tmp1\n\t"
-            "mov    $dst,  T2D,   1, $tmp2\t# insert into vector(2L)\n\t"
+            "mov    $dst,  T2D,   1, $tmp2\t# insert into vector(2L)"
   %}
   ins_encode %{
     __ umov($tmp1$$Register, as_FloatRegister($src1$$reg), __ D, 0);
@@ -4019,7 +4170,7 @@ instruct vmuladdS2I(vecX dst, vecX src1, vecX src2, vecX tmp) %{
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "smullv  $tmp, $src1, $src2\t# vector (4H)\n\t"
             "smullv  $dst, $src1, $src2\t# vector (8H)\n\t"
-            "addpv   $dst, $tmp, $dst\t# vector (4S)\n\t" %}
+            "addpv   $dst, $tmp, $dst\t# vector (4S)" %}
   ins_encode %{
     __ smullv(as_FloatRegister($tmp$$reg), __ T4H,
               as_FloatRegister($src1$$reg),

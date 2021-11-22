@@ -27,18 +27,18 @@ package javax.security.auth;
 
 import java.util.*;
 import java.io.*;
-import java.lang.reflect.*;
 import java.text.MessageFormat;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.DomainCombiner;
-import java.security.Permission;
-import java.security.PermissionCollection;
 import java.security.Principal;
-import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import java.security.ProtectionDomain;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
+
+import sun.security.action.GetBooleanAction;
 import sun.security.util.ResourcesMgr;
 
 /**
@@ -289,9 +289,10 @@ public final class Subject implements java.io.Serializable {
      * @deprecated This method depends on {@link AccessControlContext}
      *       which, in conjunction with
      *       {@linkplain SecurityManager the Security Manager}, is deprecated
-     *       and subject to removal in a future release. However, obtaining a
-     *       Subject is useful independent of the Security Manager, so a
-     *       replacement for this method may be added in a future release.
+     *       and subject to removal in a future release. However,
+     *       obtaining a Subject is useful independent of the Security Manager.
+     *       Thus, a replacement API named {@link #current()} has been added
+     *       which can be used to obtain the current subject.
      */
     @SuppressWarnings("removal")
     @Deprecated(since="17", forRemoval=true)
@@ -317,6 +318,112 @@ public final class Subject implements java.io.Serializable {
                 return sdc.getSubject();
             }
         });
+    }
+
+    // Store the current subject in a ThreadLocal when a system property is set.
+    private static final boolean USE_TL = GetBooleanAction
+            .privilegedGetProperty("jdk.security.auth.subject.useTL");
+
+    private static final InheritableThreadLocal<Subject> SUBJECT_THREAD_LOCAL =
+            USE_TL ?
+            new InheritableThreadLocal<>() {
+                @Override protected Subject initialValue() {
+                    return null;
+                }
+            } : null;
+
+    /**
+     * Returns the current subject.
+     * <p>
+     * The current subject is installed by the {@link #callAs} method.
+     * When {@code callAs(subject, action)} is called, {@code action} is
+     * executed with {@code subject} as its current subject which can be
+     * retrieved by this method. After {@code action} is finished, the current
+     * subject is reset to its previous value. The current
+     * subject is {@code null} before the first call of {@code callAs()}.
+     * <p>
+     * When a new thread is created, its current subject is the same as
+     * the one of its parent thread, and will not change even if
+     * its parent thread's current subject is changed to another value.
+     *
+     * @implNote
+     * By default, this method returns the same value as
+     * {@code Subject.getSubject(AccessController.getContext())}. This
+     * preserves compatibility with code that may still be calling {@code doAs}
+     * which installs the subject in an {@code AccessControlContext}. However,
+     * if the system property {@systemProperty jdk.security.auth.subject.useTL}
+     * is set to {@code true}, the subject is retrieved from an inheritable
+     * {@code ThreadLocal} object. This behavior is subject to
+     * change in a future version.
+     *
+     * @return the current subject, or {@code null} if a current subject is
+     *      not installed or the current subject is set to {@code null}.
+     * @see #callAs(Subject, Callable)
+     * @since 18
+     */
+    @SuppressWarnings("removal")
+    public static Subject current() {
+        return USE_TL
+            ? SUBJECT_THREAD_LOCAL.get()
+            : getSubject(AccessController.getContext());
+    }
+
+    /**
+     * Executes a {@code Callable} with {@code subject} as the
+     * current subject.
+     *
+     * @implNote
+     * By default, this method calls {@link #doAs(Subject, PrivilegedExceptionAction)
+     * Subject.doAs(subject, altAction)} which stores the subject in
+     * a new {@code AccessControlContext}, where {@code altAction.run()}
+     * is equivalent to {@code action.call()} and the exception thrown is
+     * modified to match the specification of this method. This preserves
+     * compatibility with code that may still be calling
+     * {@code getSubject(AccessControlContext)} which retrieves the subject
+     * from an {@code AccessControlContext}. However,
+     * if the system property {@code jdk.security.auth.subject.useTL}
+     * is set to {@code true}, the current subject will be stored in an inheritable
+     * {@code ThreadLocal} object. This behavior is subject to change in a
+     * future version.
+     *
+     * @param subject the {@code Subject} that the specified {@code action}
+     *               will run as.  This parameter may be {@code null}.
+     * @param action the code to be run with {@code subject} as its current
+     *               subject. Must not be {@code null}.
+     * @param <T> the type of value returned by the {@code call} method
+     *            of {@code action}
+     * @return the value returned by the {@code call} method of {@code action}
+     * @throws NullPointerException if {@code action} is {@code null}
+     * @throws CompletionException if {@code action.call()} throws an exception.
+     *      The cause of the {@code CompletionException} is set to the exception
+     *      thrown by {@code action.call()}.
+     * @see #current()
+     * @since 18
+     */
+    public static <T> T callAs(final Subject subject,
+            final Callable<T> action) throws CompletionException {
+        if (USE_TL) {
+            Subject oldSubject = SUBJECT_THREAD_LOCAL.get();
+            SUBJECT_THREAD_LOCAL.set(subject);
+            try {
+                return action.call();
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            } finally {
+                SUBJECT_THREAD_LOCAL.set(oldSubject);
+            }
+        } else {
+            try {
+                PrivilegedExceptionAction<T> pa = () -> action.call();
+                @SuppressWarnings("removal")
+                var result = doAs(subject, pa);
+                return result;
+            } catch (PrivilegedActionException e) {
+                throw new CompletionException(e.getCause());
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        }
     }
 
     /**
@@ -354,8 +461,17 @@ public final class Subject implements java.io.Serializable {
      *                  {@link AuthPermission#AuthPermission(String)
      *                  AuthPermission("doAs")} permission to invoke this
      *                  method.
+     *
+     * @deprecated This method depends on {@link AccessControlContext}
+     *       which, in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, is deprecated
+     *       and subject to removal in a future release. However, performing
+     *       work as a Subject is useful independent of the Security Manager.
+     *       Thus, a replacement API named {@link #callAs} has been added
+     *       which can be used to perform the same work.
      */
     @SuppressWarnings("removal")
+    @Deprecated(since="18", forRemoval=true)
     public static <T> T doAs(final Subject subject,
                         final java.security.PrivilegedAction<T> action) {
 
@@ -417,8 +533,17 @@ public final class Subject implements java.io.Serializable {
      *                  {@link AuthPermission#AuthPermission(String)
      *                  AuthPermission("doAs")} permission to invoke this
      *                  method.
+     *
+     * @deprecated This method depends on {@link AccessControlContext}
+     *       which, in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, is deprecated
+     *       and subject to removal in a future release. However, performing
+     *       work as a Subject is useful independent of the Security Manager.
+     *       Thus, a replacement API named {@link #callAs} has been added
+     *       which can be used to perform the same work.
      */
     @SuppressWarnings("removal")
+    @Deprecated(since="18", forRemoval=true)
     public static <T> T doAs(final Subject subject,
                         final java.security.PrivilegedExceptionAction<T> action)
                         throws java.security.PrivilegedActionException {
@@ -857,10 +982,7 @@ public final class Subject implements java.io.Serializable {
                 // avoid deadlock from dual locks
                 thatPrivCredentials = new HashSet<>(that.privCredentials);
             }
-            if (!privCredentials.equals(thatPrivCredentials)) {
-                return false;
-            }
-            return true;
+            return privCredentials.equals(thatPrivCredentials);
         }
         return false;
     }
@@ -933,7 +1055,7 @@ public final class Subject implements java.io.Serializable {
     @Override
     public int hashCode() {
 
-        /**
+        /*
          * The hashcode is derived exclusive or-ing the
          * hashcodes of this Subject's Principals and credentials.
          *
@@ -1244,7 +1366,7 @@ public final class Subject implements java.io.Serializable {
                 } else {
 
                     // For private credentials:
-                    // If the caller does not have read permission for
+                    // If the caller does not have read permission
                     // for o.getClass(), we throw a SecurityException.
                     // Otherwise we check the private cred set to see whether
                     // it contains the Object
@@ -1316,7 +1438,7 @@ public final class Subject implements java.io.Serializable {
             c = collectionNullClean(c);
 
             for (Object item : c) {
-                if (this.contains(item) == false) {
+                if (!this.contains(item)) {
                     return false;
                 }
             }
@@ -1534,7 +1656,7 @@ public final class Subject implements java.io.Serializable {
                 break;
             }
 
-            // Check whether the caller has permisson to get
+            // Check whether the caller has permission to get
             // credentials of Class c
 
             while (iterator.hasNext()) {
