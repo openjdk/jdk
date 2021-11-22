@@ -31,7 +31,6 @@ import java.lang.module.ModuleDescriptor;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -57,7 +56,7 @@ public class JarToolModuleDescriptorReproducibilityTest {
     private static final String MODULE_VERSION = "1.2.3";
     private static final String UPDATED_MODULE_VERSION = "1.2.4";
     private static final String MAIN_CLASS = "jdk.test.foo.Foo";
-    private static final Path MODULE_CLASSES_DIR = Paths.get("8258117-module-classes", MODULE_NAME).toAbsolutePath();
+    private static final Path MODULE_CLASSES_DIR = Path.of("8258117-module-classes", MODULE_NAME).toAbsolutePath();
 
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
             .orElseThrow(()
@@ -144,7 +143,7 @@ public class JarToolModuleDescriptorReproducibilityTest {
 
     // compiles using javac tool the classes used in the test module
     private static void compileModuleClasses() throws Exception {
-        Path sourcePath = Paths.get(System.getProperty("test.src", "."),
+        Path sourcePath = Path.of(System.getProperty("test.src", "."),
                 "src", MODULE_NAME);
         List<String> sourceFiles = new ArrayList<>();
         Files.walkFileTree(sourcePath, new SimpleFileVisitor<>() {
