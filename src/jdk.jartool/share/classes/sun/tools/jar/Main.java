@@ -44,6 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileTime;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.function.Consumer;
@@ -801,7 +802,7 @@ public class Main {
             if (f.isFile()) {
                 Entry e = new Entry(f, name, false);
                 if (isModuleInfoEntry(name)) {
-                    Long lastModified = f.lastModified() == 0 ? null : f.lastModified();
+                    FileTime lastModified = f.lastModified() == 0 ? null : FileTime.fromMillis(f.lastModified());
                     byte[] fileContent = Files.readAllBytes(f.toPath());
                     ModuleInfoEntry mie = new StreamedModuleInfoEntry(name, fileContent, lastModified);
                     moduleInfos.putIfAbsent(name, mie);
@@ -947,7 +948,7 @@ public class Main {
                     return false;
                 }
             } else if (moduleInfos != null && isModuleInfoEntry) {
-                Long lastModified = e.getTime() == -1 ? null : e.getTime();
+                FileTime lastModified = e.getTime() == -1 ? null : FileTime.fromMillis(e.getTime());
                 moduleInfos.putIfAbsent(name, new StreamedModuleInfoEntry(name, zis.readAllBytes(), lastModified));
             } else {
                 boolean isDir = e.isDirectory();
@@ -1040,8 +1041,8 @@ public class Main {
             String name = mi.getKey();
             byte[] bytes = mi.getValue().readAllBytes();
             ZipEntry e = new ZipEntry(name);
-            Long lastModified = mi.getValue().getLastModifiedTime();
-            e.setTime(lastModified == null ? System.currentTimeMillis() : lastModified);
+            FileTime lastModified = mi.getValue().getLastModifiedTime();
+            e.setTime(lastModified == null ? System.currentTimeMillis() : lastModified.toMillis());
             if (flag0) {
                 crc32ModuleInfo(e, bytes);
             }
@@ -1747,7 +1748,7 @@ public class Main {
          * Returns null if the last modified time is unknown or cannot be
          * determined.
          */
-       Long getLastModifiedTime();
+       FileTime getLastModifiedTime();
        default byte[] readAllBytes() throws IOException {
             try (InputStream is = bytes()) {
                 return is.readAllBytes();
@@ -1768,8 +1769,8 @@ public class Main {
         }
 
         @Override
-        public Long getLastModifiedTime() {
-            return entry.getTime() == -1 ? null : entry.getTime();
+        public FileTime getLastModifiedTime() {
+            return entry.getTime() == -1 ? null : FileTime.fromMillis(entry.getTime());
         }
 
         /** Returns an optional containing the effective URI. */
@@ -1783,9 +1784,9 @@ public class Main {
     static class StreamedModuleInfoEntry implements ModuleInfoEntry {
         private final String name;
         private final byte[] bytes;
-        private final Long lastModifiedTime;
+        private final FileTime lastModifiedTime;
 
-        StreamedModuleInfoEntry(String name, byte[] bytes, Long lastModifiedTime) {
+        StreamedModuleInfoEntry(String name, byte[] bytes, FileTime lastModifiedTime) {
             this.name = name;
             this.bytes = bytes;
             this.lastModifiedTime = lastModifiedTime;
@@ -1801,7 +1802,7 @@ public class Main {
         }
 
         @Override
-        public Long getLastModifiedTime() {
+        public FileTime getLastModifiedTime() {
             return lastModifiedTime;
         }
 
@@ -1856,7 +1857,7 @@ public class Main {
             while ((e = zis.getNextEntry()) != null) {
                 String ename = e.getName();
                 if (isModuleInfoEntry(ename)) {
-                    Long lastModified = e.getTime() == -1 ? null : e.getTime();
+                    FileTime lastModified = e.getTime() == -1 ? null : FileTime.fromMillis(e.getTime());
                     infos.add(new StreamedModuleInfoEntry(ename, zis.readAllBytes(), lastModified));
                 }
             }
