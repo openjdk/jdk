@@ -31,7 +31,6 @@
  */
 
 import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import javax.swing.ButtonModel;
@@ -73,15 +72,16 @@ public class DefaultButtonModelCrashTest {
     private void go() {
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        Container contentPane = frame.getContentPane();
-        ButtonModel model = new DefaultButtonModel();
 
+        ButtonModel model = new DefaultButtonModel();
         JCheckBox check = new JCheckBox("a bit broken");
         check.setModel(model);
+
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(new JTextField("Press Tab (twice?)"), BorderLayout.NORTH);
         panel.add(check);
-        contentPane.add(panel);
+
+        frame.getContentPane().add(panel);
         frame.setLocationRelativeTo(null);
         frame.pack();
         frame.setVisible(true);
