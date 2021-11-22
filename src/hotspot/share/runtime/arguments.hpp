@@ -618,7 +618,7 @@ class Arguments : AllStatic {
   static void  fix_appclasspath();
 
   static char* get_default_shared_archive_path() NOT_CDS_RETURN_(NULL);
-  static bool  init_shared_archive_paths() NOT_CDS_RETURN_(false);
+  static void  init_shared_archive_paths() NOT_CDS_RETURN;
 
   // Operation modi
   static Mode mode()                { return _mode;           }

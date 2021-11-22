@@ -2445,7 +2445,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     // Convenience, to translate from the JList directory view to the Mac-style JTable
     //   & minimize diffs between this and BasicFileChooserUI
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class JTableExtension extends JTable {
+    static class JTableExtension extends JTable {
         public void setSelectedIndex(final int index) {
             getSelectionModel().setSelectionInterval(index, index);
         }

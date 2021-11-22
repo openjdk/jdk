@@ -146,16 +146,13 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   uint _worker_id;
 
-  uint volatile* _num_failed_regions;
   G1EvacFailureRegions* _evac_failure_regions;
 
 public:
   RemoveSelfForwardPtrHRClosure(uint worker_id,
-                                uint volatile* num_failed_regions,
                                 G1EvacFailureRegions* evac_failure_regions) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _num_failed_regions(num_failed_regions),
     _evac_failure_regions(evac_failure_regions) {
   }
 
@@ -194,8 +191,6 @@ public:
       hr->rem_set()->clear_locked(true);
 
       hr->note_self_forwarding_removal_end(live_bytes);
-
-      Atomic::inc(_num_failed_regions, memory_order_relaxed);
     }
     return false;
   }
@@ -205,16 +200,15 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegi
   WorkerTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
   _hrclaimer(_g1h->workers()->active_workers()),
-  _evac_failure_regions(evac_failure_regions),
-  _num_failed_regions(0) { }
+  _evac_failure_regions(evac_failure_regions) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, &_num_failed_regions, _evac_failure_regions);
+  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, _evac_failure_regions);
 
   // Iterate through all regions that failed evacuation during the entire collection.
   _evac_failure_regions->par_iterate(&rsfp_cl, &_hrclaimer, worker_id);
 }
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {
-  return Atomic::load(&_num_failed_regions);
+  return _evac_failure_regions->num_regions_failed_evacuation();
 }

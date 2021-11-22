@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,15 +23,12 @@
  * questions.
  */
 
-package gc;
+#import "CommonComponentAccessibility.h"
 
-public class CriticalNative {
-    static {
-        System.loadLibrary("CriticalNative");
-    }
+#import <AppKit/AppKit.h>
 
-    public static native boolean isNull(int[] a);
-    public static native long sum1(long[] a);
-    // More than 6 parameters
-    public static native long sum2(long a1, int[] a2, int[] a3, long[] a4, int[] a5);
-}
+@interface MenuBarAccessibility : CommonComponentAccessibility {
+
+};
+- (NSAccessibilityRole _Nonnull)accessibilityRole;
+@end
