@@ -88,7 +88,7 @@ public class Versions {
         SIXTEEN(false,  "60.0", "16", Versions::checksrc16),
         SEVENTEEN(false, "61.0", "17", Versions::checksrc17),
         EIGHTEEN(false,  "62.0", "18", Versions::checksrc18),
-        NINETEEN(false,  "63.0", "19", Versions::checksrc18);
+        NINETEEN(false,  "63.0", "19", Versions::checksrc19);
 
         private final boolean dotOne;
         private final String classFileVer;
