@@ -24,7 +24,10 @@
  */
 
 package java.net;
+
 import java.io.IOException;
+import java.net.spi.InetAddressResolver.LookupPolicy;
+
 /*
  * Package private interface to "implementation" used by
  * {@link InetAddress}.
@@ -38,7 +41,7 @@ sealed interface InetAddressImpl permits Inet4AddressImpl, Inet6AddressImpl {
 
     String getLocalHostName() throws UnknownHostException;
     InetAddress[]
-        lookupAllHostAddr(String hostname) throws UnknownHostException;
+        lookupAllHostAddr(String hostname, LookupPolicy lookupPolicy) throws UnknownHostException;
     String getHostByAddr(byte[] addr) throws UnknownHostException;
 
     InetAddress anyLocalAddress();

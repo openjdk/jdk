@@ -90,5 +90,5 @@ public abstract class BasicLogEvent implements LogEvent {
         this.compilation = compilation;
     }
 
-    abstract public void print(PrintStream stream, boolean printID);
+    public abstract void print(PrintStream stream, boolean printID);
 }

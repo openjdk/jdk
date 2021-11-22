@@ -694,10 +694,8 @@ public class RMIClassLoader {
             } catch (InstantiationException e) {
                 throw new InstantiationError(e.getMessage());
             } catch (ClassCastException e) {
-                Error error = new LinkageError(
-                    "provider class not assignable to RMIClassLoaderSpi");
-                error.initCause(e);
-                throw error;
+                throw new LinkageError(
+                    "provider class not assignable to RMIClassLoaderSpi", e);
             }
         }
 
@@ -711,10 +709,8 @@ public class RMIClassLoader {
             try {
                 return iter.next();
             } catch (ClassCastException e) {
-                Error error = new LinkageError(
-                    "provider class not assignable to RMIClassLoaderSpi");
-                error.initCause(e);
-                throw error;
+                throw new LinkageError(
+                    "provider class not assignable to RMIClassLoaderSpi", e);
             }
         }
 

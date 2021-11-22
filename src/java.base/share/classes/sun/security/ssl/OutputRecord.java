@@ -141,6 +141,11 @@ abstract class OutputRecord
     // SSLEngine and SSLSocket
     abstract void encodeChangeCipherSpec() throws IOException;
 
+    // SSLEngine and SSLSocket
+    void disposeWriteCipher() {
+        throw new UnsupportedOperationException();
+    }
+
     // apply to SSLEngine only
     Ciphertext encode(
         ByteBuffer[] srcs, int srcsOffset, int srcsLength,
@@ -190,7 +195,7 @@ abstract class OutputRecord
              * Since MAC's doFinal() is called for every SSL/TLS packet, it's
              * not necessary to do the same with MAC's.
              */
-            writeCipher.dispose();
+            disposeWriteCipher();
 
             this.writeCipher = writeCipher;
             this.isFirstAppOutputRecord = true;
@@ -219,7 +224,7 @@ abstract class OutputRecord
             flush();
 
             // Dispose of any intermediate state in the underlying cipher.
-            writeCipher.dispose();
+            disposeWriteCipher();
 
             this.writeCipher = writeCipher;
             this.isFirstAppOutputRecord = true;

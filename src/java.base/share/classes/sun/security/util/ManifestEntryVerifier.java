@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ public class ManifestEntryVerifier {
                     params.setExtendedExceptionMsg(JarFile.MANIFEST_NAME,
                         name + " entry");
                     DisabledAlgorithmConstraints.jarConstraints()
-                           .permits(digest.getAlgorithm(), params);
+                           .permits(digest.getAlgorithm(), params, false);
                 } catch (GeneralSecurityException e) {
                     if (debug != null) {
                         debug.println("Digest algorithm is restricted: " + e);

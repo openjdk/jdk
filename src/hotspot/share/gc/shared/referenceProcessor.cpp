@@ -87,7 +87,6 @@ void ReferenceProcessor::enable_discovery(bool check_no_refs) {
 
 ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                                        uint      mt_processing_degree,
-                                       bool      mt_discovery,
                                        uint      mt_discovery_degree,
                                        bool      concurrent_discovery,
                                        BoolObjectClosure* is_alive_non_header)  :
@@ -99,7 +98,7 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
   assert(is_subject_to_discovery != NULL, "must be set");
 
   _discovery_is_concurrent = concurrent_discovery;
-  _discovery_is_mt         = mt_discovery;
+  _discovery_is_mt         = (mt_discovery_degree > 1);
   _num_queues              = MAX2(1U, mt_processing_degree);
   _max_num_queues          = MAX2(_num_queues, mt_discovery_degree);
   _discovered_refs         = NEW_C_HEAP_ARRAY(DiscoveredList,
@@ -1053,15 +1052,6 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   assert(oopDesc::is_oop(obj), "Discovered a bad reference");
   verify_referent(obj);
   return true;
-}
-
-bool ReferenceProcessor::has_discovered_references() {
-  for (uint i = 0; i < _max_num_queues * number_of_subclasses_of_ref(); i++) {
-    if (!_discovered_refs[i].is_empty()) {
-      return true;
-    }
-  }
-  return false;
 }
 
 void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_alive,
