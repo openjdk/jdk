@@ -46,7 +46,7 @@ public class VMObjectAllocTest {
         MethodHandle mh = publicLookup.findConstructor(VMObjectAllocTest.class, mt);
         mh.invoke("str");
 
-        if(getNumberOfAllocation() != 1) {
+        if (getNumberOfAllocation() != 1) {
             throw new Exception("Number of allocation != 1");
         }
     }

@@ -88,4 +88,4 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   return JNI_OK;
 }
 
-}
+} //extern "C"
