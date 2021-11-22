@@ -74,6 +74,8 @@ public interface SegmentAllocator {
      * {@link java.nio.charset.CharsetEncoder} class should be used when more
      * control over the encoding process is required.
      *
+     * @implSpec the default implementation for this method copies the contents of the provided Java string
+     * into a new memory segment obtained by calling {@code this.allocate(str.length() + 1)}.
      * @param str the Java string to be converted into a C string.
      * @return a new native memory segment containing the converted C string.
      */

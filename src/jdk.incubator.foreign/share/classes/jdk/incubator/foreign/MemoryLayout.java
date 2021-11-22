@@ -81,8 +81,6 @@ SequenceLayout taggedValues = MemoryLayout.sequenceLayout(5,
  * programmers should treat instances that are {@linkplain #equals(Object) equal} as interchangeable and should not
  * use instances for synchronization, or unpredictable behavior may occur. For example, in a future release,
  * synchronization may fail. The {@code equals} method should be used for comparisons.
- * <p>
- * Non-platform classes should not implement {@linkplain MemoryLayout} directly.
  *
  * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
  * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
@@ -549,8 +547,6 @@ public sealed interface MemoryLayout extends Constable permits AbstractLayout, S
      * of sequence element layout can be <em>explicit</em> (see {@link PathElement#sequenceElement(long)}) or
      * <em>implicit</em> (see {@link PathElement#sequenceElement()}). When a path uses one or more implicit
      * sequence path elements, it acquires additional <em>free dimensions</em>.
-     * <p>
-     * Non-platform classes should not implement {@linkplain PathElement} directly.
      *
      * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
      * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>

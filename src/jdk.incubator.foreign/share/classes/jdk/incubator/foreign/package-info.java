@@ -46,7 +46,7 @@
  * <pre>{@code
 MemorySegment segment = MemorySegment.allocateNative(10 * 4, ResourceScope.newImplicitScope());
 for (int i = 0 ; i < 10 ; i++) {
-   segment.setAtIndex(ValueLayout.JAVA_INT, i, 42);
+   segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
 }
  * }</pre>
  *
@@ -73,7 +73,7 @@ for (int i = 0 ; i < 10 ; i++) {
 try (ResourceScope scope = ResourceScope.newConfinedScope()) {
     MemorySegment segment = MemorySegment.allocateNative(10 * 4, scope);
     for (int i = 0 ; i < 10 ; i++) {
-        segment.setAtIndex(ValueLayout.JAVA_INT, i, 42);
+        segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
     }
 }
  * }</pre>
