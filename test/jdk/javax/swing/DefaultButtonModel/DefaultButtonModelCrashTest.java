@@ -54,6 +54,7 @@ public class DefaultButtonModelCrashTest {
             robot.setAutoDelay(200);
             SwingUtilities.invokeAndWait(() -> go());
             robot.waitForIdle();
+            robot.delay(1000);
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
             robot.delay(100);
