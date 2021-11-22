@@ -27,6 +27,62 @@
 
 #include "runtime/globals_shared.hpp"
 
+// Enable evacuation failure injector by default in non-product builds.
+
+#ifdef EVAC_FAILURE_INJECTOR
+#error "EVAC_FAILURE_INJECTOR already defined"
+#endif
+#ifndef PRODUCT
+#define EVAC_FAILURE_INJECTOR 1
+#else
+#define EVAC_FAILURE_INJECTOR 0
+#endif
+
+#if EVAC_FAILURE_INJECTOR
+#define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \
+                                       develop_pd,                          \
+                                       product,                             \
+                                       product_pd,                          \
+                                       notproduct,                          \
+                                       range,                               \
+                                       constraint)                          \
+                                                                            \
+  product(bool, G1EvacuationFailureALot, false,                             \
+          "Force use of evacuation failure handling during certain "        \
+          "evacuation pauses")                                              \
+                                                                            \
+  product(uintx, G1EvacuationFailureALotCount, 1000,                        \
+          "Number of successful evacuations between evacuation failures "   \
+          "occurring at object copying per thread")                         \
+                                                                            \
+  product(uintx, G1EvacuationFailureALotInterval, 5,                        \
+          "Total collections between forced triggering of evacuation "      \
+          "failures")                                                       \
+                                                                            \
+  product(bool, G1EvacuationFailureALotDuringConcMark, true,                \
+          "Force use of evacuation failure handling during evacuation "     \
+          "pauses when marking is in progress")                             \
+                                                                            \
+  product(bool, G1EvacuationFailureALotDuringConcurrentStart, true,         \
+          "Force use of evacuation failure handling during concurrent "     \
+          "start evacuation pauses")                                        \
+                                                                            \
+  product(bool, G1EvacuationFailureALotDuringYoungGC, true,                 \
+          "Force use of evacuation failure handling during young "          \
+          "evacuation pauses")                                              \
+                                                                            \
+  product(bool, G1EvacuationFailureALotDuringMixedGC, true,                 \
+          "Force use of evacuation failure handling during mixed "          \
+          "evacuation pauses")
+#else
+#define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \
+                                       develop_pd,                          \
+                                       product,                             \
+                                       product_pd,                          \
+                                       notproduct,                          \
+                                       range,                               \
+                                       constraint)
+#endif
 //
 // Defines all globals flags used by the garbage-first compiler.
 //
@@ -201,7 +257,7 @@
                                                                             \
   product(size_t, G1HeapRegionSize, 0,                                      \
           "Size of the G1 regions.")                                        \
-          range(0, 32*M)                                                    \
+          range(0, NOT_LP64(32*M) LP64_ONLY(512*M))                         \
           constraint(G1HeapRegionSizeConstraintFunc,AfterMemoryInit)        \
                                                                             \
   product(uint, G1ConcRefinementThreads, 0,                                 \
@@ -269,34 +325,6 @@
           "as a percentage of the heap size.")                              \
           range(0, 100)                                                     \
                                                                             \
-  notproduct(bool, G1EvacuationFailureALot, false,                          \
-          "Force use of evacuation failure handling during certain "        \
-          "evacuation pauses")                                              \
-                                                                            \
-  develop(uintx, G1EvacuationFailureALotCount, 1000,                        \
-          "Number of successful evacuations between evacuation failures "   \
-          "occurring at object copying per thread")                         \
-                                                                            \
-  develop(uintx, G1EvacuationFailureALotInterval, 5,                        \
-          "Total collections between forced triggering of evacuation "      \
-          "failures")                                                       \
-                                                                            \
-  develop(bool, G1EvacuationFailureALotDuringConcMark, true,                \
-          "Force use of evacuation failure handling during evacuation "     \
-          "pauses when marking is in progress")                             \
-                                                                            \
-  develop(bool, G1EvacuationFailureALotDuringConcurrentStart, true,         \
-          "Force use of evacuation failure handling during concurrent "     \
-          "start evacuation pauses")                                        \
-                                                                            \
-  develop(bool, G1EvacuationFailureALotDuringYoungGC, true,                 \
-          "Force use of evacuation failure handling during young "          \
-          "evacuation pauses")                                              \
-                                                                            \
-  develop(bool, G1EvacuationFailureALotDuringMixedGC, true,                 \
-          "Force use of evacuation failure handling during mixed "          \
-          "evacuation pauses")                                              \
-                                                                            \
   product(bool, G1VerifyRSetsDuringFullGC, false, DIAGNOSTIC,               \
           "If true, perform verification of each heap region's "            \
           "remembered set when verifying the heap during a full GC.")       \
@@ -343,7 +371,15 @@
   product(bool, G1UsePreventiveGC, true, DIAGNOSTIC,                        \
           "Allows collections to be triggered proactively based on the      \
            number of free regions and the expected survival rates in each   \
-           section of the heap.")
+           section of the heap.")                                           \
+                                                                            \
+  GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
+                    develop_pd,                                             \
+                    product,                                                \
+                    product_pd,                                             \
+                    notproduct,                                             \
+                    range,                                                  \
+                    constraint)
 
 // end of GC_G1_FLAGS
 

@@ -1631,12 +1631,17 @@ public class ZipFile implements ZipConstants, Closeable {
                         // slash
                         int entryLen = entry.length();
                         int nameLen = name.length();
-                        if ((entryLen == nameLen && entry.equals(name)) ||
-                                (addSlash &&
-                                nameLen + 1 == entryLen &&
-                                entry.startsWith(name) &&
-                                entry.charAt(entryLen - 1) == '/')) {
+                        if (entryLen == nameLen && entry.equals(name)) {
+                            // Found our match
                             return pos;
+                        }
+                        // If addSlash is true we'll now test for name+/ providing
+                        if (addSlash && nameLen + 1 == entryLen
+                                && entry.startsWith(name) &&
+                                entry.charAt(entryLen - 1) == '/') {
+                            // Found the entry "name+/", now find the CEN entry pos
+                            int exactPos = getEntryPos(name, false);
+                            return exactPos == -1 ? pos : exactPos;
                         }
                     } catch (IllegalArgumentException iae) {
                         // Ignore

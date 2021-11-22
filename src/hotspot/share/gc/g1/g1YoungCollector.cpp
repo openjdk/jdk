@@ -433,7 +433,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       }
       log_debug(gc, humongous)("Humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ") remset " SIZE_FORMAT " code roots " SIZE_FORMAT " marked %d reclaim candidate %d type array %d",
                                index,
-                               (size_t)cast_to_oop(hr->bottom())->size() * HeapWordSize,
+                               cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),
                                hr->rem_set()->occupied(),
                                hr->rem_set()->strong_code_roots_list_length(),
@@ -856,7 +856,7 @@ public:
       return;
     }
     if (region_attr.is_in_cset()) {
-      assert( obj->is_forwarded(), "invariant" );
+      assert(obj->is_forwarded(), "invariant" );
       *p = obj->forwardee();
     } else {
       assert(!obj->is_forwarded(), "invariant" );
@@ -983,8 +983,6 @@ void G1YoungCollector::process_discovered_references(G1ParScanThreadStateSet* pe
   gc_tracer_stw()->report_gc_reference_stats(stats);
 
   _g1h->make_pending_list_reachable();
-
-  rp->verify_no_references_recorded();
 
   phase_times()->record_ref_proc_time((Ticks::now() - start).seconds() * MILLIUNITS);
 }

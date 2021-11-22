@@ -77,7 +77,7 @@ public class AuthCacheImpl implements AuthCache {
         }
         if (skey == null) {
             // list should contain only one element
-            return (AuthenticationInfo)list.get (0);
+            return list.get(0);
         }
         for (AuthCacheValue authCacheValue : list) {
             AuthenticationInfo inf = (AuthenticationInfo) authCacheValue;

@@ -92,7 +92,7 @@ abstract class InvokableTypeImpl extends ReferenceTypeImpl {
      *         compatibility.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
      */
-    final public Value invokeMethod(ThreadReference threadIntf, Method methodIntf,
+    public final Value invokeMethod(ThreadReference threadIntf, Method methodIntf,
                                     List<? extends Value> origArguments, int options)
                                         throws InvalidTypeException,
                                                ClassNotLoadedException,

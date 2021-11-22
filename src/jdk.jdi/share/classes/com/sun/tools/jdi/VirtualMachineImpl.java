@@ -124,7 +124,7 @@ class VirtualMachineImpl extends MirrorImpl
     // "objectsByID" protected by "synchronized(this)".
     private final Map<Long, SoftObjectReference> objectsByID = new HashMap<>();
     private final ReferenceQueue<ObjectReferenceImpl> referenceQueue = new ReferenceQueue<>();
-    static private final int DISPOSE_THRESHOLD = 50;
+    private static final int DISPOSE_THRESHOLD = 50;
     private final List<SoftObjectReference> batchedDisposeRequests =
             Collections.synchronizedList(new ArrayList<>(DISPOSE_THRESHOLD + 10));
 
@@ -1548,7 +1548,7 @@ class VirtualMachineImpl extends MirrorImpl
         return threadGroupForJDI;
     }
 
-   static private class SoftObjectReference extends SoftReference<ObjectReferenceImpl> {
+   private static class SoftObjectReference extends SoftReference<ObjectReferenceImpl> {
        int count;
        Long key;
 

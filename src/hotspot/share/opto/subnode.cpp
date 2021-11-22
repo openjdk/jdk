@@ -1480,13 +1480,15 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return NULL;
   }
 
+  const int cmp1_op = cmp1->Opcode();
+  const int cmp2_op = cmp2->Opcode();
+
   // Constant on left?
   Node *con = cmp1;
-  uint op2 = cmp2->Opcode();
   // Move constants to the right of compare's to canonicalize.
   // Do not muck with Opaque1 nodes, as this indicates a loop
   // guard that cannot change shape.
-  if( con->is_Con() && !cmp2->is_Con() && op2 != Op_Opaque1 &&
+  if( con->is_Con() && !cmp2->is_Con() && cmp2_op != Op_Opaque1 &&
       // Because of NaN's, CmpD and CmpF are not commutative
       cop != Op_CmpD && cop != Op_CmpF &&
       // Protect against swapping inputs to a compare when it is used by a
@@ -1504,7 +1506,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Change "bool eq/ne (cmp (and X 16) 16)" into "bool ne/eq (cmp (and X 16) 0)".
   if (cop == Op_CmpI &&
       (_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
-      cmp1->Opcode() == Op_AndI && cmp2->Opcode() == Op_ConI &&
+      cmp1_op == Op_AndI && cmp2_op == Op_ConI &&
       cmp1->in(2)->Opcode() == Op_ConI) {
     const TypeInt *t12 = phase->type(cmp2)->isa_int();
     const TypeInt *t112 = phase->type(cmp1->in(2))->isa_int();
@@ -1518,7 +1520,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Same for long type: change "bool eq/ne (cmp (and X 16) 16)" into "bool ne/eq (cmp (and X 16) 0)".
   if (cop == Op_CmpL &&
       (_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
-      cmp1->Opcode() == Op_AndL && cmp2->Opcode() == Op_ConL &&
+      cmp1_op == Op_AndL && cmp2_op == Op_ConL &&
       cmp1->in(2)->Opcode() == Op_ConL) {
     const TypeLong *t12 = phase->type(cmp2)->isa_long();
     const TypeLong *t112 = phase->type(cmp1->in(2))->isa_long();
@@ -1529,10 +1531,41 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  // Change "cmp (add X min_jint) (add Y min_jint)" into "cmpu X Y"
+  // and    "cmp (add X min_jint) c" into "cmpu X (c + min_jint)"
+  if (cop == Op_CmpI &&
+      cmp1_op == Op_AddI &&
+      phase->type(cmp1->in(2)) == TypeInt::MIN) {
+    if (cmp2_op == Op_ConI) {
+      Node* ncmp2 = phase->intcon(java_add(cmp2->get_int(), min_jint));
+      Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), ncmp2));
+      return new BoolNode(ncmp, _test._test);
+    } else if (cmp2_op == Op_AddI &&
+               phase->type(cmp2->in(2)) == TypeInt::MIN) {
+      Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), cmp2->in(1)));
+      return new BoolNode(ncmp, _test._test);
+    }
+  }
+
+  // Change "cmp (add X min_jlong) (add Y min_jlong)" into "cmpu X Y"
+  // and    "cmp (add X min_jlong) c" into "cmpu X (c + min_jlong)"
+  if (cop == Op_CmpL &&
+      cmp1_op == Op_AddL &&
+      phase->type(cmp1->in(2)) == TypeLong::MIN) {
+    if (cmp2_op == Op_ConL) {
+      Node* ncmp2 = phase->longcon(java_add(cmp2->get_long(), min_jlong));
+      Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), ncmp2));
+      return new BoolNode(ncmp, _test._test);
+    } else if (cmp2_op == Op_AddL &&
+               phase->type(cmp2->in(2)) == TypeLong::MIN) {
+      Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), cmp2->in(1)));
+      return new BoolNode(ncmp, _test._test);
+    }
+  }
+
   // Change "bool eq/ne (cmp (xor X 1) 0)" into "bool ne/eq (cmp X 0)".
   // The XOR-1 is an idiom used to flip the sense of a bool.  We flip the
   // test instead.
-  int cmp1_op = cmp1->Opcode();
   const TypeInt* cmp2_type = phase->type(cmp2)->isa_int();
   if (cmp2_type == NULL)  return NULL;
   Node* j_xor = cmp1;

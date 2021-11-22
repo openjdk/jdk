@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.Set;
 import javax.annotation.processing.Filer;
+import javax.lang.model.util.Elements;
 
 import static javax.tools.JavaFileObject.Kind;
 
@@ -345,9 +346,10 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * given package-oriented location.
      *
      * <p>The provided {@code originatingFiles} represent files that
-     * where in, an unspecified way, used to create the content of
+     * were in, an unspecified way, used to create the content of
      * the file created by this method. See {@code originatingElements}
-     * in {@link Filer#createSourceFile}.
+     * in {@link Filer#createSourceFile}. {@link Elements#getFileObjectOf}
+     * may be used to convert the {@code Element}s to {@code FileObject}s.
      *
      * @implSpec The default implementation calls
      * {@link #getJavaFileForOutput(javax.tools.JavaFileManager.Location, java.lang.String, javax.tools.JavaFileObject.Kind, javax.tools.FileObject) }
@@ -479,9 +481,10 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * name</a> in the specified package in the given location.
      *
      * <p>The provided {@code originatingFiles} represent files that
-     * where in, an unspecified way, used to create the content of
+     * were in, an unspecified way, used to create the content of
      * the file created by this method. See {@code originatingElements}
-     * in {@link Filer#createResource}.
+     * in {@link Filer#createResource}. {@link Elements#getFileObjectOf}
+     * may be used to convert the {@code Element}s to {@code FileObject}s.
      *
      * <p>If the returned object represents a {@linkplain
      * JavaFileObject.Kind#SOURCE source} or {@linkplain
@@ -494,7 +497,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * See {@link #getFileForInput getFileForInput} for an example.
      *
      * @implSpec The default implementation calls
-     * {@link #getFileForOutput(javax.tools.JavaFileManager.Location, java.lang.String, java.lang.String, javax.tools.FileObject)
+     * {@link #getFileForOutput(javax.tools.JavaFileManager.Location, java.lang.String, java.lang.String, javax.tools.FileObject) }
      * with the first element of the {@code originatingFiles}, if any, as a {@code sibling}.
      *
      * @param location an output location

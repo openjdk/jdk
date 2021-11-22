@@ -3675,7 +3675,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * This will fail if a <code>TreeWillExpandListener</code> vetos it.
      *
      * @param path a {@code TreePath} identifying a node
-     * @param state if {@code true}, all parents of @{code path} and path are marked as expanded.
+     * @param state if {@code true}, all parents of {@code path} and path are marked as expanded.
      *              Otherwise, all parents of {@code path} are marked EXPANDED,
      *              but {@code path} itself is marked collapsed.
      */

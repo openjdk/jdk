@@ -33,7 +33,7 @@ static bool returns_to_call_stub(address return_pc) { return return_pc == _call_
 
 enum platform_dependent_constants {
   code_size1 = 20000 LP64_ONLY(+10000),         // simply increase if too small (assembler will crash if too small)
-  code_size2 = 35300 LP64_ONLY(+32000)          // simply increase if too small (assembler will crash if too small)
+  code_size2 = 35300 LP64_ONLY(+35000)          // simply increase if too small (assembler will crash if too small)
 };
 
 class x86 {
@@ -165,6 +165,7 @@ class x86 {
   static address _vector_double_sign_flip;
   static address _vector_long_sign_mask;
   static address _vector_all_bits_set;
+  static address _vector_int_mask_cmp_bits;
   static address _vector_byte_perm_mask;
   static address _vector_int_to_byte_mask;
   static address _vector_int_to_short_mask;
@@ -287,6 +288,10 @@ class x86 {
 
   static address vector_all_bits_set() {
     return _vector_all_bits_set;
+  }
+
+  static address vector_int_mask_cmp_bits() {
+    return _vector_int_mask_cmp_bits;
   }
 
   static address vector_byte_perm_mask() {
