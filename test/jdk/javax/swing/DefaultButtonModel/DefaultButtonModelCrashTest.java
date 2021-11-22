@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8182577
- * @summary  Verifies if moving focus via custom ButtonModel causes crash
+ * @summary  Verifies if moving focus to JToggleButton with DefaultButtonModel
+ *           that is added to a ButtonGroup doesn't throw ClassCastException
  * @key headful
  * @run main DefaultButtonModelCrashTest
  */
