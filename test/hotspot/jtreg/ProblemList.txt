@@ -75,6 +75,8 @@ compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-x64
 compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
 
+compiler/onSpinWait/TestOnSpinWaitAArch64DefaultFlags.java 8277503 linux-aarch64
+
 
 #############################################################################
 
@@ -90,6 +92,8 @@ gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 
+applications/jcstress/acqrel.java 8277434 linux-aarch64
+
 #############################################################################
 
 # :hotspot_runtime
@@ -104,6 +108,7 @@ runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/jni/checked/TestPrimitiveArrayCriticalWithBadParam.java 8277350 macosx-x64
+runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 
 applications/jcstress/copy.java 8229852 linux-all
 
