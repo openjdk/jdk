@@ -91,9 +91,7 @@ private:
  private:
   class WDAPrinter {
   public:
-    static void summary(outputStream* out, double time);
     static void summary(outputStream* out, double min, double avg, double max, double diff, double sum, bool print_sum);
-    static void summary(outputStream* out, size_t value);
     static void summary(outputStream* out, size_t min, double avg, size_t max, size_t diff, size_t sum, bool print_sum);
 
     static void details(const WorkerDataArray<double>* phase, outputStream* out);
