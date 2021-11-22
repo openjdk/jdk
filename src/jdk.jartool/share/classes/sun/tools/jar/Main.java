@@ -802,8 +802,9 @@ public class Main {
                 Entry e = new Entry(f, name, false);
                 if (isModuleInfoEntry(name)) {
                     Long lastModified = f.lastModified() == 0 ? null : f.lastModified();
-                    moduleInfos.putIfAbsent(name,
-                            new StreamedModuleInfoEntry(name, Files.readAllBytes(f.toPath()), lastModified));
+                    byte[] fileContent = Files.readAllBytes(f.toPath());
+                    ModuleInfoEntry mie = new StreamedModuleInfoEntry(name, fileContent, lastModified);
+                    moduleInfos.putIfAbsent(name, mie);
                     if (uflag)
                         entryMap.put(name, e);
                 } else if (entries.add(e)) {
