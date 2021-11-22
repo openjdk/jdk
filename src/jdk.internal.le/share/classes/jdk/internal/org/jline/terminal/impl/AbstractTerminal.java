@@ -10,6 +10,7 @@ package jdk.internal.org.jline.terminal.impl;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -55,7 +56,8 @@ public abstract class AbstractTerminal implements Terminal {
     public AbstractTerminal(String name, String type, Charset encoding, SignalHandler signalHandler) throws IOException {
         this.name = name;
         this.type = type != null ? type : "ansi";
-        this.encoding = encoding != null ? encoding : Charset.defaultCharset();
+        this.encoding = encoding != null ? encoding :
+            Charset.forName(new OutputStreamWriter(System.out).getEncoding(), Charset.defaultCharset());
         for (Signal signal : Signal.values()) {
             handlers.put(signal, signalHandler);
         }

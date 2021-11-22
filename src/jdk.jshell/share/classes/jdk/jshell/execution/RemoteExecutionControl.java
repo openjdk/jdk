@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@ package jdk.jshell.execution;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
+import java.nio.charset.Charset;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,11 +65,17 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
         InputStream inStream = socket.getInputStream();
         OutputStream outStream = socket.getOutputStream();
         Map<String, Consumer<OutputStream>> outputs = new HashMap<>();
-        outputs.put("out", st -> System.setOut(new PrintStream(st, true)));
-        outputs.put("err", st -> System.setErr(new PrintStream(st, true)));
+        outputs.put("out", st -> System.setOut(new PrintStream(st, true, getPrintStreamCharset(System.out))));
+        outputs.put("err", st -> System.setErr(new PrintStream(st, true, getPrintStreamCharset(System.err))));
         Map<String, Consumer<InputStream>> input = new HashMap<>();
         input.put("in", System::setIn);
         forwardExecutionControlAndIO(new RemoteExecutionControl(), inStream, outStream, outputs, input);
+    }
+
+    // Get PrintStream charset
+    private static Charset getPrintStreamCharset(PrintStream ps) {
+        return Charset.forName(new OutputStreamWriter(ps).getEncoding(),
+            Charset.defaultCharset());
     }
 
     // These three variables are used by the main JShell process in interrupting
