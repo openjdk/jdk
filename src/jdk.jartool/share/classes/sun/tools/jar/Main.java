@@ -2101,11 +2101,12 @@ public class Main {
         throws IOException
     {
         for (Map.Entry<String, ModuleInfoEntry> e: moduleInfos.entrySet()) {
-            byte[] bytes = e.getValue().readAllBytes();
+            ModuleInfoEntry mie = e.getValue();
+            byte[] bytes = mie.readAllBytes();
             ModuleDescriptor md = ModuleDescriptor.read(ByteBuffer.wrap(bytes));
             byte[] extended = extendedInfoBytes(md, bytes, packages);
             // replace the entry value with the extended bytes
-            e.setValue(new StreamedModuleInfoEntry(e.getValue().name(), extended, e.getValue().getLastModifiedTime()));
+            e.setValue(new StreamedModuleInfoEntry(mie.name(), extended, mie.getLastModifiedTime()));
         }
     }
 
