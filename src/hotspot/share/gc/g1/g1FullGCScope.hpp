@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1FULLGCSCOPE_HPP
 #define SHARE_GC_G1_G1FULLGCSCOPE_HPP
 
-#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/shared/gcTimer.hpp"

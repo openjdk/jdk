@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1GCCounters.hpp"
 
 G1GCCounters::G1GCCounters(G1CollectedHeap* g1h) :

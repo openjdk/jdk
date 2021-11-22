@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CardSetFreeMemoryTask.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1_globals.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
