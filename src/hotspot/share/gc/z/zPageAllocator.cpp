@@ -112,10 +112,9 @@ private:
   ZListNode<ZPageAllocation> _node;
   ZFuture<bool>              _stall_result;
   ZGenerationId const        _generation;
-  ZCollector* const          _collector;
 
 public:
-  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation, ZCollector* collector) :
+  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation) :
       _type(type),
       _size(size),
       _flags(flags),
@@ -126,8 +125,7 @@ public:
       _pages(),
       _node(),
       _stall_result(),
-      _generation(generation),
-      _collector(collector) {}
+      _generation(generation) {}
 
   uint8_t type() const {
     return _type;
@@ -183,10 +181,6 @@ public:
 
   bool gc_relocation() const {
     return _flags.gc_relocation();
-  }
-
-  ZCollector* collector() const {
-    return _collector;
   }
 };
 
@@ -273,7 +267,7 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   flags.set_non_blocking();
   flags.set_low_address();
 
-  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, ZGenerationId::young, ZPageAge::eden, NULL /* collector */);
+  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, ZGenerationId::young, ZPageAge::eden);
   if (page == NULL) {
     return false;
   }
@@ -284,7 +278,7 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
     workers->run_all(&task);
   }
 
-  free_page(page, false /* reclaimed */);
+  free_page(page);
 
   return true;
 }
@@ -374,22 +368,8 @@ void ZPageAllocator::decrease_capacity(size_t size, bool set_max_capacity) {
   }
 }
 
-void ZPageAllocator::increase_used(size_t size, bool gc_relocation, ZCollector* collector, ZGenerationId id) {
+void ZPageAllocator::increase_used(size_t size, ZGenerationId id) {
   ZHeap::heap()->generation(id)->increase_used(size);
-
-  if (gc_relocation) {
-    if (ZHeap::heap()->collector(id) == collector) {
-      // Allocating a page for the purpose of GC relocation has
-      // a negative contribution to the number of reclaimed bytes,
-      // as long as the movement is within the same generation.
-      collector->increase_relocated(size);
-    } else {
-      // Allocating a page for the purpose of GC relocation into
-      // a different generation, has a positive contribution to
-      // the number of promoted bytes.
-      collector->increase_promoted(size);
-    }
-  }
 
   // Update atomically since we have concurrent readers
   const size_t used = Atomic::add(&_used, size);
@@ -397,12 +377,8 @@ void ZPageAllocator::increase_used(size_t size, bool gc_relocation, ZCollector* 
   ZHeap::heap()->old_collector()->update_used(used);
 }
 
-void ZPageAllocator::decrease_used(size_t size, bool reclaimed, ZGenerationId id) {
+void ZPageAllocator::decrease_used(size_t size, ZGenerationId id) {
   ZHeap::heap()->generation(id)->decrease_used(size);
-
-  if (reclaimed) {
-    ZHeap::heap()->collector(id)->increase_reclaimed(size);
-  }
 
   // Update atomically since we have concurrent readers
   const size_t used = Atomic::sub(&_used, size);
@@ -494,7 +470,7 @@ bool ZPageAllocator::alloc_page_common(ZPageAllocation* allocation) {
   }
 
   // Updated used statistics
-  increase_used(size, allocation->gc_relocation(), allocation->collector(), allocation->generation_id());
+  increase_used(size, allocation->generation_id());
 
   // Success
   return true;
@@ -683,11 +659,11 @@ ZPage* ZPageAllocator::alloc_page_finalize(ZPageAllocation* allocation) {
   return NULL;
 }
 
-ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id, ZPageAge age, ZCollector* collector) {
+ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id, ZPageAge age) {
   EventZPageAllocation event;
 
 retry:
-  ZPageAllocation allocation(type, size, flags, generation_id, collector);
+  ZPageAllocation allocation(type, size, flags, generation_id);
 
   // Allocate one or more pages from the page cache. If the allocation
   // succeeds but the returned pages don't cover the complete allocation,
@@ -758,14 +734,14 @@ void ZPageAllocator::recycle_page(ZPage* page) {
   _cache.free_page(page);
 }
 
-void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
+void ZPageAllocator::free_page(ZPage* page) {
   const ZGenerationId generation_id = page->generation_id();
   ZPage* const to_recycle = _safe_recycle.register_and_clone_if_activated(page);
 
   ZLocker<ZLock> locker(&_lock);
 
   // Update used statistics
-  decrease_used(to_recycle->size(), reclaimed, generation_id);
+  decrease_used(to_recycle->size(), generation_id);
 
   // Free page
   recycle_page(to_recycle);
@@ -774,7 +750,7 @@ void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
   satisfy_stalled();
 }
 
-void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages, bool gc_relocation) {
+void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
   ZArray<ZPage*> to_recycle;
 
   size_t generation_used[2] = {0, 0};
@@ -787,8 +763,8 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages, bool gc_relocation)
 
   ZLocker<ZLock> locker(&_lock);
 
-  decrease_used(generation_used[(int)ZGenerationId::young], gc_relocation, ZGenerationId::young);
-  decrease_used(generation_used[(int)ZGenerationId::old], gc_relocation, ZGenerationId::old);
+  decrease_used(generation_used[(int)ZGenerationId::young], ZGenerationId::young);
+  decrease_used(generation_used[(int)ZGenerationId::old], ZGenerationId::old);
 
   // Free pages
   ZArrayIterator<ZPage*> iter(&to_recycle);
@@ -822,7 +798,7 @@ void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
 
   // Adjust capacity and used to reflect the failed capacity increase
   const size_t remaining = allocation->size() - freed;
-  decrease_used(remaining, false /* reclaimed */, allocation->generation_id());
+  decrease_used(remaining, allocation->generation_id());
   decrease_capacity(remaining, true /* set_max_capacity */);
 
   // Try satisfy stalled allocations

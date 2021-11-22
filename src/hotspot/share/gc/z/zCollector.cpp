@@ -112,7 +112,8 @@ void ZCollector::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
   // the page allocator lock, and trying to satisfy stalled allocations
   // too frequently.
   if (selector->should_free_empty_pages(bulk)) {
-    ZHeap::heap()->free_pages(selector->empty_pages(), true /* reclaimed */);
+    size_t reclaimed = ZHeap::heap()->free_pages(selector->empty_pages());
+    increase_reclaimed(reclaimed);
     selector->clear_empty_pages();
   }
 }
@@ -239,10 +240,6 @@ void ZCollector::increase_reclaimed(size_t size) {
   Atomic::add(&_reclaimed, size, memory_order_relaxed);
 }
 
-void ZCollector::decrease_reclaimed(size_t size) {
-  Atomic::sub(&_reclaimed, size, memory_order_relaxed);
-}
-
 size_t ZCollector::promoted() const {
   return _promoted;
 }
@@ -251,20 +248,12 @@ void ZCollector::increase_promoted(size_t size) {
   Atomic::add(&_promoted, size, memory_order_relaxed);
 }
 
-void ZCollector::decrease_promoted(size_t size) {
-  Atomic::sub(&_promoted, size, memory_order_relaxed);
-}
-
 size_t ZCollector::relocated() const {
   return _relocated;
 }
 
 void ZCollector::increase_relocated(size_t size) {
   Atomic::add(&_relocated, size, memory_order_relaxed);
-}
-
-void ZCollector::decrease_relocated(size_t size) {
-  Atomic::sub(&_relocated, size, memory_order_relaxed);
 }
 
 void ZCollector::update_used(size_t used) {
@@ -478,17 +467,16 @@ void ZYoungCollector::promote_flip(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
   ZHeap::heap()->young_generation()->decrease_used(from_page->size());
+  ZHeap::heap()->old_generation()->increase_used(from_page->size());
+
   ZHeap::heap()->young_collector()->increase_reclaimed(from_page->size());
   ZHeap::heap()->young_collector()->increase_promoted(from_page->live_bytes());
-  ZHeap::heap()->old_generation()->increase_used(from_page->size());
 }
 
 void ZYoungCollector::promote_reloc(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
   ZHeap::heap()->young_generation()->decrease_used(from_page->size());
-  ZHeap::heap()->young_collector()->increase_reclaimed(from_page->size());
-  ZHeap::heap()->young_collector()->increase_promoted(from_page->size());
   ZHeap::heap()->old_generation()->increase_used(from_page->size());
 }
 

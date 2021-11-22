@@ -84,8 +84,8 @@ private:
   size_t increase_capacity(size_t size);
   void decrease_capacity(size_t size, bool set_max_capacity);
 
-  void increase_used(size_t size, bool gc_relocation, ZCollector* collector, ZGenerationId id);
-  void decrease_used(size_t size, bool reclaimed, ZGenerationId id);
+  void increase_used(size_t size, ZGenerationId id);
+  void decrease_used(size_t size, ZGenerationId id);
 
   bool commit_page(ZPage* page);
   void uncommit_page(ZPage* page);
@@ -130,11 +130,11 @@ public:
 
   ZPageAllocatorStats stats(ZCollector* collector) const;
 
-  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id, ZPageAge age, ZCollector* collector);
+  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id, ZPageAge age);
   void recycle_page(ZPage* page);
   void safe_destroy_page(ZPage* page);
-  void free_page(ZPage* page, bool reclaimed);
-  void free_pages(const ZArray<ZPage*>* pages, bool gc_relocation);
+  void free_page(ZPage* page);
+  void free_pages(const ZArray<ZPage*>* pages);
 
   void enable_safe_destroy() const;
   void disable_safe_destroy() const;

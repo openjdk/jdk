@@ -152,6 +152,10 @@ inline size_t ZPage::remaining() const {
   return end() - top();
 }
 
+inline size_t ZPage::used() const {
+  return top() - start();
+}
+
 inline const ZVirtualMemory& ZPage::virtual_memory() const {
   return _virtual;
 }

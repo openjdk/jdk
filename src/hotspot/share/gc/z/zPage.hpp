@@ -105,6 +105,7 @@ public:
   size_t size() const;
   zoffset top() const;
   size_t remaining() const;
+  size_t used() const;
 
   const ZVirtualMemory& virtual_memory() const;
   const ZPhysicalMemory& physical_memory() const;

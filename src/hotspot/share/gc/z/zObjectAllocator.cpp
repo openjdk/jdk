@@ -80,7 +80,7 @@ void ZObjectAllocator::register_undo_alloc_for_relocation(const ZPage* page, siz
 }
 
 ZPage* ZObjectAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags) {
-  ZPage* const page = ZHeap::heap()->alloc_page(type, size, flags, _generation_id, _age, NULL /* collector */);
+  ZPage* const page = ZHeap::heap()->alloc_page(type, size, flags, _generation_id, _age);
   if (page != NULL) {
     // Increment used bytes
     Atomic::add(_used.addr(), size);

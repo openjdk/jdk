@@ -1634,6 +1634,15 @@ void ZStatHeap::print(ZCollector* collector) {
                      .left(ZTABLE_ARGS(_at_relocate_start.allocated))
                      .left(ZTABLE_ARGS(_at_relocate_end.allocated))
                      .end());
+  if (collector->is_young()) {
+    log_info(gc, heap)("%s", gen_table()
+                       .right("Promoted:")
+                       .left(ZTABLE_ARGS_NA)
+                       .left(ZTABLE_ARGS_NA)
+                       .left(ZTABLE_ARGS(_at_relocate_start.promoted))
+                       .left(ZTABLE_ARGS(_at_relocate_end.promoted))
+                       .end());
+  }
   log_info(gc, heap)("%s", gen_table()
                      .right("Garbage:")
                      .left(ZTABLE_ARGS_NA)
@@ -1648,14 +1657,5 @@ void ZStatHeap::print(ZCollector* collector) {
                      .left(ZTABLE_ARGS(_at_relocate_start.reclaimed))
                      .left(ZTABLE_ARGS(_at_relocate_end.reclaimed))
                      .end());
-  if (collector->is_young()) {
-    log_info(gc, heap)("%s", gen_table()
-                       .right("Promoted:")
-                       .left(ZTABLE_ARGS_NA)
-                       .left(ZTABLE_ARGS_NA)
-                       .left(ZTABLE_ARGS(_at_relocate_start.promoted))
-                       .left(ZTABLE_ARGS(_at_relocate_end.promoted))
-                       .end());
-  }
 }
 

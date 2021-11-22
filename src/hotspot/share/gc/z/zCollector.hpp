@@ -111,13 +111,10 @@ public:
   size_t used_high() const;
   size_t used_low() const;
   ssize_t reclaimed() const;
-  void decrease_reclaimed(size_t size);
   void increase_reclaimed(size_t size);
   size_t promoted() const;
-  void decrease_promoted(size_t size);
   void increase_promoted(size_t size);
   size_t relocated() const;
-  void decrease_relocated(size_t size);
   void increase_relocated(size_t size);
   void update_used(size_t used);
 

@@ -300,7 +300,7 @@ zaddress ZRelocate::forward_object(ZForwarding* forwarding, zaddress_unsafe from
   return to_addr;
 }
 
-static ZPage* alloc_page(const ZForwarding* forwarding, ZGenerationId generation, ZPageAge age, ZCollector* collector) {
+static ZPage* alloc_page(const ZForwarding* forwarding, ZGenerationId generation, ZPageAge age) {
   if (ZStressRelocateInPlace) {
     // Simulate failure to allocate a new page. This will
     // cause the page being relocated to be relocated in-place.
@@ -311,19 +311,27 @@ static ZPage* alloc_page(const ZForwarding* forwarding, ZGenerationId generation
   flags.set_non_blocking();
   flags.set_gc_relocation();
 
-  return ZHeap::heap()->alloc_page(forwarding->type(), forwarding->size(), flags, generation, age, collector);
+  return ZHeap::heap()->alloc_page(forwarding->type(), forwarding->size(), flags, generation, age);
 }
 
-static void free_page(ZPage* page, bool reclaimed) {
-  ZHeap::heap()->free_page(page, reclaimed);
+static void free_page(ZPage* page) {
+  ZHeap::heap()->free_page(page);
 }
 
-static bool should_free_target_page(ZPage* page) {
+static void retire_page(ZCollector* collector, ZPage* page) {
+  if (collector->is_young() && page->is_old()) {
+    collector->increase_promoted(page->used());
+  } else {
+    collector->increase_relocated(page->used());
+  }
+
   // Free target page if it is empty. We can end up with an empty target
   // page if we allocated a new target page, and then lost the race to
   // relocate the remaining objects, leaving the target page empty when
   // relocation completed.
-  return page->top() == page->start();
+  if (page->used() == 0) {
+    free_page(page);
+  }
 }
 
 class ZRelocateSmallAllocator {
@@ -341,7 +349,7 @@ public:
       _collector(collector) {}
 
   ZPage* alloc_target_page(ZForwarding* forwarding, ZPage* target) {
-    ZPage* const page = alloc_page(forwarding, _generation, _age, _collector);
+    ZPage* const page = alloc_page(forwarding, _generation, _age);
     if (page == NULL) {
       Atomic::inc(&_in_place_count);
     }
@@ -354,21 +362,9 @@ public:
   }
 
   void free_target_page(ZPage* page) {
-    if (page == NULL) {
-      return;
+    if (page != NULL) {
+      retire_page(_collector, page);
     }
-    if (_collector->is_young() && _generation == ZGenerationId::old) {
-      _collector->decrease_promoted(page->remaining());
-    } else {
-      _collector->decrease_relocated(page->remaining());
-    }
-    if (should_free_target_page(page)) {
-      free_page(page, false /* reclaimed */);
-    }
-  }
-
-  void free_relocated_page(ZPage* page) {
-    free_page(page, true /* reclaimed */);
   }
 
   zaddress alloc_object(ZPage* page, size_t size) const {
@@ -405,17 +401,8 @@ public:
       _collector(collector) {}
 
   ~ZRelocateMediumAllocator() {
-    if (_shared == NULL) {
-      return;
-    }
-    // Release remaining memory that was not relocated/promoted
-    if (_collector->is_young() && _generation == ZGenerationId::old) {
-      _collector->decrease_promoted(_shared->remaining());
-    } else {
-      _collector->decrease_relocated(_shared->remaining());
-    }
-    if (should_free_target_page(_shared)) {
-      free_page(_shared, false /* reclaimed */);
+    if (_shared != NULL) {
+      retire_page(_collector, _shared);
     }
   }
 
@@ -432,7 +419,7 @@ public:
     // current target page if another thread shared a page, or allocated
     // a new page.
     if (_shared == target) {
-      _shared = alloc_page(forwarding, _generation, _age, _collector);
+      _shared = alloc_page(forwarding, _generation, _age);
       if (_shared == NULL) {
         Atomic::inc(&_in_place_count);
         _in_place = true;
@@ -457,10 +444,6 @@ public:
 
   void free_target_page(ZPage* page) {
     // Does nothing
-  }
-
-  void free_relocated_page(ZPage* page) {
-    free_page(page, true /* reclaimed */);
   }
 
   zaddress alloc_object(ZPage* page, size_t size) const {
@@ -695,15 +678,6 @@ private:
       // Register the the promotion
       ZHeap::heap()->young_collector()->promote_reloc(prev_page, new_page);
       ZHeap::heap()->young_collector()->register_promote_relocated(prev_page);
-    } else {
-      // An in-place relocation conceptually allocates a to-space page,
-      // relocates the objects, and then frees the from-space page. It just
-      // happens to be that the from-space and to-space pages are the same.
-      // Allocating a to-space increments used, and freeing the from-space
-      // decrements used. So the increment and decrement cancel each other.
-      // Therefore, we only need to update relocated and reclaimed.
-      _collector->increase_reclaimed(new_page->size());
-      _collector->increase_relocated(new_page->size());
     }
 
     return new_page;
@@ -714,6 +688,11 @@ private:
     assert(ZHeap::heap()->is_object_live(addr), "Should be live");
 
     while (!try_relocate_object(addr)) {
+      if (_target != NULL) {
+        // Retire the old page
+        retire_page(_collector, _target);
+      }
+
       // Allocate a new target page, or if that fails, use the page being
       // relocated as the new target, which will cause it to be relocated
       // in-place.
@@ -757,6 +736,8 @@ public:
       _forwarding->verify();
     }
 
+    _collector->increase_reclaimed(_forwarding->page()->size());
+
     // Deal with in-place relocation
     const bool in_place = _forwarding->in_place_relocation();
     if (in_place) {
@@ -775,7 +756,7 @@ public:
     } else {
       // Detach and free relocated page
       ZPage* const page = _forwarding->detach_page();
-      _allocator->free_relocated_page(page);
+      free_page(page);
     }
   }
 };
