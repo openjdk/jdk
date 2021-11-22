@@ -480,7 +480,7 @@ VectorNode* VectorNode::make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, 
 }
 
 // Make a vector node for binary operation
-VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask) {
+VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask, bool is_var_shift) {
   // This method should not be called for unimplemented vectors.
   guarantee(vopc > 0, "vopc must be > 0");
 
@@ -534,20 +534,20 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_RotateLeftV: return new RotateLeftVNode(n1, n2, vt);
   case Op_RotateRightV: return new RotateRightVNode(n1, n2, vt);
 
-  case Op_LShiftVB: return new LShiftVBNode(n1, n2, vt);
-  case Op_LShiftVS: return new LShiftVSNode(n1, n2, vt);
-  case Op_LShiftVI: return new LShiftVINode(n1, n2, vt);
-  case Op_LShiftVL: return new LShiftVLNode(n1, n2, vt);
+  case Op_LShiftVB: return new LShiftVBNode(n1, n2, vt, is_var_shift);
+  case Op_LShiftVS: return new LShiftVSNode(n1, n2, vt, is_var_shift);
+  case Op_LShiftVI: return new LShiftVINode(n1, n2, vt, is_var_shift);
+  case Op_LShiftVL: return new LShiftVLNode(n1, n2, vt, is_var_shift);
 
-  case Op_RShiftVB: return new RShiftVBNode(n1, n2, vt);
-  case Op_RShiftVS: return new RShiftVSNode(n1, n2, vt);
-  case Op_RShiftVI: return new RShiftVINode(n1, n2, vt);
-  case Op_RShiftVL: return new RShiftVLNode(n1, n2, vt);
+  case Op_RShiftVB: return new RShiftVBNode(n1, n2, vt, is_var_shift);
+  case Op_RShiftVS: return new RShiftVSNode(n1, n2, vt, is_var_shift);
+  case Op_RShiftVI: return new RShiftVINode(n1, n2, vt, is_var_shift);
+  case Op_RShiftVL: return new RShiftVLNode(n1, n2, vt, is_var_shift);
 
-  case Op_URShiftVB: return new URShiftVBNode(n1, n2, vt);
-  case Op_URShiftVS: return new URShiftVSNode(n1, n2, vt);
-  case Op_URShiftVI: return new URShiftVINode(n1, n2, vt);
-  case Op_URShiftVL: return new URShiftVLNode(n1, n2, vt);
+  case Op_URShiftVB: return new URShiftVBNode(n1, n2, vt, is_var_shift);
+  case Op_URShiftVS: return new URShiftVSNode(n1, n2, vt, is_var_shift);
+  case Op_URShiftVI: return new URShiftVINode(n1, n2, vt, is_var_shift);
+  case Op_URShiftVL: return new URShiftVLNode(n1, n2, vt, is_var_shift);
 
   case Op_AndV: return new AndVNode(n1, n2, vt);
   case Op_OrV:  return new OrVNode (n1, n2, vt);
@@ -563,12 +563,12 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
 }
 
 // Return the vector version of a scalar binary operation node.
-VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, uint vlen, BasicType bt) {
+VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, uint vlen, BasicType bt, bool is_var_shift) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
   int vopc = VectorNode::opcode(opc, bt);
   // This method should not be called for unimplemented vectors.
   guarantee(vopc > 0, "Vector for '%s' is not implemented", NodeClassNames[opc]);
-  return make(vopc, n1, n2, vt);
+  return make(vopc, n1, n2, vt, false, is_var_shift);
 }
 
 // Make a vector node for ternary operation
@@ -1297,8 +1297,8 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
     shiftRCnt = phase->transform(new RShiftCntVNode(shiftRCnt, vt));
   }
 
-  return new OrVNode(phase->transform(VectorNode::make(shiftLOpc, src, shiftLCnt, vlen, bt)),
-                     phase->transform(VectorNode::make(shiftROpc, src, shiftRCnt, vlen, bt)),
+  return new OrVNode(phase->transform(VectorNode::make(shiftLOpc, src, shiftLCnt, vlen, bt, is_binary_vector_op)),
+                     phase->transform(VectorNode::make(shiftROpc, src, shiftRCnt, vlen, bt, is_binary_vector_op)),
                      vt);
 }
 
