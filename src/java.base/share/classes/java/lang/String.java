@@ -2495,6 +2495,9 @@ public final class String
      *          or {@code -1} if there is no such occurrence.
      */
     public int indexOf(String str) {
+        if (str.length() == 1) {
+            return indexOf(str.charAt(0));
+        }
         byte coder = coder();
         if (coder == str.coder()) {
             return isLatin1() ? StringLatin1.indexOf(value, str.value)
