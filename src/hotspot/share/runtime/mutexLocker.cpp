@@ -131,6 +131,7 @@ Mutex*   UnsafeJlong_lock             = NULL;
 Mutex*   CodeHeapStateAnalytics_lock  = NULL;
 
 Mutex*   Metaspace_lock               = NULL;
+Monitor* MetaspaceCritical_lock       = NULL;
 Mutex*   ClassLoaderDataGraph_lock    = NULL;
 Monitor* ThreadsSMRDelete_lock        = NULL;
 Mutex*   ThreadIdTableCreate_lock     = NULL;
@@ -243,6 +244,7 @@ void mutex_init() {
   def(RawMonitor_lock              , PaddedMutex  , nosafepoint-1);
 
   def(Metaspace_lock               , PaddedMutex  , nosafepoint-3);
+  def(MetaspaceCritical_lock       , PaddedMonitor, nosafepoint-1);
 
   def(Patching_lock                , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
   def(MonitorDeflation_lock        , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations

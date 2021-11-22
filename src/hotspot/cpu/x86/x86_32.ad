@@ -13150,7 +13150,25 @@ instruct cmovII_mem_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, rRegI dst, memory 
   ins_pipe( pipe_cmov_mem );
 %}
 
-// Compare 2 longs and CMOVE ints.
+instruct cmovII_reg_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, rRegI dst, rRegI src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovII_reg_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovII_mem_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, rRegI dst, memory src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst (LoadI src))));
+  ins_cost(250);
+  expand %{
+    cmovII_mem_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
+// Compare 2 longs and CMOVE ptrs.
 instruct cmovPP_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, eRegP dst, eRegP src) %{
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
   match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
@@ -13313,7 +13331,25 @@ instruct cmovII_mem_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, rRegI dst, memory 
   ins_pipe( pipe_cmov_mem );
 %}
 
-// Compare 2 longs and CMOVE ints.
+instruct cmovII_reg_EQNE_U(cmpOpU cmp, flagsReg_ulong_EQNE flags, rRegI dst, rRegI src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovII_reg_EQNE(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovII_mem_EQNE_U(cmpOpU cmp, flagsReg_ulong_EQNE flags, rRegI dst, memory src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst (LoadI src))));
+  ins_cost(250);
+  expand %{
+    cmovII_mem_EQNE(cmp, flags, dst, src);
+  %}
+%}
+
+// Compare 2 longs and CMOVE ptrs.
 instruct cmovPP_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, eRegP dst, eRegP src) %{
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
   match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
@@ -13469,22 +13505,18 @@ instruct cmovLL_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegL 
   match(Set dst (CMoveL (Binary cmp flags) (Binary dst src)));
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   ins_cost(400);
-  format %{ "CMOV$cmp $dst.lo,$src.lo\n\t"
-            "CMOV$cmp $dst.hi,$src.hi" %}
-  opcode(0x0F,0x40);
-  ins_encode( enc_cmov(cmp), RegReg_Lo2( dst, src ), enc_cmov(cmp), RegReg_Hi2( dst, src ) );
-  ins_pipe( pipe_cmov_reg_long );
+  expand %{
+    cmovLL_reg_LEGT(cmp, flags, dst, src);
+  %}
 %}
 
 instruct cmovLL_mem_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegL dst, load_long_memory src) %{
   match(Set dst (CMoveL (Binary cmp flags) (Binary dst (LoadL src))));
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   ins_cost(500);
-  format %{ "CMOV$cmp $dst.lo,$src.lo\n\t"
-            "CMOV$cmp $dst.hi,$src.hi+4" %}
-  opcode(0x0F,0x40);
-  ins_encode( enc_cmov(cmp), RegMem(dst, src), enc_cmov(cmp), RegMem_Hi(dst, src) );
-  ins_pipe( pipe_cmov_reg_long );
+  expand %{
+    cmovLL_mem_LEGT(cmp, flags, dst, src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE ints.
@@ -13506,6 +13538,24 @@ instruct cmovII_mem_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, rRegI dst,
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cmp), RegMem( dst, src ) );
   ins_pipe( pipe_cmov_mem );
+%}
+
+instruct cmovII_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, rRegI dst, rRegI src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovII_reg_LEGT(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovII_mem_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, rRegI dst, memory src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst (LoadI src))));
+  ins_cost(250);
+  expand %{
+    cmovII_mem_LEGT(cmp, flags, dst, src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE ptrs.

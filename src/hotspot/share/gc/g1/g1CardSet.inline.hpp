@@ -42,18 +42,18 @@ inline G1CardSet::CardSetPtr G1CardSet::make_card_set_ptr(void* value, uintptr_t
 }
 
 template <class CardOrRangeVisitor>
-inline void G1CardSet::iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& found) {
+inline void G1CardSet::iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& cl) {
   switch (card_set_type(card_set)) {
     case CardSetInlinePtr: {
-      if (found.start_iterate(G1GCPhaseTimes::MergeRSMergedInline)) {
+      if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedInline)) {
         G1CardSetInlinePtr ptr(card_set);
-        ptr.iterate(found, _config->inline_ptr_bits_per_card());
+        ptr.iterate(cl, _config->inline_ptr_bits_per_card());
       }
       return;
     }
     case CardSetArrayOfCards : {
-      if (found.start_iterate(G1GCPhaseTimes::MergeRSMergedArrayOfCards)) {
-        card_set_ptr<G1CardSetArray>(card_set)->iterate(found);
+      if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedArrayOfCards)) {
+        card_set_ptr<G1CardSetArray>(card_set)->iterate(cl);
       }
       return;
     }
@@ -65,13 +65,13 @@ inline void G1CardSet::iterate_cards_or_ranges_in_container(CardSetPtr const car
     case CardSetHowl: {
       assert(card_set_type(FullCardSet) == CardSetHowl, "Must be");
       if (card_set == FullCardSet) {
-        if (found.start_iterate(G1GCPhaseTimes::MergeRSMergedFull)) {
-          found(0, _config->max_cards_in_region());
+        if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedFull)) {
+          cl(0, _config->max_cards_in_region());
         }
         return;
       }
-      if (found.start_iterate(G1GCPhaseTimes::MergeRSMergedHowl)) {
-        card_set_ptr<G1CardSetHowl>(card_set)->iterate(found, _config);
+      if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedHowl)) {
+        card_set_ptr<G1CardSetHowl>(card_set)->iterate(cl, _config);
       }
       return;
     }

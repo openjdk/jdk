@@ -374,7 +374,7 @@ public:
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                      uint mt_processing_degree = 1,
-                     bool mt_discovery  = false, uint mt_discovery_degree  = 1,
+                     uint mt_discovery_degree  = 1,
                      bool concurrent_discovery = false,
                      BoolObjectClosure* is_alive_non_header = NULL);
 

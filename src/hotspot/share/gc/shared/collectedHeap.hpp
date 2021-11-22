@@ -461,14 +461,15 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // this collector.  The default implementation returns false.
   virtual bool supports_concurrent_gc_breakpoints() const;
 
-  // Provides a thread pool to SafepointSynchronize to use
-  // for parallel safepoint cleanup.
-  // GCs that use a GC worker thread pool may want to share
-  // it for use during safepoint cleanup. This is only possible
-  // if the GC can pause and resume concurrent work (e.g. G1
-  // concurrent marking) for an intermittent non-GC safepoint.
-  // If this method returns NULL, SafepointSynchronize will
-  // perform cleanup tasks serially in the VMThread.
+  // Workers used in non-GC safepoints for parallel safepoint cleanup. If this
+  // method returns NULL, cleanup tasks are done serially in the VMThread. See
+  // `SafepointSynchronize::do_cleanup_tasks` for details.
+  // GCs using a GC worker thread pool inside GC safepoints may opt to share
+  // that pool with non-GC safepoints, avoiding creating extraneous threads.
+  // Such sharing is safe, because GC safepoints and non-GC safepoints never
+  // overlap. For example, `G1CollectedHeap::workers()` (for GC safepoints) and
+  // `G1CollectedHeap::safepoint_workers()` (for non-GC safepoints) return the
+  // same thread-pool.
   virtual WorkerThreads* safepoint_workers() { return NULL; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
