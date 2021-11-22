@@ -198,6 +198,8 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
 
   update_soft_ref_master_clock();
 
+  phase_times.set_processing_is_mt(processing_is_mt());
+
   {
     RefProcTotalPhaseTimesTracker tt(SoftWeakFinalRefsPhase, &phase_times);
     process_soft_weak_final_refs(proxy_task, phase_times);
@@ -730,8 +732,6 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
   phase_times.set_ref_discovered(REF_WEAK, num_weak_refs);
   phase_times.set_ref_discovered(REF_FINAL, num_final_refs);
 
-  phase_times.set_processing_is_mt(processing_is_mt());
-
   if (num_total_refs == 0) {
     log_debug(gc, ref)("Skipped SoftWeakFinalRefsPhase of Reference Processing: no references");
     return;
@@ -764,7 +764,6 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
                                                   ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_final_refs = total_count(_discoveredFinalRefs);
-  phase_times.set_processing_is_mt(processing_is_mt());
 
   if (num_final_refs == 0) {
     log_debug(gc, ref)("Skipped KeepAliveFinalRefsPhase of Reference Processing: no references");
@@ -791,7 +790,6 @@ void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
 
   size_t const num_phantom_refs = total_count(_discoveredPhantomRefs);
   phase_times.set_ref_discovered(REF_PHANTOM, num_phantom_refs);
-  phase_times.set_processing_is_mt(processing_is_mt());
 
   if (num_phantom_refs == 0) {
     log_debug(gc, ref)("Skipped PhantomRefsPhase of Reference Processing: no references");
