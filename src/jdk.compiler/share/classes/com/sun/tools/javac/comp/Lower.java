@@ -121,7 +121,7 @@ public class Lower extends TreeTranslator {
         debugLower = options.isSet("debuglower");
         pkginfoOpt = PkgInfo.get(options);
         optimizeOuterThis =
-            target.omitUnusedPrivateSyntheticEnclosingInstanceFields() ||
+            target.optimizeOuterThis() ||
             options.getBoolean("optimizeOuterThis", false);
         disableProtectedAccessors = options.isSet("disableProtectedAccessors");
     }

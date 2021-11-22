@@ -207,7 +207,7 @@ public enum Target {
     /** Omit unused enclosing instance fields from inner classes that don't access enclosing
      * instance state.
      */
-    public boolean omitUnusedPrivateSyntheticEnclosingInstanceFields() {
+    public boolean optimizeOuterThis() {
         return compareTo(JDK1_18) >= 0;
     }
 }
