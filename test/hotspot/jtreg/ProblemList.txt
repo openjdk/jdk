@@ -74,8 +74,6 @@ compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-x64
 compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
 
-compiler/onSpinWait/TestOnSpinWaitAArch64DefaultFlags.java 8277503 linux-aarch64
-
 
 #############################################################################
 
