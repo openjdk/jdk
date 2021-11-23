@@ -1098,20 +1098,6 @@ public abstract class Provider extends Properties {
         }
     }
 
-    /**
-     * Remove all invalid services from the Map. Invalid services can only
-     * occur if the legacy properties are inconsistent or incomplete.
-     */
-    private void removeInvalidServices(Map<ServiceKey,Service> map) {
-        for (Iterator<Map.Entry<ServiceKey, Service>> t =
-                map.entrySet().iterator(); t.hasNext(); ) {
-            Service s = t.next().getValue();
-            if (s.isValid() == false) {
-                t.remove();
-            }
-        }
-    }
-
     private static String[] getTypeAndAlgorithm(String key) {
         int i = key.indexOf('.');
         if (i < 1) {
