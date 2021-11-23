@@ -38,8 +38,6 @@
 #
 #############################################################################
 
-vmTestbase/nsk/jvmti/AttachOnDemand/attach002a/TestDescription.java 8265795 generic-all
-vmTestbase/nsk/jvmti/AttachOnDemand/attach022/TestDescription.java 8265795 generic-all
 vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects002/referringObjects002.java 8265796  generic-all
 
 #############################################################################
@@ -77,6 +75,8 @@ compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-x64
 compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
 
+compiler/onSpinWait/TestOnSpinWaitAArch64DefaultFlags.java 8277503 linux-aarch64
+
 
 #############################################################################
 
@@ -92,6 +92,8 @@ gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 
+applications/jcstress/acqrel.java 8277434 linux-aarch64
+
 #############################################################################
 
 # :hotspot_runtime
@@ -106,6 +108,7 @@ runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/jni/checked/TestPrimitiveArrayCriticalWithBadParam.java 8277350 macosx-x64
+runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 
 applications/jcstress/copy.java 8229852 linux-all
 
@@ -161,7 +164,6 @@ vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.ja
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/SuspendThread/suspendthrd003/TestDescription.java 8264605 generic-all
-vmTestbase/nsk/jvmti/PopFrame/popframe011/TestDescription.java 8266593 generic-all
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
 

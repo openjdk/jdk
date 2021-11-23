@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-#ifndef SHARE_CLASSFILE_ALTHASHING_HPP
-#define SHARE_CLASSFILE_ALTHASHING_HPP
-
-#include "jni.h"
-#include "memory/allocation.hpp"
 
 /**
- * Implementation of alternate more secure hashing.
+ * @test
+ * @summary Verifies that a VMObjectAlloc event is generated for object created using MethodHandle
+ * @requires vm.jvmti
+ * @run main/othervm/native -agentlib:VMObjectAlloc VMObjectAllocTest
  */
 
-class AltHashing : AllStatic {
-  friend class AltHashingTest;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
-  // For the seed computation
-  static uint64_t halfsiphash_64(const uint32_t* data, int len);
-  static uint64_t halfsiphash_64(uint64_t seed, const uint32_t* data, int len);
+public class VMObjectAllocTest {
 
- public:
-  static uint64_t compute_seed();
+    private static native int getNumberOfAllocation();
 
-  // For Symbols
-  static uint32_t halfsiphash_32(uint64_t seed, const void* in, int len);
-  // For Strings
-  static uint32_t halfsiphash_32(uint64_t seed, const uint16_t* data, int len);
-};
-#endif // SHARE_CLASSFILE_ALTHASHING_HPP
+    public VMObjectAllocTest(String str) {
+    }
+
+    public static void main(String[] args) throws Throwable {
+
+        MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
+        MethodType mt = MethodType.methodType(void.class, String.class);
+        MethodHandle mh = publicLookup.findConstructor(VMObjectAllocTest.class, mt);
+        mh.invoke("str");
+
+        if (getNumberOfAllocation() != 1) {
+            throw new Exception("Number of allocation != 1");
+        }
+    }
+}
