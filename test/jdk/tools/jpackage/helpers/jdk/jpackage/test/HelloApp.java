@@ -133,6 +133,10 @@ public final class HelloApp {
     }
 
     void addTo(JPackageCommand cmd) {
+        // set jlink.debug system property to allow the jlink process
+        // to print exception stacktraces on any failure
+        cmd.addArgument("-J-Djlink.debug=true");
+
         final String moduleName = appDesc.moduleName();
         final String qualifiedClassName = appDesc.className();
 
