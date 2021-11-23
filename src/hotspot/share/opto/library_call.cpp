@@ -1095,12 +1095,12 @@ bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
   Node* vector_iter_coef = VectorNode::scalar2vector(intcon(vector_iter_coef_val), vector_length, TypeInt::INT);
   vector_iter_coef = _gvn.transform(vector_iter_coef);
 
-  // Load a vector at the offset temp_base + temp_offset of array, temp_base should be an int node while
-  // temp_offset be a long node. This division is for convenience when loading strides of unrolled loop
+  // Load a vector at the offset temp_base + temp_offset of array.
+  // This division is for convenience when loading strides of unrolled loop
   auto vector_iter = [&](Node* temp_base, Node* temp_offset) {
     // vector_iter = {a[j * vl], a[j * vl + 1], ..., a[j * vl + (vl - 1)]};
-    Node* temp_iter_addr = array_element_address(array, temp_base, T_BYTE);
-    temp_iter_addr = AddP(array, temp_iter_addr, temp_offset);
+    Node* temp_iter_offset = AddI(temp_base, temp_offset);
+    Node* temp_iter_addr = array_element_address(array, temp_iter_offset, T_BYTE);
     Node* temp_iter = new LoadVectorNode(control(), memory(temp_iter_addr),
                                           temp_iter_addr, TypeAryPtr::BYTES, lvt);
     temp_iter = _gvn.transform(temp_iter);
@@ -1179,7 +1179,7 @@ bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
   // Iteratively calculate each stride sum
   for (jint i = 0; i < UNROLLED_FACTOR; i++) {
     Node* unrolled_sum_next = _gvn.transform(new MulVINode(unrolled_sum[i], unrolled_iter_coef, dvt));
-    Node* unrolled_iter = vector_iter(unrolled_index, longcon(lvt->length() * i));
+    Node* unrolled_iter = vector_iter(unrolled_index, intcon(lvt->length() * i));
     unrolled_sum_next = new AddVINode(unrolled_sum_next, unrolled_iter, dvt);
     unrolled_sum_next = _gvn.transform(unrolled_sum_next);
     unrolled_sum[i]->init_req(2, unrolled_sum_next);
@@ -1244,7 +1244,7 @@ bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
 
   // vector_sum = vector_sum * 31**vl + vector_iter
   Node* vector_sum_next = _gvn.transform(new MulVINode(vector_sum, vector_iter_coef, dvt));
-  vector_sum_next = _gvn.transform(new AddVINode(vector_sum_next, vector_iter(vector_index, longcon(0)), dvt));
+  vector_sum_next = _gvn.transform(new AddVINode(vector_sum_next, vector_iter(vector_index, intcon(0)), dvt));
   vector_sum->init_req(2, vector_sum_next);
 
   set_control(vector_break);
