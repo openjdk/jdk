@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,10 @@ public class Main {
     Map<Integer,Set<String>> pathsMap = new HashMap<>();
 
     // There's also a files array per version
-    Map<Integer,String[]> filesMap = new HashMap<>();
+    // base version is the first entry and then follow with the version given
+    // from the --release option in the command-line order.
+    // The value of each entry is the files given in the command-line order.
+    Map<Integer,String[]> filesMap = new LinkedHashMap<>();
 
     // Do we think this is a multi-release jar?  Set to true
     // if --release option found followed by at least file
@@ -772,15 +775,17 @@ public class Main {
     private void expand(File dir, String[] files, Set<String> cpaths, int version)
         throws IOException
     {
-        if (files == null)
+        if (files == null) {
             return;
+        }
 
         for (int i = 0; i < files.length; i++) {
             File f;
-            if (dir == null)
+            if (dir == null) {
                 f = new File(files[i]);
-            else
+            } else {
                 f = new File(dir, files[i]);
+            }
 
             boolean isDir = f.isDirectory();
             String name = toEntryName(f.getPath(), cpaths, isDir);
@@ -802,18 +807,20 @@ public class Main {
                 Entry e = new Entry(f, name, false);
                 if (isModuleInfoEntry(name)) {
                     moduleInfos.putIfAbsent(name, Files.readAllBytes(f.toPath()));
-                    if (uflag)
+                    if (uflag) {
                         entryMap.put(name, e);
+                    }
                 } else if (entries.add(e)) {
-                    if (uflag)
+                    if (uflag) {
                         entryMap.put(name, e);
+                    }
                 }
             } else if (isDir) {
                 Entry e = new Entry(f, name, true);
                 if (entries.add(e)) {
                     // utilize entryMap for the duplicate dir check even in
                     // case of cflag == true.
-                    // dir name confilict/duplicate could happen with -C option.
+                    // dir name conflict/duplicate could happen with -C option.
                     // just remove the last "e" from the "entries" (zos will fail
                     // with "duplicated" entries), but continue expanding the
                     // sub tree
@@ -822,7 +829,12 @@ public class Main {
                     } else {
                         entryMap.put(name, e);
                     }
-                    expand(f, f.list(), cpaths, version);
+                    String[] dirFiles = f.list();
+                    // Ensure files list is sorted for reproducible jar content
+                    if (dirFiles != null) {
+                        Arrays.sort(dirFiles);
+                    }
+                    expand(f, dirFiles, cpaths, version);
                 }
             } else {
                 error(formatMsg("error.nosuch.fileordir", String.valueOf(f)));
