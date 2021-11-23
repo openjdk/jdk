@@ -35,6 +35,15 @@ import java.nio.ByteOrder;
  *                   -XX:-TieredCompilation compiler.vectorapi.TestIntrinsicBailOut
  */
 
+/*
+ * @test
+ * @bug 8277652
+ * @summary ShenandoahBarrierC2Support::verify_raw_mem testing with malformed control flow graph
+ * @modules jdk.incubator.vector
+ * @requires vm.gc.Shenandoah
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=1 -XX:+UseShenandoahGC
+ *                   -XX:-TieredCompilation compiler.vectorapi.TestIntrinsicBailOut
+ */
 
 public class TestIntrinsicBailOut {
   static final VectorSpecies<Double> SPECIES256 = DoubleVector.SPECIES_256;

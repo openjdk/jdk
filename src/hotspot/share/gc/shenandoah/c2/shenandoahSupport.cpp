@@ -1920,6 +1920,10 @@ void ShenandoahBarrierC2Support::verify_raw_mem(RootNode* root) {
         Node *m = controls.at(next2);
         for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
           Node* u = m->fast_out(i);
+          if (u->is_Region() && u->unique_ctrl_out() == NULL) {
+              // Malformed control flow detected. So return early.
+              return;
+          }
           if (u->is_CFG() && !u->is_Root() &&
               !(u->Opcode() == Op_CProj && u->in(0)->Opcode() == Op_NeverBranch && u->as_Proj()->_con == 1) &&
               !(u->is_Region() && u->unique_ctrl_out()->Opcode() == Op_Halt)) {
