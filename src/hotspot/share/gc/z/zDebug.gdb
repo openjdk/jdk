@@ -129,15 +129,17 @@ define zmarked
     end
 end
 
+# For some reason gdb doesn't like ZCollector::ZPhase::Mark etc.
+# Use hard-coded values instead.
 define z_print_phase
-  if $arg0 == ZPhase::Relocate
-    printf "Relocate"
+  if $arg0 == 0
+    printf "Mark"
   else
-    if $arg0 == ZPhase::Mark
-      printf "Mark"
+    if $arg0 == 1
+      printf "MarkComplete"
     else
-      if $arg0 == ZPhase::MarkComplete
-	printf "MarkComplete"
+      if $arg0 == 2
+        printf "Relocate"
       else
 	printf "Unknown"
       end
@@ -145,7 +147,7 @@ define z_print_phase
   end
 end
 
-define z_print_cycle
+define z_print_collector
   printf "%u", $arg0->_seqnum
   printf "/"
   z_print_phase $arg0->_phase
@@ -153,12 +155,12 @@ end
 
 define zz
   printf "Old: "
-  z_print_cycle ZHeap::_heap->_old_collector
+  z_print_collector ZHeap::_heap->_old_collector
 
   printf " | "
 
   printf "Young: "
-  z_print_cycle ZHeap::_heap->_young_collector
+  z_print_collector ZHeap::_heap->_young_collector
 
   printf "\n"
 end
