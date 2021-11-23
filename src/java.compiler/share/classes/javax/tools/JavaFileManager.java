@@ -360,7 +360,9 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @param kind the kind of file, must be one of {@link
      * JavaFileObject.Kind#SOURCE SOURCE} or {@link
      * JavaFileObject.Kind#CLASS CLASS}
-     * @param originatingFiles the files which are contributing to this newly created file
+     * @param originatingFiles the files which are contributing to this newly created file;
+     *                         {@code null} is equivalent to empty {@code originatingFiles},
+     *                         meaning no known originating files
      * @return a file object for output
      * @throws IllegalArgumentException if sibling is not known to
      * this file manager, or if the location is not known to this file
@@ -503,7 +505,9 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @param location an output location
      * @param packageName a package name
      * @param relativeName a relative name
-     * @param originatingFiles the files which are contributing to this newly created file
+     * @param originatingFiles the files which are contributing to this newly created file;
+     *                         {@code null} is equivalent to empty {@code originatingFiles},
+     *                         meaning no known originating files
      * @return a file object
      * @throws IllegalArgumentException if sibling is not known to
      * this file manager, or if the location is not known to this file
