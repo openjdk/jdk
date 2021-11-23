@@ -89,6 +89,11 @@ class BlockListBuilder {
   void print();
 #endif
 
+  // Removing successor duplication
+  int local_block_number_of_successors(BlockBegin* block);
+  BlockBegin* local_block_successor_at(BlockBegin* block, int i);
+  void local_block_add_successor(BlockBegin* block, BlockBegin* sux);
+
  public:
   // creation
   BlockListBuilder(Compilation* compilation, IRScope* scope, int osr_bci);
@@ -99,6 +104,21 @@ class BlockListBuilder {
 
 
 // Implementation of BlockListBuilder
+
+int BlockListBuilder::local_block_number_of_successors(BlockBegin* block)
+{
+  return block->number_of_sux_from_local();
+}
+
+BlockBegin* BlockListBuilder::local_block_successor_at(BlockBegin* block, int i)
+{
+  return block->sux_at_from_local(i);
+}
+
+void BlockListBuilder::local_block_add_successor(BlockBegin* block, BlockBegin* sux)
+{
+  block->add_successor(sux);
+}
 
 BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int osr_bci)
  : _compilation(compilation)
@@ -170,7 +190,7 @@ BlockBegin* BlockListBuilder::make_block_at(int cur_bci, BlockBegin* predecessor
       BAILOUT_("Exception handler can be reached by both normal and exceptional control flow", block);
     }
 
-    predecessor->add_successor(block);
+    local_block_add_successor(predecessor, block);
     block->increment_total_preds();
   }
 
@@ -202,7 +222,7 @@ void BlockListBuilder::handle_exceptions(BlockBegin* current, int cur_bci) {
 
       // add each exception handler only once
       if (!current->is_successor(entry)) {
-        current->add_successor(entry);
+        local_block_add_successor(current, entry);
         entry->increment_total_preds();
       }
 
@@ -418,9 +438,9 @@ int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   _active.set_bit(block_id);
 
   intptr_t loop_state = 0;
-  for (int i = block->number_of_sux() - 1; i >= 0; i--) {
+  for (int i = local_block_number_of_successors(block) - 1; i >= 0; i--) {
     // recursively process all successors
-    loop_state |= mark_loops(block->sux_at(i), in_subroutine);
+    loop_state |= mark_loops(local_block_successor_at(block, i), in_subroutine);
   }
 
   // clear active-bit after all successors are processed
@@ -477,10 +497,10 @@ void BlockListBuilder::print() {
     tty->print(cur->is_set(BlockBegin::subroutine_entry_flag)        ? " sr" : "   ");
     tty->print(cur->is_set(BlockBegin::parser_loop_header_flag)      ? " lh" : "   ");
 
-    if (cur->number_of_sux() > 0) {
+    if (cur->number_of_sux_from_local() > 0) {
       tty->print("    sux: ");
-      for (int j = 0; j < cur->number_of_sux(); j++) {
-        BlockBegin* sux = cur->sux_at(j);
+      for (int j = 0; j < local_block_number_of_successors(cur); j++) {
+        BlockBegin* sux = local_block_successor_at(cur, j);
         tty->print("B%d ", sux->block_id());
       }
     }
