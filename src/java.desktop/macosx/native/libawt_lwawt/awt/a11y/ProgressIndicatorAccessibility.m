@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,32 +21,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_CLASSFILE_ALTHASHING_HPP
-#define SHARE_CLASSFILE_ALTHASHING_HPP
+#import "ProgressIndicatorAccessibility.h"
 
-#include "jni.h"
-#include "memory/allocation.hpp"
-
-/**
- * Implementation of alternate more secure hashing.
+/*
+ * Implementation of the accessibility peer for the NSProgressIndicator role.
+ * Main usage is JProgressBar
  */
+@implementation ProgressIndicatorAccessibility
 
-class AltHashing : AllStatic {
-  friend class AltHashingTest;
+- (NSAccessibilityRole _Nonnull)accessibilityRole
+{
+    return NSAccessibilityProgressIndicatorRole;
+}
 
-  // For the seed computation
-  static uint64_t halfsiphash_64(const uint32_t* data, int len);
-  static uint64_t halfsiphash_64(uint64_t seed, const uint32_t* data, int len);
+- (NSString * _Nullable)accessibilityValue
+{
+    return [super accessibilityValue];
+}
 
- public:
-  static uint64_t compute_seed();
-
-  // For Symbols
-  static uint32_t halfsiphash_32(uint64_t seed, const void* in, int len);
-  // For Strings
-  static uint32_t halfsiphash_32(uint64_t seed, const uint16_t* data, int len);
-};
-#endif // SHARE_CLASSFILE_ALTHASHING_HPP
+@end
