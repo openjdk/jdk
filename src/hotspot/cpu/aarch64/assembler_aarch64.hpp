@@ -159,6 +159,8 @@ REGISTER_DECLARATION(PRegister, ptrue, p7);
 
 namespace asm_util {
   uint32_t encode_logical_immediate(bool is32, uint64_t imm);
+  uint32_t encode_sve_logical_immediate(unsigned elembits, uint64_t imm);
+  bool operand_valid_for_immediate_bits(int64_t imm, unsigned nbits);
 };
 
 using namespace asm_util;
@@ -1516,6 +1518,8 @@ public:
   static SIMD_Arrangement esize2arrangement(unsigned esize, bool isQ);
   static SIMD_RegVariant elemType_to_regVariant(BasicType bt);
   static SIMD_RegVariant elemBytes_to_regVariant(unsigned esize);
+  // Return the corresponding bits for different SIMD_RegVariant value.
+  static unsigned regVariant_to_elemBits(SIMD_RegVariant T);
 
   enum shift_kind { LSL, LSR, ASR, ROR };
 
@@ -2953,6 +2957,32 @@ public:
   INSN(sve_sub, 0b001);
 #undef INSN
 
+// SVE integer add/subtract immediate (unpredicated)
+#define INSN(NAME, op)                                                  \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, unsigned imm8) {       \
+    starti;                                                             \
+    /* The immediate is an unsigned value in the range 0 to 255, and    \
+     * for element width of 16 bits or higher it may also be a          \
+     * positive multiple of 256 in the range 256 to 65280.              \
+     */                                                                 \
+    assert(T != Q, "invalid size");                                     \
+    int sh = 0;                                                         \
+    if (imm8 <= 0xff) {                                                 \
+      sh = 0;                                                           \
+    } else if (T != B && imm8 <= 0xff00 && (imm8 & 0xff) == 0) {        \
+      sh = 1;                                                           \
+      imm8 = (imm8 >> 8);                                               \
+    } else {                                                            \
+      guarantee(false, "invalid immediate");                            \
+    }                                                                   \
+    f(0b00100101, 31, 24), f(T, 23, 22), f(0b10000, 21, 17);            \
+    f(op, 16, 14), f(sh, 13), f(imm8, 12, 5), rf(Zd, 0);                \
+  }
+
+  INSN(sve_add, 0b011);
+  INSN(sve_sub, 0b111);
+#undef INSN
+
 // SVE floating-point arithmetic - unpredicated
 #define INSN(NAME, opcode)                                                             \
   void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) { \
@@ -3088,6 +3118,20 @@ public:
   INSN(sve_eor, 0b10);
   INSN(sve_orr, 0b01);
   INSN(sve_bic, 0b11);
+#undef INSN
+
+// SVE bitwise logical with immediate (unpredicated)
+#define INSN(NAME, opc)                                                      \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, uint64_t imm) {             \
+    starti;                                                                  \
+    unsigned elembits = regVariant_to_elemBits(T);                           \
+    uint32_t val = encode_sve_logical_immediate(elembits, imm);              \
+    f(0b00000101, 31, 24), f(opc, 23, 22), f(0b0000, 21, 18);                \
+    f(val, 17, 5), rf(Zd, 0);                                                \
+  }
+  INSN(sve_and, 0b10);
+  INSN(sve_eor, 0b01);
+  INSN(sve_orr, 0b00);
 #undef INSN
 
 // SVE shift immediate - unpredicated
@@ -3639,7 +3683,9 @@ void sve_cmp(Condition cond, PRegister Pd, SIMD_RegVariant T,
   virtual void bang_stack_with_offset(int offset);
 
   static bool operand_valid_for_logical_immediate(bool is32, uint64_t imm);
+  static bool operand_valid_for_sve_logical_immediate(unsigned elembits, uint64_t imm);
   static bool operand_valid_for_add_sub_immediate(int64_t imm);
+  static bool operand_valid_for_sve_add_sub_immediate(int64_t imm);
   static bool operand_valid_for_float_immediate(double imm);
 
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);

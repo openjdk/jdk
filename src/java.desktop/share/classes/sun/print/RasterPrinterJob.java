@@ -28,8 +28,6 @@ package sun.print;
 import java.io.FilePermission;
 
 import java.awt.Color;
-import java.awt.Dialog;
-import java.awt.Frame;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
@@ -304,7 +302,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * The redrawing code needs to look at sx, sy to calculate the scale
      * to device resolution.
      */
-    private class GraphicsState {
+    private static class GraphicsState {
         Rectangle2D region;  // Area of page to repaint
         Shape theClip;       // image drawing clip.
         AffineTransform theTransform; // to transform clip to dev coords.

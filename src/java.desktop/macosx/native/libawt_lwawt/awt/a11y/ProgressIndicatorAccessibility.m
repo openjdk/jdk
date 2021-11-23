@@ -1,10 +1,12 @@
 /*
- * Copyright (C) 2020 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,26 +23,22 @@
  * questions.
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
+#import "ProgressIndicatorAccessibility.h"
 
 /*
- * @test
- * @bug 8251155
- * @summary Test host names starting with digits
- * @library /test/lib
- * @build JpsHelper
- * @run driver TestJpsHostName
+ * Implementation of the accessibility peer for the NSProgressIndicator role.
+ * Main usage is JProgressBar
  */
-public class TestJpsHostName {
+@implementation ProgressIndicatorAccessibility
 
-    public static void main(String[] args) throws Throwable {
-        testJpsHostName("12345");
-        testJpsHostName("12345:37266");
-    }
-
-    private static void testJpsHostName(String hostname) throws Exception {
-        OutputAnalyzer output = JpsHelper.jps(hostname);
-        output.shouldNotContain("Malformed Host Identifier: " + hostname);
-    }
-
+- (NSAccessibilityRole _Nonnull)accessibilityRole
+{
+    return NSAccessibilityProgressIndicatorRole;
 }
+
+- (NSString * _Nullable)accessibilityValue
+{
+    return [super accessibilityValue];
+}
+
+@end

@@ -231,9 +231,9 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   };
 
   class G1CardSetHashTableScan : public StackObj {
-    G1CardSet::G1CardSetPtrIterator* _scan_f;
+    G1CardSet::CardSetPtrClosure* _scan_f;
   public:
-    explicit G1CardSetHashTableScan(G1CardSet::G1CardSetPtrIterator* f) : _scan_f(f) { }
+    explicit G1CardSetHashTableScan(G1CardSet::CardSetPtrClosure* f) : _scan_f(f) { }
 
     bool operator()(G1CardSetHashTableValue* value) {
       _scan_f->do_cardsetptr(value->_region_idx, value->_num_occupied, value->_card_set);
@@ -284,12 +284,12 @@ public:
     return found.value();
   }
 
-  void iterate_safepoint(G1CardSet::G1CardSetPtrIterator* cl2) {
+  void iterate_safepoint(G1CardSet::CardSetPtrClosure* cl2) {
     G1CardSetHashTableScan cl(cl2);
     _table.do_safepoint_scan(cl);
   }
 
-  void iterate(G1CardSet::G1CardSetPtrIterator* cl2) {
+  void iterate(G1CardSet::CardSetPtrClosure* cl2) {
     G1CardSetHashTableScan cl(cl2);
     _table.do_scan(Thread::current(), cl);
   }
@@ -800,7 +800,7 @@ void G1CardSet::print_info(outputStream* st, uint card_region, uint card_in_regi
 }
 
 template <class CardVisitor>
-void G1CardSet::iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& found) {
+void G1CardSet::iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& cl) {
   uint type = card_set_type(card_set);
   assert(type == CardSetInlinePtr || type == CardSetArrayOfCards,
          "invalid card set type %d to transfer from",
@@ -809,11 +809,11 @@ void G1CardSet::iterate_cards_during_transfer(CardSetPtr const card_set, CardVis
   switch (type) {
     case CardSetInlinePtr: {
       G1CardSetInlinePtr ptr(card_set);
-      ptr.iterate(found, _config->inline_ptr_bits_per_card());
+      ptr.iterate(cl, _config->inline_ptr_bits_per_card());
       return;
     }
     case CardSetArrayOfCards : {
-      card_set_ptr<G1CardSetArray>(card_set)->iterate(found);
+      card_set_ptr<G1CardSetArray>(card_set)->iterate(cl);
       return;
     }
     default:
@@ -821,56 +821,57 @@ void G1CardSet::iterate_cards_during_transfer(CardSetPtr const card_set, CardVis
   }
 }
 
-void G1CardSet::iterate_containers(G1CardSetPtrIterator* found, bool at_safepoint) {
+void G1CardSet::iterate_containers(CardSetPtrClosure* cl, bool at_safepoint) {
   if (at_safepoint) {
-    _table->iterate_safepoint(found);
+    _table->iterate_safepoint(cl);
   } else {
-    _table->iterate(found);
+    _table->iterate(cl);
   }
 }
 
+// Applied to all card (ranges) of the containers.
 template <typename Closure>
-class G1ContainerCards {
-  Closure& _iter;
+class G1ContainerCardsClosure {
+  Closure& _cl;
   uint _region_idx;
 
 public:
-  G1ContainerCards(Closure& iter, uint region_idx) : _iter(iter), _region_idx(region_idx) { }
+  G1ContainerCardsClosure(Closure& cl, uint region_idx) : _cl(cl), _region_idx(region_idx) { }
 
   bool start_iterate(uint tag) { return true; }
 
   void operator()(uint card_idx) {
-    _iter.do_card(_region_idx, card_idx);
+    _cl.do_card(_region_idx, card_idx);
   }
 
   void operator()(uint card_idx, uint length) {
     for (uint i = 0; i < length; i++) {
-      _iter.do_card(_region_idx, card_idx);
+      _cl.do_card(_region_idx, card_idx);
     }
   }
 };
 
 template <typename Closure, template <typename> class CardOrRanges>
-class G1CardSetIterateCardsIterator : public G1CardSet::G1CardSetPtrIterator {
+class G1CardSetContainersClosure : public G1CardSet::CardSetPtrClosure {
   G1CardSet* _card_set;
-  Closure& _iter;
+  Closure& _cl;
 
 public:
 
-  G1CardSetIterateCardsIterator(G1CardSet* card_set,
-                                Closure& iter) :
+  G1CardSetContainersClosure(G1CardSet* card_set,
+                             Closure& cl) :
     _card_set(card_set),
-    _iter(iter) { }
+    _cl(cl) { }
 
   void do_cardsetptr(uint region_idx, size_t num_occupied, G1CardSet::CardSetPtr card_set) override {
-    CardOrRanges<Closure> cl(_iter, region_idx);
+    CardOrRanges<Closure> cl(_cl, region_idx);
     _card_set->iterate_cards_or_ranges_in_container(card_set, cl);
   }
 };
 
-void G1CardSet::iterate_cards(G1CardSetCardIterator& iter) {
-  G1CardSetIterateCardsIterator<G1CardSetCardIterator, G1ContainerCards> cl(this, iter);
-  iterate_containers(&cl);
+void G1CardSet::iterate_cards(CardClosure& cl) {
+  G1CardSetContainersClosure<CardClosure, G1ContainerCardsClosure> cl2(this, cl);
+  iterate_containers(&cl2);
 }
 
 bool G1CardSet::occupancy_less_or_equal_to(size_t limit) const {
@@ -886,11 +887,11 @@ size_t G1CardSet::occupied() const {
 }
 
 size_t G1CardSet::num_containers() {
-  class GetNumberOfContainers : public G1CardSetPtrIterator {
+  class GetNumberOfContainers : public CardSetPtrClosure {
   public:
     size_t _count;
 
-    GetNumberOfContainers() : G1CardSetPtrIterator(), _count(0) { }
+    GetNumberOfContainers() : CardSetPtrClosure(), _count(0) { }
 
     void do_cardsetptr(uint region_idx, size_t num_occupied, CardSetPtr card_set) override {
       _count++;

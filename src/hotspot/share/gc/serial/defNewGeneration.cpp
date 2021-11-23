@@ -878,11 +878,6 @@ void DefNewGeneration::record_spaces_top() {
   from()->set_top_for_allocations();
 }
 
-void DefNewGeneration::ref_processor_init() {
-  Generation::ref_processor_init();
-}
-
-
 void DefNewGeneration::update_counters() {
   if (UsePerfData) {
     _eden_counters->update_all();

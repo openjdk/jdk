@@ -3931,7 +3931,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * @see sun.java2d.SunGraphicsEnvironment#isFlipStrategyPreferred(ComponentPeer)
      */
-    private class ProxyCapabilities extends ExtendedBufferCapabilities {
+    private static class ProxyCapabilities extends ExtendedBufferCapabilities {
         private BufferCapabilities orig;
         private ProxyCapabilities(BufferCapabilities orig) {
             super(orig.getFrontBufferCapabilities(),

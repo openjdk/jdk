@@ -1381,7 +1381,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     op->addr()->as_pointer_register() :
     op->addr()->as_address_ptr()->base()->as_pointer_register();
   assert(op->addr()->is_register() || op->addr()->as_address_ptr()->disp() == 0, "unexpected disp");
-  assert(op->addr()->is_register() || op->addr()->as_address_ptr()->index() == LIR_OprDesc::illegalOpr(), "unexpected index");
+  assert(op->addr()->is_register() || op->addr()->as_address_ptr()->index() == LIR_Opr::illegalOpr(), "unexpected index");
   if (op->code() == lir_cas_int || op->code() == lir_cas_obj) {
     Register cmpval = op->cmp_value()->as_register();
     Register newval = op->new_value()->as_register();
