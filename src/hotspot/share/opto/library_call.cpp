@@ -1305,7 +1305,7 @@ bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
 
   // scalar_sum = scalar_sum * 31 + a[i];
   PhiNode* scalar_sum = new PhiNode(scalar_loop, TypeInt::INT);
-  sum->init_req(1, scalar_sum_start);
+  scalar_sum->init_req(1, scalar_sum_start);
   _gvn.set_type(scalar_sum, TypeInt::INT);
   record_for_igvn(scalar_sum);
 
