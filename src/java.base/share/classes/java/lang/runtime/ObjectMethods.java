@@ -273,9 +273,9 @@ public class ObjectMethods {
         MethodHandle[] toSplit = getters;
         int namesIndex = 0;
         do {
-            /* StringConcatFactory::makeConcatWithConstants can only deal with 200 spots, longs and double occupy two
-             * the rest 1 spot, we need to chop the current `getters` into chuncks, it could be that for records with
-             * a lot of components that we need to do a couple of iterations. The main diference between the first
+            /* StringConcatFactory::makeConcatWithConstants can only deal with 200 slots, longs and double occupy two
+             * the rest 1 slot, we need to chop the current `getters` into chunks, it could be that for records with
+             * a lot of components that we need to do a couple of iterations. The main difference between the first
              * iteration and the rest would be on the recipe
              */
             splits = split(toSplit);
@@ -311,6 +311,7 @@ public class ObjectMethods {
                             new Object[0]
                     ).getTarget();
                     mhs[splitIndex] = MethodHandles.filterArguments(mhs[splitIndex], 0, currentSplitGetters);
+                    // this will spread the receiver class across all the getters
                     mhs[splitIndex] = MethodHandles.permuteArguments(
                             mhs[splitIndex],
                             MethodType.methodType(String.class, receiverClass),
@@ -327,10 +328,10 @@ public class ObjectMethods {
     }
 
     /**
-     * Chops the getters into smaller chunks according to the maximum number of spots
+     * Chops the getters into smaller chunks according to the maximum number of slots
      * StringConcatFactory::makeConcatWithConstants can chew
      * @param getters the current getters
-     * @return chunks that wont surpass the maximum number of spots StringConcatFactory::makeConcatWithConstants can chew
+     * @return chunks that wont surpass the maximum number of slots StringConcatFactory::makeConcatWithConstants can chew
      */
     private static List<List<MethodHandle>> split(MethodHandle[] getters) {
         List<List<MethodHandle>> splits = new ArrayList<>();
