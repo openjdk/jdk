@@ -41,6 +41,8 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import jdk.internal.jmod.JmodFile;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import static jdk.internal.jmod.JmodFile.*;
 
@@ -107,7 +109,7 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
         ZipEntry e2 = new ZipEntry(e1.getName());
         e2.setMethod(e1.getMethod());
         if (sourceDate != -1) {
-            e2.setTime(sourceDate);
+            e2.setTimeLocal(LocalDateTime.ofEpochSecond(sourceDate, 0, ZoneOffset.UTC));
         } else {
             e2.setTime(e1.getTime());
         }
@@ -132,7 +134,7 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
         entries.get(section).add(path);
         ZipEntry zipEntry = new ZipEntry(name);
         if (sourceDate != -1) {
-            zipEntry.setTime(sourceDate);
+            zipEntry.setTimeLocal(LocalDateTime.ofEpochSecond(sourceDate, 0, ZoneOffset.UTC));
         }
         return zipEntry;
     }

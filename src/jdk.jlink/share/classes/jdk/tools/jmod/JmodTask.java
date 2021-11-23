@@ -62,6 +62,8 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import jdk.internal.jmod.JmodFile;
 import jdk.internal.jmod.JmodFile.Section;
@@ -975,7 +977,7 @@ public class JmodTask {
                             // what about module-info.class in versioned entries?
                             ZipEntry ze = new ZipEntry(e.getName());
                             if (options.sourceDate != -1) {
-                                ze.setTime(options.sourceDate);
+                                ze.setTimeLocal(LocalDateTime.ofEpochSecond(options.sourceDate, 0, ZoneOffset.UTC));
                             } else {
                                 ze.setTime(System.currentTimeMillis());
                             }

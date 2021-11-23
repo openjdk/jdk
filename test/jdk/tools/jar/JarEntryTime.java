@@ -125,8 +125,8 @@ public class JarEntryTime {
         check(jarFile.exists());
 
         // Make a jar file from that directory structure with
-        // --source-date set to 1647302400000 (15/03/2022)
-        long sourceDate = 1647302400000L;
+        // --source-date set to epoch seconds 1647302400 (15/03/2022)
+        long sourceDate = 1647302400L;
         check(JAR_TOOL.run(System.out, System.err,
                            "--create",
                            "--file", jarFileSourceDate.getName(),
@@ -178,9 +178,9 @@ public class JarEntryTime {
         check(dirOuter.exists());
         check(dirInner.exists());
         check(fileInner.exists());
-        checkFileTime(dirOuter.lastModified(), sourceDate);
-        checkFileTime(dirInner.lastModified(), sourceDate);
-        checkFileTime(fileInner.lastModified(), sourceDate);
+        checkFileTime(dirOuter.lastModified(), sourceDate * 1000);
+        checkFileTime(dirInner.lastModified(), sourceDate * 1000);
+        checkFileTime(fileInner.lastModified(), sourceDate * 1000);
 
         check(cleanup(dirInner));
         check(cleanup(dirOuter));

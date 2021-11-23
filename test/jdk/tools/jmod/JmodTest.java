@@ -210,8 +210,8 @@ public class JmodTest {
         FileUtils.deleteFileIfExistsWithRetry(jmod1);
         FileUtils.deleteFileIfExistsWithRetry(jmod2);
 
-        // Use source date of 15/03/2022
-        long sourceDate = 1647302400000L;
+        // Use source date of epoch seconds 15/03/2022
+        long sourceDate = 1647302400L;
 
         jmod("create",
              "--class-path", cp,
