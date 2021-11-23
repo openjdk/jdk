@@ -203,4 +203,11 @@ public enum Target {
     public boolean obsoleteAccStrict() {
         return compareTo(JDK1_17) >= 0;
     }
+
+    /** Omit unused enclosing instance fields from inner classes that don't access enclosing
+     * instance state.
+     */
+    public boolean optimizeOuterThis() {
+        return compareTo(JDK1_18) >= 0;
+    }
 }
