@@ -719,16 +719,23 @@ void DeoptimizationBlob::print_value_on(outputStream* st) const {
 
 // Implementation of OptimizedEntryBlob
 
-OptimizedEntryBlob::OptimizedEntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
+OptimizedEntryBlob::OptimizedEntryBlob(const char* name, CodeBuffer* cb, int size, int frame_complete, int frame_size,
+                                       intptr_t exception_handler_offset,
                                        jobject receiver, ByteSize frame_data_offset) :
-  BufferBlob(name, size, cb),
+  RuntimeBlob(name, cb, sizeof(OptimizedEntryBlob), size, frame_complete, frame_size,
+              /* oop_maps */ nullptr, /* caller should gc arguments */ false),
   _exception_handler_offset(exception_handler_offset),
   _receiver(receiver),
   _frame_data_offset(frame_data_offset) {
   CodeCache::commit(this);
 }
 
-OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb, intptr_t exception_handler_offset,
+void* OptimizedEntryBlob::operator new(size_t s, unsigned size) throw() {
+  return CodeCache::allocate(size, CodeBlobType::NonNMethod);
+}
+
+OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb, int frame_complete, int frame_size,
+                                               intptr_t exception_handler_offset,
                                                jobject receiver, ByteSize frame_data_offset) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
@@ -736,7 +743,8 @@ OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb,
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(OptimizedEntryBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) OptimizedEntryBlob(name, size, cb, exception_handler_offset, receiver, frame_data_offset);
+    blob = new (size) OptimizedEntryBlob(name, cb, size, frame_complete, frame_size,
+                                         exception_handler_offset, receiver, frame_data_offset);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -750,4 +758,17 @@ void OptimizedEntryBlob::oops_do(OopClosure* f, const frame& frame) {
 
 JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
   return &frame_data_for_frame(frame)->jfa;
+}
+
+void OptimizedEntryBlob::verify() {
+  // unimplemented
+}
+
+void OptimizedEntryBlob::print_on(outputStream* st) const {
+  RuntimeBlob::print_on(st);
+  print_value_on(st);
+}
+
+void OptimizedEntryBlob::print_value_on(outputStream* st) const {
+  st->print_cr("OptimizedEntryBlob (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
 }

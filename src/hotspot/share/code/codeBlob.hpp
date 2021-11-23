@@ -60,13 +60,13 @@ struct CodeBlobType {
 //    AdapterBlob        : Used to hold C2I/I2C adapters
 //    VtableBlob         : Used for holding vtable chunks
 //    MethodHandlesAdapterBlob : Used to hold MethodHandles adapters
-//    OptimizedEntryBlob : Used for upcalls from native code
 //   RuntimeStub         : Call to VM runtime methods
 //   SingletonBlob       : Super-class for all blobs that exist in only one instance
 //    DeoptimizationBlob : Used for deoptimization
 //    ExceptionBlob      : Used for stack unrolling
 //    SafepointBlob      : Used to handle illegal instruction exceptions
 //    UncommonTrapBlob   : Used to handle uncommon traps
+//   OptimizedEntryBlob  : Used for upcalls from native code
 //
 //
 // Layout : continuous in the CodeCache
@@ -740,15 +740,22 @@ class SafepointBlob: public SingletonBlob {
 
 class ProgrammableUpcallHandler;
 
-class OptimizedEntryBlob: public BufferBlob {
+class OptimizedEntryBlob: public RuntimeBlob {
   friend class ProgrammableUpcallHandler;
  private:
   intptr_t _exception_handler_offset;
   jobject _receiver;
   ByteSize _frame_data_offset;
 
-  OptimizedEntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
+  OptimizedEntryBlob(const char* name, CodeBuffer* cb, int size, int frame_complete, int frame_size,
+                     intptr_t exception_handler_offset,
                      jobject receiver, ByteSize frame_data_offset);
+
+  // This ordinary operator delete is needed even though not used, so the
+  // below two-argument operator delete will be treated as a placement
+  // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
+  void operator delete(void* p);
+  void* operator new(size_t s, unsigned size) throw();
 
   struct FrameData {
     JavaFrameAnchor jfa;
@@ -762,19 +769,27 @@ class OptimizedEntryBlob: public BufferBlob {
   FrameData* frame_data_for_frame(const frame& frame) const;
  public:
   // Creation
-  static OptimizedEntryBlob* create(const char* name, CodeBuffer* cb,
-                                    intptr_t exception_handler_offset, jobject receiver,
-                                    ByteSize frame_data_offset);
+  static OptimizedEntryBlob* create(const char* name, CodeBuffer* cb, int frame_complete, int frame_size,
+                                    intptr_t exception_handler_offset,
+                                    jobject receiver, ByteSize frame_data_offset);
 
   address exception_handler() { return code_begin() + _exception_handler_offset; }
   jobject receiver() { return _receiver; }
 
   JavaFrameAnchor* jfa_for_frame(const frame& frame) const;
 
-  void oops_do(OopClosure* f, const frame& frame);
-
   // Typing
   virtual bool is_optimized_entry_blob() const override { return true; }
+
+  // GC/Verification support
+  void oops_do(OopClosure* f, const frame& frame);
+  virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) override;
+  virtual bool is_alive() const override { return true; }
+  virtual void verify() override;
+
+  // Misc.
+  virtual void print_on(outputStream* st) const override;
+  virtual void print_value_on(outputStream* st) const override;
 };
 
 #endif // SHARE_CODE_CODEBLOB_HPP
