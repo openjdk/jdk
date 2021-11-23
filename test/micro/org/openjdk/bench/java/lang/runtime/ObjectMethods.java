@@ -27,6 +27,7 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
 import java.lang.invoke.MethodHandle;
@@ -83,8 +84,9 @@ public class ObjectMethods {
 
     R0 r0;
     R1 r1;
+    R10 r10;
     R100 r100;
-    R100 r254;
+    R254 r254;
 
     @Setup
     public void prepare() {
