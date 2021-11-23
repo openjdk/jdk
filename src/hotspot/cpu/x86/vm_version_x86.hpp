@@ -911,8 +911,11 @@ public:
   static bool is_intel_skylake() { return is_intel_family_core() &&
                                           extended_cpu_model() == CPU_MODEL_SKYLAKE; }
 
+  // avx3_threshold() sets the threshold at which 64-byte instructions are used
+  // for implementing the array copy and clear operations.
   // The Intel platforms that supports the serialize instruction
-  // has improved implementation of 64-byte load/stores.
+  // has improved implementation of 64-byte load/stores and so the threshold
+  // is set to 0 for these platforms.
   static int avx3_threshold() { return ((is_intel_family_core() &&
                                 supports_serialize()) ? 0: AVX3Threshold); }
 
