@@ -44,6 +44,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -94,8 +95,14 @@ public class IndyCorrectInvocationName implements Plugin {
         Path pluginClasses = Path.of("plugin-classes");
         tb.writeFile(pluginClasses.resolve("META-INF").resolve("services").resolve(Plugin.class.getName()),
                 IndyCorrectInvocationName.class.getName() + "\n");
-        Files.copy(Path.of(ToolBox.testClasses).resolve("IndyCorrectInvocationName.class"),
-                pluginClasses.resolve("IndyCorrectInvocationName.class"));
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(Path.of(ToolBox.testClasses))) {
+            for (Path p : ds) {
+                if (!p.getFileName().toString().startsWith("IndyCorrectInvocationName") ||
+                    !p.getFileName().toString().endsWith(".class")) {
+                    Files.copy(p, pluginClasses.resolve(p.getFileName()));
+                }
+            }
+        }
 
         Path pluginJar = Path.of("plugin.jar");
         new JarTask(tb, pluginJar)
