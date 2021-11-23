@@ -2277,7 +2277,7 @@ public class Main {
         if (sourceDate != -1) {
           e.setTimeLocal(LocalDateTime.ofEpochSecond(sourceDate, 0, ZoneOffset.UTC));
         } else {
-          e.setTime(origTime); 
+          e.setTime(origTime);
         }
     }
 }
