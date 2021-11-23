@@ -38,7 +38,6 @@
 #
 #############################################################################
 
-vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects002/referringObjects002.java 8265796  generic-all
 
 #############################################################################
 
@@ -75,8 +74,6 @@ compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-x64
 compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
 
-compiler/onSpinWait/TestOnSpinWaitAArch64DefaultFlags.java 8277503 linux-aarch64
-
 
 #############################################################################
 
@@ -107,7 +104,6 @@ runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
-runtime/jni/checked/TestPrimitiveArrayCriticalWithBadParam.java 8277350 macosx-x64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 
 applications/jcstress/copy.java 8229852 linux-all
