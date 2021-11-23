@@ -911,7 +911,10 @@ public:
   static bool is_intel_skylake() { return is_intel_family_core() &&
                                           extended_cpu_model() == CPU_MODEL_SKYLAKE; }
 
-  static int avx3_threshold() { return (supports_serialize() ? 0: AVX3Threshold); }
+  // The Intel platforms that supports the serialize instruction
+  // has improved implementation of 64-byte load/stores.
+  static int avx3_threshold() { return ((is_intel_family_core() &&
+                                supports_serialize()) ? 0: AVX3Threshold); }
 
   static bool is_intel_tsc_synched_at_init()  {
     if (is_intel_family_core()) {
