@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,29 @@
  * questions.
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
+#include <stdio.h>
+#include <stdlib.h>
+#include <dlfcn.h>
 
-/*
- * @test
- * @bug 8251155
- * @summary Test host names starting with digits
- * @library /test/lib
- * @build JpsHelper
- * @run driver TestJpsHostName
- */
-public class TestJpsHostName {
+int main(int argc, char** argv)
+{
+    void *handle;
 
-    public static void main(String[] args) throws Throwable {
-        testJpsHostName("12345");
-        testJpsHostName("12345:37266");
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <lib_filename_or_full_path>\n", argv[0]);
+        return EXIT_FAILURE;
     }
 
-    private static void testJpsHostName(String hostname) throws Exception {
-        OutputAnalyzer output = JpsHelper.jps(hostname);
-        output.shouldNotContain("Malformed Host Identifier: " + hostname);
+    printf("Attempting to load library '%s'...\n", argv[1]);
+
+    handle = dlopen(argv[1], RTLD_LAZY);
+
+    if (handle == NULL) {
+       fprintf(stderr, "Unable to load library!\n");
+       return EXIT_FAILURE;
     }
 
+    printf("Library successfully loaded!\n");
+
+    return dlclose(handle);
 }
