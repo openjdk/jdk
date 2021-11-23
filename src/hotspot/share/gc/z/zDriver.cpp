@@ -966,8 +966,8 @@ void ZDriverMajor::run_service() {
     // Run GC
     gc(request);
 
-    if (should_terminate()) {
-      // Abort
+    if (ZAbort::should_abort()) {
+      minor_unblock();
       break;
     }
 
