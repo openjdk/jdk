@@ -769,7 +769,7 @@ public class JmodTask {
         {
             // Keep a sorted set of files to be processed, so that the jmod
             // content is reproducible as Files.walkFileTree order is not defined
-            SortedMap<String, Path> filesToProcess  = new TreeMap<String, Path>();
+            SortedMap<String, Path> filesToProcess = new TreeMap<String, Path>();
 
             Files.walkFileTree(path, Set.of(FileVisitOption.FOLLOW_LINKS),
                 Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
