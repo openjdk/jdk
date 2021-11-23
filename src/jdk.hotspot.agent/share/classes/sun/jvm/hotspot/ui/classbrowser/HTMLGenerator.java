@@ -1281,8 +1281,6 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          if (w == Location.Where.ON_STACK) {
             buf.append("stack[" + loc.getStackOffset() + "]");
          } else if (w == Location.Where.IN_REGISTER) {
-            boolean isFloat = (type == Location.Type.FLOAT_IN_DBL ||
-                               type == Location.Type.DBL);
             int regNum = loc.getRegisterNumber();
             VMReg vmReg = new VMReg(regNum);
             buf.append(VMRegImpl.getRegisterName(vmReg.getValue()));

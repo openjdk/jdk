@@ -421,9 +421,6 @@ public:
   // Discover a Reference object, using appropriate discovery criteria
   virtual bool discover_reference(oop obj, ReferenceType rt);
 
-  // Has discovered references that need handling
-  bool has_discovered_references();
-
   // Process references found during GC (called by the garbage collector)
   ReferenceProcessorStats
   process_discovered_references(RefProcProxyTask& proxy_task,

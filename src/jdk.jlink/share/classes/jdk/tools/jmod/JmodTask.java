@@ -770,6 +770,10 @@ public class JmodTask {
         void processSection(JmodOutputStream out, Section section, Path path)
             throws IOException
         {
+            // Keep a sorted set of files to be processed, so that the jmod
+            // content is reproducible as Files.walkFileTree order is not defined
+            SortedMap<String, Path> filesToProcess = new TreeMap<String, Path>();
+
             Files.walkFileTree(path, Set.of(FileVisitOption.FOLLOW_LINKS),
                 Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
                     @Override
@@ -785,14 +789,21 @@ public class JmodTask {
                             if (out.contains(section, name)) {
                                 warning("warn.ignore.duplicate.entry", name, section);
                             } else {
-                                try (InputStream in = Files.newInputStream(file)) {
-                                    out.writeEntry(in, section, name);
-                                }
+                                filesToProcess.put(name, file);
                             }
                         }
                         return FileVisitResult.CONTINUE;
                     }
                 });
+
+            // Process files in sorted order for deterministic jmod content
+            for (Map.Entry<String, Path> entry : filesToProcess.entrySet()) {
+                String name = entry.getKey();
+                Path   file = entry.getValue();
+                try (InputStream in = Files.newInputStream(file)) {
+                    out.writeEntry(in, section, name);
+                }
+            }
         }
 
         boolean matches(Path path, List<PathMatcher> matchers) {
