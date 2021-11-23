@@ -193,13 +193,7 @@ Address LIR_Assembler::as_Address(LIR_Address* addr, Register tmp) {
     ptrdiff_t offset = ptrdiff_t(addr->disp());
     // NOTE: Does not handle any 16 byte vector access.
     const uint type_size = type2aelembytes(addr->type(), true);
-    const uint log2_size = log2i_exact(type_size);
-    if (Address::offset_ok_for_immed(offset, log2_size)) {
-      return Address(base, offset);
-    } else {
-      __ mov(tmp, offset);
-      return Address(base, tmp);
-    }
+    return __ legitimize_address(Address(base, offset), type_size, tmp);
   }
   return Address();
 }
