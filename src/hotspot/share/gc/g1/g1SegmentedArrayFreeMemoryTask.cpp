@@ -59,7 +59,7 @@ bool G1SegmentedArrayFreeMemoryTask::calculate_return_infos(jlong deadline) {
     size_t return_to_vm_size = keep_size(free._num_mem_sizes[i],
                                          used._num_mem_sizes[i],
                                          G1RemSetFreeMemoryKeepExcessRatio);
-    log_trace(gc, task)("Card Set Free Memory: Type %s: Free: %zu (%zu) "
+    log_trace(gc, task)("Segmented Array Free Memory: Type %s: Free: %zu (%zu) "
                         "Used: %zu Keep: %zu",
                         G1CardSetConfiguration::mem_object_type_name_str(i),
                         free._num_mem_sizes[i], free._num_segments[i],
@@ -112,7 +112,7 @@ bool G1SegmentedArrayFreeMemoryTask::free_excess_segmented_array_memory() {
   jlong end = start +
               (os::elapsed_frequency() / 1000) * G1RemSetFreeMemoryStepDurationMillis;
 
-  log_trace(gc, task)("Card Set Free Memory: Step start %1.3f end %1.3f",
+  log_trace(gc, task)("Segmented Array Free Memory: Step start %1.3f end %1.3f",
                       TimeHelper::counter_to_millis(start), TimeHelper::counter_to_millis(end));
 
   State next_state;
@@ -149,7 +149,7 @@ bool G1SegmentedArrayFreeMemoryTask::free_excess_segmented_array_memory() {
         break;
       }
       default:
-        log_error(gc, task)("Should not try to free excess card set memory in %s state", get_state_name(_state));
+        log_error(gc, task)("Should not try to free excess segmented array memory in %s state", get_state_name(_state));
         ShouldNotReachHere();
         break;
     }
@@ -157,7 +157,7 @@ bool G1SegmentedArrayFreeMemoryTask::free_excess_segmented_array_memory() {
     set_state(next_state);
   } while (_state != State::Inactive && !deadline_exceeded(end));
 
-  log_trace(gc, task)("Card Set Free Memory: Step took %1.3fms, done %s",
+  log_trace(gc, task)("Segmented Array Free Memory: Step took %1.3fms, done %s",
                       TimeHelper::counter_to_millis(os::elapsed_counter() - start),
                       bool_to_str(_state == State::CalculateUsed));
 
