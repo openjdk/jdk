@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/isGCActiveMark.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zNMethod.hpp"
@@ -492,6 +493,9 @@ void ZVerify::after_mark() {
     roots_strong(true /* verify_fixed */);
   }
   if (ZVerifyObjects) {
+    // Workaround OopMapCacheAllocation_lock reordering with the StackWatermark_lock
+    DisableIsGCActiveMark mark;
+
     objects(false /* verify_weaks */);
     guarantee(zverify_broken_object == zaddress::null, "Verification failed");
   }
