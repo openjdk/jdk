@@ -276,4 +276,3 @@ public class IndyCorrectInvocationName implements Plugin {
     }
 
 }
-
