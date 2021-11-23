@@ -456,7 +456,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             defaultStyles = new StyleSheet();
             appContext.put(DEFAULT_STYLES_KEY, defaultStyles);
             try (InputStream is = HTMLEditorKit.getResourceAsStream(DEFAULT_CSS);
-                 Reader r = new BufferedReader(new InputStreamReader(is, ISO_8859_1)))
+                 InputStreamReader isr = new InputStreamReader(is, ISO_8859_1);
+                 Reader r = new BufferedReader(isr))
             {
                 defaultStyles.loadRules(r, null);
             } catch (Throwable e) {

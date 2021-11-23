@@ -479,7 +479,8 @@ public class StyleSheet extends StyleContext {
      */
     public void importStyleSheet(URL url) {
         try (InputStream is = url.openStream();
-             Reader r = new BufferedReader(new InputStreamReader(is)))
+             InputStreamReader isr = new InputStreamReader(is);
+             Reader r = new BufferedReader(isr))
         {
             CssParser parser = new CssParser();
             parser.parse(url, r, false, true);
