@@ -32,7 +32,7 @@
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build SyntheticTestDriver ExpectedClass ExpectedClasses
- * @compile BridgeMethodsForLambdaTest.java
+ * @compile -XDdeduplicateLambdas=false BridgeMethodsForLambdaTest.java
  * @run main SyntheticTestDriver BridgeMethodsForLambdaTest
  */
 
