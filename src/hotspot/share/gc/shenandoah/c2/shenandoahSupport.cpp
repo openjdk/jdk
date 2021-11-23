@@ -54,7 +54,7 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
     PhaseIdealLoop::optimize(igvn, LoopOptsShenandoahExpand);
     if (C->failing()) return false;
     PhaseIdealLoop::verify(igvn);
-    DEBUG_ONLY(verify_raw_mem(C->root());)
+    //DEBUG_ONLY(verify_raw_mem(C->root());)
     if (attempt_more_loopopts) {
       C->set_major_progress();
       if (!C->optimize_loops(igvn, LoopOptsShenandoahPostExpand)) {
@@ -964,17 +964,10 @@ void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl,
   phase->register_new_node(cset_bool,      old_ctrl);
 }
 
-void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem,
+void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr,
                                                DecoratorSet decorators, PhaseIdealLoop* phase) {
   IdealLoopTree*loop = phase->get_loop(ctrl);
   const TypePtr* obj_type = phase->igvn().type(val)->is_oopptr();
-
-  // The slow path stub consumes and produces raw memory in addition
-  // to the existing memory edges
-  Node* base = find_bottom_mem(ctrl, phase);
-  MergeMemNode* mm = MergeMemNode::make(base);
-  mm->set_memory_at(Compile::AliasIdxRaw, raw_mem);
-  phase->register_new_node(mm, ctrl);
 
   address calladdr = NULL;
   const char* name = NULL;
@@ -1013,7 +1006,7 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
 
   call->init_req(TypeFunc::Control, ctrl);
   call->init_req(TypeFunc::I_O, phase->C->top());
-  call->init_req(TypeFunc::Memory, mm);
+  call->init_req(TypeFunc::Memory, phase->C->top());
   call->init_req(TypeFunc::FramePtr, phase->C->top());
   call->init_req(TypeFunc::ReturnAdr, phase->C->top());
   call->init_req(TypeFunc::Parms, val);
@@ -1021,8 +1014,6 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
   phase->register_control(call, loop, ctrl);
   ctrl = new ProjNode(call, TypeFunc::Control);
   phase->register_control(ctrl, loop, call);
-  result_mem = new ProjNode(call, TypeFunc::Memory);
-  phase->register_new_node(result_mem, call);
   val = new ProjNode(call, TypeFunc::Parms);
   phase->register_new_node(val, call);
   val = new CheckCastPPNode(ctrl, val, obj_type);
@@ -1341,12 +1332,9 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* ctrl = phase->get_ctrl(lrb);
     Node* val = lrb->in(ShenandoahLoadReferenceBarrierNode::ValueIn);
 
-
     Node* orig_ctrl = ctrl;
 
     Node* raw_mem = fixer.find_mem(ctrl, lrb);
-    Node* init_raw_mem = raw_mem;
-    Node* raw_mem_for_ctrl = fixer.find_mem(ctrl, NULL);
 
     IdealLoopTree *loop = phase->get_loop(ctrl);
 
@@ -1359,7 +1347,6 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     enum { _heap_stable = 1, _evac_path, _not_cset, PATH_LIMIT };
     Node* region = new RegionNode(PATH_LIMIT);
     Node* val_phi = new PhiNode(region, val->bottom_type()->is_oopptr());
-    Node* raw_mem_phi = PhiNode::make(region, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
 
     // Stable path.
     int flags = ShenandoahHeap::HAS_FORWARDED;
@@ -1372,7 +1359,6 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     // Heap stable case
     region->init_req(_heap_stable, heap_stable_ctrl);
     val_phi->init_req(_heap_stable, val);
-    raw_mem_phi->init_req(_heap_stable, raw_mem);
 
     // Test for in-cset, unless it's a native-LRB. Native LRBs need to return NULL
     // even for non-cset objects to prevent ressurrection of such objects.
@@ -1384,11 +1370,9 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     if (not_cset_ctrl != NULL) {
       region->init_req(_not_cset, not_cset_ctrl);
       val_phi->init_req(_not_cset, val);
-      raw_mem_phi->init_req(_not_cset, raw_mem);
     } else {
       region->del_req(_not_cset);
       val_phi->del_req(_not_cset);
-      raw_mem_phi->del_req(_not_cset);
     }
 
     // Resolve object when orig-value is in cset.
@@ -1429,15 +1413,13 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
         }
       }
     }
-    call_lrb_stub(ctrl, val, addr, result_mem, raw_mem, lrb->decorators(), phase);
+    call_lrb_stub(ctrl, val, addr, lrb->decorators(), phase);
     region->init_req(_evac_path, ctrl);
     val_phi->init_req(_evac_path, val);
-    raw_mem_phi->init_req(_evac_path, result_mem);
 
     phase->register_control(region, loop, heap_stable_iff);
     Node* out_val = val_phi;
     phase->register_new_node(val_phi, region);
-    phase->register_new_node(raw_mem_phi, region);
 
     fix_ctrl(lrb, region, fixer, uses, uses_to_ignore, last, phase);
 
@@ -1450,18 +1432,10 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     for(uint next = 0; next < uses.size(); next++ ) {
       Node *n = uses.at(next);
       assert(phase->get_ctrl(n) == ctrl, "bad control");
-      assert(n != init_raw_mem, "should leave input raw mem above the barrier");
+      assert(n != raw_mem, "should leave input raw mem above the barrier");
       phase->set_ctrl(n, region);
       follow_barrier_uses(n, ctrl, uses, phase);
     }
-
-    // The slow path call produces memory: hook the raw memory phi
-    // from the expanded load reference barrier with the rest of the graph
-    // which may require adding memory phis at every post dominated
-    // region and at enclosing loop heads. Use the memory state
-    // collected in memory_nodes to fix the memory graph. Update that
-    // memory state as we go.
-    fixer.fix_mem(ctrl, region, init_raw_mem, raw_mem_for_ctrl, raw_mem_phi, uses);
   }
   // Done expanding load-reference-barriers.
   assert(ShenandoahBarrierSetC2::bsc2()->state()->load_reference_barriers_count() == 0, "all load reference barrier nodes should have been replaced");
