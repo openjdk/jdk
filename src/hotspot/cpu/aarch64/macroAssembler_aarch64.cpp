@@ -4923,6 +4923,92 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
   bind(fini);
 }
 
+// Intrinsic for
+//
+// - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
+//     return the number of characters copied.
+// - java/lang/StringUTF16.compress
+//     return zero (0) if copy fails, otherwise 'len'.
+//
+// This version always returns the number of characters copied, and does not
+// clobber the 'len' register. A successful copy will complete with the post-
+// condition: 'res' == 'len', while an unsuccessful copy will exit with the
+// post-condition: 0 <= 'res' < 'len'.
+//
+void MacroAssembler::encode_iso_array(Register src, Register dst,
+                                      Register len, Register res, bool ascii,
+                                      FloatRegister vtmp0, FloatRegister vtmp1,
+                                      FloatRegister vtmp2, FloatRegister vtmp3)
+{
+  Register cnt = res;
+
+  prfm(Address(src), PLDL1STRM);
+  movw(cnt, len);
+
+  Label LOOP_16, BREAK_LOOP_16;
+
+  BIND(LOOP_16);
+  {
+    cmpw(cnt, 16);
+    br(LT, BREAK_LOOP_16);
+    if (SoftwarePrefetchHintDistance >= 0) {
+      prfm(Address(dst), PSTL1KEEP);
+    }
+    FloatRegister vc0 = vtmp0;
+    FloatRegister vc1 = vtmp1;
+    ld1(vc0, vc1, T16B, src);
+
+    FloatRegister vhi = vtmp2;
+    FloatRegister vlo = vtmp3;
+    uzp2(vhi, T16B, vc0, vc1);
+    uzp1(vlo, T16B, vc0, vc1);
+
+    // ISO-check on hi-parts (all zero).
+    Register max = rscratch1;
+    umaxv(vhi, T16B, vhi);
+    umov(max, vhi, B, 0);
+    cbnzw(max, BREAK_LOOP_16);
+
+    if (ascii) {
+      // Ascii-check (separate "pass") on lo-parts (no sign).
+      FloatRegister vt0 = vtmp2;
+      cmlt(vt0, T16B, vlo);
+      umaxv(vt0, T16B, vt0);
+      umov(max, vt0, B, 0);
+      cbnzw(max, BREAK_LOOP_16);
+    }
+    if (SoftwarePrefetchHintDistance >= 0) {
+      prfm(Address(src, 32), PLDL1STRM);
+    }
+    subw(cnt, cnt, 16);
+
+    st1(vlo, T16B, dst);
+    add(src, src, 32);
+    add(dst, dst, 16);
+    b(LOOP_16);
+  }
+  BIND(BREAK_LOOP_16);
+
+  Label DONE;
+  Label LOOP;
+
+  cbz(cnt, DONE);
+  BIND(LOOP);
+  {
+    Register tmp = rscratch1;
+    ldrh(tmp, Address(post(src, 2)));
+    tst(tmp, ascii ? 0xff80 : 0xff00);
+    br(NE, DONE);
+    strb(tmp, Address(post(dst, 1)));
+    subs(cnt, cnt, 1);
+    br(GT, LOOP);
+  }
+  BIND(DONE);
+  // Return index where we stopped.
+  subw(res, len, cnt);
+}
+
+#if 0
 // Intrinsic for sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray and
 // java/lang/StringUTF16.compress.
 void MacroAssembler::encode_iso_array(Register src, Register dst,
@@ -5027,7 +5113,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
                                 // characters
     BIND(DONE);
 }
-
+#endif
 
 // Inflate byte[] array to char[].
 address MacroAssembler::byte_array_inflate(Register src, Register dst, Register len,
@@ -5136,13 +5222,13 @@ address MacroAssembler::byte_array_inflate(Register src, Register dst, Register 
 
 // Compress char[] array to byte[].
 void MacroAssembler::char_array_compress(Register src, Register dst, Register len,
-                                         FloatRegister tmp1Reg, FloatRegister tmp2Reg,
-                                         FloatRegister tmp3Reg, FloatRegister tmp4Reg,
-                                         Register result) {
-  encode_iso_array(src, dst, len, result,
-                   tmp1Reg, tmp2Reg, tmp3Reg, tmp4Reg);
-  cmp(len, zr);
-  csel(result, result, zr, EQ);
+                                         Register res,
+                                         FloatRegister tmp0, FloatRegister tmp1,
+                                         FloatRegister tmp2, FloatRegister tmp3) {
+  encode_iso_array(src, dst, len, res, false, tmp0, tmp1, tmp2, tmp3);
+  // Adjust result: res == len ? len : 0
+  cmp(len, res);
+  csel(res, res, zr, EQ);
 }
 
 // get_thread() can be called anywhere inside generated code so we

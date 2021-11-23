@@ -2424,6 +2424,12 @@ public:
   INSN(cnt,    0, 0b100000010110, 0); // accepted arrangements: T8B, T16B
   INSN(uaddlp, 1, 0b100000001010, 2); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(uaddlv, 1, 0b110000001110, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
+  // Zero compare.
+  INSN(cmeq,   0, 0b100000100110, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmge,   1, 0b100000100010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmgt,   0, 0b100000100010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmle,   1, 0b100000100110, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmlt,   0, 0b100000101010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
 
 #undef INSN
 
