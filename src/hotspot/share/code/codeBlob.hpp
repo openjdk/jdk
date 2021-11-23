@@ -747,7 +747,7 @@ class OptimizedEntryBlob: public RuntimeBlob {
   jobject _receiver;
   ByteSize _frame_data_offset;
 
-  OptimizedEntryBlob(const char* name, CodeBuffer* cb, int size, int frame_complete, int frame_size,
+  OptimizedEntryBlob(const char* name, CodeBuffer* cb, int size,
                      intptr_t exception_handler_offset,
                      jobject receiver, ByteSize frame_data_offset);
 
@@ -769,7 +769,7 @@ class OptimizedEntryBlob: public RuntimeBlob {
   FrameData* frame_data_for_frame(const frame& frame) const;
  public:
   // Creation
-  static OptimizedEntryBlob* create(const char* name, CodeBuffer* cb, int frame_complete, int frame_size,
+  static OptimizedEntryBlob* create(const char* name, CodeBuffer* cb,
                                     intptr_t exception_handler_offset,
                                     jobject receiver, ByteSize frame_data_offset);
 

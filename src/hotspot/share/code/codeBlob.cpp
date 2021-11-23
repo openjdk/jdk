@@ -719,10 +719,10 @@ void DeoptimizationBlob::print_value_on(outputStream* st) const {
 
 // Implementation of OptimizedEntryBlob
 
-OptimizedEntryBlob::OptimizedEntryBlob(const char* name, CodeBuffer* cb, int size, int frame_complete, int frame_size,
+OptimizedEntryBlob::OptimizedEntryBlob(const char* name, CodeBuffer* cb, int size,
                                        intptr_t exception_handler_offset,
                                        jobject receiver, ByteSize frame_data_offset) :
-  RuntimeBlob(name, cb, sizeof(OptimizedEntryBlob), size, frame_complete, frame_size,
+  RuntimeBlob(name, cb, sizeof(OptimizedEntryBlob), size, CodeOffsets::frame_never_safe, no_frame_size,
               /* oop_maps */ nullptr, /* caller should gc arguments */ false),
   _exception_handler_offset(exception_handler_offset),
   _receiver(receiver),
@@ -734,7 +734,7 @@ void* OptimizedEntryBlob::operator new(size_t s, unsigned size) throw() {
   return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 
-OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb, int frame_complete, int frame_size,
+OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb,
                                                intptr_t exception_handler_offset,
                                                jobject receiver, ByteSize frame_data_offset) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
@@ -743,7 +743,7 @@ OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb,
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(OptimizedEntryBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) OptimizedEntryBlob(name, cb, size, frame_complete, frame_size,
+    blob = new (size) OptimizedEntryBlob(name, cb, size,
                                          exception_handler_offset, receiver, frame_data_offset);
   }
   // Track memory usage statistic after releasing CodeCache_lock
