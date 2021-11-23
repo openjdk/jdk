@@ -144,7 +144,7 @@ class G1CardSetMemoryManager : public CHeapObj<mtGCCardSet> {
   uint num_mem_object_types() const;
 public:
   G1CardSetMemoryManager(G1CardSetConfiguration* config,
-                         G1CardSetFreePool* free_list_pool);
+                         G1SegmentedArrayFreePool<mtGCCardSet>* free_list_pool);
 
   virtual ~G1CardSetMemoryManager();
 
@@ -163,7 +163,7 @@ public:
   size_t mem_size() const;
   size_t wasted_mem_size() const;
 
-  G1CardSetMemoryStats memory_stats() const;
+  G1SegmentedArrayMemoryStats memory_stats() const;
 };
 
 #endif // SHARE_GC_G1_G1CARDSETMEMORY_HPP

@@ -33,6 +33,7 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/bitMap.hpp"
 
+class G1CardSetMemoryManager;
 class outputStream;
 
 class HeapRegionRemSet : public CHeapObj<mtGC> {
@@ -125,7 +126,7 @@ public:
   void clear(bool only_cardset = false);
   void clear_locked(bool only_cardset = false);
 
-  G1CardSetMemoryStats card_set_memory_stats() const { return _card_set_mm.memory_stats(); }
+  G1SegmentedArrayMemoryStats card_set_memory_stats() const;
 
   // The actual # of bytes this hr_remset takes up. Also includes the strong code
   // root set.
@@ -142,7 +143,7 @@ public:
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return G1CardSet::static_mem_size() + G1CodeRootSet::static_mem_size() + sizeof(G1CardSetFreePool);
+    return G1CardSet::static_mem_size() + G1CodeRootSet::static_mem_size() + sizeof(G1SegmentedArrayFreePool<mtGCCardSet>);
   }
 
   static void print_static_mem_size(outputStream* out);
