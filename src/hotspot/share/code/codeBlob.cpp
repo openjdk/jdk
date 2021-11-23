@@ -760,6 +760,10 @@ JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
   return &frame_data_for_frame(frame)->jfa;
 }
 
+void OptimizedEntryBlob::preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) {
+  // do nothing for now
+}
+
 void OptimizedEntryBlob::verify() {
   // unimplemented
 }
