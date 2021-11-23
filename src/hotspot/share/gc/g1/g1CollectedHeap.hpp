@@ -1077,7 +1077,7 @@ public:
   // Iterate over all objects, calling "cl.do_object" on each.
   void object_iterate(ObjectClosure* cl) override;
 
-  ParallelObjectIterator* parallel_object_iterator(uint thread_num) override;
+  ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) override;
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj) override;
