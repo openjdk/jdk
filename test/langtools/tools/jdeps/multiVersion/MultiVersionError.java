@@ -74,7 +74,8 @@ public class MultiVersionError {
     }
 
     /*
-     * multiple module-info.class from different versions
+     * multiple module-info.class from different versions should be excluded
+     * from multiple version check.
      */
     @Test
     public void noMultiVersionClass() {
@@ -87,6 +88,9 @@ public class MultiVersionError {
         assertTrue(jdepsRunner.outputContains("java.base,m1"));
     }
 
+    /*
+     * Detect multiple versions of p.internal.P class
+     */
     @Test
     public void classInMultiVersions() {
         JdepsRunner jdepsRunner = new JdepsRunner("--print-module-deps", "--multi-release", "13",
