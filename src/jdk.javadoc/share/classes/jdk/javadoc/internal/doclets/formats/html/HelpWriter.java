@@ -197,7 +197,8 @@ public class HelpWriter extends HtmlDocletWriter {
             for (String[] example : SEARCH_EXAMPLES) {
                 searchExamples.add(HtmlTree.LI(
                         getContent("doclet.help.search.example",
-                                HtmlTree.CODE(Text.of(example[0])), example[1])));
+                                HtmlTree.CODE(HtmlTree.A("#!search=" + example[0], Text.of(example[0]))),
+                                example[1])));
             }
             Content searchSpecLink = HtmlTree.A(
                     resources.getText("doclet.help.search.spec.url", configuration.getDocletVersion().feature()),

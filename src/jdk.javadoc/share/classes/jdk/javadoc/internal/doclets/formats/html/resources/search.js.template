@@ -278,6 +278,14 @@ function doSearch(request, response) {
     }
     response(result);
 }
+function hashSearch() {
+    var searchKey = "!search=";
+    var hash = location.hash;
+    if (hash && hash.indexOf(searchKey) > -1) {
+        var queryString = decodeURI(hash.substring(hash.indexOf(searchKey) + searchKey.length));
+        $("#search-input").val(queryString).catcomplete("search", queryString);
+    }
+}
 $(function() {
     var expanded = false;
     var windowWidth;
@@ -308,6 +316,7 @@ $(function() {
     $(window).on("orientationchange", collapse).on("resize", function(e) {
         if (expanded && windowWidth !== window.innerWidth) collapse();
     });
+    $(window).on("hashchange", hashSearch);
     $("#search-input").catcomplete({
         minLength: 1,
         delay: 300,
@@ -368,4 +377,5 @@ $(function() {
             }
         }
     });
+    hashSearch();
 });
