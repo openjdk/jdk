@@ -61,7 +61,8 @@ class WindowsUserDefinedFileAttributeView
             throw new IllegalArgumentException("'name' has a root component");
         if (namePath.getParent() != null)
             throw new IllegalArgumentException("'name' has more than one element");
-        return join(file.getPathWithPrefixForWin32Calls(), name);
+        int pad = 1 + name.length();  // colon + name length
+        return join(file.getPathWithPadForWin32Calls(pad), name);
     }
 
     private final WindowsPath file;
