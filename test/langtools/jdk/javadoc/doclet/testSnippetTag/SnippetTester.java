@@ -103,6 +103,12 @@ public class SnippetTester extends JavadocTester {
 
     protected String getSnippetHtmlRepresentation(String pathToHtmlFile,
                                                   String content,
+                                                  Optional<String> lang) {
+        return getSnippetHtmlRepresentation(pathToHtmlFile, content, lang, Optional.empty());
+    }
+
+    protected String getSnippetHtmlRepresentation(String pathToHtmlFile,
+                                                  String content,
                                                   Optional<String> lang,
                                                   Optional<String> id) {
         // the further away from the root, the further to reach to common resources
