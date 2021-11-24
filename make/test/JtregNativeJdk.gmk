@@ -54,6 +54,7 @@ BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli
 
 BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncStackWalk := $(LIBCXX)
+BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncInvokers := $(LIBCXX)
 
 # Platform specific setup
 ifeq ($(call isTargetOs, windows), true)
@@ -66,6 +67,7 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeCallerAccessTest := jvm.lib
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncStackWalk := /EHsc
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncInvokers := /EHsc
 else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
