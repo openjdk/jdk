@@ -423,10 +423,10 @@ final class DateTimeParseContext {
      * This stores the zone name type that has been parsed.
      * The parsed type should either be;
      * <ul>
-     *     <li>Undefined: -1</li>
-     *     <li>Standard: 0</li>
-     *     <li>Daylight Saving: 1</li>
-     *     <li>Generic: 2</li>
+     *     <li>{@link DateTimeFormatterBuilder.ZoneTextPrinterParser#UNDEFINED}</li>
+     *     <li>{@link DateTimeFormatterBuilder.ZoneTextPrinterParser#STD}</li>
+     *     <li>{@link DateTimeFormatterBuilder.ZoneTextPrinterParser#DST}</li>
+     *     <li>{@link DateTimeFormatterBuilder.ZoneTextPrinterParser#GENERIC}</li>
      * </ul>
      *
      * @param type  the parsed zone name type

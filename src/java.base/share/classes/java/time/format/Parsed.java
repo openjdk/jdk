@@ -136,7 +136,7 @@ final class Parsed implements TemporalAccessor {
     /**
      * The parsed zone name type.
      */
-    int zoneNameType = -1;
+    int zoneNameType = DateTimeFormatterBuilder.ZoneTextPrinterParser.UNDEFINED;
     /**
      * The parsed chronology.
      */
@@ -659,7 +659,8 @@ final class Parsed implements TemporalAccessor {
             } else {
                 if (zone != null) {
                     var czdt = date.atTime(time).atZone(zone);
-                    if (zoneNameType == 0 || zoneNameType == 2) { // std or generic
+                    if (zoneNameType == DateTimeFormatterBuilder.ZoneTextPrinterParser.STD ||
+                        zoneNameType == DateTimeFormatterBuilder.ZoneTextPrinterParser.GENERIC) {
                         czdt = czdt.withLaterOffsetAtOverlap();
                     }
                     fieldValues.put(INSTANT_SECONDS, czdt.toEpochSecond());

@@ -4324,9 +4324,10 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
-        private static final int STD = 0;
-        private static final int DST = 1;
-        private static final int GENERIC = 2;
+        static final int UNDEFINED = -1;
+        static final int STD = 0;
+        static final int DST = 1;
+        static final int GENERIC = 2;
         private static final Map<String, SoftReference<Map<Locale, String[]>>> cache =
             new ConcurrentHashMap<>();
 
@@ -4433,7 +4434,7 @@ public final class DateTimeFormatterBuilder {
                         nonRegionIds.add(zid);
                         continue;
                     }
-                    tree.add(zid, zid, -1);    // don't convert zid -> metazone
+                    tree.add(zid, zid, UNDEFINED);    // don't convert zid -> metazone
                     zid = ZoneName.toZid(zid, locale);
                     int i = textStyle == TextStyle.FULL ? 1 : 2;
                     for (; i < names.length; i += 2) {
@@ -4671,9 +4672,9 @@ public final class DateTimeFormatterBuilder {
             //    return new LENIENT("", null, null);
             //}
             if (context.isCaseSensitive()) {
-                return new PrefixTree("", null, -1, null);
+                return new PrefixTree("", null, ZoneTextPrinterParser.UNDEFINED, null);
             }
-            return new CI("", null, -1, null);
+            return new CI("", null, ZoneTextPrinterParser.UNDEFINED, null);
         }
 
         /**
@@ -4686,7 +4687,7 @@ public final class DateTimeFormatterBuilder {
         public static  PrefixTree newTree(Set<String> keys, DateTimeParseContext context) {
             PrefixTree tree = newTree(context);
             for (String k : keys) {
-                tree.add0(k, k, -1);
+                tree.add0(k, k, ZoneTextPrinterParser.UNDEFINED);
             }
             return tree;
         }
