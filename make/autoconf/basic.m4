@@ -95,7 +95,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/make/autoconf
 
-
   # Setup username (for use in adhoc version strings etc)
   AC_ARG_WITH([build-user], [AS_HELP_STRING([--with-build-user],
       [build username to use in version strings])])
