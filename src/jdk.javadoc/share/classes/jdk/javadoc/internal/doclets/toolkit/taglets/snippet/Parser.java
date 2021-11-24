@@ -77,48 +77,6 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.SnippetTaglet;
  */
 public final class Parser {
 
-    // Without this interface regular expressions that describe comments would have to
-    // to be standardized or needlessly complex.
-
-    private interface CoarseParser {
-        boolean parse(String line);
-        int payloadEnd();
-        int markupStart();
-    }
-
-    private final class JavaCommentCoarseParser implements CoarseParser {
-        private final Matcher m = Pattern.compile("^(?<payload>.*)//(?=[ \t]*@[a-z]+\\b)(?<markup>.*)$").matcher("");
-
-        @Override
-        public boolean parse(String line) {return m.reset(line).matches();}
-
-        @Override
-        public int payloadEnd() {return m.end("payload");}
-
-        @Override
-        public int markupStart() {return m.start("markup");}
-    }
-
-    private final class PropertiesCommentCoarseParser implements CoarseParser {
-
-        private final Matcher m = Pattern.compile("^(?<payload>[ \t]*([!#].*)?)[!#](?=[ \t]*@[a-z]+\\b)(?<markup>.*)$").matcher("");
-
-        @Override
-        public boolean parse(String line) {
-            return m.reset(line).matches();
-        }
-
-        @Override
-        public int payloadEnd() {
-            return m.end("payload");
-        }
-
-        @Override
-        public int markupStart() {
-            return m.start("markup");
-        }
-    }
-
     private final Resources resources;
     private final MarkupParser markupParser;
 
@@ -134,8 +92,8 @@ public final class Parser {
     public Result parse(Optional<SnippetTaglet.Language> language, String source) throws ParseException {
         SnippetTaglet.Language lang = language.orElse(SnippetTaglet.Language.JAVA);
         var p = switch (lang) {
-            case JAVA -> new JavaCommentCoarseParser();
-            case PROPERTIES -> new PropertiesCommentCoarseParser();
+            case JAVA -> Pattern.compile("^(?<payload>.*)//(?=[ \t]*@[a-z]+\\b)(?<markup>.*)$");
+            case PROPERTIES -> Pattern.compile("^(?<payload>[ \t]*([!#].*)?)[!#](?=[ \t]*@[a-z]+\\b)(?<markup>.*)$");
         };
         return parse(p, source);
     }
@@ -143,9 +101,11 @@ public final class Parser {
     /*
      * Newline characters in the returned text are of the \n form.
      */
-    private Result parse(CoarseParser parser, String source) throws ParseException {
-        Objects.requireNonNull(parser);
+    private Result parse(Pattern commentPattern, String source) throws ParseException {
+        Objects.requireNonNull(commentPattern);
         Objects.requireNonNull(source);
+
+        Matcher markedUpLine = commentPattern.matcher(""); // reusable matcher
 
         tags.clear();
         regions.clear();
@@ -174,20 +134,21 @@ public final class Parser {
             String rawLine = next.line();
             boolean addLineTerminator = iterator.hasNext() || trailingNewline;
             String line;
-            if (!parser.parse(rawLine)) { // (1)
+            markedUpLine.reset(rawLine);
+            if (!markedUpLine.matches()) { // (1)
                 line = rawLine + (addLineTerminator ? "\n" : "");
             } else {
-                String maybeMarkup = rawLine.substring(parser.markupStart());
+                String maybeMarkup = rawLine.substring(markedUpLine.start("markup"));
                 List<Tag> parsedTags;
                 try {
                     parsedTags = markupParser.parse(maybeMarkup);
                 } catch (ParseException e) {
                     // translate error position from markup to file line
-                    throw new ParseException(e::getMessage, parser.markupStart() + e.getPosition());
+                    throw new ParseException(e::getMessage, markedUpLine.start("markup") + e.getPosition());
                 }
                 for (Tag t : parsedTags) {
                     t.lineSourceOffset = next.offset();
-                    t.markupLineOffset = parser.markupStart();
+                    t.markupLineOffset = markedUpLine.start("markup");
                 }
                 thisLineTags.addAll(parsedTags);
                 for (var tagIterator = thisLineTags.iterator(); tagIterator.hasNext(); ) {
@@ -202,7 +163,7 @@ public final class Parser {
                     // TODO: log this with NOTICE;
                     line = rawLine + (addLineTerminator ? "\n" : "");
                 } else { // (3)
-                    String payload = rawLine.substring(0, parser.payloadEnd());
+                    String payload = rawLine.substring(0, markedUpLine.end("payload"));
                     line = payload + (addLineTerminator ? "\n" : "");
                 }
             }
