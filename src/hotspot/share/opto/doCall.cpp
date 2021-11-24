@@ -164,7 +164,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // Try inlining a bytecoded method:
     if (!call_does_dispatch) {
       InlineTree* ilt = InlineTree::find_subtree_from_root(this->ilt(), jvms->caller(), jvms->method());
-      bool should_delay = false;
+      bool should_delay = AlwaysIncrementalInline;
       if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {
         CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
         // For optimized virtual calls assert at runtime that receiver object
@@ -189,7 +189,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             return CallGenerator::for_boxing_late_inline(callee, cg);
           } else if (should_delay_vector_reboxing_inlining(callee, jvms)) {
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
-          } else if ((should_delay || AlwaysIncrementalInline)) {
+          } else if (should_delay) {
             return CallGenerator::for_late_inline(callee, cg);
           } else {
             return cg;

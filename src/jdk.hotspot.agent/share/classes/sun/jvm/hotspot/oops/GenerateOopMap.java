@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,10 +310,10 @@ public class GenerateOopMap {
   int      _max_stack;      // Cached value of max. stack depth
   int      _max_monitors;   // Cached value of max. monitor stack depth
   boolean  _has_exceptions; // True, if exceptions exist for method
-  boolean  _got_error;      // True, if an error occured during interpretation.
+  boolean  _got_error;      // True, if an error occurred during interpretation.
   String   _error_msg;      // Error message. Set if _got_error is true.
   //  bool     _did_rewriting;  // was bytecodes rewritten
-  //  bool     _did_relocation; // was relocation neccessary
+  //  bool     _did_relocation; // was relocation necessary
   boolean  _monitor_safe;   // The monitors in this method have been determined
                             // to be safe.
 
@@ -529,7 +529,6 @@ public class GenerateOopMap {
                                               CellTypeState replace) {
     int i;
     int len = _max_locals + _stack_top;
-    boolean change = false;
 
     for (i = len - 1; i >= 0; i--) {
       if (match.equal(_state.get(i))) {
@@ -1894,7 +1893,7 @@ public class GenerateOopMap {
 
   // Create result set
   boolean  _report_result;
-  boolean  _report_result_for_send;         // Unfortunatly, stackmaps for sends are special, so we need some extra
+  boolean  _report_result_for_send;         // Unfortunately, stackmaps for sends are special, so we need some extra
   BytecodeStream _itr_send;                 // variables to handle them properly.
 
   void  reportResult                        () {
@@ -1947,7 +1946,7 @@ public class GenerateOopMap {
   }
 
   // Conflicts rewrite logic
-  boolean   _conflict;                      // True, if a conflict occured during interpretation
+  boolean   _conflict;                      // True, if a conflict occurred during interpretation
   int       _nof_refval_conflicts;          // No. of conflicts that require rewrites
   int[]     _new_var_map;
 
@@ -2131,7 +2130,7 @@ public class GenerateOopMap {
   // Public routines for GenerateOopMap
   //
   public GenerateOopMap(Method method) {
-    // We have to initialize all variables here, that can be queried direcly
+    // We have to initialize all variables here, that can be queried directly
     _method = method;
     _max_locals=0;
     _init_vars = null;
@@ -2204,7 +2203,7 @@ public class GenerateOopMap {
 
     if (_got_error) {
       // We could expand this code to throw somekind of exception (e.g., VerifyException). However,
-      // an exception thrown in this part of the code is likly to mean that we are executing some
+      // an exception thrown in this part of the code is likely to mean that we are executing some
       // illegal bytecodes (that the verifier should have caught if turned on), so we will just exit
       // with a fatal.
       throw new RuntimeException("Illegal bytecode sequence encountered while generating interpreter pointer maps - method should be rejected by verifier.");

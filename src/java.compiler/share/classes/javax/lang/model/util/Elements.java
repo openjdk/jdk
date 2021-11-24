@@ -68,8 +68,8 @@ public interface Elements {
      *     </li>
      * </ul>
      *
-     * If this process leads to a list with a single element,
-     * the single element is returned, otherwise null is returned.
+     * If this process leads to a list with a single element, the
+     * single element is returned, otherwise {@code null} is returned.
      *
      * @param name fully qualified package name,
      *             or an empty string for an unnamed package
@@ -155,8 +155,8 @@ public interface Elements {
      *     </li>
      * </ul>
      *
-     * If this process leads to a list with a single element,
-     * the single element is returned, otherwise null is returned.
+     * If this process leads to a list with a single element, the
+     * single element is returned, otherwise {@code null} is returned.
      *
      * @param name the canonical name
      * @return the named type element,
@@ -735,8 +735,9 @@ public interface Elements {
     }
 
     /**
-     * Returns the record component for the given accessor. Returns null if the
-     * given method is not a record component accessor.
+     * Returns the record component for the given accessor. Returns
+     * {@code null} if the given method is not a record component
+     * accessor.
      *
      * @implSpec The default implementation of this method checks if the element
      * enclosing the accessor has kind {@link ElementKind#RECORD RECORD} if that is
@@ -747,8 +748,8 @@ public interface Elements {
      * record component is returned, in any other case {@code null} is returned.
      *
      * @param accessor the method for which the record component should be found.
-     * @return the record component, or null if the given method is not a record
-     * component accessor
+     * @return the record component, or {@code null} if the given
+     * method is not a record component accessor
      * @since 16
      */
     default RecordComponentElement recordComponentFor(ExecutableElement accessor) {
