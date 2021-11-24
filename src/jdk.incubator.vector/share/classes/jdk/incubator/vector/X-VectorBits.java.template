@@ -476,6 +476,22 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @Override
     @ForceInline
+    public $vectortype$ compress(VectorMask<$Boxtype$> m) {
+        return ($vectortype$)
+            super.compressTemplate($masktype$.class,
+                                   ($masktype$) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public $vectortype$ expand(VectorMask<$Boxtype$> m) {
+        return ($vectortype$)
+            super.expandTemplate($masktype$.class,
+                                   ($masktype$) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public $vectortype$ selectFrom(Vector<$Boxtype$> v) {
         return ($vectortype$)
             super.selectFromTemplate(($vectortype$) v);  // specialize
@@ -913,6 +929,15 @@ final class $vectortype$ extends $abstractvectortype$ {
         public $masktype$ not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public $masktype$ compress() {
+            return ($masktype$)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                $vectortype$.class, $masktype$.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

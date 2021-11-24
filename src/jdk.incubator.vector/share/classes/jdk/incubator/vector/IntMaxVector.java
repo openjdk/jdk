@@ -470,6 +470,22 @@ final class IntMaxVector extends IntVector {
 
     @Override
     @ForceInline
+    public IntMaxVector compress(VectorMask<Integer> m) {
+        return (IntMaxVector)
+            super.compressTemplate(IntMaxMask.class,
+                                   (IntMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public IntMaxVector expand(VectorMask<Integer> m) {
+        return (IntMaxVector)
+            super.expandTemplate(IntMaxMask.class,
+                                   (IntMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public IntMaxVector selectFrom(Vector<Integer> v) {
         return (IntMaxVector)
             super.selectFromTemplate((IntMaxVector) v);  // specialize
@@ -640,6 +656,15 @@ final class IntMaxVector extends IntVector {
         public IntMaxMask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public IntMaxMask compress() {
+            return (IntMaxMask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                IntMaxVector.class, IntMaxMask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

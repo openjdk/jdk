@@ -351,6 +351,36 @@ public abstract class LongVector extends AbstractVector<Long> {
         return vectorFactory(res);
     }
 
+    static LongVector expandHelper(Vector<Long> v, VectorMask<Long> m) {
+        VectorSpecies<Long> vsp = m.vectorSpecies();
+        LongVector r  = (LongVector) vsp.zero();
+        LongVector vi = (LongVector) v;
+        if (m.allTrue()) {
+            return vi;
+        }
+        for(int i = 0,j = 0; i < vsp.length(); i++) {
+            if(m.laneIsSet(i)) {
+                r = r.withLane(i, vi.lane(j++));
+            }
+        }
+        return r;
+    }
+
+    static LongVector compressHelper(Vector<Long> v, VectorMask<Long> m) {
+        VectorSpecies<Long> vsp = m.vectorSpecies();
+        LongVector r  = (LongVector) vsp.zero();
+        LongVector vi = (LongVector) v;
+        if (m.allTrue()) {
+            return vi;
+        }
+        for(int i = 0, j = 0; i < vsp.length(); i++) {
+            if (m.laneIsSet(i)) {
+                r = r.withLane(j++, vi.lane(i));
+            }
+        }
+        return r;
+    }
+
     interface FStOp<M> {
         void apply(M memory, int offset, int i, long a);
     }
@@ -2222,6 +2252,43 @@ public abstract class LongVector extends AbstractVector<Long> {
                                      this, vsp,
                                      LongVector::toShuffle0);
     }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    LongVector compress(VectorMask<Long> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends AbstractMask<Long>>
+    LongVector compressTemplate(Class<M> masktype, M m) {
+      m.check(masktype, this);
+      return (LongVector) VectorSupport.comExpOp(VectorSupport.VECTOR_OP_COMPRESS, getClass(), masktype,
+                                                   long.class, length(), this, m,
+                                                   (v1, m1) -> compressHelper(v1, m1));
+    }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    LongVector expand(VectorMask<Long> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends AbstractMask<Long>>
+    LongVector expandTemplate(Class<M> masktype, M m) {
+      m.check(masktype, this);
+      return (LongVector) VectorSupport.comExpOp(VectorSupport.VECTOR_OP_EXPAND, getClass(), masktype,
+                                                   long.class, length(), this, m,
+                                                   (v1, m1) -> expandHelper(v1, m1));
+    }
+
 
     /**
      * {@inheritDoc} <!--workaround-->

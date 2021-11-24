@@ -460,6 +460,22 @@ final class Long128Vector extends LongVector {
 
     @Override
     @ForceInline
+    public Long128Vector compress(VectorMask<Long> m) {
+        return (Long128Vector)
+            super.compressTemplate(Long128Mask.class,
+                                   (Long128Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Long128Vector expand(VectorMask<Long> m) {
+        return (Long128Vector)
+            super.expandTemplate(Long128Mask.class,
+                                   (Long128Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Long128Vector selectFrom(Vector<Long> v) {
         return (Long128Vector)
             super.selectFromTemplate((Long128Vector) v);  // specialize
@@ -632,6 +648,15 @@ final class Long128Vector extends LongVector {
         public Long128Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Long128Mask compress() {
+            return (Long128Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Long128Vector.class, Long128Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

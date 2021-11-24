@@ -1599,6 +1599,17 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_CompressM:
+      if (!VM_Version::supports_avx512vl() || !VM_Version::supports_bmi2()) {
+        return false;
+      }
+      break;
+    case Op_CompressV:
+    case Op_ExpandV:
+      if (!VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      break;
   }
   return true;  // Match rules are supported by default.
 }
@@ -1807,7 +1818,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     case Op_LoadVectorGatherMasked:
     case Op_StoreVectorScatterMasked:
     case Op_StoreVectorScatter:
-      if(is_subword_type(bt)) {
+      if (is_subword_type(bt)) {
         return false;
       } else if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
         return false;
@@ -1831,6 +1842,23 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_VectorMaskCmp:
       if (vlen < 2 || size_in_bits < 32) {
+        return false;
+      }
+      break;
+    case Op_CompressM:
+      if (UseAVX < 3 || !VM_Version::supports_bmi2()) {
+        return false;
+      }
+      break;
+    case Op_CompressV:
+    case Op_ExpandV:
+      if (is_subword_type(bt) && !VM_Version::supports_avx512_vbmi2()) {
+        return false;
+      }
+      if (size_in_bits < 128 ) {
+        return false;
+      }
+      if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
         return false;
       }
       break;
@@ -4564,7 +4592,7 @@ instruct insertF(vec dst, regF val, immU8 idx) %{
     assert(Matcher::vector_element_basic_type(this) == T_FLOAT, "sanity");
     assert($idx$$constant < (int)Matcher::vector_length(this), "out of bounds");
 
-    __ insertps($dst$$XMMRegister, $val$$XMMRegister, $idx$$constant);
+    __ insertps($dst$$XMMRegister, $val$$XMMRegister, $idx$$constant << 4);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4584,13 +4612,13 @@ instruct vinsertF(vec dst, vec src, regF val, immU8 idx, vec vtmp) %{
       uint y_idx = ($idx$$constant >> 2) & 1;
       int vlen_enc = Assembler::AVX_256bit;
       __ vextracti128($vtmp$$XMMRegister, $src$$XMMRegister, y_idx);
-      __ vinsertps($vtmp$$XMMRegister, $vtmp$$XMMRegister, $val$$XMMRegister, x_idx);
+      __ vinsertps($vtmp$$XMMRegister, $vtmp$$XMMRegister, $val$$XMMRegister, x_idx << 4);
       __ vinserti128($dst$$XMMRegister, $src$$XMMRegister, $vtmp$$XMMRegister, y_idx);
     } else {
       assert(vlen == 16, "sanity");
       uint y_idx = ($idx$$constant >> 2) & 3;
       __ vextracti32x4($vtmp$$XMMRegister, $src$$XMMRegister, y_idx);
-      __ vinsertps($vtmp$$XMMRegister, $vtmp$$XMMRegister, $val$$XMMRegister, x_idx);
+      __ vinsertps($vtmp$$XMMRegister, $vtmp$$XMMRegister, $val$$XMMRegister, x_idx << 4);
       __ vinserti32x4($dst$$XMMRegister, $src$$XMMRegister, $vtmp$$XMMRegister, y_idx);
     }
   %}
@@ -8757,6 +8785,34 @@ instruct vmask_first_or_last_true_avx(rRegI dst, vec mask, rRegL tmp, vec xtmp, 
   %}
   ins_pipe( pipe_slow );
 %}
+
+// --------------------------------- Compress/Expand Operations ---------------------------
+
+instruct vcompress_expand_reg_evex(vec dst, vec src, kReg mask) %{
+  match(Set dst (CompressV src mask));
+  match(Set dst (ExpandV src mask));
+  format %{ "vector_compress_expand $dst, $src, $mask" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vector_len = vector_length_encoding(this);
+    BasicType bt  = Matcher::vector_element_basic_type(this);
+    __ vector_compress_expand(opcode, $dst$$XMMRegister, $src$$XMMRegister, $mask$$KRegister, false, bt, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vcompress_mask_reg_evex(kReg dst, kReg mask, rRegL rtmp1, rRegL rtmp2, rFlagsReg cr) %{
+  match(Set dst (CompressM mask));
+  effect(TEMP rtmp1, TEMP rtmp2, KILL cr);
+  format %{ "mask_compress_evex $dst, $mask\t! using $rtmp1 and $rtmp2 as TEMP" %}
+  ins_encode %{
+    assert(this->in(1)->bottom_type()->isa_vectmask(), "");
+    int mask_len = Matcher::vector_length(this);
+    __ vector_mask_compress($dst$$KRegister, $mask$$KRegister, $rtmp1$$Register, $rtmp2$$Register, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 #endif // _LP64
 
 // ---------------------------------- Vector Masked Operations ------------------------------------

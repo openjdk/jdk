@@ -470,6 +470,22 @@ final class Int256Vector extends IntVector {
 
     @Override
     @ForceInline
+    public Int256Vector compress(VectorMask<Integer> m) {
+        return (Int256Vector)
+            super.compressTemplate(Int256Mask.class,
+                                   (Int256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Int256Vector expand(VectorMask<Integer> m) {
+        return (Int256Vector)
+            super.expandTemplate(Int256Mask.class,
+                                   (Int256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Int256Vector selectFrom(Vector<Integer> v) {
         return (Int256Vector)
             super.selectFromTemplate((Int256Vector) v);  // specialize
@@ -654,6 +670,15 @@ final class Int256Vector extends IntVector {
         public Int256Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Int256Mask compress() {
+            return (Int256Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Int256Vector.class, Int256Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

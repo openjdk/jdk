@@ -155,4 +155,23 @@ public class MaskQueryOperationsBenchmark {
     public int testLastTrueLong(Blackhole bh) {
         return lmask.lastTrue();
     }
+
+    @Benchmark
+    public long testToLongByte(Blackhole bh) {
+        return bmask.toLong();
+    }
+
+    @Benchmark
+    public long testToLongShort(Blackhole bh) {
+        return smask.toLong();
+    }
+    @Benchmark
+    public long testToLongInt(Blackhole bh) {
+        return imask.toLong();
+    }
+    @Benchmark
+    public long testToLongLong(Blackhole bh) {
+        return lmask.toLong();
+    }
+
 }

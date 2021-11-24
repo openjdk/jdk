@@ -457,6 +457,22 @@ final class Float256Vector extends FloatVector {
 
     @Override
     @ForceInline
+    public Float256Vector compress(VectorMask<Float> m) {
+        return (Float256Vector)
+            super.compressTemplate(Float256Mask.class,
+                                   (Float256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Float256Vector expand(VectorMask<Float> m) {
+        return (Float256Vector)
+            super.expandTemplate(Float256Mask.class,
+                                   (Float256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Float256Vector selectFrom(Vector<Float> v) {
         return (Float256Vector)
             super.selectFromTemplate((Float256Vector) v);  // specialize
@@ -643,6 +659,15 @@ final class Float256Vector extends FloatVector {
         public Float256Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Float256Mask compress() {
+            return (Float256Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Float256Vector.class, Float256Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

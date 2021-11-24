@@ -460,6 +460,22 @@ final class Long64Vector extends LongVector {
 
     @Override
     @ForceInline
+    public Long64Vector compress(VectorMask<Long> m) {
+        return (Long64Vector)
+            super.compressTemplate(Long64Mask.class,
+                                   (Long64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Long64Vector expand(VectorMask<Long> m) {
+        return (Long64Vector)
+            super.expandTemplate(Long64Mask.class,
+                                   (Long64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Long64Vector selectFrom(Vector<Long> v) {
         return (Long64Vector)
             super.selectFromTemplate((Long64Vector) v);  // specialize
@@ -630,6 +646,15 @@ final class Long64Vector extends LongVector {
         public Long64Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Long64Mask compress() {
+            return (Long64Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Long64Vector.class, Long64Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

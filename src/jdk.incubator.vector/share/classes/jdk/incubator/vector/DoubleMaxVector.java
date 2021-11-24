@@ -457,6 +457,22 @@ final class DoubleMaxVector extends DoubleVector {
 
     @Override
     @ForceInline
+    public DoubleMaxVector compress(VectorMask<Double> m) {
+        return (DoubleMaxVector)
+            super.compressTemplate(DoubleMaxMask.class,
+                                   (DoubleMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public DoubleMaxVector expand(VectorMask<Double> m) {
+        return (DoubleMaxVector)
+            super.expandTemplate(DoubleMaxMask.class,
+                                   (DoubleMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public DoubleMaxVector selectFrom(Vector<Double> v) {
         return (DoubleMaxVector)
             super.selectFromTemplate((DoubleMaxVector) v);  // specialize
@@ -628,6 +644,15 @@ final class DoubleMaxVector extends DoubleVector {
         public DoubleMaxMask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public DoubleMaxMask compress() {
+            return (DoubleMaxMask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                DoubleMaxVector.class, DoubleMaxMask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

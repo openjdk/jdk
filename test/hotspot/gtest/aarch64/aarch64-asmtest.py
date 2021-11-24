@@ -1737,6 +1737,8 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["uzp2",    "__ sve_uzp2(p0, __ D, p0, p1);",                     "uzp2\tp0.d, p0.d, p1.d"],
                         ["punpklo", "__ sve_punpklo(p1, p0);",                            "punpklo\tp1.h, p0.b"],
                         ["punpkhi", "__ sve_punpkhi(p1, p0);",                            "punpkhi\tp1.h, p0.b"],
+                        ["compact", "__ sve_compact(z16, __ S, z16, p1);",                "compact\tz16.s, p1, z16.s"],
+                        ["compact", "__ sve_compact(z16, __ D, z16, p1);",                "compact\tz16.d, p1, z16.d"],
 ])
 
 print "\n// FloatImmediateOp"

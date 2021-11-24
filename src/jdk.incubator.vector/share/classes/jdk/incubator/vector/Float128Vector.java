@@ -457,6 +457,22 @@ final class Float128Vector extends FloatVector {
 
     @Override
     @ForceInline
+    public Float128Vector compress(VectorMask<Float> m) {
+        return (Float128Vector)
+            super.compressTemplate(Float128Mask.class,
+                                   (Float128Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Float128Vector expand(VectorMask<Float> m) {
+        return (Float128Vector)
+            super.expandTemplate(Float128Mask.class,
+                                   (Float128Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Float128Vector selectFrom(Vector<Float> v) {
         return (Float128Vector)
             super.selectFromTemplate((Float128Vector) v);  // specialize
@@ -635,6 +651,15 @@ final class Float128Vector extends FloatVector {
         public Float128Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Float128Mask compress() {
+            return (Float128Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Float128Vector.class, Float128Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

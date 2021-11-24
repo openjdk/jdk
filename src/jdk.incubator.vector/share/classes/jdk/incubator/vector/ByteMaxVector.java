@@ -470,6 +470,22 @@ final class ByteMaxVector extends ByteVector {
 
     @Override
     @ForceInline
+    public ByteMaxVector compress(VectorMask<Byte> m) {
+        return (ByteMaxVector)
+            super.compressTemplate(ByteMaxMask.class,
+                                   (ByteMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ByteMaxVector expand(VectorMask<Byte> m) {
+        return (ByteMaxVector)
+            super.expandTemplate(ByteMaxMask.class,
+                                   (ByteMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public ByteMaxVector selectFrom(Vector<Byte> v) {
         return (ByteMaxVector)
             super.selectFromTemplate((ByteMaxVector) v);  // specialize
@@ -640,6 +656,15 @@ final class ByteMaxVector extends ByteVector {
         public ByteMaxMask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public ByteMaxMask compress() {
+            return (ByteMaxMask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                ByteMaxVector.class, ByteMaxMask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

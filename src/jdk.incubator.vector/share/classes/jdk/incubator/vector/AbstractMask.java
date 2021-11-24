@@ -28,6 +28,10 @@ import java.util.Objects;
 
 import jdk.internal.vm.annotation.ForceInline;
 
+import jdk.internal.misc.Unsafe;
+
+import jdk.internal.vm.vector.VectorSupport;
+
 import static jdk.incubator.vector.VectorOperators.*;
 
 abstract class AbstractMask<E> extends VectorMask<E> {
@@ -77,7 +81,15 @@ abstract class AbstractMask<E> extends VectorMask<E> {
 
     @Override
     public void intoArray(boolean[] bits, int i) {
-        System.arraycopy(getBits(), 0, bits, i, length());
+        AbstractSpecies<E> vsp = (AbstractSpecies<E>) vectorSpecies();
+        int laneCount = vsp.laneCount();
+        i = VectorIntrinsics.checkFromIndexSize(i, laneCount, bits.length);
+        VectorSupport.store(
+            vsp.maskType(), vsp.elementType(), laneCount,
+            bits, (long) i + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET,
+            this, bits, i,
+            (c, idx, s) -> System.arraycopy(s.getBits(), 0, c, idx, s.length()));
+
     }
 
     @Override

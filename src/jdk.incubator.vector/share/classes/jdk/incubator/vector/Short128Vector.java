@@ -470,6 +470,22 @@ final class Short128Vector extends ShortVector {
 
     @Override
     @ForceInline
+    public Short128Vector compress(VectorMask<Short> m) {
+        return (Short128Vector)
+            super.compressTemplate(Short128Mask.class,
+                                   (Short128Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Short128Vector expand(VectorMask<Short> m) {
+        return (Short128Vector)
+            super.expandTemplate(Short128Mask.class,
+                                   (Short128Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Short128Vector selectFrom(Vector<Short> v) {
         return (Short128Vector)
             super.selectFromTemplate((Short128Vector) v);  // specialize
@@ -654,6 +670,15 @@ final class Short128Vector extends ShortVector {
         public Short128Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Short128Mask compress() {
+            return (Short128Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Short128Vector.class, Short128Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

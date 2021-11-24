@@ -351,6 +351,36 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return vectorFactory(res);
     }
 
+    static ByteVector expandHelper(Vector<Byte> v, VectorMask<Byte> m) {
+        VectorSpecies<Byte> vsp = m.vectorSpecies();
+        ByteVector r  = (ByteVector) vsp.zero();
+        ByteVector vi = (ByteVector) v;
+        if (m.allTrue()) {
+            return vi;
+        }
+        for(int i = 0,j = 0; i < vsp.length(); i++) {
+            if(m.laneIsSet(i)) {
+                r = r.withLane(i, vi.lane(j++));
+            }
+        }
+        return r;
+    }
+
+    static ByteVector compressHelper(Vector<Byte> v, VectorMask<Byte> m) {
+        VectorSpecies<Byte> vsp = m.vectorSpecies();
+        ByteVector r  = (ByteVector) vsp.zero();
+        ByteVector vi = (ByteVector) v;
+        if (m.allTrue()) {
+            return vi;
+        }
+        for(int i = 0, j = 0; i < vsp.length(); i++) {
+            if (m.laneIsSet(i)) {
+                r = r.withLane(j++, vi.lane(i));
+            }
+        }
+        return r;
+    }
+
     interface FStOp<M> {
         void apply(M memory, int offset, int i, byte a);
     }
@@ -2357,6 +2387,43 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                      this, vsp,
                                      ByteVector::toShuffle0);
     }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    ByteVector compress(VectorMask<Byte> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends AbstractMask<Byte>>
+    ByteVector compressTemplate(Class<M> masktype, M m) {
+      m.check(masktype, this);
+      return (ByteVector) VectorSupport.comExpOp(VectorSupport.VECTOR_OP_COMPRESS, getClass(), masktype,
+                                                   byte.class, length(), this, m,
+                                                   (v1, m1) -> compressHelper(v1, m1));
+    }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    ByteVector expand(VectorMask<Byte> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends AbstractMask<Byte>>
+    ByteVector expandTemplate(Class<M> masktype, M m) {
+      m.check(masktype, this);
+      return (ByteVector) VectorSupport.comExpOp(VectorSupport.VECTOR_OP_EXPAND, getClass(), masktype,
+                                                   byte.class, length(), this, m,
+                                                   (v1, m1) -> expandHelper(v1, m1));
+    }
+
 
     /**
      * {@inheritDoc} <!--workaround-->

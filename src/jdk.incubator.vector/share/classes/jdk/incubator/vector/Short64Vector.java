@@ -470,6 +470,22 @@ final class Short64Vector extends ShortVector {
 
     @Override
     @ForceInline
+    public Short64Vector compress(VectorMask<Short> m) {
+        return (Short64Vector)
+            super.compressTemplate(Short64Mask.class,
+                                   (Short64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Short64Vector expand(VectorMask<Short> m) {
+        return (Short64Vector)
+            super.expandTemplate(Short64Mask.class,
+                                   (Short64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Short64Vector selectFrom(Vector<Short> v) {
         return (Short64Vector)
             super.selectFromTemplate((Short64Vector) v);  // specialize
@@ -646,6 +662,15 @@ final class Short64Vector extends ShortVector {
         public Short64Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Short64Mask compress() {
+            return (Short64Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Short64Vector.class, Short64Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

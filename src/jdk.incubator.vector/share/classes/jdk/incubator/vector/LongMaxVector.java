@@ -460,6 +460,22 @@ final class LongMaxVector extends LongVector {
 
     @Override
     @ForceInline
+    public LongMaxVector compress(VectorMask<Long> m) {
+        return (LongMaxVector)
+            super.compressTemplate(LongMaxMask.class,
+                                   (LongMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public LongMaxVector expand(VectorMask<Long> m) {
+        return (LongMaxVector)
+            super.expandTemplate(LongMaxMask.class,
+                                   (LongMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public LongMaxVector selectFrom(Vector<Long> v) {
         return (LongMaxVector)
             super.selectFromTemplate((LongMaxVector) v);  // specialize
@@ -630,6 +646,15 @@ final class LongMaxVector extends LongVector {
         public LongMaxMask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public LongMaxMask compress() {
+            return (LongMaxMask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                LongMaxVector.class, LongMaxMask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

@@ -457,6 +457,22 @@ final class Double64Vector extends DoubleVector {
 
     @Override
     @ForceInline
+    public Double64Vector compress(VectorMask<Double> m) {
+        return (Double64Vector)
+            super.compressTemplate(Double64Mask.class,
+                                   (Double64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Double64Vector expand(VectorMask<Double> m) {
+        return (Double64Vector)
+            super.expandTemplate(Double64Mask.class,
+                                   (Double64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Double64Vector selectFrom(Vector<Double> v) {
         return (Double64Vector)
             super.selectFromTemplate((Double64Vector) v);  // specialize
@@ -629,6 +645,15 @@ final class Double64Vector extends DoubleVector {
         public Double64Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Double64Mask compress() {
+            return (Double64Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Double64Vector.class, Double64Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

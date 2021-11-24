@@ -457,6 +457,22 @@ final class Float64Vector extends FloatVector {
 
     @Override
     @ForceInline
+    public Float64Vector compress(VectorMask<Float> m) {
+        return (Float64Vector)
+            super.compressTemplate(Float64Mask.class,
+                                   (Float64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Float64Vector expand(VectorMask<Float> m) {
+        return (Float64Vector)
+            super.expandTemplate(Float64Mask.class,
+                                   (Float64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Float64Vector selectFrom(Vector<Float> v) {
         return (Float64Vector)
             super.selectFromTemplate((Float64Vector) v);  // specialize
@@ -631,6 +647,15 @@ final class Float64Vector extends FloatVector {
         public Float64Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Float64Mask compress() {
+            return (Float64Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Float64Vector.class, Float64Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

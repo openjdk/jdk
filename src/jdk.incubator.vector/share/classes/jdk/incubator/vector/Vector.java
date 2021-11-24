@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1038,6 +1038,12 @@ import java.util.Arrays;
  * mapping source lanes to destination lanes.  A {@code VectorShuffle}
  * can encode a mathematical permutation as well as many other
  * patterns of data movement.
+ *
+ * <li>The {@link #compress(VectorMask)} and {@link #expand(VectorMask)}
+ * methods, which select up to {@code VLENGTH} lanes from an
+ * input vector, and assemble them in lane order.  The selection of lanes
+ * is controlled by a {@code VectorMask}, with set lane elements mapping, by
+ * compression or expansion in lane order, source lanes to destination lanes.
  *
  * </ul>
  * <p> Some vector operations are not lane-wise, but rather move data
@@ -2688,6 +2694,44 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * @see #slice(int,Vector)
      */
     public abstract Vector<E> rearrange(VectorShuffle<E> s, Vector<E> v);
+
+    /**
+     * Compresses the lane elements of this vector selecting lanes
+     * under the control of a specific mask.
+     *
+     * This is a cross-lane operation that compresses the lane
+     * elements of this vector as selected by the specified mask.
+     *
+     * For each lane {@code N} of the mask, if the mask at
+     * lane {@code N} is set, the element at lane {@code N}
+     * of input vector is selected and stored into the output
+     * vector contiguously starting from the lane {@code 0}.
+     * All the upper remaining lanes, if any, of the output
+     * vector are set to zero.
+     *
+     * @param m the mask controlling the compression
+     * @return the compressed lane elements of this vector
+     */
+    public abstract Vector<E> compress(VectorMask<E> m);
+
+    /**
+     * Expands the lane elements of this vector
+     * under the control of a specific mask.
+     *
+     * This is a cross-lane operation that expands the contiguous lane
+     * elements of this vector into lanes of an output vector
+     * as selected by the specified mask.
+     *
+     * For each lane {@code N} of the mask, if the mask at
+     * lane {@code N} is set, the next contiguous element of input vector
+     * starting from lane {@code 0} is selected and stored into the output
+     * vector at lane {@code N}.
+     * All the remaining lanes, if any, of the output vector are set to zero.
+     *
+     * @param m the mask controlling the compression
+     * @return the expanded lane elements of this vector
+     */
+    public abstract Vector<E> expand(VectorMask<E> m);
 
     /**
      * Using index values stored in the lanes of this vector,

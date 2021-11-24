@@ -144,6 +144,8 @@ source %{
       case Op_LoadVector:
       case Op_StoreVector:
         return Matcher::vector_size_supported(bt, vlen);
+      case Op_CompressV:
+        return (bt == T_INT || bt == T_LONG);
       default:
         break;
     }
@@ -3172,6 +3174,22 @@ instruct vmask_lasttrue_partial(iRegINoSp dst, pReg src, pReg ptmp, rFlagsReg cr
     __ sve_whilelo_zr_imm(as_PRegister($ptmp$$reg), size, Matcher::vector_length(this, $src));
     __ sve_and(as_PRegister($ptmp$$reg), ptrue, as_PRegister($ptmp$$reg), as_PRegister($src$$reg));
     __ sve_vmask_lasttrue($dst$$Register, bt, as_PRegister($ptmp$$reg), as_PRegister($ptmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}dnl
+
+
+// ---------------------------- Compress/Expand Operations ---------------------------
+
+instruct vcompress(vReg dst, vReg src, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst (CompressV src pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_compact $dst, $src, $pg\t# vector compress (sve)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
+    __ sve_compact(as_FloatRegister($dst$$reg), size, as_FloatRegister($src$$reg), as_PRegister($pg$$reg));
   %}
   ins_pipe(pipe_slow);
 %}dnl

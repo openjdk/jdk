@@ -76,6 +76,7 @@ shift_template="Shift-op"
 shift_masked_template="Shift-Masked-op"
 get_template="Get-op"
 rearrange_template="Rearrange"
+compressexpand_template="CompressExpand"
 broadcast_template="Broadcast"
 zero_template="Zero"
 slice_template="Slice-op"
@@ -502,6 +503,9 @@ gen_op_tmpl $blend "blend" ""
 
 # Rearrange
 gen_op_tmpl $rearrange_template "rearrange" ""
+
+# Compress/Expand
+gen_op_tmpl $compressexpand_template "compress_expand" ""
 
 # Get
 gen_get_op "lane" ""

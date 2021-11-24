@@ -496,6 +496,10 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_fsignum:
     if (!Matcher::match_rule_supported(Op_SignumF)) return false;
     break;
+  case vmIntrinsics::_VectorComExp:
+    if (!Matcher::match_rule_supported(Op_CompressM)) return false;
+    if (!Matcher::match_rule_supported(Op_CompressV)) return false;
+    break;
   case vmIntrinsics::_hashCode:
   case vmIntrinsics::_identityHashCode:
   case vmIntrinsics::_getClass:

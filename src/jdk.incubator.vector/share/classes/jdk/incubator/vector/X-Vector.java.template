@@ -355,6 +355,36 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return vectorFactory(res);
     }
 
+    static $abstractvectortype$ expandHelper(Vector<$Boxtype$> v, VectorMask<$Boxtype$> m) {
+        VectorSpecies<$Boxtype$> vsp = m.vectorSpecies();
+        $abstractvectortype$ r  = ($abstractvectortype$) vsp.zero();
+        $abstractvectortype$ vi = ($abstractvectortype$) v;
+        if (m.allTrue()) {
+            return vi;
+        }
+        for(int i = 0,j = 0; i < vsp.length(); i++) {
+            if(m.laneIsSet(i)) {
+                r = r.withLane(i, vi.lane(j++));
+            }
+        }
+        return r;
+    }
+
+    static $abstractvectortype$ compressHelper(Vector<$Boxtype$> v, VectorMask<$Boxtype$> m) {
+        VectorSpecies<$Boxtype$> vsp = m.vectorSpecies();
+        $abstractvectortype$ r  = ($abstractvectortype$) vsp.zero();
+        $abstractvectortype$ vi = ($abstractvectortype$) v;
+        if (m.allTrue()) {
+            return vi;
+        }
+        for(int i = 0, j = 0; i < vsp.length(); i++) {
+            if (m.laneIsSet(i)) {
+                r = r.withLane(j++, vi.lane(i));
+            }
+        }
+        return r;
+    }
+
     interface FStOp<M> {
         void apply(M memory, int offset, int i, $type$ a);
     }
@@ -2654,6 +2684,43 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                      this, vsp,
                                      $Type$Vector::toShuffle0);
     }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    $Type$Vector compress(VectorMask<$Boxtype$> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends AbstractMask<$Boxtype$>>
+    $Type$Vector compressTemplate(Class<M> masktype, M m) {
+      m.check(masktype, this);
+      return ($Type$Vector) VectorSupport.comExpOp(VectorSupport.VECTOR_OP_COMPRESS, getClass(), masktype,
+                                                   $type$.class, length(), this, m,
+                                                   (v1, m1) -> compressHelper(v1, m1));
+    }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    $Type$Vector expand(VectorMask<$Boxtype$> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends AbstractMask<$Boxtype$>>
+    $Type$Vector expandTemplate(Class<M> masktype, M m) {
+      m.check(masktype, this);
+      return ($Type$Vector) VectorSupport.comExpOp(VectorSupport.VECTOR_OP_EXPAND, getClass(), masktype,
+                                                   $type$.class, length(), this, m,
+                                                   (v1, m1) -> expandHelper(v1, m1));
+    }
+
 
     /**
      * {@inheritDoc} <!--workaround-->

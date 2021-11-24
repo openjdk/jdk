@@ -470,6 +470,22 @@ final class ShortMaxVector extends ShortVector {
 
     @Override
     @ForceInline
+    public ShortMaxVector compress(VectorMask<Short> m) {
+        return (ShortMaxVector)
+            super.compressTemplate(ShortMaxMask.class,
+                                   (ShortMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ShortMaxVector expand(VectorMask<Short> m) {
+        return (ShortMaxVector)
+            super.expandTemplate(ShortMaxMask.class,
+                                   (ShortMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public ShortMaxVector selectFrom(Vector<Short> v) {
         return (ShortMaxVector)
             super.selectFromTemplate((ShortMaxVector) v);  // specialize
@@ -640,6 +656,15 @@ final class ShortMaxVector extends ShortVector {
         public ShortMaxMask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public ShortMaxMask compress() {
+            return (ShortMaxMask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                ShortMaxVector.class, ShortMaxMask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

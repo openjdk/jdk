@@ -3676,6 +3676,14 @@ void sve_cmp(Condition cond, PRegister Pd, SIMD_RegVariant T,
     f(0b001100, 15, 10), rf(Zn, 5), rf(Zd, 0);
   }
 
+  // Shuffle active elements of vector to the right and fill with zero
+  void sve_compact(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, PRegister Pg) {
+    starti;
+    assert(T == S || T == D, "invalid size");
+    f(0b00000101, 31, 24), f(T, 23, 22), f(0b100001100, 21, 13);
+    pgrf(Pg, 10), rf(Zn, 5), rf(Zd, 0);
+  }
+
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
   }
 

@@ -457,6 +457,22 @@ final class Double512Vector extends DoubleVector {
 
     @Override
     @ForceInline
+    public Double512Vector compress(VectorMask<Double> m) {
+        return (Double512Vector)
+            super.compressTemplate(Double512Mask.class,
+                                   (Double512Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Double512Vector expand(VectorMask<Double> m) {
+        return (Double512Vector)
+            super.expandTemplate(Double512Mask.class,
+                                   (Double512Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Double512Vector selectFrom(Vector<Double> v) {
         return (Double512Vector)
             super.selectFromTemplate((Double512Vector) v);  // specialize
@@ -643,6 +659,15 @@ final class Double512Vector extends DoubleVector {
         public Double512Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Double512Mask compress() {
+            return (Double512Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Double512Vector.class, Double512Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 

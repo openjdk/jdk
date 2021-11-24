@@ -351,6 +351,36 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return vectorFactory(res);
     }
 
+    static FloatVector expandHelper(Vector<Float> v, VectorMask<Float> m) {
+        VectorSpecies<Float> vsp = m.vectorSpecies();
+        FloatVector r  = (FloatVector) vsp.zero();
+        FloatVector vi = (FloatVector) v;
+        if (m.allTrue()) {
+            return vi;
+        }
+        for(int i = 0,j = 0; i < vsp.length(); i++) {
+            if(m.laneIsSet(i)) {
+                r = r.withLane(i, vi.lane(j++));
+            }
+        }
+        return r;
+    }
+
+    static FloatVector compressHelper(Vector<Float> v, VectorMask<Float> m) {
+        VectorSpecies<Float> vsp = m.vectorSpecies();
+        FloatVector r  = (FloatVector) vsp.zero();
+        FloatVector vi = (FloatVector) v;
+        if (m.allTrue()) {
+            return vi;
+        }
+        for(int i = 0, j = 0; i < vsp.length(); i++) {
+            if (m.laneIsSet(i)) {
+                r = r.withLane(j++, vi.lane(i));
+            }
+        }
+        return r;
+    }
+
     interface FStOp<M> {
         void apply(M memory, int offset, int i, float a);
     }
@@ -2215,6 +2245,43 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                      this, vsp,
                                      FloatVector::toShuffle0);
     }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    FloatVector compress(VectorMask<Float> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends AbstractMask<Float>>
+    FloatVector compressTemplate(Class<M> masktype, M m) {
+      m.check(masktype, this);
+      return (FloatVector) VectorSupport.comExpOp(VectorSupport.VECTOR_OP_COMPRESS, getClass(), masktype,
+                                                   float.class, length(), this, m,
+                                                   (v1, m1) -> compressHelper(v1, m1));
+    }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    FloatVector expand(VectorMask<Float> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends AbstractMask<Float>>
+    FloatVector expandTemplate(Class<M> masktype, M m) {
+      m.check(masktype, this);
+      return (FloatVector) VectorSupport.comExpOp(VectorSupport.VECTOR_OP_EXPAND, getClass(), masktype,
+                                                   float.class, length(), this, m,
+                                                   (v1, m1) -> expandHelper(v1, m1));
+    }
+
 
     /**
      * {@inheritDoc} <!--workaround-->

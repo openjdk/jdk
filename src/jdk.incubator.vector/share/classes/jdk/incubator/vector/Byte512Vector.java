@@ -470,6 +470,22 @@ final class Byte512Vector extends ByteVector {
 
     @Override
     @ForceInline
+    public Byte512Vector compress(VectorMask<Byte> m) {
+        return (Byte512Vector)
+            super.compressTemplate(Byte512Mask.class,
+                                   (Byte512Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Byte512Vector expand(VectorMask<Byte> m) {
+        return (Byte512Vector)
+            super.expandTemplate(Byte512Mask.class,
+                                   (Byte512Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Byte512Vector selectFrom(Vector<Byte> v) {
         return (Byte512Vector)
             super.selectFromTemplate((Byte512Vector) v);  // specialize
@@ -766,6 +782,15 @@ final class Byte512Vector extends ByteVector {
         public Byte512Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Byte512Mask compress() {
+            return (Byte512Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Byte512Vector.class, Byte512Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 
