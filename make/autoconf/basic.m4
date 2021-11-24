@@ -100,7 +100,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
       [build username to use in version strings])])
   if test "x$with_build_user" != x; then
     USERNAME="$with_build_user"
-  else 
+  else
     # Outer [ ] to quote m4.
     [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
   fi
