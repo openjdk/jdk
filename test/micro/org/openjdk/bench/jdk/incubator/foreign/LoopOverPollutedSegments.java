@@ -22,7 +22,6 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
@@ -42,7 +41,8 @@ import java.lang.invoke.VarHandle;
 import java.util.concurrent.TimeUnit;
 
 import static jdk.incubator.foreign.MemoryLayout.PathElement.sequenceElement;
-import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_FLOAT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -62,7 +62,7 @@ public class LoopOverPollutedSegments {
     byte[] arr;
     long addr;
 
-    static final VarHandle intHandle = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(int.class, MemoryLayout.PathElement.sequenceElement());
+    static final VarHandle intHandle = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(MemoryLayout.PathElement.sequenceElement());
 
 
     @Setup
@@ -79,14 +79,14 @@ public class LoopOverPollutedSegments {
         for (int rep = 0 ; rep < 5 ; rep++) {
             for (int i = 0; i < ELEM_SIZE; i++) {
                 unsafe.putInt(arr, Unsafe.ARRAY_BYTE_BASE_OFFSET + (i * 4), i);
-                MemoryAccess.setIntAtIndex(nativeSegment, i, i);
-                MemoryAccess.setFloatAtIndex(nativeSegment, i, i);
+                nativeSegment.setAtIndex(JAVA_INT, i, i);
+                nativeSegment.setAtIndex(JAVA_FLOAT, i, i);
                 intHandle.set(nativeSegment, (long)i, i);
-                MemoryAccess.setIntAtIndex(heapSegmentBytes, i, i);
-                MemoryAccess.setFloatAtIndex(heapSegmentBytes, i, i);
+                heapSegmentBytes.setAtIndex(JAVA_INT, i, i);
+                heapSegmentBytes.setAtIndex(JAVA_FLOAT, i, i);
                 intHandle.set(heapSegmentBytes, (long)i, i);
-                MemoryAccess.setIntAtIndex(heapSegmentFloats, i, i);
-                MemoryAccess.setFloatAtIndex(heapSegmentFloats, i, i);
+                heapSegmentFloats.setAtIndex(JAVA_INT, i, i);
+                heapSegmentFloats.setAtIndex(JAVA_FLOAT, i, i);
                 intHandle.set(heapSegmentFloats, (long)i, i);
             }
         }
@@ -113,11 +113,11 @@ public class LoopOverPollutedSegments {
     }
 
     @Benchmark
-    public int native_segment_static() {
+    public int native_segment_instance() {
         int sum = 0;
         for (int k = 0; k < ELEM_SIZE; k++) {
-            MemoryAccess.setIntAtOffset(nativeSegment, k, k + 1);
-            int v = MemoryAccess.getIntAtOffset(nativeSegment, k);
+            nativeSegment.setAtIndex(JAVA_INT, k, k + 1);
+            int v = nativeSegment.getAtIndex(JAVA_INT, k);
             sum += v;
         }
         return sum;
@@ -135,11 +135,11 @@ public class LoopOverPollutedSegments {
     }
 
     @Benchmark
-    public int heap_segment_ints_static() {
+    public int heap_segment_ints_instance() {
         int sum = 0;
         for (int k = 0; k < ELEM_SIZE; k++) {
-            MemoryAccess.setIntAtOffset(heapSegmentBytes, k, k + 1);
-            int v = MemoryAccess.getIntAtOffset(heapSegmentBytes, k);
+            heapSegmentBytes.setAtIndex(JAVA_INT, k, k + 1);
+            int v = heapSegmentBytes.getAtIndex(JAVA_INT, k);
             sum += v;
         }
         return sum;
@@ -157,11 +157,11 @@ public class LoopOverPollutedSegments {
     }
 
     @Benchmark
-    public int heap_segment_floats_static() {
+    public int heap_segment_floats_instance() {
         int sum = 0;
         for (int k = 0; k < ELEM_SIZE; k++) {
-            MemoryAccess.setIntAtOffset(heapSegmentFloats, k, k + 1);
-            int v = MemoryAccess.getIntAtOffset(heapSegmentFloats, k);
+            heapSegmentFloats.setAtIndex(JAVA_INT, k, k + 1);
+            int v = heapSegmentFloats.getAtIndex(JAVA_INT, k);
             sum += v;
         }
         return sum;
