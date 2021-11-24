@@ -329,11 +329,11 @@ void ZDriverMinor::collect(const ZDriverRequest& request) {
   case GCCause::_z_minor_timer:
   case GCCause::_z_minor_allocation_rate:
   case GCCause::_z_major_young:
+  case GCCause::_z_minor_high_usage:
     // Start asynchronous GC
     _port.send_async(request);
     break;
 
-  case GCCause::_z_minor_high_usage:
   case GCCause::_z_major_young_preclean:
     // Start synchronous GC
     _port.send_sync(request);
