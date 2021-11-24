@@ -59,7 +59,9 @@ public class BMPBitsPerPixelTest {
                 imageType = BufferedImage.TYPE_BYTE_INDEXED;
             }
             BufferedImage img = new BufferedImage(10, 10, imageType, (IndexColorModel)cm);
-            ImageIO.write(img, "BMP", new File("test.bmp"));
+            File file = File.createTempFile("test", ".bmp", new File("."));
+            file.deleteOnExit();
+            ImageIO.write(img, "BMP", file);
         } catch (IOException e) {
             exceptionThrown = true;
         } catch (Exception e) {
