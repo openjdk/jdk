@@ -27,11 +27,12 @@
  */
 
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemoryLayout;
 
 import java.lang.invoke.MethodHandles;
+import java.nio.ByteOrder;
 
+import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
@@ -66,49 +67,48 @@ public class TestLayoutConstants {
     public Object[][] createLayouts() {
         return new Object[][] {
                 //padding
-                { MemoryLayouts.PAD_32 },
-                { MemoryLayout.sequenceLayout(MemoryLayouts.PAD_32) },
-                { MemoryLayout.sequenceLayout(5, MemoryLayouts.PAD_32) },
-                { MemoryLayout.structLayout(MemoryLayouts.PAD_32, MemoryLayouts.PAD_32) },
-                { MemoryLayout.unionLayout(MemoryLayouts.PAD_32, MemoryLayouts.PAD_32) },
+                {MemoryLayout.paddingLayout(32)},
+                { MemoryLayout.sequenceLayout(MemoryLayout.paddingLayout(32)) },
+                { MemoryLayout.sequenceLayout(5, MemoryLayout.paddingLayout(32)) },
+                { MemoryLayout.structLayout(MemoryLayout.paddingLayout(32), MemoryLayout.paddingLayout(32)) },
+                { MemoryLayout.unionLayout(MemoryLayout.paddingLayout(32), MemoryLayout.paddingLayout(32)) },
                 //values, big endian
-                { MemoryLayouts.BITS_32_BE },
+                { ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN) },
                 { MemoryLayout.structLayout(
-                        MemoryLayouts.BITS_32_BE,
-                        MemoryLayouts.BITS_32_BE) },
+                        ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN),
+                        ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN)) },
                 { MemoryLayout.unionLayout(
-                        MemoryLayouts.BITS_32_BE,
-                        MemoryLayouts.BITS_32_BE) },
+                        ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN),
+                        ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN)) },
                 //values, little endian
-                { MemoryLayouts.BITS_32_LE },
+                { ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN) },
                 { MemoryLayout.structLayout(
-                        MemoryLayouts.BITS_32_LE,
-                        MemoryLayouts.BITS_32_LE) },
+                        ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN),
+                        ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN)) },
                 { MemoryLayout.unionLayout(
-                        MemoryLayouts.BITS_32_LE,
-                        MemoryLayouts.BITS_32_LE) },
+                        ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN),
+                        ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN)) },
                 //deeply nested
                 { MemoryLayout.structLayout(
-                        MemoryLayouts.PAD_16,
+                        MemoryLayout.paddingLayout(16),
                         MemoryLayout.structLayout(
-                                MemoryLayouts.PAD_8,
-                                MemoryLayouts.BITS_32_BE)) },
+                                MemoryLayout.paddingLayout(8),
+                                ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN))) },
                 { MemoryLayout.unionLayout(
-                        MemoryLayouts.PAD_16,
+                        MemoryLayout.paddingLayout(16),
                         MemoryLayout.structLayout(
-                                MemoryLayouts.PAD_8,
-                                MemoryLayouts.BITS_32_BE)) },
+                                MemoryLayout.paddingLayout(8),
+                                ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN))) },
                 { MemoryLayout.sequenceLayout(
                         MemoryLayout.structLayout(
-                                MemoryLayouts.PAD_8,
-                                MemoryLayouts.BITS_32_BE)) },
+                                MemoryLayout.paddingLayout(8),
+                                ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN))) },
                 { MemoryLayout.sequenceLayout(5,
                         MemoryLayout.structLayout(
-                                MemoryLayouts.PAD_8,
-                                MemoryLayouts.BITS_32_BE)) },
-                { MemoryLayouts.BITS_32_LE.withName("myInt") },
-                { MemoryLayouts.BITS_32_LE.withBitAlignment(8) },
-                { MemoryLayouts.BITS_32_LE.withAttribute("xyz", "abc") },
+                                MemoryLayout.paddingLayout(8),
+                                ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN))) },
+                { ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN).withName("myInt") },
+                { ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN).withBitAlignment(8) },
         };
     }
 

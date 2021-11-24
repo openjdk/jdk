@@ -27,33 +27,45 @@
 package jdk.incubator.foreign;
 
 import jdk.internal.foreign.MemoryAddressImpl;
-import jdk.internal.ref.CleanerFactory;
 import jdk.internal.reflect.CallerSensitive;
 
-import java.lang.ref.Cleaner;
+import java.nio.ByteOrder;
 
 /**
- * A memory address models a reference into a memory location. Memory addresses are typically obtained using the
- * {@link MemorySegment#address()} method, and can refer to either off-heap or on-heap memory. Off-heap memory
- * addresses are referred to as <em>native</em> memory addresses (see {@link #isNative()}). Native memory addresses
- * allow clients to obtain a raw memory address (expressed as a long value) which can then be used e.g. when interacting
- * with native code.
- * <p>
- * Given an address, it is possible to compute its offset relative to a given segment, which can be useful
- * when performing memory dereference operations using a memory access var handle (see {@link MemoryHandles}).
- * <p>
- * A memory address is associated with a {@linkplain ResourceScope resource scope}; the resource scope determines the
- * lifecycle of the memory address, and whether the address can be used from multiple threads. Memory addresses
- * obtained from {@linkplain #ofLong(long) numeric values}, or from native code, are associated with the
- * {@linkplain ResourceScope#globalScope() global resource scope}. Memory addresses obtained from segments
- * are associated with the same scope as the segment from which they have been obtained.
+ * A memory address models a reference into a memory location. Memory addresses are typically obtained in three ways:
+ * <ul>
+ *     <li>By calling {@link Addressable#address()} on an instance of type {@link Addressable} (e.g. a memory segment);</li>
+ *     <li>By invoking a {@linkplain CLinker#downcallHandle(FunctionDescriptor) downcall method handle} which returns a pointer;</li>
+ *     <li>By reading an address from memory, e.g. via {@link MemorySegment#get(ValueLayout.OfAddress, long)}.</li>
+ * </ul>
+ * A memory address is backed by a raw machine pointer, expressed as a {@linkplain #toRawLongValue() long value}.
+ *
+ * <h2>Dereference</h2>
+ *
+ * A memory address can be read or written using various methods provided in this class (e.g. {@link #get(ValueLayout.OfInt, long)}).
+ * Each dereference method takes a {@linkplain jdk.incubator.foreign.ValueLayout value layout}, which specifies the size,
+ * alignment constraints, byte order as well as the Java type associated with the dereference operation, and an offset.
+ * For instance, to read an int from a segment, using {@link ByteOrder#nativeOrder() default endianness}, the following code can be used:
+ * <blockquote><pre>{@code
+MemoryAddress address = ...
+int value = address.get(ValueLayout.JAVA_INT, 0);
+ * }</pre></blockquote>
+ *
+ * If the value to be read is stored in memory using {@link ByteOrder#BIG_ENDIAN big-endian} encoding, the dereference operation
+ * can be expressed as follows:
+ * <blockquote><pre>{@code
+MemoryAddress address = ...
+int value = address.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
+ * }</pre></blockquote>
+ *
+ * All the dereference methods in this class are <a href="package-summary.html#restricted"><em>restricted</em></a>: since
+ * a memory address does not feature temporal nor spatial bounds, the runtime has no way to check the correctness
+ * of the memory dereference operation.
  * <p>
  * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
  * programmers should treat instances that are {@linkplain #equals(Object) equal} as interchangeable and should not
  * use instances for synchronization, or unpredictable behavior may occur. For example, in a future release,
  * synchronization may fail. The {@code equals} method should be used for comparisons.
- * <p>
- * Non-platform classes should not implement {@linkplain MemoryAddress} directly.
  *
  * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
  * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
@@ -63,10 +75,11 @@ import java.lang.ref.Cleaner;
  */
 public sealed interface MemoryAddress extends Addressable permits MemoryAddressImpl {
 
-    @Override
-    default MemoryAddress address() {
-        return this;
-    }
+    /**
+     * Returns the raw long value associated with this memory address.
+     * @return The raw long value associated with this memory address.
+     */
+    long toRawLongValue();
 
     /**
      * Creates a new memory address with given offset (in bytes), which might be negative, from current one.
@@ -76,126 +89,48 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
     MemoryAddress addOffset(long offset);
 
     /**
-     * Returns the resource scope associated with this memory address.
-     * @return the resource scope associated with this memory address.
-     */
-    ResourceScope scope();
-
-    /**
-     * Returns the offset of this memory address into the given segment. More specifically, if both the segment's
-     * base address and this address are native addresses, the result is computed as
-     * {@code this.toRawLongValue() - segment.address().toRawLongValue()}. Otherwise, if both addresses in the form
-     * {@code (B, O1)}, {@code (B, O2)}, where {@code B} is the same base heap object and {@code O1}, {@code O2}
-     * are byte offsets (relative to the base object) associated with this address and the segment's base address,
-     * the result is computed as {@code O1 - O2}.
+     * Reads a UTF-8 encoded, null-terminated string from this address and offset.
      * <p>
-     * If the segment's base address and this address are both heap addresses, but with different base objects, the result is undefined
-     * and an exception is thrown. Similarly, if the segment's base address is an heap address (resp. off-heap) and
-     * this address is an off-heap (resp. heap) address, the result is undefined and an exception is thrown.
-     * Otherwise, the result is a byte offset {@code SO}. If this address falls within the
-     * spatial bounds of the given segment, then {@code 0 <= SO < segment.byteSize()}; otherwise, {@code SO < 0 || SO > segment.byteSize()}.
-     * @return the offset of this memory address into the given segment.
-     * @param segment the segment relative to which this address offset should be computed
-     * @throws IllegalArgumentException if {@code segment} is not compatible with this address; this can happen, for instance,
-     * when {@code segment} models an heap memory region, while this address is a {@linkplain #isNative() native} address.
-     */
-    long segmentOffset(MemorySegment segment);
-
-    /**
-     Returns a new native memory segment with given size and resource scope (replacing the scope already associated
-     * with this address), and whose base address is this address. This method can be useful when interacting with custom
-     * native memory sources (e.g. custom allocators), where an address to some
-     * underlying memory region is typically obtained from native code (often as a plain {@code long} value).
-     * The returned segment is not read-only (see {@link MemorySegment#isReadOnly()}), and is associated with the
-     * provided resource scope.
-     * <p>
-     * Clients should ensure that the address and bounds refers to a valid region of memory that is accessible for reading and,
-     * if appropriate, writing; an attempt to access an invalid memory location from Java code will either return an arbitrary value,
-     * have no visible effect, or cause an unspecified exception to be thrown.
-     * <p>
-     * This method is equivalent to the following code:
-     * <pre>{@code
-    asSegment(byteSize, null, scope);
-     * }</pre>
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement string.  The {@link
+     * java.nio.charset.CharsetDecoder} class should be used when more control
+     * over the decoding process is required.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
-     * @param bytesSize the desired size.
-     * @param scope the native segment scope.
-     * @return a new native memory segment with given base address, size and scope.
-     * @throws IllegalArgumentException if {@code bytesSize <= 0}.
-     * @throws IllegalStateException if either the scope associated with this address or the provided scope
-     * have been already closed, or if access occurs from a thread other than the thread owning either
-     * scopes.
-     * @throws UnsupportedOperationException if this address is not a {@linkplain #isNative() native} address.
+     * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     * @return a Java string constructed from the bytes read from the given starting address ({@code toRowLongValue() + offset})
+     * up to (but not including) the first {@code '\0'} terminator character (assuming one is found).
+     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     @CallerSensitive
-    MemorySegment asSegment(long bytesSize, ResourceScope scope);
+    String getUtf8String(long offset);
 
     /**
-     * Returns a new native memory segment with given size and resource scope (replacing the scope already associated
-     * with this address), and whose base address is this address. This method can be useful when interacting with custom
-     * native memory sources (e.g. custom allocators), where an address to some
-     * underlying memory region is typically obtained from native code (often as a plain {@code long} value).
-     * The returned segment is associated with the provided resource scope.
+     * Writes the given string to this address at given offset, converting it to a null-terminated byte sequence using UTF-8 encoding.
      * <p>
-     * Clients should ensure that the address and bounds refers to a valid region of memory that is accessible for reading and,
-     * if appropriate, writing; an attempt to access an invalid memory location from Java code will either return an arbitrary value,
-     * have no visible effect, or cause an unspecified exception to be thrown.
-     * <p>
-     * Calling {@link ResourceScope#close()} on the scope associated with the returned segment will result in calling
-     * the provided cleanup action (if any).
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
-     *
-     * @param bytesSize the desired size.
-     * @param cleanupAction the cleanup action; can be {@code null}.
-     * @param scope the native segment scope.
-     * @return a new native memory segment with given base address, size and scope.
-     * @throws IllegalArgumentException if {@code bytesSize <= 0}.
-     * @throws IllegalStateException if either the scope associated with this address or the provided scope
-     * have been already closed, or if access occurs from a thread other than the thread owning either
-     * scopes.
-     * @throws UnsupportedOperationException if this address is not a {@linkplain #isNative() native} address.
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement string.  The {@link
+     * java.nio.charset.CharsetDecoder} class should be used when more control
+     * over the decoding process is required.
+     * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     * @param str the Java string to be written at this address.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     @CallerSensitive
-    MemorySegment asSegment(long bytesSize, Runnable cleanupAction, ResourceScope scope);
-
-    /**
-     * Is this an off-heap memory address?
-     * @return true, if this is an off-heap memory address.
-     */
-    boolean isNative();
-
-    /**
-     * Returns the raw long value associated with this native memory address.
-     * @return The raw long value associated with this native memory address.
-     * @throws UnsupportedOperationException if this memory address is not a {@linkplain #isNative() native} address.
-     * @throws IllegalStateException if the scope associated with this segment has been already closed,
-     * or if access occurs from a thread other than the thread owning either segment.
-     */
-    long toRawLongValue();
+    void setUtf8String(long offset, String str);
 
     /**
      * Compares the specified object with this address for equality. Returns {@code true} if and only if the specified
      * object is also an address, and it refers to the same memory location as this address.
-     *
-     * @apiNote two addresses might be considered equal despite their associated resource scopes differ. This
-     * can happen, for instance, if the same memory address is used to create memory segments with different
-     * scopes (using {@link #asSegment(long, ResourceScope)}), and the base address of the resulting segments is
-     * then compared.
      *
      * @param that the object to be compared for equality with this address.
      * @return {@code true} if the specified object is equal to this address.
@@ -211,20 +146,594 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
     int hashCode();
 
     /**
-     * The native memory address instance modelling the {@code NULL} address, associated
-     * with the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The native memory address instance modelling the {@code NULL} address.
      */
-    MemoryAddress NULL = new MemoryAddressImpl(null, 0L);
+    MemoryAddress NULL = new MemoryAddressImpl(0L);
 
     /**
-     * Obtain a native memory address instance from given long address. The returned address is associated
-     * with the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * Obtain a native memory address instance from given long address.
      * @param value the long address.
      * @return the new memory address instance.
      */
     static MemoryAddress ofLong(long value) {
         return value == 0 ?
                 NULL :
-                new MemoryAddressImpl(null, value);
+                new MemoryAddressImpl(value);
     }
+
+    /**
+     * Reads a byte from this address and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     * @return a byte value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    byte get(ValueLayout.OfByte layout, long offset);
+
+    /**
+     * Writes a byte to this address instance and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     * @param value the byte value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void set(ValueLayout.OfByte layout, long offset, byte value);
+
+    /**
+     * Reads a boolean from this address and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     * @return a boolean value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    boolean get(ValueLayout.OfBoolean layout, long offset);
+
+    /**
+     * Writes a boolean to this address instance and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     * @param value the boolean value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void set(ValueLayout.OfBoolean layout, long offset, boolean value);
+
+    /**
+     * Reads a char from this address and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     * @return a char value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    char get(ValueLayout.OfChar layout, long offset);
+
+    /**
+     * Writes a char to this address instance and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     * @param value the char value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void set(ValueLayout.OfChar layout, long offset, char value);
+
+    /**
+     * Reads a short from this address and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     * @return a short value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    short get(ValueLayout.OfShort layout, long offset);
+
+    /**
+     * Writes a short to this address instance and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     * @param value the short value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void set(ValueLayout.OfShort layout, long offset, short value);
+
+    /**
+     * Reads an int from this address and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     * @return an int value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    int get(ValueLayout.OfInt layout, long offset);
+
+    /**
+     * Writes an int to this address instance and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     * @param value the int value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void set(ValueLayout.OfInt layout, long offset, int value);
+
+    /**
+     * Reads a float from this address and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     * @return a float value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    float get(ValueLayout.OfFloat layout, long offset);
+
+    /**
+     * Writes a float to this address instance and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     * @param value the float value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void set(ValueLayout.OfFloat layout, long offset, float value);
+
+    /**
+     * Reads a long from this address and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     * @return a long value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    long get(ValueLayout.OfLong layout, long offset);
+
+    /**
+     * Writes a long to this address instance and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     * @param value the long value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void set(ValueLayout.OfLong layout, long offset, long value);
+
+    /**
+     * Reads a double from this address and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     * @return a double value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    double get(ValueLayout.OfDouble layout, long offset);
+
+    /**
+     * Writes a double to this address instance and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     * @param value the double value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void set(ValueLayout.OfDouble layout, long offset, double value);
+
+    /**
+     * Reads an address from this address and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     * @return an address value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    MemoryAddress get(ValueLayout.OfAddress layout, long offset);
+
+    /**
+     * Writes an address to this address instance and offset with given layout.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     * @param value the address value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void set(ValueLayout.OfAddress layout, long offset, Addressable value);
+
+    /**
+     * Reads a char from this address and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @return a char value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    char getAtIndex(ValueLayout.OfChar layout, long index);
+
+    /**
+     * Writes a char to this address instance and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the char value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void setAtIndex(ValueLayout.OfChar layout, long index, char value);
+
+    /**
+     * Reads a short from this address and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @return a short value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    short getAtIndex(ValueLayout.OfShort layout, long index);
+
+    /**
+     * Writes a short to this address instance and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the short value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void setAtIndex(ValueLayout.OfShort layout, long index, short value);
+
+    /**
+     * Reads an int from this address and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @return an int value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    int getAtIndex(ValueLayout.OfInt layout, long index);
+
+    /**
+     * Writes an int to this address instance and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the int value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void setAtIndex(ValueLayout.OfInt layout, long index, int value);
+
+    /**
+     * Reads a float from this address and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @return a float value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    float getAtIndex(ValueLayout.OfFloat layout, long index);
+
+    /**
+     * Writes a float to this address instance and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the float value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void setAtIndex(ValueLayout.OfFloat layout, long index, float value);
+
+    /**
+     * Reads a long from this address and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @return a long value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    long getAtIndex(ValueLayout.OfLong layout, long index);
+
+    /**
+     * Writes a long to this address instance and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the long value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void setAtIndex(ValueLayout.OfLong layout, long index, long value);
+
+    /**
+     * Reads a double from this address and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @return a double value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    double getAtIndex(ValueLayout.OfDouble layout, long index);
+
+    /**
+     * Writes a double to this address instance and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the double value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void setAtIndex(ValueLayout.OfDouble layout, long index, double value);
+
+    /**
+     * Reads an address from this address and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @return an address value read from this address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    MemoryAddress getAtIndex(ValueLayout.OfAddress layout, long index);
+
+    /**
+     * Writes an address to this address instance and index, scaled by given layout size.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the address value to be written.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    void setAtIndex(ValueLayout.OfAddress layout, long index, Addressable value);
 }
