@@ -77,6 +77,11 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.SnippetTaglet;
  */
 public final class Parser {
 
+    private static final Pattern JAVA_COMMENT = Pattern.compile(
+            "^(?<payload>.*)//(?=[ \t]*@[a-z]+\\b)(?<markup>.*)$");
+    private static final Pattern PROPERTIES_COMMENT = Pattern.compile(
+            "^(?<payload>[ \t]*([!#].*)?)[!#](?=[ \t]*@[a-z]+\\b)(?<markup>.*)$");
+
     private final Resources resources;
     private final MarkupParser markupParser;
 
@@ -92,8 +97,8 @@ public final class Parser {
     public Result parse(Optional<SnippetTaglet.Language> language, String source) throws ParseException {
         SnippetTaglet.Language lang = language.orElse(SnippetTaglet.Language.JAVA);
         var p = switch (lang) {
-            case JAVA -> Pattern.compile("^(?<payload>.*)//(?=[ \t]*@[a-z]+\\b)(?<markup>.*)$");
-            case PROPERTIES -> Pattern.compile("^(?<payload>[ \t]*([!#].*)?)[!#](?=[ \t]*@[a-z]+\\b)(?<markup>.*)$");
+            case JAVA -> JAVA_COMMENT;
+            case PROPERTIES -> PROPERTIES_COMMENT;
         };
         return parse(p, source);
     }
