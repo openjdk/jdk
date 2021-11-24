@@ -632,7 +632,7 @@ public class SourceLauncherTest extends TestRunner {
 
     @Test
     public void testNoOptionsWarnings(Path base) throws IOException {
-        tb.writeJavaFiles(base, "public class Main { public static void main(String... args) {System.out.println(\"coto\");}}");
+        tb.writeJavaFiles(base, "public class Main { public static void main(String... args) {}}");
         String log = new JavaTask(tb)
                 .vmOptions("--source", "7")
                 .className(base.resolve("Main.java").toString())
