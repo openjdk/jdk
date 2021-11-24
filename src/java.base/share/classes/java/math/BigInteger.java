@@ -1885,7 +1885,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             this.depth = depth;
         }
 
-        private RecursiveTask<BigInteger> forkOrInvoke() {
+        protected RecursiveTask<BigInteger> forkOrInvoke() {
             if (parallel && depth <= PARALLEL_FORK_THRESHOLD) fork();
             else invoke();
             return this;
