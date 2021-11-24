@@ -4060,47 +4060,74 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
 }
 
 #ifdef _LP64
-void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, KRegister mask,
+void C2_MacroAssembler::vector_mask_operation_helper(int opc, Register dst, Register tmp, int masklen) {
+  switch(opc) {
+    case Op_VectorMaskTrueCount:
+      popcntq(dst, tmp);
+      break;
+    case Op_VectorMaskLastTrue:
+      if (VM_Version::supports_lzcnt()) {
+        lzcntq(tmp, tmp);
+        movl(dst, 63);
+        subl(dst, tmp);
+      } else {
+        movl(dst, -1);
+        bsrq(tmp, tmp);
+        cmov32(Assembler::notZero, dst, tmp);
+      }
+      break;
+    case Op_VectorMaskFirstTrue:
+      if (VM_Version::supports_bmi1()) {
+        if (masklen < 32) {
+          orl(tmp, 1 << masklen);
+          tzcntl(dst, tmp);
+        } else if (masklen == 32) {
+          tzcntl(dst, tmp);
+        } else {
+          assert(masklen == 64, "");
+          tzcntq(dst, tmp);
+        }
+      } else {
+        if (masklen < 32) {
+          orl(tmp, 1 << masklen);
+          bsfl(dst, tmp);
+        } else {
+          assert(masklen == 32 || masklen == 64, "");
+          movl(dst, masklen);
+          if (masklen == 32)  {
+            bsfl(tmp, tmp);
+          } else {
+            bsfq(tmp, tmp);
+          }
+          cmov32(Assembler::notZero, dst, tmp);
+        }
+      }
+      break;
+    case Op_VectorMaskToLong:
+      assert(dst == tmp, "Dst and tmp should be the same for toLong operations");
+      break;
+    default: assert(false, "Unhandled mask operation");
+  }
+}
+
+void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, KRegister mask, Register tmp,
                                               int masklen, int masksize, int vec_enc) {
-  assert(VM_Version::supports_popcnt() &&
-         VM_Version::supports_lzcnt()  &&
-         VM_Version::supports_bmi1(), "");
+  assert(VM_Version::supports_popcnt(), "");
+
   if(VM_Version::supports_avx512bw()) {
-    kmovql(dst, mask);
+    kmovql(tmp, mask);
   } else {
     assert(masklen <= 16, "");
-    kmovwl(dst, mask);
+    kmovwl(tmp, mask);
   }
 
   // Mask generated out of partial vector comparisons/replicate/mask manipulation
   // operations needs to be clipped.
   if (masksize < 16 && opc != Op_VectorMaskFirstTrue) {
-    andq(dst, (1 << masklen) - 1);
+    andq(tmp, (1 << masklen) - 1);
   }
 
-  switch(opc) {
-    case Op_VectorMaskTrueCount:
-      popcntq(dst, dst);
-      break;
-    case Op_VectorMaskLastTrue:
-      lzcntq(dst, dst);
-      notl(dst);
-      addl(dst, 64);
-      break;
-    case Op_VectorMaskFirstTrue:
-      if (masklen < 32) {
-        orl(dst, 1 << masklen);
-        tzcntl(dst, dst);
-      } else if (masklen == 32) {
-        tzcntl(dst, dst);
-      } else {
-        tzcntq(dst, dst);
-      }
-      break;
-    case Op_VectorMaskToLong:
-      break;
-    default: assert(false, "Unhandled mask operation");
-  }
+  vector_mask_operation_helper(opc, dst, tmp, masklen);
 }
 
 void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
@@ -4150,44 +4177,6 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister
     andq(tmp, (1 << masklen) - 1);
   }
 
-  switch(opc) {
-    case Op_VectorMaskTrueCount:
-      popcntl(dst, tmp);
-      break;
-    case Op_VectorMaskLastTrue:
-      if (VM_Version::supports_lzcnt()) {
-        lzcntl(tmp, tmp);
-        movl(dst, 31);
-        subl(dst, tmp);
-      } else {
-        movl(dst, -1);
-        bsrl(tmp, tmp);
-        cmov32(Assembler::notZero, dst, tmp);
-      }
-      break;
-    case Op_VectorMaskFirstTrue:
-      if (VM_Version::supports_bmi1()) {
-        if (masklen < 32) {
-          orl(tmp, 1 << masklen);
-          tzcntl(dst, tmp);
-        } else {
-          tzcntl(dst, tmp);
-        }
-      } else {
-        if (masklen < 32) {
-          orl(tmp, 1 << masklen);
-          bsfl(dst, tmp);
-        } else {
-          movl(dst, masklen);
-          bsfl(tmp, tmp);
-          cmov32(Assembler::notZero, dst, tmp);
-        }
-      }
-      break;
-    case Op_VectorMaskToLong:
-      assert(dst == tmp, "Dst and tmp should be the same for toLong operations");
-      break;
-    default: assert(false, "Unhandled mask operation");
-  }
+  vector_mask_operation_helper(opc, dst, tmp, masklen);
 }
 #endif
