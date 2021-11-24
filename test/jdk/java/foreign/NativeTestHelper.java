@@ -22,58 +22,90 @@
  *
  */
 
+import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.CLinker;
+import jdk.incubator.foreign.FunctionDescriptor;
+import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SegmentAllocator;
+import jdk.incubator.foreign.ValueLayout;
+
+import java.lang.invoke.MethodHandle;
 
 public class NativeTestHelper {
 
-    static CLinker.TypeKind kind(MemoryLayout layout) {
-        return (CLinker.TypeKind)layout.attribute(CLinker.TypeKind.ATTR_NAME).orElseThrow(
-                () -> new IllegalStateException("Unexpected value layout: could not determine ABI class"));
+    public static boolean isIntegral(MemoryLayout layout) {
+        return layout instanceof ValueLayout valueLayout && isIntegral(valueLayout.carrier());
     }
 
-    public static boolean isIntegral(MemoryLayout layout) {
-        return kind(layout).isIntegral();
+    static boolean isIntegral(Class<?> clazz) {
+        return clazz == byte.class || clazz == char.class || clazz == short.class
+                || clazz == int.class || clazz == long.class;
     }
 
     public static boolean isPointer(MemoryLayout layout) {
-        return kind(layout).isPointer();
+        return layout instanceof ValueLayout valueLayout && valueLayout.carrier() == MemoryAddress.class;
     }
 
-    public static class NativeScope implements SegmentAllocator, AutoCloseable {
-        final ResourceScope resourceScope;
-        final ResourceScope.Handle scopeHandle;
-        final SegmentAllocator allocator;
+    // the constants below are useful aliases for C types. The type/carrier association is only valid for 64-bit platforms.
 
-        long allocatedBytes = 0;
+    /**
+     * The layout for the {@code bool} C type
+     */
+    public static final ValueLayout.OfBoolean C_BOOL = ValueLayout.JAVA_BOOLEAN;
+    /**
+     * The layout for the {@code char} C type
+     */
+    public static final ValueLayout.OfByte C_CHAR = ValueLayout.JAVA_BYTE;
+    /**
+     * The layout for the {@code short} C type
+     */
+    public static final ValueLayout.OfShort C_SHORT = ValueLayout.JAVA_SHORT.withBitAlignment(16);
+    /**
+     * The layout for the {@code int} C type
+     */
+    public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT.withBitAlignment(32);
 
-        public NativeScope() {
-            this.resourceScope = ResourceScope.newConfinedScope();
-            this.scopeHandle = resourceScope.acquire();
-            this.allocator = SegmentAllocator.arenaAllocator(resourceScope);
+    /**
+     * The layout for the {@code long long} C type.
+     */
+    public static final ValueLayout.OfLong C_LONG_LONG = ValueLayout.JAVA_LONG.withBitAlignment(64);
+    /**
+     * The layout for the {@code float} C type
+     */
+    public static final ValueLayout.OfFloat C_FLOAT = ValueLayout.JAVA_FLOAT.withBitAlignment(32);
+    /**
+     * The layout for the {@code double} C type
+     */
+    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE.withBitAlignment(64);
+    /**
+     * The {@code T*} native type.
+     */
+    public static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64);
+
+    private static CLinker LINKER = CLinker.systemCLinker();
+
+    private static final MethodHandle FREE = LINKER.downcallHandle(
+            LINKER.lookup("free").get(), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+
+    private static final MethodHandle MALLOC = LINKER.downcallHandle(
+            LINKER.lookup("malloc").get(), FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
+
+    public static void freeMemory(Addressable address) {
+        try {
+            FREE.invokeExact(address);
+        } catch (Throwable ex) {
+            throw new IllegalStateException(ex);
         }
+    }
 
-        @Override
-        public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-            allocatedBytes += bytesSize;
-            return allocator.allocate(bytesSize, bytesAlignment);
-        }
-
-        public ResourceScope scope() {
-            return resourceScope;
-        }
-
-        public long allocatedBytes() {
-            return allocatedBytes;
-        }
-
-        @Override
-        public void close() {
-            resourceScope.release(scopeHandle);
-            resourceScope.close();
+    public static MemoryAddress allocateMemory(long size) {
+        try {
+            return (MemoryAddress)MALLOC.invokeExact(size);
+        } catch (Throwable ex) {
+            throw new IllegalStateException(ex);
         }
     }
 }

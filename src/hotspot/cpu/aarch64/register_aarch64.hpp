@@ -268,6 +268,8 @@ class PRegisterImpl: public AbstractRegisterImpl {
 };
 
 // The predicate registers of SVE.
+CONSTANT_REGISTER_DECLARATION(PRegister, pnoreg, (-1));
+
 CONSTANT_REGISTER_DECLARATION(PRegister, p0,  ( 0));
 CONSTANT_REGISTER_DECLARATION(PRegister, p1,  ( 1));
 CONSTANT_REGISTER_DECLARATION(PRegister, p2,  ( 2));
