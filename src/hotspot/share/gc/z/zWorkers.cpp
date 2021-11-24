@@ -24,6 +24,8 @@
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/z/zCollector.inline.hpp"
+#include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
@@ -61,9 +63,10 @@ public:
   }
 };
 
-ZWorkers::ZWorkers(const char* name) :
+ZWorkers::ZWorkers(const char* name, ZCollectorId collector) :
     _workers(name,
-             UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads)) {
+             UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads)),
+    _collector(collector) {
 
   if (UseDynamicNumberOfGCThreads) {
     log_info_p(gc, init)("GC Workers: %u (dynamic)", _workers.max_workers());
@@ -88,15 +91,17 @@ uint ZWorkers::active_workers() const {
 }
 
 void ZWorkers::set_active_workers(uint nworkers) {
-  log_info(gc, task)("Using %u workers", nworkers);
+  log_info(gc, task)("Using %u workers for %s generation",
+                     nworkers, _collector == ZCollectorId::young ? "young" : "old");
   _workers.set_active_workers(nworkers);
 }
 
 void ZWorkers::run(ZTask* task) {
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), active_workers());
-  ZStatWorkers::at_start();
+  ZStatWorkers* stat_workers = ZHeap::heap()->collector(_collector)->stat_workers();
+  stat_workers->at_start();
   _workers.run_task(task->worker_task());
-  ZStatWorkers::at_end();
+  stat_workers->at_end();
 }
 
 void ZWorkers::run_all(ZTask* task) {

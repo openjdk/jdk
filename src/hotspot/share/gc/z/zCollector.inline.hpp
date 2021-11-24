@@ -68,6 +68,10 @@ inline ZStatCycle* ZCollector::stat_cycle() {
   return &_stat_cycle;
 }
 
+inline ZStatWorkers* ZCollector::stat_workers() {
+  return &_stat_workers;
+}
+
 inline ZStatMark* ZCollector::stat_mark() {
   return &_stat_mark;
 }

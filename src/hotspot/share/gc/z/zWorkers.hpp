@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZWORKERS_HPP
 
 #include "gc/shared/workerThread.hpp"
+#include "gc/z/zCollectorId.hpp"
 
 class ThreadClosure;
 class ZTask;
@@ -32,9 +33,10 @@ class ZTask;
 class ZWorkers {
 private:
   WorkerThreads _workers;
+  ZCollectorId _collector;
 
 public:
-  ZWorkers(const char* name);
+  ZWorkers(const char* name, ZCollectorId collector);
 
   uint active_workers() const;
   void set_active_workers(uint nworkers);

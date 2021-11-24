@@ -427,15 +427,16 @@ public:
 //
 class ZStatCycle {
 private:
-  uint64_t  _nwarmup_cycles;
-  Ticks     _start_of_last;
-  Ticks     _end_of_last;
-  NumberSeq _serial_time;
-  NumberSeq _parallelizable_time;
-  uint      _last_active_workers;
+  uint64_t     _nwarmup_cycles;
+  Ticks        _start_of_last;
+  Ticks        _end_of_last;
+  NumberSeq    _serial_time;
+  NumberSeq    _parallelizable_time;
+  uint         _last_active_workers;
+  ZCollectorId _collector;
 
 public:
-  ZStatCycle();
+  ZStatCycle(ZCollectorId collector);
 
   void at_start();
   void at_end(GCCause::Cause cause, uint active_workers);
@@ -455,16 +456,18 @@ public:
 //
 // Stat workers
 //
-class ZStatWorkers : public AllStatic {
+class ZStatWorkers {
 private:
-  static Ticks    _start_of_last;
-  static Tickspan _accumulated_duration;
+  Ticks    _start_of_last;
+  Tickspan _accumulated_duration;
 
 public:
-  static void at_start();
-  static void at_end();
+  ZStatWorkers();
 
-  static double get_and_reset_duration();
+  void at_start();
+  void at_end();
+
+  double get_and_reset_duration();
 };
 
 //

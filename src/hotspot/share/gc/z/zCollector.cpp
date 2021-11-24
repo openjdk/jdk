@@ -64,7 +64,7 @@ ZCollector::ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* p
     _page_allocator(page_allocator),
     _page_table(page_table),
     _forwarding_table(),
-    _workers(worker_prefix),
+    _workers(worker_prefix, id),
     _mark(this, page_table),
     _relocate(this),
     _relocation_set(this),
@@ -74,7 +74,8 @@ ZCollector::ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* p
     _phase(Phase::Relocate),
     _seqnum(1),
     _stat_heap(),
-    _stat_cycle(),
+    _stat_cycle(id),
+    _stat_workers(),
     _stat_mark() {
 }
 

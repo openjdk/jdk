@@ -1149,13 +1149,14 @@ public:
 //
 // Stat cycle
 //
-ZStatCycle::ZStatCycle() :
+ZStatCycle::ZStatCycle(ZCollectorId collector) :
     _nwarmup_cycles(0),
     _start_of_last(),
     _end_of_last(),
     _serial_time(0.7 /* alpha */),
     _parallelizable_time(0.7 /* alpha */),
-    _last_active_workers(0) {
+    _last_active_workers(0),
+    _collector(collector) {
 }
 
 void ZStatCycle::at_start() {
@@ -1170,11 +1171,13 @@ void ZStatCycle::at_end(GCCause::Cause cause, uint active_workers) {
     _nwarmup_cycles++;
   }
 
+  ZCollector* collector = ZHeap::heap()->collector(_collector);
+
   _last_active_workers = active_workers;
 
   // Calculate serial and parallelizable GC cycle times
   const double duration = (_end_of_last - _start_of_last).seconds();
-  const double workers_duration = ZStatWorkers::get_and_reset_duration();
+  const double workers_duration = collector->stat_workers()->get_and_reset_duration();
   const double serial_time = duration - workers_duration;
   const double parallelizable_time = workers_duration * active_workers;
   _serial_time.add(serial_time);
@@ -1221,8 +1224,9 @@ double ZStatCycle::time_since_last() {
 //
 // Stat workers
 //
-Ticks ZStatWorkers::_start_of_last;
-Tickspan ZStatWorkers::_accumulated_duration;
+ZStatWorkers::ZStatWorkers() :
+    _start_of_last(),
+    _accumulated_duration() {}
 
 void ZStatWorkers::at_start() {
   _start_of_last = Ticks::now();
