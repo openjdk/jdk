@@ -1318,7 +1318,7 @@ class PredecessorValidator : public BlockClosure {
     }
   }
 
-  void collect_predecessor(BlockBegin* const pred, const BlockBegin *sux) {
+  void collect_predecessor(BlockBegin* const pred, const BlockBegin* sux) {
     BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
     if (preds == NULL) {
       preds = new BlockList();
