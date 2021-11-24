@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -55,6 +56,7 @@ public class FunctionalCMEs {
                 new Object[]{new Hashtable<>(), true},
                 new Object[]{new LinkedHashMap<>(), true},
                 new Object[]{new TreeMap<>(), true},
+                new Object[]{new IdentityHashMap<>(), true},
                 // Test default Map methods - no CME
                 new Object[]{new Defaults.ExtendsAbstractMap<>(), false}
         ).iterator();
