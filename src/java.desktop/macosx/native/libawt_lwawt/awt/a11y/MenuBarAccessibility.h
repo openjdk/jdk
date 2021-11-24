@@ -1,11 +1,12 @@
 /*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,36 +23,12 @@
  * questions.
  */
 
-#include "jni.h"
-#import "JavaAccessibilityAction.h"
-#import "JavaAccessibilityUtilities.h"
-#import "CellAccessibility.h"
-#import "ColumnAccessibility.h"
-#import "TableAccessibility.h"
-#import "ThreadUtilities.h"
-#import "JNIUtilities.h"
-#import "sun_lwawt_macosx_CAccessibility.h"
+#import "CommonComponentAccessibility.h"
 
-static jclass sjc_CAccessibility = NULL;
+#import <AppKit/AppKit.h>
 
-static jmethodID jm_getChildrenAndRoles = NULL;
-#define GET_CHILDRENANDROLES_METHOD_RETURN(ret) \
-    GET_CACCESSIBILITY_CLASS_RETURN(ret); \
-    GET_STATIC_METHOD_RETURN(jm_getChildrenAndRoles, sjc_CAccessibility, "getChildrenAndRoles",\
-                      "(Ljavax/accessibility/Accessible;Ljava/awt/Component;IZ)[Ljava/lang/Object;", ret);
+@interface MenuBarAccessibility : CommonComponentAccessibility {
 
-@implementation ColumnAccessibility
-
-// NSAccessibilityElement protocol methods
-
-- (NSAccessibilityRole)accessibilityRole
-{
-    return NSAccessibilityColumnRole;
-}
-
-- (NSInteger)accessibilityIndex
-{
-    return fIndex;
-}
-
+};
+- (NSAccessibilityRole _Nonnull)accessibilityRole;
 @end

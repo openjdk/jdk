@@ -1,11 +1,12 @@
 /*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,36 +23,23 @@
  * questions.
  */
 
-#include "jni.h"
-#import "JavaAccessibilityAction.h"
-#import "JavaAccessibilityUtilities.h"
-#import "CellAccessibility.h"
-#import "ColumnAccessibility.h"
-#import "TableAccessibility.h"
-#import "ThreadUtilities.h"
+#import "MenuBarAccessibility.h"
 #import "JNIUtilities.h"
+#import "ThreadUtilities.h"
 #import "sun_lwawt_macosx_CAccessibility.h"
 
-static jclass sjc_CAccessibility = NULL;
-
-static jmethodID jm_getChildrenAndRoles = NULL;
-#define GET_CHILDRENANDROLES_METHOD_RETURN(ret) \
-    GET_CACCESSIBILITY_CLASS_RETURN(ret); \
-    GET_STATIC_METHOD_RETURN(jm_getChildrenAndRoles, sjc_CAccessibility, "getChildrenAndRoles",\
-                      "(Ljavax/accessibility/Accessible;Ljava/awt/Component;IZ)[Ljava/lang/Object;", ret);
-
-@implementation ColumnAccessibility
-
-// NSAccessibilityElement protocol methods
-
-- (NSAccessibilityRole)accessibilityRole
+/*
+ * This is the protocol for the Menu Bar component
+ */
+@implementation MenuBarAccessibility
+- (NSAccessibilityRole _Nonnull)accessibilityRole
 {
-    return NSAccessibilityColumnRole;
+    return NSAccessibilityMenuBarRole;
 }
 
-- (NSInteger)accessibilityIndex
+- (BOOL)isAccessibilityElement
 {
-    return fIndex;
+    return YES;
 }
 
 @end

@@ -122,7 +122,7 @@ static jobject sAccessibilityClass = NULL;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:46];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:51];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
@@ -152,6 +152,11 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"ListAccessibility" forKey:@"list"];
     [rolesMap setObject:@"OutlineAccessibility" forKey:@"tree"];
     [rolesMap setObject:@"TableAccessibility" forKey:@"table"];
+    [rolesMap setObject:@"MenuBarAccessibility" forKey:@"menubar"];
+    [rolesMap setObject:@"MenuAccessibility" forKey:@"menu"];
+    [rolesMap setObject:@"MenuItemAccessibility" forKey:@"menuitem"];
+    [rolesMap setObject:@"MenuAccessibility" forKey:@"popupmenu"];
+    [rolesMap setObject:@"ProgressIndicatorAccessibility" forKey:@"progressbar"];
 
     /*
      * All the components below should be ignored by the accessibility subsystem,
@@ -419,13 +424,20 @@ static jobject sAccessibilityClass = NULL;
     GET_CACCESSIBLE_CLASS_RETURN(NULL);
     DECLARE_STATIC_METHOD_RETURN(sjm_getCAccessible, sjc_CAccessible, "getCAccessible",
                                 "(Ljavax/accessibility/Accessible;)Lsun/lwawt/macosx/CAccessible;", NULL);
-    if ((*env)->IsInstanceOf(env, jaccessible, sjc_CAccessible)) {
-        return jaccessible;
-    } else if ((*env)->IsInstanceOf(env, jaccessible, sjc_Accessible)) {
-        jobject o = (*env)->CallStaticObjectMethod(env, sjc_CAccessible,  sjm_getCAccessible, jaccessible);
+
+    // jaccessible is a weak ref, check it's still alive
+    jobject jaccessibleLocal = (*env)->NewLocalRef(env, jaccessible);
+    if ((*env)->IsSameObject(env, jaccessibleLocal, NULL)) return NULL;
+
+    if ((*env)->IsInstanceOf(env, jaccessibleLocal, sjc_CAccessible)) {
+        return jaccessibleLocal; // delete in the caller
+    } else if ((*env)->IsInstanceOf(env, jaccessibleLocal, sjc_Accessible)) {
+        jobject jCAX = (*env)->CallStaticObjectMethod(env, sjc_CAccessible,  sjm_getCAccessible, jaccessibleLocal);
         CHECK_EXCEPTION();
-        return o;
+        (*env)->DeleteLocalRef(env, jaccessibleLocal);
+        return jCAX; // delete in the caller
     }
+    (*env)->DeleteLocalRef(env, jaccessibleLocal);
     return NULL;
 }
 
@@ -535,12 +547,10 @@ static jobject sAccessibilityClass = NULL;
     // try to fetch the jCAX from Java, and return autoreleased
     jobject jCAX = [CommonComponentAccessibility getCAccessible:jaccessible withEnv:env];
     if (jCAX == NULL) return nil;
-    if (!wrapped) { // If wrapped is true, then you don't need to get an existing instance, you need to create a new one
-        CommonComponentAccessibility *value = (CommonComponentAccessibility *) jlong_to_ptr((*env)->GetLongField(env, jCAX, jf_ptr));
-        if (value != nil) {
-            (*env)->DeleteLocalRef(env, jCAX);
-            return [[value retain] autorelease];
-        }
+    CommonComponentAccessibility *value = (CommonComponentAccessibility *) jlong_to_ptr((*env)->GetLongField(env, jCAX, jf_ptr));
+    if (value != nil) {
+        (*env)->DeleteLocalRef(env, jCAX);
+        return [[value retain] autorelease];
     }
 
     // otherwise, create a new instance
@@ -561,10 +571,7 @@ static jobject sAccessibilityClass = NULL;
     [newChild retain];
     (*env)->SetLongField(env, jCAX, jf_ptr, ptr_to_jlong(newChild));
 
-    // the link is removed in the wrapper
-    if (!wrapped) {
-        (*env)->DeleteLocalRef(env, jCAX);
-    }
+    (*env)->DeleteLocalRef(env, jCAX);
 
     // return autoreleased instance
     return [newChild autorelease];
@@ -1248,6 +1255,54 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_selectedCellsChanged
 {
     JNI_COCOA_ENTER(env);
         [ThreadUtilities performOnMainThread:@selector(postSelectedCellsChanged)
+                         on:(CommonComponentAccessibility *)jlong_to_ptr(element)
+                         withObject:nil
+                         waitUntilDone:NO];
+    JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuOpened
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuOpened
+    (JNIEnv *env, jclass jklass, jlong element)
+{
+    JNI_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThread:@selector(postMenuOpened)
+                         on:(CommonComponentAccessibility *)jlong_to_ptr(element)
+                         withObject:nil
+                         waitUntilDone:NO];
+    JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuClosed
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuClosed
+    (JNIEnv *env, jclass jklass, jlong element)
+{
+    JNI_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThread:@selector(postMenuClosed)
+                         on:(CommonComponentAccessibility *)jlong_to_ptr(element)
+                         withObject:nil
+                         waitUntilDone:NO];
+    JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuItemSelected
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuItemSelected
+    (JNIEnv *env, jclass jklass, jlong element)
+{
+    JNI_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThread:@selector(postMenuItemSelected)
                          on:(CommonComponentAccessibility *)jlong_to_ptr(element)
                          withObject:nil
                          waitUntilDone:NO];
