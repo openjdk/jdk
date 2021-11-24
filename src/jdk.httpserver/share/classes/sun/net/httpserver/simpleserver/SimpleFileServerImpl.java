@@ -71,7 +71,7 @@ final class SimpleFileServerImpl {
      *
      * @param  writer the writer to which output should be written
      * @param  args the command line options
-     * @param launcher the launcher the server is started from
+     * @param  launcher the launcher the server is started from
      * @throws NullPointerException if any of the arguments are {@code null},
      *         or if there are any {@code null} values in the {@code args} array
      * @return startup status code
@@ -120,7 +120,7 @@ final class SimpleFileServerImpl {
             }
         } catch (AssertionError ae) {
             out.reportError(ResourceBundleHelper.getMessage("err.unknown.option", option));
-            out.showUsage();
+            out.showUsage(launcher);
             return Startup.CMDERR.statusCode;
         } catch (NoSuchElementException nsee) {
             out.reportError(ResourceBundleHelper.getMessage("err.missing.arg", option));
@@ -174,8 +174,8 @@ final class SimpleFileServerImpl {
             }
         }
 
-        void showUsage() {
-            writer.println(ResourceBundleHelper.getMessage("usage"));
+        void showUsage(String launcher) {
+            writer.println(ResourceBundleHelper.getMessage("usage." + launcher));
         }
 
         void showVersion(String launcher) {

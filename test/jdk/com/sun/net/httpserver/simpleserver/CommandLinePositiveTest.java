@@ -107,7 +107,8 @@ public class CommandLinePositiveTest {
 
     static final String USAGE_TEXT = """
             Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
-                                          [-o none|info|verbose] [-h to show options]""";
+                                          [-o none|info|verbose] [-h to show options]
+                                          [-version to show version information]""";
 
     static final String OPTIONS_TEXT = """
             Options:
@@ -116,8 +117,8 @@ public class CommandLinePositiveTest {
             -d, --directory       - Directory to serve. Default: current directory.
             -o, --output          - Output format. none|info|verbose. Default: info.
             -p, --port            - Port to listen on. Default: 8000.
-            -h, -?, --help        - Print this help message.
-            -version, --version   - Print version information.
+            -h, -?, --help        - Prints this help message and exits.
+            -version, --version   - Prints version information and exits.
             To stop the server, press Ctrl + C.""".formatted(LOOPBACK_ADDR);
 
     @Test(dataProvider = "helpOptions")

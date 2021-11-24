@@ -57,9 +57,9 @@ public class JWebServer {
      */
     public static void main(String... args) {
         int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), "jwebserver", args);
-        if (ec != 0)
+        if (ec != 0) {
             System.exit(ec);
-        // otherwise the server has been started successfully and runs in
-        // another non-daemon thread.
+        }  // otherwise the server has been started successfully and runs in
+           // another non-daemon thread.
     }
 }

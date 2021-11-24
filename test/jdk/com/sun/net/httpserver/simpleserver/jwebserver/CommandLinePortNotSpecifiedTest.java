@@ -118,8 +118,8 @@ public class CommandLinePortNotSpecifiedTest {
             -d, --directory       - Directory to serve. Default: current directory.
             -o, --output          - Output format. none|info|verbose. Default: info.
             -p, --port            - Port to listen on. Default: 8000.
-            -h, -?, --help        - Print this help message.
-            -version, --version   - Print version information.
+            -h, -?, --help        - Prints this help message and exits.
+            -version, --version   - Prints version information and exits.
             To stop the server, press Ctrl + C.""".formatted(LOOPBACK_ADDR);
 
     // The stdout/stderr output line to wait for when starting the simpleserver

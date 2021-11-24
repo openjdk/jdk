@@ -138,13 +138,7 @@
         }
     });
    </pre></blockquote>
-   <p>
-   The {@link com.sun.net.httpserver.SimpleFileServer} class offers a simple
-   HTTP file server (intended for testing, development and debugging purposes
-   only). A default implementation is provided via the
-   <a href="{@docRoot}/jdk.httpserver/module-summary.html#entry-point">main entry point</a>
-   of the {@code jdk.httpserver} module.
-
+ 
    @since 1.6
  */
 package com.sun.net.httpserver;
