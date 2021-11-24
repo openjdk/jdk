@@ -251,13 +251,19 @@ static size_t calc_min_yellow_zone_size() {
 }
 
 static size_t calc_init_green_zone() {
-  size_t green = G1ConcRefinementGreenZone;
-  const char* name = "G1ConcRefinementGreenZone";
+  size_t green;
   if (FLAG_IS_DEFAULT(G1ConcRefinementGreenZone)) {
-    green = ParallelGCThreads;
-    name = "ParallelGCThreads";
+    // rate_1 is a relatively conservative guess at the rate for pause-time
+    // card refinement by one thread.
+    const double rate_1 = 200.0; // cards/ms/thread
+    const double rate_n = rate_1 * ParallelGCThreads;
+    // The time budget for pause-time card refinement.
+    const double ms = MaxGCPauseMillis * (G1RSetUpdatingPauseTimePercent / 100.0);
+    green = rate_n * ms;
+  } else {
+    green = configuration_buffers_to_cards(G1ConcRefinementGreenZone,
+                                           "G1ConcRefinementGreenZone");
   }
-  green = configuration_buffers_to_cards(green, name);
   return MIN2(green, max_green_zone);
 }
 
