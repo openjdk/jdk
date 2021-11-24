@@ -1067,7 +1067,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         for (int i=k.bitLength()-2; i >= 0; i--) {
             u2 = u.multiply(v).mod(n);
 
-            v2 = v.square(false).add(d.multiply(u.square(false))).mod(n);
+            v2 = v.square().add(d.multiply(u.square())).mod(n);
             if (v2.testBit(0))
                 v2 = v2.subtract(n);
 
@@ -1583,7 +1583,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this * val}
      */
     public BigInteger multiply(BigInteger val) {
-        return multiply(val, false, false);
+        return multiply(val, false, false, 0);
     }
 
     /**
@@ -1598,7 +1598,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this * val}
      */
     public BigInteger parallelMultiply(BigInteger val) {
-        return multiply(val, false, true);
+        return multiply(val, false, true, 0);
     }
 
     /**
@@ -1610,14 +1610,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  parallel whether the multiply should be done in parallel
      * @return {@code this * val}
      */
-    private BigInteger multiply(BigInteger val, boolean isRecursion, boolean parallel) {
+    private BigInteger multiply(BigInteger val, boolean isRecursion, boolean parallel, int depth) {
         if (val.signum == 0 || signum == 0)
             return ZERO;
 
         int xlen = mag.length;
 
         if (val == this && xlen > MULTIPLY_SQUARE_THRESHOLD) {
-            return square(parallel);
+            return square(true, parallel, depth);
         }
 
         int ylen = val.mag.length;
@@ -1695,7 +1695,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     }
                 }
 
-                return multiplyToomCook3(this, val, parallel);
+                return multiplyToomCook3(this, val, parallel, depth);
             }
         }
     }
@@ -1862,30 +1862,83 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
     }
 
-    private static final class RecursiveMultiply extends RecursiveTask<BigInteger> {
+    private abstract static sealed class RecursiveOp extends RecursiveTask<BigInteger> {
+        /**
+         * The threshold until when we should continue forking recursive ops
+         * if parallel is true. By default we use the Math.ceil() of
+         * log2(availableProcessors). Can be overridden with the system
+         * property -Djava.math.BigInteger.parallelForkThreshold=num. This
+         * threshold is only relevant for Toom Cook 3 multiply and square.
+         */
+        private static final int PARALLEL_FORK_THRESHOLD = Integer.getInteger(
+                "java.math.BigInteger.parallelForkThreshold",
+                (int) Math.ceil(Math.log(Runtime.getRuntime().availableProcessors()) / Math.log(2)));
+
         @Serial
         private static final long serialVersionUID = 0L;
-        private final BigInteger a;
-        private final BigInteger b;
-        private final boolean isRecursive;
+
         private final boolean parallel;
+        private final int depth;
 
-        private RecursiveMultiply(BigInteger a, BigInteger b, boolean isRecursive, boolean parallel) {
-            this.a = a;
-            this.b = b;
-            this.isRecursive = isRecursive;
+        private RecursiveOp(boolean parallel, int depth) {
             this.parallel = parallel;
+            this.depth = depth;
         }
 
-        @Override
-        protected BigInteger compute() {
-            return a.multiply(b, isRecursive, parallel);
+        private RecursiveTask<BigInteger> forkOrInvoke() {
+            if (parallel && depth <= PARALLEL_FORK_THRESHOLD) fork();
+            else invoke();
+            return this;
         }
 
-        public static RecursiveMultiply create(BigInteger a, BigInteger b, boolean isRecursive, boolean parallel) {
-            var result = new RecursiveMultiply(a, b, isRecursive, parallel);
-            if (parallel) result.fork(); else result.invoke();
-            return result;
+        private static final class RecursiveMultiply extends RecursiveOp {
+            @Serial
+            private static final long serialVersionUID = 0L;
+
+            private final BigInteger a;
+            private final BigInteger b;
+
+            public RecursiveMultiply(BigInteger a, BigInteger b, boolean parallel, int depth) {
+                super(parallel, depth);
+                this.a = a;
+                this.b = b;
+            }
+
+            @Override
+            public BigInteger compute() {
+                return a.multiply(b, true, super.parallel, super.depth);
+            }
+        }
+
+        private static final class RecursiveSquare extends RecursiveOp {
+            @Serial
+            private static final long serialVersionUID = 0L;
+
+            private final BigInteger a;
+
+            public RecursiveSquare(BigInteger a, boolean parallel, int depth) {
+                super(parallel, depth);
+                this.a = a;
+            }
+
+            @Override
+            public BigInteger compute() {
+                return a.square(true, super.parallel, super.depth);
+            }
+        }
+
+        private static RecursiveTask<BigInteger> exec(RecursiveOp op) {
+            if (op.parallel && op.depth <= PARALLEL_FORK_THRESHOLD) op.fork();
+            else op.invoke();
+            return op;
+        }
+
+        private static RecursiveTask<BigInteger> multiply(BigInteger a, BigInteger b, boolean parallel, int depth) {
+            return new RecursiveMultiply(a, b, parallel, depth).forkOrInvoke();
+        }
+
+        private static RecursiveTask<BigInteger> square(BigInteger a, boolean parallel, int depth) {
+            return new RecursiveSquare(a, parallel, depth).forkOrInvoke();
         }
     }
 
@@ -1917,7 +1970,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * LNCS #4547. Springer, Madrid, Spain, June 21-22, 2007.
      *
      */
-    private static BigInteger multiplyToomCook3(BigInteger a, BigInteger b, boolean parallel) {
+    private static BigInteger multiplyToomCook3(BigInteger a, BigInteger b, boolean parallel, int depth) {
         int alen = a.mag.length;
         int blen = b.mag.length;
 
@@ -1941,19 +1994,16 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         BigInteger v0, v1, v2, vm1, vinf, t1, t2, tm1, da1, db1;
 
-        var v0_task = RecursiveMultiply.create(a0, b0, true, parallel);
-//        v0 = a0.multiply(b0, true, parallel);
+        var v0_task = RecursiveOp.multiply(a0, b0, parallel, depth + 1);
         da1 = a2.add(a0);
         db1 = b2.add(b0);
-        var vm1_task = RecursiveMultiply.create(da1.subtract(a1), db1.subtract(b1), true, parallel);
-//        vm1 = da1.subtract(a1).multiply(db1.subtract(b1), true, parallel);
+        var vm1_task = RecursiveOp.multiply(da1.subtract(a1), db1.subtract(b1), parallel, depth + 1);
         da1 = da1.add(a1);
         db1 = db1.add(b1);
-        var v1_task = RecursiveMultiply.create(da1, db1, true, parallel);
-//        v1 = da1.multiply(db1, true, parallel);
+        var v1_task = RecursiveOp.multiply(da1, db1, parallel, depth + 1);
         v2 = da1.add(a2).shiftLeft(1).subtract(a0).multiply(
-             db1.add(b2).shiftLeft(1).subtract(b0), true, parallel);
-        vinf = a2.multiply(b2, true, parallel);
+             db1.add(b2).shiftLeft(1).subtract(b0), true, parallel, depth + 1);
+        vinf = a2.multiply(b2, true, parallel, depth + 1);
         v0 = v0_task.join();
         vm1 = vm1_task.join();
         v1 = v1_task.join();
@@ -2121,8 +2171,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @return <code>this<sup>2</sup></code>
      */
-    private BigInteger square(boolean parallel) {
-        return square(false, parallel);
+    private BigInteger square() {
+        return square(false, false, 0);
     }
 
     /**
@@ -2132,7 +2182,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param isRecursion whether this is a recursive invocation
      * @return <code>this<sup>2</sup></code>
      */
-    private BigInteger square(boolean isRecursion, boolean parallel) {
+    private BigInteger square(boolean isRecursion, boolean parallel, int depth) {
         if (signum == 0) {
             return ZERO;
         }
@@ -2154,7 +2204,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     }
                 }
 
-                return squareToomCook3(parallel);
+                return squareToomCook3(parallel, depth);
             }
         }
     }
@@ -2274,36 +2324,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         BigInteger xl = getLower(half);
         BigInteger xh = getUpper(half);
 
-        BigInteger xhs = xh.square(false);  // xhs = xh^2
-        BigInteger xls = xl.square(false);  // xls = xl^2
+        BigInteger xhs = xh.square();  // xhs = xh^2
+        BigInteger xls = xl.square();  // xls = xl^2
 
         // xh^2 << 64  +  (((xl+xh)^2 - (xh^2 + xl^2)) << 32) + xl^2
-        return xhs.shiftLeft(half*32).add(xl.add(xh).square(false).subtract(xhs.add(xls))).shiftLeft(half*32).add(xls);
-    }
-
-    private static final class RecursiveSquare extends RecursiveTask<BigInteger> {
-        @Serial
-        private static final long serialVersionUID = 0L;
-        private final BigInteger num;
-        private final boolean isRecursive;
-        private final boolean parallel;
-
-        private RecursiveSquare(BigInteger a, boolean isRecursive, boolean parallel) {
-            this.num = a;
-            this.isRecursive = isRecursive;
-            this.parallel = parallel;
-        }
-
-        @Override
-        protected BigInteger compute() {
-            return num.square(isRecursive, parallel);
-        }
-
-        public static RecursiveSquare create(BigInteger a, boolean isRecursive, boolean parallel) {
-            var result = new RecursiveSquare(a, isRecursive, parallel);
-            if (parallel) result.fork(); else result.invoke();
-            return result;
-        }
+        return xhs.shiftLeft(half*32).add(xl.add(xh).square().subtract(xhs.add(xls))).shiftLeft(half*32).add(xls);
     }
 
     /**
@@ -2313,7 +2338,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * that has better asymptotic performance than the algorithm used in
      * squareToLen or squareKaratsuba.
      */
-    private BigInteger squareToomCook3(boolean parallel) {
+    private BigInteger squareToomCook3(boolean parallel, int depth) {
         int len = mag.length;
 
         // k is the size (in ints) of the lower-order slices.
@@ -2330,16 +2355,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         a0 = getToomSlice(k, r, 2, len);
         BigInteger v0, v1, v2, vm1, vinf, t1, t2, tm1, da1;
 
-        var v0_fork = RecursiveSquare.create(a0, true, parallel);
-//        v0 = a0.square(true, parallel);
+        var v0_fork = RecursiveOp.square(a0, parallel, depth + 1);
         da1 = a2.add(a0);
-        var vm1_fork = RecursiveSquare.create(da1.subtract(a1), true, parallel);
-//        vm1 = da1.subtract(a1).square(true, parallel);
+        var vm1_fork = RecursiveOp.square(da1.subtract(a1), parallel, depth + 1);
         da1 = da1.add(a1);
-        var v1_fork = RecursiveSquare.create(da1, true, parallel);
-//        v1 = da1.square(true, parallel);
-        vinf = a2.square(true, parallel);
-        v2 = da1.add(a2).shiftLeft(1).subtract(a0).square(true, parallel);
+        var v1_fork = RecursiveOp.square(da1, parallel, depth + 1);
+        vinf = a2.square(true, parallel, depth + 1);
+        v2 = da1.add(a2).shiftLeft(1).subtract(a0).square(true, parallel, depth + 1);
         v0 = v0_fork.join();
         vm1 = vm1_fork.join();
         v1 = v1_fork.join();
@@ -2597,7 +2619,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 }
 
                 if ((workingExponent >>>= 1) != 0) {
-                    partToSquare = partToSquare.square(false);
+                    partToSquare = partToSquare.square();
                 }
             }
             // Multiply back the (exponentiated) powers of two (quickly,
@@ -2656,7 +2678,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     public BigInteger[] sqrtAndRemainder() {
         BigInteger s = sqrt();
-        BigInteger r = this.subtract(s.square(false));
+        BigInteger r = this.subtract(s.square());
         assert r.compareTo(BigInteger.ZERO) >= 0;
         return new BigInteger[] {s, r};
     }
@@ -3332,7 +3354,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 result = result.multiply(baseToPow2).mod2(p);
             expOffset++;
             if (expOffset < limit)
-                baseToPow2 = baseToPow2.square(false).mod2(p);
+                baseToPow2 = baseToPow2.square().mod2(p);
         }
 
         return result;
