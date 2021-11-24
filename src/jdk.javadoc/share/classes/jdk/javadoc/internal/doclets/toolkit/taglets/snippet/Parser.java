@@ -87,21 +87,21 @@ public final class Parser {
     }
 
     private final class JavaCommentCoarseParser implements CoarseParser {
-        private final Matcher m = Pattern.compile("^(.*)(//(\\s*@\\s*\\w+.+?))$").matcher("");
+        private final Matcher m = Pattern.compile("^(?<payload>.*)//(?=[ \t]*@[a-z]+\\b)(?<markup>.*)$").matcher("");
 
         @Override
         public boolean parse(String line) {return m.reset(line).matches();}
 
         @Override
-        public int payloadEnd() {return m.end(1);}
+        public int payloadEnd() {return m.end("payload");}
 
         @Override
-        public int markupStart() {return m.start(3);}
+        public int markupStart() {return m.start("markup");}
     }
 
     private final class PropertiesCommentCoarseParser implements CoarseParser {
 
-        private final Matcher m = Pattern.compile("^([ \t]*[#!](.*[#!])?)(\\s*@\\s*\\w+.+?)$").matcher("");
+        private final Matcher m = Pattern.compile("^(?<payload>[ \t]*([!#].*)?)[!#](?=[ \t]*@[a-z]+\\b)(?<markup>.*)$").matcher("");
 
         @Override
         public boolean parse(String line) {
@@ -110,12 +110,12 @@ public final class Parser {
 
         @Override
         public int payloadEnd() {
-            return m.start(3) - 1;
+            return m.end("payload");
         }
 
         @Override
         public int markupStart() {
-            return m.start(3);
+            return m.start("markup");
         }
     }
 
