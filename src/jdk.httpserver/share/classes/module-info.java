@@ -27,14 +27,18 @@
  * Defines the JDK-specific HTTP server API, and provides the jwebserver tool
  * for running a minimal HTTP server.
  *
- * The com.sun.net.httpserver package defines a high-level API for building
+ * <p>The com.sun.net.httpserver package defines a high-level API for building
  * servers that support HTTP and HTTPS. The SimpleFileServer class implements a
  * simple HTTP-only file server intended for testing, development and debugging
- * purposes.
+ * purposes. A default implementation is provided via the {@code jwebserver} tool
+ * and the main entry point of the module, which can be invoked with
+ * {@code java -m jdk.httpserver}.
  *
- * The com.sun.net.httpserver.spi package specifies a Service Provider Interface
- * (SPI) for locating HTTP server implementations based on the
+ * <p>The com.sun.net.httpserver.spi package specifies a Service Provider
+ * Interface (SPI) for locating HTTP server implementations based on the
  * com.sun.net.httpserver API.
+ *
+ * @toolGuide jwebserver
  *
  * @uses com.sun.net.httpserver.spi.HttpServerProvider
  *
