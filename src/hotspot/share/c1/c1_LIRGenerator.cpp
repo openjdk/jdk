@@ -2796,8 +2796,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
     case Bytecodes::_invokeinterface:
       // for loaded and final (method or class) target we still produce an inline cache,
       // in order to be able to call mixed mode
-      if (x->code() == Bytecodes::_invokespecial || x->target_is_final() ||
-          x->is_private_interface_method()) {
+      if (x->code() == Bytecodes::_invokespecial || x->target_is_final()) {
         __ call_opt_virtual(target, receiver, result_register,
                             SharedRuntime::get_resolve_opt_virtual_call_stub(),
                             arg_list, info);

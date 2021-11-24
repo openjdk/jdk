@@ -1252,7 +1252,6 @@ LEAF(Invoke, StateSplit)
   // Returns false if target is not loaded
   bool target_is_final() const                   { return check_flag(TargetIsFinalFlag); }
   bool target_is_loaded() const                  { return check_flag(TargetIsLoadedFlag); }
-  bool is_private_interface_method() const       { return code() == Bytecodes::_invokeinterface && target_is_loaded() && _target->is_private(); }
 
   // JSR 292 support
   bool is_invokedynamic() const                  { return code() == Bytecodes::_invokedynamic; }
