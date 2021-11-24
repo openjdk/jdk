@@ -1054,7 +1054,11 @@ public class Main {
             byte[] bytes = mie.readAllBytes();
             ZipEntry e = new ZipEntry(name);
             FileTime lastModified = mie.getLastModifiedTime();
-            e.setLastModifiedTime(lastModified != null ? lastModified : FileTime.fromMillis(System.currentTimeMillis()));
+            if (lastModified != null) {
+                e.setLastModifiedTime(lastModified);
+            } else {
+                e.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
+            }
             if (flag0) {
                 crc32ModuleInfo(e, bytes);
             }
