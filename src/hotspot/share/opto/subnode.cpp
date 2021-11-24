@@ -1827,6 +1827,72 @@ bool BoolNode::is_counted_loop_exit_test() {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
+const Type* AbsNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) return Type::TOP;
+
+  switch (t1->base()) {
+  case Type::Int: {
+    const TypeInt* ti = t1->is_int();
+    if (ti->is_con()) {
+      // Special case for min_jint: Math.abs(min_jint) = min_jint.
+      // Do not use C++ abs() for min_jint to avoid undefined behavior.
+      return (ti->is_con(min_jint)) ? TypeInt::MIN : TypeInt::make(abs(ti->get_con()));
+    }
+    break;
+  }
+  case Type::Long: {
+    const TypeLong* tl = t1->is_long();
+    if (tl->is_con()) {
+      // Special case for min_jlong: Math.abs(min_jlong) = min_jlong.
+      // Do not use C++ abs() for min_jlong to avoid undefined behavior.
+      return (tl->is_con(min_jlong)) ? TypeLong::MIN : TypeLong::make(abs(tl->get_con()));
+    }
+    break;
+  }
+  case Type::FloatCon:
+    return TypeF::make(abs(t1->getf()));
+  case Type::DoubleCon:
+    return TypeD::make(abs(t1->getd()));
+  default:
+    break;
+  }
+
+  return bottom_type();
+}
+
+//------------------------------Identity----------------------------------------
+Node* AbsNode::Identity(PhaseGVN* phase) {
+  Node* in1 = in(1);
+  // No need to do abs for non-negative values
+  if (phase->type(in1)->higher_equal(TypeInt::POS) ||
+      phase->type(in1)->higher_equal(TypeLong::POS)) {
+    return in1;
+  }
+  // Convert "abs(abs(x))" into "abs(x)"
+  if (in1->Opcode() == Opcode()) {
+    return in1;
+  }
+  return this;
+}
+
+//------------------------------Ideal------------------------------------------
+Node* AbsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* in1 = in(1);
+  // Convert "abs(0-x)" into "abs(x)"
+  if (in1->is_Sub() && phase->type(in1->in(1))->is_zero_type()) {
+    set_req(1, in1->in(2));
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    if (igvn) {
+      igvn->_worklist.push(in1);
+    }
+    return this;
+  }
+  return NULL;
+}
+
+//=============================================================================
+//------------------------------Value------------------------------------------
 // Compute sqrt
 const Type* SqrtDNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
