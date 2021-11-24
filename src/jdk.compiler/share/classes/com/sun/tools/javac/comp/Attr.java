@@ -1680,7 +1680,8 @@ public class Attr extends JCTree.Visitor {
             // Attribute all cases and
             // check that there are no duplicate case labels or default clauses.
             Set<Object> labels = new HashSet<>(); // The set of case labels.
-            List<Type> coveredTypes = List.nil();
+            List<Type> coveredTypesForPatterns = List.nil();
+            List<Type> coveredTypesForConstants = List.nil();
             boolean hasDefault = false;           // Is there a default label?
             boolean hasTotalPattern = false;      // Is there a total pattern?
             boolean hasNullPattern = false;       // Is there a null pattern?
@@ -1718,7 +1719,7 @@ public class Attr extends JCTree.Visitor {
                             } else if (!labels.add(sym)) {
                                 log.error(pat.pos(), Errors.DuplicateCaseLabel);
                             } else {
-                                checkCaseLabelDominated(pat.pos(), coveredTypes, sym.type);
+                                checkCaseLabelDominated(pat.pos(), coveredTypesForConstants, sym.type);
                             }
                         } else if (errorEnumSwitch) {
                             //error recovery: the selector is erroneous, and all the case labels
@@ -1751,7 +1752,7 @@ public class Attr extends JCTree.Visitor {
                                 } else if (!labels.add(pattype.constValue())) {
                                     log.error(c.pos(), Errors.DuplicateCaseLabel);
                                 } else {
-                                    checkCaseLabelDominated(pat.pos(), coveredTypes, types.boxedTypeOrType(pattype));
+                                    checkCaseLabelDominated(pat.pos(), coveredTypesForConstants, types.boxedTypeOrType(pattype));
                                 }
                             }
                         }
@@ -1784,9 +1785,12 @@ public class Attr extends JCTree.Visitor {
                             }
                             hasTotalPattern = true;
                         }
-                        checkCaseLabelDominated(pat.pos(), coveredTypes, patternType);
-                        if (primary.unconditional() && !patternType.isErroneous()) {
-                            coveredTypes = coveredTypes.prepend(patternType);
+                        checkCaseLabelDominated(pat.pos(), coveredTypesForPatterns, patternType);
+                        if (!patternType.isErroneous()) {
+                            coveredTypesForConstants = coveredTypesForConstants.prepend(patternType);
+                            if (primary.unconditional()) {
+                                coveredTypesForPatterns = coveredTypesForPatterns.prepend(patternType);
+                            }
                         }
                     }
                     currentBindings = matchBindingsComputer.switchCase(pat, currentBindings, matchBindings);
