@@ -288,4 +288,16 @@ public:
 
   void masked_op(int ideal_opc, int mask_len, KRegister dst,
                  KRegister src1, KRegister src2);
+
+  void vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                          XMMRegister xtmp2, XMMRegister xtmp3, AddressLiteral float_sign_flip,
+                          AddressLiteral max_int, Register scratch, int vec_enc);
+
+  void vector_castF2I_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                           KRegister ktmp1, AddressLiteral float_sign_flip,
+                           AddressLiteral max_int, Register scratch, int vec_enc);
+
+  void vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                           KRegister ktmp1, AddressLiteral double_sign_flip,
+                           AddressLiteral max_long, Register scratch, int vec_enc);
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

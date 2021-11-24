@@ -4059,6 +4059,82 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
   }
 }
 
+/*
+ * Algorithm for vector D2L and F2I conversions:-
+ * a) Perform vector D2L/F2I cast.
+ * b) Choose fast path if none of the result vector lane contains 0x80000000 value.
+ *    It signifies that source value could be any of the special floating point
+ *    values(NaN,-Inf,Int,Max,-Min).
+ * c) Set destination to zero if source is NaN value.
+ * d) Replace 0x80000000 with MaxInt if source lane contains a +ve value.
+ */
+
+void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, AddressLiteral double_sign_flip,
+                                            AddressLiteral max_long, Register scratch, int vec_enc) {
+  Label done;
+  evcvttpd2qq(dst, src, vec_enc);
+  evmovdqul(xtmp1, k0, double_sign_flip, true, vec_enc, scratch);
+  evpcmpeqq(ktmp1, xtmp1, dst, vec_enc);
+  kortestwl(ktmp1, ktmp1);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  evcmppd(ktmp1, k0, src, src, Assembler::UNORD_Q, vec_enc);
+  evblendmpd(dst, ktmp1, dst, xtmp2, true, vec_enc);
+
+  evpcmpeqq(ktmp1, xtmp1, dst, vec_enc);
+  evcmppd(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_US, vec_enc);
+  evmovdquq(xtmp1, max_long, vec_enc, scratch);
+  evblendmpd(dst, ktmp1, dst, xtmp1, true, vec_enc);
+  bind(done);
+}
+
+void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                           XMMRegister xtmp2, XMMRegister xtmp3, AddressLiteral float_sign_flip,
+                                           AddressLiteral max_int, Register scratch, int vec_enc) {
+  Label done;
+  vcvttps2dq(dst, src, vec_enc);
+  vmovdqu(xtmp1, float_sign_flip, scratch);
+  vpcmpeqd(xtmp2, dst, xtmp1, vec_enc);
+  vpmovmskb(scratch, xtmp2, vec_enc);
+  testl(scratch, scratch);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  vcmpps(xtmp3, src, src, Assembler::UNORD_Q, vec_enc);
+  vblendvps(dst, dst, xtmp2, xtmp3, vec_enc);
+
+  vpcmpeqd(xtmp1, dst, xtmp1, vec_enc);
+  vpand(xtmp2, xtmp1, src, vec_enc);
+  vpxor(xtmp3, xtmp2, xtmp1, vec_enc);
+  vpand(xtmp3, xtmp3, xtmp1, vec_enc);
+  vmovdqu(xtmp1, max_int, scratch);
+  vblendvps(dst, dst, xtmp1, xtmp3, vec_enc);
+  bind(done);
+}
+
+void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, AddressLiteral float_sign_flip,
+                                            AddressLiteral max_int, Register scratch, int vec_enc) {
+  Label done;
+  vcvttps2dq(dst, src, vec_enc);
+  evmovdqul(xtmp1, k0, float_sign_flip, false, vec_enc, scratch);
+  Assembler::evpcmpeqd(ktmp1, k0, xtmp1, dst, vec_enc);
+  kortestwl(ktmp1, ktmp1);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  evcmpps(ktmp1, k0, src, src, Assembler::UNORD_Q, vec_enc);
+  evblendmps(dst, ktmp1, dst, xtmp2, true, vec_enc);
+
+  Assembler::evpcmpeqd(ktmp1, k0, xtmp1, dst, vec_enc);
+  evcmpps(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_US, vec_enc);
+  evmovdquq(xtmp1, max_int, vec_enc, scratch);
+  evblendmps(dst, ktmp1, dst, xtmp1, true, vec_enc);
+  bind(done);
+}
+
 #ifdef _LP64
 void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, KRegister mask,
                                               Register tmp, int masklen, int masksize,
