@@ -916,8 +916,8 @@ public abstract class Provider extends Properties {
         if (!checkLegacy(key)) return null;
 
         Object o = super.remove(key);
-        if (o != null && o instanceof String && key instanceof String) {
-            parseLegacy((String)key, (String)o, OPType.REMOVE);
+        if (o instanceof String so && key instanceof String sk) {
+            parseLegacy(sk, so, OPType.REMOVE);
         }
         return o;
     }
@@ -926,8 +926,8 @@ public abstract class Provider extends Properties {
         if (!checkLegacy(key)) return false;
 
         boolean result = super.remove(key, value);
-        if (result && key instanceof String && value instanceof String) {
-            parseLegacy((String)key, (String)value, OPType.REMOVE);
+        if (result && key instanceof String sk && value instanceof String sv) {
+            parseLegacy(sk, sv, OPType.REMOVE);
         }
         return result;
     }
@@ -936,11 +936,11 @@ public abstract class Provider extends Properties {
         if (!checkLegacy(key)) return false;
 
         boolean result = super.replace(key, oldValue, newValue);
-        if (result && key instanceof String) {
-            if (newValue instanceof String) {
-                parseLegacy((String)key, (String)newValue, OPType.REPLACE);
-            } else if (oldValue instanceof String) {
-                parseLegacy((String)key, (String)oldValue, OPType.REMOVE);
+        if (result && key instanceof String sk) {
+            if (newValue instanceof String sv) {
+                parseLegacy(sk, sv, OPType.REPLACE);
+            } else if (oldValue instanceof String sv) {
+                parseLegacy(sk, sv, OPType.REMOVE);
             }
         }
         return result;
@@ -950,12 +950,12 @@ public abstract class Provider extends Properties {
         if (!checkLegacy(key)) return null;
 
         Object o = super.replace(key, value);
-        if (key instanceof String) {
-            if (o != null && o instanceof String) {
-                if (value != null && value instanceof String) {
-                    parseLegacy((String)key, (String)value, OPType.REPLACE);
+        if (key instanceof String sk) {
+            if (o instanceof String so) {
+                if (value instanceof String sv) {
+                    parseLegacy(sk, sv, OPType.REPLACE);
                 } else {
-                    parseLegacy((String)key, (String)o, OPType.REMOVE);
+                    parseLegacy(sk, so, OPType.REMOVE);
                 }
             }
         }
@@ -970,11 +970,11 @@ public abstract class Provider extends Properties {
         for (Map.Entry<Object, Object> entry : super.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
-            if ((key instanceof String) && (value instanceof String)) {
-                if (!checkLegacy(key)) {
+            if ((key instanceof String sk) && (value instanceof String sv)) {
+                if (!checkLegacy(sk)) {
                     continue;
                 }
-                parseLegacy((String)key, (String)value, OPType.REPLACE);
+                parseLegacy(sk, sv, OPType.REPLACE);
             }
         }
     }
@@ -986,11 +986,11 @@ public abstract class Provider extends Properties {
         if (!checkLegacy(key)) return null;
 
         Object o = super.merge(key, value, remappingFunction);
-        if (key instanceof String) {
+        if (key instanceof String sk) {
             if (o == null) {
-                parseLegacy((String)key, (String)o, OPType.REMOVE);
-            } else if (o instanceof String) {
-                parseLegacy((String)key, (String)o, OPType.REPLACE);
+                parseLegacy(sk, null, OPType.REMOVE);
+            } else if (o instanceof String so) {
+                parseLegacy(sk, so, OPType.REPLACE);
             }
         }
         return o;
@@ -1003,11 +1003,11 @@ public abstract class Provider extends Properties {
         if (!checkLegacy(key)) return null;
 
         Object o = super.compute(key, remappingFunction);
-        if (key instanceof String) {
+        if (key instanceof String sk) {
             if (o == null) {
-                parseLegacy((String)key, (String)o, OPType.REMOVE);
-            } else if (o instanceof String) {
-                parseLegacy((String)key, (String)o, OPType.REPLACE);
+                parseLegacy(sk, null, OPType.REMOVE);
+            } else if (o instanceof String so) {
+                parseLegacy(sk, so, OPType.REPLACE);
             }
         }
         return o;
@@ -1019,8 +1019,8 @@ public abstract class Provider extends Properties {
         if (!checkLegacy(key)) return null;
 
         Object o = super.computeIfAbsent(key, mappingFunction);
-        if (o instanceof String && key instanceof String) {
-            parseLegacy((String)key, (String)o, OPType.REPLACE);
+        if (o instanceof String so && key instanceof String sk) {
+            parseLegacy(sk, so, OPType.REPLACE);
         }
         return o;
     }
@@ -1031,8 +1031,8 @@ public abstract class Provider extends Properties {
         if (!checkLegacy(key)) return null;
 
         Object o = super.computeIfPresent(key, remappingFunction);
-        if (o instanceof String && key instanceof String) {
-            parseLegacy((String)key, (String)o, OPType.REPLACE);
+        if (o instanceof String so && key instanceof String sk) {
+            parseLegacy(sk, so, OPType.REPLACE);
         }
         return o;
     }
@@ -1041,8 +1041,8 @@ public abstract class Provider extends Properties {
         if (!checkLegacy(key)) return null;
 
         Object o = super.put(key, value);
-        if (key instanceof String && value instanceof String) {
-            parseLegacy((String)key, (String)value, OPType.REPLACE);
+        if (key instanceof String sk && value instanceof String sv) {
+            parseLegacy(sk, sv, OPType.REPLACE);
         }
         return o;
     }
@@ -1051,8 +1051,9 @@ public abstract class Provider extends Properties {
         if (!checkLegacy(key)) return null;
 
         Object o = super.putIfAbsent(key, value);
-        if (o == null && key instanceof String && value instanceof String) {
-            parseLegacy((String)key, (String)value, OPType.ADD);
+        if (o == null && key instanceof String sk &&
+                value instanceof String sv) {
+            parseLegacy(sk, sv, OPType.ADD);
         }
         return o;
     }
