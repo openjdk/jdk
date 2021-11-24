@@ -1756,20 +1756,20 @@ public class Main {
      * bytes and an optional URI.
      */
     interface ModuleInfoEntry {
-       String name();
-       Optional<String> uriString();
-       InputStream bytes() throws IOException;
+        String name();
+        Optional<String> uriString();
+        InputStream bytes() throws IOException;
         /**
          * @return Returns the last modified time of the module-info.class.
          * Returns null if the last modified time is unknown or cannot be
          * determined.
          */
-       FileTime getLastModifiedTime();
-       default byte[] readAllBytes() throws IOException {
+        FileTime getLastModifiedTime();
+        default byte[] readAllBytes() throws IOException {
             try (InputStream is = bytes()) {
                 return is.readAllBytes();
             }
-       }
+        }
     }
 
     static class ZipFileModuleInfoEntry implements ModuleInfoEntry {
