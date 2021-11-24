@@ -78,9 +78,9 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.SnippetTaglet;
 public final class Parser {
 
     private static final Pattern JAVA_COMMENT = Pattern.compile(
-            "^(?<payload>.*)//(?=[ \t]*@[a-z]+\\b)(?<markup>.*)$");
+            "^(?<payload>.*)//(?<markup>\\s*@\\s*\\w+.+?)$");
     private static final Pattern PROPERTIES_COMMENT = Pattern.compile(
-            "^(?<payload>[ \t]*([!#].*)?)[!#](?=[ \t]*@[a-z]+\\b)(?<markup>.*)$");
+            "^(?<payload>[ \t]*([#!].*)?)[#!](?<markup>\\s*@\\s*\\w+.+?)$");
 
     private final Resources resources;
     private final MarkupParser markupParser;
