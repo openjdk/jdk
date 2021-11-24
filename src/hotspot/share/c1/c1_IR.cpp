@@ -1300,7 +1300,7 @@ class PredecessorValidator : public BlockClosure {
   }
 
  private:
-  void verify_successor_xentry_flag(const BlockBegin *block) const {
+  void verify_successor_xentry_flag(const BlockBegin* block) const {
     for (int i = 0; i < block->end()->number_of_sux(); i++) {
       assert(!block->end()->sux_at(i)->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
     }
@@ -1309,7 +1309,7 @@ class PredecessorValidator : public BlockClosure {
     }
   }
 
-  void collect_predecessors(BlockBegin *block) {
+  void collect_predecessors(BlockBegin* block) {
     for (int i = 0; i < block->end()->number_of_sux(); i++) {
       collect_predecessor(block, block->end()->sux_at(i));
     }
