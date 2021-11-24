@@ -34,6 +34,7 @@ import java.nio.charset.spi.CharsetProvider;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
 public class StandardCharsets extends CharsetProvider {
@@ -156,6 +157,15 @@ public class StandardCharsets extends CharsetProvider {
         } catch (ClassNotFoundException |
                  IllegalAccessException |
                  InstantiationException x) {
+            if ("COMPAT".equals(cln) && "compat".equals(csn)) {
+                classMap().put(csn, null);
+                String enc = StaticProperty.nativeEncoding();
+                if (enc != null) {
+                    Charset chs = lookup(enc);
+                    if (chs != null)
+                        return cache(csn, chs);
+                }
+            }
             return null;
         }
     }

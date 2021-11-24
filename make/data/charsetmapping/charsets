@@ -476,6 +476,11 @@ charset x-IBM874 IBM874
     alias   ibm-874
     alias   874
 
+# Dummy entry for COMPAT
+charset compat COMPAT
+    package sun.nio.cs
+    type    source
+
 ########################################################
 #
 # charsets provided by ExtendedCharsets provider.
