@@ -1660,7 +1660,7 @@ jint G1CollectedHeap::initialize() {
 
   // The G1FromCardCache reserves card with value 0 as "invalid", so the heap must not
   // start within the first card.
-  guarantee(heap_rs.base() >= (char*)G1CardTable::card_size, "Java heap must not start within the first card.");
+  guarantee((uintptr_t)(heap_rs.base()) >= G1CardTable::card_size, "Java heap must not start within the first card.");
   G1FromCardCache::initialize(max_reserved_regions());
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this, _card_table, _hot_card_cache);
@@ -1828,7 +1828,6 @@ void G1CollectedHeap::ref_processing_init() {
                            ParallelGCThreads,                              // degree of mt processing
                            // We discover with the gc worker threads during Remark, so both
                            // thread counts must be considered for discovery.
-                           (ParallelGCThreads > 1) || (ConcGCThreads > 1), // mt discovery
                            MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
                            true,                                           // Reference discovery is concurrent
                            &_is_alive_closure_cm);                         // is alive closure
@@ -1837,7 +1836,6 @@ void G1CollectedHeap::ref_processing_init() {
   _ref_processor_stw =
     new ReferenceProcessor(&_is_subject_to_discovery_stw,
                            ParallelGCThreads,                    // degree of mt processing
-                           (ParallelGCThreads > 1),              // mt discovery
                            ParallelGCThreads,                    // degree of mt discovery
                            false,                                // Reference discovery is not concurrent
                            &_is_alive_closure_stw);              // is alive closure
@@ -2262,7 +2260,7 @@ void G1CollectedHeap::object_iterate(ObjectClosure* cl) {
   heap_region_iterate(&blk);
 }
 
-class G1ParallelObjectIterator : public ParallelObjectIterator {
+class G1ParallelObjectIterator : public ParallelObjectIteratorImpl {
 private:
   G1CollectedHeap*  _heap;
   HeapRegionClaimer _claimer;
@@ -2277,7 +2275,7 @@ public:
   }
 };
 
-ParallelObjectIterator* G1CollectedHeap::parallel_object_iterator(uint thread_num) {
+ParallelObjectIteratorImpl* G1CollectedHeap::parallel_object_iterator(uint thread_num) {
   return new G1ParallelObjectIterator(thread_num);
 }
 

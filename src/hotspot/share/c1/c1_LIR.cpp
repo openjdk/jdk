@@ -33,15 +33,15 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
 
-Register LIR_OprDesc::as_register() const {
+Register LIR_Opr::as_register() const {
   return FrameMap::cpu_rnr2reg(cpu_regnr());
 }
 
-Register LIR_OprDesc::as_register_lo() const {
+Register LIR_Opr::as_register_lo() const {
   return FrameMap::cpu_rnr2reg(cpu_regnrLo());
 }
 
-Register LIR_OprDesc::as_register_hi() const {
+Register LIR_Opr::as_register_hi() const {
   return FrameMap::cpu_rnr2reg(cpu_regnrHi());
 }
 
@@ -93,7 +93,7 @@ LIR_Address::Scale LIR_Address::scale(BasicType type) {
 
 //---------------------------------------------------
 
-char LIR_OprDesc::type_char(BasicType t) {
+char LIR_Opr::type_char(BasicType t) {
   switch (t) {
     case T_ARRAY:
       t = T_OBJECT;
@@ -121,7 +121,7 @@ char LIR_OprDesc::type_char(BasicType t) {
 }
 
 #ifndef PRODUCT
-void LIR_OprDesc::validate_type() const {
+void LIR_Opr::validate_type() const {
 
 #ifdef ASSERT
   if (!is_pointer() && !is_illegal()) {
@@ -173,7 +173,7 @@ void LIR_OprDesc::validate_type() const {
 #endif // PRODUCT
 
 
-bool LIR_OprDesc::is_oop() const {
+bool LIR_Opr::is_oop() const {
   if (is_pointer()) {
     return pointer()->is_oop_pointer();
   } else {
@@ -1373,7 +1373,7 @@ void LIR_List::unlock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, LIR_Opr scr
 
 void check_LIR() {
   // cannot do the proper checking as PRODUCT and other modes return different results
-  // guarantee(sizeof(LIR_OprDesc) == wordSize, "may not have a v-table");
+  // guarantee(sizeof(LIR_Opr) == wordSize, "may not have a v-table");
 }
 
 
@@ -1448,12 +1448,12 @@ void print_LIR(BlockList* blocks) {
 }
 
 #else
-// LIR_OprDesc
-void LIR_OprDesc::print() const {
+// LIR_Opr
+void LIR_Opr::print() const {
   print(tty);
 }
 
-void LIR_OprDesc::print(outputStream* out) const {
+void LIR_Opr::print(outputStream* out) const {
   if (is_illegal()) {
     return;
   }

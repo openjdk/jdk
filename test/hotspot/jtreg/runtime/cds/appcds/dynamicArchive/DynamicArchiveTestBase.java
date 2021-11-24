@@ -291,7 +291,7 @@ class DynamicArchiveTestBase {
      *   UseCompressedClassPointers options. Those "compressed" options were
      *   enabled when the default CDS archive was built.
      */
-    private static boolean isUseSharedSpacesDisabled() {
+    public static boolean isUseSharedSpacesDisabled() {
         return (WB.getBooleanVMFlag("UseSharedSpaces") == false);
     }
 }
