@@ -36,7 +36,7 @@
  *
  * <p>The {@link com.sun.net.httpserver.spi} package specifies a Service Provider
  * Interface (SPI) for locating HTTP server implementations based on the
- * com.sun.net.httpserver API.
+ * {@code com.sun.net.httpserver} API.
  *
  * @toolGuide jwebserver
  *
