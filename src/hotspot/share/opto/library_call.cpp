@@ -1079,7 +1079,7 @@ bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
   assert(16 >= vector_length, "coef array too short");
   Node* vector_comb_coef_addr = array_element_address(vector_comb_coef_array,
                                       SubI(vector_comb_coef_array_length, intcon(vector_length)), T_INT);
-  Node* vector_comb_coef = new LoadVectorNode(nullptr, memory(vector_comb_coef_addr),
+  Node* vector_comb_coef = new LoadVectorNode(nullptr, memory(TypeAryPtr::INTS),
                                       vector_comb_coef_addr, TypeAryPtr::INTS, dvt);
   vector_comb_coef = _gvn.transform(vector_comb_coef);
 
@@ -1101,7 +1101,7 @@ bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
     // vector_iter = {a[j * vl], a[j * vl + 1], ..., a[j * vl + (vl - 1)]};
     Node* temp_iter_offset = AddI(temp_base, temp_offset);
     Node* temp_iter_addr = array_element_address(array, temp_iter_offset, T_BYTE);
-    Node* temp_iter = new LoadVectorNode(control(), memory(temp_iter_addr),
+    Node* temp_iter = new LoadVectorNode(control(), memory(TypeAryPtr::BYTES),
                                           temp_iter_addr, TypeAryPtr::BYTES, lvt);
     temp_iter = _gvn.transform(temp_iter);
     temp_iter = _gvn.transform(new VectorReinterpretNode(temp_iter, lvt, svt));
