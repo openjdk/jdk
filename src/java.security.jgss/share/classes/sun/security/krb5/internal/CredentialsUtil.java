@@ -61,7 +61,7 @@ public class CredentialsUtil {
             Credentials middleTGT) throws KrbException, IOException {
         PrincipalName sname = middleTGT.getClient();
         String uRealm = user.getRealmString();
-        String localRealm = middleTGT.getClient().getRealmString();
+        String localRealm = sname.getRealmString();
         if (!uRealm.equals(localRealm)) {
             // Referrals will be required because the middle service
             // and the user impersonated are on different realms.
