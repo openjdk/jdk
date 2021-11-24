@@ -264,14 +264,21 @@ public:
 #endif
 
 class G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask : public G1AbstractSubTask {
-  uint _humongous_regions_reclaimed;
-  size_t _bytes_freed;
+  uint _humongous_reclaim_candidates;
+  volatile uint _humongous_regions_reclaimed;
+  volatile size_t _bytes_freed;
+  HeapRegionClaimer _claimer;
 
 public:
   EagerlyReclaimHumongousObjectsTask() :
     G1AbstractSubTask(G1GCPhaseTimes::EagerlyReclaimHumongousObjects),
+    _humongous_reclaim_candidates(G1CollectedHeap::heap()->num_humongous_reclaim_candidates()),
     _humongous_regions_reclaimed(0),
-    _bytes_freed(0) { }
+    _bytes_freed(0),
+    _claimer(0) {
+      record_work_item(0, G1GCPhaseTimes::EagerlyReclaimNumTotal, G1CollectedHeap::heap()->num_humongous_objects());
+      record_work_item(0, G1GCPhaseTimes::EagerlyReclaimNumCandidates, _humongous_reclaim_candidates);
+    }
 
   virtual ~EagerlyReclaimHumongousObjectsTask() {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -280,21 +287,24 @@ public:
     g1h->decrement_summary_bytes(_bytes_freed);
   }
 
-  static bool should_execute() {   return G1CollectedHeap::heap()->should_do_eager_reclaim(); }
+  static bool should_execute() { return G1CollectedHeap::heap()->should_do_eager_reclaim(); }
 
-  double worker_cost() const override { return 1.0; }
+  double worker_cost() const override { return MAX2(1u, _humongous_reclaim_candidates); }
+
+  void set_max_workers(uint max_workers) override {
+    _claimer.set_n_workers(max_workers);
+  }
+
   void do_work(uint worker_id) override {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
     G1FreeHumongousRegionClosure cl;
-    g1h->heap_region_iterate(&cl);
+    g1h->heap_region_par_iterate_from_worker_offset(&cl, &_claimer, worker_id);
 
-    record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumTotal, g1h->num_humongous_objects());
-    record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumCandidates, g1h->num_humongous_reclaim_candidates());
+    // Record the number of objects reclaimed by this worker and update the total stats.
     record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumReclaimed, cl.humongous_objects_reclaimed());
-
-    _humongous_regions_reclaimed = cl.humongous_regions_reclaimed();
-    _bytes_freed = cl.bytes_freed();
+    Atomic::add(&_humongous_regions_reclaimed, cl.humongous_regions_reclaimed());
+    Atomic::add(&_bytes_freed, cl.bytes_freed());
   }
 };
 
@@ -674,7 +684,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   add_serial_task(new UpdateDerivedPointersTask());
 #endif
   if (EagerlyReclaimHumongousObjectsTask::should_execute()) {
-    add_serial_task(new EagerlyReclaimHumongousObjectsTask());
+    add_parallel_task(new EagerlyReclaimHumongousObjectsTask());
   }
 
   if (evac_failure_regions->evacuation_failed()) {
