@@ -1533,7 +1533,7 @@ public class IdentityHashMap<K,V>
      *
      * @param key key with which the specified value is to be associated
      * @param value value to be associated with the specified key
-     * @param replace whether an existing value is to be replaced if the key is present
+     * @param replace whether a non-null existing value is to be replaced if the key is present
      * @return the value associated to the key before the call, or {@code null} if
      * there was no previously associated value
      */
@@ -1544,7 +1544,7 @@ public class IdentityHashMap<K,V>
         if (tab[i] == k) {
             @SuppressWarnings("unchecked")
             V oldValue = (V) tab[i + 1];
-            if (replace) {
+            if (replace || oldValue == null) {
                 tab[i + 1] = value;
             }
             return oldValue;
