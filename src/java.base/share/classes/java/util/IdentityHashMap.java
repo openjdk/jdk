@@ -29,6 +29,7 @@ import java.lang.reflect.Array;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import jdk.internal.access.SharedSecrets;
 
 /**
@@ -307,6 +308,43 @@ public class IdentityHashMap<K,V>
     }
 
     /**
+     * Finds an interesting index for a key such that the key is present
+     * at that index in the table, or an open index where the key could
+     * be stored. Guaranteed that {@code tab[ret] == null} or {@code
+     * tab[ret] == key}.
+     *
+     * @param tab the hash table
+     * @param key the key, null-masked
+     * @return the index found
+     */
+    private static int findInterestingIndex(Object[] tab, Object key) {
+        final int len = tab.length;
+        Object item;
+        int i = hash(key, len);
+        while ((item = tab[i]) != key && item != null) {
+            i = nextKeyIndex(i, len);
+        }
+        return i;
+    }
+
+    /**
+     * Finds an open index where the key could be stored. Guaranteed that
+     * {@code tab[ret] == null}.
+     *
+     * @param tab the hash table
+     * @param key the key, null-masked
+     * @return the index found
+     */
+    private static int findOpenIndex(Object[] tab, Object key) {
+        final int len = tab.length;
+        int i = hash(key, len);
+        while (tab[i] != null) {
+            i = nextKeyIndex(i, len);
+        }
+        return i;
+    }
+
+    /**
      * Returns the value to which the specified key is mapped,
      * or {@code null} if this map contains no mapping for the key.
      *
@@ -323,20 +361,8 @@ public class IdentityHashMap<K,V>
      *
      * @see #put(Object, Object)
      */
-    @SuppressWarnings("unchecked")
     public V get(Object key) {
-        Object k = maskNull(key);
-        Object[] tab = table;
-        int len = tab.length;
-        int i = hash(k, len);
-        while (true) {
-            Object item = tab[i];
-            if (item == k)
-                return (V) tab[i + 1];
-            if (item == null)
-                return null;
-            i = nextKeyIndex(i, len);
-        }
+        return getOrDefault(key, null);
     }
 
     /**
@@ -351,16 +377,7 @@ public class IdentityHashMap<K,V>
     public boolean containsKey(Object key) {
         Object k = maskNull(key);
         Object[] tab = table;
-        int len = tab.length;
-        int i = hash(k, len);
-        while (true) {
-            Object item = tab[i];
-            if (item == k)
-                return true;
-            if (item == null)
-                return false;
-            i = nextKeyIndex(i, len);
-        }
+        return tab[findInterestingIndex(tab, k)] == k;
     }
 
     /**
@@ -392,16 +409,8 @@ public class IdentityHashMap<K,V>
     private boolean containsMapping(Object key, Object value) {
         Object k = maskNull(key);
         Object[] tab = table;
-        int len = tab.length;
-        int i = hash(k, len);
-        while (true) {
-            Object item = tab[i];
-            if (item == k)
-                return tab[i + 1] == value;
-            if (item == null)
-                return false;
-            i = nextKeyIndex(i, len);
-        }
+        int i = findInterestingIndex(tab, k);
+        return tab[i] == k && tab[i + 1] == value;
     }
 
     /**
@@ -420,35 +429,7 @@ public class IdentityHashMap<K,V>
      * @see     #containsKey(Object)
      */
     public V put(K key, V value) {
-        final Object k = maskNull(key);
-
-        retryAfterResize: for (;;) {
-            final Object[] tab = table;
-            final int len = tab.length;
-            int i = hash(k, len);
-
-            for (Object item; (item = tab[i]) != null;
-                 i = nextKeyIndex(i, len)) {
-                if (item == k) {
-                    @SuppressWarnings("unchecked")
-                        V oldValue = (V) tab[i + 1];
-                    tab[i + 1] = value;
-                    return oldValue;
-                }
-            }
-
-            final int s = size + 1;
-            // Use optimized form of 3 * s.
-            // Next capacity is len, 2 * current capacity.
-            if (s + (s << 1) > len && resize(len))
-                continue retryAfterResize;
-
-            modCount++;
-            tab[i] = k;
-            tab[i + 1] = value;
-            size = s;
-            return null;
-        }
+        return put(key, value, true);
     }
 
     /**
@@ -479,9 +460,7 @@ public class IdentityHashMap<K,V>
                 Object value = oldTable[j+1];
                 oldTable[j] = null;
                 oldTable[j+1] = null;
-                int i = hash(key, newLength);
-                while (newTable[i] != null)
-                    i = nextKeyIndex(i, newLength);
+                int i = findOpenIndex(newTable, key);
                 newTable[i] = key;
                 newTable[i + 1] = value;
             }
@@ -521,25 +500,14 @@ public class IdentityHashMap<K,V>
     public V remove(Object key) {
         Object k = maskNull(key);
         Object[] tab = table;
-        int len = tab.length;
-        int i = hash(k, len);
-
-        while (true) {
-            Object item = tab[i];
-            if (item == k) {
-                modCount++;
-                size--;
-                @SuppressWarnings("unchecked")
-                    V oldValue = (V) tab[i + 1];
-                tab[i + 1] = null;
-                tab[i] = null;
-                closeDeletion(i);
-                return oldValue;
-            }
-            if (item == null)
-                return null;
-            i = nextKeyIndex(i, len);
-        }
+        int i = findInterestingIndex(tab, k);
+        if (tab[i] == k) {
+            @SuppressWarnings("unchecked")
+            V oldValue = (V) tab[i + 1];
+            delete(tab, i);
+            return oldValue;
+        } else
+            return null;
     }
 
     /**
@@ -553,25 +521,14 @@ public class IdentityHashMap<K,V>
     private boolean removeMapping(Object key, Object value) {
         Object k = maskNull(key);
         Object[] tab = table;
-        int len = tab.length;
-        int i = hash(k, len);
-
-        while (true) {
-            Object item = tab[i];
-            if (item == k) {
-                if (tab[i + 1] != value)
-                    return false;
-                modCount++;
-                size--;
-                tab[i] = null;
-                tab[i + 1] = null;
-                closeDeletion(i);
-                return true;
-            }
-            if (item == null)
+        int i = findInterestingIndex(tab, k);
+        if (tab[i] == k) {
+            if (tab[i + 1] != value)
                 return false;
-            i = nextKeyIndex(i, len);
-        }
+            delete(tab, i);
+            return true;
+        } else
+            return false;
     }
 
     /**
@@ -1373,6 +1330,277 @@ public class IdentityHashMap<K,V>
                 throw new ConcurrentModificationException();
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public V getOrDefault(Object key, V fallback) {
+        Object k = maskNull(key);
+        Object[] tab = table;
+        int i = findInterestingIndex(tab, k);
+        return tab[i] == k ? (V) tab[i + 1] : fallback;
+    }
+
+    @Override
+    public V putIfAbsent(K key, V value) {
+        return put(key, value, false);
+    }
+
+    @Override
+    public V replace(K key, V value) {
+        Object k = maskNull(key);
+        Object[] tab = table;
+        int i = findInterestingIndex(tab, k);
+        if (tab[i] == k) {
+            @SuppressWarnings("unchecked")
+            final V prev = (V) tab[i + 1];
+            tab[i + 1] = value;
+            return prev;
+        } else
+            return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>This method will, on a best-effort basis, throw a
+     * {@link ConcurrentModificationException} if it is detected that the
+     * mapping function modifies this map during computation.
+     *
+     * @throws ConcurrentModificationException if it is detected that the
+     * mapping function modified this map
+     */
+    @Override
+    public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        Objects.requireNonNull(mappingFunction);
+
+        Object k = maskNull(key);
+        Object[] tab = table;
+        int i = findInterestingIndex(tab, k);
+        if (tab[i] == k) {
+            @SuppressWarnings("unchecked")
+            final V oldValue = (V) tab[i + 1];
+            if (oldValue != null)
+                return oldValue;
+
+            // replace null old value, per specification
+            final V newValue = callFunction(key, mappingFunction);
+            if (newValue != null) {
+                tab[i + 1] = newValue;
+            }
+            return newValue;
+        } else
+            return maybeAddNewEntry(tab, i, k, callFunction(key, mappingFunction));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>This method will, on a best-effort basis, throw a
+     * {@link ConcurrentModificationException} if it is detected that the
+     * remapping function modifies this map during computation.
+     *
+     * @throws ConcurrentModificationException if it is detected that the
+     * remapping function modified this map
+     */
+    @Override
+    public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        Objects.requireNonNull(remappingFunction);
+
+        Object k = maskNull(key);
+        Object[] tab = table;
+        int i = findInterestingIndex(tab, k);
+        if (tab[i] == k) {
+            @SuppressWarnings("unchecked")
+            final V oldValue = (V) tab[i + 1];
+            if (oldValue == null) {
+                return null;
+            }
+
+            return updateByNewValue(tab, i, callFunction(key, oldValue, remappingFunction));
+        } else
+            return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>This method will, on a best-effort basis, throw a
+     * {@link ConcurrentModificationException} if it is detected that the
+     * remapping function modifies this map during computation.
+     *
+     * @throws ConcurrentModificationException if it is detected that the
+     * remapping function modified this map
+     */
+    @Override
+    public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        Objects.requireNonNull(remappingFunction);
+
+        Object k = maskNull(key);
+        Object[] tab = table;
+        int i = findInterestingIndex(tab, k);
+        if (tab[i] == k) {
+            @SuppressWarnings("unchecked")
+            final V oldValue = (V) tab[i + 1];
+            return updateByNewValue(tab, i, callFunction(key, oldValue, remappingFunction));
+        } else
+            return maybeAddNewEntry(tab, i, k, callFunction(key, null, remappingFunction));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>This method will, on a best-effort basis, throw a
+     * {@link ConcurrentModificationException} if it is detected that the
+     * remapping function modifies this map during computation.
+     *
+     * @throws ConcurrentModificationException if it is detected that the
+     * remapping function modified this map
+     */
+    @Override
+    public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(remappingFunction);
+
+        Object k = maskNull(key);
+        Object[] tab = table;
+        int i = findInterestingIndex(tab, k);
+        if (tab[i] == k) {
+            @SuppressWarnings("unchecked")
+            final V oldValue = (V) tab[i + 1];
+            return updateByNewValue(tab, i, mergeValue(oldValue, value, remappingFunction));
+        } else
+            return maybeAddNewEntry(tab, i, k, value);
+    }
+
+    private V callFunction(K key, Function<? super K, ? extends V> function) {
+        final int expectedModCount = modCount;
+        V result = function.apply(key);
+        if (expectedModCount != modCount) {
+            throw new ConcurrentModificationException();
+        }
+        return result;
+    }
+
+    private V callFunction(K key, V value, BiFunction<? super K, ? super V, ? extends V> function) {
+        final int expectedModCount = modCount;
+        V result = function.apply(key, value);
+        if (expectedModCount != modCount) {
+            throw new ConcurrentModificationException();
+        }
+        return result;
+    }
+
+    private V mergeValue(V oldValue, V value, BiFunction<? super V, ? super V, ? extends V> function) {
+        if (oldValue == null) {
+            return value;
+        }
+
+        final int expectedModCount = modCount;
+        V result = function.apply(oldValue, value);
+        if (expectedModCount != modCount) {
+            throw new ConcurrentModificationException();
+        }
+        return result;
+    }
+
+    private V updateByNewValue(Object[] tab, int i, V newValue) {
+        if (newValue != null) {
+            tab[i + 1] = newValue;
+        } else {
+            delete(tab, i);
+        }
+        return newValue;
+    }
+
+    /**
+     * Deletes a mapping from this map's table. Increases modCount as it
+     * changes map size.
+     *
+     * @param tab the table, should be equivalent to {@code this.table}
+     * @param i the index of the object to delete
+     */
+    private void delete(Object[] tab, int i) {
+        modCount++;
+        size--;
+        tab[i] = null;
+        tab[i + 1] = null;
+        closeDeletion(i);
+    }
+
+    /**
+     * Shared implementation of put and putIfAbsent.
+     *
+     * @param key key with which the specified value is to be associated
+     * @param value value to be associated with the specified key
+     * @param replace whether an existing value is to be replaced if the key is present
+     * @return the value associated to the key before the call, or {@code null} if
+     * there was no previously associated value
+     */
+    private V put(K key, V value, boolean replace) {
+        final Object k = maskNull(key);
+        Object[] tab = table;
+        int i = findInterestingIndex(tab, k);
+        if (tab[i] == k) {
+            @SuppressWarnings("unchecked")
+            V oldValue = (V) tab[i + 1];
+            if (replace) {
+                tab[i + 1] = value;
+            }
+            return oldValue;
+        }
+
+        addNewEntry(tab, i, k, value);
+        return null;
+    }
+
+    /**
+     * Adds an entry to this map if and only if {@code newValue} is not null.
+     *
+     * @param tab the hash table of this map, may be reused
+     * @param i the current index of k in the table
+     * @param k the key
+     * @param newValue the value
+     * @return the value
+     */
+    private V maybeAddNewEntry(Object[] tab, int i, Object k, V newValue) {
+        if (newValue == null) {
+            return null;
+        }
+
+        return addNewEntry(tab, i, k, newValue);
+    }
+
+    /**
+     * Adds a new entry to this map, associating {@code k} with the {@code newValue}.
+     * Accepts null values. Increases modCount as it changes map size.
+     *
+     * @param tab the hash table of this map, may be reused
+     * @param i the current index of k in the table
+     * @param k the key
+     * @param newValue the value
+     * @return the value
+     */
+    private V addNewEntry(Object[] tab, int i, Object k, V newValue) {
+        int len = tab.length;
+        do {
+            final int s = size + 1;
+            // Use optimized form of 3 * s.
+            // Next capacity is len, 2 * current capacity.
+            if (!(s + (s << 1) > len && resize(len)))
+                break;
+
+            tab = table;
+            len = tab.length;
+            // findInterestingIndex should return the same value here
+            i = findOpenIndex(tab, k);
+        } while (true);
+
+        modCount++;
+        tab[i] = k;
+        tab[i + 1] = newValue;
+        size++;
+        return newValue;
     }
 
     /**
