@@ -1760,7 +1760,7 @@ public class Main {
        Optional<String> uriString();
        InputStream bytes() throws IOException;
         /**
-         * @return Returns the last modified time of the module descriptor.
+         * @return Returns the last modified time of the module-info.class.
          * Returns null if the last modified time is unknown or cannot be
          * determined.
          */
