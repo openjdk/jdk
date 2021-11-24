@@ -38,11 +38,14 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -217,12 +220,22 @@ public class ClassFileReader implements Closeable {
         }
 
         protected Set<String> scan() {
-            try (Stream<Path> stream = Files.walk(path, Integer.MAX_VALUE)) {
-                return stream.filter(ClassFileReader::isClass)
-                             .map(path::relativize)
-                             .map(Path::toString)
-                             .map(p -> p.replace(File.separatorChar, '/'))
-                             .collect(Collectors.toSet());
+            try {
+                Set<String> result = new HashSet<>();
+                Files.walkFileTree(path, new SimpleFileVisitor<>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        if (ClassFileReader.isClass(file)) {
+                            result.add(path.relativize(file).toString().replace(File.separatorChar, '/'));
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+                return result;
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
