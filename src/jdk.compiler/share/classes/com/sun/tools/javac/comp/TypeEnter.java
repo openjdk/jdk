@@ -1346,14 +1346,6 @@ public class TypeEnter implements Completer {
             ListBuffer<Attribute.Compound> paramAttrs;
             if (copyConstAnnos) {
                 csym.appendAttributes(constr.getRawAttributes());
-                /*paramAttrs = new ListBuffer<>();
-                for (Attribute.Compound compound : constr.getRawAttributes()) {
-                    Attribute.Compound newAttr = new Attribute.Compound(compound.type, compound.values, compound.position);
-                    paramAttrs.add(newAttr);
-                }
-                if (paramAttrs.size() > 0) {
-                    csym.appendAttributes(paramAttrs.toList());
-                }*/
             }
 
             ListBuffer<VarSymbol> params = new ListBuffer<>();
@@ -1366,16 +1358,6 @@ public class TypeEnter implements Completer {
                 for (VarSymbol p : constr.params) {
                     VarSymbol param = new VarSymbol(PARAMETER | p.flags(), p.name, argtypes.head, csym);
                     param.appendAttributes(p.getRawAttributes());
-
-                    /*paramAttrs = new ListBuffer<>();
-                    //ListBuffer<Attribute.Compound> paramAttrs = new ListBuffer<>();
-                    for (Attribute.Compound compound : p.getRawAttributes()) {
-                        Attribute.Compound newAttr = new Attribute.Compound(compound.type, compound.values, compound.position);
-                        paramAttrs.add(newAttr);
-                    }
-                    if (paramAttrs.size() > 0) {
-                        param.appendAttributes(paramAttrs.toList());
-                    }*/
                     params.add(param);
                     argtypes = argtypes.tail;
                 }
