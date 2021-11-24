@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 /**
  * @test
  * @bug 4052223 4089987 4469904 4326988 4486735 8008577 8045998 8140571
- *      8216969
+ *      8190748 8216969
  * @summary test DateFormat and SimpleDateFormat.
  * @library /java/text/testlib
  * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=COMPAT,SPI DateFormatTest
  */
 
+import java.time.ZoneId;
 import java.util.*;
 import java.text.*;
 import static java.util.GregorianCalendar.*;
@@ -342,12 +343,17 @@ public class DateFormatTest extends IntlTest
     // Test pattern with runs things together
     public void TestRunTogetherPattern985()
     {
+        Date date1 = new Date();
+        var defZone = ZoneId.systemDefault();
+        if (defZone.getRules().getTransition(date1.toInstant().atZone(defZone).toLocalDateTime()) != null) {
+            logln("At the offset transition. Round trip test skipped.");
+            return;
+        }
+
         String format = "yyyyMMddHHmmssSSS";
         String now, then;
-
         SimpleDateFormat formatter = new SimpleDateFormat(format);
 
-        Date date1 = new Date();
         now = formatter.format(date1);
 
         logln(now);
