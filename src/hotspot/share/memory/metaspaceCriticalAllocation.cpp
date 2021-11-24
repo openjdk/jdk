@@ -126,9 +126,9 @@ bool MetaspaceCriticalAllocation::try_allocate_critical(MetadataAllocationReques
 }
 
 void MetaspaceCriticalAllocation::wait_for_purge(MetadataAllocationRequest* request) {
+  ThreadBlockInVM tbivm(JavaThread::current());
+  MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
   for (;;) {
-    ThreadBlockInVM tbivm(JavaThread::current());
-    MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
     if (request->has_result()) {
       break;
     }
