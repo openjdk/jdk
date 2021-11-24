@@ -586,7 +586,11 @@ void BlockBegin::disconnect_edge(BlockBegin* from, BlockBegin* to) {
 void BlockBegin::disconnect_from_graph() {
   // disconnect this block from all other blocks
   for (int p = 0; p < number_of_preds(); p++) {
-    pred_at(p)->remove_successor(this);
+    BlockBegin *receiver = pred_at(p);
+    int idx;
+    while ((idx = receiver->_successors.find(this)) >= 0) {
+      receiver->_successors.remove_at(idx);
+    }
   }
   for (int s = 0; s < number_of_sux(); s++) {
     sux_at(s)->remove_predecessor(this);
@@ -666,14 +670,6 @@ BlockBegin* BlockBegin::insert_block_between(BlockBegin* sux) {
   }
   assert(assigned == true, "should have assigned at least once");
   return new_sux;
-}
-
-
-void BlockBegin::remove_successor(BlockBegin* pred) {
-  int idx;
-  while ((idx = _successors.find(pred)) >= 0) {
-    _successors.remove_at(idx);
-  }
 }
 
 

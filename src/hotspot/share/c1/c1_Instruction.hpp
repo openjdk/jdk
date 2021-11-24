@@ -1732,7 +1732,6 @@ LEAF(BlockBegin, StateSplit)
   BlockBegin* sux_at(int i) const;
   BlockBegin* sux_at_from_local(int i) const;
   void add_successor(BlockBegin* sux);
-  void remove_successor(BlockBegin* pred);
   bool is_successor(BlockBegin* sux) const       { return _successors.contains(sux); }
 
   void add_predecessor(BlockBegin* pred);
