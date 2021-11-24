@@ -1318,7 +1318,7 @@ class PredecessorValidator : public BlockClosure {
     }
   }
 
-  void collect_predecessor(BlockBegin * const pred, const BlockBegin *sux) {
+  void collect_predecessor(BlockBegin* const pred, const BlockBegin *sux) {
     BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
     if (preds == NULL) {
       preds = new BlockList();
@@ -1327,7 +1327,7 @@ class PredecessorValidator : public BlockClosure {
     preds->append(pred);
   }
 
-  void verify_block_preds_against_collected_preds(const BlockBegin *block) const {
+  void verify_block_preds_against_collected_preds(const BlockBegin* block) const {
     BlockList* preds = _predecessors->at(block->block_id());
     if (preds == NULL) {
       assert(block->number_of_preds() == 0, "should be the same");
