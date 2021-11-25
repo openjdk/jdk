@@ -1546,7 +1546,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   const uint idx_before_pre_post = Compile::current()->unique();
   CountedLoopNode *post_head = NULL;
   Node* post_incr = incr;
-  Node *main_exit = insert_post_loop(loop, old_new, main_head, main_end, post_incr, limit, post_head);
+  Node* main_exit = insert_post_loop(loop, old_new, main_head, main_end, post_incr, limit, post_head);
   const uint idx_after_post_before_pre = Compile::current()->unique();
 
   //------------------------------
@@ -1645,7 +1645,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   assert(post_head->in(1)->is_IfProj(), "must be zero-trip guard If node projection of the post loop");
   copy_skeleton_predicates_to_main_loop(pre_head, castii, stride, outer_loop, outer_main_head, dd_main_head,
                                         idx_before_pre_post, idx_after_post_before_pre, min_taken, post_head->in(1), old_new);
-  insert_post_loop_skeleton_predicates(outer_main_head, post_head, post_incr, stride);
+  copy_skeleton_predicates_to_post_loop(outer_main_head, post_head, post_incr, stride);
 
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
   // RCE and alignment may change this later.
@@ -1768,7 +1768,7 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   // In this case we throw away the result as we are not using it to connect anything else.
   CountedLoopNode *post_head = NULL;
   insert_post_loop(loop, old_new, main_head, main_end, incr, limit, post_head);
-  insert_post_loop_skeleton_predicates(main_head->skip_strip_mined(), post_head, incr, main_head->stride());
+  copy_skeleton_predicates_to_post_loop(main_head->skip_strip_mined(), post_head, incr, main_head->stride());
 
   // It's difficult to be precise about the trip-counts
   // for post loops.  They are usually very short,
@@ -1815,7 +1815,7 @@ void PhaseIdealLoop::insert_scalar_rced_post_loop(IdealLoopTree *loop, Node_List
   // In this case we throw away the result as we are not using it to connect anything else.
   CountedLoopNode *post_head = NULL;
   insert_post_loop(loop, old_new, main_head, main_end, incr, limit, post_head);
-  insert_post_loop_skeleton_predicates(main_head->skip_strip_mined(), post_head, incr, main_head->stride());
+  copy_skeleton_predicates_to_post_loop(main_head->skip_strip_mined(), post_head, incr, main_head->stride());
 
   // It's difficult to be precise about the trip-counts
   // for post loops.  They are usually very short,
@@ -1918,9 +1918,8 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   }
 
   // CastII for the new post loop:
-  Node* castii = cast_incr_before_loop(zer_opaq->in(1), zer_taken, post_head);
-  assert(castii != NULL, "no castII inserted");
-  incr = castii;
+  incr = cast_incr_before_loop(zer_opaq->in(1), zer_taken, post_head);
+  assert(incr != NULL, "no castII inserted");
 
   return new_main_exit;
 }
@@ -1975,7 +1974,7 @@ void PhaseIdealLoop::update_main_loop_skeleton_predicates(Node* ctrl, CountedLoo
   }
 }
 
-void PhaseIdealLoop::insert_post_loop_skeleton_predicates(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init, Node* stride) {
+void PhaseIdealLoop::copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init, Node* stride) {
   // Go over the skeleton predicates of the main loop and make a copy for the post loop with its initial iv value and
   // stride as inputs.
   Node* post_loop_entry = post_loop_head->in(LoopNode::EntryControl);
@@ -1991,10 +1990,10 @@ void PhaseIdealLoop::insert_post_loop_skeleton_predicates(LoopNode* main_loop_he
       break;
     }
     if (iff->in(1)->Opcode() == Op_Opaque4 && skeleton_predicate_has_opaque(iff)) {
-        prev_proj = clone_skeleton_predicate_for_main_or_post_loop(iff, init, stride, ctrl, proj, post_loop_entry,
-                                                                   post_loop, prev_proj);
-        assert(!skeleton_predicate_has_opaque(prev_proj->in(0)->as_If()), "unexpected");
-      }
+      prev_proj = clone_skeleton_predicate_for_main_or_post_loop(iff, init, stride, ctrl, proj, post_loop_entry,
+                                                                 post_loop, prev_proj);
+      assert(!skeleton_predicate_has_opaque(prev_proj->in(0)->as_If()), "unexpected");
+    }
     ctrl = ctrl->in(0)->in(0);
   }
   if (prev_proj != post_loop_entry) {
