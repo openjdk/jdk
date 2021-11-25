@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import jdk.javadoc.internal.doclets.toolkit.Resources;
+import jdk.javadoc.internal.doclets.toolkit.taglets.SnippetTaglet;
 
 /*
  * Semantics of a EOL comment; plus
@@ -76,10 +77,10 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
  */
 public final class Parser {
 
-    // next-line tag behaves as if it were specified on the next line
-
-    private String eolMarker;
-    private Matcher markedUpLine;
+    private static final Pattern JAVA_COMMENT = Pattern.compile(
+            "^(?<payload>.*)//(?<markup>\\s*@\\s*\\w+.+?)$");
+    private static final Pattern PROPERTIES_COMMENT = Pattern.compile(
+            "^(?<payload>[ \t]*([#!].*)?)[#!](?<markup>\\s*@\\s*\\w+.+?)$");
 
     private final Resources resources;
     private final MarkupParser markupParser;
@@ -93,32 +94,23 @@ public final class Parser {
         this.markupParser = new MarkupParser(resources);
     }
 
-    public Result parse(String source) throws ParseException {
-        return parse("//", source);
+    public Result parse(Optional<SnippetTaglet.Language> language, String source) throws ParseException {
+        SnippetTaglet.Language lang = language.orElse(SnippetTaglet.Language.JAVA);
+        var p = switch (lang) {
+            case JAVA -> JAVA_COMMENT;
+            case PROPERTIES -> PROPERTIES_COMMENT;
+        };
+        return parse(p, source);
     }
 
     /*
      * Newline characters in the returned text are of the \n form.
      */
-    public Result parse(String eolMarker, String source) throws ParseException {
-        Objects.requireNonNull(eolMarker);
+    private Result parse(Pattern commentPattern, String source) throws ParseException {
+        Objects.requireNonNull(commentPattern);
         Objects.requireNonNull(source);
-        if (!Objects.equals(eolMarker, this.eolMarker)) {
-            if (eolMarker.length() < 1) {
-                throw new IllegalArgumentException();
-            }
-            for (int i = 0; i < eolMarker.length(); i++) {
-                switch (eolMarker.charAt(i)) {
-                    case '\f', '\n', '\r' -> throw new IllegalArgumentException();
-                }
-            }
-            this.eolMarker = eolMarker;
-            // capture the rightmost eolMarker (e.g. "//")
-            // The below Pattern.compile should never throw PatternSyntaxException
-            Pattern pattern = Pattern.compile("^(.*)(" + Pattern.quote(eolMarker)
-                    + "(\\s*@\\s*\\w+.+?))$");
-            this.markedUpLine = pattern.matcher(""); // reusable matcher
-        }
+
+        Matcher markedUpLine = commentPattern.matcher(""); // reusable matcher
 
         tags.clear();
         regions.clear();
@@ -151,17 +143,17 @@ public final class Parser {
             if (!markedUpLine.matches()) { // (1)
                 line = rawLine + (addLineTerminator ? "\n" : "");
             } else {
-                String maybeMarkup = markedUpLine.group(3);
+                String maybeMarkup = rawLine.substring(markedUpLine.start("markup"));
                 List<Tag> parsedTags;
                 try {
                     parsedTags = markupParser.parse(maybeMarkup);
                 } catch (ParseException e) {
                     // translate error position from markup to file line
-                    throw new ParseException(e::getMessage, markedUpLine.start(3) + e.getPosition());
+                    throw new ParseException(e::getMessage, markedUpLine.start("markup") + e.getPosition());
                 }
                 for (Tag t : parsedTags) {
                     t.lineSourceOffset = next.offset();
-                    t.markupLineOffset = markedUpLine.start(3);
+                    t.markupLineOffset = markedUpLine.start("markup");
                 }
                 thisLineTags.addAll(parsedTags);
                 for (var tagIterator = thisLineTags.iterator(); tagIterator.hasNext(); ) {
@@ -176,7 +168,7 @@ public final class Parser {
                     // TODO: log this with NOTICE;
                     line = rawLine + (addLineTerminator ? "\n" : "");
                 } else { // (3)
-                    String payload = markedUpLine.group(1);
+                    String payload = rawLine.substring(0, markedUpLine.end("payload"));
                     line = payload + (addLineTerminator ? "\n" : "");
                 }
             }

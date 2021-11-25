@@ -1034,6 +1034,11 @@
     <Field type="string" name="name" label="Name" />
   </Event>
 
+  <Event name="ZThreadDebug" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Event" description="Temporary latency measurements used during development and debugging of ZGC" thread="true" experimental="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
   <Event name="ZUncommit" category="Java Virtual Machine, GC, Detailed" label="ZGC Uncommit" description="Uncommitting of memory" thread="true">
     <Field type="ulong" contentType="bytes" name="uncommitted" label="Uncommitted" />
   </Event>
