@@ -107,14 +107,17 @@ static void setBlendingFactors(
                     stencilNeeded:stencilNeeded];
 }
 
-// Bits in pipeline state index
-enum state_index_bits {
-  ST_SRC_PRE_BIT,
-  ST_SRC_OPQ_BIT,
-  ST_STN_BIT,
-  ST_AA_BIT,
-  ST_EXTA_BIT,
-  ST_MAX_BIT
+// Pipeline state index
+union StateIndex {
+  uint32_t value;
+  struct {
+    uint32_t srcPremultiplied : 1,
+             srcOpaque        : 1,
+             stencil          : 1,
+             aa               : 1,
+             extAlpha         : 1,
+             compositeRule    : 27;
+  } bits;
 };
 
 // Base method to obtain MTLRenderPipelineState.
@@ -133,41 +136,31 @@ enum state_index_bits {
 
     // Calculate index by flags and compositeRule
     // TODO: reimplement, use map with convenient key (calculated by all arguments)
-    int subIndex = 0;
+    union StateIndex index;
+    index.value = 0;
     if (useXorComposite) {
         // compositeRule value is already XOR_COMPOSITE_RULE
     }
     else {
         if (useComposite) {
-            if (!renderOptions->srcFlags.isPremultiplied)
-                subIndex |= 1 << ST_SRC_PRE_BIT;
-            if (renderOptions->srcFlags.isOpaque)
-                subIndex |= 1 << ST_SRC_OPQ_BIT;
+            index.bits.srcPremultiplied = renderOptions->srcFlags.isPremultiplied;
+            index.bits.srcOpaque = renderOptions->srcFlags.isOpaque;
         } else
             compositeRule = RULE_Src;
     }
 
-    if (stencilNeeded) {
-        subIndex |= 1 << ST_STN_BIT;
-    }
-
-    if (renderOptions->isAA) {
-        subIndex |= 1 << ST_AA_BIT;
-    }
-
-    if ((composite != nil && FLT_LT([composite getExtraAlpha], 1.0f))) {
-        subIndex |= 1 << ST_EXTA_BIT;
-    }
-
-    int index = (compositeRule << ST_MAX_BIT) + subIndex;
+    index.bits.stencil = stencilNeeded;
+    index.bits.aa = renderOptions->isAA;
+    index.bits.extAlpha = composite != nil && FLT_LT([composite getExtraAlpha], 1.0f);
+    index.bits.compositeRule = compositeRule;
 
     NSPointerArray * subStates = [self getSubStates:vertexShaderId fragmentShader:fragmentShaderId];
 
-    if (index >= subStates.count) {
-        subStates.count = (NSUInteger) (index + 1);
+    if (index.value >= subStates.count) {
+        subStates.count = index.value + 1;
     }
 
-    id<MTLRenderPipelineState> result = [subStates pointerAtIndex:index];
+    id<MTLRenderPipelineState> result = [subStates pointerAtIndex:index.value];
     if (result == nil) {
         @autoreleasepool {
             id <MTLFunction> vertexShader = [self getShader:vertexShaderId];
@@ -228,7 +221,7 @@ enum state_index_bits {
                 exit(0);
             }
 
-            [subStates insertPointer:result atIndex:index];
+            [subStates replacePointerAtIndex:index.value withPointer:result];
         }
     }
 
