@@ -48,26 +48,38 @@ public:
   }
 };
 
-class ZStrongOopStorageSetIterator {
+class ZOopStorageSetIteratorStrong {
   OopStorageSetStrongParState<true /* concurrent */, false /* is_const */> _iter;
 
 public:
-  ZStrongOopStorageSetIterator();
+  ZOopStorageSetIteratorStrong();
 
   void apply(OopClosure* cl);
 };
 
-class ZStrongCLDsIterator {
+class ZOopStorageSetIteratorWeak {
+private:
+  OopStorageSetWeakParState<true /* concurrent */, false /* is_const */> _iter;
+
+public:
+  ZOopStorageSetIteratorWeak();
+
+  void apply(OopClosure* cl);
+
+  void report_num_dead();
+};
+
+class ZCLDsIteratorStrong {
 public:
   void apply(CLDClosure* cl);
 };
 
-class ZWeakCLDsIterator {
+class ZCLDsIteratorWeak {
 public:
   void apply(CLDClosure* cl);
 };
 
-class ZAllCLDsIterator {
+class ZCLDsIteratorAll {
 public:
   void apply(CLDClosure* cl);
 };
@@ -85,107 +97,90 @@ public:
   void apply(ThreadClosure* cl);
 };
 
-class ZNMethodsIterator {
+class ZNMethodsIteratorImpl {
 private:
   const bool _enabled;
   const bool _secondary;
 
-public:
-  ZNMethodsIterator(bool enabled, bool secondary);
-  ~ZNMethodsIterator();
+protected:
+  ZNMethodsIteratorImpl(bool enabled, bool secondary);
+  ~ZNMethodsIteratorImpl();
 
+public:
   void apply(NMethodClosure* cl);
 };
 
-class ZNMethodsStrongIterator : public ZNMethodsIterator {
+class ZNMethodsIteratorStrong : public ZNMethodsIteratorImpl {
 public:
-  ZNMethodsStrongIterator() : ZNMethodsIterator(!ClassUnloading /* enabled */, false /* secondary */) {}
+  ZNMethodsIteratorStrong() :
+      ZNMethodsIteratorImpl(!ClassUnloading /* enabled */, false /* secondary */) {}
 };
 
-class ZNMethodsWeakIterator : public ZNMethodsIterator {
+class ZNMethodsIteratorWeak : public ZNMethodsIteratorImpl {
 public:
-  ZNMethodsWeakIterator() : ZNMethodsIterator(true /* enabled */, true /* secondary */) {}
+  ZNMethodsIteratorWeak() :
+      ZNMethodsIteratorImpl(true /* enabled */, true /* secondary */) {}
 };
 
-class ZNMethodsAllIterator : public ZNMethodsIterator {
+class ZNMethodsIteratorAll : public ZNMethodsIteratorImpl {
 public:
-  ZNMethodsAllIterator() : ZNMethodsIterator(true /* enabled */, true /* secondary */) {}
+  ZNMethodsIteratorAll() :
+      ZNMethodsIteratorImpl(true /* enabled */, true /* secondary */) {}
 };
 
-class ZColoredRootsStrongIterator {
+class ZRootsIteratorStrongUncolored {
 private:
-  ZParallelApply<ZStrongOopStorageSetIterator> _oop_storage_set;
-  ZParallelApply<ZStrongCLDsIterator>          _class_loader_data_graph;
-
-public:
-  void apply(OopClosure* cl,
-             CLDClosure* cld_cl);
-};
-
-class ZUncoloredRootsStrongIterator {
-private:
-  ZParallelApply<ZJavaThreadsIterator>         _java_threads;
-  ZParallelApply<ZNMethodsStrongIterator>      _nmethods;
+  ZParallelApply<ZJavaThreadsIterator>    _java_threads;
+  ZParallelApply<ZNMethodsIteratorStrong> _nmethods_strong;
 
 public:
   void apply(ThreadClosure* thread_cl,
              NMethodClosure* nm_cl);
 };
 
-class ZUncoloredRootsWeakIterator {
+class ZRootsIteratorWeakUncolored {
 private:
-  ZParallelApply<ZNMethodsWeakIterator>        _nmethods;
+  ZParallelApply<ZNMethodsIteratorWeak> _nmethods_weak;
 
 public:
   void apply(NMethodClosure* nm_cl);
 };
 
-class ZUncoloredRootsAllIterator {
+class ZRootsIteratorAllUncolored {
 private:
-  ZParallelApply<ZJavaThreadsIterator>         _java_threads;
-  ZParallelApply<ZNMethodsAllIterator>         _nmethods;
+  ZParallelApply<ZJavaThreadsIterator> _java_threads;
+  ZParallelApply<ZNMethodsIteratorAll> _nmethods_all;
 
 public:
   void apply(ThreadClosure* thread_cl,
              NMethodClosure* nm_cl);
 };
 
-class ZWeakOopStorageSetIterator {
+class ZRootsIteratorStrongColored {
 private:
-  OopStorageSetWeakParState<true /* concurrent */, false /* is_const */> _iter;
-
-public:
-  ZWeakOopStorageSetIterator();
-
-  void apply(OopClosure* cl);
-
-  void report_num_dead();
-};
-
-class ZWeakRootsIterator {
-private:
-  ZParallelApply<ZWeakOopStorageSetIterator> _oop_storage_set;
-
-public:
-  void apply(OopClosure* cl);
-
-  void report_num_dead();
-};
-
-class ZColoredRootsWeakIterator {
-  ZParallelApply<ZWeakOopStorageSetIterator> _weak_oop_storage_set;
-  ZParallelApply<ZWeakCLDsIterator>          _weak_class_loader_data_graph;
+  ZParallelApply<ZOopStorageSetIteratorStrong> _oop_storage_set_strong;
+  ZParallelApply<ZCLDsIteratorStrong>          _clds_strong;
 
 public:
   void apply(OopClosure* cl,
              CLDClosure* cld_cl);
 };
 
-class ZColoredRootsAllIterator {
+class ZRootsIteratorWeakColored {
 private:
-  ZParallelApply<ZStrongOopStorageSetIterator> _strong_oop_storage_set;
-  ZParallelApply<ZWeakOopStorageSetIterator>   _weak_oop_storage_set;
-  ZParallelApply<ZAllCLDsIterator>             _all_class_loader_data_graph;
+  ZParallelApply<ZOopStorageSetIteratorWeak> _oop_storage_set_weak;
+
+public:
+  void apply(OopClosure* cl);
+
+  void report_num_dead();
+};
+
+class ZRootsIteratorAllColored {
+private:
+  ZParallelApply<ZOopStorageSetIteratorStrong> _oop_storage_set_strong;
+  ZParallelApply<ZOopStorageSetIteratorWeak>   _oop_storage_set_weak;
+  ZParallelApply<ZCLDsIteratorAll>             _clds_all;
 
 public:
   void apply(OopClosure* cl,

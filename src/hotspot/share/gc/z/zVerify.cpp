@@ -387,9 +387,9 @@ void ZVerify::roots_strong(bool verify_fixed) {
     ZVerifyColoredRootClosure cl(verify_fixed);
     ZVerifyCLDClosure cld_cl(&cl);
 
-    ZColoredRootsStrongIterator iter;
-    iter.apply(&cl,
-               &cld_cl);
+    ZRootsIteratorStrongColored roots_strong_colored;
+    roots_strong_colored.apply(&cl,
+                               &cld_cl);
   }
   // FIXME: Only verify_fixed == true supported right now
   if (verify_fixed) {
@@ -397,9 +397,9 @@ void ZVerify::roots_strong(bool verify_fixed) {
     ZVerifyThreadClosure thread_cl(&cl);
     ZVerifyNMethodClosure nm_cl(&cl, verify_fixed);
 
-    ZUncoloredRootsStrongIterator iter;
-    iter.apply(&thread_cl,
-               &nm_cl);
+    ZRootsIteratorStrongUncolored roots_strong_uncolored;
+    roots_strong_uncolored.apply(&thread_cl,
+                                 &nm_cl);
   }
 }
 
@@ -408,8 +408,8 @@ void ZVerify::roots_weak() {
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
   ZVerifyColoredRootClosure cl(true /* verify_fixed */);
-  ZWeakRootsIterator iter;
-  iter.apply(&cl);
+  ZRootsIteratorWeakColored roots_weak_colored;
+  roots_weak_colored.apply(&cl);
 }
 
 zaddress zverify_broken_object = zaddress::null;

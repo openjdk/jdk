@@ -114,7 +114,7 @@ public:
 };
 
 template <bool Weak>
-class ZHeapIteratorRootOopClosure : public OopClosure {
+class ZHeapIteratorColoredRootOopClosure : public OopClosure {
 private:
   const ZHeapIteratorContext& _context;
 
@@ -127,7 +127,7 @@ private:
   }
 
 public:
-  ZHeapIteratorRootOopClosure(const ZHeapIteratorContext& context) :
+  ZHeapIteratorColoredRootOopClosure(const ZHeapIteratorContext& context) :
       _context(context) {}
 
   virtual void do_oop(oop* p) {
@@ -141,7 +141,7 @@ public:
   }
 };
 
-class ZHeapIteratorRootUncoloredOopClosure : public OopClosure {
+class ZHeapIteratorUncoloredRootOopClosure : public OopClosure {
 private:
   const ZHeapIteratorContext& _context;
 
@@ -152,7 +152,7 @@ private:
   }
 
 public:
-  ZHeapIteratorRootUncoloredOopClosure(const ZHeapIteratorContext& context) :
+  ZHeapIteratorUncoloredRootOopClosure(const ZHeapIteratorContext& context) :
       _context(context) {}
 
   virtual void do_oop(oop* p) {
@@ -243,9 +243,9 @@ ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
     _bitmaps_lock(),
     _queues(nworkers),
     _array_queues(nworkers),
-    _colored_roots(),
-    _uncolored_roots(),
-    _weak_roots(),
+    _roots_colored(),
+    _roots_uncolored(),
+    _roots_weak_colored(),
     _terminator(nworkers, &_queues) {
 
   // Create queues
@@ -359,25 +359,25 @@ public:
 
 void ZHeapIterator::push_strong_roots(const ZHeapIteratorContext& context) {
   {
-    ZHeapIteratorRootOopClosure<false /* Weak */> cl(context);
+    ZHeapIteratorColoredRootOopClosure<false /* Weak */> cl(context);
     ZHeapIteratorCLDCLosure cld_cl(&cl);
 
-    _colored_roots.apply(&cl,
+    _roots_colored.apply(&cl,
                          &cld_cl);
   }
 
   {
-    ZHeapIteratorRootUncoloredOopClosure cl(context);
+    ZHeapIteratorUncoloredRootOopClosure cl(context);
     ZHeapIteratorNMethodClosure nm_cl(&cl);
     ZHeapIteratorThreadClosure thread_cl(&cl, &nm_cl);
-    _uncolored_roots.apply(&thread_cl,
+    _roots_uncolored.apply(&thread_cl,
                            &nm_cl);
   }
 }
 
 void ZHeapIterator::push_weak_roots(const ZHeapIteratorContext& context) {
-  ZHeapIteratorRootOopClosure<true  /* Weak */> cl(context);
-  _weak_roots.apply(&cl);
+  ZHeapIteratorColoredRootOopClosure<true  /* Weak */> cl(context);
+  _roots_weak_colored.apply(&cl);
 }
 
 template <bool VisitWeaks>

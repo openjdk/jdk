@@ -51,21 +51,21 @@ ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers) :
 
 class ZProcessWeakRootsTask : public ZTask {
 private:
-  ZWeakRootsIterator _weak_roots;
+  ZRootsIteratorWeakColored _roots_weak_colored;
 
 public:
   ZProcessWeakRootsTask() :
       ZTask("ZProcessWeakRootsTask"),
-      _weak_roots() {}
+      _roots_weak_colored() {}
 
   ~ZProcessWeakRootsTask() {
-    _weak_roots.report_num_dead();
+    _roots_weak_colored.report_num_dead();
   }
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts;
     ZPhantomCleanOopClosure cl;
-    _weak_roots.apply(&cl);
+    _roots_weak_colored.apply(&cl);
   }
 };
 

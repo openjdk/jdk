@@ -52,25 +52,25 @@ void ZParallelApply<Iterator>::apply(ClosureType* cl) {
   }
 }
 
-ZStrongOopStorageSetIterator::ZStrongOopStorageSetIterator() :
+ZOopStorageSetIteratorStrong::ZOopStorageSetIteratorStrong() :
     _iter() {}
 
-void ZStrongOopStorageSetIterator::apply(OopClosure* cl) {
+void ZOopStorageSetIteratorStrong::apply(OopClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsOopStorageSet);
   _iter.oops_do(cl);
 }
 
-void ZStrongCLDsIterator::apply(CLDClosure* cl) {
+void ZCLDsIteratorStrong::apply(CLDClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
   ClassLoaderDataGraph::always_strong_cld_do(cl);
 }
 
-void ZWeakCLDsIterator::apply(CLDClosure* cl) {
+void ZCLDsIteratorWeak::apply(CLDClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
   ClassLoaderDataGraph::roots_cld_do(NULL /* strong */, cl /* weak */);
 }
 
-void ZAllCLDsIterator::apply(CLDClosure* cl) {
+void ZCLDsIteratorAll::apply(CLDClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
   ClassLoaderDataGraph::cld_do(cl);
 }
@@ -96,77 +96,71 @@ void ZJavaThreadsIterator::apply(ThreadClosure* cl) {
   }
 }
 
-ZNMethodsIterator::ZNMethodsIterator(bool enabled, bool secondary)
+ZNMethodsIteratorImpl::ZNMethodsIteratorImpl(bool enabled, bool secondary)
     : _enabled(enabled), _secondary(secondary) {
   if (_enabled) {
     ZNMethod::nmethods_do_begin(secondary);
   }
 }
 
-ZNMethodsIterator::~ZNMethodsIterator() {
+ZNMethodsIteratorImpl::~ZNMethodsIteratorImpl() {
   if (_enabled) {
     ZNMethod::nmethods_do_end(_secondary);
   }
 }
 
-void ZNMethodsIterator::apply(NMethodClosure* cl) {
+void ZNMethodsIteratorImpl::apply(NMethodClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsCodeCache);
   ZNMethod::nmethods_do(_secondary, cl);
 }
 
-void ZColoredRootsStrongIterator::apply(OopClosure* cl,
+void ZRootsIteratorStrongColored::apply(OopClosure* cl,
                                   CLDClosure* cld_cl) {
-  _oop_storage_set.apply(cl);
-  _class_loader_data_graph.apply(cld_cl);
+  _oop_storage_set_strong.apply(cl);
+  _clds_strong.apply(cld_cl);
 }
 
-void ZUncoloredRootsStrongIterator::apply(ThreadClosure* thread_cl,
+void ZRootsIteratorStrongUncolored::apply(ThreadClosure* thread_cl,
                                           NMethodClosure* nm_cl) {
   _java_threads.apply(thread_cl);
   if (!ClassUnloading) {
-    _nmethods.apply(nm_cl);
+    _nmethods_strong.apply(nm_cl);
   }
 }
 
-void ZUncoloredRootsWeakIterator::apply(NMethodClosure* nm_cl) {
-  _nmethods.apply(nm_cl);
+void ZRootsIteratorWeakUncolored::apply(NMethodClosure* nm_cl) {
+  _nmethods_weak.apply(nm_cl);
 }
 
-ZWeakOopStorageSetIterator::ZWeakOopStorageSetIterator() :
+ZOopStorageSetIteratorWeak::ZOopStorageSetIteratorWeak() :
     _iter() {}
 
-void ZWeakOopStorageSetIterator::apply(OopClosure* cl) {
+void ZOopStorageSetIteratorWeak::apply(OopClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentWeakRootsOopStorageSet);
   _iter.oops_do(cl);
 }
 
-void ZWeakOopStorageSetIterator::report_num_dead() {
+void ZOopStorageSetIteratorWeak::report_num_dead() {
   _iter.report_num_dead();
 }
 
-void ZWeakRootsIterator::report_num_dead() {
-  _oop_storage_set.iter().report_num_dead();
+void ZRootsIteratorWeakColored::report_num_dead() {
+  _oop_storage_set_weak.iter().report_num_dead();
 }
 
-void ZWeakRootsIterator::apply(OopClosure* cl) {
-  _oop_storage_set.apply(cl);
+void ZRootsIteratorWeakColored::apply(OopClosure* cl) {
+  _oop_storage_set_weak.apply(cl);
 }
 
-void ZColoredRootsWeakIterator::apply(OopClosure* cl,
-                                      CLDClosure* cld_cl) {
-  _weak_oop_storage_set.apply(cl);
-  _weak_class_loader_data_graph.apply(cld_cl);
-}
-
-void ZColoredRootsAllIterator::apply(OopClosure* cl,
+void ZRootsIteratorAllColored::apply(OopClosure* cl,
                                      CLDClosure* cld_cl) {
-  _strong_oop_storage_set.apply(cl);
-  _weak_oop_storage_set.apply(cl);
-  _all_class_loader_data_graph.apply(cld_cl);
+  _oop_storage_set_strong.apply(cl);
+  _oop_storage_set_weak.apply(cl);
+  _clds_all.apply(cld_cl);
 }
 
-void ZUncoloredRootsAllIterator::apply(ThreadClosure* thread_cl,
+void ZRootsIteratorAllUncolored::apply(ThreadClosure* thread_cl,
                                        NMethodClosure* nm_cl) {
   _java_threads.apply(thread_cl);
-  _nmethods.apply(nm_cl);
+  _nmethods_all.apply(nm_cl);
 }

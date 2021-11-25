@@ -53,9 +53,9 @@ private:
   ZLock                         _bitmaps_lock;
   ZHeapIteratorQueues           _queues;
   ZHeapIteratorArrayQueues      _array_queues;
-  ZColoredRootsStrongIterator   _colored_roots;
-  ZUncoloredRootsStrongIterator _uncolored_roots;
-  ZWeakRootsIterator            _weak_roots;
+  ZRootsIteratorStrongColored   _roots_colored;
+  ZRootsIteratorStrongUncolored _roots_uncolored;
+  ZRootsIteratorWeakColored     _roots_weak_colored;
   TaskTerminator                _terminator;
 
   ZHeapIteratorBitMap* object_bitmap(oop obj);

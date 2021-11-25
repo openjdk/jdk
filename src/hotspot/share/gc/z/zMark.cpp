@@ -758,8 +758,8 @@ typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_strong> ZMarkOldGenCLDCl
 class ZMarkOldGenRootsTask : public ZTask {
 private:
   ZMark* const                  _mark;
-  ZColoredRootsStrongIterator   _roots_colored;
-  ZUncoloredRootsStrongIterator _roots_uncolored;
+  ZRootsIteratorStrongColored   _roots_colored;
+  ZRootsIteratorStrongUncolored _roots_uncolored;
 
   ZMarkOopClosure               _cl_colored;
   ZMarkOldGenCLDClosure         _cld_cl;
@@ -800,37 +800,13 @@ public:
   }
 };
 
-class ZMarkRememberedSetIterator {
-private:
-  bool _task_taken;
-
-public:
-  ZMarkRememberedSetIterator() : _task_taken(false) {}
-
-  void apply(OopClosure* cl) {
-    // FIXME: Only visited by one thread at the moment
-    if (Atomic::cmpxchg(&_task_taken, false, true) == false) {
-    }
-  }
-};
-
-class ZExtraYoungRootsIterator {
-private:
-  ZParallelApply<ZMarkRememberedSetIterator> _remember_set;
-
-public:
-  void apply(OopClosure* cl) {
-    _remember_set.apply(cl);
-  }
-};
-
 typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_none> ZMarkYoungGenCLDClosure;
 
 class ZMarkYoungGenRootsTask : public ZTask {
 private:
   ZMark* const               _mark;
-  ZColoredRootsAllIterator   _roots_colored;
-  ZUncoloredRootsAllIterator _roots_uncolored;
+  ZRootsIteratorAllColored   _roots_colored;
+  ZRootsIteratorAllUncolored _roots_uncolored;
 
   ZMarkYoungOopClosure       _cl_colored;
   ZMarkYoungGenCLDClosure    _cld_cl;

@@ -727,8 +727,8 @@ typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_none> ZRemapCLDClosure;
 
 class ZRemapRootsTask : public ZTask {
 private:
-  ZColoredRootsAllIterator   _roots_colored;
-  ZUncoloredRootsAllIterator _roots_uncolored;
+  ZRootsIteratorAllColored   _roots_colored;
+  ZRootsIteratorAllUncolored _roots_uncolored;
 
   ZRemapOopClosure           _cl_colored;
   ZRemapCLDClosure           _cld_cl;
