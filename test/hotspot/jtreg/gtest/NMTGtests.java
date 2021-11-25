@@ -24,10 +24,15 @@
  */
 
 /*
- * This tests NMT by running gtests with NMT enabled.
- *
- * To save time, we just run them for debug builds (where we would catch assertions) and only a selection of tests
- * (namely, NMT tests themselves, and - for the detail statistics - os tests, since those reserve a lot and stress NMT)
+ * This tests NMT by running gtests with NMT enabled (only those which are relevant for NMT)
+ */
+
+/* @test id=nmt-off
+ * @summary Run NMT-related gtests with NMT switched off
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @run main/native GTestWrapper --gtest_filter=NMT*:os* -XX:NativeMemoryTracking=off
  */
 
 /* @test id=nmt-summary
@@ -35,8 +40,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @requires vm.debug
- * @run main/native GTestWrapper --gtest_filter=NMT* -XX:NativeMemoryTracking=summary
+ * @run main/native GTestWrapper --gtest_filter=NMT*:os* -XX:NativeMemoryTracking=summary
  */
 
 /* @test id=nmt-detail
@@ -44,6 +48,5 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @requires vm.debug
  * @run main/native GTestWrapper --gtest_filter=NMT*:os* -XX:NativeMemoryTracking=detail
  */
