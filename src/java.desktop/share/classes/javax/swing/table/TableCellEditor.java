@@ -31,8 +31,7 @@ import javax.swing.*;
 
 /**
  * This interface defines the method any object that would like to be
- * an editor of values for components such as <code>JListBox</code>,
- * <code>JComboBox</code>, <code>JTree</code>, or <code>JTable</code>
+ * an editor of values for the component <code>JTable</code> that
  * needs to implement.
  *
  * @author Alan Chung
