@@ -73,7 +73,11 @@
                                                                             \
   product(bool, G1EvacuationFailureALotDuringMixedGC, true,                 \
           "Force use of evacuation failure handling during mixed "          \
-          "evacuation pauses")
+          "evacuation pauses")                                              \
+                                                                            \
+  product(uintx, G1EvacuationFailureALotCSetPercent, 100,                   \
+          "Percent of the regions in cset that fail evacuation")            \
+          range(1, 100)
 #else
 #define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \
                                        develop_pd,                          \
