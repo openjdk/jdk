@@ -51,6 +51,7 @@ final class LdapClientFactory implements PooledConnectionFactory {
 
     LdapClientFactory(String host, int port, String socketFactory,
         int connTimeout, int readTimeout, OutputStream trace) {
+
         this.host = host;
         this.port = port;
         this.socketFactory = socketFactory;
@@ -61,8 +62,16 @@ final class LdapClientFactory implements PooledConnectionFactory {
 
     public PooledConnection createPooledConnection(PoolCallback pcb)
         throws NamingException {
+
         return new LdapClient(host, port, socketFactory,
                 connTimeout, readTimeout, trace, pcb);
+    }
+
+    public PooledConnection createPooledConnection(PoolCallback pcb, long timeout)
+        throws NamingException {
+
+        return new LdapClient(host, port, socketFactory,
+                (int)timeout, readTimeout, trace, pcb);
     }
 
     public String toString() {
