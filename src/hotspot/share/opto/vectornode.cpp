@@ -599,7 +599,8 @@ VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t, boo
   const TypeVect* vt = opd_t->singleton() ? TypeVect::make(opd_t, vlen, is_mask)
                                           : TypeVect::make(bt, vlen, is_mask);
 
-  if (is_mask && Matcher::match_rule_supported_vector(Op_MaskAll, vlen, bt)) {
+  if (is_mask) {
+    guarantee(Matcher::match_rule_supported_vector(Op_MaskAll, vlen, bt), "must be");
     return new MaskAllNode(s, vt);
   }
 
