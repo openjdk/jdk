@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.media.sound;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * Resource Interchange File Format (RIFF) stream decoder.
@@ -76,14 +78,14 @@ public final class RIFFReader extends InputStream {
         byte[] fourcc = new byte[4];
         fourcc[0] = (byte) b;
         readFully(fourcc, 1, 3);
-        this.fourcc = new String(fourcc, "ascii");
+        this.fourcc = new String(fourcc, US_ASCII);
         ckSize = readUnsignedInt();
         avail = ckSize;
 
         if (getFormat().equals("RIFF") || getFormat().equals("LIST")) {
             byte[] format = new byte[4];
             readFully(format);
-            this.riff_type = new String(format, "ascii");
+            this.riff_type = new String(format, US_ASCII);
         }
     }
 
@@ -227,10 +229,10 @@ public final class RIFFReader extends InputStream {
         readFully(buff);
         for (int i = 0; i < buff.length; i++) {
             if (buff[i] == 0) {
-                return new String(buff, 0, i, "ascii");
+                return new String(buff, 0, i, US_ASCII);
             }
         }
-        return new String(buff, "ascii");
+        return new String(buff, US_ASCII);
     }
 
     // Read 8 bit signed integer from stream

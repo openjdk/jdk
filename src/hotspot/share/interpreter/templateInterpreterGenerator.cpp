@@ -124,7 +124,6 @@ void TemplateInterpreterGenerator::generate_all() {
   }
 
   { CodeletMark cm(_masm, "earlyret entry points");
-    address earlyret_entry_itos = generate_earlyret_entry_for(itos);
     Interpreter::_earlyret_entry =
       EntryPoint(
                  generate_earlyret_entry_for(atos),
@@ -235,7 +234,6 @@ void TemplateInterpreterGenerator::generate_all() {
     Interpreter::_deopt_entry[0] = EntryPoint();
     Interpreter::_deopt_entry[0].set_entry(vtos, generate_deopt_entry_for(vtos, 0));
     for (int i = 1; i < Interpreter::number_of_deopt_entries; i++) {
-      address deopt_itos = generate_deopt_entry_for(itos, i);
       Interpreter::_deopt_entry[i] =
         EntryPoint(
                    generate_deopt_entry_for(atos, i),

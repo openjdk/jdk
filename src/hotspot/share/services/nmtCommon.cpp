@@ -60,3 +60,27 @@ size_t NMTUtil::scale_from_name(const char* scale) {
   return K;
 }
 
+const char* NMTUtil::tracking_level_to_string(NMT_TrackingLevel lvl) {
+  switch(lvl) {
+    case NMT_unknown: return "unknown"; break;
+    case NMT_off:     return "off"; break;
+    case NMT_minimal: return "minimal"; break;
+    case NMT_summary: return "summary"; break;
+    case NMT_detail:  return "detail"; break;
+    default:          return "invalid"; break;
+  }
+}
+
+// Returns the parsed level; NMT_unknown if string is invalid
+NMT_TrackingLevel NMTUtil::parse_tracking_level(const char* s) {
+  if (s != NULL) {
+    if (strcmp(s, "summary") == 0) {
+      return NMT_summary;
+    } else if (strcmp(s, "detail") == 0) {
+      return NMT_detail;
+    } else if (strcmp(s, "off") == 0) {
+      return NMT_off;
+    }
+  }
+  return NMT_unknown;
+}

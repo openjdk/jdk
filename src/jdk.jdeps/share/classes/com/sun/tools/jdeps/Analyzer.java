@@ -405,6 +405,14 @@ public class Analyzer {
             }
         }
 
+        /*
+         * Ignore the module name which should not be shown in the output
+         */
+        @Override
+        public String name() {
+            return getName();
+        }
+
         public boolean contains(Location location) {
             String cn = location.getClassName();
             int i = cn.lastIndexOf('.');

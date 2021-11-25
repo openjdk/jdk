@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,8 @@ public final class SunMSCAPI extends Provider {
     private static final String INFO = "Sun's Microsoft Crypto API provider";
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 System.loadLibrary("sunmscapi");
                 return null;
@@ -143,6 +144,7 @@ public final class SunMSCAPI extends Provider {
         }
     }
 
+    @SuppressWarnings("removal")
     public SunMSCAPI() {
         super("SunMSCAPI", PROVIDER_VER, INFO);
 

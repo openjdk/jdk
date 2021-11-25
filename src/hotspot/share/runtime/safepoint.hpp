@@ -126,6 +126,10 @@ class SafepointSynchronize : AllStatic {
                                     JavaThread *thread,
                                     uint64_t safepoint_count);
 
+  static bool is_a_block_safe_state(JavaThreadState state) {
+    // Check that we have a valid thread_state before blocking for safepoints
+    return state == _thread_in_vm || state == _thread_in_Java;
+  }
   // Called when a thread voluntarily blocks
   static void block(JavaThread *thread);
 

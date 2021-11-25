@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,6 +191,7 @@ public class ManagementFactoryHelper {
             return LOG_MANAGER_CLASS != null;
         }
 
+        @SuppressWarnings("removal")
         private static Class<?> loadLoggingClass(String className) {
             return AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override
@@ -459,6 +460,7 @@ public class ManagementFactoryHelper {
      * Registers a given MBean if not registered in the MBeanServer;
      * otherwise, just return.
      */
+    @SuppressWarnings("removal")
     private static void addMBean(MBeanServer mbs, Object mbean, String mbeanName) {
         try {
             final ObjectName objName = Util.newObjectName(mbeanName);
@@ -519,6 +521,7 @@ public class ManagementFactoryHelper {
         }
     }
 
+    @SuppressWarnings("removal")
     private static void unregisterMBean(MBeanServer mbs, String mbeanName) {
         try {
             final ObjectName objName = Util.newObjectName(mbeanName);

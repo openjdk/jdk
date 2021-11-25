@@ -212,12 +212,14 @@ public class Timer implements Serializable
     /*
      * The timer's AccessControlContext.
      */
+     @SuppressWarnings("removal")
      private transient volatile AccessControlContext acc =
             AccessController.getContext();
 
     /**
       * Returns the acc this timer was constructed with.
       */
+     @SuppressWarnings("removal")
      final AccessControlContext getAccessControlContext() {
        if (acc == null) {
            throw new SecurityException(
@@ -607,6 +609,7 @@ public class Timer implements Serializable
     }
 
 
+    @SuppressWarnings("removal")
     void post() {
          if (notify.compareAndSet(false, true) || !coalesce) {
              AccessController.doPrivileged(new PrivilegedAction<Void>() {
@@ -622,6 +625,7 @@ public class Timer implements Serializable
         return lock;
     }
 
+    @SuppressWarnings("removal")
     @Serial
     private void readObject(ObjectInputStream in)
         throws ClassNotFoundException, IOException

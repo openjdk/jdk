@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import com.sun.nio.sctp.SctpSocketOption;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 
 public class SctpNet {
+    @SuppressWarnings("removal")
     private static final String osName = AccessController.doPrivileged(
         (PrivilegedAction<String>) () -> System.getProperty("os.name"));
 
@@ -103,6 +104,7 @@ public class SctpNet {
     private static Set<SocketAddress> getRevealedLocalAddressSet(
             SocketAddress[] saa)
     {
+         @SuppressWarnings("removal")
          SecurityManager sm = System.getSecurityManager();
          Set<SocketAddress> set = new HashSet<>(saa.length);
          for (SocketAddress sa : saa) {
@@ -112,7 +114,7 @@ public class SctpNet {
     }
 
     private static SocketAddress getRevealedLocalAddress(SocketAddress sa,
-                                                         SecurityManager sm)
+                                                         @SuppressWarnings("removal") SecurityManager sm)
     {
         if (sm == null || sa == null)
             return sa;
@@ -335,6 +337,11 @@ public class SctpNet {
     static native void init();
 
     static {
+        loadSctpLibrary();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadSctpLibrary() {
         IOUtil.load();   // loads nio & net native libraries
         java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Void>() {

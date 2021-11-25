@@ -25,7 +25,6 @@
 package nsk.jdi.ExceptionRequest.addInstanceFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -55,7 +54,7 @@ public class instancefilter003a {
 
     //====================================================== test program
 
-    static instancefilter003aThread thread1 = null;
+    static Thread thread1 = null;
 
     static instancefilter003aTestClass objTC[] = { new instancefilter003aTestClass(), new instancefilter003aTestClass() };
 
@@ -100,7 +99,7 @@ public class instancefilter003a {
 
 
                     case 0:
-                            thread1 = new instancefilter003aThread("thread1");
+                            thread1 = JDIThreadFactory.newThread(new instancefilter003aThread("thread1"));
                             break;
 
     //-------------------------------------------------    standard end section
@@ -139,21 +138,19 @@ public class instancefilter003a {
     static Object lockingObj[] = new Object[2];
     static volatile int number = 0;
 
-    static class instancefilter003aThread extends Thread {
+    static class instancefilter003aThread extends NamedTask {
 
-        String tName = null;
         int tNumber;
 
         public instancefilter003aThread(String threadName) {
             super(threadName);
-            tName = threadName;
             tNumber = number;
             number++;
             lockingObj[tNumber] = threadName;
         }
 
         public void run() {
-            log1("  'run': enter  :: threadName == " + tName);
+            log1("  'run': enter  :: threadName == " + getName());
             if (lockingObj[tNumber] == null)
                 log1("lockingObj[tNumber] == null");
             synchronized(lockingObj[tNumber]) {
@@ -162,7 +159,7 @@ public class instancefilter003a {
                 }
                 objTC[tNumber].method();
             }
-            log1("  'run': exit   :: threadName == " + tName);
+            log1("  'run': exit   :: threadName == " + getName());
             return;
         }
     }

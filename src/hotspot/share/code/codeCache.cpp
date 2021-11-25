@@ -336,7 +336,7 @@ ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
   const size_t rs_ps = page_size();
   const size_t rs_align = MAX2(rs_ps, (size_t) os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
-  ReservedCodeSpace rs(rs_size, rs_align, rs_ps > (size_t) os::vm_page_size());
+  ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
   if (!rs.is_reserved()) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
                                           rs_size/K));
@@ -1077,12 +1077,6 @@ void CodeCache::old_nmethods_do(MetadataClosure* f) {
   log_debug(redefine, class, nmethod)("Walked %d nmethods for mark_on_stack", length);
 }
 
-// Just marks the methods in this class as needing deoptimization
-void CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-}
-
-
 // Walk compiled methods and mark dependent methods for deoptimization.
 int CodeCache::mark_dependents_for_evol_deoptimization() {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
@@ -1184,10 +1178,18 @@ void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
 
   if (number_of_nmethods_with_dependencies() == 0) return;
 
-  KlassDepChange changes(dependee);
+  int marked = 0;
+  if (dependee->is_linked()) {
+    // Class initialization state change.
+    KlassInitDepChange changes(dependee);
+    marked = mark_for_deoptimization(changes);
+  } else {
+    // New class is loaded.
+    NewKlassDepChange changes(dependee);
+    marked = mark_for_deoptimization(changes);
+  }
 
-  // Compute the dependent nmethods
-  if (mark_for_deoptimization(changes) > 0) {
+  if (marked > 0) {
     // At least one nmethod has been marked for deoptimization
     Deoptimization::deoptimize_all_marked();
   }
@@ -1224,7 +1226,9 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
   CodeHeap* heap = get_code_heap(code_blob_type);
   assert(heap != NULL, "heap is null");
 
-  if ((heap->full_count() == 0) || print) {
+  heap->report_full();
+
+  if ((heap->full_count() == 1) || print) {
     // Not yet reported for this heap, report
     if (SegmentedCodeCache) {
       ResourceMark rm;
@@ -1261,14 +1265,12 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
       tty->print("%s", s.as_string());
     }
 
-    if (heap->full_count() == 0) {
+    if (heap->full_count() == 1) {
       if (PrintCodeHeapAnalytics) {
         CompileBroker::print_heapinfo(tty, "all", 4096); // details, may be a lot!
       }
     }
   }
-
-  heap->report_full();
 
   EventCodeCacheFull event;
   if (event.should_commit()) {

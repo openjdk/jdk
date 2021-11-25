@@ -435,6 +435,12 @@ class PhaseCFG : public Phase {
   // Compute the instruction global latency with a backwards walk
   void compute_latencies_backwards(VectorSet &visited, Node_Stack &stack);
 
+  // Check if a block between early and LCA block of uses is cheaper by
+  // frequency-based policy, latency-based policy and random-based policy
+  bool is_cheaper_block(Block* LCA, Node* self, uint target_latency,
+                        uint end_latency, double least_freq,
+                        int cand_cnt, bool in_latency);
+
   // Pick a block between early and late that is a cheaper alternative
   // to late. Helper for schedule_late.
   Block* hoist_to_cheaper_block(Block* LCA, Block* early, Node* self);
@@ -625,6 +631,8 @@ class PhaseCFG : public Phase {
   bool trace_opto_pipelining() const { return false; }
 #endif
 
+  bool unrelated_load_in_store_null_block(Node* store, Node* load);
+
   // Check that block b is in the home loop (or an ancestor) of n, if n is a
   // memory writer.
   void verify_memory_writer_placement(const Block* b, const Node* n) const NOT_DEBUG_RETURN;
@@ -789,8 +797,6 @@ class Trace : public ResourceObj {
   Block * _first;       // First block in the trace
   Block * _last;        // Last block in the trace
 
-  // Return the block that follows "b" in the trace.
-  Block * next(Block *b) const { return _next_list[b->_pre_order]; }
   void set_next(Block *b, Block *n) const { _next_list[b->_pre_order] = n; }
 
   // Return the block that precedes "b" in the trace.
@@ -828,6 +834,9 @@ class Trace : public ResourceObj {
   // Return the last block in the trace
   Block * last_block() const { return _last; }
 
+  // Return the block that follows "b" in the trace.
+  Block * next(Block *b) const { return _next_list[b->_pre_order]; }
+
   // Insert a trace in the middle of this one after b
   void insert_after(Block *b, Trace *tr) {
     set_next(tr->last_block(), next(b));
@@ -861,8 +870,6 @@ class Trace : public ResourceObj {
     _last = b;
   }
 
-  // Adjust the the blocks in this trace
-  void fixup_blocks(PhaseCFG &cfg);
   bool backedge(CFGEdge *e);
 
 #ifndef PRODUCT

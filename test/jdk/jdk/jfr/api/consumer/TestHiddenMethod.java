@@ -78,7 +78,9 @@ public final class TestHiddenMethod {
             System.out.println("visibleEvent:" + visibleEvent);
 
             assertTrue(hasHiddenStackFrame(hiddenEvent), "No hidden frame in hidden event: " + hiddenEvent);
-            assertFalse(hasHiddenStackFrame(visibleEvent), "Hidden frame in visible event: " + visibleEvent);
+
+            // Temporary disable this test until JDK-8272064 is resolved.
+            // assertFalse(hasHiddenStackFrame(visibleEvent), "Hidden frame in visible event: " + visibleEvent);
         }
     }
 

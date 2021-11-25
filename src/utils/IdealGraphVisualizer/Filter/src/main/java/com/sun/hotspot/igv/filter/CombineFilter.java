@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,7 @@ public class CombineFilter extends AbstractFilter {
                         } else {
                             assert slot != null;
                             slot.setText(f.getProperties().get("dump_spec"));
+                            slot.setColor(f.getColor());
                             if (f.getProperties().get("short_name") != null) {
                                 slot.setShortName(f.getProperties().get("short_name"));
                             } else {
@@ -139,6 +140,7 @@ public class CombineFilter extends AbstractFilter {
                                     }
                                 } else {
                                     slot.setText(succ.getProperties().get("dump_spec"));
+                                    slot.setColor(succ.getColor());
                                     if (succ.getProperties().get("short_name") != null) {
                                         slot.setShortName(succ.getProperties().get("short_name"));
                                     } else {

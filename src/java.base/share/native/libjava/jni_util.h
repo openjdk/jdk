@@ -333,8 +333,6 @@ JNIEXPORT void InitializeEncoding(JNIEnv *env, const char *name);
 
 void* getProcessHandle();
 
-void* findEntryInProcess(const char* name);
-
 void buildJniFunctionName(const char *sym, const char *cname,
                           char *jniEntryName);
 

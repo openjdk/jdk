@@ -156,7 +156,7 @@ class Bytes: AllStatic {
 // The following header contains the implementations of swap_u2,
 // swap_u4, and swap_u8
 
-#include OS_CPU_HEADER_INLINE(bytes)
+#include OS_CPU_HEADER(bytes)
 
 #endif // VM_LITTLE_ENDIAN
 

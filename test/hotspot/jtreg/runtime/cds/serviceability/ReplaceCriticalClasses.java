@@ -48,15 +48,16 @@ public class ReplaceCriticalClasses {
 
     public void process(String args[]) throws Throwable {
         if (args.length == 0) {
+            // Add an extra class to provoke JDK-8262376. This will be ignored if this class doesn't exist
+            // in the JDK that's being tested (e.g., if the "jdk.localedata" module is somehow missing).
+            String extraClasses[] = {"sun/util/resources/cldr/provider/CLDRLocaleDataMetaInfo"};
+
             // Dump the shared archive in case it was not generated during the JDK build.
             // Put the archive at separate file to avoid clashes with concurrent tests.
             CDSOptions opts = new CDSOptions()
-                .setXShareMode("dump")
-                .setArchiveName(ReplaceCriticalClasses.class.getName() + ".jsa")
-                .setUseVersion(false)
-                .addSuffix("-showversion")
-                .addSuffix("-Xlog:cds");
-            CDSTestUtils.run(opts).assertNormalExit("");
+                .setClassList(extraClasses)
+                .setArchiveName(ReplaceCriticalClasses.class.getName() + ".jsa");
+            CDSTestUtils.createArchiveAndCheck(opts);
 
             launchChildProcesses(getTests());
         } else if (args.length == 3 && args[0].equals("child")) {

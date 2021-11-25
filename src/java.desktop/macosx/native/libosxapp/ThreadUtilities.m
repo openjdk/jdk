@@ -33,7 +33,7 @@
 JavaVM *jvm = NULL;
 static JNIEnv *appKitEnv = NULL;
 static jobject appkitThreadGroup = NULL;
-static NSString* JavaRunLoopMode = @"javaRunLoopMode";
+static NSString* JavaRunLoopMode = @"AWTRunLoopMode";
 static NSArray<NSString*> *javaModes = nil;
 
 static inline void attachCurrentThread(void** env) {

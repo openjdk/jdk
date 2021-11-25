@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,10 @@ package java.rmi;
 /**
  * A <code>StubNotFoundException</code> is thrown if a valid stub class
  * could not be found for a remote object when it is exported.
- * A <code>StubNotFoundException</code> may also be
- * thrown when an activatable object is registered via the
- * <code>java.rmi.activation.Activatable.register</code> method.
  *
  * @author  Roger Riggs
  * @since   1.1
  * @see     java.rmi.server.UnicastRemoteObject
- * @see     java.rmi.activation.Activatable
  */
 public class StubNotFoundException extends RemoteException {
 

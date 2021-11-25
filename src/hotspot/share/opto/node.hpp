@@ -44,6 +44,7 @@ class AllocateNode;
 class ArrayCopyNode;
 class BaseCountedLoopNode;
 class BaseCountedLoopEndNode;
+class BlackholeNode;
 class Block;
 class BoolNode;
 class BoxLockNode;
@@ -56,6 +57,9 @@ class CallNode;
 class CallRuntimeNode;
 class CallNativeNode;
 class CallStaticJavaNode;
+class CastFFNode;
+class CastDDNode;
+class CastVVNode;
 class CastIINode;
 class CastLLNode;
 class CatchNode;
@@ -94,6 +98,7 @@ class LockNode;
 class LongCountedLoopNode;
 class LongCountedLoopEndNode;
 class LoopNode;
+class LShiftNode;
 class MachBranchNode;
 class MachCallDynamicJavaNode;
 class MachCallJavaNode;
@@ -167,7 +172,10 @@ class LoadVectorGatherNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
 class VectorMaskCmpNode;
+class VectorUnboxNode;
 class VectorSet;
+class VectorReinterpretNode;
+class ShiftVNode;
 
 // The type of all node counts and indexes.
 // It must hold at least 16 bits, but must also be fast to load and store.
@@ -216,8 +224,7 @@ class Node {
   friend class VMStructs;
 
   // Lots of restrictions on cloning Nodes
-  Node(const Node&);            // not defined; linker error to use these
-  Node &operator=(const Node &rhs);
+  NONCOPYABLE(Node);
 
 public:
   friend class Compile;
@@ -235,7 +242,7 @@ public:
 
   inline void* operator new(size_t x) throw() {
     Compile* C = Compile::current();
-    Node* n = (Node*)C->node_arena()->Amalloc_D(x);
+    Node* n = (Node*)C->node_arena()->AmallocWords(x);
     return (void*)n;
   }
 
@@ -322,9 +329,11 @@ protected:
   // preserved in _parse_idx.
   const node_idx_t _idx;
   DEBUG_ONLY(const node_idx_t _parse_idx;)
-  // IGV node identifier. It is similar to Node::_debug_idx in that it is unique
-  // across all compilation phases, but different in that it is initialized in
-  // each compilation, for stability.
+  // IGV node identifier. Two nodes, possibly in different compilation phases,
+  // have the same IGV identifier if (and only if) they are the very same node
+  // (same memory address) or one is "derived" from the other (by e.g.
+  // renumbering or matching). This identifier makes it possible to follow the
+  // entire lifetime of a node in IGV even if its C2 identifier (_idx) changes.
   NOT_PRODUCT(node_idx_t _igv_idx;)
 
   // Get the (read-only) number of input edges
@@ -688,6 +697,9 @@ public:
         DEFINE_CLASS_ID(CastII, ConstraintCast, 0)
         DEFINE_CLASS_ID(CheckCastPP, ConstraintCast, 1)
         DEFINE_CLASS_ID(CastLL, ConstraintCast, 2)
+        DEFINE_CLASS_ID(CastFF, ConstraintCast, 3)
+        DEFINE_CLASS_ID(CastDD, ConstraintCast, 4)
+        DEFINE_CLASS_ID(CastVV, ConstraintCast, 5)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
@@ -698,6 +710,9 @@ public:
         DEFINE_CLASS_ID(EncodePKlass, EncodeNarrowPtr, 1)
       DEFINE_CLASS_ID(Vector, Type, 7)
         DEFINE_CLASS_ID(VectorMaskCmp, Vector, 0)
+        DEFINE_CLASS_ID(VectorUnbox, Vector, 1)
+        DEFINE_CLASS_ID(VectorReinterpret, Vector, 2)
+        DEFINE_CLASS_ID(ShiftV, Vector, 3)
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -746,6 +761,7 @@ public:
     DEFINE_CLASS_ID(Halt,     Node, 15)
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
     DEFINE_CLASS_ID(Move,     Node, 17)
+    DEFINE_CLASS_ID(LShift,   Node, 18)
 
     _max_classes  = ClassMask_Move
   };
@@ -768,7 +784,8 @@ public:
     Flag_is_scheduled                = 1 << 12,
     Flag_has_vector_mask_set         = 1 << 13,
     Flag_is_expensive                = 1 << 14,
-    Flag_for_post_loop_opts_igvn     = 1 << 15,
+    Flag_is_predicated_vector        = 1 << 15,
+    Flag_for_post_loop_opts_igvn     = 1 << 16,
     _last_flag                       = Flag_for_post_loop_opts_igvn
   };
 
@@ -875,6 +892,7 @@ public:
   DEFINE_CLASS_QUERY(LoadStoreConditional)
   DEFINE_CLASS_QUERY(Lock)
   DEFINE_CLASS_QUERY(Loop)
+  DEFINE_CLASS_QUERY(LShift)
   DEFINE_CLASS_QUERY(Mach)
   DEFINE_CLASS_QUERY(MachBranch)
   DEFINE_CLASS_QUERY(MachCall)
@@ -922,11 +940,14 @@ public:
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
   DEFINE_CLASS_QUERY(Vector)
+  DEFINE_CLASS_QUERY(VectorMaskCmp)
+  DEFINE_CLASS_QUERY(VectorUnbox)
+  DEFINE_CLASS_QUERY(VectorReinterpret);
   DEFINE_CLASS_QUERY(LoadVector)
   DEFINE_CLASS_QUERY(LoadVectorGather)
   DEFINE_CLASS_QUERY(StoreVector)
   DEFINE_CLASS_QUERY(StoreVectorScatter)
-  DEFINE_CLASS_QUERY(VectorMaskCmp)
+  DEFINE_CLASS_QUERY(ShiftV)
   DEFINE_CLASS_QUERY(Unlock)
 
   #undef DEFINE_CLASS_QUERY
@@ -976,6 +997,8 @@ public:
   // An arithmetic node which accumulates a data in a loop.
   // It must have the loop's phi as input and provide a def to the phi.
   bool is_reduction() const { return (_flags & Flag_is_reduction) != 0; }
+
+  bool is_predicated_vector() const { return (_flags & Flag_is_predicated_vector) != 0; }
 
   // The node is a CountedLoopEnd with a mask annotation so as to emit a restore context
   bool has_vector_mask_set() const { return (_flags & Flag_has_vector_mask_set) != 0; }
@@ -1199,7 +1222,7 @@ public:
   void collect_nodes_out_all_ctrl_boundary(GrowableArray<Node*> *ns) const;
 
   void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
-  static void verify(Node* n, int verify_depth);
+  static void verify(int verify_depth, VectorSet& visited, Node_List& worklist);
 
   // This call defines a class-unique string used to identify class instances
   virtual const char *Name() const;
@@ -1250,19 +1273,12 @@ public:
   }
 };
 
-
-#ifndef PRODUCT
-
-// Used in debugging code to avoid walking across dead or uninitialized edges.
-inline bool NotANode(const Node* n) {
+inline bool not_a_node(const Node* n) {
   if (n == NULL)                   return true;
   if (((intptr_t)n & 1) != 0)      return true;  // uninitialized, etc.
   if (*(address*)n == badAddress)  return true;  // kill by Node::destruct
   return false;
 }
-
-#endif
-
 
 //-----------------------------------------------------------------------------
 // Iterators over DU info, and associated Node functions.

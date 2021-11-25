@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * ===========================================================================
@@ -73,6 +73,7 @@ public final class DOMReference extends DOMStructure
     *
     * If true, overrides the same property if set in the XMLSignContext.
     */
+    @SuppressWarnings("removal")
     private static boolean useC14N11 =
         AccessController.doPrivileged((PrivilegedAction<Boolean>)
             () -> Boolean.getBoolean("com.sun.org.apache.xml.internal.security.useC14N11"));

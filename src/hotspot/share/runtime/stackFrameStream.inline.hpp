@@ -25,8 +25,9 @@
 #ifndef SHARE_RUNTIME_STACKFRAMESTREAM_INLINE_HPP
 #define SHARE_RUNTIME_STACKFRAMESTREAM_INLINE_HPP
 
-#include "runtime/frame.inline.hpp"
 #include "runtime/stackFrameStream.hpp"
+
+#include "runtime/frame.inline.hpp"
 
 inline bool StackFrameStream::is_done() {
   return (_is_done) ? true : (_is_done = _fr.is_first_frame(), false);

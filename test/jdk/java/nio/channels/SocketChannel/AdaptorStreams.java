@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ public class AdaptorStreams {
         withConnection((sc, peer) -> {
             peer.getOutputStream().write(99);
             Socket s = sc.socket();
-            s.setSoTimeout(1000);
+            s.setSoTimeout(60_000);
             int n = s.getInputStream().read();
             assertEquals(n, 99);
         });
@@ -171,7 +171,7 @@ public class AdaptorStreams {
         withConnection((sc, peer) -> {
             scheduleWrite(peer.getOutputStream(), 99, 1000);
             Socket s = sc.socket();
-            s.setSoTimeout(5000);
+            s.setSoTimeout(60_000);
             int n = s.getInputStream().read();
             assertEquals(n, 99);
         });
@@ -183,7 +183,7 @@ public class AdaptorStreams {
     public void testTimedRead3() throws Exception {
         withConnection((sc, peer) -> {
             Socket s = sc.socket();
-            s.setSoTimeout(1000);
+            s.setSoTimeout(500);
             InputStream in = s.getInputStream();
             expectThrows(SocketTimeoutException.class, () -> in.read());
         });
@@ -196,7 +196,7 @@ public class AdaptorStreams {
         withConnection((sc, peer) -> {
             scheduleClose(sc, 2000);
             Socket s = sc.socket();
-            s.setSoTimeout(60*1000);
+            s.setSoTimeout(60_000);
             InputStream in = s.getInputStream();
             expectThrows(IOException.class, () -> in.read());
         });
@@ -210,7 +210,7 @@ public class AdaptorStreams {
             Socket s = sc.socket();
             Thread.currentThread().interrupt();
             try {
-                s.setSoTimeout(60*1000);
+                s.setSoTimeout(60_000);
                 InputStream in = s.getInputStream();
                 expectThrows(IOException.class, () -> in.read());
             } finally {
@@ -228,7 +228,7 @@ public class AdaptorStreams {
             Future<?> interrupter = scheduleInterrupt(Thread.currentThread(), 2000);
             Socket s = sc.socket();
             try {
-                s.setSoTimeout(60*1000);
+                s.setSoTimeout(60_000);
                 InputStream in = s.getInputStream();
                 expectThrows(IOException.class, () -> in.read());
                 assertTrue(s.isClosed());
@@ -396,7 +396,7 @@ public class AdaptorStreams {
 
             // test read when bytes are available
             peer.getOutputStream().write(99);
-            s.setSoTimeout(60*1000);
+            s.setSoTimeout(60_000);
             int n = s.getInputStream().read();
             assertEquals(n, 99);
         });
@@ -421,7 +421,7 @@ public class AdaptorStreams {
 
             // test read blocking until bytes are available
             scheduleWrite(peer.getOutputStream(), 99, 500);
-            s.setSoTimeout(60*1000);
+            s.setSoTimeout(60_000);
             int n = s.getInputStream().read();
             assertEquals(n, 99);
         });
@@ -436,7 +436,7 @@ public class AdaptorStreams {
 
             // block thread in read
             execute(() -> {
-                s.setSoTimeout(60*1000);
+                s.setSoTimeout(60_000);
                 s.getInputStream().read();
             });
             Thread.sleep(100); // give reader time to block

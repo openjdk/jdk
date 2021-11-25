@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -85,6 +84,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final String PROPERTY_DISABLED_EC_CURVES =
             "jdk.disabled.namedCurves";
 
+    private static final Pattern INCLUDE_PATTERN = Pattern.compile("include " +
+            PROPERTY_DISABLED_EC_CURVES, Pattern.CASE_INSENSITIVE);
+
     private static class CertPathHolder {
         static final DisabledAlgorithmConstraints CONSTRAINTS =
             new DisabledAlgorithmConstraints(PROPERTY_CERTPATH_DISABLED_ALGS);
@@ -95,7 +97,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             new DisabledAlgorithmConstraints(PROPERTY_JAR_DISABLED_ALGS);
     }
 
-    private final List<String> disabledAlgorithms;
+    private final Set<String> disabledAlgorithms;
     private final Constraints algorithmConstraints;
 
     public static DisabledAlgorithmConstraints certPathConstraints() {
@@ -130,21 +132,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         disabledAlgorithms = getAlgorithms(propertyName);
 
         // Check for alias
-        int ecindex = -1, i = 0;
         for (String s : disabledAlgorithms) {
-            if (s.regionMatches(true, 0,"include ", 0, 8)) {
-                if (s.regionMatches(true, 8, PROPERTY_DISABLED_EC_CURVES, 0,
-                        PROPERTY_DISABLED_EC_CURVES.length())) {
-                    ecindex = i;
-                    break;
-                }
+            Matcher matcher = INCLUDE_PATTERN.matcher(s);
+            if (matcher.matches()) {
+                disabledAlgorithms.remove(matcher.group());
+                disabledAlgorithms.addAll(
+                        getAlgorithms(PROPERTY_DISABLED_EC_CURVES));
+                break;
             }
-            i++;
-        }
-        if (ecindex > -1) {
-            disabledAlgorithms.remove(ecindex);
-            disabledAlgorithms.addAll(ecindex,
-                    getAlgorithms(PROPERTY_DISABLED_EC_CURVES));
         }
         algorithmConstraints = new Constraints(propertyName, disabledAlgorithms);
     }
@@ -197,9 +192,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     public final void permits(String algorithm, AlgorithmParameters ap,
-        ConstraintsParameters cp) throws CertPathValidatorException {
-
-        permits(algorithm, cp);
+            ConstraintsParameters cp, boolean checkKey)
+            throws CertPathValidatorException {
+        permits(algorithm, cp, checkKey);
         if (ap != null) {
             permits(ap, cp);
         }
@@ -224,13 +219,13 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             PSSParameterSpec pssParams =
                 ap.getParameterSpec(PSSParameterSpec.class);
             String digestAlg = pssParams.getDigestAlgorithm();
-            permits(digestAlg, cp);
+            permits(digestAlg, cp, false);
             AlgorithmParameterSpec mgfParams = pssParams.getMGFParameters();
             if (mgfParams instanceof MGF1ParameterSpec) {
                 String mgfDigestAlg =
                     ((MGF1ParameterSpec)mgfParams).getDigestAlgorithm();
                 if (!mgfDigestAlg.equalsIgnoreCase(digestAlg)) {
-                    permits(mgfDigestAlg, cp);
+                    permits(mgfDigestAlg, cp, false);
                 }
             }
         } catch (InvalidParameterSpecException ipse) {
@@ -238,22 +233,22 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    public final void permits(String algorithm, ConstraintsParameters cp)
-            throws CertPathValidatorException {
-
-        // Check if named curves in the key are disabled.
-        for (Key key : cp.getKeys()) {
-            for (String curve : getNamedCurveFromKey(key)) {
-                if (!checkAlgorithm(disabledAlgorithms, curve, decomposer)) {
-                    throw new CertPathValidatorException(
+    public final void permits(String algorithm, ConstraintsParameters cp,
+            boolean checkKey) throws CertPathValidatorException {
+        if (checkKey) {
+            // Check if named curves in the key are disabled.
+            for (Key key : cp.getKeys()) {
+                for (String curve : getNamedCurveFromKey(key)) {
+                    if (!checkAlgorithm(disabledAlgorithms, curve, decomposer)) {
+                        throw new CertPathValidatorException(
                             "Algorithm constraints check failed on disabled " +
                                     "algorithm: " + curve,
                             null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
+                    }
                 }
             }
         }
-
-        algorithmConstraints.permits(algorithm, cp);
+        algorithmConstraints.permits(algorithm, cp, checkKey);
     }
 
     private static List<String> getNamedCurveFromKey(Key key) {
@@ -309,10 +304,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     /**
      * Key and Certificate Constraints
      *
-     * The complete disabling of an algorithm is not handled by Constraints or
-     * Constraint classes.  That is addressed with
-     *   permit(Set<CryptoPrimitive>, String, AlgorithmParameters)
-     *
      * When passing a Key to permit(), the boolean return values follow the
      * same as the interface class AlgorithmConstraints.permit().  This is to
      * maintain compatibility:
@@ -323,7 +314,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * will be thrown on a failure to better identify why the operation was
      * disallowed.
      */
-
     private static class Constraints {
         private Map<String, List<Constraint>> constraintsMap = new HashMap<>();
 
@@ -332,8 +322,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     "denyAfter\\s+(\\d{4})-(\\d{2})-(\\d{2})");
         }
 
-        public Constraints(String propertyName, List<String> constraintArray) {
-            for (String constraintEntry : constraintArray) {
+        public Constraints(String propertyName, Set<String> constraintSet) {
+            for (String constraintEntry : constraintSet) {
                 if (constraintEntry == null || constraintEntry.isEmpty()) {
                     continue;
                 }
@@ -346,9 +336,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // Check if constraint is a complete disabling of an
                 // algorithm or has conditions.
                 int space = constraintEntry.indexOf(' ');
-                String algorithm = AlgorithmDecomposer.hashName(
-                        ((space > 0 ? constraintEntry.substring(0, space) :
-                                constraintEntry)));
+                String algorithm = AlgorithmDecomposer.decomposeDigestName(
+                        space > 0 ? constraintEntry.substring(0, space) :
+                                constraintEntry);
                 List<Constraint> constraintList =
                         constraintsMap.getOrDefault(
                                 algorithm.toUpperCase(Locale.ENGLISH),
@@ -491,8 +481,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             return true;
         }
 
-        public void permits(String algorithm, ConstraintsParameters cp)
-                throws CertPathValidatorException {
+        public void permits(String algorithm, ConstraintsParameters cp,
+                boolean checkKey) throws CertPathValidatorException {
 
             if (debug != null) {
                 debug.println("Constraints.permits(): " + algorithm + ", "
@@ -502,12 +492,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             // Get all signature algorithms to check for constraints
             Set<String> algorithms = new HashSet<>();
             if (algorithm != null) {
-                algorithms.addAll(AlgorithmDecomposer.decomposeOneHash(algorithm));
+                algorithms.addAll(AlgorithmDecomposer.decomposeName(algorithm));
                 algorithms.add(algorithm);
             }
 
-            for (Key key : cp.getKeys()) {
-                algorithms.add(key.getAlgorithm());
+            if (checkKey) {
+                for (Key key : cp.getKeys()) {
+                    algorithms.add(key.getAlgorithm());
+                }
             }
 
             // Check all applicable constraints
@@ -517,6 +509,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     continue;
                 }
                 for (Constraint constraint : list) {
+                    if (!checkKey && constraint instanceof KeySizeConstraint) {
+                        continue;
+                    }
                     constraint.permits(cp);
                 }
             }
@@ -692,8 +687,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      */
     private static class DenyAfterConstraint extends Constraint {
         private Date denyAfterDate;
-        private static final SimpleDateFormat dateFormat =
-                new SimpleDateFormat("EEE, MMM d HH:mm:ss z yyyy");
 
         DenyAfterConstraint(String algo, int year, int month, int day) {
             Calendar c;
@@ -727,7 +720,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             denyAfterDate = c.getTime();
             if (debug != null) {
                 debug.println("DenyAfterConstraint date set to: " +
-                        dateFormat.format(denyAfterDate));
+                        denyAfterDate);
             }
         }
 
@@ -758,8 +751,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 throw new CertPathValidatorException(
                         "denyAfter constraint check failed: " + algorithm +
                         " used with Constraint date: " +
-                        dateFormat.format(denyAfterDate) + "; params date: " +
-                        dateFormat.format(currentDate) + cp.extendedExceptionMsg(),
+                        denyAfterDate + "; params date: " +
+                        currentDate + cp.extendedExceptionMsg(),
                         null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
             }
         }
@@ -809,7 +802,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         break;
                     case "signedjar":
                         match =
-                            variant.equals(Validator.VAR_PLUGIN_CODE_SIGNING) ||
                             variant.equals(Validator.VAR_CODE_SIGNING) ||
                             variant.equals(Validator.VAR_TSA_SERVER);
                         break;

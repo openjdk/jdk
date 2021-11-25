@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,9 +168,9 @@ public class ToolOptions {
     private final OptionHelper compilerOptionHelper;
 
     /**
-     * The messager to be used to report diagnostics..
+     * The log to be used to report diagnostics..
      */
-    private final Messager messager;
+    private final JavadocLog log;
 
     /**
      * The helper for help and version options
@@ -181,10 +181,10 @@ public class ToolOptions {
      * Creates an object to handle tool options.
      *
      * @param context the context used to find other tool-related components
-     * @param messager the messager to be used to report diagnostics
+     * @param log the log to be used to report diagnostics
      */
-    ToolOptions(Context context, Messager messager, ShowHelper showHelper) {
-        this.messager = messager;
+    ToolOptions(Context context, JavadocLog log, ShowHelper showHelper) {
+        this.log = log;
         this.showHelper = showHelper;
         compOpts = Options.instance(context);
         fileManagerOpts = new LinkedHashMap<>();
@@ -200,7 +200,7 @@ public class ToolOptions {
         compOpts = null;
         compilerOptionHelper = null;
         fileManagerOpts = null;
-        messager = null;
+        log = null;
         showHelper = null;
     }
 
@@ -646,14 +646,14 @@ public class ToolOptions {
             return names;
         }
 
-        String getParameters(Messager messager) {
+        String getParameters(JavadocLog log) {
             return (hasArg || primaryName.endsWith(":"))
-                    ? messager.getText(getKey(primaryName, ".arg"))
+                    ? log.getText(getKey(primaryName, ".arg"))
                     : null;
         }
 
-        String getDescription(Messager messager) {
-            return messager.getText(getKey(primaryName, ".desc"));
+        String getDescription(JavadocLog log) {
+            return log.getText(getKey(primaryName, ".desc"));
         }
 
         private String getKey(String optionName, String suffix) {
@@ -833,7 +833,7 @@ public class ToolOptions {
      * @return the exception
      */
     private IllegalOptionValue illegalOptionValue(String arg) {
-        return new IllegalOptionValue(showHelper::usage, messager.getText("main.illegal_option_value", arg));
+        return new IllegalOptionValue(showHelper::usage, log.getText("main.illegal_option_value", arg));
     }
 
     /**
@@ -864,7 +864,7 @@ public class ToolOptions {
      * @return the helper
      */
     private OptionHelper getOptionHelper() {
-        return new OptionHelper.GrumpyHelper(messager) {
+        return new OptionHelper.GrumpyHelper(log) {
             @Override
             public String get(com.sun.tools.javac.main.Option option) {
                 return compOpts.get(option);

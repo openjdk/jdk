@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,11 @@
  * @compile -XDcompilePolicy=simple Tree.java TreeScanner.java TreeInfo.java
  * @compile -XDcompilePolicy=simple TreeInfo.java TreeScanner.java Tree.java
  *
- * @compile -XDcompilePolicy=check  Tree.java TreeScanner.java TreeInfo.java
- * @compile -XDcompilePolicy=check  TreeInfo.java TreeScanner.java Tree.java
+ * @compile -XDshould-stop.ifError=FLOW -XDshould-stop.ifNoError=FLOW  Tree.java TreeScanner.java TreeInfo.java
+ * @compile -XDshould-stop.ifError=FLOW -XDshould-stop.ifNoError=FLOW  TreeInfo.java TreeScanner.java Tree.java
  *
- * @compile -XDcompilePolicy=attr   Tree.java TreeScanner.java TreeInfo.java
- * @compile -XDcompilePolicy=attr   TreeInfo.java TreeScanner.java Tree.java
+ * @compile -XDshould-stop.ifError=ATTR -XDshould-stop.ifNoError=ATTR  Tree.java TreeScanner.java TreeInfo.java
+ * @compile -XDshould-stop.ifError=ATTR -XDshould-stop.ifNoError=ATTR  TreeInfo.java TreeScanner.java Tree.java
  */
 
 package p;

@@ -623,13 +623,12 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
                     try {
                         Object inst = s.newInstance(null);
                         // ignore non-spis
-                        if (inst instanceof KeyPairGeneratorSpi == false) {
+                        if (!(inst instanceof KeyPairGeneratorSpi spi)) {
                             continue;
                         }
                         if (inst instanceof KeyPairGenerator) {
                             continue;
                         }
-                        KeyPairGeneratorSpi spi = (KeyPairGeneratorSpi)inst;
                         if (reinit) {
                             if (initType == I_SIZE) {
                                 spi.initialize(initKeySize, initRandom);

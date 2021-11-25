@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4406815 8222969
+ * @bug 4406815 8222969 8266784
  * @summary RuleBasedCollatorTest uses very limited but selected test data
  *  to test basic functionalities provided by RuleBasedCollator.
  * @run testng/othervm RuleBasedCollatorTest
@@ -37,7 +37,7 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Locale;
 
-import org.testng.annotations.BeforeGroups;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.SkipException;
@@ -48,7 +48,7 @@ public class RuleBasedCollatorTest {
     static RuleBasedCollator USC;
     static String US_RULES;
 
-    @BeforeGroups("USC")
+    @BeforeClass
     public void setup() {
         Collator c = Collator.getInstance(Locale.US);
         if (!(c instanceof RuleBasedCollator)) {
@@ -91,7 +91,7 @@ public class RuleBasedCollatorTest {
         };
     }
 
-    @Test(dataProvider = "rulesData", groups = "USC")
+    @Test(dataProvider = "rulesData")
     public void testRules(String rules, String[] testData, String[] expected)
             throws ParseException {
         Arrays.sort(testData, new RuleBasedCollator(rules));
@@ -111,7 +111,7 @@ public class RuleBasedCollatorTest {
                 { "a", "\u1ea1", -1 } };
     }
 
-    @Test(dataProvider = "FrenchSecondarySort", groups = "USC")
+    @Test(dataProvider = "FrenchSecondarySort")
     public void testFrenchSecondarySort(String sData, String tData,
             int expected) throws ParseException {
         String french_rule = "@";
@@ -129,7 +129,7 @@ public class RuleBasedCollatorTest {
         };
     }
 
-    @Test(dataProvider = "ThaiLaoVowelConsonantSwapping", groups = "USC")
+    @Test(dataProvider = "ThaiLaoVowelConsonantSwapping")
     public void testThaiLaoVowelConsonantSwapping(String sData, String tData,
             int expected) throws ParseException {
         String thai_rule = "& Z < \u0e01 < \u0e2e <\u0e40 < \u0e44!";
@@ -162,7 +162,7 @@ public class RuleBasedCollatorTest {
         };
     }
 
-    @Test(dataProvider = "Normalization", groups = "USC")
+    @Test(dataProvider = "Normalization")
     public void testNormalization(String sData, String tData, int decomp,
             int result) {
         RuleBasedCollator rc = (RuleBasedCollator)USC.clone();

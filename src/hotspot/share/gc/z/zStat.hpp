@@ -331,18 +331,18 @@ void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment = 1);
 class ZStatAllocRate : public AllStatic {
 private:
   static const ZStatUnsampledCounter _counter;
-  static TruncatedSeq                _rate;     // B/s
-  static TruncatedSeq                _rate_avg; // B/s
+  static TruncatedSeq                _samples;
+  static TruncatedSeq                _rate;
 
 public:
-  static const uint64_t sample_window_sec = 1; // seconds
-  static const uint64_t sample_hz         = 10;
+  static const uint64_t sample_hz = 10;
 
   static const ZStatUnsampledCounter& counter();
   static uint64_t sample_and_reset();
 
+  static double predict();
   static double avg();
-  static double avg_sd();
+  static double sd();
 };
 
 //
@@ -374,19 +374,39 @@ private:
   static uint64_t  _nwarmup_cycles;
   static Ticks     _start_of_last;
   static Ticks     _end_of_last;
-  static NumberSeq _normalized_duration;
+  static NumberSeq _serial_time;
+  static NumberSeq _parallelizable_time;
+  static uint      _last_active_workers;
 
 public:
   static void at_start();
-  static void at_end(GCCause::Cause cause, double boost_factor);
+  static void at_end(GCCause::Cause cause, uint active_workers);
 
   static bool is_warm();
   static uint64_t nwarmup_cycles();
 
-  static bool is_normalized_duration_trustable();
-  static const AbsSeq& normalized_duration();
+  static bool is_time_trustable();
+  static const AbsSeq& serial_time();
+  static const AbsSeq& parallelizable_time();
+
+  static uint last_active_workers();
 
   static double time_since_last();
+};
+
+//
+// Stat workers
+//
+class ZStatWorkers : public AllStatic {
+private:
+  static Ticks    _start_of_last;
+  static Tickspan _accumulated_duration;
+
+public:
+  static void at_start();
+  static void at_end();
+
+  static double get_and_reset_duration();
 };
 
 //
@@ -407,6 +427,7 @@ private:
   static size_t _nterminateflush;
   static size_t _ntrycomplete;
   static size_t _ncontinue;
+  static size_t _mark_stack_usage;
 
 public:
   static void set_at_mark_start(size_t nstripes);
@@ -414,6 +435,7 @@ public:
                               size_t nterminateflush,
                               size_t ntrycomplete,
                               size_t ncontinue);
+  static void set_at_mark_free(size_t mark_stack_usage);
 
   static void print();
 };

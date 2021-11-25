@@ -196,7 +196,7 @@ public interface DataInput {
      *          all the bytes.
      * @throws  IOException   if an I/O error occurs.
      */
-    void readFully(byte b[]) throws IOException;
+    void readFully(byte[] b) throws IOException;
 
     /**
      *
@@ -246,7 +246,7 @@ public interface DataInput {
      *          all the bytes.
      * @throws  IOException   if an I/O error occurs.
      */
-    void readFully(byte b[], int off, int len) throws IOException;
+    void readFully(byte[] b, int off, int len) throws IOException;
 
     /**
      * Makes an attempt to skip over

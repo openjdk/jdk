@@ -49,8 +49,8 @@ import java.lang.System.Logger.Level;
  * @build AccessSystemLogger BaseLoggerFinderTest CustomSystemClassLoader BaseLoggerFinder TestLoggerFinder
  * @run  driver AccessSystemLogger
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerFinderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerFinderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerFinderTest WITHPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerFinderTest NOPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerFinderTest WITHPERMISSIONS
  * @author danielfuchs
  */
 public class BaseLoggerFinderTest {

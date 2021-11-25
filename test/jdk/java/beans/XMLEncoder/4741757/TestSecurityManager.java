@@ -25,6 +25,7 @@
  * @test
  * @bug 4741757
  * @summary Tests encoding with security manager
+ * @run main/othervm -Djava.security.manager=allow TestSecurityManager
  * @author Sergey Malenkov
  */
 

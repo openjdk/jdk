@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8265227
+ * @bug 8265227 8266753
  * @summary Test Proc
  * @library /test/lib
  */
@@ -36,12 +36,13 @@ import java.util.List;
 public class ProcTest {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
+            // Test launcher
             Proc p1 = Proc.create("ProcTest")
-                    .args("p1")
+                    .args("1")
                     .debug("p1")
                     .start();
             Proc p2 = Proc.create("ProcTest")
-                    .args("p2")
+                    .args("2")
                     .debug("p2")
                     .start();
             while (true) {
@@ -54,9 +55,10 @@ public class ProcTest {
             p1.waitFor();
             p2.waitFor();
         } else {
+            // Sub process, args[0] is random seed.
             List<String> gestures = List.of("Rock", "Paper", "Scissors");
             int wins = 0;
-            Random r = new Random();
+            Random r = new Random(Long.parseLong(args[0]));
             while (true) {
                 String my = gestures.get(r.nextInt(3));
                 Proc.textOut(my); // show first, next line might block

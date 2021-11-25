@@ -34,7 +34,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * @test
  * @bug 6925410
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true sax.Bug6925410Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.Bug6925410Test
  * @run testng/othervm sax.Bug6925410Test
  * @summary Test XMLReaderFactory can createXMLReader repeatedly.
  */

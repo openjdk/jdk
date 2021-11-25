@@ -142,7 +142,9 @@ public class TestRelatedPackages extends JavadocTester {
                     <div class="col-first odd-row-color"><a href="../t1/package-summary.html">t.p1.s3.t1</a></div>
                     <div class="col-last odd-row-color">&nbsp;</div>
                     </div>""");
-        checkOutput("t/p2/package-summary.html", false, "Related Packages");
+        checkOutput("t/p2/package-summary.html", false,
+                """
+                    <div class="caption"><span>Related Packages</span></div>""");
     }
 
     @Test

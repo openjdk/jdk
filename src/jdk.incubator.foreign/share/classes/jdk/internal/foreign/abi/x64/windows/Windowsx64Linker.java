@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,14 @@
  */
 package jdk.internal.foreign.abi.x64.windows;
 
-import jdk.incubator.foreign.Addressable;
+import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.CLinker;
+import jdk.incubator.foreign.NativeSymbol;
+import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.VaList;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.foreign.abi.UpcallStubs;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -39,12 +39,10 @@ import java.lang.invoke.MethodType;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static jdk.internal.foreign.PlatformLayouts.*;
-
 /**
  * ABI implementation based on Windows ABI AMD64 supplement v.0.99.6
  */
-public class Windowsx64Linker implements CLinker {
+public final class Windowsx64Linker implements CLinker {
 
     public static final int MAX_INTEGER_ARGUMENT_REGISTERS = 4;
     public static final int MAX_INTEGER_RETURN_REGISTERS = 1;
@@ -57,21 +55,6 @@ public class Windowsx64Linker implements CLinker {
 
     static final long ADDRESS_SIZE = 64; // bits
 
-    private static final MethodHandle MH_unboxVaList;
-    private static final MethodHandle MH_boxVaList;
-
-    static {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            MH_unboxVaList = lookup.findVirtual(VaList.class, "address",
-                MethodType.methodType(MemoryAddress.class));
-            MH_boxVaList = lookup.findStatic(Windowsx64Linker.class, "newVaListOfAddress",
-                MethodType.methodType(VaList.class, MemoryAddress.class));
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
-
     public static Windowsx64Linker getInstance() {
         if (instance == null) {
             instance = new Windowsx64Linker();
@@ -79,33 +62,39 @@ public class Windowsx64Linker implements CLinker {
         return instance;
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, SharedUtils.Allocator allocator) {
-        WinVaList.Builder builder = WinVaList.builder(allocator);
+    public static VaList newVaList(Consumer<VaList.Builder> actions, ResourceScope scope) {
+        WinVaList.Builder builder = WinVaList.builder(scope);
         actions.accept(builder);
         return builder.build();
     }
 
     @Override
-    public MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function) {
-        Objects.requireNonNull(symbol);
-        Objects.requireNonNull(type);
+    public final MethodHandle downcallHandle(FunctionDescriptor function) {
         Objects.requireNonNull(function);
-        MethodType llMt = SharedUtils.convertVaListCarriers(type, WinVaList.CARRIER);
-        MethodHandle handle = CallArranger.arrangeDowncall(symbol, llMt, function);
-        handle = SharedUtils.unboxVaLists(type, handle, MH_unboxVaList);
-        return handle;
+        MethodType type = SharedUtils.inferMethodType(function, false);
+        MethodHandle handle = CallArranger.arrangeDowncall(type, function);
+        if (!type.returnType().equals(MemorySegment.class)) {
+            // not returning segment, just insert a throwing allocator
+            handle = MethodHandles.insertArguments(handle, 1, SharedUtils.THROWING_ALLOCATOR);
+        }
+        return SharedUtils.wrapDowncall(handle, function);
     }
 
     @Override
-    public MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function) {
+    public final NativeSymbol upcallStub(MethodHandle target, FunctionDescriptor function, ResourceScope scope) {
+        Objects.requireNonNull(scope);
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
-        target = SharedUtils.boxVaLists(target, MH_boxVaList);
-        return UpcallStubs.upcallAddress(CallArranger.arrangeUpcall(target, target.type(), function));
+        SharedUtils.checkExceptions(target);
+        MethodType type = SharedUtils.inferMethodType(function, true);
+        if (!type.equals(target.type())) {
+            throw new IllegalArgumentException("Wrong method handle type: " + target.type());
+        }
+        return CallArranger.arrangeUpcall(target, target.type(), function, scope);
     }
 
-    public static VaList newVaListOfAddress(MemoryAddress ma) {
-        return WinVaList.ofAddress(ma);
+    public static VaList newVaListOfAddress(MemoryAddress ma, ResourceScope scope) {
+        return WinVaList.ofAddress(ma, scope);
     }
 
     public static VaList emptyVaList() {

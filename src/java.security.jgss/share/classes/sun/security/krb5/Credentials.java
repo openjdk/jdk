@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ public class Credentials {
     HostAddresses cAddr;
     AuthorizationData authzData;
     private static boolean DEBUG = Krb5.DEBUG;
-    private static CredentialsCache cache;
     static boolean alreadyLoaded = false;
     private static boolean alreadyTried = false;
 
@@ -416,9 +415,8 @@ public class Credentials {
     public static synchronized Credentials acquireDefaultCreds() {
         Credentials result = null;
 
-        if (cache == null) {
-            cache = CredentialsCache.getInstance();
-        }
+        CredentialsCache cache = CredentialsCache.getInstance();
+
         if (cache != null) {
             Credentials temp = cache.getInitialCreds();
             if (temp != null) {
@@ -505,10 +503,6 @@ public class Credentials {
                 service, second, client, ccreds);
     }
 
-    public CredentialsCache getCache() {
-        return cache;
-    }
-
     /*
      * Prints out debug info.
      */
@@ -529,6 +523,7 @@ public class Credentials {
     }
 
 
+    @SuppressWarnings("removal")
     static void ensureLoaded() {
         java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Void> () {

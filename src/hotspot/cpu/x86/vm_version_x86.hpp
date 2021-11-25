@@ -25,9 +25,9 @@
 #ifndef CPU_X86_VM_VERSION_X86_HPP
 #define CPU_X86_VM_VERSION_X86_HPP
 
-#include "memory/universe.hpp"
 #include "runtime/abstract_vm_version.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/sizes.hpp"
 
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
@@ -261,7 +261,9 @@ class VM_Version : public Abstract_VM_Version {
       uint32_t             : 2,
              avx512_4vnniw : 1,
              avx512_4fmaps : 1,
-                           : 28;
+                           : 10,
+                 serialize : 1,
+                           : 17;
     } bits;
   };
 
@@ -359,7 +361,8 @@ protected:
                                                      \
     decl(AVX512_VBMI2,      "avx512_vbmi2",      44) /* VBMI2 shift left double instructions */ \
     decl(AVX512_VBMI,       "avx512_vbmi",       45) /* Vector BMI instructions */ \
-    decl(HV,                "hv",                46) /* Hypervisor instructions */
+    decl(HV,                "hv",                46) /* Hypervisor instructions */ \
+    decl(SERIALIZE,         "serialize",         47) /* CPU SERIALIZE */
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -646,6 +649,8 @@ enum Extended_Family {
       if (_cpuid_info.sef_cpuid7_ebx.bits.clwb != 0) {
         result |= CPU_CLWB;
       }
+      if (_cpuid_info.sef_cpuid7_edx.bits.serialize != 0)
+        result |= CPU_SERIALIZE;
     }
 
     // ZX features.
@@ -747,9 +752,6 @@ public:
   // Override Abstract_VM_Version implementation
   static void print_platform_virtualization_info(outputStream*);
 
-  // Override Abstract_VM_Version implementation
-  static bool use_biased_locking();
-
   // Asserts
   static void assert_is_initialized() {
     assert(_cpuid_info.std_cpuid1_eax.bits.family != 0, "VM_Version not initialized");
@@ -778,7 +780,7 @@ public:
   static bool is_intel()          { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x756e6547; } // 'uneG'
   static bool is_zx()             { assert_is_initialized(); return (_cpuid_info.std_vendor_name_0 == 0x746e6543) || (_cpuid_info.std_vendor_name_0 == 0x68532020); } // 'tneC'||'hS  '
   static bool is_atom_family()    { return ((cpu_family() == 0x06) && ((extended_cpu_model() == 0x36) || (extended_cpu_model() == 0x37) || (extended_cpu_model() == 0x4D))); } //Silvermont and Centerton
-  static bool is_knights_family() { return ((cpu_family() == 0x06) && ((extended_cpu_model() == 0x57) || (extended_cpu_model() == 0x85))); } // Xeon Phi 3200/5200/7200 and Future Xeon Phi
+  static bool is_knights_family() { return UseKNLSetting || ((cpu_family() == 0x06) && ((extended_cpu_model() == 0x57) || (extended_cpu_model() == 0x85))); } // Xeon Phi 3200/5200/7200 and Future Xeon Phi
 
   static bool supports_processor_topology() {
     return (_cpuid_info.std_max_function >= 0xB) &&
@@ -882,6 +884,7 @@ public:
   static bool supports_avx512bw()     { return (_features & CPU_AVX512BW) != 0; }
   static bool supports_avx512vl()     { return (_features & CPU_AVX512VL) != 0; }
   static bool supports_avx512vlbw()   { return (supports_evex() && supports_avx512bw() && supports_avx512vl()); }
+  static bool supports_avx512bwdq()   { return (supports_evex() && supports_avx512bw() && supports_avx512dq()); }
   static bool supports_avx512vldq()   { return (supports_evex() && supports_avx512dq() && supports_avx512vl()); }
   static bool supports_avx512vlbwdq() { return (supports_evex() && supports_avx512vl() &&
                                                 supports_avx512bw() && supports_avx512dq()); }
@@ -899,6 +902,7 @@ public:
   static bool supports_avx512_vbmi()  { return (_features & CPU_AVX512_VBMI) != 0; }
   static bool supports_avx512_vbmi2() { return (_features & CPU_AVX512_VBMI2) != 0; }
   static bool supports_hv()           { return (_features & CPU_HV) != 0; }
+  static bool supports_serialize()    { return (_features & CPU_SERIALIZE) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
@@ -1030,19 +1034,8 @@ public:
   // and trailing StoreStore fences.
 
 #ifdef _LP64
-  static bool supports_clflush() {
-    // clflush should always be available on x86_64
-    // if not we are in real trouble because we rely on it
-    // to flush the code cache.
-    // Unfortunately, Assembler::clflush is currently called as part
-    // of generation of the code cache flush routine. This happens
-    // under Universe::init before the processor features are set
-    // up. Assembler::flush calls this routine to check that clflush
-    // is allowed. So, we give the caller a free pass if Universe init
-    // is still in progress.
-    assert ((!Universe::is_fully_initialized() || (_features & CPU_FLUSH) != 0), "clflush should be available");
-    return true;
-  }
+
+  static bool supports_clflush(); // Can't inline due to header file conflict
 #else
   static bool supports_clflush() { return  ((_features & CPU_FLUSH) != 0); }
 #endif // _LP64

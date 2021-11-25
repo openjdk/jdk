@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,16 @@
  */
 package jdk.internal.foreign.abi;
 
+import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.SegmentAllocator;
+import jdk.incubator.foreign.ValueLayout;
 import jdk.internal.foreign.MemoryAddressImpl;
+import jdk.internal.foreign.ResourceScopeImpl;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -44,7 +49,6 @@ import java.nio.ByteOrder;
 import static java.lang.invoke.MethodHandles.collectArguments;
 import static java.lang.invoke.MethodHandles.filterArguments;
 import static java.lang.invoke.MethodHandles.insertArguments;
-import static java.lang.invoke.MethodHandles.permuteArguments;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -203,7 +207,6 @@ import static java.lang.invoke.MethodType.methodType;
 public abstract class Binding {
     private static final MethodHandle MH_UNBOX_ADDRESS;
     private static final MethodHandle MH_BOX_ADDRESS;
-    private static final MethodHandle MH_BASE_ADDRESS;
     private static final MethodHandle MH_COPY_BUFFER;
     private static final MethodHandle MH_ALLOCATE_BUFFER;
     private static final MethodHandle MH_TO_SEGMENT;
@@ -215,17 +218,98 @@ public abstract class Binding {
                     methodType(long.class));
             MH_BOX_ADDRESS = lookup.findStatic(MemoryAddress.class, "ofLong",
                     methodType(MemoryAddress.class, long.class));
-            MH_BASE_ADDRESS = lookup.findVirtual(MemorySegment.class, "address",
-                    methodType(MemoryAddress.class));
             MH_COPY_BUFFER = lookup.findStatic(Binding.Copy.class, "copyBuffer",
-                    methodType(MemorySegment.class, MemorySegment.class, long.class, long.class, SharedUtils.Allocator.class));
+                    methodType(MemorySegment.class, MemorySegment.class, long.class, long.class, Context.class));
             MH_ALLOCATE_BUFFER = lookup.findStatic(Binding.Allocate.class, "allocateBuffer",
-                    methodType(MemorySegment.class, long.class, long.class, SharedUtils.Allocator.class));
+                    methodType(MemorySegment.class, long.class, long.class, Context.class));
             MH_TO_SEGMENT = lookup.findStatic(Binding.ToSegment.class, "toSegment",
-                    methodType(MemorySegment.class, MemoryAddress.class, long.class));
+                    methodType(MemorySegment.class, MemoryAddress.class, long.class, Context.class));
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * A binding context is used as an helper to carry out evaluation of certain bindings; for instance,
+     * it helps {@link Allocate} bindings, by providing the {@link SegmentAllocator} that should be used for
+     * the allocation operation, or {@link ToSegment} bindings, by providing the {@link ResourceScope} that
+     * should be used to create an unsafe struct from a memory address.
+     */
+    public static class Context implements AutoCloseable {
+        private final SegmentAllocator allocator;
+        private final ResourceScope scope;
+
+        private Context(SegmentAllocator allocator, ResourceScope scope) {
+            this.allocator = allocator;
+            this.scope = scope;
+        }
+
+        public SegmentAllocator allocator() {
+            return allocator;
+        }
+
+        public ResourceScope scope() {
+            return scope;
+        }
+
+        @Override
+        public void close() {
+            scope().close();
+        }
+
+        /**
+         * Create a binding context from given native scope.
+         */
+        public static Context ofBoundedAllocator(long size) {
+            ResourceScope scope = ResourceScope.newConfinedScope();
+            return new Context(SegmentAllocator.newNativeArena(size, scope), scope);
+        }
+
+        /**
+         * Create a binding context from given segment allocator. The resulting context will throw when
+         * the context's scope is accessed.
+         */
+        public static Context ofAllocator(SegmentAllocator allocator) {
+            return new Context(allocator, null) {
+                @Override
+                public ResourceScope scope() {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        }
+
+        /**
+         * Create a binding context from given scope. The resulting context will throw when
+         * the context's allocator is accessed.
+         */
+        public static Context ofScope() {
+            ResourceScope scope = ResourceScope.newConfinedScope();
+            return new Context(null, scope) {
+                @Override
+                public SegmentAllocator allocator() { throw new UnsupportedOperationException(); }
+            };
+        }
+
+        /**
+         * Dummy binding context. Throws exceptions when attempting to access scope, return a throwing allocator, and has
+         * an idempotent {@link #close()}.
+         */
+        public static final Context DUMMY = new Context(null, null) {
+            @Override
+            public SegmentAllocator allocator() {
+                return SharedUtils.THROWING_ALLOCATOR;
+            }
+
+            @Override
+            public ResourceScope scope() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void close() {
+                // do nothing
+            }
+        };
     }
 
     enum Tag {
@@ -237,7 +321,6 @@ public abstract class Binding {
         ALLOC_BUFFER,
         BOX_ADDRESS,
         UNBOX_ADDRESS,
-        BASE_ADDRESS,
         TO_SEGMENT,
         DUP
     }
@@ -255,33 +338,12 @@ public abstract class Binding {
     public abstract void verify(Deque<Class<?>> stack);
 
     public abstract void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                                   BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator);
+                                   BindingInterpreter.LoadFunc loadFunc, Context context);
 
     public abstract MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos);
 
-    private static MethodHandle mergeArguments(MethodHandle mh, int sourceIndex, int destIndex) {
-        MethodType oldType = mh.type();
-        Class<?> sourceType = oldType.parameterType(sourceIndex);
-        Class<?> destType = oldType.parameterType(destIndex);
-        if (sourceType != destType) {
-            // TODO meet?
-            throw new IllegalArgumentException("Parameter types differ: " + sourceType + " != " + destType);
-        }
-        MethodType newType = oldType.dropParameterTypes(destIndex, destIndex + 1);
-        int[] reorder = new int[oldType.parameterCount()];
-        assert destIndex > sourceIndex;
-        for (int i = 0, index = 0; i < reorder.length; i++) {
-            if (i != destIndex) {
-                reorder[i] = index++;
-            } else {
-                reorder[i] = sourceIndex;
-            }
-        }
-        return permuteArguments(mh, newType, reorder);
-    }
-
     private static void checkType(Class<?> type) {
-        if (!type.isPrimitive() || type == void.class || type == boolean.class)
+        if (!type.isPrimitive() || type == void.class)
             throw new IllegalArgumentException("Illegal type: " + type);
     }
 
@@ -325,11 +387,11 @@ public abstract class Binding {
     }
 
     public static UnboxAddress unboxAddress() {
-        return UnboxAddress.INSTANCE;
+        return UnboxAddress.INSTANCE.get(MemoryAddress.class);
     }
 
-    public static BaseAddress baseAddress() {
-        return BaseAddress.INSTANCE;
+    public static UnboxAddress unboxAddress(Class<?> carrier) {
+        return UnboxAddress.INSTANCE.get(carrier);
     }
 
     public static ToSegment toSegment(MemoryLayout layout) {
@@ -404,8 +466,8 @@ public abstract class Binding {
             return this;
         }
 
-        public Binding.Builder baseAddress() {
-            bindings.add(Binding.baseAddress());
+        public Binding.Builder unboxAddress(Class<?> carrier) {
+            bindings.add(Binding.unboxAddress(carrier));
             return this;
         }
 
@@ -424,7 +486,7 @@ public abstract class Binding {
         }
     }
 
-    static abstract class Move extends Binding {
+    abstract static class Move extends Binding {
         private final VMStorage storage;
         private final Class<?> type;
 
@@ -477,7 +539,7 @@ public abstract class Binding {
 
         @Override
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator) {
+                              BindingInterpreter.LoadFunc loadFunc, Context context) {
             storeFunc.store(storage(), type(), stack.pop());
         }
 
@@ -512,7 +574,7 @@ public abstract class Binding {
 
         @Override
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator) {
+                              BindingInterpreter.LoadFunc loadFunc, Context context) {
             stack.push(loadFunc.load(storage(), type()));
         }
 
@@ -530,7 +592,7 @@ public abstract class Binding {
         }
     }
 
-    private static abstract class Dereference extends Binding {
+    private abstract static class Dereference extends Binding {
         private final long offset;
         private final Class<?> type;
 
@@ -564,7 +626,11 @@ public abstract class Binding {
         }
 
         public VarHandle varHandle() {
-            return MemoryHandles.insertCoordinates(MemoryHandles.varHandle(type, ByteOrder.nativeOrder()), 1, offset);
+            // alignment is set to 1 byte here to avoid exceptions for cases where we do super word
+            // copies of e.g. 2 int fields of a struct as a single long, while the struct is only
+            // 4-byte-aligned (since it only contains ints)
+            ValueLayout layout = MemoryLayout.valueLayout(type(), ByteOrder.nativeOrder()).withBitAlignment(8);
+            return MemoryHandles.insertCoordinates(MemoryHandles.varHandle(layout), 1, offset);
         }
     }
 
@@ -589,7 +655,7 @@ public abstract class Binding {
 
         @Override
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator) {
+                              BindingInterpreter.LoadFunc loadFunc, Context context) {
             Object value = stack.pop();
             MemorySegment operand = (MemorySegment) stack.pop();
             MemorySegment writeAddress = operand.asSlice(offset());
@@ -633,7 +699,7 @@ public abstract class Binding {
 
         @Override
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator) {
+                              BindingInterpreter.LoadFunc loadFunc, Context context) {
             MemorySegment operand = (MemorySegment) stack.pop();
             MemorySegment readAddress = operand.asSlice(offset());
             stack.push(SharedUtils.read(readAddress, type()));
@@ -673,10 +739,9 @@ public abstract class Binding {
         }
 
         private static MemorySegment copyBuffer(MemorySegment operand, long size, long alignment,
-                                                    SharedUtils.Allocator allocator) {
-            MemorySegment copy = allocator.allocate(size, alignment);
-            copy.copyFrom(operand.asSlice(0, size));
-            return copy;
+                                                    Context context) {
+            return context.allocator().allocate(size, alignment)
+                            .copyFrom(operand.asSlice(0, size));
         }
 
         public long size() {
@@ -705,9 +770,9 @@ public abstract class Binding {
 
         @Override
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator) {
+                              BindingInterpreter.LoadFunc loadFunc, Context context) {
             MemorySegment operand = (MemorySegment) stack.pop();
-            MemorySegment copy = copyBuffer(operand, size, alignment, allocator);
+            MemorySegment copy = copyBuffer(operand, size, alignment, context);
             stack.push(copy);
         }
 
@@ -715,7 +780,7 @@ public abstract class Binding {
         public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
             MethodHandle filter = insertArguments(MH_COPY_BUFFER, 1, size, alignment);
             specializedHandle = collectArguments(specializedHandle, insertPos, filter);
-            return mergeArguments(specializedHandle, allocatorPos, insertPos + 1);
+            return SharedUtils.mergeArguments(specializedHandle, allocatorPos, insertPos + 1);
         }
 
         @Override
@@ -748,8 +813,8 @@ public abstract class Binding {
             this.alignment = alignment;
         }
 
-        private static MemorySegment allocateBuffer(long size, long allignment, SharedUtils.Allocator allocator) {
-            return allocator.allocate(size, allignment);
+        private static MemorySegment allocateBuffer(long size, long allignment, Context context) {
+            return context.allocator().allocate(size, allignment);
         }
 
         public long size() {
@@ -776,15 +841,15 @@ public abstract class Binding {
 
         @Override
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator) {
-            stack.push(allocateBuffer(size, alignment, allocator));
+                              BindingInterpreter.LoadFunc loadFunc, Context context) {
+            stack.push(allocateBuffer(size, alignment, context));
         }
 
         @Override
         public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
             MethodHandle allocateBuffer = insertArguments(MH_ALLOCATE_BUFFER, 0, size, alignment);
             specializedHandle = collectArguments(specializedHandle, insertPos, allocateBuffer);
-            return mergeArguments(specializedHandle, allocatorPos, insertPos);
+            return SharedUtils.mergeArguments(specializedHandle, allocatorPos, insertPos);
         }
 
         @Override
@@ -809,27 +874,44 @@ public abstract class Binding {
      *     and pushes that onto the operand stack.
      */
     public static class UnboxAddress extends Binding {
-        private static final UnboxAddress INSTANCE = new UnboxAddress();
-        private UnboxAddress() {
+
+        static final ClassValue<UnboxAddress> INSTANCE = new ClassValue<>() {
+            @Override
+            protected UnboxAddress computeValue(Class<?> type) {
+                return new UnboxAddress(type);
+            }
+        };
+
+        final Class<?> carrier;
+        final MethodHandle toAddress;
+
+        private UnboxAddress(Class<?> carrier) {
             super(Tag.UNBOX_ADDRESS);
+            this.carrier = carrier;
+            try {
+                this.toAddress = MethodHandles.lookup().findVirtual(carrier, "address", MethodType.methodType(MemoryAddress.class));
+            } catch (Throwable ex) {
+                throw new IllegalArgumentException(ex);
+            }
         }
 
         @Override
         public void verify(Deque<Class<?>> stack) {
             Class<?> actualType = stack.pop();
-            SharedUtils.checkType(actualType, MemoryAddress.class);
+            SharedUtils.checkType(actualType, carrier);
             stack.push(long.class);
         }
 
         @Override
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator) {
-            stack.push(((MemoryAddress)stack.pop()).toRawLongValue());
+                              BindingInterpreter.LoadFunc loadFunc, Context context) {
+            stack.push(((Addressable)stack.pop()).address().toRawLongValue());
         }
 
         @Override
         public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            return filterArguments(specializedHandle, insertPos, MH_UNBOX_ADDRESS);
+            return filterArguments(specializedHandle, insertPos,
+                    MethodHandles.filterReturnValue(toAddress, MH_UNBOX_ADDRESS));
         }
 
         @Override
@@ -839,7 +921,7 @@ public abstract class Binding {
     }
 
     /**
-     * Box_ADDRESS()
+     * BOX_ADDRESS()
      * Pops a 'long' from the operand stack, converts it to a 'MemoryAddress',
      *     and pushes that onto the operand stack.
      */
@@ -858,7 +940,7 @@ public abstract class Binding {
 
         @Override
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator) {
+                              BindingInterpreter.LoadFunc loadFunc, Context context) {
             stack.push(MemoryAddress.ofLong((long) stack.pop()));
         }
 
@@ -874,43 +956,8 @@ public abstract class Binding {
     }
 
     /**
-     * BASE_ADDRESS()
-     *   Pops a MemorySegment from the operand stack, and takes the base address of the segment
-     *   (the MemoryAddress that points to the start), and pushes that onto the operand stack
-     */
-    public static class BaseAddress extends Binding {
-        private static final BaseAddress INSTANCE = new BaseAddress();
-        private BaseAddress() {
-            super(Tag.BASE_ADDRESS);
-        }
-
-        @Override
-        public void verify(Deque<Class<?>> stack) {
-            Class<?> actualType = stack.pop();
-            SharedUtils.checkType(actualType, MemorySegment.class);
-            stack.push(MemoryAddress.class);
-        }
-
-        @Override
-        public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator) {
-            stack.push(((MemorySegment) stack.pop()).address());
-        }
-
-        @Override
-        public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            return filterArguments(specializedHandle, insertPos, MH_BASE_ADDRESS);
-        }
-
-        @Override
-        public String toString() {
-            return "BaseAddress{}";
-        }
-    }
-
-    /**
-     * BASE_ADDRESS([size])
-     *   Pops a MemoryAddress from the operand stack, and takes the converts it to a MemorySegment
+     * TO_SEGMENT([size])
+     *   Pops a MemoryAddress from the operand stack, and converts it to a MemorySegment
      *   with the given size, and pushes that onto the operand stack
      */
     public static class ToSegment extends Binding {
@@ -922,9 +969,8 @@ public abstract class Binding {
             this.size = size;
         }
 
-        // FIXME should register with scope
-        private static MemorySegment toSegment(MemoryAddress operand, long size) {
-            return MemoryAddressImpl.ofLongUnchecked(operand.toRawLongValue(), size);
+        private static MemorySegment toSegment(MemoryAddress operand, long size, Context context) {
+            return MemoryAddressImpl.ofLongUnchecked(operand.toRawLongValue(), size, (ResourceScopeImpl) context.scope);
         }
 
         @Override
@@ -936,16 +982,17 @@ public abstract class Binding {
 
         @Override
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator) {
+                              BindingInterpreter.LoadFunc loadFunc, Context context) {
             MemoryAddress operand = (MemoryAddress) stack.pop();
-            MemorySegment segment = toSegment(operand, size);
+            MemorySegment segment = toSegment(operand, size, context);
             stack.push(segment);
         }
 
         @Override
         public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
             MethodHandle toSegmentHandle = insertArguments(MH_TO_SEGMENT, 1, size);
-            return filterArguments(specializedHandle, insertPos, toSegmentHandle);
+            specializedHandle = collectArguments(specializedHandle, insertPos, toSegmentHandle);
+            return SharedUtils.mergeArguments(specializedHandle, allocatorPos, insertPos + 1);
         }
 
         @Override
@@ -988,7 +1035,7 @@ public abstract class Binding {
 
         @Override
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, SharedUtils.Allocator allocator) {
+                              BindingInterpreter.LoadFunc loadFunc, Context context) {
             stack.push(stack.peekLast());
         }
 
@@ -1012,7 +1059,7 @@ public abstract class Binding {
          */
         @Override
         public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            return mergeArguments(specializedHandle, insertPos, insertPos + 1);
+            return SharedUtils.mergeArguments(specializedHandle, insertPos, insertPos + 1);
         }
 
         @Override

@@ -29,6 +29,7 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
+ * @key stress randomness
  * @bug 8252219 8256535
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Tests that stress compilations with the same seed yield the same
@@ -49,11 +50,12 @@ public class TestStressIGVNAndCCP {
             className, "10"};
         ProcessBuilder pb  = ProcessTools.createJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        out.shouldHaveExitValue(0);
         return out.getStdout();
     }
 
     static String igvnTrace(int stressSeed) throws Exception {
-        return phaseTrace("StressIGVN", "TraceIterativeIGVN", stressSeed);
+        return phaseTrace("StressIGVN", "TraceIterativeGVN", stressSeed);
     }
 
     static String ccpTrace(int stressSeed) throws Exception {

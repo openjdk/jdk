@@ -79,6 +79,8 @@ import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  *
  * @author Thomas Wuerthinger

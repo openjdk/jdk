@@ -43,6 +43,8 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * The class {@link Xoroshiro128PlusPlus} uses the {@code xoroshiro128} algorithm
  * (parameters 49, 21, 28) with the "++" scrambler that computes
  * {@code Long.rotateLeft(s0 + s1, 17) + s0}.
+ * (See David Blackman and Sebastiano Vigna, "Scrambled Linear Pseudorandom
+ * Number Generators," ACM Transactions on Mathematical Software, 2021.)
  * Its state consists of two {@code long} fields {@code x0} and {@code x1},
  * which can take on any values provided that they are not both zero.
  * The period of this generator is 2<sup>128</sup>-1.
@@ -74,7 +76,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
         name = "Xoroshiro128PlusPlus",
         group = "Xoroshiro",
         i = 128, j = 1, k = 0,
-        equidistribution = 2
+        equidistribution = 1
 )
 public final class Xoroshiro128PlusPlus implements LeapableGenerator {
 
@@ -83,16 +85,6 @@ public final class Xoroshiro128PlusPlus implements LeapableGenerator {
      *
      * This is an implementation of the xoroshiro128++ algorithm version 1.0,
      * written in 2019 by David Blackman and Sebastiano Vigna (vigna@acm.org).
-     * See http://xoshiro.di.unimi.it and these two papers:
-     *
-     *    Sebastiano Vigna. 2016. An Experimental Exploration of Marsaglia's
-     *    xorshift Generators, Scrambled. ACM Transactions on Mathematical
-     *    Software 42, 4, Article 30 (June 2016), 23 pages.
-     *    https://doi.org/10.1145/2845077
-     *
-     *    David Blackman and Sebastiano Vigna.  2018.  Scrambled Linear
-     *    Pseudorandom Number Generators.  Computing Research Repository (CoRR).
-     *    http://arxiv.org/abs/1805.01407
      *
      * The jump operation moves the current generator forward by 2*64
      * steps; this has the same effect as calling nextLong() 2**64

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -800,6 +800,7 @@ public class BufferedImage extends java.awt.Image
         }   // else if ((raster instanceof ByteComponentRaster) &&
     }
 
+    @SuppressWarnings("removal")
     private static boolean isStandard(ColorModel cm, WritableRaster wr) {
         final Class<? extends ColorModel> cmClass = cm.getClass();
         final Class<? extends WritableRaster> wrClass = wr.getClass();

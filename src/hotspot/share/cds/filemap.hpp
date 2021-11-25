@@ -137,6 +137,7 @@ public:
 
 
 class FileMapRegion: private CDSFileMapRegion {
+public:
   void assert_is_heap_region() const {
     assert(_is_heap_region, "must be heap region");
   }
@@ -144,7 +145,6 @@ class FileMapRegion: private CDSFileMapRegion {
     assert(!_is_heap_region, "must not be heap region");
   }
 
-public:
   static FileMapRegion* cast(CDSFileMapRegion* p) {
     return (FileMapRegion*)p;
   }
@@ -180,11 +180,10 @@ public:
 };
 
 class FileMapHeader: private CDSFileMapHeaderBase {
-  friend class CDSOffsets;
+  friend class CDSConstants;
   friend class VMStructs;
 
-  size_t _header_size;
-
+private:
   // The following fields record the states of the VM during dump time.
   // They are compared with the runtime states to see if the archive
   // can be used.
@@ -202,15 +201,12 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   size_t  _serialized_data_offset;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
   address _heap_begin;              // heap begin at dump time.
   address _heap_end;                // heap end at dump time.
-  bool _base_archive_is_default;    // indicates if the base archive is the system default one
+  bool _has_non_jar_in_classpath;   // non-jar file entry exists in classpath
 
   // The following fields are all sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
   // invoked with.
   char  _jvm_ident[JVM_IDENT_MAX];  // identifier string of the jvm that created this dump
-
-  // size of the base archive name including NULL terminator
-  size_t _base_archive_name_size;
 
   // The following is a table of all the boot/app/module path entries that were used
   // during dumping. At run time, we validate these entries according to their
@@ -242,17 +238,21 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   }
   void set_as_offset(char* p, size_t *offset);
 public:
-  // Accessors -- fields declared in CDSFileMapHeaderBase
-  unsigned int magic()                    const { return _magic; }
-  int crc()                               const { return _crc; }
-  int version()                           const { return _version; }
+  // Accessors -- fields declared in GenericCDSFileMapHeader
+  unsigned int magic()                    const { return _generic_header._magic;    }
+  int crc()                               const { return _generic_header._crc;      }
+  int version()                           const { return _generic_header._version;  }
+  unsigned int header_size()              const { return _generic_header._header_size;              }
+  unsigned int base_archive_name_offset() const { return _generic_header._base_archive_name_offset; }
+  unsigned int base_archive_name_size()   const { return _generic_header._base_archive_name_size;   }
 
-  void set_crc(int crc_value)                   { _crc = crc_value; }
-  void set_version(int v)                       { _version = v; }
+  void set_magic(unsigned int m)                    { _generic_header._magic = m;       }
+  void set_crc(int crc_value)                       { _generic_header._crc = crc_value; }
+  void set_version(int v)                           { _generic_header._version = v;     }
+  void set_header_size(unsigned int s)              { _generic_header._header_size = s;              }
+  void set_base_archive_name_offset(unsigned int s) { _generic_header._base_archive_name_offset = s; }
+  void set_base_archive_name_size(unsigned int s)   { _generic_header._base_archive_name_size = s;   }
 
-  // Accessors -- fields declared in FileMapHeader
-
-  size_t header_size()                     const { return _header_size; }
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
   address narrow_oop_base()                const { return _narrow_oop_base; }
@@ -266,12 +266,11 @@ public:
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
   address heap_begin()                     const { return _heap_begin; }
   address heap_end()                       const { return _heap_end; }
-  bool base_archive_is_default()           const { return _base_archive_is_default; }
   const char* jvm_ident()                  const { return _jvm_ident; }
-  size_t base_archive_name_size()          const { return _base_archive_name_size; }
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
+  bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
   size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
@@ -285,12 +284,10 @@ public:
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
-  void set_base_archive_name_size(size_t s)      { _base_archive_name_size = s; }
-  void set_base_archive_is_default(bool b)       { _base_archive_is_default = b; }
-  void set_header_size(size_t s)                 { _header_size = s; }
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_obj_roots(narrowOop r)           { _heap_obj_roots = r; }
+  void copy_base_archive_name(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
     set_as_offset((char*)table.table(), &_shared_path_table_offset);
@@ -315,8 +312,8 @@ public:
     return FileMapRegion::cast(&_space[i]);
   }
 
-  void populate(FileMapInfo* info, size_t core_region_alignment);
-
+  void populate(FileMapInfo *info, size_t core_region_alignment, size_t header_size,
+                size_t base_archive_name_size, size_t base_archive_name_offset);
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
   }
@@ -344,6 +341,7 @@ private:
   // TODO: Probably change the following to be non-static
   static SharedPathTable       _shared_path_table;
   static SharedPathTable       _saved_shared_path_table;
+  static Array<u8>*            _saved_shared_path_table_array;  // remember the table array for cleanup
   static bool                  _validating_shared_path_table;
 
   // FileMapHeader describes the shared space data in the file to be
@@ -360,12 +358,13 @@ private:
 
 public:
   static bool get_base_archive_name_from_header(const char* archive_name,
-                                                int* size, char** base_archive_name);
+                                                char** base_archive_name);
   static bool check_archive(const char* archive_name, bool is_static);
   static SharedPathTable shared_path_table() {
     return _shared_path_table;
   }
   static SharedPathTable saved_shared_path_table() {
+    assert(_saved_shared_path_table.size() >= 0, "Sanity check");
     return _saved_shared_path_table;
   }
 
@@ -394,9 +393,6 @@ public:
   int     narrow_klass_shift() const { return header()->narrow_klass_shift(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
 
-  void   set_header_base_archive_name_size(size_t size)      { header()->set_base_archive_name_size(size); }
-  void   set_header_base_archive_is_default(bool is_default) { header()->set_base_archive_is_default(is_default); }
-
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
   jshort app_module_paths_start_index()       const { return header()->app_module_paths_start_index(); }
   jshort app_class_paths_start_index()        const { return header()->app_class_paths_start_index(); }
@@ -416,6 +412,8 @@ public:
 
   void set_requested_base(char* b)                  { header()->set_requested_base(b); }
   char* requested_base_address()           const    { return header()->requested_base_address(); }
+
+  narrowOop heap_obj_roots()               const    { return header()->heap_obj_roots(); }
 
   class DynamicArchiveHeader* dynamic_header() const {
     assert(!is_static(), "must be");
@@ -456,21 +454,23 @@ public:
                             GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
                             GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
                             size_t &size_in_bytes);
-  size_t write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
-                                    GrowableArray<ArchiveHeapOopmapInfo> *oopmaps,
-                                    int first_region_id, int max_num_regions);
+  size_t write_heap_regions(GrowableArray<MemRegion>* regions,
+                            GrowableArray<ArchiveHeapOopmapInfo>* oopmaps,
+                            int first_region_id, int max_num_regions);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);
   MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs);
   void  unmap_regions(int regions[], int num_regions);
-  void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+  void  map_or_load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
-  void  patch_archived_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
-  void  patch_archived_heap_embedded_pointers(MemRegion* ranges, int num_ranges,
-                                              int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
+  void  patch_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
+  void  patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
+                                     int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
   bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
   MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
+  bool  read_region(int i, char* base, size_t size, bool do_commit);
+  char* map_bitmap_region();
   void  unmap_region(int i);
   bool  verify_region_checksum(int i);
   void  close();
@@ -495,6 +495,7 @@ public:
 
   static void allocate_shared_path_table(TRAPS);
   static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
+  static void clone_shared_path_table(TRAPS);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool validate_shared_path_table();
@@ -565,29 +566,32 @@ public:
                     GrowableArray<const char*>* rp_array) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
-  bool  map_heap_data(MemRegion **heap_mem, int first, int max, int* num,
-                      bool is_open = false) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  bool  map_heap_regions(int first, int max, bool is_open_archive,
+                         MemRegion** regions_ret, int* num_regions_ret) NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
-  void  dealloc_archive_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
+  void  dealloc_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
+  bool  can_use_heap_regions();
+  bool  load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
+  bool  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
   void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
-  char* map_bitmap_region();
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
-  bool  read_region(int i, char* base, size_t size);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
   static size_t set_oopmaps_offset(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_size);
   static size_t write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_offset, char* buffer);
+
+  address decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode);
 
   // The starting address of spc, as calculated with CompressedOop::decode_non_null()
   address start_address_as_decoded_with_current_oop_encoding_mode(FileMapRegion* spc) {
     return decode_start_address(spc, true);
   }
-
+public:
   // The starting address of spc, as calculated with HeapShared::decode_from_archive()
   address start_address_as_decoded_from_archive(FileMapRegion* spc) {
     return decode_start_address(spc, false);
   }
 
-  address decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode);
+private:
 
 #if INCLUDE_JVMTI
   static ClassPathEntry** _classpath_entries_for_jvmti;

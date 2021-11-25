@@ -163,11 +163,11 @@ abstract class DelegatingMethodHandle extends MethodHandle {
     }
 
     private static Kind whichKind(int whichCache) {
-        switch(whichCache) {
-            case MethodTypeForm.LF_REBIND:   return BOUND_REINVOKER;
-            case MethodTypeForm.LF_DELEGATE: return DELEGATE;
-            default:                         return REINVOKER;
-        }
+        return switch (whichCache) {
+            case MethodTypeForm.LF_REBIND   -> BOUND_REINVOKER;
+            case MethodTypeForm.LF_DELEGATE -> DELEGATE;
+            default -> REINVOKER;
+        };
     }
 
     static final NamedFunction NF_getTarget;

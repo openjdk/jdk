@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8167340 8204329
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.StreamReaderTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.StreamReaderTest
  * @run testng/othervm stream.XMLStreamReaderTest.StreamReaderTest
  * @summary Verifies patches for StreamReader bugs
  */

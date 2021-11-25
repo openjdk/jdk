@@ -206,9 +206,7 @@ JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location)
 }
 
 JvmtiBreakpoint::~JvmtiBreakpoint() {
-  if (_class_holder.peek() != NULL) {
-    _class_holder.release(JvmtiExport::jvmti_oop_storage());
-  }
+  _class_holder.release(JvmtiExport::jvmti_oop_storage());
 }
 
 void JvmtiBreakpoint::copy(JvmtiBreakpoint& bp) {
@@ -243,8 +241,17 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
 
     for (int i = methods->length() - 1; i >= 0; i--) {
       Method* method = methods->at(i);
-      // Only set breakpoints in running EMCP methods.
-      if (method->is_running_emcp() &&
+      // Only set breakpoints in EMCP methods.
+      // EMCP methods are old but not obsolete. Equivalent
+      // Modulo Constant Pool means the method is equivalent except
+      // the constant pool and instructions that access the constant
+      // pool might be different.
+      // If a breakpoint is set in a redefined method, its EMCP methods
+      // must have a breakpoint also.
+      // None of the methods are deleted until none are running.
+      // This code could set a breakpoint in a method that
+      // is never reached, but this won't be noticeable to the programmer.
+      if (!method->is_obsolete() &&
           method->name() == m_name &&
           method->signature() == m_signature) {
         ResourceMark rm;
@@ -953,10 +960,10 @@ JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
 }
 
 void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
-  // Post and destroy queue nodes
+  // Post events while nmethods are still in the queue and can't be unloaded or made zombie
   while (_queue_head != NULL) {
-     JvmtiDeferredEvent event = dequeue();
-     event.post_compiled_method_load_event(env);
+    _queue_head->event().post_compiled_method_load_event(env);
+    dequeue();
   }
 }
 

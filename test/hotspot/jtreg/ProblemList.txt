@@ -38,6 +38,9 @@
 #
 #############################################################################
 
+
+#############################################################################
+
 # :hotspot_compiler
 
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
@@ -69,6 +72,8 @@ compiler/whitebox/EnqueueMethodForCompilationTest.java 8265360 macosx-aarch64
 compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-x64
+compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
+
 
 #############################################################################
 
@@ -84,6 +89,8 @@ gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 
+applications/jcstress/acqrel.java 8277434 linux-aarch64
+
 #############################################################################
 
 # :hotspot_runtime
@@ -91,20 +98,33 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java 8253437 windows-x64
 runtime/cds/DeterministicDump.java 8253495 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
-runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
+runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
+runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
+runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
+runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
+runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
+runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
+runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
+
+applications/jcstress/copy.java 8229852 linux-all
 
 #############################################################################
 
 # :hotspot_serviceability
 
-serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64
+serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 macosx-x64,macosx-aarch64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
-resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8262386 generic-all
 
-serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
-serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
-serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-x64
+serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
+
+serviceability/sa/ClhsdbCDSCore.java 8269982,8267433 macosx-aarch64,macosx-x64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core 8269982,8267433 macosx-aarch64,macosx-x64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8269982,8267433 macosx-aarch64,macosx-x64
+serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
+serviceability/sa/ClhsdbPstack.java#core 8269982,8267433 macosx-aarch64,macosx-x64
+serviceability/sa/TestJmapCore.java 8267433 macosx-x64
+serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
 
 #############################################################################
 
@@ -127,9 +147,9 @@ vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded004
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded005/TestDescription.java 8153598 generic-all
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Deadlock/JavaDeadlock001/TestDescription.java 8060733 generic-all
 
+vmTestbase/nsk/jdi/HiddenClass/events/events001.java                 8257705 generic-all
 vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all
-
-vmTestbase/nsk/jdb/eval/eval001/eval001.java 8221503 generic-all
+vmTestbase/nsk/jdi/TypeComponent/isSynthetic/issynthetic001/TestDescription.java 8277803 generic-all
 
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
@@ -140,6 +160,7 @@ vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 gener
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219652 aix-ppc64
+vmTestbase/nsk/jvmti/AttachOnDemand/attach002a/TestDescription.java 8277812 generic-all
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
 
@@ -151,7 +172,6 @@ vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8257761 ge
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_a/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all
-
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 

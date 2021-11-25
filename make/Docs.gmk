@@ -332,6 +332,12 @@ define SetupApiDocsGenerationBody
   $$(eval $$(call create_overview_file,$1))
   $1_OPTIONS += -overview $$($1_OVERVIEW)
 
+  # Add summary pages for new/deprecated APIs in recent releases
+  $1_OPTIONS += --since $(call CommaList, \
+      $(filter-out $(VERSION_DOCS_API_SINCE), \
+          $(call sequence, $(VERSION_DOCS_API_SINCE), $(VERSION_FEATURE))))
+  $1_OPTIONS += --since-label "New API since JDK $(VERSION_DOCS_API_SINCE)"
+
   $$(foreach g, $$($1_GROUPS), \
     $$(eval $1_OPTIONS += -group "$$($$g_GROUP_NAME)" "$$($$g_GROUP_MODULES)") \
   )

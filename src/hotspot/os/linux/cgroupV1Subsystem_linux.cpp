@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,4 +240,44 @@ int CgroupV1Subsystem::cpu_shares() {
   if (shares == 1024) return -1;
 
   return shares;
+}
+
+
+char* CgroupV1Subsystem::pids_max_val() {
+  GET_CONTAINER_INFO_CPTR(cptr, _pids, "/pids.max",
+                     "Maximum number of tasks is: %s", "%s %*d", pidsmax, 1024);
+  if (pidsmax == NULL) {
+    return NULL;
+  }
+  return os::strdup(pidsmax);
+}
+
+/* pids_max
+ *
+ * Return the maximum number of tasks available to the process
+ *
+ * return:
+ *    maximum number of tasks
+ *    -1 for unlimited
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV1Subsystem::pids_max() {
+  if (_pids == NULL) return OSCONTAINER_ERROR;
+  char * pidsmax_str = pids_max_val();
+  return limit_from_str(pidsmax_str);
+}
+
+/* pids_current
+ *
+ * The number of tasks currently in the cgroup (and its descendants) of the process
+ *
+ * return:
+ *    current number of tasks
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV1Subsystem::pids_current() {
+  if (_pids == NULL) return OSCONTAINER_ERROR;
+  GET_CONTAINER_INFO(jlong, _pids, "/pids.current",
+                     "Current number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pids_current);
+  return pids_current;
 }

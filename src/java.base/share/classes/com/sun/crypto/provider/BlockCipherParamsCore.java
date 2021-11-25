@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.io.*;
+import java.util.Arrays;
 import sun.security.util.*;
 import sun.security.util.HexDumpEncoder;
 import java.security.spec.AlgorithmParameterSpec;
@@ -48,8 +49,11 @@ final class BlockCipherParamsCore {
     private int block_size = 0;
     private byte[] iv = null;
 
-    BlockCipherParamsCore(int blksize) {
+    private int[] moreSizes = null;
+
+    BlockCipherParamsCore(int blksize, int... moreSizes) {
         block_size = blksize;
+        this.moreSizes = moreSizes;
     }
 
     void init(AlgorithmParameterSpec paramSpec)
@@ -59,9 +63,20 @@ final class BlockCipherParamsCore {
                 ("Inappropriate parameter specification");
         }
         byte[] tmpIv = ((IvParameterSpec)paramSpec).getIV();
-        if (tmpIv.length != block_size) {
-            throw new InvalidParameterSpecException("IV not " +
-                        block_size + " bytes long");
+        boolean check = (tmpIv.length == block_size);
+        if (!check && moreSizes != null) {
+            for (int s : moreSizes) {
+                if (tmpIv.length == s) {
+                    check = true;
+                    break;
+                }
+            }
+        }
+        if (!check) {
+            String expectedLen = block_size + (moreSizes == null? "" :
+                Arrays.toString(moreSizes));
+            throw new InvalidParameterSpecException("IV length not " +
+                        expectedLen + " bytes long");
         }
         iv = tmpIv.clone();
     }
@@ -73,15 +88,17 @@ final class BlockCipherParamsCore {
         if (der.available() != 0) {
             throw new IOException("IV parsing error: extra data");
         }
-        if (tmpIv.length != block_size) {
-            throw new IOException("IV not " + block_size +
+        boolean check = (tmpIv.length == block_size);
+        if (!check) {
+            String expectedLen = block_size + (moreSizes == null? "" :
+                Arrays.toString(moreSizes));
+            throw new IOException("IV not " + expectedLen +
                 " bytes long");
         }
         iv = tmpIv;
     }
 
-    void init(byte[] encoded, String decodingMethod)
-        throws IOException {
+    void init(byte[] encoded, String decodingMethod) throws IOException {
         if ((decodingMethod != null) &&
             (!decodingMethod.equalsIgnoreCase("ASN.1"))) {
             throw new IllegalArgumentException("Only support ASN.1 format");
@@ -90,8 +107,7 @@ final class BlockCipherParamsCore {
     }
 
     <T extends AlgorithmParameterSpec> T getParameterSpec(Class<T> paramSpec)
-        throws InvalidParameterSpecException
-    {
+        throws InvalidParameterSpecException {
         if (IvParameterSpec.class.isAssignableFrom(paramSpec)) {
             return paramSpec.cast(new IvParameterSpec(this.iv));
         } else {

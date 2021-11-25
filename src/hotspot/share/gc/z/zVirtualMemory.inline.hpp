@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZVIRTUALMEMORY_INLINE_HPP
 #define SHARE_GC_Z_ZVIRTUALMEMORY_INLINE_HPP
 
-#include "gc/z/zMemory.inline.hpp"
 #include "gc/z/zVirtualMemory.hpp"
+
+#include "gc/z/zMemory.inline.hpp"
 
 inline ZVirtualMemory::ZVirtualMemory() :
     _start(UINTPTR_MAX),
@@ -54,6 +55,14 @@ inline size_t ZVirtualMemory::size() const {
 inline ZVirtualMemory ZVirtualMemory::split(size_t size) {
   _start += size;
   return ZVirtualMemory(_start - size, size);
+}
+
+inline size_t ZVirtualMemoryManager::reserved() const {
+  return _reserved;
+}
+
+inline uintptr_t ZVirtualMemoryManager::lowest_available_address() const {
+  return _manager.peek_low_address();
 }
 
 #endif // SHARE_GC_Z_ZVIRTUALMEMORY_INLINE_HPP

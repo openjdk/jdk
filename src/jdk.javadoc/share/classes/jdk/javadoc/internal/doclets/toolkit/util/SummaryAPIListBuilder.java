@@ -59,8 +59,7 @@ public class SummaryAPIListBuilder {
         INTERFACE,
         CLASS,
         ENUM,
-        EXCEPTION,              // no ElementKind mapping
-        ERROR,                  // no ElementKind mapping
+        EXCEPTION_CLASS,        // no ElementKind mapping
         RECORD_CLASS,
         ANNOTATION_TYPE,
         FIELD,
@@ -84,7 +83,6 @@ public class SummaryAPIListBuilder {
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             summaryMap.put(kind, createSummarySet());
         }
-        buildSummaryAPIInfo();
     }
 
     public boolean isEmpty() {
@@ -96,64 +94,61 @@ public class SummaryAPIListBuilder {
      * Build separate lists for summary modules, packages, classes, constructors,
      * methods and fields.
      */
-    private void buildSummaryAPIInfo() {
+    protected void buildSummaryAPIInfo() {
         SortedSet<ModuleElement> modules = configuration.modules;
         SortedSet<Element> mset = summaryMap.get(SummaryElementKind.MODULE);
         for (Element me : modules) {
             if (belongsToSummary.test(me)) {
                 mset.add(me);
+                handleElement(me);
             }
-            handleElement(me);
         }
         SortedSet<PackageElement> packages = configuration.packages;
         SortedSet<Element> pset = summaryMap.get(SummaryElementKind.PACKAGE);
         for (Element pe : packages) {
             if (belongsToSummary.test(pe)) {
                 pset.add(pe);
+                handleElement(pe);
             }
-            handleElement(pe);
         }
-        for (Element e : configuration.getIncludedTypeElements()) {
-            TypeElement te = (TypeElement)e;
+        for (TypeElement te : configuration.getIncludedTypeElements()) {
             SortedSet<Element> eset;
-            if (belongsToSummary.test(e)) {
-                switch (e.getKind()) {
+            if (belongsToSummary.test(te)) {
+                switch (te.getKind()) {
                     case ANNOTATION_TYPE -> {
                         eset = summaryMap.get(SummaryElementKind.ANNOTATION_TYPE);
-                        eset.add(e);
+                        eset.add(te);
                     }
                     case CLASS -> {
-                        if (utils.isError(te)) {
-                            eset = summaryMap.get(SummaryElementKind.ERROR);
-                        } else if (utils.isException(te)) {
-                            eset = summaryMap.get(SummaryElementKind.EXCEPTION);
+                        if (utils.isThrowable(te)) {
+                            eset = summaryMap.get(SummaryElementKind.EXCEPTION_CLASS);
                         } else {
                             eset = summaryMap.get(SummaryElementKind.CLASS);
                         }
-                        eset.add(e);
+                        eset.add(te);
                     }
                     case INTERFACE -> {
                         eset = summaryMap.get(SummaryElementKind.INTERFACE);
-                        eset.add(e);
+                        eset.add(te);
                     }
                     case ENUM -> {
                         eset = summaryMap.get(SummaryElementKind.ENUM);
-                        eset.add(e);
+                        eset.add(te);
                     }
                     case RECORD -> {
                         eset = summaryMap.get(SummaryElementKind.RECORD_CLASS);
-                        eset.add(e);
+                        eset.add(te);
                     }
                 }
+                handleElement(te);
             }
-            handleElement(te);
             composeSummaryList(summaryMap.get(SummaryElementKind.FIELD),
                     utils.getFields(te));
             composeSummaryList(summaryMap.get(SummaryElementKind.METHOD),
                     utils.getMethods(te));
             composeSummaryList(summaryMap.get(SummaryElementKind.CONSTRUCTOR),
                     utils.getConstructors(te));
-            if (utils.isEnum(e)) {
+            if (utils.isEnum(te)) {
                 composeSummaryList(summaryMap.get(SummaryElementKind.ENUM_CONSTANT),
                         utils.getEnumConstants(te));
             }
@@ -166,7 +161,7 @@ public class SummaryAPIListBuilder {
                     }
                 }
             }
-            if (utils.isAnnotationType(e)) {
+            if (utils.isAnnotationType(te)) {
                 composeSummaryList(summaryMap.get(SummaryElementKind.ANNOTATION_TYPE_MEMBER),
                         utils.getAnnotationMembers(te));
 
@@ -184,8 +179,8 @@ public class SummaryAPIListBuilder {
         for (Element member : members) {
             if (belongsToSummary.test(member)) {
                 sset.add(member);
+                handleElement(member);
             }
-            handleElement(member);
         }
     }
 
@@ -209,7 +204,7 @@ public class SummaryAPIListBuilder {
     }
 
     /**
-     * Additional extra processing of an analyzed element.
+     * Additional extra processing of an included element.
      *
      * @param e element to process
      */

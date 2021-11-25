@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,9 +101,15 @@ public class KeyTab implements KeyTabConstants {
         } catch (FileNotFoundException e) {
             entries.clear();
             isMissing = true;
+            if (DEBUG) {
+                System.out.println("Cannot load keytab " + tabName + ": " + e);
+            }
         } catch (Exception ioe) {
             entries.clear();
             isValid = false;
+            if (DEBUG) {
+                System.out.println("Cannot load keytab " + tabName + ": " + ioe);
+            }
         }
     }
 
@@ -117,7 +123,7 @@ public class KeyTab implements KeyTabConstants {
      * @param s file name of keytab, must not be null
      * @return the keytab object, can be invalid, but never null.
      */
-    private synchronized static KeyTab getInstance0(String s) {
+    private static synchronized KeyTab getInstance0(String s) {
         long lm = new File(s).lastModified();
         KeyTab old = map.get(s);
         if (old != null && old.isValid() && old.lastModified == lm) {
@@ -423,7 +429,7 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Creates a new default key table.
      */
-    public synchronized static KeyTab create()
+    public static synchronized KeyTab create()
         throws IOException, RealmException {
         String dname = getDefaultTabName();
         return create(dname);
@@ -432,7 +438,7 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Creates a new default key table.
      */
-    public synchronized static KeyTab create(String name)
+    public static synchronized KeyTab create(String name)
         throws IOException, RealmException {
 
         try (KeyTabOutputStream kos =

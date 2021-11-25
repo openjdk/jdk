@@ -60,8 +60,8 @@ import sun.util.logging.PlatformLogger;
  *          java.logging
  * @build CustomSystemClassLoader LogProducerFinder LoggerBridgeTest
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader LoggerBridgeTest NOSECURITY
- * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader LoggerBridgeTest NOPERMISSIONS
- * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader LoggerBridgeTest WITHPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader LoggerBridgeTest NOPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader LoggerBridgeTest WITHPERMISSIONS
  * @author danielfuchs
  */
 public class LoggerBridgeTest {

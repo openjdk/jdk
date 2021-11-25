@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 /**
  * An extension to the base lexical analyzer (JavaTokenizer) that
  * captures and processes the contents of doc comments. It does
- * so by stripping the leading whitespace and comment starts from
+ * so by stripping the leading whitespace and comment stars from
  * each line of the Javadoc comment.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -89,7 +89,7 @@ public class JavadocTokenizer extends JavaTokenizer {
      */
     protected static class JavadocComment extends BasicComment {
         /**
-         * Pattern used to detect a well formed @deprecated tag in a JaavDoc
+         * Pattern used to detect a well formed @deprecated tag in a Javadoc
          * comment.
          */
         private static final Pattern DEPRECATED_PATTERN =
@@ -332,7 +332,9 @@ public class JavadocTokenizer extends JavaTokenizer {
         private int[] map;
 
         /**
-         * Logical size of map (number of valid entries.)
+         * Logical size of map.
+         * This is the number of occupied positions in {@code map},
+         * and equals {@code NOFFSETS} multiplied by the number of entries.
          */
         private int size;
 
@@ -349,25 +351,25 @@ public class JavadocTokenizer extends JavaTokenizer {
          * if there is a change in relative offset.
          *
          * @param sbOffset  comment offset member of pair.
-         * @param posOffet  input offset member of pair.
+         * @param posOffset  input offset member of pair.
          *
          * @return true if it is worthwhile adding the entry pair.
          */
-        boolean shouldAdd(int sbOffset, int posOffet) {
-            return sbOffset - lastSBOffset() != posOffet - lastPosOffset();
+        boolean shouldAdd(int sbOffset, int posOffset) {
+            return sbOffset - lastSBOffset() != posOffset - lastPosOffset();
         }
 
         /**
          * Adds entry pair if worthwhile.
          *
          * @param sbOffset  comment offset member of pair.
-         * @param posOffet  input offset member of pair.
+         * @param posOffset  input offset member of pair.
          */
-        void add(int sbOffset, int posOffet) {
-            if (size == 0 || shouldAdd(sbOffset, posOffet)) {
+        void add(int sbOffset, int posOffset) {
+            if (size == 0 || shouldAdd(sbOffset, posOffset)) {
                 ensure(NOFFSETS);
                 map[size + SB_OFFSET] = sbOffset;
-                map[size + POS_OFFSET] = posOffet;
+                map[size + POS_OFFSET] = posOffset;
                 size += NOFFSETS;
             }
         }

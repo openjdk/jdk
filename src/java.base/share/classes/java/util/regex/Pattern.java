@@ -755,6 +755,14 @@ import jdk.internal.util.ArraysSupport;
  *    within a group; in the latter case, flags are restored at the end of the
  *    group just as in Perl.  </p></li>
  *
+ *    <li><p><i>Free-spacing mode</i> in Perl (called <i>comments
+ *    mode</i> in this class) denoted by {@code (?x)} in the regular
+ *    expression (or by the {@link Pattern#COMMENTS} flag when compiling
+ *    the expression) will not ignore whitespace inside of character classes. In
+ *    this class, whitespace inside of character classes must be escaped to be
+ *    considered as part of the regular expression when in comments mode.
+ *    </p></li>
+ *
  * </ul>
  *
  *
@@ -816,7 +824,9 @@ public final class Pattern
      * Permits whitespace and comments in pattern.
      *
      * <p> In this mode, whitespace is ignored, and embedded comments starting
-     * with {@code #} are ignored until the end of a line.
+     * with {@code #} are ignored until the end of a line. Comments mode ignores
+     * whitespace within a character class contained in a pattern string. Such
+     * whitespace must be escaped in order to be considered significant.  </p>
      *
      * <p> Comments mode can also be enabled via the embedded flag
      * expression&nbsp;{@code (?x)}.
@@ -2343,30 +2353,19 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         boolean done = false;
         while(!done) {
             int ch = peek();
-            switch(ch) {
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                int newRefNum = (refNum * 10) + (ch - '0');
-                // Add another number if it doesn't make a group
-                // that doesn't exist
-                if (capturingGroupCount - 1 < newRefNum) {
-                    done = true;
-                    break;
+            switch (ch) {
+                case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
+                    int newRefNum = (refNum * 10) + (ch - '0');
+                    // Add another number if it doesn't make a group
+                    // that doesn't exist
+                    if (capturingGroupCount - 1 < newRefNum) {
+                        done = true;
+                        break;
+                    }
+                    refNum = newRefNum;
+                    read();
                 }
-                refNum = newRefNum;
-                read();
-                break;
-            default:
-                done = true;
-                break;
+                default -> done = true;
             }
         }
         hasGroupRef = true;
@@ -2973,89 +2972,86 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         if (ch == '?') {
             ch = skip();
             switch (ch) {
-            case ':':   //  (?:xxx) pure group
-                head = createGroup(true);
-                tail = root;
-                head.next = expr(tail);
-                break;
-            case '=':   // (?=xxx) and (?!xxx) lookahead
-            case '!':
-                head = createGroup(true);
-                tail = root;
-                head.next = expr(tail);
-                if (ch == '=') {
-                    head = tail = new Pos(head);
-                } else {
-                    head = tail = new Neg(head);
-                }
-                break;
-            case '>':   // (?>xxx)  independent group
-                head = createGroup(true);
-                tail = root;
-                head.next = expr(tail);
-                head = tail = new Ques(head, Qtype.INDEPENDENT);
-                break;
-            case '<':   // (?<xxx)  look behind
-                ch = read();
-                if (ch != '=' && ch != '!') {
-                    // named captured group
-                    String name = groupname(ch);
-                    if (namedGroups().containsKey(name))
-                        throw error("Named capturing group <" + name
-                                    + "> is already defined");
-                    capturingGroup = true;
-                    head = createGroup(false);
+                case ':' -> {   //  (?:xxx) pure group
+                    head = createGroup(true);
                     tail = root;
-                    namedGroups().put(name, capturingGroupCount-1);
                     head.next = expr(tail);
-                    break;
                 }
-                int start = cursor;
-                head = createGroup(true);
-                tail = root;
-                head.next = expr(tail);
-                tail.next = LookBehindEndNode.INSTANCE;
-                TreeInfo info = new TreeInfo();
-                head.study(info);
-                if (info.maxValid == false) {
-                    throw error("Look-behind group does not have "
-                                + "an obvious maximum length");
+                case '=', '!' -> {   // (?=xxx) and (?!xxx) lookahead
+                    head = createGroup(true);
+                    tail = root;
+                    head.next = expr(tail);
+                    if (ch == '=') {
+                        head = tail = new Pos(head);
+                    } else {
+                        head = tail = new Neg(head);
+                    }
                 }
-                boolean hasSupplementary = findSupplementary(start, patternLength);
-                if (ch == '=') {
-                    head = tail = (hasSupplementary ?
-                                   new BehindS(head, info.maxLength,
-                                               info.minLength) :
-                                   new Behind(head, info.maxLength,
-                                              info.minLength));
-                } else { // if (ch == '!')
-                    head = tail = (hasSupplementary ?
-                                   new NotBehindS(head, info.maxLength,
-                                                  info.minLength) :
-                                   new NotBehind(head, info.maxLength,
-                                                 info.minLength));
+                case '>' -> {   // (?>xxx)  independent group
+                    head = createGroup(true);
+                    tail = root;
+                    head.next = expr(tail);
+                    head = tail = new Ques(head, Qtype.INDEPENDENT);
                 }
-                // clear all top-closure-nodes inside lookbehind
-                if (saveTCNCount < topClosureNodes.size())
-                    topClosureNodes.subList(saveTCNCount, topClosureNodes.size()).clear();
-                break;
-            case '$':
-            case '@':
-                throw error("Unknown group type");
-            default:    // (?xxx:) inlined match flags
-                unread();
-                addFlag();
-                ch = read();
-                if (ch == ')') {
-                    return null;    // Inline modifier only
+                case '<' -> {   // (?<xxx)  look behind
+                    ch = read();
+                    if (ch != '=' && ch != '!') {
+                        // named captured group
+                        String name = groupname(ch);
+                        if (namedGroups().containsKey(name))
+                            throw error("Named capturing group <" + name
+                                        + "> is already defined");
+                        capturingGroup = true;
+                        head = createGroup(false);
+                        tail = root;
+                        namedGroups().put(name, capturingGroupCount - 1);
+                        head.next = expr(tail);
+                        break;
+                    }
+                    int start = cursor;
+                    head = createGroup(true);
+                    tail = root;
+                    head.next = expr(tail);
+                    tail.next = LookBehindEndNode.INSTANCE;
+                    TreeInfo info = new TreeInfo();
+                    head.study(info);
+                    if (info.maxValid == false) {
+                        throw error("Look-behind group does not have "
+                                    + "an obvious maximum length");
+                    }
+                    boolean hasSupplementary = findSupplementary(start, patternLength);
+                    if (ch == '=') {
+                        head = tail = (hasSupplementary ?
+                            new BehindS(head, info.maxLength,
+                                info.minLength) :
+                            new Behind(head, info.maxLength,
+                                info.minLength));
+                    } else { // if (ch == '!')
+                        head = tail = (hasSupplementary ?
+                            new NotBehindS(head, info.maxLength,
+                                info.minLength) :
+                            new NotBehind(head, info.maxLength,
+                                info.minLength));
+                    }
+                    // clear all top-closure-nodes inside lookbehind
+                    if (saveTCNCount < topClosureNodes.size())
+                        topClosureNodes.subList(saveTCNCount, topClosureNodes.size()).clear();
                 }
-                if (ch != ':') {
-                    throw error("Unknown inline modifier");
+                case '$', '@' -> throw error("Unknown group type");
+                default -> {    // (?xxx:) inlined match flags
+                    unread();
+                    addFlag();
+                    ch = read();
+                    if (ch == ')') {
+                        return null;    // Inline modifier only
+                    }
+                    if (ch != ':') {
+                        throw error("Unknown inline modifier");
+                    }
+                    head = createGroup(true);
+                    tail = root;
+                    head.next = expr(tail);
                 }
-                head = createGroup(true);
-                tail = root;
-                head.next = expr(tail);
-                break;
             }
         } else { // (xxx) a regular group
             capturingGroup = true;
@@ -3083,8 +3079,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         if (saveTCNCount < topClosureNodes.size())
             topClosureNodes.subList(saveTCNCount, topClosureNodes.size()).clear();
 
-        if (node instanceof Ques) {
-            Ques ques = (Ques) node;
+        if (node instanceof Ques ques) {
             if (ques.type == Qtype.POSSESSIVE) {
                 root = node;
                 return node;
@@ -3098,8 +3093,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             }
             root = tail;
             return head;
-        } else if (node instanceof Curly) {
-            Curly curly = (Curly) node;
+        } else if (node instanceof Curly curly) {
             if (curly.type == Qtype.POSSESSIVE) {
                 root = node;
                 return node;
@@ -3451,7 +3445,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         int length = seq.length();
         int x = index;
         if (lengthInCodePoints >= 0) {
-            assert (index >= 0 && index < length);
+            assert ((length == 0 && index == 0) || index >= 0 && index < length);
             for (int i = 0; x < length && i < lengthInCodePoints; i++) {
                 if (Character.isHighSurrogate(seq.charAt(x++))) {
                     if (x < length && Character.isLowSurrogate(seq.charAt(x))) {
@@ -5611,50 +5605,69 @@ NEXT:       while (i <= last) {
         }
     }
 
+    private static CharPredicate and(CharPredicate p1, CharPredicate p2,
+                                     boolean bmpChar) {
+        if (bmpChar) {
+            return (BmpCharPredicate)(ch -> p1.is(ch) && p2.is(ch));
+        } else {
+            return (CharPredicate)(ch -> p1.is(ch) && p2.is(ch));
+        }
+    }
+
+    private static CharPredicate union(CharPredicate p1, CharPredicate p2,
+                                       boolean bmpChar) {
+        if (bmpChar) {
+            return (BmpCharPredicate)(ch -> p1.is(ch) || p2.is(ch));
+        } else {
+            return (CharPredicate)(ch -> p1.is(ch) || p2.is(ch));
+        }
+    }
+
+    private static CharPredicate union(CharPredicate p1, CharPredicate p2,
+                                       CharPredicate p3, boolean bmpChar) {
+        if (bmpChar) {
+            return (BmpCharPredicate)(ch -> p1.is(ch) || p2.is(ch) || p3.is(ch));
+        } else {
+            return (CharPredicate)(ch -> p1.is(ch) || p2.is(ch) || p3.is(ch));
+        }
+    }
+
+    private static CharPredicate negate(CharPredicate p1) {
+        return (CharPredicate)(ch -> !p1.is(ch));
+    }
+
     @FunctionalInterface
     static interface CharPredicate {
         boolean is(int ch);
 
         default CharPredicate and(CharPredicate p) {
-            return ch -> is(ch) && p.is(ch);
+            return Pattern.and(this, p, false);
         }
         default CharPredicate union(CharPredicate p) {
-            return ch -> is(ch) || p.is(ch);
+            return Pattern.union(this, p, false);
         }
         default CharPredicate union(CharPredicate p1,
                                     CharPredicate p2) {
-            return ch -> is(ch) || p1.is(ch) || p2.is(ch);
+            return Pattern.union(this, p1, p2, false);
         }
         default CharPredicate negate() {
-            return ch -> !is(ch);
+            return Pattern.negate(this);
         }
     }
 
     static interface BmpCharPredicate extends CharPredicate {
 
         default CharPredicate and(CharPredicate p) {
-            if (p instanceof BmpCharPredicate)
-                return (BmpCharPredicate)(ch -> is(ch) && p.is(ch));
-            return ch -> is(ch) && p.is(ch);
+            return Pattern.and(this, p, p instanceof BmpCharPredicate);
         }
         default CharPredicate union(CharPredicate p) {
-            if (p instanceof BmpCharPredicate)
-                return (BmpCharPredicate)(ch -> is(ch) || p.is(ch));
-            return ch -> is(ch) || p.is(ch);
+            return Pattern.union(this, p, p instanceof BmpCharPredicate);
         }
-        static CharPredicate union(CharPredicate... predicates) {
-            CharPredicate cp = ch -> {
-                for (CharPredicate p : predicates) {
-                    if (!p.is(ch))
-                        return false;
-                }
-                return true;
-            };
-            for (CharPredicate p : predicates) {
-                if (! (p instanceof BmpCharPredicate))
-                    return cp;
-            }
-            return (BmpCharPredicate)cp;
+        default CharPredicate union(CharPredicate p1,
+                                    CharPredicate p2) {
+            return Pattern.union(this, p1, p2,
+                                 p1 instanceof BmpCharPredicate &&
+                                 p2 instanceof BmpCharPredicate);
         }
     }
 

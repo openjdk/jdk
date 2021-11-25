@@ -245,7 +245,6 @@ LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
     }
   } else {
     ShouldNotReachHere();
-    r = NULL;  // unreachable
   }
   return r;
 }
@@ -261,7 +260,7 @@ void LIRGenerator::increment_counter(address counter, BasicType type, int step) 
 
 
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
-  LIR_Opr imm = NULL;
+  LIR_Opr imm;
   switch(addr->type()) {
   case T_INT:
     imm = LIR_OprFact::intConst(step);
@@ -331,11 +330,6 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
 
   // "lock" stores the address of the monitor stack slot, so this is not an oop
   LIR_Opr lock = new_register(T_INT);
-  // Need a scratch register for biased locking
-  LIR_Opr scratch = LIR_OprFact::illegalOpr;
-  if (UseBiasedLocking) {
-    scratch = new_register(T_INT);
-  }
 
   CodeEmitInfo* info_for_exception = NULL;
   if (x->needs_null_check()) {
@@ -344,7 +338,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   // this CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expect object to be unlocked)
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, syncTempOpr(), scratch,
+  monitor_enter(obj.result(), lock, syncTempOpr(), LIR_OprFact::illegalOpr,
                         x->monitor_no(), info_for_exception, info);
 }
 
@@ -422,12 +416,8 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
     left.load_item();
 
   LIR_Opr reg = rlock(x);
-  LIR_Opr tmp = LIR_OprFact::illegalOpr;
-  if (x->is_strictfp() && (x->op() == Bytecodes::_dmul || x->op() == Bytecodes::_ddiv)) {
-    tmp = new_register(T_DOUBLE);
-  }
 
-  arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), x->is_strictfp());
+  arithmetic_op_fpu(x->op(), reg, left.result(), right.result());
 
   set_result(x, round_item(reg));
 }
@@ -778,14 +768,16 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   }
   switch (x->id()) {
     case vmIntrinsics::_dabs:
-    case vmIntrinsics::_dsqrt: {
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict: {
       assert(x->number_of_arguments() == 1, "wrong type");
       LIRItem value(x->argument_at(0), this);
       value.load_item();
       LIR_Opr dst = rlock_result(x);
 
       switch (x->id()) {
-        case vmIntrinsics::_dsqrt: {
+        case vmIntrinsics::_dsqrt:
+        case vmIntrinsics::_dsqrt_strict: {
           __ sqrt(value.result(), dst, LIR_OprFact::illegalOpr);
           break;
         }
@@ -968,10 +960,6 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
         index = tmp;
       }
 
-      if (is_updateBytes) {
-        base_op = access_resolve(ACCESS_READ, base_op);
-      }
-
       if (offset) {
         LIR_Opr tmp = new_pointer_register();
         __ add(base_op, LIR_OprFact::intConst(offset), tmp);
@@ -1048,10 +1036,6 @@ void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
         LIR_Opr tmp = new_register(T_LONG);
         __ convert(Bytecodes::_i2l, index, tmp);
         index = tmp;
-      }
-
-      if (is_updateBytes) {
-        base_op = access_resolve(ACCESS_READ, base_op);
       }
 
       if (offset) {
@@ -1144,8 +1128,8 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr reg = result_register_for(x->type());
   new_instance(reg, x->klass(), x->is_unresolved(),
-                       FrameMap::r2_oop_opr,
-                       FrameMap::r5_oop_opr,
+                       FrameMap::r10_oop_opr,
+                       FrameMap::r11_oop_opr,
                        FrameMap::r4_oop_opr,
                        LIR_OprFact::illegalOpr,
                        FrameMap::r3_metadata_opr, info);
@@ -1160,8 +1144,8 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   length.load_item_force(FrameMap::r19_opr);
 
   LIR_Opr reg = result_register_for(x->type());
-  LIR_Opr tmp1 = FrameMap::r2_oop_opr;
-  LIR_Opr tmp2 = FrameMap::r4_oop_opr;
+  LIR_Opr tmp1 = FrameMap::r10_oop_opr;
+  LIR_Opr tmp2 = FrameMap::r11_oop_opr;
   LIR_Opr tmp3 = FrameMap::r5_oop_opr;
   LIR_Opr tmp4 = reg;
   LIR_Opr klass_reg = FrameMap::r3_metadata_opr;
@@ -1189,8 +1173,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   CodeEmitInfo* info = state_for(x, x->state());
 
   LIR_Opr reg = result_register_for(x->type());
-  LIR_Opr tmp1 = FrameMap::r2_oop_opr;
-  LIR_Opr tmp2 = FrameMap::r4_oop_opr;
+  LIR_Opr tmp1 = FrameMap::r10_oop_opr;
+  LIR_Opr tmp2 = FrameMap::r11_oop_opr;
   LIR_Opr tmp3 = FrameMap::r5_oop_opr;
   LIR_Opr tmp4 = reg;
   LIR_Opr klass_reg = FrameMap::r3_metadata_opr;

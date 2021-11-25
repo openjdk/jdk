@@ -37,7 +37,7 @@ import org.xml.sax.helpers.NamespaceSupport;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.NSSupportTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.xml.sax.ptests.NSSupportTest
  * @run testng/othervm org.xml.sax.ptests.NSSupportTest
  */
 @Listeners({jaxp.library.BasePolicy.class})

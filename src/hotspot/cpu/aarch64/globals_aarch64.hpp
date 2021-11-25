@@ -39,7 +39,6 @@ define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap NULLs 
 define_pd_global(uintx, CodeCacheSegmentSize,    64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
 define_pd_global(intx, CodeEntryAlignment,       64);
 define_pd_global(intx, OptoLoopAlignment,        16);
-define_pd_global(intx, InlineFrequencyCount,     100);
 
 #define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)
@@ -111,7 +110,15 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(int, SoftwarePrefetchHintDistance, -1,                        \
           "Use prfm hint with specified distance in compiled code."     \
           "Value -1 means off.")                                        \
-          range(-1, 4096)
+          range(-1, 4096)                                               \
+  product(ccstr, OnSpinWaitInst, "none", DIAGNOSTIC,                    \
+          "The instruction to use to implement "                        \
+          "java.lang.Thread.onSpinWait()."                              \
+          "Options: none, nop, isb, yield.")                            \
+  product(uint, OnSpinWaitInstCount, 1, DIAGNOSTIC,                     \
+          "The number of OnSpinWaitInst instructions to generate."      \
+          "It cannot be used with OnSpinWaitInst=none.")                \
+          range(1, 99)
 
 // end of ARCH_FLAGS
 

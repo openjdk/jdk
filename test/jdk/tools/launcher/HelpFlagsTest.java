@@ -47,7 +47,9 @@ public class HelpFlagsTest extends TestHelper {
     static final String[] TOOLS_NOT_TO_TEST = {
         "appletviewer",     // deprecated, don't test
         "jaccessinspector", // gui, don't test, win only
+        "jaccessinspector-32", // gui, don't test, win-32 only
         "jaccesswalker",    // gui, don't test, win only
+        "jaccesswalker-32", // gui, don't test, win-32 only
         "jconsole",         // gui, don't test
         "servertool",       // none. Shell, don't test.
         "javaw",            // don't test, win only
@@ -146,7 +148,6 @@ public class HelpFlagsTest extends TestHelper {
         new ToolHelpSpec("jstat",       1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
         new ToolHelpSpec("jstatd",      1,   1,   1,   0,         0,    0,     1),     // -?, -h, --help
         new ToolHelpSpec("keytool",     1,   1,   1,   0,         1,    0,     1),     // none, prints help message anyways.
-        new ToolHelpSpec("rmid",        0,   0,   0,   0,         0,    0,     1),     // none, prints help message anyways.
         new ToolHelpSpec("rmiregistry", 0,   0,   0,   0,         0,    0,     1),     // none, prints help message anyways.
         new ToolHelpSpec("serialver",   0,   0,   0,   0,         0,    0,     1),     // none, prints help message anyways.
         new ToolHelpSpec("jpackage",    0,   1,   1,   0,         0,    1,     1),     //     -h, --help,

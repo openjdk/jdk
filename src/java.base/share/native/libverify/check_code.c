@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3244,6 +3244,7 @@ merge_stack(context_type *context, unsigned int from_inumber,
         jboolean change = JNI_FALSE;
         for (old = stack, new = new_stack; old != NULL;
                    old = old->next, new = new->next) {
+            assert(new != NULL);
             if (!isAssignableTo(context, new->item, old->item)) {
                 change = JNI_TRUE;
                 break;
@@ -3821,7 +3822,7 @@ signature_to_fieldtype(context_type *context,
                 assert(finish >= p);
                 length = (int)(finish - p);
                 if (length + 1 > (int)sizeof(buffer_space)) {
-                    buffer = malloc(length + 1);
+                    buffer = calloc(length + 1, sizeof(char));
                     check_and_push(context, buffer, VM_MALLOC_BLK);
                 }
                 memcpy(buffer, p, length);

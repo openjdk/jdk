@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ package sun.util.locale;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
+import sun.security.action.GetPropertyAction;
 
 import java.lang.ref.SoftReference;
 import java.util.StringJoiner;
@@ -98,6 +99,13 @@ public final class BaseLocale {
 
     private volatile int hash;
 
+    /**
+     * Boolean for the old ISO language code compatibility.
+     */
+    private static final boolean OLD_ISO_CODES = GetPropertyAction.privilegedGetProperties()
+            .getProperty("java.locale.useOldISOCodes", "false")
+            .equalsIgnoreCase("true");
+
     // This method must be called with normalize = false only when creating the
     // Locale.* constants and non-normalized BaseLocale$Keys used for lookup.
     private BaseLocale(String language, String script, String region, String variant,
@@ -131,7 +139,7 @@ public final class BaseLocale {
             region = "";
         }
         if (language == null) {
-            language = null;
+            language = "";
         }
         if (variant == null) {
             variant = "";
@@ -153,17 +161,20 @@ public final class BaseLocale {
 
         // JDK uses deprecated ISO639.1 language codes for he, yi and id
         if (!language.isEmpty()) {
-            if (language.equals("he")) {
-                language = "iw";
-            } else if (language.equals("yi")) {
-                language = "ji";
-            } else if (language.equals("id")) {
-                language = "in";
-            }
+            language = convertOldISOCodes(language);
         }
 
         Key key = new Key(language, script, region, variant, false);
         return Cache.CACHE.get(key);
+    }
+
+    public static String convertOldISOCodes(String language) {
+        return switch (language) {
+            case "he", "iw" -> OLD_ISO_CODES ? "iw" : "he";
+            case "id", "in" -> OLD_ISO_CODES ? "in" : "id";
+            case "yi", "ji" -> OLD_ISO_CODES ? "ji" : "yi";
+            default -> language;
+        };
     }
 
     public String getLanguage() {

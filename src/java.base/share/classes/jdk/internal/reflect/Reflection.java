@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.Set;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /** Common utility routines used by both java.lang and
@@ -103,6 +104,14 @@ public class Reflection {
     {
         if (!verifyMemberAccess(currentClass, memberClass, targetClass, modifiers)) {
             throw newIllegalAccessException(currentClass, memberClass, targetClass, modifiers);
+        }
+    }
+
+    @ForceInline
+    public static void ensureNativeAccess(Class<?> currentClass) {
+        Module module = currentClass.getModule();
+        if (!SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module)) {
+            throw new IllegalCallerException("Illegal native access from: " + module);
         }
     }
 

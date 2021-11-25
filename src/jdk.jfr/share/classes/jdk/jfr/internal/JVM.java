@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,9 +142,6 @@ public final class JVM {
     @IntrinsicCandidate
     public static native long getClassId(Class<?> clazz);
 
-    // temporary workaround until we solve intrinsics supporting epoch shift tagging
-    public static native long getClassIdNonIntrinsic(Class<?> clazz);
-
     /**
      * Return process identifier.
      *
@@ -214,7 +211,7 @@ public final class JVM {
      *
      * @throws IllegalStateException if wrong JVMTI phase.
      */
-    public native synchronized void retransformClasses(Class<?>[] classes);
+    public synchronized native void retransformClasses(Class<?>[] classes);
 
     /**
      * Enable event

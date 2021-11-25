@@ -1387,6 +1387,7 @@ inline unsigned int Assembler::get_instruction(unsigned char *pc, unsigned long 
       // The length as returned from instr_len() can only be 2, 4, or 6 bytes.
       // Having a default clause makes the compiler happy.
       ShouldNotReachHere();
+      *instr = 0L; // This assignment is there to make gcc8 happy.
       break;
   }
   return len;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 
@@ -44,20 +44,20 @@ import jdk.jpackage.test.PackageType;
  * @build LicenseTypeTest
  * @requires (os.family == "linux")
  * @modules jdk.jpackage/jdk.jpackage.internal
- * @run main/othervm/timeout=360 -Xmx512m LicenseTypeTest
+ * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=LicenseTypeTest
  */
 public class LicenseTypeTest {
 
-    public static void main(String[] args) {
+    @Test
+    public static void test() {
         final String LICENSE_TYPE = "JP_LICENSE_TYPE";
 
-        TKit.run(args, () -> {
-            new PackageTest().forTypes(PackageType.LINUX_RPM).configureHelloApp()
-            .addInitializer(cmd -> {
-                cmd.addArguments("--linux-rpm-license-type", LICENSE_TYPE);
-            })
-            .addBundlePropertyVerifier("License", LICENSE_TYPE)
-            .run();
-        });
+        new PackageTest().forTypes(PackageType.LINUX_RPM).configureHelloApp()
+                .addInitializer(cmd -> {
+                    cmd.addArguments("--linux-rpm-license-type", LICENSE_TYPE);
+                })
+                .addBundlePropertyVerifier("License", LICENSE_TYPE)
+                .run();
     }
 }

@@ -1190,7 +1190,7 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitSwitch(JCSwitch tree) {
-        handleSwitch(tree, tree.selector, tree.cases);
+        handleSwitch(tree, tree.selector, tree.cases, tree.patternSwitch);
     }
 
     @Override
@@ -1235,7 +1235,7 @@ public class Gen extends JCTree.Visitor {
             }
             int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
             try {
-                handleSwitch(tree, tree.selector, tree.cases);
+                handleSwitch(tree, tree.selector, tree.cases, tree.patternSwitch);
             } finally {
                 code.setLetExprStackPos(prevLetExprStart);
             }
@@ -1265,9 +1265,11 @@ public class Gen extends JCTree.Visitor {
             return hasTry[0];
         }
 
-    private void handleSwitch(JCTree swtch, JCExpression selector, List<JCCase> cases) {
+    private void handleSwitch(JCTree swtch, JCExpression selector, List<JCCase> cases,
+                              boolean patternSwitch) {
         int limit = code.nextreg;
         Assert.check(!selector.type.hasTag(CLASS));
+        int switchStart = patternSwitch ? code.entryPoint() : -1;
         int startpcCrt = genCrt ? code.curCP() : 0;
         Assert.check(code.isStatementStart());
         Item sel = genExpr(selector, syms.intType);
@@ -1297,9 +1299,9 @@ public class Gen extends JCTree.Visitor {
 
             List<JCCase> l = cases;
             for (int i = 0; i < labels.length; i++) {
-                if (l.head.pats.nonEmpty()) {
-                    Assert.check(l.head.pats.size() == 1);
-                    int val = ((Number)l.head.pats.head.type.constValue()).intValue();
+                if (l.head.labels.head.isExpression()) {
+                    Assert.check(l.head.labels.size() == 1);
+                    int val = ((Number)((JCExpression) l.head.labels.head).type.constValue()).intValue();
                     labels[i] = val;
                     if (val < lo) lo = val;
                     if (hi < val) hi = val;
@@ -1369,6 +1371,11 @@ public class Gen extends JCTree.Visitor {
 
                 // Generate code for the statements in this case.
                 genStats(c.stats, switchEnv, CRT_FLOW_TARGET);
+            }
+
+            if (switchEnv.info.cont != null) {
+                Assert.check(patternSwitch);
+                code.resolve(switchEnv.info.cont, switchStart);
             }
 
             // Resolve all breaks.
@@ -1503,8 +1510,8 @@ public class Gen extends JCTree.Visitor {
     //where
         /** Generate code for a try or synchronized statement
          *  @param body      The body of the try or synchronized statement.
-         *  @param catchers  The lis of catch clauses.
-         *  @param env       the environment current for the body.
+         *  @param catchers  The list of catch clauses.
+         *  @param env       The current environment of the body.
          */
         void genTry(JCTree body, List<JCCatch> catchers, Env<GenContext> env) {
             int limit = code.nextreg;
@@ -1516,7 +1523,13 @@ public class Gen extends JCTree.Visitor {
             code.statBegin(TreeInfo.endPos(body));
             genFinalizer(env);
             code.statBegin(TreeInfo.endPos(env.tree));
-            Chain exitChain = code.branch(goto_);
+            Chain exitChain;
+            boolean actualTry = env.tree.hasTag(TRY);
+            if (startpc == endpc && actualTry) {
+                exitChain = code.branch(dontgoto);
+            } else {
+                exitChain = code.branch(goto_);
+            }
             endFinalizerGap(env);
             env.info.finalize.afterBody();
             boolean hasFinalizer =
@@ -1534,7 +1547,7 @@ public class Gen extends JCTree.Visitor {
                 }
                 endFinalizerGap(env);
             }
-            if (hasFinalizer) {
+            if (hasFinalizer && (startpc != endpc || !actualTry)) {
                 // Create a new register segment to avoid allocating
                 // the same variables in finalizers and other statements.
                 code.newRegSegment();

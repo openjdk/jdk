@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1940,31 +1940,20 @@ void ArchDesc::declareClasses(FILE *fp) {
       // it doesn't understand what that might alias.
       fprintf(fp,"  const Type            *bottom_type() const { return TypeRawPtr::BOTTOM; } // Box?\n");
     }
-    else if( instr->_matrule && instr->_matrule->_rChild && !strcmp(instr->_matrule->_rChild->_opType,"CMoveP") ) {
+    else if (instr->_matrule && instr->_matrule->_rChild &&
+              (!strcmp(instr->_matrule->_rChild->_opType,"CMoveP") || !strcmp(instr->_matrule->_rChild->_opType,"CMoveN")) ) {
       int offset = 1;
       // Special special hack to see if the Cmp? has been incorporated in the conditional move
       MatchNode *rl = instr->_matrule->_rChild->_lChild;
-      if( rl && !strcmp(rl->_opType, "Binary") ) {
-          MatchNode *rlr = rl->_rChild;
-          if (rlr && strncmp(rlr->_opType, "Cmp", 3) == 0)
-            offset = 2;
+      if (rl && !strcmp(rl->_opType, "Binary") && rl->_rChild && strncmp(rl->_rChild->_opType, "Cmp", 3) == 0) {
+        offset = 2;
+        fprintf(fp,"  const Type            *bottom_type() const { if (req() == 3) return in(2)->bottom_type();\n\tconst Type *t = in(oper_input_base()+%d)->bottom_type(); return (req() <= oper_input_base()+%d) ? t : t->meet(in(oper_input_base()+%d)->bottom_type()); } // %s\n",
+        offset, offset+1, offset+1, instr->_matrule->_rChild->_opType);
+      } else {
+        // Special hack for ideal CMove; ideal type depends on inputs
+        fprintf(fp,"  const Type            *bottom_type() const { const Type *t = in(oper_input_base()+%d)->bottom_type(); return (req() <= oper_input_base()+%d) ? t : t->meet(in(oper_input_base()+%d)->bottom_type()); } // %s\n",
+        offset, offset+1, offset+1, instr->_matrule->_rChild->_opType);
       }
-      // Special hack for ideal CMoveP; ideal type depends on inputs
-      fprintf(fp,"  const Type            *bottom_type() const { const Type *t = in(oper_input_base()+%d)->bottom_type(); return (req() <= oper_input_base()+%d) ? t : t->meet(in(oper_input_base()+%d)->bottom_type()); } // CMoveP\n",
-        offset, offset+1, offset+1);
-    }
-    else if( instr->_matrule && instr->_matrule->_rChild && !strcmp(instr->_matrule->_rChild->_opType,"CMoveN") ) {
-      int offset = 1;
-      // Special special hack to see if the Cmp? has been incorporated in the conditional move
-      MatchNode *rl = instr->_matrule->_rChild->_lChild;
-      if( rl && !strcmp(rl->_opType, "Binary") ) {
-          MatchNode *rlr = rl->_rChild;
-          if (rlr && strncmp(rlr->_opType, "Cmp", 3) == 0)
-            offset = 2;
-      }
-      // Special hack for ideal CMoveN; ideal type depends on inputs
-      fprintf(fp,"  const Type            *bottom_type() const { const Type *t = in(oper_input_base()+%d)->bottom_type(); return (req() <= oper_input_base()+%d) ? t : t->meet(in(oper_input_base()+%d)->bottom_type()); } // CMoveN\n",
-        offset, offset+1, offset+1);
     }
     else if (instr->is_tls_instruction()) {
       // Special hack for tlsLoadP

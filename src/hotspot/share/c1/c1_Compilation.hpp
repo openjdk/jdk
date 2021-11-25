@@ -49,11 +49,9 @@ class CodeEmitInfo;
 class ciEnv;
 class ciMethod;
 class ValueStack;
-class LIR_OprDesc;
 class C1_MacroAssembler;
 class CFGPrinter;
 class CFGPrinterOutput;
-typedef LIR_OprDesc* LIR_Opr;
 
 typedef GrowableArray<BasicType> BasicTypeArray;
 typedef GrowableArray<BasicType> BasicTypeList;
@@ -228,8 +226,6 @@ class Compilation: public StackObj {
     return env()->comp_level() == CompLevel_full_profile ||
            env()->comp_level() == CompLevel_limited_profile;
   }
-  bool count_invocations() { return is_profiling(); }
-  bool count_backedges()   { return is_profiling(); }
 
   // Helpers for generation of profile information
   bool profile_branches() {

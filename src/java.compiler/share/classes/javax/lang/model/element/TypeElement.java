@@ -108,6 +108,7 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @jls 8.8.9 Default Constructor
      * @jls 8.9.3 Enum Members
+     * @jls 8.10.3 Record Members
      */
     @Override
     List<? extends Element> getEnclosedElements();
@@ -207,10 +208,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @return the permitted classes, or an empty list if there are none
      *
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES,
-                                 reflective=true)
     default List<? extends TypeMirror> getPermittedSubclasses() {
         return List.of();
     }

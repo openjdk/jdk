@@ -49,7 +49,7 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 6206491
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6206491
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6206491
  * @run testng/othervm transform.Bug6206491
  * @summary Test key searches over more than one document.
  */

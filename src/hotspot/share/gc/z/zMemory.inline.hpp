@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZMEMORY_INLINE_HPP
 #define SHARE_GC_Z_ZMEMORY_INLINE_HPP
 
-#include "gc/z/zList.inline.hpp"
 #include "gc/z/zMemory.hpp"
+
+#include "gc/z/zList.inline.hpp"
 #include "utilities/debug.hpp"
 
 inline ZMemory::ZMemory(uintptr_t start, size_t size) :

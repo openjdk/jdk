@@ -571,7 +571,6 @@ void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
 #if INCLUDE_CDS
   if (klass->is_shared()) {
     assert(!klass->is_rewritten(), "rewritten shared classes cannot be rewritten again");
-    assert(MetaspaceShared::is_old_class(klass), "only shared old classes aren't rewritten");
   }
 #endif // INCLUDE_CDS
   ResourceMark rm(THREAD);

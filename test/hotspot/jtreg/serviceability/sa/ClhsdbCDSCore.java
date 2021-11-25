@@ -125,8 +125,8 @@ public class ClhsdbCDSCore {
 
             List testJavaOpts = Arrays.asList(Utils.getTestJavaOpts());
 
-            if (testJavaOpts.contains("-Xcomp") && testJavaOpts.contains("-XX:TieredStopAtLevel=1")) {
-                // No MDOs are allocated in -XX:TieredStopAtLevel=1 + -Xcomp mode
+            if (testJavaOpts.contains("-XX:TieredStopAtLevel=1")) {
+                // No MDOs are allocated in -XX:TieredStopAtLevel=1
                 // The reason is methods being compiled aren't hot enough
                 // Let's not call printmdo in such scenario
                 cmds = List.of("printall", "jstack -v");

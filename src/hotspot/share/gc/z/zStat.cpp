@@ -31,6 +31,7 @@
 #include "gc/z/zPageAllocator.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zThread.inline.hpp"
 #include "gc/z/zTracer.inline.hpp"
 #include "gc/z/zUtils.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -736,8 +737,13 @@ ZStatSubPhase::ZStatSubPhase(const char* name) :
     ZStatPhase("Subphase", name) {}
 
 void ZStatSubPhase::register_start(const Ticks& start) const {
-  LogTarget(Debug, gc, phases, start) log;
-  log_start(log, true /* thread */);
+  if (ZThread::is_worker()) {
+    LogTarget(Trace, gc, phases, start) log;
+    log_start(log, true /* thread */);
+  } else {
+    LogTarget(Debug, gc, phases, start) log;
+    log_start(log, false /* thread */);
+  }
 }
 
 void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
@@ -750,8 +756,13 @@ void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  LogTarget(Debug, gc, phases) log;
-  log_end(log, duration, true /* thread */);
+  if (ZThread::is_worker()) {
+    LogTarget(Trace, gc, phases) log;
+    log_end(log, duration, true /* thread */);
+  } else {
+    LogTarget(Debug, gc, phases) log;
+    log_end(log, duration, false /* thread */);
+  }
 }
 
 ZStatCriticalPhase::ZStatCriticalPhase(const char* name, bool verbose) :
@@ -760,8 +771,10 @@ ZStatCriticalPhase::ZStatCriticalPhase(const char* name, bool verbose) :
     _verbose(verbose) {}
 
 void ZStatCriticalPhase::register_start(const Ticks& start) const {
-  LogTarget(Debug, gc, start) log;
-  log_start(log, true /* thread */);
+  // This is called from sensitive contexts, for example before an allocation stall
+  // has been resolved. This means we must not access any oops in here since that
+  // could lead to infinite recursion. Without access to the thread name we can't
+  // really log anything useful here.
 }
 
 void ZStatCriticalPhase::register_end(const Ticks& start, const Ticks& end) const {
@@ -830,8 +843,8 @@ void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment) {
 // Stat allocation rate
 //
 const ZStatUnsampledCounter ZStatAllocRate::_counter("Allocation Rate");
-TruncatedSeq                ZStatAllocRate::_rate(ZStatAllocRate::sample_window_sec * ZStatAllocRate::sample_hz);
-TruncatedSeq                ZStatAllocRate::_rate_avg(ZStatAllocRate::sample_window_sec * ZStatAllocRate::sample_hz);
+TruncatedSeq                ZStatAllocRate::_samples(ZStatAllocRate::sample_hz);
+TruncatedSeq                ZStatAllocRate::_rate(ZStatAllocRate::sample_hz);
 
 const ZStatUnsampledCounter& ZStatAllocRate::counter() {
   return _counter;
@@ -839,20 +852,24 @@ const ZStatUnsampledCounter& ZStatAllocRate::counter() {
 
 uint64_t ZStatAllocRate::sample_and_reset() {
   const ZStatCounterData bytes_per_sample = _counter.collect_and_reset();
-  const uint64_t bytes_per_second = bytes_per_sample._counter * sample_hz;
+  _samples.add(bytes_per_sample._counter);
 
+  const uint64_t bytes_per_second = _samples.sum();
   _rate.add(bytes_per_second);
-  _rate_avg.add(_rate.avg());
 
   return bytes_per_second;
+}
+
+double ZStatAllocRate::predict() {
+  return _rate.predict_next();
 }
 
 double ZStatAllocRate::avg() {
   return _rate.avg();
 }
 
-double ZStatAllocRate::avg_sd() {
-  return _rate_avg.sd();
+double ZStatAllocRate::sd() {
+  return _rate.sd();
 }
 
 //
@@ -1058,25 +1075,30 @@ public:
 uint64_t  ZStatCycle::_nwarmup_cycles = 0;
 Ticks     ZStatCycle::_start_of_last;
 Ticks     ZStatCycle::_end_of_last;
-NumberSeq ZStatCycle::_normalized_duration(0.7 /* alpha */);
+NumberSeq ZStatCycle::_serial_time(0.7 /* alpha */);
+NumberSeq ZStatCycle::_parallelizable_time(0.7 /* alpha */);
+uint      ZStatCycle::_last_active_workers = 0;
 
 void ZStatCycle::at_start() {
   _start_of_last = Ticks::now();
 }
 
-void ZStatCycle::at_end(GCCause::Cause cause, double boost_factor) {
+void ZStatCycle::at_end(GCCause::Cause cause, uint active_workers) {
   _end_of_last = Ticks::now();
 
   if (cause == GCCause::_z_warmup) {
     _nwarmup_cycles++;
   }
 
-  // Calculate normalized cycle duration. The measured duration is
-  // normalized using the boost factor to avoid artificial deflation
-  // of the duration when boost mode is enabled.
+  _last_active_workers = active_workers;
+
+  // Calculate serial and parallelizable GC cycle times
   const double duration = (_end_of_last - _start_of_last).seconds();
-  const double normalized_duration = duration * boost_factor;
-  _normalized_duration.add(normalized_duration);
+  const double workers_duration = ZStatWorkers::get_and_reset_duration();
+  const double serial_time = duration - workers_duration;
+  const double parallelizable_time = workers_duration * active_workers;
+  _serial_time.add(serial_time);
+  _parallelizable_time.add(parallelizable_time);
 }
 
 bool ZStatCycle::is_warm() {
@@ -1087,14 +1109,22 @@ uint64_t ZStatCycle::nwarmup_cycles() {
   return _nwarmup_cycles;
 }
 
-bool ZStatCycle::is_normalized_duration_trustable() {
-  // The normalized duration is considered trustable if we have
-  // completed at least one warmup cycle
+bool ZStatCycle::is_time_trustable() {
+  // The times are considered trustable if we
+  // have completed at least one warmup cycle.
   return _nwarmup_cycles > 0;
 }
 
-const AbsSeq& ZStatCycle::normalized_duration() {
-  return _normalized_duration;
+const AbsSeq& ZStatCycle::serial_time() {
+  return _serial_time;
+}
+
+const AbsSeq& ZStatCycle::parallelizable_time() {
+  return _parallelizable_time;
+}
+
+uint ZStatCycle::last_active_workers() {
+  return _last_active_workers;
 }
 
 double ZStatCycle::time_since_last() {
@@ -1106,6 +1136,29 @@ double ZStatCycle::time_since_last() {
   const Ticks now = Ticks::now();
   const Tickspan time_since_last = now - _end_of_last;
   return time_since_last.seconds();
+}
+
+//
+// Stat workers
+//
+Ticks ZStatWorkers::_start_of_last;
+Tickspan ZStatWorkers::_accumulated_duration;
+
+void ZStatWorkers::at_start() {
+  _start_of_last = Ticks::now();
+}
+
+void ZStatWorkers::at_end() {
+  const Ticks now = Ticks::now();
+  const Tickspan duration = now - _start_of_last;
+  _accumulated_duration += duration;
+}
+
+double ZStatWorkers::get_and_reset_duration() {
+  const double duration = _accumulated_duration.seconds();
+  const Ticks now = Ticks::now();
+  _accumulated_duration = now - now;
+  return duration;
 }
 
 //
@@ -1125,6 +1178,7 @@ size_t ZStatMark::_nproactiveflush;
 size_t ZStatMark::_nterminateflush;
 size_t ZStatMark::_ntrycomplete;
 size_t ZStatMark::_ncontinue;
+size_t ZStatMark::_mark_stack_usage;
 
 void ZStatMark::set_at_mark_start(size_t nstripes) {
   _nstripes = nstripes;
@@ -1140,6 +1194,10 @@ void ZStatMark::set_at_mark_end(size_t nproactiveflush,
   _ncontinue = ncontinue;
 }
 
+void ZStatMark::set_at_mark_free(size_t mark_stack_usage) {
+  _mark_stack_usage = mark_stack_usage;
+}
+
 void ZStatMark::print() {
   log_info(gc, marking)("Mark: "
                         SIZE_FORMAT " stripe(s), "
@@ -1152,6 +1210,8 @@ void ZStatMark::print() {
                         _nterminateflush,
                         _ntrycomplete,
                         _ncontinue);
+
+  log_info(gc, marking)("Mark Stack Usage: " SIZE_FORMAT "M", _mark_stack_usage / M);
 }
 
 //
@@ -1211,12 +1271,13 @@ void ZStatNMethods::print() {
 // Stat metaspace
 //
 void ZStatMetaspace::print() {
+  MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
   log_info(gc, metaspace)("Metaspace: "
                           SIZE_FORMAT "M used, "
                           SIZE_FORMAT "M committed, " SIZE_FORMAT "M reserved",
-                          MetaspaceUtils::used_bytes() / M,
-                          MetaspaceUtils::committed_bytes() / M,
-                          MetaspaceUtils::reserved_bytes() / M);
+                          stats.used() / M,
+                          stats.committed() / M,
+                          stats.reserved() / M);
 }
 
 //

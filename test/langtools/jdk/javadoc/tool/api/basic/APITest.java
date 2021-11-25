@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,9 @@ class APITest {
             missing.removeAll(foundFiles);
             if (!missing.isEmpty())
                 error("the following files were not found in " + where + ": " + missing);
-            Set<String> unexpected = new TreeSet<String>(foundFiles);
+            Set<String> unexpected = foundFiles.stream()
+                    .filter(p -> !p.startsWith("legal"))
+                    .collect(Collectors.toCollection(TreeSet::new));
             unexpected.removeAll(expectFiles);
             if (!unexpected.isEmpty())
                 error("the following unexpected files were found in " + where + ": " + unexpected);
@@ -194,6 +196,7 @@ class APITest {
             "allclasses-index.html",
             "allpackages-index.html",
             "constant-values.html",
+            "copy.svg",
             "deprecated-list.html",
             "help-doc.html",
             "index-all.html",

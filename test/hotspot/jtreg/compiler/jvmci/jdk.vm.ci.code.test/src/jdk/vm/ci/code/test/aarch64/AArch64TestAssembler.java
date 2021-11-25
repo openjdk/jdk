@@ -263,8 +263,8 @@ public class AArch64TestAssembler extends TestAssembler {
     @Override
     public void emitEpilogue() {
         recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
-        recordCall(new HotSpotForeignCallTarget(config.handleDeoptStub), 5, true, null);
-        code.emitInt(0x94000000);  // bl <imm26>
+        recordCall(new HotSpotForeignCallTarget(config.handleDeoptStub), 4*4, true, null);
+        emitCall(0xdeaddeaddeadL);
     }
 
     @Override
@@ -285,7 +285,7 @@ public class AArch64TestAssembler extends TestAssembler {
 
     @Override
     public void emitCall(long addr) {
-        emitLoadLong(scratchRegister, addr);
+        emitLoadPointer48(scratchRegister, addr);
         emitBlr(scratchRegister);
     }
 
@@ -320,20 +320,39 @@ public class AArch64TestAssembler extends TestAssembler {
         }
     }
 
+    private void emitLoadPointer32(Register ret, long addr) {
+        long a = addr;
+        long al = a;
+        a >>= 16;
+        long ah = a;
+        a >>= 16;
+        assert a == 0 : "invalid pointer" + Long.toHexString(addr);
+        // Set upper 16 bits first. See MacroAssembler::patch_oop().
+        emitMovz(ret, ((int)ah & 0xffff), 16);
+        emitMovk(ret, ((int)al & 0xffff), 0);
+    }
+
+    private void emitLoadPointer48(Register ret, long addr) {
+        // 48-bit VA
+        long a = addr;
+        emitMovz(ret, ((int)a & 0xffff), 0);
+        a >>= 16;
+        emitMovk(ret, ((int)a & 0xffff), 16);
+        a >>= 16;
+        emitMovk(ret, ((int)a & 0xffff), 32);
+        a >>= 16;
+        assert a == 0 : "invalid pointer" + Long.toHexString(addr);
+    }
+
     @Override
     public Register emitLoadPointer(HotSpotConstant c) {
         recordDataPatchInCode(new ConstantReference((VMConstant) c));
 
         Register ret = newRegister();
         if (c.isCompressed()) {
-            // Set upper 16 bits first. See MacroAssembler::patch_oop().
-            emitMovz(ret, 0xdead, 16);
-            emitMovk(ret, 0xdead, 0);
+            emitLoadPointer32(ret, 0xdeaddeadL);
         } else {
-            // 48-bit VA
-            emitMovz(ret, 0xdead, 0);
-            emitMovk(ret, 0xdead, 16);
-            emitMovk(ret, 0xdead, 32);
+            emitLoadPointer48(ret, 0xdeaddeaddeadL);
         }
         return ret;
     }

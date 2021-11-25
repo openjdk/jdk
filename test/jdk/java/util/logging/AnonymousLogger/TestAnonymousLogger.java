@@ -39,7 +39,7 @@ import java.util.logging.SimpleFormatter;
  * @summary checks that anonymous logger setters work as expected when a
  *          security manager is set, and checks that getters return expected
  *          values.
- * @run main/othervm TestAnonymousLogger
+ * @run main/othervm -Djava.security.manager=allow TestAnonymousLogger
  */
 public class TestAnonymousLogger {
 

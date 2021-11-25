@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +26,8 @@
  * @test
  * @bug 8252204
  * @summary Verify UseSHA3Intrinsics option processing on unsupported CPU.
- * @library /test/lib testcases /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @library /test/lib /
+ * @requires vm.flagless
  *
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox

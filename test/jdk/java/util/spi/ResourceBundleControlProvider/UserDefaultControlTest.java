@@ -28,7 +28,7 @@
  * @build test/*
  * @build com.foo.UserControlProvider
  * @run main/othervm UserDefaultControlTest false
- * @run main/othervm UserDefaultControlTest true
+ * @run main/othervm -Djava.security.manager=allow UserDefaultControlTest true
  */
 
 import java.io.*;

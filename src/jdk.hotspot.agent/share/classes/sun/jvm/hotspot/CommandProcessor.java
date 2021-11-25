@@ -33,13 +33,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Stack;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,13 +48,10 @@ import sun.jvm.hotspot.ci.ciEnv;
 import sun.jvm.hotspot.code.CodeBlob;
 import sun.jvm.hotspot.code.CodeCacheVisitor;
 import sun.jvm.hotspot.code.NMethod;
-import sun.jvm.hotspot.debugger.cdbg.CDebugger;
-import sun.jvm.hotspot.debugger.cdbg.LoadObject;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.classfile.ClassLoaderDataGraph;
 import sun.jvm.hotspot.memory.FileMapInfo;
-import sun.jvm.hotspot.memory.SystemDictionary;
 import sun.jvm.hotspot.memory.Universe;
 import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
@@ -95,11 +93,9 @@ import sun.jvm.hotspot.ui.tree.OopTreeNodeAdapter;
 import sun.jvm.hotspot.ui.tree.SimpleTreeNode;
 import sun.jvm.hotspot.utilities.AddressOps;
 import sun.jvm.hotspot.utilities.Assert;
-import sun.jvm.hotspot.utilities.CompactHashTable;
 import sun.jvm.hotspot.utilities.HeapProgressThunk;
 import sun.jvm.hotspot.utilities.LivenessPathElement;
 import sun.jvm.hotspot.utilities.MethodArray;
-import sun.jvm.hotspot.utilities.ObjectReader;
 import sun.jvm.hotspot.utilities.PointerFinder;
 import sun.jvm.hotspot.utilities.PointerLocation;
 import sun.jvm.hotspot.utilities.ReversePtrs;
@@ -133,7 +129,7 @@ public class CommandProcessor {
             if (kls.getClassLoader() == null) return false;
             if (emitted.get(kls.getName()) != null) {
                 // Since multiple class loaders are being shoved
-                // together duplicate classes are a possibilty.  For
+                // together duplicate classes are a possibility.  For
                 // now just ignore them.
                 return false;
             }
@@ -238,9 +234,7 @@ public class CommandProcessor {
         }
 
         String at(int i) {
-            if (i < 0 || i >= length) {
-                throw new IndexOutOfBoundsException(String.valueOf(i));
-            }
+            Objects.checkIndex(i, length);
             return tokens[i];
         }
     }
@@ -439,7 +433,6 @@ public class CommandProcessor {
                     Matcher m2 = args2.matcher(arg);
                     Address start = null;
                     Address end   = null;
-                    String format = "";
                     int formatSize = (int)VM.getVM().getAddressSize();
 
                     if (m1.matches()) {
@@ -599,32 +592,8 @@ public class CommandProcessor {
                 if (t.countTokens() != 1) {
                     usage();
                 } else {
-                    String symbol = t.nextToken();
-                    Address addr = VM.getVM().getDebugger().lookup(null, symbol);
-                    if (addr == null && VM.getVM().getDebugger().getOS().equals("win32")) {
-                        // On win32 symbols are prefixed with the dll name. Do the user
-                        // a favor and see if this is a symbol in jvm.dll or java.dll.
-                        addr = VM.getVM().getDebugger().lookup(null, "jvm!" + symbol);
-                        if (addr == null) {
-                            addr = VM.getVM().getDebugger().lookup(null, "java!" + symbol);
-                        }
-                    }
-                    if (addr == null) {
-                        out.println("Symbol not found");
-                        return;
-                    }
-                    out.print(addr);  // Print the address of the symbol.
-                    CDebugger cdbg = VM.getVM().getDebugger().getCDebugger();
-                    LoadObject loadObject = cdbg.loadObjectContainingPC(addr);
-                    // Print the shared library path and the offset of the symbol.
-                    if (loadObject != null) {
-                        out.print(": " + loadObject.getName());
-                        long diff = addr.minus(loadObject.getBase());
-                        if (diff != 0L) {
-                            out.print(" + 0x" + Long.toHexString(diff));
-                        }
-                    }
-                    out.println();
+                    String result = VM.getVM().getDebugger().findSymbol(t.nextToken());
+                    out.println(result == null ? "Symbol not found" : result);
                 }
             }
         },
@@ -1012,7 +981,7 @@ public class CommandProcessor {
                 Iterator i = agent.getTypeDataBase().getTypes();
                 // Make sure the types are emitted in an order than can be read back in
                 HashSet<String> emitted = new HashSet<>();
-                Stack<Type> pending = new Stack<>();
+                ArrayDeque<Type> pending = new ArrayDeque<>();
                 while (i.hasNext()) {
                     Type n = (Type)i.next();
                     if (emitted.contains(n.getName())) {
@@ -1023,7 +992,7 @@ public class CommandProcessor {
                         pending.push(n);
                         n = n.getSuperclass();
                     }
-                    while (!pending.empty()) {
+                    while (!pending.isEmpty()) {
                         n = (Type)pending.pop();
                         dumpType(n);
                         emitted.add(n.getName());
@@ -1408,7 +1377,7 @@ public class CommandProcessor {
                     Iterator i = agent.getTypeDataBase().getTypes();
                     // Make sure the types are emitted in an order than can be read back in
                     HashSet<String> emitted = new HashSet<>();
-                    Stack<Type> pending = new Stack<>();
+                    ArrayDeque<Type> pending = new ArrayDeque<>();
                     while (i.hasNext()) {
                         Type n = (Type)i.next();
                         if (emitted.contains(n.getName())) {
@@ -1419,7 +1388,7 @@ public class CommandProcessor {
                             pending.push(n);
                             n = n.getSuperclass();
                         }
-                        while (!pending.empty()) {
+                        while (!pending.isEmpty()) {
                             n = (Type)pending.pop();
                             dumpType(n);
                             emitted.add(n.getName());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ import javax.crypto.SecretKey;
 
 /*
  * @test
- * @bug 8075286
- * @summary Test the AESWrap algorithm OIDs in JDK.
+ * @bug 8075286 8248268
+ * @summary Test the AES-Key-Wrap and AES-Key-Wrap-Pad algorithm OIDs in JDK.
  *          OID and Algorithm transformation string should match.
  *          Both could be able to be used to generate the algorithm instance.
  * @run main TestAESWrapOids
@@ -49,9 +49,15 @@ public class TestAESWrapOids {
     private static final String PROVIDER_NAME = "SunJCE";
 
     private static final List<DataTuple> DATA = Arrays.asList(
-            new DataTuple("2.16.840.1.101.3.4.1.5", "AESWrap_128", 128),
-            new DataTuple("2.16.840.1.101.3.4.1.25", "AESWrap_192", 192),
-            new DataTuple("2.16.840.1.101.3.4.1.45", "AESWrap_256", 256));
+            new DataTuple("2.16.840.1.101.3.4.1.5", "AESWrap_128"),
+            new DataTuple("2.16.840.1.101.3.4.1.25", "AESWrap_192"),
+            new DataTuple("2.16.840.1.101.3.4.1.45", "AESWrap_256"),
+            new DataTuple("2.16.840.1.101.3.4.1.5", "AES_128/KW/NoPadding"),
+            new DataTuple("2.16.840.1.101.3.4.1.25", "AES_192/KW/NoPadding"),
+            new DataTuple("2.16.840.1.101.3.4.1.45", "AES_256/KW/NoPadding"),
+            new DataTuple("2.16.840.1.101.3.4.1.8", "AES_128/KWP/NoPadding"),
+            new DataTuple("2.16.840.1.101.3.4.1.28", "AES_192/KWP/NoPadding"),
+            new DataTuple("2.16.840.1.101.3.4.1.48", "AES_256/KWP/NoPadding"));
 
     public static void main(String[] args) throws Exception {
         for (DataTuple dataTuple : DATA) {
@@ -145,10 +151,15 @@ public class TestAESWrapOids {
         private final String algorithm;
         private final int keyLength;
 
-        private DataTuple(String oid, String algorithm, int keyLength) {
+        private DataTuple(String oid, String algorithm) {
             this.oid = oid;
             this.algorithm = algorithm;
-            this.keyLength = keyLength;
+            this.keyLength = switch (oid) {
+                case "2.16.840.1.101.3.4.1.5", "2.16.840.1.101.3.4.1.8"->128;
+                case "2.16.840.1.101.3.4.1.25", "2.16.840.1.101.3.4.1.28"->192;
+                case "2.16.840.1.101.3.4.1.45", "2.16.840.1.101.3.4.1.48"->256;
+                default->throw new RuntimeException("Unrecognized oid: " + oid);
+            };
         }
     }
 }

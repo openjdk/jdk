@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@ public class classprep001 {
         }
     }
 
-    native static void getReady();
-    native static int check();
+    native static void getReady(Thread thread);
+    native static int check(Thread thread);
 
     public static void main(String args[]) {
         args = nsk.share.jvmti.JVMTITest.commonInit(args);
@@ -51,12 +51,26 @@ public class classprep001 {
     }
 
     public static int run(String args[], PrintStream out) {
-        getReady();
+        Thread otherThread = new Thread(() -> {
+            new TestClass2().run();
+        });
+
+        getReady(Thread.currentThread());
+
+        // should generate the events
         new TestClass().run();
-        return check();
+
+        // loading classes on other thread should not generate the events
+        otherThread.start();
+        try {
+            otherThread.join();
+        } catch (InterruptedException e) {
+        }
+
+        return check(Thread.currentThread());
     }
 
-    static interface TestInterface {
+    interface TestInterface {
         int constant = Integer.parseInt("10");
         void run();
     }
@@ -69,6 +83,15 @@ public class classprep001 {
         }
         public void run() {
             count++;
+        }
+    }
+
+    interface TestInterface2 {
+        void run();
+    }
+
+    static class TestClass2 implements TestInterface2 {
+        public void run() {
         }
     }
 }

@@ -35,6 +35,7 @@ G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) :
   _old_length(g1_heap->old_regions_count()),
   _archive_length(g1_heap->archive_regions_count()),
   _humongous_length(g1_heap->humongous_regions_count()),
+  _meta_sizes(MetaspaceUtils::get_combined_statistics()),
   _eden_length_per_node(NULL),
   _survivor_length_per_node(NULL) {
 

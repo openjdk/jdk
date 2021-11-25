@@ -26,6 +26,8 @@
 #define CPU_X86_MACROASSEMBLER_X86_HPP
 
 #include "asm/assembler.hpp"
+#include "code/vmreg.inline.hpp"
+#include "compiler/oopMap.hpp"
 #include "utilities/macros.hpp"
 #include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
@@ -192,6 +194,8 @@ class MacroAssembler: public Assembler {
   void incrementq(AddressLiteral dst);
 
   // Alignment
+  void align32();
+  void align64();
   void align(int modulus);
   void align(int modulus, int target);
 
@@ -206,6 +210,22 @@ class MacroAssembler: public Assembler {
   // The pointer will be loaded into the thread register.
   void get_thread(Register thread);
 
+#ifdef _LP64
+  // Support for argument shuffling
+
+  void move32_64(VMRegPair src, VMRegPair dst);
+  void long_move(VMRegPair src, VMRegPair dst);
+  void float_move(VMRegPair src, VMRegPair dst);
+  void double_move(VMRegPair src, VMRegPair dst);
+  void move_ptr(VMRegPair src, VMRegPair dst);
+  void object_move(OopMap* map,
+                   int oop_handle_offset,
+                   int framesize_in_slots,
+                   VMRegPair src,
+                   VMRegPair dst,
+                   bool is_receiver,
+                   int* receiver_offset);
+#endif // _LP64
 
   // Support for VM calls
   //
@@ -327,10 +347,6 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
                        Register tmp1, Register tmp2);
 
-  // Resolves obj access. Result is placed in the same register.
-  // All other registers are preserved.
-  void resolve(DecoratorSet decorators, Register obj);
-
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
                      Register thread_tmp = noreg, DecoratorSet decorators = 0);
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
@@ -341,8 +357,6 @@ class MacroAssembler: public Assembler {
   // Used for storing NULL. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
-
-  void load_prototype_header(Register dst, Register src, Register tmp);
 
 #ifdef _LP64
   void store_klass_gap(Register dst, Register src);
@@ -659,21 +673,6 @@ class MacroAssembler: public Assembler {
 
   void verify_tlab();
 
-  // Biased locking support
-  // lock_reg and obj_reg must be loaded up with the appropriate values.
-  // swap_reg must be rax, and is killed.
-  // tmp_reg is optional. If it is supplied (i.e., != noreg) it will
-  // be killed; if not supplied, push/pop will be used internally to
-  // allocate a temporary (inefficient, avoid if possible).
-  // Optional slow case is for implementations (interpreter and C1) which branch to
-  // slow case directly. Leaves condition codes set for C2's Fast_Lock node.
-  void biased_locking_enter(Register lock_reg, Register obj_reg,
-                            Register swap_reg, Register tmp_reg,
-                            Register tmp_reg2, bool swap_reg_contains_mark,
-                            Label& done, Label* slow_case = NULL,
-                            BiasedLockingCounters* counters = NULL);
-  void biased_locking_exit (Register obj_reg, Register temp_reg, Label& done);
-
   Condition negate_condition(Condition cond);
 
   // Instructions that use AddressLiteral operands. These instruction can handle 32bit/64bit
@@ -713,13 +712,11 @@ class MacroAssembler: public Assembler {
   void cmpklass(Address dst, Metadata* obj);
   void cmpklass(Register dst, Metadata* obj);
   void cmpoop(Address dst, jobject obj);
-  void cmpoop_raw(Address dst, jobject obj);
 #endif // _LP64
 
   void cmpoop(Register src1, Register src2);
   void cmpoop(Register src1, Address src2);
   void cmpoop(Register dst, jobject obj);
-  void cmpoop_raw(Register dst, jobject obj);
 
   // NOTE src2 must be the lval. This is NOT an mem-mem compare
   void cmpptr(Address src1, AddressLiteral src2);
@@ -950,12 +947,19 @@ private:
   void roundDec(XMMRegister key, int rnum);
   void lastroundDec(XMMRegister key, int rnum);
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
-
+  void gfmul_avx512(XMMRegister ghash, XMMRegister hkey);
+  void generateHtbl_48_block_zmm(Register htbl, Register avx512_subkeyHtbl);
+  void ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx,
+                                  XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
+                                  XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
+                                  bool final_reduction, int index, XMMRegister counter_inc_mask);
 public:
   void aesecb_encrypt(Register source_addr, Register dest_addr, Register key, Register len);
   void aesecb_decrypt(Register source_addr, Register dest_addr, Register key, Register len);
   void aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
                       Register len_reg, Register used, Register used_addr, Register saved_encCounter_start);
+  void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
+                      Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter);
 
 #endif
 
@@ -1285,22 +1289,23 @@ public:
 
   // Vector compares
   void evpcmpd(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpd(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpd(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
   void evpcmpq(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpq(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpq(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpq(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
   void evpcmpb(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpb(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpb(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpb(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
   void evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpw(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpw(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
 
+  void evpbroadcast(BasicType type, XMMRegister dst, Register src, int vector_len);
 
   // Emit comparison instruction for the specified comparison predicate.
   void vpcmpCCW(XMMRegister dst, XMMRegister nds, XMMRegister src, ComparisonPredicate cond, Width width, int vector_len, Register scratch_reg);
@@ -1309,10 +1314,17 @@ public:
   void vpmovzxbw(XMMRegister dst, Address src, int vector_len);
   void vpmovzxbw(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::vpmovzxbw(dst, src, vector_len); }
 
-  void vpmovmskb(Register dst, XMMRegister src);
+  void vpmovmskb(Register dst, XMMRegister src, int vector_len = Assembler::AVX_256bit);
 
   void vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void vpmulld(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+    Assembler::vpmulld(dst, nds, src, vector_len);
+  };
+  void vpmulld(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+    Assembler::vpmulld(dst, nds, src, vector_len);
+  }
+  void vpmulld(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg);
 
   void vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpsubb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
@@ -1325,6 +1337,75 @@ public:
 
   void evpsraq(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void evpsraq(XMMRegister dst, XMMRegister nds, int shift, int vector_len);
+
+  void evpsllw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
+    if (!is_varshift) {
+      Assembler::evpsllw(dst, mask, nds, src, merge, vector_len);
+    } else {
+      Assembler::evpsllvw(dst, mask, nds, src, merge, vector_len);
+    }
+  }
+  void evpslld(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
+    if (!is_varshift) {
+      Assembler::evpslld(dst, mask, nds, src, merge, vector_len);
+    } else {
+      Assembler::evpsllvd(dst, mask, nds, src, merge, vector_len);
+    }
+  }
+  void evpsllq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
+    if (!is_varshift) {
+      Assembler::evpsllq(dst, mask, nds, src, merge, vector_len);
+    } else {
+      Assembler::evpsllvq(dst, mask, nds, src, merge, vector_len);
+    }
+  }
+  void evpsrlw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
+    if (!is_varshift) {
+      Assembler::evpsrlw(dst, mask, nds, src, merge, vector_len);
+    } else {
+      Assembler::evpsrlvw(dst, mask, nds, src, merge, vector_len);
+    }
+  }
+  void evpsrld(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
+    if (!is_varshift) {
+      Assembler::evpsrld(dst, mask, nds, src, merge, vector_len);
+    } else {
+      Assembler::evpsrlvd(dst, mask, nds, src, merge, vector_len);
+    }
+  }
+  void evpsrlq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
+    if (!is_varshift) {
+      Assembler::evpsrlq(dst, mask, nds, src, merge, vector_len);
+    } else {
+      Assembler::evpsrlvq(dst, mask, nds, src, merge, vector_len);
+    }
+  }
+  void evpsraw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
+    if (!is_varshift) {
+      Assembler::evpsraw(dst, mask, nds, src, merge, vector_len);
+    } else {
+      Assembler::evpsravw(dst, mask, nds, src, merge, vector_len);
+    }
+  }
+  void evpsrad(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
+    if (!is_varshift) {
+      Assembler::evpsrad(dst, mask, nds, src, merge, vector_len);
+    } else {
+      Assembler::evpsravd(dst, mask, nds, src, merge, vector_len);
+    }
+  }
+  void evpsraq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
+    if (!is_varshift) {
+      Assembler::evpsraq(dst, mask, nds, src, merge, vector_len);
+    } else {
+      Assembler::evpsravq(dst, mask, nds, src, merge, vector_len);
+    }
+  }
+
+  void evpmins(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evpmins(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+  void evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
 
   void vpsrlw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void vpsrlw(XMMRegister dst, XMMRegister nds, int shift, int vector_len);
@@ -1615,7 +1696,33 @@ public:
     Assembler::evpclmulqdq(dst, nds, src, 0x11, vector_len);
   }
 
-  // Data
+  // AVX-512 mask operations.
+  void kand(BasicType etype, KRegister dst, KRegister src1, KRegister src2);
+  void kor(BasicType type, KRegister dst, KRegister src1, KRegister src2);
+  void knot(uint masklen, KRegister dst, KRegister src, KRegister ktmp = knoreg, Register rtmp = noreg);
+  void kxor(BasicType type, KRegister dst, KRegister src1, KRegister src2);
+  void kortest(uint masklen, KRegister src1, KRegister src2);
+  void ktest(uint masklen, KRegister src1, KRegister src2);
+
+  void evperm(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evperm(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+
+  void evor(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evor(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+
+  void evand(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evand(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+
+  void evxor(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evxor(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+
+  void evrold(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vlen_enc);
+  void evrold(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vlen_enc);
+  void evrord(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vlen_enc);
+  void evrord(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vlen_enc);
+
+  void alltrue(Register dst, uint masklen, KRegister src1, KRegister src2, KRegister kscratch);
+  void anytrue(Register dst, uint masklen, KRegister src, KRegister kscratch);
 
   void cmov32( Condition cc, Register dst, Address  src);
   void cmov32( Condition cc, Register dst, Register src);
@@ -1715,7 +1822,7 @@ public:
 
   void encode_iso_array(Register src, Register dst, Register len,
                         XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
-                        XMMRegister tmp4, Register tmp5, Register result);
+                        XMMRegister tmp4, Register tmp5, Register result, bool ascii);
 
 #ifdef _LP64
   void add2_with_carry(Register dest_hi, Register dest_lo, Register src1, Register src2);
@@ -1770,6 +1877,7 @@ public:
   void kernel_crc32_avx512_256B(Register crc, Register buf, Register len, Register key, Register pos,
                                 Register tmp1, Register tmp2, Label& L_barrett, Label& L_16B_reduction_loop,
                                 Label& L_get_last_two_xmms, Label& L_128_done, Label& L_cleanup);
+  void updateBytesAdler32(Register adler32, Register buf, Register length, XMMRegister shuf0, XMMRegister shuf1, ExternalAddress scale);
 #endif // _LP64
 
   // CRC32C code for java.util.zip.CRC32C::updateBytes() intrinsic
@@ -1826,17 +1934,20 @@ public:
   void byte_array_inflate(Register src, Register dst, Register len,
                           XMMRegister tmp1, Register tmp2, KRegister mask = knoreg);
 
-  void fill64_masked_avx(uint shift, Register dst, int disp,
+  void fill_masked(BasicType bt, Address dst, XMMRegister xmm, KRegister mask,
+                   Register length, Register temp, int vec_enc);
+
+  void fill64_masked(uint shift, Register dst, int disp,
                          XMMRegister xmm, KRegister mask, Register length,
                          Register temp, bool use64byteVector = false);
 
-  void fill32_masked_avx(uint shift, Register dst, int disp,
+  void fill32_masked(uint shift, Register dst, int disp,
                          XMMRegister xmm, KRegister mask, Register length,
                          Register temp);
 
-  void fill32_avx(Register dst, int disp, XMMRegister xmm);
+  void fill32(Register dst, int disp, XMMRegister xmm);
 
-  void fill64_avx(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
+  void fill64(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
 
 #ifdef _LP64
   void convert_f2i(Register dst, XMMRegister src);
@@ -1873,6 +1984,10 @@ public:
   void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
+
+  void generate_fill_avx3(BasicType type, Register to, Register value,
+                          Register count, Register rtmp, XMMRegister xtmp);
+
 #endif // COMPILER2_OR_JVMCI
 
 #endif // _LP64

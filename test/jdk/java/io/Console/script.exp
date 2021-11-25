@@ -28,15 +28,5 @@ set args [lrange $argv 3 end]
 regexp {([a-zA-Z_]*).([a-zA-Z0-9\-]*)} $locale dummy lang_region encoding
 
 eval spawn $java -Dsun.stdout.encoding=$encoding -classpath $args CharsetTest
-if {$encoding == "FOO"} then \
-    {expect "UTF-8"} \
-else \
-    {expect $expected}
-
-eval spawn env LANG=$locale LC_ALL=$locale $java -classpath $args CharsetTest
-if {$encoding == "FOO"} then \
-    {expect "US-ASCII"} \
-else \
-    {expect $expected}
-
+expect $expected
 expect eof

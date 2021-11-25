@@ -80,6 +80,7 @@ public final class P11Util {
         return p;
     }
 
+    @SuppressWarnings("removal")
     private static Provider getProvider(Provider p, String providerName,
             String className) {
         if (p != null) {

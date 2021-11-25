@@ -138,6 +138,7 @@ class frame {
   bool is_compiled_frame()       const;
   bool is_safepoint_blob_frame() const;
   bool is_deoptimized_frame()    const;
+  bool is_optimized_entry_frame()         const;
 
   // testers
   bool is_first_frame() const; // oldest frame? (has no sender)
@@ -172,6 +173,7 @@ class frame {
   frame sender_for_entry_frame(RegisterMap* map) const;
   frame sender_for_interpreter_frame(RegisterMap* map) const;
   frame sender_for_native_frame(RegisterMap* map) const;
+  frame sender_for_optimized_entry_frame(RegisterMap* map) const;
 
   bool is_entry_frame_valid(JavaThread* thread) const;
 
@@ -259,8 +261,7 @@ class frame {
   oop retrieve_receiver(RegisterMap *reg_map);
 
   // Return the monitor owner and BasicLock for compiled synchronized
-  // native methods so that biased locking can revoke the receiver's
-  // bias if necessary.  This is also used by JVMTI's GetLocalInstance method
+  // native methods. Used by JVMTI's GetLocalInstance method
   // (via VM_GetReceiver) to retrieve the receiver from a native wrapper frame.
   BasicLock* get_native_monitor();
   oop        get_native_receiver();
@@ -340,6 +341,7 @@ class frame {
 
   // tells whether there is another chunk of Delta stack above
   bool entry_frame_is_first() const;
+  bool optimized_entry_frame_is_first() const;
 
   // Safepoints
 
@@ -397,8 +399,6 @@ class frame {
   static bool verify_return_pc(address x);
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
-
-  NOT_PRODUCT(void pd_ps();)  // platform dependent frame printing
 
 #include CPU_HEADER(frame)
 

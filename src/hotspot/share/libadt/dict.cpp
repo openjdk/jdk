@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ Dict::Dict(CmpKey initcmp, Hash inithash) : _arena(Thread::current()->resource_a
 
   _size = 16;                   // Size is a power of 2
   _cnt = 0;                     // Dictionary is empty
-  _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket) * _size);
+  _bin = (bucket*)_arena->AmallocWords(sizeof(bucket) * _size);
   memset((void*)_bin, 0, sizeof(bucket) * _size);
 }
 
@@ -74,20 +74,20 @@ Dict::Dict(CmpKey initcmp, Hash inithash, Arena* arena, int size)
   _size = MAX2(16, round_up_power_of_2(size));
 
   _cnt = 0;                     // Dictionary is empty
-  _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket) * _size);
+  _bin = (bucket*)_arena->AmallocWords(sizeof(bucket) * _size);
   memset((void*)_bin, 0, sizeof(bucket) * _size);
 }
 
 // Deep copy into arena of choice
 Dict::Dict(const Dict &d, Arena* arena)
 : _arena(arena), _size(d._size), _cnt(d._cnt), _hash(d._hash), _cmp(d._cmp) {
-  _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket) * _size);
+  _bin = (bucket*)_arena->AmallocWords(sizeof(bucket) * _size);
   memcpy((void*)_bin, (void*)d._bin, sizeof(bucket) * _size);
   for (uint i = 0; i < _size; i++) {
     if (!_bin[i]._keyvals) {
       continue;
     }
-    _bin[i]._keyvals = (void**)_arena->Amalloc_4(sizeof(void*) * _bin[i]._max * 2);
+    _bin[i]._keyvals = (void**)_arena->AmallocWords(sizeof(void*) * _bin[i]._max * 2);
     memcpy(_bin[i]._keyvals, d._bin[i]._keyvals, _bin[i]._cnt * 2 * sizeof(void*));
   }
 }
@@ -118,7 +118,7 @@ void Dict::doubhash() {
     if (!j) { j = 1; }                 // Handle zero-sized buckets
     nb->_max = j << 1;
     // Allocate worst case space for key-value pairs
-    nb->_keyvals = (void**)_arena->Amalloc_4(sizeof(void* ) * nb->_max * 2);
+    nb->_keyvals = (void**)_arena->AmallocWords(sizeof(void* ) * nb->_max * 2);
     uint nbcnt = 0;
 
     for (j = 0; j < b->_cnt;) {        // Rehash all keys in this bucket
@@ -168,7 +168,7 @@ void*Dict::Insert(void* key, void* val, bool replace) {
   if (b->_cnt == b->_max) {     // Must grow bucket?
     if (!b->_keyvals) {
       b->_max = 2;              // Initial bucket size
-      b->_keyvals = (void**)_arena->Amalloc_4(sizeof(void*) * b->_max * 2);
+      b->_keyvals = (void**)_arena->AmallocWords(sizeof(void*) * b->_max * 2);
     } else {
       b->_keyvals = (void**)_arena->Arealloc(b->_keyvals, sizeof(void*) * b->_max * 2, sizeof(void*) * b->_max * 4);
       b->_max <<= 1;            // Double bucket

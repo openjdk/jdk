@@ -162,7 +162,7 @@ class StubGenerator: public StubCodeGenerator {
       __ stmxcsr(mxcsr_save);
       __ movl(rax, mxcsr_save);
       __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-      ExternalAddress mxcsr_std(StubRoutines::addr_mxcsr_std());
+      ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
       __ cmp32(rax, mxcsr_std);
       __ jcc(Assembler::equal, skip_ldmx);
       __ ldmxcsr(mxcsr_std);
@@ -170,7 +170,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // make sure the control word is correct.
-    __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
 
 #ifdef ASSERT
     // make sure we have no pending exceptions
@@ -446,7 +446,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (CheckJNICalls && UseSSE > 0 ) {
       Label ok_ret;
-      ExternalAddress mxcsr_std(StubRoutines::addr_mxcsr_std());
+      ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
       __ push(rax);
       __ subptr(rsp, wordSize);      // allocate a temp location
       __ stmxcsr(mxcsr_save);
@@ -490,7 +490,7 @@ class StubGenerator: public StubCodeGenerator {
       __ fnstcw(fpu_cntrl_wrd_save);
       __ movl(rax, fpu_cntrl_wrd_save);
       __ andl(rax, FPU_CNTRL_WRD_MASK);
-      ExternalAddress fpu_std(StubRoutines::addr_fpu_cntrl_wrd_std());
+      ExternalAddress fpu_std(StubRoutines::x86::addr_fpu_cntrl_wrd_std());
       __ cmp32(rax, fpu_std);
       __ jcc(Assembler::equal, ok_ret);
 
@@ -2998,7 +2998,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   address generate_upper_word_mask() {
-    __ align(64);
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "upper_word_mask");
     address start = __ pc();
     __ emit_data(0x00000000, relocInfo::none, 0);
@@ -3009,7 +3009,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   address generate_shuffle_byte_flip_mask() {
-    __ align(64);
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "shuffle_byte_flip_mask");
     address start = __ pc();
     __ emit_data(0x0c0d0e0f, relocInfo::none, 0);
@@ -3068,7 +3068,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   address generate_pshuffle_byte_flip_mask() {
-    __ align(64);
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "pshuffle_byte_flip_mask");
     address start = __ pc();
     __ emit_data(0x00010203, relocInfo::none, 0);
@@ -3857,23 +3857,23 @@ class StubGenerator: public StubCodeGenerator {
 
   void create_control_words() {
     // Round to nearest, 53-bit mode, exceptions masked
-    StubRoutines::_fpu_cntrl_wrd_std   = 0x027F;
+    StubRoutines::x86::_fpu_cntrl_wrd_std   = 0x027F;
     // Round to zero, 53-bit mode, exception mased
-    StubRoutines::_fpu_cntrl_wrd_trunc = 0x0D7F;
+    StubRoutines::x86::_fpu_cntrl_wrd_trunc = 0x0D7F;
     // Round to nearest, 24-bit mode, exceptions masked
-    StubRoutines::_fpu_cntrl_wrd_24    = 0x007F;
+    StubRoutines::x86::_fpu_cntrl_wrd_24    = 0x007F;
     // Round to nearest, 64-bit mode, exceptions masked
-    StubRoutines::_mxcsr_std           = 0x1F80;
+    StubRoutines::x86::_mxcsr_std           = 0x1F80;
     // Note: the following two constants are 80-bit values
     //       layout is critical for correct loading by FPU.
     // Bias for strict fp multiply/divide
-    StubRoutines::_fpu_subnormal_bias1[0]= 0x00000000; // 2^(-15360) == 0x03ff 8000 0000 0000 0000
-    StubRoutines::_fpu_subnormal_bias1[1]= 0x80000000;
-    StubRoutines::_fpu_subnormal_bias1[2]= 0x03ff;
+    StubRoutines::x86::_fpu_subnormal_bias1[0]= 0x00000000; // 2^(-15360) == 0x03ff 8000 0000 0000 0000
+    StubRoutines::x86::_fpu_subnormal_bias1[1]= 0x80000000;
+    StubRoutines::x86::_fpu_subnormal_bias1[2]= 0x03ff;
     // Un-Bias for strict fp multiply/divide
-    StubRoutines::_fpu_subnormal_bias2[0]= 0x00000000; // 2^(+15360) == 0x7bff 8000 0000 0000 0000
-    StubRoutines::_fpu_subnormal_bias2[1]= 0x80000000;
-    StubRoutines::_fpu_subnormal_bias2[2]= 0x7bff;
+    StubRoutines::x86::_fpu_subnormal_bias2[0]= 0x00000000; // 2^(+15360) == 0x7bff 8000 0000 0000 0000
+    StubRoutines::x86::_fpu_subnormal_bias2[1]= 0x80000000;
+    StubRoutines::x86::_fpu_subnormal_bias2[2]= 0x7bff;
   }
 
   //---------------------------------------------------------------------------
@@ -3896,12 +3896,10 @@ class StubGenerator: public StubCodeGenerator {
     // platform dependent
     create_control_words();
 
-    StubRoutines::x86::_verify_mxcsr_entry                 = generate_verify_mxcsr();
-    StubRoutines::x86::_verify_fpu_cntrl_wrd_entry         = generate_verify_fpu_cntrl_wrd();
-    StubRoutines::_d2i_wrapper                              = generate_d2i_wrapper(T_INT,
-                                                                                   CAST_FROM_FN_PTR(address, SharedRuntime::d2i));
-    StubRoutines::_d2l_wrapper                              = generate_d2i_wrapper(T_LONG,
-                                                                                   CAST_FROM_FN_PTR(address, SharedRuntime::d2l));
+    StubRoutines::x86::_verify_mxcsr_entry         = generate_verify_mxcsr();
+    StubRoutines::x86::_verify_fpu_cntrl_wrd_entry = generate_verify_fpu_cntrl_wrd();
+    StubRoutines::x86::_d2i_wrapper                = generate_d2i_wrapper(T_INT,  CAST_FROM_FN_PTR(address, SharedRuntime::d2i));
+    StubRoutines::x86::_d2l_wrapper                = generate_d2i_wrapper(T_LONG, CAST_FROM_FN_PTR(address, SharedRuntime::d2l));
 
     // Build this early so it's available for the interpreter
     StubRoutines::_throw_StackOverflowError_entry          = generate_throw_exception("StackOverflowError throw_exception",
@@ -4003,6 +4001,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_vector_byte_perm_mask = generate_vector_byte_perm_mask("vector_byte_perm_mask");
     StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask_long_double("vector_long_sign_mask", 0x80000000, 0x00000000);
     StubRoutines::x86::_vector_all_bits_set = generate_vector_mask("vector_all_bits_set", 0xFFFFFFFF);
+    StubRoutines::x86::_vector_int_mask_cmp_bits = generate_vector_mask("vector_int_mask_cmp_bits", 0x00000001);
     StubRoutines::x86::_vector_iota_indices = generate_iota_indices("iota_indices");
 
     // support for verify_oop (must happen after universe_init)

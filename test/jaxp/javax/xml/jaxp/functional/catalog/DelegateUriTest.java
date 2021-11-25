@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.DelegateUriTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.DelegateUriTest
  * @run testng/othervm catalog.DelegateUriTest
  * @summary Get matched URIs from delegateURI entries.
  */

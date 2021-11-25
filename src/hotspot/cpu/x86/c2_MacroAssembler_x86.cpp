@@ -30,7 +30,6 @@
 #include "opto/intrinsicnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/subnode.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -234,7 +233,6 @@ void C2_MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Regi
                                          Metadata* method_data, bool profile_rtm,
                                          Label& DONE_LABEL, Label& IsInflated) {
   assert(UseRTMForStackLocks, "why call this otherwise?");
-  assert(!UseBiasedLocking, "Biased locking is not supported with RTM locking");
   assert(tmpReg == rax, "");
   assert(scrReg == rdx, "");
   Label L_rtm_retry, L_decrement_retry, L_on_abort;
@@ -244,7 +242,7 @@ void C2_MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Regi
     bind(L_rtm_retry);
   }
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));
-  testptr(tmpReg, markWord::monitor_value);  // inflated vs stack-locked|neutral|biased
+  testptr(tmpReg, markWord::monitor_value);  // inflated vs stack-locked|neutral
   jcc(Assembler::notZero, IsInflated);
 
   if (PrintPreciseRTMLockingStatistics || profile_rtm) {
@@ -259,8 +257,8 @@ void C2_MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Regi
   }
   xbegin(L_on_abort);
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));       // fetch markword
-  andptr(tmpReg, markWord::biased_lock_mask_in_place); // look at 3 lock bits
-  cmpptr(tmpReg, markWord::unlocked_value);            // bits = 001 unlocked
+  andptr(tmpReg, markWord::lock_mask_in_place);     // look at 2 lock bits
+  cmpptr(tmpReg, markWord::unlocked_value);         // bits = 01 unlocked
   jcc(Assembler::equal, DONE_LABEL);        // all done if unlocked
 
   Register abort_status_Reg = tmpReg; // status of abort is stored in RAX
@@ -447,7 +445,6 @@ void C2_MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, R
 // scr: tmp -- KILLED
 void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg,
                                  Register scrReg, Register cx1Reg, Register cx2Reg,
-                                 BiasedLockingCounters* counters,
                                  RTMLockingCounters* rtm_counters,
                                  RTMLockingCounters* stack_rtm_counters,
                                  Metadata* method_data,
@@ -462,10 +459,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     assert_different_registers(objReg, boxReg, tmpReg, scrReg);
   }
 
-  if (counters != NULL) {
-    atomic_incl(ExternalAddress((address)counters->total_entry_count_addr()), scrReg);
-  }
-
   // Possible cases that we'll encounter in fast_lock
   // ------------------------------------------------
   // * Inflated
@@ -473,9 +466,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   //    -- Locked
   //       = by self
   //       = by other
-  // * biased
-  //    -- by Self
-  //    -- by other
   // * neutral
   // * stack-locked
   //    -- by self
@@ -493,16 +483,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     jcc(Assembler::notZero, DONE_LABEL);
   }
 
-  // it's stack-locked, biased or neutral
-  // TODO: optimize away redundant LDs of obj->mark and improve the markword triage
-  // order to reduce the number of conditional branches in the most common cases.
-  // Beware -- there's a subtle invariant that fetch of the markword
-  // at [FETCH], below, will never observe a biased encoding (*101b).
-  // If this invariant is not held we risk exclusion (safety) failure.
-  if (UseBiasedLocking && !UseOptoBiasInlining) {
-    biased_locking_enter(boxReg, objReg, tmpReg, scrReg, cx1Reg, false, DONE_LABEL, NULL, counters);
-  }
-
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
     rtm_stack_locking(objReg, tmpReg, scrReg, cx2Reg,
@@ -512,7 +492,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 #endif // INCLUDE_RTM_OPT
 
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));          // [FETCH]
-  testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral|biased
+  testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral
   jccb(Assembler::notZero, IsInflated);
 
   // Attempt stack-locking ...
@@ -520,10 +500,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
   lock();
   cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
-  if (counters != NULL) {
-    cond_inc32(Assembler::equal,
-               ExternalAddress((address)counters->fast_path_entry_count_addr()));
-  }
   jcc(Assembler::equal, DONE_LABEL);           // Success
 
   // Recursive locking.
@@ -533,10 +509,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
   andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
   movptr(Address(boxReg, 0), tmpReg);
-  if (counters != NULL) {
-    cond_inc32(Assembler::equal,
-               ExternalAddress((address)counters->fast_path_entry_count_addr()));
-  }
   jmp(DONE_LABEL);
 
   bind(IsInflated);
@@ -602,8 +574,13 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   // Unconditionally set box->_displaced_header = markWord::unused_mark().
   // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
   movptr(Address(boxReg, 0), (int32_t)intptr_t(markWord::unused_mark().value()));
-  // Intentional fall-through into DONE_LABEL ...
   // Propagate ICC.ZF from CAS above into DONE_LABEL.
+  jcc(Assembler::equal, DONE_LABEL);           // CAS above succeeded; propagate ZF = 1 (success)
+
+  cmpptr(r15_thread, rax);                     // Check if we are already the owner (recursive lock)
+  jcc(Assembler::notEqual, DONE_LABEL);        // If not recursive, ZF = 0 at this point (fail)
+  incq(Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+  xorq(rax, rax); // Set ZF = 1 (success) for recursive lock, denoting locking success
 #endif // _LP64
 #if INCLUDE_RTM_OPT
   } // use_rtm()
@@ -659,19 +636,12 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
   Label DONE_LABEL, Stacked, CheckSucc;
 
-  // Critically, the biased locking test must have precedence over
-  // and appear before the (box->dhw == 0) recursive stack-lock test.
-  if (UseBiasedLocking && !UseOptoBiasInlining) {
-    biased_locking_exit(objReg, tmpReg, DONE_LABEL);
-  }
-
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
-    assert(!UseBiasedLocking, "Biased locking is not supported with RTM locking");
     Label L_regular_unlock;
     movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // fetch markword
-    andptr(tmpReg, markWord::biased_lock_mask_in_place);              // look at 3 lock bits
-    cmpptr(tmpReg, markWord::unlocked_value);                         // bits = 001 unlocked
+    andptr(tmpReg, markWord::lock_mask_in_place);                     // look at 2 lock bits
+    cmpptr(tmpReg, markWord::unlocked_value);                         // bits = 01 unlocked
     jccb(Assembler::notEqual, L_regular_unlock);                      // if !HLE RegularLock
     xend();                                                           // otherwise end...
     jmp(DONE_LABEL);                                                  // ... and we're done
@@ -705,10 +675,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // Refer to the comments in synchronizer.cpp for how we might encode extra
   // state in _succ so we can avoid fetching EntryList|cxq.
   //
-  // I'd like to add more cases in fast_lock() and fast_unlock() --
-  // such as recursive enter and exit -- but we have to be wary of
-  // I$ bloat, T$ effects and BP$ effects.
-  //
   // If there's no contention try a 1-0 exit.  That is, exit without
   // a costly MEMBAR or CAS.  See synchronizer.cpp for details on how
   // we detect and recover from the race that the 1-0 exit admits.
@@ -738,7 +704,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   jmpb  (DONE_LABEL);
 
   bind (Stacked);
-  // It's not inflated and it's not recursively stack-locked and it's not biased.
+  // It's not inflated and it's not recursively stack-locked.
   // It must be stack-locked.
   // Try to reset the header to displaced header.
   // The "box" value on the stack is stable, so we can reload
@@ -756,9 +722,16 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   bind (CheckSucc);
 #else // _LP64
   // It's inflated
-  xorptr(boxReg, boxReg);
-  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-  jccb  (Assembler::notZero, DONE_LABEL);
+  Label LNotRecursive, LSuccess, LGoSlowPath;
+
+  cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 0);
+  jccb(Assembler::equal, LNotRecursive);
+
+  // Recursive inflated unlock
+  decq(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+  jmpb(LSuccess);
+
+  bind(LNotRecursive);
   movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
   orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
   jccb  (Assembler::notZero, CheckSucc);
@@ -767,7 +740,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   jmpb  (DONE_LABEL);
 
   // Try to avoid passing control into the slow_path ...
-  Label LSuccess, LGoSlowPath ;
   bind  (CheckSucc);
 
   // The following optional optimization can be elided if necessary
@@ -1043,6 +1015,35 @@ void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
     evcmppd(ktmp, k0, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
     evmovdquq(dst, ktmp, atmp, merge, vlen_enc);
   }
+}
+
+// Float/Double signum
+void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst,
+                                  XMMRegister zero, XMMRegister one,
+                                  Register scratch) {
+  assert(opcode == Op_SignumF || opcode == Op_SignumD, "sanity");
+
+  Label DONE_LABEL;
+
+  if (opcode == Op_SignumF) {
+    assert(UseSSE > 0, "required");
+    ucomiss(dst, zero);
+    jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
+    jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
+    movflt(dst, one);
+    jcc(Assembler::above, DONE_LABEL);
+    xorps(dst, ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), scratch);
+  } else if (opcode == Op_SignumD) {
+    assert(UseSSE > 1, "required");
+    ucomisd(dst, zero);
+    jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
+    jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
+    movdbl(dst, one);
+    jcc(Assembler::above, DONE_LABEL);
+    xorpd(dst, ExternalAddress(StubRoutines::x86::vector_double_sign_flip()), scratch);
+  }
+
+  bind(DONE_LABEL);
 }
 
 void C2_MacroAssembler::vextendbw(bool sign, XMMRegister dst, XMMRegister src) {
@@ -1433,7 +1434,7 @@ void C2_MacroAssembler::evscatter(BasicType typ, Register base, XMMRegister idx,
   }
 }
 
-void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt) {
+void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt, bool is_legacy) {
   if (vlen_in_bytes <= 16) {
     pxor (dst, dst);
     psubb(dst, src);
@@ -1448,10 +1449,12 @@ void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int v
       default: assert(false, "%s", type2name(elem_bt));
     }
   } else {
+    assert(!is_legacy || !is_subword_type(elem_bt) || vlen_in_bytes < 64, "");
     int vlen_enc = vector_length_encoding(vlen_in_bytes);
 
     vpxor (dst, dst, dst, vlen_enc);
-    vpsubb(dst, dst, src, vlen_enc);
+    vpsubb(dst, dst, src, is_legacy ? AVX_256bit : vlen_enc);
+
     switch (elem_bt) {
       case T_BYTE:   /* nothing to do */            break;
       case T_SHORT:  vpmovsxbw(dst, dst, vlen_enc); break;
@@ -1465,9 +1468,26 @@ void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int v
   }
 }
 
+void C2_MacroAssembler::load_vector_mask(KRegister dst, XMMRegister src, XMMRegister xtmp,
+                                         Register tmp, bool novlbwdq, int vlen_enc) {
+  if (novlbwdq) {
+    vpmovsxbd(xtmp, src, vlen_enc);
+    evpcmpd(dst, k0, xtmp, ExternalAddress(StubRoutines::x86::vector_int_mask_cmp_bits()),
+            Assembler::eq, true, vlen_enc, tmp);
+  } else {
+    vpxor(xtmp, xtmp, xtmp, vlen_enc);
+    vpsubb(xtmp, xtmp, src, vlen_enc);
+    evpmovb2m(dst, xtmp, vlen_enc);
+  }
+}
+
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes) {
   ExternalAddress addr(StubRoutines::x86::vector_iota_indices());
-  if (vlen_in_bytes <= 16) {
+  if (vlen_in_bytes == 4) {
+    movdl(dst, addr);
+  } else if (vlen_in_bytes == 8) {
+    movq(dst, addr);
+  } else if (vlen_in_bytes == 16) {
     movdqu(dst, addr, scratch);
   } else if (vlen_in_bytes == 32) {
     vmovdqu(dst, addr, scratch);
@@ -1476,6 +1496,7 @@ void C2_MacroAssembler::load_iota_indices(XMMRegister dst, Register scratch, int
     evmovdqub(dst, k0, addr, false /*merge*/, Assembler::AVX_512bit, scratch);
   }
 }
+
 // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
 
 void C2_MacroAssembler::reduce_operation_128(BasicType typ, int opcode, XMMRegister dst, XMMRegister src) {
@@ -1894,7 +1915,7 @@ void C2_MacroAssembler::reduce8L(int opcode, Register dst, Register src1, XMMReg
 }
 
 void C2_MacroAssembler::genmask(KRegister dst, Register len, Register temp) {
-  assert(ArrayCopyPartialInlineSize <= 64,"");
+  assert(ArrayOperationPartialInlineSize > 0 && ArrayOperationPartialInlineSize <= 64, "invalid");
   mov64(temp, -1L);
   bzhiq(temp, temp, len);
   kmovql(dst, temp);
@@ -2111,25 +2132,129 @@ void C2_MacroAssembler::get_elem(BasicType typ, XMMRegister dst, XMMRegister src
   }
 }
 
-void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral adr, int comparison, int vector_len, Register scratch) {
+void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, XMMRegister src2, int comparison, int vector_len) {
   switch(typ) {
     case T_BYTE:
-      evpcmpb(kdmask, ksmask, src1, adr, comparison, vector_len, scratch);
+    case T_BOOLEAN:
+      evpcmpb(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
       break;
     case T_SHORT:
-      evpcmpw(kdmask, ksmask, src1, adr, comparison, vector_len, scratch);
+    case T_CHAR:
+      evpcmpw(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
       break;
     case T_INT:
     case T_FLOAT:
-      evpcmpd(kdmask, ksmask, src1, adr, comparison, vector_len, scratch);
+      evpcmpd(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
       break;
     case T_LONG:
     case T_DOUBLE:
-      evpcmpq(kdmask, ksmask, src1, adr, comparison, vector_len, scratch);
+      evpcmpq(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
       break;
     default:
       assert(false,"Should not reach here.");
       break;
+  }
+}
+
+void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral adr, int comparison, int vector_len, Register scratch) {
+  switch(typ) {
+    case T_BOOLEAN:
+    case T_BYTE:
+      evpcmpb(kdmask, ksmask, src1, adr, comparison, /*signed*/ true, vector_len, scratch);
+      break;
+    case T_CHAR:
+    case T_SHORT:
+      evpcmpw(kdmask, ksmask, src1, adr, comparison, /*signed*/ true, vector_len, scratch);
+      break;
+    case T_INT:
+    case T_FLOAT:
+      evpcmpd(kdmask, ksmask, src1, adr, comparison, /*signed*/ true, vector_len, scratch);
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      evpcmpq(kdmask, ksmask, src1, adr, comparison, /*signed*/ true, vector_len, scratch);
+      break;
+    default:
+      assert(false,"Should not reach here.");
+      break;
+  }
+}
+
+void C2_MacroAssembler::vpcmpu(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison,
+                            int vlen_in_bytes, XMMRegister vtmp1, XMMRegister vtmp2, Register scratch) {
+  int vlen_enc = vector_length_encoding(vlen_in_bytes*2);
+  switch (typ) {
+  case T_BYTE:
+    vpmovzxbw(vtmp1, src1, vlen_enc);
+    vpmovzxbw(vtmp2, src2, vlen_enc);
+    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::W, vlen_enc, scratch);
+    vpacksswb(dst, dst, dst, vlen_enc);
+    break;
+  case T_SHORT:
+    vpmovzxwd(vtmp1, src1, vlen_enc);
+    vpmovzxwd(vtmp2, src2, vlen_enc);
+    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::D, vlen_enc, scratch);
+    vpackssdw(dst, dst, dst, vlen_enc);
+    break;
+  case T_INT:
+    vpmovzxdq(vtmp1, src1, vlen_enc);
+    vpmovzxdq(vtmp2, src2, vlen_enc);
+    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::Q, vlen_enc, scratch);
+    vpermilps(dst, dst, 8, vlen_enc);
+    break;
+  default:
+    assert(false, "Should not reach here");
+  }
+  if (vlen_in_bytes == 16) {
+    vpermpd(dst, dst, 0x8, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vpcmpu32(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
+                              XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3, Register scratch) {
+  int vlen_enc = vector_length_encoding(vlen_in_bytes);
+  switch (typ) {
+  case T_BYTE:
+    vpmovzxbw(vtmp1, src1, vlen_enc);
+    vpmovzxbw(vtmp2, src2, vlen_enc);
+    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::W, vlen_enc, scratch);
+    vextracti128(vtmp1, src1, 1);
+    vextracti128(vtmp2, src2, 1);
+    vpmovzxbw(vtmp1, vtmp1, vlen_enc);
+    vpmovzxbw(vtmp2, vtmp2, vlen_enc);
+    vpcmpCCW(vtmp3, vtmp1, vtmp2, comparison, Assembler::W, vlen_enc, scratch);
+    vpacksswb(dst, dst, vtmp3, vlen_enc);
+    vpermpd(dst, dst, 0xd8, vlen_enc);
+    break;
+  case T_SHORT:
+    vpmovzxwd(vtmp1, src1, vlen_enc);
+    vpmovzxwd(vtmp2, src2, vlen_enc);
+    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::D, vlen_enc, scratch);
+    vextracti128(vtmp1, src1, 1);
+    vextracti128(vtmp2, src2, 1);
+    vpmovzxwd(vtmp1, vtmp1, vlen_enc);
+    vpmovzxwd(vtmp2, vtmp2, vlen_enc);
+    vpcmpCCW(vtmp3, vtmp1, vtmp2, comparison, Assembler::D,  vlen_enc, scratch);
+    vpackssdw(dst, dst, vtmp3, vlen_enc);
+    vpermpd(dst, dst, 0xd8, vlen_enc);
+    break;
+  case T_INT:
+    vpmovzxdq(vtmp1, src1, vlen_enc);
+    vpmovzxdq(vtmp2, src2, vlen_enc);
+    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::Q, vlen_enc, scratch);
+    vpshufd(dst, dst, 8, vlen_enc);
+    vpermq(dst, dst, 8, vlen_enc);
+    vextracti128(vtmp1, src1, 1);
+    vextracti128(vtmp2, src2, 1);
+    vpmovzxdq(vtmp1, vtmp1, vlen_enc);
+    vpmovzxdq(vtmp2, vtmp2, vlen_enc);
+    vpcmpCCW(vtmp3, vtmp1, vtmp2, comparison, Assembler::Q,  vlen_enc, scratch);
+    vpshufd(vtmp3, vtmp3, 8, vlen_enc);
+    vpermq(vtmp3, vtmp3, 0x80, vlen_enc);
+    vpblendd(dst, dst, vtmp3, 0xf0, vlen_enc);
+    break;
+  default:
+    assert(false, "Should not reach here");
   }
 }
 
@@ -3721,3 +3846,275 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
     vpxor(vec2, vec2);
   }
 }
+
+void C2_MacroAssembler::evmasked_op(int ideal_opc, BasicType eType, KRegister mask, XMMRegister dst,
+                                    XMMRegister src1, int imm8, bool merge, int vlen_enc) {
+  switch(ideal_opc) {
+    case Op_LShiftVS:
+      Assembler::evpsllw(dst, mask, src1, imm8, merge, vlen_enc); break;
+    case Op_LShiftVI:
+      Assembler::evpslld(dst, mask, src1, imm8, merge, vlen_enc); break;
+    case Op_LShiftVL:
+      Assembler::evpsllq(dst, mask, src1, imm8, merge, vlen_enc); break;
+    case Op_RShiftVS:
+      Assembler::evpsraw(dst, mask, src1, imm8, merge, vlen_enc); break;
+    case Op_RShiftVI:
+      Assembler::evpsrad(dst, mask, src1, imm8, merge, vlen_enc); break;
+    case Op_RShiftVL:
+      Assembler::evpsraq(dst, mask, src1, imm8, merge, vlen_enc); break;
+    case Op_URShiftVS:
+      Assembler::evpsrlw(dst, mask, src1, imm8, merge, vlen_enc); break;
+    case Op_URShiftVI:
+      Assembler::evpsrld(dst, mask, src1, imm8, merge, vlen_enc); break;
+    case Op_URShiftVL:
+      Assembler::evpsrlq(dst, mask, src1, imm8, merge, vlen_enc); break;
+    case Op_RotateRightV:
+      evrord(eType, dst, mask, src1, imm8, merge, vlen_enc); break;
+    case Op_RotateLeftV:
+      evrold(eType, dst, mask, src1, imm8, merge, vlen_enc); break;
+    default:
+      fatal("Unsupported masked operation"); break;
+  }
+}
+
+void C2_MacroAssembler::evmasked_op(int ideal_opc, BasicType eType, KRegister mask, XMMRegister dst,
+                                    XMMRegister src1, XMMRegister src2, bool merge, int vlen_enc,
+                                    bool is_varshift) {
+  switch (ideal_opc) {
+    case Op_AddVB:
+      evpaddb(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVS:
+      evpaddw(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVI:
+      evpaddd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVL:
+      evpaddq(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVF:
+      evaddps(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVD:
+      evaddpd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVB:
+      evpsubb(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVS:
+      evpsubw(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVI:
+      evpsubd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVL:
+      evpsubq(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVF:
+      evsubps(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVD:
+      evsubpd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVS:
+      evpmullw(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVI:
+      evpmulld(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVL:
+      evpmullq(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVF:
+      evmulps(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVD:
+      evmulpd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_DivVF:
+      evdivps(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_DivVD:
+      evdivpd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SqrtVF:
+      evsqrtps(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SqrtVD:
+      evsqrtpd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AbsVB:
+      evpabsb(dst, mask, src2, merge, vlen_enc); break;
+    case Op_AbsVS:
+      evpabsw(dst, mask, src2, merge, vlen_enc); break;
+    case Op_AbsVI:
+      evpabsd(dst, mask, src2, merge, vlen_enc); break;
+    case Op_AbsVL:
+      evpabsq(dst, mask, src2, merge, vlen_enc); break;
+    case Op_FmaVF:
+      evpfma213ps(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_FmaVD:
+      evpfma213pd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_VectorRearrange:
+      evperm(eType, dst, mask, src2, src1, merge, vlen_enc); break;
+    case Op_LShiftVS:
+      evpsllw(dst, mask, src1, src2, merge, vlen_enc, is_varshift); break;
+    case Op_LShiftVI:
+      evpslld(dst, mask, src1, src2, merge, vlen_enc, is_varshift); break;
+    case Op_LShiftVL:
+      evpsllq(dst, mask, src1, src2, merge, vlen_enc, is_varshift); break;
+    case Op_RShiftVS:
+      evpsraw(dst, mask, src1, src2, merge, vlen_enc, is_varshift); break;
+    case Op_RShiftVI:
+      evpsrad(dst, mask, src1, src2, merge, vlen_enc, is_varshift); break;
+    case Op_RShiftVL:
+      evpsraq(dst, mask, src1, src2, merge, vlen_enc, is_varshift); break;
+    case Op_URShiftVS:
+      evpsrlw(dst, mask, src1, src2, merge, vlen_enc, is_varshift); break;
+    case Op_URShiftVI:
+      evpsrld(dst, mask, src1, src2, merge, vlen_enc, is_varshift); break;
+    case Op_URShiftVL:
+      evpsrlq(dst, mask, src1, src2, merge, vlen_enc, is_varshift); break;
+    case Op_RotateLeftV:
+      evrold(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_RotateRightV:
+      evrord(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MaxV:
+      evpmaxs(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MinV:
+      evpmins(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_XorV:
+      evxor(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_OrV:
+      evor(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AndV:
+      evand(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    default:
+      fatal("Unsupported masked operation"); break;
+  }
+}
+
+void C2_MacroAssembler::evmasked_op(int ideal_opc, BasicType eType, KRegister mask, XMMRegister dst,
+                                    XMMRegister src1, Address src2, bool merge, int vlen_enc) {
+  switch (ideal_opc) {
+    case Op_AddVB:
+      evpaddb(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVS:
+      evpaddw(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVI:
+      evpaddd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVL:
+      evpaddq(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVF:
+      evaddps(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVD:
+      evaddpd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVB:
+      evpsubb(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVS:
+      evpsubw(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVI:
+      evpsubd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVL:
+      evpsubq(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVF:
+      evsubps(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVD:
+      evsubpd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVS:
+      evpmullw(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVI:
+      evpmulld(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVL:
+      evpmullq(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVF:
+      evmulps(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVD:
+      evmulpd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_DivVF:
+      evdivps(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_DivVD:
+      evdivpd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_FmaVF:
+      evpfma213ps(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_FmaVD:
+      evpfma213pd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MaxV:
+      evpmaxs(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MinV:
+      evpmins(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_XorV:
+      evxor(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_OrV:
+      evor(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AndV:
+      evand(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    default:
+      fatal("Unsupported masked operation"); break;
+  }
+}
+
+void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
+                                  KRegister src1, KRegister src2) {
+  BasicType etype = T_ILLEGAL;
+  switch(mask_len) {
+    case 2:
+    case 4:
+    case 8:  etype = T_BYTE; break;
+    case 16: etype = T_SHORT; break;
+    case 32: etype = T_INT; break;
+    case 64: etype = T_LONG; break;
+    default: fatal("Unsupported type"); break;
+  }
+  assert(etype != T_ILLEGAL, "");
+  switch(ideal_opc) {
+    case Op_AndVMask:
+      kand(etype, dst, src1, src2); break;
+    case Op_OrVMask:
+      kor(etype, dst, src1, src2); break;
+    case Op_XorVMask:
+      kxor(etype, dst, src1, src2); break;
+    default:
+      fatal("Unsupported masked operation"); break;
+  }
+}
+
+#ifdef _LP64
+void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, KRegister mask,
+                                              Register tmp, int masklen, int masksize,
+                                              int vec_enc) {
+  if(VM_Version::supports_avx512bw()) {
+    kmovql(tmp, mask);
+  } else {
+    assert(masklen <= 16, "");
+    kmovwl(tmp, mask);
+  }
+  if (masksize < 16) {
+    andq(tmp, (((jlong)1 << masklen) - 1));
+  }
+  switch(opc) {
+    case Op_VectorMaskTrueCount:
+      popcntq(dst, tmp);
+      break;
+    case Op_VectorMaskLastTrue:
+      mov64(dst, -1);
+      bsrq(tmp, tmp);
+      cmov(Assembler::notZero, dst, tmp);
+      break;
+    case Op_VectorMaskFirstTrue:
+      mov64(dst, masklen);
+      bsfq(tmp, tmp);
+      cmov(Assembler::notZero, dst, tmp);
+      break;
+    default: assert(false, "Unhandled mask operation");
+  }
+}
+
+void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
+                                              XMMRegister xtmp1, Register tmp, int masklen, int masksize,
+                                              int vec_enc) {
+  assert(VM_Version::supports_avx(), "");
+  vpxor(xtmp, xtmp, xtmp, vec_enc);
+  vpsubb(xtmp, xtmp, mask, vec_enc);
+  vpmovmskb(tmp, xtmp, vec_enc);
+  if (masksize < 16) {
+    andq(tmp, (((jlong)1 << masklen) - 1));
+  }
+  switch(opc) {
+    case Op_VectorMaskTrueCount:
+      popcntq(dst, tmp);
+      break;
+    case Op_VectorMaskLastTrue:
+      mov64(dst, -1);
+      bsrq(tmp, tmp);
+      cmov(Assembler::notZero, dst, tmp);
+      break;
+    case Op_VectorMaskFirstTrue:
+      mov64(dst, masklen);
+      bsfq(tmp, tmp);
+      cmov(Assembler::notZero, dst, tmp);
+      break;
+    default: assert(false, "Unhandled mask operation");
+  }
+}
+#endif

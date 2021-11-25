@@ -66,6 +66,7 @@ void launchApp() {
         appLauncher
             .setImageRoot(appImageRoot)
             .setAppDir(FileUtils::mkpath() << appImageRoot << _T("lib/app"))
+            .setLibEnvVariableName(_T("LD_LIBRARY_PATH"))
             .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
                     << _T("lib/runtime"));
     } else {
@@ -112,17 +113,9 @@ void launchApp() {
         launchInfo = (tstrings::any() << thisHash).str();
     }
 
-    JP_TRY;
-    if (0 != setenv(_JPACKAGE_LAUNCHER.c_str(), launchInfo.c_str(), 1)) {
-        JP_THROW(tstrings::any() << "setenv(" << _JPACKAGE_LAUNCHER
-                << ", " << launchInfo << ") failed. Error: " << lastCRTError());
-    } else {
-        LOG_TRACE(tstrings::any() << "Set "
-                << _JPACKAGE_LAUNCHER << "=[" << launchInfo << "]");
-    }
-    JP_CATCH_ALL;
-
     jvmLauncher = appLauncher.createJvmLauncher();
+
+    jvmLauncher->addEnvVariable(_JPACKAGE_LAUNCHER, launchInfo);
 }
 
 } // namespace

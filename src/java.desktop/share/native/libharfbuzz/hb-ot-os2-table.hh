@@ -183,8 +183,7 @@ struct OS2
       cmap.collect_mapping (&unicodes, &unicode_glyphid_map);
       cmap.fini ();
 
-      if (c->plan->unicodes->is_empty ()) unicodes.clear ();
-      else hb_set_set (&unicodes, c->plan->unicodes);
+      hb_set_set (&unicodes, c->plan->unicodes);
 
       + unicode_glyphid_map.iter ()
       | hb_filter (c->plan->glyphs_requested, hb_second)

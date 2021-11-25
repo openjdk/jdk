@@ -25,9 +25,10 @@
 #ifndef SHARE_RUNTIME_STACKWATERMARK_INLINE_HPP
 #define SHARE_RUNTIME_STACKWATERMARK_INLINE_HPP
 
+#include "runtime/stackWatermark.hpp"
+
 #include "code/nmethod.hpp"
 #include "runtime/registerMap.hpp"
-#include "runtime/stackWatermark.hpp"
 #include "runtime/thread.hpp"
 
 static inline bool is_above_watermark(uintptr_t sp, uintptr_t watermark) {

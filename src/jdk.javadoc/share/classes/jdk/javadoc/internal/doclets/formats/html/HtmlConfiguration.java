@@ -60,6 +60,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
@@ -128,6 +129,14 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     protected PreviewAPIListBuilder previewAPIListBuilder;
 
+    /**
+     * The collection of new API items, if any, to be displayed on the new-list page,
+     * or null if the page should not be generated.
+     * The page is only generated if the {@code --since} option is used with release
+     * names matching {@code @since} tags in the documented code.
+     */
+    protected NewAPIBuilder newAPIPageBuilder;
+
     public Contents contents;
 
     protected final Messages messages;
@@ -146,7 +155,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     // Note: this should (eventually) be merged with Navigation.PageMode,
     // which performs a somewhat similar role
     public enum ConditionalPage {
-        CONSTANT_VALUES, DEPRECATED, PREVIEW, SERIALIZED_FORM, SYSTEM_PROPERTIES
+        CONSTANT_VALUES, DEPRECATED, PREVIEW, SERIALIZED_FORM, SYSTEM_PROPERTIES, NEW
     }
 
     /**
@@ -287,12 +296,6 @@ public class HtmlConfiguration extends BaseConfiguration {
         } else {
             if (showModules) {
                 topFile = DocPath.empty.resolve(docPaths.moduleSummary(modules.first()));
-            } else if (packages.size() == 1 && packages.first().isUnnamed()) {
-                List<TypeElement> classes = new ArrayList<>(getIncludedTypeElements());
-                if (!classes.isEmpty()) {
-                    TypeElement te = getValidClass(classes);
-                    topFile = docPaths.forClass(te);
-                }
             } else if (!packages.isEmpty()) {
                 topFile = docPaths.forPackage(packages.first()).resolve(DocPaths.PACKAGE_SUMMARY);
             }
@@ -354,8 +357,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     @Override
     public JavaFileObject getOverviewPath() {
         String overviewpath = options.overviewPath();
-        if (overviewpath != null && getFileManager() instanceof StandardJavaFileManager) {
-            StandardJavaFileManager fm = (StandardJavaFileManager) getFileManager();
+        if (overviewpath != null && getFileManager() instanceof StandardJavaFileManager fm) {
             return fm.getJavaFileObjects(overviewpath).iterator().next();
         }
         return null;
@@ -373,6 +375,13 @@ public class HtmlConfiguration extends BaseConfiguration {
     public List<DocPath> getAdditionalStylesheets() {
         return options.additionalStylesheets().stream()
                 .map(ssf -> DocFile.createFileForInput(this, ssf))
+                .map(file -> DocPath.create(file.getName()))
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public List<DocPath> getAdditionalScripts() {
+        return options.additionalScripts().stream()
+                .map(sf -> DocFile.createFileForInput(this, sf))
                 .map(file -> DocPath.create(file.getName()))
                 .collect(Collectors.toCollection(ArrayList::new));
     }

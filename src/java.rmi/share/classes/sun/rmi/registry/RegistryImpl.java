@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
      * The registryFilter created from the value of the {@code "sun.rmi.registry.registryFilter"}
      * property.
      */
+    @SuppressWarnings("removal")
     private static final ObjectInputFilter registryFilter =
             AccessController.doPrivileged((PrivilegedAction<ObjectInputFilter>)RegistryImpl::initRegistryFilter);
 
@@ -156,6 +157,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
      * Construct a new RegistryImpl on the specified port with the
      * given custom socket factory pair and ObjectInputFilter.
      */
+    @SuppressWarnings("removal")
     public RegistryImpl(int port,
                         RMIClientSocketFactory csf,
                         RMIServerSocketFactory ssf,
@@ -184,6 +186,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     /**
      * Construct a new RegistryImpl on the specified port.
      */
+    @SuppressWarnings("removal")
     public RegistryImpl(int port)
         throws RemoteException
     {
@@ -306,6 +309,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
      * Check that the caller has access to perform indicated operation.
      * The client must be on same the same host as this server.
      */
+    @SuppressWarnings("removal")
     public static void checkAccess(String op) throws AccessException {
 
         try {
@@ -464,7 +468,6 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
                     || UnicastRef.class.isAssignableFrom(clazz)
                     || RMIClientSocketFactory.class.isAssignableFrom(clazz)
                     || RMIServerSocketFactory.class.isAssignableFrom(clazz)
-                    || java.rmi.activation.ActivationID.class.isAssignableFrom(clazz)
                     || java.rmi.server.UID.class.isAssignableFrom(clazz)) {
                 return ObjectInputFilter.Status.ALLOWED;
             } else {
@@ -488,6 +491,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
      * @exception RemoteException If remote operation failed.
      * @since 9
      */
+    @SuppressWarnings("removal")
     public static RegistryImpl createRegistry(int regPort) throws RemoteException {
         // Create and install the security manager if one is not installed
         // already.
@@ -576,6 +580,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
      * The approach used here is taken from the similar method
      * getAccessControlContext() in the sun.applet.AppletPanel class.
      */
+    @SuppressWarnings("removal")
     private static AccessControlContext getAccessControlContext(int port) {
         // begin with permissions granted to all code in current policy
         PermissionCollection perms = AccessController.doPrivileged(

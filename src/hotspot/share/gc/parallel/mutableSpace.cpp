@@ -72,7 +72,7 @@ void MutableSpace::initialize(MemRegion mr,
                               bool clear_space,
                               bool mangle_space,
                               bool setup_pages,
-                              WorkGang* pretouch_gang) {
+                              WorkerThreads* pretouch_workers) {
 
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -122,10 +122,10 @@ void MutableSpace::initialize(MemRegion mr,
       size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
 
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             page_size, pretouch_gang);
+                             page_size, pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             page_size, pretouch_gang);
+                             page_size, pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.

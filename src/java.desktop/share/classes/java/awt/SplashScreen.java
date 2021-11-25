@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,7 @@ public final class SplashScreen {
      * @return the {@link SplashScreen} instance, or {@code null} if there is
      *         none or it has already been closed
      */
+    @SuppressWarnings("removal")
     public static  SplashScreen getSplashScreen() {
         synchronized (SplashScreen.class) {
             if (GraphicsEnvironment.isHeadless()) {

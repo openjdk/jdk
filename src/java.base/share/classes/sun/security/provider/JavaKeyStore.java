@@ -281,6 +281,9 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
         if (!(key instanceof java.security.PrivateKey)) {
             throw new KeyStoreException("Cannot store non-PrivateKeys");
         }
+        if (password == null) {
+            throw new KeyStoreException("password can't be null");
+        }
         try {
             synchronized(entries) {
                 KeyEntry entry = new KeyEntry();
@@ -807,9 +810,9 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
                 if (!MessageDigest.isEqual(computed, actual)) {
                     Throwable t = new UnrecoverableKeyException
                             ("Password verification failed");
-                    throw (IOException) new IOException
+                    throw new IOException
                             ("Keystore was tampered with, or "
-                                    + "password was incorrect").initCause(t);
+                                    + "password was incorrect", t);
                 }
             }
         }

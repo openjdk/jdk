@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1ALLOCATOR_INLINE_HPP
 
 #include "gc/g1/g1Allocator.hpp"
+
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/shared/plab.inline.hpp"
 #include "memory/universe.hpp"
@@ -52,16 +53,29 @@ inline HeapWord* G1Allocator::attempt_allocation(size_t min_word_size,
                                                  size_t desired_word_size,
                                                  size_t* actual_word_size) {
   uint node_index = current_node_index();
+
   HeapWord* result = mutator_alloc_region(node_index)->attempt_retained_allocation(min_word_size, desired_word_size, actual_word_size);
   if (result != NULL) {
     return result;
   }
+
   return mutator_alloc_region(node_index)->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
+}
+
+inline HeapWord* G1Allocator::attempt_allocation_using_new_region(size_t word_size) {
+  uint node_index = current_node_index();
+  size_t temp;
+  HeapWord* result = mutator_alloc_region(node_index)->attempt_allocation_using_new_region(word_size, word_size, &temp);
+  assert(result != NULL || mutator_alloc_region(node_index)->get() == NULL,
+         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT,
+         p2i(mutator_alloc_region(node_index)->get()));
+  return result;
 }
 
 inline HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size) {
   uint node_index = current_node_index();
   HeapWord* result = mutator_alloc_region(node_index)->attempt_allocation_locked(word_size);
+
   assert(result != NULL || mutator_alloc_region(node_index)->get() == NULL,
          "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region(node_index)->get()));
   return result;
@@ -117,6 +131,51 @@ inline HeapWord* G1PLABAllocator::allocate(G1HeapRegionAttr dest,
     return obj;
   }
   return allocate_direct_or_new_plab(dest, word_sz, refill_failed, node_index);
+}
+
+inline bool G1PLABAllocator::needs_bot_update(G1HeapRegionAttr dest) const {
+  return dest.is_old();
+}
+
+inline void G1PLABAllocator::update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size) {
+  if (!needs_bot_update(attr)) {
+    return;
+  }
+
+  // Out of PLAB allocations in an old generation region. Update BOT.
+  HeapRegion* region = _g1h->heap_region_containing(addr);
+  region->update_bot_at(addr, size);
+}
+
+inline void G1PLABAllocator::update_bot_for_plab_allocation(G1HeapRegionAttr dest, size_t word_sz, uint node_index) {
+  assert(needs_bot_update(dest), "Wrong destination: %s", dest.get_type_str());
+  G1BotUpdatingPLAB* plab = static_cast<G1BotUpdatingPLAB*>(alloc_buffer(dest, node_index));
+  plab->update_bot(word_sz);
+}
+
+inline void G1BotUpdatingPLAB::set_buf(HeapWord* buf, size_t word_sz) {
+  PLAB::set_buf(buf, word_sz);
+  // Update the region and threshold to allow efficient BOT updates.
+  _region = G1CollectedHeap::heap()->heap_region_containing(buf);
+  _next_bot_threshold = _region->bot_threshold_for_addr(buf);
+}
+
+inline void G1BotUpdatingPLAB::update_bot(size_t word_sz) {
+  // The last object end is at _top, if it did not cross the
+  // threshold, there is nothing to do.
+  if (_top <= _next_bot_threshold) {
+    return;
+  }
+
+  HeapWord* obj_start = _top - word_sz;
+  assert(contains(obj_start),
+         "Object start outside PLAB. bottom: " PTR_FORMAT " object: " PTR_FORMAT,
+         p2i(_bottom), p2i(obj_start));
+  assert(obj_start <= _next_bot_threshold,
+         "Object start not below or at threshold. threshold: " PTR_FORMAT " object: " PTR_FORMAT,
+         p2i(_next_bot_threshold), p2i(obj_start));
+
+  _region->update_bot_crossing_threshold(&_next_bot_threshold, obj_start, _top);
 }
 
 #endif // SHARE_GC_G1_G1ALLOCATOR_INLINE_HPP

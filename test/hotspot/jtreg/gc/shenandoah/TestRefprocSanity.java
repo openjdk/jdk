@@ -23,39 +23,39 @@
  */
 
 /*
- * @test TestRefprocSanity
+ * @test id=default
  * @summary Test that null references/referents work fine
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC
  *      -XX:+ShenandoahVerify
  *      TestRefprocSanity
  *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC
  *      TestRefprocSanity
  *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      TestRefprocSanity
  */
 
 /*
- * @test TestRefprocSanity
+ * @test id=iu
  * @summary Test that null references/referents work fine
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
  *      -XX:+ShenandoahVerify
  *      TestRefprocSanity
  *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
  *      TestRefprocSanity
  *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
  *      TestRefprocSanity
  */
@@ -64,13 +64,15 @@ import java.lang.ref.*;
 
 public class TestRefprocSanity {
 
-    static final long TARGET_MB = Long.getLong("target", 10_000); // 10 Gb allocation
-    static final int WINDOW = 10_000;
+    static final long TARGET_MB = Long.getLong("target", 1_000); // 1 Gb allocation
+    static final int WINDOW = 1_000;
 
     static final Reference<MyObject>[] refs = new Reference[WINDOW];
 
+    static Object sink;
+
     public static void main(String[] args) throws Exception {
-        long count = TARGET_MB * 1024 * 1024 / 32;
+        long count = TARGET_MB * 1024 * 1024 / 128;
         int rIdx = 0;
 
         ReferenceQueue rq = new ReferenceQueue();
@@ -87,7 +89,12 @@ public class TestRefprocSanity {
             if (rIdx >= WINDOW) {
                 rIdx = 0;
             }
-            while (rq.poll() != null); // drain
+
+            // Do allocations to force GCs
+            sink = new byte[100];
+
+            // Drain the refqueue
+            while (rq.poll() != null);
         }
     }
 

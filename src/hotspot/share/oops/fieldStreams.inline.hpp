@@ -26,6 +26,7 @@
 #define SHARE_OOPS_FIELDSTREAMS_INLINE_HPP
 
 #include "oops/fieldStreams.hpp"
+
 #include "runtime/thread.inline.hpp"
 
 FieldStreamBase::FieldStreamBase(Array<u2>* fields, ConstantPool* constants, int start, int limit) : _fields(fields),

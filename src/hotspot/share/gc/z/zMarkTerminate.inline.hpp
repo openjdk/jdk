@@ -24,6 +24,8 @@
 #ifndef SHARE_GC_Z_ZMARKTERMINATE_INLINE_HPP
 #define SHARE_GC_Z_ZMARKTERMINATE_INLINE_HPP
 
+#include "gc/z/zMarkTerminate.hpp"
+
 #include "runtime/atomic.hpp"
 
 inline ZMarkTerminate::ZMarkTerminate() :

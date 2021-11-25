@@ -38,6 +38,7 @@ import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * Cipher implementation class. This class currently supports
@@ -369,9 +370,13 @@ final class P11Cipher extends CipherSpi {
             case Cipher.DECRYPT_MODE:
                 encrypt = false;
                 break;
-            default:
-                throw new InvalidAlgorithmParameterException
+            case Cipher.WRAP_MODE:
+            case Cipher.UNWRAP_MODE:
+                throw new UnsupportedOperationException
                         ("Unsupported mode: " + opmode);
+            default:
+                // should never happen; checked by Cipher.init()
+                throw new AssertionError("Unknown mode: " + opmode);
         }
         if (blockMode == MODE_ECB) { // ECB or stream cipher
             if (iv != null) {
@@ -451,7 +456,7 @@ final class P11Cipher extends CipherSpi {
                 token.p11.C_DecryptFinal(session.id(), 0, buffer, 0, bufLen);
             }
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+            if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
                 // call. If the operation inside the token was already cancelled,
                 // do not fail here. This is part of a defensive mechanism for
@@ -651,7 +656,7 @@ final class P11Cipher extends CipherSpi {
             bytesBuffered += (inLen - k);
             return k;
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_BUFFER_TOO_SMALL) {
+            if (e.match(CKR_BUFFER_TOO_SMALL)) {
                 throw (ShortBufferException)
                         (new ShortBufferException().initCause(e));
             }
@@ -775,7 +780,7 @@ final class P11Cipher extends CipherSpi {
         } catch (PKCS11Exception e) {
             // Reset input buffer to its original position for
             inBuffer.position(origPos);
-            if (e.getErrorCode() == CKR_BUFFER_TOO_SMALL) {
+            if (e.match(CKR_BUFFER_TOO_SMALL)) {
                 throw (ShortBufferException)
                         (new ShortBufferException().initCause(e));
             }
@@ -957,12 +962,11 @@ final class P11Cipher extends CipherSpi {
 
     private void handleException(PKCS11Exception e)
             throws ShortBufferException, IllegalBlockSizeException {
-        long errorCode = e.getErrorCode();
-        if (errorCode == CKR_BUFFER_TOO_SMALL) {
+        if (e.match(CKR_BUFFER_TOO_SMALL)) {
             throw (ShortBufferException)
                     (new ShortBufferException().initCause(e));
-        } else if (errorCode == CKR_DATA_LEN_RANGE ||
-                   errorCode == CKR_ENCRYPTED_DATA_LEN_RANGE) {
+        } else if (e.match(CKR_DATA_LEN_RANGE) ||
+                e.match(CKR_ENCRYPTED_DATA_LEN_RANGE)) {
             throw (IllegalBlockSizeException)
                     (new IllegalBlockSizeException(e.toString()).initCause(e));
         }

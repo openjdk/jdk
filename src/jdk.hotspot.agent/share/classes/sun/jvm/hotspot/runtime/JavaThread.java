@@ -52,6 +52,7 @@ public class JavaThread extends Thread {
   private static AddressField  stackBaseField;
   private static CIntegerField stackSizeField;
   private static CIntegerField terminatedField;
+  private static AddressField activeHandlesField;
 
   private static JavaThreadPDAccess access;
 
@@ -95,6 +96,7 @@ public class JavaThread extends Thread {
     stackBaseField    = type.getAddressField("_stack_base");
     stackSizeField    = type.getCIntegerField("_stack_size");
     terminatedField   = type.getCIntegerField("_terminated");
+    activeHandlesField = type.getAddressField("_active_handles");
 
     UNINITIALIZED     = db.lookupIntConstant("_thread_uninitialized").intValue();
     NEW               = db.lookupIntConstant("_thread_new").intValue();
@@ -409,6 +411,14 @@ public class JavaThread extends Thread {
     return null;
   }
 
+  public JNIHandleBlock activeHandles() {
+    Address a = activeHandlesField.getAddress(addr);
+    if (a == null) {
+      return null;
+    }
+    return new JNIHandleBlock(a);
+  }
+
   public void printInfoOn(PrintStream tty) {
 
     tty.println("State: " + getThreadState().toString());
@@ -487,7 +497,7 @@ public class JavaThread extends Thread {
     out.print(" tid=");
     out.print(this.getAddress());
     out.print(" nid=");
-    out.print(String.format("0x%x ",this.getOSThread().threadId()));
+    out.print(String.format("%d ",this.getOSThread().threadId()));
     out.print(getOSThread().getThreadState().getPrintVal());
     out.print(" [");
     if(this.getLastJavaSP() == null){

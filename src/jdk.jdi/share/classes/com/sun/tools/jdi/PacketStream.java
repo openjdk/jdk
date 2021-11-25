@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ import com.sun.jdi.ObjectReference;
 import com.sun.jdi.PrimitiveValue;
 import com.sun.jdi.ShortValue;
 import com.sun.jdi.Value;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 class PacketStream {
     final VirtualMachineImpl vm;
@@ -189,13 +191,9 @@ class PacketStream {
     }
 
     void writeString(String string) {
-        try {
-            byte[] stringBytes = string.getBytes("UTF8");
-            writeInt(stringBytes.length);
-            writeByteArray(stringBytes);
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new InternalException("Cannot convert string to UTF8 bytes");
-        }
+        byte[] stringBytes = string.getBytes(UTF_8);
+        writeInt(stringBytes.length);
+        writeByteArray(stringBytes);
     }
 
     void writeLocation(Location location) {
@@ -405,15 +403,8 @@ class PacketStream {
      * characters of the string.
      */
     String readString() {
-        String ret;
         int len = readInt();
-
-        try {
-            ret = new String(pkt.data, inCursor, len, "UTF8");
-        } catch(java.io.UnsupportedEncodingException e) {
-            System.err.println(e);
-            ret = "Conversion error!";
-        }
+        String ret = new String(pkt.data, inCursor, len, UTF_8);
         inCursor += len;
         return ret;
     }

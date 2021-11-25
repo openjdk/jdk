@@ -33,19 +33,20 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
 
-Register LIR_OprDesc::as_register() const {
+Register LIR_Opr::as_register() const {
   return FrameMap::cpu_rnr2reg(cpu_regnr());
 }
 
-Register LIR_OprDesc::as_register_lo() const {
+Register LIR_Opr::as_register_lo() const {
   return FrameMap::cpu_rnr2reg(cpu_regnrLo());
 }
 
-Register LIR_OprDesc::as_register_hi() const {
+Register LIR_Opr::as_register_hi() const {
   return FrameMap::cpu_rnr2reg(cpu_regnrHi());
 }
 
 LIR_Opr LIR_OprFact::illegalOpr = LIR_OprFact::illegal();
+LIR_Opr LIR_OprFact::nullOpr = LIR_Opr();
 
 LIR_Opr LIR_OprFact::value_type(ValueType* type) {
   ValueTag tag = type->tag();
@@ -92,7 +93,7 @@ LIR_Address::Scale LIR_Address::scale(BasicType type) {
 
 //---------------------------------------------------
 
-char LIR_OprDesc::type_char(BasicType t) {
+char LIR_Opr::type_char(BasicType t) {
   switch (t) {
     case T_ARRAY:
       t = T_OBJECT;
@@ -120,7 +121,7 @@ char LIR_OprDesc::type_char(BasicType t) {
 }
 
 #ifndef PRODUCT
-void LIR_OprDesc::validate_type() const {
+void LIR_Opr::validate_type() const {
 
 #ifdef ASSERT
   if (!is_pointer() && !is_illegal()) {
@@ -172,7 +173,7 @@ void LIR_OprDesc::validate_type() const {
 #endif // PRODUCT
 
 
-bool LIR_OprDesc::is_oop() const {
+bool LIR_Opr::is_oop() const {
   if (is_pointer()) {
     return pointer()->is_oop_pointer();
   } else {
@@ -212,9 +213,7 @@ void LIR_Op2::verify() const {
     case lir_add:
     case lir_sub:
     case lir_mul:
-    case lir_mul_strictfp:
     case lir_div:
-    case lir_div_strictfp:
     case lir_rem:
     case lir_logic_and:
     case lir_logic_or:
@@ -405,7 +404,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
   switch (op->code()) {
 
 // LIR_Op0
-    case lir_backwardbranch_target:    // result and info always invalid
     case lir_fpop_raw:                 // result and info always invalid
     case lir_breakpoint:               // result and info always invalid
     case lir_membar:                   // result and info always invalid
@@ -564,8 +562,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_cmp_fd2i:
     case lir_add:
     case lir_sub:
-    case lir_mul:
-    case lir_div:
     case lir_rem:
     case lir_sqrt:
     case lir_abs:
@@ -623,8 +619,8 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     // vspecial handling for strict operations: register input operands
     // as temp to guarantee that they do not overlap with other
     // registers
-    case lir_mul_strictfp:
-    case lir_div_strictfp:
+    case lir_mul:
+    case lir_div:
     {
       assert(op->as_Op2() != NULL, "must be");
       LIR_Op2* op2 = (LIR_Op2*)op;
@@ -1377,7 +1373,7 @@ void LIR_List::unlock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, LIR_Opr scr
 
 void check_LIR() {
   // cannot do the proper checking as PRODUCT and other modes return different results
-  // guarantee(sizeof(LIR_OprDesc) == wordSize, "may not have a v-table");
+  // guarantee(sizeof(LIR_Opr) == wordSize, "may not have a v-table");
 }
 
 
@@ -1452,12 +1448,12 @@ void print_LIR(BlockList* blocks) {
 }
 
 #else
-// LIR_OprDesc
-void LIR_OprDesc::print() const {
+// LIR_Opr
+void LIR_Opr::print() const {
   print(tty);
 }
 
-void LIR_OprDesc::print(outputStream* out) const {
+void LIR_Opr::print(outputStream* out) const {
   if (is_illegal()) {
     return;
   }
@@ -1641,7 +1637,6 @@ const char * LIR_Op::name() const {
      case lir_label:                 s = "label";         break;
      case lir_nop:                   s = "nop";           break;
      case lir_on_spin_wait:          s = "on_spin_wait";  break;
-     case lir_backwardbranch_target: s = "backbranch";    break;
      case lir_std_entry:             s = "std_entry";     break;
      case lir_osr_entry:             s = "osr_entry";     break;
      case lir_fpop_raw:              s = "fpop_raw";      break;
@@ -1675,9 +1670,7 @@ const char * LIR_Op::name() const {
      case lir_add:                   s = "add";           break;
      case lir_sub:                   s = "sub";           break;
      case lir_mul:                   s = "mul";           break;
-     case lir_mul_strictfp:          s = "mul_strictfp";  break;
      case lir_div:                   s = "div";           break;
-     case lir_div_strictfp:          s = "div_strictfp";  break;
      case lir_rem:                   s = "rem";           break;
      case lir_abs:                   s = "abs";           break;
      case lir_neg:                   s = "neg";           break;
@@ -1787,8 +1780,6 @@ const char * LIR_Op1::name() const {
     switch (move_kind()) {
     case lir_move_normal:
       return "move";
-    case lir_move_unaligned:
-      return "unaligned move";
     case lir_move_volatile:
       return "volatile_move";
     case lir_move_wide:

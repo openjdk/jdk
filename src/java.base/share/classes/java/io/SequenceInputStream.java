@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class SequenceInputStream extends InputStream {
 
     private void peekNextStream() {
         if (e.hasMoreElements()) {
-            in = (InputStream) e.nextElement();
+            in = e.nextElement();
             if (in == null)
                 throw new NullPointerException();
         } else {
@@ -184,7 +184,7 @@ public class SequenceInputStream extends InputStream {
      *             greater than {@code b.length - off}
      * @throws     IOException  if an I/O error occurs.
      */
-    public int read(byte b[], int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException {
         if (in == null) {
             return -1;
         } else if (b == null) {

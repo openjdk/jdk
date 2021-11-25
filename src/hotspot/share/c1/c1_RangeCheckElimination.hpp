@@ -104,9 +104,6 @@ public:
     void remove_lower();
     void add_constant(int value);
     Bound *copy();
-
-  private:
-    void init();
   };
 
 
@@ -133,8 +130,6 @@ public:
     void do_MonitorEnter   (MonitorEnter*    x) { /* nothing to do */ };
     void do_MonitorExit    (MonitorExit*     x) { /* nothing to do */ };
     void do_Invoke         (Invoke*          x) { /* nothing to do */ };
-    void do_UnsafePutRaw   (UnsafePutRaw*    x) { /* nothing to do */ };
-    void do_UnsafePutObject(UnsafePutObject* x) { /* nothing to do */ };
     void do_Intrinsic      (Intrinsic*       x) { /* nothing to do */ };
     void do_Local          (Local*           x) { /* nothing to do */ };
     void do_LoadField      (LoadField*       x) { /* nothing to do */ };
@@ -155,7 +150,6 @@ public:
     void do_BlockBegin     (BlockBegin*      x) { /* nothing to do */ };
     void do_Goto           (Goto*            x) { /* nothing to do */ };
     void do_If             (If*              x) { /* nothing to do */ };
-    void do_IfInstanceOf   (IfInstanceOf*    x) { /* nothing to do */ };
     void do_TableSwitch    (TableSwitch*     x) { /* nothing to do */ };
     void do_LookupSwitch   (LookupSwitch*    x) { /* nothing to do */ };
     void do_Return         (Return*          x) { /* nothing to do */ };
@@ -164,9 +158,9 @@ public:
     void do_OsrEntry       (OsrEntry*        x) { /* nothing to do */ };
     void do_ExceptionObject(ExceptionObject* x) { /* nothing to do */ };
     void do_RoundFP        (RoundFP*         x) { /* nothing to do */ };
-    void do_UnsafeGetRaw   (UnsafeGetRaw*    x) { /* nothing to do */ };
-    void do_UnsafeGetObject(UnsafeGetObject* x) { /* nothing to do */ };
-    void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) { /* nothing to do */ };
+    void do_UnsafePut      (UnsafePut*       x) { /* nothing to do */ };
+    void do_UnsafeGet      (UnsafeGet*       x) { /* nothing to do */ };
+    void do_UnsafeGetAndSet(UnsafeGetAndSet* x) { /* nothing to do */ };
     void do_ProfileCall    (ProfileCall*     x) { /* nothing to do */ };
     void do_ProfileReturnType (ProfileReturnType*  x) { /* nothing to do */ };
     void do_ProfileInvoke  (ProfileInvoke*   x) { /* nothing to do */ };

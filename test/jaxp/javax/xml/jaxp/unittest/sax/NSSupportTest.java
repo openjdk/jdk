@@ -34,7 +34,7 @@ import org.xml.sax.helpers.NamespaceSupport;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true sax.NSSupportTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.NSSupportTest
  * @run testng/othervm sax.NSSupportTest
  * @summary Test NamespaceSupport.
  */

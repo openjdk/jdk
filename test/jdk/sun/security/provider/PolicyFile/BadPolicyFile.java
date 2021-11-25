@@ -25,7 +25,7 @@
  * @test
  * @bug 8150468
  * @summary check that a badly formatted policy file is handled correctly
- * @run main/othervm BadPolicyFile
+ * @run main/othervm -Djava.security.manager=allow BadPolicyFile
  */
 
 import java.io.File;

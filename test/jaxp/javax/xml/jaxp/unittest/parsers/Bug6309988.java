@@ -45,7 +45,7 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 6309988
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug6309988
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug6309988
  * @run testng/othervm parsers.Bug6309988
  * @summary Test elementAttributeLimit, maxOccurLimit, entityExpansionLimit.
  */

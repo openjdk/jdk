@@ -678,17 +678,17 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
       break;
     }
 
-    case lir_mul_strictfp:
-    case lir_div_strictfp: {
-      assert(op2->tmp1_opr()->is_fpu_register(), "strict operations need temporary fpu stack slot");
-      insert_free_if_dead(op2->tmp1_opr());
-      assert(sim()->stack_size() <= 7, "at least one stack slot must be free");
+    case lir_mul:
+    case lir_div: {
+      if (res->is_double_fpu()) {
+        assert(op2->tmp1_opr()->is_fpu_register(), "strict operations need temporary fpu stack slot");
+        insert_free_if_dead(op2->tmp1_opr());
+        assert(sim()->stack_size() <= 7, "at least one stack slot must be free");
+      }
       // fall-through: continue with the normal handling of lir_mul and lir_div
     }
     case lir_add:
-    case lir_sub:
-    case lir_mul:
-    case lir_div: {
+    case lir_sub: {
       assert(left->is_fpu_register(), "must be");
       assert(res->is_fpu_register(), "must be");
       assert(left->is_equal(res), "must be");

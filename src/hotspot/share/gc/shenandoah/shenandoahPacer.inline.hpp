@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPACER_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahPacer.hpp"
+
 #include "runtime/atomic.hpp"
 
 inline void ShenandoahPacer::report_mark(size_t words) {

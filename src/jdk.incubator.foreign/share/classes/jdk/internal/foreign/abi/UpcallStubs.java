@@ -25,19 +25,12 @@
 package jdk.internal.foreign.abi;
 
 import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.internal.foreign.MemoryAddressImpl;
-import jdk.internal.foreign.NativeMemorySegmentImpl;
+import jdk.incubator.foreign.NativeSymbol;
+import jdk.incubator.foreign.ResourceScope;
+import jdk.internal.foreign.NativeSymbolImpl;
+import jdk.internal.foreign.ResourceScopeImpl;
 
 public class UpcallStubs {
-
-    public static MemorySegment upcallAddress(UpcallHandler handler) {
-        long stubAddress = handler.entryPoint();
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(
-                MemoryAddress.ofLong(stubAddress), 0, () -> freeUpcallStub(stubAddress), null)
-                .share()
-                .withAccessModes(MemorySegment.CLOSE | MemorySegment.HANDOFF | MemorySegment.SHARE);
-    };
 
     private static void freeUpcallStub(long stubAddress) {
         if (!freeUpcallStub0(stubAddress)) {
@@ -53,5 +46,15 @@ public class UpcallStubs {
     private static native void registerNatives();
     static {
         registerNatives();
+    }
+
+    static NativeSymbol makeUpcall(long entry, ResourceScope scope) {
+        ((ResourceScopeImpl)scope).addOrCleanupIfFail(new ResourceScopeImpl.ResourceList.ResourceCleanup() {
+            @Override
+            public void cleanup() {
+                freeUpcallStub(entry);
+            }
+        });
+        return new NativeSymbolImpl("upcall:" + Long.toHexString(entry), MemoryAddress.ofLong(entry), scope);
     }
 }

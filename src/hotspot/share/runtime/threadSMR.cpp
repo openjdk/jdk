@@ -35,6 +35,7 @@
 #include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -183,29 +184,23 @@ inline ThreadsList* ThreadsSMRSupport::xchg_java_thread_list(ThreadsList* new_li
 //
 class ThreadScanHashtable : public CHeapObj<mtThread> {
  private:
-  static bool ptr_equals(void * const& s1, void * const& s2) {
-    return s1 == s2;
-  }
-
   static unsigned int ptr_hash(void * const& s1) {
     // 2654435761 = 2^32 * Phi (golden ratio)
     return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
   }
 
-  int _table_size;
-  // ResourceHashtable SIZE is specified at compile time so our
-  // dynamic _table_size is unused for now; 1031 is the first prime
-  // after 1024.
-  typedef ResourceHashtable<void *, int, &ThreadScanHashtable::ptr_hash,
-                            &ThreadScanHashtable::ptr_equals, 1031,
-                            ResourceObj::C_HEAP, mtThread> PtrTable;
+  // ResourceHashtable SIZE is specified at compile time so we
+  // use 1031 which is the first prime after 1024.
+  typedef ResourceHashtable<void *, int, 1031,
+                            ResourceObj::C_HEAP, mtThread,
+                            &ThreadScanHashtable::ptr_hash> PtrTable;
   PtrTable * _ptrs;
 
  public:
   // ResourceHashtable is passed to various functions and populated in
   // different places so we allocate it using C_HEAP to make it immune
   // from any ResourceMarks that happen to be in the code paths.
-  ThreadScanHashtable(int table_size) : _table_size(table_size), _ptrs(new (ResourceObj::C_HEAP, mtThread) PtrTable()) {}
+  ThreadScanHashtable() : _ptrs(new (ResourceObj::C_HEAP, mtThread) PtrTable()) {}
 
   ~ThreadScanHashtable() { delete _ptrs; }
 
@@ -282,8 +277,8 @@ class ScanHazardPtrGatherProtectedThreadsClosure : public ThreadClosure {
       if (thread->cmpxchg_threads_hazard_ptr(NULL, current_list) == current_list) return;
     }
 
-    guarantee(ThreadsList::is_valid(current_list), "current_list="
-              INTPTR_FORMAT " is not valid!", p2i(current_list));
+    assert(ThreadsList::is_valid(current_list), "current_list="
+           INTPTR_FORMAT " is not valid!", p2i(current_list));
 
     // The current JavaThread has a hazard ptr (ThreadsList reference)
     // which might be _java_thread_list or it might be an older
@@ -313,13 +308,15 @@ class ScanHazardPtrGatherThreadsListClosure : public ThreadClosure {
     if (thread == NULL) return;
     ThreadsList *hazard_ptr = thread->get_threads_hazard_ptr();
     if (hazard_ptr == NULL) return;
+#ifdef ASSERT
     if (!Thread::is_hazard_ptr_tagged(hazard_ptr)) {
       // We only validate hazard_ptrs that are not tagged since a tagged
       // hazard ptr can be deleted at any time.
-      guarantee(ThreadsList::is_valid(hazard_ptr), "hazard_ptr=" INTPTR_FORMAT
-                " for thread=" INTPTR_FORMAT " is not valid!", p2i(hazard_ptr),
-                p2i(thread));
+      assert(ThreadsList::is_valid(hazard_ptr), "hazard_ptr=" INTPTR_FORMAT
+             " for thread=" INTPTR_FORMAT " is not valid!", p2i(hazard_ptr),
+             p2i(thread));
     }
+#endif
     // In this closure we always ignore the tag that might mark this
     // hazard ptr as not yet verified. If we happen to catch an
     // unverified hazard ptr that is subsequently discarded (not
@@ -382,9 +379,9 @@ class ValidateHazardPtrsClosure : public ThreadClosure {
     // If the hazard ptr is unverified, then ignore it since it could
     // be deleted at any time now.
     if (Thread::is_hazard_ptr_tagged(hazard_ptr)) return;
-    guarantee(ThreadsList::is_valid(hazard_ptr), "hazard_ptr=" INTPTR_FORMAT
-              " for thread=" INTPTR_FORMAT " is not valid!", p2i(hazard_ptr),
-              p2i(thread));
+    assert(ThreadsList::is_valid(hazard_ptr), "hazard_ptr=" INTPTR_FORMAT
+           " for thread=" INTPTR_FORMAT " is not valid!", p2i(hazard_ptr),
+           p2i(thread));
   }
 };
 
@@ -559,10 +556,10 @@ void SafeThreadsListPtr::release_stable_list() {
     // An exiting thread might be waiting in smr_delete(); we need to
     // check with delete_lock to be sure.
     ThreadsSMRSupport::release_stable_list_wake_up(_has_ref_count);
-    guarantee(_previous == NULL || ThreadsList::is_valid(_previous->_list),
-              "_previous->_list=" INTPTR_FORMAT
-              " is not valid after calling release_stable_list_wake_up!",
-              p2i(_previous->_list));
+    assert(_previous == NULL || ThreadsList::is_valid(_previous->_list),
+           "_previous->_list=" INTPTR_FORMAT
+           " is not valid after calling release_stable_list_wake_up!",
+           p2i(_previous->_list));
   }
 }
 
@@ -632,6 +629,29 @@ static JavaThread* const* make_threads_list_data(int entries) {
   data[entries] = NULL;         // Make sure the final entry is NULL.
   return data;
 }
+
+#ifdef ASSERT
+
+ThreadsList::Iterator::Iterator() : _thread_ptr(nullptr), _list(nullptr) {}
+
+uint ThreadsList::Iterator::check_index(ThreadsList* list, uint i) {
+  assert(i <= list->length(), "invalid index %u", i);
+  return i;
+}
+
+void ThreadsList::Iterator::assert_not_singular() const {
+  assert(_list != nullptr, "singular iterator");
+}
+
+void ThreadsList::Iterator::assert_dereferenceable() const {
+  assert(_thread_ptr < (_list->threads() + _list->length()), "not dereferenceable");
+}
+
+void ThreadsList::Iterator::assert_same_list(Iterator i) const {
+  assert(_list == i._list, "iterators from different lists");
+}
+
+#endif // ASSERT
 
 ThreadsList::ThreadsList(int entries) :
   _magic(THREADS_LIST_MAGIC),
@@ -870,12 +890,8 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
     }
   }
 
-  // Hash table size should be first power of two higher than twice the length of the ThreadsList
-  int hash_table_size = MIN2((int)get_java_thread_list()->length(), 32) << 1;
-  hash_table_size = round_up_power_of_2(hash_table_size);
-
   // Gather a hash table of the current hazard ptrs:
-  ThreadScanHashtable *scan_table = new ThreadScanHashtable(hash_table_size);
+  ThreadScanHashtable *scan_table = new ThreadScanHashtable();
   ScanHazardPtrGatherThreadsListClosure scan_cl(scan_table);
   threads_do(&scan_cl);
   OrderAccess::acquire(); // Must order reads of hazard ptr before reads of
@@ -929,14 +945,9 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
 bool ThreadsSMRSupport::is_a_protected_JavaThread(JavaThread *thread) {
   assert_locked_or_safepoint(Threads_lock);
 
-  // Hash table size should be first power of two higher than twice
-  // the length of the Threads list.
-  int hash_table_size = MIN2((int)get_java_thread_list()->length(), 32) << 1;
-  hash_table_size = round_up_power_of_2(hash_table_size);
-
   // Gather a hash table of the JavaThreads indirectly referenced by
   // hazard ptrs.
-  ThreadScanHashtable *scan_table = new ThreadScanHashtable(hash_table_size);
+  ThreadScanHashtable *scan_table = new ThreadScanHashtable();
   ScanHazardPtrGatherProtectedThreadsClosure scan_cl(scan_table);
   threads_do(&scan_cl);
   OrderAccess::acquire(); // Must order reads of hazard ptr before reads of

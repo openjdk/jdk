@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8142968 8166568 8166286 8170618 8168149 8240910
+ * @bug 8142968 8166568 8166286 8170618 8168149 8240910 8276764
  * @summary Basic test for jmod
  * @library /test/lib
  * @modules jdk.compiler
@@ -98,7 +98,7 @@ public class JmodTest {
 
     // JDK-8166286 - jmod fails on symlink to directory
     @Test
-    public void testSymlinks() throws IOException {
+    public void testDirSymlinks() throws IOException {
         Path apaDir = EXPLODED_DIR.resolve("apa");
         Path classesDir = EXPLODED_DIR.resolve("apa").resolve("classes");
         assertTrue(compileModule("apa", classesDir));
@@ -110,6 +110,8 @@ public class JmodTest {
             assertTrue(Files.exists(link));
         } catch (IOException|UnsupportedOperationException uoe) {
             // OS does not support symlinks. Nothing to test!
+            System.out.println("Creating symlink failed. Test passes vacuously.");
+            uoe.printStackTrace();
             return;
         }
 
@@ -119,6 +121,42 @@ public class JmodTest {
              "--class-path", classesDir.toString(),
              jmod.toString())
             .assertSuccess();
+        Files.delete(jmod);
+    }
+
+    // JDK-8267583 - jmod fails on symlink to class file
+    @Test
+    public void testFileSymlinks() throws IOException {
+        Path apaDir = EXPLODED_DIR.resolve("apa");
+        Path classesDir = EXPLODED_DIR.resolve("apa").resolve("classes");
+        assertTrue(compileModule("apa", classesDir));
+
+        Files.move(classesDir.resolve("module-info.class"),
+            classesDir.resolve("module-info.class1"));
+        Files.move(classesDir.resolve(Paths.get("jdk", "test", "apa", "Apa.class")),
+            classesDir.resolve("Apa.class1"));
+        try {
+            Path link = Files.createSymbolicLink(
+                classesDir.resolve("module-info.class"),
+                classesDir.resolve("module-info.class1").toAbsolutePath());
+            assertTrue(Files.exists(link));
+            link = Files.createSymbolicLink(
+                classesDir.resolve(Paths.get("jdk", "test", "apa", "Apa.class")),
+                classesDir.resolve("Apa.class1").toAbsolutePath());
+            assertTrue(Files.exists(link));
+        } catch (IOException|UnsupportedOperationException uoe) {
+            // OS does not support symlinks. Nothing to test!
+            System.out.println("Creating symlinks failed. Test passes vacuously.");
+            uoe.printStackTrace();
+            return;
+        }
+
+        Path jmod = MODS_DIR.resolve("apa.jmod");
+        jmod("create",
+             "--class-path", classesDir.toString(),
+             jmod.toString())
+            .assertSuccess();
+        Files.delete(jmod);
     }
 
     // JDK-8170618 - jmod should validate if any exported or open package is missing
@@ -159,6 +197,17 @@ public class JmodTest {
                 assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/Foo.class");
                 assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/internal/Message.class");
                 assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/resources/foo.properties");
+
+                // JDK-8276764: Ensure the order is sorted for reproducible jmod content
+                // module-info, followed by <sorted classes>
+                int mod_info_i = r.output.indexOf(CLASSES_PREFIX + "module-info.class");
+                int foo_cls_i  = r.output.indexOf(CLASSES_PREFIX + "jdk/test/foo/Foo.class");
+                int msg_i      = r.output.indexOf(CLASSES_PREFIX + "jdk/test/foo/internal/Message.class");
+                int res_i      = r.output.indexOf(CLASSES_PREFIX + "jdk/test/foo/resources/foo.properties");
+                System.out.println("jmod classes sort order check:\n"+r.output);
+                assertTrue(mod_info_i < foo_cls_i);
+                assertTrue(foo_cls_i < msg_i);
+                assertTrue(msg_i < res_i);
             });
     }
 

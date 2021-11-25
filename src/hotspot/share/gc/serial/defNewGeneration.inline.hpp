@@ -26,6 +26,7 @@
 #define SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
 
 #include "gc/serial/defNewGeneration.hpp"
+
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"

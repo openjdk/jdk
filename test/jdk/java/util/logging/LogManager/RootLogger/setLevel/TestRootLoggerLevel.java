@@ -38,7 +38,7 @@ import java.util.logging.LoggingPermission;
  * @modules java.base/sun.util.logging
  *          java.logging
  * @build TestRootLoggerLevel
- * @run main/othervm -Dtest.security=on TestRootLoggerLevel
+ * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestRootLoggerLevel
  * @run main/othervm -Dtest.security=off TestRootLoggerLevel
  * @author danielfuchs
  */

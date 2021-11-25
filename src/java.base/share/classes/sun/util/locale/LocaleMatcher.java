@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import static java.util.Locale.LanguageRange.*;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * Implementation for BCP47 Locale matching
@@ -84,7 +83,7 @@ public final class LocaleMatcher {
             for (LanguageRange lr : priorityList) {
                 String range = lr.getRange();
                 if (range.startsWith("*-")
-                    || range.indexOf("-*") != -1) { // Extended range
+                    || range.contains("-*")) { // Extended range
                     if (mode == AUTOSELECT_FILTERING) {
                         return filterExtended(priorityList, tags);
                     } else if (mode == MAP_EXTENDED_RANGES) {
@@ -184,7 +183,7 @@ public final class LocaleMatcher {
             Collection<String> tags) {
         Set<String> distinctTags = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         return tags.stream().filter(x -> distinctTags.add(x))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.security.Provider;
 import java.security.AccessController;
-import java.security.AccessControlContext;
 import java.security.Key;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -641,14 +640,12 @@ class Krb5Context implements GSSContextSpi {
                      * for this service in the Subject and reuse it
                      */
 
-                    final AccessControlContext acc =
-                        AccessController.getContext();
-
                     if (GSSUtil.useSubjectCredsOnly(caller)) {
                         KerberosTicket kerbTicket = null;
                         try {
                            // get service ticket from caller's subject
-                           kerbTicket = AccessController.doPrivileged(
+                           @SuppressWarnings("removal")
+                           var tmp = AccessController.doPrivilegedWithCombiner(
                                 new PrivilegedExceptionAction<KerberosTicket>() {
                                 public KerberosTicket run() throws Exception {
                                     // XXX to be cleaned
@@ -663,9 +660,9 @@ class Krb5Context implements GSSContextSpi {
                                         second == null ?
                                             myName.getKrb5PrincipalName().getName():
                                             second.getName().getKrb5PrincipalName().getName(),
-                                        peerName.getKrb5PrincipalName().getName(),
-                                        acc);
+                                        peerName.getKrb5PrincipalName().getName());
                                 }});
+                            kerbTicket = tmp;
                         } catch (PrivilegedActionException e) {
                             if (DEBUG) {
                                 System.out.println("Attempt to obtain service"
@@ -705,11 +702,12 @@ class Krb5Context implements GSSContextSpi {
                                     tgt);
                         }
                         if (GSSUtil.useSubjectCredsOnly(caller)) {
+                            @SuppressWarnings("removal")
                             final Subject subject =
-                                AccessController.doPrivileged(
+                                AccessController.doPrivilegedWithCombiner(
                                 new java.security.PrivilegedAction<Subject>() {
                                     public Subject run() {
-                                        return (Subject.getSubject(acc));
+                                        return (Subject.current());
                                     }
                                 });
                             if (subject != null &&
@@ -723,7 +721,8 @@ class Krb5Context implements GSSContextSpi {
                                  */
                                 final KerberosTicket kt =
                                         Krb5Util.credsToTicket(serviceCreds);
-                                AccessController.doPrivileged (
+                                @SuppressWarnings("removal")
+                                var dummy = AccessController.doPrivileged (
                                     new java.security.PrivilegedAction<Void>() {
                                       public Void run() {
                                         subject.getPrivateCredentials().add(kt);
@@ -1344,6 +1343,7 @@ class Krb5Context implements GSSContextSpi {
     }
 
     private void checkPermission(String principal, String action) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             ServicePermission perm =

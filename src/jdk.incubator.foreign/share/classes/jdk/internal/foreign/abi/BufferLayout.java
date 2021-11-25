@@ -24,8 +24,9 @@
  */
 package jdk.internal.foreign.abi;
 
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ValueLayout;
+import jdk.internal.foreign.MemoryAddressImpl;
 
 import java.io.PrintStream;
 import java.lang.invoke.VarHandle;
@@ -33,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 class BufferLayout {
-    static final VarHandle VH_LONG = MemoryLayouts.JAVA_LONG.varHandle(long.class);
+    static final VarHandle VH_LONG = ValueLayout.JAVA_LONG.varHandle();
 
     final long size;
     final long arguments_next_pc;
@@ -115,7 +116,7 @@ class BufferLayout {
         return Long.toHexString((long) VH_LONG.get(buffer.asSlice(offset)));
     }
 
-    private static void dumpValues(jdk.internal.foreign.abi.Architecture arch, MemorySegment buff, PrintStream stream,
+    private void dumpValues(jdk.internal.foreign.abi.Architecture arch, MemorySegment buff, PrintStream stream,
                                    Map<jdk.internal.foreign.abi.VMStorage, Long> offsets) {
         for (var entry : offsets.entrySet()) {
             VMStorage storage = entry.getKey();
@@ -128,6 +129,14 @@ class BufferLayout {
             }
             stream.println("}");
         }
+        long stack_ptr = (long) VH_LONG.get(buff.asSlice(stack_args));
+        long stack_bytes = (long) VH_LONG.get(buff.asSlice(stack_args_bytes));
+        MemorySegment stackArgs = MemoryAddressImpl.ofLongUnchecked(stack_ptr, stack_bytes);
+        stream.println("Stack {");
+        for (int i = 0; i < stack_bytes / 8; i += 8) {
+            stream.printf("    @%d: %s%n", i, getLongString(stackArgs, i));
+        }
+        stream.println("}");
     }
 
     void dump(Architecture arch, MemorySegment buff, PrintStream stream) {

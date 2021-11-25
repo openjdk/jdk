@@ -205,7 +205,7 @@ var getJibProfiles = function (input) {
 
     // Exclude list to use when Jib creates a source bundle
     data.src_bundle_excludes = [
-        "build", "{,**/}webrev*", "{,**/}.hg", "{,**/}JTwork", "{,**/}JTreport",
+        "build", "{,**/}webrev*", "{,**/}.hg", "{,**/}JTwork*", "{,**/}JTreport*",
         "{,**/}.git"
     ];
     // Include list to use when creating a minimal jib source bundle which
@@ -249,7 +249,7 @@ var getJibProfilesCommon = function (input, data) {
         dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf", "jmh", "jcov"],
         default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
         configure_args: concat("--enable-jtreg-failure-handler",
-            "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
+            "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
             "--disable-jvm-feature-shenandoahgc",
             versionArgs(input, common))
@@ -394,13 +394,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    if (input.build_os == 'macosx' && input.build_cpu == 'aarch64') {
-        common.boot_jdk_version = "17";
-        common.boot_jdk_build_number = "19";
-    } else {
-        common.boot_jdk_version = "16";
-        common.boot_jdk_build_number = "36";
-    }
+    common.boot_jdk_version = "17";
+    common.boot_jdk_build_number = "35";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -491,6 +486,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: ["devkit", "gtest", "build_devkit", "pandoc"],
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu",
+                "--with-zlib=system",
+                "--disable-dtrace",
 		"--enable-compatible-cds-alignment",
             ],
         },
@@ -562,7 +559,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             "ANT_HOME": input.get("ant", "home_path")
         }
     };
-    [ "linux-x64", "macosx-x64", "windows-x64"]
+    [ "linux-x64", "macosx-x64", "windows-x64", "linux-aarch64"]
         .forEach(function (name) {
             var maketestName = name + "-testmake";
             profiles[maketestName] = concatObjects(profiles[name], testmakeBase);
@@ -583,6 +580,17 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64-zero": {
             target_os: "linux",
             target_cpu: "x64",
+            dependencies: ["devkit", "gtest"],
+            configure_args: concat(common.configure_args_64bit, [
+                "--with-zlib=system",
+                "--with-jvm-variants=zero",
+                "--enable-libffi-bundling"
+            ])
+        },
+
+        "linux-aarch64-zero": {
+            target_os: "linux",
+            target_cpu: "aarch64",
             dependencies: ["devkit", "gtest"],
             configure_args: concat(common.configure_args_64bit, [
                 "--with-zlib=system",
@@ -636,7 +644,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     // Bootcycle profiles runs the build with itself as the boot jdk. This can
     // be done in two ways. Either using the builtin bootcycle target in the
     // build system. Or by supplying the main jdk build as bootjdk to configure.
-    [ "linux-x64", "macosx-x64", "windows-x64" ]
+    [ "linux-x64", "macosx-x64", "windows-x64", "linux-aarch64" ]
         .forEach(function (name) {
             var bootcycleName = name + "-bootcycle";
             var bootcyclePrebuiltName = name + "-bootcycle-prebuilt";
@@ -672,11 +680,7 @@ var getJibProfilesProfiles = function (input, common, data) {
                 ["--with-jcov-input-jdk=" + input.get(name + ".jdk", "home_path")]);
         });
 
-    //
     // Define artifacts for profiles
-    //
-    // Macosx bundles are named osx
-    // tar.gz.
     var artifactData = {
         "linux-x64": {
             platform: "linux-x64",
@@ -685,11 +689,11 @@ var getJibProfilesProfiles = function (input, common, data) {
             platform: "linux-x86",
         },
         "macosx-x64": {
-            platform: "osx-x64",
+            platform: "macos-x64",
             jdk_subdir: "jdk-" + data.version +  ".jdk/Contents/Home",
         },
         "macosx-aarch64": {
-            platform: "osx-aarch64",
+            platform: "macos-aarch64",
             jdk_subdir: "jdk-" + data.version + ".jdk/Contents/Home",
         },
         "windows-x64": {
@@ -1073,9 +1077,11 @@ var getJibProfilesDependencies = function (input, common) {
             devkit_cross_prefix = input.build_platform + "-to-";
         }
     }
-
-    var boot_jdk_platform = (input.build_os == "macosx" ? "osx" : input.build_os)
-        + "-" + input.build_cpu;
+    var boot_jdk_os = input.build_os;
+    if (input.build_os == "macosx") {
+        boot_jdk_os = "macos";
+    }
+    var boot_jdk_platform = boot_jdk_os + "-" + input.build_cpu;
     var boot_jdk_ext = (input.build_os == "windows" ? ".zip" : ".tar.gz")
     // If running in WSL and building for Windows, it will look like Linux,
     // but we need a Windows boot JDK.
@@ -1137,10 +1143,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "5.1",
-            build_number: "b01",
-            checksum_file: "MD5_VALUES",
-            file: "bundles/jtreg_bin-5.1.zip",
+            version: "6.1",
+            build_number: "1",
+            file: "bundles/jtreg-6.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1149,7 +1154,7 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.28+1.0"
+            revision: "1.33+1.0"
         },
 
         jcov: {
@@ -1161,7 +1166,7 @@ var getJibProfilesDependencies = function (input, common) {
             // build_number: "b07",
             // file: "bundles/jcov-3_0.zip",
             organization: common.organization,
-            revision: "3.0-7-jdk-asm+1.0",
+            revision: "3.0-9-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },

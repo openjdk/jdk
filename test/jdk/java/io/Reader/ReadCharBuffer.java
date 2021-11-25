@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4926314
+ * @bug 4926314 8266014
  * @summary Test for Reader#read(CharBuffer).
  * @run testng ReadCharBuffer
  */
@@ -33,7 +33,10 @@ import org.testng.annotations.Test;
 
 
 import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.CharArrayReader;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.Arrays;
@@ -96,6 +99,19 @@ public class ReadCharBuffer {
         }
         expected.append("Gx");
         assertEquals(buffer.toString(), expected.toString());
+    }
+
+    @Test
+    public void readZeroLength() {
+        char[] buf = new char[] {1, 2, 3};
+        BufferedReader r = new BufferedReader(new CharArrayReader(buf));
+        int n = -1;
+        try {
+            n = r.read(CharBuffer.allocate(0));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        assertEquals(n, 0);
     }
 
     private void fillBuffer(CharBuffer buffer) {

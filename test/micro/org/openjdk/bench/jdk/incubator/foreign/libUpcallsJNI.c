@@ -22,54 +22,9 @@
  */
 #include <jni.h>
 #include <stdlib.h>
+
 #include "jlong.h"
-
-void blank(void (*cb)(void)) {
-    cb();
-}
-
-int identity(int x, int (*cb)(int)) {
-    return cb(x);
-}
-
-typedef struct {
-    jclass holder;
-    jmethodID mid;
-} *JNICB;
-
-#define CHECK_NULL(thing, message) \
-    if (thing == NULL) { \
-        jclass cls = (*env)->FindClass(env, "java/lang/Exception"); \
-        (*env)->ThrowNew(env, cls, message); \
-        return 0; \
-    }
-
-JNIEXPORT jlong JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_Upcalls_makeCB
-  (JNIEnv *env, jclass cls, jstring holderName, jstring methodName, jstring descriptor) {
-
-  const char* holderNameC = (*env)->GetStringUTFChars(env, holderName, NULL);
-  const char* methodNameC = (*env)->GetStringUTFChars(env, methodName, NULL);
-  const char* descriptorC = (*env)->GetStringUTFChars(env, descriptor, NULL);
-
-  JNICB cb = malloc(sizeof *cb);
-  CHECK_NULL(cb, "Can not allocate cb");
-
-  jclass holder = (*env)->FindClass(env, holderNameC);
-  CHECK_NULL(holder, "Can not find class");
-  holder = (jclass) (*env)->NewGlobalRef(env, holder);
-  cb->holder = holder;
-
-  jmethodID methodID = (*env)->GetStaticMethodID(env, holder, methodNameC, descriptorC);
-  CHECK_NULL(methodID, "Can not find method");
-  //methodID = (jmethodID) (*env)->NewGlobalRef(env, methodID); // DON'T DO THIS! -> Crashes GC
-  cb->mid = methodID;
-
-  (*env)->ReleaseStringUTFChars(env, holderName, holderNameC);
-  (*env)->ReleaseStringUTFChars(env, methodName, methodNameC);
-  (*env)->ReleaseStringUTFChars(env, descriptor, descriptorC);
-
-  return ptr_to_jlong(cb);
-}
+#include "JNICB.h"
 
 JNIEXPORT void JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_Upcalls_blank
   (JNIEnv *env, jclass cls, jlong cb) {
@@ -81,4 +36,21 @@ JNIEXPORT jint JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_Upcalls_iden
   (JNIEnv *env, jclass cls, jint x, jlong cb) {
     JNICB jniCb = jlong_to_ptr(cb);
     return (*env)->CallStaticIntMethod(env, jniCb->holder, jniCb->mid, x);
+}
+
+JNIEXPORT jint JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_Upcalls_args5
+  (JNIEnv *env, jclass cls,
+      jlong a0, jdouble a1, jlong a2, jdouble a3, jlong a4,
+      jlong cb) {
+    JNICB jniCb = jlong_to_ptr(cb);
+    return (*env)->CallStaticIntMethod(env, jniCb->holder, jniCb->mid, a0, a1, a2, a3, a4);
+}
+
+JNIEXPORT jint JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_Upcalls_args10
+  (JNIEnv *env, jclass cls,
+      jlong a0, jdouble a1, jlong a2, jdouble a3, jlong a4,
+      jdouble a5, jlong a6, jdouble a7, jlong a8, jdouble a9,
+      jlong cb) {
+    JNICB jniCb = jlong_to_ptr(cb);
+    return (*env)->CallStaticIntMethod(env, jniCb->holder, jniCb->mid, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
 }

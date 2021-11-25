@@ -78,7 +78,7 @@ public abstract class CGraphicsConfig extends GraphicsConfiguration
 
     /**
      * Creates a new SurfaceData that will be associated with the given
-     * CGLLayer.
+     * layer (CGLLayer/MTLLayer).
      */
     public abstract SurfaceData createSurfaceData(CFRetainedResource layer);
 

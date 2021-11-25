@@ -26,6 +26,7 @@
 #define SHARE_JFR_UTILITIES_JFRVERSIONSYSTEM_INLINE_HPP
 
 #include "jfr/utilities/jfrVersionSystem.hpp"
+
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 

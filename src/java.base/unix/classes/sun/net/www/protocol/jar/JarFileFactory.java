@@ -192,6 +192,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
 
         /* if the JAR file is cached, the permission will always be there */
         if (result != null) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 Permission perm = getPermission(result);
@@ -202,11 +203,11 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
                         // fallback to checkRead/checkConnect for pre 1.2
                         // security managers
                         if ((perm instanceof java.io.FilePermission) &&
-                            perm.getActions().indexOf("read") != -1) {
+                            perm.getActions().contains("read")) {
                             sm.checkRead(perm.getName());
                         } else if ((perm instanceof
                             java.net.SocketPermission) &&
-                            perm.getActions().indexOf("connect") != -1) {
+                            perm.getActions().contains("connect")) {
                             sm.checkConnect(url.getHost(), url.getPort());
                         } else {
                             throw se;

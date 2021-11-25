@@ -571,6 +571,12 @@ public class JavacElements implements Elements {
             }
         }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
+    public TypeElement getOutermostTypeElement(Element e) {
+        Symbol sym = cast(Symbol.class, e);
+        return sym.outermostClass();
+    }
+
     /**
      * Returns all annotations of an element, whether
      * inherited or directly present.
@@ -719,6 +725,30 @@ public class JavacElements implements Elements {
     public boolean isAutomaticModule(ModuleElement module) {
         ModuleSymbol msym = (ModuleSymbol) module;
         return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public JavaFileObject getFileObjectOf(Element e) {
+        Symbol sym = (Symbol) e;
+        return switch(sym.kind) {
+            case PCK -> {
+                PackageSymbol psym = (PackageSymbol) sym;
+                if (psym.package_info == null) {
+                    yield null;
+                }
+                yield psym.package_info.classfile;
+            }
+
+            case MDL -> {
+                ModuleSymbol msym = (ModuleSymbol) sym;
+                if (msym.module_info == null) {
+                    yield null;
+                }
+                yield msym.module_info.classfile;
+            }
+            case TYP -> ((ClassSymbol) sym).classfile;
+            default -> sym.enclClass().classfile;
+        };
     }
 
     /**

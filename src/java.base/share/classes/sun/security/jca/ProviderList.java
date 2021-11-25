@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public final class ProviderList {
     static final ProviderList EMPTY = new ProviderList(PC0, true);
 
     // list of all jdk.security.provider.preferred entries
-    static private PreferredList preferredPropList = null;
+    private static PreferredList preferredPropList = null;
 
     // dummy provider object to use during initialization
     // used to avoid explicit null checks in various places
@@ -87,6 +87,7 @@ public final class ProviderList {
 
     // construct a ProviderList from the security properties
     // (static provider configuration in the java.security file)
+    @SuppressWarnings("removal")
     static ProviderList fromSecurityProperties() {
         // doPrivileged() because of Security.getProperty()
         return AccessController.doPrivileged(
@@ -177,8 +178,10 @@ public final class ProviderList {
         while ((entry = Security.getProperty("security.provider." + i)) != null) {
             entry = entry.trim();
             if (entry.isEmpty()) {
-                System.err.println("invalid entry for " +
+                if (debug != null) {
+                    debug.println("empty entry for " +
                                    "security.provider." + i);
+                }
                 break;
             }
             int k = entry.indexOf(' ');

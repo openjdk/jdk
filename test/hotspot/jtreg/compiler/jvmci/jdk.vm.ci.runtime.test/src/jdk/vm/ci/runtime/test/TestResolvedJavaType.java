@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,43 +162,17 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
     }
 
-    private static Class<?> anonClass() throws Exception {
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(Opcodes.V1_8, Opcodes.ACC_FINAL + Opcodes.ACC_SUPER, "Anon", null, "java/lang/Object", null);
-        FieldVisitor intField = cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "intField", "I", null, 0);
-        intField.visitEnd();
-        cw.visitEnd();
-        return unsafe.defineAnonymousClass(TypeUniverse.class, cw.toByteArray(), null);
-    }
-
     @Test
-    public void getHostClassTest() throws Exception {
-        ResolvedJavaType type = metaAccess.lookupJavaType(anonClass());
-        ResolvedJavaType host = type.getHostClass();
-        assertNotNull(host);
-        for (Class<?> c : classes) {
-            type = metaAccess.lookupJavaType(c);
-            host = type.getHostClass();
-            assertNull(host);
-            if (type.equals(predicateType)) {
-                assertTrue(c.isHidden());
-            }
-        }
-
-        class LocalClass {
-        }
-        Cloneable clone = new Cloneable() {
-        };
-        assertNull(metaAccess.lookupJavaType(LocalClass.class).getHostClass());
-        assertNull(metaAccess.lookupJavaType(clone.getClass()).getHostClass());
-
+    public void internalNameTest() {
+        // Verify that the last slash in lambda types are not replaced with a '.' as they
+        // are part of the type name.
         Supplier<Runnable> lambda = () -> () -> System.out.println("run");
         ResolvedJavaType lambdaType = metaAccess.lookupJavaType(lambda.getClass());
-        ResolvedJavaType nestedLambdaType = metaAccess.lookupJavaType(lambda.get().getClass());
-        assertNull(lambdaType.getHostClass());
-        assertTrue(lambda.getClass().isHidden());
-        assertNull(nestedLambdaType.getHostClass());
-        assertTrue(lambda.get().getClass().isHidden());
+        String typeName = lambdaType.getName();
+        int typeNameLen = TestResolvedJavaType.class.getSimpleName().length();
+        int index = typeName.indexOf(TestResolvedJavaType.class.getSimpleName());
+        String suffix = typeName.substring(index + typeNameLen, typeName.length() - 1);
+        assertEquals(TestResolvedJavaType.class.getName() + suffix, lambdaType.toJavaName());
     }
 
     @Test
@@ -1155,6 +1129,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         "isLinked",
         "getJavaClass",
         "getObjectHub",
+        "getHostClass",
         "hasFinalizableSubclass",
         "hasFinalizer",
         "isLocal",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1030,13 +1030,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      *         null if no parameters are present.
      */
     public byte[] getSigAlgParams() {
-        if (algId == null)
-            return null;
-        try {
-            return algId.getEncodedParams();
-        } catch (IOException e) {
-            return null;
-        }
+        return algId == null ? null : algId.getEncodedParams();
     }
 
     /**
@@ -1445,24 +1439,45 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     }
 
     /**
-     * This method are the overridden implementation of
+     * This method is the overridden implementation of the
      * getExtendedKeyUsage method in X509Certificate in the Sun
      * provider. It is better performance-wise since it returns cached
      * values.
      */
+    @Override
     public synchronized List<String> getExtendedKeyUsage()
         throws CertificateParsingException {
         if (readOnly && extKeyUsage != null) {
             return extKeyUsage;
-        } else {
-            ExtendedKeyUsageExtension ext = getExtendedKeyUsageExtension();
-            if (ext == null) {
-                return null;
-            }
-            extKeyUsage =
-                Collections.unmodifiableList(ext.getExtendedKeyUsage());
-            return extKeyUsage;
         }
+        ExtendedKeyUsageExtension ext = (ExtendedKeyUsageExtension)
+            getExtensionIfParseable(PKIXExtensions.ExtendedKeyUsage_Id);
+        if (ext == null) {
+            return null;
+        }
+        extKeyUsage = Collections.unmodifiableList(ext.getExtendedKeyUsage());
+        return extKeyUsage;
+    }
+
+    /**
+     * Returns the extension identified by OID or null if it doesn't exist
+     * and is not unparseable.
+     *
+     * @throws CertificateParsingException if extension is unparseable
+     */
+    private Extension getExtensionIfParseable(ObjectIdentifier oid)
+            throws CertificateParsingException {
+        Extension ext = getExtension(oid);
+        if (ext == null) {
+            // check if unparseable
+            UnparseableExtension unparseableExt =
+                   (UnparseableExtension)getUnparseableExtension(oid);
+            if (unparseableExt != null) {
+                throw new CertificateParsingException(
+                        unparseableExt.exceptionMessage());
+            }
+        }
+        return ext;
     }
 
     /**
@@ -1608,11 +1623,12 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     }
 
     /**
-     * This method are the overridden implementation of
+     * This method is the overridden implementation of the
      * getSubjectAlternativeNames method in X509Certificate in the Sun
      * provider. It is better performance-wise since it returns cached
      * values.
      */
+    @Override
     public synchronized Collection<List<?>> getSubjectAlternativeNames()
         throws CertificateParsingException {
         // return cached value if we can
@@ -1620,7 +1636,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             return cloneAltNames(subjectAlternativeNames);
         }
         SubjectAlternativeNameExtension subjectAltNameExt =
-            getSubjectAlternativeNameExtension();
+            (SubjectAlternativeNameExtension)getExtensionIfParseable(
+                PKIXExtensions.SubjectAlternativeName_Id);
         if (subjectAltNameExt == null) {
             return null;
         }
@@ -1638,7 +1655,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
     /**
      * This static method is the default implementation of the
-     * getSubjectAlternaitveNames method in X509Certificate. A
+     * getSubjectAlternativeNames method in X509Certificate. A
      * X509Certificate provider generally should overwrite this to
      * provide among other things caching for better performance.
      */
@@ -1672,11 +1689,12 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     }
 
     /**
-     * This method are the overridden implementation of
+     * This method is the overridden implementation of the
      * getIssuerAlternativeNames method in X509Certificate in the Sun
      * provider. It is better performance-wise since it returns cached
      * values.
      */
+    @Override
     public synchronized Collection<List<?>> getIssuerAlternativeNames()
         throws CertificateParsingException {
         // return cached value if we can
@@ -1684,7 +1702,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             return cloneAltNames(issuerAlternativeNames);
         }
         IssuerAlternativeNameExtension issuerAltNameExt =
-            getIssuerAlternativeNameExtension();
+            (IssuerAlternativeNameExtension)getExtensionIfParseable(
+                PKIXExtensions.IssuerAlternativeName_Id);
         if (issuerAltNameExt == null) {
             return null;
         }
@@ -1702,7 +1721,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
     /**
      * This static method is the default implementation of the
-     * getIssuerAlternaitveNames method in X509Certificate. A
+     * getIssuerAlternativeNames method in X509Certificate. A
      * X509Certificate provider generally should overwrite this to
      * provide among other things caching for better performance.
      */
@@ -1917,25 +1936,57 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     private ConcurrentHashMap<String,String> fingerprints =
             new ConcurrentHashMap<>(2);
 
-    public String getFingerprint(String algorithm) {
+    private String getFingerprint(String algorithm, Debug debug) {
         return fingerprints.computeIfAbsent(algorithm,
-            x -> getFingerprint(x, this));
+            x -> {
+                try {
+                    return getFingerprintInternal(x, getEncodedInternal(), debug);
+                } catch (CertificateEncodingException e) {
+                    if (debug != null) {
+                        debug.println("Cannot encode certificate: " + e);
+                    }
+                    return null;
+                }
+            });
+    }
+
+    private static String getFingerprintInternal(String algorithm,
+            byte[] encodedCert, Debug debug) {
+        try {
+            MessageDigest md = MessageDigest.getInstance(algorithm);
+            byte[] digest = md.digest(encodedCert);
+            return HexFormat.of().withUpperCase().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            if (debug != null) {
+                debug.println("Cannot create " + algorithm
+                    + " MessageDigest: " + e);
+            }
+            return null;
+        }
     }
 
     /**
-     * Gets the requested finger print of the certificate. The result
+     * Gets the requested fingerprint of the certificate. The result
      * only contains 0-9 and A-F. No small case, no colon.
+     *
+     * @param algorithm the MessageDigest algorithm
+     * @param cert the X509Certificate
+     * @return the fingerprint, or null if it cannot be calculated because
+     *     of an exception
      */
     public static String getFingerprint(String algorithm,
-            X509Certificate cert) {
-        try {
-            byte[] encCertInfo = cert.getEncoded();
-            MessageDigest md = MessageDigest.getInstance(algorithm);
-            byte[] digest = md.digest(encCertInfo);
-            return HexFormat.of().withUpperCase().formatHex(digest);
-        } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
-            // ignored
+            X509Certificate cert, Debug debug) {
+        if (cert instanceof X509CertImpl) {
+            return ((X509CertImpl)cert).getFingerprint(algorithm, debug);
+        } else {
+            try {
+                return getFingerprintInternal(algorithm, cert.getEncoded(), debug);
+            } catch (CertificateEncodingException e) {
+                if (debug != null) {
+                    debug.println("Cannot encode certificate: " + e);
+                }
+                return null;
+            }
         }
-        return "";
     }
 }

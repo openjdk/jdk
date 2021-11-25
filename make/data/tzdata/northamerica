@@ -752,7 +752,11 @@ Zone America/Adak	 12:13:22 -	LMT	1867 Oct 19 12:44:35
 			-11:00	US	B%sT	1983 Oct 30  2:00
 			-10:00	US	AH%sT	1983 Nov 30
 			-10:00	US	H%sT
-# The following switches don't quite make our 1970 cutoff.
+# The following switches don't make our 1970 cutoff.
+#
+# Kiska observed Tokyo date and time during Japanese occupation from
+# 1942-06-06 to 1943-07-29, and similarly for Attu from 1942-06-07 to
+# 1943-05-29 (all dates American).  Both islands are now uninhabited.
 #
 # Shanks writes that part of southwest Alaska (e.g. Aniak)
 # switched from -11:00 to -10:00 on 1968-09-22 at 02:00,
@@ -848,6 +852,8 @@ Zone America/Phoenix	-7:28:18 -	LMT	1883 Nov 18 11:31:42
 			-7:00	-	MST	1967
 			-7:00	US	M%sT	1968 Mar 21
 			-7:00	-	MST
+Link America/Phoenix America/Creston
+
 # From Arthur David Olson (1988-02-13):
 # A writer from the Inter Tribal Council of Arizona, Inc.,
 # notes in private correspondence dated 1987-12-28 that "Presently, only the
@@ -993,7 +999,7 @@ Zone America/Indiana/Vincennes -5:50:07 - LMT	1883 Nov 18 12:09:53
 			-5:00	US	E%sT
 #
 # Perry County, Indiana, switched from eastern to central time in April 2006.
-# From Alois Triendl (2019-07-09):
+# From Alois Treindl (2019-07-09):
 # The Indianapolis News, Friday 27 October 1967 states that Perry County
 # returned to CST.  It went again to EST on 27 April 1969, as documented by the
 # Indianapolis star of Saturday 26 April.
@@ -1616,24 +1622,7 @@ Zone America/Moncton	-4:19:08 -	LMT	1883 Dec  9
 # From Paul Eggert (2020-01-10):
 # See America/Toronto for most of Quebec, including Montreal.
 # See America/Halifax for the Îles de la Madeleine and the Listuguj reserve.
-#
-# Matthews and Vincent (1998) also write that Quebec east of the -63
-# meridian is supposed to observe AST, but residents as far east as
-# Natashquan use EST/EDT, and residents east of Natashquan use AST.
-# The Quebec department of justice writes in
-# "The situation in Minganie and Basse-Côte-Nord"
-# https://www.justice.gouv.qc.ca/en/department/ministre/functions-and-responsabilities/legal-time-in-quebec/the-situation-in-minganie-and-basse-cote-nord/
-# that the coastal strip from just east of Natashquan to Blanc-Sablon
-# observes Atlantic standard time all year round.
-# This common practice was codified into law as of 2007; see Legal Time Act,
-# CQLR c T-5.1 <http://legisquebec.gouv.qc.ca/en/ShowDoc/cs/T-5.1>.
-# For lack of better info, guess this practice began around 1970, contra to
-# Shanks & Pottenger who have this region observing AST/ADT.
-
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Blanc-Sablon -3:48:28 -	LMT	1884
-			-4:00	Canada	A%sT	1970
-			-4:00	-	AST
+# See America/Puerto_Rico for east of Natashquan.
 
 # Ontario
 
@@ -1671,54 +1660,6 @@ Zone America/Blanc-Sablon -3:48:28 -	LMT	1884
 # For more on Orillia, see: Daubs K. Bold attempt at daylight saving
 # time became a comic failure in Orillia. Toronto Star 2017-07-08.
 # https://www.thestar.com/news/insight/2017/07/08/bold-attempt-at-daylight-saving-time-became-a-comic-failure-in-orillia.html
-
-# From Paul Eggert (1997-10-17):
-# Mark Brader writes that an article in the 1997-10-14 Toronto Star
-# says that Atikokan, Ontario currently does not observe DST,
-# but will vote on 11-10 whether to use EST/EDT.
-# He also writes that the Ontario Time Act (1990, Chapter T.9)
-# http://www.gov.on.ca/MBS/english/publications/statregs/conttext.html
-# says that Ontario east of 90W uses EST/EDT, and west of 90W uses CST/CDT.
-# Officially Atikokan is therefore on CST/CDT, and most likely this report
-# concerns a non-official time observed as a matter of local practice.
-#
-# From Paul Eggert (2000-10-02):
-# Matthews and Vincent (1998) write that Atikokan, Pickle Lake, and
-# New Osnaburgh observe CST all year, that Big Trout Lake observes
-# CST/CDT, and that Upsala and Shebandowan observe EST/EDT, all in
-# violation of the official Ontario rules.
-#
-# From Paul Eggert (2006-07-09):
-# Chris Walton (2006-07-06) mentioned an article by Stephanie MacLellan in the
-# 2005-07-21 Chronicle-Journal, which said:
-#
-#	The clocks in Atikokan stay set on standard time year-round.
-#	This means they spend about half the time on central time and
-#	the other half on eastern time.
-#
-#	For the most part, the system works, Mayor Dennis Brown said.
-#
-#	"The majority of businesses in Atikokan deal more with Eastern
-#	Canada, but there are some that deal with Western Canada," he
-#	said.  "I don't see any changes happening here."
-#
-# Walton also writes "Supposedly Pickle Lake and Mishkeegogamang
-# [New Osnaburgh] follow the same practice."
-
-# From Garry McKinnon (2006-07-14) via Chris Walton:
-# I chatted with a member of my board who has an outstanding memory
-# and a long history in Atikokan (and in the telecom industry) and he
-# can say for certain that Atikokan has been practicing the current
-# time keeping since 1952, at least.
-
-# From Paul Eggert (2006-07-17):
-# Shanks & Pottenger say that Atikokan has agreed with Rainy River
-# ever since standard time was introduced, but the information from
-# McKinnon sounds more authoritative.  For now, assume that Atikokan
-# switched to EST immediately after WWII era daylight saving time
-# ended.  This matches the old (less-populous) America/Coral_Harbour
-# entry since our cutoff date of 1970, so we can move
-# America/Coral_Harbour to the 'backward' file.
 
 # From Mark Brader (2010-03-06):
 #
@@ -1850,6 +1791,7 @@ Zone America/Toronto	-5:17:32 -	LMT	1895
 			-5:00	Canada	E%sT	1946
 			-5:00	Toronto	E%sT	1974
 			-5:00	Canada	E%sT
+Link America/Toronto America/Nassau
 Zone America/Thunder_Bay -5:57:00 -	LMT	1895
 			-6:00	-	CST	1910
 			-5:00	-	EST	1942
@@ -1865,11 +1807,7 @@ Zone America/Rainy_River -6:18:16 -	LMT	1895
 			-6:00	Canada	C%sT	1940 Sep 29
 			-6:00	1:00	CDT	1942 Feb  9  2:00s
 			-6:00	Canada	C%sT
-Zone America/Atikokan	-6:06:28 -	LMT	1895
-			-6:00	Canada	C%sT	1940 Sep 29
-			-6:00	1:00	CDT	1942 Feb  9  2:00s
-			-6:00	Canada	C%sT	1945 Sep 30  2:00
-			-5:00	-	EST
+# For Atikokan see America/Panama.
 
 
 # Manitoba
@@ -2021,7 +1959,7 @@ Zone America/Swift_Current -7:11:20 -	LMT	1905 Sep
 
 # Alberta
 
-# From Alois Triendl (2019-07-19):
+# From Alois Treindl (2019-07-19):
 # There was no DST in Alberta in 1967... Calgary Herald, 29 April 1967.
 # 1969, no DST, from Edmonton Journal 18 April 1969
 #
@@ -2060,60 +1998,6 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # Shanks & Pottenger write that since 1970 most of this region has
 # been like Vancouver.
 # Dawson Creek uses MST.  Much of east BC is like Edmonton.
-# Matthews and Vincent (1998) write that Creston is like Dawson Creek.
-
-# It seems though that (re: Creston) is not entirely correct:
-
-# From Chris Walton (2011-12-01):
-# There are two areas within the Canadian province of British Columbia
-# that do not currently observe daylight saving:
-# a) The Creston Valley (includes the town of Creston and surrounding area)
-# b) The eastern half of the Peace River Regional District
-# (includes the cities of Dawson Creek and Fort St. John)
-
-# Earlier this year I stumbled across a detailed article about the time
-# keeping history of Creston; it was written by Tammy Hardwick who is the
-# manager of the Creston & District Museum. The article was written in May 2009.
-# http://www.ilovecreston.com/?p=articles&t=spec&ar=260
-# According to the article, Creston has not changed its clocks since June 1918.
-# i.e. Creston has been stuck on UT-7 for 93 years.
-# Dawson Creek, on the other hand, changed its clocks as recently as April 1972.
-
-# Unfortunately the exact date for the time change in June 1918 remains
-# unknown and will be difficult to ascertain.  I e-mailed Tammy a few months
-# ago to ask if Sunday June 2 was a reasonable guess.  She said it was just
-# as plausible as any other date (in June).  She also said that after writing
-# the article she had discovered another time change in 1916; this is the
-# subject of another article which she wrote in October 2010.
-# http://www.creston.museum.bc.ca/index.php?module=comments&uop=view_comment&cm+id=56
-
-# Here is a summary of the three clock change events in Creston's history:
-# 1. 1884 or 1885: adoption of Mountain Standard Time (GMT-7)
-# Exact date unknown
-# 2. Oct 1916: switch to Pacific Standard Time (GMT-8)
-# Exact date in October unknown; Sunday October 1 is a reasonable guess.
-# 3. June 1918: switch to Pacific Daylight Time (GMT-7)
-# Exact date in June unknown; Sunday June 2 is a reasonable guess.
-# note 1:
-# On Oct 27/1918 when daylight saving ended in the rest of Canada,
-# Creston did not change its clocks.
-# note 2:
-# During WWII when the Federal Government legislated a mandatory clock change,
-# Creston did not oblige.
-# note 3:
-# There is no guarantee that Creston will remain on Mountain Standard Time
-# (UTC-7) forever.
-# The subject was debated at least once this year by the town Council.
-# http://www.bclocalnews.com/kootenay_rockies/crestonvalleyadvance/news/116760809.html
-
-# During a period WWII, summer time (Daylight saying) was mandatory in Canada.
-# In Creston, that was handled by shifting the area to PST (-8:00) then applying
-# summer time to cause the offset to be -7:00, the same as it had been before
-# the change.  It can be argued that the timezone abbreviation during this
-# period should be PDT rather than MST, but that doesn't seem important enough
-# (to anyone) to further complicate the rules.
-
-# The transition dates (and times) are guesses.
 
 # From Matt Johnson (2015-09-21):
 # Fort Nelson, BC, Canada will cancel DST this year.  So while previously they
@@ -2130,7 +2014,7 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 #
 # From Paul Eggert (2019-07-25):
 # Shanks says Fort Nelson did not observe DST in 1946, unlike Vancouver.
-# Alois Triendl confirmed this on 07-22, citing the 1946-04-27 Vancouver Daily
+# Alois Treindl confirmed this on 07-22, citing the 1946-04-27 Vancouver Daily
 # Province.  He also cited the 1946-09-28 Victoria Daily Times, which said
 # that Vancouver, Victoria, etc. "change at midnight Saturday"; for now,
 # guess they meant 02:00 Sunday since 02:00 was common practice in Vancouver.
@@ -2167,10 +2051,7 @@ Zone America/Fort_Nelson	-8:10:47 -	LMT	1884
 			-8:00	Vanc	P%sT	1987
 			-8:00	Canada	P%sT	2015 Mar  8  2:00
 			-7:00	-	MST
-Zone America/Creston	-7:46:04 -	LMT	1884
-			-7:00	-	MST	1916 Oct 1
-			-8:00	-	PST	1918 Jun 2
-			-7:00	-	MST
+# For Creston see America/Phoenix.
 
 # Northwest Territories, Nunavut, Yukon
 
@@ -2952,64 +2833,61 @@ Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
 
 # Anguilla
 # Antigua and Barbuda
-# See America/Port_of_Spain.
+# See America/Puerto_Rico.
 
-# Bahamas
-#
-# For 1899 Milne gives -5:09:29.5; round that.
-#
-# From P Chan (2020-11-27, corrected on 2020-12-02):
-# There were two periods of DST observed in 1942-1945: 1942-05-01
-# midnight to 1944-12-31 midnight and 1945-02-01 to 1945-10-17 midnight.
-# "midnight" should mean 24:00 from the context.
-#
-# War Time Order 1942 [1942-05-01] and War Time (No. 2) Order 1942  [1942-09-29]
-# Appendix to the Statutes of 7 George VI. and the Year 1942. p 34, 43
-# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA3-PA34
-# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA3-PA43
-#
-# War Time Order 1943 [1943-03-31] and War Time Order 1944 [1943-12-29]
-# Appendix to the Statutes of 8 George VI. and the Year 1943. p 9-10, 28-29
-# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA4-PA9
-# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA4-PA28
-#
-# War Time Order 1945 [1945-01-31] and the Order which revoke War Time Order
-# 1945 [1945-10-16] Appendix to the Statutes of 9 George VI. and the Year
-# 1945. p 160, 247-248
-# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA6-PA160
-# https://books.google.com/books?id=5rlNAQAAIAAJ&pg=RA6-PA247
-#
-# From Sue Williams (2006-12-07):
-# The Bahamas announced about a month ago that they plan to change their DST
-# rules to sync with the U.S. starting in 2007....
-# http://www.jonesbahamas.com/?c=45&a=10412
+# The Bahamas
+# See America/Toronto.
 
-# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Bahamas	1942	only	-	May	 1	24:00	1:00	W
-Rule	Bahamas	1944	only	-	Dec	31	24:00	0	S
-Rule	Bahamas	1945	only	-	Feb	 1	0:00	1:00	W
-Rule	Bahamas	1945	only	-	Aug	14	23:00u	1:00	P # Peace
-Rule	Bahamas	1945	only	-	Oct	17	24:00	0	S
-Rule	Bahamas	1964	1975	-	Oct	lastSun	2:00	0	S
-Rule	Bahamas	1964	1975	-	Apr	lastSun	2:00	1:00	D
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Nassau	-5:09:30 -	LMT	1912 Mar 2
-			-5:00	Bahamas	E%sT	1976
-			-5:00	US	E%sT
 
 # Barbados
 
 # For 1899 Milne gives -3:58:29.2; round that.
 
+# From P Chan (2020-12-09 and 2020-12-11):
+# Standard time of GMT-4 was adopted in 1911.
+# Definition of Time Act, 1911 (1911-7) [1911-08-28]
+# 1912, Laws of Barbados (5 v.), OCLC Number: 919801291, Vol. 4, Image No. 522
+# 1944, Laws of Barbados (5 v.), OCLC Number: 84548697, Vol. 4, Image No. 122
+# http://llmc.com/browse.aspx?type=2&coll=85&div=297
+#
+# DST was observed in 1942-44.
+# Defence (Daylight Saving) Regulations, 1942, 1942-04-13
+# Defence (Daylight Saving) (Repeal) Regulations, 1942, 1942-08-22
+# Defence (Daylight Saving) Regulations, 1943, 1943-04-16
+# Defence (Daylight Saving) (Repeal) Regulations, 1943, 1943-09-01
+# Defence (Daylight Saving) Regulations, 1944, 1944-03-21
+# [Defence (Daylight Saving) (Amendment) Regulations 1944, 1944-03-28]
+# Defence (Daylight Saving) (Repeal) Regulations, 1944, 1944-08-30
+#
+# 1914-, Subsidiary Legis., Annual Vols. OCLC Number: 226290591
+# 1942: Image Nos. 527-528, 555-556
+# 1943: Image Nos. 178-179, 198
+# 1944: Image Nos. 113-115, 129
+# http://llmc.com/titledescfull.aspx?type=2&coll=85&div=297&set=98437
+#
+# From Tim Parenti (2021-02-20):
+# The transitions below are derived from P Chan's sources, except that the 1977
+# through 1980 transitions are from Shanks & Pottenger since we have no better
+# data there.  Of particular note, the 1944 DST regulation only advanced the
+# time to "exactly three and a half hours later than Greenwich mean time", as
+# opposed to "three hours" in the 1942 and 1943 regulations.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+Rule	Barb	1942	only	-	Apr	19	5:00u	1:00	D
+Rule	Barb	1942	only	-	Aug	31	6:00u	0	S
+Rule	Barb	1943	only	-	May	 2	5:00u	1:00	D
+Rule	Barb	1943	only	-	Sep	 5	6:00u	0	S
+Rule	Barb	1944	only	-	Apr	10	5:00u	0:30	-
+Rule	Barb	1944	only	-	Sep	10	6:00u	0	S
 Rule	Barb	1977	only	-	Jun	12	2:00	1:00	D
 Rule	Barb	1977	1978	-	Oct	Sun>=1	2:00	0	S
 Rule	Barb	1978	1980	-	Apr	Sun>=15	2:00	1:00	D
 Rule	Barb	1979	only	-	Sep	30	2:00	0	S
 Rule	Barb	1980	only	-	Sep	25	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Barbados	-3:58:29 -	LMT	1924 # Bridgetown
-			-3:58:29 -	BMT	1932 # Bridgetown Mean Time
+Zone America/Barbados	-3:58:29 -	LMT	1911 Aug 28 # Bridgetown
+			-4:00	Barb	A%sT	1944
+			-4:00	Barb	AST/-0330 1945
 			-4:00	Barb	A%sT
 
 # Belize
@@ -3170,6 +3048,9 @@ Zone Atlantic/Bermuda	-4:19:18 -	LMT	1890	# Hamilton
 			-4:00	Bermuda	A%sT	1974 Apr 28  2:00
 			-4:00	Canada	A%sT	1976
 			-4:00	US	A%sT
+
+# Caribbean Netherlands
+# See America/Puerto_Rico.
 
 # Cayman Is
 # See America/Panama.
@@ -3399,7 +3280,7 @@ Zone	America/Havana	-5:29:28 -	LMT	1890
 			-5:00	Cuba	C%sT
 
 # Dominica
-# See America/Port_of_Spain.
+# See America/Puerto_Rico.
 
 # Dominican Republic
 
@@ -3451,7 +3332,7 @@ Zone America/El_Salvador -5:56:48 -	LMT	1921 # San Salvador
 # Guadeloupe
 # St Barthélemy
 # St Martin (French part)
-# See America/Port_of_Spain.
+# See America/Puerto_Rico.
 
 # Guatemala
 #
@@ -3638,7 +3519,7 @@ Zone America/Martinique	-4:04:20 -      LMT	1890        # Fort-de-France
 			-4:00	-	AST
 
 # Montserrat
-# See America/Port_of_Spain.
+# See America/Puerto_Rico.
 
 # Nicaragua
 #
@@ -3710,6 +3591,7 @@ Zone	America/Managua	-5:45:08 -	LMT	1890
 Zone	America/Panama	-5:18:08 -	LMT	1890
 			-5:19:36 -	CMT	1908 Apr 22 # Colón Mean Time
 			-5:00	-	EST
+Link America/Panama America/Atikokan
 Link America/Panama America/Cayman
 
 # Puerto Rico
@@ -3719,10 +3601,29 @@ Zone America/Puerto_Rico -4:24:25 -	LMT	1899 Mar 28 12:00 # San Juan
 			-4:00	-	AST	1942 May  3
 			-4:00	US	A%sT	1946
 			-4:00	-	AST
+Link America/Puerto_Rico America/Anguilla
+Link America/Puerto_Rico America/Antigua
+Link America/Puerto_Rico America/Aruba
+Link America/Puerto_Rico America/Curacao
+Link America/Puerto_Rico America/Blanc-Sablon	# Quebec (Lower North Shore)
+Link America/Puerto_Rico America/Dominica
+Link America/Puerto_Rico America/Grenada
+Link America/Puerto_Rico America/Guadeloupe
+Link America/Puerto_Rico America/Kralendijk	# Caribbean Netherlands
+Link America/Puerto_Rico America/Lower_Princes	# Sint Maarten
+Link America/Puerto_Rico America/Marigot	# St Martin (French part)
+Link America/Puerto_Rico America/Montserrat
+Link America/Puerto_Rico America/Port_of_Spain	# Trinidad & Tobago
+Link America/Puerto_Rico America/St_Barthelemy	# St Barthélemy
+Link America/Puerto_Rico America/St_Kitts	# St Kitts & Nevis
+Link America/Puerto_Rico America/St_Lucia
+Link America/Puerto_Rico America/St_Thomas	# Virgin Islands (US)
+Link America/Puerto_Rico America/St_Vincent
+Link America/Puerto_Rico America/Tortola	# Virgin Islands (UK)
 
 # St Kitts-Nevis
 # St Lucia
-# See America/Port_of_Spain.
+# See America/Puerto_Rico.
 
 # St Pierre and Miquelon
 # There are too many St Pierres elsewhere, so we'll use 'Miquelon'.
@@ -3733,7 +3634,10 @@ Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 			-3:00	Canada	-03/-02
 
 # St Vincent and the Grenadines
-# See America/Port_of_Spain.
+# See America/Puerto_Rico.
+
+# Sint Maarten
+# See America/Puerto_Rico.
 
 # Turks and Caicos
 #
@@ -3804,8 +3708,8 @@ Zone America/Grand_Turk	-4:44:32 -	LMT	1890
 			-5:00	US	E%sT
 
 # British Virgin Is
-# Virgin Is
-# See America/Port_of_Spain.
+# US Virgin Is
+# See America/Puerto_Rico.
 
 
 # Local Variables:

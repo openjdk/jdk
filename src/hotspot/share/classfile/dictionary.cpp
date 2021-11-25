@@ -207,6 +207,7 @@ void DictionaryEntry::add_protection_domain(ClassLoaderData* loader_data, Handle
     protection_domain->print_value_on(&ls);
     ls.print(" ");
     print_count(&ls);
+    ls.cr();
   }
 }
 
@@ -580,7 +581,7 @@ void DictionaryEntry::print_count(outputStream *st) {
                               current = current->next_acquire()) {
     count++;
   }
-  st->print_cr("pd set count = #%d", count);
+  st->print("pd set count = #%d", count);
 }
 
 // ----------------------------------------------------------------------------
@@ -631,9 +632,8 @@ void Dictionary::verify() {
   ClassLoaderData* cld = loader_data();
   // class loader must be present;  a null class loader is the
   // boostrap loader
-  guarantee(cld != NULL ||
-            cld->class_loader() == NULL ||
-            cld->class_loader()->is_instance(),
+  guarantee(cld != NULL &&
+            (cld->the_null_class_loader_data() || cld->class_loader()->is_instance()),
             "checking type of class_loader");
 
   ResourceMark rm;
