@@ -100,7 +100,6 @@ import javax.swing.*;
  * <pre>
  *   MaskFormatter formatter = new MaskFormatter("###-####");
  *   formatter.setPlaceholderCharacter('_');
- *   formatter.getDisplayValue(tf, "123");
  * </pre>
  * <p>
  * Would result in the string '123-____'. If
