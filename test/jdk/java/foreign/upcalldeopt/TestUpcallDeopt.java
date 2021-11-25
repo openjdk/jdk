@@ -26,6 +26,7 @@
  * @bug 8277602
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @library /test/lib
+ * @library ../
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
@@ -38,8 +39,10 @@
  *   TestUpcallDeopt
  */
 
+import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
 
@@ -51,13 +54,11 @@ import jdk.incubator.foreign.ResourceScope;
 import sun.hotspot.WhiteBox;
 
 import static java.lang.invoke.MethodHandles.lookup;
-import static jdk.incubator.foreign.CLinker.C_INT;
-import static jdk.incubator.foreign.CLinker.C_POINTER;
 
-public class TestUpcallDeopt {
+public class TestUpcallDeopt extends NativeTestHelper {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-    static final CLinker linker = CLinker.getInstance();
+    static final CLinker linker = CLinker.systemCLinker();
 
     static final MethodHandle MH_foo;
     static final MethodHandle MH_m;
@@ -68,10 +69,7 @@ public class TestUpcallDeopt {
             SymbolLookup lookup = SymbolLookup.loaderLookup();
             MH_foo = linker.downcallHandle(
                     lookup.lookup("foo").orElseThrow(),
-                    MethodType.methodType(void.class, MemoryAddress.class,
-                        int.class, int.class, int.class, int.class),
-                    FunctionDescriptor.ofVoid(C_POINTER,
-                        C_INT, C_INT, C_INT, C_INT));
+                    FunctionDescriptor.ofVoid(C_POINTER, C_INT, C_INT, C_INT, C_INT));
             MH_m = lookup().findStatic(TestUpcallDeopt.class, "m",
                     MethodType.methodType(void.class, int.class, int.class, int.class, int.class));
         } catch (ReflectiveOperationException e) {
@@ -85,20 +83,19 @@ public class TestUpcallDeopt {
     // that is created when calling upcallStub below
     public static void main(String[] args) throws Throwable {
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemoryAddress stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(C_INT, C_INT, C_INT, C_INT), scope);
-            MemoryAddress stubAddress = stub.address();
+            NativeSymbol stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(C_INT, C_INT, C_INT, C_INT), scope);
             armed = false;
             for (int i = 0; i < 20_000; i++) {
-                payload(stubAddress); // warmup
+                payload(stub); // warmup
             }
 
             armed = true;
-            payload(stubAddress); // test
+            payload(stub); // test
         }
     }
 
-    static void payload(MemoryAddress cb) throws Throwable {
-        MH_foo.invokeExact(cb, 0, 1, 2, 3);
+    static void payload(NativeSymbol cb) throws Throwable {
+        MH_foo.invokeExact((Addressable) cb, 0, 1, 2, 3);
         Reference.reachabilityFence(cb); // keep oop alive across call
     }
 
@@ -106,7 +103,7 @@ public class TestUpcallDeopt {
     // if the caller's frame is extended enough to spill these arguments.
     static void m(int a0, int a1, int a2, int a3) {
         if (armed) {
-            // do some stuff to trigger uncommon trap from this frame
+            // Trigger uncommon trap from this frame
             WB.verifyFrames(/*log=*/true, /*updateRegisterMap=*/true);
             WB.verifyFrames(/*log=*/true, /*updateRegisterMap=*/false); // triggers different code paths
         }
