@@ -141,7 +141,7 @@ void G1CardSetAllocator<Elem>::print(outputStream* os) {
 }
 
 G1CardSetMemoryManager::G1CardSetMemoryManager(G1CardSetConfiguration* config,
-                                               G1SegmentedArrayFreePool<mtGCCardSet>* free_list_pool) : _config(config) {
+                                               G1CardSetFreePool* free_list_pool) : _config(config) {
 
   _allocators = NEW_C_HEAP_ARRAY(G1CardSetAllocator<G1CardSetContainer>,
                                  _config->num_mem_object_types(),

@@ -3040,7 +3040,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   }
 
   // add static memory usages to remembered set sizes
-  _total_remset_bytes += G1SegmentedArrayFreePool<mtGCCardSet>::free_list_pool()->mem_size() + HeapRegionRemSet::static_mem_size();
+  _total_remset_bytes += G1CardSetFreePool::free_list_pool()->mem_size() + HeapRegionRemSet::static_mem_size();
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX

@@ -143,7 +143,7 @@ public:
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return G1CardSet::static_mem_size() + G1CodeRootSet::static_mem_size() + sizeof(G1SegmentedArrayFreePool<mtGCCardSet>);
+    return G1CardSet::static_mem_size() + G1CodeRootSet::static_mem_size() + sizeof(G1CardSetFreePool);
   }
 
   static void print_static_mem_size(outputStream* out);

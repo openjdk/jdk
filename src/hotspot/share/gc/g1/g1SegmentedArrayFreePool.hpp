@@ -59,13 +59,13 @@ public:
 template<MEMFLAGS flag>
 class G1SegmentedArrayFreePool {
   // The global free pool.
-  static G1SegmentedArrayFreePool<flag> _freelist_pool;
+  static G1SegmentedArrayFreePool _freelist_pool;
 
   const uint _num_free_lists;
   G1SegmentedArrayBufferList<flag>* _free_lists;
 
 public:
-  static G1SegmentedArrayFreePool<flag>* free_list_pool() { return &_freelist_pool; }
+  static G1SegmentedArrayFreePool* free_list_pool() { return &_freelist_pool; }
   static G1SegmentedArrayMemoryStats free_list_sizes() { return _freelist_pool.memory_sizes(); }
 
   class G1ReturnMemoryProcessor;
@@ -73,7 +73,7 @@ public:
 
   static void update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processors);
 
-  explicit G1SegmentedArrayFreePool<flag>(uint num_free_lists);
+  explicit G1SegmentedArrayFreePool(uint num_free_lists);
   ~G1SegmentedArrayFreePool();
 
   G1SegmentedArrayBufferList<flag>* free_list(uint i) {
