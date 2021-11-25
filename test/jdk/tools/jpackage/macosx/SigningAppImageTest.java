@@ -22,8 +22,11 @@
  */
 
 import java.nio.file.Path;
+import java.util.List;
+
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameters;
 
 /**
  * Tests generation of app image with --mac-sign and related arguments. Test will
@@ -57,21 +60,36 @@ import jdk.jpackage.test.Annotations.Test;
  */
 public class SigningAppImageTest {
 
+    final boolean doSign;
+
+    public SigningAppImageTest(String flag) {
+        this.doSign = "true".equals(flag);
+    }
+
+    @Parameters
+    public static List<Object[]> data() {
+        return List.of(new Object[][] {{"true"}, {"false"}});
+    }
+
     @Test
-    public static void test() throws Exception {
+    public void test() throws Exception {
         SigningCheck.checkCertificates();
 
         JPackageCommand cmd = JPackageCommand.helloAppImage();
-        cmd.addArguments("--mac-sign", "--mac-signing-key-user-name",
-                SigningBase.DEV_NAME, "--mac-signing-keychain",
-                SigningBase.KEYCHAIN);
+        if (doSign) {
+            cmd.addArguments("--mac-sign", "--mac-signing-key-user-name",
+                    SigningBase.DEV_NAME, "--mac-signing-keychain",
+                    SigningBase.KEYCHAIN);
+        }
         cmd.executeAndAssertHelloAppImageCreated();
 
         Path launcherPath = cmd.appLauncherPath();
-        SigningBase.verifyCodesign(launcherPath, true);
+        SigningBase.verifyCodesign(launcherPath, doSign);
 
         Path appImage = cmd.outputBundle();
-        SigningBase.verifyCodesign(appImage, true);
-        SigningBase.verifySpctl(appImage, "exec");
+        SigningBase.verifyCodesign(appImage, doSign);
+        if (doSign) {
+            SigningBase.verifySpctl(appImage, "exec");
+        }
     }
 }

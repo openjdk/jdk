@@ -25,7 +25,7 @@
  * @test
  * @bug 8275670
  * @library / /test/lib
- * @summary testing of ciReplay with inlining
+ * @summary testing of ciReplay with nested BoundMethodHandles
  * @requires vm.flightRecorder != true & vm.compMode != "Xint" & vm.debug == true & vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox

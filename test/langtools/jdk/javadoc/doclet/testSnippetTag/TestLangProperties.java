@@ -21,16 +21,6 @@
  * questions.
  */
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import toolbox.ToolBox;
-
 /*
  * @test
  * @bug 8266666
@@ -42,11 +32,16 @@ import toolbox.ToolBox;
  * @build javadoc.tester.* toolbox.ToolBox toolbox.ModuleBuilder builder.ClassBuilder
  * @run main TestLangProperties
  */
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 public class TestLangProperties extends SnippetTester {
-
-    private final ToolBox tb = new ToolBox();
-
-    private TestLangProperties() {}
 
     public static void main(String... args) throws Exception {
         new TestLangProperties().runTests(m -> new Object[]{Paths.get(m.getName())});

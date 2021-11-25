@@ -48,7 +48,6 @@ import java.util.regex.Pattern;
 import builder.ClassBuilder;
 import builder.ClassBuilder.MethodBuilder;
 import toolbox.ModuleBuilder;
-import toolbox.ToolBox;
 
 // FIXME
 //   0. Add tests for snippets in all types of elements: e.g., fields
@@ -85,10 +84,6 @@ import toolbox.ToolBox;
  */
 public class TestSnippetTag extends SnippetTester {
 
-    private final ToolBox tb = new ToolBox();
-
-    private TestSnippetTag() {}
-
     public static void main(String... args) throws Exception {
         new TestSnippetTag().runTests(m -> new Object[]{Paths.get(m.getName())});
     }
@@ -100,7 +95,7 @@ public class TestSnippetTag extends SnippetTester {
      * https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
      */
     @Test
-    public void testPositiveInlineTagIdAndLangAttributes(Path base) throws IOException {
+    public void testPositiveInlineTag_IdAndLangAttributes(Path base) throws IOException {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
 
@@ -246,7 +241,7 @@ public class TestSnippetTag extends SnippetTester {
      */
     // TODO: restructure this as a list of TestCase records
     @Test
-    public void testPositiveInlineExternalTagMarkupImplicitAttributes(Path base) throws IOException {
+    public void testPositiveInlineExternalTagMarkup_ImplicitAttributes(Path base) throws IOException {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
 
@@ -302,7 +297,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeInlineTagBadTagSyntax(Path base) throws IOException {
+    public void testNegativeInlineTag_BadTagSyntax(Path base) throws IOException {
         // TODO consider improving diagnostic output by providing more specific
         //  error messages and better positioning the caret (depends on JDK-8273244)
 
@@ -889,7 +884,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testPositiveExternalTagFile(Path base) throws Exception {
+    public void testPositiveExternalTag_File(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
 
@@ -981,7 +976,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testPositiveInlineTagInDocFiles(Path base) throws IOException {
+    public void testPositiveInlineTag_InDocFiles(Path base) throws IOException {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         // If there is no *.java files, javadoc will not create an output
@@ -1023,7 +1018,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testPositiveExternalTagInDocFiles(Path base) throws IOException {
+    public void testPositiveExternalTag_InDocFiles(Path base) throws IOException {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         // If there is no *.java files, javadoc will not create an output
@@ -1065,7 +1060,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeExternalTagFileNotFound(Path base) throws Exception {
+    public void testNegativeExternalTag_FileNotFound(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1089,7 +1084,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test // TODO perhaps this could be unified with testPositiveExternalTagFile
-    public void testNegativeExternalTagFileModuleSourcePath(Path base) throws Exception {
+    public void testNegativeExternalTag_FileModuleSourcePath(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "snippet.txt";
@@ -1115,7 +1110,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test // TODO perhaps this could be unified with testNegativeExternalTagFileNotFound
-    public void testNegativeExternalTagFileNotFoundModuleSourcePath(Path base) throws Exception {
+    public void testNegativeExternalTag_FileNotFoundModuleSourcePath(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1144,7 +1139,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeTagNoContents(Path base) throws Exception {
+    public void testNegativeTag_NoContents(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1194,7 +1189,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeInlineTagAttributeConflict20(Path base) throws Exception {
+    public void testNegativeInlineTag_AttributeConflict20(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1220,7 +1215,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeInlineTagAttributeConflict30(Path base) throws Exception {
+    public void testNegativeInlineTag_AttributeConflict30(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1242,7 +1237,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeInlineTagAttributeConflict60(Path base) throws Exception {
+    public void testNegativeInlineTag_AttributeConflict60(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1262,7 +1257,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeInlineTagAttributeConflict70(Path base) throws Exception {
+    public void testNegativeInlineTag_AttributeConflict70(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1282,7 +1277,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeInlineTagAttributeConflict80(Path base) throws Exception {
+    public void testNegativeInlineTag_AttributeConflict80(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1306,7 +1301,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeInlineTagAttributeConflict90(Path base) throws Exception {
+    public void testNegativeInlineTag_AttributeConflict90(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1330,7 +1325,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeTagPositionResolution(Path base) throws Exception {
+    public void testNegativeTag_PositionResolution(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         new ClassBuilder(tb, "pkg.A")
@@ -1358,7 +1353,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testPositiveInlineTagAttributeConflictRegion(Path base) throws Exception {
+    public void testPositiveInlineTag_AttributeConflictRegion(Path base) throws Exception {
         record TestCase(Snippet snippet, String expectedOutput) { }
         final var testCases = List.of(
                 new TestCase(newSnippetBuilder()
@@ -1574,7 +1569,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeInlineTagMarkupAttributeValueSyntaxUnquotedCurly(Path base) throws Exception {
+    public void testNegativeInlineTagMarkup_AttributeValueSyntaxUnquotedCurly(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         /*
@@ -1608,7 +1603,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testPositiveInlineTagMarkupSyntaxCurly(Path base) throws Exception {
+    public void testPositiveInlineTagMarkup_SyntaxCurly(Path base) throws Exception {
         /*
          * The snippet has to be external, otherwise its content would
          * interfere with the test: that internal closing curly would
@@ -1658,7 +1653,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test // TODO: use combinatorial methods
-    public void testPositiveExternalTagMarkupAttributeValueSyntax(Path base) throws Exception {
+    public void testPositiveExternalTagMarkup_AttributeValueSyntax(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         // Test most expected use cases for external snippet
@@ -1757,7 +1752,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testPositiveInlineTagMarkupComment(Path base) throws Exception {
+    public void testPositiveInlineTagMarkup_Comment(Path base) throws Exception {
         record TestCase(Snippet snippet, String expectedOutput) { }
         final var testCases = List.of(
                 new TestCase(newSnippetBuilder()
@@ -1836,7 +1831,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeHybridTagFileNotFound(Path base) throws Exception {
+    public void testNegativeHybridTag_FileNotFound(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1861,7 +1856,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeTagValuelessAttributes(Path base) throws IOException {
+    public void testNegativeTag_ValuelessAttributes(Path base) throws IOException {
         // none of these attributes should ever be valueless
         record TestCase(String input, String expectedError) { }
         var testCases = new ArrayList<TestCase>();
@@ -1912,7 +1907,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeTagBlankRegion(Path base) throws Exception {
+    public void testNegativeTag_BlankRegion(Path base) throws Exception {
         // If a blank region were allowed, it could not be used without quotes
         record TestCase(String input, String expectedError) { }
 
@@ -1964,7 +1959,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeHybridTagMarkupRegionNotFound(Path base) throws Exception {
+    public void testNegativeHybridTagMarkup_RegionNotFound(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -1995,7 +1990,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeHybridTagMismatch(Path base) throws Exception {
+    public void testNegativeHybridTag_Mismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -2024,7 +2019,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeHybridTagMarkupRegionRegionMismatch(Path base) throws Exception {
+    public void testNegativeHybridTagMarkup_RegionRegionMismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -2064,7 +2059,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeHybridTagMarkupRegion1Mismatch(Path base) throws Exception {
+    public void testNegativeHybridTagMarkup_Region1Mismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -2098,7 +2093,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeHybridTagMarkupRegion2Mismatch(Path base) throws Exception {
+    public void testNegativeHybridTagMarkup_Region2Mismatch(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var fileName = "text.txt";
@@ -2267,7 +2262,7 @@ public class TestSnippetTag extends SnippetTester {
     }
 
     @Test
-    public void testNegativeInlineTagMarkupInvalidRegexDiagnostics(Path base) throws Exception {
+    public void testNegativeInlineTagMarkup_InvalidRegexDiagnostics(Path base) throws Exception {
 
         record TestCase(String input, String expectedError) { }
 
@@ -2351,7 +2346,7 @@ hello there //   @highlight  type="italics" regex ="  ["
     }
 
     @Test
-    public void testNegativeInlineTagMarkupErrorMessages(Path base) throws Exception {
+    public void testNegativeInlineTagMarkup_ErrorMessages(Path base) throws Exception {
 
         record TestCase(String input, String expectedError) { }
 

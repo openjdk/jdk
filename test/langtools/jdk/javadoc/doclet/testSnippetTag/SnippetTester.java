@@ -35,8 +35,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
 
 public class SnippetTester extends JavadocTester {
+
+    protected final ToolBox tb = new ToolBox();
 
     protected void checkOrder(Output output, String... strings) {
         new OutputChecker(output).setExpectOrdered(true).check(strings);
@@ -87,17 +90,10 @@ public class SnippetTester extends JavadocTester {
         }
     }
 
-    // TODO: perhaps this method could be added to JavadocTester
     protected void checkOutputEither(Output out, String first, String... other) {
-        checking("checkOutputEither");
-        String output = getOutput(out);
-        Stream<String> strings = Stream.concat(Stream.of(first), Stream.of(other));
-        Optional<String> any = strings.filter(output::contains).findAny();
-        if (any.isPresent()) {
-            passed(": following text is found:\n" + any.get());
-        } else {
-            failed(": nothing found");
-        }
+        var strings = Stream.concat(Stream.of(first), Stream.of(other))
+                .toArray(String[]::new);
+        new OutputChecker(out).checkAnyOf(strings);
     }
 
     protected String getSnippetHtmlRepresentation(String pathToHtmlFile,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ public class TestIntFloatVect {
       test_vi_unaln(a1, b1, (int)123, 103.f);
       test_cp_unalndst(a1, a2, b1, b2);
       test_cp_unalnsrc(a1, a2, b1, b2);
+      test_conv_i2f(a1, b1);
+      test_conv_f2i(a1, b1);
     }
     // Initialize
     for (int i=0; i<ARRLEN; i++) {
@@ -338,6 +340,72 @@ public class TestIntFloatVect {
         errn += verify("test_cp_unalnsrc_overlap: a1", i, a1[i], (int)v);
         errn += verify("test_cp_unalnsrc_overlap: b1", i, b1[i], (float)v);
       }
+      // Reset to test conversion from int to float.
+      for (int i=0; i<ARRLEN; i++) {
+        a1[i] = (int)i;
+      }
+      test_conv_i2f(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_i2f: a1", i, b1[i], (float)i);
+      }
+      // Reset to test conversion from float to int.
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = (float)(i+1);
+      }
+      test_conv_f2i(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_f2i: a1", i, a1[i], (i+1));
+      }
+      // Reset to test NAN conversion from int to float.
+      for (int i=0; i<ARRLEN; i++) {
+        a1[i] = Integer.MIN_VALUE;
+      }
+      test_conv_i2f(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_i2f: a1", i, b1[i], (float)Integer.MIN_VALUE);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        a1[i] = Integer.MAX_VALUE;
+      }
+      test_conv_i2f(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_i2f: a1", i, b1[i], (float)Integer.MAX_VALUE);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = Float.NaN;
+      }
+      test_conv_f2i(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_f2i: a1", i, a1[i], (int)Float.NaN);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = Float.POSITIVE_INFINITY;
+      }
+      test_conv_f2i(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_f2i: a1", i, a1[i], (int)Float.POSITIVE_INFINITY);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = Float.NEGATIVE_INFINITY;
+      }
+      test_conv_f2i(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_f2i: a1", i, a1[i], (int)Float.NEGATIVE_INFINITY);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = 0.0f;
+      }
+      test_conv_f2i(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_f2i: a1", i, a1[i], (int)0.0);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = -0.0f;
+      }
+      test_conv_f2i(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_f2i: a1", i, a1[i], (int)(-0.0));
+      }
 
     }
 
@@ -448,6 +516,18 @@ public class TestIntFloatVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_cp_unalnsrc: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_conv_i2f(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_i2f: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_conv_f2i(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_f2i: " + (end - start));
     return errn;
   }
 
@@ -556,6 +636,16 @@ public class TestIntFloatVect {
       c[i] = d[i+UNALIGN_OFF];
     }
   }
+  static void test_conv_i2f(int[] a, float[] b){
+    for (int i = 0; i < a.length; i+=1) {
+      b[i] = (float)a[i];
+    }
+  }
+  static void test_conv_f2i(int[] a, float[] b){
+    for (int i = 0; i < a.length; i+=1) {
+      a[i] = (int)b[i];
+    }
+  }
 
   static int verify(String text, int i, int elem, int val) {
     if (elem != val) {
@@ -565,7 +655,7 @@ public class TestIntFloatVect {
     return 0;
   }
   static int verify(String text, int i, float elem, float val) {
-    if (elem != val) {
+    if (elem != val && !(Float.isNaN(elem) && Float.isNaN(val))) {
       System.err.println(text + "[" + i + "] = " + elem + " != " + val);
       return 1;
     }
