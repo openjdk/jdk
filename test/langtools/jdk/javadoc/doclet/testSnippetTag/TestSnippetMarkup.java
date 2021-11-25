@@ -370,6 +370,118 @@ First line // @highlight :
         testPositive(base, testCases);
     }
 
+    // @replace on a blank line will not do anything bad!
+
+    // What to do with a markup line that modifies blankness somehow? For example:
+    //
+    //    // @replace regex=.* replacement="hello"
+
+    @Test
+    public void testPositiveInlineTagMarkup_BlankLinesFromStartEnd(Path base) throws Exception {
+        // A markup line that contains either @start or @end is removed.
+        var testCases = List.of(
+                new TestCase("""
+                        First line
+                          // @start region="a"
+                         Third line
+                          // @end
+                        Fifth line
+                        """,
+                        """
+                                First line
+                                 Third line
+                                Fifth line
+                                """),
+                new TestCase("""
+                        First line
+                          // @start region="a"
+                          // @start region="b"
+                         Third line
+                          // @end
+                        Fifth line
+                          // @end
+                        """,
+                        """
+                                First line
+                                 Third line
+                                Fifth line
+                                """),
+                // note incidental whitespace removal in test cases below
+                new TestCase("a", """
+                        First line
+                          // @start region="a"
+                         Third line
+                          // @end
+                        Fifth line
+                        """,
+
+                        """
+                                Third line
+                                """),
+                new TestCase("b", """
+                        First line
+                          // @start region="a"
+                          // @start region="b"
+                         Third line
+                          // @end
+                        Fifth line
+                          // @end
+                        """,
+                        """
+                                Third line
+                                """)
+        );
+        testPositive(base, testCases);
+    }
+
+    @Test
+    public void testPositiveInlineTagMarkup_BlankLinesFromNextLineMarkup(Path base) throws Exception {
+        // A markup line that refers to the next line is removed.
+        var testCases = List.of(
+                new TestCase("""
+                        First line
+                             // @highlight:
+                         Third line
+                        """,
+                        """
+                                First line
+                                <span class="bold"> Third line
+                                </span>"""),
+                new TestCase("""
+                        First line
+                             // @link target="Object#equals(Object)":
+                         Third line
+                        """,
+                        replace("""
+                                First line
+                                 link(Third line)
+                                """, "link\\((.+?)\\)", r -> link(true, "java.lang.Object#equals(Object)", r.group(1)))
+                ),
+                new TestCase("""
+                        First line
+                             // @replace regex=.+ replacement="x":
+                         Third line
+                        """,
+                        """
+                                First line
+                                x
+                                """),
+                new TestCase("""
+                        First line
+                             // @start region=a:
+                         Third line
+                             // @end:
+                           Fifth line
+                        """,
+                        """
+                                First line
+                                 Third line
+                                   Fifth line
+                                """)
+        );
+        testPositive(base, testCases);
+    }
+
     private static String link(boolean linkPlain,
                                String targetReference,
                                String content)
