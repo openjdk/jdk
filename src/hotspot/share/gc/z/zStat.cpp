@@ -1124,15 +1124,19 @@ ZStatCycle::ZStatCycle(ZCollectorId collector) :
     _end_of_last(),
     _serial_time(0.7 /* alpha */),
     _parallelizable_time(0.7 /* alpha */),
-    _last_active_workers(0),
+    _parallelizable_duration(0.7 /* alpha */),
+    _last_active_workers(0.0),
     _collector(collector) {
 }
 
 void ZStatCycle::at_start() {
+  ZCollector* collector = ZHeap::heap()->collector(_collector);
   _start_of_last = Ticks::now();
+
+  collector->workers()->clear_pending_resize();
 }
 
-void ZStatCycle::at_end(uint active_workers) {
+void ZStatCycle::at_end() {
   _end_of_last = Ticks::now();
 
   if (ZCollectedHeap::heap()->gc_cause() == GCCause::_z_major_warmup && _nwarmup_cycles < 3) {
@@ -1141,15 +1145,16 @@ void ZStatCycle::at_end(uint active_workers) {
 
   ZCollector* collector = ZHeap::heap()->collector(_collector);
 
-  _last_active_workers = active_workers;
-
   // Calculate serial and parallelizable GC cycle times
   const double duration = (_end_of_last - _start_of_last).seconds();
   const double workers_duration = collector->stat_workers()->get_and_reset_duration();
+  const double workers_time = collector->stat_workers()->get_and_reset_time();
   const double serial_time = duration - workers_duration;
-  const double parallelizable_time = workers_duration * active_workers;
+
+  _last_active_workers = workers_time / workers_duration;
   _serial_time.add(serial_time);
-  _parallelizable_time.add(parallelizable_time);
+  _parallelizable_time.add(workers_time);
+  _parallelizable_duration.add(workers_duration);
 }
 
 bool ZStatCycle::is_warm() {
@@ -1174,8 +1179,24 @@ const AbsSeq& ZStatCycle::parallelizable_time() {
   return _parallelizable_time;
 }
 
-uint ZStatCycle::last_active_workers() {
+const AbsSeq& ZStatCycle::parallelizable_duration() {
+  return _parallelizable_duration;
+}
+
+double ZStatCycle::last_active_workers() {
   return _last_active_workers;
+}
+
+double ZStatCycle::duration_since_start() {
+  const Ticks start = _start_of_last;
+  if (start.value() == 0) {
+    // No end recorded yet, return time since VM start
+    return 0.0;
+  }
+
+  const Ticks now = Ticks::now();
+  const Tickspan duration_since_start = now - start;
+  return duration_since_start.seconds();
 }
 
 double ZStatCycle::time_since_last() {
@@ -1192,18 +1213,56 @@ double ZStatCycle::time_since_last() {
 //
 // Stat workers
 //
-ZStatWorkers::ZStatWorkers() :
+ZStatWorkers::ZStatWorkers(ZCollectorId collector) :
+    _active_workers(0),
     _start_of_last(),
-    _accumulated_duration() {}
+    _accumulated_duration(),
+    _accumulated_time(),
+    _collector(collector) {}
 
 void ZStatWorkers::at_start() {
   _start_of_last = Ticks::now();
+  ZCollector* collector = ZHeap::heap()->collector(_collector);
+  uint nworkers = collector->workers()->active_workers();
+  _active_workers = nworkers;
 }
 
 void ZStatWorkers::at_end() {
+  ZCollector* collector = ZHeap::heap()->collector(_collector);
+  uint nworkers = collector->workers()->active_workers();
   const Ticks now = Ticks::now();
   const Tickspan duration = now - _start_of_last;
+  Tickspan time = duration;
+  for (uint i = 1; i < nworkers; ++i) {
+    time += duration;
+  }
+  _accumulated_time += time;
   _accumulated_duration += duration;
+  _active_workers = 0;
+}
+
+double ZStatWorkers::accumulated_time() {
+  ZCollector* collector = ZHeap::heap()->collector(_collector);
+  uint nworkers = _active_workers;
+  const Ticks now = Ticks::now();
+  Ticks start = _start_of_last;
+  Tickspan time = _accumulated_time;
+  if (nworkers != 0) {
+    for (uint i = 0; i < nworkers; ++i) {
+      time += now - start;
+    }
+  }
+  return time.seconds();
+}
+
+double ZStatWorkers::accumulated_duration() {
+  const Ticks now = Ticks::now();
+  Ticks start = _start_of_last;
+  Tickspan duration = _accumulated_duration;
+  if (_active_workers != 0) {
+    duration += now - start;
+  }
+  return duration.seconds();
 }
 
 double ZStatWorkers::get_and_reset_duration() {
@@ -1211,6 +1270,17 @@ double ZStatWorkers::get_and_reset_duration() {
   const Ticks now = Ticks::now();
   _accumulated_duration = now - now;
   return duration;
+}
+
+double ZStatWorkers::get_and_reset_time() {
+  const double time = _accumulated_time.seconds();
+  const Ticks now = Ticks::now();
+  _accumulated_time = now - now;
+  return time;
+}
+
+uint ZStatWorkers::active_workers() {
+  return _active_workers;
 }
 
 //

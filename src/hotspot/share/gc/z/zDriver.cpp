@@ -388,7 +388,7 @@ public:
 
   ~ZDriverScopeYoung() {
     // Update statistics
-    young_collector()->stat_cycle()->at_end(young_collector()->active_workers());
+    young_collector()->stat_cycle()->at_end();
   }
 };
 
@@ -727,7 +727,7 @@ public:
 
   ~ZDriverScopeOld() {
     // Update statistics
-    old_collector()->stat_cycle()->at_end(old_collector()->active_workers());
+    old_collector()->stat_cycle()->at_end();
   }
 };
 

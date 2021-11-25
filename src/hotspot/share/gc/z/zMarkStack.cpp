@@ -26,6 +26,7 @@
 #include "gc/z/zMarkStackAllocator.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
 #include "logging/log.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -50,14 +51,16 @@ void ZMarkStripeSet::set_nstripes(size_t nstripes) {
   assert(nstripes >= 1, "Invalid number of stripes");
   assert(nstripes <= ZMarkStripesMax, "Invalid number of stripes");
 
-  _nstripes = nstripes;
-  _nstripes_mask = nstripes - 1;
+  // Mutators may read these values concurrently. It doesn't matter
+  // if they see the old or new values.
+  Atomic::store(&_nstripes, nstripes);
+  Atomic::store(&_nstripes_mask, nstripes - 1);
 
   log_debug(gc, marking)("Using " SIZE_FORMAT " mark stripes", _nstripes);
 }
 
 bool ZMarkStripeSet::is_empty() const {
-  for (size_t i = 0; i < _nstripes; i++) {
+  for (size_t i = 0; i < ZMarkStripesMax; i++) {
     if (!_stripes[i].is_empty()) {
       return false;
     }
@@ -93,7 +96,7 @@ ZMarkThreadLocalStacks::ZMarkThreadLocalStacks() :
 }
 
 bool ZMarkThreadLocalStacks::is_empty(const ZMarkStripeSet* stripes) const {
-  for (size_t i = 0; i < stripes->nstripes(); i++) {
+  for (size_t i = 0; i < ZMarkStripesMax; i++) {
     ZMarkStack* const stack = _stacks[i];
     if (stack != NULL) {
       return false;
@@ -204,7 +207,7 @@ bool ZMarkThreadLocalStacks::flush(ZMarkStackAllocator* allocator, ZMarkStripeSe
   bool flushed = false;
 
   // Flush all stacks
-  for (size_t i = 0; i < stripes->nstripes(); i++) {
+  for (size_t i = 0; i < ZMarkStripesMax; i++) {
     ZMarkStripe* const stripe = stripes->stripe_at(i);
     ZMarkStack** const stackp = &_stacks[i];
     ZMarkStack* const stack = *stackp;

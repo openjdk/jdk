@@ -75,7 +75,7 @@ ZCollector::ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* p
     _seqnum(1),
     _stat_heap(),
     _stat_cycle(id),
-    _stat_workers(),
+    _stat_workers(id),
     _stat_mark() {
 }
 

@@ -102,7 +102,6 @@ private:
 public:
   ZMarkStripeSet(uintptr_t base);
 
-  size_t nstripes() const;
   void set_nstripes(size_t nstripes);
 
   bool is_empty() const;
@@ -111,7 +110,8 @@ public:
   ZMarkStripe* stripe_at(size_t index);
   ZMarkStripe* stripe_next(ZMarkStripe* stripe);
   ZMarkStripe* stripe_for_worker(uint nworkers, uint worker_id);
-  ZMarkStripe* stripe_for_addr(uintptr_t addr);
+  ZMarkStripe* stripe_for_addr_worker(uintptr_t addr);
+  ZMarkStripe* stripe_for_addr_barrier(uintptr_t addr);
 };
 
 class ZMarkStackAllocator;

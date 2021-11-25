@@ -414,14 +414,15 @@ private:
   Ticks        _end_of_last;
   NumberSeq    _serial_time;
   NumberSeq    _parallelizable_time;
-  uint         _last_active_workers;
+  NumberSeq    _parallelizable_duration;
+  double       _last_active_workers;
   ZCollectorId _collector;
 
 public:
   ZStatCycle(ZCollectorId collector);
 
   void at_start();
-  void at_end(uint active_workers);
+  void at_end();
 
   bool is_warm();
   uint64_t nwarmup_cycles();
@@ -429,9 +430,11 @@ public:
   bool is_time_trustable();
   const AbsSeq& serial_time();
   const AbsSeq& parallelizable_time();
+  const AbsSeq& parallelizable_duration();
 
-  uint last_active_workers();
+  double last_active_workers();
 
+  double duration_since_start();
   double time_since_last();
 };
 
@@ -440,16 +443,23 @@ public:
 //
 class ZStatWorkers {
 private:
-  Ticks    _start_of_last;
-  Tickspan _accumulated_duration;
+  uint         _active_workers;
+  Ticks        _start_of_last;
+  Tickspan     _accumulated_duration;
+  Tickspan     _accumulated_time;
+  ZCollectorId _collector;
 
 public:
-  ZStatWorkers();
+  ZStatWorkers(ZCollectorId collector);
 
   void at_start();
   void at_end();
 
   double get_and_reset_duration();
+  double get_and_reset_time();
+  double accumulated_duration();
+  double accumulated_time();
+  uint active_workers();
 };
 
 //

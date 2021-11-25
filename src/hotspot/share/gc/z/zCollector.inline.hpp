@@ -24,8 +24,10 @@
 #ifndef SHARE_GC_Z_ZCOLLECTOR_INLINE_HPP
 #define SHARE_GC_Z_ZCOLLECTOR_INLINE_HPP
 
+#include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zCollector.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zWorkers.inline.hpp"
 #include "utilities/debug.hpp"
 
 inline bool ZCollector::is_phase_relocate() const {
@@ -58,6 +60,14 @@ inline bool ZCollector::is_old() const {
 
 inline ZForwarding* ZCollector::forwarding(zaddress_unsafe addr) const {
   return _forwarding_table.get(addr);
+}
+
+inline bool ZCollector::should_worker_resize() {
+  return _workers.should_worker_resize();
+}
+
+inline bool ZCollector::should_worker_stop() {
+  return ZAbort::should_abort() || should_worker_resize();
 }
 
 inline ZStatHeap* ZCollector::stat_heap() {

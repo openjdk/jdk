@@ -819,7 +819,7 @@ public:
   }
 };
 
-class ZRelocateTask : public ZTask {
+class ZRelocateTask : public ZRestartableTask {
 private:
   ZRelocationSetParallelIterator _iter;
   ZCollector* const              _collector;
@@ -835,7 +835,7 @@ private:
 
 public:
   ZRelocateTask(ZRelocationSet* relocation_set, ZRelocateQueue* queue) :
-      ZTask("ZRelocateTask"),
+      ZRestartableTask("ZRelocateTask"),
       _iter(relocation_set),
       _collector(relocation_set->collector()),
       _queue(queue),
@@ -879,9 +879,18 @@ public:
       for (ZForwarding* queue_forwarding; _queue->poll(&queue_forwarding, &synchronized);) {
         do_forwarding(queue_forwarding);
       }
+
+      // Check if we should resize threads
+      if (_collector->should_worker_resize()) {
+        break;
+      }
     }
 
     _queue->leave();
+  }
+
+  virtual void resize_workers(uint nworkers) {
+    _queue->join(nworkers);
   }
 };
 

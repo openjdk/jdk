@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,40 +21,15 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZTASK_HPP
-#define SHARE_GC_Z_ZTASK_HPP
+#ifndef SHARE_GC_Z_ZWORKERS_INLINE_HPP
+#define SHARE_GC_Z_ZWORKERS_INLINE_HPP
 
-#include "gc/shared/workerThread.hpp"
-#include "memory/allocation.hpp"
+#include "gc/z/zWorkers.hpp"
 
-class ZTask : public StackObj {
-private:
-  class Task : public WorkerTask {
-  private:
-    ZTask* const _task;
-    const bool   _coordinator_is_suspendible_thread;
+#include "runtime/atomic.hpp"
 
-  public:
-    Task(ZTask* task, const char* name);
+inline bool ZWorkers::should_worker_resize() {
+  return Atomic::load(&_resize_workers_request) != 0;
+}
 
-    virtual void work(uint worker_id);
-  };
-
-  Task _worker_task;
-
-public:
-  ZTask(const char* name);
-
-  const char* name() const;
-  WorkerTask* worker_task();
-
-  virtual void work() = 0;
-};
-
-class ZRestartableTask : public ZTask {
-public:
-  ZRestartableTask(const char* name);
-  virtual void resize_workers(uint nworkers);
-};
-
-#endif // SHARE_GC_Z_ZTASK_HPP
+#endif // SHARE_GC_Z_ZWORKERS_INLINE_HPP

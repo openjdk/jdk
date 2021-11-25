@@ -49,3 +49,8 @@ const char* ZTask::name() const {
 WorkerTask* ZTask::worker_task() {
   return &_worker_task;
 }
+
+ZRestartableTask::ZRestartableTask(const char* name) :
+    ZTask(name) {}
+
+void ZRestartableTask::resize_workers(uint nworkers) {}

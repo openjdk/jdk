@@ -97,6 +97,7 @@ private:
   ZWorkers* workers() const;
   void prepare_work();
   void finish_work();
+  void resize_workers(uint nworkers);
 
   void work();
 

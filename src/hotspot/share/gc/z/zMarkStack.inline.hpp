@@ -193,30 +193,32 @@ inline ZMarkStack* ZMarkStripe::steal_stack() {
   return _published.pop();
 }
 
-inline size_t ZMarkStripeSet::nstripes() const {
-  return _nstripes;
-}
-
 inline size_t ZMarkStripeSet::stripe_id(const ZMarkStripe* stripe) const {
   const size_t index = ((uintptr_t)stripe - (uintptr_t)_stripes) / sizeof(ZMarkStripe);
-  assert(index < _nstripes, "Invalid index");
+  assert(index < ZMarkStripesMax, "Invalid index");
   return index;
 }
 
 inline ZMarkStripe* ZMarkStripeSet::stripe_at(size_t index) {
-  assert(index < _nstripes, "Invalid index");
+  assert(index < ZMarkStripesMax, "Invalid index");
   return &_stripes[index];
 }
 
 inline ZMarkStripe* ZMarkStripeSet::stripe_next(ZMarkStripe* stripe) {
-  const size_t index = (stripe_id(stripe) + 1) & _nstripes_mask;
-  assert(index < _nstripes, "Invalid index");
+  const size_t index = (stripe_id(stripe) + 1) & (ZMarkStripesMax - 1);
+  assert(index < ZMarkStripesMax, "Invalid index");
   return &_stripes[index];
 }
 
-inline ZMarkStripe* ZMarkStripeSet::stripe_for_addr(uintptr_t addr) {
+inline ZMarkStripe* ZMarkStripeSet::stripe_for_addr_worker(uintptr_t addr) {
   const size_t index = (addr >> ZMarkStripeShift) & _nstripes_mask;
-  assert(index < _nstripes, "Invalid index");
+  assert(index < ZMarkStripesMax, "Invalid index");
+  return &_stripes[index];
+}
+
+inline ZMarkStripe* ZMarkStripeSet::stripe_for_addr_barrier(uintptr_t addr) {
+  const size_t index = (addr >> ZMarkStripeShift) & Atomic::load(&_nstripes_mask);
+  assert(index < ZMarkStripesMax, "Invalid index");
   return &_stripes[index];
 }
 

@@ -164,7 +164,7 @@ bool ZMark::is_array(zaddress addr) const {
 void ZMark::push_partial_array(uintptr_t addr, size_t size, bool finalizable) {
   assert(is_aligned(addr, ZMarkPartialArrayMinSize), "Address misaligned");
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _collector->id());
-  ZMarkStripe* const stripe = _stripes.stripe_for_addr(addr);
+  ZMarkStripe* const stripe = _stripes.stripe_for_addr_worker(addr);
   const uintptr_t offset = untype(ZAddress::offset(to_zaddress(addr))) >> ZMarkPartialArrayMinSizeShift;
   const uintptr_t length = size / oopSize;
   const ZMarkStackEntry entry(offset, length, finalizable);
@@ -418,7 +418,7 @@ bool ZMark::drain(ZMarkContext* context) {
     if ((processed++ & 31) == 0) {
       // Yield once per 32 oops
       SuspendibleThreadSet::yield();
-      if (ZAbort::should_abort()) {
+      if (_collector->should_worker_stop()) {
         return false;
       }
     }
@@ -567,7 +567,7 @@ bool ZMark::try_proactive_flush() {
 
 bool ZMark::try_terminate() {
   ZStatTimer timer(ZSubPhaseConcurrentMarkTryTerminate);
-  return _terminate.try_terminate() || ZAbort::should_abort();
+  return _terminate.try_terminate();
 }
 
 void ZMark::leave() {
@@ -577,10 +577,9 @@ void ZMark::leave() {
 void ZMark::work() {
   ZStatTimer timer(ZSubPhaseConcurrentMark);
   SuspendibleThreadSetJoiner sts;
-  ZMarkCache cache(_stripes.nstripes());
   ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, ZThread::worker_id());
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _collector->id());
-  ZMarkContext context(_stripes.nstripes(), stripe, stacks);
+  ZMarkContext context(ZMarkStripesMax, stripe, stacks);
 
   for (;;) {
     if (!drain(&context)) {
@@ -834,13 +833,13 @@ public:
   }
 };
 
-class ZMarkTask : public ZTask {
+class ZMarkTask : public ZRestartableTask {
 private:
   ZMark* const _mark;
 
 public:
   ZMarkTask(ZMark* mark) :
-      ZTask("ZMarkTask"),
+      ZRestartableTask("ZMarkTask"),
       _mark(mark) {
     _mark->prepare_work();
   }
@@ -852,7 +851,18 @@ public:
   virtual void work() {
     _mark->work();
   }
+
+  virtual void resize_workers(uint nworkers) {
+    _mark->resize_workers(nworkers);
+  }
 };
+
+void ZMark::resize_workers(uint nworkers) {
+  _nworkers = nworkers;
+  const size_t nstripes = calculate_nstripes(nworkers);
+  _stripes.set_nstripes(nstripes);
+  _terminate.reset(nworkers);
+}
 
 void ZMark::mark_roots() {
   SuspendibleThreadSetJoiner sts_joiner;

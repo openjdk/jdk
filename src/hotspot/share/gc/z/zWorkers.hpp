@@ -26,14 +26,25 @@
 
 #include "gc/shared/workerThread.hpp"
 #include "gc/z/zCollectorId.hpp"
+#include "gc/z/zLock.hpp"
 
 class ThreadClosure;
+class ZRestartableTask;
 class ZTask;
+
+struct ZWorkerResizeStats {
+  bool   _gc_active;
+  double _serial_gc_time_passed;
+  double _parallel_gc_time_passed;
+  uint _nworkers_current;
+};
 
 class ZWorkers {
 private:
-  WorkerThreads _workers;
-  ZCollectorId _collector;
+  WorkerThreads  _workers;
+  ZCollectorId   _collector;
+  ZConditionLock _thread_resize_lock;
+  volatile uint  _resize_workers_request;
 
 public:
   ZWorkers(const char* name, ZCollectorId collector);
@@ -42,9 +53,18 @@ public:
   void set_active_workers(uint nworkers);
 
   void run(ZTask* task);
+  void run(ZRestartableTask* task);
   void run_all(ZTask* task);
 
   void threads_do(ThreadClosure* tc) const;
+
+  // Worker resizing
+  ZWorkerResizeStats resize_stats();
+  void request_resize_workers(uint nworkers);
+  void clear_pending_resize();
+
+  bool try_resize_workers(ZRestartableTask* task, ZWorkers* workers);
+  bool should_worker_resize();
 };
 
 #endif // SHARE_GC_Z_ZWORKERS_HPP
