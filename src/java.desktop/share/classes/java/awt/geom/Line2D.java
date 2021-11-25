@@ -112,7 +112,7 @@ public abstract class Line2D implements Shape, Cloneable {
          * @since 1.2
          */
         public double getX1() {
-            return (double) x1;
+            return x1;
         }
 
         /**
@@ -120,7 +120,7 @@ public abstract class Line2D implements Shape, Cloneable {
          * @since 1.2
          */
         public double getY1() {
-            return (double) y1;
+            return y1;
         }
 
         /**
@@ -136,7 +136,7 @@ public abstract class Line2D implements Shape, Cloneable {
          * @since 1.2
          */
         public double getX2() {
-            return (double) x2;
+            return x2;
         }
 
         /**
@@ -144,7 +144,7 @@ public abstract class Line2D implements Shape, Cloneable {
          * @since 1.2
          */
         public double getY2() {
-            return (double) y2;
+            return y2;
         }
 
         /**
@@ -532,7 +532,7 @@ public abstract class Line2D implements Shape, Cloneable {
                 }
             }
         }
-        return (ccw < 0.0) ? -1 : ((ccw > 0.0) ? 1 : 0);
+        return java.lang.Double.compare(ccw, 0.0);
     }
 
     /**

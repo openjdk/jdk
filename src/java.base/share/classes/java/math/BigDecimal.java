@@ -4405,7 +4405,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             x = -x;
         if (y < 0)
             y = -y;
-        return (x < y) ? -1 : ((x == y) ? 0 : 1);
+        return Long.compare(x, y);
     }
 
     private static int saturateLong(long s) {
