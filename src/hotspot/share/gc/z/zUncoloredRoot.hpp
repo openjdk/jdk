@@ -29,6 +29,30 @@
 #include "memory/iterator.hpp"
 #include "oops/oopsHierarchy.hpp"
 
+// ZGC has two types of oops:
+//
+// Colored oops (zpointer)
+//   Metadata explicitly encoded in the pointer bits.
+//   Requires normal GC barriers to use.
+//   - OopStorage oops.
+//
+// Uncolored oops (zaddress, zaddress_unsafe)
+//   Metadata is either implicit or stored elsewhere
+//   Requires specialized GC barriers
+//   - nmethod oops - nmethod entry barriers
+//   - Thread oops - stack watermark barriers
+//
+// Even though the uncolored roots lack the color/metadata, ZGC still needs
+// that information when processing the roots. Therefore, we store the color
+// in the "container" object where the oop is located, and use specialized
+// GC barriers, which accepts the external color as an extra argument. These
+// roots are handled in this file.
+//
+// The zaddress_unsafe type is used to hold uncolored oops that the GC needs
+// to process before it is safe to use. E.g. the original object might have
+// been relocated and the address needs to be updated. The zaddress type
+// denotes that this pointer refers the the correct address of the object.
+
 class ZUncoloredRoot : public AllStatic {
 private:
   template <typename ObjectFunctionT>
@@ -36,15 +60,15 @@ private:
 
   static zaddress make_load_good(zaddress_unsafe addr, uintptr_t color);
 
-  static void mark_invisible_object(zaddress addr);
-
-  static void process_invisible_object(zaddress addr);
-
 public:
+  // Operations to be used on oops that are known to be load good
   static void mark_object(zaddress addr);
   static void mark_young_object(zaddress addr);
+  static void mark_invisible_object(zaddress addr);
+  static void process_invisible_object(zaddress addr);
   static void keep_alive_object(zaddress addr);
 
+  // Operations on roots, with an externally provided color
   static void mark(zaddress_unsafe* p, uintptr_t color);
   static void mark_young(zaddress_unsafe* p, uintptr_t color);
   static void process(zaddress_unsafe* p, uintptr_t color);
@@ -52,6 +76,8 @@ public:
   static void process_no_keepalive(zaddress_unsafe* p, uintptr_t color);
   static void process_invisible(zaddress_unsafe* p, uintptr_t color);
 
+  // Cast needed when ZGC interfaces with the rest of the JVM,
+  // which is agnostic to ZGCs oop type system.
   static zaddress_unsafe* cast(oop* p);
 
   typedef void (*RootFunction)(zaddress_unsafe*, uintptr_t);
