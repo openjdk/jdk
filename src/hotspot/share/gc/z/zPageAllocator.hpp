@@ -146,7 +146,8 @@ public:
   bool has_alloc_stalled() const;
   void reset_alloc_stalled();
 
-  void check_out_of_memory();
+  void check_minor_out_of_memory();
+  void check_major_out_of_memory();
 
   void threads_do(ThreadClosure* tc) const;
 };

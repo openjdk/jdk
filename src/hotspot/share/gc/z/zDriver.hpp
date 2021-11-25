@@ -54,6 +54,8 @@ private:
   void pause_relocate_start();
   void concurrent_relocate();
 
+  void check_out_of_memory();
+
   void gc(const ZDriverRequest& request);
 
 protected:

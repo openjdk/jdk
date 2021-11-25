@@ -373,8 +373,12 @@ inline bool ZHeap::has_alloc_stalled() const {
   return _page_allocator.has_alloc_stalled();
 }
 
-inline void ZHeap::check_out_of_memory() {
-  _page_allocator.check_out_of_memory();
+inline void ZHeap::check_minor_out_of_memory() {
+  _page_allocator.check_minor_out_of_memory();
+}
+
+inline void ZHeap::check_major_out_of_memory() {
+  _page_allocator.check_major_out_of_memory();
 }
 
 inline bool ZHeap::is_oop(uintptr_t addr) const {

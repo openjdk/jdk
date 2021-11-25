@@ -126,6 +126,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _z_minor_allocation_rate:
       return "Minor Allocation Rate";
 
+    case _z_minor_allocation_stall:
+      return "Minor Allocation Stall";
+
     case _z_minor_high_usage:
       return "Minor High Usage";
 

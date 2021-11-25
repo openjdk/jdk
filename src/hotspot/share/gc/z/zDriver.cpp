@@ -328,6 +328,7 @@ void ZDriverMinor::collect(const ZDriverRequest& request) {
   case GCCause::_scavenge_alot:
   case GCCause::_z_minor_timer:
   case GCCause::_z_minor_allocation_rate:
+  case GCCause::_z_minor_allocation_stall:
   case GCCause::_z_major_young:
   case GCCause::_z_minor_high_usage:
     // Start asynchronous GC
@@ -416,6 +417,10 @@ void ZDriverMinor::pause_relocate_start() {
 void ZDriverMinor::concurrent_relocate() {
   ZStatTimerYoung timer(ZPhaseConcurrentYoungRelocated);
   ZHeap::heap()->young_collector()->relocate();
+}
+
+void ZDriverMinor::check_out_of_memory() {
+  ZHeap::heap()->check_minor_out_of_memory();
 }
 
 class ZDriverMinorGCScope : public StackObj {
@@ -515,6 +520,9 @@ void ZDriverMinor::run_service() {
 
     // Notify GC completed
     _port.ack();
+
+    // Check for out of memory condition
+    check_out_of_memory();
 
     inactive();
   }
@@ -768,7 +776,7 @@ void ZDriverMajor::concurrent_roots_remap() {
 }
 
 void ZDriverMajor::check_out_of_memory() {
-  ZHeap::heap()->check_out_of_memory();
+  ZHeap::heap()->check_major_out_of_memory();
 }
 
 static bool should_clear_soft_references(const ZDriverRequest& request) {

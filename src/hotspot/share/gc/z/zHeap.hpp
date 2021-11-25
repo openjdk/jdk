@@ -130,7 +130,8 @@ public:
 
   // Object allocation
   bool has_alloc_stalled() const;
-  void check_out_of_memory();
+  void check_minor_out_of_memory();
+  void check_major_out_of_memory();
 
   // Iteration
   void object_iterate(ObjectClosure* object_cl, bool visit_weaks);
