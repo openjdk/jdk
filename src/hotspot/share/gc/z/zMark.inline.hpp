@@ -86,8 +86,4 @@ inline void ZMark::mark_object(zaddress addr) {
   stacks->push(&_allocator, &_stripes, stripe, entry, publish);
 }
 
-inline void ZMark::mark_follow_invisible_root(zaddress addr, size_t size) {
-  follow_array((uintptr_t)addr, size, false /* finalizable */);
-}
-
 #endif // SHARE_GC_Z_ZMARK_INLINE_HPP

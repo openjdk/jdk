@@ -43,7 +43,7 @@ private:
   uintptr_t              _nmethod_disarmed;
   ZStoreBarrierBuffer*   _store_barrier_buffer;
   ZMarkThreadLocalStacks _mark_stacks[2];
-  oop*                   _invisible_root;
+  zaddress_unsafe*       _invisible_root;
 
   ZThreadLocalData() :
       _load_good_mask(0),
@@ -110,7 +110,7 @@ public:
     return data(thread)->_store_barrier_buffer;
   }
 
-  static void set_invisible_root(Thread* thread, oop* root) {
+  static void set_invisible_root(Thread* thread, zaddress_unsafe* root) {
     assert(data(thread)->_invisible_root == NULL, "Already set");
     data(thread)->_invisible_root = root;
   }
@@ -120,7 +120,7 @@ public:
     data(thread)->_invisible_root = NULL;
   }
 
-  static oop* invisible_root(Thread* thread) {
+  static zaddress_unsafe* invisible_root(Thread* thread) {
     return data(thread)->_invisible_root;
   }
 

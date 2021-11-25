@@ -31,7 +31,7 @@
 #include "oops/oop.inline.hpp"
 
 inline bool ZIterator::is_invisible_root(oop obj) {
-  return obj->klass()->is_objArray_klass() && obj->mark_acquire().is_marked();
+  return obj->mark_acquire().is_marked();
 }
 
 // This iterator skips invisible roots

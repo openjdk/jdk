@@ -359,16 +359,6 @@ inline bool ZHeap::is_remembered(volatile zpointer* p) {
   return _young_generation.is_remembered(p);
 }
 
-inline void ZHeap::mark_follow_invisible_root(zaddress addr, size_t size) {
-  if (is_old(addr)) {
-    assert(_old_collector.is_phase_mark(), "Mark not allowed");
-    _old_collector.mark_follow_invisible_root(addr, size);
-  } else {
-    assert(_young_collector.is_phase_mark(), "Mark not allowed");
-    _young_collector.mark_follow_invisible_root(addr, size);
-  }
-}
-
 inline bool ZHeap::is_alloc_stalling_for_major() const {
   return _page_allocator.is_alloc_stalling_for_major();
 }

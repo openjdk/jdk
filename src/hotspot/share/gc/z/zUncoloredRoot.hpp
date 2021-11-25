@@ -63,21 +63,20 @@ private:
 public:
   // Operations to be used on oops that are known to be load good
   static void mark_object(zaddress addr);
-  static void mark_young_object(zaddress addr);
   static void mark_invisible_object(zaddress addr);
-  static void process_invisible_object(zaddress addr);
   static void keep_alive_object(zaddress addr);
+  static void mark_young_object(zaddress addr);
 
   // Operations on roots, with an externally provided color
   static void mark(zaddress_unsafe* p, uintptr_t color);
   static void mark_young(zaddress_unsafe* p, uintptr_t color);
   static void process(zaddress_unsafe* p, uintptr_t color);
+  static void process_invisible(zaddress_unsafe* p, uintptr_t color);
   static void process_weak(zaddress_unsafe* p, uintptr_t color);
   static void process_no_keepalive(zaddress_unsafe* p, uintptr_t color);
-  static void process_invisible(zaddress_unsafe* p, uintptr_t color);
 
   // Cast needed when ZGC interfaces with the rest of the JVM,
-  // which is agnostic to ZGCs oop type system.
+  // which is agnostic to ZGC's oop type system.
   static zaddress_unsafe* cast(oop* p);
 
   typedef void (*RootFunction)(zaddress_unsafe*, uintptr_t);

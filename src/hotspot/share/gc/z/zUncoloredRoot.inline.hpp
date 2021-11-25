@@ -78,10 +78,6 @@ inline void ZUncoloredRoot::mark_invisible_object(zaddress addr) {
   ZHeap::heap()->mark_object<ZMark::DontResurrect, ZMark::AnyThread, ZMark::DontFollow, ZMark::Strong, ZMark::Publish>(addr);
 }
 
-inline void ZUncoloredRoot::process_invisible_object(zaddress addr) {
-  mark_invisible_object(addr);
-}
-
 inline void ZUncoloredRoot::keep_alive_object(zaddress addr) {
   ZHeap::heap()->mark_object<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
 }
@@ -98,6 +94,10 @@ inline void ZUncoloredRoot::process(zaddress_unsafe* p, uintptr_t color) {
   barrier(mark_object, p, color);
 }
 
+inline void ZUncoloredRoot::process_invisible(zaddress_unsafe* p, uintptr_t color) {
+  barrier(mark_invisible_object, p, color);
+}
+
 inline void ZUncoloredRoot::process_weak(zaddress_unsafe* p, uintptr_t color) {
   barrier(keep_alive_object, p, color);
 }
@@ -105,10 +105,6 @@ inline void ZUncoloredRoot::process_weak(zaddress_unsafe* p, uintptr_t color) {
 inline void ZUncoloredRoot::process_no_keepalive(zaddress_unsafe* p, uintptr_t color) {
   auto do_nothing = [](zaddress) -> void {};
   barrier(do_nothing, p, color);
-}
-
-inline void ZUncoloredRoot::process_invisible(zaddress_unsafe* p, uintptr_t color) {
-  barrier(process_invisible_object, p, color);
 }
 
 inline zaddress_unsafe* ZUncoloredRoot::cast(oop* p) {

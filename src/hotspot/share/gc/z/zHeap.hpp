@@ -110,7 +110,6 @@ public:
   void mark_object(zaddress addr);
   template <bool follow, bool publish>
   void mark_young_object(zaddress addr);
-  void mark_follow_invisible_root(zaddress addr, size_t size);
   void mark_flush_and_free(Thread* thread);
   void keep_alive(oop obj);
 

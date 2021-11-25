@@ -93,10 +93,6 @@ inline void ZCollector::mark_object(zaddress addr) {
   _mark.mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
 }
 
-inline void ZCollector::mark_follow_invisible_root(zaddress addr, size_t size) {
-  _mark.mark_follow_invisible_root(addr, size);
-}
-
 inline zaddress ZCollector::relocate_or_remap_object(zaddress_unsafe addr) {
   ZForwarding* const forwarding = _forwarding_table.get(addr);
   if (forwarding == NULL) {

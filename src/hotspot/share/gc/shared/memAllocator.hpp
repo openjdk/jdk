@@ -60,7 +60,7 @@ protected:
   // This finish constructing an oop by installing the mark word and the Klass* pointer
   // last. At the point when the Klass pointer is initialized, this is a constructed object
   // that must be parseable as an oop by concurrent collectors.
-  virtual oop finish(HeapWord* mem) const;
+  oop finish(HeapWord* mem) const;
 
   // Raw memory allocation. This will try to do a TLAB allocation, and otherwise fall
   // back to calling CollectedHeap::mem_allocate().
@@ -83,9 +83,9 @@ public:
 };
 
 class ObjArrayAllocator: public MemAllocator {
+protected:
   const int  _length;
   const bool _do_zero;
-protected:
   virtual MemRegion obj_memory_range(oop obj) const;
 
 public:
