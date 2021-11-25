@@ -53,6 +53,7 @@ class BlockListBuilder {
 
   BlockList    _blocks;                // internal list of all blocks
   BlockList*   _bci2block;             // mapping from bci to blocks for GraphBuilder
+  GrowableArray<BlockList> _bci2block_successors; // Mapping bcis to their blocks successors while we dont have a blockend
 
   // fields used by mark_loops
   ResourceBitMap _active;              // for iteration of control flow graph
@@ -107,16 +108,22 @@ class BlockListBuilder {
 
 int BlockListBuilder::local_block_number_of_successors(BlockBegin* block)
 {
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  assert(block->number_of_sux_from_local() == _bci2block_successors.at(block->bci()).length(), "same answer?");
   return block->number_of_sux_from_local();
 }
 
 BlockBegin* BlockListBuilder::local_block_successor_at(BlockBegin* block, int i)
 {
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  assert(block->sux_at_from_local(i) == _bci2block_successors.at(block->bci()).at(i), "same answer?");
   return block->sux_at_from_local(i);
 }
 
 void BlockListBuilder::local_block_add_successor(BlockBegin* block, BlockBegin* sux)
 {
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  _bci2block_successors.at(block->bci()).append(sux);
   block->add_successor_local(sux);
 }
 
@@ -125,6 +132,7 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
  , _scope(scope)
  , _blocks(16)
  , _bci2block(new BlockList(scope->method()->code_size(), NULL))
+ , _bci2block_successors(scope->method()->code_size())
  , _active()         // size not known yet
  , _visited()        // size not known yet
  , _loop_map() // size not known yet
@@ -180,6 +188,7 @@ BlockBegin* BlockListBuilder::make_block_at(int cur_bci, BlockBegin* predecessor
     block = new BlockBegin(cur_bci);
     block->init_stores_to_locals(method()->max_locals());
     _bci2block->at_put(cur_bci, block);
+    _bci2block_successors.at_put_grow(cur_bci, BlockList());
     _blocks.append(block);
 
     assert(predecessor == NULL || predecessor->bci() < cur_bci, "targets for backward branches must already exist");
