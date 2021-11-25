@@ -377,7 +377,7 @@ First line // @highlight :
     //    // @replace regex=.* replacement="hello"
 
     @Test
-    public void testPositiveInlineTagMarkupBlankLinesFromStartEnd(Path base) throws Exception {
+    public void testPositiveInlineTagMarkup_BlankLinesFromStartEnd(Path base) throws Exception {
         // A markup line that contains either @start or @end is removed.
         var testCases = List.of(
                 new TestCase("""
@@ -435,7 +435,7 @@ First line // @highlight :
     }
 
     @Test
-    public void testPositiveInlineTagMarkupBlankLinesFromNextLineMarkup(Path base) throws Exception {
+    public void testPositiveInlineTagMarkup_BlankLinesFromNextLineMarkup(Path base) throws Exception {
         // A markup line that refers to the next line is removed.
         var testCases = List.of(
                 new TestCase("""
