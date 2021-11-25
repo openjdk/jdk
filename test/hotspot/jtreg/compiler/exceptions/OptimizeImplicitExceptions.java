@@ -148,7 +148,7 @@ public class OptimizeImplicitExceptions {
     }
 
     // Checks after the test method has been JIT-compiled but before the compiled version has been invoked.
-    private static void checkOne(TestMode testMode, ImplicitException impExcp, Exception ex, Method throwImplicitException_m, int invocations) {
+    private static void checkSimple(TestMode testMode, ImplicitException impExcp, Exception ex, Method throwImplicitException_m, int invocations) {
 
         printCounters(testMode, impExcp, throwImplicitException_m, invocations);
         // At this point, throwImplicitException() has been compiled but the compiled version has not been invoked yet.
@@ -161,11 +161,12 @@ public class OptimizeImplicitExceptions {
         Asserts.assertNotNull(ex.getMessage(), "Exceptions thrown in the interpreter should have a message.");
     }
 
-    // Checks after the JIT-compiled test method has been invoked 'PerBytecodeTrapLimit' times.
-    private static void checkTwo(TestMode testMode, ImplicitException impExcp, Exception ex, Method throwImplicitException_m, int invocations) {
+    // Checks after the JIT-compiled test method has been invoked 'invocations' times.
+    private static void check(TestMode testMode, ImplicitException impExcp, Exception ex,
+                              Method throwImplicitException_m, int invocations, int totalInvocations) {
 
-        printCounters(testMode, impExcp, throwImplicitException_m, invocations);
-        // At this point, the compiled version of 'throwImplicitException()' has been invoked 'PerBytecodeTrapLimit' times.
+        printCounters(testMode, impExcp, throwImplicitException_m, totalInvocations);
+        // At this point, the compiled version of 'throwImplicitException()' has been invoked 'invocations' times.
         Asserts.assertEQ(WB.getMethodCompilationLevel(throwImplicitException_m), 4, "Method should be compiled at level 4.");
         int deoptCount = WB.getDeoptCount();
         int deoptCountReason = WB.getDeoptCount(impExcp.getReason(), null/*action*/);
@@ -177,57 +178,9 @@ public class OptimizeImplicitExceptions {
             Asserts.assertNull(ex.getMessage(), "Optimized exceptions have no message.");
         } else if (testMode == TestMode.STACKTRACES_IN_FASTTHROW) {
             // We always deoptimize for '-XX:-OmitStackTraceInFastThrow
-            Asserts.assertEQ(oldDeoptCount + PerBytecodeTrapLimit, deoptCount, "Wrong number of deoptimizations.");
-            Asserts.assertEQ(oldDeoptCountReason.get(impExcp.getReason()) + PerBytecodeTrapLimit, deoptCountReason, "Wrong number of deoptimizations.");
+            Asserts.assertEQ(oldDeoptCount + invocations, deoptCount, "Wrong number of deoptimizations.");
+            Asserts.assertEQ(oldDeoptCountReason.get(impExcp.getReason()) + invocations, deoptCountReason, "Wrong number of deoptimizations.");
             Asserts.assertNotNull(ex.getMessage(), "Exceptions thrown in the interpreter should have a message.");
-        } else {
-            Asserts.fail("Unknown test mode.");
-        }
-        oldDeoptCount = deoptCount;
-        oldDeoptCountReason.put(impExcp.getReason(), deoptCountReason);
-    }
-
-    // Checks after the test method has been invoked 'Tier0InvokeNotifyFreq' more times.
-    private static void checkThree(TestMode testMode, ImplicitException impExcp, Exception ex, Method throwImplicitException_m, int invocations) {
-
-        printCounters(testMode, impExcp, throwImplicitException_m, invocations);
-        // At this point, throwImplicitException() has been invoked 'Tier0InvokeNotifyFreq' more times.
-        Asserts.assertEQ(WB.getMethodCompilationLevel(throwImplicitException_m), 4, "Method should be compiled at level 4.");
-        int deoptCount = WB.getDeoptCount();
-        int deoptCountReason = WB.getDeoptCount(impExcp.getReason(), null/*action*/);
-        if (testMode == TestMode.OMIT_STACKTRACES_IN_FASTTHROW) {
-            // No deoptimizations for '-XX:+OmitStackTraceInFastThrow'
-            Asserts.assertEQ(oldDeoptCount, deoptCount, "Wrong number of deoptimizations.");
-            Asserts.assertEQ(oldDeoptCountReason.get(impExcp.getReason()), deoptCountReason, "Wrong number of deoptimizations.");
-        } else if (testMode == TestMode.STACKTRACES_IN_FASTTHROW) {
-            Asserts.assertEQ(oldDeoptCount + Tier0InvokeNotifyFreq, deoptCount, "Wrong number of deoptimizations.");
-            Asserts.assertEQ(oldDeoptCountReason.get(impExcp.getReason()) + Tier0InvokeNotifyFreq, deoptCountReason, "Wrong number of deoptimizations.");
-            Asserts.assertNotNull(ex.getMessage(), "Exceptions thrown in the interpreter should have a message.");
-        } else {
-            Asserts.fail("Unknown test mode.");
-        }
-        oldDeoptCount = deoptCount;
-        oldDeoptCountReason.put(impExcp.getReason(), deoptCountReason);
-    }
-
-    // Checks after the test method has been invoked 'PerBytecodeTrapLimit' more times.
-    private static void checkFour(TestMode testMode, ImplicitException impExcp, Exception ex, Method throwImplicitException_m, int invocations) {
-
-        printCounters(testMode, impExcp, throwImplicitException_m, invocations);
-        // At this point, the compiled (or re-compiled) version of throwImplicitException() has been invoked 'PerBytecodeTrapLimit' more times.
-        Asserts.assertEQ(WB.getMethodCompilationLevel(throwImplicitException_m), 4, "Method should be compiled at level 4.");
-        int deoptCount = WB.getDeoptCount();
-        int deoptCountReason = WB.getDeoptCount(impExcp.getReason(), null/*action*/);
-        if (testMode == TestMode.OMIT_STACKTRACES_IN_FASTTHROW) {
-            // No deoptimizations for '-XX:+OmitStackTraceInFastThrow'
-            Asserts.assertEQ(oldDeoptCount, deoptCount, "Wrong number of deoptimizations.");
-            Asserts.assertEQ(oldDeoptCountReason.get(impExcp.getReason()), deoptCountReason, "Wrong number of deoptimizations.");
-            // '-XX:+OmitStackTraceInFastThrow' never has message because it is using a global singleton exception.
-            Asserts.assertNull(ex.getMessage(), "Optimized exceptions have no message.");
-        } else if (testMode == TestMode.STACKTRACES_IN_FASTTHROW) {
-            // We always deoptimize for '-XX:-OmitStackTraceInFastThrow'
-            Asserts.assertEQ(oldDeoptCount + PerBytecodeTrapLimit, deoptCount, "Wrong number of deoptimizations.");
-            Asserts.assertEQ(oldDeoptCountReason.get(impExcp.getReason()) + PerBytecodeTrapLimit, deoptCountReason, "Wrong number of deoptimizations.");
         } else {
             Asserts.fail("Unknown test mode.");
         }
@@ -268,7 +221,7 @@ public class OptimizeImplicitExceptions {
                     throw new Exception("Should not happen");
                 }
 
-                checkOne(testMode, impExcp, lastException, throwImplicitException_m, invocations);
+                checkSimple(testMode, impExcp, lastException, throwImplicitException_m, invocations);
 
                 // Invoke compiled code 'PerBytecodeTrapLimit' times.
                 for (int i = 0; i < PerBytecodeTrapLimit; i++) {
@@ -282,9 +235,9 @@ public class OptimizeImplicitExceptions {
                     throw new Exception("Should not happen");
                 }
 
-                checkTwo(testMode, impExcp, lastException, throwImplicitException_m, invocations);
+                check(testMode, impExcp, lastException, throwImplicitException_m, PerBytecodeTrapLimit, invocations);
 
-                // Invoke compiled (or interpreted if JDK-8275908 isn't fixed) code 'Tier0InvokeNotifyFreq' times.
+                // Invoke compiled code 'Tier0InvokeNotifyFreq' times.
                 // If the method was de-compiled before, this will re-compile it again.
                 for (int i = 0; i < Tier0InvokeNotifyFreq; i++) {
                     invocations++;
@@ -297,7 +250,7 @@ public class OptimizeImplicitExceptions {
                     throw new Exception("Should not happen");
                 }
 
-                checkThree(testMode, impExcp, lastException, throwImplicitException_m, invocations);
+                check(testMode, impExcp, lastException, throwImplicitException_m, Tier0InvokeNotifyFreq, invocations);
 
                 // Invoke compiled code 'PerBytecodeTrapLimit' times.
                 for (int i = 0; i < PerBytecodeTrapLimit; i++) {
@@ -311,7 +264,7 @@ public class OptimizeImplicitExceptions {
                     throw new Exception("Should not happen");
                 }
 
-                checkFour(testMode, impExcp, lastException, throwImplicitException_m, invocations);
+                check(testMode, impExcp, lastException, throwImplicitException_m, PerBytecodeTrapLimit, invocations);
 
                 System.out.println("------------------------------------------------------------------");
 

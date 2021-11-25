@@ -831,7 +831,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
                                  last_frame.get_index_u2_cpcache(bytecode), bytecode,
                                  THREAD);
 
-    if(HAS_PENDING_EXCEPTION) {
+    if (HAS_PENDING_EXCEPTION) {
       if (ProfileTraps && PENDING_EXCEPTION->klass()->name() == vmSymbols::java_lang_NullPointerException()) {
         // Preserve the original exception across the call to note_trap()
         PreserveExceptionMark pm(current);

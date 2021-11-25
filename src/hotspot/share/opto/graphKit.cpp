@@ -3339,8 +3339,8 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
         // It needs a null check because a null will *pass* the cast check.
         // A non-null value will always produce an exception.
         if (!objtp->maybe_null()) {
-          bool aastore = (java_bc() == Bytecodes::_aastore);
-          Deoptimization::DeoptReason reason = aastore ?
+          bool is_aastore = (java_bc() == Bytecodes::_aastore);
+          Deoptimization::DeoptReason reason = is_aastore ?
             Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
           builtin_throw(reason, makecon(TypeKlassPtr::make(objtp->klass())));
           return top();
@@ -3424,8 +3424,8 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
       if (not_subtype_ctrl != top()) { // If failure is possible
         PreserveJVMState pjvms(this);
         set_control(not_subtype_ctrl);
-        bool aastore = (java_bc() == Bytecodes::_aastore);
-        Deoptimization::DeoptReason reason = aastore ?
+        bool is_aastore = (java_bc() == Bytecodes::_aastore);
+        Deoptimization::DeoptReason reason = is_aastore ?
           Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
         builtin_throw(reason, load_object_klass(not_null_obj));
       }
