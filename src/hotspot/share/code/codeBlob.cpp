@@ -159,6 +159,18 @@ RuntimeBlob::RuntimeBlob(
   cb->copy_code_and_locs_to(this);
 }
 
+void RuntimeBlob::free(RuntimeBlob* blob) {
+  assert(blob != NULL, "caller must check for NULL");
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+  blob->flush();
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeCache::free(blob);
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+}
+
 void CodeBlob::flush() {
   FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
   _oop_maps = NULL;
@@ -225,8 +237,8 @@ void CodeBlob::print_code() {
 // Implementation of BufferBlob
 
 
-BufferBlob::BufferBlob(const char* name, int header_size, int size)
-: RuntimeBlob(name, header_size, size, CodeOffsets::frame_never_safe, /*locs_size:*/ 0)
+BufferBlob::BufferBlob(const char* name, int size)
+: RuntimeBlob(name, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, /*locs_size:*/ 0)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
@@ -240,7 +252,7 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
   assert(name != NULL, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferBlob(name, sizeof(BufferBlob), size);
+    blob = new (size) BufferBlob(name, size);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -249,8 +261,8 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
 }
 
 
-BufferBlob::BufferBlob(const char* name, int header_size, int size, CodeBuffer* cb)
-  : RuntimeBlob(name, cb, header_size, size, CodeOffsets::frame_never_safe, 0, NULL)
+BufferBlob::BufferBlob(const char* name, int size, CodeBuffer* cb)
+  : RuntimeBlob(name, cb, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, 0, NULL)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
@@ -261,7 +273,7 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   assert(name != NULL, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferBlob(name, sizeof(BufferBlob), size, cb);
+    blob = new (size) BufferBlob(name, size, cb);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -274,15 +286,7 @@ void* BufferBlob::operator new(size_t s, unsigned size) throw() {
 }
 
 void BufferBlob::free(BufferBlob *blob) {
-  assert(blob != NULL, "caller must check for NULL");
-  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
-  blob->flush();
-  {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::free((RuntimeBlob*)blob);
-  }
-  // Track memory usage statistic after releasing CodeCache_lock
-  MemoryService::track_code_cache_memory_usage();
+  RuntimeBlob::free(blob);
 }
 
 
@@ -290,7 +294,7 @@ void BufferBlob::free(BufferBlob *blob) {
 // Implementation of AdapterBlob
 
 AdapterBlob::AdapterBlob(int size, CodeBuffer* cb) :
-  BufferBlob("I2C/C2I adapters", sizeof(AdapterBlob), size, cb) {
+  BufferBlob("I2C/C2I adapters", size, cb) {
   CodeCache::commit(this);
 }
 
@@ -320,7 +324,7 @@ void* VtableBlob::operator new(size_t s, unsigned size) throw() {
 }
 
 VtableBlob::VtableBlob(const char* name, int size) :
-  BufferBlob(name, sizeof(VtableBlob), size) {
+  BufferBlob(name, size) {
 }
 
 VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
@@ -719,16 +723,23 @@ void DeoptimizationBlob::print_value_on(outputStream* st) const {
 
 // Implementation of OptimizedEntryBlob
 
-OptimizedEntryBlob::OptimizedEntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
+OptimizedEntryBlob::OptimizedEntryBlob(const char* name, CodeBuffer* cb, int size,
+                                       intptr_t exception_handler_offset,
                                        jobject receiver, ByteSize frame_data_offset) :
-  BufferBlob(name, sizeof(OptimizedEntryBlob), size, cb),
+  RuntimeBlob(name, cb, sizeof(OptimizedEntryBlob), size, CodeOffsets::frame_never_safe, 0 /* no frame size */,
+              /* oop maps = */ nullptr, /* caller must gc arguments = */ false),
   _exception_handler_offset(exception_handler_offset),
   _receiver(receiver),
   _frame_data_offset(frame_data_offset) {
   CodeCache::commit(this);
 }
 
-OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb, intptr_t exception_handler_offset,
+void* OptimizedEntryBlob::operator new(size_t s, unsigned size) throw() {
+  return CodeCache::allocate(size, CodeBlobType::NonNMethod);
+}
+
+OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb,
+                                               intptr_t exception_handler_offset,
                                                jobject receiver, ByteSize frame_data_offset) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
@@ -736,7 +747,8 @@ OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb,
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(OptimizedEntryBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) OptimizedEntryBlob(name, size, cb, exception_handler_offset, receiver, frame_data_offset);
+    blob = new (size) OptimizedEntryBlob(name, cb, size,
+                                         exception_handler_offset, receiver, frame_data_offset);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -757,5 +769,23 @@ JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
 void OptimizedEntryBlob::free(OptimizedEntryBlob* blob) {
   assert(blob != nullptr, "caller must check for NULL");
   JNIHandles::destroy_global(blob->receiver());
-  BufferBlob::free(blob);
+  RuntimeBlob::free(blob);
+}
+
+void OptimizedEntryBlob::preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) {
+  // do nothing for now
+}
+
+// Misc.
+void OptimizedEntryBlob::verify() {
+  // unimplemented
+}
+
+void OptimizedEntryBlob::print_on(outputStream* st) const {
+  RuntimeBlob::print_on(st);
+  print_value_on(st);
+}
+
+void OptimizedEntryBlob::print_value_on(outputStream* st) const {
+  st->print_cr("OptimizedEntryBlob (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
 }

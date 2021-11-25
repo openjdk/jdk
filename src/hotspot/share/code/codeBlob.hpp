@@ -60,13 +60,13 @@ struct CodeBlobType {
 //    AdapterBlob        : Used to hold C2I/I2C adapters
 //    VtableBlob         : Used for holding vtable chunks
 //    MethodHandlesAdapterBlob : Used to hold MethodHandles adapters
-//    OptimizedEntryBlob : Used for upcalls from native code
 //   RuntimeStub         : Call to VM runtime methods
 //   SingletonBlob       : Super-class for all blobs that exist in only one instance
 //    DeoptimizationBlob : Used for deoptimization
 //    ExceptionBlob      : Used for stack unrolling
 //    SafepointBlob      : Used to handle illegal instruction exceptions
 //    UncommonTrapBlob   : Used to handle uncommon traps
+//   OptimizedEntryBlob  : Used for upcalls from native code
 //
 //
 // Layout : continuous in the CodeCache
@@ -371,6 +371,8 @@ class RuntimeBlob : public CodeBlob {
     bool        caller_must_gc_arguments = false
   );
 
+  static void free(RuntimeBlob* blob);
+
   // GC support
   virtual bool is_alive() const                  = 0;
 
@@ -401,8 +403,8 @@ class BufferBlob: public RuntimeBlob {
 
  private:
   // Creation support
-  BufferBlob(const char* name, int header_size, int size);
-  BufferBlob(const char* name, int header_size, int size, CodeBuffer* cb);
+  BufferBlob(const char* name, int size);
+  BufferBlob(const char* name, int size, CodeBuffer* cb);
 
   // This ordinary operator delete is needed even though not used, so the
   // below two-argument operator delete will be treated as a placement
@@ -465,7 +467,7 @@ public:
 
 class MethodHandlesAdapterBlob: public BufferBlob {
 private:
-  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", sizeof(MethodHandlesAdapterBlob), size) {}
+  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", size) {}
 
 public:
   // Creation
@@ -740,15 +742,18 @@ class SafepointBlob: public SingletonBlob {
 
 class ProgrammableUpcallHandler;
 
-class OptimizedEntryBlob: public BufferBlob {
+class OptimizedEntryBlob: public RuntimeBlob {
   friend class ProgrammableUpcallHandler;
  private:
   intptr_t _exception_handler_offset;
   jobject _receiver;
   ByteSize _frame_data_offset;
 
-  OptimizedEntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
+  OptimizedEntryBlob(const char* name, CodeBuffer* cb, int size,
+                     intptr_t exception_handler_offset,
                      jobject receiver, ByteSize frame_data_offset);
+
+  void* operator new(size_t s, unsigned size) throw();
 
   struct FrameData {
     JavaFrameAnchor jfa;
@@ -762,8 +767,8 @@ class OptimizedEntryBlob: public BufferBlob {
  public:
   // Creation
   static OptimizedEntryBlob* create(const char* name, CodeBuffer* cb,
-                                    intptr_t exception_handler_offset, jobject receiver,
-                                    ByteSize frame_data_offset);
+                                    intptr_t exception_handler_offset,
+                                    jobject receiver, ByteSize frame_data_offset);
 
   static void free(OptimizedEntryBlob* blob);
 
@@ -772,10 +777,18 @@ class OptimizedEntryBlob: public BufferBlob {
 
   JavaFrameAnchor* jfa_for_frame(const frame& frame) const;
 
-  void oops_do(OopClosure* f, const frame& frame);
-
   // Typing
   virtual bool is_optimized_entry_blob() const override { return true; }
+
+  // GC/Verification support
+  void oops_do(OopClosure* f, const frame& frame);
+  virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) override;
+  virtual bool is_alive() const override { return true; }
+  virtual void verify() override;
+
+  // Misc.
+  virtual void print_on(outputStream* st) const override;
+  virtual void print_value_on(outputStream* st) const override;
 };
 
 #endif // SHARE_CODE_CODEBLOB_HPP
