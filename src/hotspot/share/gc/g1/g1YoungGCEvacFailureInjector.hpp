@@ -75,7 +75,7 @@ public:
 
   // Return true if it's time to cause an evacuation failure; the caller
   // provides the (preferably thread-local) counter to minimize performance impact.
-  bool evacuation_should_fail(size_t& counter, const HeapRegion* from_region) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
+  bool evacuation_should_fail(size_t& counter, uint region_idx) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
 
   // Reset the evacuation failure injection counters. Should be called at
   // the end of an evacuation pause in which an evacuation failure occurred.

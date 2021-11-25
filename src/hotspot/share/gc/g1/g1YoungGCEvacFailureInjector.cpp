@@ -30,12 +30,12 @@
 
 #if EVAC_FAILURE_INJECTOR
 
-class CSetClosure : public HeapRegionClosure {
+class SelectEvacFailureRegionClosure : public HeapRegionClosure {
   CHeapBitMap& _regions;
-  uint _evac_failure_regions_num;
+  size_t _evac_failure_regions_num;
 
 public:
-  CSetClosure(CHeapBitMap& regions, size_t cset_length) :
+  SelectEvacFailureRegionClosure(CHeapBitMap& regions, size_t cset_length) :
     _regions(regions),
     _evac_failure_regions_num(cset_length * G1EvacuationFailureALotCSetPercent / 100) { }
 
@@ -53,7 +53,7 @@ public:
 void G1YoungGCEvacFailureInjector::select_evac_failure_regions() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   _regions.reinitialize(g1h->max_reserved_regions());
-  CSetClosure closure(_regions, g1h->collection_set()->cur_length());
+  SelectEvacFailureRegionClosure closure(_regions, g1h->collection_set()->cur_length());
   g1h->collection_set_iterate_all(&closure);
 }
 

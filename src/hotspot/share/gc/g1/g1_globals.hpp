@@ -76,7 +76,7 @@
           "evacuation pauses")                                              \
                                                                             \
   product(uintx, G1EvacuationFailureALotCSetPercent, 100,                   \
-          "Percent of the regions in cset that fail evacuation")            \
+          "Percent of the regions in cset that will fail evacuation")       \
           range(1, 100)
 #else
 #define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \

@@ -32,11 +32,11 @@
 
 #if EVAC_FAILURE_INJECTOR
 
-inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter, const HeapRegion* from_region) {
+inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter, uint region_idx) {
   if (!_inject_evacuation_failure_for_current_gc) {
     return false;
   }
-  if (!_regions.at(from_region->hrm_index())) {
+  if (!_regions.at(region_idx)) {
     return false;
   }
   if (++counter < G1EvacuationFailureALotCount) {
