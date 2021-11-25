@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
@@ -38,37 +39,37 @@ import java.lang.reflect.InvocationTargetException;
 public class TestRestricted {
     @Test(expectedExceptions = InvocationTargetException.class)
     public void testReflection() throws Throwable {
-        Method method = MemorySegment.class.getDeclaredMethod("globalNativeSegment");
+        Method method = CLinker.class.getDeclaredMethod("systemCLinker");
         method.invoke(null);
     }
 
     @Test(expectedExceptions = IllegalCallerException.class)
     public void testInvoke() throws Throwable {
-        var mh = MethodHandles.lookup().findStatic(MemorySegment.class,
-                "globalNativeSegment", MethodType.methodType(MemorySegment.class));
-        var seg = (MemorySegment)mh.invokeExact();
+        var mh = MethodHandles.lookup().findStatic(CLinker.class,
+                "systemCLinker", MethodType.methodType(CLinker.class));
+        var seg = (CLinker)mh.invokeExact();
     }
 
     @Test(expectedExceptions = IllegalCallerException.class)
     public void testDirectAccess() throws Throwable {
-        MemorySegment.globalNativeSegment();
+        CLinker.systemCLinker();
     }
 
     @Test(expectedExceptions = InvocationTargetException.class)
     public void testReflection2() throws Throwable {
-        Method method = MemoryAddress.class.getDeclaredMethod("asSegment", long.class, ResourceScope.class);
-        method.invoke(MemoryAddress.NULL, 4000L, ResourceScope.globalScope());
+        Method method = MemorySegment.class.getDeclaredMethod("ofAddress", MemoryAddress.class, long.class, ResourceScope.class);
+        method.invoke(null, MemoryAddress.NULL, 4000L, ResourceScope.globalScope());
     }
 
     @Test(expectedExceptions = IllegalCallerException.class)
     public void testInvoke2() throws Throwable {
-        var mh = MethodHandles.lookup().findVirtual(MemoryAddress.class, "asSegment",
-            MethodType.methodType(MemorySegment.class, long.class, ResourceScope.class));
+        var mh = MethodHandles.lookup().findStatic(MemorySegment.class, "ofAddress",
+            MethodType.methodType(MemorySegment.class, MemoryAddress.class, long.class, ResourceScope.class));
         var seg = (MemorySegment)mh.invokeExact(MemoryAddress.NULL, 4000L, ResourceScope.globalScope());
     }
 
     @Test(expectedExceptions = IllegalCallerException.class)
     public void testDirectAccess2() throws Throwable {
-        MemoryAddress.NULL.asSegment(4000L, ResourceScope.globalScope());
+        MemorySegment.ofAddress(MemoryAddress.NULL, 4000, ResourceScope.globalScope());
     }
 }

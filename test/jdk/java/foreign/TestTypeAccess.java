@@ -27,10 +27,9 @@
  * @run testng TestTypeAccess
  */
 
-import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.*;
 
 import java.lang.invoke.VarHandle;
@@ -38,24 +37,17 @@ import java.lang.invoke.WrongMethodTypeException;
 
 public class TestTypeAccess {
 
-    static final VarHandle INT_HANDLE = MemoryLayouts.JAVA_INT.varHandle(int.class);
-
-    static final VarHandle ADDR_HANDLE = MemoryHandles.asAddressVarHandle(INT_HANDLE);
+    static final VarHandle INT_HANDLE = ValueLayout.JAVA_INT.varHandle();
+    static final VarHandle ADDR_HANDLE = ValueLayout.ADDRESS.varHandle();
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressCoordinateAsString() {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, scope);
-            int v = (int)INT_HANDLE.get("string");
-        }
+        int v = (int)INT_HANDLE.get("string");
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryCoordinatePrimitive() {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, scope);
-            int v = (int)INT_HANDLE.get(1);
-        }
+        int v = (int)INT_HANDLE.get(1);
     }
 
     @Test(expectedExceptions=ClassCastException.class)

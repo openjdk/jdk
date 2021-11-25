@@ -213,42 +213,6 @@ void G1BlockOffsetTablePart::check_all_cards(size_t start_card, size_t end_card)
   }
 }
 
-HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord* q,
-                                                                        HeapWord* n,
-                                                                        const void* addr) {
-  // We're not in the normal case.  We need to handle an important subcase
-  // here: LAB allocation.  An allocation previously recorded in the
-  // offset table was actually a lab allocation, and was divided into
-  // several objects subsequently.  Fix this situation as we answer the
-  // query, by updating entries as we cross them.
-
-  // If the fist object's end q is at the card boundary. Start refining
-  // with the corresponding card (the value of the entry will be basically
-  // set to 0). If the object crosses the boundary -- start from the next card.
-  size_t n_index = _bot->index_for(n);
-  size_t next_index = _bot->index_for(n) + !_bot->is_card_boundary(n);
-  // Calculate a consistent next boundary.  If "n" is not at the boundary
-  // already, step to the boundary.
-  HeapWord* next_boundary = _bot->address_for_index(n_index) +
-                            (n_index == next_index ? 0 : BOTConstants::N_words);
-  assert(next_boundary <= _bot->_reserved.end(),
-         "next_boundary is beyond the end of the covered region "
-         " next_boundary " PTR_FORMAT " _array->_end " PTR_FORMAT,
-         p2i(next_boundary), p2i(_bot->_reserved.end()));
-  while (next_boundary < addr) {
-    while (n <= next_boundary) {
-      q = n;
-      oop obj = cast_to_oop(q);
-      if (obj->klass_or_null_acquire() == NULL) return q;
-      n += block_size(q);
-    }
-    assert(q <= next_boundary && n > next_boundary, "Consequence of loop");
-    // [q, n) is the block that crosses the boundary.
-    alloc_block_work(&next_boundary, q, n);
-  }
-  return forward_to_block_containing_addr_const(q, n, addr);
-}
-
 //
 //              threshold_
 //              |   _index_

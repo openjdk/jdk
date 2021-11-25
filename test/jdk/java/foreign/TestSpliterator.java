@@ -27,7 +27,6 @@
  */
 
 import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SequenceLayout;
@@ -40,22 +39,22 @@ import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.LongStream;
-import java.util.stream.StreamSupport;
 
+import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.*;
 
 import static org.testng.Assert.*;
 
 public class TestSpliterator {
 
-    static final VarHandle INT_HANDLE = MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_INT)
-            .varHandle(int.class, MemoryLayout.PathElement.sequenceElement());
+    static final VarHandle INT_HANDLE = MemoryLayout.sequenceLayout(ValueLayout.JAVA_INT)
+            .varHandle(MemoryLayout.PathElement.sequenceElement());
 
     final static int CARRIER_SIZE = 4;
 
     @Test(dataProvider = "splits")
     public void testSum(int size, int threshold) {
-        SequenceLayout layout = MemoryLayout.sequenceLayout(size, MemoryLayouts.JAVA_INT);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(size, ValueLayout.JAVA_INT);
 
         //setup
         try (ResourceScope scope = ResourceScope.newSharedScope()) {
@@ -82,7 +81,7 @@ public class TestSpliterator {
 
     @Test
     public void testSumSameThread() {
-        SequenceLayout layout = MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_INT);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
 
         //setup
         MemorySegment segment = MemorySegment.allocateNative(layout, ResourceScope.newImplicitScope());
@@ -100,32 +99,32 @@ public class TestSpliterator {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadSpliteratorElementSizeTooBig() {
-        MemorySegment.ofArray(new byte[2]).spliterator(MemoryLayouts.JAVA_INT);
+        MemorySegment.ofArray(new byte[2]).spliterator(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadStreamElementSizeTooBig() {
-        MemorySegment.ofArray(new byte[2]).elements(MemoryLayouts.JAVA_INT);
+        MemorySegment.ofArray(new byte[2]).elements(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadSpliteratorElementSizeNotMultiple() {
-        MemorySegment.ofArray(new byte[7]).spliterator(MemoryLayouts.JAVA_INT);
+        MemorySegment.ofArray(new byte[7]).spliterator(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadStreamElementSizeNotMultiple() {
-        MemorySegment.ofArray(new byte[7]).elements(MemoryLayouts.JAVA_INT);
+        MemorySegment.ofArray(new byte[7]).elements(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadSpliteratorElementSizeZero() {
-        MemorySegment.ofArray(new byte[7]).spliterator(MemoryLayout.sequenceLayout(0, MemoryLayouts.JAVA_INT));
+        MemorySegment.ofArray(new byte[7]).spliterator(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadStreamElementSizeZero() {
-        MemorySegment.ofArray(new byte[7]).elements(MemoryLayout.sequenceLayout(0, MemoryLayouts.JAVA_INT));
+        MemorySegment.ofArray(new byte[7]).elements(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
     }
 
     static long sumSingle(long acc, MemorySegment segment) {

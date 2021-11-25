@@ -374,7 +374,7 @@ public:
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                      uint mt_processing_degree = 1,
-                     bool mt_discovery  = false, uint mt_discovery_degree  = 1,
+                     uint mt_discovery_degree  = 1,
                      bool concurrent_discovery = false,
                      BoolObjectClosure* is_alive_non_header = NULL);
 
@@ -420,9 +420,6 @@ public:
 
   // Discover a Reference object, using appropriate discovery criteria
   virtual bool discover_reference(oop obj, ReferenceType rt);
-
-  // Has discovered references that need handling
-  bool has_discovered_references();
 
   // Process references found during GC (called by the garbage collector)
   ReferenceProcessorStats

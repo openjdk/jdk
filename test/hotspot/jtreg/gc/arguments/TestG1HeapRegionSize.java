@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestG1HeapRegionSize {
@@ -82,6 +83,13 @@ public class TestG1HeapRegionSize {
     checkG1HeapRegionSize(new String[] { "-Xmx64m",  "-XX:G1HeapRegionSize=2m"  },  2*M, 0);
     checkG1HeapRegionSize(new String[] { "-Xmx64m",  "-XX:G1HeapRegionSize=3m"  },  4*M, 0);
     checkG1HeapRegionSize(new String[] { "-Xmx256m", "-XX:G1HeapRegionSize=32m" }, 32*M, 0);
-    checkG1HeapRegionSize(new String[] { "-Xmx256m", "-XX:G1HeapRegionSize=64m" }, 32*M, 1);
+    if (Platform.is64bit()) {
+      checkG1HeapRegionSize(new String[] { "-Xmx4096m", "-XX:G1HeapRegionSize=64m" }, 64*M, 0);
+      checkG1HeapRegionSize(new String[] { "-Xmx4096m", "-XX:G1HeapRegionSize=512m" }, 512*M, 0);
+      checkG1HeapRegionSize(new String[] { "-Xmx4096m", "-XX:G1HeapRegionSize=1024m" }, 512*M, 1);
+      checkG1HeapRegionSize(new String[] { "-Xmx128g" }, 32*M, 0);
+    } else {
+      checkG1HeapRegionSize(new String[] { "-Xmx256m", "-XX:G1HeapRegionSize=64m" }, 64*M, 1);
+    }
   }
 }
