@@ -50,7 +50,7 @@ private:
   void concurrent_mark_continue();
   void concurrent_mark_free();
   void concurrent_reset_relocation_set();
-  void concurrent_select_relocation_set();
+  void concurrent_select_relocation_set(bool promote_all);
   void pause_relocate_start();
   void concurrent_relocate();
 
@@ -82,7 +82,6 @@ private:
   ZDriverPort         _port;
   ZConditionLock      _lock;
   bool                _active;
-  bool                _promote_all;
   ZDriverMinor* const _minor;
 
   void minor_block();
@@ -117,8 +116,6 @@ public:
   ZDriverMajor(ZDriverMinor* minor);
 
   bool is_busy() const;
-
-  bool promote_all();
 
   void collect(const ZDriverRequest& request);
 };

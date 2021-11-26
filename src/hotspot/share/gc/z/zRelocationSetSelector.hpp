@@ -105,16 +105,19 @@ private:
   ZRelocationSetSelectorGroup _medium;
   ZRelocationSetSelectorGroup _large;
   ZArray<ZPage*>              _empty_pages;
+  const bool                  _promote_all;
 
   size_t total() const;
   size_t empty() const;
   size_t relocate() const;
 
 public:
-  ZRelocationSetSelector();
+  ZRelocationSetSelector(bool promote_all);
 
   void register_live_page(ZPage* page);
   void register_empty_page(ZPage* page);
+
+  bool promote_all() const;
 
   bool should_free_empty_pages(int bulk) const;
   const ZArray<ZPage*>* empty_pages() const;

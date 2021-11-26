@@ -945,6 +945,7 @@ public:
     });
   }
 };
+
 void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   {
     // Install the store buffer's base pointers before the
@@ -977,23 +978,21 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
 class ZPromotePagesTask : public ZTask {
 private:
   ZArrayParallelIterator<ZPage*> _iter;
+  const bool                     _promote_all;
 
 public:
-  ZPromotePagesTask(const ZArray<ZPage*>* pages) :
+  ZPromotePagesTask(const ZArray<ZPage*>* pages, bool promote_all) :
       ZTask("ZPromotePagesTask"),
-      _iter(pages) {}
-
+      _iter(pages),
+      _promote_all(promote_all) {}
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
-
     ZArray<ZPage*> promoted_pages;
-
-    const bool promote_all = ZCollectedHeap::heap()->driver_major()->promote_all();
 
     for (ZPage* prev_page; _iter.next(&prev_page);) {
       ZPageAge age_from = prev_page->age();
-      ZPageAge age_to = ZForwarding::compute_age_to(age_from, promote_all);
+      ZPageAge age_to = ZForwarding::compute_age_to(age_from, _promote_all);
       assert(age_from != ZPageAge::old, "invalid age for a young collection");
 
       // Figure out if this is proper promotion
@@ -1020,8 +1019,8 @@ public:
   }
 };
 
-void ZRelocate::promote_pages(const ZArray<ZPage*>* pages) {
-  ZPromotePagesTask promote_task(pages);
+void ZRelocate::promote_pages(const ZArray<ZPage*>* pages, bool promote_all) {
+  ZPromotePagesTask promote_task(pages, promote_all);
   workers()->run(&promote_task);
 }
 

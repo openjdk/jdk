@@ -41,6 +41,7 @@ private:
   ZForwardingAllocator* const    _allocator;
   ZForwarding**                  _forwardings;
   const size_t                   _nforwardings;
+  const bool                     _promote_all;
   ZArrayParallelIterator<ZPage*> _small_iter;
   ZArrayParallelIterator<ZPage*> _medium_iter;
   volatile size_t                _small_next;
@@ -69,6 +70,7 @@ public:
       _allocator(allocator),
       _forwardings(NULL),
       _nforwardings(selector->selected_small()->length() + selector->selected_medium()->length()),
+      _promote_all(selector->promote_all()),
       _small_iter(selector->selected_small()),
       _medium_iter(selector->selected_medium()),
       _small_next(selector->selected_medium()->length()),
@@ -91,16 +93,14 @@ public:
 
   virtual void work() {
     // Allocate and install forwardings for small pages
-    bool promote_all = ZCollectedHeap::heap()->driver_major()->promote_all();
-
     for (ZPage* page; _small_iter.next(&page);) {
-      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, promote_all);
+      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, _promote_all);
       install_small(forwarding);
     }
 
     // Allocate and install forwardings for medium pages
     for (ZPage* page; _medium_iter.next(&page);) {
-      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, promote_all);
+      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, _promote_all);
       install_medium(forwarding);
     }
   }

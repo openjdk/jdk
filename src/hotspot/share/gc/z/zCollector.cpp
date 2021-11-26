@@ -116,19 +116,20 @@ void ZCollector::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
   }
 }
 
-void ZCollector::promote_pages(ZRelocationSetSelector* selector) {
+void ZCollector::promote_pages(const ZRelocationSetSelector* selector) {
   if (is_young()) {
-    _relocate.promote_pages(selector->not_selected_small());
-    _relocate.promote_pages(selector->not_selected_medium());
-    _relocate.promote_pages(selector->not_selected_large());
+    const bool promote_all = selector->promote_all();
+    _relocate.promote_pages(selector->not_selected_small(), promote_all);
+    _relocate.promote_pages(selector->not_selected_medium(), promote_all);
+    _relocate.promote_pages(selector->not_selected_large(), promote_all);
   }
 }
 
-void ZCollector::select_relocation_set() {
+void ZCollector::select_relocation_set(bool promote_all) {
   ZGenerationId collected_generation = ZHeap::heap()->generation(_id)->generation_id();
 
   // Register relocatable pages with selector
-  ZRelocationSetSelector selector;
+  ZRelocationSetSelector selector(promote_all);
   {
     ZGenerationPagesIterator pt_iter(_page_table, collected_generation, _page_allocator);
     for (ZPage* page; pt_iter.next(&page);) {

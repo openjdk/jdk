@@ -82,7 +82,7 @@ protected:
   ConcurrentGCTimer _timer;
 
   void free_empty_pages(ZRelocationSetSelector* selector, int bulk);
-  void promote_pages(ZRelocationSetSelector* selector);
+  void promote_pages(const ZRelocationSetSelector* selector);
   void promote_pages(const ZArray<ZPage*>* pages);
 
   ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator);
@@ -148,7 +148,7 @@ public:
   void mark_free();
 
   // Relocation set
-  void select_relocation_set();
+  void select_relocation_set(bool promote_all);
   void reset_relocation_set();
 
   // Relocation

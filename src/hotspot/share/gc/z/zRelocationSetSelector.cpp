@@ -191,11 +191,12 @@ void ZRelocationSetSelectorGroup::select(ZGenerationId generation_id) {
   event.commit(_page_type, _stats.npages(), _stats.total(), _stats.empty(), _stats.relocate());
 }
 
-ZRelocationSetSelector::ZRelocationSetSelector() :
+ZRelocationSetSelector::ZRelocationSetSelector(bool promote_all) :
     _small("Small", ZPageTypeSmall, ZPageSizeSmall, ZObjectSizeLimitSmall),
     _medium("Medium", ZPageTypeMedium, ZPageSizeMedium, ZObjectSizeLimitMedium),
     _large("Large", ZPageTypeLarge, 0 /* page_size */, 0 /* object_size_limit */),
-    _empty_pages() {}
+    _empty_pages(),
+    _promote_all(promote_all) {}
 
 void ZRelocationSetSelector::select(ZGenerationId generation_id) {
   // Select pages to relocate. The resulting relocation set will be

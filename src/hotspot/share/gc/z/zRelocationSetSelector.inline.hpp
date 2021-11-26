@@ -133,6 +133,10 @@ inline void ZRelocationSetSelector::register_empty_page(ZPage* page) {
   _empty_pages.append(page);
 }
 
+inline bool ZRelocationSetSelector::promote_all() const {
+  return _promote_all;
+}
+
 inline bool ZRelocationSetSelector::should_free_empty_pages(int bulk) const {
   return _empty_pages.length() >= bulk && _empty_pages.is_nonempty();
 }
