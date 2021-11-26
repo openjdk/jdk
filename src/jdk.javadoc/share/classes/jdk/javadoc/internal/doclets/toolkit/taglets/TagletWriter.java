@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
@@ -238,6 +239,15 @@ public abstract class TagletWriter {
      */
     protected abstract Content valueTagOutput(VariableElement field,
         String constantVal, boolean includeLink);
+
+    /**
+     * Returns the output that acts as a notification for an invalid tag.
+     *
+     * @param summary the summary message
+     * @param detail the optional detail message
+     * @return the output
+     */
+    protected abstract Content invalidTagOutput(String summary, Optional<String> detail);
 
     /**
      * Returns the main type element of the current page or null for pages that don't have one.
