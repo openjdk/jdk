@@ -3367,7 +3367,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
       ld1r(v5, T2D, post(tmp, 8));
       ld1r(v6, T2D, post(tmp, 8));
       ld1r(v7, T2D, post(tmp, 8));
-      mov(v16, T4S, 0, crc);
+      mov(v16, S, 0, crc);
 
       eor(v0, T16B, v0, v16);
       sub(len, len, 64);
@@ -3471,16 +3471,16 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
       br(Assembler::GE, L_fold);
 
       mov(crc, 0);
-      mov(tmp, v0, T1D, 0);
+      mov(tmp, v0, D, 0);
       update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
       update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
-      mov(tmp, v0, T1D, 1);
+      mov(tmp, v0, D, 1);
       update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
       update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
-      mov(tmp, v1, T1D, 0);
+      mov(tmp, v1, D, 0);
       update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
       update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
-      mov(tmp, v1, T1D, 1);
+      mov(tmp, v1, D, 1);
       update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
       update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
 

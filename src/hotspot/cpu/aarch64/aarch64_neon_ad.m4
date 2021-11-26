@@ -296,7 +296,7 @@ instruct vcvt2Dto2I(vecD dst, vecX src)
             "fcvtzdw  rscratch1, $src\n\t"
             "fcvtzdw  rscratch2, $dst\n\t"
             "fmovs    $dst, rscratch1\n\t"
-            "mov      $dst, T2S, 1, rscratch2\t#convert 2D to 2I vector"
+            "mov      $dst, S, 1, rscratch2\t#convert 2D to 2I vector"
   %}
   ins_encode %{
     __ ins(as_FloatRegister($dst$$reg), __ D, as_FloatRegister($src$$reg), 0, 1);
@@ -305,7 +305,7 @@ instruct vcvt2Dto2I(vecD dst, vecX src)
     __ fcvtzdw(rscratch1, as_FloatRegister($src$$reg));
     __ fcvtzdw(rscratch2, as_FloatRegister($dst$$reg));
     __ fmovs(as_FloatRegister($dst$$reg), rscratch1);
-    __ mov(as_FloatRegister($dst$$reg), __ T2S, 1, rscratch2);
+    __ mov(as_FloatRegister($dst$$reg), __ S, 1, rscratch2);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -868,13 +868,13 @@ instruct insert$1$2`'(vec$3 dst, vec$3 src, iReg$4`'ORL2I($4) val, immI idx)
   match(Set dst (VectorInsert (Binary src val) idx));
   ins_cost(INSN_COST);
   format %{ "orr    $dst, T$5, $src, $src\n\t"
-            "mov    $dst, T$1`'iTYPE2SIMD($2), $idx, $val\t# insert into vector($1$2)" %}
+            "mov    $dst, iTYPE2SIMD($2), $idx, $val\t# insert into vector($1$2)" %}
   ins_encode %{
     if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
       __ orr(as_FloatRegister($dst$$reg), __ T$5,
              as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
     }
-    __ mov(as_FloatRegister($dst$$reg), __ T$1`'iTYPE2SIMD($2), $idx$$constant, $val$$Register);
+    __ mov(as_FloatRegister($dst$$reg), __ iTYPE2SIMD($2), $idx$$constant, $val$$Register);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -1003,11 +1003,11 @@ instruct vmul2L(vecX dst, vecX src1, vecX src2, iRegLNoSp tmp1, iRegLNoSp tmp2)
     __ umov($tmp1$$Register, as_FloatRegister($src1$$reg), __ D, 0);
     __ umov($tmp2$$Register, as_FloatRegister($src2$$reg), __ D, 0);
     __ mul(as_Register($tmp2$$reg), as_Register($tmp2$$reg), as_Register($tmp1$$reg));
-    __ mov(as_FloatRegister($dst$$reg), __ T2D, 0, $tmp2$$Register);
+    __ mov(as_FloatRegister($dst$$reg), __ D, 0, $tmp2$$Register);
     __ umov($tmp1$$Register, as_FloatRegister($src1$$reg), __ D, 1);
     __ umov($tmp2$$Register, as_FloatRegister($src2$$reg), __ D, 1);
     __ mul(as_Register($tmp2$$reg), as_Register($tmp2$$reg), as_Register($tmp1$$reg));
-    __ mov(as_FloatRegister($dst$$reg), __ T2D, 1, $tmp2$$Register);
+    __ mov(as_FloatRegister($dst$$reg), __ D, 1, $tmp2$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
