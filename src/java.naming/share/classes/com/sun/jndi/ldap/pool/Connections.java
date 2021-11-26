@@ -77,7 +77,6 @@ final class Connections implements PoolCallback {
     private final List<ConnectionDesc> conns;
     final private PooledConnectionFactory factory;
 
-
     private boolean closed = false;   // Closed for business
     private Reference<Object> ref; // maintains reference to id to prevent premature GC
 
