@@ -41,10 +41,6 @@ public class PrintTouchedMethodsJcmd {
       var pb = new ProcessBuilder();
       pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.print_touched_methods"});
       var output = new OutputAnalyzer(pb.start());
-      try {
-        output.shouldContain("PrintTouchedMethodsJcmd.main:([Ljava/lang/String;)V");
-      } catch (RuntimeException e) {
-        output.shouldContain("Unknown diagnostic command");
-      }
-  }
+      output.shouldContain("PrintTouchedMethodsJcmd.main:([Ljava/lang/String;)V");
+    }
 }

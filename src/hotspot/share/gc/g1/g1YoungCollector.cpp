@@ -29,7 +29,7 @@
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
@@ -856,7 +856,7 @@ public:
       return;
     }
     if (region_attr.is_in_cset()) {
-      assert( obj->is_forwarded(), "invariant" );
+      assert(obj->is_forwarded(), "invariant" );
       *p = obj->forwardee();
     } else {
       assert(!obj->is_forwarded(), "invariant" );
@@ -985,12 +985,6 @@ void G1YoungCollector::process_discovered_references(G1ParScanThreadStateSet* pe
   _g1h->make_pending_list_reachable();
 
   phase_times()->record_ref_proc_time((Ticks::now() - start).seconds() * MILLIUNITS);
-}
-
-bool G1STWIsAliveClosure::do_object_b(oop p) {
-  // An object is reachable if it is outside the collection set,
-  // or is inside and copied.
-  return !_g1h->is_in_cset(p) || p->is_forwarded();
 }
 
 void G1YoungCollector::post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states) {

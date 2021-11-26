@@ -46,6 +46,7 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	$(call ExecuteWithLog, $@, \
 	    $(TOOL_CLDRCONVERTER) -base $(CLDR_DATA_DIR) \
 	    -baselocales "en-US" \
+	    -year $(COPYRIGHT_YEAR) \
 	    -o $(GENSRC_DIR))
 	$(TOUCH) $@
 

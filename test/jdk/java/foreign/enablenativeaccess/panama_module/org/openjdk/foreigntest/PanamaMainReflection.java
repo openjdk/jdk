@@ -28,7 +28,7 @@ import java.lang.reflect.Method;
 
 public class PanamaMainReflection {
    public static void main(String[] args) throws Throwable {
-       Method method = CLinker.class.getDeclaredMethod("getInstance");
+       Method method = CLinker.class.getDeclaredMethod("systemCLinker");
        method.invoke(null);
    }
 }

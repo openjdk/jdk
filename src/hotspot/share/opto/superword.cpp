@@ -2558,6 +2558,14 @@ void SuperWord::output() {
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+      } else if (opc == Op_ConvI2F || opc == Op_ConvL2D ||
+                 opc == Op_ConvF2I || opc == Op_ConvD2L) {
+        assert(n->req() == 2, "only one input expected");
+        BasicType bt = velt_basic_type(n);
+        int vopc = VectorNode::opcode(opc, bt);
+        Node* in = vector_opd(p, 1);
+        vn = VectorCastNode::make(vopc, in, bt, vlen);
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (is_cmov_pack(p)) {
         if (can_process_post_loop) {
           // do not refactor of flow in post loop context

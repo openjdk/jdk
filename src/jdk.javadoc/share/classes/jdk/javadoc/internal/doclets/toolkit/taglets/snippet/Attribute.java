@@ -58,8 +58,7 @@ import java.util.Objects;
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
  */
-// TODO: uncomment /* sealed */ when minimum boot JDK version >= 17
-public /* sealed */ abstract class Attribute {
+public abstract class Attribute {
 
     private final String name;
 

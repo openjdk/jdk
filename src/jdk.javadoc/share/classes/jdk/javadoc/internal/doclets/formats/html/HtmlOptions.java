@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,11 @@ public class HtmlOptions extends BaseOptions {
      * Argument for command-line option {@code --add-stylesheet}.
      */
     private List<String> additionalStylesheets = new ArrayList<>();
+
+    /**
+     * Argument for command-line option {@code --add-script}.
+     */
+    private List<String> additionalScripts = new ArrayList<>();
 
     /**
      * Argument for command-line option {@code -bottom}.
@@ -199,6 +204,14 @@ public class HtmlOptions extends BaseOptions {
         Resources resources = messages.getResources();
 
         List<Option> options = List.of(
+                new Option(resources, "--add-script", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        additionalScripts.add(args.get(0));
+                        return true;
+                    }
+                },
+
                 new Option(resources, "--add-stylesheet", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -500,7 +513,14 @@ public class HtmlOptions extends BaseOptions {
                 return false;
             }
         }
-
+        // check if additional scripts exists
+        for (String script : additionalScripts) {
+            DocFile sfile = DocFile.createFileForInput(config, script);
+            if (!sfile.exists()) {
+                messages.error("doclet.File_not_found", script);
+                return false;
+            }
+        }
         // In a more object-oriented world, this would be done by methods on the Option objects.
         // Note that -windowtitle silently removes any and all HTML elements, and so does not need
         // to be handled here.
@@ -512,6 +532,13 @@ public class HtmlOptions extends BaseOptions {
         utils.checkJavaScriptInOption("-packagesheader", packagesHeader);
 
         return true;
+    }
+
+    /**
+     * Argument for command-line option {@code --add-script}.
+     */
+    List<String> additionalScripts() {
+        return additionalScripts;
     }
 
     /**
