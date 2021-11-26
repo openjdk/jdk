@@ -1266,7 +1266,7 @@ typedef GrowableArray<BlockList*> BlockListList;
 
 class PredecessorValidator : public BlockClosure {
  private:
-  BlockListList* _predecessors;
+  BlockListList* _predecessors; // Each index i will hold predecessors of block with id i
   BlockList*     _blocks;
 
   static int cmp(BlockBegin** a, BlockBegin** b) {
@@ -1277,71 +1277,74 @@ class PredecessorValidator : public BlockClosure {
   PredecessorValidator(IR* hir) {
     ResourceMark rm;
     _predecessors = new BlockListList(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL);
-    _blocks = new BlockList();
+    _blocks = new BlockList(BlockBegin::number_of_blocks());
 
-    int i;
     hir->start()->iterate_preorder(this);
     if (hir->code() != NULL) {
       assert(hir->code()->length() == _blocks->length(), "must match");
-      for (i = 0; i < _blocks->length(); i++) {
+      for (int i = 0; i < _blocks->length(); i++) {
         assert(hir->code()->contains(_blocks->at(i)), "should be in both lists");
       }
     }
 
-    for (i = 0; i < _blocks->length(); i++) {
+    for (int i = 0; i < _blocks->length(); i++) {
       BlockBegin* block = _blocks->at(i);
-      BlockList* preds = _predecessors->at(block->block_id());
-      if (preds == NULL) {
-        assert(block->number_of_preds() == 0, "should be the same");
-        continue;
-      }
-
-      // clone the pred list so we can mutate it
-      BlockList* pred_copy = new BlockList();
-      int j;
-      for (j = 0; j < block->number_of_preds(); j++) {
-        pred_copy->append(block->pred_at(j));
-      }
-      // sort them in the same order
-      preds->sort(cmp);
-      pred_copy->sort(cmp);
-      int length = MIN2(preds->length(), block->number_of_preds());
-      for (j = 0; j < block->number_of_preds(); j++) {
-        assert(preds->at(j) == pred_copy->at(j), "must match");
-      }
-
-      assert(preds->length() == block->number_of_preds(), "should be the same");
+      verify_block_preds_against_collected_preds(block);
     }
   }
 
   virtual void block_do(BlockBegin* block) {
     _blocks->append(block);
-    BlockEnd* be = block->end();
-    int n = be->number_of_sux();
-    int i;
-    for (i = 0; i < n; i++) {
-      BlockBegin* sux = be->sux_at(i);
-      assert(!sux->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
+    verify_successor_xentry_flag(block);
+    collect_predecessors(block);
+  }
 
-      BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
-      if (preds == NULL) {
-        preds = new BlockList();
-        _predecessors->at_put(sux->block_id(), preds);
-      }
-      preds->append(block);
+ private:
+  void verify_successor_xentry_flag(const BlockBegin* block) const {
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      assert(!block->end()->sux_at(i)->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
     }
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+      assert(block->exception_handler_at(i)->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
+    }
+  }
 
-    n = block->number_of_exception_handlers();
-    for (i = 0; i < n; i++) {
-      BlockBegin* sux = block->exception_handler_at(i);
-      assert(sux->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
+  void collect_predecessors(BlockBegin* block) {
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      collect_predecessor(block, block->end()->sux_at(i));
+    }
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+      collect_predecessor(block, block->exception_handler_at(i));
+    }
+  }
 
-      BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
-      if (preds == NULL) {
-        preds = new BlockList();
-        _predecessors->at_put(sux->block_id(), preds);
-      }
-      preds->append(block);
+  void collect_predecessor(BlockBegin* const pred, const BlockBegin* sux) {
+    BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
+    if (preds == NULL) {
+      preds = new BlockList();
+      _predecessors->at_put(sux->block_id(), preds);
+    }
+    preds->append(pred);
+  }
+
+  void verify_block_preds_against_collected_preds(const BlockBegin* block) const {
+    BlockList* preds = _predecessors->at(block->block_id());
+    if (preds == NULL) {
+      assert(block->number_of_preds() == 0, "should be the same");
+      return;
+    }
+    assert(preds->length() == block->number_of_preds(), "should be the same");
+
+    // clone the pred list so we can mutate it
+    BlockList* pred_copy = new BlockList();
+    for (int j = 0; j < block->number_of_preds(); j++) {
+      pred_copy->append(block->pred_at(j));
+    }
+    // sort them in the same order
+    preds->sort(cmp);
+    pred_copy->sort(cmp);
+    for (int j = 0; j < block->number_of_preds(); j++) {
+      assert(preds->at(j) == pred_copy->at(j), "must match");
     }
   }
 };
