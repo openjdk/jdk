@@ -96,9 +96,8 @@ final class Connections implements PoolCallback {
      * when one is removed.
      * @param factory The factory responsible for creating a connection
      */
-    Connections(Object id, int initSize, int prefSize, int maxSize,
-                PooledConnectionFactory factory, ReentrantLock lock)
-            throws NamingException {
+    Connections(Object id, int initSize, int prefSize, int maxSize, PooledConnectionFactory factory,
+            ReentrantLock lock) throws NamingException {
         this.maxSize = maxSize;
         this.lock = lock;
         this.connectionsAvailable = lock.newCondition();
@@ -124,8 +123,7 @@ final class Connections implements PoolCallback {
         d("preferred size=", prefSize);
     }
 
-    void waitForAvailableConnection()
-            throws InterruptedNamingException {
+    void waitForAvailableConnection() throws InterruptedNamingException {
         try {
             d("get(): waiting");
             connectionsAvailable.await();
@@ -135,8 +133,7 @@ final class Connections implements PoolCallback {
         }
     }
 
-    void waitForAvailableConnection(long waitTime)
-            throws InterruptedNamingException {
+    void waitForAvailableConnection(long waitTime) throws InterruptedNamingException {
         try {
             d("get(): waiting");
             connectionsAvailable.await(waitTime, TimeUnit.MILLISECONDS);
@@ -181,8 +178,8 @@ final class Connections implements PoolCallback {
      * If maxSize has been reached, return null.
      * Caller must hold the ReentrantLock.
      */
-    PooledConnection createConnection(
-            PooledConnectionFactory factory, long timeout) throws NamingException {
+    PooledConnection createConnection(PooledConnectionFactory factory, long timeout)
+            throws NamingException {
         int size = conns.size(); // Current number of idle/non-idle connections
         if (maxSize == 0 || size < maxSize) {
             PooledConnection conn = factory.createPooledConnection(this, timeout);
