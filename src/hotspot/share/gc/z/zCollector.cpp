@@ -513,14 +513,6 @@ ConcurrentGCTimer* ZOldCollector::major_timer() {
   return &_major_timer;
 }
 
-void ZOldCollector::reset_statistics() {
-  ZCollector::reset_statistics();
-
-  // The alloc stalled count is used by the major driver,
-  // so reset it from the old cycle.
-  _page_allocator->reset_alloc_stalled();
-}
-
 void ZOldCollector::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 

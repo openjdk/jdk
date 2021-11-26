@@ -173,8 +173,9 @@ private:
 public:
   ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
-  // Statistics
   ConcurrentGCTimer* minor_timer();
+
+  // Statistics
   void reset_statistics();
 
   // GC operations
@@ -210,8 +211,6 @@ private:
 public:
   ZOldCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
-  // Statistics
-  void reset_statistics();
   ConcurrentGCTimer* major_timer();
 
   // Reference processing

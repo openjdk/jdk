@@ -85,7 +85,6 @@ private:
   bool                _promote_all;
   ZDriverMinor* const _minor;
 
-  bool should_collect_young_before_major(GCCause::Cause cause);
   void minor_block();
   void minor_unblock();
   void minor_start();

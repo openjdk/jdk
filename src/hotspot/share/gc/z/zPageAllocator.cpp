@@ -205,7 +205,6 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
     _claimed(0),
     _used(0),
     _stalled(),
-    _nstalled(0),
     _unmapper(new ZUnmapper(this)),
     _uncommitter(new ZUncommitter(this)),
     _safe_destroy(),
@@ -513,9 +512,6 @@ bool ZPageAllocator::alloc_page_stall(ZPageAllocation* allocation) {
 
   // We can only block if the VM is fully initialized
   check_out_of_memory_during_initialization();
-
-  // Increment stalled counter
-  Atomic::inc(&_nstalled);
 
   // Start asynchronous minor GC
   ZCollectedHeap::heap()->collect(GCCause::_z_minor_allocation_stall);
@@ -898,12 +894,24 @@ void ZPageAllocator::disable_safe_recycle() const {
   _safe_recycle.deactivate();
 }
 
-bool ZPageAllocator::has_alloc_stalled() const {
-  return Atomic::load(&_nstalled) != 0;
+static bool has_alloc_seen_young(const ZPageAllocation* allocation) {
+  return allocation->young_seqnum() != ZHeap::heap()->young_collector()->seqnum();
 }
 
-void ZPageAllocator::reset_alloc_stalled() {
-  return Atomic::store(&_nstalled, uint64_t(0));
+static bool has_alloc_seen_old(const ZPageAllocation* allocation) {
+  return allocation->old_seqnum() != ZHeap::heap()->old_collector()->seqnum();
+}
+
+bool ZPageAllocator::is_alloc_stalling_for_major() const {
+  ZLocker<ZLock> locker(&_lock);
+
+  ZPageAllocation* const allocation = _stalled.first();
+  if (allocation == NULL) {
+    // No stalled allocations
+    return false;
+  }
+
+  return has_alloc_seen_young(allocation) && !has_alloc_seen_old(allocation);
 }
 
 void ZPageAllocator::check_minor_out_of_memory() {
@@ -917,7 +925,7 @@ void ZPageAllocator::check_minor_out_of_memory() {
 
   // Start a minor GC if the first allocation request was enqueued
   // after the last minor GC started, otherwise start a major GC.
-  if (allocation->young_seqnum() == ZHeap::heap()->young_collector()->seqnum()) {
+  if (!has_alloc_seen_young(allocation)) {
     // Start a minor GC, keep allocation requests enqueued
     ZCollectedHeap::heap()->collect(GCCause::_z_minor_allocation_stall);
   } else {
@@ -932,7 +940,7 @@ void ZPageAllocator::check_major_out_of_memory() {
   // Fail allocation requests that were enqueued before
   // the last major GC started, otherwise start a major GC.
   for (ZPageAllocation* allocation = _stalled.first(); allocation != NULL; allocation = _stalled.first()) {
-    if (allocation->old_seqnum() == ZHeap::heap()->old_collector()->seqnum()) {
+    if (!has_alloc_seen_old(allocation)) {
       // Start a major GC, keep allocation requests enqueued
       ZCollectedHeap::heap()->collect(GCCause::_z_major_allocation_stall);
       return;

@@ -129,7 +129,7 @@ public:
   void free_pages(const ZArray<ZPage*>* pages, bool reclaimed);
 
   // Object allocation
-  bool has_alloc_stalled() const;
+  bool is_alloc_stalling_for_major() const;
   void check_minor_out_of_memory();
   void check_major_out_of_memory();
 

@@ -258,10 +258,11 @@ static ZDriverRequest rule_minor_allocation_rate_static() {
 }
 
 static ZDriverRequest rule_minor_allocation_rate() {
-  if (ZHeap::heap()->has_alloc_stalled() && ZCollectedHeap::heap()->driver_major()->is_busy()) {
-    // Wait for full GC when we stall to avoid excessive minor GCs
+  if (ZHeap::heap()->is_alloc_stalling_for_major()) {
+    // Don't collect young if we have threads stalled waiting for a major collection
     return GCCause::_no_gc;
   }
+
   if (UseDynamicNumberOfGCThreads) {
     return rule_minor_allocation_rate_dynamic();
   } else {

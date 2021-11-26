@@ -369,8 +369,8 @@ inline void ZHeap::mark_follow_invisible_root(zaddress addr, size_t size) {
   }
 }
 
-inline bool ZHeap::has_alloc_stalled() const {
-  return _page_allocator.has_alloc_stalled();
+inline bool ZHeap::is_alloc_stalling_for_major() const {
+  return _page_allocator.is_alloc_stalling_for_major();
 }
 
 inline void ZHeap::check_minor_out_of_memory() {

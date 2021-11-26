@@ -646,7 +646,6 @@ void ZDriverMajor::minor_await() {
 
 void ZDriverMajor::collect(const ZDriverRequest& request) {
   switch (request.cause()) {
-  case GCCause::_wb_conc_mark:
   case GCCause::_wb_full_gc:
   case GCCause::_dcmd_gc_run:
   case GCCause::_java_lang_system_gc:
@@ -779,17 +778,70 @@ void ZDriverMajor::check_out_of_memory() {
   ZHeap::heap()->check_major_out_of_memory();
 }
 
-static bool should_clear_soft_references(const ZDriverRequest& request) {
+static bool should_clear_soft_references(GCCause::Cause cause) {
   // Clear soft references if implied by the GC cause
-  if (request.cause() == GCCause::_wb_full_gc ||
-      request.cause() == GCCause::_metadata_GC_clear_soft_refs ||
-      request.cause() == GCCause::_z_major_allocation_stall) {
-    // Clear
+  switch (cause) {
+  case GCCause::_wb_full_gc:
+  case GCCause::_metadata_GC_clear_soft_refs:
+  case GCCause::_z_major_allocation_stall:
+    return true;
+
+  case GCCause::_wb_breakpoint:
+  case GCCause::_dcmd_gc_run:
+  case GCCause::_java_lang_system_gc:
+  case GCCause::_full_gc_alot:
+  case GCCause::_jvmti_force_gc:
+  case GCCause::_z_major_timer:
+  case GCCause::_z_major_warmup:
+  case GCCause::_z_major_allocation_rate:
+  case GCCause::_z_major_proactive:
+  case GCCause::_metadata_GC_threshold:
+    break;
+
+  default:
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
+  }
+
+  // Clear soft references if threads are stalled waiting for a major collection
+  if (ZHeap::heap()->is_alloc_stalling_for_major()) {
     return true;
   }
 
   // Don't clear
   return false;
+}
+
+static bool should_collect_young_before_major(GCCause::Cause cause) {
+  // Collect young if implied by the GC cause
+  switch (cause) {
+  case GCCause::_wb_full_gc:
+  case GCCause::_wb_breakpoint:
+  case GCCause::_dcmd_gc_run:
+  case GCCause::_java_lang_system_gc:
+  case GCCause::_full_gc_alot:
+  case GCCause::_jvmti_force_gc:
+  case GCCause::_metadata_GC_clear_soft_refs:
+  case GCCause::_z_major_allocation_stall:
+    return true;
+
+  case GCCause::_z_major_timer:
+  case GCCause::_z_major_warmup:
+  case GCCause::_z_major_allocation_rate:
+  case GCCause::_z_major_proactive:
+  case GCCause::_metadata_GC_threshold:
+    break;
+
+  default:
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
+  }
+
+  // Collect young if threads are stalled waiting for a major collection
+  if (ZHeap::heap()->is_alloc_stalling_for_major()) {
+    return true;
+  }
+
+  // Collect young if implied by configuration
+  return ScavengeBeforeFullGC;
 }
 
 class ZDriverMajorGCScope : public StackObj {
@@ -810,7 +862,7 @@ public:
     collector->set_at_collection_start();
 
     // Set up soft reference policy
-    const bool clear = should_clear_soft_references(request);
+    const bool clear = should_clear_soft_references(request.cause());
     collector->set_soft_reference_policy(clear);
   }
 
@@ -866,13 +918,13 @@ public:
 void ZDriverMajor::gc(const ZDriverRequest& request) {
   ZDriverMajorGCScope major_scope(request);
 
-  if (_promote_all) {
+  if (should_collect_young_before_major(request.cause())) {
+    _promote_all = true;
+    minor_unblock();
     _minor->collect(GCCause::_z_major_young_preclean);
+    minor_block();
+    _promote_all = false;
   }
-
-  minor_block();
-
-  _promote_all = false;
 
   if (ZAbort::should_abort()) {
     return;
@@ -933,27 +985,6 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
   minor_block();
 }
 
-bool ZDriverMajor::should_collect_young_before_major(GCCause::Cause cause) {
-  if (cause != GCCause::_metadata_GC_threshold &&
-      cause != GCCause::_z_major_timer &&
-      cause != GCCause::_z_major_warmup &&
-      cause != GCCause::_z_major_allocation_rate &&
-      cause != GCCause::_z_major_proactive) {
-    // Cause is not relaxed to skip young preclean before major
-    return true;
-  }
-
-  if (ZHeap::heap()->has_alloc_stalled()) {
-    // Even if the cause is relaxed, we have to collect young before major
-    // if there is a stall, to ensure OOM is thrown correctly.
-    return true;
-  }
-
-  // We are now allowed to relax young before major, unless someone
-  // specified explicitly that we should not.
-  return ScavengeBeforeFullGC;
-}
-
 void ZDriverMajor::run_service() {
   // Main loop
   while (!ZAbort::should_abort()) {
@@ -966,10 +997,6 @@ void ZDriverMajor::run_service() {
     ZBreakpoint::at_before_gc();
 
     minor_block();
-
-    _promote_all = should_collect_young_before_major(request.cause());
-
-    minor_unblock();
 
     // Run GC
     gc(request);

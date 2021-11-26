@@ -75,7 +75,6 @@ private:
   volatile size_t            _claimed;
   volatile size_t            _used;
   ZList<ZPageAllocation>     _stalled;
-  volatile uint64_t          _nstalled;
   ZUnmapper*                 _unmapper;
   ZUncommitter*              _uncommitter;
   mutable ZSafeDelete<ZPage> _safe_destroy;
@@ -143,8 +142,7 @@ public:
   void enable_safe_recycle() const;
   void disable_safe_recycle() const;
 
-  bool has_alloc_stalled() const;
-  void reset_alloc_stalled();
+  bool is_alloc_stalling_for_major() const;
 
   void check_minor_out_of_memory();
   void check_major_out_of_memory();
