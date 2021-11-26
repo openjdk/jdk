@@ -346,7 +346,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * given package-oriented location.
      *
      * <p>The provided {@code originatingFiles} represent files that
-     * were in, an unspecified way, used to create the content of
+     * were, in an unspecified way, used to create the content of
      * the file created by this method. See {@code originatingElements}
      * in {@link Filer#createSourceFile}. {@link Elements#getFileObjectOf}
      * may be used to convert the {@code Element}s to {@code FileObject}s.
@@ -358,8 +358,8 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @param location a package-oriented location
      * @param className the name of a class
      * @param kind the kind of file, must be one of {@link
-     * JavaFileObject.Kind#SOURCE SOURCE} or {@link
-     * JavaFileObject.Kind#CLASS CLASS}
+     *             JavaFileObject.Kind#SOURCE SOURCE} or {@link
+     *             JavaFileObject.Kind#CLASS CLASS}
      * @param originatingFiles the files which are contributing to this newly created file;
      *                         {@code null} is equivalent to empty {@code originatingFiles},
      *                         meaning no known originating files
@@ -483,7 +483,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * name</a> in the specified package in the given location.
      *
      * <p>The provided {@code originatingFiles} represent files that
-     * were in, an unspecified way, used to create the content of
+     * were, in an unspecified way, used to create the content of
      * the file created by this method. See {@code originatingElements}
      * in {@link Filer#createResource}. {@link Elements#getFileObjectOf}
      * may be used to convert the {@code Element}s to {@code FileObject}s.

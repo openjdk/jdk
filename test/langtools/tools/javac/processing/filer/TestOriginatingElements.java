@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8272234
  * @summary Verify proper handling of originating elements in javac's Filer.
@@ -59,6 +59,7 @@ import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaFileManager;
@@ -182,7 +183,7 @@ public class TestOriginatingElements extends TestRunner {
                 }
                 List<String> options = List.of("-sourcepath", src.toString(),
                                                "-processor", "TestOriginatingElements$P",
-                                               "-processorpath", System.getProperty("test.classes"),
+                                               "-processorpath", System.getProperty("test.class.path"),
                                                "--module-path", libClasses.toString(),
                                                "--add-modules", "lib",
                                                "-d", classes.toString(),
@@ -222,11 +223,12 @@ public class TestOriginatingElements extends TestRunner {
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
             if (round++ == 0) {
-                ModuleElement mdl = processingEnv.getElementUtils().getModuleElement("m");
-                ModuleElement java_base = processingEnv.getElementUtils().getModuleElement("java.base");
-                PackageElement pack = processingEnv.getElementUtils().getPackageElement("p");
-                PackageElement lib1Pack = processingEnv.getElementUtils().getPackageElement("lib1");
-                PackageElement lib2Pack = processingEnv.getElementUtils().getPackageElement("lib2");
+                Elements elems = processingEnv.getElementUtils();
+                ModuleElement mdl = elems.getModuleElement("m");
+                ModuleElement java_base = elems.getModuleElement("java.base");
+                PackageElement pack = elems.getPackageElement("p");
+                PackageElement lib1Pack = elems.getPackageElement("lib1");
+                PackageElement lib2Pack = elems.getPackageElement("lib2");
                 Filer filer = processingEnv.getFiler();
                 try {
                     filer.createSourceFile("test.Generated1",

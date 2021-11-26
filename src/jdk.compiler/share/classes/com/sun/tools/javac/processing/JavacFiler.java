@@ -36,6 +36,7 @@ import java.io.FilterWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static java.util.Collections.*;
 
@@ -527,8 +528,7 @@ public class JavacFiler implements Filer, Closeable {
         if (originatingElements == null) {
             return new JavaFileObject[0];
         }
-        JavaFileObject[] originatingFiles = Arrays.asList(originatingElements)
-                .stream()
+        JavaFileObject[] originatingFiles = Stream.of(originatingElements)
                 .map(elementUtils::getFileObjectOf)
                 .filter(fo -> fo != null)
                 .toArray(s -> new JavaFileObject[s]);
