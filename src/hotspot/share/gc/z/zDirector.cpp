@@ -524,7 +524,8 @@ static void make_gc_decision() {
     const ZDriverRequest minor_request = make_minor_gc_decision();
     const ZDriverRequest major_request = rule_major_allocation_rate();
     if (minor_request.cause() != GCCause::_no_gc) {
-      if (major_request.cause() == GCCause::_z_major_allocation_rate) {
+      if (!ZCollectedHeap::heap()->driver_major()->is_busy() &&
+          major_request.cause() == GCCause::_z_major_allocation_rate) {
         // Try merging major allocation rate GCs with another minor GC.
         const ZDriverRequest merged_request(GCCause::_z_major_allocation_rate, minor_request.nworkers());
         ZCollectedHeap::heap()->driver_major()->collect(merged_request);
