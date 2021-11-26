@@ -271,7 +271,7 @@ public class TestLongRangeCheck {
             long offset = stride * scale * 4;
             long length = offset + stride * scale * 3 + 1;
             long stop = stride * 5;
-                    
+
             m.invoke(null, 0, stop, length, offset);
             compile(m);
 
@@ -285,7 +285,7 @@ public class TestLongRangeCheck {
             long offset = stride * scale * 4;
             long length = offset + stride * scale * 3 + 1;
             long stop = stride * 5;
-                    
+
             m.invoke(null, 0, stop, length, offset);
             compile(m);
 
@@ -418,7 +418,7 @@ public class TestLongRangeCheck {
             }
         }
     }
-    
+
     public static void testStridePosScalePosInIntLoop(long start, long stop, long length, long offset) {
         checkInputs(start, stop);
         final long scale = 1;
