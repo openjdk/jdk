@@ -165,7 +165,7 @@ public final class MemoryHandles {
      */
     public static VarHandle varHandle(ValueLayout layout) {
         Objects.requireNonNull(layout);
-        return layout.accessHandle();
+        return layout.accessHandle(false);
     }
 
     /**

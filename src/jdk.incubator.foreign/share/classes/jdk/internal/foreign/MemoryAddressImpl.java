@@ -27,6 +27,7 @@ package jdk.internal.foreign;
 
 import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.ValueLayout;
@@ -35,6 +36,8 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.util.Objects;
 
 /**
  * This class provides an immutable implementation for the {@code MemoryAddress} interface. This class contains information
@@ -267,7 +270,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public char getAtIndex(ValueLayout.OfChar layout, long index) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        return NativeMemorySegmentImpl.EVERYTHING.get(layout, toRawLongValue() + (index * layout.byteSize()));
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            return (char)Utils.accessHandle(layout, true)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        } else {
+            return (char)Utils.accessHandle(layout, false)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        }
     }
 
     @Override
@@ -275,7 +285,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public void setAtIndex(ValueLayout.OfChar layout, long index, char value) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        NativeMemorySegmentImpl.EVERYTHING.set(layout, toRawLongValue() + (index * layout.byteSize()), value);
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            Utils.accessHandle(layout, true)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        } else {
+            Utils.accessHandle(layout, false)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        }
     }
 
     @Override
@@ -283,7 +300,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public short getAtIndex(ValueLayout.OfShort layout, long index) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        return NativeMemorySegmentImpl.EVERYTHING.get(layout, toRawLongValue() + (index * layout.byteSize()));
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            return (short)Utils.accessHandle(layout, true)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        } else {
+            return (short)Utils.accessHandle(layout, false)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        }
     }
 
     @Override
@@ -291,7 +315,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public void setAtIndex(ValueLayout.OfShort layout, long index, short value) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        NativeMemorySegmentImpl.EVERYTHING.set(layout, toRawLongValue() + (index * layout.byteSize()), value);
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            Utils.accessHandle(layout, true)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        } else {
+            Utils.accessHandle(layout, false)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        }
     }
 
     @Override
@@ -299,7 +330,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public int getAtIndex(ValueLayout.OfInt layout, long index) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        return NativeMemorySegmentImpl.EVERYTHING.get(layout, toRawLongValue() + (index * layout.byteSize()));
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            return (int)Utils.accessHandle(layout, true)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        } else {
+            return (int)Utils.accessHandle(layout, false)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        }
     }
 
     @Override
@@ -307,7 +345,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public void setAtIndex(ValueLayout.OfInt layout, long index, int value) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        NativeMemorySegmentImpl.EVERYTHING.set(layout, toRawLongValue() + (index * layout.byteSize()), value);
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            Utils.accessHandle(layout, true)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        } else {
+            Utils.accessHandle(layout, false)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        }
     }
 
     @Override
@@ -315,7 +360,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public float getAtIndex(ValueLayout.OfFloat layout, long index) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        return NativeMemorySegmentImpl.EVERYTHING.get(layout, toRawLongValue() + (index * layout.byteSize()));
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            return (float)Utils.accessHandle(layout, true)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        } else {
+            return (float)Utils.accessHandle(layout, false)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        }
     }
 
     @Override
@@ -323,7 +375,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public void setAtIndex(ValueLayout.OfFloat layout, long index, float value) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        NativeMemorySegmentImpl.EVERYTHING.set(layout, toRawLongValue() + (index * layout.byteSize()), value);
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            Utils.accessHandle(layout, true)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        } else {
+            Utils.accessHandle(layout, false)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        }
     }
 
     @Override
@@ -331,7 +390,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public long getAtIndex(ValueLayout.OfLong layout, long index) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        return NativeMemorySegmentImpl.EVERYTHING.get(layout, toRawLongValue() + (index * layout.byteSize()));
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            return (long)Utils.accessHandle(layout, true)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        } else {
+            return (long)Utils.accessHandle(layout, false)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        }
     }
 
     @Override
@@ -339,7 +405,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public void setAtIndex(ValueLayout.OfLong layout, long index, long value) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        NativeMemorySegmentImpl.EVERYTHING.set(layout, toRawLongValue() + (index * layout.byteSize()), value);
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            Utils.accessHandle(layout, true)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        } else {
+            Utils.accessHandle(layout, false)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        }
     }
 
     @Override
@@ -347,7 +420,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public double getAtIndex(ValueLayout.OfDouble layout, long index) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        return NativeMemorySegmentImpl.EVERYTHING.get(layout, toRawLongValue() + (index * layout.byteSize()));
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            return (double)Utils.accessHandle(layout, true)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        } else {
+            return (double)Utils.accessHandle(layout, false)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        }
     }
 
     @Override
@@ -355,7 +435,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public void setAtIndex(ValueLayout.OfDouble layout, long index, double value) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        NativeMemorySegmentImpl.EVERYTHING.set(layout, toRawLongValue() + (index * layout.byteSize()), value);
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            Utils.accessHandle(layout, true)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        } else {
+            Utils.accessHandle(layout, false)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        }
     }
 
     @Override
@@ -363,7 +450,14 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public MemoryAddress getAtIndex(ValueLayout.OfAddress layout, long index) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        return NativeMemorySegmentImpl.EVERYTHING.get(layout, toRawLongValue() + (index * layout.byteSize()));
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            return (MemoryAddress)Utils.accessHandle(layout, true)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        } else {
+            return (MemoryAddress)Utils.accessHandle(layout, false)
+                    .get(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()));
+        }
     }
 
     @Override
@@ -371,6 +465,21 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     @CallerSensitive
     public void setAtIndex(ValueLayout.OfAddress layout, long index, Addressable value) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        NativeMemorySegmentImpl.EVERYTHING.set(layout, toRawLongValue() + (index * layout.byteSize()), value.address());
+        Objects.requireNonNull(value);
+        if (layout.byteAlignment() <= layout.byteSize()) {
+            checkAlignment(layout);
+            Utils.accessHandle(layout, true)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        } else {
+            Utils.accessHandle(layout, false)
+                    .set(NativeMemorySegmentImpl.EVERYTHING, toRawLongValue() + (index * layout.byteSize()), value);
+        }
+    }
+
+    @ForceInline
+    private void checkAlignment(MemoryLayout layout) {
+        if (toRawLongValue() % layout.byteAlignment() != 0) {
+            throw new IllegalStateException("Misaligned access at address: " + toRawLongValue());
+        }
     }
 }

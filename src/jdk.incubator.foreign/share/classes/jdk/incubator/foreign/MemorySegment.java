@@ -1038,7 +1038,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default byte get(ValueLayout.OfByte layout, long offset) {
-        return (byte)layout.accessHandle().get(this, offset);
+        return (byte) layout.accessHandle(false).get(this, offset);
     }
 
     /**
@@ -1054,7 +1054,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void set(ValueLayout.OfByte layout, long offset, byte value) {
-        layout.accessHandle().set(this, offset, value);
+        layout.accessHandle(false).set(this, offset, value);
     }
 
     /**
@@ -1071,7 +1071,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default boolean get(ValueLayout.OfBoolean layout, long offset) {
-        return (boolean)layout.accessHandle().get(this, offset);
+        return (boolean) layout.accessHandle(false).get(this, offset);
     }
 
     /**
@@ -1087,7 +1087,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void set(ValueLayout.OfBoolean layout, long offset, boolean value) {
-        layout.accessHandle().set(this, offset, value);
+        layout.accessHandle(false).set(this, offset, value);
     }
 
     /**
@@ -1104,7 +1104,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default char get(ValueLayout.OfChar layout, long offset) {
-        return (char)layout.accessHandle().get(this, offset);
+        return (char) layout.accessHandle(false).get(this, offset);
     }
 
     /**
@@ -1120,7 +1120,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void set(ValueLayout.OfChar layout, long offset, char value) {
-        layout.accessHandle().set(this, offset, value);
+        layout.accessHandle(false).set(this, offset, value);
     }
 
     /**
@@ -1137,7 +1137,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default short get(ValueLayout.OfShort layout, long offset) {
-        return (short)layout.accessHandle().get(this, offset);
+        return (short) layout.accessHandle(false).get(this, offset);
     }
 
     /**
@@ -1153,7 +1153,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void set(ValueLayout.OfShort layout, long offset, short value) {
-        layout.accessHandle().set(this, offset, value);
+        layout.accessHandle(false).set(this, offset, value);
     }
 
     /**
@@ -1170,7 +1170,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default int get(ValueLayout.OfInt layout, long offset) {
-        return (int)layout.accessHandle().get(this, offset);
+        return (int) layout.accessHandle(false).get(this, offset);
     }
 
     /**
@@ -1186,7 +1186,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void set(ValueLayout.OfInt layout, long offset, int value) {
-        layout.accessHandle().set(this, offset, value);
+        layout.accessHandle(false).set(this, offset, value);
     }
 
     /**
@@ -1203,7 +1203,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default float get(ValueLayout.OfFloat layout, long offset) {
-        return (float)layout.accessHandle().get(this, offset);
+        return (float) layout.accessHandle(false).get(this, offset);
     }
 
     /**
@@ -1219,7 +1219,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void set(ValueLayout.OfFloat layout, long offset, float value) {
-        layout.accessHandle().set(this, offset, value);
+        layout.accessHandle(false).set(this, offset, value);
     }
 
     /**
@@ -1236,7 +1236,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default long get(ValueLayout.OfLong layout, long offset) {
-        return (long)layout.accessHandle().get(this, offset);
+        return (long) layout.accessHandle(false).get(this, offset);
     }
 
     /**
@@ -1252,7 +1252,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void set(ValueLayout.OfLong layout, long offset, long value) {
-        layout.accessHandle().set(this, offset, value);
+        layout.accessHandle(false).set(this, offset, value);
     }
 
     /**
@@ -1269,7 +1269,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default double get(ValueLayout.OfDouble layout, long offset) {
-        return (double)layout.accessHandle().get(this, offset);
+        return (double) layout.accessHandle(false).get(this, offset);
     }
 
     /**
@@ -1285,7 +1285,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void set(ValueLayout.OfDouble layout, long offset, double value) {
-        layout.accessHandle().set(this, offset, value);
+        layout.accessHandle(false).set(this, offset, value);
     }
 
     /**
@@ -1302,7 +1302,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default MemoryAddress get(ValueLayout.OfAddress layout, long offset) {
-        return (MemoryAddress)layout.accessHandle().get(this, offset);
+        return (MemoryAddress) layout.accessHandle(false).get(this, offset);
     }
 
     /**
@@ -1318,7 +1318,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void set(ValueLayout.OfAddress layout, long offset, Addressable value) {
-        layout.accessHandle().set(this, offset, value.address());
+        layout.accessHandle(false).set(this, offset, value.address());
     }
 
     /**
@@ -1335,7 +1335,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default char getAtIndex(ValueLayout.OfChar layout, long index) {
-        return (char)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+        return (char)layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
     /**
@@ -1351,7 +1352,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfChar layout, long index, char value) {
-        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+        layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
     /**
@@ -1368,7 +1370,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default short getAtIndex(ValueLayout.OfShort layout, long index) {
-        return (short)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+        return (short)layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
     /**
@@ -1384,7 +1387,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfShort layout, long index, short value) {
-        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+        layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
     /**
@@ -1401,7 +1405,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default int getAtIndex(ValueLayout.OfInt layout, long index) {
-        return (int)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+        return (int)layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
     /**
@@ -1417,7 +1422,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfInt layout, long index, int value) {
-        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+        layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
     /**
@@ -1434,7 +1440,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default float getAtIndex(ValueLayout.OfFloat layout, long index) {
-        return (float)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+        return (float)layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
     /**
@@ -1450,7 +1457,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfFloat layout, long index, float value) {
-        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+        layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
     /**
@@ -1467,7 +1475,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default long getAtIndex(ValueLayout.OfLong layout, long index) {
-        return (long)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+        return (long)layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
     /**
@@ -1483,7 +1492,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfLong layout, long index, long value) {
-        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+        layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
     /**
@@ -1500,7 +1510,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default double getAtIndex(ValueLayout.OfDouble layout, long index) {
-        return (double)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+        return (double)layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
     /**
@@ -1516,7 +1527,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfDouble layout, long index, double value) {
-        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+        layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
     /**
@@ -1533,7 +1545,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default MemoryAddress getAtIndex(ValueLayout.OfAddress layout, long index) {
-        return (MemoryAddress)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+        return (MemoryAddress)layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
     /**
@@ -1549,7 +1562,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfAddress layout, long index, Addressable value) {
-        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value.address());
+        layout.accessHandle(layout.byteAlignment() <= layout.byteSize())
+                .set(this, Utils.scaleOffset(this, index, layout.byteSize()), value.address());
     }
 
 

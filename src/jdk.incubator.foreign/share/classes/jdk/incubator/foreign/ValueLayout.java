@@ -70,6 +70,10 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
 
     private static final int ADDRESS_SIZE_BITS = Unsafe.ADDRESS_SIZE * 8;
 
+    static {
+        Utils.LAYOUT_ACCESS = ValueLayout::accessHandle;
+    }
+
     ValueLayout(Class<?> carrier, ByteOrder order, long size) {
         this(carrier, order, size, size, Optional.empty());
     }
@@ -195,15 +199,19 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
     }
 
     @Stable
-    private VarHandle handle;
+    private final VarHandle[] handles = new VarHandle[2];
+
+    static final int ALIGNED_POS = 0;
+    static final int UNALIGNED_POS = 1;
 
     @ForceInline
-    VarHandle accessHandle() {
-        if (handle == null) {
+    VarHandle accessHandle(boolean aligned) {
+        int pos = aligned ? ALIGNED_POS : UNALIGNED_POS;
+        if (handles[pos] == null) {
             // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
-            handle = Utils.makeMemoryAccessVarHandle(this, false);
+            handles[pos] = Utils.makeMemoryAccessVarHandle(this, aligned);
         }
-        return handle;
+        return handles[pos];
     }
 
     /**
@@ -513,14 +521,15 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
     }
 
     /**
-     * A value layout constant whose size is the same as that of a machine address (e.g. {@code size_t}),
-     * bit-alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * A value layout constant whose size {@code S} is the same as that of a machine address (e.g. {@code size_t}),
+     * bit-alignment set to {@code S}, and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * <blockquote><pre>{@code
-    MemoryLayout.valueLayout(MemoryAddress.class, ByteOrder.nativeOrder()).withBitAlignment(8);
+    MemoryLayout.valueLayout(MemoryAddress.class, ByteOrder.nativeOrder());
      * }</pre></blockquote>
      */
-    public static final OfAddress ADDRESS = new OfAddress(ByteOrder.nativeOrder()).withBitAlignment(8);
+    public static final OfAddress ADDRESS = new OfAddress(ByteOrder.nativeOrder())
+            .withBitAlignment(ADDRESS_SIZE_BITS);
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code byte},
@@ -530,7 +539,8 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
     MemoryLayout.valueLayout(byte.class, ByteOrder.nativeOrder()).withBitAlignment(8);
      * }</pre></blockquote>
      */
-    public static final OfByte JAVA_BYTE = new OfByte(ByteOrder.nativeOrder()).withBitAlignment(8);
+    public static final OfByte JAVA_BYTE = new OfByte(ByteOrder.nativeOrder())
+            .withBitAlignment(8);
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code boolean},
@@ -540,66 +550,72 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
     MemoryLayout.valueLayout(boolean.class, ByteOrder.nativeOrder()).withBitAlignment(8);
      * }</pre></blockquote>
      */
-    public static final OfBoolean JAVA_BOOLEAN = new OfBoolean(ByteOrder.nativeOrder()).withBitAlignment(8);
-
-    /**
-     * A value layout constant whose size is the same as that of a Java {@code char},
-     * bit-alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
-     * Equivalent to the following code:
-     * <blockquote><pre>{@code
-    MemoryLayout.valueLayout(char.class, ByteOrder.nativeOrder()).withBitAlignment(8);
-     * }</pre></blockquote>
-     */
-    public static final OfChar JAVA_CHAR = new OfChar(ByteOrder.nativeOrder()).withBitAlignment(8);
-
-    /**
-     * A value layout constant whose size is the same as that of a Java {@code short},
-     * bit-alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
-     * Equivalent to the following code:
-     * <blockquote><pre>{@code
-    MemoryLayout.valueLayout(short.class, ByteOrder.nativeOrder()).withBitAlignment(8);
-     * }</pre></blockquote>
-     */
-    public static final OfShort JAVA_SHORT = new OfShort(ByteOrder.nativeOrder()).withBitAlignment(8);
-
-    /**
-     * A value layout constant whose size is the same as that of a Java {@code int},
-     * bit-alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
-     * Equivalent to the following code:
-     * <blockquote><pre>{@code
-    MemoryLayout.valueLayout(int.class, ByteOrder.nativeOrder()).withBitAlignment(8);
-     * }</pre></blockquote>
-     */
-    public static final OfInt JAVA_INT = new OfInt(ByteOrder.nativeOrder()).withBitAlignment(8);
-
-    /**
-     * A value layout constant whose size is the same as that of a Java {@code long},
-     * bit-alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
-     * Equivalent to the following code:
-     * <blockquote><pre>{@code
-    MemoryLayout.valueLayout(long.class, ByteOrder.nativeOrder()).withBitAlignment(8);
-     * }</pre></blockquote>
-     */
-    public static final OfLong JAVA_LONG = new OfLong(ByteOrder.nativeOrder())
+    public static final OfBoolean JAVA_BOOLEAN = new OfBoolean(ByteOrder.nativeOrder())
             .withBitAlignment(8);
 
     /**
-     * A value layout constant whose size is the same as that of a Java {@code float},
-     * bit-alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * A value layout constant whose size is the same as that of a Java {@code char},
+     * bit-alignment set to 16, and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * <blockquote><pre>{@code
-    MemoryLayout.valueLayout(float.class, ByteOrder.nativeOrder()).withBitAlignment(8);
+    MemoryLayout.valueLayout(char.class, ByteOrder.nativeOrder()).withBitAlignment(16);
      * }</pre></blockquote>
      */
-    public static final OfFloat JAVA_FLOAT = new OfFloat(ByteOrder.nativeOrder()).withBitAlignment(8);
+    public static final OfChar JAVA_CHAR = new OfChar(ByteOrder.nativeOrder())
+            .withBitAlignment(16);
+
+    /**
+     * A value layout constant whose size is the same as that of a Java {@code short},
+     * bit-alignment set to 16, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * Equivalent to the following code:
+     * <blockquote><pre>{@code
+    MemoryLayout.valueLayout(short.class, ByteOrder.nativeOrder()).withBitAlignment(16);
+     * }</pre></blockquote>
+     */
+    public static final OfShort JAVA_SHORT = new OfShort(ByteOrder.nativeOrder())
+            .withBitAlignment(16);
+
+    /**
+     * A value layout constant whose size is the same as that of a Java {@code int},
+     * bit-alignment set to 32, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * Equivalent to the following code:
+     * <blockquote><pre>{@code
+    MemoryLayout.valueLayout(int.class, ByteOrder.nativeOrder()).withBitAlignment(32);
+     * }</pre></blockquote>
+     */
+    public static final OfInt JAVA_INT = new OfInt(ByteOrder.nativeOrder())
+            .withBitAlignment(32);
+
+    /**
+     * A value layout constant whose size is the same as that of a Java {@code long},
+     * bit-alignment set to {@code ADDRESS.bitSize()}, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * Equivalent to the following code:
+     * <blockquote><pre>{@code
+    MemoryLayout.valueLayout(long.class, ByteOrder.nativeOrder()).withBitAlignment(ADDRESS.bitSize());
+     * }</pre></blockquote>
+     */
+    public static final OfLong JAVA_LONG = new OfLong(ByteOrder.nativeOrder())
+            .withBitAlignment(ADDRESS_SIZE_BITS);
+
+    /**
+     * A value layout constant whose size is the same as that of a Java {@code float},
+     * bit-alignment set to 32, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * Equivalent to the following code:
+     * <blockquote><pre>{@code
+    MemoryLayout.valueLayout(float.class, ByteOrder.nativeOrder()).withBitAlignment(32);
+     * }</pre></blockquote>
+     */
+    public static final OfFloat JAVA_FLOAT = new OfFloat(ByteOrder.nativeOrder())
+            .withBitAlignment(32);
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code double},
-     * bit-alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * bit-alignment set to {@code ADDRESS.bitSize()}, and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * <blockquote><pre>{@code
-    MemoryLayout.valueLayout(double.class, ByteOrder.nativeOrder()).withBitAlignment(8);
+    MemoryLayout.valueLayout(double.class, ByteOrder.nativeOrder()).withBitAlignment(ADDRESS.bitSize());
      * }</pre></blockquote>
      */
-    public static final OfDouble JAVA_DOUBLE = new OfDouble(ByteOrder.nativeOrder()).withBitAlignment(8);
+    public static final OfDouble JAVA_DOUBLE = new OfDouble(ByteOrder.nativeOrder())
+            .withBitAlignment(ADDRESS_SIZE_BITS);
 }
