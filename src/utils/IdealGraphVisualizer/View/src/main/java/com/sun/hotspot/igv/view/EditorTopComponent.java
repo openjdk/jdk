@@ -47,6 +47,7 @@ import java.awt.event.KeyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.*;
 import javax.swing.*;
@@ -668,19 +669,11 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         ctx.setEmbeddedFontsOn(true);
         SVGGraphics2D svgGenerator = new SVGGraphics2D(ctx, true);
         scene.paint(svgGenerator);
-        FileOutputStream os = null;
-        try {
-            os = new FileOutputStream(f);
-            Writer out = new OutputStreamWriter(os, "UTF-8");
+        try (FileOutputStream os = new FileOutputStream(f)) {
+            Writer out = new OutputStreamWriter(os, StandardCharsets.UTF_8);
             svgGenerator.stream(out, true);
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException e) {}
-            }
         }
     }
 }
