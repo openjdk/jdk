@@ -345,7 +345,6 @@ void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* ph
   JVMState* ex_jvms = ex_map->_jvms;
   assert(ex_jvms->same_calls_as(phi_map->_jvms), "consistent call chains");
   assert(ex_jvms->stkoff() == phi_map->_jvms->stkoff(), "matching locals");
-//  assert(ex_jvms->sp() == phi_map->_jvms->sp(), "matching stack sizes");
   assert(ex_jvms->monoff() == phi_map->_jvms->monoff(), "matching JVMS");
   assert(ex_jvms->scloff() == phi_map->_jvms->scloff(), "matching scalar replaced objects");
   assert(ex_map->req() == phi_map->req(), "matching maps");
@@ -408,7 +407,7 @@ void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* ph
   }
   uint limit = ex_map->req();
   for (uint i = TypeFunc::Parms; i < limit; i++) {
-    // Skip everything in the JVMS after tos.  (The ex_oop follows.)
+    // Skip everything in the JVMS after the stack (included).  (The ex_oop follows.)
     if (i == ex_jvms->stkoff())  i = ex_jvms->monoff();
     Node* src = ex_map->in(i);
     Node* dst = phi_map->in(i);
