@@ -138,7 +138,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     CardTable::CardValue* base = ci_card_table_address();
     assert(base != NULL, "unexpected byte_map_base");
     cardtable_start_address = base;
-    cardtable_shift = CardTable::card_shift;
+    cardtable_shift = CardTable::card_shift();
   } else {
     // No card mark barriers
     cardtable_start_address = 0;
