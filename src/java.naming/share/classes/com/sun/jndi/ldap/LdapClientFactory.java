@@ -68,7 +68,8 @@ final class LdapClientFactory implements PooledConnectionFactory {
     public PooledConnection createPooledConnection(PoolCallback pcb, long timeout)
         throws NamingException {
         return new LdapClient(host, port, socketFactory,
-                (int)timeout, readTimeout, trace, pcb);
+                timeout > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) timeout,
+                readTimeout, trace, pcb);
     }
 
     public String toString() {

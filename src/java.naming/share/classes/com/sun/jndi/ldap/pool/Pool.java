@@ -138,7 +138,7 @@ public final class Pool {
         remaining = checkRemaining(start, remaining);
 
         if (!conns.grabLock(remaining)) {
-            throw new NamingException("Timed out waiting for lock");
+            throw new CommunicationException("Timed out waiting for lock");
         }
 
         try {
