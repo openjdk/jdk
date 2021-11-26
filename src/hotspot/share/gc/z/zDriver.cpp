@@ -231,10 +231,11 @@ static uint select_active_young_worker_threads(const ZDriverRequest& request) {
 }
 
 static uint select_active_old_worker_threads(const ZDriverRequest& request) {
+  uint nworkers = ZConcOldGCThreads != 0 ? ZConcOldGCThreads : ConcGCThreads;
   if (UseDynamicNumberOfGCThreads) {
-    return select_active_worker_threads_dynamic(request.cause(), ConcGCThreads);
+    return select_active_worker_threads_dynamic(request.cause(), nworkers);
   } else {
-    return select_active_worker_threads_static(request.cause(), ConcGCThreads);
+    return select_active_worker_threads_static(request.cause(), nworkers);
   }
 }
 
