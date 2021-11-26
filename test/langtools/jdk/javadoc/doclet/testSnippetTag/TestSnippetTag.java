@@ -2094,10 +2094,10 @@ public class TestSnippetTag extends SnippetTester {
                         <pre>contents mismatch:
                         ----------------- inline -------------------
                         Hello, Snippet! ...more
-                                            
+
                         ----------------- external -----------------
                         Hello, Snippet!
-                                            
+
                         </pre>
                         </details>
                         """);
