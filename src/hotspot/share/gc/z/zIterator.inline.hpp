@@ -30,28 +30,34 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 
-inline bool ZIterator::is_invisible_root(oop obj) {
+inline bool ZIterator::is_invisible_object(oop obj) {
   return obj->mark_acquire().is_marked();
 }
 
-// This iterator skips invisible roots
+inline bool ZIterator::is_invisible_object_array(oop obj) {
+  return obj->klass()->is_objArray_klass() && is_invisible_object(obj);
+}
+
+// This iterator skips invisible object arrays
 template <typename OopClosureT>
 void ZIterator::oop_iterate_safe(oop obj, OopClosureT* cl) {
-  // Skip invisible roots
-  if (!is_invisible_root(obj)) {
+  // Skip invisible object arrays - we only filter out *object* arrays,
+  // because that check is arguably faster than the is_invisible_object
+  // check, and primitive arrays are cheap to call oop_iterate on.
+  if (!is_invisible_object_array(obj)) {
     obj->oop_iterate(cl);
   }
 }
 
 template <typename OopClosureT>
 void ZIterator::oop_iterate(oop obj, OopClosureT* cl) {
-  assert(!is_invisible_root(obj), "not safe");
+  assert(!is_invisible_object_array(obj), "not safe");
   obj->oop_iterate(cl);
 }
 
 template <typename OopClosureT>
 void ZIterator::oop_iterate_range(objArrayOop obj, OopClosureT* cl, int start, int end) {
-  assert(!is_invisible_root(obj), "not safe");
+  assert(!is_invisible_object_array(obj), "not safe");
   obj->oop_iterate_range(cl, start, end);
 }
 

@@ -29,7 +29,8 @@
 
 class ZIterator : AllStatic {
 private:
-  static bool is_invisible_root(oop obj);
+  static bool is_invisible_object(oop obj);
+  static bool is_invisible_object_array(oop obj);
 
 public:
   // This iterator skips invisible roots
