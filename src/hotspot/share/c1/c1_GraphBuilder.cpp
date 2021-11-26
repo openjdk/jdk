@@ -93,6 +93,7 @@ class BlockListBuilder {
   int number_of_successors(BlockBegin* block);
   BlockBegin* successor_at(BlockBegin* block, int i);
   void add_successor(BlockBegin* block, BlockBegin* sux);
+  bool is_successor(BlockBegin* block, BlockBegin* sux);
 
  public:
   // creation
@@ -210,7 +211,7 @@ void BlockListBuilder::handle_exceptions(BlockBegin* current, int cur_bci) {
       assert(entry->is_set(BlockBegin::exception_entry_flag), "flag must be set");
 
       // add each exception handler only once
-      if(!_bci2block_successors.at(current->bci()).contains(entry)) {
+      if(!is_successor(current, entry)) {
         add_successor(current, entry);
         entry->increment_total_preds();
       }
@@ -477,6 +478,11 @@ inline void BlockListBuilder::add_successor(BlockBegin* block, BlockBegin* sux)
 {
   assert(_bci2block_successors.length() > block->bci(), "sux must exist");
   _bci2block_successors.at(block->bci()).append(sux);
+}
+
+inline bool BlockListBuilder::is_successor(BlockBegin* block, BlockBegin* sux) {
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).contains(sux);
 }
 
 #ifndef PRODUCT
