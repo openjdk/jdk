@@ -54,7 +54,6 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
     PhaseIdealLoop::optimize(igvn, LoopOptsShenandoahExpand);
     if (C->failing()) return false;
     PhaseIdealLoop::verify(igvn);
-    //DEBUG_ONLY(verify_raw_mem(C->root());)
     if (attempt_more_loopopts) {
       C->set_major_progress();
       if (!C->optimize_loops(igvn, LoopOptsShenandoahPostExpand)) {
@@ -1875,105 +1874,6 @@ void ShenandoahBarrierC2Support::optimize_after_expansion(VectorSet &visited, No
     }
   }
 }
-
-#ifdef ASSERT
-void ShenandoahBarrierC2Support::verify_raw_mem(RootNode* root) {
-  const bool trace = false;
-  ResourceMark rm;
-  Unique_Node_List nodes;
-  Unique_Node_List controls;
-  Unique_Node_List memories;
-
-  nodes.push(root);
-  for (uint next = 0; next < nodes.size(); next++) {
-    Node *n  = nodes.at(next);
-    if (ShenandoahBarrierSetC2::is_shenandoah_lrb_call(n)) {
-      controls.push(n);
-      if (trace) { tty->print("XXXXXX verifying"); n->dump(); }
-      for (uint next2 = 0; next2 < controls.size(); next2++) {
-        Node *m = controls.at(next2);
-        for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
-          Node* u = m->fast_out(i);
-          if (u->is_CFG() && !u->is_Root() &&
-              !(u->Opcode() == Op_CProj && u->in(0)->Opcode() == Op_NeverBranch && u->as_Proj()->_con == 1) &&
-              !(u->is_Region() && u->unique_ctrl_out()->Opcode() == Op_Halt)) {
-            if (trace) { tty->print("XXXXXX pushing control"); u->dump(); }
-            controls.push(u);
-          }
-        }
-      }
-      memories.push(n->as_Call()->proj_out(TypeFunc::Memory));
-      for (uint next2 = 0; next2 < memories.size(); next2++) {
-        Node *m = memories.at(next2);
-        assert(m->bottom_type() == Type::MEMORY, "");
-        for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
-          Node* u = m->fast_out(i);
-          if (u->bottom_type() == Type::MEMORY && (u->is_Mem() || u->is_ClearArray())) {
-            if (trace) { tty->print("XXXXXX pushing memory"); u->dump(); }
-            memories.push(u);
-          } else if (u->is_LoadStore()) {
-            if (trace) { tty->print("XXXXXX pushing memory"); u->find_out_with(Op_SCMemProj)->dump(); }
-            memories.push(u->find_out_with(Op_SCMemProj));
-          } else if (u->is_MergeMem() && u->as_MergeMem()->memory_at(Compile::AliasIdxRaw) == m) {
-            if (trace) { tty->print("XXXXXX pushing memory"); u->dump(); }
-            memories.push(u);
-          } else if (u->is_Phi()) {
-            assert(u->bottom_type() == Type::MEMORY, "");
-            if (u->adr_type() == TypeRawPtr::BOTTOM || u->adr_type() == TypePtr::BOTTOM) {
-              assert(controls.member(u->in(0)), "");
-              if (trace) { tty->print("XXXXXX pushing memory"); u->dump(); }
-              memories.push(u);
-            }
-          } else if (u->is_SafePoint() || u->is_MemBar()) {
-            for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
-              Node* uu = u->fast_out(j);
-              if (uu->bottom_type() == Type::MEMORY) {
-                if (trace) { tty->print("XXXXXX pushing memory"); uu->dump(); }
-                memories.push(uu);
-              }
-            }
-          }
-        }
-      }
-      for (uint next2 = 0; next2 < controls.size(); next2++) {
-        Node *m = controls.at(next2);
-        if (m->is_Region()) {
-          bool all_in = true;
-          for (uint i = 1; i < m->req(); i++) {
-            if (!controls.member(m->in(i))) {
-              all_in = false;
-              break;
-            }
-          }
-          if (trace) { tty->print("XXX verifying %s", all_in ? "all in" : ""); m->dump(); }
-          bool found_phi = false;
-          for (DUIterator_Fast jmax, j = m->fast_outs(jmax); j < jmax && !found_phi; j++) {
-            Node* u = m->fast_out(j);
-            if (u->is_Phi() && memories.member(u)) {
-              found_phi = true;
-              for (uint i = 1; i < u->req() && found_phi; i++) {
-                Node* k = u->in(i);
-                if (memories.member(k) != controls.member(m->in(i))) {
-                  found_phi = false;
-                }
-              }
-            }
-          }
-          assert(found_phi || all_in, "");
-        }
-      }
-      controls.clear();
-      memories.clear();
-    }
-    for( uint i = 0; i < n->len(); ++i ) {
-      Node *m = n->in(i);
-      if (m != NULL) {
-        nodes.push(m);
-      }
-    }
-  }
-}
-#endif
 
 ShenandoahIUBarrierNode::ShenandoahIUBarrierNode(Node* val) : Node(NULL, val) {
   ShenandoahBarrierSetC2::bsc2()->state()->add_iu_barrier(this);

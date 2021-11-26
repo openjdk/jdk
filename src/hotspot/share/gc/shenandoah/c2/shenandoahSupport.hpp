@@ -50,7 +50,6 @@ private:
 
   static bool verify_helper(Node* in, Node_Stack& phis, VectorSet& visited, verify_type t, bool trace, Unique_Node_List& barriers_used);
   static void report_verify_failure(const char* msg, Node* n1 = NULL, Node* n2 = NULL);
-  static void verify_raw_mem(RootNode* root);
 #endif
   static Node* dom_mem(Node* mem, Node* ctrl, int alias, Node*& mem_ctrl, PhaseIdealLoop* phase);
   static Node* no_branches(Node* c, Node* dom, bool allow_one_proj, PhaseIdealLoop* phase);
