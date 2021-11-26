@@ -94,7 +94,7 @@ public:
   static uint max_cards_in_inline_ptr(uint bits_per_card);
 
   // Array of Cards configuration
-  // Number of cards in "Array of Cards" set; 0 to disable.
+  // Maximum number of cards in "Array of Cards" set; 0 to disable.
   // Always coarsen to next level if full, so no specific threshold.
   uint max_cards_in_array() const { return _max_cards_in_array; }
 
