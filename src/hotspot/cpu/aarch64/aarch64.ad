@@ -4007,19 +4007,15 @@ encode %{
     __ bind(object_has_monitor);
     STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
-    __ ldr(rscratch1, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
 
     Label notRecursive;
-    __ cmp(rscratch1, rthread);
-    __ br(Assembler::NE, cont);
-
     __ cbz(disp_hdr, notRecursive);
 
     // Recursive lock
     __ sub(disp_hdr, disp_hdr, 1u);
     __ str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
-    // flag == EQ was set in the ownership check above
+    __ cmp(disp_hdr, disp_hdr); // Sets flags for result
     __ b(cont);
 
     __ bind(notRecursive);
