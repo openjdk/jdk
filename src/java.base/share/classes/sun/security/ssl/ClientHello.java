@@ -568,15 +568,15 @@ final class ClientHello {
                             "No new session is allowed and " +
                             "no existing session can be resumed");
                 }
-
-                if (chc.maximumActiveProtocol.useTLS13PlusSpec() &&
-                        SSLConfiguration.useCompatibilityMode) {
-                    // In compatibility mode, the TLS 1.3 legacy_session_id
-                    // field MUST be non-empty, so a client not offering a
-                    // pre-TLS 1.3 session MUST generate a new 32-byte value.
-                    sessionId =
+            }
+            if (sessionId.length() == 0 &&
+                    chc.maximumActiveProtocol.useTLS13PlusSpec() &&
+                    SSLConfiguration.useCompatibilityMode) {
+                // In compatibility mode, the TLS 1.3 legacy_session_id
+                // field MUST be non-empty, so a client not offering a
+                // pre-TLS 1.3 session MUST generate a new 32-byte value.
+                sessionId =
                         new SessionId(true, chc.sslContext.getSecureRandom());
-                }
             }
 
             ProtocolVersion minimumVersion = ProtocolVersion.NONE;

@@ -338,6 +338,9 @@ public class ResumeTLS13withSNI {
 
         // Get the legacy session length and skip that many bytes
         int sessIdLen = Byte.toUnsignedInt(resCliHello.get());
+        if (sessIdLen == 0) {
+            throw new Exception("SessionID field empty");
+        }
         resCliHello.position(resCliHello.position() + sessIdLen);
 
         // Skip over all the cipher suites
