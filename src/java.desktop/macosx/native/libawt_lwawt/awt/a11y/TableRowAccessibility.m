@@ -84,13 +84,15 @@ static jclass sjc_CAccessibility = NULL;
                 (*env)->DeleteLocalRef(env, jkey);
             }
 
-            CellAccessibility *child = [[CellAccessibility alloc] initWithParent:self
-                                                                         withEnv:env
-                                                                  withAccessible:jchild
-                                                                       withIndex:childIndex
-                                                                        withView:self->fView
-                                                                    withJavaRole:childJavaRole];
-            [children addObject:[[child retain] autorelease]];
+            CellAccessibility *child = (CellAccessibility *)
+                [CommonComponentAccessibility createWithParent:self
+                                                     withClass:[CellAccessibility class]
+                                                    accessible:jchild
+                                                          role:childJavaRole
+                                                         index:childIndex
+                                                       withEnv:env
+                                                      withView:self->fView];
+            [children addObject:child];
 
             (*env)->DeleteLocalRef(env, jchild);
             (*env)->DeleteLocalRef(env, jchildJavaRole);
