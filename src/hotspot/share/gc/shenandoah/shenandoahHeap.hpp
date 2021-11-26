@@ -484,7 +484,7 @@ public:
   // Used for native heap walkers: heap dumpers, mostly
   void object_iterate(ObjectClosure* cl);
   // Parallel heap iteration support
-  virtual ParallelObjectIterator* parallel_object_iterator(uint workers);
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint workers);
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj);

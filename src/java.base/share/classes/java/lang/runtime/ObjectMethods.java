@@ -29,9 +29,11 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.StringConcatFactory;
 import java.lang.invoke.TypeDescriptor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +53,8 @@ import static java.util.Objects.requireNonNull;
 public class ObjectMethods {
 
     private ObjectMethods() { }
+
+    private static final int MAX_STRING_CONCAT_SLOTS = 20;
 
     private static final MethodType DESCRIPTOR_MT = MethodType.methodType(MethodType.class);
     private static final MethodType NAMES_MT = MethodType.methodType(List.class);
@@ -251,44 +255,110 @@ public class ObjectMethods {
      * @param names           the names
      * @return the method handle
      */
-    private static MethodHandle makeToString(Class<?> receiverClass,
-                                            List<MethodHandle> getters,
+    private static MethodHandle makeToString(MethodHandles.Lookup lookup,
+                                            Class<?> receiverClass,
+                                            MethodHandle[] getters,
                                             List<String> names) {
-        // This is a pretty lousy algorithm; we spread the receiver over N places,
-        // apply the N getters, apply N toString operations, and concat the result with String.format
-        // Better to use String.format directly, or delegate to StringConcatFactory
-        // Also probably want some quoting around String components
-
-        assert getters.size() == names.size();
-
-        int[] invArgs = new int[getters.size()];
-        Arrays.fill(invArgs, 0);
-        MethodHandle[] filters = new MethodHandle[getters.size()];
-        StringBuilder sb = new StringBuilder();
-        sb.append(receiverClass.getSimpleName()).append("[");
-        for (int i=0; i<getters.size(); i++) {
-            MethodHandle getter = getters.get(i); // (R)T
-            MethodHandle stringify = stringifier(getter.type().returnType()); // (T)String
-            MethodHandle stringifyThisField = MethodHandles.filterArguments(stringify, 0, getter);    // (R)String
-            filters[i] = stringifyThisField;
-            sb.append(names.get(i)).append("=%s");
-            if (i != getters.size() - 1)
-                sb.append(", ");
-        }
-        sb.append(']');
-        String formatString = sb.toString();
-        MethodHandle formatter = MethodHandles.insertArguments(STRING_FORMAT, 0, formatString)
-                                              .asCollector(String[].class, getters.size()); // (R*)String
-        if (getters.size() == 0) {
-            // Add back extra R
-            formatter = MethodHandles.dropArguments(formatter, 0, receiverClass);
-        }
-        else {
-            MethodHandle filtered = MethodHandles.filterArguments(formatter, 0, filters);
-            formatter = MethodHandles.permuteArguments(filtered, MethodType.methodType(String.class, receiverClass), invArgs);
+        assert getters.length == names.size();
+        if (getters.length == 0) {
+            // special case
+            MethodHandle emptyRecordCase = MethodHandles.constant(String.class, receiverClass.getSimpleName() + "[]");
+            emptyRecordCase = MethodHandles.dropArguments(emptyRecordCase, 0, receiverClass); // (R)S
+            return emptyRecordCase;
         }
 
-        return formatter;
+        boolean firstTime = true;
+        MethodHandle[] mhs;
+        List<List<MethodHandle>> splits;
+        MethodHandle[] toSplit = getters;
+        int namesIndex = 0;
+        do {
+            /* StringConcatFactory::makeConcatWithConstants can only deal with 200 slots, longs and double occupy two
+             * the rest 1 slot, we need to chop the current `getters` into chunks, it could be that for records with
+             * a lot of components that we need to do a couple of iterations. The main difference between the first
+             * iteration and the rest would be on the recipe
+             */
+            splits = split(toSplit);
+            mhs = new MethodHandle[splits.size()];
+            for (int splitIndex = 0; splitIndex < splits.size(); splitIndex++) {
+                String recipe = "";
+                if (firstTime && splitIndex == 0) {
+                    recipe = receiverClass.getSimpleName() + "[";
+                }
+                for (int i = 0; i < splits.get(splitIndex).size(); i++) {
+                    recipe += firstTime ? names.get(namesIndex) + "=" + "\1" : "\1";
+                    if (firstTime && namesIndex != names.size() - 1) {
+                        recipe += ", ";
+                    }
+                    namesIndex++;
+                }
+                if (firstTime && splitIndex == splits.size() - 1) {
+                    recipe += "]";
+                }
+                Class<?>[] concatTypeArgs = new Class<?>[splits.get(splitIndex).size()];
+                // special case: no need to create another getters if there is only one split
+                MethodHandle[] currentSplitGetters = new MethodHandle[splits.get(splitIndex).size()];
+                for (int j = 0; j < splits.get(splitIndex).size(); j++) {
+                    concatTypeArgs[j] = splits.get(splitIndex).get(j).type().returnType();
+                    currentSplitGetters[j] = splits.get(splitIndex).get(j);
+                }
+                MethodType concatMT = MethodType.methodType(String.class, concatTypeArgs);
+                try {
+                    mhs[splitIndex] = StringConcatFactory.makeConcatWithConstants(
+                            lookup, "",
+                            concatMT,
+                            recipe,
+                            new Object[0]
+                    ).getTarget();
+                    mhs[splitIndex] = MethodHandles.filterArguments(mhs[splitIndex], 0, currentSplitGetters);
+                    // this will spread the receiver class across all the getters
+                    mhs[splitIndex] = MethodHandles.permuteArguments(
+                            mhs[splitIndex],
+                            MethodType.methodType(String.class, receiverClass),
+                            new int[splits.get(splitIndex).size()]
+                    );
+                } catch (Throwable t) {
+                    throw new RuntimeException(t);
+                }
+            }
+            toSplit = mhs;
+            firstTime = false;
+        } while (splits.size() > 1);
+        return mhs[0];
+    }
+
+    /**
+     * Chops the getters into smaller chunks according to the maximum number of slots
+     * StringConcatFactory::makeConcatWithConstants can chew
+     * @param getters the current getters
+     * @return chunks that wont surpass the maximum number of slots StringConcatFactory::makeConcatWithConstants can chew
+     */
+    private static List<List<MethodHandle>> split(MethodHandle[] getters) {
+        List<List<MethodHandle>> splits = new ArrayList<>();
+
+        int slots = 0;
+
+        // Need to peel, so that neither call has more than acceptable number
+        // of slots for the arguments.
+        List<MethodHandle> cArgs = new ArrayList<>();
+        for (MethodHandle methodHandle : getters) {
+            Class<?> returnType = methodHandle.type().returnType();
+            int needSlots = (returnType == long.class || returnType == double.class) ? 2 : 1;
+            if (slots + needSlots > MAX_STRING_CONCAT_SLOTS) {
+                splits.add(cArgs);
+                cArgs = new ArrayList<>();
+                slots = 0;
+            }
+            cArgs.add(methodHandle);
+            slots += needSlots;
+        }
+
+        // Flush the tail slice
+        if (!cArgs.isEmpty()) {
+            splits.add(cArgs);
+        }
+
+        return splits;
     }
 
     /**
@@ -367,7 +437,7 @@ public class ObjectMethods {
                 List<String> nameList = "".equals(names) ? List.of() : List.of(names.split(";"));
                 if (nameList.size() != getterList.size())
                     throw new IllegalArgumentException("Name list and accessor list do not match");
-                yield makeToString(recordClass, getterList, nameList);
+                yield makeToString(lookup, recordClass, getters, nameList);
             }
             default -> throw new IllegalArgumentException(methodName);
         };
