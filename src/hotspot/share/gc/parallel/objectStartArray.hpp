@@ -52,11 +52,17 @@ class ObjectStartArray : public CHeapObj<mtGC> {
     clean_block                  = -1
   };
 
-  enum BlockSizeConstants {
-    block_shift                  = 9,
-    block_size                   = 1 << block_shift,
-    block_size_in_words          = block_size / sizeof(HeapWord)
-  };
+  static uint block_shift;
+  static uint block_size;
+  static uint block_size_in_words;
+
+  // Maximum size an offset table entry can cover. This maximum is derived from that
+  // we need an extra bit for possible offsets in the byte for backskip values, leaving 2^7 possible offsets.
+  // Minimum object alignment is 8 bytes (2^3), so we can at most represent 2^10 offsets within a BOT value.
+  static const uint MaxBlockSize = 1024;
+
+  // Initialize block size based on card size
+  static void initialize_block_size(uint card_shift);
 
  protected:
 

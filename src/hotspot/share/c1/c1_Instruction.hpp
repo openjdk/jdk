@@ -1998,14 +1998,6 @@ LEAF(If, BlockEnd)
     _cond = mirror(_cond);
   }
 
-  void swap_sux() {
-    assert(number_of_sux() == 2, "wrong number of successors");
-    BlockList* s = sux();
-    BlockBegin* t = s->at(0); s->at_put(0, s->at(1)); s->at_put(1, t);
-    _cond = negate(_cond);
-    set_flag(UnorderedIsTrueFlag, !check_flag(UnorderedIsTrueFlag));
-  }
-
   void set_should_profile(bool value)             { set_flag(ProfileMDOFlag, value); }
   void set_profiled_method(ciMethod* method)      { _profiled_method = method; }
   void set_profiled_bci(int bci)                  { _profiled_bci = bci;       }

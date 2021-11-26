@@ -6579,7 +6579,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * A <code>Printable</code> implementation that wraps another
      * <code>Printable</code>, making it safe for printing on another thread.
      */
-    private class ThreadSafePrintable implements Printable {
+    private static class ThreadSafePrintable implements Printable {
 
         /** The delegate <code>Printable</code>. */
         private Printable printDelegate;

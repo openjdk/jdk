@@ -692,9 +692,13 @@
   product(uintx, GCDrainStackTargetSize, 64,                                \
           "Number of entries we will try to leave on the stack "            \
           "during parallel gc")                                             \
-          range(0, max_juint)
-
-// end of GC_FLAGS
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, GCCardSizeInBytes, 512,                                     \
+          "Card table entry size (in bytes) for card based collectors")     \
+          range(128, 1024)                                                  \
+          constraint(GCCardSizeInBytesConstraintFunc,AtParse)
+  // end of GC_FLAGS
 
 DECLARE_FLAGS(GC_FLAGS)
 

@@ -777,8 +777,6 @@ public:
   // Start a concurrent cycle.
   void start_concurrent_cycle(bool concurrent_operation_is_full_mark);
 
-  void wait_for_root_region_scanning();
-
   void prepare_tlabs_for_mutator();
 
   void retire_tlabs();
@@ -936,9 +934,6 @@ public:
 
   void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) override;
 
-  // Try to minimize the remembered set.
-  void scrub_rem_set();
-
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
   void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id);
 
@@ -1082,7 +1077,7 @@ public:
   // Iterate over all objects, calling "cl.do_object" on each.
   void object_iterate(ObjectClosure* cl) override;
 
-  ParallelObjectIterator* parallel_object_iterator(uint thread_num) override;
+  ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) override;
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj) override;

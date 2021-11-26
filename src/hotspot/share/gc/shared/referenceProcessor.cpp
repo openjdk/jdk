@@ -87,7 +87,6 @@ void ReferenceProcessor::enable_discovery(bool check_no_refs) {
 
 ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                                        uint      mt_processing_degree,
-                                       bool      mt_discovery,
                                        uint      mt_discovery_degree,
                                        bool      concurrent_discovery,
                                        BoolObjectClosure* is_alive_non_header)  :
@@ -99,7 +98,7 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
   assert(is_subject_to_discovery != NULL, "must be set");
 
   _discovery_is_concurrent = concurrent_discovery;
-  _discovery_is_mt         = mt_discovery;
+  _discovery_is_mt         = (mt_discovery_degree > 1);
   _num_queues              = MAX2(1U, mt_processing_degree);
   _max_num_queues          = MAX2(_num_queues, mt_discovery_degree);
   _discovered_refs         = NEW_C_HEAP_ARRAY(DiscoveredList,
@@ -198,6 +197,8 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
                                 total_count(_discoveredPhantomRefs));
 
   update_soft_ref_master_clock();
+
+  phase_times.set_processing_is_mt(processing_is_mt());
 
   {
     RefProcTotalPhaseTimesTracker tt(SoftWeakFinalRefsPhase, &phase_times);
@@ -731,8 +732,6 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
   phase_times.set_ref_discovered(REF_WEAK, num_weak_refs);
   phase_times.set_ref_discovered(REF_FINAL, num_final_refs);
 
-  phase_times.set_processing_is_mt(processing_is_mt());
-
   if (num_total_refs == 0) {
     log_debug(gc, ref)("Skipped SoftWeakFinalRefsPhase of Reference Processing: no references");
     return;
@@ -765,7 +764,6 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
                                                   ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_final_refs = total_count(_discoveredFinalRefs);
-  phase_times.set_processing_is_mt(processing_is_mt());
 
   if (num_final_refs == 0) {
     log_debug(gc, ref)("Skipped KeepAliveFinalRefsPhase of Reference Processing: no references");
@@ -792,7 +790,6 @@ void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
 
   size_t const num_phantom_refs = total_count(_discoveredPhantomRefs);
   phase_times.set_ref_discovered(REF_PHANTOM, num_phantom_refs);
-  phase_times.set_processing_is_mt(processing_is_mt());
 
   if (num_phantom_refs == 0) {
     log_debug(gc, ref)("Skipped PhantomRefsPhase of Reference Processing: no references");
@@ -1053,15 +1050,6 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   assert(oopDesc::is_oop(obj), "Discovered a bad reference");
   verify_referent(obj);
   return true;
-}
-
-bool ReferenceProcessor::has_discovered_references() {
-  for (uint i = 0; i < _max_num_queues * number_of_subclasses_of_ref(); i++) {
-    if (!_discovered_refs[i].is_empty()) {
-      return true;
-    }
-  }
-  return false;
 }
 
 void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_alive,

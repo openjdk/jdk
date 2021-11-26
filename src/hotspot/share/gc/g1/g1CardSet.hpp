@@ -58,7 +58,7 @@ class G1CardSetConfiguration {
   uint _cards_in_howl_bitmap_threshold;
   uint _log2_num_cards_in_howl_bitmap;
   size_t _bitmap_hash_mask;
-  uint _log2_card_region_per_heap_region;
+  uint _log2_card_regions_per_heap_region;
   uint _log2_cards_per_card_region;
 
   G1CardSetAllocOptions* _card_set_alloc_options;
@@ -69,7 +69,7 @@ class G1CardSetConfiguration {
                          uint num_buckets_in_howl,
                          double cards_in_howl_threshold_percent,
                          uint max_cards_in_card_set,
-                         uint log2_card_region_per_heap_region);
+                         uint log2_card_regions_per_heap_region);
   void init_card_set_alloc_options();
 
   void log_configuration();
@@ -127,8 +127,8 @@ public:
   // The next two members give information about how many card regions are there
   // per area (heap region) and how many cards each card region has.
 
-  // The log2 of the amount of card regions per heap region configured.
-  uint log2_card_region_per_heap_region() const { return _log2_card_region_per_heap_region; }
+  // The log2 of the number of card regions per heap region configured.
+  uint log2_card_regions_per_heap_region() const { return _log2_card_regions_per_heap_region; }
   // The log2 of the number of cards per card region. This is calculated from max_cards_in_region()
   // and above.
   uint log2_cards_per_card_region() const { return _log2_cards_per_card_region; }
@@ -291,7 +291,7 @@ private:
   //
   // on the given class.
   template <class CardVisitor>
-  void iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& found);
+  void iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& vl);
 
   uint card_set_type_to_mem_object_type(uintptr_t type) const;
   uint8_t* allocate_mem_object(uintptr_t type);
@@ -353,21 +353,21 @@ public:
   // start_iterate().
   //
   template <class CardOrRangeVisitor>
-  void iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& found);
+  void iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& cl);
 
-  class G1CardSetPtrIterator {
+  class CardSetPtrClosure {
   public:
     virtual void do_cardsetptr(uint region_idx, size_t num_occupied, CardSetPtr card_set) = 0;
   };
 
-  void iterate_containers(G1CardSetPtrIterator* iter, bool safepoint = false);
+  void iterate_containers(CardSetPtrClosure* cl, bool safepoint = false);
 
-  class G1CardSetCardIterator {
+  class CardClosure {
   public:
     virtual void do_card(uint region_idx, uint card_idx) = 0;
   };
 
-  void iterate_cards(G1CardSetCardIterator& iter);
+  void iterate_cards(CardClosure& cl);
 };
 
 class G1CardSetHashTableValue {

@@ -51,7 +51,6 @@ import javax.management.remote.TargetedNotification;
 
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.util.concurrent.RejectedExecutionException;
 
 
@@ -340,9 +339,7 @@ public abstract class ClientNotifForwarder {
             try {
                 wait();
             } catch (InterruptedException ire) {
-                IOException ioe = new IOException(ire.toString());
-                EnvHelp.initCause(ioe, ire);
-                throw ioe;
+                throw new IOException(ire.toString(), ire);
             }
         }
 
@@ -381,9 +378,7 @@ public abstract class ClientNotifForwarder {
                   try {
                       wait();
                   } catch (InterruptedException ire) {
-                      IOException ioe = new IOException(ire.toString());
-                      EnvHelp.initCause(ioe, ire);
-                      throw ioe;
+                      throw new IOException(ire.toString(), ire);
                   }
               }
 
@@ -821,10 +816,7 @@ public abstract class ClientNotifForwarder {
                 try {
                     wait();
                 } catch (InterruptedException ire) {
-                    IOException ioe = new IOException(ire.toString());
-                    EnvHelp.initCause(ioe, ire);
-
-                    throw ioe;
+                    throw new IOException(ire.toString(), ire);
                 }
             }
 
@@ -901,10 +893,7 @@ public abstract class ClientNotifForwarder {
             try {
                 wait();
             } catch (InterruptedException ire) {
-                IOException ioe = new IOException(ire.toString());
-                EnvHelp.initCause(ioe, ire);
-
-                throw ioe;
+                throw new IOException(ire.toString(), ire);
             }
         }
 
