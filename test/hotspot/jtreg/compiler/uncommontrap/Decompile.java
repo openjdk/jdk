@@ -52,6 +52,10 @@ public class Decompile {
     private static final int PerBytecodeTrapLimit = WB.getIntxVMFlag("PerBytecodeTrapLimit").intValue();
     // The number of interpreter invocations after which a decompiled method will be re-compiled.
     private static final int Tier0InvokeNotifyFreq = (int)Math.pow(2, WB.getIntxVMFlag("Tier0InvokeNotifyFreqLog"));
+    // VM builds without JVMCI like x86_32 call the bimorphic inlining trap just 'bimorphic'
+    // while all the other builds with JVMCI call it 'bimorphic_or_optimized_type_check'.
+    private static final boolean isJVMCISupported = WhiteBox.getWhiteBox().isJVMCISupportedByGC();
+    private static final String bimorphicTrapName = isJVMCISupported ? "bimorphic_or_optimized_type_check" : "bimorphic";
 
     static class Base {
         void foo() {}
@@ -74,12 +78,12 @@ public class Decompile {
                            "decompileCount=" + WB.getMethodDecompileCount(uncommonTrap_m) + "\n" +
                            "trapCount=" + WB.getMethodTrapCount(uncommonTrap_m) + " " +
                            "trapCount(class_check)=" + WB.getMethodTrapCount(uncommonTrap_m, "class_check") + " " +
-                           "trapCount(bimorphic_or_optimized_type_check)=" +
-                           WB.getMethodTrapCount(uncommonTrap_m, "bimorphic_or_optimized_type_check") + "\n" +
+                           "trapCount(" + bimorphicTrapName + ")=" +
+                           WB.getMethodTrapCount(uncommonTrap_m, bimorphicTrapName) + "\n" +
                            "globalDeoptCount=" + WB.getDeoptCount() + " " +
                            "globalDeoptCount(class_check)=" + WB.getDeoptCount("class_check", null) + " " +
-                           "globalDeoptCount(bimorphic_or_optimized_type_check)=" +
-                           WB.getDeoptCount("bimorphic_or_optimized_type_check", null));
+                           "globalDeoptCount(" + bimorphicTrapName + ")=" +
+                           WB.getDeoptCount(bimorphicTrapName, null));
         System.out.println("-----------------------------------------------------------------");
     }
 
@@ -97,14 +101,14 @@ public class Decompile {
                          "Wrong number of traps.");
         Asserts.assertEQ(trapCountClassCheck, WB.getMethodTrapCount(uncommonTrap_m, "class_check"),
                          "Wrong number of traps.");
-        Asserts.assertEQ(trapCountBimorphic, WB.getMethodTrapCount(uncommonTrap_m, "bimorphic_or_optimized_type_check"),
+        Asserts.assertEQ(trapCountBimorphic, WB.getMethodTrapCount(uncommonTrap_m, bimorphicTrapName),
                          "Wrong number of traps.");
         Asserts.assertEQ(deoptCount, WB.getDeoptCount(),
                          "Wrong number of deoptimizations.");
         Asserts.assertEQ(deoptCountClassCheck, WB.getDeoptCount("class_check", null),
                          "Wrong number of class_check deoptimizations.");
-        Asserts.assertEQ(deoptCountBimorphic, WB.getDeoptCount("bimorphic_or_optimized_type_check", null),
-                         "Wrong number of bimorphic_or_optimized_type_checkdeoptimizations.");
+        Asserts.assertEQ(deoptCountBimorphic, WB.getDeoptCount(bimorphicTrapName, null),
+                         "Wrong number of " + bimorphicTrapName + "deoptimizations.");
     }
     public static void main(String[] args) throws Exception {
 
