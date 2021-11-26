@@ -837,16 +837,6 @@ bool LibraryCallKit::inline_vector_broadcast_coerced() {
     return false; // not supported
   }
 
-  // Op_MaskAll is required in VectorNode::scalar2vector for mask operations.
-  // So bail out if Op_MaskAll is unavailable.
-  if (is_vector_mask(vbox_klass) && !Matcher::match_rule_supported_vector(Op_MaskAll, num_elem, elem_bt)) {
-    if (C->print_intrinsics()) {
-      tty->print_cr("  ** not supported: arity=0 op=broadcast vlen=%d etype=%s ismask=1 due to Op_MaskAll is unavailable",
-                    num_elem, type2name(elem_bt));
-    }
-    return false; // not supported
-  }
-
   Node* bits = argument(3); // long
   Node* elem = NULL;
   switch (elem_bt) {
