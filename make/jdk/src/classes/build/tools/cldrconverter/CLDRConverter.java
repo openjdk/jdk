@@ -114,6 +114,7 @@ public class CLDRConverter {
         ResourceBundle.Control.getControl(ResourceBundle.Control.FORMAT_DEFAULT);
 
     private static Set<String> AVAILABLE_TZIDS;
+    static int copyrightYear;
     private static String zoneNameTempFile;
     private static String tzDataDir;
     private static final Map<String, String> canonicalTZMap = new HashMap<>();
@@ -217,6 +218,10 @@ public class CLDRConverter {
                         verbose = true;
                         break;
 
+                    case "-year":
+                        copyrightYear = Integer.parseInt(args[++i]);
+                        break;
+
                     case "-zntempfile":
                         zoneNameTempFile = args[++i];
                         break;
@@ -235,7 +240,7 @@ public class CLDRConverter {
                     }
                 }
             } catch (RuntimeException e) {
-                severe("unknown or imcomplete arg(s): " + currentArg);
+                severe("unknown or incomplete arg(s): " + currentArg);
                 usage();
                 System.exit(1);
             }
@@ -258,6 +263,10 @@ public class CLDRConverter {
 
         if (BASE_LOCALES.isEmpty()) {
             setupBaseLocales("en-US");
+        }
+
+        if (copyrightYear == 0) {
+            copyrightYear = ZonedDateTime.now(ZoneId.of("America/Los_Angeles")).getYear();
         }
 
         bundleGenerator = new ResourceBundleGenerator();
@@ -292,6 +301,7 @@ public class CLDRConverter {
                 + "\t-basemodule    generates bundles that go into java.base module%n"
                 + "\t-baselocales loc(,loc)*      locales that go into the base module%n"
                 + "\t-o dir         output directory (default: ./build/gensrc)%n"
+                + "\t-year year     copyright year in output%n"
                 + "\t-zntempfile    template file for java.time.format.ZoneName.java%n"
                 + "\t-tzdatadir     tzdata directory for java.time.format.ZoneName.java%n"
                 + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n");

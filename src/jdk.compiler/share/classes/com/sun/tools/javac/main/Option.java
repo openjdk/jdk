@@ -510,6 +510,11 @@ public enum Option {
         public void process(OptionHelper helper, String option) {
             throw new AssertionError("the -J flag should be caught by the launcher.");
         }
+
+        @Override
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            throw helper.newInvalidValueException(Errors.InvalidFlag(option + arg));
+        }
     },
 
     MOREINFO("-moreinfo", null, HIDDEN, BASIC) {

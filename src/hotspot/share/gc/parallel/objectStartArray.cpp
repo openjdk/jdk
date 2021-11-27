@@ -31,11 +31,21 @@
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 
+uint ObjectStartArray::block_shift = 0;
+uint ObjectStartArray::block_size = 0;
+uint ObjectStartArray::block_size_in_words = 0;
+
+void ObjectStartArray::initialize_block_size(uint card_shift) {
+  block_shift = card_shift;
+  block_size = 1 << block_shift;
+  block_size_in_words = block_size / sizeof(HeapWord);
+}
+
 void ObjectStartArray::initialize(MemRegion reserved_region) {
   // We're based on the assumption that we use the same
   // size blocks as the card table.
   assert((int)block_size == (int)CardTable::card_size, "Sanity");
-  assert((int)block_size <= 512, "block_size must be less than or equal to 512");
+  assert(block_size <= MaxBlockSize, "block_size must be less than or equal to " UINT32_FORMAT, MaxBlockSize);
 
   // Calculate how much space must be reserved
   _reserved_region = reserved_region;

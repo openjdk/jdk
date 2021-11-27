@@ -25,14 +25,15 @@
 import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.*;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static org.testng.Assert.*;
@@ -54,8 +55,8 @@ public class TestMemoryHandleAsUnsigned {
     public void testUnsignedIntToByte(int intValue) {
         byte byteValue = (byte) (intValue & 0xFF);
 
-        MemoryLayout layout = MemoryLayouts.BITS_8_BE;
-        VarHandle byteHandle = layout.varHandle(byte.class);
+        MemoryLayout layout = ValueLayout.JAVA_BYTE;
+        VarHandle byteHandle = layout.varHandle();
         VarHandle intHandle = MemoryHandles.asUnsigned(byteHandle, int.class);
 
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
@@ -77,8 +78,8 @@ public class TestMemoryHandleAsUnsigned {
     public void testUnsignedLongToByte(long longValue) {
         byte byteValue = (byte) (longValue & 0xFFL);
 
-        MemoryLayout layout = MemoryLayouts.BITS_8_BE;
-        VarHandle byteHandle = layout.varHandle(byte.class);
+        MemoryLayout layout = ValueLayout.JAVA_BYTE;
+        VarHandle byteHandle = layout.varHandle();
         VarHandle longHandle = MemoryHandles.asUnsigned(byteHandle, long.class);
 
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
@@ -100,8 +101,8 @@ public class TestMemoryHandleAsUnsigned {
     public void testUnsignedIntToShort(int intValue) {
         short shortValue = (short) (intValue & 0xFFFF);
 
-        MemoryLayout layout = MemoryLayouts.BITS_16_BE;
-        VarHandle shortHandle = layout.varHandle(short.class);
+        MemoryLayout layout = ValueLayout.JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN);
+        VarHandle shortHandle = layout.varHandle();
         VarHandle intHandle = MemoryHandles.asUnsigned(shortHandle, int.class);
 
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
@@ -123,8 +124,8 @@ public class TestMemoryHandleAsUnsigned {
     public void testUnsignedLongToShort(long longValue) {
         short shortValue = (short) (longValue & 0xFFFFL);
 
-        MemoryLayout layout = MemoryLayouts.BITS_16_BE;
-        VarHandle shortHandle = layout.varHandle(short.class);
+        MemoryLayout layout = ValueLayout.JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN);
+        VarHandle shortHandle = layout.varHandle();
         VarHandle longHandle = MemoryHandles.asUnsigned(shortHandle, long.class);
 
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
@@ -150,8 +151,8 @@ public class TestMemoryHandleAsUnsigned {
     public void testUnsignedLongToInt(long longValue) {
         int intValue = (int) (longValue & 0xFFFF_FFFFL);
 
-        MemoryLayout layout = MemoryLayouts.BITS_32_BE;
-        VarHandle intHandle = layout.varHandle(int.class);
+        MemoryLayout layout = ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN);
+        VarHandle intHandle = layout.varHandle();
         VarHandle longHandle = MemoryHandles.asUnsigned(intHandle, long.class);
 
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
@@ -165,8 +166,8 @@ public class TestMemoryHandleAsUnsigned {
 
     @Test
     public void testCoordinatesSequenceLayout() {
-        MemoryLayout layout = MemoryLayout.sequenceLayout(2, MemoryLayouts.BITS_8_BE);
-        VarHandle byteHandle = layout.varHandle(byte.class, PathElement.sequenceElement());
+        MemoryLayout layout = MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_BYTE);
+        VarHandle byteHandle = layout.varHandle(PathElement.sequenceElement());
         VarHandle intHandle = MemoryHandles.asUnsigned(byteHandle, int.class);
 
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
@@ -184,14 +185,14 @@ public class TestMemoryHandleAsUnsigned {
         MemorySegment segment = MemorySegment.ofArray(arr);
 
         {
-            VarHandle byteHandle = MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_BYTE)
-                    .varHandle(byte.class, PathElement.sequenceElement());
+            VarHandle byteHandle = MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE)
+                    .varHandle(PathElement.sequenceElement());
             VarHandle intHandle = MemoryHandles.asUnsigned(byteHandle, int.class);
             assertEquals((int) intHandle.get(segment, 2L), 129);
         }
         {
-            VarHandle byteHandle = MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_BYTE)
-                    .varHandle(byte.class, PathElement.sequenceElement());
+            VarHandle byteHandle = MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE)
+                    .varHandle(PathElement.sequenceElement());
             VarHandle intHandle = MemoryHandles.asUnsigned(byteHandle, int.class);
             assertEquals((int) intHandle.get(segment, 2L), 129);
         }
@@ -201,7 +202,7 @@ public class TestMemoryHandleAsUnsigned {
 
     @Test
     public void testNull() {
-        VarHandle handle = MemoryHandles.varHandle(byte.class, BIG_ENDIAN);
+        VarHandle handle = MemoryHandles.varHandle(ValueLayout.JAVA_BYTE.withOrder(BIG_ENDIAN));
         assertThrows(NPE, () -> MemoryHandles.asUnsigned(handle, null));
         assertThrows(NPE, () -> MemoryHandles.asUnsigned(null, short.class));
         assertThrows(NPE, () -> MemoryHandles.asUnsigned(null, null));
@@ -209,22 +210,22 @@ public class TestMemoryHandleAsUnsigned {
 
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
 
-    static void assertIllegalArgumentExceptionIllegalCarrier(Class<?> carrier, Class<?> adaptedType) {
-        var vh = MemoryHandles.varHandle(carrier, BIG_ENDIAN);
+    static void assertIllegalArgumentExceptionIllegalCarrier(ValueLayout layout, Class<?> adaptedType) {
+        var vh = MemoryHandles.varHandle(layout.withOrder(BIG_ENDIAN));
         var exception = expectThrows(IAE, () -> MemoryHandles.asUnsigned(vh, adaptedType));
         var msg = exception.getMessage();
         assertTrue(msg.contains("illegal carrier"), "Expected \"illegal carrier\" in:[" + msg +"]");
     }
 
-    static void assertIllegalArgumentExceptionIllegalAdapter(Class<?> carrier, Class<?> adaptedType) {
-        var vh = MemoryHandles.varHandle(carrier, BIG_ENDIAN);
+    static void assertIllegalArgumentExceptionIllegalAdapter(ValueLayout layout, Class<?> adaptedType) {
+        var vh = MemoryHandles.varHandle(layout.withOrder(BIG_ENDIAN));
         var exception = expectThrows(IAE, () -> MemoryHandles.asUnsigned(vh, adaptedType));
         var msg = exception.getMessage();
         assertTrue(msg.contains("illegal adapter type"), "Expected \"illegal adapter type\" in:[" + msg +"]");
     }
 
-    static void assertIllegalArgumentExceptionIsNotWiderThan(Class<?> carrier, Class<?> adaptedType) {
-        var vh = MemoryHandles.varHandle(carrier, BIG_ENDIAN);
+    static void assertIllegalArgumentExceptionIsNotWiderThan(ValueLayout layout, Class<?> adaptedType) {
+        var vh = MemoryHandles.varHandle(layout.withOrder(BIG_ENDIAN));
         var exception = expectThrows(IAE, () -> MemoryHandles.asUnsigned(vh, adaptedType));
         var msg = exception.getMessage();
         assertTrue(msg.contains("is not wider than"), "Expected \"is not wider than\" in:[" + msg +"]");
@@ -232,25 +233,25 @@ public class TestMemoryHandleAsUnsigned {
 
     @Test
     public void testIllegalArgumentException() {
-        assertIllegalArgumentExceptionIllegalCarrier(char.class,   long.class);
-        assertIllegalArgumentExceptionIllegalCarrier(double.class, long.class);
-        assertIllegalArgumentExceptionIllegalCarrier(float.class,  long.class);
-        assertIllegalArgumentExceptionIllegalCarrier(long.class,   long.class);
+        assertIllegalArgumentExceptionIllegalCarrier(ValueLayout.JAVA_CHAR,   long.class);
+        assertIllegalArgumentExceptionIllegalCarrier(ValueLayout.JAVA_DOUBLE, long.class);
+        assertIllegalArgumentExceptionIllegalCarrier(ValueLayout.JAVA_FLOAT,  long.class);
+        assertIllegalArgumentExceptionIllegalCarrier(ValueLayout.JAVA_LONG,   long.class);
 
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, void.class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, byte.class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, short.class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, char.class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, double.class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, float.class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, Object.class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, Integer.class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, Long.class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, long[].class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, int[].class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, Integer[].class);
-        assertIllegalArgumentExceptionIllegalAdapter(byte.class, Long[].class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, void.class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, byte.class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, short.class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, char.class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, double.class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, float.class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, Object.class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, Integer.class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, Long.class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, long[].class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, int[].class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, Integer[].class);
+        assertIllegalArgumentExceptionIllegalAdapter(ValueLayout.JAVA_BYTE, Long[].class);
 
-        assertIllegalArgumentExceptionIsNotWiderThan(int.class, int.class);
+        assertIllegalArgumentExceptionIsNotWiderThan(ValueLayout.JAVA_INT, int.class);
     }
 }
