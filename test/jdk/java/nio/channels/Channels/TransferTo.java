@@ -32,15 +32,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -73,8 +69,6 @@ public class TransferTo {
     private static final long BYTES_WRITTEN = (long) NUM_WRITES * BYTES_PER_WRITE;
 
     private static final Random RND = RandomFactory.getRandom();
-
-    private static Collection<Path> tempFiles;
 
     /*
      * Provides test scenarios, i. e. combinations of input and output streams to be tested.
@@ -144,27 +138,35 @@ public class TransferTo {
      */
     @Test
     public void testMoreThanTwoGB() throws IOException {
-        // preparing two temporary files which will be compared at the end of the test
-        Path sourceFile = newTempFile();
-        Path targetFile = newTempFile();
+        Path sourceFile = Files.createTempFile("test2GBSource", null);
+        try {
+            // preparing two temporary files which will be compared at the end of the test
+            Path targetFile = Files.createTempFile("test2GBtarget", null);
+            try {
+                // writing 3 GB of random bytes into source file
+                for (int i = 0; i < NUM_WRITES; i++)
+                    Files.write(sourceFile, createRandomBytes(BYTES_PER_WRITE, 0), StandardOpenOption.APPEND);
 
-        // writing 3 GB of random bytes into source file
-        for (int i = 0; i < NUM_WRITES; i++)
-            Files.write(sourceFile, createRandomBytes(BYTES_PER_WRITE, 0), StandardOpenOption.APPEND);
+                // performing actual transfer, effectively by multiple invocations of Filechannel.transferTo(FileChannel)
+                long count;
+                try (InputStream inputStream = Channels.newInputStream(FileChannel.open(sourceFile));
+                     OutputStream outputStream = Channels
+                             .newOutputStream(FileChannel.open(targetFile, StandardOpenOption.WRITE))) {
+                    count = inputStream.transferTo(outputStream);
+                }
 
-        // performing actual transfer, effectively by multiple invocations of Filechannel.transferTo(FileChannel)
-        long count;
-        try (InputStream inputStream = Channels.newInputStream(FileChannel.open(sourceFile));
-             OutputStream outputStream = Channels
-                     .newOutputStream(FileChannel.open(targetFile, StandardOpenOption.WRITE))) {
-            count = inputStream.transferTo(outputStream);
+                // comparing reported transferred bytes, must be 3 GB
+                assertEquals(count, BYTES_WRITTEN);
+
+                // comparing content of both files, failing in case of any difference
+                assertEquals(Files.mismatch(sourceFile, targetFile), -1);
+
+            } finally {
+                 Files.delete(targetFile);
+            }
+        } finally {
+            Files.delete(sourceFile);
         }
-
-        // comparing reported transferred bytes, must be 3 GB
-        assertEquals(count, BYTES_WRITTEN);
-
-        // comparing content of both files, failing in case of any difference
-        assertEquals(Files.mismatch(sourceFile, targetFile), -1);
     }
 
     /*
@@ -240,7 +242,7 @@ public class TransferTo {
         return new InputStreamProvider() {
             @Override
             public InputStream input(byte... bytes) throws Exception {
-                Path path = newTempFile();
+                Path path = Files.createTempFile(null, null);
                 Files.write(path, bytes);
                 FileChannel fileChannel = FileChannel.open(path);
                 return Channels.newInputStream(fileChannel);
@@ -266,7 +268,7 @@ public class TransferTo {
     private static OutputStreamProvider fileChannelOutput() {
         return new OutputStreamProvider() {
             public OutputStream output(Consumer<Supplier<byte[]>> spy) throws Exception {
-                Path path = newTempFile();
+                Path path = Files.createTempFile(null, null);
                 FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.WRITE);
                 spy.accept(() -> {
                     try {
@@ -280,29 +282,4 @@ public class TransferTo {
         };
     }
 
-    @BeforeClass
-    public static void createTempFileRegistry() {
-        tempFiles = new LinkedList();
-    }
-
-    @AfterClass
-    public static void deleteTempFiles() {
-        tempFiles.forEach(path -> {
-            try {
-                Files.delete(path);
-            } catch (IOException e) {
-                // ignored
-            }
-        });
-        tempFiles = null;
-    }
-
-    /*
-     * Creates a temporary file and registers it for later cleanup after tests.
-     */
-    private static Path newTempFile() throws IOException {
-        Path path = Files.createTempFile("transferTo", null);
-        tempFiles.add(path);
-        return path;
-    }
 }
