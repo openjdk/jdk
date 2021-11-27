@@ -45,6 +45,9 @@ static size_t calculate_heap_alignment(size_t space_alignment) {
 }
 
 void G1Arguments::initialize_alignments() {
+  // Initialize card size before initializing alignments
+  CardTable::initialize_card_size();
+
   // Set up the region size and associated fields.
   //
   // There is a circular dependency here. We base the region size on the heap

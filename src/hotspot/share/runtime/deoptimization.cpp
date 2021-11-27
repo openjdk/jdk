@@ -2608,6 +2608,30 @@ jint Deoptimization::total_deoptimization_count() {
   return _deoptimization_hist[Reason_none][0][0];
 }
 
+// Get the deopt count for a specific reason and a specific action. If either
+// one of 'reason' or 'action' is null, the method returns the sum of all
+// deoptimizations with the specific 'action' or 'reason' respectively.
+// If both arguments are null, the method returns the total deopt count.
+jint Deoptimization::deoptimization_count(const char *reason_str, const char *action_str) {
+  if (reason_str == NULL && action_str == NULL) {
+    return total_deoptimization_count();
+  }
+  juint counter = 0;
+  for (int reason = 0; reason < Reason_LIMIT; reason++) {
+    if (reason_str == NULL || !strcmp(reason_str, trap_reason_name(reason))) {
+      for (int action = 0; action < Action_LIMIT; action++) {
+        if (action_str == NULL || !strcmp(action_str, trap_action_name(action))) {
+          juint* cases = _deoptimization_hist[reason][1+action];
+          for (int bc_case = 0; bc_case < BC_CASE_LIMIT; bc_case++) {
+            counter += cases[bc_case] >> LSB_BITS;
+          }
+        }
+      }
+    }
+  }
+  return counter;
+}
+
 void Deoptimization::print_statistics() {
   juint total = total_deoptimization_count();
   juint account = total;
@@ -2659,6 +2683,14 @@ bool Deoptimization::trap_state_is_recompiled(int trap_state) {
 
 const char* Deoptimization::trap_reason_name(int reason) {
   return "unknown";
+}
+
+jint Deoptimization::total_deoptimization_count() {
+  return 0;
+}
+
+jint Deoptimization::deoptimization_count(const char *reason_str, const char *action_str) {
+  return 0;
 }
 
 void Deoptimization::print_statistics() {
