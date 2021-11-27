@@ -120,7 +120,7 @@ public class LdapPoolTimeoutTest {
                                        () -> new InitialDirContext(env));
         NamingException e = expectThrows(NamingException.class, completion);
         String msg = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
-        assertTrue(msg != null && 
+        assertTrue(msg != null &&
                 (msg.contains("Timed out")
                     || msg.contains("timed out")
                     || msg.contains("Timeout")));
