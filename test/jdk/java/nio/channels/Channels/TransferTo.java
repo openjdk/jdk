@@ -78,6 +78,8 @@ public class TransferTo {
 
     private static final Random RND = RandomFactory.getRandom();
 
+    private static final Path CWD = Path.of(".");
+
     /*
      * Provides test scenarios, i. e. combinations of input and output streams to be tested.
      */
@@ -191,7 +193,7 @@ public class TransferTo {
         Pipe pipe = Pipe.open();
         try {
             // testing arbitrary input (here: empty file) to non-blocking selectable output
-            try (FileChannel fc = FileChannel.open(Files.createTempFile(null, null));
+            try (FileChannel fc = FileChannel.open(Files.createTempFile(CWD, "testIllegalBlockingMode", null));
                     InputStream is = Channels.newInputStream(fc);
                     SelectableChannel sc = pipe.sink().configureBlocking(false);
                     OutputStream os = Channels.newOutputStream((WritableByteChannel) sc)) {
