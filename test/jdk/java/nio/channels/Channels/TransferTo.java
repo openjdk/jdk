@@ -70,6 +70,8 @@ public class TransferTo {
 
     private static final Random RND = RandomFactory.getRandom();
 
+    private static final Path CWD = Path.of(".");
+
     /*
      * Provides test scenarios, i. e. combinations of input and output streams to be tested.
      */
@@ -138,10 +140,10 @@ public class TransferTo {
      */
     @Test
     public void testMoreThanTwoGB() throws IOException {
-        Path sourceFile = Files.createTempFile("test2GBSource", null);
+        Path sourceFile = Files.createTempFile(CWD, "test2GBSource", null);
         try {
             // preparing two temporary files which will be compared at the end of the test
-            Path targetFile = Files.createTempFile("test2GBtarget", null);
+            Path targetFile = Files.createTempFile(CWD, "test2GBtarget", null);
             try {
                 // writing 3 GB of random bytes into source file
                 for (int i = 0; i < NUM_WRITES; i++)
@@ -242,7 +244,7 @@ public class TransferTo {
         return new InputStreamProvider() {
             @Override
             public InputStream input(byte... bytes) throws Exception {
-                Path path = Files.createTempFile(null, null);
+                Path path = Files.createTempFile(CWD, "fileChannelInput", null);
                 Files.write(path, bytes);
                 FileChannel fileChannel = FileChannel.open(path);
                 return Channels.newInputStream(fileChannel);
@@ -268,7 +270,7 @@ public class TransferTo {
     private static OutputStreamProvider fileChannelOutput() {
         return new OutputStreamProvider() {
             public OutputStream output(Consumer<Supplier<byte[]>> spy) throws Exception {
-                Path path = Files.createTempFile(null, null);
+                Path path = Files.createTempFile(CWD, "fileChannelOutput", null);
                 FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.WRITE);
                 spy.accept(() -> {
                     try {
