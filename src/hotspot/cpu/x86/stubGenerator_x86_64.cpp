@@ -6570,7 +6570,7 @@ address generate_avx_ghash_processBlocks() {
       const Register j = r9;
       const Register k = r10;
       const Register l = r11;
-      const Register table = r12;
+      const Register table = r14;
 #ifdef _WIN64
       const Register y = rdi;
       const Register z = rsi;
@@ -6586,11 +6586,14 @@ address generate_avx_ghash_processBlocks() {
       __ push(y);
       __ push(z);
 #endif
+      __ push(table);
       if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
           VM_Version::supports_avx512bw() &&
           VM_Version::supports_avx512vl()) {
         __ lea(table, ExternalAddress(StubRoutines::x86::crc32c_table_avx512_addr()));
+        __ notl(crc);
         __ kernel_crc32_avx512(crc, buf, len, table, l, k);
+        __ notl(crc);
       } else {
         __ crc32c_ipl_alg2_alt2(crc, buf, len,
                                 a, j, k,
@@ -6598,6 +6601,7 @@ address generate_avx_ghash_processBlocks() {
                                 c_farg0, c_farg1, c_farg2,
                                 is_pclmulqdq_supported);
       }
+      __ pop(table);
       __ movl(rax, crc);
 #ifdef _WIN64
       __ pop(z);
