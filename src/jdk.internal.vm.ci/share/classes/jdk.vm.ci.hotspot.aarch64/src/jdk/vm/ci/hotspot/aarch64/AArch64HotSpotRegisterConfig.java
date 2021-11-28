@@ -116,6 +116,8 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     private final RegisterArray nativeGeneralParameterRegisters = new RegisterArray(r0, r1, r2, r3, r4, r5, r6, r7);
     private final RegisterArray simdParameterRegisters = new RegisterArray(v0, v1, v2, v3, v4, v5, v6, v7);
 
+    private final boolean macOS;
+
     public static final Register inlineCacheRegister = rscratch2;
 
     /**
@@ -162,13 +164,14 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
         return new RegisterArray(registers);
     }
 
-    public AArch64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean canUsePlatformRegister) {
-        this(target, initAllocatable(target.arch, useCompressedOops, canUsePlatformRegister));
+    public AArch64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean canUsePlatformRegister, boolean macOs) {
+        this(target, initAllocatable(target.arch, useCompressedOops, canUsePlatformRegister), macOs);
         assert callerSaved.size() >= allocatable.size();
     }
 
-    public AArch64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable) {
+    public AArch64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable, boolean macOs) {
         this.target = target;
+        this.macOS = macOs;
 
         this.allocatable = allocatable;
         Set<Register> callerSaveSet = new HashSet<>();
@@ -265,11 +268,25 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
 
             if (locations[i] == null) {
                 ValueKind<?> valueKind = valueKindFactory.getValueKind(kind);
+                int kindSize = valueKind.getPlatformKind().getSizeInBytes();
+                if (macOS && currentStackOffset % kindSize != 0) {
+                    // In MacOS natural alignment is used
+                    // See https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms
+                    currentStackOffset += kindSize - currentStackOffset % kindSize;
+                }
                 locations[i] = StackSlot.get(valueKind, currentStackOffset, !type.out);
-                currentStackOffset += Math.max(valueKind.getPlatformKind().getSizeInBytes(), target.wordSize);
+                if (macOS) {
+                    // In MacOS "Function arguments may consume slots on the stack that are not multiples of 8 bytes"
+                    // See https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms
+                    currentStackOffset += kindSize;
+                } else {
+                    currentStackOffset += Math.max(kindSize, target.wordSize);
+                }
             }
         }
-
+        if (currentStackOffset % target.stackAlignment != 0) {
+            currentStackOffset += target.stackAlignment - currentStackOffset % target.stackAlignment;
+        }
         JavaKind returnKind = returnType == null ? JavaKind.Void : returnType.getJavaKind();
         AllocatableValue returnLocation = returnKind == JavaKind.Void ? Value.ILLEGAL : getReturnRegister(returnKind).asValue(valueKindFactory.getValueKind(returnKind.getStackKind()));
         return new CallingConvention(currentStackOffset, returnLocation, locations);
