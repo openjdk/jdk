@@ -371,7 +371,7 @@ public abstract class StringConcat {
                         syms.stringType,
                         syms.methodTypeType);
 
-                Symbol bsm = rs.resolveInternalMethod(pos,
+                MethodSymbol bsm = rs.resolveInternalMethod(pos,
                         gen.getAttrEnv(),
                         syms.stringConcatFactory,
                         names.makeConcat,
@@ -380,7 +380,7 @@ public abstract class StringConcat {
 
                 Symbol.DynamicMethodSymbol dynSym = new Symbol.DynamicMethodSymbol(names.makeConcat,
                         syms.noSymbol,
-                        ((MethodSymbol)bsm).asHandle(),
+                        bsm.asHandle(),
                         indyType,
                         List.nil().toArray(new LoadableConstant[0]));
 
@@ -487,7 +487,7 @@ public abstract class StringConcat {
                         .append(syms.stringType)
                         .appendList(constTypes);
 
-                Symbol bsm = rs.resolveInternalMethod(pos,
+                MethodSymbol bsm = rs.resolveInternalMethod(pos,
                         gen.getAttrEnv(),
                         syms.stringConcatFactory,
                         names.makeConcatWithConstants,
@@ -496,7 +496,7 @@ public abstract class StringConcat {
 
                 Symbol.DynamicMethodSymbol dynSym = new Symbol.DynamicMethodSymbol(names.makeConcatWithConstants,
                         syms.noSymbol,
-                        ((MethodSymbol)bsm).asHandle(),
+                        bsm.asHandle(),
                         indyType,
                         List.of(LoadableConstant.String(recipe))
                                 .appendList(constants).toArray(new LoadableConstant[constants.size()]));

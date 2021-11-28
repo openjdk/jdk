@@ -41,8 +41,6 @@ class ReferenceProcessorPhaseTimes : public CHeapObj<mtGC> {
 
   // Records per thread time information of each sub phase.
   WorkerDataArray<double>* _sub_phases_worker_time_sec[ReferenceProcessor::RefSubPhaseMax];
-  // Total time of each sub phase.
-  double                   _sub_phases_total_time_ms[ReferenceProcessor::RefSubPhaseMax];
 
   // Records total elapsed time for each phase.
   double                   _phases_time_ms[ReferenceProcessor::RefPhaseMax];
@@ -62,7 +60,6 @@ class ReferenceProcessorPhaseTimes : public CHeapObj<mtGC> {
   GCTimer*                 _gc_timer;
 
   double phase_time_ms(ReferenceProcessor::RefProcPhases phase) const;
-  double sub_phase_total_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase) const;
 
   double total_time_ms() const { return _total_time_ms; }
 
@@ -83,8 +80,6 @@ public:
   WorkerDataArray<double>* soft_weak_final_refs_phase_worker_time_sec() const { return _soft_weak_final_refs_phase_worker_time_sec; }
   WorkerDataArray<double>* sub_phase_worker_time_sec(ReferenceProcessor::RefProcSubPhases phase) const;
   void set_phase_time_ms(ReferenceProcessor::RefProcPhases phase, double par_phase_time_ms);
-
-  void set_sub_phase_total_phase_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase, double ref_proc_time_ms);
 
   void set_total_time_ms(double total_time_ms) { _total_time_ms = total_time_ms; }
 

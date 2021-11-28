@@ -30,6 +30,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
@@ -62,6 +63,38 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  *  deletion without notice.</b>
  */
 public class SnippetTaglet extends BaseTaglet {
+
+    public enum Language {
+
+        JAVA("java"),
+        PROPERTIES("properties");
+
+        private static final Map<String, Language> languages;
+
+        static {
+            Map<String, Language> tmp = new HashMap<>();
+            for (var language : values()) {
+                String id = Objects.requireNonNull(language.identifier);
+                if (tmp.put(id, language) != null)
+                    throw new IllegalStateException(); // 1-1 correspondence
+            }
+            languages = Map.copyOf(tmp);
+        }
+
+        Language(String id) {
+            identifier = id;
+        }
+
+        private final String identifier;
+
+        public static Optional<Language> of(String identifier) {
+            if (identifier == null)
+                return Optional.empty();
+            return Optional.ofNullable(languages.get(identifier));
+        }
+
+        public String getIdentifier() {return identifier;}
+    }
 
     public SnippetTaglet() {
         super(DocTree.Kind.SNIPPET, true, EnumSet.allOf(Taglet.Location.class));
@@ -217,6 +250,19 @@ public class SnippetTaglet extends BaseTaglet {
             }
         }
 
+        String lang = null;
+        AttributeTree langAttr = attributes.get("lang");
+        if (langAttr != null) {
+            lang = stringValueOf(langAttr);
+        } else if (containsClass) {
+            lang = "java";
+        } else if (containsFile) {
+            lang = languageFromFileName(fileObject.getName());
+        }
+
+        Optional<Language> language = Language.of(lang);
+
+
         // TODO cache parsed external snippet (WeakHashMap)
 
         StyledText inlineSnippet = null;
@@ -224,7 +270,7 @@ public class SnippetTaglet extends BaseTaglet {
 
         try {
             if (inlineContent != null) {
-                inlineSnippet = parse(writer.configuration().getDocResources(), inlineContent);
+                inlineSnippet = parse(writer.configuration().getDocResources(), language, inlineContent);
             }
         } catch (ParseException e) {
             var path = writer.configuration().utils.getCommentHelper(holder)
@@ -239,7 +285,7 @@ public class SnippetTaglet extends BaseTaglet {
 
         try {
             if (externalContent != null) {
-                externalSnippet = parse(writer.configuration().getDocResources(), externalContent);
+                externalSnippet = parse(writer.configuration().getDocResources(), language, externalContent);
             }
         } catch (ParseException e) {
             assert fileObject != null;
@@ -289,15 +335,6 @@ public class SnippetTaglet extends BaseTaglet {
         assert inlineSnippet != null || externalSnippet != null;
         StyledText text = inlineSnippet != null ? inlineSnippet : externalSnippet;
 
-        String lang = null;
-        AttributeTree langAttr = attributes.get("lang");
-        if (langAttr != null) {
-            lang = stringValueOf(langAttr);
-        } else if (containsClass) {
-            lang = "java";
-        } else if (containsFile) {
-            lang = languageFromFileName(fileObject.getName());
-        }
         AttributeTree idAttr = attributes.get("id");
         String id = idAttr == null
                 ? null
@@ -326,8 +363,8 @@ public class SnippetTaglet extends BaseTaglet {
                """.formatted(inline, external);
     }
 
-    private StyledText parse(Resources resources, String content) throws ParseException {
-        Parser.Result result = new Parser(resources).parse(content);
+    private StyledText parse(Resources resources, Optional<Language> language, String content) throws ParseException {
+        Parser.Result result = new Parser(resources).parse(language, content);
         result.actions().forEach(Action::perform);
         return result.text();
     }
