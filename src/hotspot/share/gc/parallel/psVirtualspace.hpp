@@ -73,7 +73,7 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
     _special(false) {
   }
   PSVirtualSpace();
-  bool initialize(ReservedSpace rs, size_t commit_size);
+  void initialize(ReservedSpace rs);
 
   bool contains(void* p)      const;
 
