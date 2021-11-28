@@ -6570,7 +6570,11 @@ address generate_avx_ghash_processBlocks() {
       const Register j = r9;
       const Register k = r10;
       const Register l = r11;
+<<<<<<< HEAD
       const Register table = r14;
+=======
+      const Register table = r12;
+>>>>>>> 1d13cbde87facf5f76c0b96bb27a057fb8e03839
 #ifdef _WIN64
       const Register y = rdi;
       const Register z = rsi;
