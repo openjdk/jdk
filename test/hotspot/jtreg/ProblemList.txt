@@ -89,8 +89,6 @@ gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 
-applications/jcstress/acqrel.java 8277434 linux-aarch64
-
 #############################################################################
 
 # :hotspot_runtime
