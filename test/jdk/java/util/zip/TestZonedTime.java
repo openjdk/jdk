@@ -29,17 +29,22 @@
 
 import java.io.*;
 import java.nio.file.*;
+import java.nio.file.attribute.FileTime;
 import java.time.*;
 import java.util.*;
 import java.util.zip.*;
 
 public class TestZonedTime {
     private static TimeZone tz0 = TimeZone.getDefault();
+    private static TimeZone tzAsia = TimeZone.getTimeZone("Asia/Shanghai"); 
+    private static boolean testLastModified;
 
     public static void main(String[] args) throws Throwable{
         try {
             ZonedDateTime zdt = ZonedDateTime.now();
 
+            // Test set/getTimeZoned()
+            testLastModified = false;
             test(zdt);    // now
             test(zdt.withYear(1968));
             test(zdt.withYear(1970));
@@ -48,13 +53,31 @@ public class TestZonedTime {
             test(zdt.withYear(2100));
             test(zdt.withYear(2106));
 
-            TimeZone tz = TimeZone.getTimeZone("Asia/Shanghai");
             // dos time does not support < 1980, have to use
             // utc in mtime.
-            testWithTZ(tz, zdt.withYear(1982));
-            testWithTZ(tz, zdt.withYear(2037));
-            testWithTZ(tz, zdt.withYear(2100));
-            testWithTZ(tz, zdt.withYear(2106));
+            testWithTZ(tzAsia, zdt.withYear(1982));
+            testWithTZ(tzAsia, zdt.withYear(2037));
+            testWithTZ(tzAsia, zdt.withYear(2100));
+            testWithTZ(tzAsia, zdt.withYear(2106));
+
+            test(ZonedDateTime.of(2200, 04, 26, 2, 31, 52, 973, ZoneId.of("-05:00")));
+
+            // Test set/getTimeZoned()
+            testLastModified = true;
+            test(zdt);    // now
+            test(zdt.withYear(1968));
+            test(zdt.withYear(1970));
+            test(zdt.withYear(1982));
+            test(zdt.withYear(2037));
+            test(zdt.withYear(2100));
+            test(zdt.withYear(2106));
+
+            // dos time does not support < 1980, have to use
+            // utc in mtime.
+            testWithTZ(tzAsia, zdt.withYear(1982));
+            testWithTZ(tzAsia, zdt.withYear(2037));
+            testWithTZ(tzAsia, zdt.withYear(2100));
+            testWithTZ(tzAsia, zdt.withYear(2106));
 
             test(ZonedDateTime.of(2200, 04, 26, 2, 31, 52, 973, ZoneId.of("-05:00")));
         } finally {
@@ -66,7 +89,12 @@ public class TestZonedTime {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream zos = new ZipOutputStream(baos);
         ZipEntry ze = new ZipEntry("TestZonedTime.java");
-        ze.setTimeZoned(mtime);
+        if (testLastModified) {
+            FileTime lastModified = FileTime.from(mtime.toInstant());
+            ze.setLastModifiedTimeZoned(lastModified, mtime.getZone());
+        } else {
+            ze.setTimeZoned(mtime);
+        }
         check(ze, mtime);
         zos.putNextEntry(ze);
         zos.write(new byte[] { 1, 2, 3, 4});
@@ -108,7 +136,12 @@ public class TestZonedTime {
     }
 
     static void check(ZipEntry ze, ZonedDateTime expected) {
-        long timeSeconds = ze.getTimeZoned(expected.getZone()).toEpochSecond();
+        long timeSeconds;
+        if (testLastModified) {
+            timeSeconds = ze.getLastModifiedTimeZoned(expected.getZone()).toInstant().getEpochSecond(); 
+        } else {
+            timeSeconds = ze.getTimeZoned(expected.getZone()).toEpochSecond();
+        }
         if ( timeSeconds >> 1
             != expected.toEpochSecond() >> 1) {
             throw new RuntimeException("Timestamp: storing mtime failed!");

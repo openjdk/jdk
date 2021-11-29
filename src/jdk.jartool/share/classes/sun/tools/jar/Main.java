@@ -60,6 +60,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import java.util.concurrent.TimeUnit;
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleHashesBuilder;
@@ -1061,9 +1062,9 @@ public class Main {
             ZipEntry e = new ZipEntry(name);
             FileTime lastModified = mie.getLastModifiedTime();
             if (lastModified != null) {
-                setLastModifiedTime(e, lastModified.to(TimeUnit.MILLISECONDS));
+                setTimeLastModified(e, lastModified);
             } else {
-                setLastModifiedTime(e);
+                setTimeLastModified(e);
             }
             if (flag0) {
                 crc32ModuleInfo(e, bytes);

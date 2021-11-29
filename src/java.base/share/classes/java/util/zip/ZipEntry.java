@@ -428,6 +428,11 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * <p> The specified time-zone is used to convert the time to
      * the MS-DOS local date-time.
      *
+     * @param  time
+     *         The last modification time of the entry
+     * @param  zoneId 
+     *         The time-zone for conmversion to the MS-DOS local date-time
+     *
      * @return This zip entry
      *
      * @throws NullPointerException if the {@code time} is null
@@ -456,7 +461,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * zoned date-time.
      *
      * @param  zoneId
-     *         The time-zone used to convert the UTC time to
+     *         The time-zone used to convert the MS-DOS time to
      *         zoned date-time
      *
      * @return The last modification time of the entry in zoned date-time
