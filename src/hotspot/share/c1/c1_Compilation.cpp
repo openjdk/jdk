@@ -152,6 +152,26 @@ void Compilation::build_hir() {
   {
     PhaseTraceTime timeit(_t_hir_parse);
     _hir = new IR(this, method(), osr_bci());
+
+    /////////////////
+    // This is to assert that no block reachable from start has _end == NULL
+    BlockList processed;
+    BlockList to_go;
+    to_go.append(_hir->start());
+    while(to_go.length() > 0) {
+      BlockBegin* current = to_go.pop();
+      assert(current != NULL, "dont expect null");
+      assert(current->end() != NULL, "an end is NULL...");
+      processed.append(current);
+      for(int i = 0; i < current->number_of_sux(); i++) {
+        BlockBegin* s = current->sux_at(i);
+        if (!processed.contains(s)) {
+          to_go.append(s);
+        }
+      }
+    }
+    // Interesting, this passes...
+    //////////////
   }
   if (log)  log->done("parse");
   if (!_hir->is_valid()) {
@@ -194,6 +214,21 @@ void Compilation::build_hir() {
   // compute block ordering for code generation
   // the control flow must not be changed from here on
   _hir->compute_code();
+
+  /////////////////
+  // This is to verify that all the blocks in code have _end != NULL
+  // Are all the blockbegin _end pointers nonnull here?
+  bool all_ends = true;
+  // Unsure if code is the rightone but oh well
+  assert(_hir->code() != NULL, "has code, right? JANIUK");
+  for(int i = 0; i < _hir->code()->length(); i++) {
+    BlockBegin* b = _hir->code()->at(i);
+
+    if (b == NULL) continue;
+    if (b->end() == NULL) all_ends = false;
+  }
+  assert(all_ends, "checking in after compute code");
+  //////////////
 
   if (UseGlobalValueNumbering) {
     // No resource mark here! LoopInvariantCodeMotion can allocate ValueStack objects.

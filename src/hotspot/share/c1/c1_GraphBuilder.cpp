@@ -3235,6 +3235,8 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   _initial_state = state_at_entry();
   start_block->merge(_initial_state);
 
+  // End nulls still exist here
+
   // complete graph
   _vmap        = new ValueMap();
   switch (scope->method()->intrinsic_id()) {
@@ -3338,6 +3340,27 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   }
   CHECK_BAILOUT();
 
+# ifdef ASSERT
+  //All blocks reachable from start_block have _end != NULL
+  {
+    BlockList processed;
+    BlockList to_go;
+    to_go.append(start_block);
+    while(to_go.length() > 0) {
+      BlockBegin* current = to_go.pop();
+      assert(current != NULL, "Should not happen.");
+      assert(current->end() != NULL, "All blocks reachable from start_block should have end() != NULL.");
+      processed.append(current);
+      for(int i = 0; i < current->number_of_sux(); i++) {
+        BlockBegin* s = current->sux_at(i);
+        if (!processed.contains(s)) {
+          to_go.append(s);
+        }
+      }
+    }
+  }
+#endif // ASSERT
+
   _start = setup_start_block(osr_bci, start_block, _osr_entry, _initial_state);
 
   eliminate_redundant_phis(_start);
@@ -3358,6 +3381,10 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
 #ifndef PRODUCT
   if (PrintCompilation && Verbose) tty->print_cr("Created %d Instructions", _instruction_count);
 #endif
+
+  // JANIUK: If we iterate all the blocks in _blocks, some of them have end NULL.
+  // But the ones reachable from start don't, we saw that earlier.
+  // Ah! So a lot of BlockBegins get discarded. The only ones that survive are the ones reachable from start at the end.
 }
 
 
