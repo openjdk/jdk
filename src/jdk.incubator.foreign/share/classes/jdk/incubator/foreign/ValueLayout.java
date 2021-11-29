@@ -201,8 +201,8 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
     @Stable
     private final VarHandle[] handles = new VarHandle[2];
 
-    static final int ALIGNED_POS = 0;
-    static final int UNALIGNED_POS = 1;
+    private static final int ALIGNED_POS = 0;
+    private static final int UNALIGNED_POS = 1;
 
     @ForceInline
     VarHandle accessHandle(boolean aligned) {
