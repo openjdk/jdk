@@ -528,8 +528,7 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
     MemoryLayout.valueLayout(MemoryAddress.class, ByteOrder.nativeOrder());
      * }</pre></blockquote>
      */
-    public static final OfAddress ADDRESS = new OfAddress(ByteOrder.nativeOrder())
-            .withBitAlignment(ADDRESS_SIZE_BITS);
+    public static final OfAddress ADDRESS = new OfAddress(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code byte},
@@ -588,7 +587,7 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code long},
-     * bit-alignment set to {@code ADDRESS.bitSize()}, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * bit-alignment set to 64, and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * <blockquote><pre>{@code
     MemoryLayout.valueLayout(long.class, ByteOrder.nativeOrder()).withBitAlignment(ADDRESS.bitSize());
@@ -610,7 +609,7 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code double},
-     * bit-alignment set to {@code ADDRESS.bitSize()}, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * bit-alignment set to 64, and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * <blockquote><pre>{@code
     MemoryLayout.valueLayout(double.class, ByteOrder.nativeOrder()).withBitAlignment(ADDRESS.bitSize());
