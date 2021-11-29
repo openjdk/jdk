@@ -326,23 +326,6 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     }
   }
 
-  // Covert "x - (0 - y)" into "x + y"
-  if (in2->Opcode() == Op_SubI
-      && phase->type(in2->in(1)) == TypeInt::ZERO) {
-      return new AddINode(in1, in2->in(2));
-  }
-
-  // Convert "c0 - (x + c1)" into "(c0 - c1) - x"
-  if (in2->Opcode() == Op_AddI
-      && phase->type(in1)->isa_int() != NULL
-      && phase->type(in1)->isa_int()->is_con()
-      && phase->type(in2->in(2))->isa_int() != NULL
-      && phase->type(in2->in(2))->isa_int()->is_con()) {
-      jint c0 = phase->type(in1)->isa_int()->get_con();
-      jint c1 = phase->type(in2->in(2))->isa_int()->get_con();
-      return new SubINode(phase->transform(new SubINode(phase->intcon(c0), phase->intcon(c1))), in2->in(1));
-  }
-
   return NULL;
 }
 
