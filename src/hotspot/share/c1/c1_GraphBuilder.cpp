@@ -124,6 +124,8 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
   mark_loops();
   NOT_PRODUCT(if (PrintInitialBlockList) print());
 
+  // _bci2block still contains blocks with _end == null and > 0 sux in _bci2block_successors.
+
 #ifndef PRODUCT
   if (PrintCFGToFile) {
     stringStream title;
