@@ -29,7 +29,9 @@
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-  return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
+  frame f = frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
+  f.set_from_thread();
+  return f;
 }
 
 // For Forte Analyzer AsyncGetCallTrace profiling support - thread is

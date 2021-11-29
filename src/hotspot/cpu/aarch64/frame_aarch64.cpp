@@ -468,7 +468,8 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   // have to find it relative to the unextended sp
 
   assert(_cb->frame_size() >= 0, "must have non-zero frame size");
-  intptr_t* l_sender_sp = unextended_sp() + _cb->frame_size();
+  intptr_t* l_sender_sp = (!PreserveFramePointer || _from_thread) ? unextended_sp() + _cb->frame_size()
+                                                                  : sender_sp();
   intptr_t* unextended_sp = l_sender_sp;
 
   // the return_address is always the word on the stack

@@ -124,6 +124,8 @@
   intptr_t*     _unextended_sp;
   void adjust_unextended_sp();
 
+  bool _from_thread;
+
   intptr_t* ptr_at_addr(int offset) const {
     return (intptr_t*) addr_at(offset);
   }
@@ -164,5 +166,7 @@
 
   // returns the sending frame, without applying any barriers
   frame sender_raw(RegisterMap* map) const;
+
+  void set_from_thread() { _from_thread = true; }
 
 #endif // CPU_AARCH64_FRAME_AARCH64_HPP
