@@ -47,6 +47,9 @@ field name RELEASE_18 descriptor Ljavax/lang/model/SourceVersion; flags 4019
 method name valueOf descriptor (Ljava/lang/Runtime$Version;)Ljavax/lang/model/SourceVersion; flags 9
 method name runtimeVersion descriptor ()Ljava/lang/Runtime$Version; flags 1
 
+class name javax/lang/model/element/ExecutableElement
+method name getEnclosingElement descriptor ()Ljavax/lang/model/element/Element; flags 401
+
 class name javax/lang/model/element/Modifier
 header extends java/lang/Enum sealed true flags 4021 signature Ljava/lang/Enum<Ljavax/lang/model/element/Modifier;>;
 
@@ -101,6 +104,7 @@ header extends javax/lang/model/util/ElementScanner9 flags 21 signature <R:Ljava
 
 class name javax/lang/model/util/Elements
 method name getOutermostTypeElement descriptor (Ljavax/lang/model/element/Element;)Ljavax/lang/model/element/TypeElement; flags 1
+method name getFileObjectOf descriptor (Ljavax/lang/model/element/Element;)Ljavax/tools/JavaFileObject; flags 1
 
 class name javax/lang/model/util/SimpleAnnotationValueVisitor14
 header extends javax/lang/model/util/SimpleAnnotationValueVisitor9 flags 21 signature <R:Ljava/lang/Object;P:Ljava/lang/Object;>Ljavax/lang/model/util/SimpleAnnotationValueVisitor9<TR;TP;>; runtimeAnnotations @Ljavax/annotation/processing/SupportedSourceVersion;(value=eLjavax/lang/model/SourceVersion;RELEASE_18;)

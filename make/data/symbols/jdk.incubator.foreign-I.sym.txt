@@ -59,10 +59,10 @@ class name jdk/incubator/foreign/MemorySegment
 header extends java/lang/Object implements jdk/incubator/foreign/Addressable sealed true flags 601
 innerclass innerClass java/nio/channels/FileChannel$MapMode outerClass java/nio/channels/FileChannel innerClassName MapMode flags 9
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-method name asReadOnly descriptor ()Ljdk/incubator/foreign/MemorySegment; flags 401
-method name isReadOnly descriptor ()Z flags 401
 -method name asReadOnly descriptor ()Ljdk/incubator/foreign/MemorySegment;
 -method name isReadOnly descriptor ()Z
+method name asReadOnly descriptor ()Ljdk/incubator/foreign/MemorySegment; flags 401
+method name isReadOnly descriptor ()Z flags 401
 
 class name jdk/incubator/foreign/ResourceScope
 header extends java/lang/Object implements java/lang/AutoCloseable nestMembers jdk/incubator/foreign/ResourceScope$Handle sealed true flags 601

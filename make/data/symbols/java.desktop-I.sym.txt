@@ -578,9 +578,44 @@ class name javax/swing/GrayFilter
 header extends java/awt/image/RGBImageFilter flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name javax/swing/GroupLayout
+header extends java/lang/Object implements java/awt/LayoutManager2 nestMembers javax/swing/GroupLayout$ParallelGroup,javax/swing/GroupLayout$SequentialGroup,javax/swing/GroupLayout$Group,javax/swing/GroupLayout$Spring,javax/swing/GroupLayout$Alignment flags 21
+innerclass innerClass javax/swing/GroupLayout$Alignment outerClass javax/swing/GroupLayout innerClassName Alignment flags 4019
+innerclass innerClass javax/swing/GroupLayout$ParallelGroup outerClass javax/swing/GroupLayout innerClassName ParallelGroup flags 1
+innerclass innerClass javax/swing/GroupLayout$Group outerClass javax/swing/GroupLayout innerClassName Group flags 401
+innerclass innerClass javax/swing/GroupLayout$SequentialGroup outerClass javax/swing/GroupLayout innerClassName SequentialGroup flags 1
+innerclass innerClass javax/swing/GroupLayout$Spring outerClass javax/swing/GroupLayout innerClassName Spring flags 40a
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name javax/swing/GroupLayout$Group
+header extends javax/swing/GroupLayout$Spring nestHost javax/swing/GroupLayout flags 421
+innerclass innerClass javax/swing/GroupLayout$Group outerClass javax/swing/GroupLayout innerClassName Group flags 401
+innerclass innerClass javax/swing/GroupLayout$Spring outerClass javax/swing/GroupLayout innerClassName Spring flags 40a
+
+class name javax/swing/GroupLayout$ParallelGroup
+header extends javax/swing/GroupLayout$Group nestHost javax/swing/GroupLayout flags 21
+innerclass innerClass javax/swing/GroupLayout$ParallelGroup outerClass javax/swing/GroupLayout innerClassName ParallelGroup flags 1
+innerclass innerClass javax/swing/GroupLayout$Group outerClass javax/swing/GroupLayout innerClassName Group flags 401
+innerclass innerClass javax/swing/GroupLayout$Alignment outerClass javax/swing/GroupLayout innerClassName Alignment flags 4019
+innerclass innerClass javax/swing/GroupLayout$Spring outerClass javax/swing/GroupLayout innerClassName Spring flags 40a
+
+class name javax/swing/GroupLayout$SequentialGroup
+header extends javax/swing/GroupLayout$Group nestHost javax/swing/GroupLayout flags 21
+innerclass innerClass javax/swing/GroupLayout$SequentialGroup outerClass javax/swing/GroupLayout innerClassName SequentialGroup flags 1
+innerclass innerClass javax/swing/GroupLayout$Group outerClass javax/swing/GroupLayout innerClassName Group flags 401
+innerclass innerClass javax/swing/GroupLayout$Spring outerClass javax/swing/GroupLayout innerClassName Spring flags 40a
+innerclass innerClass javax/swing/LayoutStyle$ComponentPlacement outerClass javax/swing/LayoutStyle innerClassName ComponentPlacement flags 4019
+innerclass innerClass java/awt/Component$BaselineResizeBehavior outerClass java/awt/Component innerClassName BaselineResizeBehavior flags 4019
+
+class name javax/swing/GroupLayout$Spring
+header extends java/lang/Object nestHost javax/swing/GroupLayout flags 420
+innerclass innerClass javax/swing/GroupLayout$Spring outerClass javax/swing/GroupLayout innerClassName Spring flags 40a
+innerclass innerClass javax/swing/GroupLayout$Alignment outerClass javax/swing/GroupLayout innerClassName Alignment flags 4019
+innerclass innerClass java/awt/Component$BaselineResizeBehavior outerClass java/awt/Component innerClassName BaselineResizeBehavior flags 4019
+
 class name javax/swing/JList$AccessibleJList$AccessibleJListChild
-method name getAccessibleAction descriptor ()Ljavax/accessibility/AccessibleAction; flags 1
 -method name getAccessibleAction descriptor ()Ljavax/accessibility/AccessibleAction;
+method name getAccessibleAction descriptor ()Ljavax/accessibility/AccessibleAction; flags 1
 
 class name javax/swing/JTextPane
 header extends javax/swing/JEditorPane flags 21 runtimeAnnotations @Ljava/beans/JavaBean;(description="A\u005C;u0020;text\u005C;u0020;component\u005C;u0020;that\u005C;u0020;can\u005C;u0020;be\u005C;u0020;marked\u005C;u0020;up\u005C;u0020;with\u005C;u0020;attributes\u005C;u0020;that\u005C;u0020;are\u005C;u0020;graphically\u005C;u0020;represented.")@Ljavax/swing/SwingContainer;
