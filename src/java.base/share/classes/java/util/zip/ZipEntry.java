@@ -268,7 +268,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * @param  time
      *         The last modification time of the entry in zoned date-time
      *
-     * @since 18 
+     * @since 18
      */
     public void setTimeZoned(ZonedDateTime time) {
         int year = time.getYear() - 1980;
@@ -334,13 +334,13 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * <p> The specified time-zone is used to convert the UTC time to a
      * zoned date-time.
      *
-     * @param  zoneId 
+     * @param  zoneId
      *         The time-zone used to convert the UTC time to
-     *         zoned date-time 
+     *         zoned date-time
      *
      * @return The last modification time of the entry in zoned date-time
      *
-     * @since 18 
+     * @since 18
      */
     public ZonedDateTime getTimeZoned(ZoneId zoneId) {
         if (mtime != null) {

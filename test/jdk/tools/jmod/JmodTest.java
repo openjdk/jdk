@@ -260,7 +260,7 @@ public class JmodTest {
                 assertContains(r.output, "is before Epoch 1970-01-01T00:00:00");
             });
 
-        // Use a date before zip minimum dostime 1980-1-1 
+        // Use a date before zip minimum dostime 1980-1-1
         sourceDate = "1976-03-15T01:02:03+02:00";
 
         jmod("create",
