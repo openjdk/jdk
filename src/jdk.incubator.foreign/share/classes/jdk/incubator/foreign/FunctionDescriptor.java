@@ -97,7 +97,7 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
      * Obtain a specialized variadic function descriptor, by appending given variadic layouts to this
      * function descriptor argument layouts. The resulting function descriptor can report the position
      * of the {@linkplain #firstVariadicArgumentIndex() first variadic argument}, and cannot be altered
-     * in any way: for instance, calling {@link #withReturnLayout(MemoryLayout)} on the resulting descriptor
+     * in any way: for instance, calling {@link #changeReturnLayout(MemoryLayout)} on the resulting descriptor
      * will throw an {@link UnsupportedOperationException}.
      * @param variadicLayouts the variadic argument layouts to be appended to this descriptor argument layouts.
      * @return a new variadic function descriptor, or this descriptor if {@code variadicLayouts.length == 0}.
@@ -123,10 +123,27 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
      * @param addedLayouts the argument layouts to append.
      * @return the new function descriptor.
      */
-    public FunctionDescriptor withAppendedArgumentLayouts(MemoryLayout... addedLayouts) {
+    public FunctionDescriptor appendArgumentLayouts(MemoryLayout... addedLayouts) {
+        return insertArgumentLayouts(argLayouts.size(), addedLayouts);
+    }
+
+    /**
+     * Create a new function descriptor with the given argument layouts inserted at the given index, into the argument
+     * layout array of this function descriptor.
+     * @param index the index at which to insert the arguments
+     * @param addedLayouts the argument layouts to append.
+     * @return the new function descriptor.
+     * @throws IllegalArgumentException if {@code index < 0 || index > argumentLayouts().size()}.
+     */
+    public FunctionDescriptor insertArgumentLayouts(int index, MemoryLayout... addedLayouts) {
         Objects.requireNonNull(addedLayouts);
         Arrays.stream(addedLayouts).forEach(Objects::requireNonNull);
-        List<MemoryLayout> newLayouts = Stream.concat(argLayouts.stream(), Stream.of(addedLayouts)).toList();
+        if (index < 0 || index > argLayouts.size())
+            throw new IllegalArgumentException("Index out of bounds: " + index);
+        List<MemoryLayout> newLayouts = new ArrayList<>(argLayouts.size() + addedLayouts.length);
+        newLayouts.addAll(argLayouts.subList(0, index));
+        newLayouts.addAll(List.of(addedLayouts));
+        newLayouts.addAll(argLayouts.subList(index, argLayouts.size()));
         return new FunctionDescriptor(resLayout, newLayouts);
     }
 
@@ -135,16 +152,17 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
      * @param newReturn the new return layout.
      * @return the new function descriptor.
      */
-    public FunctionDescriptor withReturnLayout(MemoryLayout newReturn) {
+    public FunctionDescriptor changeReturnLayout(MemoryLayout newReturn) {
         Objects.requireNonNull(newReturn);
         return new FunctionDescriptor(newReturn, argLayouts);
     }
 
     /**
-     * Create a new function descriptor with the return layout dropped.
+     * Create a new function descriptor with the return layout dropped. This is useful to model functions
+     * which return no values.
      * @return the new function descriptor.
      */
-    public FunctionDescriptor withVoidReturnLayout() {
+    public FunctionDescriptor dropReturnLayout() {
         return new FunctionDescriptor(null, argLayouts);
     }
 
@@ -212,7 +230,7 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
             constants.add(argLayout.describeConstable().get());
         }
         return Optional.of(DynamicConstantDesc.ofNamed(
-                    ConstantDescs.BSM_INVOKE, "function", AbstractLayout.CD_FUNCTION_DESC, constants.toArray(new ConstantDesc[0])));
+                ConstantDescs.BSM_INVOKE, "function", AbstractLayout.CD_FUNCTION_DESC, constants.toArray(new ConstantDesc[0])));
     }
 
     static final class VariadicFunction extends FunctionDescriptor {
@@ -231,17 +249,22 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
         }
 
         @Override
-        public FunctionDescriptor withAppendedArgumentLayouts(MemoryLayout... addedLayouts) {
+        public FunctionDescriptor appendArgumentLayouts(MemoryLayout... addedLayouts) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public FunctionDescriptor withReturnLayout(MemoryLayout newReturn) {
+        public FunctionDescriptor insertArgumentLayouts(int index, MemoryLayout... addedLayouts) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public FunctionDescriptor withVoidReturnLayout() {
+        public FunctionDescriptor changeReturnLayout(MemoryLayout newReturn) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public FunctionDescriptor dropReturnLayout() {
             throw new UnsupportedOperationException();
         }
 
