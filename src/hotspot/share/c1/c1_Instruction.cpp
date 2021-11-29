@@ -958,15 +958,15 @@ void BlockEnd::set_sux_from_begin(BlockBegin* begin) {
 
 
 void BlockEnd::clear_begin() {
-    BlockList* sux = NULL;
     if (this->begin() != NULL) {
       // copy our sux list
       BlockList* sux = new BlockList(this->begin()->number_of_sux());
       for (int i = 0; i < this->begin()->number_of_sux(); i++) {
         sux->append(this->begin()->sux_at(i));
       }
+      // NB the copy is completely worhless
     }
-    _sux = sux;
+    _sux = NULL;
 }
 
 
