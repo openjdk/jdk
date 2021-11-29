@@ -122,6 +122,7 @@ tier1_compiler_1 = \
   compiler/blackhole/ \
   compiler/c1/ \
   compiler/c2/ \
+  -compiler/arraycopy/stress \
   -compiler/c2/Test6850611.java \
   -compiler/c2/cr6890943/Test6890943.java \
   -compiler/c2/Test6905845.java \
@@ -175,6 +176,11 @@ tier1_compiler_3 = \
 
 tier1_compiler_not_xcomp = \
   compiler/profiling
+
+tier2_compiler =
+
+tier3_compiler = \
+  compiler/arraycopy/stress
 
 ctw_1 = \
   applications/ctw/modules/ \
@@ -467,11 +473,13 @@ tier2 = \
   :hotspot_tier2_runtime \
   :hotspot_tier2_runtime_platform_agnostic \
   :hotspot_tier2_serviceability \
+  :tier2_compiler \
   :tier2_gc_epsilon \
   :tier2_gc_shenandoah
 
 tier3 = \
   :hotspot_tier3_runtime \
+  :tier3_compiler \
   :tier3_gc_shenandoah
 
 # Everything that is not in other tiers, but not apps
