@@ -1825,9 +1825,6 @@ BASE(BlockEnd, StateSplit)
   // For compatibility with old code, for new code use block()
   BlockBegin* begin() const                      { return _block; }
 
-  // manipulation
-  void set_sux_from_begin(BlockBegin* begin);
-
   // successors
   int number_of_sux() const                      { return _sux != NULL ? _sux->length() : 0; }
   BlockBegin* sux_at(int i) const                { return _sux->at(i); }

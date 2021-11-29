@@ -538,6 +538,7 @@ void BlockBegin::set_end(BlockEnd* end) {
     _end = NULL;
   }
 
+
   // Now reset successors list based on BlockEnd
   _successors.clear();
   for (int i = 0; i < end->number_of_sux(); i++) {
@@ -940,16 +941,9 @@ void BlockList::print(bool cfg_only, bool live_only) {
 
 // Implementation of BlockEnd
 
-void BlockEnd::set_sux_from_begin(BlockBegin* begin) {
-  assert(begin->end() != NULL, "Using successors, need end");
-  _sux = begin->successors();
-}
-
-
 void BlockEnd::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
   substitute(*_sux, old_sux, new_sux);
 }
-
 
 // Implementation of Phi
 
