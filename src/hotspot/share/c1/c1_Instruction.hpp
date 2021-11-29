@@ -1826,7 +1826,8 @@ BASE(BlockEnd, StateSplit)
   BlockBegin* begin() const                      { return _block; }
 
   // manipulation
-  void set_begin(BlockBegin* begin);
+  void set_sux_from_begin(BlockBegin* begin);
+  void clear_begin();
 
   // successors
   int number_of_sux() const                      { return _sux != NULL ? _sux->length() : 0; }

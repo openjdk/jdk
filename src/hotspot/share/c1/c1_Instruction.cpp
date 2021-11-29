@@ -534,14 +534,15 @@ void BlockBegin::set_end(BlockEnd* end) {
   // Set the new end
   _end = end;
 
+  // Copy successors from newEnd to here
   _successors.clear();
-  // Now reset successors list based on BlockEnd
   for (int i = 0; i < end->number_of_sux(); i++) {
     BlockBegin* sux = end->sux_at(i);
     _successors.append(sux);
     sux->_predecessors.append(this);
   }
-  _end->set_begin(this);
+
+  _end->set_sux_from_begin(this);
 }
 
 
@@ -550,7 +551,7 @@ void BlockBegin::clear_end() {
   // BlockEnd's notion.
   if (_end != NULL) {
     // disconnect from the old end
-    _end->set_begin(NULL);
+    _end->clear_begin();
 
     // disconnect this block from it's current successors
     for (int i = 0; i < _successors.length(); i++) {
@@ -950,19 +951,22 @@ void BlockList::print(bool cfg_only, bool live_only) {
 
 // Implementation of BlockEnd
 
-void BlockEnd::set_begin(BlockBegin* begin) {
-  BlockList* sux = NULL;
-  if (begin != NULL) {
-    assert(begin->end() != NULL, "Using successors, need end");
-    sux = begin->successors();
-  } else if (this->begin() != NULL) {
-    // copy our sux list
-    BlockList* sux = new BlockList(this->begin()->number_of_sux());
-    for (int i = 0; i < this->begin()->number_of_sux(); i++) {
-      sux->append(this->begin()->sux_at(i));
+void BlockEnd::set_sux_from_begin(BlockBegin* begin) {
+  assert(begin->end() != NULL, "Using successors, need end");
+  _sux = begin->successors();
+}
+
+
+void BlockEnd::clear_begin() {
+    BlockList* sux = NULL;
+    if (this->begin() != NULL) {
+      // copy our sux list
+      BlockList* sux = new BlockList(this->begin()->number_of_sux());
+      for (int i = 0; i < this->begin()->number_of_sux(); i++) {
+        sux->append(this->begin()->sux_at(i));
+      }
     }
-  }
-  _sux = sux;
+    _sux = sux;
 }
 
 
