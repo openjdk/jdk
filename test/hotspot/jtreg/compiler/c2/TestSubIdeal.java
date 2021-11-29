@@ -1,5 +1,7 @@
 /*
  * @test
+ * @bug 8277882
+ * @summary New subnode ideal optimization: converting "c0 - (x + c1)" into "(c0 - c1) - x"
  * @library /test/lib
  * @run main/othervm -XX:-TieredCompilation
  *                   -XX:CompileCommand=dontinline,compiler.c2.TestSubIdeal::test*
