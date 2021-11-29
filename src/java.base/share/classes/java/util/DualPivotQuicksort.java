@@ -36,8 +36,9 @@ import java.util.concurrent.RecursiveTask;
  * faster than traditional (one-pivot) Quicksort implementations.
  *
  * There are also additional algorithms, invoked from the Dual-Pivot
- * Quicksort such as mixed insertion sort, merging sort and counting
- * sort, heap sort and LSD Radix sort, parallel merge sort.
+ * Quicksort such as merging sort, sorting network, Radix sort, heap
+ * sort, mixed (simple, pin, pair) insertion sort, counting sort and
+ * parallel merge sort.
  *
  * @author Vladimir Yaroslavskiy
  * @author Jon Bentley
@@ -58,7 +59,7 @@ final class DualPivotQuicksort {
     /**
      * Max array size to use mixed insertion sort.
      */
-    private static final int MAX_MIXED_INSERTION_SORT_SIZE = 65;
+    private static final int MAX_MIXED_INSERTION_SORT_SIZE = 124;
 
     /**
      * Max array size to use insertion sort.
@@ -153,12 +154,8 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(int[] a, int parallelism, int low, int high) {
-        int size = high - low;
-
-        if (parallelism > 1 && size > MIN_PARALLEL_SORT_SIZE) {
-            int depth = getDepth(parallelism, size >> 12);
-            int[] b = depth == 0 ? null : (int[]) tryAllocate(a, size);
-            new Sorter(null, a, b, low, size, low, depth).invoke();
+        if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
+            new Sorter(a, parallelism, low, high - low, 0).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
@@ -217,7 +214,7 @@ final class DualPivotQuicksort {
              * Use an inexpensive approximation of the golden ratio
              * to select five sample elements and determine pivots.
              */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 8) + 1;
 
             /*
              * Five elements around (and including) the central element
@@ -274,8 +271,8 @@ final class DualPivotQuicksort {
              * Try Radix sort on large fully random data.
              */
             if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH || isRandom)
-                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5] && isRandom
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
                     && tryRadixSort(sorter, a, low, high)) {
                 return;
             }
@@ -594,14 +591,12 @@ final class DualPivotQuicksort {
         /*
          * Allocate additional buffer.
          */
-        if (sorter == null || (b = (int[]) sorter.b) == null) {
-            b = (int[]) tryAllocate(a, size);
-
-            if (b == null) {
+        if (sorter != null && (b = (int[]) sorter.b) != null) {
+            offset = sorter.offset;
+        } else {
+            if ((b = (int[]) tryAllocate(a, size)) == null) {
                 return false;
             }
-        } else {
-            offset = sorter.offset;
         }
 
         int start = low - offset;
@@ -867,14 +862,12 @@ final class DualPivotQuicksort {
         if (count > 1) {
             int[] b; int offset = low;
 
-            if (sorter == null || (b = (int[]) sorter.b) == null) {
-                b = (int[]) tryAllocate(a, size);
-
-                if (b == null) {
+            if (sorter != null && (b = (int[]) sorter.b) != null) {
+                offset = sorter.offset;
+            } else {
+                if ((b = (int[]) tryAllocate(a, size)) == null) {
                     return false;
                 }
-            } else {
-                offset = sorter.offset;
             }
             mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
         }
@@ -1050,12 +1043,8 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(long[] a, int parallelism, int low, int high) {
-        int size = high - low;
-
-        if (parallelism > 1 && size > MIN_PARALLEL_SORT_SIZE) {
-            int depth = getDepth(parallelism, size >> 12);
-            long[] b = depth == 0 ? null : (long[]) tryAllocate(a, size);
-            new Sorter(null, a, b, low, size, low, depth).invoke();
+        if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
+            new Sorter(a, parallelism, low, high - low, 0).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
@@ -1114,7 +1103,7 @@ final class DualPivotQuicksort {
              * Use an inexpensive approximation of the golden ratio
              * to select five sample elements and determine pivots.
              */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 8) + 1;
 
             /*
              * Five elements around (and including) the central element
@@ -1171,8 +1160,8 @@ final class DualPivotQuicksort {
              * Try Radix sort on large fully random data.
              */
             if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH || isRandom)
-                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5] && isRandom
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
                     && tryRadixSort(sorter, a, low, high)) {
                 return;
             }
@@ -1491,14 +1480,12 @@ final class DualPivotQuicksort {
         /*
          * Allocate additional buffer.
          */
-        if (sorter == null || (b = (long[]) sorter.b) == null) {
-            b = (long[]) tryAllocate(a, size);
-
-            if (b == null) {
+        if (sorter != null && (b = (long[]) sorter.b) != null) {
+            offset = sorter.offset;
+        } else {
+            if ((b = (long[]) tryAllocate(a, size)) == null) {
                 return false;
             }
-        } else {
-            offset = sorter.offset;
         }
 
         int start = low - offset;
@@ -1784,14 +1771,12 @@ final class DualPivotQuicksort {
         if (count > 1) {
             long[] b; int offset = low;
 
-            if (sorter == null || (b = (long[]) sorter.b) == null) {
-                b = (long[]) tryAllocate(a, size);
-
-                if (b == null) {
+            if (sorter != null && (b = (long[]) sorter.b) != null) {
+                offset = sorter.offset;
+            } else {
+                if ((b = (long[]) tryAllocate(a, size)) == null) {
                     return false;
                 }
-            } else {
-                offset = sorter.offset;
             }
             mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
         }
@@ -2090,7 +2075,7 @@ final class DualPivotQuicksort {
              * Use an inexpensive approximation of the golden ratio
              * to select five sample elements and determine pivots.
              */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 8) + 1;
 
             /*
              * Five elements around (and including) the central element
@@ -2412,7 +2397,7 @@ final class DualPivotQuicksort {
              * Use an inexpensive approximation of the golden ratio
              * to select five sample elements and determine pivots.
              */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 8) + 1;
 
             /*
              * Five elements around (and including) the central element
@@ -2731,12 +2716,8 @@ final class DualPivotQuicksort {
          * Phase 2. Sort everything except NaNs,
          * which are already in place.
          */
-        int size = high - low;
-
-        if (parallelism > 1 && size > MIN_PARALLEL_SORT_SIZE) {
-            int depth = getDepth(parallelism, size >> 12);
-            float[] b = depth == 0 ? null : (float[]) tryAllocate(a, size);
-            new Sorter(null, a, b, low, size, low, depth).invoke();
+        if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
+            new Sorter(a, parallelism, low, high - low, 0).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
@@ -2824,7 +2805,7 @@ final class DualPivotQuicksort {
              * Use an inexpensive approximation of the golden ratio
              * to select five sample elements and determine pivots.
              */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 8) + 1;
 
             /*
              * Five elements around (and including) the central element
@@ -2881,8 +2862,8 @@ final class DualPivotQuicksort {
              * Try Radix sort on large fully random data.
              */
             if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH || isRandom)
-                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5] && isRandom
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
                     && tryRadixSort(sorter, a, low, high)) {
                 return;
             }
@@ -3201,14 +3182,12 @@ final class DualPivotQuicksort {
         /*
          * Allocate additional buffer.
          */
-        if (sorter == null || (b = (float[]) sorter.b) == null) {
-            b = (float[]) tryAllocate(a, size);
-
-            if (b == null) {
+        if (sorter != null && (b = (float[]) sorter.b) != null) {
+            offset = sorter.offset;
+        } else {
+            if ((b = (float[]) tryAllocate(a, size)) == null) {
                 return false;
             }
-        } else {
-            offset = sorter.offset;
         }
 
         int start = low - offset;
@@ -3451,14 +3430,12 @@ final class DualPivotQuicksort {
         if (count > 1) {
             float[] b; int offset = low;
 
-            if (sorter == null || (b = (float[]) sorter.b) == null) {
-                b = (float[]) tryAllocate(a, size);
-
-                if (b == null) {
+            if (sorter != null && (b = (float[]) sorter.b) != null) {
+                offset = sorter.offset;
+            } else {
+                if ((b = (float[]) tryAllocate(a, size)) == null) {
                     return false;
                 }
-            } else {
-                offset = sorter.offset;
             }
             mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
         }
@@ -3657,12 +3634,8 @@ final class DualPivotQuicksort {
          * Phase 2. Sort everything except NaNs,
          * which are already in place.
          */
-        int size = high - low;
-
-        if (parallelism > 1 && size > MIN_PARALLEL_SORT_SIZE) {
-            int depth = getDepth(parallelism, size >> 12);
-            double[] b = depth == 0 ? null : (double[]) tryAllocate(a, size);
-            new Sorter(null, a, b, low, size, low, depth).invoke();
+        if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
+            new Sorter(a, parallelism, low, high - low, 0).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
@@ -3750,7 +3723,7 @@ final class DualPivotQuicksort {
              * Use an inexpensive approximation of the golden ratio
              * to select five sample elements and determine pivots.
              */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 8) + 1;
 
             /*
              * Five elements around (and including) the central element
@@ -3807,8 +3780,8 @@ final class DualPivotQuicksort {
              * Try Radix sort on large fully random data.
              */
             if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH || isRandom)
-                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5] && isRandom
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
                     && tryRadixSort(sorter, a, low, high)) {
                 return;
             }
@@ -4127,14 +4100,12 @@ final class DualPivotQuicksort {
         /*
          * Allocate additional buffer.
          */
-        if (sorter == null || (b = (double[]) sorter.b) == null) {
-            b = (double[]) tryAllocate(a, size);
-
-            if (b == null) {
+        if (sorter != null && (b = (double[]) sorter.b) != null) {
+            offset = sorter.offset;
+        } else {
+            if ((b = (double[]) tryAllocate(a, size)) == null) {
                 return false;
             }
-        } else {
-            offset = sorter.offset;
         }
 
         int start = low - offset;
@@ -4431,14 +4402,12 @@ final class DualPivotQuicksort {
         if (count > 1) {
             double[] b; int offset = low;
 
-            if (sorter == null || (b = (double[]) sorter.b) == null) {
-                b = (double[]) tryAllocate(a, size);
-
-                if (b == null) {
+            if (sorter != null && (b = (double[]) sorter.b) != null) {
+                offset = sorter.offset;
+            } else {
+                if ((b = (double[]) tryAllocate(a, size)) == null) {
                     return false;
                 }
-            } else {
-                offset = sorter.offset;
             }
             mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
         }
@@ -4608,6 +4577,19 @@ final class DualPivotQuicksort {
         private final Object a, b;
         private final int low, size, offset, depth;
 
+        private Sorter(Object a, int parallelism, int low, int size, int depth) {
+            this.a = a;
+            this.low = low;
+            this.size = size;
+            this.offset = low;
+
+            while ((parallelism >>= 1) > 0 && (size >>= 8) > 0) {
+                depth -= 2;
+            }
+            this.b = depth == 0 ? null : tryAllocate(a, this.size);
+            this.depth = b == null ? 0 : depth;
+        }
+
         private Sorter(CountedCompleter<?> parent,
                 Object a, Object b, int low, int size, int offset, int depth) {
             super(parent);
@@ -4616,7 +4598,7 @@ final class DualPivotQuicksort {
             this.low = low;
             this.size = size;
             this.offset = offset;
-            this.depth = b == null ? 0 : depth;
+            this.depth = depth;
         }
 
         @Override
@@ -4765,22 +4747,6 @@ final class DualPivotQuicksort {
             join();
             return getRawResult();
         }
-    }
-
-    /**
-     * Calculates the negative double depth of parallel merging.
-     *
-     * @param parallelism the parallelism level
-     * @param size the target size
-     * @return the depth of parallel merging
-     */
-    private static int getDepth(int parallelism, int size) {
-        int depth = 0;
-
-        while ((parallelism >>= 1) > 0 && (size >>= 2) > 0) {
-            depth -= 2;
-        }
-        return depth;
     }
 
     /**

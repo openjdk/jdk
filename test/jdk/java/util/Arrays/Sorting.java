@@ -45,20 +45,20 @@ public class Sorting {
     private static final PrintStream err = System.err;
 
     // Lengths of arrays for long run (default)
-    private static final int[] LONG_RUN_LENGTHS = {
-        1, 3, 8, 21, 55, 100, 1_000, 10_000, 100_000 };
+    private static final int[] LONG_RUN_LENGTHS =
+        { 1, 3, 8, 21, 55, 100, 1_000, 10_000, 100_000 };
 
     // Lengths of arrays for short run
-    private static final int[] SHORT_RUN_LENGTHS = {
-        1, 8, 55, 100, 10_000 };
+    private static final int[] SHORT_RUN_LENGTHS =
+        { 1, 8, 55, 100, 10_000 };
 
     // Initial random values for long run (default)
-    private static final TestRandom[] LONG_RUN_RANDOMS = {
-        TestRandom.DEDA, TestRandom.BABA, TestRandom.C0FFEE };
+    private static final TestRandom[] LONG_RUN_RANDOMS =
+        { TestRandom.DEDA, TestRandom.BABA, TestRandom.C0FFEE };
 
     // Initial random values for short run
-    private static final TestRandom[] SHORT_RUN_RANDOMS = {
-        TestRandom.C0FFEE };
+    private static final TestRandom[] SHORT_RUN_RANDOMS =
+        { TestRandom.C0FFEE };
 
     // Constant to fill the left part of array
     private static final int A380 = 0xA380;
