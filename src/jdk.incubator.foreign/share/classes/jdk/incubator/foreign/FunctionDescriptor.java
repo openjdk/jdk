@@ -131,7 +131,7 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
      * Create a new function descriptor with the given argument layouts inserted at the given index, into the argument
      * layout array of this function descriptor.
      * @param index the index at which to insert the arguments
-     * @param addedLayouts the argument layouts to append.
+     * @param addedLayouts the argument layouts to insert at given index.
      * @return the new function descriptor.
      * @throws IllegalArgumentException if {@code index < 0 || index > argumentLayouts().size()}.
      */
