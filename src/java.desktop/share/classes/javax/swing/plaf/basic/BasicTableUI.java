@@ -216,8 +216,8 @@ public class BasicTableUI extends TableUI
                 this.inSelection = true;
 
                 // look at the sign of dx and dy only
-                dx = sign(dx);
-                dy = sign(dy);
+                dx = Integer.signum(dx);
+                dy = Integer.signum(dy);
 
                 // make sure one is zero, but not both
                 assert (dx == 0 || dy == 0) && !(dx == 0 && dy == 0);
@@ -243,10 +243,6 @@ public class BasicTableUI extends TableUI
         private void moveWithinTableRange(JTable table, int dx, int dy) {
             leadRow = clipToRange(leadRow+dy, 0, table.getRowCount());
             leadColumn = clipToRange(leadColumn+dx, 0, table.getColumnCount());
-        }
-
-        private static int sign(int num) {
-            return Integer.compare(num, 0);
         }
 
         /**
