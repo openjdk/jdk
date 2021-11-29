@@ -24,21 +24,24 @@
 #ifndef SHARE_GC_Z_ZMARKTERMINATE_HPP
 #define SHARE_GC_Z_ZMARKTERMINATE_HPP
 
+#include "gc/z/zLock.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZMarkTerminate {
 private:
-  uint          _nworkers;
-  volatile uint _nworking;
-  volatile bool _resurrected;
+  uint           _nworkers;
+  volatile uint  _nworking;
+  volatile bool  _resurrected;
+  ZConditionLock _lock;
 
 public:
   ZMarkTerminate();
 
   void reset(uint nworkers);
+  void leave();
 
-  bool enter();
-  bool try_exit();
+  void wake_up();
+  bool try_terminate();
   void set_resurrected(bool value);
   bool resurrected();
 };

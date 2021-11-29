@@ -87,11 +87,11 @@ private:
   bool try_steal_local(ZMarkContext* context);
   bool try_steal_global(ZMarkContext* context);
   bool try_steal(ZMarkContext* context);
-  void idle() const;
   bool flush(bool gc_threads);
   bool try_proactive_flush();
   bool try_terminate_flush();
   bool try_terminate();
+  void leave();
   bool try_end();
 
   ZWorkers* workers() const;

@@ -28,6 +28,8 @@
 #include "gc/z/zMarkStackEntry.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class ZMarkTerminate;
+
 template <typename T, size_t S>
 class ZStack {
 private:
@@ -87,7 +89,7 @@ public:
 
   bool is_empty() const;
 
-  void publish_stack(ZMarkStack* stack, bool publish = true);
+  void publish_stack(ZMarkStack* stack, ZMarkTerminate* terminate, bool publish);
   ZMarkStack* steal_stack();
 };
 
@@ -125,6 +127,7 @@ private:
   bool push_slow(ZMarkStackAllocator* allocator,
                  ZMarkStripe* stripe,
                  ZMarkStack** stackp,
+                 ZMarkTerminate* terminate,
                  ZMarkStackEntry entry,
                  bool publish);
 
@@ -148,6 +151,7 @@ public:
   bool push(ZMarkStackAllocator* allocator,
             ZMarkStripeSet* stripes,
             ZMarkStripe* stripe,
+            ZMarkTerminate* terminate,
             ZMarkStackEntry entry,
             bool publish);
 
@@ -157,7 +161,8 @@ public:
            ZMarkStackEntry& entry);
 
   bool flush(ZMarkStackAllocator* allocator,
-             ZMarkStripeSet* stripes);
+             ZMarkStripeSet* stripes,
+             ZMarkTerminate* terminate);
 
   void free(ZMarkStackAllocator* allocator);
 };

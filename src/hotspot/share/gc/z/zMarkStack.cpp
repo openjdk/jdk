@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkStackAllocator.hpp"
+#include "gc/z/zMarkTerminate.inline.hpp"
 #include "logging/log.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -146,6 +147,7 @@ void ZMarkThreadLocalStacks::free_stack(ZMarkStackAllocator* allocator, ZMarkSta
 bool ZMarkThreadLocalStacks::push_slow(ZMarkStackAllocator* allocator,
                                        ZMarkStripe* stripe,
                                        ZMarkStack** stackp,
+                                       ZMarkTerminate* terminate,
                                        ZMarkStackEntry entry,
                                        bool publish) {
   ZMarkStack* stack = *stackp;
@@ -166,7 +168,7 @@ bool ZMarkThreadLocalStacks::push_slow(ZMarkStackAllocator* allocator,
     }
 
     // Publish/Overflow and uninstall stack
-    stripe->publish_stack(stack, publish);
+    stripe->publish_stack(stack, terminate, publish);
     *stackp = stack = NULL;
   }
 }
@@ -198,7 +200,7 @@ bool ZMarkThreadLocalStacks::pop_slow(ZMarkStackAllocator* allocator,
   }
 }
 
-bool ZMarkThreadLocalStacks::flush(ZMarkStackAllocator* allocator, ZMarkStripeSet* stripes) {
+bool ZMarkThreadLocalStacks::flush(ZMarkStackAllocator* allocator, ZMarkStripeSet* stripes, ZMarkTerminate* terminate) {
   bool flushed = false;
 
   // Flush all stacks
@@ -214,7 +216,7 @@ bool ZMarkThreadLocalStacks::flush(ZMarkStackAllocator* allocator, ZMarkStripeSe
     if (stack->is_empty()) {
       free_stack(allocator, stack);
     } else {
-      stripe->publish_stack(stack);
+      stripe->publish_stack(stack, terminate, true /* publish */);
       flushed = true;
     }
     *stackp = NULL;

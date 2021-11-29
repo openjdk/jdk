@@ -26,6 +26,7 @@
 
 #include "gc/z/zMarkStack.hpp"
 
+#include "gc/z/zMarkTerminate.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
@@ -167,7 +168,7 @@ inline bool ZMarkStripe::is_empty() const {
   return _published.is_empty() && _overflowed.is_empty();
 }
 
-inline void ZMarkStripe::publish_stack(ZMarkStack* stack, bool publish) {
+inline void ZMarkStripe::publish_stack(ZMarkStack* stack, ZMarkTerminate* terminate, bool publish) {
   // A stack is published either on the published list or the overflowed
   // list. The published list is used by mutators publishing stacks for GC
   // workers to work on, while the overflowed list is used by GC workers
@@ -179,6 +180,7 @@ inline void ZMarkStripe::publish_stack(ZMarkStack* stack, bool publish) {
   } else {
     _overflowed.push(stack);
   }
+  terminate->wake_up();
 }
 
 inline ZMarkStack* ZMarkStripe::steal_stack() {
@@ -240,6 +242,7 @@ inline ZMarkStack* ZMarkThreadLocalStacks::steal(ZMarkStripeSet* stripes,
 inline bool ZMarkThreadLocalStacks::push(ZMarkStackAllocator* allocator,
                                          ZMarkStripeSet* stripes,
                                          ZMarkStripe* stripe,
+                                         ZMarkTerminate* terminate,
                                          ZMarkStackEntry entry,
                                          bool publish) {
   ZMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
@@ -248,7 +251,7 @@ inline bool ZMarkThreadLocalStacks::push(ZMarkStackAllocator* allocator,
     return true;
   }
 
-  return push_slow(allocator, stripe, stackp, entry, publish);
+  return push_slow(allocator, stripe, stackp, terminate, entry, publish);
 }
 
 inline bool ZMarkThreadLocalStacks::pop(ZMarkStackAllocator* allocator,
