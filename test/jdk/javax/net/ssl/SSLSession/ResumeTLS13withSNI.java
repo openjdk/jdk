@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 8211806
+ * @bug 8211806 8277881
  * @summary TLS 1.3 handshake server name indication is missing on a session resume
  * @run main/othervm ResumeTLS13withSNI
  */
