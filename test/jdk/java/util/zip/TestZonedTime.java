@@ -62,7 +62,7 @@ public class TestZonedTime {
 
             test(ZonedDateTime.of(2200, 04, 26, 2, 31, 52, 973, ZoneId.of("-05:00")));
 
-            // Test set/getTimeZoned()
+            // Test set/getLastModifiedTimeZoned()
             testLastModified = true;
             test(zdt);    // now
             test(zdt.withYear(1968));
