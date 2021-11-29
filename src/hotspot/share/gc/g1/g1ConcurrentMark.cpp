@@ -770,7 +770,7 @@ public:
   double worker_cost() const override {
     // The work done per region is very small, therefore we choose this magic number to cap the number
     // of threads used when there are few regions.
-    const uint regions_per_thread = 1000;
+    const double regions_per_thread = 1000;
     return _claimer.n_regions() / regions_per_thread;
   }
 
