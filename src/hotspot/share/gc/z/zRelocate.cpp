@@ -952,6 +952,16 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   _queue.clear();
 }
 
+ZPageAge ZRelocate::compute_age_to(ZPageAge age_from, bool promote_all) {
+  if (promote_all) {
+    return ZPageAge::old;
+  } else if (age_from == ZPageAge::eden) {
+    return ZPageAge::survivor;
+  } else {
+    return ZPageAge::old;
+  }
+}
+
 class ZPromotePagesTask : public ZTask {
 private:
   ZArrayParallelIterator<ZPage*> _iter;
@@ -968,8 +978,8 @@ public:
     ZArray<ZPage*> promoted_pages;
 
     for (ZPage* prev_page; _iter.next(&prev_page);) {
-      ZPageAge age_from = prev_page->age();
-      ZPageAge age_to = ZForwarding::compute_age_to(age_from, _promote_all);
+      const ZPageAge age_from = prev_page->age();
+      const ZPageAge age_to = ZRelocate::compute_age_to(age_from, _promote_all);
       assert(age_from != ZPageAge::old, "invalid age for a young collection");
 
       // Figure out if this is proper promotion
@@ -980,7 +990,7 @@ public:
       prev_page->log_msg(promotion ? " (in-place promoted)" : " (in-place survived)");
 
       // Setup to-space page
-      ZPage* new_page = promotion ? prev_page->clone_limited_in_place_promoted() : prev_page;
+      ZPage* const new_page = promotion ? prev_page->clone_limited_in_place_promoted() : prev_page;
       new_page->reset(generation_to, age_to, ZPageResetType::InPlaceAging);
 
       if (promotion) {

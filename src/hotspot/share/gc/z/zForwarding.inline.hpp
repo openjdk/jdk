@@ -50,30 +50,20 @@ inline uint32_t ZForwarding::nentries(const ZPage* page) {
   return round_up_power_of_2(page->live_objects() * 2);
 }
 
-inline ZForwarding* ZForwarding::alloc(ZForwardingAllocator* allocator, ZPage* page, bool promote_all) {
+inline ZForwarding* ZForwarding::alloc(ZForwardingAllocator* allocator, ZPage* page, ZPageAge age_to) {
   const size_t nentries = ZForwarding::nentries(page);
   void* const addr = AttachedArray::alloc(allocator, nentries);
-  return ::new (addr) ZForwarding(page, nentries, promote_all);
+  return ::new (addr) ZForwarding(page, age_to, nentries);
 }
 
-inline ZPageAge ZForwarding::compute_age_to(ZPageAge age_from, bool promote_all) {
-  if (promote_all) {
-    return ZPageAge::old;
-  } else if (age_from == ZPageAge::eden) {
-    return ZPageAge::survivor;
-  } else {
-    return ZPageAge::old;
-  }
-}
-
-inline ZForwarding::ZForwarding(ZPage* page, size_t nentries, bool promote_all) :
+inline ZForwarding::ZForwarding(ZPage* page, ZPageAge age_to, size_t nentries) :
     _virtual(page->virtual_memory()),
     _object_alignment_shift(page->object_alignment_shift()),
     _entries(nentries),
     _page(page),
     _generation_id(page->generation_id()),
     _age_from(page->age()),
-    _age_to(compute_age_to(_age_from, promote_all)),
+    _age_to(age_to),
     _claimed(false),
     _ref_lock(),
     _ref_count(1),

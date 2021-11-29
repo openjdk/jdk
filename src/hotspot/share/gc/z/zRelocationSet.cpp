@@ -64,6 +64,10 @@ private:
     install(forwarding, &_medium_next);
   }
 
+  ZPageAge age_to(ZPage* page) {
+    return ZRelocate::compute_age_to(page->age(), _promote_all);
+  }
+
 public:
   ZRelocationSetInstallTask(ZForwardingAllocator* allocator, const ZRelocationSetSelector* selector) :
       ZTask("ZRelocationSetInstallTask"),
@@ -94,13 +98,13 @@ public:
   virtual void work() {
     // Allocate and install forwardings for small pages
     for (ZPage* page; _small_iter.next(&page);) {
-      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, _promote_all);
+      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, age_to(page));
       install_small(forwarding);
     }
 
     // Allocate and install forwardings for medium pages
     for (ZPage* page; _medium_iter.next(&page);) {
-      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, _promote_all);
+      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, age_to(page));
       install_medium(forwarding);
     }
   }

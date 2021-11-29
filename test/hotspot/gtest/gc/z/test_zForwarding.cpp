@@ -204,7 +204,7 @@ public:
     allocator.reset((sizeof(ZForwarding)) + (nentries * sizeof(ZForwardingEntry)));
 
     // Setup forwarding
-    ZForwarding* const forwarding = ZForwarding::alloc(&allocator, &page, false /* promote_all */);
+    ZForwarding* const forwarding = ZForwarding::alloc(&allocator, &page, ZPageAge::survivor);
 
     // Actual test function
     (*function)(forwarding);

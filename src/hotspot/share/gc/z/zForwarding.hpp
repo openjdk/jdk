@@ -75,12 +75,11 @@ private:
   template <typename Function>
   void object_iterate_forwarded_via_table(Function function);
 
-  ZForwarding(ZPage* page, size_t nentries, bool promote_all);
+  ZForwarding(ZPage* page, ZPageAge age_to, size_t nentries);
 
 public:
   static uint32_t nentries(const ZPage* page);
-  static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page, bool promote_all);
-  static ZPageAge compute_age_to(ZPageAge age_from, bool promote_all);
+  static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page, ZPageAge age_to);
 
   uint8_t type() const;
   ZGenerationId generation_id() const;

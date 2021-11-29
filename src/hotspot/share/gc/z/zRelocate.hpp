@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZRELOCATE_HPP
 
 #include "gc/z/zRelocationSet.hpp"
+#include "gc/z/zPageAge.hpp"
 
 class ZForwarding;
 class ZGeneration;
@@ -76,6 +77,8 @@ public:
 
   static void add_remset(volatile zpointer* p);
   static void add_remset_for_fields(volatile zaddress addr);
+
+  static ZPageAge compute_age_to(ZPageAge age_from, bool promote_all);
 
   zaddress relocate_object(ZForwarding* forwarding, zaddress_unsafe from_addr);
   zaddress forward_object(ZForwarding* forwarding, zaddress_unsafe from_addr);
