@@ -529,12 +529,16 @@ void BlockBegin::set_end(BlockEnd* end) {
   if (end == _end) {
     return;
   }
-  clear_end();
 
-  // Set the new end
-  _end = end;
+  // remove this block as predecessor of its current successors
+  if (_end != NULL) {
+    for (int i1 = 0; i1 < _successors.length(); i1++) {
+      _successors.at(i1)->remove_predecessor(this);
+    }
+    _end = NULL;
+  }
 
-  // Copy successors from newEnd to here
+  // Now reset successors list based on BlockEnd
   _successors.clear();
   for (int i = 0; i < end->number_of_sux(); i++) {
     BlockBegin* sux = end->sux_at(i);
@@ -542,22 +546,8 @@ void BlockBegin::set_end(BlockEnd* end) {
     sux->_predecessors.append(this);
   }
 
-  _end->set_sux_from_begin(this);
-}
-
-
-void BlockBegin::clear_end() {
-  // Must make the predecessors/successors match up with the
-  // BlockEnd's notion.
-  if (_end == NULL) return;
-
-  // We dont need to do anything with the old end, it will just be forgotten
-
-  // disconnect this block from its current successors
-  for (int i = 0; i < _successors.length(); i++) {
-    _successors.at(i)->remove_predecessor(this);
-  }
-  _end = NULL;
+  end->set_sux(&_successors);
+  _end = end;
 }
 
 

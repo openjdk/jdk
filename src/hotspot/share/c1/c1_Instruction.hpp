@@ -1705,7 +1705,7 @@ LEAF(BlockBegin, StateSplit)
   void set_depth_first_number(int dfn)           { _depth_first_number = dfn; }
   void set_linear_scan_number(int lsn)           { _linear_scan_number = lsn; }
   void set_end(BlockEnd* end);
-  void clear_end();
+
   void disconnect_from_graph();
   static void disconnect_edge(BlockBegin* from, BlockBegin* to);
   BlockBegin* insert_block_between(BlockBegin* sux);
@@ -1803,6 +1803,7 @@ BASE(BlockEnd, StateSplit)
  protected:
   BlockList* sux() const                         { return _sux; }
 
+ public:
   void set_sux(BlockList* sux) {
 #ifdef ASSERT
     assert(sux != NULL, "sux must exist");
@@ -1811,7 +1812,6 @@ BASE(BlockEnd, StateSplit)
     _sux = sux;
   }
 
- public:
   // creation
   BlockEnd(ValueType* type, ValueStack* state_before, bool is_safepoint)
   : StateSplit(type, state_before)
