@@ -29,11 +29,9 @@ import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
 
@@ -49,7 +47,7 @@ public class InterfacePrivateCalls {
     static class C1 implements I {}
     static class C2 implements I {}
     static class C3 implements I {}
-    
+
     private I[] objs;
 
     @Setup(Level.Trial)
