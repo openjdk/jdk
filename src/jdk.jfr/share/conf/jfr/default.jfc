@@ -627,6 +627,11 @@
       <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.UnsafeAllocation">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.ObjectAllocationSample">
       <setting name="enabled" control="object-allocation-enabled">true</setting>
       <setting name="throttle" control="allocation-profiling">150/s</setting>

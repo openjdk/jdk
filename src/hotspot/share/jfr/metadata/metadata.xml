@@ -599,6 +599,11 @@
     <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
   </Event>
 
+  <Event name="UnsafeAllocation" category="Java Application" label="Allocation on Unsafe" description="Allocation memory when using unsafe"
+    thread="true" stackTrace="true" startTime="false">
+    <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
+  </Event>
+
   <Event name="ObjectAllocationSample" category="Java Application" label="Object Allocation Sample" thread="true" stackTrace="true" startTime="false" throttle="true">
     <Field type="Class" name="objectClass" label="Object Class" description="Class of allocated object" />
     <Field type="long" contentType="bytes" name="weight" label="Sample Weight"

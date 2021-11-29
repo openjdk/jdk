@@ -339,9 +339,10 @@ UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong si
   size_t sz = (size_t)size;
 
   assert(is_aligned(sz, HeapWordSize), "sz not aligned");
-
+  EventUnsafeAllocation event;
   void* x = os::malloc(sz, mtOther);
-
+  event.set_allocationSize(sz);
+  event.commit();
   return addr_to_java(x);
 } UNSAFE_END
 
