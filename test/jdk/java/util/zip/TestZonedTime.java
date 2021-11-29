@@ -36,7 +36,7 @@ import java.util.zip.*;
 
 public class TestZonedTime {
     private static TimeZone tz0 = TimeZone.getDefault();
-    private static TimeZone tzAsia = TimeZone.getTimeZone("Asia/Shanghai"); 
+    private static TimeZone tzAsia = TimeZone.getTimeZone("Asia/Shanghai");
     private static boolean testLastModified;
 
     public static void main(String[] args) throws Throwable{
@@ -138,7 +138,7 @@ public class TestZonedTime {
     static void check(ZipEntry ze, ZonedDateTime expected) {
         long timeSeconds;
         if (testLastModified) {
-            timeSeconds = ze.getLastModifiedTimeZoned(expected.getZone()).toInstant().getEpochSecond(); 
+            timeSeconds = ze.getLastModifiedTimeZoned(expected.getZone()).toInstant().getEpochSecond();
         } else {
             timeSeconds = ze.getTimeZoned(expected.getZone()).toEpochSecond();
         }

@@ -430,7 +430,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * @param  time
      *         The last modification time of the entry
-     * @param  zoneId 
+     * @param  zoneId
      *         The time-zone for conmversion to the MS-DOS local date-time
      *
      * @return This zip entry
