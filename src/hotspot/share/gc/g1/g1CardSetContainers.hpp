@@ -227,6 +227,8 @@ public:
   template <class CardVisitor>
   void iterate(CardVisitor& found);
 
+  size_t max_entries() const { return _size; }
+
   static size_t header_size_in_bytes() { return header_size_in_bytes_internal<G1CardSetArray>(); }
 
   static size_t size_in_bytes(size_t num_cards) {
