@@ -31,7 +31,6 @@
  * @run main/othervm -Djava.locale.providers=COMPAT,SPI DateFormatTest
  */
 
-import java.time.ZoneId;
 import java.util.*;
 import java.text.*;
 import static java.util.GregorianCalendar.*;
@@ -343,17 +342,12 @@ public class DateFormatTest extends IntlTest
     // Test pattern with runs things together
     public void TestRunTogetherPattern985()
     {
-        Date date1 = new Date();
-        var defZone = ZoneId.systemDefault();
-        if (defZone.getRules().getTransition(date1.toInstant().atZone(defZone).toLocalDateTime()) != null) {
-            logln("At the offset transition. Round trip test skipped.");
-            return;
-        }
-
-        String format = "yyyyMMddHHmmssSSS";
+        String format = "yyyyMMddHHmmssSSSzzzz";
         String now, then;
+
         SimpleDateFormat formatter = new SimpleDateFormat(format);
 
+        Date date1 = new Date();
         now = formatter.format(date1);
 
         logln(now);
