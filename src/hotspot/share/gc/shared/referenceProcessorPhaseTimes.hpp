@@ -114,7 +114,8 @@ public:
 };
 
 // Updates working time of each worker thread for a given sub phase.
-class RefProcSubPhasesWorkerTimeTracker : public RefProcWorkerTimeTracker {
+class RefProcSubPhasesWorkerTimeTracker : public StackObj {
+  RefProcWorkerTimeTracker _tracker;
 public:
   RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
                                     ReferenceProcessorPhaseTimes* phase_times,
