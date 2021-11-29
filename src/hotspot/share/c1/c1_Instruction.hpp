@@ -1723,14 +1723,7 @@ LEAF(BlockBegin, StateSplit)
 
   // successors and predecessors
   int number_of_sux() const;
-  int number_of_sux_from_local() const;
   BlockBegin* sux_at(int i) const;
-  BlockBegin* sux_at_from_local(int i) const;
-  void remove_sux_at(int i);
-  int find_sux(BlockBegin* sux);
-  void clear_sux();
-  void add_successor_local(BlockBegin* sux);
-
   void add_predecessor(BlockBegin* pred);
   void remove_predecessor(BlockBegin* pred);
   bool is_predecessor(BlockBegin* pred) const    { return _predecessors.contains(pred); }
@@ -1810,7 +1803,6 @@ BASE(BlockEnd, StateSplit)
   }
 
  public:
-
   // creation
   BlockEnd(ValueType* type, ValueStack* state_before, bool is_safepoint)
   : StateSplit(type, state_before)
@@ -1827,14 +1819,11 @@ BASE(BlockEnd, StateSplit)
   // manipulation
   inline void remove_sux_at(int i) { _sux->remove_at(i);}
   inline int find_sux(BlockBegin* sux) {return _sux->find(sux);}
-  void clear_sux() {_sux->clear();}
 
   // successors
   int number_of_sux() const                      { return _sux != NULL ? _sux->length() : 0; }
   BlockBegin* sux_at(int i) const                { return _sux->at(i); }
   BlockBegin* default_sux() const                { return sux_at(number_of_sux() - 1); }
-  BlockBegin** addr_sux_at(int i) const          { return _sux->adr_at(i); }
-  int sux_index(BlockBegin* sux) const           { return _sux->find(sux); }
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);
 };
 
