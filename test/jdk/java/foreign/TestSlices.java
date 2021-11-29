@@ -23,12 +23,12 @@
  */
 
 import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
 
 import java.lang.invoke.VarHandle;
 
 import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
@@ -39,9 +39,9 @@ import static org.testng.Assert.*;
 public class TestSlices {
 
     static MemoryLayout LAYOUT = MemoryLayout.sequenceLayout(2,
-            MemoryLayout.sequenceLayout(5, MemoryLayouts.JAVA_INT));
+            MemoryLayout.sequenceLayout(5, ValueLayout.JAVA_INT));
 
-    static VarHandle VH_ALL = LAYOUT.varHandle(int.class,
+    static VarHandle VH_ALL = LAYOUT.varHandle(
             MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.sequenceElement());
 
     @Test(dataProvider = "slices")
@@ -76,16 +76,16 @@ public class TestSlices {
                 // x
                 { VH_ALL, 2, 5, new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 } },
                 // x[0::2]
-                { LAYOUT.varHandle(int.class, MemoryLayout.PathElement.sequenceElement(),
+                { LAYOUT.varHandle(MemoryLayout.PathElement.sequenceElement(),
                         MemoryLayout.PathElement.sequenceElement(0, 2)), 2, 3, new int[] { 1, 3, 5, 6, 8, 10 } },
                 // x[1::2]
-                { LAYOUT.varHandle(int.class, MemoryLayout.PathElement.sequenceElement(),
+                { LAYOUT.varHandle(MemoryLayout.PathElement.sequenceElement(),
                         MemoryLayout.PathElement.sequenceElement(1, 2)), 2, 2, new int[] { 2, 4, 7, 9 } },
                 // x[4::-2]
-                { LAYOUT.varHandle(int.class, MemoryLayout.PathElement.sequenceElement(),
+                { LAYOUT.varHandle(MemoryLayout.PathElement.sequenceElement(),
                         MemoryLayout.PathElement.sequenceElement(4, -2)), 2, 3, new int[] { 5, 3, 1, 10, 8, 6 } },
                 // x[3::-2]
-                { LAYOUT.varHandle(int.class, MemoryLayout.PathElement.sequenceElement(),
+                { LAYOUT.varHandle(MemoryLayout.PathElement.sequenceElement(),
                         MemoryLayout.PathElement.sequenceElement(3, -2)), 2, 2, new int[] { 4, 2, 9, 7 } },
         };
     }

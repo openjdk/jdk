@@ -55,7 +55,7 @@ public abstract class AbstractTerminal implements Terminal {
     public AbstractTerminal(String name, String type, Charset encoding, SignalHandler signalHandler) throws IOException {
         this.name = name;
         this.type = type != null ? type : "ansi";
-        this.encoding = encoding != null ? encoding : Charset.defaultCharset();
+        this.encoding = encoding != null ? encoding : System.out.charset();
         for (Signal signal : Signal.values()) {
             handlers.put(signal, signalHandler);
         }

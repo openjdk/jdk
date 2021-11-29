@@ -174,6 +174,7 @@ ProgrammableUpcallHandler::ProgrammableUpcallHandler() {
 }
 
 void ProgrammableUpcallHandler::handle_uncaught_exception(oop exception) {
+  ResourceMark rm;
   // Based on CATCH macro
   tty->print_cr("Uncaught exception:");
   exception->print();
