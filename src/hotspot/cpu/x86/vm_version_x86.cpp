@@ -1884,12 +1884,9 @@ void VM_Version::check_virtualizations() {
 // has improved implementation of 64-byte load/stores and so the default
 // threshold is set to 0 for these platforms.
 int VM_Version::avx3_threshold() {
-  if (FLAG_IS_DEFAULT(AVX3Threshold)) {
-    return ((is_intel_family_core() &&
-             supports_serialize()) ? 0: AVX3Threshold);
-  } else {
-    return AVX3Threshold;
-  }
+  return (is_intel_family_core() &&
+          supports_serialize() &&
+          FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
 void VM_Version::initialize() {

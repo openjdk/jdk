@@ -8706,6 +8706,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
   Label L_fill_zmm_sequence;
 
   int shift = -1;
+  int avx3threshold = VM_Version::avx3_threshold();
   switch(type) {
     case T_BYTE:  shift = 0;
       break;
@@ -8721,10 +8722,10 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
       fatal("Unhandled type: %s\n", type2name(type));
   }
 
-  if ((VM_Version::avx3_threshold() != 0)  || (MaxVectorSize == 32)) {
+  if ((avx3threshold != 0)  || (MaxVectorSize == 32)) {
 
     if (MaxVectorSize == 64) {
-      cmpq(count, VM_Version::avx3_threshold() >> shift);
+      cmpq(count, avx3threshold >> shift);
       jcc(Assembler::greater, L_fill_zmm_sequence);
     }
 
