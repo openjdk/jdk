@@ -612,15 +612,7 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
     output()->print(" dom B%d", x->dominator()->block_id());
   }
 
-  // print predecessors and successors
-  assert(x->end() != NULL, "gonna touch successors");
-  if (x->number_of_sux() > 0) {
-    output()->print(" sux:");
-    for (int i = 0; i < x->number_of_sux(); i ++) {
-      output()->print(" B%d", x->sux_at(i)->block_id());
-    }
-  }
-
+  // print predecessors
   if (x->number_of_preds() > 0) {
     output()->print(" pred:");
     for (int i = 0; i < x->number_of_preds(); i ++) {
