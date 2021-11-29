@@ -32,7 +32,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+UseSerialGC -Xbatch -XX:-UseOnStackReplacement -XX:-TieredCompilation
+ *                   -Xbatch -XX:-UseOnStackReplacement -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.exceptions.OptimizeImplicitExceptions::throwImplicitException
  *                   compiler.exceptions.OptimizeImplicitExceptions
  */
