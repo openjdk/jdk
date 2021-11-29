@@ -268,9 +268,13 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * @param  time
      *         The last modification time of the entry in zoned date-time
      *
+     * @throws NullPointerException if the {@code time} is null
+     *
+     * @see #getTimeZoned(ZoneId)
      * @since 18
      */
     public void setTimeZoned(ZonedDateTime time) {
+        Objects.requireNonNull(time, "lastModifiedTime");
         int year = time.getYear() - 1980;
         if (year < 0) {
             this.xdostime = DOSTIME_BEFORE_1980;
@@ -340,9 +344,13 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * @return The last modification time of the entry in zoned date-time
      *
+     * @throws NullPointerException if the {@code zoneId} is null
+     *
+     * @see #setTimeZoned(ZonedDateTime)
      * @since 18
      */
     public ZonedDateTime getTimeZoned(ZoneId zoneId) {
+        Objects.requireNonNull(zoneId, "zoneId");
         if (mtime != null) {
             return ZonedDateTime.ofInstant(mtime.toInstant(), zoneId);
         }
@@ -403,6 +411,67 @@ public class ZipEntry implements ZipConstants, Cloneable {
         if (xdostime == -1)
             return null;
         return FileTime.from(getTime(), TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Sets the last modification time of the entry in zoned date-time.
+     *
+     * <p> If the entry is output to a ZIP file or ZIP file formatted
+     * output stream the last modification time set by this method will
+     * be stored into the {@code date and time fields} of the zip file
+     * entry and encoded in standard {@code MS-DOS date and time format}.
+     * If the date-time set is out of the range of the standard {@code
+     * MS-DOS date and time format}, the time will also be stored into
+     * zip file entry's extended timestamp fields in {@code optional
+     * extra data} in UTC time converted from the input zoned time.
+     *
+     * <p> The specified time-zone is used to convert the time to
+     * the MS-DOS local date-time.
+     *
+     * @return This zip entry
+     *
+     * @throws NullPointerException if the {@code time} is null
+     * @throws NullPointerException if the {@code zoneId} is null
+     *
+     * @see #getLastModifiedTimeZoned()
+     * @since 18
+     */
+    public ZipEntry setLastModifiedTimeZoned(FileTime time, ZoneId zoneId) {
+        this.mtime = Objects.requireNonNull(time, "lastModifiedTime");
+        this.xdostime = javaToExtendedDosTime(time.to(TimeUnit.MILLISECONDS),
+                                              Objects.requireNonNull(zoneId, "zoneId"));
+        return this;
+    }
+
+    /**
+     * Returns the last modification time of the entry in a zoned date-time.
+     *
+     * <p> If the entry is read from a ZIP file or ZIP file formatted
+     * input stream, this is the last modification time from the zip
+     * file entry's {@code optional extra data} if the extended timestamp
+     * fields are present. Otherwise, the last modification time is read
+     * from entry's standard MS-DOS formatted {@code date and time fields}.
+     *
+     * <p> The specified time-zone is used to convert the MS-DOS time to a
+     * zoned date-time.
+     *
+     * @param  zoneId
+     *         The time-zone used to convert the UTC time to
+     *         zoned date-time
+     *
+     * @return The last modification time of the entry in zoned date-time
+     *
+     * @throws NullPointerException if the {@code zoneId} is null
+     *
+     * @see #setLastModifiedTimeZoned(FileTime, ZoneId)
+     * @since 18
+     */
+    public FileTime getLastModifiedTimeZoned(ZoneId zoneId) {
+        if (mtime != null)
+            return mtime;
+        if (xdostime == -1)
+            return null;
+        return FileTime.from(getTimeZoned(Objects.requireNonNull(zoneId, "zoneId")).toInstant());
     }
 
     /**

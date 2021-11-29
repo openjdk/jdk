@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,16 +149,33 @@ class ZipUtils {
      * @return DOS time with 2s remainder encoded into upper half
      */
     static long javaToExtendedDosTime(long time) {
-        LocalDateTime ldt = javaEpochToLocalDateTime(time);
+        return javaToExtendedDosTime(time, null);
+    }
+
+    static LocalDateTime javaEpochToLocalDateTime(long time) {
+        return javaEpochToLocalDateTime(time, null);
+    }
+
+    /**
+     * Converts Java time to DOS time using specified time-zone,
+     * encoding any milliseconds lost in the conversion into the
+     * upper half of the returned long.
+     *
+     * @param time milliseconds since epoch
+     * @param zoneId time-zone to convert from UTC value into local time.
+     * @return DOS time with 2s remainder encoded into upper half
+     */
+    static long javaToExtendedDosTime(long time, ZoneId zoneId) {
+        LocalDateTime ldt = javaEpochToLocalDateTime(time, zoneId);
         if (ldt.getYear() >= 1980) {
             return javaToDosTime(ldt) + ((time % 2000) << 32);
         }
         return ZipEntry.DOSTIME_BEFORE_1980;
     }
 
-    static LocalDateTime javaEpochToLocalDateTime(long time) {
+    static LocalDateTime javaEpochToLocalDateTime(long time, ZoneId zoneId) {
         Instant instant = Instant.ofEpochMilli(time);
-        return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+        return LocalDateTime.ofInstant(instant, zoneId == null ? ZoneId.systemDefault() : zoneId);
     }
 
     /**

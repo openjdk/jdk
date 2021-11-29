@@ -28,7 +28,7 @@ import jdk.incubator.foreign.*;
 public class PanamaMain {
    public static void main(String[] args) {
        System.out.println("Trying to get CLinker");
-       CLinker.getInstance();
+       CLinker.systemCLinker();
        System.out.println("Got CLinker");
    }
 }

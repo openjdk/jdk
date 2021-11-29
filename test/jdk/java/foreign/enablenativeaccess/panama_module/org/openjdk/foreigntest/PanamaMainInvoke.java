@@ -28,7 +28,7 @@ import jdk.incubator.foreign.*;
 
 public class PanamaMainInvoke {
    public static void main(String[] args) throws Throwable {
-       var mh = MethodHandles.lookup().findStatic(CLinker.class, "getInstance",
+       var mh = MethodHandles.lookup().findStatic(CLinker.class, "systemCLinker",
            MethodType.methodType(CLinker.class));
        var linker = (CLinker)mh.invokeExact();
    }
