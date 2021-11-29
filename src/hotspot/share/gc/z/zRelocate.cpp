@@ -314,10 +314,6 @@ static ZPage* alloc_page(const ZForwarding* forwarding, ZGenerationId generation
   return ZHeap::heap()->alloc_page(forwarding->type(), forwarding->size(), flags, generation, age);
 }
 
-static void free_page(ZPage* page) {
-  ZHeap::heap()->free_page(page);
-}
-
 static void retire_page(ZCollector* collector, ZPage* page) {
   if (collector->is_young() && page->is_old()) {
     collector->increase_promoted(page->used());
@@ -330,7 +326,7 @@ static void retire_page(ZCollector* collector, ZPage* page) {
   // relocate the remaining objects, leaving the target page empty when
   // relocation completed.
   if (page->used() == 0) {
-    free_page(page);
+    ZHeap::heap()->free_page(page);
   }
 }
 
@@ -756,7 +752,7 @@ public:
     } else {
       // Detach and free relocated page
       ZPage* const page = _forwarding->detach_page();
-      free_page(page);
+      ZHeap::heap()->free_page(page);
     }
   }
 };
