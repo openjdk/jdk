@@ -97,8 +97,8 @@ public class IndyCorrectInvocationName implements Plugin {
                 IndyCorrectInvocationName.class.getName() + "\n");
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(Path.of(ToolBox.testClasses))) {
             for (Path p : ds) {
-                if (!p.getFileName().toString().startsWith("IndyCorrectInvocationName") ||
-                    !p.getFileName().toString().endsWith(".class")) {
+                if (p.getFileName().toString().startsWith("IndyCorrectInvocationName") ||
+                    p.getFileName().toString().endsWith(".class")) {
                     Files.copy(p, pluginClasses.resolve(p.getFileName()));
                 }
             }
