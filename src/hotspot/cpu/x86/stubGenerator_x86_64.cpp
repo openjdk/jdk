@@ -1384,7 +1384,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
-    int avx3threshold = VM_Version::avx3_threshold(); 
+    int avx3threshold = VM_Version::avx3_threshold();
     bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
     Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
     Label L_repmovs, L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
