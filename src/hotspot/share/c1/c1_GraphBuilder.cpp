@@ -90,10 +90,9 @@ class BlockListBuilder {
   void print();
 #endif
 
-  // Removing successor duplication
-  int local_block_number_of_successors(BlockBegin* block);
-  BlockBegin* local_block_successor_at(BlockBegin* block, int i);
-  void local_block_add_successor(BlockBegin* block, BlockBegin* sux);
+  int number_of_successors(BlockBegin* block);
+  BlockBegin* successor_at(BlockBegin* block, int i);
+  void add_successor(BlockBegin* block, BlockBegin* sux);
 
  public:
   // creation
@@ -105,24 +104,6 @@ class BlockListBuilder {
 
 
 // Implementation of BlockListBuilder
-
-int BlockListBuilder::local_block_number_of_successors(BlockBegin* block)
-{
-  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
-  return _bci2block_successors.at(block->bci()).length();
-}
-
-BlockBegin* BlockListBuilder::local_block_successor_at(BlockBegin* block, int i)
-{
-  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
-  return _bci2block_successors.at(block->bci()).at(i);
-}
-
-void BlockListBuilder::local_block_add_successor(BlockBegin* block, BlockBegin* sux)
-{
-  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
-  _bci2block_successors.at(block->bci()).append(sux);
-}
 
 BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int osr_bci)
  : _compilation(compilation)
@@ -196,7 +177,7 @@ BlockBegin* BlockListBuilder::make_block_at(int cur_bci, BlockBegin* predecessor
       BAILOUT_("Exception handler can be reached by both normal and exceptional control flow", block);
     }
 
-    local_block_add_successor(predecessor, block);
+    add_successor(predecessor, block);
     block->increment_total_preds();
   }
 
@@ -228,7 +209,7 @@ void BlockListBuilder::handle_exceptions(BlockBegin* current, int cur_bci) {
 
       // add each exception handler only once
       if(!_bci2block_successors.at(current->bci()).contains(entry)) {
-        local_block_add_successor(current, entry);
+        add_successor(current, entry);
         entry->increment_total_preds();
       }
 
@@ -444,9 +425,9 @@ int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   _active.set_bit(block_id);
 
   intptr_t loop_state = 0;
-  for (int i = local_block_number_of_successors(block) - 1; i >= 0; i--) {
+  for (int i = number_of_successors(block) - 1; i >= 0; i--) {
     // recursively process all successors
-    loop_state |= mark_loops(local_block_successor_at(block, i), in_subroutine);
+    loop_state |= mark_loops(successor_at(block, i), in_subroutine);
   }
 
   // clear active-bit after all successors are processed
@@ -478,6 +459,23 @@ int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   return loop_state;
 }
 
+inline int BlockListBuilder::number_of_successors(BlockBegin* block)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).length();
+}
+
+inline BlockBegin* BlockListBuilder::successor_at(BlockBegin* block, int i)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).at(i);
+}
+
+inline void BlockListBuilder::add_successor(BlockBegin* block, BlockBegin* sux)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  _bci2block_successors.at(block->bci()).append(sux);
+}
 
 #ifndef PRODUCT
 
@@ -503,10 +501,10 @@ void BlockListBuilder::print() {
     tty->print(cur->is_set(BlockBegin::subroutine_entry_flag)        ? " sr" : "   ");
     tty->print(cur->is_set(BlockBegin::parser_loop_header_flag)      ? " lh" : "   ");
 
-    if (local_block_number_of_successors(cur) > 0) {
+    if (number_of_successors(cur) > 0) {
       tty->print("    sux: ");
-      for (int j = 0; j < local_block_number_of_successors(cur); j++) {
-        BlockBegin* sux = local_block_successor_at(cur, j);
+      for (int j = 0; j < number_of_successors(cur); j++) {
+        BlockBegin* sux = successor_at(cur, j);
         tty->print("B%d ", sux->block_id());
       }
     }
