@@ -1335,9 +1335,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
             values.addElement(invoker);
         }
         // Save the popup, if it's Serializable.
-        if (popup instanceof Serializable ser) {
+        if (popup instanceof Serializable) {
             values.addElement("popup");
-            values.addElement(ser);
+            values.addElement(popup);
         }
         s.writeObject(values);
 

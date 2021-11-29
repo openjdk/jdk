@@ -3129,24 +3129,24 @@ public class JTree extends JComponent implements Scrollable, Accessible
 
         s.defaultWriteObject();
         // Save the cellRenderer, if it's Serializable.
-        if (cellRenderer instanceof Serializable ser) {
+        if (cellRenderer instanceof Serializable) {
             values.addElement("cellRenderer");
-            values.addElement(ser);
+            values.addElement(cellRenderer);
         }
         // Save the cellEditor, if it's Serializable.
-        if (cellEditor instanceof Serializable ser) {
+        if (cellEditor instanceof Serializable) {
             values.addElement("cellEditor");
-            values.addElement(ser);
+            values.addElement(cellEditor);
         }
         // Save the treeModel, if it's Serializable.
-        if (treeModel instanceof Serializable ser) {
+        if (treeModel instanceof Serializable) {
             values.addElement("treeModel");
-            values.addElement(ser);
+            values.addElement(treeModel);
         }
         // Save the selectionModel, if it's Serializable.
-        if (selectionModel instanceof Serializable ser) {
+        if (selectionModel instanceof Serializable) {
             values.addElement("selectionModel");
-            values.addElement(ser);
+            values.addElement(selectionModel);
         }
 
         Object      expandedData = getArchivableExpandedState();

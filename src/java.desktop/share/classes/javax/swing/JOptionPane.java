@@ -2331,14 +2331,14 @@ public class JOptionPane extends JComponent implements Accessible
 
         s.defaultWriteObject();
         // Save the icon, if it's Serializable.
-        if (icon instanceof Serializable ser) {
+        if (icon instanceof Serializable) {
             values.addElement("icon");
-            values.addElement(ser);
+            values.addElement(icon);
         }
         // Save the message, if it's Serializable.
-        if (message instanceof Serializable ser) {
+        if (message instanceof Serializable) {
             values.addElement("message");
-            values.addElement(ser);
+            values.addElement(message);
         }
         // Save the treeModel, if it's Serializable.
         if(options != null) {
@@ -2355,14 +2355,14 @@ public class JOptionPane extends JComponent implements Accessible
             }
         }
         // Save the initialValue, if it's Serializable.
-        if (initialValue instanceof Serializable ser) {
+        if (initialValue instanceof Serializable) {
             values.addElement("initialValue");
-            values.addElement(ser);
+            values.addElement(initialValue);
         }
         // Save the value, if it's Serializable.
-        if (value instanceof Serializable ser) {
+        if (value instanceof Serializable) {
             values.addElement("value");
-            values.addElement(ser);
+            values.addElement(value);
         }
         // Save the selectionValues, if it's Serializable.
         if(selectionValues != null) {
@@ -2382,14 +2382,14 @@ public class JOptionPane extends JComponent implements Accessible
             }
         }
         // Save the inputValue, if it's Serializable.
-        if (inputValue instanceof Serializable ser) {
+        if (inputValue instanceof Serializable) {
             values.addElement("inputValue");
-            values.addElement(ser);
+            values.addElement(inputValue);
         }
         // Save the initialSelectionValue, if it's Serializable.
-        if (initialSelectionValue instanceof Serializable ser) {
+        if (initialSelectionValue instanceof Serializable) {
             values.addElement("initialSelectionValue");
-            values.addElement(ser);
+            values.addElement(initialSelectionValue);
         }
         s.writeObject(values);
     }

@@ -144,8 +144,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
     }
 
     protected static TableColumn getTableColumn(final JTableHeader target, final Object value) {
-        if (!(value instanceof Integer idx)) return null;
-        final int columnIndex = idx;
+        if (!(value instanceof Integer columnIndex)) return null;
 
         final TableColumnModel columnModel = target.getColumnModel();
         if (columnIndex < 0 || columnIndex >= columnModel.getColumnCount()) return null;

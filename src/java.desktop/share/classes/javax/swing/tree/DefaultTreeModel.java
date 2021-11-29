@@ -691,9 +691,9 @@ public class DefaultTreeModel implements Serializable, TreeModel {
 
         s.defaultWriteObject();
         // Save the root, if it's Serializable.
-        if (root instanceof Serializable ser) {
+        if (root instanceof Serializable) {
             values.addElement("root");
-            values.addElement(ser);
+            values.addElement(root);
         }
         s.writeObject(values);
     }
