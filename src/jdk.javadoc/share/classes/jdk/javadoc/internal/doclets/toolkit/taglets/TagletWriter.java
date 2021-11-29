@@ -243,8 +243,8 @@ public abstract class TagletWriter {
     /**
      * Returns the output that acts as a notification for an invalid tag.
      *
-     * @param summary the summary message
-     * @param detail the optional detail message
+     * @param summary the single-line summary message
+     * @param detail the optional detail message which may contain preformatted text
      * @return the output
      */
     protected abstract Content invalidTagOutput(String summary, Optional<String> detail);

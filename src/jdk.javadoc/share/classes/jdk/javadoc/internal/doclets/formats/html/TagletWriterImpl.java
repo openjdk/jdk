@@ -539,7 +539,7 @@ public class TagletWriterImpl extends TagletWriter {
         }
         return new HtmlTree(TagName.DETAILS).addStyle(HtmlStyle.invalidTag)
                 .add(new HtmlTree(TagName.SUMMARY).add(Text.of(summary)))
-                .add(new HtmlTree(TagName.PRE).add(Text.of(detail.get())));
+                .add(new HtmlTree(TagName.PRE).add(Text.of(utils.normalizeNewlines(detail.get()))));
     }
 
     @Override
