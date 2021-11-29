@@ -504,8 +504,9 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * If a {@code ZoneId} was parsed without an offset then the zone will be
  * combined with the {@code LocalDateTime} to form the instant using the rules
  * of {@link ChronoLocalDateTime#atZone(ZoneId)}. If the {@code ZoneId} was
- * parsed from the zone name that does not indicate daylight saving time, then
- * the standard offset will be used at the local time-line overlap.
+ * parsed from a zone name that indicates whether daylight saving time is in
+ * operation or not, then that fact will be used to select the correct offset
+ * at the local time-line overlap.
  * </ol>
  *
  * @implSpec

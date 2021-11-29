@@ -24,10 +24,12 @@
 package test.java.time.format;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 import java.text.DateFormatSymbols;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.time.format.DecimalStyle;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -259,5 +261,14 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     public void test_roundTripAtOverlap(String pattern, String input) {
         var dtf = DateTimeFormatter.ofPattern(pattern);
         assertEquals(dtf.format(ZonedDateTime.parse(input, dtf)), input);
+        var lc = input.toLowerCase(Locale.ROOT);
+        try {
+            ZonedDateTime.parse(lc, dtf);
+            fail("Should throw DateTimeParseException");
+        } catch (DateTimeParseException ignore) {}
+
+        dtf = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(pattern).toFormatter();
+        assertEquals(dtf.format(ZonedDateTime.parse(input, dtf)), input);
+        assertEquals(dtf.format(ZonedDateTime.parse(lc, dtf)), input);
     }
 }

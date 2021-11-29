@@ -4668,9 +4668,6 @@ public final class DateTimeFormatterBuilder {
          * @return the tree, not null
          */
         public static PrefixTree newTree(DateTimeParseContext context) {
-            //if (!context.isStrict()) {
-            //    return new LENIENT("", null, null);
-            //}
             if (context.isCaseSensitive()) {
                 return new PrefixTree("", null, ZoneTextPrinterParser.UNDEFINED, null);
             }
@@ -4894,86 +4891,6 @@ public final class DateTimeFormatterBuilder {
                     }
                 }
                 return true;
-            }
-        }
-
-        /**
-         * Lenient prefix tree. Case insensitive and ignores characters
-         * like space, underscore and slash.
-         */
-        private static class LENIENT extends CI {
-
-            private LENIENT(String k, String v, int t, PrefixTree child) {
-                super(k, v, t, child);
-            }
-
-            @Override
-            protected CI newNode(String k, String v, int t, PrefixTree child) {
-                return new LENIENT(k, v, t, child);
-            }
-
-            private boolean isLenientChar(char c) {
-                return c == ' ' || c == '_' || c == '/';
-            }
-
-            protected String toKey(String k) {
-                for (int i = 0; i < k.length(); i++) {
-                    if (isLenientChar(k.charAt(i))) {
-                        StringBuilder sb = new StringBuilder(k.length());
-                        sb.append(k, 0, i);
-                        i++;
-                        while (i < k.length()) {
-                            if (!isLenientChar(k.charAt(i))) {
-                                sb.append(k.charAt(i));
-                            }
-                            i++;
-                        }
-                        return sb.toString();
-                    }
-                }
-                return k;
-            }
-
-            @Override
-            public PrefixTree match(CharSequence text, ParsePosition pos) {
-                int off = pos.getIndex();
-                int end = text.length();
-                int len = key.length();
-                int koff = 0;
-                while (koff < len && off < end) {
-                    if (isLenientChar(text.charAt(off))) {
-                        off++;
-                        continue;
-                    }
-                    if (!isEqual(key.charAt(koff++), text.charAt(off++))) {
-                        return null;
-                    }
-                }
-                if (koff != len) {
-                    return null;
-                }
-                if (child != null && off != end) {
-                    int off0 = off;
-                    while (off0 < end && isLenientChar(text.charAt(off0))) {
-                        off0++;
-                    }
-                    if (off0 < end) {
-                        PrefixTree c = child;
-                        do {
-                            if (isEqual(c.c0, text.charAt(off0))) {
-                                pos.setIndex(off0);
-                                PrefixTree found = c.match(text, pos);
-                                if (found != null) {
-                                    return found;
-                                }
-                                break;
-                            }
-                            c = c.sibling;
-                        } while (c != null);
-                    }
-                }
-                pos.setIndex(off);
-                return this;
             }
         }
     }
