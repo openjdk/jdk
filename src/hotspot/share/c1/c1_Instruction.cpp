@@ -524,25 +524,21 @@ Constant::CompareResult Constant::compare(Instruction::Condition cond, Value rig
 
 // Implementation of BlockBegin
 
-void BlockBegin::set_end(BlockEnd* end) {
-  assert(end != NULL, "should not reset block end to NULL");
-  if (end == _end) {
-    return;
-  }
+void BlockBegin::set_end(BlockEnd* new_end) { // Assumes that no predecessor of new_end still has it as its successor
+  assert(new_end != NULL, "Should not reset block new_end to NULL");
+  if (new_end == _end) return;
 
-  // remove this block as predecessor of its current successors
-  if (_end != NULL) {
-    for (int i1 = 0; i1 < number_of_sux(); i1++) {
-      sux_at(i1)->remove_predecessor(this);
-    }
-    _end = NULL;
-  }
-
-  _end = end;
-
+  // Remove this block as predecessor of its current successors
+  if (_end != NULL)
   for (int i = 0; i < number_of_sux(); i++) {
-    BlockBegin* sux = sux_at(i);
-    sux->_predecessors.append(this);
+    sux_at(i)->remove_predecessor(this);
+  }
+
+  _end = new_end;
+
+  // Add this block as predecessor of its new successors
+  for (int i = 0; i < number_of_sux(); i++) {
+    sux_at(i)->add_predecessor(this);
   }
 }
 
