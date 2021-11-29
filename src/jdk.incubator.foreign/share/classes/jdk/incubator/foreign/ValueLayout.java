@@ -590,7 +590,7 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
      * bit-alignment set to 64, and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * <blockquote><pre>{@code
-    MemoryLayout.valueLayout(long.class, ByteOrder.nativeOrder()).withBitAlignment(ADDRESS.bitSize());
+    MemoryLayout.valueLayout(long.class, ByteOrder.nativeOrder()).withBitAlignment(64);
      * }</pre></blockquote>
      */
     public static final OfLong JAVA_LONG = new OfLong(ByteOrder.nativeOrder())
@@ -612,7 +612,7 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
      * bit-alignment set to 64, and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * <blockquote><pre>{@code
-    MemoryLayout.valueLayout(double.class, ByteOrder.nativeOrder()).withBitAlignment(ADDRESS.bitSize());
+    MemoryLayout.valueLayout(double.class, ByteOrder.nativeOrder()).withBitAlignment(64);
      * }</pre></blockquote>
      */
     public static final OfDouble JAVA_DOUBLE = new OfDouble(ByteOrder.nativeOrder())
