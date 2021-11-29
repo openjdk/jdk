@@ -1676,7 +1676,7 @@ LEAF(BlockBegin, StateSplit)
   // accessors
   int block_id() const                           { return _block_id; }
   int bci() const                                { return _bci; }
-  BlockList* successors()                        { return &_successors; }
+  BlockList* successors();
   BlockList* dominates()                         { return &_dominates; }
   BlockBegin* dominator() const                  { return _dominator; }
   int loop_depth() const                         { return _loop_depth; }
@@ -1734,7 +1734,6 @@ LEAF(BlockBegin, StateSplit)
   int find_sux(BlockBegin* sux);
   void clear_sux();
   void add_successor_local(BlockBegin* sux);
-  bool is_successor(BlockBegin* sux) const       { return _successors.contains(sux); }
 
   void add_predecessor(BlockBegin* pred);
   void remove_predecessor(BlockBegin* pred);
@@ -2443,12 +2442,8 @@ class BlockPair: public CompilationResourceObj {
 
 typedef GrowableArray<BlockPair*> BlockPairList;
 
-inline int         BlockBegin::number_of_sux() const            { assert(_end != NULL && _end->number_of_sux() == _successors.length(), "mismatch"); return _end->number_of_sux(); }
-inline BlockBegin* BlockBegin::sux_at(int i) const              { assert(_end != NULL && _end->sux_at(i) == _successors.at(i), "mismatch");          return _end->sux_at(i); }
-inline int         BlockBegin::number_of_sux_from_local() const { assert(_end == NULL, "should only be used when _end is null");                     return _successors.length(); }
-inline BlockBegin* BlockBegin::sux_at_from_local(int i) const   { assert(_end == NULL, "should only be used when _end is null");                     return _successors.at(i); }
-inline void        BlockBegin::add_successor_local(BlockBegin* sux)   { assert(_end == NULL, "Would create mismatch with successors of BlockEnd");         _successors.append(sux); }
-inline void BlockBegin::clear_sux() {_successors.clear();}
+inline int         BlockBegin::number_of_sux() const            { assert(_end != NULL, "need end"); return _end->number_of_sux(); }
+inline BlockBegin* BlockBegin::sux_at(int i) const              { assert(_end != NULL , "need end"); return _end->sux_at(i); }
 
 #undef ASSERT_VALUES
 

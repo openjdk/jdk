@@ -542,17 +542,12 @@ void BlockBegin::set_end(BlockEnd* end) {
     // We are gonna clear _successors anyways so.
   }
 
+  _end = end;
 
-  // Now reset successors list based on BlockEnd
-  clear_sux(); // Cannot remove yet
-  for (int i = 0; i < end->number_of_sux(); i++) {
-    BlockBegin* sux = end->sux_at(i);
-    add_successor_local(sux);
+  for (int i = 0; i < number_of_sux(); i++) {
+    BlockBegin* sux = sux_at(i);
     sux->_predecessors.append(this);
   }
-
-  end->set_sux(successors());
-  _end = end;
 }
 
 
@@ -570,13 +565,17 @@ void BlockBegin::disconnect_edge(BlockBegin* from, BlockBegin* to) {
       if (index >= 0) {
         sux->_predecessors.remove_at(index);
       }
-      assert(from->successors() == from->end()->sux(), "must match janiuk");
       from->end()->remove_sux_at(s);
     } else {
       s++;
     }
   }
 }
+
+BlockList* BlockBegin::successors() {
+  assert(_end != NULL, "need end");
+  return _end->sux();
+} // TODO temporary accessor, remove
 
 void BlockBegin::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
   // modify predecessors before substituting successors
