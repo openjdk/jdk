@@ -476,6 +476,9 @@ public:
 private:
   ShenandoahMonitoringSupport* _monitoring_support;
   MemoryPool*                  _memory_pool;
+  MemoryPool*                  _young_gen_memory_pool;
+  MemoryPool*                  _old_gen_memory_pool;
+
   GCMemoryManager              _stw_memory_manager;
   GCMemoryManager              _cycle_memory_manager;
   ConcurrentGCTimer*           _gc_timer;
