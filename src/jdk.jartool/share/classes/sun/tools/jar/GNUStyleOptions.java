@@ -34,6 +34,9 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleResolution;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 /**
  * Parser for GNU Style Options.
@@ -188,12 +191,15 @@ class GNUStyleOptions {
                     jartool.flag0 = true;
                 }
             },
-            new Option(true, OptionType.CREATE_UPDATE_INDEX, "--source-date") {
+            new Option(true, OptionType.CREATE_UPDATE_INDEX, "--date") {
                 void process(Main jartool, String opt, String arg) throws BadArgs {
                     try {
-                        jartool.sourceDate = Long.parseLong(arg);
-                    } catch (NumberFormatException x) {
-                        throw new BadArgs("error.source.date.notnumber", arg);
+                        jartool.date = ZonedDateTime.parse(arg, DateTimeFormatter.ISO_DATE_TIME);
+                        if (jartool.date.toEpochSecond() < 0) {
+                            throw new BadArgs("error.date.before.epoch", arg);
+                        }
+                    } catch (DateTimeParseException x) {
+                        throw new BadArgs("error.date.notvalid", arg);
                     }
                 }
             },

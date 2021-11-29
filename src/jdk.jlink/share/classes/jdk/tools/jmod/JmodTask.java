@@ -64,6 +64,9 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 import jdk.internal.jmod.JmodFile;
 import jdk.internal.jmod.JmodFile.Section;
@@ -162,7 +165,7 @@ public class JmodTask {
         boolean dryrun;
         List<PathMatcher> excludes;
         Path extractDir;
-        long sourceDate;
+        ZonedDateTime date;
     }
 
     public int run(String[] args) {
@@ -430,7 +433,7 @@ public class JmodTask {
         Path target = options.jmodFile;
         Path tempTarget = jmodTempFilePath(target);
         try {
-            try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.sourceDate)) {
+            try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date)) {
                 jmod.write(jos);
             }
             Files.move(tempTarget, target);
@@ -987,8 +990,8 @@ public class JmodTask {
                         if (e.getName().equals(MODULE_INFO)) {
                             // what about module-info.class in versioned entries?
                             ZipEntry ze = new ZipEntry(e.getName());
-                            if (options.sourceDate != -1) {
-                                ze.setTimeLocal(LocalDateTime.ofEpochSecond(options.sourceDate, 0, ZoneOffset.UTC));
+                            if (options.date != null) {
+                                ze.setTimeZoned(options.date);
                             } else {
                                 ze.setTime(System.currentTimeMillis());
                             }
@@ -1019,7 +1022,7 @@ public class JmodTask {
         {
 
             try (JmodFile jf = new JmodFile(target);
-                 JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.sourceDate))
+                 JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date))
             {
                 jf.stream().forEach(e -> {
                     try (InputStream in = jf.getInputStream(e.section(), e.name())) {
@@ -1154,19 +1157,23 @@ public class JmodTask {
         @Override public String valuePattern() { return "module-version"; }
     }
 
-    static class SourceDateConverter implements ValueConverter<Long> {
+    static class DateConverter implements ValueConverter<ZonedDateTime> {
         @Override
-        public Long convert(String value) {
+        public ZonedDateTime convert(String value) {
             try {
-                return Long.valueOf(value);
-            } catch (NumberFormatException x) {
-                throw new CommandException("err.invalid.source.date", x.getMessage());
+                ZonedDateTime date = ZonedDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME);
+                if (date.toEpochSecond() < 0) {
+                    throw new CommandException("err.date.before.epoch", value);
+                }
+                return date;
+            } catch (DateTimeParseException x) {
+                throw new CommandException("err.invalid.date", value, x.getMessage());
             }
         }
 
-        @Override public Class<Long> valueType() { return Long.class; }
+        @Override public Class<ZonedDateTime> valueType() { return ZonedDateTime.class; }
 
-        @Override public String valuePattern() { return "source-date"; }
+        @Override public String valuePattern() { return "date"; }
     }
 
     static class WarnIfResolvedReasonConverter
@@ -1404,10 +1411,10 @@ public class JmodTask {
         OptionSpec<Void> version
                 = parser.accepts("version", getMessage("main.opt.version"));
 
-        OptionSpec<Long> sourceDate
-                = parser.accepts("source-date", getMessage("main.opt.source-date"))
+        OptionSpec<ZonedDateTime> date
+                = parser.accepts("date", getMessage("main.opt.date"))
                         .withRequiredArg()
-                        .withValuesConvertedBy(new SourceDateConverter());
+                        .withValuesConvertedBy(new DateConverter());
 
         NonOptionArgumentSpec<String> nonOptions
                 = parser.nonOptions();
@@ -1452,10 +1459,8 @@ public class JmodTask {
                 options.manPages = getLastElement(opts.valuesOf(manPages));
             if (opts.has(legalNotices))
                 options.legalNotices = getLastElement(opts.valuesOf(legalNotices));
-            if (opts.has(sourceDate))
-                options.sourceDate = opts.valueOf(sourceDate).longValue();
-            else
-                options.sourceDate = -1;
+            if (opts.has(date))
+                options.date = opts.valueOf(date);
             if (opts.has(modulePath)) {
                 Path[] dirs = getLastElement(opts.valuesOf(modulePath)).toArray(new Path[0]);
                 options.moduleFinder = ModulePath.of(Runtime.version(), true, dirs);

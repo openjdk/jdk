@@ -34,6 +34,8 @@ import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.spi.ToolProvider;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class JarEntryTime {
     static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
@@ -86,6 +88,7 @@ public class JarEntryTime {
         File dirInner = new File(dirOuter, "inner");
         File jarFile = new File("JarEntryTime.jar");
         File jarFileSourceDate = new File("JarEntryTimeSourceDate.jar");
+        File jarFileSourceDateBefore1980 = new File("JarEntryTimeSourceDateBefore1980.jar");
         File testFile = new File("JarEntryTimeTest.txt");
 
         // Remove any leftovers from prior run
@@ -125,14 +128,23 @@ public class JarEntryTime {
         check(jarFile.exists());
 
         // Make a jar file from that directory structure with
-        // --source-date set to epoch seconds 1647302400 (15/03/2022)
-        long sourceDate = 1647302400L;
+        // --date set to 15/03/2022
+        String sourceDate = "2022-03-15T00:00:00+00:00";
         check(JAR_TOOL.run(System.out, System.err,
                            "--create",
                            "--file", jarFileSourceDate.getName(),
-                           "--source-date", String.valueOf(sourceDate),
+                           "--date", sourceDate,
                            dirOuter.getName()) == 0);
         check(jarFileSourceDate.exists());
+
+        // Use a date before dostime 1980/1/1 in non-UTC zone
+        String sourceDateBefore1980 = "1976-03-15T01:02:03+02:00";
+        check(JAR_TOOL.run(System.out, System.err,
+                           "--create",
+                           "--file", jarFileSourceDateBefore1980.getName(),
+                           "--date", sourceDateBefore1980,
+                           dirOuter.getName()) == 0);
+        check(jarFileSourceDateBefore1980.exists());
 
         check(cleanup(dirInner));
         check(cleanup(dirOuter));
@@ -178,15 +190,32 @@ public class JarEntryTime {
         check(dirOuter.exists());
         check(dirInner.exists());
         check(fileInner.exists());
-        checkFileTime(dirOuter.lastModified(), sourceDate * 1000);
-        checkFileTime(dirInner.lastModified(), sourceDate * 1000);
-        checkFileTime(fileInner.lastModified(), sourceDate * 1000);
+        long sourceDateEpochMillis = ZonedDateTime.parse(sourceDate,
+                               DateTimeFormatter.ISO_DATE_TIME).toEpochSecond() * 1000;
+        checkFileTime(dirOuter.lastModified(), sourceDateEpochMillis);
+        checkFileTime(dirInner.lastModified(), sourceDateEpochMillis);
+        checkFileTime(fileInner.lastModified(), sourceDateEpochMillis);
+
+        check(cleanup(dirInner));
+        check(cleanup(dirOuter));
+
+        // Extract jarFileSourceDateBefore1980 and check last modified values
+        extractJar(jarFileSourceDateBefore1980, false);
+        check(dirOuter.exists());
+        check(dirInner.exists());
+        check(fileInner.exists());
+        long sourceDateBefore1980Millis = ZonedDateTime.parse(sourceDateBefore1980,
+                               DateTimeFormatter.ISO_DATE_TIME).toEpochSecond() * 1000;
+        checkFileTime(dirOuter.lastModified(), sourceDateBefore1980Millis);
+        checkFileTime(dirInner.lastModified(), sourceDateBefore1980Millis);
+        checkFileTime(fileInner.lastModified(), sourceDateBefore1980Millis);
 
         check(cleanup(dirInner));
         check(cleanup(dirOuter));
 
         check(jarFile.delete());
         check(jarFileSourceDate.delete());
+        check(jarFileSourceDateBefore1980.delete());
         check(testFile.delete());
     }
 

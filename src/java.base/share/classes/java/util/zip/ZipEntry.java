@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,6 +249,49 @@ public class ZipEntry implements ZipConstants, Cloneable {
     }
 
     /**
+     * Sets the last modification time of the entry in zoned date-time.
+     *
+     * <p> If the entry is output to a ZIP file or ZIP file formatted
+     * output stream the last modification time set by this method will
+     * be stored into the {@code date and time fields} of the zip file
+     * entry and encoded in standard {@code MS-DOS date and time format}.
+     * If the date-time set is out of the range of the standard {@code
+     * MS-DOS date and time format}, the time will also be stored into
+     * zip file entry's extended timestamp fields in {@code optional
+     * extra data} in UTC time converted from the input zoned time.
+     *
+     * <p> {@code ZonedDateTime} uses a precision of nanoseconds, whereas
+     * this class uses a precision of milliseconds. The conversion will
+     * truncate any excess precision information as though the amount in
+     * nanoseconds was subject to integer division by one million.
+     *
+     * @param  time
+     *         The last modification time of the entry in zoned date-time
+     *
+     * @since 18 
+     */
+    public void setTimeZoned(ZonedDateTime time) {
+        int year = time.getYear() - 1980;
+        if (year < 0) {
+            this.xdostime = DOSTIME_BEFORE_1980;
+        } else {
+            this.xdostime = ((year << 25 |
+                time.getMonthValue() << 21 |
+                time.getDayOfMonth() << 16 |
+                time.getHour() << 11 |
+                time.getMinute() << 5 |
+                time.getSecond() >> 1) & 0xffffffffL)
+                + ((long)(((time.getSecond() & 0x1) * 1000) +
+                      time.getNano() / 1000_000) << 32);
+        }
+        if (xdostime != DOSTIME_BEFORE_1980 && year <= 0x7f) {
+            this.mtime = null;
+        } else {
+            this.mtime = FileTime.from(time.toInstant());
+        }
+    }
+
+    /**
      * Returns the last modification time of the entry in local date-time.
      *
      * <p> If the entry is read from a ZIP file or ZIP file formatted
@@ -279,6 +322,40 @@ public class ZipEntry implements ZipConstants, Cloneable {
                              (ms % 1000) * 1000_000);
     }
 
+    /**
+     * Returns the last modification time of the entry in a zoned date-time.
+     *
+     * <p> If the entry is read from a ZIP file or ZIP file formatted
+     * input stream, this is the last modification time from the zip
+     * file entry's {@code optional extra data} if the extended timestamp
+     * fields are present. Otherwise, the last modification time is read
+     * from entry's standard MS-DOS formatted {@code date and time fields}.
+     *
+     * <p> The specified time-zone is used to convert the UTC time to a
+     * zoned date-time.
+     *
+     * @param  zoneId 
+     *         The time-zone used to convert the UTC time to
+     *         zoned date-time 
+     *
+     * @return The last modification time of the entry in zoned date-time
+     *
+     * @since 18 
+     */
+    public ZonedDateTime getTimeZoned(ZoneId zoneId) {
+        if (mtime != null) {
+            return ZonedDateTime.ofInstant(mtime.toInstant(), zoneId);
+        }
+        int ms = (int)(xdostime >> 32);
+        return ZonedDateTime.of((int)(((xdostime >> 25) & 0x7f) + 1980),
+                             (int)((xdostime >> 21) & 0x0f),
+                             (int)((xdostime >> 16) & 0x1f),
+                             (int)((xdostime >> 11) & 0x1f),
+                             (int)((xdostime >> 5) & 0x3f),
+                             (int)((xdostime << 1) & 0x3e) + ms / 1000,
+                             (ms % 1000) * 1000_000,
+                             zoneId);
+    }
 
     /**
      * Sets the last modification time of the entry.

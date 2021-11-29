@@ -218,15 +218,19 @@ public class JmodTest {
         String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
         Path jmod1 = MODS_DIR.resolve("foo1.jmod");
         Path jmod2 = MODS_DIR.resolve("foo2.jmod");
+        Path jmod3 = MODS_DIR.resolve("foo3.jmod");
+        Path jmod4 = MODS_DIR.resolve("foo4.jmod");
         FileUtils.deleteFileIfExistsWithRetry(jmod1);
         FileUtils.deleteFileIfExistsWithRetry(jmod2);
+        FileUtils.deleteFileIfExistsWithRetry(jmod3);
+        FileUtils.deleteFileIfExistsWithRetry(jmod4);
 
-        // Use source date of epoch seconds 15/03/2022
-        long sourceDate = 1647302400L;
+        // Use source date of 15/03/2022
+        String sourceDate = "2022-03-15T00:00:00+00:00";
 
         jmod("create",
              "--class-path", cp,
-             "--source-date", String.valueOf(sourceDate),
+             "--date", sourceDate,
              jmod1.toString())
             .assertSuccess();
 
@@ -237,12 +241,47 @@ public class JmodTest {
 
         jmod("create",
              "--class-path", cp,
-             "--source-date", String.valueOf(sourceDate),
+             "--date", sourceDate,
              jmod2.toString())
             .assertSuccess();
 
         // Compare file byte content to see if they are identical
         assertSameContent(jmod1, jmod2);
+
+        // Use a date before epoch and assert failure error
+        sourceDate = "1936-03-15T00:00:00+00:00";
+
+        jmod("create",
+             "--class-path", cp,
+             "--date", sourceDate,
+             jmod3.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertContains(r.output, "is before Epoch 1970-01-01T00:00:00");
+            });
+
+        // Use a date before zip minimum dostime 1980-1-1 
+        sourceDate = "1976-03-15T01:02:03+02:00";
+
+        jmod("create",
+             "--class-path", cp,
+             "--date", sourceDate,
+             jmod3.toString())
+            .assertSuccess();
+
+        try {
+            // Sleep 5 seconds to ensure zip timestamps might be different if they could be
+            Thread.sleep(5000);
+        } catch(InterruptedException ex) {}
+
+        jmod("create",
+             "--class-path", cp,
+             "--date", sourceDate,
+             jmod4.toString())
+            .assertSuccess();
+
+        // Compare file byte content to see if they are identical
+        assertSameContent(jmod3, jmod4);
     }
 
     @Test

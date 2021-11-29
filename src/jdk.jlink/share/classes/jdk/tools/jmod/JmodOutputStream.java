@@ -43,6 +43,7 @@ import java.util.zip.ZipOutputStream;
 import jdk.internal.jmod.JmodFile;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 import static jdk.internal.jmod.JmodFile.*;
 
@@ -56,17 +57,17 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
      * This method creates (or overrides, if exists) the JMOD file,
      * returning the the output stream to write to the JMOD file.
      */
-    static JmodOutputStream newOutputStream(Path file, long sourceDate) throws IOException {
+    static JmodOutputStream newOutputStream(Path file, ZonedDateTime date) throws IOException {
         OutputStream out = Files.newOutputStream(file);
         BufferedOutputStream bos = new BufferedOutputStream(out);
-        return new JmodOutputStream(bos, sourceDate);
+        return new JmodOutputStream(bos, date);
     }
 
     private final ZipOutputStream zos;
-    private final long            sourceDate;
-    private JmodOutputStream(OutputStream out, long sourceDate) {
+    private final ZonedDateTime   date;
+    private JmodOutputStream(OutputStream out, ZonedDateTime date) {
         this.zos = new ZipOutputStream(out);
-        this.sourceDate = sourceDate;
+        this.date = date;
         try {
             JmodFile.writeMagicNumber(out);
         } catch (IOException e) {
@@ -108,8 +109,8 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
         // sun.tools.jar.Main.update()
         ZipEntry e2 = new ZipEntry(e1.getName());
         e2.setMethod(e1.getMethod());
-        if (sourceDate != -1) {
-            e2.setTimeLocal(LocalDateTime.ofEpochSecond(sourceDate, 0, ZoneOffset.UTC));
+        if (date != null) {
+            e2.setTimeZoned(date);
         } else {
             e2.setTime(e1.getTime());
         }
@@ -133,8 +134,8 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
                            .replace(File.separatorChar, '/');
         entries.get(section).add(path);
         ZipEntry zipEntry = new ZipEntry(name);
-        if (sourceDate != -1) {
-            zipEntry.setTimeLocal(LocalDateTime.ofEpochSecond(sourceDate, 0, ZoneOffset.UTC));
+        if (date != null) {
+            zipEntry.setTimeZoned(date);
         }
         return zipEntry;
     }

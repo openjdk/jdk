@@ -69,6 +69,7 @@ import jdk.internal.module.ModuleTarget;
 import jdk.internal.util.jar.JarIndex;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.jar.JarFile.MANIFEST_NAME;
@@ -175,8 +176,8 @@ public class Main {
     static final int VERSIONS_DIR_LENGTH = VERSIONS_DIR.length();
     private static ResourceBundle rsrc;
 
-    /* Source date option for entry timestamps */
-    long sourceDate = -1;
+    /* Date option for entry timestamps */
+    ZonedDateTime date;
 
     /**
      * If true, maintain compatibility with JDK releases prior to 6.0 by
@@ -863,12 +864,12 @@ public class Main {
                     output(getMsg("out.added.manifest"));
                 }
                 ZipEntry e = new ZipEntry(MANIFEST_DIR);
-                setSourceDate(e);
+                setDate(e);
                 e.setSize(0);
                 e.setCrc(0);
                 zos.putNextEntry(e);
                 e = new ZipEntry(MANIFEST_NAME);
-                setSourceDate(e);
+                setDate(e);
                 if (flag0) {
                     crc32Manifest(e, manifest);
                 }
@@ -968,7 +969,7 @@ public class Main {
                     // do our own compression
                     ZipEntry e2 = new ZipEntry(name);
                     e2.setMethod(e.getMethod());
-                    setSourceDate(e2, e.getTime());
+                    setDate(e2, e.getTime());
                     e2.setComment(e.getComment());
                     e2.setExtra(e.getExtra());
                     if (e.getMethod() == ZipEntry.STORED) {
@@ -1034,7 +1035,7 @@ public class Main {
         throws IOException
     {
         ZipEntry e = new ZipEntry(INDEX_NAME);
-        setSourceDate(e);
+        setDate(e);
         if (flag0) {
             CRC32OutputStream os = new CRC32OutputStream();
             index.write(os);
@@ -1053,7 +1054,7 @@ public class Main {
             String name = mi.getKey();
             byte[] bytes = mi.getValue();
             ZipEntry e = new ZipEntry(name);
-            setSourceDate(e);
+            setDate(e);
             if (flag0) {
                 crc32ModuleInfo(e, bytes);
             }
@@ -1078,7 +1079,7 @@ public class Main {
             addMultiRelease(m);
         }
         ZipEntry e = new ZipEntry(MANIFEST_NAME);
-        setSourceDate(e);
+        setDate(e);
         if (flag0) {
             crc32Manifest(e, m);
         }
@@ -1199,7 +1200,7 @@ public class Main {
             out.print(formatMsg("out.adding", name));
         }
         ZipEntry e = new ZipEntry(name);
-        setSourceDate(e, file.lastModified());
+        setDate(e, file.lastModified());
         if (size == 0) {
             e.setMethod(ZipEntry.STORED);
             e.setSize(0);
@@ -2278,16 +2279,16 @@ public class Main {
     static Comparator<ZipEntry> ENTRY_COMPARATOR =
         Comparator.comparing(ZipEntry::getName, ENTRYNAME_COMPARATOR);
 
-    // Set the ZipEntry dostime using sourceDate if specified otherwise the current time
-    private void setSourceDate(ZipEntry e) {
-        setSourceDate(e, System.currentTimeMillis());
+    // Set the ZipEntry dostime using date if specified otherwise the current time
+    private void setDate(ZipEntry e) {
+        setDate(e, System.currentTimeMillis());
     }
 
-    // Set the ZipEntry dostime using the sourceDate if specified
+    // Set the ZipEntry dostime using the date if specified
     // otherwise the original time
-    private void setSourceDate(ZipEntry e, long origTime) {
-        if (sourceDate != -1) {
-          e.setTimeLocal(LocalDateTime.ofEpochSecond(sourceDate, 0, ZoneOffset.UTC));
+    private void setDate(ZipEntry e, long origTime) {
+        if (date != null) {
+          e.setTimeZoned(date);
         } else {
           e.setTime(origTime);
         }
