@@ -478,16 +478,17 @@ class Address {
           assert(size == 0, "bad size");
           size = 0b100;
         }
+        assert(offset_ok_for_immed(_offset, size),
+               "must be, was: %ld, %d", _offset, size);
         unsigned mask = (1 << size) - 1;
-        if (_offset < 0 || _offset & mask)
-          {
-            i->f(0b00, 25, 24);
-            i->f(0, 21), i->f(0b00, 11, 10);
-            i->sf(_offset, 20, 12);
-          } else {
-            i->f(0b01, 25, 24);
-            i->f(_offset >> size, 21, 10);
-          }
+        if (_offset < 0 || _offset & mask) {
+          i->f(0b00, 25, 24);
+          i->f(0, 21), i->f(0b00, 11, 10);
+          i->sf(_offset, 20, 12);
+        } else {
+          i->f(0b01, 25, 24);
+          i->f(_offset >> size, 21, 10);
+        }
       }
       break;
 
