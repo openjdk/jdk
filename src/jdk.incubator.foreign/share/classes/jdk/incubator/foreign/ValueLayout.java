@@ -70,10 +70,6 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
 
     private static final int ADDRESS_SIZE_BITS = Unsafe.ADDRESS_SIZE * 8;
 
-    static {
-        Utils.LAYOUT_ACCESS = ValueLayout::accessHandle;
-    }
-
     ValueLayout(Class<?> carrier, ByteOrder order, long size) {
         this(carrier, order, size, size, Optional.empty());
     }

@@ -175,15 +175,23 @@ public final class Utils {
         return MemorySegmentProxy.multiplyOffsets(index, (int)size, (AbstractMemorySegmentImpl)segment);
     }
 
-    @Stable
-    public static LayoutAccess LAYOUT_ACCESS;
+    final static MethodHandle LAYOUT_ACCESS_HANDLE;
 
-    public interface LayoutAccess {
-        VarHandle accessHandle(ValueLayout valueLayout, boolean aligned);
+    static {
+        try {
+            LAYOUT_ACCESS_HANDLE = MethodHandles.privateLookupIn(ValueLayout.class, MethodHandles.lookup())
+                    .findVirtual(ValueLayout.class, "accessHandle", MethodType.methodType(VarHandle.class, boolean.class));
+        } catch (Throwable ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
     }
 
     @ForceInline
     public static VarHandle accessHandle(ValueLayout layout, boolean aligned) {
-        return LAYOUT_ACCESS.accessHandle(layout, aligned);
+        try {
+            return (VarHandle) LAYOUT_ACCESS_HANDLE.invokeExact(layout, aligned);
+        } catch (Throwable ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }
