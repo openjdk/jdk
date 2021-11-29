@@ -479,7 +479,7 @@ class Address {
           size = 0b100;
         }
         assert(offset_ok_for_immed(_offset, size),
-               "must be, was: %ld, %d", _offset, size);
+               "must be, was: " INT64_FORMAT ", %d", _offset, size);
         unsigned mask = (1 << size) - 1;
         if (_offset < 0 || _offset & mask) {
           i->f(0b00, 25, 24);
