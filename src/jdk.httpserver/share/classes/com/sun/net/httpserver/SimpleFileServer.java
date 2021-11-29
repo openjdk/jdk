@@ -109,6 +109,8 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  * <p>A simple HTTP file server implementation is provided via the
  * {@code jwebserver} tool.
  *
+ * @toolGuide jwebserver
+ *
  * @since 18
  */
 public final class SimpleFileServer {
