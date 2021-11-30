@@ -484,7 +484,8 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   }
 
 #if INCLUDE_RTM_OPT
-  if (!UseHeavyMonitors && UseRTMForStackLocks && use_rtm) {
+  if (UseRTMForStackLocks && use_rtm) {
+    assert(!UseHeavyMonitors, "+UseHeavyMonitors and +UseRTMForStackLocks are mutually exclusive");
     rtm_stack_locking(objReg, tmpReg, scrReg, cx2Reg,
                       stack_rtm_counters, method_data, profile_rtm,
                       DONE_LABEL, IsInflated);
@@ -642,7 +643,8 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   Label DONE_LABEL, Stacked, CheckSucc;
 
 #if INCLUDE_RTM_OPT
-  if (!UseHeavyMonitors && UseRTMForStackLocks && use_rtm) {
+  if (UseRTMForStackLocks && use_rtm) {
+    assert(!UseHeavyMonitors, "+UseHeavyMonitors and +UseRTMForStackLocks are mutually exclusive");
     Label L_regular_unlock;
     movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // fetch markword
     andptr(tmpReg, markWord::lock_mask_in_place);                     // look at 2 lock bits

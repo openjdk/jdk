@@ -2021,6 +2021,17 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
+#ifndef AMD64
+  if (UseHeavyMonitors) {
+    warning("UseHeavyMonitors is not fully implemented on this architecture");
+  }
+#endif
+ if (UseHeavyMonitors && UseRTMForStackLocks) {
+    fatal("-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+  }
+  if (VerifyHeavyMonitors && !UseHeavyMonitors) {
+    fatal("-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+  }
   return status;
 }
 

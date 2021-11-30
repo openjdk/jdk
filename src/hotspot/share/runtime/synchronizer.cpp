@@ -813,7 +813,8 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     markWord temp, test;
     intptr_t hash;
     markWord mark = read_stable_mark(obj);
-    if (UseHeavyMonitors && VerifyHeavyMonitors) {
+    if (VerifyHeavyMonitors) {
+      assert(UseHeavyMonitors, "+VerifyHeavyMonitors requires +UseHeavyMonitors");
       guarantee(!mark.has_locker(), "must not be stack locked");
     }
     if (mark.is_neutral()) {               // if this is a normal header
