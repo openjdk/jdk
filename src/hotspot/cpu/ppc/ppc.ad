@@ -12793,6 +12793,7 @@ instruct has_negatives(rarg1RegP ary1, iRegIsrc len, iRegIdst result, iRegLdst t
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst result, iRegLdst tmp1,
                           iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4, iRegLdst tmp5, regCTR ctr, flagsRegCR0 cr0) %{
+  predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
   effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
          USE_KILL src, USE_KILL dst, KILL ctr, KILL cr0);

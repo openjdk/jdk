@@ -191,4 +191,7 @@
       return true;
   }
 
+  // Implements a variant of EncodeISOArrayNode that encode ASCII only
+  static const bool supports_encode_ascii_array = true;
+
 #endif // CPU_X86_MATCHER_X86_HPP
