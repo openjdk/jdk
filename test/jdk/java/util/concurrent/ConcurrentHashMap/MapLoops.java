@@ -48,7 +48,7 @@
 /*
  * @test
  * @summary Exercise multithreaded maps, using only heavy monitors.
- * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib
  * @run main/othervm/timeout=1600 -XX:+IgnoreUnrecognizedVMOptions -XX:+UseHeavyMonitors -XX:+VerifyHeavyMonitors MapLoops
  */

@@ -2021,7 +2021,7 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-#ifndef AMD64
+#ifndef X86
   if (UseHeavyMonitors) {
     warning("UseHeavyMonitors is not fully implemented on this architecture");
   }
