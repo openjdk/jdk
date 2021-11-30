@@ -94,6 +94,14 @@ public class BasicPanelUI extends PanelUI {
      */
     protected void uninstallDefaults(JPanel p) {
         LookAndFeel.uninstallBorder(p);
+        Color bg = p.getBackground();
+        if (bg == null || bg instanceof UIResource) {
+            p.setBackground(null);
+        }
+        Font f = p.getFont();
+        if (f == null || f instanceof UIResource) {
+            p.setFont(null);
+        }
     }
 
 
