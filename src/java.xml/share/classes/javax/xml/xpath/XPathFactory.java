@@ -375,6 +375,9 @@ public abstract class XPathFactory {
      * Sets a property for this {@code XPathFactory}. The property applies to
      * {@code XPath} objects that the {@code XPathFactory} creates. It has no
      * impact on {@code XPath} objects that are already created.
+     * <p>
+     * A property can either be defined in this {@code XPathFactory}, or by the
+     * underlying implementation.
      *
      * @implSpec
      * The default implementation throws
