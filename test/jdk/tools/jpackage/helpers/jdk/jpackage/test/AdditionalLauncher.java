@@ -32,10 +32,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
 
-public final class AdditionalLauncher {
+public class AdditionalLauncher {
 
     public AdditionalLauncher(String name) {
         this.name = name;
@@ -43,12 +42,12 @@ public final class AdditionalLauncher {
         setPersistenceHandler(null);
     }
 
-    public AdditionalLauncher setDefaultArguments(String... v) {
+    final public AdditionalLauncher setDefaultArguments(String... v) {
         defaultArguments = new ArrayList<>(List.of(v));
         return this;
     }
 
-    public AdditionalLauncher addDefaultArguments(String... v) {
+    final public AdditionalLauncher addDefaultArguments(String... v) {
         if (defaultArguments == null) {
             return setDefaultArguments(v);
         }
@@ -57,12 +56,12 @@ public final class AdditionalLauncher {
         return this;
     }
 
-    public AdditionalLauncher setJavaOptions(String... v) {
+    final public AdditionalLauncher setJavaOptions(String... v) {
         javaOptions = new ArrayList<>(List.of(v));
         return this;
     }
 
-    public AdditionalLauncher addJavaOptions(String... v) {
+    final public AdditionalLauncher addJavaOptions(String... v) {
         if (javaOptions == null) {
             return setJavaOptions(v);
         }
@@ -71,23 +70,28 @@ public final class AdditionalLauncher {
         return this;
     }
 
-    public AdditionalLauncher addRawProperties(Map.Entry<String, String>... v) {
+    final public AdditionalLauncher setLauncherAsService() {
+        return addRawProperties(LAUNCHER_AS_SERVICE);
+    }
+
+    final public AdditionalLauncher addRawProperties(
+            Map.Entry<String, String>... v) {
         return addRawProperties(List.of(v));
     }
 
-    public AdditionalLauncher addRawProperties(
+    final public AdditionalLauncher addRawProperties(
             Collection<Map.Entry<String, String>> v) {
         rawProperties.addAll(v);
         return this;
     }
 
-    public AdditionalLauncher setShortcuts(boolean menu, boolean shortcut) {
+    final public AdditionalLauncher setShortcuts(boolean menu, boolean shortcut) {
         withMenuShortcut = menu;
         withShortcut = shortcut;
         return this;
     }
 
-    public AdditionalLauncher setIcon(Path iconPath) {
+    final public AdditionalLauncher setIcon(Path iconPath) {
         if (iconPath == NO_ICON) {
             throw new IllegalArgumentException();
         }
@@ -96,12 +100,12 @@ public final class AdditionalLauncher {
         return this;
     }
 
-    public AdditionalLauncher setNoIcon() {
+    final public AdditionalLauncher setNoIcon() {
         icon = NO_ICON;
         return this;
     }
 
-    public AdditionalLauncher setPersistenceHandler(
+    final public AdditionalLauncher setPersistenceHandler(
             ThrowingBiConsumer<Path, List<Map.Entry<String, String>>> handler) {
         if (handler != null) {
             createFileHandler = ThrowingBiConsumer.toBiConsumer(handler);
@@ -111,19 +115,27 @@ public final class AdditionalLauncher {
         return this;
     }
 
-    public void applyTo(JPackageCommand cmd) {
+    final public void applyTo(JPackageCommand cmd) {
         cmd.addPrerequisiteAction(this::initialize);
         cmd.addVerifyAction(this::verify);
     }
 
-    public void applyTo(PackageTest test) {
+    final public void applyTo(PackageTest test) {
         test.addLauncherName(name);
         test.addInitializer(this::initialize);
         test.addInstallVerifier(this::verify);
     }
 
     private void initialize(JPackageCommand cmd) {
-        final Path propsFile = TKit.workDir().resolve(name + ".properties");
+        Path propsFile = TKit.workDir().resolve(name + ".properties");
+        if (Files.exists(propsFile)) {
+            try {
+                propsFile = TKit.createTempFile(propsFile);
+                TKit.deleteIfExists(propsFile);
+            } catch (IOException ex) {
+                Functional.rethrowUnchecked(ex);
+            }
+        }
 
         cmd.addArguments("--add-launcher", String.format("%s=%s", name,
                     propsFile));
@@ -242,7 +254,7 @@ public final class AdditionalLauncher {
         }
     }
 
-    private void verify(JPackageCommand cmd) throws IOException {
+    protected void verify(JPackageCommand cmd) throws IOException {
         verifyIcon(cmd);
         verifyShortcuts(cmd);
 
@@ -255,14 +267,21 @@ public final class AdditionalLauncher {
             return;
         }
 
-        HelloApp.assertApp(launcherPath)
-        .addDefaultArguments(Optional
-                .ofNullable(defaultArguments)
-                .orElseGet(() -> List.of(cmd.getAllArgumentValues("--arguments"))))
-        .addJavaOptions(Optional
-                .ofNullable(javaOptions)
-                .orElseGet(() -> List.of(cmd.getAllArgumentValues("--java-options"))))
-        .executeAndVerifyOutput();
+        var appVerifier = HelloApp.assertApp(launcherPath)
+                .addDefaultArguments(Optional
+                        .ofNullable(defaultArguments)
+                        .orElseGet(() -> List.of(cmd.getAllArgumentValues("--arguments"))))
+                .addJavaOptions(Optional
+                        .ofNullable(javaOptions)
+                        .orElseGet(() -> List.of(cmd.getAllArgumentValues("--java-options"))));
+
+        if (!rawProperties.contains(LAUNCHER_AS_SERVICE)) {
+            appVerifier.executeAndVerifyOutput();
+        } else if (!cmd.isPackageUnpacked(String.format(
+                "Not verifying contents of test output file for %s launcher",
+                launcherPath))) {
+            appVerifier.verifyOutput();
+        }
     }
 
     private List<String> javaOptions;
@@ -275,4 +294,6 @@ public final class AdditionalLauncher {
     private Boolean withShortcut;
 
     private final static Path NO_ICON = Path.of("");
+    private final static Map.Entry<String, String> LAUNCHER_AS_SERVICE = Map.entry(
+            "launcher-as-service", "true");
 }

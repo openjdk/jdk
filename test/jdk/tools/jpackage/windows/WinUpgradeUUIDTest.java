@@ -100,7 +100,7 @@ public class WinUpgradeUUIDTest {
         // It will be uninstalled automatically when the second
         // package will be installed.
         // However uninstall verification for the first package will be executed.
-        PackageTest test1 = init.get().setPackageUninstaller(cmd -> {});
+        PackageTest test1 = init.get().disablePackageUninstaller();
 
         PackageTest test2 = init.get().addInitializer(cmd -> {
             cmd.setArgumentValue("--app-version", "2.0");

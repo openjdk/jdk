@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,21 +202,15 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    public PackageTest setPackageInstaller(Consumer<JPackageCommand> v) {
+    public PackageTest disablePackageInstaller() {
         currentTypes.forEach(
-                type -> packageHandlers.get(type).installHandler = v);
+                type -> packageHandlers.get(type).installHandler = cmd -> {});
         return this;
     }
 
-    public PackageTest setPackageUnpacker(
-            BiFunction<JPackageCommand, Path, Path> v) {
-        currentTypes.forEach(type -> packageHandlers.get(type).unpackHandler = v);
-        return this;
-    }
-
-    public PackageTest setPackageUninstaller(Consumer<JPackageCommand> v) {
+    public PackageTest disablePackageUninstaller() {
         currentTypes.forEach(
-                type -> packageHandlers.get(type).uninstallHandler = v);
+                type -> packageHandlers.get(type).uninstallHandler = cmd -> {});
         return this;
     }
 
@@ -317,6 +311,13 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
+    public PackageTest addHelloAppInitializer(String javaAppDesc) {
+        addInitializer(
+                cmd -> new HelloApp(JavaAppDesc.parse(javaAppDesc)).addTo(cmd),
+                "HelloApp");
+        return this;
+    }
+
     public PackageTest addLauncherName(String name) {
         launcherNames.add(name);
         return this;
@@ -363,12 +364,6 @@ public final class PackageTest extends RunnablePackageTest {
     @Override
     protected void runAction(Action... action) {
         throw new UnsupportedOperationException();
-    }
-
-    private void addHelloAppInitializer(String javaAppDesc) {
-        addInitializer(
-                cmd -> new HelloApp(JavaAppDesc.parse(javaAppDesc)).addTo(cmd),
-                "HelloApp");
     }
 
     private List<Consumer<Action>> createPackageTypeHandlers() {

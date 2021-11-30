@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Stream;
 import java.util.Collections;
+import java.util.Optional;
 
 public class Hello implements OpenFilesHandler {
 
@@ -87,7 +88,8 @@ public class Hello implements OpenFilesHandler {
     }
 
     private static Path getOutputFile(String[] args) {
-        Path outputFilePath = Path.of("appOutput.txt");
+        Path outputFilePath = Path.of(Optional.ofNullable(System.getProperty(
+                "jpackage.test.appOutput")).orElse("appOutput.txt"));
 
         // If first arg is a file (most likely from fa), then put output in the same folder as
         // the file from fa.
@@ -101,7 +103,7 @@ public class Hello implements OpenFilesHandler {
         try {
             // Try writing in the default output file.
             Files.write(outputFilePath, Collections.emptyList());
-            return outputFilePath;
+            return outputFilePath.toAbsolutePath();
         } catch (IOException ex) {
             // Log reason of a failure.
             StringWriter errors = new StringWriter();
@@ -109,7 +111,7 @@ public class Hello implements OpenFilesHandler {
             Stream.of(errors.toString().split("\\R")).forEachOrdered(Hello::trace);
         }
 
-        return Path.of(System.getProperty("user.home")).resolve(outputFilePath);
+        return Path.of(System.getProperty("user.home")).resolve(outputFilePath).toAbsolutePath();
     }
 
     @Override
