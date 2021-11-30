@@ -439,7 +439,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
       }
       // Fall through to inflate() ...
     } else if (mark.has_locker() &&
-    current->is_lock_owned((address)mark.locker())) {
+               current->is_lock_owned((address)mark.locker())) {
       assert(lock != mark.locker(), "must not re-lock the same lock");
       assert(lock != (BasicLock*)obj->mark().value(), "don't relock with same BasicLock");
       lock->set_displaced_header(markWord::from_pointer(NULL));
