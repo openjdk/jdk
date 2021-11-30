@@ -4064,7 +4064,7 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
  * a) Perform vector D2L/F2I cast.
  * b) Choose fast path if none of the result vector lane contains 0x80000000 value.
  *    It signifies that source value could be any of the special floating point
- *    values(NaN,-Inf,Int,Max,-Min).
+ *    values(NaN,-Inf,Inf,Max,-Min).
  * c) Set destination to zero if source is NaN value.
  * d) Replace 0x80000000 with MaxInt if source lane contains a +ve value.
  */
@@ -4084,7 +4084,7 @@ void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XM
   evmovdquq(dst, ktmp2, xtmp2, true, vec_enc);
 
   kxorwl(ktmp1, ktmp1, ktmp2);
-  evcmppd(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_US, vec_enc);
+  evcmppd(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
   vpternlogq(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
   evmovdquq(dst, ktmp1, xtmp2, true, vec_enc);
   bind(done);
@@ -4095,21 +4095,25 @@ void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMM
                                            AddressLiteral float_sign_flip, Register scratch, int vec_enc) {
   Label done;
   vcvttps2dq(dst, src, vec_enc);
-  vmovdqu(xtmp1, float_sign_flip, scratch);
+  vmovdqu(xtmp1, float_sign_flip, scratch, vec_enc);
   vpcmpeqd(xtmp2, dst, xtmp1, vec_enc);
   vptest(xtmp2, xtmp2, vec_enc);
   jccb(Assembler::equal, done);
+
+  vpcmpeqd(xtmp4, xtmp4, xtmp4, vec_enc);
+  vpxor(xtmp1, xtmp1, xtmp4, vec_enc);
 
   vpxor(xtmp4, xtmp4, xtmp4, vec_enc);
   vcmpps(xtmp3, src, src, Assembler::UNORD_Q, vec_enc);
   vblendvps(dst, dst, xtmp4, xtmp3, vec_enc);
 
+  // Recompute the mask for remaining special value.
   vpxor(xtmp2, xtmp2, xtmp3, vec_enc);
+  // Extract SRC values corresponding to TRUE mask lanes.
   vpand(xtmp4, xtmp2, src, vec_enc);
+  // Flip mask bits so that MSB bit of MASK lanes corresponding to +ve special
+  // values are set.
   vpxor(xtmp3, xtmp2, xtmp4, vec_enc);
-
-  vpcmpeqd(xtmp4, xtmp4, xtmp4, vec_enc);
-  vpxor(xtmp1, xtmp1, xtmp4, vec_enc);
 
   vblendvps(dst, dst, xtmp1, xtmp3, vec_enc);
   bind(done);
