@@ -281,6 +281,12 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
     // complete relocation of this page, and then forward the object. If
     // the GC aborts the relocation phase before the page has been relocated,
     // then wait return false and we just forward the object in-place.
+
+    if (ZAbort::should_abort()) {
+      // Prevent repeated queueing and logging if we have aborted
+      return forwarding_insert(forwarding, safe(from_addr), safe(from_addr), &cursor);
+    }
+
     _queue.add(forwarding);
 
     if (!forwarding->wait_page_released()) {
