@@ -24,4 +24,4 @@
 # questions.
 #
 
-rm -rf *.class build.log test-output
+rm -rf build.log
