@@ -288,13 +288,13 @@ public final class PropertyInfo {
                         if (returnType.equals(void.class) && isPrefix(name, "set")) {
                             PropertyInfo info = getInfo(map, name.substring(3), false);
                             info.writeList = add(info.writeList, method, method.getGenericParameterTypes()[0]);
-                        } else if (!returnType.equals(void.class) && method.getParameterTypes()[0].equals(int.class) && isPrefix(name, "get")) {
+                        } else if (!returnType.equals(void.class) && method.parameterType(0).equals(int.class) && isPrefix(name, "get")) {
                             PropertyInfo info = getInfo(map, name.substring(3), true);
                             info.readList = add(info.readList, method, method.getGenericReturnType());
                         }
                         break;
                     case 2:
-                        if (returnType.equals(void.class) && method.getParameterTypes()[0].equals(int.class) && isPrefix(name, "set")) {
+                        if (returnType.equals(void.class) && method.parameterType(0).equals(int.class) && isPrefix(name, "set")) {
                             PropertyInfo info = getInfo(map, name.substring(3), true);
                             info.writeList = add(info.writeList, method, method.getGenericParameterTypes()[1]);
                         }

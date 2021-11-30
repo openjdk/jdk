@@ -321,7 +321,7 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
         Class<?> type = null;
 
         if (getter != null) {
-            if (getter.getParameterTypes().length != 0) {
+            if (getter.getParameterCount() != 0) {
                 throw new IntrospectionException("bad getter arg count");
             }
             type = getter.getReturnType();

@@ -371,7 +371,7 @@ public final class Constructor<T> extends Executable {
         sb.append(getDeclaringClass().getTypeName());
         sb.append('(');
         StringJoiner sj = new StringJoiner(",");
-        for (Class<?> parameterType : getParameterTypes()) {
+        for (Class<?> parameterType : getSharedParameterTypes()) {
             sj.add(parameterType.getTypeName());
         }
         sb.append(sj);

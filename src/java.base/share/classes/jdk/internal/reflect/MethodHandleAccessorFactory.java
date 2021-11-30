@@ -323,7 +323,7 @@ final class MethodHandleAccessorFactory {
         // the native accessor.
         int paramCount = member.getParameterCount();
         if (member.isVarArgs() &&
-                (paramCount == 0 || !(member.getParameterTypes()[paramCount-1].isArray()))) {
+                (paramCount == 0 || !(member.parameterType(paramCount-1).isArray()))) {
             return true;
         }
         // A method handle cannot be created if its type has an arity >= 255

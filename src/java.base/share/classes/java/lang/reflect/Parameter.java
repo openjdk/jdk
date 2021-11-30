@@ -219,7 +219,7 @@ public final class Parameter implements AnnotatedElement {
     public Class<?> getType() {
         Class<?> tmp = parameterClassCache;
         if (null == tmp) {
-            tmp = executable.getParameterTypes()[index];
+            tmp = executable.parameterType(index);
             parameterClassCache = tmp;
         }
         return tmp;

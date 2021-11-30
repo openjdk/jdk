@@ -132,7 +132,7 @@ class MBeanAnalyzer<M> {
            us to give getter and setter together to visitAttribute. */
         for (Method m : methods) {
             final String name = m.getName();
-            final int nParams = m.getParameterTypes().length;
+            final int nParams = m.getParameterCount();
 
             final M cm = introspector.mFrom(m);
 

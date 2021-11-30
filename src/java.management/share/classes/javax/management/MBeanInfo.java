@@ -588,7 +588,7 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
                 Method method = methods[i];
                 String methodName = method.getName();
                 if (methodName.startsWith("get") &&
-                        method.getParameterTypes().length == 0 &&
+                        method.getParameterCount() == 0 &&
                         method.getReturnType().isArray()) {
                     try {
                         Method submethod =

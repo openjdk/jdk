@@ -64,7 +64,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
         // Handle Object and Annotation methods
         if (parameterCount == 1 && member == "equals" &&
-                method.getParameterTypes()[0] == Object.class) {
+                method.parameterType(0) == Object.class) {
             return equalsImpl(proxy, args[0]);
         }
         if (parameterCount != 0) {

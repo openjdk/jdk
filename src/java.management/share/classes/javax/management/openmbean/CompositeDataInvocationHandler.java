@@ -160,7 +160,7 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
             else if (methodName.equals("hashCode") && args == null)
                 return compositeData.hashCode() + 0x43444948;
             else if (methodName.equals("equals") && args.length == 1
-                && method.getParameterTypes()[0] == Object.class)
+                && method.parameterType(0) == Object.class)
                 return equals(proxy, args[0]);
             else {
                 /* Either someone is calling invoke by hand, or

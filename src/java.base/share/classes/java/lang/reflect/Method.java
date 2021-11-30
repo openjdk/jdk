@@ -431,7 +431,7 @@ public final class Method extends Executable {
 
     String toShortSignature() {
         StringJoiner sj = new StringJoiner(",", getName() + "(", ")");
-        for (Class<?> parameterType : getParameterTypes()) {
+        for (Class<?> parameterType : getSharedParameterTypes()) {
             sj.add(parameterType.getTypeName());
         }
         return sj.toString();

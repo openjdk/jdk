@@ -416,7 +416,7 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
     private boolean shouldDoLocally(Object proxy, Method method) {
         final String methodName = method.getName();
         if ((methodName.equals("hashCode") || methodName.equals("toString"))
-            && method.getParameterTypes().length == 0
+            && method.getParameterCount() == 0
             && isLocal(proxy, method))
             return true;
         if (methodName.equals("equals")
@@ -425,7 +425,7 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
             && isLocal(proxy, method))
             return true;
         if (methodName.equals("finalize")
-            && method.getParameterTypes().length == 0) {
+            && method.getParameterCount() == 0) {
             return true;
         }
         return false;

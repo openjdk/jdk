@@ -1612,7 +1612,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         else if (name.startsWith("is") && m.getReturnType() == boolean.class)
             rest = name.substring(2);
         if (rest == null || rest.length() == 0
-            || m.getParameterTypes().length > 0
+            || m.getParameterCount() > 0
             || m.getReturnType() == void.class
             || name.equals("getClass"))
             return null;

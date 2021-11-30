@@ -287,7 +287,7 @@ abstract class MBeanIntrospector<M> {
     }
 
     static boolean isValidParameter(Method m, Object value, int paramNo) {
-        Class<?> c = m.getParameterTypes()[paramNo];
+        Class<?> c = m.parameterType(paramNo);
         try {
             // Following is expensive but we only call this method to determine
             // if an exception is due to an incompatible parameter type.

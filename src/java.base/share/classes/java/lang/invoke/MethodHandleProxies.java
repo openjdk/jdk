@@ -284,7 +284,7 @@ public class MethodHandleProxies {
                                && m.getParameterCount() == 0;
             case "equals"   -> m.getReturnType() == boolean.class
                                && m.getParameterCount() == 1
-                               && m.getParameterTypes()[0] == Object.class;
+                               && m.parameterType(0) == Object.class;
             default -> false;
         };
     }

@@ -295,12 +295,12 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                         for (Constructor<?> ctorGeneric : ctors) {
                             @SuppressWarnings("unchecked")
                             Constructor<T> ctorSpecific = (Constructor<T>) ctorGeneric;
-                            final Class<?>[] parameterTypes = ctorSpecific.getParameterTypes();
+                            int ctorSpecificParameterCount = ctorSpecific.getParameterCount();
 
-                            if (parameterTypes.length == 0) {
+                            if (ctorSpecificParameterCount == 0) {
                                 tmpCtor = ctorSpecific;
-                            } else if (parameterTypes.length == 1) {
-                                Class<?> argType = parameterTypes[0];
+                            } else if (ctorSpecificParameterCount == 1) {
+                                Class<?> argType = ctorSpecific.parameterType(0);
 
                                 if (argType == long.class) {
                                     tmpCtorLong = ctorSpecific;

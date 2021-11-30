@@ -550,10 +550,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             try {
                 Constructor<?> noArgCtor = null, oneArgCtor = null;
                 for (Constructor<?> c : ex.getClass().getConstructors()) {
-                    Class<?>[] ps = c.getParameterTypes();
-                    if (ps.length == 0)
+                    if (c.getParameterCount() == 0)
                         noArgCtor = c;
-                    else if (ps.length == 1 && ps[0] == Throwable.class) {
+                    else if (c.getParameterCount() == 1 && c.parameterType(0) == Throwable.class) {
                         oneArgCtor = c;
                         break;
                     }

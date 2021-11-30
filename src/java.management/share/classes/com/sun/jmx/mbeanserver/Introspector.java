@@ -622,8 +622,7 @@ public class Introspector {
                 return false;
 
             String name = method.getName();
-            Class<?>[] paramTypes = method.getParameterTypes();
-            int paramCount = paramTypes.length;
+            int paramCount = method.getParameterCount();
 
             if (paramCount == 0 && name.length() > 2) {
                 // boolean isXXX()

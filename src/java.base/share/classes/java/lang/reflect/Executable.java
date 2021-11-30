@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 import jdk.internal.access.SharedSecrets;
@@ -258,6 +257,16 @@ public abstract sealed class Executable extends AccessibleObject
     }
 
     /**
+     * Returns the parameter type at the specified index, within this method.
+     * @param index the index (zero-based) of the desired parameter type
+     * @return the selected parameter type
+     */
+    public Class<?> parameterType(int index) {
+        Objects.checkIndex(index, getParameterCount());
+        return getSharedParameterTypes()[index];
+    }
+
+    /**
      * Returns an array of {@code Type} objects that represent the
      * formal parameter types, in declaration order, of the executable
      * represented by this object. An array of length 0 is returned if the
@@ -311,11 +320,11 @@ public abstract sealed class Executable extends AccessibleObject
         // this case, we just return the result of
         // getParameterTypes().
         if (!genericInfo) {
-            return getParameterTypes();
+            return getSharedParameterTypes();
         } else {
             final boolean realParamData = hasRealParameterData();
             final Type[] genericParamTypes = getGenericParameterTypes();
-            final Type[] nonGenericParamTypes = getParameterTypes();
+            final Type[] nonGenericParamTypes = getSharedParameterTypes();
             // If we have real parameter data, then we use the
             // synthetic and mandate flags to our advantage.
             if (realParamData) {
@@ -326,7 +335,7 @@ public abstract sealed class Executable extends AccessibleObject
                     final Parameter param = params[i];
                     if (param.isSynthetic() || param.isImplicit()) {
                         // If we hit a synthetic or mandated parameter,
-                        // use the non generic parameter info.
+                        // use the non-generic parameter info.
                         out[i] = nonGenericParamTypes[i];
                     } else {
                         // Otherwise, use the generic parameter info.
