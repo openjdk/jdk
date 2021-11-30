@@ -320,7 +320,7 @@ static ZPage* alloc_page(const ZForwarding* forwarding, ZGenerationId generation
   return ZHeap::heap()->alloc_page(forwarding->type(), forwarding->size(), flags, generation, age);
 }
 
-static void retire_page(ZCollector* collector, ZPage* page) {
+static void retire_target_page(ZCollector* collector, ZPage* page) {
   if (collector->is_young() && page->is_old()) {
     collector->increase_promoted(page->used());
   } else {
@@ -365,7 +365,7 @@ public:
 
   void free_target_page(ZPage* page) {
     if (page != NULL) {
-      retire_page(_collector, page);
+      retire_target_page(_collector, page);
     }
   }
 
@@ -404,7 +404,7 @@ public:
 
   ~ZRelocateMediumAllocator() {
     if (_shared != NULL) {
-      retire_page(_collector, _shared);
+      retire_target_page(_collector, _shared);
     }
   }
 
@@ -692,7 +692,7 @@ private:
     while (!try_relocate_object(addr)) {
       if (_target != NULL) {
         // Retire the old page
-        retire_page(_collector, _target);
+        retire_target_page(_collector, _target);
       }
 
       // Allocate a new target page, or if that fails, use the page being
