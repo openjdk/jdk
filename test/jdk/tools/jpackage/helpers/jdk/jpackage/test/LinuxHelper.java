@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ public class LinuxHelper {
         PackageHandlers rpm = new PackageHandlers();
         rpm.installHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sudo", "rpm", "-i")
+            Executor.of("sudo", "rpm", "-U")
             .addArgument(cmd.outputBundle())
             .execute();
         };
