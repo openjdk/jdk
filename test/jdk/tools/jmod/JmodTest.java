@@ -219,11 +219,9 @@ public class JmodTest {
         Path jmod1 = MODS_DIR.resolve("foo1.jmod");
         Path jmod2 = MODS_DIR.resolve("foo2.jmod");
         Path jmod3 = MODS_DIR.resolve("foo3.jmod");
-        Path jmod4 = MODS_DIR.resolve("foo4.jmod");
         FileUtils.deleteFileIfExistsWithRetry(jmod1);
         FileUtils.deleteFileIfExistsWithRetry(jmod2);
         FileUtils.deleteFileIfExistsWithRetry(jmod3);
-        FileUtils.deleteFileIfExistsWithRetry(jmod4);
 
         // Use source date of 15/03/2022
         String sourceDate = "2022-03-15T00:00:00+00:00";
@@ -248,8 +246,8 @@ public class JmodTest {
         // Compare file byte content to see if they are identical
         assertSameContent(jmod1, jmod2);
 
-        // Use a date before epoch and assert failure error
-        sourceDate = "1936-03-15T00:00:00+00:00";
+        // Use a date before 1980 and assert failure error
+        sourceDate = "1976-03-15T00:00:00+00:00";
 
         jmod("create",
              "--class-path", cp,
@@ -257,31 +255,20 @@ public class JmodTest {
              jmod3.toString())
             .assertFailure()
             .resultChecker(r -> {
-                assertContains(r.output, "is before Epoch 1970-01-01T00:00:00");
+                assertContains(r.output, "is out of the valid year range 1980->2099");
             });
 
-        // Use a date before zip minimum dostime 1980-1-1
-        sourceDate = "1976-03-15T01:02:03+02:00";
+        // Use a date after 2099 and assert failure error
+        sourceDate = "2100-03-15T00:00:00+00:00";
 
         jmod("create",
              "--class-path", cp,
              "--date", sourceDate,
              jmod3.toString())
-            .assertSuccess();
-
-        try {
-            // Sleep 5 seconds to ensure zip timestamps might be different if they could be
-            Thread.sleep(5000);
-        } catch(InterruptedException ex) {}
-
-        jmod("create",
-             "--class-path", cp,
-             "--date", sourceDate,
-             jmod4.toString())
-            .assertSuccess();
-
-        // Compare file byte content to see if they are identical
-        assertSameContent(jmod3, jmod4);
+            .assertFailure()
+            .resultChecker(r -> {
+                assertContains(r.output, "is out of the valid year range 1980->2099");
+            });
     }
 
     @Test

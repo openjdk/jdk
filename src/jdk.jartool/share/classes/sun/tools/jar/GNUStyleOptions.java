@@ -34,7 +34,9 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleResolution;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
@@ -194,9 +196,10 @@ class GNUStyleOptions {
             new Option(true, OptionType.CREATE_UPDATE_INDEX, "--date") {
                 void process(Main jartool, String opt, String arg) throws BadArgs {
                     try {
-                        jartool.date = ZonedDateTime.parse(arg, DateTimeFormatter.ISO_DATE_TIME);
-                        if (jartool.date.toEpochSecond() < 0) {
-                            throw new BadArgs("error.date.before.epoch", arg);
+                        jartool.date = ZonedDateTime.parse(arg, DateTimeFormatter.ISO_DATE_TIME)
+                                           .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+                        if (jartool.date.getYear() < 1980 || jartool.date.getYear() > 2099) {
+                            throw new BadArgs("error.date.out.of.range", arg);
                         }
                     } catch (DateTimeParseException x) {
                         throw new BadArgs("error.date.notvalid", arg);

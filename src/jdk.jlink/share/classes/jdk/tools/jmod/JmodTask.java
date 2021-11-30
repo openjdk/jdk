@@ -63,8 +63,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
@@ -165,7 +165,7 @@ public class JmodTask {
         boolean dryrun;
         List<PathMatcher> excludes;
         Path extractDir;
-        ZonedDateTime date;
+        LocalDateTime date;
     }
 
     public int run(String[] args) {
@@ -991,7 +991,7 @@ public class JmodTask {
                             // what about module-info.class in versioned entries?
                             ZipEntry ze = new ZipEntry(e.getName());
                             if (options.date != null) {
-                                ze.setTimeZoned(options.date);
+                                ze.setTimeLocal(options.date);
                             } else {
                                 ze.setTime(System.currentTimeMillis());
                             }
@@ -1157,13 +1157,14 @@ public class JmodTask {
         @Override public String valuePattern() { return "module-version"; }
     }
 
-    static class DateConverter implements ValueConverter<ZonedDateTime> {
+    static class DateConverter implements ValueConverter<LocalDateTime> {
         @Override
-        public ZonedDateTime convert(String value) {
+        public LocalDateTime convert(String value) {
             try {
-                ZonedDateTime date = ZonedDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME);
-                if (date.toEpochSecond() < 0) {
-                    throw new CommandException("err.date.before.epoch", value);
+                LocalDateTime date = ZonedDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME)
+                                         .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+                if (date.getYear() < 1980 || date.getYear() > 2099) {
+                    throw new CommandException("err.date.out.of.range", value);
                 }
                 return date;
             } catch (DateTimeParseException x) {
@@ -1171,7 +1172,7 @@ public class JmodTask {
             }
         }
 
-        @Override public Class<ZonedDateTime> valueType() { return ZonedDateTime.class; }
+        @Override public Class<LocalDateTime> valueType() { return LocalDateTime.class; }
 
         @Override public String valuePattern() { return "date"; }
     }
@@ -1411,7 +1412,7 @@ public class JmodTask {
         OptionSpec<Void> version
                 = parser.accepts("version", getMessage("main.opt.version"));
 
-        OptionSpec<ZonedDateTime> date
+        OptionSpec<LocalDateTime> date
                 = parser.accepts("date", getMessage("main.opt.date"))
                         .withRequiredArg()
                         .withValuesConvertedBy(new DateConverter());

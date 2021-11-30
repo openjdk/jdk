@@ -42,8 +42,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import jdk.internal.jmod.JmodFile;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 
 import static jdk.internal.jmod.JmodFile.*;
 
@@ -57,15 +55,15 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
      * This method creates (or overrides, if exists) the JMOD file,
      * returning the the output stream to write to the JMOD file.
      */
-    static JmodOutputStream newOutputStream(Path file, ZonedDateTime date) throws IOException {
+    static JmodOutputStream newOutputStream(Path file, LocalDateTime date) throws IOException {
         OutputStream out = Files.newOutputStream(file);
         BufferedOutputStream bos = new BufferedOutputStream(out);
         return new JmodOutputStream(bos, date);
     }
 
     private final ZipOutputStream zos;
-    private final ZonedDateTime   date;
-    private JmodOutputStream(OutputStream out, ZonedDateTime date) {
+    private final LocalDateTime   date;
+    private JmodOutputStream(OutputStream out, LocalDateTime date) {
         this.zos = new ZipOutputStream(out);
         this.date = date;
         try {
@@ -110,7 +108,7 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
         ZipEntry e2 = new ZipEntry(e1.getName());
         e2.setMethod(e1.getMethod());
         if (date != null) {
-            e2.setTimeZoned(date);
+            e2.setTimeLocal(date);
         } else {
             e2.setTime(e1.getTime());
         }
@@ -135,7 +133,7 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
         entries.get(section).add(path);
         ZipEntry zipEntry = new ZipEntry(name);
         if (date != null) {
-            zipEntry.setTimeZoned(date);
+            zipEntry.setTimeLocal(date);
         }
         return zipEntry;
     }

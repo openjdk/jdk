@@ -34,8 +34,12 @@ import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.spi.ToolProvider;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 
 public class JarEntryTime {
     static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
@@ -88,7 +92,6 @@ public class JarEntryTime {
         File dirInner = new File(dirOuter, "inner");
         File jarFile = new File("JarEntryTime.jar");
         File jarFileSourceDate = new File("JarEntryTimeSourceDate.jar");
-        File jarFileSourceDateBefore1980 = new File("JarEntryTimeSourceDateBefore1980.jar");
         File testFile = new File("JarEntryTimeTest.txt");
 
         // Remove any leftovers from prior run
@@ -126,25 +129,6 @@ public class JarEntryTime {
         check(JAR_TOOL.run(System.out, System.err,
                            "cf", jarFile.getName(), dirOuter.getName()) == 0);
         check(jarFile.exists());
-
-        // Make a jar file from that directory structure with
-        // --date set to 15/03/2022
-        String sourceDate = "2022-03-15T00:00:00+00:00";
-        check(JAR_TOOL.run(System.out, System.err,
-                           "--create",
-                           "--file", jarFileSourceDate.getName(),
-                           "--date", sourceDate,
-                           dirOuter.getName()) == 0);
-        check(jarFileSourceDate.exists());
-
-        // Use a date before dostime 1980/1/1 in non-UTC zone
-        String sourceDateBefore1980 = "1976-03-15T01:02:03+02:00";
-        check(JAR_TOOL.run(System.out, System.err,
-                           "--create",
-                           "--file", jarFileSourceDateBefore1980.getName(),
-                           "--date", sourceDateBefore1980,
-                           dirOuter.getName()) == 0);
-        check(jarFileSourceDateBefore1980.exists());
 
         check(cleanup(dirInner));
         check(cleanup(dirOuter));
@@ -185,38 +169,88 @@ public class JarEntryTime {
         check(cleanup(dirInner));
         check(cleanup(dirOuter));
 
-        // Extract jarFileSourceDate and check last modified values
-        extractJar(jarFileSourceDate, false);
-        check(dirOuter.exists());
-        check(dirInner.exists());
-        check(fileInner.exists());
-        long sourceDateEpochMillis = ZonedDateTime.parse(sourceDate,
-                               DateTimeFormatter.ISO_DATE_TIME).toEpochSecond() * 1000;
-        checkFileTime(dirOuter.lastModified(), sourceDateEpochMillis);
-        checkFileTime(dirInner.lastModified(), sourceDateEpochMillis);
-        checkFileTime(fileInner.lastModified(), sourceDateEpochMillis);
+        // Test --date source date
+        String[] sourceDates = {"1986-06-24T01:02:03+00:00",
+                                "2022-03-15T00:00:00+00:00",
+                                "2022-03-15T00:00:00+06:00",
+                                "2038-11-26T06:06:06+00:00",
+                                "2098-02-18T00:00:00-08:00"};
+        for (String sourceDate : sourceDates) {
+            jarFileSourceDate.delete();
+            createOuterInnerDirs(dirOuter, dirInner);
+            check(JAR_TOOL.run(System.out, System.err,
+                           "--create",
+                           "--file", jarFileSourceDate.getName(),
+                           "--date", sourceDate,
+                           dirOuter.getName()) == 0);
+            check(jarFileSourceDate.exists());
 
-        check(cleanup(dirInner));
-        check(cleanup(dirOuter));
+            // Extract jarFileSourceDate and check last modified values
+            extractJar(jarFileSourceDate, false);
+            check(dirOuter.exists());
+            check(dirInner.exists());
+            check(fileInner.exists());
+            LocalDateTime expectedLdt = ZonedDateTime.parse(sourceDate,
+                                             DateTimeFormatter.ISO_DATE_TIME)
+                                             .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+            System.out.format("Checking jar entries local date time for --date %s, is %s%n",
+                              sourceDate, expectedLdt); 
+            long sourceDateEpochMillis = TimeUnit.MILLISECONDS.convert(
+                expectedLdt.toEpochSecond(ZoneId.systemDefault().getRules().getOffset(expectedLdt)),
+                TimeUnit.SECONDS);
+            checkFileTime(dirOuter.lastModified(), sourceDateEpochMillis);
+            checkFileTime(dirInner.lastModified(), sourceDateEpochMillis);
+            checkFileTime(fileInner.lastModified(), sourceDateEpochMillis);
 
-        // Extract jarFileSourceDateBefore1980 and check last modified values
-        extractJar(jarFileSourceDateBefore1980, false);
-        check(dirOuter.exists());
-        check(dirInner.exists());
-        check(fileInner.exists());
-        long sourceDateBefore1980Millis = ZonedDateTime.parse(sourceDateBefore1980,
-                               DateTimeFormatter.ISO_DATE_TIME).toEpochSecond() * 1000;
-        checkFileTime(dirOuter.lastModified(), sourceDateBefore1980Millis);
-        checkFileTime(dirInner.lastModified(), sourceDateBefore1980Millis);
-        checkFileTime(fileInner.lastModified(), sourceDateBefore1980Millis);
+            check(cleanup(dirInner));
+            check(cleanup(dirOuter));
+        }
 
-        check(cleanup(dirInner));
-        check(cleanup(dirOuter));
+        // Negative Tests --date out of range source date
+        String[] badSourceDates = {"1976-06-24T01:02:03+00:00",
+                                   "2100-02-18T00:00:00-11:00"};
+        for (String sourceDate : badSourceDates) {
+            createOuterInnerDirs(dirOuter, dirInner);
+            check(JAR_TOOL.run(System.out, System.err,
+                           "--create",
+                           "--file", jarFileSourceDate.getName(),
+                           "--date", sourceDate,
+                           dirOuter.getName()) != 0);
+
+            check(cleanup(dirInner));
+            check(cleanup(dirOuter));
+        }
 
         check(jarFile.delete());
         check(jarFileSourceDate.delete());
-        check(jarFileSourceDateBefore1980.delete());
         check(testFile.delete());
+    }
+
+    static void createOuterInnerDirs(File dirOuter, File dirInner) throws Throwable {
+        /* Create a directory structure
+         * outer/
+         *     inner/
+         *         foo.txt
+         * Set the lastModified dates so that outer is created now, inner
+         * yesterday, and foo.txt created "earlier".
+         */
+        check(dirOuter.mkdir());
+        check(dirInner.mkdir());
+        File fileInner = new File(dirInner, "foo.txt");
+        try (PrintWriter pw = new PrintWriter(fileInner)) {
+            pw.println("hello, world");
+        }
+
+        // Get the "now" from the "last-modified-time" of the last file we
+        // just created, instead of the "System.currentTimeMillis()", to
+        // workaround the possible "time difference" due to nfs.
+        final long now = fileInner.lastModified();
+        final long earlier = now - (60L * 60L * 6L * 1000L);
+        final long yesterday = now - (60L * 60L * 24L * 1000L);
+
+        check(dirOuter.setLastModified(now));
+        check(dirInner.setLastModified(yesterday));
+        check(fileInner.setLastModified(earlier));
     }
 
     static void checkFileTime(long now, long original) {

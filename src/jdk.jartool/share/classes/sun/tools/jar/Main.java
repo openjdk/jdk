@@ -71,7 +71,6 @@ import jdk.internal.module.ModuleTarget;
 import jdk.internal.util.jar.JarIndex;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.jar.JarFile.MANIFEST_NAME;
@@ -178,8 +177,8 @@ public class Main {
     static final int VERSIONS_DIR_LENGTH = VERSIONS_DIR.length();
     private static ResourceBundle rsrc;
 
-    /* Date option for entry timestamps */
-    ZonedDateTime date;
+    /* Date option for entry timestamps resolved to UTC Local time */
+    LocalDateTime date;
 
     /**
      * If true, maintain compatibility with JDK releases prior to 6.0 by
@@ -869,12 +868,12 @@ public class Main {
                     output(getMsg("out.added.manifest"));
                 }
                 ZipEntry e = new ZipEntry(MANIFEST_DIR);
-                setTime(e);
+                setDate(e);
                 e.setSize(0);
                 e.setCrc(0);
                 zos.putNextEntry(e);
                 e = new ZipEntry(MANIFEST_NAME);
-                setTime(e);
+                setDate(e);
                 if (flag0) {
                     crc32Manifest(e, manifest);
                 }
@@ -974,7 +973,7 @@ public class Main {
                     // do our own compression
                     ZipEntry e2 = new ZipEntry(name);
                     e2.setMethod(e.getMethod());
-                    setTime(e2, e.getTime());
+                    setDate(e2, e.getTime());
                     e2.setComment(e.getComment());
                     e2.setExtra(e.getExtra());
                     if (e.getMethod() == ZipEntry.STORED) {
@@ -1040,7 +1039,7 @@ public class Main {
         throws IOException
     {
         ZipEntry e = new ZipEntry(INDEX_NAME);
-        setTime(e);
+        setDate(e);
         if (flag0) {
             CRC32OutputStream os = new CRC32OutputStream();
             index.write(os);
@@ -1062,9 +1061,9 @@ public class Main {
             ZipEntry e = new ZipEntry(name);
             FileTime lastModified = mie.getLastModifiedTime();
             if (lastModified != null) {
-                setTimeLastModified(e, lastModified);
+                setDate(e, lastModified.toMillis());
             } else {
-                setTimeLastModified(e);
+                setDate(e);
             }
             if (flag0) {
                 crc32ModuleInfo(e, bytes);
@@ -1090,7 +1089,7 @@ public class Main {
             addMultiRelease(m);
         }
         ZipEntry e = new ZipEntry(MANIFEST_NAME);
-        setTime(e);
+        setDate(e);
         if (flag0) {
             crc32Manifest(e, m);
         }
@@ -1211,7 +1210,7 @@ public class Main {
             out.print(formatMsg("out.adding", name));
         }
         ZipEntry e = new ZipEntry(name);
-        setTime(e, file.lastModified());
+        setDate(e, file.lastModified());
         if (size == 0) {
             e.setMethod(ZipEntry.STORED);
             e.setSize(0);
@@ -2326,32 +2325,17 @@ public class Main {
         Comparator.comparing(ZipEntry::getName, ENTRYNAME_COMPARATOR);
 
     // Set the ZipEntry dostime using date if specified otherwise the current time
-    private void setTime(ZipEntry e) {
-        setTime(e, System.currentTimeMillis());
+    private void setDate(ZipEntry e) {
+        setDate(e, System.currentTimeMillis());
     }
 
     // Set the ZipEntry dostime using the date if specified
     // otherwise the original time
-    private void setTime(ZipEntry e, long origTime) {
+    private void setDate(ZipEntry e, long origTime) {
         if (date != null) {
-          e.setTimeZoned(date);
+          e.setTimeLocal(date);
         } else {
           e.setTime(origTime);
-        }
-    }
-
-    // Set the ZipEntry last modified time using date if specified otherwise the current time
-    private void setTimeLastModified(ZipEntry e) {
-        setTimeLastModified(e, FileTime.fromMillis(System.currentTimeMillis()));
-    }
-
-    // Set the ZipEntry last modified time using the date if specified
-    // otherwise the original time
-    private void setTimeLastModified(ZipEntry e, FileTime origTime) {
-        if (date != null) {
-          e.setLastModifiedTimeZoned(FileTime.from(date.toInstant()), date.getZone());
-        } else {
-          e.setLastModifiedTime(origTime);
         }
     }
 }
