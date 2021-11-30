@@ -159,6 +159,10 @@ static bool ok_to_convert(Node* inc, Node* var) {
   return !(is_cloop_increment(inc) || var->is_cloop_ind_var());
 }
 
+static bool ok_to_convert(Node* inc) {
+  return !is_cloop_increment(inc);
+}
+
 //------------------------------Ideal------------------------------------------
 Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   Node *in1 = in(1);
@@ -190,10 +194,11 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
       && phase->type(in1)->isa_int() != NULL
       && phase->type(in1)->isa_int()->is_con()
       && phase->type(in2->in(2))->isa_int() != NULL
-      && phase->type(in2->in(2))->isa_int()->is_con()) {
-      jint c0 = phase->type(in1)->isa_int()->get_con();
-      jint c1 = phase->type(in2->in(2))->isa_int()->get_con();
-      return new SubINode(phase->intcon(java_subtract(c0, c1)), in2->in(1));
+      && phase->type(in2->in(2))->isa_int()->is_con()
+      && ok_to_convert(in2)) {
+    jint c0 = phase->type(in1)->isa_int()->get_con();
+    jint c1 = phase->type(in2->in(2))->isa_int()->get_con();
+    return new SubINode(phase->intcon(java_subtract(c0, c1)), in2->in(1));
   }
 
   // Convert "(x+c0) - y" into (x-y) + c0"
