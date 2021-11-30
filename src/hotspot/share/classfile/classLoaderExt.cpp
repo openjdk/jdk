@@ -26,7 +26,6 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
-#include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -229,8 +228,7 @@ void ClassLoaderExt::setup_search_paths(JavaThread* current) {
   ClassLoaderExt::setup_app_search_path(current);
 }
 
-void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result,
-                                   const ClassFileStream* stream, bool redefined) {
+void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result, bool redefined) {
   Arguments::assert_is_dumping_archive();
 
   // We need to remember where the class comes from during dumping.

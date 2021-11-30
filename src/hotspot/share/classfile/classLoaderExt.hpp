@@ -29,7 +29,6 @@
 #include "classfile/moduleEntry.hpp"
 #include "utilities/macros.hpp"
 
-class ClassFileStream;
 class ClassListParser;
 
 class ClassLoaderExt: public ClassLoader { // AllStatic
@@ -112,8 +111,7 @@ public:
     return _has_non_jar_in_classpath;
   }
 
-  static void record_result(const s2 classpath_index, InstanceKlass* result,
-                            const ClassFileStream* stream, bool redefined);
+  static void record_result(const s2 classpath_index, InstanceKlass* result, bool redefined);
   static void set_has_app_classes() {
     _has_app_classes = true;
   }
