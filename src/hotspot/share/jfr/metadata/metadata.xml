@@ -599,9 +599,22 @@
     <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
   </Event>
 
-  <Event name="UnsafeAllocation" category="Java Application" label="Allocation on Unsafe" description="Allocation memory when using unsafe"
+  <Event name="UnsafeAllocation" category="Java Application" label="Unsafe Allocation" description="Allocation memory when using unsafe"
     thread="true" stackTrace="true" startTime="false">
+    <Field type="ulong" name="addr" label="addr" />
     <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
+  </Event>
+
+  <Event name="UnsafeReallocate" category="Java Application" label="Unsafe Reallocate" description="Reallocate memory when using unsafe"
+    thread="true" stackTrace="true" startTime="false">
+    <Field type="ulong" name="freeAddr" label="addr" />
+    <Field type="ulong" name="allocAddr" label="addr" />
+    <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
+  </Event>
+
+  <Event name="UnsafeFreeMemory" category="Java Application" label="Unsafe FreeMemory" description="Free memory when using unsafe"
+    thread="true" stackTrace="true" startTime="false">
+    <Field type="ulong" name="addr" label="addr" />
   </Event>
 
   <Event name="ObjectAllocationSample" category="Java Application" label="Object Allocation Sample" thread="true" stackTrace="true" startTime="false" throttle="true">
