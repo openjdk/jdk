@@ -34,7 +34,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
@@ -474,12 +473,6 @@ void KlassHierarchy::print_class(outputStream* st, KlassInfoEntry* cie, bool pri
   if (klass->is_interface()) {
     st->print(" (intf)");
   }
-  // Special treatment for generated core reflection accessor classes: print invocation target.
-  if (ReflectionAccessorImplKlassHelper::is_generated_accessor(klass)) {
-    st->print(" (invokes: ");
-    ReflectionAccessorImplKlassHelper::print_invocation_target(st, klass);
-    st->print(")");
-  }
   st->print("\n");
 
   // Print any interfaces the class has.
@@ -585,18 +578,12 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
       const uint capped_parallel_thread_num = MIN2(parallel_thread_num, workers->max_workers());
       WithActiveWorkers with_active_workers(workers, capped_parallel_thread_num);
 
-      ParallelObjectIterator* poi = Universe::heap()->parallel_object_iterator(workers->active_workers());
-      if (poi != NULL) {
-        // The GC supports parallel object iteration.
-
-        ParHeapInspectTask task(poi, cit, filter);
-        // Run task with the active workers.
-        workers->run_task(&task);
-
-        delete poi;
-        if (task.success()) {
-          return task.missed_count();
-        }
+      ParallelObjectIterator poi(workers->active_workers());
+      ParHeapInspectTask task(&poi, cit, filter);
+      // Run task with the active workers.
+      workers->run_task(&task);
+      if (task.success()) {
+        return task.missed_count();
       }
     }
   }

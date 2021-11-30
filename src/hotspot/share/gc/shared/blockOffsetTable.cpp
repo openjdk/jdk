@@ -33,6 +33,18 @@
 #include "runtime/java.hpp"
 #include "services/memTracker.hpp"
 
+uint BOTConstants::LogN = 0;
+uint BOTConstants::LogN_words = 0;
+uint BOTConstants::N_bytes = 0;
+uint BOTConstants::N_words = 0;
+
+void BOTConstants::initialize_bot_size(uint card_shift) {
+  LogN =  card_shift;
+  LogN_words = LogN - LogHeapWordSize;
+  N_bytes = 1 << LogN;
+  N_words = 1 << LogN_words;
+}
+
 //////////////////////////////////////////////////////////////////////
 // BlockOffsetSharedArray
 //////////////////////////////////////////////////////////////////////

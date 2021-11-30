@@ -433,6 +433,7 @@ class Deoptimization : AllStatic {
                                          int trap_request);
 
   static jint total_deoptimization_count();
+  static jint deoptimization_count(const char* reason_str, const char* action_str);
 
   // JVMTI PopFrame support
 

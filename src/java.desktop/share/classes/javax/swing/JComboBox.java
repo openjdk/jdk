@@ -1555,7 +1555,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
         int selectionForKey(char aKey,ComboBoxModel<?> aModel);
     }
 
-    class DefaultKeySelectionManager implements KeySelectionManager, Serializable {
+    static class DefaultKeySelectionManager implements KeySelectionManager, Serializable {
         public int selectionForKey(char aKey,ComboBoxModel<?> aModel) {
             int i,c;
             int currentSelection = -1;

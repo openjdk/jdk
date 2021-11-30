@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,11 +76,11 @@ public final class Secmod {
     // Slot IDs - defined in j2secmod.h on the native side
     // Values obtained from NSS's pkcs11i.h header
 
-    private final static int NETSCAPE_SLOT_ID = 0x1;
+    private static final int NETSCAPE_SLOT_ID = 0x1;
 
-    private final static int PRIVATE_KEY_SLOT_ID = 0x2;
+    private static final int PRIVATE_KEY_SLOT_ID = 0x2;
 
-    private final static int FIPS_SLOT_ID = 0x3;
+    private static final int FIPS_SLOT_ID = 0x3;
 
     // handle to be passed to the native code, 0 means not initialized
     private long nssHandle;

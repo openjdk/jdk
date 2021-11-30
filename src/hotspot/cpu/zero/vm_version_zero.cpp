@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -116,5 +116,8 @@ void VM_Version::initialize() {
   }
 
   // Not implemented
-  UNSUPPORTED_OPTION(CriticalJNINatives);
+  UNSUPPORTED_OPTION(UseCompiler);
+#ifdef ASSERT
+  UNSUPPORTED_OPTION(CountCompiledCalls);
+#endif
 }

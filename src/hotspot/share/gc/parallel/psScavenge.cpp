@@ -654,8 +654,6 @@ bool PSScavenge::invoke_no_policy() {
     DerivedPointerTable::update_pointers();
 #endif
 
-    NOT_PRODUCT(reference_processor()->verify_no_references_recorded());
-
     // Re-verify object start arrays
     if (VerifyObjectStartArray &&
         VerifyAfterGC) {
@@ -801,7 +799,6 @@ void PSScavenge::initialize() {
   _ref_processor =
     new ReferenceProcessor(&_span_based_discoverer,
                            ParallelGCThreads,          // mt processing degree
-                           true,                       // mt discovery
                            ParallelGCThreads,          // mt discovery degree
                            false,                      // concurrent_discovery
                            NULL);                      // header provides liveness info
