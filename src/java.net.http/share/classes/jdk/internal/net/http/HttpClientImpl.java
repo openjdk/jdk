@@ -36,6 +36,7 @@ import java.lang.ref.WeakReference;
 import java.net.Authenticator;
 import java.net.ConnectException;
 import java.net.CookieHandler;
+import java.net.InetAddress;
 import java.net.ProxySelector;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpTimeoutException;
@@ -188,6 +189,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     private final Http2ClientImpl client2;
     private final long id;
     private final String dbgTag;
+    private final InetAddress localAddr;
 
     // The SSL DirectBuffer Supplier provides the ability to recycle
     // buffers used between the socket reader and the SSLEngine, or
@@ -297,6 +299,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         client2 = new Http2ClientImpl(this);
         cookieHandler = builder.cookieHandler;
         connectTimeout = builder.connectTimeout;
+        localAddr = builder.localAddr;
         followRedirects = builder.followRedirects == null ?
                 Redirect.NEVER : builder.followRedirects;
         this.userProxySelector = builder.proxy;
@@ -1179,6 +1182,11 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     @Override
     public Version version() {
         return version;
+    }
+
+    @Override
+    public InetAddress localAddress() {
+        return localAddr;
     }
 
     String dbgString() {

@@ -27,6 +27,7 @@ package jdk.internal.net.http;
 
 import java.net.Authenticator;
 import java.net.CookieHandler;
+import java.net.InetAddress;
 import java.net.ProxySelector;
 import java.time.Duration;
 import java.util.concurrent.Executor;
@@ -49,6 +50,7 @@ public class HttpClientBuilderImpl implements HttpClient.Builder {
     SSLContext sslContext;
     SSLParameters sslParams;
     int priority = -1;
+    InetAddress localAddr;
 
     @Override
     public HttpClientBuilderImpl cookieHandler(CookieHandler cookieHandler) {
@@ -127,6 +129,12 @@ public class HttpClientBuilderImpl implements HttpClient.Builder {
     public HttpClientBuilderImpl authenticator(Authenticator a) {
         requireNonNull(a);
         this.authenticator = a;
+        return this;
+    }
+
+    @Override
+    public HttpClient.Builder localAddress(final InetAddress localAddr) {
+        this.localAddr = localAddr;
         return this;
     }
 

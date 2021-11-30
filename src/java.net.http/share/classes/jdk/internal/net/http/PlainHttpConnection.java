@@ -168,7 +168,6 @@ class PlainHttpConnection extends HttpConnection {
         try {
             assert !connected : "Already connected";
             assert !chan.isBlocking() : "Unexpected blocking channel";
-            boolean finished;
 
             if (connectTimerEvent == null) {
                 connectTimerEvent = newConnectTimer(exchange, cf);
@@ -178,32 +177,73 @@ class PlainHttpConnection extends HttpConnection {
                     client().registerTimer(connectTimerEvent);
                 }
             }
+            final var initiatingCF = cf;
+            // we initiate a (async) bind if any explicit local address is configured
+            // on the client. The result of this task is either
+            // a successful bind or failed bind. In case of a successful bind,
+            // the initiating CompletableFuture completes successfully with a null result.
+            // On a failed bind, the initiating CompletableFuture is completedExceptionally
+            // and PlainHttpConnection.close() is called.
+            cf.completeAsync(() -> {
+                var localAddr = client().localAddress();
+                if (localAddr == null) {
+                    return null;
+                }
+                if (debug.on()) {
+                    debug.log("binding to configured local address " + localAddr);
+                }
+                PrivilegedExceptionAction<SocketChannel> pa = () -> chan.bind(new InetSocketAddress(localAddr, 0));
+                try {
+                    AccessController.doPrivileged(pa);
+                    if (debug.on()) {
+                        debug.log("bind completed " + localAddr);
+                    }
+                    return null;
+                } catch (PrivilegedActionException e) {
+                    var cause = e.getCause();
+                    if (debug.on()) {
+                        debug.log("bind to " + localAddr + " failed: " + cause.getMessage());
+                    }
+                    onFailedConnect(initiatingCF, cause);
+                }
+                return null;
+            }, client().theExecutor());
 
-            PrivilegedExceptionAction<Boolean> pa =
-                    () -> chan.connect(Utils.resolveAddress(address));
-            try {
-                 finished = AccessController.doPrivileged(pa);
-            } catch (PrivilegedActionException e) {
-               throw e.getCause();
-            }
-            if (finished) {
-                if (debug.on()) debug.log("connect finished without blocking");
-                cf.complete(ConnectState.SUCCESS);
-            } else {
-                if (debug.on()) debug.log("registering connect event");
-                client().registerEvent(new ConnectEvent(cf, exchange));
-            }
+            // only upon a successful bind, move to next stage to "connect"
+            cf = cf.thenCompose((Function<ConnectState, CompletableFuture<ConnectState>>)(unused) -> {
+                try {
+                    boolean finished;
+                    if (debug.on()) {
+                        debug.log("attempting connect " + address);
+                    }
+                    PrivilegedExceptionAction<Boolean> pa = () -> chan.connect(Utils.resolveAddress(address));
+                    try {
+                        finished = AccessController.doPrivileged(pa);
+                        if (debug.on()) {
+                            debug.log("finished connect " + address + " " + finished);
+                        }
+                    } catch (PrivilegedActionException e) {
+                        throw e.getCause();
+                    }
+                    if (finished) {
+                        if (debug.on()) debug.log("connect finished without blocking");
+                        return MinimalFuture.completedFuture(ConnectState.SUCCESS);
+                    }
+                    if (debug.on()) debug.log("registering connect event");
+                    MinimalFuture<ConnectState> connectCF = new MinimalFuture<>();
+                    client().registerEvent(new ConnectEvent(connectCF, exchange));
+                    return connectCF;
+                } catch (Throwable t) {
+                    var f = new MinimalFuture<ConnectState>();
+                    onFailedConnect(f, t);
+                    return f;
+                }
+            });
             cf = exchange.checkCancelled(cf, this);
         } catch (Throwable throwable) {
-            cf.completeExceptionally(Utils.toConnectException(throwable));
-            try {
-                close();
-            } catch (Exception x) {
-                if (debug.on())
-                    debug.log("Failed to close channel after unsuccessful connect");
-            }
+            onFailedConnect(cf, throwable);
         }
-        return cf.handle((r,t) -> checkRetryConnect(r, t,exchange))
+        return cf.handle((r,t) -> checkRetryConnect(r, t, exchange))
                 .thenCompose(Function.identity());
     }
 
@@ -241,6 +281,22 @@ class PlainHttpConnection extends HttpConnection {
         ConnectTimerEvent timer = connectTimerEvent;
         if (timer == null) return true;
         return timer.deadline().isAfter(Instant.now());
+    }
+
+    /**
+     * Completes the passed {@link CompletableFuture} exceptionally and closes
+     * this connection
+     * @param cf the CompletableFuture
+     * @param failure the underlying failure
+     */
+    private void onFailedConnect(CompletableFuture<?> cf, Throwable failure) {
+        cf.completeExceptionally(Utils.toConnectException(failure));
+        try {
+            close();
+        } catch (Exception x) {
+            if (debug.on())
+                debug.log("Failed to close channel after unsuccessful connect");
+        }
     }
 
     @Override

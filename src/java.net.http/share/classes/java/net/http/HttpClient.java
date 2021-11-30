@@ -27,6 +27,7 @@ package java.net.http;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -355,6 +356,21 @@ public abstract class HttpClient {
         public Builder authenticator(Authenticator authenticator);
 
         /**
+         * Binds the socket to this local address when creating
+         * connections for sending requests.
+         *
+         * <p> If no local address is set or {@code null} is passed
+         * to this method then sockets created by the
+         * HTTP client will be bound to an automatically
+         * assigned socket address.
+         *
+         * @param localAddr The local socket address. Can be null.
+         * @return this builder
+         * @since 19
+         */
+        public Builder localAddress(InetAddress localAddr);
+
+        /**
          * Returns a new {@link HttpClient} built from the current state of this
          * builder.
          *
@@ -639,6 +655,22 @@ public abstract class HttpClient {
     sendAsync(HttpRequest request,
               BodyHandler<T> responseBodyHandler,
               PushPromiseHandler<T> pushPromiseHandler);
+
+    /**
+     * Returns an {@link InetAddress} which will be used by this client
+     * to bind a socket when creating connections. If no
+     * {@link Builder#localAddress() local address} was set in the
+     * client's builder, then this method returns null, in which case
+     * the sockets created by this client will be bound to automatically
+     * assigned socket addresses.
+     *
+     * @return the local address that will be used by this client when
+     *         creating connections
+     * @since 19
+     */
+    public InetAddress localAddress() {
+        return null;
+    }
 
     /**
      * Creates a new {@code WebSocket} builder (optional operation).
