@@ -82,7 +82,7 @@ public:
 
     class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
     public:
-      G1CardSetMemoryStats _total;
+      G1SegmentedArrayMemoryStats _total;
 
       bool do_heap_region(HeapRegion* r) override {
         _total.add(r->rem_set()->card_set_memory_stats());
