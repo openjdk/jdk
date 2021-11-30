@@ -58,7 +58,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author John Howard (johnh@schemasoft.com)
- * @LastModified: May 2021
+ * @LastModified: Nov 2021
  */
 public final class XSLTC {
 
@@ -461,7 +461,10 @@ public final class XSLTC {
                     setClassName(name);
                 }
                 else if (systemId != null && !systemId.equals("")) {
-                    setClassName(Util.baseName(systemId));
+                    String clsName = Util.baseName(systemId);
+                    if (clsName != null && !clsName.equals("")) {
+                        setClassName(clsName);
+                    }
                 }
 
                 // Ensure we have a non-empty class name at this point
