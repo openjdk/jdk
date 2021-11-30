@@ -385,8 +385,8 @@ class BlockMerger: public BlockClosure {
       BlockBegin *receiver1 = receiver->pred_at(p);
       assert(receiver1->end() != NULL, "End should not be null.");
       int idx;
-      while ((idx = receiver1->successors()->find(receiver)) >= 0) {
-        receiver1->successors()->remove_at(idx);
+      while ((idx = receiver1->find_sux(receiver)) >= 0) {
+        receiver1->remove_sux_at(idx);
       }
     }
     for (int s = 0; s < receiver->number_of_sux(); s++) {
