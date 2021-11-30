@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,11 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-/**
- * This package is used to proxy the SVG export functionality of the BatikSVG library. Reflection is used such that the
- * library is optional and need not be present at build time.
- */
-package com.sun.hotspot.igv.svg;
 
+#ifdef _WIN64
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
+
+EXPORT void foo(void (*cb)(int, int, int, int), int a0, int a1, int a2, int a3) {
+    cb(a0, a1, a2, a3);
+}

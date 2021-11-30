@@ -135,8 +135,8 @@ void G1Arguments::initialize_card_set_configuration() {
   uint region_size_log_mb = (uint)MAX2(HeapRegion::LogOfHRGrainBytes - LOG_M, 0);
 
   if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
-    uint num_cards_in_inline_ptr = G1CardSetConfiguration::num_cards_in_inline_ptr(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift);
-    FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(num_cards_in_inline_ptr * 2,
+    uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift);
+    FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
                                                     G1RemSetArrayOfCardsEntriesBase * (1u << (region_size_log_mb + 1))));
   }
 
