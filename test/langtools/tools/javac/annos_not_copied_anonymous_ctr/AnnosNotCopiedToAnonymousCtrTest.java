@@ -110,10 +110,15 @@ public class AnnosNotCopiedToAnonymousCtrTest {
     @Target(value = {ElementType.CONSTRUCTOR})
     @interface InvisibleCtrAnnotation {}
 
+    @Target({ElementType.TYPE_USE})
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface TypeAnno {}
+
     public class Test {
         @VisibleCtrAnnotation
         @InvisibleCtrAnnotation
-        public Test(String firstParam, @VisibleParamAnnotation String secondParam, @InvisibleParamAnnotation String thirdParam) {}
+        @TypeAnno
+        public Test(String firstParam, @VisibleParamAnnotation @TypeAnno String secondParam, @InvisibleParamAnnotation String thirdParam) {}
 
         public void m() {
             // let's create an anonymous inner class

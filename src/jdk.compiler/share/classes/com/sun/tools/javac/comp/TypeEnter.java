@@ -1338,32 +1338,34 @@ public class TypeEnter implements Completer {
         @Override
         public MethodSymbol constructorSymbol() {
             // we should do this only once
-            boolean copyConstAnnos = constructorSymbol == null;
-            MethodSymbol csym = super.constructorSymbol();
-            csym.flags_field |= ANONCONSTR | (constr.flags() & VARARGS);
-            csym.flags_field |= based ? ANONCONSTR_BASED : 0;
+            if (constructorSymbol == null) {
+                MethodSymbol csym = super.constructorSymbol();
+                csym.flags_field |= ANONCONSTR | (constr.flags() & VARARGS);
+                csym.flags_field |= based ? ANONCONSTR_BASED : 0;
 
-            ListBuffer<Attribute.Compound> paramAttrs;
-            if (copyConstAnnos) {
+                ListBuffer<Attribute.Compound> paramAttrs;
                 csym.appendAttributes(constr.getRawAttributes());
-            }
+                csym.appendUniqueTypeAttributes(constr.getRawTypeAttributes());
 
-            ListBuffer<VarSymbol> params = new ListBuffer<>();
-            List<Type> argtypes = constructorType().getParameterTypes();
-            if (!enclosingType().hasTag(NONE)) {
-                argtypes = argtypes.tail;
-                params = params.prepend(new VarSymbol(PARAMETER, make.paramName(0), enclosingType(), csym));
-            }
-            if (constr.params != null) {
-                for (VarSymbol p : constr.params) {
-                    VarSymbol param = new VarSymbol(PARAMETER | p.flags(), p.name, argtypes.head, csym);
-                    param.appendAttributes(p.getRawAttributes());
-                    params.add(param);
+                ListBuffer<VarSymbol> params = new ListBuffer<>();
+                List<Type> argtypes = constructorType().getParameterTypes();
+                if (!enclosingType().hasTag(NONE)) {
                     argtypes = argtypes.tail;
+                    params = params.prepend(new VarSymbol(PARAMETER, make.paramName(0), enclosingType(), csym));
                 }
+                if (constr.params != null) {
+                    for (VarSymbol p : constr.params) {
+                        VarSymbol param = new VarSymbol(PARAMETER | p.flags(), p.name, argtypes.head, csym);
+                        param.appendAttributes(p.getRawAttributes());
+                        param.appendUniqueTypeAttributes(p.getRawTypeAttributes());
+                        params.add(param);
+                        argtypes = argtypes.tail;
+                    }
+                }
+                csym.params = params.toList();
+                return csym;
             }
-            csym.params = params.toList();
-            return csym;
+            return constructorSymbol;
         }
 
         @Override
