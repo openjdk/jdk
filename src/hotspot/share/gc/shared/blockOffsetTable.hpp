@@ -67,16 +67,9 @@ public:
   static size_t power_to_cards_back(uint i) {
     return (size_t)1 << (LogBase * i);
   }
-  static size_t power_to_words_back(uint i) {
-    return power_to_cards_back(i) * N_words;
-  }
   static size_t entry_to_cards_back(u_char entry) {
     assert(entry >= N_words, "Precondition");
     return power_to_cards_back(entry - N_words);
-  }
-  static size_t entry_to_words_back(u_char entry) {
-    assert(entry >= N_words, "Precondition");
-    return power_to_words_back(entry - N_words);
   }
 };
 
