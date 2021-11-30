@@ -443,7 +443,7 @@ public class TagletWriterImpl extends TagletWriter {
                     c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
                     // We don't care about trailing whitespace.
                 } else {
-                    c = HtmlTree.SPAN(Text.of(utils.normalizeNewlines(sequence)));
+                    c = HtmlTree.SPAN(Text.of(text));
                     classes.forEach(((HtmlTree) c)::addStyle);
                 }
                 code.add(c);

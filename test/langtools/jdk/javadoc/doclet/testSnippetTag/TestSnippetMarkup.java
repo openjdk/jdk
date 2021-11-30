@@ -370,11 +370,132 @@ First line // @highlight :
         testPositive(base, testCases);
     }
 
-    // @replace on a blank line will not do anything bad!
+    /*
+     * These are corner cases. As such they are expected to rarely happen in
+     * practise. These tests merely capture what the results looked when
+     * the feature was integrated. This might help when refactoring
+     * and refreshing the feature, to better understand the impact of
+     * the proposed changes.
+     */
+    @Test
+    public void testPositiveInlineTagMarkup_ReplaceOnBlankLine(Path base) throws Exception {
+        var testCases = List.of(
+                // the complete line is being replaced
+                new TestCase("one",
+                        """
+                                // @start region=one @replace regex=".*" replacement="-----"
+                                one
+                                // @end
+                                """,
+                        """
+                                -----one
+                                """
+                ),
+                // the contents of the line, but not the line terminator is being replaced
+                new TestCase("two",
+                        """
+                                    // @start region=two @replace regex=".+" replacement="*****"
+                                two
+                                // @end
+                                """,
+                        """
+                                *****two
+                                """
+                ),
+                new TestCase(
+                        """
+                                // @replace regex="duke" replacement="duchess"
+                                """,
+                        """
+                                """
+                )
+        );
+        testPositive(base, testCases);
+    }
 
-    // What to do with a markup line that modifies blankness somehow? For example:
-    //
-    //    // @replace regex=.* replacement="hello"
+    @Test
+    public void testPositiveInlineTagMarkup_BlankLinesRegionEquivalence(Path base) throws Exception {
+        var testCases = List.of(
+                new TestCase("example1",
+                        """
+                                // @start region="example1"
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                } // @end
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }"""),
+                new TestCase("example2",
+                        """
+                                if (v.isPresent()) { // @start region="example2"
+                                    System.out.println("v: " + v.get());
+                                } // @end
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }"""),
+                new TestCase("example3",
+                        """
+                                // @start region="example3" :
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                // @end :
+                                }
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }""")
+        );
+        testPositive(base, testCases);
+    }
+
+    @Test
+    public void testPositiveInlineTagMarkup_BlankLinesEquivalence(Path base) throws Exception {
+        var testCases = List.of(
+                new TestCase(
+                        """
+                                // @start region="example"
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }
+                                // @end
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }
+                                """),
+                new TestCase(
+                        """
+                                if (v.isPresent()) { // @start region="example"
+                                    System.out.println("v: " + v.get());
+                                } // @end
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }
+                                """),
+                new TestCase(
+                        """
+                                 // @start region="example" :
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                // @end :
+                                }
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }
+                                """)
+        );
+        testPositive(base, testCases);
+    }
 
     @Test
     public void testPositiveInlineTagMarkup_BlankLinesFromStartEnd(Path base) throws Exception {
