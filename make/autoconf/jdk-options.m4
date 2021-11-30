@@ -702,7 +702,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
   if test "x$OPENJDK_BUILD_OS" = xwindows && \
       test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse && \
       test "x$ENABLE_REPRODUCIBLE_BUILD" = xfalse; then
-    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-builds])
+    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-build])
     AC_MSG_NOTICE([with --disable-absolute-paths-in-output.])
     AC_MSG_ERROR([Cannot continue])
   fi
