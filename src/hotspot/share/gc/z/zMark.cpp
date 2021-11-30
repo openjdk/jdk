@@ -548,8 +548,6 @@ bool ZMark::try_terminate_flush() {
 }
 
 bool ZMark::try_proactive_flush() {
-  Atomic::inc(&_work_nproactiveflush);
-
   // Only do proactive flushes from worker 0
   if (ZThread::worker_id() != 0) {
     return false;
@@ -559,6 +557,8 @@ bool ZMark::try_proactive_flush() {
     // Limit reached or we're trying to terminate
     return false;
   }
+
+  Atomic::inc(&_work_nproactiveflush);
 
   ZStatTimer timer(ZSubPhaseConcurrentMarkTryFlush);
   SuspendibleThreadSetLeaver sts;
