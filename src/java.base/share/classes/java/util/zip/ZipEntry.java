@@ -279,6 +279,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
                              (ms % 1000) * 1000_000);
     }
 
+
     /**
      * Sets the last modification time of the entry.
      *
