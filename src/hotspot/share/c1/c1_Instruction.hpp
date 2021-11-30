@@ -1706,7 +1706,6 @@ LEAF(BlockBegin, StateSplit)
   void set_linear_scan_number(int lsn)           { _linear_scan_number = lsn; }
   void set_end(BlockEnd* end);
 
-  void disconnect_from_graph();
   static void disconnect_edge(BlockBegin* from, BlockBegin* to);
   BlockBegin* insert_block_between(BlockBegin* sux);
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);

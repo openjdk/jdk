@@ -369,8 +369,8 @@ class BlockMerger: public BlockClosure {
     for_each_local_value(sux_state, index, sux_value) {
       Phi* sux_phi = sux_value->as_Phi();
       if (sux_phi != NULL && sux_phi->is_illegal()) continue;
-      assert(sux_value == end_state->local_at(index), "locals not equal");
-    }
+        assert(sux_value == end_state->local_at(index), "locals not equal");
+      }
     assert(sux_state->caller_state() == end_state->caller_state(), "caller not equal");
 #endif
 
@@ -380,7 +380,18 @@ class BlockMerger: public BlockClosure {
     assert(prev->as_BlockEnd() == NULL, "must not be a BlockEnd");
     prev->set_next(next);
     prev->fixup_block_pointers();
-    sux->disconnect_from_graph();
+    BlockBegin *receiver = sux;// disconnect this block from all other blocks
+    for (int p = 0; p < receiver->number_of_preds(); p++) {
+      BlockBegin *receiver1 = receiver->pred_at(p);
+      assert(receiver1->end() != NULL, "End should not be null.");
+      int idx;
+      while ((idx = receiver1->successors()->find(receiver)) >= 0) {
+        receiver1->successors()->remove_at(idx);
+      }
+    }
+    for (int s = 0; s < receiver->number_of_sux(); s++) {
+      receiver->sux_at(s)->remove_predecessor(receiver);
+    }
     block->set_end(sux->end());
     // add exception handlers of deleted block, if any
     for (int k = 0; k < sux->number_of_exception_handlers(); k++) {

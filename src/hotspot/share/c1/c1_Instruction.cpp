@@ -573,22 +573,6 @@ void BlockBegin::disconnect_edge(BlockBegin* from, BlockBegin* to) {
   }
 }
 
-
-void BlockBegin::disconnect_from_graph() {
-  // disconnect this block from all other blocks
-  for (int p = 0; p < number_of_preds(); p++) {
-    BlockBegin *receiver = pred_at(p);
-    assert(receiver->end() != NULL, "End should not be null");
-    int idx;
-    while ((idx = receiver->_successors.find(this)) >= 0) {
-      receiver->_successors.remove_at(idx);
-    }
-  }
-  for (int s = 0; s < number_of_sux(); s++) {
-    sux_at(s)->remove_predecessor(this);
-  }
-}
-
 void BlockBegin::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
   // modify predecessors before substituting successors
   for (int i = 0; i < number_of_sux(); i++) {
