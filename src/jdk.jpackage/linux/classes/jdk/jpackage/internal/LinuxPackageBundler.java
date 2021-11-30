@@ -148,10 +148,13 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                 }
             }
 
+            for (var ca : customActions) {
+                ca.init(thePackage, params);
+            }
+
             Map<String, String> data = createDefaultReplacementData(params);
 
             for (var ca : customActions) {
-                ca.init(thePackage, params);
                 if (ca.instance != null) {
                     ca.instance.replacementStringIds().forEach(v -> data.put(v,
                             ""));
