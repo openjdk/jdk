@@ -347,7 +347,6 @@ UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong si
   event.set_allocationSize(sz);
   event.set_addr(addr);
   event.commit();
-  
   return addr;
 } UNSAFE_END
 
