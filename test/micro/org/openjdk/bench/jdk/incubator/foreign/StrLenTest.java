@@ -25,9 +25,9 @@
 
 package org.openjdk.bench.jdk.incubator.foreign;
 
+import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
@@ -45,10 +45,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 import java.util.concurrent.TimeUnit;
 
-import static jdk.incubator.foreign.CLinker.*;
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -56,12 +55,12 @@ import static jdk.incubator.foreign.CLinker.*;
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign", "--enable-native-access=ALL-UNNAMED" })
-public class StrLenTest {
+public class StrLenTest extends CLayouts {
 
-    ResourceScope scope = ResourceScope.newConfinedScope();
+    ResourceScope scope = ResourceScope.newImplicitScope();
 
     SegmentAllocator segmentAllocator;
-    SegmentAllocator arenaAllocator = SegmentAllocator.arenaAllocator(scope);
+    SegmentAllocator arenaAllocator = SegmentAllocator.newNativeArena(scope);
 
     @Param({"5", "20", "100"})
     public int size;
@@ -72,31 +71,17 @@ public class StrLenTest {
     }
 
     static final MethodHandle STRLEN;
-    static final MethodHandle STRLEN_TRIVIAL;
-    static final MethodHandle MALLOC_TRIVIAL;
-    static final MethodHandle FREE_TRIVIAL;
 
     static {
-        CLinker abi = CLinker.getInstance();
-        STRLEN = abi.downcallHandle(CLinker.systemLookup().lookup("strlen").get(),
-                MethodType.methodType(int.class, MemoryAddress.class),
+        CLinker abi = CLinker.systemCLinker();
+        STRLEN = abi.downcallHandle(abi.lookup("strlen").get(),
                 FunctionDescriptor.of(C_INT, C_POINTER));
-        STRLEN_TRIVIAL = abi.downcallHandle(CLinker.systemLookup().lookup("strlen").get(),
-                MethodType.methodType(int.class, MemoryAddress.class),
-                FunctionDescriptor.of(C_INT, C_POINTER).withAttribute(FunctionDescriptor.TRIVIAL_ATTRIBUTE_NAME, true));
-        MALLOC_TRIVIAL = abi.downcallHandle(CLinker.systemLookup().lookup("malloc").get(),
-                MethodType.methodType(MemoryAddress.class, long.class),
-                FunctionDescriptor.of(C_POINTER, C_LONG_LONG).withAttribute(FunctionDescriptor.TRIVIAL_ATTRIBUTE_NAME, true));
-
-        FREE_TRIVIAL = abi.downcallHandle(CLinker.systemLookup().lookup("free").get(),
-                MethodType.methodType(void.class, MemoryAddress.class),
-                FunctionDescriptor.ofVoid(C_POINTER).withAttribute(FunctionDescriptor.TRIVIAL_ATTRIBUTE_NAME, true));
     }
 
     @Setup
     public void setup() {
         str = makeString(size);
-        segmentAllocator = SegmentAllocator.ofSegment(MemorySegment.allocateNative(size + 1, ResourceScope.newImplicitScope()));
+        segmentAllocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(size + 1, ResourceScope.newConfinedScope()));
     }
 
     @TearDown
@@ -112,54 +97,37 @@ public class StrLenTest {
     @Benchmark
     public int panama_strlen() throws Throwable {
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = CLinker.toCString(str, scope);
-            return (int)STRLEN.invokeExact(segment.address());
+            MemorySegment segment = MemorySegment.allocateNative(str.length() + 1, scope);
+            segment.setUtf8String(0, str);
+            return (int)STRLEN.invokeExact((Addressable)segment);
         }
     }
 
     @Benchmark
     public int panama_strlen_arena() throws Throwable {
-        return (int)STRLEN.invokeExact(CLinker.toCString(str, arenaAllocator).address());
+        return (int)STRLEN.invokeExact((Addressable)arenaAllocator.allocateUtf8String(str));
     }
 
     @Benchmark
     public int panama_strlen_prefix() throws Throwable {
-        return (int)STRLEN.invokeExact(CLinker.toCString(str, segmentAllocator).address());
+        return (int)STRLEN.invokeExact((Addressable)segmentAllocator.allocateUtf8String(str));
     }
 
     @Benchmark
     public int panama_strlen_unsafe() throws Throwable {
         MemoryAddress address = makeStringUnsafe(str);
-        int res = (int) STRLEN.invokeExact(address);
-        CLinker.freeMemory(address);
-        return res;
-    }
-
-    @Benchmark
-    public int panama_strlen_unsafe_trivial() throws Throwable {
-        MemoryAddress address = makeStringUnsafeTrivial(str);
-        int res = (int) STRLEN_TRIVIAL.invokeExact(address);
-        FREE_TRIVIAL.invokeExact(address);
+        int res = (int) STRLEN.invokeExact((Addressable)address);
+        freeMemory(address);
         return res;
     }
 
     static MemoryAddress makeStringUnsafe(String s) {
         byte[] bytes = s.getBytes();
         int len = bytes.length;
-        MemoryAddress address = CLinker.allocateMemory(len + 1);
-        MemorySegment str = address.asSegment(len + 1, ResourceScope.globalScope());
+        MemoryAddress address = allocateMemory(len + 1);
+        MemorySegment str = MemorySegment.ofAddress(address, len + 1, ResourceScope.globalScope());
         str.copyFrom(MemorySegment.ofArray(bytes));
-        MemoryAccess.setByteAtOffset(str, len, (byte)0);
-        return address;
-    }
-
-    static MemoryAddress makeStringUnsafeTrivial(String s) throws Throwable {
-        byte[] bytes = s.getBytes();
-        int len = bytes.length;
-        MemoryAddress address = (MemoryAddress)MALLOC_TRIVIAL.invokeExact((long)len + 1);
-        MemorySegment str = address.asSegment(len + 1, ResourceScope.globalScope());
-        str.copyFrom(MemorySegment.ofArray(bytes));
-        MemoryAccess.setByteAtOffset(str, len, (byte)0);
+        str.set(JAVA_BYTE, len, (byte)0);
         return address;
     }
 

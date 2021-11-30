@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
@@ -32,6 +34,32 @@
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#if INCLUDE_PARALLELGC
+#include "gc/parallel/objectStartArray.hpp"
+#endif
+
+uint CardTable::card_shift = 0;
+uint CardTable::card_size = 0;
+uint CardTable::card_size_in_words = 0;
+
+void CardTable::initialize_card_size() {
+  assert(UseG1GC || UseParallelGC || UseSerialGC,
+         "Initialize card size should only be called by card based collectors.");
+
+  card_size = GCCardSizeInBytes;
+  card_shift = log2i_exact(card_size);
+  card_size_in_words = card_size / sizeof(HeapWord);
+
+  // Set blockOffsetTable size based on card table entry size
+  BOTConstants::initialize_bot_size(card_shift);
+
+#if INCLUDE_PARALLELGC
+  // Set ObjectStartArray block size based on card table entry size
+  ObjectStartArray::initialize_block_size(card_shift);
+#endif
+
+  log_info_p(gc, init)("CardTable entry size: " UINT32_FORMAT,  card_size);
+}
 
 size_t CardTable::compute_byte_map_size() {
   assert(_guard_index == cards_required(_whole_heap.word_size()) - 1,
@@ -56,8 +84,6 @@ CardTable::CardTable(MemRegion whole_heap) :
 {
   assert((uintptr_t(_whole_heap.start())  & (card_size - 1))  == 0, "heap must start at card boundary");
   assert((uintptr_t(_whole_heap.end()) & (card_size - 1))  == 0, "heap must end at card boundary");
-
-  assert(card_size <= 512, "card_size must be less than 512"); // why?
 }
 
 CardTable::~CardTable() {
@@ -428,7 +454,8 @@ MemRegion CardTable::dirty_card_range_after_reset(MemRegion mr,
 }
 
 uintx CardTable::ct_max_alignment_constraint() {
-  return card_size * os::vm_page_size();
+  // Calculate maximum alignment using GCCardSizeInBytes as card_size hasn't been set yet
+  return GCCardSizeInBytes * os::vm_page_size();
 }
 
 void CardTable::verify_guard() {
