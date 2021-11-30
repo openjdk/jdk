@@ -49,11 +49,10 @@
 class ContiguousSpace;
 
 class BOTConstants : public AllStatic {
-private:
-  static uint _LogN;
-  static uint _LogN_words;
-  static uint _N_bytes;
-  static uint _N_words;
+  static uint _log_bot_card_size;
+  static uint _log_bot_card_size_words;
+  static uint _bot_card_size_bytes;
+  static uint _bot_card_size_words;
 
 public:
   // entries "e" of at least N_words mean "go back by Base^(e-N_words)."
@@ -70,25 +69,20 @@ public:
   }
 
   static size_t entry_to_cards_back(u_char entry) {
-    assert(entry >= _N_words, "Precondition");
-    return power_to_cards_back(entry - _N_words);
+    assert(entry >= _bot_card_size_words, "Precondition");
+    return power_to_cards_back(entry - _bot_card_size_words);
   }
-
-  static size_t entry_to_words_back(u_char entry) {
-    assert(entry >= _N_words, "Precondition");
-    return power_to_words_back(entry - _N_words);
+  static uint log_bot_card_size() {
+    return _log_bot_card_size;
   }
-  static uint LogN() {
-    return _LogN;
+  static uint log_bot_card_size_words() {
+    return _log_bot_card_size_words;
   }
-  static uint LogN_words() {
-    return _LogN_words;
+  static uint bot_card_size_bytes() {
+    return _bot_card_size_bytes;
   }
-  static uint N_bytes() {
-    return _N_bytes;
-  }
-  static uint N_words() {
-    return _N_words;
+  static uint bot_card_size_words() {
+    return _bot_card_size_words;
   }
 };
 
@@ -110,7 +104,7 @@ public:
   BlockOffsetTable(HeapWord* bottom, HeapWord* end):
     _bottom(bottom), _end(end) {
     assert(_bottom <= _end, "arguments out of order");
-    assert(BOTConstants::N_bytes() == CardTable::card_size(), "sanity");
+    assert(BOTConstants::bot_card_size_bytes() == CardTable::card_size(), "sanity");
   }
 
   // Note that the committed size of the covered space may have changed,
@@ -197,7 +191,7 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
     check_reducing_assertion(reducing);
     assert(index < _vs.committed_size(), "index out of range");
     assert(high >= low, "addresses out of order");
-    assert(pointer_delta(high, low) <= BOTConstants::N_words(), "offset too large");
+    assert(pointer_delta(high, low) <= BOTConstants::bot_card_size_words(), "offset too large");
     assert(!reducing || _offset_array[index] >=  (u_char)pointer_delta(high, low),
            "Not reducing");
     _offset_array[index] = (u_char)pointer_delta(high, low);
@@ -208,7 +202,7 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
     assert(index_for(right - 1) < _vs.committed_size(),
            "right address out of range");
     assert(left  < right, "Heap addresses out of order");
-    size_t num_cards = pointer_delta(right, left) >> BOTConstants::LogN_words();
+    size_t num_cards = pointer_delta(right, left) >> BOTConstants::log_bot_card_size_words();
 
     fill_range(index_for(left), num_cards, offset);
   }
@@ -225,7 +219,7 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
   void check_offset_array(size_t index, HeapWord* high, HeapWord* low) const {
     assert(index < _vs.committed_size(), "index out of range");
     assert(high >= low, "addresses out of order");
-    assert(pointer_delta(high, low) <= BOTConstants::N_words(), "offset too large");
+    assert(pointer_delta(high, low) <= BOTConstants::bot_card_size_words(), "offset too large");
     assert(_offset_array[index] == pointer_delta(high, low),
            "Wrong offset");
   }
@@ -240,7 +234,7 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
   // to be reserved.
 
   size_t compute_size(size_t mem_region_words) {
-    size_t number_of_slots = (mem_region_words / BOTConstants::N_words()) + 1;
+    size_t number_of_slots = (mem_region_words / BOTConstants::bot_card_size_words()) + 1;
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
@@ -354,7 +348,7 @@ class BlockOffsetArray: public BlockOffsetTable {
       assert(_array->is_card_boundary(new_end),
              "new _end would not be a card boundary");
       // set all the newly added cards
-      _array->set_offset_array(_end, new_end, BOTConstants::N_words());
+      _array->set_offset_array(_end, new_end, BOTConstants::bot_card_size_words());
     }
     _end = new_end;  // update _end
   }

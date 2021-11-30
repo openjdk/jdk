@@ -808,7 +808,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
       return;
     }
 
-    HeapWord* scan_end = MIN2(card_start + (num_cards << BOTConstants::LogN_words()), top);
+    HeapWord* scan_end = MIN2(card_start + (num_cards << BOTConstants::log_bot_card_size_words()), top);
     if (_scanned_to >= scan_end) {
       return;
     }
