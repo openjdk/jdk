@@ -121,67 +121,6 @@ bool PSVirtualSpace::shrink_by(size_t bytes) {
   return result;
 }
 
-size_t
-PSVirtualSpace::expand_into(PSVirtualSpace* other_space, size_t bytes) {
-  assert(is_aligned(bytes), "arg not aligned");
-  assert(grows_up(), "this space must grow up");
-  assert(other_space->grows_down(), "other space must grow down");
-  assert(reserved_high_addr() == other_space->reserved_low_addr(),
-         "spaces not contiguous");
-  assert(special() == other_space->special(), "one space is special, the other is not");
-  DEBUG_ONLY(PSVirtualSpaceVerifier this_verifier(this));
-  DEBUG_ONLY(PSVirtualSpaceVerifier other_verifier(other_space));
-
-  size_t bytes_needed = bytes;
-
-  // First use the uncommitted region in this space.
-  size_t tmp_bytes = MIN2(uncommitted_size(), bytes_needed);
-  if (tmp_bytes > 0) {
-    if (expand_by(tmp_bytes)) {
-      bytes_needed -= tmp_bytes;
-    } else {
-      return 0;
-    }
-  }
-
-  // Next take from the uncommitted region in the other space, and commit it.
-  tmp_bytes = MIN2(other_space->uncommitted_size(), bytes_needed);
-  if (tmp_bytes > 0) {
-    char* const commit_base = committed_high_addr();
-    if (other_space->special() ||
-        os::commit_memory(commit_base, tmp_bytes, alignment(), !ExecMem)) {
-      // Reduce the reserved region in the other space.
-      other_space->set_reserved(other_space->reserved_low_addr() + tmp_bytes,
-                                other_space->reserved_high_addr(),
-                                other_space->special());
-
-      // Grow both reserved and committed in this space.
-      _reserved_high_addr += tmp_bytes;
-      _committed_high_addr += tmp_bytes;
-      bytes_needed -= tmp_bytes;
-    } else {
-      return bytes - bytes_needed;
-    }
-  }
-
-  // Finally take from the already committed region in the other space.
-  tmp_bytes = bytes_needed;
-  if (tmp_bytes > 0) {
-    // Reduce both committed and reserved in the other space.
-    other_space->set_committed(other_space->committed_low_addr() + tmp_bytes,
-                               other_space->committed_high_addr());
-    other_space->set_reserved(other_space->reserved_low_addr() + tmp_bytes,
-                              other_space->reserved_high_addr(),
-                              other_space->special());
-
-    // Grow both reserved and committed in this space.
-    _reserved_high_addr += tmp_bytes;
-    _committed_high_addr += tmp_bytes;
-  }
-
-  return bytes;
-}
-
 #ifndef PRODUCT
 bool PSVirtualSpace::is_aligned(size_t value, size_t align) {
   const size_t tmp_value = value + align - 1;
