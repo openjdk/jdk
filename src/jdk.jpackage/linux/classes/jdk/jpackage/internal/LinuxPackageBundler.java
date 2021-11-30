@@ -50,7 +50,9 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     LinuxPackageBundler(BundlerParamInfo<String> packageName) {
         this.packageName = packageName;
         appImageBundler = new LinuxAppBundler().setDependentTask(true);
-        customActions = List.of(new CustomActionInstance(DesktopIntegration::create));
+        customActions = List.of(new CustomActionInstance(
+                DesktopIntegration::create), new CustomActionInstance(
+                LauncherAsService::create));
     }
 
     @Override

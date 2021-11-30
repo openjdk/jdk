@@ -32,7 +32,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static javax.swing.UIManager.put;
 import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.ShellCustomAction.escapedInstalledLauncherPath;
@@ -97,7 +100,7 @@ final class LauncherAsService extends ShellCustomAction {
         if (launchers.isEmpty()) {
             return Collections.emptyList();
         }
-        return List.of("systemd");
+        return List.of("systemd", "/usr/bin/wc", "/usr/bin/grep");
     }
 
     @Override
@@ -113,14 +116,19 @@ final class LauncherAsService extends ShellCustomAction {
             return data;
         }
 
+        final List<String> installedUnitFiles = launchers.stream().map(
+                launcher -> launcher.unitFilePath(Path.of("/")).toString()).toList();
+
+        Function<String, String> strigifier = cmd -> {
+            return stringifyShellCommands(Stream.of(List.of(
+                cmd), installedUnitFiles).flatMap(x -> x.stream()).collect(
+                Collectors.joining(" ")));
+        };
+
         data.put(SCRIPTS, stringifyTextFile("service_utils.sh"));
 
-        List<String> installedUnitFiles = launchers.stream().map(
-                launcher -> launcher.unitFilePath(Path.of("/")).toString()).toList();
-        data.put(COMMANDS_INSTALL, stringifyShellCommands(Stream.of(List.of(
-                "register_units"), installedUnitFiles).flatMap(x -> x.stream()).toList()));
-        data.put(COMMANDS_UNINSTALL, stringifyShellCommands(Stream.of(List.of(
-                "unregister_units"), installedUnitFiles).flatMap(x -> x.stream()).toList()));
+        data.put(COMMANDS_INSTALL, strigifier.apply("register_units"));
+        data.put(COMMANDS_UNINSTALL, strigifier.apply("unregister_units"));
 
         for (var launcher: launchers) {
             launcher.createUnitFile();
@@ -132,8 +140,8 @@ final class LauncherAsService extends ShellCustomAction {
     private class Launcher {
         Launcher(String name, Map<String, ? super Object> mainParams) {
             this.name = name;
-            unitFilename = Path.of(thePackage.name() + "-" + name.replaceAll(
-                    "[\\s]", "_") + ".service");
+            String unitPublicName = name.replaceAll("[\\s]", "_") + ".service";
+            unitFilename = Path.of(thePackage.name() + "-" + unitPublicName);
             unitFileResource = createResource("unit-template.service", mainParams)
                     .setCategory(I18N.getString("resource.systemd-unit-file"))
                     .setPublicName(unitFilename);

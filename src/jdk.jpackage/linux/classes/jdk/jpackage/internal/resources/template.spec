@@ -73,22 +73,23 @@ sed -i -e 's/.*/%dir "&"/' %{package_filelist}
 %endif
 
 %post
+package_type=rpm
 LAUNCHER_AS_SERVICE_SCRIPTS
 DESKTOP_COMMANDS_INSTALL
 LAUNCHER_AS_SERVICE_COMMANDS_INSTALL
 
 %pre
+package_type=rpm
 LAUNCHER_AS_SERVICE_SCRIPTS
 if [ "$1" = 2 ]; then
 LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL
 fi
 
 %preun
+package_type=rpm
 DESKTOP_SCRIPTS
 LAUNCHER_AS_SERVICE_SCRIPTS
 DESKTOP_COMMANDS_UNINSTALL
-if [ "$1" = 0 ]; then
 LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL
-fi
 
 %clean

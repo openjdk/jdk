@@ -21,30 +21,20 @@
  * questions.
  */
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 import jdk.jpackage.test.LauncherAsServiceVerifier;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.RunnablePackageTest;
-import jdk.jpackage.test.TKit;
 
 /**
  * Launcher as service packaging test. Output of the test should be
- * servicetest*.* updateservicetest*.* and package bundles.
+ * servicetest*.* package bundle.
  */
 
 /*
  * @test
  * @summary Launcher as service packaging test
- * @library /test/lib
  * @library ../helpers
  * @key jpackagePlatformPackage
- * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ServiceTest.java
@@ -53,56 +43,18 @@ import jdk.jpackage.test.TKit;
  */
 public class ServiceTest {
 
-    public ServiceTest() {
-        if (TKit.isWindows()) {
-            final String propName = "jpackage.test.ServiceTest.service-installer";
-            String serviceInstallerExec = System.getProperty(propName);
-            if (serviceInstallerExec == null) {
-                if (Stream.of(RunnablePackageTest.Action.CREATE,
-                        RunnablePackageTest.Action.INSTALL).allMatch(
-                                RunnablePackageTest::hasAction)) {
-                    TKit.throwSkippedException(String.format(
-                            "%s system property not set", propName));
-                } else {
-                    // Use cmd.exe as a stub as the output packages will not be
-                    // created and installed in the test run
-                    serviceInstallerExec = System.getenv("COMSPEC");
-                    TKit.trace(
-                            String.format("Using [%s] as a service installer",
-                                    serviceInstallerExec));
-                }
-            }
-
-            winServiceInstaller = Path.of(serviceInstallerExec);
-
-        } else {
-            winServiceInstaller = null;
-        }
+    @Test
+    public static void test() {
+        var test = new PackageTest().addHelloAppInitializer(null);
+        new LauncherAsServiceVerifier("A1").applyTo(test);
+        test.run();
     }
 
     @Test
-    public void test() throws IOException {
-        var pkgInitializer = configureWinServiceInstaller();
-        var pkg = new PackageTest().addHelloAppInitializer(null);
-        new LauncherAsServiceVerifier("A1").applyTo(pkg);
-        pkgInitializer.accept(pkg);
-        pkg.run();
-    }
-
-    @Test
-    public void testUpdate() throws IOException {
-        final String upgradeCode = "4050AD4D-D6CC-452A-9CB0-58E5FA8C410F";
-
-        var pkgInitializer = configureWinServiceInstaller();
-
+    public static void testUpdate() {
         var pkg = new PackageTest()
                 .addHelloAppInitializer(null)
                 .disablePackageUninstaller();
-        pkg.forTypes(PackageType.WINDOWS, () -> pkg.addInitializer(cmd -> {
-            cmd.addArguments("--win-upgrade-uuid", upgradeCode);
-        }));
-        pkgInitializer.accept(pkg);
-
         new LauncherAsServiceVerifier("Default").applyTo(pkg);
 
         var pkg2 = new PackageTest()
@@ -110,10 +62,6 @@ public class ServiceTest {
                 .addInitializer(cmd -> {
                     cmd.addArguments("--app-version", "2.0");
                 });
-        pkg2.forTypes(PackageType.WINDOWS, () -> pkg2.addInitializer(cmd -> {
-            cmd.addArguments("--win-upgrade-uuid", upgradeCode);
-        }));
-        pkgInitializer.accept(pkg2);
 
         new LauncherAsServiceVerifier("foo", "foo-launcher-as-service.txt",
                 "Foo").applyTo(pkg);
@@ -124,24 +72,4 @@ public class ServiceTest {
 
         new PackageTest.Group(pkg, pkg2).run();
     }
-
-    private Consumer<PackageTest> configureWinServiceInstaller() throws
-            IOException {
-        if (winServiceInstaller == null) {
-            return test -> {};
-        }
-
-        var resourceDir = TKit.createTempDirectory("resource-dir");
-        Files.copy(winServiceInstaller, resourceDir.resolve(
-                "service-installer.exe"));
-
-        return test -> {
-            test.forTypes(PackageType.WINDOWS, () -> test.addInitializer(
-                    cmd -> {
-                        cmd.addArguments("--resource-dir", resourceDir);
-                    }));
-        };
-    }
-
-    private final Path winServiceInstaller;
 }

@@ -43,11 +43,6 @@ public final class LauncherAsServiceVerifier {
 
     public void applyTo(PackageTest pkg) {
         if (launcherName == null) {
-            pkg.forTypes(PackageType.WINDOWS, () -> {
-                pkg.addInitializer(cmd -> {
-                    cmd.removeArgument("--win-console");
-                });
-            });
             applyToMainLauncher(pkg);
         } else {
             applyToAdditionalLauncher(pkg);
@@ -78,7 +73,6 @@ public final class LauncherAsServiceVerifier {
                     JPackageCommand.escapeAndJoin(expectedValue));
             cmd.addArguments("--java-options",
                     "-Djpackage.test.appOutput=" + appOutputPath.toString());
-            cmd.addArguments("--java-options", "-Djpackage.test.noexit=true");
         });
         pkg.addInstallVerifier(cmd -> {
             if (canVerifyInstall(cmd)) {
@@ -98,11 +92,8 @@ public final class LauncherAsServiceVerifier {
                     super.verify(cmd);
                 }
             }
-        }.setLauncherAsService()
-        .addJavaOptions("-Djpackage.test.appOutput=" + appOutputPath.toString())
-        .addJavaOptions("-Djpackage.test.noexit=true")
-        .addDefaultArguments(expectedValue)
-        .applyTo(pkg);
+        }.setLauncherAsService().addJavaOptions("-Djpackage.test.appOutput=" +
+                appOutputPath.toString()).addDefaultArguments(expectedValue).applyTo(pkg);
     }
 
     private static void delayInstallVerify() {
@@ -111,7 +102,7 @@ public final class LauncherAsServiceVerifier {
     }
 
     private static Path appOutputDir() {
-        return Path.of(System.getProperty("java.io.tmpdir"));
+        return Path.of("/tmp");
     }
 
     private final String expectedValue;

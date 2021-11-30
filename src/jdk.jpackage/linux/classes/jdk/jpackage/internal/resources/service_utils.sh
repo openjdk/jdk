@@ -15,9 +15,24 @@ register_units ()
 unregister_units ()
 {
   for unit in "$@"; do
-    local unit_name=`basename "$unit"`
-    if [ -n `systemctl list-unit-files "$unit_name"` ]; then
-      systemctl disable --now "$unit_name"
+    if file_belongs_to_single_package "$unit"; then
+      local unit_name=`basename "$unit"`
+      if systemctl list-units --full -all | grep -q "$unit_name"; then
+        systemctl disable --now "$unit_name"
+      fi
     fi
   done
+}
+
+file_belongs_to_single_package ()
+{
+  if [ ! -e "$1" ]; then
+    false
+  elif [ "$package_type" == rpm ]; then
+    test `rpm -q --whatprovides "$1" | wc -l` == 1
+  elif [ "$package_type" == deb ]; then
+    test `dpkg -S "$1" | wc -l` == 1
+  else
+    exit 1
+  fi
 }
