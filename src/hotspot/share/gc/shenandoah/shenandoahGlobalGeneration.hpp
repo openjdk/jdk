@@ -34,28 +34,28 @@ public:
   : ShenandoahGeneration(GLOBAL, max_queues, 0, 0) { }
 
 public:
-  virtual const char* name() const;
+  virtual const char* name() const override;
 
-  virtual size_t max_capacity() const;
-  virtual size_t soft_max_capacity() const;
-  virtual size_t used_regions_size() const;
-  virtual size_t used() const;
-  virtual size_t available() const;
+  virtual size_t max_capacity() const override;
+  virtual size_t soft_max_capacity() const override;
+  virtual size_t used_regions_size() const override;
+  virtual size_t used() const override;
+  virtual size_t available() const override;
 
-  virtual void prepare_gc(bool do_old_gc_bootstrap);
+  virtual void prepare_gc(bool do_old_gc_bootstrap) override;
 
-  virtual void set_concurrent_mark_in_progress(bool in_progress);
+  virtual void set_concurrent_mark_in_progress(bool in_progress)  override;
 
-  bool contains(ShenandoahHeapRegion* region) const;
+  bool contains(ShenandoahHeapRegion* region) const  override;
 
   bool contains(oop obj) const override { return true; }
 
-  void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl);
+  void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl)  override;
 
-  void heap_region_iterate(ShenandoahHeapRegionClosure* cl);
+  void heap_region_iterate(ShenandoahHeapRegionClosure* cl)  override;
 
  protected:
-  bool is_concurrent_mark_in_progress();
+  bool is_concurrent_mark_in_progress()  override;
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP
