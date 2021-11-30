@@ -460,9 +460,9 @@ public final class XSLTC {
                 if (name != null) {
                     setClassName(name);
                 }
-                else if (systemId != null && !systemId.equals("")) {
+                else if (systemId != null && !systemId.isEmpty()) {
                     String clsName = Util.baseName(systemId);
-                    if (clsName != null && !clsName.equals("")) {
+                    if (clsName != null && !clsName.isEmpty()) {
                         setClassName(clsName);
                     }
                 }
