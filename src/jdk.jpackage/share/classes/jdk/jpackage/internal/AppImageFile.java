@@ -54,7 +54,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
-public class AppImageFile {
+public final class AppImageFile {
 
     // These values will be loaded from AppImage xml file.
     private final String creatorVersion;
@@ -287,11 +287,11 @@ public class AppImageFile {
         return null;
     }
 
-    private static String getVersion() {
+    static String getVersion() {
         return "1.0";
     }
 
-    private static String getPlatform() {
+    static String getPlatform() {
         return PLATFORM_LABELS.get(Platform.getPlatform());
     }
 

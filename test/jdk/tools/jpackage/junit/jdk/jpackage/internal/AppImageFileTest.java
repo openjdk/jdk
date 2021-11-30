@@ -74,12 +74,13 @@ public class AppImageFileTest {
     public void testInavlidXml() throws IOException {
         assertInvalid(createFromXml("<foo/>"));
         assertInvalid(createFromXml("<jpackage-state/>"));
+        assertInvalid(createFromXml(JPACKAGE_STATE_OPEN, "</jpackage-state>"));
         assertInvalid(createFromXml(
-                "<jpackage-state>",
+                JPACKAGE_STATE_OPEN,
                     "<main-launcher></main-launcher>",
                 "</jpackage-state>"));
         assertInvalid(createFromXml(
-                "<jpackage-state>",
+                JPACKAGE_STATE_OPEN,
                     "<launcher>A</launcher>",
                     "<launcher>B</launcher>",
                 "</jpackage-state>"));
@@ -88,18 +89,18 @@ public class AppImageFileTest {
     @Test
     public void testValidXml() throws IOException {
         Assert.assertEquals("Foo", (createFromXml(
-                "<jpackage-state>",
+                JPACKAGE_STATE_OPEN,
                     "<main-launcher>Foo</main-launcher>",
                 "</jpackage-state>")).getLauncherName());
 
         Assert.assertEquals("Boo", (createFromXml(
-                "<jpackage-state>",
+                JPACKAGE_STATE_OPEN,
                     "<main-launcher>Boo</main-launcher>",
                     "<main-launcher>Bar</main-launcher>",
                 "</jpackage-state>")).getLauncherName());
 
         var file = createFromXml(
-                "<jpackage-state>",
+                JPACKAGE_STATE_OPEN,
                     "<main-launcher>Foo</main-launcher>",
                     "<launcher></launcher>",
                 "</jpackage-state>");
@@ -173,5 +174,9 @@ public class AppImageFileTest {
         AppImageFile image = AppImageFile.load(directory);
         return image;
     }
+
+    private final static String JPACKAGE_STATE_OPEN = String.format(
+            "<jpackage-state platform=\"%s\" version=\"%s\">",
+            AppImageFile.getPlatform(), AppImageFile.getVersion());
 
 }
