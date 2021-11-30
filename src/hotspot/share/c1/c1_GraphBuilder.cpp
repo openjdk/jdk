@@ -117,7 +117,7 @@ BlockBegin* BlockListBuilder::local_block_successor_at(BlockBegin* block, int i)
 
 void BlockListBuilder::local_block_add_successor(BlockBegin* block, BlockBegin* sux)
 {
-  block->add_successor(sux);
+  block->add_successor_local(sux);
 }
 
 BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int osr_bci)
@@ -497,7 +497,7 @@ void BlockListBuilder::print() {
     tty->print(cur->is_set(BlockBegin::subroutine_entry_flag)        ? " sr" : "   ");
     tty->print(cur->is_set(BlockBegin::parser_loop_header_flag)      ? " lh" : "   ");
 
-    if (cur->number_of_sux_from_local() > 0) {
+    if (local_block_number_of_successors(cur) > 0) {
       tty->print("    sux: ");
       for (int j = 0; j < local_block_number_of_successors(cur); j++) {
         BlockBegin* sux = local_block_successor_at(cur, j);

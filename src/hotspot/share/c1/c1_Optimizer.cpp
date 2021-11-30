@@ -384,9 +384,11 @@ class BlockMerger: public BlockClosure {
     for (int p = 0; p < receiver->number_of_preds(); p++) {
       BlockBegin *receiver1 = receiver->pred_at(p);
       assert(receiver1->end() != NULL, "End should not be null.");
+      assert(receiver1->successors() == receiver1->end()->sux(), "must match janiuk");
       int idx;
-      while ((idx = receiver1->find_sux(receiver)) >= 0) {
-        receiver1->remove_sux_at(idx);
+      while ((idx = receiver1->end()->find_sux(receiver)) >= 0) {
+        assert(receiver1->successors() == receiver1->end()->sux(), "must match janiuk");
+        receiver1->end()->remove_sux_at(idx);
       }
     }
     for (int s = 0; s < receiver->number_of_sux(); s++) {
