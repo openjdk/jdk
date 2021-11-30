@@ -58,7 +58,7 @@ class G1CardSetConfiguration {
   uint _cards_in_howl_bitmap_threshold;
   uint _log2_num_cards_in_howl_bitmap;
   size_t _bitmap_hash_mask;
-  uint _log2_card_region_per_heap_region;
+  uint _log2_card_regions_per_heap_region;
   uint _log2_cards_per_card_region;
 
   G1CardSetAllocOptions* _card_set_alloc_options;
@@ -69,7 +69,7 @@ class G1CardSetConfiguration {
                          uint num_buckets_in_howl,
                          double cards_in_howl_threshold_percent,
                          uint max_cards_in_card_set,
-                         uint log2_card_region_per_heap_region);
+                         uint log2_card_regions_per_heap_region);
   void init_card_set_alloc_options();
 
   void log_configuration();
@@ -127,8 +127,8 @@ public:
   // The next two members give information about how many card regions are there
   // per area (heap region) and how many cards each card region has.
 
-  // The log2 of the amount of card regions per heap region configured.
-  uint log2_card_region_per_heap_region() const { return _log2_card_region_per_heap_region; }
+  // The log2 of the number of card regions per heap region configured.
+  uint log2_card_regions_per_heap_region() const { return _log2_card_regions_per_heap_region; }
   // The log2 of the number of cards per card region. This is calculated from max_cards_in_region()
   // and above.
   uint log2_cards_per_card_region() const { return _log2_cards_per_card_region; }

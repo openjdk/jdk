@@ -40,7 +40,6 @@ import sun.jvm.hotspot.gc.shenandoah.*;
 import sun.jvm.hotspot.gc.g1.*;
 import sun.jvm.hotspot.gc.z.*;
 import sun.jvm.hotspot.interpreter.*;
-import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.ui.*;
@@ -1737,7 +1736,6 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                                String progressBarText,
                                HeapVisitor visitor,
                                CleanupThunk cleanup) {
-    sun.jvm.hotspot.oops.ObjectHistogram histo = new sun.jvm.hotspot.oops.ObjectHistogram();
     HeapProgress progress = new HeapProgress(frameTitle,
                                              progressBarText,
                                              cleanup);

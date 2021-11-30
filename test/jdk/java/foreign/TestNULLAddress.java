@@ -34,39 +34,37 @@ import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.NativeSymbol;
+import jdk.incubator.foreign.ResourceScope;
 import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import java.nio.charset.Charset;
 
 public class TestNULLAddress {
 
-    static final CLinker LINKER = CLinker.getInstance();
+    static final CLinker LINKER = CLinker.systemCLinker();
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNULLLinking() {
         LINKER.downcallHandle(
-                MemoryAddress.NULL,
-                MethodType.methodType(void.class),
+                NativeSymbol.ofAddress("nullAddress", MemoryAddress.NULL, ResourceScope.globalScope()),
                 FunctionDescriptor.ofVoid());
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNULLVirtual() throws Throwable {
         MethodHandle mh = LINKER.downcallHandle(
-                MethodType.methodType(void.class),
                 FunctionDescriptor.ofVoid());
-        mh.invokeExact((Addressable) MemoryAddress.NULL);
+        mh.invokeExact(NativeSymbol.ofAddress("null", MemoryAddress.NULL, ResourceScope.globalScope()));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testNULLtoJavaString() {
-        CLinker.toJavaString(MemoryAddress.NULL);
+    public void testNULLgetString() {
+        MemoryAddress.NULL.getUtf8String(0);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testNULLfreeMemory() {
-        CLinker.freeMemory(MemoryAddress.NULL);
+    public void testNULLsetString() {
+        MemoryAddress.NULL.setUtf8String(0, "hello");
     }
 }

@@ -25,14 +25,12 @@
  */
 package jdk.incubator.foreign;
 
-import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -40,7 +38,7 @@ import java.util.function.LongBinaryOperator;
 import java.util.stream.Collectors;
 
 /**
- * A group layout is used to combine together multiple <em>member layouts</em>. There are two ways in which member layouts
+ * A group layout is used to combine multiple <em>member layouts</em>. There are two ways in which member layouts
  * can be combined: if member layouts are laid out one after the other, the resulting group layout is said to be a <em>struct</em>
  * (see {@link MemoryLayout#structLayout(MemoryLayout...)}); conversely, if all member layouts are laid out at the same starting offset,
  * the resulting group layout is said to be a <em>union</em> (see {@link MemoryLayout#unionLayout(MemoryLayout...)}).
@@ -105,11 +103,11 @@ public final class GroupLayout extends AbstractLayout implements MemoryLayout {
     private final List<MemoryLayout> elements;
 
     GroupLayout(Kind kind, List<MemoryLayout> elements) {
-        this(kind, elements, kind.alignof(elements), Map.of());
+        this(kind, elements, kind.alignof(elements), Optional.empty());
     }
 
-    GroupLayout(Kind kind, List<MemoryLayout> elements, long alignment, Map<String, Constable> attributes) {
-        super(kind.sizeof(elements), alignment, attributes);
+    GroupLayout(Kind kind, List<MemoryLayout> elements, long alignment, Optional<String> name) {
+        super(kind.sizeof(elements), alignment, name);
         this.kind = kind;
         this.elements = elements;
     }
@@ -160,10 +158,9 @@ public final class GroupLayout extends AbstractLayout implements MemoryLayout {
         if (!super.equals(other)) {
             return false;
         }
-        if (!(other instanceof GroupLayout)) {
+        if (!(other instanceof GroupLayout g)) {
             return false;
         }
-        GroupLayout g = (GroupLayout)other;
         return kind.equals(g.kind) && elements.equals(g.elements);
     }
 
@@ -173,8 +170,8 @@ public final class GroupLayout extends AbstractLayout implements MemoryLayout {
     }
 
     @Override
-    GroupLayout dup(long alignment, Map<String, Constable> attributes) {
-        return new GroupLayout(kind, elements, alignment, attributes);
+    GroupLayout dup(long alignment, Optional<String> name) {
+        return new GroupLayout(kind, elements, alignment, name);
     }
 
     @Override
@@ -211,13 +208,5 @@ public final class GroupLayout extends AbstractLayout implements MemoryLayout {
     @Override
     public GroupLayout withBitAlignment(long alignmentBits) {
         return (GroupLayout)super.withBitAlignment(alignmentBits);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public GroupLayout withAttribute(String name, Constable value) {
-        return (GroupLayout)super.withAttribute(name, value);
     }
 }

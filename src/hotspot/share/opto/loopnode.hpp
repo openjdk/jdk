@@ -917,13 +917,13 @@ private:
   void copy_skeleton_predicates_to_main_loop(CountedLoopNode* pre_head, Node* init, Node* stride, IdealLoopTree* outer_loop, LoopNode* outer_main_head,
                                              uint dd_main_head, const uint idx_before_pre_post, const uint idx_after_post_before_pre,
                                              Node* zero_trip_guard_proj_main, Node* zero_trip_guard_proj_post, const Node_List &old_new);
-  Node* clone_skeleton_predicate_for_main_loop(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
-                                               IdealLoopTree* outer_loop, Node* input_proj);
-  Node* clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
-                                      IdealLoopTree* outer_loop);
+  Node* clone_skeleton_predicate_for_main_or_post_loop(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
+                                                       IdealLoopTree* outer_loop, Node* input_proj);
+  Node* clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* control);
   static bool skeleton_predicate_has_opaque(IfNode* iff);
   static void get_skeleton_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
+  void copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init, Node* stride);
   void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
 #ifdef ASSERT
   bool only_has_infinite_loops();
@@ -1246,9 +1246,9 @@ public:
   void insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_new, bool peel_only );
 
   // Add post loop after the given loop.
-  Node *insert_post_loop(IdealLoopTree *loop, Node_List &old_new,
-                         CountedLoopNode *main_head, CountedLoopEndNode *main_end,
-                         Node *incr, Node *limit, CountedLoopNode *&post_head);
+  Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
+                         CountedLoopNode* main_head, CountedLoopEndNode* main_end,
+                         Node*& incr, Node* limit, CountedLoopNode*& post_head);
 
   // Add an RCE'd post loop which we will multi-version adapt for run time test path usage
   void insert_scalar_rced_post_loop( IdealLoopTree *loop, Node_List &old_new );
@@ -1593,8 +1593,9 @@ private:
                                                Node_List* old_new = NULL);
   void clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, Deoptimization::DeoptReason reason,
                                                     ProjNode* old_predicate_proj, ProjNode* iffast_pred, ProjNode* ifslow_pred);
-  ProjNode* clone_skeleton_predicate_for_unswitched_loops(Node* iff, ProjNode* predicate, Node* uncommon_proj, Deoptimization::DeoptReason reason,
-                                                          ProjNode* output_proj, IdealLoopTree* loop);
+  ProjNode* clone_skeleton_predicate_for_unswitched_loops(Node* iff, ProjNode* predicate,
+                                                          Deoptimization::DeoptReason reason,
+                                                          ProjNode* output_proj);
   static void check_created_predicate_for_unswitching(const Node* new_entry) PRODUCT_RETURN;
 
   bool _created_loop_node;
