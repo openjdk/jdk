@@ -278,7 +278,7 @@ public final class AppImageFile {
         return null;
     }
 
-    private static String getVersion() {
+    static String getVersion() {
         return "1.0";
     }
 
