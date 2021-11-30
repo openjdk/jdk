@@ -1277,6 +1277,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
     // Limit is not exact.
     // Calculate exact limit here.
     // Note, counted loop's test is '<' or '>'.
+    loop->compute_trip_count(this);
     Node* limit   = exact_limit(loop);
     int  stride   = cl->stride()->get_int();
 
