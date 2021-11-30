@@ -568,10 +568,6 @@ void BlockBegin::disconnect_edge(BlockBegin* from, BlockBegin* to) {
   }
 }
 
-BlockList* BlockBegin::successors() {
-  assert(_end != NULL, "need end");
-  return _end->sux();
-} // TODO temporary accessor, remove
 
 void BlockBegin::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
   // modify predecessors before substituting successors
