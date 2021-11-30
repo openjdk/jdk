@@ -720,11 +720,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
       break;
 
     case T_ADDRESS:
-      if (UseCompressedClassPointers && addr->disp() == oopDesc::klass_offset_in_bytes()) {
-        __ ldr_u32(dest->as_pointer_register(), as_Address(addr));
-      } else {
-        __ ldr(dest->as_pointer_register(), as_Address(addr));
-      }
+      __ ldr(dest->as_pointer_register(), as_Address(addr));
       break;
 
     case T_INT:
@@ -1381,7 +1377,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     op->addr()->as_pointer_register() :
     op->addr()->as_address_ptr()->base()->as_pointer_register();
   assert(op->addr()->is_register() || op->addr()->as_address_ptr()->disp() == 0, "unexpected disp");
-  assert(op->addr()->is_register() || op->addr()->as_address_ptr()->index() == LIR_OprDesc::illegalOpr(), "unexpected index");
+  assert(op->addr()->is_register() || op->addr()->as_address_ptr()->index() == LIR_Opr::illegalOpr(), "unexpected index");
   if (op->code() == lir_cas_int || op->code() == lir_cas_obj) {
     Register cmpval = op->cmp_value()->as_register();
     Register newval = op->new_value()->as_register();
@@ -2445,6 +2441,21 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   __ bind(*op->stub()->continuation());
 }
 
+void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
+  Register obj = op->obj()->as_pointer_register();
+  Register result = op->result_opr()->as_pointer_register();
+
+  CodeEmitInfo* info = op->info();
+  if (info != NULL) {
+    add_debug_info_for_null_check_here(info);
+  }
+
+  if (UseCompressedClassPointers) { // On 32 bit arm??
+    __ ldr_u32(result, Address(obj, oopDesc::klass_offset_in_bytes()));
+  } else {
+    __ ldr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
+  }
+}
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();

@@ -77,19 +77,13 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
     return;
   }
 
-  oop forwardee = obj->forwardee();
-  if (forwardee == NULL) {
-    // Not forwarded, return current reference.
-    assert(obj->mark() == markWord::prototype() || // Correct mark
-           obj->mark_must_be_preserved(), // Will be restored by PreservedMarksSet
-           "Must have correct prototype or be preserved, obj: " PTR_FORMAT ", mark: " PTR_FORMAT ", prototype: " PTR_FORMAT,
-           p2i(obj), obj->mark().value(), markWord::prototype().value());
-    return;
+  if (obj->is_forwarded()) {
+    oop forwardee = obj->forwardee();
+    // Forwarded, just update.
+    assert(G1CollectedHeap::heap()->is_in_reserved(forwardee), "should be in object space");
+    RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
   }
 
-  // Forwarded, just update.
-  assert(G1CollectedHeap::heap()->is_in_reserved(forwardee), "should be in object space");
-  RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
 }
 
 inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_work(p); }

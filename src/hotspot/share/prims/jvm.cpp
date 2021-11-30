@@ -426,8 +426,8 @@ extern volatile jint vm_created;
 JVM_ENTRY_NO_ENV(void, JVM_BeforeHalt())
 #if INCLUDE_CDS
   // Link all classes for dynamic CDS dumping before vm exit.
-  if (DynamicDumpSharedSpaces) {
-    DynamicArchive::prepare_for_dynamic_dumping();
+  if (DynamicArchive::should_dump_at_vm_exit()) {
+    DynamicArchive::prepare_for_dump_at_exit();
   }
 #endif
   EventShutdown event;
@@ -660,7 +660,7 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   }
 
   // Make shallow object copy
-  const int size = obj->size();
+  const size_t size = obj->size();
   oop new_obj_oop = NULL;
   if (obj->is_array()) {
     const int length = ((arrayOop)obj())->length();
@@ -3369,7 +3369,7 @@ JVM_END
 
 // Library support ///////////////////////////////////////////////////////////////////////////
 
-JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name))
+JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name, jboolean throwException))
   //%note jvm_ct
   char ebuf[1024];
   void *load_result;
@@ -3378,18 +3378,23 @@ JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name))
     load_result = os::dll_load(name, ebuf, sizeof ebuf);
   }
   if (load_result == NULL) {
-    char msg[1024];
-    jio_snprintf(msg, sizeof msg, "%s: %s", name, ebuf);
-    // Since 'ebuf' may contain a string encoded using
-    // platform encoding scheme, we need to pass
-    // Exceptions::unsafe_to_utf8 to the new_exception method
-    // as the last argument. See bug 6367357.
-    Handle h_exception =
-      Exceptions::new_exception(thread,
-                                vmSymbols::java_lang_UnsatisfiedLinkError(),
-                                msg, Exceptions::unsafe_to_utf8);
+    if (throwException) {
+      char msg[1024];
+      jio_snprintf(msg, sizeof msg, "%s: %s", name, ebuf);
+      // Since 'ebuf' may contain a string encoded using
+      // platform encoding scheme, we need to pass
+      // Exceptions::unsafe_to_utf8 to the new_exception method
+      // as the last argument. See bug 6367357.
+      Handle h_exception =
+        Exceptions::new_exception(thread,
+                                  vmSymbols::java_lang_UnsatisfiedLinkError(),
+                                  msg, Exceptions::unsafe_to_utf8);
 
-    THROW_HANDLE_0(h_exception);
+      THROW_HANDLE_0(h_exception);
+    } else {
+      log_info(library)("Failed to load library %s", name);
+      return load_result;
+    }
   }
   log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, name, p2i(load_result));
   return load_result;
@@ -3701,7 +3706,7 @@ JVM_ENTRY(void, JVM_DumpDynamicArchive(JNIEnv *env, jstring archiveName))
   ResourceMark rm(THREAD);
   Handle file_handle(THREAD, JNIHandles::resolve_non_null(archiveName));
   char* archive_name  = java_lang_String::as_utf8_string(file_handle());
-  DynamicArchive::dump(archive_name, CHECK);
+  DynamicArchive::dump_for_jcmd(archive_name, CHECK);
 #endif // INCLUDE_CDS
 JVM_END
 

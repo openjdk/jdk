@@ -35,8 +35,6 @@ class ciField;
 class ValueStack;
 class InstructionPrinter;
 class IRScope;
-class LIR_OprDesc;
-typedef LIR_OprDesc* LIR_Opr;
 
 
 // Instruction class hierarchy
@@ -1998,14 +1996,6 @@ LEAF(If, BlockEnd)
   void swap_operands() {
     Value t = _x; _x = _y; _y = t;
     _cond = mirror(_cond);
-  }
-
-  void swap_sux() {
-    assert(number_of_sux() == 2, "wrong number of successors");
-    BlockList* s = sux();
-    BlockBegin* t = s->at(0); s->at_put(0, s->at(1)); s->at_put(1, t);
-    _cond = negate(_cond);
-    set_flag(UnorderedIsTrueFlag, !check_flag(UnorderedIsTrueFlag));
   }
 
   void set_should_profile(bool value)             { set_flag(ProfileMDOFlag, value); }

@@ -645,7 +645,7 @@ final class HttpsClient extends HttpClient
             // ignore
         }
 
-        if ((cipher != null) && (cipher.indexOf("_anon_") != -1)) {
+        if ((cipher != null) && (cipher.contains("_anon_"))) {
             return;
         } else if ((hostnameVerifier != null) &&
                    (hostnameVerifier.verify(host, session))) {

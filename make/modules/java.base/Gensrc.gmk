@@ -62,6 +62,7 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	    -baselocales "en-US" \
 	    -o $(GENSRC_DIR) \
 	    -basemodule \
+	    -year $(COPYRIGHT_YEAR) \
 	    -zntempfile $(ZONENAME_TEMPLATE) \
 	    -tzdatadir $(TZ_DATA_DIR))
 	$(TOUCH) $@
@@ -99,7 +100,7 @@ GENSRC_LSREQUIVMAPS := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/Loc
 
 $(GENSRC_LSREQUIVMAPS): $(TOPDIR)/make/data/lsrdata/language-subtag-registry.txt $(BUILD_TOOLS_JDK)
 	$(call MakeDir, $(@D))
-	$(TOOL_GENERATELSREQUIVMAPS) $< $@
+	$(TOOL_GENERATELSREQUIVMAPS) $< $@ $(COPYRIGHT_YEAR)
 
 TARGETS += $(GENSRC_LSREQUIVMAPS)
 
