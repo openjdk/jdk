@@ -229,18 +229,8 @@ void ClassLoaderExt::setup_search_paths(JavaThread* current) {
   ClassLoaderExt::setup_app_search_path(current);
 }
 
-bool ClassLoaderExt::is_module_image_path(const char* path) {
-  char* runtime_boot_path = Arguments::get_sysclasspath();
-  char* p = strstr((char*)runtime_boot_path, os::path_separator());
-  size_t module_path_len = (p == NULL) ? strlen(runtime_boot_path) : p - runtime_boot_path + 1;
-  if (strlen(path) == module_path_len && strncmp(path, runtime_boot_path, module_path_len) == 0) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result, const ClassFileStream* stream) {
+void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result,
+                                   const ClassFileStream* stream, bool redefined) {
   Arguments::assert_is_dumping_archive();
 
   // We need to remember where the class comes from during dumping.
@@ -260,7 +250,7 @@ void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* resu
   result->set_shared_class_loader_type(classloader_type);
 #if INCLUDE_CDS_JAVA_HEAP
   if (DumpSharedSpaces && AllowArchivingWithJavaAgent && classloader_type == ClassLoader::BOOT_LOADER &&
-      classpath_index < 0 && HeapShared::can_write() && is_module_image_path(stream->source())) {
+      classpath_index < 0 && HeapShared::can_write() && redefined) {
     // During static dump, classes for the built-in loaders are always loaded from
     // known locations (jimage, classpath or modulepath), so classpath_index should
     // always be >= 0.

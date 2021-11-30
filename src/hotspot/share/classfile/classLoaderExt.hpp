@@ -60,7 +60,6 @@ private:
   static bool _has_non_jar_in_classpath;
 
   static char* read_manifest(JavaThread* current, ClassPathEntry* entry, jint *manifest_size, bool clean_text);
-  static bool is_module_image_path(const char* path);
 
 public:
   static void process_jar_manifest(JavaThread* current, ClassPathEntry* entry, bool check_for_duplicates);
@@ -113,7 +112,8 @@ public:
     return _has_non_jar_in_classpath;
   }
 
-  static void record_result(const s2 classpath_index, InstanceKlass* result, const ClassFileStream* stream);
+  static void record_result(const s2 classpath_index, InstanceKlass* result,
+                            const ClassFileStream* stream, bool redefined);
   static void set_has_app_classes() {
     _has_app_classes = true;
   }

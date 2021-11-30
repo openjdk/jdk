@@ -1253,7 +1253,8 @@ char* ClassLoader::skip_uri_protocol(char* source) {
 
 // Record the shared classpath index and loader type for classes loaded
 // by the builtin loaders at dump time.
-void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik, const ClassFileStream* stream) {
+void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
+                                const ClassFileStream* stream, bool redefined) {
   Arguments::assert_is_dumping_archive();
   assert(stream != NULL, "sanity");
 
@@ -1359,7 +1360,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik, const Cl
                                                          ik->name()->utf8_length());
   assert(file_name != NULL, "invariant");
 
-  ClassLoaderExt::record_result(classpath_index, ik, stream);
+  ClassLoaderExt::record_result(classpath_index, ik, stream, redefined);
 }
 #endif // INCLUDE_CDS
 
