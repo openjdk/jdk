@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@ const char* NMTUtil::tracking_level_to_string(NMT_TrackingLevel lvl) {
   switch(lvl) {
     case NMT_unknown: return "unknown"; break;
     case NMT_off:     return "off"; break;
-    case NMT_minimal: return "minimal"; break;
     case NMT_summary: return "summary"; break;
     case NMT_detail:  return "detail"; break;
     default:          return "invalid"; break;

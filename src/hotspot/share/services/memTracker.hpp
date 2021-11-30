@@ -49,7 +49,6 @@ class Tracker : public StackObj {
 class MemTracker : AllStatic {
  public:
   static inline NMT_TrackingLevel tracking_level() { return NMT_off; }
-  static inline void shutdown() { }
   static inline void init() { }
   static bool check_launcher_nmt_support(const char* value) { return true; }
   static bool verify_nmt_option() { return true; }
@@ -137,15 +136,6 @@ class MemTracker : AllStatic {
     return _tracking_level;
   }
 
-  // Shutdown native memory tracking.
-  // This transitions the tracking level:
-  //  summary -> minimal
-  //  detail  -> minimal
-  static void shutdown();
-
-  // Transition the tracking level to specified level
-  static bool transition_to(NMT_TrackingLevel level);
-
   static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
     const NativeCallStack& stack, NMT_TrackingLevel level) {
     if (level != NMT_off) {
@@ -206,8 +196,6 @@ class MemTracker : AllStatic {
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
-      // Recheck to avoid potential racing during NMT shutdown
-      if (tracking_level() < NMT_summary) return;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
     }
   }
@@ -218,7 +206,6 @@ class MemTracker : AllStatic {
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
-      if (tracking_level() < NMT_summary) return;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
@@ -230,7 +217,6 @@ class MemTracker : AllStatic {
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
-      if (tracking_level() < NMT_summary) return;
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
@@ -246,8 +232,6 @@ class MemTracker : AllStatic {
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
-      // Recheck to avoid potential racing during NMT shutdown
-      if (tracking_level() < NMT_summary) return;
       VirtualMemoryTracker::split_reserved_region((address)addr, size, split);
     }
   }
@@ -257,7 +241,6 @@ class MemTracker : AllStatic {
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
-      if (tracking_level() < NMT_summary) return;
       VirtualMemoryTracker::set_reserved_region_type((address)addr, flag);
     }
   }
