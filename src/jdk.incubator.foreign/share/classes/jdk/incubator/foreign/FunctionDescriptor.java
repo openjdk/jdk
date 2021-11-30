@@ -136,13 +136,12 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
      * @throws IllegalArgumentException if {@code index < 0 || index > argumentLayouts().size()}.
      */
     public FunctionDescriptor insertArgumentLayouts(int index, MemoryLayout... addedLayouts) {
-        Objects.requireNonNull(addedLayouts);
-        Arrays.stream(addedLayouts).forEach(Objects::requireNonNull);
         if (index < 0 || index > argLayouts.size())
             throw new IllegalArgumentException("Index out of bounds: " + index);
+        List<MemoryLayout> added = List.of(addedLayouts); // null check on array and its elements
         List<MemoryLayout> newLayouts = new ArrayList<>(argLayouts.size() + addedLayouts.length);
         newLayouts.addAll(argLayouts.subList(0, index));
-        newLayouts.addAll(List.of(addedLayouts));
+        newLayouts.addAll(added);
         newLayouts.addAll(argLayouts.subList(index, argLayouts.size()));
         return new FunctionDescriptor(resLayout, newLayouts);
     }
