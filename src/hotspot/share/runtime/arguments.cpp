@@ -2026,12 +2026,15 @@ bool Arguments::check_vm_args_consistency() {
     warning("UseHeavyMonitors is not fully implemented on this architecture");
   }
 #endif
- if (UseHeavyMonitors && UseRTMForStackLocks) {
+#ifdef X86
+  if (UseHeavyMonitors && UseRTMForStackLocks) {
     fatal("-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
   }
+#endif
   if (VerifyHeavyMonitors && !UseHeavyMonitors) {
     fatal("-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
   }
+
   return status;
 }
 
