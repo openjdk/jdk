@@ -312,6 +312,19 @@ void Optimizer::eliminate_conditional_expressions() {
   CE_Eliminator ce(ir());
 }
 
+void disconnect_from_graph(BlockBegin* block) {
+  for (int p = 0; p < block->number_of_preds(); p++) {
+    BlockBegin* pred = block->pred_at(p);
+    int idx;
+    while ((idx = pred->end()->find_sux(block)) >= 0) {
+      pred->end()->remove_sux_at(idx);
+    }
+  }
+  for (int s = 0; s < block->number_of_sux(); s++) {
+    block->sux_at(s)->remove_predecessor(block);
+  }
+}
+
 class BlockMerger: public BlockClosure {
  private:
   IR* _hir;
@@ -382,16 +395,7 @@ class BlockMerger: public BlockClosure {
     prev->fixup_block_pointers();
 
     // disconnect this block from all other blocks
-    for (int p = 0; p < sux->number_of_preds(); p++) {
-      BlockBegin* pred = sux->pred_at(p);
-      int idx;
-      while ((idx = pred->end()->find_sux(sux)) >= 0) {
-        pred->end()->remove_sux_at(idx);
-      }
-    }
-    for (int s = 0; s < sux->number_of_sux(); s++) {
-      sux->sux_at(s)->remove_predecessor(sux);
-    }
+    disconnect_from_graph(sux);
     block->set_end(sux->end());
 
     // TODO Should this be done in set_end universally?
