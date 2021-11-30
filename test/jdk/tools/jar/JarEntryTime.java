@@ -194,7 +194,7 @@ public class JarEntryTime {
                                              DateTimeFormatter.ISO_DATE_TIME)
                                              .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
             System.out.format("Checking jar entries local date time for --date %s, is %s%n",
-                              sourceDate, expectedLdt); 
+                              sourceDate, expectedLdt);
             long sourceDateEpochMillis = TimeUnit.MILLISECONDS.convert(
                 expectedLdt.toEpochSecond(ZoneId.systemDefault().getRules().getOffset(expectedLdt)),
                 TimeUnit.SECONDS);
