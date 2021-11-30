@@ -48,8 +48,9 @@
 /*
  * @test
  * @summary Exercise multithreaded maps, using only heavy monitors.
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib
- * @run main/othervm/timeout=1600 -XX:+IgnoreUnrecognizedVMOptions -XX:+UseHeavyMonitors MapLoops
+ * @run main/othervm/timeout=1600 -XX:+IgnoreUnrecognizedVMOptions -XX:+UseHeavyMonitors -XX:+VerifyHeavyMonitors MapLoops
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
