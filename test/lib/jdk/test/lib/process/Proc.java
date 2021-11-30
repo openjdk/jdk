@@ -113,8 +113,8 @@ public class Proc {
 
     private List<String> args = new ArrayList<>();
     private Map<String,String> env = new HashMap<>();
-    private Map<String,String> prop = new HashMap();
-    private Map<String,String> secprop = new HashMap();
+    private Map<String,String> prop = new HashMap<>();
+    private Map<String,String> secprop = new HashMap<>();
     private boolean inheritIO = false;
     private boolean noDump = false;
 

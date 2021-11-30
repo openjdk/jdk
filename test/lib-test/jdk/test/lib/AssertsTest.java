@@ -38,7 +38,7 @@ public class AssertsTest {
         }
 
         public int compareTo(Foo f) {
-            return new Integer(id).compareTo(new Integer(f.id));
+            return Integer.valueOf(id).compareTo(Integer.valueOf(f.id));
         }
         public String toString() {
             return "Foo(" + Integer.toString(id) + ")";

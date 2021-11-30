@@ -36,6 +36,7 @@ import javax.tools.ForwardingJavaFileManager;
 import javax.tools.FileObject;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
@@ -106,7 +107,7 @@ public class InMemoryJavaCompiler {
         }
     }
 
-    private static class FileManagerWrapper extends ForwardingJavaFileManager {
+    private static class FileManagerWrapper extends ForwardingJavaFileManager<JavaFileManager> {
         private static final Location PATCH_LOCATION = new Location() {
             @Override
             public String getName() {

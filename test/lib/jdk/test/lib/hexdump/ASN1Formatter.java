@@ -626,6 +626,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @return the InputStream or the wrapped decoder of Base64Mime.
      * @throws IOException if an I/O error occurs
      */
+    @SuppressWarnings("deprecation")
     private static InputStream wrapIfBase64Mime(BufferedInputStream bis) throws IOException {
         bis.mark(256);
         DataInputStream dis = new DataInputStream(bis);
