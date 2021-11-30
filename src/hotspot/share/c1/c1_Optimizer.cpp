@@ -380,18 +380,21 @@ class BlockMerger: public BlockClosure {
     assert(prev->as_BlockEnd() == NULL, "must not be a BlockEnd");
     prev->set_next(next);
     prev->fixup_block_pointers();
-    BlockBegin *receiver = sux;// disconnect this block from all other blocks
-    for (int p = 0; p < receiver->number_of_preds(); p++) {
-      BlockBegin *receiver1 = receiver->pred_at(p);
+
+    // disconnect this block from all other blocks
+    for (int p = 0; p < sux->number_of_preds(); p++) {
+      BlockBegin* pred = sux->pred_at(p);
       int idx;
-      while ((idx = receiver1->end()->find_sux(receiver)) >= 0) {
-        receiver1->end()->remove_sux_at(idx);
+      while ((idx = pred->end()->find_sux(sux)) >= 0) {
+        pred->end()->remove_sux_at(idx);
       }
     }
-    for (int s = 0; s < receiver->number_of_sux(); s++) {
-      receiver->sux_at(s)->remove_predecessor(receiver);
+    for (int s = 0; s < sux->number_of_sux(); s++) {
+      sux->sux_at(s)->remove_predecessor(sux);
     }
     block->set_end(sux->end());
+
+    // TODO Should this be done in set_end universally?
     // add exception handlers of deleted block, if any
     for (int k = 0; k < sux->number_of_exception_handlers(); k++) {
       BlockBegin* xhandler = sux->exception_handler_at(k);
