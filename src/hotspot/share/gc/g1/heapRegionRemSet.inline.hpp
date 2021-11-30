@@ -110,7 +110,7 @@ template <class CardOrRangeVisitor>
 inline void HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
   G1HeapRegionRemSetMergeCardClosure<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(&_card_set,
                                                                                        cl,
-                                                                                       _card_set.config()->log2_card_region_per_heap_region(),
+                                                                                       _card_set.config()->log2_card_regions_per_heap_region(),
                                                                                        _card_set.config()->log2_cards_per_card_region());
   _card_set.iterate_containers(&cl2, true /* at_safepoint */);
 }

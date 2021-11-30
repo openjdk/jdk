@@ -22,17 +22,18 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1CARDSETFREEMEMORYTASK_HPP
-#define SHARE_GC_G1_G1CARDSETFREEMEMORYTASK_HPP
+#ifndef SHARE_GC_G1_G1SEGMENTEDARRAYFREEMEMORYTASK_HPP
+#define SHARE_GC_G1_G1SEGMENTEDARRAYFREEMEMORYTASK_HPP
 
-#include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
+#include "gc/g1/g1SegmentedArrayFreePool.hpp"
+#include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"
 
-// Task handling deallocation of free card set memory.
-class G1CardSetFreeMemoryTask : public G1ServiceTask {
+// Task handling deallocation of free segmented array memory.
+class G1SegmentedArrayFreeMemoryTask : public G1ServiceTask {
 
   enum class State : uint {
     Inactive,
@@ -52,11 +53,11 @@ class G1CardSetFreeMemoryTask : public G1ServiceTask {
 
   State _state;
 
-  // Current total card set memory usage.
-  G1CardSetMemoryStats _total_used;
+  // Current total segmented array memory usage.
+  G1SegmentedArrayMemoryStats _total_used;
 
-  typedef G1CardSetFreePool::G1ReturnMemoryProcessor G1ReturnMemoryProcessor;
-  typedef G1CardSetFreePool::G1ReturnMemoryProcessorSet G1ReturnMemoryProcessorSet;
+  typedef G1SegmentedArrayFreePool<mtGCCardSet>::G1ReturnMemoryProcessor G1ReturnMemoryProcessor;
+  typedef G1SegmentedArrayFreePool<mtGCCardSet>::G1ReturnMemoryProcessorSet G1ReturnMemoryProcessorSet;
 
   G1ReturnMemoryProcessorSet* _return_info;
 
@@ -70,9 +71,9 @@ class G1CardSetFreeMemoryTask : public G1ServiceTask {
   bool return_memory_to_os(jlong deadline);
   bool cleanup_return_infos();
 
-  // Free excess card set memory, main method. Returns true if there is more work
+  // Free excess segmented array memory, main method. Returns true if there is more work
   // to do.
-  bool free_excess_card_set_memory();
+  bool free_excess_segmented_array_memory();
 
   void set_state(State new_state);
   // Returns whether we are currently processing a recent request.
@@ -82,14 +83,14 @@ class G1CardSetFreeMemoryTask : public G1ServiceTask {
   jlong reschedule_delay_ms() const;
 
 public:
-  explicit G1CardSetFreeMemoryTask(const char* name);
+  explicit G1SegmentedArrayFreeMemoryTask(const char* name);
 
   void execute() override;
 
   // Notify the task of new used remembered set memory statistics for the young
   // generation and the collection set candidate sets.
-  void notify_new_stats(G1CardSetMemoryStats* young_gen_stats,
-                        G1CardSetMemoryStats* collection_set_candidate_stats);
+  void notify_new_stats(G1SegmentedArrayMemoryStats* young_gen_stats,
+                        G1SegmentedArrayMemoryStats* collection_set_candidate_stats);
 };
 
-#endif // SHARE_GC_G1_G1CARDSETFREEMEMORYTASK_HPP
+#endif // SHARE_GC_G1_G1SEGMENTEDARRAYFREEMEMORYTASK_HPP

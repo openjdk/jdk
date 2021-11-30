@@ -596,13 +596,13 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, Node* n3, uint vlen, B
 // Scalar promotion
 VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t, bool is_mask) {
   BasicType bt = opd_t->array_element_basic_type();
-  const TypeVect* vt = opd_t->singleton() ? TypeVect::make(opd_t, vlen, is_mask)
-                                          : TypeVect::make(bt, vlen, is_mask);
-
   if (is_mask && Matcher::match_rule_supported_vector(Op_MaskAll, vlen, bt)) {
+    const TypeVect* vt = TypeVect::make(opd_t, vlen, true);
     return new MaskAllNode(s, vt);
   }
 
+  const TypeVect* vt = opd_t->singleton() ? TypeVect::make(opd_t, vlen)
+                                          : TypeVect::make(bt, vlen);
   switch (bt) {
   case T_BOOLEAN:
   case T_BYTE:

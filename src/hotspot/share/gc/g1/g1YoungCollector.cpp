@@ -330,7 +330,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
     uint _worker_humongous_total;
     uint _worker_humongous_candidates;
 
-    G1CardSetMemoryStats _card_set_stats;
+    G1SegmentedArrayMemoryStats _card_set_stats;
 
     void sample_card_set_size(HeapRegion* hr) {
       // Sample card set sizes for young gen and humongous before GC: this makes
@@ -446,7 +446,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       return false;
     }
 
-    G1CardSetMemoryStats card_set_stats() const {
+    G1SegmentedArrayMemoryStats card_set_stats() const {
       return _card_set_stats;
     }
   };
@@ -456,7 +456,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
   volatile uint _humongous_total;
   volatile uint _humongous_candidates;
 
-  G1CardSetMemoryStats _all_card_set_stats;
+  G1SegmentedArrayMemoryStats _all_card_set_stats;
 
 public:
   G1PrepareEvacuationTask(G1CollectedHeap* g1h) :
@@ -490,7 +490,7 @@ public:
     return _humongous_total;
   }
 
-  const G1CardSetMemoryStats all_card_set_stats() const {
+  const G1SegmentedArrayMemoryStats all_card_set_stats() const {
     return _all_card_set_stats;
   }
 };
