@@ -76,7 +76,7 @@
           "0: Claim tree "                                                  \
           "1: Simple Striped ")                                             \
                                                                             \
-  product(uintx, ZRelocateRemsetStrategy, 0,                                \
+  product(uintx, ZRelocateRemsetStrategy, 1,                                \
           "Strategy used to add remset entries to promoted objects "        \
           "0: Add for all fields during relocation "                        \
           "1: Filter and remapping during relocation "                      \
