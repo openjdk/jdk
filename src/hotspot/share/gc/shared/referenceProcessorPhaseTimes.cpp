@@ -101,10 +101,7 @@ RefProcWorkerTimeTracker::~RefProcWorkerTimeTracker() {
 RefProcSubPhasesWorkerTimeTracker::RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
                                                                      ReferenceProcessorPhaseTimes* phase_times,
                                                                      uint worker_id) :
-  RefProcWorkerTimeTracker(phase_times->sub_phase_worker_time_sec(phase), worker_id) {
-}
-
-RefProcSubPhasesWorkerTimeTracker::~RefProcSubPhasesWorkerTimeTracker() {
+  _tracker(phase_times->sub_phase_worker_time_sec(phase), worker_id) {
 }
 
 RefProcPhaseTimeBaseTracker::RefProcPhaseTimeBaseTracker(const char* title,
