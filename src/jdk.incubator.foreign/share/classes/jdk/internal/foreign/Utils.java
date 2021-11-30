@@ -30,7 +30,6 @@ import jdk.incubator.foreign.*;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -173,25 +172,5 @@ public final class Utils {
     public static long scaleOffset(MemorySegment segment, long index, long size) {
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
         return MemorySegmentProxy.multiplyOffsets(index, (int)size, (AbstractMemorySegmentImpl)segment);
-    }
-
-    final static MethodHandle LAYOUT_ACCESS_HANDLE;
-
-    static {
-        try {
-            LAYOUT_ACCESS_HANDLE = MethodHandles.privateLookupIn(ValueLayout.class, MethodHandles.lookup())
-                    .findVirtual(ValueLayout.class, "accessHandle", MethodType.methodType(VarHandle.class, boolean.class));
-        } catch (Throwable ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
-
-    @ForceInline
-    public static VarHandle accessHandle(ValueLayout layout, boolean aligned) {
-        try {
-            return (VarHandle) LAYOUT_ACCESS_HANDLE.invokeExact(layout, aligned);
-        } catch (Throwable ex) {
-            throw new IllegalStateException(ex);
-        }
     }
 }

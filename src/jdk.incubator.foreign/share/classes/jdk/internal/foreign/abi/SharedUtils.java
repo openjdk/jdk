@@ -104,13 +104,6 @@ public class SharedUtils {
     private static final MethodHandle ACQUIRE_MH;
     private static final MethodHandle RELEASE_MH;
 
-    private static final ValueLayout.OfChar JAVA_CHAR_UNALIGNED = JAVA_CHAR.withBitAlignment(8);
-    private static final ValueLayout.OfShort JAVA_SHORT_UNALIGNED = JAVA_SHORT.withBitAlignment(8);
-    private static final ValueLayout.OfInt JAVA_INT_UNALIGNED = JAVA_INT.withBitAlignment(8);
-    private static final ValueLayout.OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withBitAlignment(8);
-    private static final ValueLayout.OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withBitAlignment(8);
-    private static final ValueLayout.OfDouble JAVA_DOUBLE_UNALIGNED = JAVA_DOUBLE.withBitAlignment(8);
-
     static {
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -727,22 +720,21 @@ public class SharedUtils {
     static void writeOverSized(MemorySegment ptr, Class<?> type, Object o) {
         // use VH_LONG for integers to zero out the whole register in the process
         if (type == long.class) {
-            ptr.set(JAVA_LONG_UNALIGNED, 0, (long) o);
+            ptr.set(JAVA_LONG, 0, (long) o);
         } else if (type == int.class) {
-            ptr.set(JAVA_LONG_UNALIGNED, 0, (int) o);
+            ptr.set(JAVA_LONG, 0, (int) o);
         } else if (type == short.class) {
-            ptr.set(JAVA_LONG_UNALIGNED, 0, (short) o);
+            ptr.set(JAVA_LONG, 0, (short) o);
         } else if (type == char.class) {
-            ptr.set(JAVA_LONG_UNALIGNED, 0, (char) o);
+            ptr.set(JAVA_LONG, 0, (char) o);
         } else if (type == byte.class) {
-            ptr.set(JAVA_LONG_UNALIGNED, 0, (byte) o);
+            ptr.set(JAVA_LONG, 0, (byte) o);
         } else if (type == float.class) {
-            ptr.set(JAVA_FLOAT_UNALIGNED, 0, (float) o);
+            ptr.set(JAVA_FLOAT, 0, (float) o);
         } else if (type == double.class) {
-            ptr.set(JAVA_DOUBLE_UNALIGNED, 0, (double) o);
+            ptr.set(JAVA_DOUBLE, 0, (double) o);
         } else if (type == boolean.class) {
-            boolean b = (boolean)o;
-            ptr.set(JAVA_LONG_UNALIGNED, 0, b ? (byte)1 : (byte)0);
+            ptr.set(JAVA_BOOLEAN, 0, (boolean) o);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }
@@ -750,19 +742,19 @@ public class SharedUtils {
 
     static void write(MemorySegment ptr, Class<?> type, Object o) {
         if (type == long.class) {
-            ptr.set(JAVA_LONG_UNALIGNED, 0, (long) o);
+            ptr.set(JAVA_LONG, 0, (long) o);
         } else if (type == int.class) {
-            ptr.set(JAVA_INT_UNALIGNED, 0, (int) o);
+            ptr.set(JAVA_INT, 0, (int) o);
         } else if (type == short.class) {
-            ptr.set(JAVA_SHORT_UNALIGNED, 0, (short) o);
+            ptr.set(JAVA_SHORT, 0, (short) o);
         } else if (type == char.class) {
-            ptr.set(JAVA_CHAR_UNALIGNED, 0, (char) o);
+            ptr.set(JAVA_CHAR, 0, (char) o);
         } else if (type == byte.class) {
             ptr.set(JAVA_BYTE, 0, (byte) o);
         } else if (type == float.class) {
-            ptr.set(JAVA_FLOAT_UNALIGNED, 0, (float) o);
+            ptr.set(JAVA_FLOAT, 0, (float) o);
         } else if (type == double.class) {
-            ptr.set(JAVA_DOUBLE_UNALIGNED, 0, (double) o);
+            ptr.set(JAVA_DOUBLE, 0, (double) o);
         } else if (type == boolean.class) {
             ptr.set(JAVA_BOOLEAN, 0, (boolean) o);
         } else {
@@ -772,19 +764,19 @@ public class SharedUtils {
 
     static Object read(MemorySegment ptr, Class<?> type) {
         if (type == long.class) {
-            return ptr.get(JAVA_LONG_UNALIGNED, 0);
+            return ptr.get(JAVA_LONG, 0);
         } else if (type == int.class) {
-            return ptr.get(JAVA_INT_UNALIGNED, 0);
+            return ptr.get(JAVA_INT, 0);
         } else if (type == short.class) {
-            return ptr.get(JAVA_SHORT_UNALIGNED, 0);
+            return ptr.get(JAVA_SHORT, 0);
         } else if (type == char.class) {
-            return ptr.get(JAVA_CHAR_UNALIGNED, 0);
+            return ptr.get(JAVA_CHAR, 0);
         } else if (type == byte.class) {
             return ptr.get(JAVA_BYTE, 0);
         } else if (type == float.class) {
-            return ptr.get(JAVA_FLOAT_UNALIGNED, 0);
+            return ptr.get(JAVA_FLOAT, 0);
         } else if (type == double.class) {
-            return ptr.get(JAVA_DOUBLE_UNALIGNED, 0);
+            return ptr.get(JAVA_DOUBLE, 0);
         } else if (type == boolean.class) {
             return ptr.get(JAVA_BOOLEAN, 0);
         } else {
