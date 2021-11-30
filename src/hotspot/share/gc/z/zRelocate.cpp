@@ -231,7 +231,7 @@ static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_add
   const size_t size = ZUtils::object_size(from_addr);
 
   ZPage* page = forwarding->page();
-  ZGeneration* generation = forwarding->age_to() == ZPageAge::old ?
+  ZGeneration* generation = forwarding->to_age() == ZPageAge::old ?
                             (ZGeneration*)ZHeap::heap()->old_generation() :
                             (ZGeneration*)ZHeap::heap()->young_generation();
 
@@ -636,9 +636,9 @@ private:
   }
 
   void update_remset_for_fields(zaddress from_addr, zaddress to_addr) const {
-    if (_forwarding->age_to() == ZPageAge::old) {
+    if (_forwarding->to_age() == ZPageAge::old) {
       // Need to deal with remset when moving stuff to old
-      if (_forwarding->age_from() == ZPageAge::old) {
+      if (_forwarding->from_age() == ZPageAge::old) {
         update_remset_old_to_old(from_addr, to_addr);
       } else {
         update_remset_promoted(to_addr);
@@ -663,7 +663,7 @@ private:
     _forwarding->in_place_relocation_start();
 
     ZPage* prev_page = _forwarding->page();
-    ZPageAge new_age = _forwarding->age_to();
+    ZPageAge new_age = _forwarding->to_age();
     ZGenerationId new_generation = new_age == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
     bool promotion = _forwarding->is_promotion();
     // Promotions happen through a new cloned page
@@ -826,7 +826,7 @@ public:
     const auto do_forwarding = [&](ZForwarding* forwarding) {
       if (forwarding->claim()) {
         ZPage* page = forwarding->page();
-        ZPageAge to_age = forwarding->age_to();
+        ZPageAge to_age = forwarding->to_age();
         if (is_small(forwarding)) {
           ZRelocateWork<ZRelocateSmallAllocator>* small = to_age == ZPageAge::old ? &old_small : &survivor_small;
           small->do_forwarding(forwarding);
@@ -952,10 +952,10 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   _queue.clear();
 }
 
-ZPageAge ZRelocate::compute_age_to(ZPageAge age_from, bool promote_all) {
+ZPageAge ZRelocate::compute_to_age(ZPageAge from_age, bool promote_all) {
   if (promote_all) {
     return ZPageAge::old;
-  } else if (age_from == ZPageAge::eden) {
+  } else if (from_age == ZPageAge::eden) {
     return ZPageAge::survivor;
   } else {
     return ZPageAge::old;
@@ -978,20 +978,20 @@ public:
     ZArray<ZPage*> promoted_pages;
 
     for (ZPage* prev_page; _iter.next(&prev_page);) {
-      const ZPageAge age_from = prev_page->age();
-      const ZPageAge age_to = ZRelocate::compute_age_to(age_from, _promote_all);
-      assert(age_from != ZPageAge::old, "invalid age for a young collection");
+      const ZPageAge from_age = prev_page->age();
+      const ZPageAge to_age = ZRelocate::compute_to_age(from_age, _promote_all);
+      assert(from_age != ZPageAge::old, "invalid age for a young collection");
 
       // Figure out if this is proper promotion
-      const ZGenerationId generation_to = age_to == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
-      const bool promotion = age_to == ZPageAge::old;
+      const ZGenerationId to_generation = to_age == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
+      const bool promotion = to_age == ZPageAge::old;
 
       // Logging
       prev_page->log_msg(promotion ? " (in-place promoted)" : " (in-place survived)");
 
       // Setup to-space page
       ZPage* const new_page = promotion ? prev_page->clone_limited_in_place_promoted() : prev_page;
-      new_page->reset(generation_to, age_to, ZPageResetType::InPlaceAging);
+      new_page->reset(to_generation, to_age, ZPageResetType::InPlaceAging);
 
       if (promotion) {
         ZHeap::heap()->young_collector()->promote_flip(prev_page, new_page);

@@ -72,7 +72,7 @@ void ZForwarding::in_place_relocation_finish() {
 
   _page->log_msg(" In-place reloc finish - top at start: " PTR_FORMAT, untype(_in_place_top_at_start));
 
-  if (_age_from == ZPageAge::old && _age_to == ZPageAge::old) {
+  if (_from_age == ZPageAge::old && _to_age == ZPageAge::old) {
     // The old to old relocation reused the ZPage
     // It took ownership of clearing and updating the remset up to,
     // and including, the last from object. Clear the rest.
@@ -80,7 +80,7 @@ void ZForwarding::in_place_relocation_finish() {
 
   }
 
-  if (_age_from == ZPageAge::old || _age_to != ZPageAge::old) {
+  if (_from_age == ZPageAge::old || _to_age != ZPageAge::old) {
     // Only do this for non-promoted pages, that still need to reset live map.
     // Done with iterating over the "from-page" view, so can now drop the _livemap.
     _page->finalize_reset_for_in_place_relocation();

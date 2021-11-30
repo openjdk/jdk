@@ -50,20 +50,20 @@ inline uint32_t ZForwarding::nentries(const ZPage* page) {
   return round_up_power_of_2(page->live_objects() * 2);
 }
 
-inline ZForwarding* ZForwarding::alloc(ZForwardingAllocator* allocator, ZPage* page, ZPageAge age_to) {
+inline ZForwarding* ZForwarding::alloc(ZForwardingAllocator* allocator, ZPage* page, ZPageAge to_age) {
   const size_t nentries = ZForwarding::nentries(page);
   void* const addr = AttachedArray::alloc(allocator, nentries);
-  return ::new (addr) ZForwarding(page, age_to, nentries);
+  return ::new (addr) ZForwarding(page, to_age, nentries);
 }
 
-inline ZForwarding::ZForwarding(ZPage* page, ZPageAge age_to, size_t nentries) :
+inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries) :
     _virtual(page->virtual_memory()),
     _object_alignment_shift(page->object_alignment_shift()),
     _entries(nentries),
     _page(page),
     _generation_id(page->generation_id()),
-    _age_from(page->age()),
-    _age_to(age_to),
+    _from_age(page->age()),
+    _to_age(to_age),
     _claimed(false),
     _ref_lock(),
     _ref_count(1),
@@ -82,12 +82,12 @@ inline ZGenerationId ZForwarding::generation_id() const {
   return _generation_id;
 }
 
-inline ZPageAge ZForwarding::age_from() const {
-  return _age_from;
+inline ZPageAge ZForwarding::from_age() const {
+  return _from_age;
 }
 
-inline ZPageAge ZForwarding::age_to() const {
-  return _age_to;
+inline ZPageAge ZForwarding::to_age() const {
+  return _to_age;
 }
 
 inline zoffset ZForwarding::start() const {
@@ -103,8 +103,8 @@ inline size_t ZForwarding::object_alignment_shift() const {
 }
 
 inline bool ZForwarding::is_promotion() const {
-  return _age_from != ZPageAge::old &&
-         _age_to == ZPageAge::old;
+  return _from_age != ZPageAge::old &&
+         _to_age == ZPageAge::old;
 }
 
 template <typename Function>

@@ -49,8 +49,8 @@ private:
   const AttachedArray    _entries;
   ZPage* const           _page;
   ZGenerationId          _generation_id;
-  ZPageAge               _age_from;
-  ZPageAge               _age_to;
+  ZPageAge               _from_age;
+  ZPageAge               _to_age;
   volatile bool          _claimed;
   mutable ZConditionLock _ref_lock;
   volatile int32_t       _ref_count;
@@ -75,16 +75,16 @@ private:
   template <typename Function>
   void object_iterate_forwarded_via_table(Function function);
 
-  ZForwarding(ZPage* page, ZPageAge age_to, size_t nentries);
+  ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries);
 
 public:
   static uint32_t nentries(const ZPage* page);
-  static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page, ZPageAge age_to);
+  static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page, ZPageAge to_age);
 
   uint8_t type() const;
   ZGenerationId generation_id() const;
-  ZPageAge age_from() const;
-  ZPageAge age_to() const;
+  ZPageAge from_age() const;
+  ZPageAge to_age() const;
   zoffset start() const;
   size_t size() const;
   size_t object_alignment_shift() const;

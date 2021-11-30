@@ -78,7 +78,7 @@ public:
   static void add_remset(volatile zpointer* p);
   static void add_remset_for_fields(volatile zaddress addr);
 
-  static ZPageAge compute_age_to(ZPageAge age_from, bool promote_all);
+  static ZPageAge compute_to_age(ZPageAge from_age, bool promote_all);
 
   zaddress relocate_object(ZForwarding* forwarding, zaddress_unsafe from_addr);
   zaddress forward_object(ZForwarding* forwarding, zaddress_unsafe from_addr);
