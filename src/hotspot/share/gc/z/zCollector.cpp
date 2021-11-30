@@ -70,7 +70,7 @@ ZCollector::ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* p
     _relocation_set(this),
     _used_high(),
     _used_low(),
-    _reclaimed(),
+    _freed(),
     _phase(Phase::Relocate),
     _seqnum(1),
     _stat_heap(),
@@ -112,8 +112,8 @@ void ZCollector::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
   // the page allocator lock, and trying to satisfy stalled allocations
   // too frequently.
   if (selector->should_free_empty_pages(bulk)) {
-    size_t reclaimed = ZHeap::heap()->free_pages(selector->empty_pages());
-    increase_reclaimed(reclaimed);
+    size_t freed = ZHeap::heap()->free_pages(selector->empty_pages());
+    increase_freed(freed);
     selector->clear_empty_pages();
   }
 }
@@ -218,7 +218,7 @@ void ZCollector::desynchronize_relocation() {
 
 void ZCollector::reset_statistics() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  _reclaimed = 0;
+  _freed = 0;
   _promoted = 0;
   _relocated = 0;
   _used_high = _used_low = _page_allocator->used();
@@ -232,12 +232,12 @@ size_t ZCollector::used_low() const {
   return _used_low;
 }
 
-ssize_t ZCollector::reclaimed() const {
-  return _reclaimed;
+ssize_t ZCollector::freed() const {
+  return _freed;
 }
 
-void ZCollector::increase_reclaimed(size_t size) {
-  Atomic::add(&_reclaimed, size, memory_order_relaxed);
+void ZCollector::increase_freed(size_t size) {
+  Atomic::add(&_freed, size, memory_order_relaxed);
 }
 
 size_t ZCollector::promoted() const {
@@ -351,12 +351,6 @@ ConcurrentGCTimer* ZYoungCollector::minor_timer() {
   return &_minor_timer;
 }
 
-void ZYoungCollector::reset_statistics() {
-  ZCollector::reset_statistics();
-
-  ZHeap::heap()->old_generation()->reset_promoted();
-}
-
 bool ZYoungCollector::should_skip_mark_start() {
   SuspendibleThreadSetJoiner sts_joiner;
   if (_skip_mark_start) {
@@ -458,9 +452,7 @@ void ZYoungCollector::relocate() {
   _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  stat_heap()->set_at_relocate_end(_page_allocator->stats(this),
-                                   ZHeap::heap()->young_generation()->relocated(),
-                                   ZHeap::heap()->old_generation()->promoted());
+  stat_heap()->set_at_relocate_end(_page_allocator->stats(this));
 }
 
 void ZYoungCollector::promote_flip(ZPage* from_page, ZPage* to_page) {
@@ -469,7 +461,7 @@ void ZYoungCollector::promote_flip(ZPage* from_page, ZPage* to_page) {
   ZHeap::heap()->young_generation()->decrease_used(from_page->size());
   ZHeap::heap()->old_generation()->increase_used(from_page->size());
 
-  ZHeap::heap()->young_collector()->increase_reclaimed(from_page->size());
+  ZHeap::heap()->young_collector()->increase_freed(from_page->size());
   ZHeap::heap()->young_collector()->increase_promoted(from_page->live_bytes());
 }
 
@@ -653,9 +645,7 @@ void ZOldCollector::relocate() {
   _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  stat_heap()->set_at_relocate_end(_page_allocator->stats(this),
-                                   ZHeap::heap()->old_generation()->relocated(),
-                                   0 /* promoted */);
+  stat_heap()->set_at_relocate_end(_page_allocator->stats(this));
   _total_collections_at_end = ZCollectedHeap::heap()->total_collections();
 }
 

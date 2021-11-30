@@ -39,18 +39,11 @@ private:
   const bool         _use_per_cpu_shared_small_pages;
   ZPerCPU<size_t>    _used;
   ZPerCPU<size_t>    _undone;
-  ZPerCPU<size_t>    _alloc_for_relocation;
-  ZPerCPU<size_t>    _undo_alloc_for_relocation;
-  ZPerCPU<size_t>    _alloc_for_promotion;
-  ZPerCPU<size_t>    _undo_alloc_for_promotion;
   ZContended<ZPage*> _shared_medium_page;
   ZPerCPU<ZPage*>    _shared_small_page;
 
   ZPage** shared_small_page_addr();
   ZPage* const* shared_small_page_addr() const;
-
-  void register_alloc_for_relocation(const ZPage* page, size_t size, bool promoted);
-  void register_undo_alloc_for_relocation(const ZPage* page, size_t size, bool promoted);
 
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
   void undo_alloc_page(ZPage* page);
@@ -77,11 +70,8 @@ public:
 
   size_t used() const;
   size_t remaining() const;
-  size_t relocated() const;
-  size_t promoted() const;
 
   void retire_pages();
-  void reset_promoted();
 };
 
 #endif // SHARE_GC_Z_ZOBJECTALLOCATOR_HPP

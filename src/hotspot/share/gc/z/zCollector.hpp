@@ -67,7 +67,7 @@ protected:
 
   size_t            _used_high;
   size_t            _used_low;
-  volatile size_t   _reclaimed;
+  volatile size_t   _freed;
   volatile size_t   _relocated;
   volatile size_t   _promoted;
 
@@ -110,8 +110,8 @@ public:
   void reset_statistics();
   size_t used_high() const;
   size_t used_low() const;
-  ssize_t reclaimed() const;
-  void increase_reclaimed(size_t size);
+  ssize_t freed() const;
+  void increase_freed(size_t size);
   size_t promoted() const;
   void increase_promoted(size_t size);
   size_t relocated() const;
@@ -172,9 +172,6 @@ public:
   ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   ConcurrentGCTimer* minor_timer();
-
-  // Statistics
-  void reset_statistics();
 
   // GC operations
   void mark_start();

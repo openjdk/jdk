@@ -350,10 +350,15 @@ public:
       _age(age),
       _collector(collector) {}
 
-  ZPage* alloc_target_page(ZForwarding* forwarding, ZPage* target) {
+  ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
     ZPage* const page = alloc_page(forwarding, _generation, _age);
     if (page == NULL) {
       Atomic::inc(&_in_place_count);
+    }
+
+    if (target != NULL) {
+      // Retire the old target page
+      retire_target_page(_collector, target);
     }
 
     return page;
@@ -408,7 +413,7 @@ public:
     }
   }
 
-  ZPage* alloc_target_page(ZForwarding* forwarding, ZPage* target) {
+  ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
     ZLocker<ZConditionLock> locker(&_lock);
 
     // Wait for any ongoing in-place relocation to complete
@@ -425,6 +430,11 @@ public:
       if (_shared == NULL) {
         Atomic::inc(&_in_place_count);
         _in_place = true;
+      }
+
+      // This thread is responsible for retiring the shared target page
+      if (target != NULL) {
+        retire_target_page(_collector, target);
       }
     }
 
@@ -468,21 +478,38 @@ private:
   ZForwarding*      _forwarding;
   ZPage*            _target;
   ZCollector* const _collector;
+  size_t            _other_promoted;
+  size_t            _other_relocated;
 
-  zaddress try_relocate_object_inner(zaddress from_addr) const {
+  size_t object_alignment() const {
+    return 1 << _forwarding->object_alignment_shift();
+  }
+
+  void increase_other_forwarded(size_t unaligned_object_size) {
+    const size_t aligned_size = align_up(unaligned_object_size, object_alignment());
+    if (_forwarding->is_promotion()) {
+      _other_promoted += aligned_size;
+    } else {
+      _other_relocated += aligned_size;
+    }
+  }
+
+  zaddress try_relocate_object_inner(zaddress from_addr) {
     ZForwardingCursor cursor;
+
+    const size_t size = ZUtils::object_size(from_addr);
 
     // Lookup forwarding
     {
       const zaddress to_addr = forwarding_find(_forwarding, from_addr, &cursor);
       if (!is_null(to_addr)) {
         // Already relocated
+        increase_other_forwarded(size);
         return to_addr;
       }
     }
 
     // Allocate object
-    const size_t size = ZUtils::object_size(from_addr);
     const zaddress allocated_addr = _allocator->alloc_object(_target, size);
     if (is_null(allocated_addr)) {
       // Allocation failed
@@ -502,6 +529,7 @@ private:
     if (to_addr != allocated_addr) {
       // Already relocated, undo allocation
       _allocator->undo_alloc_object(_target, to_addr, size);
+      increase_other_forwarded(size);
     }
 
     return to_addr;
@@ -652,7 +680,7 @@ private:
     }
   }
 
-  bool try_relocate_object(zaddress from_addr) const {
+  bool try_relocate_object(zaddress from_addr) {
     zaddress to_addr = try_relocate_object_inner(from_addr);
 
     if (is_null(to_addr)) {
@@ -690,15 +718,10 @@ private:
     assert(ZHeap::heap()->is_object_live(addr), "Should be live");
 
     while (!try_relocate_object(addr)) {
-      if (_target != NULL) {
-        // Retire the old page
-        retire_target_page(_collector, _target);
-      }
-
       // Allocate a new target page, or if that fails, use the page being
       // relocated as the new target, which will cause it to be relocated
       // in-place.
-      _target = _allocator->alloc_target_page(_forwarding, _target);
+      _target = _allocator->alloc_and_retire_target_page(_forwarding, _target);
       if (_target != NULL) {
         continue;
       }
@@ -715,10 +738,14 @@ public:
       _allocator(allocator),
       _forwarding(NULL),
       _target(NULL),
-      _collector(collector) {}
+      _collector(collector),
+      _other_promoted(0),
+      _other_relocated(0) {}
 
   ~ZRelocateWork() {
     _allocator->free_target_page(_target);
+    _collector->increase_promoted(_other_promoted);
+    _collector->increase_relocated(_other_relocated);
   }
 
   void do_forwarding(ZForwarding* forwarding) {
@@ -738,7 +765,7 @@ public:
       _forwarding->verify();
     }
 
-    _collector->increase_reclaimed(_forwarding->page()->size());
+    _collector->increase_freed(_forwarding->page()->size());
 
     // Deal with in-place relocation
     const bool in_place = _forwarding->in_place_relocation();

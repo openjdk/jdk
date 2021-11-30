@@ -84,10 +84,6 @@ size_t ZYoungGeneration::remaining() const {
   return _eden_allocator.remaining() + _survivor_allocator.remaining();
 }
 
-size_t ZYoungGeneration::relocated() const {
-  return _eden_allocator.relocated() + _survivor_allocator.relocated();
-}
-
 ZOldGeneration::ZOldGeneration() :
     ZGeneration(ZGenerationId::old),
     _old_allocator(ZGenerationId::old, ZPageAge::old) {
@@ -104,20 +100,4 @@ void ZOldGeneration::undo_alloc_object_for_relocation(zaddress addr, size_t size
 
 void ZOldGeneration::retire_pages() {
   _old_allocator.retire_pages();
-}
-
-void ZOldGeneration::reset_promoted() {
-  _old_allocator.reset_promoted();
-}
-
-size_t ZOldGeneration::remaining() const {
-  return _old_allocator.remaining();
-}
-
-size_t ZOldGeneration::relocated() const {
-  return _old_allocator.relocated();
-}
-
-size_t ZOldGeneration::promoted() const {
-  return _old_allocator.promoted();
 }

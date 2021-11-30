@@ -86,7 +86,6 @@ public:
   // Statistics
   size_t tlab_used() const;
   size_t remaining() const;
-  size_t relocated() const;
 
   // Verification
   bool is_remembered(volatile zpointer* p);
@@ -103,12 +102,6 @@ public:
   virtual zaddress alloc_object_for_relocation(size_t size, bool promotion);
   virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
   void retire_pages();
-
-  // Statistics
-  void reset_promoted();
-  size_t remaining() const;
-  size_t relocated() const;
-  size_t promoted() const;
 };
 
 #endif // SHARE_GC_Z_ZGENERATION_HPP

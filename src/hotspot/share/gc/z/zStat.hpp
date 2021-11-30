@@ -606,8 +606,8 @@ private:
     size_t used;
     size_t used_generation;
     size_t live;
-    size_t allocated;
     size_t garbage;
+    size_t mutator_allocated;
   } _at_mark_end;
 
   struct ZAtRelocateStart {
@@ -615,10 +615,12 @@ private:
     size_t free;
     size_t used;
     size_t used_generation;
-    size_t allocated;
+    size_t live;
     size_t garbage;
+    size_t mutator_allocated;
     size_t reclaimed;
     size_t promoted;
+    size_t relocated;
   } _at_relocate_start;
 
   struct ZAtRelocateEnd {
@@ -632,18 +634,20 @@ private:
     size_t used_high;
     size_t used_low;
     size_t used_generation;
-    size_t allocated;
+    size_t live;
     size_t garbage;
+    size_t mutator_allocated;
     size_t reclaimed;
     size_t promoted;
+    size_t relocated;
   } _at_relocate_end;
 
   size_t capacity_high();
   size_t capacity_low();
   size_t free(size_t used);
-  size_t allocated(size_t used, size_t reclaimed, size_t relocated);
-  size_t garbage(size_t reclaimed, size_t relocated, size_t promoted);
-  size_t reclaimed(size_t reclaimed, size_t relocated, size_t promoted);
+  size_t mutator_allocated(size_t used, size_t freed, size_t relocated);
+  size_t garbage(size_t freed, size_t relocated, size_t promoted);
+  size_t reclaimed(size_t freed, size_t relocated, size_t promoted);
 
 public:
   void set_at_initialize(size_t min_capacity, size_t max_capacity);
@@ -653,7 +657,7 @@ public:
   void set_at_mark_end(const ZPageAllocatorStats& stats);
   void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
   void set_at_relocate_start(const ZPageAllocatorStats& stats);
-  void set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated, size_t non_worker_promoted);
+  void set_at_relocate_end(const ZPageAllocatorStats& stats);
 
   static size_t max_capacity();
   size_t used_at_collection_start();

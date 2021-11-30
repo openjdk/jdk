@@ -1439,21 +1439,22 @@ size_t ZStatHeap::free(size_t used) {
   return _at_initialize.max_capacity - used;
 }
 
-size_t ZStatHeap::allocated(size_t used_generation, size_t reclaimed, size_t relocated) {
+size_t ZStatHeap::mutator_allocated(size_t used_generation, size_t freed, size_t relocated) {
   // The amount of allocated memory between point A and B is used(B) - used(A).
   // However, we might also have reclaimed memory between point A and B. This
   // means the current amount of used memory must be incremented by the amount
   // reclaimed, so that used(B) represents the amount of used memory we would
   // have had if we had not reclaimed anything.
-  return used_generation + reclaimed - relocated - _at_mark_start.used_generation;
+  const size_t used_generation_delta = used_generation - _at_mark_start.used_generation;
+  return  used_generation_delta + freed - relocated;
 }
 
-size_t ZStatHeap::garbage(size_t reclaimed, size_t relocated, size_t promoted) {
-  return _at_mark_end.garbage + promoted + relocated - reclaimed;
+size_t ZStatHeap::garbage(size_t freed, size_t relocated, size_t promoted) {
+  return _at_mark_end.garbage - (freed - promoted - relocated);
 }
 
-size_t ZStatHeap::reclaimed(size_t reclaimed, size_t relocated, size_t promoted) {
-  return reclaimed - relocated - promoted;
+size_t ZStatHeap::reclaimed(size_t freed, size_t relocated, size_t promoted) {
+  return freed - relocated - promoted;
 }
 
 void ZStatHeap::set_at_initialize(size_t min_capacity, size_t max_capacity) {
@@ -1490,7 +1491,7 @@ void ZStatHeap::set_at_mark_end(const ZPageAllocatorStats& stats) {
   _at_mark_end.free = free(stats.used());
   _at_mark_end.used = stats.used();
   _at_mark_end.used_generation = stats.used_generation();
-  _at_mark_end.allocated = allocated(stats.used_generation(), 0 /* reclaimed */, 0 /* relocated */);
+  _at_mark_end.mutator_allocated = mutator_allocated(stats.used_generation(), 0 /* reclaimed */, 0 /* relocated */);
 }
 
 void ZStatHeap::set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
@@ -1500,20 +1501,22 @@ void ZStatHeap::set_at_select_relocation_set(const ZRelocationSetSelectorStats& 
 }
 
 void ZStatHeap::set_at_relocate_start(const ZPageAllocatorStats& stats) {
+  // In-place aging doesn't increment relocated
+  assert(stats.relocated() == 0, "Nothing should have been relocated");
+
   _at_relocate_start.capacity = stats.capacity();
   _at_relocate_start.free = free(stats.used());
   _at_relocate_start.used = stats.used();
   _at_relocate_start.used_generation = stats.used_generation();
-  _at_relocate_start.allocated = allocated(stats.used_generation(), stats.reclaimed(), 0 /* relocated */);
-  _at_relocate_start.garbage = garbage(stats.reclaimed(), 0 /* relocated */, 0 /* promoted */);
-  _at_relocate_start.reclaimed = reclaimed(stats.reclaimed(), 0 /* relocated */, 0 /* promoted */);
-  _at_relocate_start.promoted = 0 /* promoted */;
+  _at_relocate_start.live = _at_mark_end.live - stats.promoted();
+  _at_relocate_start.garbage = garbage(stats.freed(), stats.relocated(), stats.promoted());
+  _at_relocate_start.mutator_allocated = mutator_allocated(stats.used_generation(), stats.freed(), stats.relocated());
+  _at_relocate_start.reclaimed = reclaimed(stats.freed(), stats.relocated(), stats.promoted());
+  _at_relocate_start.promoted = stats.promoted();
+  _at_relocate_start.relocated = stats.relocated();
 }
 
-void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated, size_t non_worker_promoted) {
-  const size_t relocated = stats.relocated() + non_worker_relocated;
-  const size_t promoted = stats.promoted() + non_worker_promoted;
-
+void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats) {
   _at_relocate_end.capacity = stats.capacity();
   _at_relocate_end.capacity_high = capacity_high();
   _at_relocate_end.capacity_low = capacity_low();
@@ -1524,10 +1527,12 @@ void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non
   _at_relocate_end.used_high = stats.used_high();
   _at_relocate_end.used_low = stats.used_low();
   _at_relocate_end.used_generation = stats.used_generation();
-  _at_relocate_end.allocated = allocated(stats.used_generation(), stats.reclaimed(), relocated);
-  _at_relocate_end.garbage = garbage(stats.reclaimed(), relocated, promoted);
-  _at_relocate_end.reclaimed = reclaimed(stats.reclaimed(), relocated, promoted);
-  _at_relocate_end.promoted = promoted;
+  _at_relocate_end.live = _at_mark_end.live - stats.promoted();
+  _at_relocate_end.garbage = garbage(stats.freed(), stats.relocated(), stats.promoted());
+  _at_relocate_end.mutator_allocated = mutator_allocated(stats.used_generation(), stats.freed(), stats.relocated());
+  _at_relocate_end.reclaimed = reclaimed(stats.freed(), stats.relocated(), stats.promoted());
+  _at_relocate_end.promoted = stats.promoted();
+  _at_relocate_end.relocated = stats.relocated();
 }
 
 size_t ZStatHeap::max_capacity() {
@@ -1624,15 +1629,29 @@ void ZStatHeap::print(ZCollector* collector) {
                      .right("Live:")
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS(_at_mark_end.live))
-                     .left(ZTABLE_ARGS(_at_mark_end.live /* Same as at mark end */))
-                     .left(ZTABLE_ARGS(_at_mark_end.live /* Same as at mark end */))
+                     .left(ZTABLE_ARGS(_at_relocate_start.live))
+                     .left(ZTABLE_ARGS(_at_relocate_end.live))
+                     .end());
+  log_info(gc, heap)("%s", gen_table()
+                     .right("Garbage:")
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS(_at_mark_end.garbage))
+                     .left(ZTABLE_ARGS(_at_relocate_start.garbage))
+                     .left(ZTABLE_ARGS(_at_relocate_end.garbage))
                      .end());
   log_info(gc, heap)("%s", gen_table()
                      .right("Allocated:")
                      .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS(_at_mark_end.allocated))
-                     .left(ZTABLE_ARGS(_at_relocate_start.allocated))
-                     .left(ZTABLE_ARGS(_at_relocate_end.allocated))
+                     .left(ZTABLE_ARGS(_at_mark_end.mutator_allocated))
+                     .left(ZTABLE_ARGS(_at_relocate_start.mutator_allocated))
+                     .left(ZTABLE_ARGS(_at_relocate_end.mutator_allocated))
+                     .end());
+  log_info(gc, heap)("%s", gen_table()
+                     .right("Reclaimed:")
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS(_at_relocate_start.reclaimed))
+                     .left(ZTABLE_ARGS(_at_relocate_end.reclaimed))
                      .end());
   if (collector->is_young()) {
     log_info(gc, heap)("%s", gen_table()
@@ -1644,18 +1663,11 @@ void ZStatHeap::print(ZCollector* collector) {
                        .end());
   }
   log_info(gc, heap)("%s", gen_table()
-                     .right("Garbage:")
-                     .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS(_at_mark_end.garbage))
-                     .left(ZTABLE_ARGS(_at_relocate_start.garbage))
-                     .left(ZTABLE_ARGS(_at_relocate_end.garbage))
-                     .end());
-  log_info(gc, heap)("%s", gen_table()
-                     .right("Reclaimed:")
+                     .right("Relocated:")
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS(_at_relocate_start.reclaimed))
-                     .left(ZTABLE_ARGS(_at_relocate_end.reclaimed))
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS(_at_relocate_end.relocated))
                      .end());
 }
 

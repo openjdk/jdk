@@ -84,7 +84,8 @@ private:
   size_t increase_capacity(size_t size);
   void decrease_capacity(size_t size, bool set_max_capacity);
 
-  void increase_used(size_t size, ZGenerationId id);
+  void increase_used(size_t size);
+  void decrease_used(size_t size);
   void decrease_used(size_t size, ZGenerationId id);
 
   bool commit_page(ZPage* page);
@@ -160,7 +161,7 @@ private:
   size_t _used_high;
   size_t _used_low;
   size_t _used_generation;
-  size_t _reclaimed;
+  size_t _freed;
   size_t _promoted;
   size_t _relocated;
 
@@ -173,7 +174,7 @@ public:
                       size_t used_high,
                       size_t used_low,
                       size_t used_generation,
-                      size_t reclaimed,
+                      size_t freed,
                       size_t promoted,
                       size_t relocated);
 
@@ -185,7 +186,7 @@ public:
   size_t used_high() const;
   size_t used_low() const;
   size_t used_generation() const;
-  size_t reclaimed() const;
+  size_t freed() const;
   size_t promoted() const;
   size_t relocated() const;
 };
