@@ -3393,10 +3393,6 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
 #ifndef PRODUCT
   if (PrintCompilation && Verbose) tty->print_cr("Created %d Instructions", _instruction_count);
 #endif
-
-  // JANIUK: If we iterate all the blocks in _blocks, some of them have end NULL.
-  // But the ones reachable from start don't, we saw that earlier.
-  // Ah! So a lot of BlockBegins get discarded. The only ones that survive are the ones reachable from start at the end.
 }
 
 
