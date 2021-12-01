@@ -364,45 +364,55 @@ static ZDriverRequest rule_major_allocation_rate() {
   const size_t used = ZHeap::heap()->used();
   const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
   const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
-  const size_t old_live_for_last_gc = old_collector->stat_heap()->live_at_mark_end();
-  const size_t young_live_for_last_gc = young_collector->stat_heap()->live_at_mark_end();
+  const size_t live_last_old_gc = old_collector->stat_heap()->live_at_mark_end();
+  const size_t live_last_young_gc = young_collector->stat_heap()->live_at_mark_end();
   const size_t old_used = ZHeap::heap()->old_generation()->used();
-  const size_t old_garbage = old_used - old_live_for_last_gc;
+  const size_t old_garbage = old_used - live_last_old_gc;
   const size_t young_used = ZHeap::heap()->young_generation()->used();
   const size_t young_available = young_used + free;
-  const size_t young_freeable_per_cycle = young_available - young_live_for_last_gc;
 
   // Calculate max serial/parallel times of a young GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
   const double young_serial_gc_time = young_collector->stat_cycle()->serial_time().davg() + (young_collector->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
   const double young_parallelizable_gc_time = young_collector->stat_cycle()->parallelizable_time().davg() + (young_collector->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
-  // Calculate GC duration given number of GC workers needed.
-  const double young_gc_duration = young_serial_gc_time + young_parallelizable_gc_time;
+  // Calculate young GC time and duration given number of GC workers needed.
+  const double young_gc_time = young_serial_gc_time + young_parallelizable_gc_time;
+
+  // Calculate how much memory young collections are predicted to free.
+  const size_t freeable_per_young_gc = young_available - live_last_young_gc;
 
   // Calculate max serial/parallel times of an old GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
   const double old_serial_gc_time = old_collector->stat_cycle()->serial_time().davg() + (old_collector->stat_cycle()->serial_time().dsd() * one_in_1000);
   const double old_parallelizable_gc_time = old_collector->stat_cycle()->parallelizable_time().davg() + (old_collector->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
-  // Calculate GC duration given number of GC workers needed.
-  const double old_gc_duration = old_serial_gc_time + old_parallelizable_gc_time;
+  // Calculate old GC time.
+  const double old_gc_time = old_serial_gc_time + old_parallelizable_gc_time;
 
-  const double current_young_gc_seconds_per_bytes_freed = double(young_gc_duration) / double(young_freeable_per_cycle);
-  const double potential_young_gc_seconds_per_bytes_freed = double(young_gc_duration) / double(young_freeable_per_cycle + old_garbage);
+  // Calculate current YC time and predicted YC time after an old collection.
+  const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(freeable_per_young_gc);
+  const double potential_young_gc_time_per_bytes_freed = double(young_gc_time) / double(freeable_per_young_gc + old_garbage);
 
-  const double extra_gc_seconds_per_bytes_freed = current_young_gc_seconds_per_bytes_freed - potential_young_gc_seconds_per_bytes_freed;
-  const double extra_gc_seconds_per_potentially_young_available_bytes = extra_gc_seconds_per_bytes_freed * (young_freeable_per_cycle + old_garbage);
+  // Calculate extra time per young collection inflicted by *not* doing an
+  // old collection that frees up memory in the old generation.
+  const double extra_young_gc_time_per_bytes_freed = current_young_gc_time_per_bytes_freed - potential_young_gc_time_per_bytes_freed;
+  const double extra_young_gc_time = extra_young_gc_time_per_bytes_freed * (freeable_per_young_gc + old_garbage);
 
+  // Doing an old collection makes subsequent young collections more efficient.
+  // Calculate the number of young collections ahead that we will try to amortize
+  // the cost of doing an old collection for.
   int lookahead = ZCollectedHeap::heap()->total_collections() - old_collector->total_collections_at_end();
 
-  double extra_minor_gc_seconds_for_lookahead = extra_gc_seconds_per_potentially_young_available_bytes * lookahead;
+  // Calculate extra young collection overhead predicted for a number of future
+  // young collections, due to not freeing up memory in the old generation.
+  double extra_young_gc_time_for_lookahead = extra_young_gc_time * lookahead;
 
-  log_debug(gc, director)("Rule Major: Allocation Rate, ExtraGCSecondsPerMinor: %.3fs, OldGCTime: %.3fs, Lookahead: %d, ExtraGCSecondsForLookahead: %.3fs",
-                          extra_gc_seconds_per_potentially_young_available_bytes, old_gc_duration, lookahead, extra_minor_gc_seconds_for_lookahead);
+  log_debug(gc, director)("Rule Major: Allocation Rate, ExtraYoungGCTime: %.3fs, OldGCTime: %.3fs, Lookahead: %d, ExtraYoungGCTimeForLookahead: %.3fs",
+                          extra_young_gc_time, old_gc_time, lookahead, extra_young_gc_time_for_lookahead);
 
 
-  if (extra_minor_gc_seconds_for_lookahead > old_gc_duration) {
+  if (extra_young_gc_time_for_lookahead > old_gc_time) {
     // If we continue doing as many minor collections as we already did since the
     // last major collection (N), without doing a major collection, then the minor
     // GC effort of freeing up memory for another N cycles, plus the effort of doing,
