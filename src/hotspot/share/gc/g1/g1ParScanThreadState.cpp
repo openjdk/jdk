@@ -421,8 +421,8 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
 }
 
 #if EVAC_FAILURE_INJECTOR
-bool G1ParScanThreadState::inject_evacuation_failure() {
-  return _g1h->evac_failure_injector()->evacuation_should_fail(_evac_failure_inject_counter);
+bool G1ParScanThreadState::inject_evacuation_failure(uint region_idx) {
+  return _g1h->evac_failure_injector()->evacuation_should_fail(_evac_failure_inject_counter, region_idx);
 }
 #endif
 
@@ -470,7 +470,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   assert(_g1h->is_in_reserved(obj_ptr), "Allocated memory should be in the heap");
 
   // Should this evacuation fail?
-  if (inject_evacuation_failure()) {
+  if (inject_evacuation_failure(from_region->hrm_index())) {
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
     undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
