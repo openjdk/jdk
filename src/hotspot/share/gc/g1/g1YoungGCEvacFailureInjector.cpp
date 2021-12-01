@@ -31,18 +31,18 @@
 #if EVAC_FAILURE_INJECTOR
 
 class SelectEvacFailureRegionClosure : public HeapRegionClosure {
-  CHeapBitMap& _regions;
+  CHeapBitMap& _evac_failure_regions;
   size_t _evac_failure_regions_num;
 
 public:
-  SelectEvacFailureRegionClosure(CHeapBitMap& regions, size_t cset_length) :
-    _regions(regions),
+  SelectEvacFailureRegionClosure(CHeapBitMap& evac_failure_regions, size_t cset_length) :
+    _evac_failure_regions(evac_failure_regions),
     _evac_failure_regions_num(cset_length * G1EvacuationFailureALotCSetPercent / 100) { }
 
   bool do_heap_region(HeapRegion* r) override {
     assert(r->in_collection_set(), "must be");
     if (_evac_failure_regions_num > 0) {
-      _regions.set_bit(r->hrm_index());
+      _evac_failure_regions.set_bit(r->hrm_index());
       --_evac_failure_regions_num;
       return false;
     }
@@ -52,8 +52,8 @@ public:
 
 void G1YoungGCEvacFailureInjector::select_evac_failure_regions() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  _regions.reinitialize(g1h->max_reserved_regions());
-  SelectEvacFailureRegionClosure closure(_regions, g1h->collection_set()->cur_length());
+  _evac_failure_regions.reinitialize(g1h->max_reserved_regions());
+  SelectEvacFailureRegionClosure closure(_evac_failure_regions, g1h->collection_set()->cur_length());
   g1h->collection_set_iterate_all(&closure);
 }
 

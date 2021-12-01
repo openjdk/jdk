@@ -75,8 +75,9 @@
           "Force use of evacuation failure handling during mixed "          \
           "evacuation pauses")                                              \
                                                                             \
-  product(uintx, G1EvacuationFailureALotCSetPercent, 100,                   \
-          "Percent of the regions in cset that will fail evacuation")       \
+  product(uint, G1EvacuationFailureALotCSetPercent, 100,                    \
+          "Percent of the regions in cset that will fail evacuation, "      \
+          "regions will be selected from start rather than randomly.")      \
           range(1, 100)
 #else
 #define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \

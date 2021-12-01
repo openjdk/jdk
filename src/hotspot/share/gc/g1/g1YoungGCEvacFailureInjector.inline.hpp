@@ -36,7 +36,7 @@ inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter
   if (!_inject_evacuation_failure_for_current_gc) {
     return false;
   }
-  if (!_regions.at(region_idx)) {
+  if (!_evac_failure_regions.at(region_idx)) {
     return false;
   }
   if (++counter < G1EvacuationFailureALotCount) {

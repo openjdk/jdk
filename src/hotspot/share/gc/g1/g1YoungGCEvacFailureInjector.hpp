@@ -58,7 +58,7 @@ class G1YoungGCEvacFailureInjector {
   size_t _last_collection_with_evacuation_failure;
 
   // Records the regions that will fail evacuation.
-  CHeapBitMap _regions;
+  CHeapBitMap _evac_failure_regions;
 #endif
 
   bool arm_if_needed_for_gc_type(bool for_young_gc,
