@@ -66,31 +66,21 @@ public class SigningAppImageTest {
         cmd.addArguments("--mac-sign", "--mac-signing-key-user-name",
                 SigningBase.DEV_NAME, "--mac-signing-keychain",
                 SigningBase.KEYCHAIN);
+
+        AdditionalLauncher testAL = new AdditionalLauncher("testAL");
+        testAL.applyTo(cmd);
+
         cmd.executeAndAssertHelloAppImageCreated();
 
         Path launcherPath = cmd.appLauncherPath();
         SigningBase.verifyCodesign(launcherPath, true);
+
+        Path testALPath = launcherPath.getParent().resolve("testAL");
+        SigningBase.verifyCodesign(testALPath, true);
 
         Path appImage = cmd.outputBundle();
         SigningBase.verifyCodesign(appImage, true);
         SigningBase.verifySpctl(appImage, "exec");
     }
 
-    @Test
-    public static void testAdditionalLauncher() throws Exception {
-        SigningCheck.checkCertificates();
-
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
-        cmd.addArguments("--mac-sign", "--mac-signing-key-user-name",
-                SigningBase.DEV_NAME, "--mac-signing-keychain",
-                SigningBase.KEYCHAIN);
-        AdditionalLauncher testAL = new AdditionalLauncher("testAL");
-        testAL.applyTo(cmd);
-
-        cmd.executeAndAssertHelloAppImageCreated();
-        Path launcherPath = cmd.appLauncherPath();
-        Path testALPath = launcherPath.getParent().resolve("testAL");
-        SigningBase.verifyCodesign(launcherPath, true);
-        SigningBase.verifyCodesign(testALPath, true);
-    }
 }
