@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Negative tests for java -m jdk.httpserver command
+ * @summary Negative tests for the jwebserver command-line tool
  * @library /test/lib
  * @modules jdk.httpserver
  * @run testng/othervm CommandLineNegativeTest
@@ -48,7 +48,7 @@ import static org.testng.Assert.assertFalse;
 public class CommandLineNegativeTest {
 
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
-    static final String JAVA = getJava(JAVA_HOME);
+    static final String JWEBSERVER = getJwebserver(JAVA_HOME);
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("CommandLineNegativeTest");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
@@ -74,7 +74,7 @@ public class CommandLineNegativeTest {
     @Test(dataProvider = "unknownOption")
     public void testBadOption(String opt) throws Throwable {
         out.println("\n--- testUnknownOption, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt)
+        simpleserver(JWEBSERVER, opt)
                 .shouldNotHaveExitValue(0)
                 .shouldContain("Error: unknown option: " + opt);
     }
@@ -97,7 +97,7 @@ public class CommandLineNegativeTest {
     @Test(dataProvider = "tooManyOptionArgs")
     public void testTooManyOptionArgs(String opt, String arg) throws Throwable {
         out.println("\n--- testTooManyOptionArgs, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, arg, arg)
+        simpleserver(JWEBSERVER, opt, arg, arg)
                 .shouldNotHaveExitValue(0)
                 .shouldContain("Error: unknown option: " + arg);
     }
@@ -124,7 +124,7 @@ public class CommandLineNegativeTest {
     @Test(dataProvider = "noArg")
     public void testNoArg(String opt, String msg) throws Throwable {
         out.println("\n--- testNoArg, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt)
+        simpleserver(JWEBSERVER, opt)
                 .shouldNotHaveExitValue(0)
                 .shouldContain("Error: no value given for " + opt)
                 .shouldContain(msg);
@@ -148,7 +148,7 @@ public class CommandLineNegativeTest {
     @Test(dataProvider = "invalidValue")
     public void testInvalidValue(String opt, String val) throws Throwable {
         out.println("\n--- testInvalidValue, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, val)
+        simpleserver(JWEBSERVER, opt, val)
                 .shouldNotHaveExitValue(0)
                 .shouldContain("Error: invalid value given for " + opt + ": " + val);
     }
@@ -159,7 +159,7 @@ public class CommandLineNegativeTest {
     @Test(dataProvider = "portOptions")
     public void testPortOutOfRange(String opt) throws Throwable {
         out.println("\n--- testPortOutOfRange, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "65536")  // range 0 to 65535
+        simpleserver(JWEBSERVER, opt, "65536")  // range 0 to 65535
                 .shouldNotHaveExitValue(0)
                 .shouldContain("Error: server config failed: " + "port out of range:65536");
     }
@@ -172,7 +172,7 @@ public class CommandLineNegativeTest {
         out.println("\n--- testRootNotAbsolute, opt=\"%s\" ".formatted(opt));
         var root = Path.of(".");
         assertFalse(root.isAbsolute());
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, root.toString())
+        simpleserver(JWEBSERVER, opt, root.toString())
                 .shouldNotHaveExitValue(0)
                 .shouldContain("Error: server config failed: " + "Path is not absolute:");
     }
@@ -182,7 +182,7 @@ public class CommandLineNegativeTest {
         out.println("\n--- testRootNotADirectory, opt=\"%s\" ".formatted(opt));
         var file = TEST_FILE.toString();
         assertFalse(Files.isDirectory(TEST_FILE));
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, file)
+        simpleserver(JWEBSERVER, opt, file)
                 .shouldNotHaveExitValue(0)
                 .shouldContain("Error: server config failed: " + "Path is not a directory: " + file);
     }
@@ -192,7 +192,7 @@ public class CommandLineNegativeTest {
         out.println("\n--- testRootDoesNotExist, opt=\"%s\" ".formatted(opt));
         Path root = TEST_DIR.resolve("not/existent/dir");
         assertFalse(Files.exists(root));
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, root.toString())
+        simpleserver(JWEBSERVER, opt, root.toString())
                 .shouldNotHaveExitValue(0)
                 .shouldContain("Error: server config failed: " + "Path does not exist: " + root.toString());
     }
@@ -209,7 +209,7 @@ public class CommandLineNegativeTest {
         try {
             root.toFile().setReadable(false, false);
             assertFalse(Files.isReadable(root));
-            simpleserver(JAVA, "-m", "jdk.httpserver", opt, root.toString())
+            simpleserver(JWEBSERVER, opt, root.toString())
                     .shouldNotHaveExitValue(0)
                     .shouldContain("Error: server config failed: " + "Path is not readable: " + root.toString());
         } finally {
@@ -226,12 +226,12 @@ public class CommandLineNegativeTest {
 
     // --- infra ---
 
-    static String getJava(Path image) {
+    static String getJwebserver(Path image) {
         boolean isWindows = System.getProperty("os.name").startsWith("Windows");
-        Path java = image.resolve("bin").resolve(isWindows ? "java.exe" : "java");
-        if (Files.notExists(java))
-            throw new RuntimeException(java + " not found");
-        return java.toAbsolutePath().toString();
+        Path jwebserver = image.resolve("bin").resolve(isWindows ? "jwebserver.exe" : "jwebserver");
+        if (Files.notExists(jwebserver))
+            throw new RuntimeException(jwebserver + " not found");
+        return jwebserver.toAbsolutePath().toString();
     }
 
     static OutputAnalyzer simpleserver(String... args) throws Throwable {
