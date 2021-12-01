@@ -136,6 +136,8 @@ public:
   void print(outputStream* os);
 };
 
+typedef G1SegmentedArrayFreePool<mtGCCardSet> G1CardSetFreePool;
+
 class G1CardSetMemoryManager : public CHeapObj<mtGCCardSet> {
   G1CardSetConfiguration* _config;
 
@@ -163,7 +165,7 @@ public:
   size_t mem_size() const;
   size_t wasted_mem_size() const;
 
-  G1CardSetMemoryStats memory_stats() const;
+  G1SegmentedArrayMemoryStats memory_stats() const;
 };
 
 #endif // SHARE_GC_G1_G1CARDSETMEMORY_HPP

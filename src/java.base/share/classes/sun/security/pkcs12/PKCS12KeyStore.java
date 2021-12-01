@@ -1259,14 +1259,20 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     " certificate(s) in a PKCS#7 encryptedData");
             }
 
-            byte[] encrData = createEncryptedData(password);
-            if (!certProtectionAlgorithm.equalsIgnoreCase("NONE")) {
+            byte[] certsData = getCertificateData();
+            if (password != null && !certProtectionAlgorithm.equalsIgnoreCase("NONE")) {
+                // -- SEQUENCE of EncryptedData
+                DerOutputStream encrData = new DerOutputStream();
+                encrData.putInteger(0);
+                encrData.write(encryptContent(certsData, password));
+                DerOutputStream encrDataContent = new DerOutputStream();
+                encrDataContent.write(DerValue.tag_Sequence, encrData);
                 ContentInfo encrContentInfo =
                         new ContentInfo(ContentInfo.ENCRYPTED_DATA_OID,
-                                new DerValue(encrData));
+                                new DerValue(encrDataContent.toByteArray()));
                 encrContentInfo.encode(authSafeContentInfo);
             } else {
-                ContentInfo dataContentInfo = new ContentInfo(encrData);
+                ContentInfo dataContentInfo = new ContentInfo(certsData);
                 dataContentInfo.encode(authSafeContentInfo);
             }
         }
@@ -1289,7 +1295,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         if (macIterationCount < 0) {
             macIterationCount = defaultMacIterationCount();
         }
-        if (!macAlgorithm.equalsIgnoreCase("NONE")) {
+        if (password != null && !macAlgorithm.equalsIgnoreCase("NONE")) {
             byte[] macData = calculateMac(password, authenticatedSafe);
             pfx.write(macData);
         }
@@ -1704,12 +1710,11 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     /*
-     * Create EncryptedData content type, that contains EncryptedContentInfo.
-     * Includes certificates in individual SafeBags of type CertBag.
-     * Each CertBag may include pkcs12 attributes
+     * Create Data content type, includes certificates in individual
+     * SafeBags of type CertBag. Each CertBag may include pkcs12 attributes
      * (see comments in getBagAttributes)
      */
-    private byte[] createEncryptedData(char[] password)
+    private byte[] getCertificateData()
         throws CertificateException, IOException
     {
         DerOutputStream out = new DerOutputStream();
@@ -1803,22 +1808,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         // wrap as SequenceOf SafeBag
         DerOutputStream safeBagValue = new DerOutputStream();
         safeBagValue.write(DerValue.tag_SequenceOf, out);
-        byte[] safeBagData = safeBagValue.toByteArray();
-
-        // encrypt the content (EncryptedContentInfo)
-        if (!certProtectionAlgorithm.equalsIgnoreCase("NONE")) {
-            byte[] encrContentInfo = encryptContent(safeBagData, password);
-
-            // -- SEQUENCE of EncryptedData
-            DerOutputStream encrData = new DerOutputStream();
-            DerOutputStream encrDataContent = new DerOutputStream();
-            encrData.putInteger(0);
-            encrData.write(encrContentInfo);
-            encrDataContent.write(DerValue.tag_Sequence, encrData);
-            return encrDataContent.toByteArray();
-        } else {
-            return safeBagData;
-        }
+        return safeBagValue.toByteArray();
     }
 
     /*

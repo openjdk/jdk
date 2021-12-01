@@ -922,7 +922,7 @@ public class Thread implements Runnable {
      *       <a href="{@docRoot}/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
      *       are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     public final void stop() {
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
