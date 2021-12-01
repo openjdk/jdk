@@ -380,7 +380,18 @@ static ZDriverRequest rule_major_allocation_rate() {
   const double young_gc_time = young_serial_gc_time + young_parallelizable_gc_time;
 
   // Calculate how much memory young collections are predicted to free.
-  const size_t freeable_per_young_gc = young_available - live_last_young_gc;
+  size_t freeable_per_young_gc = young_available - live_last_young_gc;
+
+  // Since young collections are not instant, we have to start them
+  // before running out of memory, so that the application can allocate
+  // while the GC works. In a back-to-back scenario, the ratio of
+  // allocated bytes vs reclaimed bytes is typically 50-50. Therefore
+  // the freeable bytes per young GC is typically half of the theoretically
+  // ultimate case of young collections being instant. This is an
+  // approximation of the truth. More exact estimations of allocation
+  // rate might yield more precise heuristics when we don't back-to-back
+  // collect the young generation.
+  freeable_per_young_gc /= 2;
 
   // Calculate max serial/parallel times of an old GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
