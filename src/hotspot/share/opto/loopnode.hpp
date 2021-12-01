@@ -1472,7 +1472,7 @@ public:
   Node *split_thru_phi( Node *n, Node *region, int policy );
   // Found an If getting its condition-code input from a Phi in the
   // same block.  Split thru the Region.
-  void do_split_if( Node *iff );
+  void do_split_if(Node *iff, Node** new_false_region = NULL, Node** new_true_region = NULL);
 
   // Conversion of fill/copy patterns into intrinsic versions
   bool do_intrinsify_fill();

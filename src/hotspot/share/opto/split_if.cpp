@@ -433,7 +433,7 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
 //------------------------------do_split_if------------------------------------
 // Found an If getting its condition-code input from a Phi in the same block.
 // Split thru the Region.
-void PhaseIdealLoop::do_split_if( Node *iff ) {
+void PhaseIdealLoop::do_split_if(Node* iff, Node** new_false_region, Node** new_true_region) {
   if (PrintOpto && VerifyLoopOptimizations) {
     tty->print_cr("Split-if");
   }
@@ -576,6 +576,13 @@ void PhaseIdealLoop::do_split_if( Node *iff ) {
   } // End of while merge point has phis
 
   _igvn.remove_dead_node(region);
+
+  if (new_false_region != NULL) {
+    *new_false_region = new_false;
+  }
+  if (new_true_region != NULL) {
+    *new_true_region = new_true;
+  }
 
 #ifndef PRODUCT
   if( VerifyLoopOptimizations ) verify();
