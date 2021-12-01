@@ -94,17 +94,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/make/autoconf
-
-  # Setup username (for use in adhoc version strings etc)
-  AC_ARG_WITH([build-user], [AS_HELP_STRING([--with-build-user],
-      [build username to use in version strings])])
-  if test "x$with_build_user" != x; then
-    USERNAME="$with_build_user"
-  else
-    # Outer [ ] to quote m4.
-    [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
-  fi
-  AC_SUBST(USERNAME)
 ])
 
 ###############################################################################
