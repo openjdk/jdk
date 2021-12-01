@@ -27,9 +27,16 @@ import jdk.test.lib.Utils;
 
 public abstract class AbstractStressArrayCopy {
     /**
-     * Max array size to test.
+     * Max array size to test. This should be reasonably high to test
+     * massive vectorized copies, plus cases that cross the cache lines and
+     * (small) page boundaries. But it should also be reasonably low to
+     * keep the test costs down.
+     *
+     * A rough guideline:
+     *   - AVX-512: 64-byte copies over 32 registers copies roughly 2K per step.
+     *   - AArch64: small pages can be about 64K large
      */
-    static final int MAX_SIZE = 1024*1024 + 1;
+    static final int MAX_SIZE = 128*1024 + 1;
 
     /**
      * Arrays up to this size would be tested exhaustively: with all combinations
