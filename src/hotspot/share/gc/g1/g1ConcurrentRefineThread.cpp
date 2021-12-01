@@ -104,16 +104,16 @@ void G1ConcurrentRefineThread::run_service() {
       break;
     }
 
-    log_debug(gc, refine)("Activated worker %d, on threshold: " SIZE_FORMAT ", current: " SIZE_FORMAT,
-                          _worker_id, _cr->activation_threshold(_worker_id),
-                          G1BarrierSet::dirty_card_queue_set().num_cards());
-
     // For logging.
     G1ConcurrentRefineStats start_stats = *_refinement_stats;
     G1ConcurrentRefineStats total_stats; // Accumulate over activation.
 
     {
       SuspendibleThreadSetJoiner sts_join;
+
+      log_debug(gc, refine)("Activated worker %d, on threshold: %zu, current: %zu",
+                            _worker_id, _cr->activation_threshold(_worker_id),
+                            G1BarrierSet::dirty_card_queue_set().num_cards());
 
       while (!should_terminate()) {
         if (sts_join.should_yield()) {

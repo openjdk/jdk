@@ -146,6 +146,11 @@ class frame {
 
   bool is_interpreted_frame_valid(JavaThread* thread) const;       // performs sanity checks on interpreted frames.
 
+  // is this frame doing a call using the compiled calling convention?
+  bool is_compiled_caller() const {
+    return is_compiled_frame() || is_optimized_entry_frame();
+  }
+
   // tells whether this frame is marked for deoptimization
   bool should_be_deoptimized() const;
 
