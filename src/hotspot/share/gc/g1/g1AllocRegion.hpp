@@ -68,9 +68,6 @@ private:
   // we allocated in it.
   size_t _used_bytes_before;
 
-  // When true, indicates that allocate calls should do BOT updates.
-  const bool _bot_updates;
-
   // Useful for debugging and tracing.
   const char* _name;
 

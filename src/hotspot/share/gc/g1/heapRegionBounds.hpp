@@ -34,12 +34,14 @@ private:
   // heaps a bit more efficiently.
   static const size_t MIN_REGION_SIZE = 1024 * 1024;
 
+  // Maximum region size determined ergonomically.
+  static const size_t MAX_ERGONOMICS_SIZE = 32 * 1024 * 1024;
   // Maximum region size; we don't go higher than that. There's a good
   // reason for having an upper bound. We don't want regions to get too
   // large, otherwise cleanup's effectiveness would decrease as there
   // will be fewer opportunities to find totally empty regions after
   // marking.
-  static const size_t MAX_REGION_SIZE = 32 * 1024 * 1024;
+  static const size_t MAX_REGION_SIZE = 512 * 1024 * 1024;
 
   // The automatic region size calculation will try to have around this
   // many regions in the heap.
@@ -47,6 +49,7 @@ private:
 
 public:
   static inline size_t min_size();
+  static inline size_t max_ergonomics_size();
   static inline size_t max_size();
   static inline size_t target_number();
 };

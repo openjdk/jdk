@@ -41,6 +41,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/unsafe.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
@@ -322,14 +323,6 @@ DEFINE_GETSETOOP_VOLATILE(jdouble, Double);
 
 #undef DEFINE_GETSETOOP_VOLATILE
 
-UNSAFE_LEAF(void, Unsafe_LoadFence(JNIEnv *env, jobject unsafe)) {
-  OrderAccess::acquire();
-} UNSAFE_END
-
-UNSAFE_LEAF(void, Unsafe_StoreFence(JNIEnv *env, jobject unsafe)) {
-  OrderAccess::release();
-} UNSAFE_END
-
 UNSAFE_LEAF(void, Unsafe_FullFence(JNIEnv *env, jobject unsafe)) {
   OrderAccess::fence();
 } UNSAFE_END
@@ -337,6 +330,7 @@ UNSAFE_LEAF(void, Unsafe_FullFence(JNIEnv *env, jobject unsafe)) {
 ////// Allocation requests
 
 UNSAFE_ENTRY(jobject, Unsafe_AllocateInstance(JNIEnv *env, jobject unsafe, jclass cls)) {
+  JvmtiVMObjectAllocEventCollector oam;
   instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(cls), CHECK_NULL);
   return JNIHandles::make_local(THREAD, i);
 } UNSAFE_END
@@ -909,8 +903,6 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
 
     {CC "shouldBeInitialized0", CC "(" CLS ")Z",         FN_PTR(Unsafe_ShouldBeInitialized0)},
 
-    {CC "loadFence",          CC "()V",                  FN_PTR(Unsafe_LoadFence)},
-    {CC "storeFence",         CC "()V",                  FN_PTR(Unsafe_StoreFence)},
     {CC "fullFence",          CC "()V",                  FN_PTR(Unsafe_FullFence)},
 };
 

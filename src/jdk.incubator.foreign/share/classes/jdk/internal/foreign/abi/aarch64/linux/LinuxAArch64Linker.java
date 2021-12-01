@@ -25,14 +25,14 @@
  */
 package jdk.internal.foreign.abi.aarch64.linux;
 
+import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.ResourceScope;
-import jdk.internal.foreign.AbstractCLinker;
-import jdk.internal.foreign.ResourceScopeImpl;
+import jdk.incubator.foreign.VaList;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.foreign.abi.UpcallStubs;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
 
 import java.lang.invoke.MethodHandle;
@@ -45,25 +45,10 @@ import java.util.function.Consumer;
  * ABI implementation based on ARM document "Procedure Call Standard for
  * the ARM 64-bit Architecture".
  */
-public final class LinuxAArch64Linker extends AbstractCLinker {
+public final class LinuxAArch64Linker implements CLinker {
     private static LinuxAArch64Linker instance;
 
     static final long ADDRESS_SIZE = 64; // bits
-
-    private static final MethodHandle MH_unboxVaList;
-    private static final MethodHandle MH_boxVaList;
-
-    static {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            MH_unboxVaList = lookup.findVirtual(VaList.class, "address",
-                MethodType.methodType(MemoryAddress.class));
-            MH_boxVaList = MethodHandles.insertArguments(lookup.findStatic(LinuxAArch64Linker.class, "newVaListOfAddress",
-                MethodType.methodType(VaList.class, MemoryAddress.class, ResourceScope.class)), 1, ResourceScope.globalScope());
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
 
     public static LinuxAArch64Linker getInstance() {
         if (instance == null) {
@@ -73,26 +58,28 @@ public final class LinuxAArch64Linker extends AbstractCLinker {
     }
 
     @Override
-    public final MethodHandle downcallHandle(MethodType type, FunctionDescriptor function) {
-        Objects.requireNonNull(type);
+    public final MethodHandle downcallHandle(FunctionDescriptor function) {
         Objects.requireNonNull(function);
-        MethodType llMt = SharedUtils.convertVaListCarriers(type, LinuxAArch64VaList.CARRIER);
-        MethodHandle handle = CallArranger.arrangeDowncall(llMt, function);
+        MethodType type = SharedUtils.inferMethodType(function, false);
+        MethodHandle handle = CallArranger.LINUX.arrangeDowncall(type, function);
         if (!type.returnType().equals(MemorySegment.class)) {
             // not returning segment, just insert a throwing allocator
             handle = MethodHandles.insertArguments(handle, 1, SharedUtils.THROWING_ALLOCATOR);
         }
-        handle = SharedUtils.unboxVaLists(type, handle, MH_unboxVaList);
-        return handle;
+        return SharedUtils.wrapDowncall(handle, function);
     }
 
     @Override
-    public final MemoryAddress upcallStub(MethodHandle target, FunctionDescriptor function, ResourceScope scope) {
+    public final NativeSymbol upcallStub(MethodHandle target, FunctionDescriptor function, ResourceScope scope) {
         Objects.requireNonNull(scope);
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
-        target = SharedUtils.boxVaLists(target, MH_boxVaList);
-        return UpcallStubs.upcallAddress(CallArranger.arrangeUpcall(target, target.type(), function), (ResourceScopeImpl) scope);
+        SharedUtils.checkExceptions(target);
+        MethodType type = SharedUtils.inferMethodType(function, true);
+        if (!type.equals(target.type())) {
+            throw new IllegalArgumentException("Wrong method handle type: " + target.type());
+        }
+        return CallArranger.LINUX.arrangeUpcall(target, target.type(), function, scope);
     }
 
     public static VaList newVaList(Consumer<VaList.Builder> actions, ResourceScope scope) {

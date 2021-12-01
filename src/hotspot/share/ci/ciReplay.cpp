@@ -65,7 +65,7 @@ typedef struct _ciMethodDataRecord {
   const char* _signature;
 
   int _state;
-  int _current_mileage;
+  int _invocation_counter;
 
   intptr_t* _data;
   char*     _orig_data;
@@ -103,6 +103,7 @@ typedef struct _ciInlineRecord {
 
   int _inline_depth;
   int _inline_bci;
+  bool _inline_late;
 } ciInlineRecord;
 
 class  CompileReplay;
@@ -113,7 +114,9 @@ class CompileReplay : public StackObj {
   FILE*   _stream;
   Thread* _thread;
   Handle  _protection_domain;
+  bool    _protection_domain_initialized;
   Handle  _loader;
+  int     _version;
 
   GrowableArray<ciMethodRecord*>     _ci_method_records;
   GrowableArray<ciMethodDataRecord*> _ci_method_data_records;
@@ -128,7 +131,6 @@ class CompileReplay : public StackObj {
   char* _bufptr;
   char* _buffer;
   int   _buffer_length;
-  int   _buffer_pos;
 
   // "compile" data
   ciKlass* _iklass;
@@ -141,6 +143,7 @@ class CompileReplay : public StackObj {
     _thread = THREAD;
     _loader = Handle(_thread, SystemDictionary::java_system_loader());
     _protection_domain = Handle();
+    _protection_domain_initialized = false;
 
     _stream = fopen(filename, "rt");
     if (_stream == NULL) {
@@ -153,12 +156,12 @@ class CompileReplay : public StackObj {
     _buffer_length = 32;
     _buffer = NEW_RESOURCE_ARRAY(char, _buffer_length);
     _bufptr = _buffer;
-    _buffer_pos = 0;
 
     _imethod = NULL;
     _iklass  = NULL;
     _entry_bci  = 0;
     _comp_level = 0;
+    _version = 0;
 
     test();
   }
@@ -189,10 +192,6 @@ class CompileReplay : public StackObj {
 
   void report_error(const char* msg) {
     _error_message = msg;
-    // Restore the _buffer contents for error reporting
-    for (int i = 0; i < _buffer_pos; i++) {
-      if (_buffer[i] == '\0') _buffer[i] = ' ';
-    }
   }
 
   int parse_int(const char* label) {
@@ -232,6 +231,10 @@ class CompileReplay : public StackObj {
     }
   }
 
+  // Ignore the rest of the line
+  void skip_remaining() {
+    _bufptr = &_bufptr[strlen(_bufptr)]; // skip ahead to terminator
+  }
 
   char* scan_and_terminate(char delim) {
     char* str = _bufptr;
@@ -434,7 +437,7 @@ class CompileReplay : public StackObj {
       } else if (strcmp(dyno_ref, "<bsm>") == 0) {
         int pool_index = cp_cache_entry->constant_pool_index();
         BootstrapInfo bootstrap_specifier(cp, pool_index, index);
-        obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
+        obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), CHECK_NULL);
       } else {
         report_error("unrecognized token");
         return NULL;
@@ -463,57 +466,57 @@ class CompileReplay : public StackObj {
         report_error("no method handle found at cpi");
         return NULL;
       }
-      {
-        bool found_it;
-        obj = cp->find_cached_constant_at(cpi, found_it, thread);
-      }
+      ik->link_class(CHECK_NULL);
+      obj = cp->resolve_possibly_cached_constant_at(cpi, CHECK_NULL);
+    }
+    if (obj == NULL) {
+      report_error("null cp object found");
+      return NULL;
     }
     Klass* k = NULL;
-    if (obj != NULL) {
-      skip_ws();
-      // loop: read fields
-      char* field = NULL;
-      do {
-        field = parse_string();
-        if (field == NULL) {
-          report_error("no field found");
-          return NULL;
-        }
-        if (strcmp(field, ";") == 0) {
-          break;
-        }
-        // raw Method*
-        if (strcmp(field, "<vmtarget>") == 0) {
-          Method* vmtarget = java_lang_invoke_MemberName::vmtarget(obj);
-          k = (vmtarget == NULL) ? NULL : vmtarget->method_holder();
-          if (k == NULL) {
-            report_error("null vmtarget found");
-            return NULL;
-          }
-          if (!parse_terminator()) {
-            report_error("missing terminator");
-            return NULL;
-          }
-          return k;
-        }
-        obj = ciReplay::obj_field(obj, field);
-        // array
-        if (obj != NULL && obj->is_objArray()) {
-          objArrayOop arr = (objArrayOop)obj;
-          int index = parse_int("index");
-          if (index >= arr->length()) {
-            report_error("bad array index");
-            return NULL;
-          }
-          obj = arr->obj_at(index);
-        }
-      } while (obj != NULL);
-      if (obj == NULL) {
-        report_error("null field found");
+    skip_ws();
+    // loop: read fields
+    char* field = NULL;
+    do {
+      field = parse_string();
+      if (field == NULL) {
+        report_error("no field found");
         return NULL;
       }
-      k = obj->klass();
+      if (strcmp(field, ";") == 0) {
+        break;
+      }
+      // raw Method*
+      if (strcmp(field, "<vmtarget>") == 0) {
+        Method* vmtarget = java_lang_invoke_MemberName::vmtarget(obj);
+        k = (vmtarget == NULL) ? NULL : vmtarget->method_holder();
+        if (k == NULL) {
+          report_error("null vmtarget found");
+          return NULL;
+        }
+        if (!parse_terminator()) {
+          report_error("missing terminator");
+          return NULL;
+        }
+        return k;
+      }
+      obj = ciReplay::obj_field(obj, field);
+      // array
+      if (obj != NULL && obj->is_objArray()) {
+        objArrayOop arr = (objArrayOop)obj;
+        int index = parse_int("index");
+        if (index >= arr->length()) {
+          report_error("bad array index");
+          return NULL;
+        }
+        obj = arr->obj_at(index);
+      }
+    } while (obj != NULL);
+    if (obj == NULL) {
+      report_error("null field found");
+      return NULL;
     }
+    k = obj->klass();
     return k;
   }
 
@@ -581,8 +584,9 @@ class CompileReplay : public StackObj {
   }
 
   int get_line(int c) {
+    int buffer_pos = 0;
     while(c != EOF) {
-      if (_buffer_pos + 1 >= _buffer_length) {
+      if (buffer_pos + 1 >= _buffer_length) {
         int new_length = _buffer_length * 2;
         // Next call will throw error in case of OOM.
         _buffer = REALLOC_RESOURCE_ARRAY(char, _buffer, _buffer_length, new_length);
@@ -594,13 +598,12 @@ class CompileReplay : public StackObj {
       } else if (c == '\r') {
         // skip LF
       } else {
-        _buffer[_buffer_pos++] = c;
+        _buffer[buffer_pos++] = c;
       }
       c = getc(_stream);
     }
     // null terminate it, reset the pointer
-    _buffer[_buffer_pos] = '\0'; // NL or EOF
-    _buffer_pos = 0;
+    _buffer[buffer_pos] = '\0'; // NL or EOF
     _bufptr = _buffer;
     return c;
   }
@@ -614,7 +617,8 @@ class CompileReplay : public StackObj {
       c = get_line(c);
       process_command(THREAD);
       if (had_error()) {
-        tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
+        int pos = _bufptr - _buffer + 1;
+        tty->print_cr("Error while parsing line %d at position %d: %s\n", line_no, pos, _error_message);
         if (ReplayIgnoreInitErrors) {
           CLEAR_PENDING_EXCEPTION;
           _error_message = NULL;
@@ -632,7 +636,16 @@ class CompileReplay : public StackObj {
       return;
     }
     if (strcmp("#", cmd) == 0) {
-      // ignore
+      // comment line, print or ignore
+      if (Verbose) {
+        tty->print_cr("# %s", _bufptr);
+      }
+      skip_remaining();
+    } else if (strcmp("version", cmd) == 0) {
+      _version = parse_int("version");
+      if (_version < 0 || _version > REPLAY_VERSION) {
+        tty->print_cr("# unrecognized version %d, expected 0 <= version <= %d", _version, REPLAY_VERSION);
+      }
     } else if (strcmp("compile", cmd) == 0) {
       process_compile(CHECK);
     } else if (strcmp("ciMethod", cmd) == 0) {
@@ -651,6 +664,9 @@ class CompileReplay : public StackObj {
 #endif // INCLUDE_JVMTI
     } else {
       report_error("unknown command");
+    }
+    if (!had_error() && *_bufptr != '\0') {
+      report_error("line not properly terminated");
     }
   }
 
@@ -705,7 +721,7 @@ class CompileReplay : public StackObj {
     return NULL;
   }
 
-  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <klass> <name> <signature>)*
+  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <inline_late> <klass> <name> <signature>)*
   void process_compile(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -747,11 +763,19 @@ class CompileReplay : public StackObj {
         if (had_error()) {
           break;
         }
+        int inline_late = 0;
+        if (_version >= 2) {
+          inline_late = parse_int("inline_late");
+          if (had_error()) {
+              break;
+          }
+        }
+
         Method* inl_method = parse_method(CHECK);
         if (had_error()) {
           break;
         }
-        new_ciInlineRecord(inl_method, bci, depth);
+        new_ciInlineRecord(inl_method, bci, depth, inline_late);
       }
     }
     if (_imethod != NULL) {
@@ -794,7 +818,7 @@ class CompileReplay : public StackObj {
     rec->_instructions_size = parse_int("instructions_size");
   }
 
-  // ciMethodData <klass> <name> <signature> <state> <current_mileage> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass>)* methods <length> (<offset> <klass> <name> <signature>)*
+  // ciMethodData <klass> <name> <signature> <state> <invocation_counter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass>)* methods <length> (<offset> <klass> <name> <signature>)*
   void process_ciMethodData(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -819,7 +843,11 @@ class CompileReplay : public StackObj {
     // collect and record all the needed information for later
     ciMethodDataRecord* rec = new_ciMethodData(method);
     rec->_state = parse_int("state");
-    rec->_current_mileage = parse_int("current_mileage");
+    if (_version < 1) {
+      parse_int("current_mileage");
+    } else {
+      rec->_invocation_counter = parse_int("invocation_counter");
+    }
 
     rec->_orig_data = parse_data("orig", rec->_orig_data_length);
     if (rec->_orig_data == NULL) {
@@ -868,6 +896,19 @@ class CompileReplay : public StackObj {
   void process_instanceKlass(TRAPS) {
     // just load the referenced class
     Klass* k = parse_klass(CHECK);
+
+    if (_version >= 1) {
+      if (!_protection_domain_initialized && k != NULL) {
+        assert(_protection_domain() == NULL, "must be uninitialized");
+        // The first entry is the holder class of the method for which a replay compilation is requested.
+        // Use the same protection domain to load all subsequent classes in order to resolve all classes
+        // in signatures of inlinees. This ensures that inlining can be done as stated in the replay file.
+        _protection_domain = Handle(_thread, k->protection_domain());
+      }
+
+      _protection_domain_initialized = true;
+    }
+
     if (k == NULL) {
       return;
     }
@@ -877,9 +918,13 @@ class CompileReplay : public StackObj {
       report_error("hidden class with comment expected");
       return;
     }
-    if (is_comment && Verbose) {
-      const char* hidden = parse_string();
-      tty->print_cr("Found %s for %s", k->name()->as_quoted_ascii(), hidden);
+    // comment, print or ignore
+    if (is_comment) {
+      if (Verbose) {
+        const char* hidden = parse_string();
+        tty->print_cr("Found %s for %s", k->name()->as_quoted_ascii(), hidden);
+      }
+      skip_remaining();
     }
   }
 
@@ -891,6 +936,7 @@ class CompileReplay : public StackObj {
   void process_ciInstanceKlass(TRAPS) {
     InstanceKlass* k = (InstanceKlass*)parse_klass(CHECK);
     if (k == NULL) {
+      skip_remaining();
       return;
     }
     int is_linked = parse_int("is_linked");
@@ -990,6 +1036,7 @@ class CompileReplay : public StackObj {
 
     if (k == NULL || ReplaySuppressInitializers == 0 ||
         (ReplaySuppressInitializers == 2 && k->class_loader() == NULL)) {
+      skip_remaining();
       return;
     }
 
@@ -1189,13 +1236,14 @@ class CompileReplay : public StackObj {
   }
 
   // Create and initialize a record for a ciInlineRecord
-  ciInlineRecord* new_ciInlineRecord(Method* method, int bci, int depth) {
+  ciInlineRecord* new_ciInlineRecord(Method* method, int bci, int depth, int inline_late) {
     ciInlineRecord* rec = NEW_RESOURCE_OBJ(ciInlineRecord);
     rec->_klass_name =  method->method_holder()->name()->as_utf8();
     rec->_method_name = method->name()->as_utf8();
     rec->_signature = method->signature()->as_utf8();
     rec->_inline_bci = bci;
     rec->_inline_depth = depth;
+    rec->_inline_late = inline_late;
     _ci_inline_records->append(rec);
     return rec;
   }
@@ -1388,7 +1436,7 @@ void ciReplay::initialize(ciMethodData* m) {
     tty->cr();
   } else {
     m->_state = rec->_state;
-    m->_current_mileage = rec->_current_mileage;
+    m->_invocation_counter = rec->_invocation_counter;
     if (rec->_data_length != 0) {
       assert(m->_data_size + m->_extra_data_size == rec->_data_length * (int)sizeof(rec->_data[0]) ||
              m->_data_size == rec->_data_length * (int)sizeof(rec->_data[0]), "must agree");
@@ -1432,23 +1480,33 @@ bool ciReplay::should_not_inline(ciMethod* method) {
   return replay_state->find_ciMethodRecord(method->get_Method()) == NULL;
 }
 
-bool ciReplay::should_inline(void* data, ciMethod* method, int bci, int inline_depth) {
+bool ciReplay::should_inline(void* data, ciMethod* method, int bci, int inline_depth, bool& should_delay) {
   if (data != NULL) {
-    GrowableArray<ciInlineRecord*>*  records = (GrowableArray<ciInlineRecord*>*)data;
+    GrowableArray<ciInlineRecord*>* records = (GrowableArray<ciInlineRecord*>*)data;
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
-    return CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth) != NULL;
+    ciInlineRecord* record = CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth);
+    if (record == NULL) {
+      return false;
+    }
+    should_delay = record->_inline_late;
+    return true;
   } else if (replay_state != NULL) {
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
-    return replay_state->find_ciInlineRecord(method->get_Method(), bci, inline_depth) != NULL;
+    ciInlineRecord* record = replay_state->find_ciInlineRecord(method->get_Method(), bci, inline_depth);
+    if (record == NULL) {
+      return false;
+    }
+    should_delay = record->_inline_late;
+    return true;
   }
   return false;
 }
 
 bool ciReplay::should_not_inline(void* data, ciMethod* method, int bci, int inline_depth) {
   if (data != NULL) {
-    GrowableArray<ciInlineRecord*>*  records = (GrowableArray<ciInlineRecord*>*)data;
+    GrowableArray<ciInlineRecord*>* records = (GrowableArray<ciInlineRecord*>*)data;
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
     return CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth) == NULL;

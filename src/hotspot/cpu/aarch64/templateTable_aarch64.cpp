@@ -3563,7 +3563,7 @@ void TemplateTable::_new() {
       // Trigger dtrace event for fastpath
       __ push(atos); // save the return value
       __ call_VM_leaf(
-           CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc), r0);
+           CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), r0);
       __ pop(atos); // restore the return value
 
     }

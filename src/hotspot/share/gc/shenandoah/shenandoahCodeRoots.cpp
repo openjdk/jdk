@@ -111,7 +111,7 @@ void ShenandoahCodeRoots::initialize() {
 }
 
 void ShenandoahCodeRoots::register_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
+  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
   _nmethod_table->register_nmethod(nm);
 }
 
@@ -121,7 +121,7 @@ void ShenandoahCodeRoots::unregister_nmethod(nmethod* nm) {
 }
 
 void ShenandoahCodeRoots::flush_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
+  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
   _nmethod_table->flush_nmethod(nm);
 }
 
@@ -355,12 +355,15 @@ ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :
         _par_iterator(CodeCache::heaps()),
         _table_snapshot(NULL) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
+  MutexLocker locker(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   _table_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
 }
 
 ShenandoahCodeRootsIterator::~ShenandoahCodeRootsIterator() {
+  MonitorLocker locker(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   ShenandoahCodeRoots::table()->finish_iteration(_table_snapshot);
   _table_snapshot = NULL;
+  locker.notify_all();
 }
 
 void ShenandoahCodeRootsIterator::possibly_parallel_blobs_do(CodeBlobClosure *f) {

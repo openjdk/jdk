@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.CLinker;
+import jdk.incubator.foreign.FunctionDescriptor;
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SymbolLookup;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -41,10 +42,6 @@ import java.lang.invoke.MethodType;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.invoke.MethodHandles.lookup;
-import static jdk.incubator.foreign.CLinker.C_DOUBLE;
-import static jdk.incubator.foreign.CLinker.C_INT;
-import static jdk.incubator.foreign.CLinker.C_LONG_LONG;
-import static jdk.incubator.foreign.CLinker.C_POINTER;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -52,18 +49,18 @@ import static jdk.incubator.foreign.CLinker.C_POINTER;
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign", "--enable-native-access=ALL-UNNAMED" })
-public class Upcalls {
+public class Upcalls extends CLayouts {
 
-    static final CLinker abi = CLinker.getInstance();
+    static final CLinker abi = CLinker.systemCLinker();
     static final MethodHandle blank;
     static final MethodHandle identity;
     static final MethodHandle args5;
     static final MethodHandle args10;
 
-    static final MemoryAddress cb_blank;
-    static final MemoryAddress cb_identity;
-    static final MemoryAddress cb_args5;
-    static final MemoryAddress cb_args10;
+    static final NativeSymbol cb_blank;
+    static final NativeSymbol cb_identity;
+    static final NativeSymbol cb_args5;
+    static final NativeSymbol cb_args10;
 
     static final long cb_blank_jni;
     static final long cb_identity_jni;
@@ -74,10 +71,10 @@ public class Upcalls {
         System.loadLibrary("UpcallsJNI");
 
         String className = "org/openjdk/bench/jdk/incubator/foreign/Upcalls";
-        cb_blank_jni = makeCB(className, "blank", "()V");
-        cb_identity_jni = makeCB(className, "identity", "(I)I");
-        cb_args5_jni = makeCB(className, "args5", "(JDJDJ)V");
-        cb_args10_jni = makeCB(className, "args10", "(JDJDJDJDJD)V");
+        cb_blank_jni = JNICB.makeCB(className, "blank", "()V");
+        cb_identity_jni = JNICB.makeCB(className, "identity", "(I)I");
+        cb_args5_jni = JNICB.makeCB(className, "args5", "(JDJDJ)V");
+        cb_args10_jni = JNICB.makeCB(className, "args10", "(JDJDJDJDJD)V");
 
         try {
             System.loadLibrary("Upcalls");
@@ -86,7 +83,7 @@ public class Upcalls {
                 MethodType mt = MethodType.methodType(void.class);
                 FunctionDescriptor fd = FunctionDescriptor.ofVoid();
 
-                blank = linkFunc(name, mt, fd);
+                blank = linkFunc(name, fd);
                 cb_blank = makeCB(name, mt, fd);
             }
             {
@@ -94,7 +91,7 @@ public class Upcalls {
                 MethodType mt = MethodType.methodType(int.class, int.class);
                 FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT);
 
-                identity = linkFunc(name, mt, fd);
+                identity = linkFunc(name, fd);
                 cb_identity = makeCB(name, mt, fd);
             }
             {
@@ -104,7 +101,7 @@ public class Upcalls {
                 FunctionDescriptor fd = FunctionDescriptor.ofVoid(
                         C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG);
 
-                args5 = linkFunc(name, mt, fd);
+                args5 = linkFunc(name, fd);
                 cb_args5 = makeCB(name, mt, fd);
             }
             {
@@ -116,7 +113,7 @@ public class Upcalls {
                         C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG,
                         C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE);
 
-                args10 = linkFunc(name, mt, fd);
+                args10 = linkFunc(name, fd);
                 cb_args10 = makeCB(name, mt, fd);
             }
         } catch (ReflectiveOperationException e) {
@@ -124,19 +121,18 @@ public class Upcalls {
         }
     }
 
-    static MethodHandle linkFunc(String name, MethodType baseType, FunctionDescriptor baseDesc) {
+    static MethodHandle linkFunc(String name, FunctionDescriptor baseDesc) {
         return abi.downcallHandle(
             SymbolLookup.loaderLookup().lookup(name).orElseThrow(),
-            baseType.insertParameterTypes(baseType.parameterCount(), MemoryAddress.class),
-            baseDesc.withAppendedArgumentLayouts(C_POINTER)
+                baseDesc.withAppendedArgumentLayouts(C_POINTER)
         );
     }
 
-    static MemoryAddress makeCB(String name, MethodType mt, FunctionDescriptor fd) throws ReflectiveOperationException {
+    static NativeSymbol makeCB(String name, MethodType mt, FunctionDescriptor fd) throws ReflectiveOperationException {
         return abi.upcallStub(
             lookup().findStatic(Upcalls.class, name, mt),
             fd, ResourceScope.globalScope()
-        ).address();
+        );
     }
 
     static native void blank(long cb);
@@ -144,7 +140,6 @@ public class Upcalls {
     static native void args5(long a0, double a1, long a2, double a3, long a4, long cb);
     static native void args10(long a0, double a1, long a2, double a3, long a4,
                               double a5, long a6, double a7, long a8, double a9, long cb);
-    static native long makeCB(String holder, String name, String signature);
 
     @Benchmark
     public void jni_blank() throws Throwable {
@@ -153,7 +148,7 @@ public class Upcalls {
 
     @Benchmark
     public void panama_blank() throws Throwable {
-        blank.invokeExact(cb_blank);
+        blank.invokeExact((Addressable)cb_blank);
     }
 
     @Benchmark
@@ -173,17 +168,17 @@ public class Upcalls {
 
     @Benchmark
     public int panama_identity() throws Throwable {
-        return (int) identity.invokeExact(10, cb_identity);
+        return (int) identity.invokeExact(10, (Addressable)cb_identity);
     }
 
     @Benchmark
     public void panama_args5() throws Throwable {
-        args5.invokeExact(1L, 2D, 3L, 4D, 5L, cb_args5);
+        args5.invokeExact(1L, 2D, 3L, 4D, 5L, (Addressable)cb_args5);
     }
 
     @Benchmark
     public void panama_args10() throws Throwable {
-        args10.invokeExact(1L, 2D, 3L, 4D, 5L, 6D, 7L, 8D, 9L, 10D, cb_args10);
+        args10.invokeExact(1L, 2D, 3L, 4D, 5L, 6D, 7L, 8D, 9L, 10D, (Addressable)cb_args10);
     }
 
     static void blank() {}

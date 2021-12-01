@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,7 @@
  */
 package test.java.time.format;
 
-import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
-import static java.time.temporal.ChronoField.NANO_OF_SECOND;
-import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+import static java.time.temporal.ChronoField.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
@@ -69,6 +67,7 @@ import java.text.ParsePosition;
 import java.time.DateTimeException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 
@@ -77,9 +76,9 @@ import org.testng.annotations.Test;
 import test.java.time.temporal.MockFieldValue;
 
 /**
- * Test FractionPrinterParser.
+ * Test formatters obtained with DateTimeFormatterBuilder.appendFraction (FractionPrinterParser, NanosPrinterParser)
  *
- * @bug 8230136
+ * @bug 8230136 8276220
  */
 @Test
 public class TestFractionPrinterParser extends AbstractTestPrinterParser {
@@ -96,10 +95,52 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(EMPTY_DTA, buf);
     }
 
+    @DataProvider(name="OOB_Nanos")
+    Object[][] provider_oob_nanos() {
+        return new Object[][]{
+            {-1},
+            {1_000_000_000},
+            {Integer.MIN_VALUE},
+            {Integer.MAX_VALUE},
+            {Integer.MAX_VALUE + 1L},
+            {Long.MAX_VALUE},
+            {Long.MIN_VALUE},
+        };
+    }
+
+    @Test(dataProvider="OOB_Nanos", expectedExceptions=DateTimeException.class)
+    public void test_print_oob_nanos(long value) throws Exception {
+        getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(NANO_OF_SECOND, value), buf);
+    }
+
+    @DataProvider(name="OOB_Micros")
+    Object[][] provider_oob_micros() {
+        return new Object[][]{
+                {-1},
+                {1_000_000},
+                {Integer.MIN_VALUE},
+                {Integer.MAX_VALUE},
+                {Integer.MAX_VALUE + 1L},
+                {Long.MAX_VALUE},
+                {Long.MIN_VALUE},
+        };
+    }
+
+    @Test(dataProvider="OOB_Micros", expectedExceptions=DateTimeException.class)
+    public void test_print_oob_micros(long value) throws Exception {
+        getFormatter(MICRO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf);
+    }
+
     public void test_print_append() throws Exception {
         buf.append("EXISTING");
         getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(LocalTime.of(12, 30, 40, 3), buf);
         assertEquals(buf.toString(), "EXISTING.000000003");
+    }
+
+    public void test_print_append_micros() throws Exception {
+        buf.append("EXISTING");
+        getFormatter(MICRO_OF_SECOND, 0, 6, true).formatTo(LocalTime.of(12, 30, 40, 3000), buf);
+        assertEquals(buf.toString(), "EXISTING.000003");
     }
 
     //-----------------------------------------------------------------------
@@ -125,6 +166,31 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
             {0, 9, 1234567,     ".001234567"},
             {0, 9, 12345678,    ".012345678"},
             {0, 9, 123456789,   ".123456789"},
+            {0, 9, 9,           ".000000009"},
+            {0, 9, 99,          ".000000099"},
+            {0, 9, 999,         ".000000999"},
+            {0, 9, 9999,        ".000009999"},
+            {0, 9, 99999,       ".000099999"},
+            {0, 9, 999999,      ".000999999"},
+            {0, 9, 9999999,     ".009999999"},
+            {0, 9, 99999999,    ".099999999"},
+            {0, 9, 999999999,   ".999999999"},
+            {0, 8, 9,           ".00000000"},
+            {0, 7, 99,          ".0000000"},
+            {0, 6, 999,         ".000000"},
+            {0, 5, 9999,        ".00000"},
+            {0, 4, 99999,       ".0000"},
+            {0, 3, 999999,      ".000"},
+            {0, 2, 9999999,     ".00"},
+            {0, 1, 99999999,    ".0"},
+            {0, 8, 1,           ".00000000"},
+            {0, 7, 11,          ".0000000"},
+            {0, 6, 111,         ".000000"},
+            {0, 5, 1111,        ".00000"},
+            {0, 4, 11111,       ".0000"},
+            {0, 3, 111111,      ".000"},
+            {0, 2, 1111111,     ".00"},
+            {0, 1, 11111111,    ".0"},
 
             {1, 9, 0,           ".0"},
             {1, 9, 2,           ".000000002"},
@@ -136,6 +202,24 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
             {1, 9, 2000000,     ".002"},
             {1, 9, 20000000,    ".02"},
             {1, 9, 200000000,   ".2"},
+            {1, 9, 1,           ".000000001"},
+            {1, 9, 10,          ".00000001"},
+            {1, 9, 100,         ".0000001"},
+            {1, 9, 1000,        ".000001"},
+            {1, 9, 10000,       ".00001"},
+            {1, 9, 100000,      ".0001"},
+            {1, 9, 1000000,     ".001"},
+            {1, 9, 10000000,    ".01"},
+            {1, 9, 100000000,   ".1"},
+            {1, 9, 9,           ".000000009"},
+            {1, 9, 99,          ".000000099"},
+            {1, 9, 999,         ".000000999"},
+            {1, 9, 9999,        ".000009999"},
+            {1, 9, 99999,       ".000099999"},
+            {1, 9, 999999,      ".000999999"},
+            {1, 9, 9999999,     ".009999999"},
+            {1, 9, 99999999,    ".099999999"},
+            {1, 9, 999999999,   ".999999999"},
 
             {2, 3, 0,           ".00"},
             {2, 3, 2,           ".000"},
@@ -176,6 +260,9 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
             {6, 6, 1234567,     ".001234"},
             {6, 6, 12345678,    ".012345"},
             {6, 6, 123456789,   ".123456"},
+            {7, 7, 123456789,   ".1234567"},
+            {8, 8, 123456789,   ".12345678"},
+            {9, 9, 123456789,   ".123456789"},
        };
     }
 
@@ -191,6 +278,82 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
     @Test(dataProvider="Nanos")
     public void test_print_nanos_noDecimalPoint(int minWidth, int maxWidth, int value, String result) throws Exception {
         getFormatter(NANO_OF_SECOND,  minWidth, maxWidth, false).formatTo(new MockFieldValue(NANO_OF_SECOND, value), buf);
+        if (result == null) {
+            fail("Expected exception");
+        }
+        assertEquals(buf.toString(), (result.startsWith(".") ? result.substring(1) : result));
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="Micros")
+    Object[][] provider_micros() {
+        return new Object[][] {
+                {0, 6, 0,           ""},
+                {0, 6, 2,           ".000002"},
+                {0, 6, 20,          ".00002"},
+                {0, 6, 200,         ".0002"},
+                {0, 6, 2000,        ".002"},
+                {0, 6, 20000,       ".02"},
+                {0, 6, 200000,      ".2"},
+                {0, 6, 1,           ".000001"},
+                {0, 6, 12,          ".000012"},
+                {0, 6, 123,         ".000123"},
+                {0, 6, 1234,        ".001234"},
+                {0, 6, 12345,       ".012345"},
+                {0, 6, 123456,      ".123456"},
+                {0, 6, 9,           ".000009"},
+                {0, 6, 99,          ".000099"},
+                {0, 6, 999,         ".000999"},
+                {0, 6, 9999,        ".009999"},
+                {0, 6, 99999,       ".099999"},
+                {0, 6, 999999,      ".999999"},
+                {0, 5, 9,           ".00000"},
+                {0, 4, 99,          ".0000"},
+                {0, 3, 999,         ".000"},
+                {0, 2, 9999,        ".00"},
+                {0, 1, 99999,       ".0"},
+                {0, 5, 1,           ".00000"},
+                {0, 4, 11,          ".0000"},
+                {0, 3, 111,         ".000"},
+                {0, 2, 1111,        ".00"},
+                {0, 1, 11111,       ".0"},
+
+                {1, 6, 0,           ".0"},
+                {1, 6, 2,           ".000002"},
+                {1, 6, 20,          ".00002"},
+                {1, 6, 200,         ".0002"},
+                {1, 6, 2000,        ".002"},
+                {1, 6, 20000,       ".02"},
+                {1, 6, 200000,      ".2"},
+
+                {2, 3, 0,           ".00"},
+                {2, 3, 2,           ".000"},
+                {2, 3, 20,          ".000"},
+                {2, 3, 200,         ".000"},
+                {2, 3, 2000,        ".002"},
+                {2, 3, 20000,       ".02"},
+                {2, 3, 200000,      ".20"},
+                {2, 3, 1,           ".000"},
+                {2, 3, 12,          ".000"},
+                {2, 3, 123,         ".000"},
+                {2, 3, 1234,        ".001"},
+                {2, 3, 12345,       ".012"},
+                {2, 3, 123456,      ".123"},
+        };
+    }
+
+    @Test(dataProvider="Micros")
+    public void test_print_micros(int minWidth, int maxWidth, int value, String result) throws Exception {
+        getFormatter(MICRO_OF_SECOND,  minWidth, maxWidth, true).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf);
+        if (result == null) {
+            fail("Expected exception");
+        }
+        assertEquals(buf.toString(), result);
+    }
+
+    @Test(dataProvider="Micros")
+    public void test_print_micros_noDecimalPoint(int minWidth, int maxWidth, int value, String result) throws Exception {
+        getFormatter(MICRO_OF_SECOND,  minWidth, maxWidth, false).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf);
         if (result == null) {
             fail("Expected exception");
         }
