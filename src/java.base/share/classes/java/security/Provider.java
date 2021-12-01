@@ -838,7 +838,7 @@ public abstract class Provider extends Properties {
 
     // Set<Service>
     // Unmodifiable set of all services. Initialized on demand.
-    private transient Set<Service> serviceSet;
+    private transient volatile Set<Service> serviceSet;
 
     // register the id attributes for this provider
     // this is to ensure that equals() and hashCode() do not incorrectly
@@ -889,16 +889,15 @@ public abstract class Provider extends Properties {
         putAll(copy);
     }
 
-    // returns false if the key is provider-related, i.e.name, version, info,
-    // and className
-    private boolean checkLegacy(Object key) {
+    // returns false if no update necessary, i.e. key isn't String or
+    // is String but it's provider-related (name/version/info/className)
+    private static boolean checkLegacy(Object key) {
         if (key instanceof String && ((String)key).startsWith("Provider.")) {
             // ignore provider related updates
             return false;
         } else {
-            legacyChanged = true;
+            return true;
         }
-        return true;
     }
 
     /**
@@ -967,6 +966,9 @@ public abstract class Provider extends Properties {
             ? extends Object> function) {
 
         super.replaceAll(function);
+        // clear out all existing mappings and start fresh
+        legacyMap.clear();
+        legacyChanged = true;
         for (Map.Entry<Object, Object> entry : super.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
@@ -974,7 +976,7 @@ public abstract class Provider extends Properties {
                 if (!checkLegacy(sk)) {
                     continue;
                 }
-                parseLegacy(sk, sv, OPType.REPLACE);
+                parseLegacy(sk, sv, OPType.ADD);
             }
         }
     }
@@ -1136,6 +1138,7 @@ public abstract class Provider extends Properties {
             if (typeAndAlg == null) {
                 return;
             }
+            legacyChanged = true;
             Objects.requireNonNull(value, "alias value should map to an alg");
             String type = getEngineName(typeAndAlg[0]);
             String aliasAlg = typeAndAlg[1].intern();
@@ -1173,6 +1176,7 @@ public abstract class Provider extends Properties {
             if (typeAndAlg == null) {
                 return;
             }
+            legacyChanged = true;
             int i = typeAndAlg[1].indexOf(' ');
             // regular registration
             if (i == -1) {
@@ -1282,20 +1286,16 @@ public abstract class Provider extends Properties {
             previousKey = key;
         }
 
-        if (!serviceMap.isEmpty()) {
-            Service s = serviceMap.get(key);
-            if (s != null) {
-                return s;
-            }
+        Service s = serviceMap.get(key);
+        if (s != null) {
+            return s;
         }
 
-        if (!legacyMap.isEmpty()) {
-            Service s = legacyMap.get(key);
-            if (s != null && !s.isValid()) {
-                legacyMap.remove(key);
-            } else {
-                return s;
-            }
+        s = legacyMap.get(key);
+        if (s != null && !s.isValid()) {
+            legacyMap.remove(key, s);
+        } else {
+            return s;
         }
 
         return null;
