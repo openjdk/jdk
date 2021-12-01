@@ -65,6 +65,7 @@ public:
       _keep_alive->do_oop(p);
       ++_live;
     } else {
+      ObjectMonitor::maybe_deflate_dead(p);
       *p = NULL;
       ++_new_dead;
     }
