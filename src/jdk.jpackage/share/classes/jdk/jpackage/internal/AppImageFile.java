@@ -148,12 +148,10 @@ public final class AppImageFile {
             for (var launcherParams : addLaunchers) {
                 var li = new LauncherInfo(launcherParams);
                 xml.writeStartElement("add-launcher");
-                xml.writeAttribute("name", APP_NAME.fetchFrom(sl));
-                xml.writeAttribute("shortcut",
-                        SHORTCUT_HINT.fetchFrom(sl).toString());
-                xml.writeAttribute("menu", MENU_HINT.fetchFrom(sl).toString());
-                xml.writeAttribute("service",
-                        LAUNCHER_AS_SERVICE.fetchFrom(sl).toString());
+                xml.writeAttribute("name", li.getName());
+                xml.writeAttribute("shortcut", Boolean.toString(li.isShortcut()));
+                xml.writeAttribute("menu", Boolean.toString(li.isMenu()));
+                xml.writeAttribute("service", Boolean.toString(li.isService()));
                 xml.writeEndElement();
             }
         });
@@ -252,9 +250,10 @@ public final class AppImageFile {
 
         // this should never be the case, but maintaining behavior of
         // creating default launchers without AppImageFile present
-        launchers.add(new LauncherInfo(APP_NAME.fetchFrom(params), params));
-        ADD_LAUNCHERS.fetchFrom(params).stream().map(APP_NAME::fetchFrom).map(
-                name -> new LauncherInfo(name, params)).forEach(launchers::add);
+        launchers.add(new LauncherInfo(params));
+        ADD_LAUNCHERS.fetchFrom(params).stream()
+                .map(launcherParams -> new LauncherInfo(launcherParams))
+                .forEach(launchers::add);
         return launchers;
     }
 
@@ -313,6 +312,10 @@ public final class AppImageFile {
         private final boolean shortcut;
         private final boolean menu;
         private final boolean service;
+
+        private LauncherInfo(Map<String, ? super Object> params) {
+            this(APP_NAME.fetchFrom(params), params);
+        }
 
         private LauncherInfo(String name, Map<String, ? super Object> params) {
             this.name = name;
