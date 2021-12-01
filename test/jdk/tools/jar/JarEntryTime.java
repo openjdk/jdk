@@ -30,7 +30,9 @@
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.spi.ToolProvider;
@@ -91,7 +93,8 @@ public class JarEntryTime {
         File dirOuter = new File("outer");
         File dirInner = new File(dirOuter, "inner");
         File jarFile = new File("JarEntryTime.jar");
-        File jarFileSourceDate = new File("JarEntryTimeSourceDate.jar");
+        File jarFileSourceDate1 = new File("JarEntryTimeSourceDate1.jar");
+        File jarFileSourceDate2 = new File("JarEntryTimeSourceDate2.jar");
         File testFile = new File("JarEntryTimeTest.txt");
 
         // Remove any leftovers from prior run
@@ -176,17 +179,17 @@ public class JarEntryTime {
                                 "2038-11-26T06:06:06+00:00",
                                 "2098-02-18T00:00:00-08:00"};
         for (String sourceDate : sourceDates) {
-            jarFileSourceDate.delete();
+            jarFileSourceDate1.delete();
             createOuterInnerDirs(dirOuter, dirInner);
             check(JAR_TOOL.run(System.out, System.err,
                            "--create",
-                           "--file", jarFileSourceDate.getName(),
+                           "--file", jarFileSourceDate1.getName(),
                            "--date", sourceDate,
                            dirOuter.getName()) == 0);
-            check(jarFileSourceDate.exists());
+            check(jarFileSourceDate1.exists());
 
-            // Extract jarFileSourceDate and check last modified values
-            extractJar(jarFileSourceDate, false);
+            // Extract jarFileSourceDate1 and check last modified values
+            extractJar(jarFileSourceDate1, false);
             check(dirOuter.exists());
             check(dirInner.exists());
             check(fileInner.exists());
@@ -206,6 +209,43 @@ public class JarEntryTime {
             check(cleanup(dirOuter));
         }
 
+        // Test jars are reproducible across timezones
+        TimeZone tz0    = TimeZone.getDefault(); 
+        TimeZone tzAsia = TimeZone.getTimeZone("Asia/Shanghai");
+        TimeZone tzLA   = TimeZone.getTimeZone("America/Los_Angeles");
+        for (String sourceDate : sourceDates) {
+            jarFileSourceDate1.delete();
+            jarFileSourceDate2.delete();
+            createOuterInnerDirs(dirOuter, dirInner);
+            TimeZone.setDefault(tzAsia);
+            check(JAR_TOOL.run(System.out, System.err,
+                           "--create",
+                           "--file", jarFileSourceDate1.getName(),
+                           "--date", sourceDate,
+                           dirOuter.getName()) == 0);
+            check(jarFileSourceDate1.exists());
+
+            try {
+                // Sleep 5 seconds to ensure jar timestamps might be different if they could be
+                Thread.sleep(5000);
+            } catch(InterruptedException ex) {}
+
+            TimeZone.setDefault(tzLA);
+            check(JAR_TOOL.run(System.out, System.err,
+                           "--create",
+                           "--file", jarFileSourceDate2.getName(),
+                           "--date", sourceDate,
+                           dirOuter.getName()) == 0);
+            check(jarFileSourceDate2.exists());
+
+            // Check jar are identical
+            checkSameContent(jarFileSourceDate1, jarFileSourceDate2);
+
+            check(cleanup(dirInner));
+            check(cleanup(dirOuter));
+        }
+        TimeZone.setDefault(tz0);
+
         // Negative Tests --date out of range source date
         String[] badSourceDates = {"1976-06-24T01:02:03+00:00",
                                    "2100-02-18T00:00:00-11:00"};
@@ -213,7 +253,7 @@ public class JarEntryTime {
             createOuterInnerDirs(dirOuter, dirInner);
             check(JAR_TOOL.run(System.out, System.err,
                            "--create",
-                           "--file", jarFileSourceDate.getName(),
+                           "--file", jarFileSourceDate1.getName(),
                            "--date", sourceDate,
                            dirOuter.getName()) != 0);
 
@@ -222,7 +262,8 @@ public class JarEntryTime {
         }
 
         check(jarFile.delete());
-        check(jarFileSourceDate.delete());
+        check(jarFileSourceDate1.delete());
+        check(jarFileSourceDate2.delete());
         check(testFile.delete());
     }
 
@@ -276,6 +317,15 @@ public class JarEntryTime {
                               FileTime.fromMillis(now),
                               FileTime.fromMillis(start),
                               FileTime.fromMillis(end));
+            fail();
+        }
+    }
+
+    static void checkSameContent(File f1, File f2) throws Throwable {
+        byte[] ba1 = Files.readAllBytes(f1.toPath());
+        byte[] ba2 = Files.readAllBytes(f2.toPath());
+        if (!Arrays.equals(ba1, ba2)) {
+            System.out.format("jar content differs: %s != %s%n", f1, f2);
             fail();
         }
     }
