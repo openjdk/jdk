@@ -166,7 +166,7 @@ inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType
 
 inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
   assert(card_idx < (1u << (sizeof(_data[0]) * BitsPerByte)),
-         "Card index %u does not fit card entry.", card_idx);
+         "Card index %u does not fit allowed card value range.", card_idx);
   EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
   EntryCountType idx = 0;
   for (; idx < num_entries; idx++) {

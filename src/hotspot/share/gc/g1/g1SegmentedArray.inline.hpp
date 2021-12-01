@@ -219,7 +219,7 @@ Slot* G1SegmentedArray<Slot, flag>::allocate() {
   }
 
   while (true) {
-    Slot* slot = (Slot*) cur->get_new_slot();
+    Slot* slot = (Slot*)cur->get_new_slot();
     if (slot != nullptr) {
       Atomic::inc(&_num_allocated_slots, memory_order_relaxed);
       guarantee(is_aligned(slot, _alloc_options->slot_alignment()),
