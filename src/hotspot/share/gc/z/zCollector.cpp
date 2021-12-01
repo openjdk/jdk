@@ -506,6 +506,9 @@ ConcurrentGCTimer* ZOldCollector::major_timer() {
 void ZOldCollector::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
+  // Verification
+  ClassLoaderDataGraph::verify_claimed_marks_not(ClassLoaderData::_claim_strong);
+
   // Flip address view
   ZGlobalsPointers::flip_old_mark_start();
 

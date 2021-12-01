@@ -547,9 +547,6 @@ public:
   }
 
   virtual bool do_operation() {
-    //ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_strong);
-    ClassLoaderDataGraph::verify_claimed_marks_not(ClassLoaderData::_claim_strong);
-
     ZStatTimerOld timer(ZPhasePauseOldMarkStart);
     ZServiceabilityPauseTracer tracer(ZCollectorId::old);
 
