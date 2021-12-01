@@ -4074,7 +4074,7 @@ void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XM
                                             Register scratch, int vec_enc) {
   Label done;
   evcvttpd2qq(dst, src, vec_enc);
-  evmovdqul(xtmp1, k0, double_sign_flip, true, vec_enc, scratch);
+  evmovdqul(xtmp1, k0, double_sign_flip, false, vec_enc, scratch);
   evpcmpeqq(ktmp1, xtmp1, dst, vec_enc);
   kortestwl(ktmp1, ktmp1);
   jccb(Assembler::equal, done);
@@ -4134,7 +4134,7 @@ void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XM
   evmovdqul(dst, ktmp2, xtmp2, true, vec_enc);
 
   kxorwl(ktmp1, ktmp1, ktmp2);
-  evcmpps(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_US, vec_enc);
+  evcmpps(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
   vpternlogd(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
   evmovdqul(dst, ktmp1, xtmp2, true, vec_enc);
   bind(done);
