@@ -76,17 +76,18 @@ class VectorSupport : AllStatic {
 
     // Convert
     VECTOR_OP_CAST        = 17,
-    VECTOR_OP_REINTERPRET = 18,
+    VECTOR_OP_UCAST       = 18,
+    VECTOR_OP_REINTERPRET = 19,
 
     // Mask manipulation operations
-    VECTOR_OP_MASK_TRUECOUNT = 19,
-    VECTOR_OP_MASK_FIRSTTRUE = 20,
-    VECTOR_OP_MASK_LASTTRUE  = 21,
-    VECTOR_OP_MASK_TOLONG    = 22,
+    VECTOR_OP_MASK_TRUECOUNT = 20,
+    VECTOR_OP_MASK_FIRSTTRUE = 21,
+    VECTOR_OP_MASK_LASTTRUE  = 22,
+    VECTOR_OP_MASK_TOLONG    = 23,
 
     // Rotate operations
-    VECTOR_OP_LROTATE = 23,
-    VECTOR_OP_RROTATE = 24,
+    VECTOR_OP_LROTATE = 24,
+    VECTOR_OP_RROTATE = 25,
 
     // Vector Math Library
     VECTOR_OP_TAN   = 101,

@@ -1836,6 +1836,7 @@ private:
   void evpmovwb(Address dst, KRegister mask, XMMRegister src, int vector_len);
 
   void vpmovzxwd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpmovzxwq(XMMRegister dst, XMMRegister src, int vector_len);
 
   void evpmovdb(Address dst, XMMRegister src, int vector_len);
 
