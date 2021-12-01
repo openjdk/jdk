@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 4833268 6253991 8008577
+ * @bug 4833268 6253991 8008577 8190748
  * @summary Test formatting and parsing with non-Gregorian calendars
  * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=COMPAT,SPI NonGregorianFormatTest
  */
 
+import java.time.ZoneId;
 import java.util.*;
 import java.text.*;
 import static java.util.Calendar.*;
@@ -160,10 +161,15 @@ public class NonGregorianFormatTest {
 
     private static void testRoundTrip(DateFormat df, Date orig) {
         try {
+            var defZone = ZoneId.systemDefault();
+            if (defZone.getRules().getTransition(orig.toInstant().atZone(defZone).toLocalDateTime()) != null) {
+                System.out.println("At the offset transition. Round trip test skipped.");
+                return;
+            }
             String s = df.format(orig);
             Date parsed = df.parse(s);
             if (!orig.equals(parsed)) {
-                error("testRoundTrip: bad date: origianl: '%s', parsed '%s'%n", orig, parsed);
+                error("testRoundTrip: bad date: original: '%s', parsed '%s'%n", orig, parsed);
             }
         } catch (Exception e) {
             error("Unexpected exception: %s%n", e);

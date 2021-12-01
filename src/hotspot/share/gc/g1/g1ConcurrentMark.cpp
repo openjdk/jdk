@@ -770,7 +770,7 @@ public:
   double worker_cost() const override {
     // The work done per region is very small, therefore we choose this magic number to cap the number
     // of threads used when there are few regions.
-    const uint regions_per_thread = 1000;
+    const double regions_per_thread = 1000;
     return _claimer.n_regions() / regions_per_thread;
   }
 
@@ -1617,10 +1617,6 @@ void G1ConcurrentMark::weak_refs_work() {
     // we utilize all the worker threads we can.
     uint active_workers = (ParallelRefProcEnabled ? _g1h->workers()->active_workers() : 1U);
     active_workers = clamp(active_workers, 1u, _max_num_tasks);
-
-    // Set the concurrency level. The phase was already set prior to
-    // executing the remark task.
-    set_concurrency(active_workers);
 
     // Set the degree of MT processing here.  If the discovery was done MT,
     // the number of threads involved during discovery could differ from

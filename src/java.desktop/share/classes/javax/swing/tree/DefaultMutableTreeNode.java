@@ -1330,7 +1330,7 @@ public class DefaultMutableTreeNode implements Cloneable,
             userObject = tValues[1];
     }
 
-    private final class PreorderEnumeration implements Enumeration<TreeNode> {
+    private static final class PreorderEnumeration implements Enumeration<TreeNode> {
         private final Stack<Enumeration<? extends TreeNode>> stack = new Stack<>();
 
         public PreorderEnumeration(TreeNode rootNode) {
@@ -1362,7 +1362,7 @@ public class DefaultMutableTreeNode implements Cloneable,
 
 
 
-    final class PostorderEnumeration implements Enumeration<TreeNode> {
+    static final class PostorderEnumeration implements Enumeration<TreeNode> {
         protected TreeNode root;
         protected Enumeration<? extends TreeNode> children;
         protected Enumeration<TreeNode> subtree;
@@ -1398,7 +1398,7 @@ public class DefaultMutableTreeNode implements Cloneable,
 
 
 
-    final class BreadthFirstEnumeration implements Enumeration<TreeNode> {
+    static final class BreadthFirstEnumeration implements Enumeration<TreeNode> {
         protected Queue queue;
 
         public BreadthFirstEnumeration(TreeNode rootNode) {
@@ -1430,11 +1430,11 @@ public class DefaultMutableTreeNode implements Cloneable,
 
 
         // A simple queue with a linked list data structure.
-        final class Queue {
+        static final class Queue {
             QNode head; // null if empty
             QNode tail;
 
-            final class QNode {
+            static final class QNode {
                 public Object   object;
                 public QNode    next;   // null if end
                 public QNode(Object object, QNode next) {
@@ -1486,7 +1486,7 @@ public class DefaultMutableTreeNode implements Cloneable,
 
 
 
-    final class PathBetweenNodesEnumeration implements Enumeration<TreeNode> {
+    static final class PathBetweenNodesEnumeration implements Enumeration<TreeNode> {
         protected Stack<TreeNode> stack;
 
         public PathBetweenNodesEnumeration(TreeNode ancestor,

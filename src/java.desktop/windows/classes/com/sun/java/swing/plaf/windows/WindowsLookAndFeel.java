@@ -2113,7 +2113,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * Gets an <code>Icon</code> from the native libraries if available.
      * A desktop property is used to trigger reloading the icon when needed.
      */
-    private class ActiveWindowsIcon implements UIDefaults.ActiveValue {
+    private static class ActiveWindowsIcon implements UIDefaults.ActiveValue {
         private Icon icon;
         private String nativeImageName;
         private String fallbackName;
@@ -2419,7 +2419,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private class TriggerDesktopProperty extends WindowsDesktopProperty {
+    private static class TriggerDesktopProperty extends WindowsDesktopProperty {
         TriggerDesktopProperty(String key) {
             super(key, null);
             // This call adds a property change listener for the property,
@@ -2436,7 +2436,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private class FontDesktopProperty extends TriggerDesktopProperty {
+    private static class FontDesktopProperty extends TriggerDesktopProperty {
         FontDesktopProperty(String key) {
             super(key);
         }

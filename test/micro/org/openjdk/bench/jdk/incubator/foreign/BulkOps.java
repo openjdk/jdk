@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,23 @@ package org.openjdk.bench.jdk.incubator.foreign;
 import jdk.incubator.foreign.ResourceScope;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
 import jdk.incubator.foreign.MemorySegment;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.concurrent.TimeUnit;
 
-import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -55,26 +59,31 @@ public class BulkOps {
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
 
-    static final long unsafe_addr = unsafe.allocateMemory(ALLOC_SIZE);
-    static final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, ResourceScope.newConfinedScope());
+    final ResourceScope scope = ResourceScope.newConfinedScope();
 
-    static final int[] bytes = new int[ELEM_SIZE];
-    static final MemorySegment bytesSegment = MemorySegment.ofArray(bytes);
-    static final int UNSAFE_INT_OFFSET = unsafe.arrayBaseOffset(int[].class);
+    final long unsafe_addr = unsafe.allocateMemory(ALLOC_SIZE);
+    final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, ResourceScope.newConfinedScope());
+    final IntBuffer buffer = IntBuffer.allocate(ELEM_SIZE);
+
+    final int[] bytes = new int[ELEM_SIZE];
+    final MemorySegment bytesSegment = MemorySegment.ofArray(bytes);
+    final int UNSAFE_INT_OFFSET = unsafe.arrayBaseOffset(int[].class);
 
     // large(ish) segments/buffers with same content, 0, for mismatch, non-multiple-of-8 sized
     static final int SIZE_WITH_TAIL = (1024 * 1024) + 7;
-    static final MemorySegment mismatchSegmentLarge1 = MemorySegment.allocateNative(SIZE_WITH_TAIL, ResourceScope.newConfinedScope());
-    static final MemorySegment mismatchSegmentLarge2 = MemorySegment.allocateNative(SIZE_WITH_TAIL, ResourceScope.newConfinedScope());
-    static final ByteBuffer mismatchBufferLarge1 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
-    static final ByteBuffer mismatchBufferLarge2 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
+    final MemorySegment mismatchSegmentLarge1 = MemorySegment.allocateNative(SIZE_WITH_TAIL, scope);
+    final MemorySegment mismatchSegmentLarge2 = MemorySegment.allocateNative(SIZE_WITH_TAIL, scope);
+    final ByteBuffer mismatchBufferLarge1 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
+    final ByteBuffer mismatchBufferLarge2 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
 
     // mismatch at first byte
-    static final MemorySegment mismatchSegmentSmall1 = MemorySegment.allocateNative(7, ResourceScope.newConfinedScope());
-    static final MemorySegment mismatchSegmentSmall2 = MemorySegment.allocateNative(7, ResourceScope.newConfinedScope());
-    static final ByteBuffer mismatchBufferSmall1 = ByteBuffer.allocateDirect(7);
-    static final ByteBuffer mismatchBufferSmall2 = ByteBuffer.allocateDirect(7);
-    static {
+    final MemorySegment mismatchSegmentSmall1 = MemorySegment.allocateNative(7, scope);
+    final MemorySegment mismatchSegmentSmall2 = MemorySegment.allocateNative(7, scope);
+    final ByteBuffer mismatchBufferSmall1 = ByteBuffer.allocateDirect(7);
+    final ByteBuffer mismatchBufferSmall2 = ByteBuffer.allocateDirect(7);
+
+    @Setup
+    public void setup() {
         mismatchSegmentSmall1.fill((byte) 0xFF);
         mismatchBufferSmall1.put((byte) 0xFF).clear();
         // verify expected mismatch indices
@@ -90,12 +99,15 @@ public class BulkOps {
         bi = mismatchBufferSmall1.mismatch(mismatchBufferSmall2);
         if (bi != 0)
             throw new AssertionError("Unexpected mismatch index:" + bi);
-    }
 
-    static {
         for (int i = 0 ; i < bytes.length ; i++) {
             bytes[i] = i;
         }
+    }
+
+    @TearDown
+    public void tearDown() {
+        scope.close();
     }
 
     @Benchmark
@@ -120,6 +132,50 @@ public class BulkOps {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void segment_copy() {
         segment.copyFrom(bytesSegment);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_copy_static() {
+        MemorySegment.copy(bytes, 0, segment, JAVA_INT, 0, bytes.length);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_copy_static_small() {
+        MemorySegment.copy(bytes, 0, segment, JAVA_INT, 0, 10);
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_copy_static_small_dontinline() {
+        MemorySegment.copy(bytes, 0, segment, JAVA_INT, 0, 10);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void unsafe_copy_small() {
+        unsafe.copyMemory(bytes, UNSAFE_INT_OFFSET, null, unsafe_addr, 10 * CARRIER_SIZE);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void buffer_copy_small() {
+        buffer.put(0, bytes, 0, 10);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void buffer_copy() {
+        buffer.put(0, bytes, 0, bytes.length);
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_copy_static_dontinline() {
+        MemorySegment.copy(bytes, 0, segment, JAVA_INT, 0, bytes.length);
     }
 
     @Benchmark

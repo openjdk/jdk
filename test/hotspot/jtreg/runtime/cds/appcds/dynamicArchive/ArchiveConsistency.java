@@ -112,31 +112,31 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetHeaderSize(),  (int)copiedJsa.length() + 1024);
         runTwo(baseArchiveName, largerHeaderSize,
                appJar, mainClass, 1,
-               new String[] {"_header_size should be equal to _base_archive_path_offset plus _base_archive_name_size",
+               new String[] {"_header_size should be equal to _base_archive_name_offset plus _base_archive_name_size",
                              "Unable to use shared archive"});
 
         // 3. Make base archive path offset beyond of header size
         System.out.println("\n3. Make base archive path offset beyond of header size.");
-        String wrongBaseArchivePathOffset = getNewArchiveName("wrongBaseArchivePathOffset");
-        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseArchivePathOffset);
+        String wrongBaseArchiveNameOffset = getNewArchiveName("wrongBaseArchiveNameOffset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseArchiveNameOffset);
         int fileHeaderSize = (int)CDSArchiveUtils.fileHeaderSize(copiedJsa);
-        int baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
-        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetBaseArchivePathOffset(), baseArchivePathOffset + 1024);
-        runTwo(baseArchiveName, wrongBaseArchivePathOffset,
+        int baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetBaseArchiveNameOffset(), baseArchiveNameOffset + 1024);
+        runTwo(baseArchiveName, wrongBaseArchiveNameOffset,
                appJar, mainClass, 1,
-               new String[] {"_header_size should be equal to _base_archive_path_offset plus _base_archive_name_size",
+               new String[] {"_header_size should be equal to _base_archive_name_offset plus _base_archive_name_size",
                              "The shared archive file has an incorrect header size",
                              "Unable to use shared archive"});
 
         // 4. Make base archive path offset points to middle of name size
         System.out.println("\n4. Make base archive path offset points to middle of name size");
-        String wrongBasePathOffset = getNewArchiveName("wrongBasePathOffset");
-        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBasePathOffset);
+        String wrongBaseNameOffset = getNewArchiveName("wrongBaseNameOffset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseNameOffset);
         int baseArchiveNameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
-        baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
-        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, baseArchivePathOffset,
-                                             baseArchivePathOffset + baseArchiveNameSize/2);
-        runTwo(baseArchiveName, wrongBasePathOffset,
+        baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, baseArchiveNameOffset,
+                                             baseArchiveNameOffset + baseArchiveNameSize/2);
+        runTwo(baseArchiveName, wrongBaseNameOffset,
                appJar, mainClass, 1,
                new String[] {"An error has occurred while processing the shared archive file.",
                              "Header checksum verification failed",
@@ -146,9 +146,9 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         System.out.println("\n5. Make base archive name not terminated with '\0'");
         String wrongBaseName = getNewArchiveName("wrongBaseName");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseName);
-        baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
+        baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
         baseArchiveNameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
-        long offset = baseArchivePathOffset + baseArchiveNameSize - 1;  // end of line
+        long offset = baseArchiveNameOffset + baseArchiveNameSize - 1;  // end of line
         CDSArchiveUtils.writeData(copiedJsa, offset, new byte[] {(byte)'X'});
 
         runTwo(baseArchiveName, wrongBaseName,
@@ -160,9 +160,9 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         System.out.println("\n6. Modify base archive name to a file that doesn't exist");
         String wrongBaseName2 = getNewArchiveName("wrongBaseName2");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseName2);
-        baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
+        baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
         baseArchiveNameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
-        offset = baseArchivePathOffset + baseArchiveNameSize - 2;  // the "a" in ".jsa"
+        offset = baseArchiveNameOffset + baseArchiveNameSize - 2;  // the "a" in ".jsa"
         CDSArchiveUtils.writeData(copiedJsa, offset, new byte[] {(byte)'b'}); // .jsa -> .jsb
 
         // Make sure it doesn't exist

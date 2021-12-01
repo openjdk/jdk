@@ -401,6 +401,7 @@ public class TagletWriterImpl extends TagletWriter {
                 Element e = null;
                 String t = null;
                 boolean linkEncountered = false;
+                boolean markupEncountered = false;
                 Set<String> classes = new HashSet<>();
                 for (Style s : styles) {
                     if (s instanceof Style.Name n) {
@@ -414,6 +415,8 @@ public class TagletWriterImpl extends TagletWriter {
                             // TODO: diagnostic output
                         }
                     } else if (s instanceof Style.Markup) {
+                        markupEncountered = true;
+                        break;
                     } else {
                         // TODO: transform this if...else into an exhaustive
                         // switch over the sealed Style hierarchy when "Pattern
@@ -423,13 +426,15 @@ public class TagletWriterImpl extends TagletWriter {
                     }
                 }
                 Content c;
-                if (linkEncountered) {
+                if (markupEncountered) {
+                    return;
+                } else if (linkEncountered) {
                     assert e != null;
                     String line = sequence.toString();
                     String strippedLine = line.strip();
                     int idx = line.indexOf(strippedLine);
                     assert idx >= 0; // because the stripped line is a substring of the line being stripped
-                    Text whitespace = Text.of(line.substring(0, idx));
+                    Text whitespace = Text.of(utils.normalizeNewlines(line.substring(0, idx)));
                     // If the leading whitespace is not excluded from the link,
                     // browsers might exhibit unwanted behavior. For example, a
                     // browser might display hand-click cursor while user hovers
@@ -438,7 +443,7 @@ public class TagletWriterImpl extends TagletWriter {
                     c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
                     // We don't care about trailing whitespace.
                 } else {
-                    c = HtmlTree.SPAN(Text.of(sequence));
+                    c = HtmlTree.SPAN(Text.of(text));
                     classes.forEach(((HtmlTree) c)::addStyle);
                 }
                 code.add(c);
