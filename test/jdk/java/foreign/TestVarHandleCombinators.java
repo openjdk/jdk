@@ -29,6 +29,7 @@
 
 import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -43,7 +44,7 @@ public class TestVarHandleCombinators {
 
     @Test
     public void testElementAccess() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, ByteOrder.nativeOrder());
+        VarHandle vh = MemoryHandles.varHandle(ValueLayout.JAVA_BYTE);
 
         byte[] arr = { 0, 0, -1, 0 };
         MemorySegment segment = MemorySegment.ofArray(arr);
@@ -52,7 +53,7 @@ public class TestVarHandleCombinators {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void testUnalignedElement() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, 4, ByteOrder.nativeOrder());
+        VarHandle vh = MemoryHandles.varHandle(ValueLayout.JAVA_BYTE.withBitAlignment(32));
         MemorySegment segment = MemorySegment.ofArray(new byte[4]);
         vh.get(segment, 2L); //should throw
         //FIXME: the VH only checks the alignment of the segment, which is fine if the VH is derived from layouts,
@@ -60,19 +61,9 @@ public class TestVarHandleCombinators {
         //FIXME: at least until the VM is fixed
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testAlignNotPowerOf2() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, 3, ByteOrder.nativeOrder());
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testAlignNegative() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, -1, ByteOrder.nativeOrder());
-    }
-
     @Test
     public void testAlign() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, 2, ByteOrder.nativeOrder());
+        VarHandle vh = MemoryHandles.varHandle(ValueLayout.JAVA_BYTE.withBitAlignment(16));
 
         MemorySegment segment = MemorySegment.allocateNative(1, 2, ResourceScope.newImplicitScope());
         vh.set(segment, 0L, (byte) 10); // fine, memory region is aligned
@@ -81,7 +72,7 @@ public class TestVarHandleCombinators {
 
     @Test
     public void testByteOrderLE() {
-        VarHandle vh = MemoryHandles.varHandle(short.class, 2, ByteOrder.LITTLE_ENDIAN);
+        VarHandle vh = MemoryHandles.varHandle(ValueLayout.JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN));
         byte[] arr = new byte[2];
         MemorySegment segment = MemorySegment.ofArray(arr);
         vh.set(segment, 0L, (short) 0xFF);
@@ -91,7 +82,7 @@ public class TestVarHandleCombinators {
 
     @Test
     public void testByteOrderBE() {
-        VarHandle vh = MemoryHandles.varHandle(short.class, 2, ByteOrder.BIG_ENDIAN);
+        VarHandle vh = MemoryHandles.varHandle(ValueLayout.JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN));
         byte[] arr = new byte[2];
         MemorySegment segment = MemorySegment.ofArray(arr);
         vh.set(segment, 0L, (short) 0xFF);
@@ -106,7 +97,7 @@ public class TestVarHandleCombinators {
 
         //[10 : [5 : [x32 i32]]]
 
-        VarHandle vh = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
+        VarHandle vh = MemoryHandles.varHandle(ValueLayout.JAVA_INT.withBitAlignment(32));
         int count = 0;
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
             MemorySegment segment = MemorySegment.allocateNative(inner_size * outer_size * 8, 4, scope);
@@ -121,21 +112,4 @@ public class TestVarHandleCombinators {
             }
         }
     }
-
-    @Test(dataProvider = "badCarriers", expectedExceptions = IllegalArgumentException.class)
-    public void testBadCarrier(Class<?> carrier) {
-        MemoryHandles.varHandle(carrier, ByteOrder.nativeOrder());
-    }
-
-    @DataProvider(name = "badCarriers")
-    public Object[][] createBadCarriers() {
-        return new Object[][] {
-                { void.class },
-                { boolean.class },
-                { Object.class },
-                { int[].class },
-                { MemorySegment.class }
-        };
-    }
-
 }

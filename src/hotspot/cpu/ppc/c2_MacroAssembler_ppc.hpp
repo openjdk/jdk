@@ -32,10 +32,16 @@
   // Compress char[] to byte[] by compressing 16 bytes at once.
   void string_compress_16(Register src, Register dst, Register cnt,
                           Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
-                          Label& Lfailure);
+                          Label& Lfailure, bool ascii = false);
 
   // Compress char[] to byte[]. cnt must be positive int.
-  void string_compress(Register src, Register dst, Register cnt, Register tmp, Label& Lfailure);
+  void string_compress(Register src, Register dst, Register cnt, Register tmp,
+                       Label& Lfailure, bool ascii = false);
+
+  // Encode UTF16 to ISO_8859_1 or ASCII. Return len on success or position of first mismatch.
+  void encode_iso_array(Register src, Register dst, Register len,
+                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
+                        Register result, bool ascii);
 
   // Inflate byte[] to char[] by inflating 16 bytes at once.
   void string_inflate_16(Register src, Register dst, Register cnt,

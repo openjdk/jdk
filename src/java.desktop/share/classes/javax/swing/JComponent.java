@@ -3448,7 +3448,7 @@ public abstract class JComponent extends Container implements Serializable,
      * <code>ActionListeners</code> that are
      * added via <code>registerKeyboardAction</code>.
      */
-    final class ActionStandin implements Action {
+    static final class ActionStandin implements Action {
         private final ActionListener actionListener;
         private final String command;
         // This will be non-null if actionListener is an Action.
@@ -5501,8 +5501,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see java.io.ObjectInputStream#registerValidation
      * @see SwingUtilities#updateComponentTreeUI
      */
-    private class ReadObjectCallback implements ObjectInputValidation
-    {
+    private static class ReadObjectCallback implements ObjectInputValidation {
         private final Vector<JComponent> roots = new Vector<JComponent>(1);
         private final ObjectInputStream inputStream;
 

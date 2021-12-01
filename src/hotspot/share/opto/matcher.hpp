@@ -329,6 +329,8 @@ public:
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
   static const bool match_rule_supported_vector(int opcode, int vlen, BasicType bt);
 
+  static const bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
+
   static const RegMask* predicate_reg_mask(void);
   static const TypeVect* predicate_reg_type(const Type* elemTy, int length);
 
@@ -345,6 +347,8 @@ public:
 
   // Actual max scalable vector register length.
   static const int scalable_vector_reg_size(const BasicType bt);
+  // Actual max scalable predicate register length.
+  static const int scalable_predicate_reg_slots();
 
   // Vector ideal reg
   static const uint vector_ideal_reg(int len);

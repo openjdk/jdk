@@ -1812,7 +1812,7 @@ public class RepaintManager
         }
     }
 
-    private class DoubleBufferInfo {
+    private static class DoubleBufferInfo {
         public Image image;
         public Dimension size;
         public boolean needsReset = false;

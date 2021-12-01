@@ -131,3 +131,16 @@ void ZTracer::send_thread_phase(const char* name, const Ticks& start, const Tick
     e.commit();
   }
 }
+
+void ZTracer::send_thread_debug(const char* name, const Ticks& start, const Ticks& end) {
+  NoSafepointVerifier nsv;
+
+  EventZThreadDebug e(UNTIMED);
+  if (e.should_commit()) {
+    e.set_gcId(GCId::current_or_undefined());
+    e.set_name(name);
+    e.set_starttime(start);
+    e.set_endtime(end);
+    e.commit();
+  }
+}

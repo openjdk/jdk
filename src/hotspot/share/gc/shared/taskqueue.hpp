@@ -483,6 +483,7 @@ GenericTaskQueueSet<T, F>::register_queue(uint i, T* q) {
 
 template<class T, MEMFLAGS F> T*
 GenericTaskQueueSet<T, F>::queue(uint i) {
+  assert(i < _n, "index out of range.");
   return _queues[i];
 }
 

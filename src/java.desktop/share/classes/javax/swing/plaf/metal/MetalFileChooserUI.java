@@ -38,8 +38,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import javax.accessibility.*;
 
 import sun.awt.shell.ShellFolder;
@@ -958,7 +956,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     }
 
     static final int space = 10;
-    class IndentIcon implements Icon {
+    static class IndentIcon implements Icon {
 
         Icon icon = null;
         int depth = 0;
@@ -1361,7 +1359,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class AlignedLabel extends JLabel {
+    private static class AlignedLabel extends JLabel {
         private AlignedLabel[] group;
         private int maxWidth = 0;
 

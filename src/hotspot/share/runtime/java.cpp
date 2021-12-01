@@ -503,9 +503,10 @@ void before_exit(JavaThread* thread) {
   os::terminate_signal_thread();
 
 #if INCLUDE_CDS
-  if (DynamicDumpSharedSpaces) {
+  if (DynamicArchive::should_dump_at_vm_exit()) {
+    assert(ArchiveClassesAtExit != NULL, "Must be already set");
     ExceptionMark em(thread);
-    DynamicArchive::dump(thread);
+    DynamicArchive::dump(ArchiveClassesAtExit, thread);
     if (thread->has_pending_exception()) {
       ResourceMark rm(thread);
       oop pending_exception = thread->pending_exception();

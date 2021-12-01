@@ -26,6 +26,7 @@
 #ifndef CPU_AARCH64_VM_VERSION_AARCH64_HPP
 #define CPU_AARCH64_VM_VERSION_AARCH64_HPP
 
+#include "spin_wait_aarch64.hpp"
 #include "runtime/abstract_vm_version.hpp"
 #include "utilities/sizes.hpp"
 
@@ -44,6 +45,8 @@ protected:
   static int _dcache_line_size;
   static int _icache_line_size;
   static int _initial_sve_vector_length;
+
+  static SpinWait _spin_wait;
 
   // Read additional info using OS-specific interfaces
   static void get_os_cpu_info();
@@ -141,6 +144,10 @@ public:
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
   static void get_compatible_board(char *buf, int buflen);
+
+  static const SpinWait& spin_wait_desc() { return _spin_wait; }
+
+  static bool supports_on_spin_wait() { return _spin_wait.inst() != SpinWait::NONE; }
 
 #ifdef __APPLE__
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)
