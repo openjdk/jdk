@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import javax.crypto.spec.*;
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 import sun.security.util.KeyUtil;
 
@@ -266,8 +267,35 @@ final class P11RSACipher extends CipherSpi {
     // state variables such as "initialized"
     private void cancelOperation() {
         token.ensureValid();
-        // cancel operation by finishing it; avoid killSession as some
-        // hardware vendors may require re-login
+
+        if (token.p11.getVersion().major == 3) {
+            long flags = switch(mode) {
+                case MODE_ENCRYPT -> CKF_ENCRYPT;
+                case MODE_DECRYPT -> CKF_DECRYPT;
+                case MODE_SIGN -> CKF_SIGN;
+                case MODE_VERIFY -> CKF_VERIFY;
+                default -> {
+                    throw new AssertionError("Unexpected value: " + mode);
+                }
+            };
+            try {
+                token.p11.C_SessionCancel(session.id(), flags);
+            } catch (PKCS11Exception e) {
+                // try only if CKR_OPERATION_CANCEL_FAILED?
+                if (e.match(CKR_OPERATION_CANCEL_FAILED)) {
+                    tryFinishingOff();
+                } else {
+                    throw new ProviderException("cancel failed", e);
+                }
+            }
+        } else {
+            tryFinishingOff();
+        }
+    }
+
+    // only used by cancelOperation(); cancel by finishing operations
+    // avoid killSession as some hardware vendors may require re-login
+    private void tryFinishingOff() {
         try {
             PKCS11 p11 = token.p11;
             int inLen = maxInputSize;

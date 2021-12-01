@@ -445,8 +445,26 @@ final class P11Cipher extends CipherSpi {
 
     private void cancelOperation() {
         token.ensureValid();
-        // cancel operation by finishing it; avoid killSession as some
-        // hardware vendors may require re-login
+        if (token.p11.getVersion().major == 3) {
+            long flags = (encrypt? CKF_ENCRYPT : CKF_DECRYPT);
+            try {
+                token.p11.C_SessionCancel(session.id(), flags);
+            } catch (PKCS11Exception e) {
+                // try only if CKR_OPERATION_CANCEL_FAILED?
+                if (e.match(CKR_OPERATION_CANCEL_FAILED)) {
+                    tryFinishingOff();
+                } else {
+                    throw new ProviderException("cancel failed", e);
+                }
+            }
+        } else {
+            tryFinishingOff();
+        }
+    }
+
+    // only used by cancelOperation(); cancel by finishing operations
+    // avoid killSession as some hardware vendors may require re-login
+    private void tryFinishingOff() {
         try {
             int bufLen = doFinalLength(0);
             byte[] buffer = new byte[bufLen];
@@ -458,7 +476,7 @@ final class P11Cipher extends CipherSpi {
         } catch (PKCS11Exception e) {
             if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
-                // call. If the operation inside the token was already cancelled,
+                // call. If the operation inside the token is already cancelled,
                 // do not fail here. This is part of a defensive mechanism for
                 // PKCS#11 libraries that do not strictly follow the standard.
                 return;

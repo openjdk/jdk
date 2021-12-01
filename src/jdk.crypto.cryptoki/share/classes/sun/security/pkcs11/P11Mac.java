@@ -147,8 +147,25 @@ final class P11Mac extends MacSpi {
 
     private void cancelOperation() {
         token.ensureValid();
-        // cancel operation by finishing it; avoid killSession as some
-        // hardware vendors may require re-login
+        if (token.p11.getVersion().major == 3) {
+            try {
+                token.p11.C_SessionCancel(session.id(), CKF_SIGN);
+            } catch (PKCS11Exception e) {
+                // try only if CKR_OPERATION_CANCEL_FAILED?
+                if (e.match(CKR_OPERATION_CANCEL_FAILED)) {
+                    tryFinishingOff();
+                } else {
+                    throw new ProviderException("cancel failed", e);
+                }
+            }
+        } else {
+            tryFinishingOff();
+        }
+    }
+
+    // only used by cancelOperation(); cancel by finishing operations
+    // avoid killSession as some hardware vendors may require re-login
+    private void tryFinishingOff() {
         try {
             token.p11.C_SignFinal(session.id(), 0);
         } catch (PKCS11Exception e) {

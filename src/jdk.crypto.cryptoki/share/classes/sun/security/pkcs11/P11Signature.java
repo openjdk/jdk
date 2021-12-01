@@ -280,8 +280,27 @@ final class P11Signature extends SignatureSpi {
 
     private void cancelOperation() {
         token.ensureValid();
-        // cancel operation by finishing it; avoid killSession as some
-        // hardware vendors may require re-login
+
+        if (token.p11.getVersion().major == 3) {
+            long flags = (mode == M_SIGN? CKF_SIGN : CKF_VERIFY);
+            try {
+                token.p11.C_SessionCancel(session.id(), flags);
+            } catch (PKCS11Exception e) {
+                // try only if CKR_OPERATION_CANCEL_FAILED?
+                if (e.match(CKR_OPERATION_CANCEL_FAILED)) {
+                    tryFinishingOff();
+                } else {
+                    throw new ProviderException("cancel failed", e);
+                }
+            }
+        } else {
+            tryFinishingOff();
+        }
+    }
+
+    // only used by cancelOperation; cancel by finishing operations
+    // avoid killSession call as some hardware vendors may require re-login
+    private void tryFinishingOff() {
         try {
             if (mode == M_SIGN) {
                 if (type == T_UPDATE) {
@@ -317,9 +336,9 @@ final class P11Signature extends SignatureSpi {
         } catch (PKCS11Exception e) {
             if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
-                // call. If the operation inside the token was already cancelled,
-                // do not fail here. This is part of a defensive mechanism for
-                // PKCS#11 libraries that do not strictly follow the standard.
+                // call. If the operation was already cancelled, do not fail
+                // here. This is part of a defensive mechanism for PKCS#11
+                // libraries that do not strictly follow the standard.
                 return;
             }
             if (mode == M_VERIFY) {

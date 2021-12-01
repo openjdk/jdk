@@ -401,8 +401,27 @@ final class P11AEADCipher extends CipherSpi {
     }
 
     private void cancelOperation() {
-        // cancel operation by finishing it; avoid killSession as some
-        // hardware vendors may require re-login
+        token.ensureValid();
+        if (token.p11.getVersion().major == 3) {
+            long flags = (encrypt? CKF_ENCRYPT : CKF_DECRYPT);
+            try {
+                token.p11.C_SessionCancel(session.id(), flags);
+            } catch (PKCS11Exception e) {
+                // try only if CKR_OPERATION_CANCEL_FAILED?
+                if (e.match(CKR_OPERATION_CANCEL_FAILED)) {
+                    tryFinishingOff();
+                } else {
+                    throw new ProviderException("cancel failed", e);
+                }
+            }
+        } else {
+            tryFinishingOff();
+        }
+    }
+
+    // only used by cancelOperation(); cancel by finishing operations
+    // avoid killSession as some hardware vendors may require re-login
+    private void tryFinishingOff() {
         int bufLen = doFinalLength(0);
         byte[] buffer = new byte[bufLen];
         byte[] in = dataBuffer.toByteArray();

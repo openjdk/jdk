@@ -271,8 +271,27 @@ final class P11PSSSignature extends SignatureSpi {
         token.ensureValid();
         if (DEBUG) System.out.print("Cancelling operation");
 
-        // cancel operation by finishing it; avoid killSession as some
-        // hardware vendors may require re-login
+        if (token.p11.getVersion().major == 3) {
+            long flags = (mode == M_SIGN? CKF_SIGN : CKF_VERIFY);
+            try {
+                token.p11.C_SessionCancel(session.id(), flags);
+                if (DEBUG) System.out.println(" by C_SessionCancel");
+            } catch (PKCS11Exception e) {
+                // try only if CKR_OPERATION_CANCEL_FAILED?
+                if (e.match(CKR_OPERATION_CANCEL_FAILED)) {
+                    tryFinishingOff();
+                } else {
+                    throw new ProviderException("cancel failed", e);
+                }
+            }
+        } else {
+            tryFinishingOff();
+        }
+    }
+
+    // only used by cancelOperation; cancel by finishing operations
+    // avoid killSession call as some hardware vendors may require re-login
+    private void tryFinishingOff() {
         try {
             if (mode == M_SIGN) {
                 if (type == T_UPDATE) {
