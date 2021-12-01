@@ -22,7 +22,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
