@@ -452,6 +452,8 @@ public abstract class KeyStoreSpi {
      *
      * @implSpec
      * The default implementation returns an empty {@code Set}.
+     * {@code KeyStoreSpi} implementations that support attributes
+     * should override this method.
      *
      * @param alias the alias name
      * @return an unmodifiable {@code Set} of attributes. This set is
@@ -460,9 +462,8 @@ public abstract class KeyStoreSpi {
      *      empty for {@code PrivateKeyEntry} or {@code SecretKeyEntry}
      *      entries that contain protected attributes. These protected
      *      attributes should be populated into the result returned by
-     *      {@link #engineGetEntry} and therefore available through
-     *      the {@link Entry#getAttributes} method after the entry
-     *      is extracted.
+     *      {@link #engineGetEntry} and can be retrieved by calling
+     *      the {@link Entry#getAttributes} method.
      *
      * @throws KeyStoreException if the keystore has not been initialized
      * (loaded).
