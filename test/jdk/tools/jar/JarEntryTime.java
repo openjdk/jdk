@@ -210,7 +210,7 @@ public class JarEntryTime {
         }
 
         // Test jars are reproducible across timezones
-        TimeZone tz0    = TimeZone.getDefault(); 
+        TimeZone tz0    = TimeZone.getDefault();
         TimeZone tzAsia = TimeZone.getTimeZone("Asia/Shanghai");
         TimeZone tzLA   = TimeZone.getTimeZone("America/Los_Angeles");
         for (String sourceDate : sourceDates) {
