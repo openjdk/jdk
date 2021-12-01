@@ -134,13 +134,13 @@ void LIR_Opr::validate_type() const {
     case T_FLOAT:
       // FP return values can be also in CPU registers on ARM (softfp ABI)
       assert((kindfield == fpu_register || kindfield == stack_value
-             ARM_ONLY(|| kindfield == cpu_register) &&
+             ARM_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == single_size, "must match");
       break;
     case T_DOUBLE:
       // FP return values can be also in CPU registers on ARM (softfp ABI)
       assert((kindfield == fpu_register || kindfield == stack_value
-             ARM_ONLY(|| kindfield == cpu_register) &&
+             ARM_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == double_size, "must match");
       break;
     case T_BOOLEAN:
