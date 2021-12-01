@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,18 @@ package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,43 +44,76 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Fork(jvmArgsAppend = "--add-opens=java.base/java.lang=ALL-UNNAMED")
 public class StringHashCode {
+    static final MethodHandle HASHCODE_LATIN1;
+    static final MethodHandle HASHCODE_UTF16;
 
-    private String hashcode;
-    private String hashcode0;
-    private String empty;
+    static {
+        try {
+            var lookup = MethodHandles.privateLookupIn(String.class, MethodHandles.lookup());
+            var latin1Klass = lookup.findClass("java.lang.StringLatin1");
+            HASHCODE_LATIN1 = lookup.findStatic(latin1Klass, "hashCode",
+                                                MethodType.methodType(int.class, byte.class.arrayType()));
+            var utf16Klass  = lookup.findClass("java.lang.StringUTF16");
+            HASHCODE_UTF16  = lookup.findStatic(utf16Klass,  "hashCode",
+                                                MethodType.methodType(int.class, byte.class.arrayType()));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-    @Setup
+    @Param({"1", "3", "10", "30", "100", "300", "1000"})
+    private int length;
+
+    private String zeroCached;
+    private String nonZeroCached;
+    private byte[] latin1Uncached;
+    private byte[] utf16Uncached;
+
+    @Setup(Level.Iteration)
     public void setup() {
-        hashcode = "abcdefghijkl";
-        hashcode0 = new String(new char[]{72, 90, 100, 89, 105, 2, 72, 90, 100, 89, 105, 2});
-        empty = new String();
+        char[] cachedValue = new char[length];
+        zeroCached = new String(cachedValue);
+        cachedValue[0] = 1;
+        nonZeroCached = new String(cachedValue);
+
+        latin1Uncached = new byte[length];
+        utf16Uncached = new byte[length * 2];
     }
 
     /**
-     * Benchmark testing String.hashCode() with a regular 12 char string with
-     * the result possibly cached in String
+     * Benchmark testing String.hashCode() for a zero hashed String with
+     * the result cached in String
      */
     @Benchmark
-    public int cached() {
-        return hashcode.hashCode();
+    public int zeroCached() {
+        return zeroCached.hashCode();
     }
 
     /**
-     * Benchmark testing String.hashCode() with a 12 char string with the
-     * hashcode = 0 forcing the value to always be recalculated.
+     * Benchmark testing String.hashCode() for a non-zero hashed String with
+     * the result cached in String
      */
     @Benchmark
-    public int notCached() {
-        return hashcode0.hashCode();
+    public int nonZeroCached() {
+        return nonZeroCached.hashCode();
     }
 
     /**
-     * Benchmark testing String.hashCode() with the empty string. Since the
-     * empty String has hashCode = 0, this value is always recalculated.
+     * Benchmark the computation of String.hashCode() for Latin1 String
      */
     @Benchmark
-    public int empty() {
-        return empty.hashCode();
+    public int uncachedLatin1() throws Throwable {
+        return (int)HASHCODE_LATIN1.invokeExact(latin1Uncached);
     }
+
+    /**
+     * Benchmark the computation of String.hashCode() for UTF16 String
+     */
+    @Benchmark
+    public int uncachedUTF16() throws Throwable {
+        return (int)HASHCODE_UTF16.invokeExact(utf16Uncached);
+    }
+
 }

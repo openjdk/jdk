@@ -151,4 +151,12 @@ public class Helper {
         return StringUTF16.lastIndexOfLatin1(src, srcCount, tgt, tgtCount, fromIndex);
     }
 
+    public static int hashCodeLatin1(byte[] value) {
+        return StringLatin1.hashCode(value);
+    }
+
+    public static int hashCodeUTF16(byte[] value) {
+        return StringUTF16.hashCode(value);
+    }
+
 }
