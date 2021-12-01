@@ -228,7 +228,6 @@ public:
   void iterate(CardVisitor& found);
 
   size_t num_entries() const { return _num_entries & EntryMask; }
-  size_t max_entries() const { return _size; }
 
   static size_t header_size_in_bytes() { return header_size_in_bytes_internal<G1CardSetArray>(); }
 

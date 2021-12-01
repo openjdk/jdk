@@ -292,6 +292,7 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    return Op_NegI;
+        case T_LONG:   return Op_NegL;
         case T_FLOAT:  return Op_NegF;
         case T_DOUBLE: return Op_NegD;
         default: fatal("NEG: %s", type2name(bt));

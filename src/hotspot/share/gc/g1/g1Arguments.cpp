@@ -45,6 +45,9 @@ static size_t calculate_heap_alignment(size_t space_alignment) {
 }
 
 void G1Arguments::initialize_alignments() {
+  // Initialize card size before initializing alignments
+  CardTable::initialize_card_size();
+
   // Set up the region size and associated fields.
   //
   // There is a circular dependency here. We base the region size on the heap
@@ -132,8 +135,8 @@ void G1Arguments::initialize_card_set_configuration() {
   uint region_size_log_mb = (uint)MAX2(HeapRegion::LogOfHRGrainBytes - LOG_M, 0);
 
   if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
-    uint num_cards_in_inline_ptr = G1CardSetConfiguration::num_cards_in_inline_ptr(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift);
-    FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(num_cards_in_inline_ptr * 2,
+    uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift);
+    FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
                                                     G1RemSetArrayOfCardsEntriesBase * (1u << (region_size_log_mb + 1))));
   }
 

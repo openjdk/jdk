@@ -25,40 +25,45 @@
 package jdk.internal.foreign.abi;
 
 import jdk.incubator.foreign.Addressable;
+import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.GroupLayout;
-import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SegmentAllocator;
 import jdk.incubator.foreign.SequenceLayout;
-import jdk.incubator.foreign.CLinker;
+import jdk.incubator.foreign.VaList;
 import jdk.incubator.foreign.ValueLayout;
 import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.Scoped;
 import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.MemoryAddressImpl;
+import jdk.internal.foreign.ResourceScopeImpl;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
+import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Reference;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -67,17 +72,26 @@ import static java.lang.invoke.MethodHandles.constant;
 import static java.lang.invoke.MethodHandles.dropArguments;
 import static java.lang.invoke.MethodHandles.dropReturn;
 import static java.lang.invoke.MethodHandles.empty;
-import static java.lang.invoke.MethodHandles.filterArguments;
+import static java.lang.invoke.MethodHandles.foldArguments;
 import static java.lang.invoke.MethodHandles.identity;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.permuteArguments;
 import static java.lang.invoke.MethodHandles.tryFinally;
 import static java.lang.invoke.MethodType.methodType;
-import static jdk.incubator.foreign.CLinker.*;
+import static jdk.incubator.foreign.ValueLayout.ADDRESS;
+import static jdk.incubator.foreign.ValueLayout.JAVA_BOOLEAN;
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
+import static jdk.incubator.foreign.ValueLayout.JAVA_CHAR;
+import static jdk.incubator.foreign.ValueLayout.JAVA_DOUBLE;
+import static jdk.incubator.foreign.ValueLayout.JAVA_FLOAT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_LONG;
+import static jdk.incubator.foreign.ValueLayout.JAVA_SHORT;
 
 public class SharedUtils {
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
     private static final MethodHandle MH_ALLOC_BUFFER;
     private static final MethodHandle MH_BASEADDRESS;
@@ -87,6 +101,8 @@ public class SharedUtils {
     private static final MethodHandle MH_CLOSE_CONTEXT;
     private static final MethodHandle MH_REACHBILITY_FENCE;
     private static final MethodHandle MH_HANDLE_UNCAUGHT_EXCEPTION;
+    private static final MethodHandle ACQUIRE_MH;
+    private static final MethodHandle RELEASE_MH;
 
     static {
         try {
@@ -107,13 +123,19 @@ public class SharedUtils {
                     methodType(void.class, Object.class));
             MH_HANDLE_UNCAUGHT_EXCEPTION = lookup.findStatic(SharedUtils.class, "handleUncaughtException",
                     methodType(void.class, Throwable.class));
+            ACQUIRE_MH = MethodHandles.lookup().findStatic(SharedUtils.class, "acquire",
+                    MethodType.methodType(void.class, Scoped[].class));
+            RELEASE_MH = MethodHandles.lookup().findStatic(SharedUtils.class, "release",
+                    MethodType.methodType(void.class, Scoped[].class));
         } catch (ReflectiveOperationException e) {
             throw new BootstrapMethodError(e);
         }
     }
 
     // this allocator should be used when no allocation is expected
-    public static final SegmentAllocator THROWING_ALLOCATOR = (size, align) -> { throw new IllegalStateException("Cannot get here"); };
+    public static final SegmentAllocator THROWING_ALLOCATOR = (size, align) -> {
+        throw new IllegalStateException("Cannot get here");
+    };
 
     /**
      * Align the specified type from a given address
@@ -225,34 +247,6 @@ public class SharedUtils {
         return dest;
     }
 
-    public static void checkCompatibleType(Class<?> carrier, MemoryLayout layout, long addressSize) {
-        if (carrier.isPrimitive()) {
-            Utils.checkPrimitiveCarrierCompat(carrier, layout);
-        } else if (carrier == MemoryAddress.class) {
-            Utils.checkLayoutType(layout, ValueLayout.class);
-            if (layout.bitSize() != addressSize)
-                throw new IllegalArgumentException("Address size mismatch: " + addressSize + " != " + layout.bitSize());
-        } else if (carrier == MemorySegment.class) {
-            Utils.checkLayoutType(layout, GroupLayout.class);
-        } else {
-            throw new IllegalArgumentException("Unsupported carrier: " + carrier);
-        }
-    }
-
-    public static void checkFunctionTypes(MethodType mt, FunctionDescriptor cDesc, long addressSize) {
-        if (mt.returnType() == void.class != cDesc.returnLayout().isEmpty())
-            throw new IllegalArgumentException("Return type mismatch: " + mt + " != " + cDesc);
-        List<MemoryLayout> argLayouts = cDesc.argumentLayouts();
-        if (mt.parameterCount() != argLayouts.size())
-            throw new IllegalArgumentException("Arity mismatch: " + mt + " != " + cDesc);
-
-        int paramCount = mt.parameterCount();
-        for (int i = 0; i < paramCount; i++) {
-            checkCompatibleType(mt.parameterType(i), argLayouts.get(i), addressSize);
-        }
-        cDesc.returnLayout().ifPresent(rl -> checkCompatibleType(mt.returnType(), rl, addressSize));
-    }
-
     public static Class<?> primitiveCarrierForSize(long size, boolean useFloat) {
         if (useFloat) {
             if (size == 4) {
@@ -287,15 +281,14 @@ public class SharedUtils {
     public static String toJavaStringInternal(MemorySegment segment, long start) {
         int len = strlen(segment, start);
         byte[] bytes = new byte[len];
-        MemorySegment.ofArray(bytes)
-                .copyFrom(segment.asSlice(start, len));
+        MemorySegment.copy(segment, JAVA_BYTE, start, bytes, 0, len);
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
     private static int strlen(MemorySegment segment, long start) {
         // iterate until overflow (String can only hold a byte[], whose length can be expressed as an int)
         for (int offset = 0; offset >= 0; offset++) {
-            byte curr = MemoryAccess.getByteAtOffset(segment, start + offset);
+            byte curr = segment.get(JAVA_BYTE, start + offset);
             if (curr == 0) {
                 return offset;
             }
@@ -392,31 +385,21 @@ public class SharedUtils {
             insertPos = 1;
         } else {
             closer = identity(specializedHandle.type().returnType()); // (V) -> V
-            closer = dropArguments(closer, 0, Throwable.class); // (Throwable, V) -> V
+            if (!upcall) {
+                closer = dropArguments(closer, 0, Throwable.class); // (Throwable, V) -> V
+            } else {
+                closer = collectArguments(closer, 0, MH_HANDLE_UNCAUGHT_EXCEPTION); // (Throwable, V) -> V
+            }
             insertPos = 2;
         }
 
-        // downcalls get the leading Addressable/SegmentAllocator param as well
+        // downcalls get the leading NativeSymbol/SegmentAllocator param as well
         if (!upcall) {
-            closer = collectArguments(closer, insertPos++, reachabilityFenceHandle(Addressable.class));
-            closer = dropArguments(closer, insertPos++, SegmentAllocator.class); // (Throwable, V?, Addressable, SegmentAllocator) -> V/void
+            closer = collectArguments(closer, insertPos++, reachabilityFenceHandle(NativeSymbol.class));
+            closer = dropArguments(closer, insertPos++, SegmentAllocator.class); // (Throwable, V?, NativeSymbol, SegmentAllocator) -> V/void
         }
 
-        closer = collectArguments(closer, insertPos++, MH_CLOSE_CONTEXT); // (Throwable, V?, Addressable?, BindingContext) -> V/void
-
-        if (!upcall) {
-            // now for each Addressable parameter, add a reachability fence
-            MethodType specType = specializedHandle.type();
-            // skip 3 for address, segment allocator, and binding context
-            for (int i = 3; i < specType.parameterCount(); i++) {
-                Class<?> param = specType.parameterType(i);
-                if (Addressable.class.isAssignableFrom(param)) {
-                    closer = collectArguments(closer, insertPos++, reachabilityFenceHandle(param));
-                } else {
-                    closer = dropArguments(closer, insertPos++, param);
-                }
-            }
-        }
+        closer = collectArguments(closer, insertPos++, MH_CLOSE_CONTEXT); // (Throwable, V?, NativeSymbol?, BindingContext) -> V/void
 
         MethodHandle contextFactory;
 
@@ -434,34 +417,171 @@ public class SharedUtils {
         return specializedHandle;
     }
 
+    @ForceInline
+    @SuppressWarnings("fallthrough")
+    public static void acquire(Scoped[] args) {
+        ResourceScope scope4 = null;
+        ResourceScope scope3 = null;
+        ResourceScope scope2 = null;
+        ResourceScope scope1 = null;
+        ResourceScope scope0 = null;
+        switch (args.length) {
+            default:
+                // slow path, acquire all remaining addressable parameters in isolation
+                for (int i = 5 ; i < args.length ; i++) {
+                    acquire(args[i].scope());
+                }
+            // fast path, acquire only scopes not seen in other parameters
+            case 5:
+                scope4 = args[4].scope();
+                acquire(scope4);
+            case 4:
+                scope3 = args[3].scope();
+                if (scope3 != scope4)
+                    acquire(scope3);
+            case 3:
+                scope2 = args[2].scope();
+                if (scope2 != scope3 && scope2 != scope4)
+                    acquire(scope2);
+            case 2:
+                scope1 = args[1].scope();
+                if (scope1 != scope2 && scope1 != scope3 && scope1 != scope4)
+                    acquire(scope1);
+            case 1:
+                scope0 = args[0].scope();
+                if (scope0 != scope1 && scope0 != scope2 && scope0 != scope3 && scope0 != scope4)
+                    acquire(scope0);
+            case 0: break;
+        }
+    }
+
+    @ForceInline
+    @SuppressWarnings("fallthrough")
+    public static void release(Scoped[] args) {
+        ResourceScope scope4 = null;
+        ResourceScope scope3 = null;
+        ResourceScope scope2 = null;
+        ResourceScope scope1 = null;
+        ResourceScope scope0 = null;
+        switch (args.length) {
+            default:
+                // slow path, release all remaining addressable parameters in isolation
+                for (int i = 5 ; i < args.length ; i++) {
+                    release(args[i].scope());
+                }
+            // fast path, release only scopes not seen in other parameters
+            case 5:
+                scope4 = args[4].scope();
+                release(scope4);
+            case 4:
+                scope3 = args[3].scope();
+                if (scope3 != scope4)
+                    release(scope3);
+            case 3:
+                scope2 = args[2].scope();
+                if (scope2 != scope3 && scope2 != scope4)
+                    release(scope2);
+            case 2:
+                scope1 = args[1].scope();
+                if (scope1 != scope2 && scope1 != scope3 && scope1 != scope4)
+                    release(scope1);
+            case 1:
+                scope0 = args[0].scope();
+                if (scope0 != scope1 && scope0 != scope2 && scope0 != scope3 && scope0 != scope4)
+                    release(scope0);
+            case 0: break;
+        }
+    }
+
+    @ForceInline
+    private static void acquire(ResourceScope scope) {
+        ((ResourceScopeImpl)scope).acquire0();
+    }
+
+    @ForceInline
+    private static void release(ResourceScope scope) {
+        ((ResourceScopeImpl)scope).release0();
+    }
+
+    /*
+     * This method adds a try/finally block to a downcall method handle, to make sure that all by-reference
+     * parameters (including the target address of the native function) are kept alive for the duration of
+     * the downcall.
+     */
+    public static MethodHandle wrapDowncall(MethodHandle downcallHandle, FunctionDescriptor descriptor) {
+        boolean hasReturn = descriptor.returnLayout().isPresent();
+        MethodHandle tryBlock = downcallHandle;
+        MethodHandle cleanup = hasReturn ?
+                MethodHandles.identity(downcallHandle.type().returnType()) :
+                MethodHandles.empty(MethodType.methodType(void.class));
+        int addressableCount = 0;
+        List<UnaryOperator<MethodHandle>> adapters = new ArrayList<>();
+        for (int i = 0 ; i < downcallHandle.type().parameterCount() ; i++) {
+            Class<?> ptype = downcallHandle.type().parameterType(i);
+            if (ptype == Addressable.class || ptype == NativeSymbol.class) {
+                addressableCount++;
+            } else {
+                int pos = i;
+                adapters.add(mh -> dropArguments(mh, pos, ptype));
+            }
+        }
+
+        if (addressableCount > 0) {
+            cleanup = dropArguments(cleanup, 0, Throwable.class);
+
+            MethodType adapterType = MethodType.methodType(void.class);
+            for (int i = 0 ; i < addressableCount ; i++) {
+                adapterType = adapterType.appendParameterTypes(i == 0 ? NativeSymbol.class : Addressable.class);
+            }
+
+            MethodHandle acquireHandle = ACQUIRE_MH.asCollector(Scoped[].class, addressableCount).asType(adapterType);
+            MethodHandle releaseHandle = RELEASE_MH.asCollector(Scoped[].class, addressableCount).asType(adapterType);
+
+            for (UnaryOperator<MethodHandle> adapter : adapters) {
+                acquireHandle = adapter.apply(acquireHandle);
+                releaseHandle = adapter.apply(releaseHandle);
+            }
+
+            tryBlock = foldArguments(tryBlock, acquireHandle);
+            cleanup = collectArguments(cleanup, hasReturn ? 2 : 1, releaseHandle);
+
+            return tryFinally(tryBlock, cleanup);
+        } else {
+            return downcallHandle;
+        }
+    }
+
+    public static void checkExceptions(MethodHandle target) {
+        Class<?>[] exceptions = JLIA.exceptionTypes(target);
+        if (exceptions != null && exceptions.length != 0) {
+            throw new IllegalArgumentException("Target handle may throw exceptions: " + Arrays.toString(exceptions));
+        }
+    }
+
     // lazy init MH_ALLOC and MH_FREE handles
     private static class AllocHolder {
 
         private static final CLinker SYS_LINKER = getSystemLinker();
 
-        static final MethodHandle MH_MALLOC = SYS_LINKER.downcallHandle(CLinker.systemLookup().lookup("malloc").get(),
-                        MethodType.methodType(MemoryAddress.class, long.class),
-                FunctionDescriptor.of(C_POINTER, C_LONG_LONG));
+        static final MethodHandle MH_MALLOC = SYS_LINKER.downcallHandle(CLinker.systemCLinker().lookup("malloc").get(),
+                FunctionDescriptor.of(ADDRESS, JAVA_LONG));
 
-        static final MethodHandle MH_FREE = SYS_LINKER.downcallHandle(CLinker.systemLookup().lookup("free").get(),
-                        MethodType.methodType(void.class, MemoryAddress.class),
-                FunctionDescriptor.ofVoid(C_POINTER));
+        static final MethodHandle MH_FREE = SYS_LINKER.downcallHandle(CLinker.systemCLinker().lookup("free").get(),
+                FunctionDescriptor.ofVoid(ADDRESS));
     }
 
-    public static MemoryAddress checkSymbol(Addressable symbol) {
-        return checkAddressable(symbol, "Symbol is NULL");
+    public static void checkSymbol(NativeSymbol symbol) {
+        checkAddressable(symbol, "Symbol is NULL");
     }
 
-    public static MemoryAddress checkAddress(MemoryAddress address) {
-        return checkAddressable(address, "Address is NULL");
+    public static void checkAddress(MemoryAddress address) {
+        checkAddressable(address, "Address is NULL");
     }
 
-    private static MemoryAddress checkAddressable(Addressable symbol, String msg) {
+    private static void checkAddressable(Addressable symbol, String msg) {
         Objects.requireNonNull(symbol);
-        MemoryAddress symbolAddr = symbol.address();
-        if (symbolAddr.equals(MemoryAddress.NULL))
-            throw new IllegalArgumentException("Symbol is NULL: " + symbolAddr);
-        return symbolAddr;
+        if (symbol.address().toRawLongValue() == 0)
+            throw new IllegalArgumentException("Symbol is NULL: " + symbol);
     }
 
     public static MemoryAddress allocateMemoryInternal(long size) {
@@ -474,7 +594,7 @@ public class SharedUtils {
 
     public static void freeMemoryInternal(MemoryAddress addr) {
         try {
-            AllocHolder.MH_FREE.invokeExact(addr);
+            AllocHolder.MH_FREE.invokeExact((Addressable)addr);
         } catch (Throwable th) {
             throw new RuntimeException(th);
         }
@@ -487,12 +607,6 @@ public class SharedUtils {
             case LinuxAArch64 -> LinuxAArch64Linker.newVaList(actions, scope);
             case MacOsAArch64 -> MacOsAArch64Linker.newVaList(actions, scope);
         };
-    }
-
-    public static VarHandle vhPrimitiveOrAddress(Class<?> carrier, MemoryLayout layout) {
-        return carrier == MemoryAddress.class
-            ? MemoryHandles.asAddressVarHandle(layout.varHandle(primitiveCarrierForSize(layout.byteSize(), false)))
-            : layout.varHandle(carrier);
     }
 
     public static VaList newVaListOfAddress(MemoryAddress ma, ResourceScope scope) {
@@ -513,34 +627,6 @@ public class SharedUtils {
         };
     }
 
-    public static MethodType convertVaListCarriers(MethodType mt, Class<?> carrier) {
-        Class<?>[] params = new Class<?>[mt.parameterCount()];
-        for (int i = 0; i < params.length; i++) {
-            Class<?> pType = mt.parameterType(i);
-            params[i] = ((pType == VaList.class) ? carrier : pType);
-        }
-        return methodType(mt.returnType(), params);
-    }
-
-    public static MethodHandle unboxVaLists(MethodType type, MethodHandle handle, MethodHandle unboxer) {
-        for (int i = 0; i < type.parameterCount(); i++) {
-            if (type.parameterType(i) == VaList.class) {
-               handle = filterArguments(handle, i + 1, unboxer); // +1 for leading address
-            }
-        }
-        return handle;
-    }
-
-    public static MethodHandle boxVaLists(MethodHandle handle, MethodHandle boxer) {
-        MethodType type = handle.type();
-        for (int i = 0; i < type.parameterCount(); i++) {
-            if (type.parameterType(i) == VaList.class) {
-               handle = filterArguments(handle, i, boxer);
-            }
-        }
-        return handle;
-    }
-
     static void checkType(Class<?> actualType, Class<?> expectedType) {
         if (expectedType != actualType) {
             throw new IllegalArgumentException(
@@ -549,9 +635,12 @@ public class SharedUtils {
     }
 
     public static boolean isTrivial(FunctionDescriptor cDesc) {
-        return cDesc.attribute(FunctionDescriptor.TRIVIAL_ATTRIBUTE_NAME)
-                .map(Boolean.class::cast)
-                .orElse(false);
+        return false; // FIXME: use system property?
+    }
+
+    public static boolean isVarargsIndex(FunctionDescriptor descriptor, int argIndex) {
+        int firstPos = descriptor.firstVariadicArgumentIndex();
+        return firstPos != -1 && argIndex >= firstPos;
     }
 
     public static class SimpleVaArg {
@@ -566,13 +655,11 @@ public class SharedUtils {
         }
 
         public VarHandle varHandle() {
-            return carrier == MemoryAddress.class
-                ? MemoryHandles.asAddressVarHandle(layout.varHandle(primitiveCarrierForSize(layout.byteSize(), false)))
-                : layout.varHandle(carrier);
+            return layout.varHandle();
         }
     }
 
-    public static non-sealed class EmptyVaList implements VaList {
+    public static non-sealed class EmptyVaList implements VaList, Scoped {
 
         private final MemoryAddress address;
 
@@ -585,32 +672,27 @@ public class SharedUtils {
         }
 
         @Override
-        public int vargAsInt(MemoryLayout layout) {
+        public int nextVarg(ValueLayout.OfInt layout) {
             throw uoe();
         }
 
         @Override
-        public long vargAsLong(MemoryLayout layout) {
+        public long nextVarg(ValueLayout.OfLong layout) {
             throw uoe();
         }
 
         @Override
-        public double vargAsDouble(MemoryLayout layout) {
+        public double nextVarg(ValueLayout.OfDouble layout) {
             throw uoe();
         }
 
         @Override
-        public MemoryAddress vargAsAddress(MemoryLayout layout) {
+        public MemoryAddress nextVarg(ValueLayout.OfAddress layout) {
             throw uoe();
         }
 
         @Override
-        public MemorySegment vargAsSegment(MemoryLayout layout, SegmentAllocator allocator) {
-            throw uoe();
-        }
-
-        @Override
-        public MemorySegment vargAsSegment(MemoryLayout layout, ResourceScope scope) {
+        public MemorySegment nextVarg(GroupLayout layout, SegmentAllocator allocator) {
             throw uoe();
         }
 
@@ -638,19 +720,21 @@ public class SharedUtils {
     static void writeOverSized(MemorySegment ptr, Class<?> type, Object o) {
         // use VH_LONG for integers to zero out the whole register in the process
         if (type == long.class) {
-            MemoryAccess.setLong(ptr, (long) o);
+            ptr.set(JAVA_LONG, 0, (long) o);
         } else if (type == int.class) {
-            MemoryAccess.setLong(ptr, (int) o);
+            ptr.set(JAVA_LONG, 0, (int) o);
         } else if (type == short.class) {
-            MemoryAccess.setLong(ptr, (short) o);
+            ptr.set(JAVA_LONG, 0, (short) o);
         } else if (type == char.class) {
-            MemoryAccess.setLong(ptr, (char) o);
+            ptr.set(JAVA_LONG, 0, (char) o);
         } else if (type == byte.class) {
-            MemoryAccess.setLong(ptr, (byte) o);
+            ptr.set(JAVA_LONG, 0, (byte) o);
         } else if (type == float.class) {
-            MemoryAccess.setFloat(ptr, (float) o);
+            ptr.set(JAVA_FLOAT, 0, (float) o);
         } else if (type == double.class) {
-            MemoryAccess.setDouble(ptr, (double) o);
+            ptr.set(JAVA_DOUBLE, 0, (double) o);
+        } else if (type == boolean.class) {
+            ptr.set(JAVA_BOOLEAN, 0, (boolean) o);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }
@@ -658,19 +742,21 @@ public class SharedUtils {
 
     static void write(MemorySegment ptr, Class<?> type, Object o) {
         if (type == long.class) {
-            MemoryAccess.setLong(ptr, (long) o);
+            ptr.set(JAVA_LONG, 0, (long) o);
         } else if (type == int.class) {
-            MemoryAccess.setInt(ptr, (int) o);
+            ptr.set(JAVA_INT, 0, (int) o);
         } else if (type == short.class) {
-            MemoryAccess.setShort(ptr, (short) o);
+            ptr.set(JAVA_SHORT, 0, (short) o);
         } else if (type == char.class) {
-            MemoryAccess.setChar(ptr, (char) o);
+            ptr.set(JAVA_CHAR, 0, (char) o);
         } else if (type == byte.class) {
-            MemoryAccess.setByte(ptr, (byte) o);
+            ptr.set(JAVA_BYTE, 0, (byte) o);
         } else if (type == float.class) {
-            MemoryAccess.setFloat(ptr, (float) o);
+            ptr.set(JAVA_FLOAT, 0, (float) o);
         } else if (type == double.class) {
-            MemoryAccess.setDouble(ptr, (double) o);
+            ptr.set(JAVA_DOUBLE, 0, (double) o);
+        } else if (type == boolean.class) {
+            ptr.set(JAVA_BOOLEAN, 0, (boolean) o);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }
@@ -678,21 +764,43 @@ public class SharedUtils {
 
     static Object read(MemorySegment ptr, Class<?> type) {
         if (type == long.class) {
-            return MemoryAccess.getLong(ptr);
+            return ptr.get(JAVA_LONG, 0);
         } else if (type == int.class) {
-            return MemoryAccess.getInt(ptr);
+            return ptr.get(JAVA_INT, 0);
         } else if (type == short.class) {
-            return MemoryAccess.getShort(ptr);
+            return ptr.get(JAVA_SHORT, 0);
         } else if (type == char.class) {
-            return MemoryAccess.getChar(ptr);
+            return ptr.get(JAVA_CHAR, 0);
         } else if (type == byte.class) {
-            return MemoryAccess.getByte(ptr);
+            return ptr.get(JAVA_BYTE, 0);
         } else if (type == float.class) {
-            return MemoryAccess.getFloat(ptr);
+            return ptr.get(JAVA_FLOAT, 0);
         } else if (type == double.class) {
-            return MemoryAccess.getDouble(ptr);
+            return ptr.get(JAVA_DOUBLE, 0);
+        } else if (type == boolean.class) {
+            return ptr.get(JAVA_BOOLEAN, 0);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
+        }
+    }
+
+    public static MethodType inferMethodType(FunctionDescriptor descriptor, boolean upcall) {
+        MethodType type = MethodType.methodType(descriptor.returnLayout().isPresent() ?
+                carrierFor(descriptor.returnLayout().get(), upcall) : void.class);
+        for (MemoryLayout argLayout : descriptor.argumentLayouts()) {
+            type = type.appendParameterTypes(carrierFor(argLayout, !upcall));
+        }
+        return type;
+    }
+
+    static Class<?> carrierFor(MemoryLayout layout, boolean forArg) {
+        if (layout instanceof ValueLayout valueLayout) {
+            return (forArg && valueLayout.carrier().equals(MemoryAddress.class)) ?
+                    Addressable.class : valueLayout.carrier();
+        } else if (layout instanceof GroupLayout) {
+            return MemorySegment.class;
+        } else {
+            throw new IllegalArgumentException("Unsupported layout: " + layout);
         }
     }
 }

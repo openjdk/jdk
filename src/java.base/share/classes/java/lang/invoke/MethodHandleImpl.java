@@ -1667,6 +1667,10 @@ abstract class MethodHandleImpl {
                 return caller.makeHiddenClassDefiner(name, bytes, Set.of()).defineClassAsLookup(initialize, classData);
             }
 
+            @Override
+            public Class<?>[] exceptionTypes(MethodHandle handle) {
+                return VarHandles.exceptionTypes(handle);
+            }
         });
     }
 
@@ -2273,15 +2277,16 @@ abstract class MethodHandleImpl {
 
     // Indexes into constant method handles:
     static final int
-            MH_cast                  = 0,
-            MH_selectAlternative     = 1,
-            MH_countedLoopPred       = 2,
-            MH_countedLoopStep       = 3,
-            MH_initIterator          = 4,
-            MH_iteratePred           = 5,
-            MH_iterateNext           = 6,
-            MH_Array_newInstance     = 7,
-            MH_LIMIT                 = 8;
+            MH_cast                  =              0,
+            MH_selectAlternative     =              1,
+            MH_countedLoopPred       =              2,
+            MH_countedLoopStep       =              3,
+            MH_initIterator          =              4,
+            MH_iteratePred           =              5,
+            MH_iterateNext           =              6,
+            MH_Array_newInstance     =              7,
+            MH_VarHandles_handleCheckedExceptions = 8,
+            MH_LIMIT                 =              9;
 
     static MethodHandle getConstantHandle(int idx) {
         MethodHandle handle = HANDLES[idx];
@@ -2331,6 +2336,9 @@ abstract class MethodHandleImpl {
                 case MH_Array_newInstance:
                     return IMPL_LOOKUP.findStatic(Array.class, "newInstance",
                             MethodType.methodType(Object.class, Class.class, int.class));
+                case MH_VarHandles_handleCheckedExceptions:
+                    return IMPL_LOOKUP.findStatic(VarHandles.class, "handleCheckedExceptions",
+                            MethodType.methodType(void.class, Throwable.class));
             }
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
