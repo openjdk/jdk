@@ -76,8 +76,9 @@
           "evacuation pauses")                                              \
                                                                             \
   product(uint, G1EvacuationFailureALotCSetPercent, 100,                    \
-          "Percent of the regions in cset that will fail evacuation, "      \
-          "regions will be selected from start rather than randomly.")      \
+          "The percentage of regions in the collection set starting "       \
+          "from the beginning where the forced evacuation failure "         \
+          "injection will be applied.")                                     \
           range(1, 100)
 #else
 #define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \
