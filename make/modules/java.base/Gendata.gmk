@@ -72,7 +72,7 @@ ifeq ($(CACERTS_FILE), )
   TARGETS += $(GENDATA_CACERTS)
 endif
 ifneq ($(CACERTS_SRC), )
-  GENDATA_CACERTS_SRC := $(CACERTS_SRC) 
+  GENDATA_CACERTS_SRC := $(CACERTS_SRC)
 endif
 
 ################################################################################
