@@ -58,7 +58,7 @@
 
 
 // Please keep relation of numerical values!
-// unknown < off < minimal < summary < detail
+// unknown < off < summary < detail
 //
 enum NMT_TrackingLevel {
   NMT_unknown,
