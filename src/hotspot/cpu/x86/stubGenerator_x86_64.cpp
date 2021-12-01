@@ -6528,8 +6528,13 @@ address generate_avx_ghash_processBlocks() {
     if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
         VM_Version::supports_avx512bw() &&
         VM_Version::supports_avx512vl()) {
+        // The constants used in the CRC32 algorithm requires the 1's compliment of the initial crc value.
+        // However, the constant table for CRC32-C assumes the original crc value.  Account for this
+        // difference before calling and after returning.
       __ lea(table, ExternalAddress(StubRoutines::x86::crc_table_avx512_addr()));
+      __ notl(crc);
       __ kernel_crc32_avx512(crc, buf, len, table, tmp1, tmp2);
+      __ notl(crc);
     } else {
       __ kernel_crc32(crc, buf, len, table, tmp1);
     }
@@ -6570,7 +6575,6 @@ address generate_avx_ghash_processBlocks() {
       const Register j = r9;
       const Register k = r10;
       const Register l = r11;
-      const Register table = r14;
 #ifdef _WIN64
       const Register y = rdi;
       const Register z = rsi;
@@ -6578,38 +6582,31 @@ address generate_avx_ghash_processBlocks() {
       const Register y = rcx;
       const Register z = r8;
 #endif
-      assert_different_registers(crc, buf, len, a, j, k, l, y, z, table);
+      assert_different_registers(crc, buf, len, a, j, k, l, y, z);
 
       BLOCK_COMMENT("Entry:");
       __ enter(); // required for proper stackwalking of RuntimeStub frame
-#ifdef _WIN64
-      __ push(y);
-      __ push(z);
-#endif
       if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
           VM_Version::supports_avx512bw() &&
           VM_Version::supports_avx512vl()) {
-        // The constants used in the CRC32 algorithm requires the 1's compliment of the initial crc value.
-        // However, the constant table for CRC32-C assumes the original crc value.  Account for this
-        // difference before calling and after returning.
-        __ push(table);
-        __ lea(table, ExternalAddress(StubRoutines::x86::crc32c_table_avx512_addr()));
-        __ notl(crc);
-        __ kernel_crc32_avx512(crc, buf, len, table, l, k);
-        __ notl(crc);
-        __ pop(table);
+        __ lea(j, ExternalAddress(StubRoutines::x86::crc32c_table_avx512_addr()));
+        __ kernel_crc32_avx512(crc, buf, len, j, l, k);
       } else {
+#ifdef _WIN64
+        __ push(y);
+        __ push(z);
+#endif
         __ crc32c_ipl_alg2_alt2(crc, buf, len,
                                 a, j, k,
                                 l, y, z,
                                 c_farg0, c_farg1, c_farg2,
                                 is_pclmulqdq_supported);
+#ifdef _WIN64
+        __ pop(z);
+        __ pop(y);
+#endif
       }
       __ movl(rax, crc);
-#ifdef _WIN64
-      __ pop(z);
-      __ pop(y);
-#endif
       __ vzeroupper();
       __ leave(); // required for proper stackwalking of RuntimeStub frame
       __ ret(0);

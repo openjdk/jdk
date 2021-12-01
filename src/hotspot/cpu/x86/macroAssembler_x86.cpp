@@ -7215,7 +7215,6 @@ void MacroAssembler::kernel_crc32_avx512(Register crc, Register buf, Register le
   // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
   // context for the registers used, where all instructions below are using 128-bit mode
   // On EVEX without VL and BW, these instructions will all be AVX.
-  notl(crc);
   movl(pos, 0);
 
   // check if smaller than 256B
@@ -7382,7 +7381,6 @@ void MacroAssembler::kernel_crc32_avx512(Register crc, Register buf, Register le
   pextrd(crc, xmm7, 2);
 
   bind(L_cleanup);
-  notl(crc); // ~c
   addptr(rsp, 16 * 2 + 8);
   pop(r12);
 }
