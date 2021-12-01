@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8276848
- * @summary Tests the java -m jdk.httpserver command with port not specified
+ * @summary Tests the jwebserver tool with port not specified
  * @modules jdk.httpserver
  * @library /test/lib
  * @run testng/othervm/manual CommandLinePortNotSpecifiedTest
@@ -47,7 +47,7 @@ import static java.lang.System.out;
 public class CommandLinePortNotSpecifiedTest {
 
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
-    static final String JAVA = getJava(JAVA_HOME);
+    static final String JWEBSERVER = getJwebserver(JAVA_HOME);
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("CommandLinePortNotSpecifiedTest");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
@@ -84,7 +84,7 @@ public class CommandLinePortNotSpecifiedTest {
     @Test
     public void testPortNotSpecified() throws Throwable {
         out.println("\n--- testPortNotSpecified");
-        simpleserver(JAVA, "-m", "jdk.httpserver")
+        simpleserver(JWEBSERVER)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
@@ -100,12 +100,12 @@ public class CommandLinePortNotSpecifiedTest {
 
     // --- infra ---
 
-    static String getJava(Path image) {
+    static String getJwebserver(Path image) {
         boolean isWindows = System.getProperty("os.name").startsWith("Windows");
-        Path java = image.resolve("bin").resolve(isWindows ? "java.exe" : "java");
-        if (Files.notExists(java))
-            throw new RuntimeException(java + " not found");
-        return java.toAbsolutePath().toString();
+        Path jwebserver = image.resolve("bin").resolve(isWindows ? "jwebserver.exe" : "jwebserver");
+        if (Files.notExists(jwebserver))
+            throw new RuntimeException(jwebserver + " not found");
+        return jwebserver.toAbsolutePath().toString();
     }
 
     static final String REGULAR_STARTUP_LINE1_STRING = "Serving";

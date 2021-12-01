@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Positive tests for java -m jdk.httpserver command
+ * @summary Positive tests for the jwebserver command-line tool
  * @library /test/lib
  * @modules jdk.httpserver
  * @run testng/othervm CommandLinePositiveTest
@@ -48,7 +48,7 @@ public class CommandLinePositiveTest {
 
     static final String JAVA_VERSION = System.getProperty("java.version");
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
-    static final String JAVA = getJava(JAVA_HOME);
+    static final String JWEBSERVER = getJwebserver(JAVA_HOME);
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("CommandLinePositiveTest");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
@@ -82,7 +82,7 @@ public class CommandLinePositiveTest {
     @Test(dataProvider = "directoryOptions")
     public void testDirectory(String opt) throws Throwable {
         out.println("\n--- testDirectory, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR)
+        simpleserver(JWEBSERVER, "-p", "0", opt, TEST_DIR_STR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
@@ -95,7 +95,7 @@ public class CommandLinePositiveTest {
     @Test(dataProvider = "portOptions")
     public void testPort(String opt) throws Throwable {
         out.println("\n--- testPort, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "0")
+        simpleserver(JWEBSERVER, opt, "0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
@@ -106,9 +106,9 @@ public class CommandLinePositiveTest {
     public Object[][] helpOptions() { return new Object[][] {{"-h"}, {"-?"}, {"--help"}}; }
 
     static final String USAGE_TEXT = """
-            Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
-                                          [-o none|info|verbose] [-h to show options]
-                                          [-version to show version information]""";
+            Usage: jwebserver [-b bind address] [-p port] [-d directory]
+                              [-o none|info|verbose] [-h to show options]
+                              [-version to show version information]""";
 
     static final String OPTIONS_TEXT = """
             Options:
@@ -126,7 +126,7 @@ public class CommandLinePositiveTest {
         out.println("\n--- testHelp, opt=\"%s\" ".formatted(opt));
         simpleserver(WaitForLine.HELP_STARTUP_LINE,
                      false,  // do not explicitly destroy the process
-                     JAVA, "-m", "jdk.httpserver", opt)
+                JWEBSERVER, opt)
                 .shouldHaveExitValue(0)
                 .shouldContain(USAGE_TEXT)
                 .shouldContain(OPTIONS_TEXT);
@@ -139,8 +139,8 @@ public class CommandLinePositiveTest {
     public void testVersion(String opt) throws Throwable {
         out.println("\n--- testVersion, opt=\"%s\" ".formatted(opt));
         simpleserver(WaitForLine.VERSION_STARTUP_LINE,
-                false,  // do not explicitly destroy the process
-                JAVA, "-m", "jdk.httpserver", opt)
+                     false,  // do not explicitly destroy the process
+                JWEBSERVER, opt)
                 .shouldHaveExitValue(0);
     }
 
@@ -150,11 +150,11 @@ public class CommandLinePositiveTest {
     @Test(dataProvider = "bindOptions")
     public void testBindAllInterfaces(String opt) throws Throwable {
         out.println("\n--- testBindAllInterfaces, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "0.0.0.0")
+        simpleserver(JWEBSERVER, "-p", "0", opt, "0.0.0.0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
                 .shouldContain("URL http://" + InetAddress.getLocalHost().getHostAddress());
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "::0")
+        simpleserver(JWEBSERVER, opt, "::0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
                 .shouldContain("URL http://" + InetAddress.getLocalHost().getHostAddress());
@@ -163,7 +163,7 @@ public class CommandLinePositiveTest {
     @Test(dataProvider = "bindOptions")
     public void testLastOneWinsBindAddress(String opt) throws Throwable {
         out.println("\n--- testLastOneWinsBindAddress, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "123.4.5.6", opt, LOOPBACK_ADDR)
+        simpleserver(JWEBSERVER, "-p", "0", opt, "123.4.5.6", opt, LOOPBACK_ADDR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
@@ -173,7 +173,7 @@ public class CommandLinePositiveTest {
     @Test(dataProvider = "directoryOptions")
     public void testLastOneWinsDirectory(String opt) throws Throwable {
         out.println("\n--- testLastOneWinsDirectory, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR, opt, TEST_DIR_STR)
+        simpleserver(JWEBSERVER, "-p", "0", opt, TEST_DIR_STR, opt, TEST_DIR_STR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
@@ -186,7 +186,7 @@ public class CommandLinePositiveTest {
     @Test(dataProvider = "outputOptions")
     public void testLastOneWinsOutput(String opt) throws Throwable {
         out.println("\n--- testLastOneWinsOutput, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "none", opt, "verbose")
+        simpleserver(JWEBSERVER, "-p", "0", opt, "none", opt, "verbose")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
@@ -196,7 +196,7 @@ public class CommandLinePositiveTest {
     @Test(dataProvider = "portOptions")
     public void testLastOneWinsPort(String opt) throws Throwable {
         out.println("\n--- testLastOneWinsPort, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "-999", opt, "0")
+        simpleserver(JWEBSERVER, opt, "-999", opt, "0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
@@ -212,17 +212,17 @@ public class CommandLinePositiveTest {
 
     // --- infra ---
 
-    static String getJava(Path image) {
+    static String getJwebserver(Path image) {
         boolean isWindows = System.getProperty("os.name").startsWith("Windows");
-        Path java = image.resolve("bin").resolve(isWindows ? "java.exe" : "java");
-        if (Files.notExists(java))
-            throw new RuntimeException(java + " not found");
-        return java.toAbsolutePath().toString();
+        Path jwebserver = image.resolve("bin").resolve(isWindows ? "jwebserver.exe" : "jwebserver");
+        if (Files.notExists(jwebserver))
+            throw new RuntimeException(jwebserver + " not found");
+        return jwebserver.toAbsolutePath().toString();
     }
 
     static final String REGULAR_STARTUP_LINE1_STRING = "Serving";
     static final String REGULAR_STARTUP_LINE2_STRING = "URL http://";
-    static final String VERSION_STARTUP_LINE_STRING = "java " + JAVA_VERSION;
+    static final String VERSION_STARTUP_LINE_STRING = "jwebserver " + JAVA_VERSION;
 
     // The stdout/stderr output line to wait for when starting the simpleserver
     enum WaitForLine {
