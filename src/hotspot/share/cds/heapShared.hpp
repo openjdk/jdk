@@ -43,6 +43,7 @@
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings;
 class FileMapInfo;
+class KlassSubGraphInfo;
 
 struct ArchivableStaticFieldInfo {
   const char* klass_name;
@@ -185,7 +186,7 @@ public:
   static bool is_fully_available() {
     return is_loaded() || is_mapped();
   }
-
+  static bool is_subgraph_root_class(InstanceKlass* ik);
 private:
 #if INCLUDE_CDS_JAVA_HEAP
   static bool _closed_regions_mapped;
@@ -219,12 +220,23 @@ public:
     assert(is_in_loaded_heap(o), "must be");
   }
 
+  struct CachedOopInfo {
+    KlassSubGraphInfo* _subgraph_info;
+    oop _referrer;
+    oop _obj;
+    CachedOopInfo() :_subgraph_info(), _referrer(), _obj() {}
+  };
+
 private:
+  static void check_enum_obj(int level,
+                             KlassSubGraphInfo* subgraph_info,
+                             oop orig_obj,
+                             bool is_closed_archive);
   static bool is_in_loaded_heap(uintptr_t o) {
     return (_loaded_heap_bottom <= o && o < _loaded_heap_top);
   }
 
-  typedef ResourceHashtable<oop, oop,
+  typedef ResourceHashtable<oop, CachedOopInfo,
       15889, // prime number
       ResourceObj::C_HEAP,
       mtClassShared,
@@ -263,7 +275,7 @@ private:
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
   static void check_closed_region_object(InstanceKlass* k);
-
+  static CachedOopInfo make_cached_oop_info(oop orig_obj);
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        int num,
                                        bool is_closed_archive,
@@ -460,6 +472,7 @@ private:
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_subgraph_info_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static bool initialize_enum_klass(InstanceKlass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
 };
 
 #if INCLUDE_CDS_JAVA_HEAP

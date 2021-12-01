@@ -170,9 +170,10 @@ private:
   // Flags of the current shared class.
   u2     _shared_class_flags;
   enum {
-    _archived_lambda_proxy_is_available = 2,
-    _has_value_based_class_annotation = 4,
-    _verified_at_dump_time = 8
+    _archived_lambda_proxy_is_available    = 1 << 1,
+    _has_value_based_class_annotation      = 1 << 2,
+    _verified_at_dump_time                 = 1 << 3,
+    _has_archived_enum_objs                = 1 << 4
   };
 #endif
 
@@ -336,6 +337,13 @@ protected:
     NOT_CDS(return false;)
   }
 
+  void set_has_archived_enum_objs() {
+    CDS_ONLY(_shared_class_flags |= _has_archived_enum_objs;)
+  }
+  bool has_archived_enum_objs() const {
+    CDS_ONLY(return (_shared_class_flags & _has_archived_enum_objs) != 0;)
+    NOT_CDS(return false;)
+  }
 
   // Obtain the module or package for this class
   virtual ModuleEntry* module() const = 0;

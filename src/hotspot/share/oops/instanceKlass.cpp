@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListWriter.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -1501,6 +1502,17 @@ void InstanceKlass::call_class_initializer(TRAPS) {
     // Hide the existence of the initializer for the purpose of replaying the compile
     return;
   }
+
+#if INCLUDE_CDS
+  // This is needed to ensure the consistency of the archived heap objects.
+  if (has_archived_enum_objs()) {
+    assert(is_shared(), "must be");
+    bool initialized = HeapShared::initialize_enum_klass(this, CHECK);
+    if (initialized) {
+      return;
+    }
+  }
+#endif
 
   methodHandle h_method(THREAD, class_initializer());
   assert(!is_initialized(), "we cannot initialize twice");
