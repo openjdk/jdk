@@ -25,7 +25,7 @@
  * @test
  * @bug 8193682
  * @summary Test Infinite loop while writing on closed GZipOutputStream , ZipOutputStream and JarOutputStream.
- * @run testng GZipLoopTest
+ * @run testng CloseDeflaterTest
  */
 import java.io.*;
 import java.util.Random;
@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.fail;
 
 
-public class GZipLoopTest {
+public class CloseDeflaterTest {
 
     //number of bytes to write
     private static final int INPUT_LENGTH= 512;
