@@ -62,7 +62,7 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
     }
 
     private final ZipOutputStream zos;
-    private final LocalDateTime   date;
+    private final LocalDateTime date;
     private JmodOutputStream(OutputStream out, LocalDateTime date) {
         this.zos = new ZipOutputStream(out);
         this.date = date;
