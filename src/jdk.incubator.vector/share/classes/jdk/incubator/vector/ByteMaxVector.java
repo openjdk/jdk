@@ -728,7 +728,7 @@ final class ByteMaxVector extends ByteVector {
         /*package-private*/
         static ByteMaxMask maskAll(boolean bit) {
             return VectorSupport.broadcastCoerced(ByteMaxMask.class, byte.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
+                                                  (bit ? -1 : 0), 0, null,
                                                   (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final ByteMaxMask  TRUE_MASK = new ByteMaxMask(true);

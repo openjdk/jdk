@@ -445,7 +445,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public static FloatVector zero(VectorSpecies<Float> species) {
         FloatSpecies vsp = (FloatSpecies) species;
         return VectorSupport.broadcastCoerced(vsp.vectorType(), float.class, species.length(),
-                        toBits(0.0f), vsp,
+                        toBits(0.0f), 0, vsp,
                         ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
 
@@ -3706,7 +3706,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             return (FloatVector)
                 VectorSupport.broadcastCoerced(
                     vectorType, float.class, laneCount,
-                    bits, this,
+                    bits, 0, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
 

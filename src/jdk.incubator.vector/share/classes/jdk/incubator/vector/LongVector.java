@@ -456,7 +456,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     public static LongVector zero(VectorSpecies<Long> species) {
         LongSpecies vsp = (LongSpecies) species;
         return VectorSupport.broadcastCoerced(vsp.vectorType(), long.class, species.length(),
-                                0, vsp,
+                                0, 0, vsp,
                                 ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
 
@@ -3811,7 +3811,7 @@ public abstract class LongVector extends AbstractVector<Long> {
             return (LongVector)
                 VectorSupport.broadcastCoerced(
                     vectorType, long.class, laneCount,
-                    bits, this,
+                    bits, 0, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
 

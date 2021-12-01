@@ -874,6 +874,7 @@ class methodHandle;
                                                "Ljava/lang/Class;"                                                                             \
                                                "I"                                                                                             \
                                                "J"                                                                                             \
+                                               "I"                                                                                             \
                                                "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                          \
                                                "Ljdk/internal/vm/vector/VectorSupport$BroadcastOperation;)"                                    \
                                                "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                         \

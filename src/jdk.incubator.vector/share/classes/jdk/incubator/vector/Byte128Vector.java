@@ -758,7 +758,7 @@ final class Byte128Vector extends ByteVector {
         /*package-private*/
         static Byte128Mask maskAll(boolean bit) {
             return VectorSupport.broadcastCoerced(Byte128Mask.class, byte.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
+                                                  (bit ? -1 : 0), 0, null,
                                                   (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Byte128Mask  TRUE_MASK = new Byte128Mask(true);

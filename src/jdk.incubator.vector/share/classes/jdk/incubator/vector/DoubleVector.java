@@ -445,7 +445,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     public static DoubleVector zero(VectorSpecies<Double> species) {
         DoubleSpecies vsp = (DoubleSpecies) species;
         return VectorSupport.broadcastCoerced(vsp.vectorType(), double.class, species.length(),
-                        toBits(0.0f), vsp,
+                        toBits(0.0f), 0, vsp,
                         ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
 
@@ -3756,7 +3756,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             return (DoubleVector)
                 VectorSupport.broadcastCoerced(
                     vectorType, double.class, laneCount,
-                    bits, this,
+                    bits, 0, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
 

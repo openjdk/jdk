@@ -169,7 +169,7 @@ public class VectorSupport {
      E>
     VM broadcastCoerced(Class<? extends VM> vmClass, Class<E> eClass,
                         int length,
-                        long bits, S s,
+                        long bits, int bitwise, S s,
                         BroadcastOperation<VM, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.broadcast(bits, s);

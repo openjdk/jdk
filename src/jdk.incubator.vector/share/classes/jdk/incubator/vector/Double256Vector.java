@@ -723,7 +723,7 @@ final class Double256Vector extends DoubleVector {
         /*package-private*/
         static Double256Mask maskAll(boolean bit) {
             return VectorSupport.broadcastCoerced(Double256Mask.class, long.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
+                                                  (bit ? -1 : 0), 0, null,
                                                   (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Double256Mask  TRUE_MASK = new Double256Mask(true);

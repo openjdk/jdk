@@ -456,7 +456,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     public static ShortVector zero(VectorSpecies<Short> species) {
         ShortSpecies vsp = (ShortSpecies) species;
         return VectorSupport.broadcastCoerced(vsp.vectorType(), short.class, species.length(),
-                                0, vsp,
+                                0, 0, vsp,
                                 ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
 
@@ -4145,7 +4145,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             return (ShortVector)
                 VectorSupport.broadcastCoerced(
                     vectorType, short.class, laneCount,
-                    bits, this,
+                    bits, 0, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
 

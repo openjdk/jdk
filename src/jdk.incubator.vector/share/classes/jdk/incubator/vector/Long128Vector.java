@@ -720,7 +720,7 @@ final class Long128Vector extends LongVector {
         /*package-private*/
         static Long128Mask maskAll(boolean bit) {
             return VectorSupport.broadcastCoerced(Long128Mask.class, long.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
+                                                  (bit ? -1 : 0), 0, null,
                                                   (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Long128Mask  TRUE_MASK = new Long128Mask(true);

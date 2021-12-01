@@ -734,7 +734,7 @@ final class Int128Vector extends IntVector {
         /*package-private*/
         static Int128Mask maskAll(boolean bit) {
             return VectorSupport.broadcastCoerced(Int128Mask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
+                                                  (bit ? -1 : 0), 0, null,
                                                   (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Int128Mask  TRUE_MASK = new Int128Mask(true);

@@ -456,7 +456,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     public static ByteVector zero(VectorSpecies<Byte> species) {
         ByteSpecies vsp = (ByteSpecies) species;
         return VectorSupport.broadcastCoerced(vsp.vectorType(), byte.class, species.length(),
-                                0, vsp,
+                                0, 0, vsp,
                                 ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
 
@@ -4151,7 +4151,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             return (ByteVector)
                 VectorSupport.broadcastCoerced(
                     vectorType, byte.class, laneCount,
-                    bits, this,
+                    bits, 0, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
 

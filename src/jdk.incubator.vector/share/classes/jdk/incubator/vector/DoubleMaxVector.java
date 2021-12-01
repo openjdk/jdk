@@ -716,7 +716,7 @@ final class DoubleMaxVector extends DoubleVector {
         /*package-private*/
         static DoubleMaxMask maskAll(boolean bit) {
             return VectorSupport.broadcastCoerced(DoubleMaxMask.class, long.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
+                                                  (bit ? -1 : 0), 0, null,
                                                   (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final DoubleMaxMask  TRUE_MASK = new DoubleMaxMask(true);

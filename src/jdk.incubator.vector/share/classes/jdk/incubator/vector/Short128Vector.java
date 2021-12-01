@@ -742,7 +742,7 @@ final class Short128Vector extends ShortVector {
         /*package-private*/
         static Short128Mask maskAll(boolean bit) {
             return VectorSupport.broadcastCoerced(Short128Mask.class, short.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
+                                                  (bit ? -1 : 0), 0, null,
                                                   (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Short128Mask  TRUE_MASK = new Short128Mask(true);
