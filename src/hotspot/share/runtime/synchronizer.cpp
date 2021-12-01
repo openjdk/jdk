@@ -417,6 +417,14 @@ void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread
   }
 }
 
+static bool useHeavyMonitors() {
+#if defined(X86) || defined(AARCH64)
+  return UseHeavyMonitors;
+#else
+  return false;
+#endif
+}
+
 // -----------------------------------------------------------------------------
 // Monitor Enter/Exit
 // The interpreter and compiler assembly code tries to lock using the fast path
@@ -428,7 +436,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
     handle_sync_on_value_based_class(obj, current);
   }
 
-  if (!UseHeavyMonitors) {
+  if (!useHeavyMonitors()) {
     markWord mark = obj->mark();
     if (mark.is_neutral()) {
       // Anticipate successful CAS -- the ST of the displaced mark must
@@ -467,7 +475,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
 }
 
 void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) {
-  if (!UseHeavyMonitors) {
+  if (!useHeavyMonitors()) {
     markWord mark = object->mark();
 
     markWord dhw = lock->displaced_header();
