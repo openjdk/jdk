@@ -39,6 +39,8 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.text.BreakIterator;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
@@ -1075,6 +1077,10 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
          * @see AccessibleContext#setAccessibleName
          */
         public String getAccessibleName() {
+            return getAccessibleNameCheckIcon(getAccessibleNameImpl());
+        }
+
+        private String getAccessibleNameImpl() {
             String name = accessibleName;
 
             if (name == null) {
@@ -1089,6 +1095,25 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
             return name;
         }
 
+        private String getAccessibleNameCheckIcon(String name) {
+            // If an icon is set but no text is set,
+            // the screen reader will say "image".
+            // cc jdk-8277497
+            if (((name == null) || name.isEmpty()) &&
+                    (JLabel.this.getIcon() != null)) {
+                if (JLabel.this.getIcon() instanceof Accessible) {
+                    AccessibleContext ac = ((Accessible) JLabel.this.getIcon()).getAccessibleContext();
+                    if (ac != null) {
+                        name = ac.getAccessibleName();
+                    }
+                }
+                if ((name == null) || name.isEmpty()) {
+                    name = ResourceBundle.getBundle("com.sun.accessibility.internal.resources.accessibility", Locale.getDefault()).getString("image");
+                }
+            }
+            return name;
+        }
+
         /**
          * Get the role of this object.
          *
@@ -1097,6 +1122,11 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
          * @see AccessibleRole
          */
         public AccessibleRole getAccessibleRole() {
+            String name = getAccessibleNameImpl();
+            if (((name == null) || name.isEmpty()) &&
+                    (JLabel.this.getIcon() != null)) {
+                return AccessibleRole.ICON;
+            }
             return AccessibleRole.LABEL;
         }
 
