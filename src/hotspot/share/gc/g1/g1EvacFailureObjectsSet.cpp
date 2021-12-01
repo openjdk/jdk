@@ -85,13 +85,10 @@ HeapWord* G1EvacFailureObjectsSet::G1EvacFailureObjectsIterationHelper::previous
   return obj_end;
 }
 
-// TODO: fix, make it const or configurable as vm option.
-static const uint TASK_LIMIT = 1000;
-
 void G1EvacFailureObjectsSet::G1EvacFailureObjectsIterationHelper::insert_queue(G1EvacFailureParScanTasksQueue* queue) {
   assert(_array_length > 0, "must be");
   uint i = 1;
-  uint start_idx = -1;
+  uint start_idx = (uint)-1;
   HeapWord* prev_end = nullptr;
   HeapRegion* region = G1CollectedHeap::heap()->region_at(_region_idx);
   for (; i*TASK_LIMIT < _array_length; i++) {

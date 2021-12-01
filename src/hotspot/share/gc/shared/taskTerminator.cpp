@@ -98,9 +98,12 @@ void TaskTerminator::reset_for_reuse() {
   }
 }
 
-void TaskTerminator::reset_for_reuse(uint n_threads) {
+void TaskTerminator::reset_for_reuse(uint n_threads, TaskQueueSetSuper* queue_set) {
   reset_for_reuse();
   _n_threads = n_threads;
+  if (queue_set != nullptr) {
+    _queue_set = queue_set;
+  }
 }
 
 bool TaskTerminator::exit_termination(size_t tasks, TerminatorTerminator* terminator) {

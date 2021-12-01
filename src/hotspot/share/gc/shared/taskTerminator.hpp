@@ -120,7 +120,7 @@ public:
   void reset_for_reuse();
   // Same as above but the number of parallel threads is set to the
   // given number.
-  void reset_for_reuse(uint n_threads);
+  void reset_for_reuse(uint n_threads, TaskQueueSetSuper* queue_set = nullptr);
 };
 
 #endif // SHARE_GC_SHARED_TASKTERMINATOR_HPP

@@ -48,6 +48,8 @@ class G1EvacFailureObjectsSet {
   class G1EvacFailureObjectsIterationHelper {
     typedef G1EvacFailureObjectsSet::OffsetInRegion OffsetInRegion;
 
+    static const uint TASK_LIMIT = 1000;
+
     G1EvacFailureObjectsSet* _objects_set;
     const G1SegmentedArray<OffsetInRegion, mtGC>* _segments;
     OffsetInRegion* _offset_array;

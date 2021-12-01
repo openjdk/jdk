@@ -105,15 +105,26 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : public G1AbstractSubTask {
+  static const uint WORKER_COST_FACTOR = 5;
+
   G1EvacFailureRegions* _evac_failure_regions;
 
   HeapRegionClaimer _pre_hrclaimer;
   HeapRegionClaimer _post_hrclaimer;
 
-  const uint _length;
+  const uint _worker_cost;
+  uint _threads;
 
   G1EvacFailureParScanTasksQueueSet* _task_queues;
   TaskTerminator _terminator;
+
+  void init_task_queues(uint length) {
+    _task_queues = new G1EvacFailureParScanTasksQueueSet(length);
+    for (uint i = 0; i < _task_queues->size(); i++) {
+      G1EvacFailureParScanTasksQueue* q = new G1EvacFailureParScanTasksQueue();
+      _task_queues->register_queue(i, q);
+    }
+  }
 
 public:
   RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
@@ -121,13 +132,10 @@ public:
     _evac_failure_regions(evac_failure_regions),
     _pre_hrclaimer(G1CollectedHeap::heap()->workers()->active_workers()),
     _post_hrclaimer(G1CollectedHeap::heap()->workers()->active_workers()),
-    _length(MIN2(_evac_failure_regions->num_regions_failed_evacuation(), G1CollectedHeap::heap()->workers()->active_workers())),
-    _task_queues(new G1EvacFailureParScanTasksQueueSet(_length)),
-    _terminator(_length, _task_queues) {
-    for (uint i = 0; i < _task_queues->size(); i++) {
-      G1EvacFailureParScanTasksQueue* q = new G1EvacFailureParScanTasksQueue();
-      _task_queues->register_queue(i, q);
-    }
+    _worker_cost(_evac_failure_regions->num_regions_failed_evacuation() * WORKER_COST_FACTOR),
+    _threads(0),
+    _task_queues(nullptr),
+    _terminator(_threads, _task_queues) {
   }
 
   ~RemoveSelfForwardPtrsTask() {
@@ -138,15 +146,23 @@ public:
     delete _task_queues;
   }
 
+  void set_threads(uint threads) {
+    _threads = threads;
+    init_task_queues(_threads);
+    _terminator.reset_for_reuse(_threads, _task_queues);
+  }
+
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
-    return _evac_failure_regions->num_regions_failed_evacuation();
+    return _worker_cost;
   }
 
   void do_work(uint worker_id) override {
-    if (worker_id >= _length) {
-      return;
-    }
+    assert(G1CollectedHeap::heap()->workers()->active_workers() == _threads,
+           "must be, " UINT32_FORMAT ", " UINT32_FORMAT,
+           G1CollectedHeap::heap()->workers()->active_workers(), _threads);
+    assert(worker_id < _threads, "must be");
+    assert(_threads == _task_queues->size(), "must be");
     G1EvacFailureParScanState scan_state(_evac_failure_regions, _task_queues, &_terminator, worker_id, &_pre_hrclaimer, &_post_hrclaimer);
     scan_state.do_void();
   }
@@ -163,10 +179,16 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
+  RemoveSelfForwardPtrsTask* remove_self_task = nullptr;
   if (evacuation_failed) {
-    add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions));
+    remove_self_task = new RemoveSelfForwardPtrsTask(evac_failure_regions);
+    add_parallel_task(remove_self_task);
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
+  if (evacuation_failed) {
+    uint workers = MIN2(num_workers_estimate(), G1CollectedHeap::heap()->workers()->active_workers());
+    remove_self_task->set_threads(workers);
+  }
 }
 
 class G1FreeHumongousRegionClosure : public HeapRegionClosure {
