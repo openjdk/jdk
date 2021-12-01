@@ -1029,10 +1029,10 @@ bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
   const TypeVect* lvt = TypeVect::make(T_BYTE, load_vector_length);
   const TypeVect* dvt = TypeVect::make(T_INT, vector_length);
 
-  // if (str.length() >= vector_length * 2) -> Vector loop
+  // if (str.length() >= vector_length) -> Vector loop
   // if string is short, using vectors is both unnecessary and inefficient
-  // On masked load supporting hardware, this threshold should be lower
-  Node* has_vector_cmp = CmpI(array_length, intcon(vector_length * 2 * type2aelembytes(bt)));
+  // On masked load supporting hardware, this threshold could be lower
+  Node* has_vector_cmp = CmpI(array_length, intcon(load_vector_length));
   Node* has_vector_bol = Bool(has_vector_cmp, BoolTest::ge);
   IfNode* has_vector_if = create_and_map_if(control(), has_vector_bol, PROB_FAIR, COUNT_UNKNOWN);
   Node* has_vector_loop = IfTrue(has_vector_if);
