@@ -100,7 +100,7 @@ final class LauncherAsService extends ShellCustomAction {
         if (launchers.isEmpty()) {
             return Collections.emptyList();
         }
-        return List.of("systemd", "/usr/bin/wc", "/usr/bin/grep");
+        return List.of("systemd", "coreutils" /* /usr/bin/wc */, "grep");
     }
 
     @Override
