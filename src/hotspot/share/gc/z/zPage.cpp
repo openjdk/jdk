@@ -63,7 +63,7 @@ ZPage* ZPage::clone_limited() const {
   return new ZPage(_type, _virtual, _physical);
 }
 
-ZPage* ZPage::clone_limited_in_place_promoted() const {
+ZPage* ZPage::clone_limited_promote_flipped() const {
   ZPage* page = new ZPage(_type, _virtual, _physical);
 
   // The page is still filled with the same objects, need to retain the top pointer.
@@ -110,7 +110,7 @@ void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
     _remembered_set.clear_previous();
     break;
 
-  case ZPageResetType::InPlaceAging:
+  case ZPageResetType::FlipAging:
     // Page stayed in the old gen. Needs new, fresh bits.
     _remembered_set.clear();
     break;
@@ -128,8 +128,8 @@ void ZPage::reset(ZGenerationId generation_id, ZPageAge age, ZPageResetType type
   _generation_id = generation_id;
   reset_seqnum(_generation_id);
 
-  // In-place aged pages are still filled with the same objects, need to retain the top pointer.
-  if (type != ZPageResetType::InPlaceAging) {
+  // Flip aged pages are still filled with the same objects, need to retain the top pointer.
+  if (type != ZPageResetType::FlipAging) {
     _top = start();
   }
 

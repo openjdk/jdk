@@ -124,8 +124,8 @@ ZRelocationSet::ZRelocationSet(ZCollector* collector) :
     _forwardings(NULL),
     _nforwardings(0),
     _promotion_lock(),
-    _promote_flipped_pages(),
-    _promote_relocated_pages() {}
+    _flip_promoted_pages(),
+    _in_place_relocate_promoted_pages() {}
 
 ZWorkers* ZRelocationSet::workers() const {
   return _collector->workers();
@@ -135,12 +135,8 @@ ZCollector* ZRelocationSet::collector() const {
   return _collector;
 }
 
-ZArray<ZPage*>* ZRelocationSet::promote_flipped_pages() {
-  return &_promote_flipped_pages;
-}
-
-ZArray<ZPage*>* ZRelocationSet::promote_relocated_pages() {
-  return &_promote_relocated_pages;
+ZArray<ZPage*>* ZRelocationSet::flip_promoted_pages() {
+  return &_flip_promoted_pages;
 }
 
 void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
@@ -172,20 +168,20 @@ void ZRelocationSet::reset(ZPageAllocator* page_allocator) {
 
   _nforwardings = 0;
 
-  destroy_and_clear(page_allocator, &_promote_relocated_pages);
-  destroy_and_clear(page_allocator, &_promote_flipped_pages);
+  destroy_and_clear(page_allocator, &_in_place_relocate_promoted_pages);
+  destroy_and_clear(page_allocator, &_flip_promoted_pages);
 }
 
-void ZRelocationSet::register_promote_flipped(const ZArray<ZPage*>& pages) {
+void ZRelocationSet::register_flip_promoted(const ZArray<ZPage*>& pages) {
   ZLocker<ZLock> locker(&_promotion_lock);
   for (ZPage* page : pages) {
-    assert(!_promote_flipped_pages.contains(page), "no duplicates allowed");
-    _promote_flipped_pages.append(page);
+    assert(!_flip_promoted_pages.contains(page), "no duplicates allowed");
+    _flip_promoted_pages.append(page);
   }
 }
 
-void ZRelocationSet::register_promote_relocated(ZPage* page) {
+void ZRelocationSet::register_in_place_relocate_promoted(ZPage* page) {
   ZLocker<ZLock> locker(&_promotion_lock);
-  assert(!_promote_relocated_pages.contains(page), "no duplicates allowed");
-  _promote_relocated_pages.append(page);
+  assert(!_in_place_relocate_promoted_pages.contains(page), "no duplicates allowed");
+  _in_place_relocate_promoted_pages.append(page);
 }

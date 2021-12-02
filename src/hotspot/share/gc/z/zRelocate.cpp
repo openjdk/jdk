@@ -50,7 +50,7 @@
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentYoungRelocateRemsetFlipPagePromoted("Concurrent Young Relocate Remset FPP");
+static const ZStatSubPhase ZSubPhaseConcurrentYoungRelocateRemsetFlipPromotedPages("Concurrent Young Relocate Remset FPP");
 static const ZStatSubPhase ZSubPhaseConcurrentYoungRelocateRemsetNormalPromoted("Concurrent Young Relocate Remset NP");
 
 ZRelocateQueue::ZRelocateQueue() :
@@ -517,7 +517,7 @@ private:
     }
 
     // Copy object. Use conjoint copying if we are relocating
-    // in-place and the new object overlapps with the old object.
+    // in-place and the new object overlaps with the old object.
     if (_forwarding->in_place_relocation() && allocated_addr + size > from_addr) {
       ZUtils::object_copy_conjoint(from_addr, allocated_addr, size);
     } else {
@@ -706,8 +706,8 @@ private:
 
     if (promotion) {
       // Register the the promotion
-      ZHeap::heap()->young_collector()->promote_reloc(prev_page, new_page);
-      ZHeap::heap()->young_collector()->register_promote_relocated(prev_page);
+      ZHeap::heap()->young_collector()->in_place_relocate_promote(prev_page, new_page);
+      ZHeap::heap()->young_collector()->register_in_place_relocate_promoted(prev_page);
     }
 
     return new_page;
@@ -972,8 +972,8 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   }
 
   if (relocation_set->collector()->is_young()) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentYoungRelocateRemsetFlipPagePromoted);
-    ZRelocateAddRemsetForInPlacePromoted task(relocation_set->promote_flipped_pages());
+    ZStatTimerYoung timer(ZSubPhaseConcurrentYoungRelocateRemsetFlipPromotedPages);
+    ZRelocateAddRemsetForInPlacePromoted task(relocation_set->flip_promoted_pages());
     workers()->run(&task);
   }
 
@@ -996,13 +996,13 @@ ZPageAge ZRelocate::compute_to_age(ZPageAge from_age, bool promote_all) {
   }
 }
 
-class ZPromotePagesTask : public ZTask {
+class ZFlipAgePagesTask : public ZTask {
 private:
   ZArrayParallelIterator<ZPage*> _iter;
   const bool                     _promote_all;
 
 public:
-  ZPromotePagesTask(const ZArray<ZPage*>* pages, bool promote_all) :
+  ZFlipAgePagesTask(const ZArray<ZPage*>* pages, bool promote_all) :
       ZTask("ZPromotePagesTask"),
       _iter(pages),
       _promote_all(promote_all) {}
@@ -1021,14 +1021,14 @@ public:
       const bool promotion = to_age == ZPageAge::old;
 
       // Logging
-      prev_page->log_msg(promotion ? " (in-place promoted)" : " (in-place survived)");
+      prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
       // Setup to-space page
-      ZPage* const new_page = promotion ? prev_page->clone_limited_in_place_promoted() : prev_page;
-      new_page->reset(to_generation, to_age, ZPageResetType::InPlaceAging);
+      ZPage* const new_page = promotion ? prev_page->clone_limited_promote_flipped() : prev_page;
+      new_page->reset(to_generation, to_age, ZPageResetType::FlipAging);
 
       if (promotion) {
-        ZHeap::heap()->young_collector()->promote_flip(prev_page, new_page);
+        ZHeap::heap()->young_collector()->flip_promote(prev_page, new_page);
         // Defer promoted page registration times the lock is taken
         promoted_pages.push(prev_page);
       }
@@ -1036,13 +1036,13 @@ public:
       SuspendibleThreadSet::yield();
     }
 
-    ZHeap::heap()->young_collector()->register_promote_flipped(promoted_pages);
+    ZHeap::heap()->young_collector()->register_flip_promoted(promoted_pages);
   }
 };
 
-void ZRelocate::promote_pages(const ZArray<ZPage*>* pages, bool promote_all) {
-  ZPromotePagesTask promote_task(pages, promote_all);
-  workers()->run(&promote_task);
+void ZRelocate::flip_age_pages(const ZArray<ZPage*>* pages, bool promote_all) {
+  ZFlipAgePagesTask flip_age_task(pages, promote_all);
+  workers()->run(&flip_age_task);
 }
 
 void ZRelocate::synchronize() {

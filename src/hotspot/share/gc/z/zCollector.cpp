@@ -118,12 +118,12 @@ void ZCollector::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
   }
 }
 
-void ZCollector::promote_pages(const ZRelocationSetSelector* selector) {
+void ZCollector::flip_age_pages(const ZRelocationSetSelector* selector) {
   if (is_young()) {
     const bool promote_all = selector->promote_all();
-    _relocate.promote_pages(selector->not_selected_small(), promote_all);
-    _relocate.promote_pages(selector->not_selected_medium(), promote_all);
-    _relocate.promote_pages(selector->not_selected_large(), promote_all);
+    _relocate.flip_age_pages(selector->not_selected_small(), promote_all);
+    _relocate.flip_age_pages(selector->not_selected_medium(), promote_all);
+    _relocate.flip_age_pages(selector->not_selected_large(), promote_all);
   }
 }
 
@@ -184,7 +184,8 @@ void ZCollector::select_relocation_set(bool promote_all) {
   // Install relocation set
   _relocation_set.install(&selector);
 
-  promote_pages(&selector);
+  // Flip age young pages that were not selected
+  flip_age_pages(&selector);
 
   // Setup forwarding table
   ZRelocationSetIterator rs_iter(&_relocation_set);
@@ -456,7 +457,7 @@ void ZYoungCollector::relocate() {
   stat_heap()->set_at_relocate_end(_page_allocator->stats(this));
 }
 
-void ZYoungCollector::promote_flip(ZPage* from_page, ZPage* to_page) {
+void ZYoungCollector::flip_promote(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
   ZHeap::heap()->young_generation()->decrease_used(from_page->size());
@@ -466,19 +467,19 @@ void ZYoungCollector::promote_flip(ZPage* from_page, ZPage* to_page) {
   ZHeap::heap()->young_collector()->increase_promoted(from_page->live_bytes());
 }
 
-void ZYoungCollector::promote_reloc(ZPage* from_page, ZPage* to_page) {
+void ZYoungCollector::in_place_relocate_promote(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
   ZHeap::heap()->young_generation()->decrease_used(from_page->size());
   ZHeap::heap()->old_generation()->increase_used(from_page->size());
 }
 
-void ZYoungCollector::register_promote_flipped(const ZArray<ZPage*>& pages) {
-  _relocation_set.register_promote_flipped(pages);
+void ZYoungCollector::register_flip_promoted(const ZArray<ZPage*>& pages) {
+  _relocation_set.register_flip_promoted(pages);
 }
 
-void ZYoungCollector::register_promote_relocated(ZPage* page) {
-  _relocation_set.register_promote_relocated(page);
+void ZYoungCollector::register_in_place_relocate_promoted(ZPage* page) {
+  _relocation_set.register_in_place_relocate_promoted(page);
 }
 
 GCTracer* ZYoungCollector::tracer() {

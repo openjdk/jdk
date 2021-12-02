@@ -85,7 +85,7 @@ public:
 
   void relocate(ZRelocationSet* relocation_set);
 
-  void promote_pages(const ZArray<ZPage*>* pages, bool promote_all);
+  void flip_age_pages(const ZArray<ZPage*>* pages, bool promote_all);
 
   void synchronize();
   void desynchronize();

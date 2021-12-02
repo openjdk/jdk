@@ -83,8 +83,8 @@ protected:
   ConcurrentGCTimer _timer;
 
   void free_empty_pages(ZRelocationSetSelector* selector, int bulk);
-  void promote_pages(const ZRelocationSetSelector* selector);
-  void promote_pages(const ZArray<ZPage*>* pages);
+  void flip_age_pages(const ZRelocationSetSelector* selector);
+  void flip_age_pages(const ZArray<ZPage*>* pages);
 
   ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator);
 
@@ -199,11 +199,11 @@ public:
   void relocate_start();
   void relocate();
 
-  void promote_flip(ZPage* from_page, ZPage* to_page);
-  void promote_reloc(ZPage* from_page, ZPage* to_page);
+  void flip_promote(ZPage* from_page, ZPage* to_page);
+  void in_place_relocate_promote(ZPage* from_page, ZPage* to_page);
 
-  void register_promote_flipped(const ZArray<ZPage*>& pages);
-  void register_promote_relocated(ZPage* page);
+  void register_flip_promoted(const ZArray<ZPage*>& pages);
+  void register_in_place_relocate_promoted(ZPage* page);
 
   virtual GCTracer* tracer();
 };

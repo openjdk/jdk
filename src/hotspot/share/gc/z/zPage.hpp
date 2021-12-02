@@ -40,7 +40,7 @@ enum class ZPageResetType {
   InPlaceRelocation,
   // Page was not selected for relocation, all objects
   // stayed, but the page aged.
-  InPlaceAging,
+  FlipAging,
   // The page was split and needs to be reset
   Splitting,
 };
@@ -85,7 +85,7 @@ public:
   ~ZPage();
 
   ZPage* clone_limited() const;
-  ZPage* clone_limited_in_place_promoted() const;
+  ZPage* clone_limited_promote_flipped() const;
 
   uint32_t object_max_count() const;
   size_t object_alignment_shift() const;
