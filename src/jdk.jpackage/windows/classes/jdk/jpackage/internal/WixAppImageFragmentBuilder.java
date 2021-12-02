@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import jdk.jpackage.internal.IOUtils.XmlConsumer;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
@@ -111,6 +112,16 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         } else {
             launchers = AppImageFile.getLaunchers(appImageRoot, params);
         }
+
+        launchersAsServices = launchers.stream()
+                .filter(LauncherInfo::isService)
+                .collect(Collectors.toMap(launcher -> {
+                    return addExeSuffixToPath(
+                    installedAppImage.launchersDirectory().resolve(
+                            launcher.getName()));
+                }, launcher -> {
+                    return new WixLauncherAsService(launcher.getName(), params);
+                }));
 
         programMenuFolderName = MENU_GROUP.fetchFrom(params);
 
@@ -387,6 +398,10 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         xmlConsumer.accept(xml);
         xml.writeEndElement();
+
+        if (role == Component.File && launchersAsServices.containsKey(path)) {
+            launchersAsServices.get(path).apply(Id.File.of(path), xml);
+        }
 
         xml.writeEndElement(); // <Component>
         xml.writeEndElement(); // <DirectoryRef>
@@ -831,7 +846,9 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private Set<ShortcutsFolder> shortcutFolders;
 
-    private List<AppImageFile.LauncherInfo> launchers;
+    private List<LauncherInfo> launchers;
+
+    private Map<Path, WixLauncherAsService> launchersAsServices;
 
     private ApplicationLayout appImage;
     private ApplicationLayout installedAppImage;

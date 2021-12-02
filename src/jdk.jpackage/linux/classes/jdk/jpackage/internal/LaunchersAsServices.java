@@ -35,26 +35,24 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static javax.swing.UIManager.put;
 import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.ShellCustomAction.escapedInstalledLauncherPath;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
 /**
  * Helper to install launchers as services.
  */
-final class LauncherAsService extends ShellCustomAction {
+final class LaunchersAsServices extends ShellCustomAction {
 
     private static final String COMMANDS_INSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_INSTALL";
     private static final String COMMANDS_UNINSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL";
     private static final String SCRIPTS = "LAUNCHER_AS_SERVICE_SCRIPTS";
 
-    private LauncherAsService(PlatformPackage thePackage,
+    private LaunchersAsServices(PlatformPackage thePackage,
             Map<String, ? super Object> params) throws IOException {
 
         List<Map<String, ? super Object>> allLaunchers = ADD_LAUNCHERS.fetchFrom(
@@ -63,7 +61,8 @@ final class LauncherAsService extends ShellCustomAction {
         this.thePackage = thePackage;
 
         // Read launchers information from predefine app image
-        if (allLaunchers == null && PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
+        if (allLaunchers == null && PREDEFINED_APP_IMAGE.fetchFrom(params)
+                != null) {
             launchers = AppImageFile.getLaunchers(
                     PREDEFINED_APP_IMAGE.fetchFrom(params), params).stream().filter(
                     LauncherInfo::isService).map(
@@ -71,8 +70,7 @@ final class LauncherAsService extends ShellCustomAction {
         } else {
             launchers = new ArrayList<>();
             if (LAUNCHER_AS_SERVICE.fetchFrom(params)) {
-                this.launchers.add(new Launcher(APP_NAME.fetchFrom(params),
-                        params));
+                this.launchers.add(new Launcher(null, params));
             }
             for (var launcherParams : Optional.ofNullable(allLaunchers).orElse(
                     Collections.emptyList())) {
@@ -82,17 +80,14 @@ final class LauncherAsService extends ShellCustomAction {
                 }
             }
         }
-
-        unitFileData = Map.of("APPLICATION_DESCRIPTION", DESCRIPTION.fetchFrom(
-                params));
     }
 
-    static LauncherAsService create(PlatformPackage thePackage,
+    static LaunchersAsServices create(PlatformPackage thePackage,
             Map<String, ? super Object> params) throws IOException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
             return null;
         }
-        return new LauncherAsService(thePackage, params);
+        return new LaunchersAsServices(thePackage, params);
     }
 
     @Override
@@ -100,7 +95,8 @@ final class LauncherAsService extends ShellCustomAction {
         if (launchers.isEmpty()) {
             return Collections.emptyList();
         }
-        return List.of("systemd", "coreutils" /* /usr/bin/wc */, "grep");
+        return List.of("systemd", "coreutils" /* /usr/bin/wc */,
+                "grep");
     }
 
     @Override
@@ -121,8 +117,8 @@ final class LauncherAsService extends ShellCustomAction {
 
         Function<String, String> strigifier = cmd -> {
             return stringifyShellCommands(Stream.of(List.of(
-                cmd), installedUnitFiles).flatMap(x -> x.stream()).collect(
-                Collectors.joining(" ")));
+                    cmd), installedUnitFiles).flatMap(x -> x.stream()).collect(
+                    Collectors.joining(" ")));
         };
 
         data.put(SCRIPTS, stringifyTextFile("service_utils.sh"));
@@ -130,42 +126,40 @@ final class LauncherAsService extends ShellCustomAction {
         data.put(COMMANDS_INSTALL, strigifier.apply("register_units"));
         data.put(COMMANDS_UNINSTALL, strigifier.apply("unregister_units"));
 
-        for (var launcher: launchers) {
+        for (var launcher : launchers) {
             launcher.createUnitFile();
         }
 
         return data;
     }
 
-    private class Launcher {
+    private class Launcher extends LauncherAsService {
+
         Launcher(String name, Map<String, ? super Object> mainParams) {
-            this.name = name;
-            String unitPublicName = name.replaceAll("[\\s]", "_") + ".service";
-            unitFilename = Path.of(thePackage.name() + "-" + unitPublicName);
-            unitFileResource = createResource("unit-template.service", mainParams)
-                    .setCategory(I18N.getString("resource.systemd-unit-file"))
-                    .setPublicName(unitFilename);
+            super(name, mainParams, createResource("unit-template.service",
+                    mainParams).setCategory(I18N.getString(
+                            "resource.systemd-unit-file")));
+
+            String baseName = getName().replaceAll("[\\s]", "_") + ".service";
+            unitFilename = Path.of(thePackage.name() + "-" + baseName);
+
+            getResource()
+                    .setPublicName(unitFilename)
+                    .addSubstitutionDataEntry("APPLICATION_LAUNCHER",
+                            escapedInstalledLauncherPath(thePackage, getName()));
         }
 
         void createUnitFile() throws IOException {
-            Map<String, String> data = new HashMap<>(unitFileData);
-            data.put("APPLICATION_LAUNCHER", escapedInstalledLauncherPath(
-                    thePackage, name));
-            unitFileResource.setSubstitutionData(data).saveToFile(unitFilePath(
-                    thePackage.sourceRoot()));
+            getResource().saveToFile(unitFilePath(thePackage.sourceRoot()));
         }
 
         Path unitFilePath(Path root) {
-            return root.resolve("lib/systemd/system").resolve(
-                    unitFilename);
+            return root.resolve("lib/systemd/system").resolve(unitFilename);
         }
 
-        private final String name;
         private final Path unitFilename;
-        private final OverridableResource unitFileResource;
     }
 
     private final PlatformPackage thePackage;
-    private final Map<String, String> unitFileData;
     private final List<Launcher> launchers;
 }
