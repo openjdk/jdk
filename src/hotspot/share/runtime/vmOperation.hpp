@@ -61,13 +61,13 @@
   template(G1Concurrent)                          \
   template(G1TryInitiateConcMark)                 \
   template(ZMarkFlushOperation)                   \
-  template(ZYoungMarkStart)                       \
-  template(ZYoungMarkEnd)                         \
-  template(ZYoungRelocateStart)                   \
-  template(ZOldMarkStart)                         \
-  template(ZOldMarkEnd)                           \
-  template(ZOldRelocateStart)                     \
-  template(ZOldVerify)                            \
+  template(ZMarkStartYoung)                       \
+  template(ZMarkStartYoungAndOld)                 \
+  template(ZMarkEndYoung)                         \
+  template(ZRelocateStartYoung)                   \
+  template(ZMarkEndOld)                           \
+  template(ZRelocateStartOld)                     \
+  template(ZVerifyOld)                            \
   template(HandshakeOneThread)                    \
   template(HandshakeAllThreads)                   \
   template(HandshakeFallback)                     \

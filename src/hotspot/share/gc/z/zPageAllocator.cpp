@@ -895,7 +895,7 @@ static bool has_alloc_seen_old(const ZPageAllocation* allocation) {
   return allocation->old_seqnum() != ZHeap::heap()->old_collector()->seqnum();
 }
 
-bool ZPageAllocator::is_alloc_stalling_for_major() const {
+bool ZPageAllocator::is_alloc_stalling_for_old() const {
   ZLocker<ZLock> locker(&_lock);
 
   ZPageAllocation* const allocation = _stalled.first();
@@ -907,7 +907,7 @@ bool ZPageAllocator::is_alloc_stalling_for_major() const {
   return has_alloc_seen_young(allocation) && !has_alloc_seen_old(allocation);
 }
 
-void ZPageAllocator::check_minor_out_of_memory() {
+void ZPageAllocator::check_out_of_memory_young() {
   ZLocker<ZLock> locker(&_lock);
 
   ZPageAllocation* const allocation = _stalled.first();
@@ -927,7 +927,7 @@ void ZPageAllocator::check_minor_out_of_memory() {
   }
 }
 
-void ZPageAllocator::check_major_out_of_memory() {
+void ZPageAllocator::check_out_of_memory_old() {
   ZLocker<ZLock> locker(&_lock);
 
   // Fail allocation requests that were enqueued before

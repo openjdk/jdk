@@ -29,34 +29,26 @@
 #include "gc/z/zDriverPort.hpp"
 #include "gc/z/zLock.hpp"
 
+class ZDriverLock : public AllStatic {
+  friend class ZDriverLocker;
+  friend class ZDriverUnlocker;
+
+private:
+  static ZLock* _lock;
+
+  static void lock();
+  static void unlock();
+
+public:
+  static void initialize();
+};
+
 class ZDriverMinor : public ConcurrentGCThread {
 private:
-  ZDriverPort    _port;
-  ZConditionLock _lock;
-  bool           _active;
-  bool           _blocked;
-  bool           _await;
-  bool           _aborted;
-
-  template <typename T> bool pause();
-
-  void active();
-  void inactive();
-  void aborted();
-
-  void pause_mark_start(const ZDriverRequest& request);
-  void concurrent_mark();
-  bool pause_mark_end();
-  void concurrent_mark_continue();
-  void concurrent_mark_free();
-  void concurrent_reset_relocation_set();
-  void concurrent_select_relocation_set(bool promote_all);
-  void pause_relocate_start();
-  void concurrent_relocate();
-
-  void check_out_of_memory();
+  ZDriverPort _port;
 
   void gc(const ZDriverRequest& request);
+  void check_out_of_memory() const;
 
 protected:
   virtual void run_service();
@@ -65,14 +57,7 @@ protected:
 public:
   ZDriverMinor();
 
-  void block();
-  void unblock();
-  void start();
-  void await();
-
   bool is_busy() const;
-
-  bool is_active();
 
   void collect(const ZDriverRequest& request);
 };
@@ -80,33 +65,10 @@ public:
 class ZDriverMajor : public ConcurrentGCThread {
 private:
   ZDriverPort         _port;
-  ZConditionLock      _lock;
-  bool                _active;
   ZDriverMinor* const _minor;
 
-  void minor_block();
-  void minor_unblock();
-  void minor_start();
-  void minor_await();
-
-  template <typename T> bool pause();
-
-  void pause_mark_start();
-  void concurrent_mark();
-  bool pause_mark_end();
-  void concurrent_mark_continue();
-  void concurrent_mark_free();
-  void concurrent_process_non_strong_references();
-  void concurrent_reset_relocation_set();
-  void pause_verify();
-  void concurrent_select_relocation_set();
-  void pause_relocate_start();
-  void concurrent_relocate();
-  void concurrent_roots_remap();
-
-  void check_out_of_memory();
-
   void gc(const ZDriverRequest& request);
+  void check_out_of_memory() const;
 
 protected:
   virtual void run_service();

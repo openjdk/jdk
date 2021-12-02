@@ -29,6 +29,28 @@
 #include "gc/z/zLock.inline.hpp"
 #include "utilities/debug.hpp"
 
+ZDriverRequest::ZDriverRequest() :
+    ZDriverRequest(GCCause::_no_gc) {}
+
+ZDriverRequest::ZDriverRequest(GCCause::Cause cause) :
+    ZDriverRequest(cause, ConcGCThreads) {}
+
+ZDriverRequest::ZDriverRequest(GCCause::Cause cause, uint nworkers) :
+    _cause(cause),
+    _nworkers(nworkers) {}
+
+bool ZDriverRequest::operator==(const ZDriverRequest& other) const {
+  return _cause == other._cause;
+}
+
+GCCause::Cause ZDriverRequest::cause() const {
+  return _cause;
+}
+
+uint ZDriverRequest::nworkers() const {
+  return _nworkers;
+}
+
 class ZDriverPortEntry {
   friend class ZList<ZDriverPortEntry>;
 

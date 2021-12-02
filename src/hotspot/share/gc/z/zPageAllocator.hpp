@@ -143,10 +143,9 @@ public:
   void enable_safe_recycle() const;
   void disable_safe_recycle() const;
 
-  bool is_alloc_stalling_for_major() const;
-
-  void check_minor_out_of_memory();
-  void check_major_out_of_memory();
+  bool is_alloc_stalling_for_old() const;
+  void check_out_of_memory_young();
+  void check_out_of_memory_old();
 
   void threads_do(ThreadClosure* tc) const;
 };

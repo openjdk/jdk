@@ -258,8 +258,8 @@ static ZDriverRequest rule_minor_allocation_rate_static() {
 }
 
 static ZDriverRequest rule_minor_allocation_rate() {
-  if (ZHeap::heap()->is_alloc_stalling_for_major()) {
-    // Don't collect young if we have threads stalled waiting for a major collection
+  if (ZHeap::heap()->is_alloc_stalling_for_old()) {
+    // Don't collect young if we have threads stalled waiting for an old collection
     return GCCause::_no_gc;
   }
 

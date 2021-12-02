@@ -128,9 +128,9 @@ public:
   size_t free_pages(const ZArray<ZPage*>* pages);
 
   // Object allocation
-  bool is_alloc_stalling_for_major() const;
-  void check_minor_out_of_memory();
-  void check_major_out_of_memory();
+  bool is_alloc_stalling_for_old() const;
+  void check_out_of_memory_young();
+  void check_out_of_memory_old();
 
   // Iteration
   void object_iterate(ObjectClosure* object_cl, bool visit_weaks);

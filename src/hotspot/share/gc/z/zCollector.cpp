@@ -344,24 +344,10 @@ const char* ZCollector::phase_to_string() const {
 }
 
 ZYoungCollector::ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-    ZCollector(ZCollectorId::young, "ZWorkerYoung", page_table, page_allocator),
-    _skip_mark_start(false) {}
+    ZCollector(ZCollectorId::young, "ZWorkerYoung", page_table, page_allocator) {}
 
 ConcurrentGCTimer* ZYoungCollector::minor_timer() {
   return &_minor_timer;
-}
-
-bool ZYoungCollector::should_skip_mark_start() {
-  SuspendibleThreadSetJoiner sts_joiner;
-  if (_skip_mark_start) {
-    _skip_mark_start = false;
-    return true;
-  }
-  return false;
-}
-
-void ZYoungCollector::skip_mark_start() {
-  _skip_mark_start = true;
 }
 
 void ZYoungCollector::mark_start() {

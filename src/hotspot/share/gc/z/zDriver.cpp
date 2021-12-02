@@ -43,56 +43,70 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 
-static const ZStatPhaseYoungCycle ZPhaseYoungCycle("Young Garbage Collection Cycle");
-static const ZStatPhaseOldCycle   ZPhaseOldCycle("Old Garbage Collection Cycle");
-static const ZStatPhaseMinorCycle ZPhaseMinorCycle("Minor Garbage Collection Cycle");
-static const ZStatPhaseMajorCycle ZPhaseMajorCycle("Major Garbage Collection Cycle");
+static const ZStatPhaseCollection ZPhaseCollectionMinor("Minor Garbage Collection");
+static const ZStatPhaseCollection ZPhaseCollectionMajor("Major Garbage Collection");
+static const ZStatPhaseGeneration ZPhaseGenerationYoung("Young Generation", ZGenerationId::young);
+static const ZStatPhaseGeneration ZPhaseGenerationOld("Old Generation", ZGenerationId::old);
 
-static const ZStatPhasePause      ZPhasePauseYoungMarkStart("Pause Young Mark Start");
-static const ZStatPhaseConcurrent ZPhaseConcurrentYoungMark("Concurrent Young Mark");
-static const ZStatPhaseConcurrent ZPhaseConcurrentYoungMarkContinue("Concurrent Young Mark Continue");
-static const ZStatPhasePause      ZPhasePauseYoungMarkEnd("Pause Young Mark End");
-static const ZStatPhaseConcurrent ZPhaseConcurrentYoungMarkFree("Concurrent Young Mark Free");
-static const ZStatPhaseConcurrent ZPhaseConcurrentYoungResetRelocationSet("Concurrent Young Reset Relocation Set");
-static const ZStatPhaseConcurrent ZPhaseConcurrentYoungSelectRelocationSet("Concurrent Young Select Relocation Set");
-static const ZStatPhasePause      ZPhasePauseYoungRelocateStart("Pause Young Relocate Start");
-static const ZStatPhaseConcurrent ZPhaseConcurrentYoungRelocated("Concurrent Young Relocate");
+static const ZStatPhasePause      ZPhasePauseMarkStartYoung("Pause Mark Start (Young)");
+static const ZStatPhasePause      ZPhasePauseMarkStartYoungAndOld("Pause Mark Start (Young + Old)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkYoung("Concurrent Mark (Young)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinueYoung("Concurrent Mark Continue (Young)");
+static const ZStatPhasePause      ZPhasePauseMarkEndYoung("Pause Mark End (Young)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkFreeYoung("Concurrent Mark Free (Young)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSetYoung("Concurrent Reset Relocation Set (Young)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentSelectRelocationSetYoung("Concurrent Select Relocation Set (Young)");
+static const ZStatPhasePause      ZPhasePauseRelocateStartYoung("Pause Relocate Start (Young)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentRelocatedYoung("Concurrent Relocate (Young)");
 
-static const ZStatPhasePause      ZPhasePauseOldMarkStart("Pause Old Mark Start");
-static const ZStatPhaseConcurrent ZPhaseConcurrentOldMark("Concurrent Old Mark");
-static const ZStatPhaseConcurrent ZPhaseConcurrentOldMarkContinue("Concurrent Old Mark Continue");
-static const ZStatPhasePause      ZPhasePauseOldMarkEnd("Pause Old Mark End");
-static const ZStatPhaseConcurrent ZPhaseConcurrentOldMarkFree("Concurrent Old Mark Free");
-static const ZStatPhaseConcurrent ZPhaseConcurrentOldProcessNonStrongReferences("Concurrent Old Process Non-Strong References");
-static const ZStatPhaseConcurrent ZPhaseConcurrentOldResetRelocationSet("Concurrent Old Reset Relocation Set");
-static const ZStatPhaseConcurrent ZPhaseConcurrentOldSelectRelocationSet("Concurrent Old Select Relocation Set");
-static const ZStatPhasePause      ZPhasePauseOldRelocateStart("Pause Old Relocate Start");
-static const ZStatPhaseConcurrent ZPhaseConcurrentOldRelocated("Concurrent Old Relocate");
-static const ZStatPhaseConcurrent ZPhaseConcurrentOldRootsRemap("Concurrent Old Roots Remap");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkOld("Concurrent Mark (Old)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinueOld("Concurrent Mark Continue (Old)");
+static const ZStatPhasePause      ZPhasePauseMarkEndOld("Pause Mark End (Old)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkFreeOld("Concurrent Mark Free (Old)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentProcessNonStrongReferencesOld("Concurrent Process Non-Strong References (Old)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSetOld("Concurrent Reset Relocation Set (Old)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentSelectRelocationSetOld("Concurrent Select Relocation Set (Old)");
+static const ZStatPhasePause      ZPhasePauseRelocateStartOld("Pause Relocate Start (Old)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentRelocatedOld("Concurrent Relocate (Old)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentRootsRemapOld("Concurrent Roots Remap (Old)");
 
 static const ZStatSampler         ZSamplerJavaThreads("System", "Java Threads", ZStatUnitThreads);
 
-ZDriverRequest::ZDriverRequest() :
-    ZDriverRequest(GCCause::_no_gc) {}
+ZLock* ZDriverLock::_lock;
 
-ZDriverRequest::ZDriverRequest(GCCause::Cause cause) :
-    ZDriverRequest(cause, ConcGCThreads) {}
-
-ZDriverRequest::ZDriverRequest(GCCause::Cause cause, uint nworkers) :
-    _cause(cause),
-    _nworkers(nworkers) {}
-
-bool ZDriverRequest::operator==(const ZDriverRequest& other) const {
-  return _cause == other._cause;
+void ZDriverLock::initialize() {
+  _lock = new ZLock();
 }
 
-GCCause::Cause ZDriverRequest::cause() const {
-  return _cause;
+void ZDriverLock::lock() {
+  _lock->lock();
 }
 
-uint ZDriverRequest::nworkers() const {
-  return _nworkers;
+void ZDriverLock::unlock() {
+  _lock->unlock();
 }
+
+class ZDriverLocker : public StackObj {
+public:
+  ZDriverLocker() {
+    ZDriverLock::lock();
+  }
+
+  ~ZDriverLocker() {
+    ZDriverLock::unlock();
+  }
+};
+
+class ZDriverUnlocker : public StackObj {
+public:
+  ZDriverUnlocker() {
+    ZDriverLock::unlock();
+  }
+
+  ~ZDriverUnlocker() {
+    ZDriverLock::lock();
+  }
+};
 
 class VM_ZOperation : public VM_Operation {
 private:
@@ -150,10 +164,10 @@ public:
   }
 };
 
-class VM_ZYoungMarkStart : public VM_ZOperation {
+class VM_ZMarkStartYoung : public VM_ZOperation {
 public:
   virtual VMOp_Type type() const {
-    return VMOp_ZYoungMarkStart;
+    return VMOp_ZMarkStartYoung;
   }
 
   virtual bool block_jni_critical() const {
@@ -161,7 +175,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimerYoung timer(ZPhasePauseYoungMarkStart);
+    ZStatTimerYoung timer(ZPhasePauseMarkStartYoung);
     ZServiceabilityPauseTracer tracer(ZCollectorId::young);
 
     ZCollectedHeap::heap()->increment_total_collections(false /* full */);
@@ -170,23 +184,10 @@ public:
   }
 };
 
-class VM_ZYoungMarkEnd : public VM_ZOperation {
+class VM_ZMarkStartYoungAndOld : public VM_ZOperation {
 public:
   virtual VMOp_Type type() const {
-    return VMOp_ZYoungMarkEnd;
-  }
-
-  virtual bool do_operation() {
-    ZStatTimerYoung timer(ZPhasePauseYoungMarkEnd);
-    ZServiceabilityPauseTracer tracer(ZCollectorId::young);
-    return ZHeap::heap()->young_collector()->mark_end();
-  }
-};
-
-class VM_ZYoungRelocateStart : public VM_ZOperation {
-public:
-  virtual VMOp_Type type() const {
-    return VMOp_ZYoungRelocateStart;
+    return VMOp_ZMarkStartYoungAndOld;
   }
 
   virtual bool block_jni_critical() const {
@@ -194,7 +195,41 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimerYoung timer(ZPhasePauseYoungRelocateStart);
+    ZStatTimerYoung timer(ZPhasePauseMarkStartYoungAndOld);
+    ZServiceabilityPauseTracer tracer(ZCollectorId::young);
+
+    ZCollectedHeap::heap()->increment_total_collections(true /* full */);
+    ZHeap::heap()->young_collector()->mark_start();
+    ZHeap::heap()->old_collector()->mark_start();
+    return true;
+  }
+};
+
+class VM_ZMarkEndYoung : public VM_ZOperation {
+public:
+  virtual VMOp_Type type() const {
+    return VMOp_ZMarkEndYoung;
+  }
+
+  virtual bool do_operation() {
+    ZStatTimerYoung timer(ZPhasePauseMarkEndYoung);
+    ZServiceabilityPauseTracer tracer(ZCollectorId::young);
+    return ZHeap::heap()->young_collector()->mark_end();
+  }
+};
+
+class VM_ZRelocateStartYoung : public VM_ZOperation {
+public:
+  virtual VMOp_Type type() const {
+    return VMOp_ZRelocateStartYoung;
+  }
+
+  virtual bool block_jni_critical() const {
+    return true;
+  }
+
+  virtual bool do_operation() {
+    ZStatTimerYoung timer(ZPhasePauseRelocateStartYoung);
     ZServiceabilityPauseTracer tracer(ZCollectorId::young);
     ZHeap::heap()->young_collector()->relocate_start();
     return true;
@@ -251,104 +286,8 @@ static uint select_active_old_worker_threads(const ZDriverRequest& request) {
     }                                 \
   } while (false)
 
-ZDriverMinor::ZDriverMinor() :
-    _port(),
-    _lock(),
-    _active(false),
-    _blocked(false),
-    _await(false),
-    _aborted(false) {
-  set_name("ZDriverMinor");
-  create_and_start();
-}
-
-bool ZDriverMinor::is_busy() const {
-  return _port.is_busy();
-}
-
-bool ZDriverMinor::is_active() {
-  ZLocker<ZConditionLock> locker(&_lock);
-  return _active;
-}
-
-void ZDriverMinor::active() {
-  ZLocker<ZConditionLock> locker(&_lock);
-  while (_blocked) {
-    _lock.wait();
-  }
-  _active = true;
-  _lock.notify_all();
-}
-
-void ZDriverMinor::inactive() {
-  ZLocker<ZConditionLock> locker(&_lock);
-  _active = false;
-  _await = false;
-  _lock.notify_all();
-}
-
-void ZDriverMinor::aborted() {
-  ZLocker<ZConditionLock> locker(&_lock);
-  _aborted = true;
-  _lock.notify_all();
-}
-
-void ZDriverMinor::block() {
-  ZLocker<ZConditionLock> locker(&_lock);
-  _blocked = true;
-  while (_active) {
-    _lock.wait();
-  }
-}
-
-void ZDriverMinor::unblock() {
-  ZLocker<ZConditionLock> locker(&_lock);
-  _blocked = false;
-  _await = true;
-  _lock.notify_all();
-}
-
-void ZDriverMinor::start() {
-  // Start an asynchronous cycle before unblocking. This avoid starting
-  // a new cycle if one is already about to start when we unblock.
-  collect(GCCause::_z_major_young);
-  unblock();
-}
-
-void ZDriverMinor::await() {
-  ZLocker<ZConditionLock> locker(&_lock);
-  while (_await && !_aborted) {
-    _lock.wait();
-  }
-}
-
-void ZDriverMinor::collect(const ZDriverRequest& request) {
-  switch (request.cause()) {
-  case GCCause::_wb_young_gc:
-  case GCCause::_scavenge_alot:
-  case GCCause::_z_minor_timer:
-  case GCCause::_z_minor_allocation_rate:
-  case GCCause::_z_minor_allocation_stall:
-  case GCCause::_z_major_young:
-  case GCCause::_z_minor_high_usage:
-    // Start asynchronous GC
-    _port.send_async(request);
-    break;
-
-  case GCCause::_z_major_young_preclean:
-    // Start synchronous GC
-    _port.send_sync(request);
-    break;
-
-  default:
-    // Other causes not supported
-    fatal("Unsupported GC cause (%s)", GCCause::to_string(request.cause()));
-    break;
-  }
-}
-
 template <typename T>
-bool ZDriverMinor::pause() {
+static bool pause() {
   T op;
 
   if (op.block_jni_critical()) {
@@ -364,138 +303,183 @@ bool ZDriverMinor::pause() {
   return op.success();
 }
 
-void ZDriverMinor::pause_mark_start(const ZDriverRequest& request) {
-  ZYoungCollector* collector = ZHeap::heap()->young_collector();
-  if (collector->should_skip_mark_start()) {
-    // An old mark start also performs a young mark start. So the next
-    // young collection after an old mark start, doesn't run young mark start.
-    // The number of GC threads has already been selected when this happens.
-    return;
+static void pause_mark_start_young(bool initiate_old) {
+  if (initiate_old) {
+    pause<VM_ZMarkStartYoungAndOld>();
+  } else {
+    pause<VM_ZMarkStartYoung>();
   }
-
-  // Select number of worker threads to use
-  const uint nworkers = select_active_young_worker_threads(request);
-  collector->set_active_workers(nworkers);
-
-  pause<VM_ZYoungMarkStart>();
 }
 
-void ZDriverMinor::concurrent_mark() {
-  ZStatTimerYoung timer(ZPhaseConcurrentYoungMark);
+static void concurrent_mark_young() {
+  ZStatTimerYoung timer(ZPhaseConcurrentMarkYoung);
   ZHeap::heap()->young_collector()->mark_roots();
   ZHeap::heap()->young_collector()->mark_follow();
 }
 
-bool ZDriverMinor::pause_mark_end() {
-  return pause<VM_ZYoungMarkEnd>();
+static bool pause_mark_end_young() {
+  return pause<VM_ZMarkEndYoung>();
 }
 
-void ZDriverMinor::concurrent_mark_continue() {
-  ZStatTimerYoung timer(ZPhaseConcurrentYoungMarkContinue);
+static void concurrent_mark_continue_young() {
+  ZStatTimerYoung timer(ZPhaseConcurrentMarkContinueYoung);
   ZHeap::heap()->young_collector()->mark_follow();
 }
 
-void ZDriverMinor::concurrent_mark_free() {
-  ZStatTimerYoung timer(ZPhaseConcurrentYoungMarkFree);
+static void concurrent_mark_free_young() {
+  ZStatTimerYoung timer(ZPhaseConcurrentMarkFreeYoung);
   ZHeap::heap()->young_collector()->mark_free();
 }
 
-void ZDriverMinor::concurrent_reset_relocation_set() {
-  ZStatTimerYoung timer(ZPhaseConcurrentYoungResetRelocationSet);
+static void concurrent_reset_relocation_set_young() {
+  ZStatTimerYoung timer(ZPhaseConcurrentResetRelocationSetYoung);
   ZHeap::heap()->young_collector()->reset_relocation_set();
 }
 
-void ZDriverMinor::concurrent_select_relocation_set(bool promote_all) {
-  ZStatTimerYoung timer(ZPhaseConcurrentYoungSelectRelocationSet);
+static void concurrent_select_relocation_set_young(bool promote_all) {
+  ZStatTimerYoung timer(ZPhaseConcurrentSelectRelocationSetYoung);
   ZHeap::heap()->young_collector()->select_relocation_set(promote_all);
 }
 
-void ZDriverMinor::pause_relocate_start() {
-  pause<VM_ZYoungRelocateStart>();
+static void pause_relocate_start_young() {
+  pause<VM_ZRelocateStartYoung>();
 }
 
-void ZDriverMinor::concurrent_relocate() {
-  ZStatTimerYoung timer(ZPhaseConcurrentYoungRelocated);
+static void concurrent_relocate_young() {
+  ZStatTimerYoung timer(ZPhaseConcurrentRelocatedYoung);
   ZHeap::heap()->young_collector()->relocate();
 }
 
-void ZDriverMinor::check_out_of_memory() {
-  ZHeap::heap()->check_minor_out_of_memory();
+static void check_out_of_memory_young() {
+  ZHeap::heap()->check_out_of_memory_young();
 }
 
-class ZDriverMinorGCScope : public StackObj {
+class ZDriverScopeYoung : public StackObj {
 private:
-  ZStatTimerMinor _timer;
-
-public:
-  ZDriverMinorGCScope(const ZDriverRequest& request) :
-      _timer(ZPhaseMinorCycle) {
-    ZYoungCollector* collector = ZHeap::heap()->young_collector();
-
-    // Update statistics
-    collector->set_at_collection_start();
-  }
-};
-
-class ZDriverYoungGCScope : public StackObj {
-private:
-  GCIdMark                   _gc_id;
-  GCCause::Cause             _gc_cause;
-  GCCauseSetter              _gc_cause_setter;
   ZStatTimerYoung            _timer;
   ZServiceabilityCycleTracer _tracer;
 
 public:
-  ZDriverYoungGCScope(const ZDriverRequest& request) :
-      _gc_id(),
-      _gc_cause(request.cause()),
-      _gc_cause_setter(ZCollectedHeap::heap(), request.cause()),
-      _timer(ZPhaseYoungCycle),
+  ZDriverScopeYoung() :
+      _timer(ZPhaseGenerationYoung),
       _tracer(ZCollectorId::young) {
-    ZYoungCollector* collector = ZHeap::heap()->young_collector();
+    ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
 
     // Update statistics
-    collector->set_at_generation_collection_start();
+    young_collector->set_at_generation_collection_start();
   }
 
-  ~ZDriverYoungGCScope() {
-    ZYoungCollector* collector = ZHeap::heap()->young_collector();
+  ~ZDriverScopeYoung() {
+    ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
 
     // Update statistics
-    collector->stat_cycle()->at_end(_gc_cause, collector->active_workers());
+    young_collector->stat_cycle()->at_end(young_collector->active_workers());
+  }
+};
+
+static void collect_young_inner(bool promote_all, bool initiate_old) {
+  ZDriverScopeYoung scope;
+
+  // Phase 1: Pause Mark Start
+  pause_mark_start_young(initiate_old);
+
+  // Phase 2: Concurrent Mark
+  abortable(concurrent_mark_young());
+
+  // Phase 3: Pause Mark End
+  while (!pause_mark_end_young()) {
+    // Phase 3.5: Concurrent Mark Continue
+    abortable(concurrent_mark_continue_young());
+  }
+
+  // Phase 4: Concurrent Mark Free
+  abortable(concurrent_mark_free_young());
+
+  // Phase 5: Concurrent Reset Relocation Set
+  abortable(concurrent_reset_relocation_set_young());
+
+  // Phase 6: Concurrent Select Relocation Set
+  abortable(concurrent_select_relocation_set_young(promote_all));
+
+  // Phase 7: Pause Relocate Start
+  pause_relocate_start_young();
+
+  // Phase 8: Concurrent Relocate
+  abortable(concurrent_relocate_young());
+}
+
+static void collect_young() {
+  collect_young_inner(false /* promote_all */, false /* initiate_old */);
+}
+
+static void collect_young_promote_all() {
+  collect_young_inner(true /* promote_all */, false /* initiate_old */);
+}
+
+static void collect_young_initiate_old() {
+  collect_young_inner(false /* promote_all */, true /* initiate_old */);
+}
+
+ZDriverMinor::ZDriverMinor() :
+    _port() {
+  set_name("ZDriverMinor");
+  create_and_start();
+}
+
+bool ZDriverMinor::is_busy() const {
+  return _port.is_busy();
+}
+
+void ZDriverMinor::collect(const ZDriverRequest& request) {
+  switch (request.cause()) {
+  case GCCause::_wb_young_gc:
+  case GCCause::_scavenge_alot:
+  case GCCause::_z_minor_timer:
+  case GCCause::_z_minor_allocation_rate:
+  case GCCause::_z_minor_allocation_stall:
+  case GCCause::_z_minor_high_usage:
+    // Start asynchronous GC
+    _port.send_async(request);
+    break;
+
+  default:
+    // Other causes not supported
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(request.cause()));
+    break;
+  }
+}
+
+class ZDriverScopeMinor : public StackObj {
+private:
+  GCIdMark        _gc_id;
+  GCCause::Cause  _gc_cause;
+  GCCauseSetter   _gc_cause_setter;
+  ZStatTimerMinor _timer;
+
+public:
+  ZDriverScopeMinor(const ZDriverRequest& request) :
+      _gc_id(),
+      _gc_cause(request.cause()),
+      _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
+      _timer(ZPhaseCollectionMinor) {
+    ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
+
+    // Update statistics
+    young_collector->set_at_collection_start();
+
+    // Select number of young worker threads to use
+    const uint young_nworkers = select_active_young_worker_threads(request);
+    young_collector->set_active_workers(young_nworkers);
   }
 };
 
 void ZDriverMinor::gc(const ZDriverRequest& request) {
-  ZDriverYoungGCScope scope(request);
+  ZDriverScopeMinor scope(request);
+  abortable(collect_young());
+}
 
-  // Phase 1: Pause Mark Start
-  pause_mark_start(request);
-
-  // Phase 2: Concurrent Mark
-  abortable(concurrent_mark());
-
-  // Phase 3: Pause Mark End
-  while (!pause_mark_end()) {
-    // Phase 3.5: Concurrent Mark Continue
-    abortable(concurrent_mark_continue());
-  }
-
-  // Phase 4: Concurrent Mark Free
-  abortable(concurrent_mark_free());
-
-  // Phase 5: Concurrent Reset Relocation Set
-  abortable(concurrent_reset_relocation_set());
-
-  // Phase 6: Concurrent Select Relocation Set
-  const bool promote_all = (request.cause() == GCCause::_z_major_young_preclean);
-  abortable(concurrent_select_relocation_set(promote_all));
-
-  // Phase 7: Pause Relocate Start
-  pause_relocate_start();
-
-  // Phase 8: Concurrent Relocate
-  abortable(concurrent_relocate());
+void ZDriverMinor::check_out_of_memory() const {
+  check_out_of_memory_young();
 }
 
 void ZDriverMinor::run_service() {
@@ -507,78 +491,48 @@ void ZDriverMinor::run_service() {
       continue;
     }
 
-    active();
+    ZDriverLocker locker;
 
-    if (request.cause() == GCCause::_z_major_young ||
-        request.cause() == GCCause::_z_major_young_preclean) {
-      // Run a young collection for a major GC
-      gc(request);
-    } else {
-      // Run a young collection for a minor GC
-      ZDriverMinorGCScope scope(request);
-      gc(request);
+    if (ZAbort::should_abort()) {
+      return;
+    }
+
+    // Run GC
+    gc(request);
+
+    if (ZAbort::should_abort()) {
+      return;
     }
 
     // Notify GC completed
     _port.ack();
 
-    // Check for out of memory condition
+    // Check out of memory
     check_out_of_memory();
-
-    inactive();
   }
-
-  aborted();
 }
 
 void ZDriverMinor::stop_service() {
   _port.send_async(GCCause::_no_gc);
 }
 
-class VM_ZOldMarkStart : public VM_ZOperation {
+class VM_ZMarkEndOld : public VM_ZOperation {
 public:
   virtual VMOp_Type type() const {
-    return VMOp_ZOldMarkStart;
-  }
-
-  virtual bool block_jni_critical() const {
-    return true;
+    return VMOp_ZMarkEndOld;
   }
 
   virtual bool do_operation() {
-    ZStatTimerOld timer(ZPhasePauseOldMarkStart);
-    ZServiceabilityPauseTracer tracer(ZCollectorId::old);
-
-    ZCollectedHeap::heap()->increment_total_collections(true /* full */);
-
-    ZYoungCollector* young_collector = ZHeap::heap()->young_collector();
-    ZOldCollector* old_collector = ZHeap::heap()->old_collector();
-
-    old_collector->mark_start();
-
-    young_collector->mark_start();
-    young_collector->skip_mark_start();
-    return true;
-  }
-};
-
-class VM_ZOldMarkEnd : public VM_ZOperation {
-public:
-  virtual VMOp_Type type() const {
-    return VMOp_ZOldMarkEnd;
-  }
-
-  virtual bool do_operation() {
-    ZStatTimerOld timer(ZPhasePauseOldMarkEnd);
+    ZStatTimerOld timer(ZPhasePauseMarkEndOld);
     ZServiceabilityPauseTracer tracer(ZCollectorId::old);
     return ZHeap::heap()->old_collector()->mark_end();
   }
 };
 
-class VM_ZOldRelocateStart : public VM_ZOperation {
+class VM_ZRelocateStartOld : public VM_ZOperation {
 public:
   virtual VMOp_Type type() const {
-    return VMOp_ZOldRelocateStart;
+    return VMOp_ZRelocateStartOld;
   }
 
   virtual bool block_jni_critical() const {
@@ -586,17 +540,17 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimerOld timer(ZPhasePauseOldRelocateStart);
+    ZStatTimerOld timer(ZPhasePauseRelocateStartOld);
     ZServiceabilityPauseTracer tracer(ZCollectorId::old);
     ZHeap::heap()->old_collector()->relocate_start();
     return true;
   }
 };
 
-class VM_ZOldVerify : public VM_Operation {
+class VM_ZVerifyOld : public VM_Operation {
 public:
   virtual VMOp_Type type() const {
-    return VMOp_ZOldVerify;
+    return VMOp_ZVerifyOld;
   }
 
   virtual bool skip_thread_oop_barriers() const {
@@ -608,10 +562,218 @@ public:
   }
 };
 
+static void concurrent_mark_old() {
+  ZStatTimerOld timer(ZPhaseConcurrentMarkOld);
+  ZBreakpoint::at_after_marking_started();
+  ZHeap::heap()->old_collector()->mark_roots();
+  ZHeap::heap()->old_collector()->mark_follow();
+  ZBreakpoint::at_before_marking_completed();
+}
+
+static bool pause_mark_end_old() {
+  ZDriverLocker locker;
+  return pause<VM_ZMarkEndOld>();
+}
+
+static void concurrent_mark_continue_old() {
+  ZStatTimerOld timer(ZPhaseConcurrentMarkContinueOld);
+  ZHeap::heap()->old_collector()->mark_follow();
+}
+
+static void concurrent_mark_free_old() {
+  ZStatTimerOld timer(ZPhaseConcurrentMarkFreeOld);
+  ZHeap::heap()->old_collector()->mark_free();
+}
+
+static void concurrent_process_non_strong_references_old() {
+  ZStatTimerOld timer(ZPhaseConcurrentProcessNonStrongReferencesOld);
+  ZBreakpoint::at_after_reference_processing_started();
+  ZHeap::heap()->old_collector()->process_non_strong_references();
+}
+
+static void concurrent_reset_relocation_set_old() {
+  ZStatTimerOld timer(ZPhaseConcurrentResetRelocationSetOld);
+  ZHeap::heap()->old_collector()->reset_relocation_set();
+}
+
+static void pause_verify_old() {
+  // Note that we block out concurrent young collections when performing the
+  // verification. The verification checks that store good oops in the
+  // old generation have a corresponding remembered set entry, or is in
+  // a store barrier buffer (hence asynchronously creating such entries).
+  // That lookup would otherwise race with installation of base pointers
+  // into the store barrier buffer. We dodge that race by blocking out
+  // young collections during this verification.
+  if (VerifyBeforeGC || VerifyDuringGC || VerifyAfterGC) {
+    // Full verification
+    ZDriverLocker locker;
+    VM_Verify op;
+    VMThread::execute(&op);
+  } else if (ZVerifyRoots || ZVerifyObjects) {
+    // Limited verification
+    ZDriverLocker locker;
+    VM_ZVerifyOld op;
+    VMThread::execute(&op);
+  }
+}
+
+static void concurrent_select_relocation_set_old() {
+  ZStatTimerOld timer(ZPhaseConcurrentSelectRelocationSetOld);
+  ZHeap::heap()->old_collector()->select_relocation_set(false /* promote_all */);
+}
+
+static void pause_relocate_start_old() {
+  pause<VM_ZRelocateStartOld>();
+}
+
+static void concurrent_relocate_old() {
+  ZStatTimerOld timer(ZPhaseConcurrentRelocatedOld);
+  ZHeap::heap()->old_collector()->relocate();
+}
+
+static void concurrent_roots_remap_old() {
+  ZStatTimerOld timer(ZPhaseConcurrentRootsRemapOld);
+  ZHeap::heap()->old_collector()->roots_remap();
+}
+
+static void check_out_of_memory_old() {
+  ZHeap::heap()->check_out_of_memory_old();
+}
+
+static bool should_clear_soft_references(GCCause::Cause cause) {
+  // Clear soft references if implied by the GC cause
+  switch (cause) {
+  case GCCause::_wb_full_gc:
+  case GCCause::_metadata_GC_clear_soft_refs:
+  case GCCause::_z_major_allocation_stall:
+    return true;
+
+  case GCCause::_wb_breakpoint:
+  case GCCause::_dcmd_gc_run:
+  case GCCause::_java_lang_system_gc:
+  case GCCause::_full_gc_alot:
+  case GCCause::_jvmti_force_gc:
+  case GCCause::_z_major_timer:
+  case GCCause::_z_major_warmup:
+  case GCCause::_z_major_allocation_rate:
+  case GCCause::_z_major_proactive:
+  case GCCause::_metadata_GC_threshold:
+    break;
+
+  default:
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
+  }
+
+  // Clear soft references if threads are stalled waiting for an old collection
+  if (ZHeap::heap()->is_alloc_stalling_for_old()) {
+    return true;
+  }
+
+  // Don't clear
+  return false;
+}
+
+static bool should_collect_young_before_old(GCCause::Cause cause) {
+  // Collect young if implied by the GC cause
+  switch (cause) {
+  case GCCause::_wb_full_gc:
+  case GCCause::_wb_breakpoint:
+  case GCCause::_dcmd_gc_run:
+  case GCCause::_java_lang_system_gc:
+  case GCCause::_full_gc_alot:
+  case GCCause::_jvmti_force_gc:
+  case GCCause::_metadata_GC_clear_soft_refs:
+  case GCCause::_z_major_allocation_stall:
+    return true;
+
+  case GCCause::_z_major_timer:
+  case GCCause::_z_major_warmup:
+  case GCCause::_z_major_allocation_rate:
+  case GCCause::_z_major_proactive:
+  case GCCause::_metadata_GC_threshold:
+    break;
+
+  default:
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
+  }
+
+  // Collect young if threads are stalled waiting for an old collection
+  if (ZHeap::heap()->is_alloc_stalling_for_old()) {
+    return true;
+  }
+
+  // Collect young if implied by configuration
+  return ScavengeBeforeFullGC;
+}
+
+class ZDriverScopeOld : public StackObj {
+private:
+  ZStatTimerOld              _timer;
+  ZServiceabilityCycleTracer _tracer;
+  ZDriverUnlocker            _unlocker;
+
+public:
+  ZDriverScopeOld() :
+      _timer(ZPhaseGenerationOld),
+      _tracer(ZCollectorId::old),
+      _unlocker() {
+    ZOldCollector* const old_collector = ZHeap::heap()->old_collector();
+
+    // Update statistics
+    old_collector->set_at_generation_collection_start();
+  }
+
+  ~ZDriverScopeOld() {
+    ZOldCollector* const old_collector = ZHeap::heap()->old_collector();
+
+    // Update statistics
+    old_collector->stat_cycle()->at_end(old_collector->active_workers());
+  }
+};
+
+static void collect_old() {
+  ZDriverScopeOld scope;
+
+  // Phase 1: Concurrent Mark
+  abortable(concurrent_mark_old());
+
+  // Phase 2: Pause Mark End
+  while (!pause_mark_end_old()) {
+    // Phase 2.5: Concurrent Mark Continue
+    abortable(concurrent_mark_continue_old());
+  }
+
+  // Phase 3: Concurrent Mark Free
+  abortable(concurrent_mark_free_old());
+
+  // Phase 4: Concurrent Process Non-Strong References
+  abortable(concurrent_process_non_strong_references_old());
+
+  // Phase 5: Concurrent Reset Relocation Set
+  abortable(concurrent_reset_relocation_set_old());
+
+  // Phase 6: Pause Verify
+  pause_verify_old();
+
+  // Phase 7: Concurrent Select Relocation Set
+  abortable(concurrent_select_relocation_set_old());
+
+  {
+    ZDriverLocker locker;
+
+    // Phase 8: Concurrent Roots Remap
+    abortable(concurrent_roots_remap_old());
+
+    // Phase 9: Pause Relocate Start
+    pause_relocate_start_old();
+  }
+
+  // Phase 10: Concurrent Relocate
+  abortable(concurrent_relocate_old());
+}
+
 ZDriverMajor::ZDriverMajor(ZDriverMinor* minor) :
     _port(),
-    _lock(),
-    _active(false),
     _minor(minor) {
   set_name("ZDriverMajor");
   create_and_start();
@@ -619,22 +781,6 @@ ZDriverMajor::ZDriverMajor(ZDriverMinor* minor) :
 
 bool ZDriverMajor::is_busy() const {
   return _port.is_busy();
-}
-
-void ZDriverMajor::minor_block() {
-  _minor->block();
-}
-
-void ZDriverMajor::minor_unblock() {
-  _minor->unblock();
-}
-
-void ZDriverMajor::minor_start() {
-  _minor->start();
-}
-
-void ZDriverMajor::minor_await() {
-  _minor->await();
 }
 
 void ZDriverMajor::collect(const ZDriverRequest& request) {
@@ -671,195 +817,39 @@ void ZDriverMajor::collect(const ZDriverRequest& request) {
   }
 }
 
-template <typename T>
-bool ZDriverMajor::pause() {
-  T op;
-
-  if (op.block_jni_critical()) {
-    ZJNICritical::block();
-  }
-
-  VMThread::execute(&op);
-
-  if (op.block_jni_critical()) {
-    ZJNICritical::unblock();
-  }
-
-  return op.success();
-}
-
-void ZDriverMajor::pause_mark_start() {
-  pause<VM_ZOldMarkStart>();
-}
-
-void ZDriverMajor::concurrent_mark() {
-  ZStatTimerOld timer(ZPhaseConcurrentOldMark);
-  ZBreakpoint::at_after_marking_started();
-  ZHeap::heap()->old_collector()->mark_roots();
-  ZHeap::heap()->old_collector()->mark_follow();
-  ZBreakpoint::at_before_marking_completed();
-}
-
-bool ZDriverMajor::pause_mark_end() {
-  return pause<VM_ZOldMarkEnd>();
-}
-
-void ZDriverMajor::concurrent_mark_continue() {
-  ZStatTimerOld timer(ZPhaseConcurrentOldMarkContinue);
-  ZHeap::heap()->old_collector()->mark_follow();
-}
-
-void ZDriverMajor::concurrent_mark_free() {
-  ZStatTimerOld timer(ZPhaseConcurrentOldMarkFree);
-  ZHeap::heap()->old_collector()->mark_free();
-}
-
-void ZDriverMajor::concurrent_process_non_strong_references() {
-  ZStatTimerOld timer(ZPhaseConcurrentOldProcessNonStrongReferences);
-  ZBreakpoint::at_after_reference_processing_started();
-  ZHeap::heap()->old_collector()->process_non_strong_references();
-}
-
-void ZDriverMajor::concurrent_reset_relocation_set() {
-  ZStatTimerOld timer(ZPhaseConcurrentOldResetRelocationSet);
-  ZHeap::heap()->old_collector()->reset_relocation_set();
-}
-
-void ZDriverMajor::pause_verify() {
-  // Note that we block out concurrent young collections when performing the
-  // verification. The verification checks that store good oops in the
-  // old generation have a corresponding remembered set entry, or is in
-  // a store barrier buffer (hence asynchronously creating such entries).
-  // That lookup would otherwise race with installation of base pointers
-  // into the store barrier buffer. We dodge that race by blocking out
-  // young collections during this verification.
-  if (VerifyBeforeGC || VerifyDuringGC || VerifyAfterGC) {
-    // Full verification
-    minor_block();
-    VM_Verify op;
-    VMThread::execute(&op);
-    minor_unblock();
-  } else if (ZVerifyRoots || ZVerifyObjects) {
-    // Limited verification
-    minor_block();
-    VM_ZOldVerify op;
-    VMThread::execute(&op);
-    minor_unblock();
-  }
-}
-
-void ZDriverMajor::concurrent_select_relocation_set() {
-  ZStatTimerOld timer(ZPhaseConcurrentOldSelectRelocationSet);
-  ZHeap::heap()->old_collector()->select_relocation_set(false /* promote_all */);
-}
-
-void ZDriverMajor::pause_relocate_start() {
-  pause<VM_ZOldRelocateStart>();
-}
-
-void ZDriverMajor::concurrent_relocate() {
-  ZStatTimerOld timer(ZPhaseConcurrentOldRelocated);
-  ZHeap::heap()->old_collector()->relocate();
-}
-
-void ZDriverMajor::concurrent_roots_remap() {
-  ZStatTimerOld timer(ZPhaseConcurrentOldRootsRemap);
-  ZHeap::heap()->old_collector()->roots_remap();
-}
-
-void ZDriverMajor::check_out_of_memory() {
-  ZHeap::heap()->check_major_out_of_memory();
-}
-
-static bool should_clear_soft_references(GCCause::Cause cause) {
-  // Clear soft references if implied by the GC cause
-  switch (cause) {
-  case GCCause::_wb_full_gc:
-  case GCCause::_metadata_GC_clear_soft_refs:
-  case GCCause::_z_major_allocation_stall:
-    return true;
-
-  case GCCause::_wb_breakpoint:
-  case GCCause::_dcmd_gc_run:
-  case GCCause::_java_lang_system_gc:
-  case GCCause::_full_gc_alot:
-  case GCCause::_jvmti_force_gc:
-  case GCCause::_z_major_timer:
-  case GCCause::_z_major_warmup:
-  case GCCause::_z_major_allocation_rate:
-  case GCCause::_z_major_proactive:
-  case GCCause::_metadata_GC_threshold:
-    break;
-
-  default:
-    fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
-  }
-
-  // Clear soft references if threads are stalled waiting for a major collection
-  if (ZHeap::heap()->is_alloc_stalling_for_major()) {
-    return true;
-  }
-
-  // Don't clear
-  return false;
-}
-
-static bool should_collect_young_before_major(GCCause::Cause cause) {
-  // Collect young if implied by the GC cause
-  switch (cause) {
-  case GCCause::_wb_full_gc:
-  case GCCause::_wb_breakpoint:
-  case GCCause::_dcmd_gc_run:
-  case GCCause::_java_lang_system_gc:
-  case GCCause::_full_gc_alot:
-  case GCCause::_jvmti_force_gc:
-  case GCCause::_metadata_GC_clear_soft_refs:
-  case GCCause::_z_major_allocation_stall:
-    return true;
-
-  case GCCause::_z_major_timer:
-  case GCCause::_z_major_warmup:
-  case GCCause::_z_major_allocation_rate:
-  case GCCause::_z_major_proactive:
-  case GCCause::_metadata_GC_threshold:
-    break;
-
-  default:
-    fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
-  }
-
-  // Collect young if threads are stalled waiting for a major collection
-  if (ZHeap::heap()->is_alloc_stalling_for_major()) {
-    return true;
-  }
-
-  // Collect young if implied by configuration
-  return ScavengeBeforeFullGC;
-}
-
-class ZDriverMajorGCScope : public StackObj {
+class ZDriverScopeMajor : public StackObj {
 private:
-  GCIdMark                   _gc_id;
-  GCCause::Cause             _gc_cause;
-  GCCauseSetter              _gc_cause_setter;
-  ZStatTimerMajor            _timer;
+  GCIdMark        _gc_id;
+  GCCause::Cause  _gc_cause;
+  GCCauseSetter   _gc_cause_setter;
+  ZStatTimerMajor _timer;
 
 public:
-  ZDriverMajorGCScope(const ZDriverRequest& request) :
+  ZDriverScopeMajor(const ZDriverRequest& request) :
       _gc_id(),
       _gc_cause(request.cause()),
       _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
-      _timer(ZPhaseMajorCycle) {
-    ZOldCollector* const collector = ZHeap::heap()->old_collector();
+      _timer(ZPhaseCollectionMajor) {
+    ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
+    ZOldCollector* const old_collector = ZHeap::heap()->old_collector();
 
-    collector->set_at_collection_start();
+    // Update statistics
+    old_collector->set_at_collection_start();
 
     // Set up soft reference policy
     const bool clear = should_clear_soft_references(request.cause());
-    collector->set_soft_reference_policy(clear);
+    old_collector->set_soft_reference_policy(clear);
+
+    // Select number of young worker threads to use
+    const uint young_nworkers = select_active_young_worker_threads(request);
+    young_collector->set_active_workers(young_nworkers);
+
+    // Select number of old worker threads to use
+    const uint old_nworkers = select_active_old_worker_threads(request);
+    old_collector->set_active_workers(old_nworkers);
   }
 
-  ~ZDriverMajorGCScope() {
+  ~ZDriverScopeMajor() {
     // Update data used by soft reference policy
     Universe::heap()->update_capacity_and_used_at_gc();
 
@@ -868,112 +858,20 @@ public:
   }
 };
 
-class ZDriverOldGCScope : public StackObj {
-private:
-  GCIdMark                   _gc_id;
-  GCCause::Cause             _gc_cause;
-  GCCauseSetter              _gc_cause_setter;
-  ZStatTimerOld              _timer;
-  ZServiceabilityCycleTracer _tracer;
-
-public:
-  ZDriverOldGCScope(const ZDriverRequest& request) :
-      _gc_id(),
-      _gc_cause(GCCause::_z_major_old),
-      _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
-      _timer(ZPhaseOldCycle),
-      _tracer(ZCollectorId::old) {
-    ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
-    ZOldCollector* const old_collector = ZHeap::heap()->old_collector();
-
-    // Active workers is expected to be set in mark_start. It isn't set yet,
-    // but will be set to ConcGCThreads. We set it explicitly now to match
-    // the expectations.
-    const uint young_nworkers = select_active_young_worker_threads(request);
-    young_collector->set_active_workers(young_nworkers);
-
-    // Select number of old worker threads to use
-    const uint old_nworkers = select_active_old_worker_threads(request);
-    old_collector->set_active_workers(old_nworkers);
-
-    // Update statistics
-    old_collector->set_at_generation_collection_start();
-  }
-
-  ~ZDriverOldGCScope() {
-    ZOldCollector* collector = ZHeap::heap()->old_collector();
-
-    // Update statistics
-    collector->stat_cycle()->at_end(_gc_cause, collector->active_workers());
-  }
-};
-
 void ZDriverMajor::gc(const ZDriverRequest& request) {
-  ZDriverMajorGCScope major_scope(request);
+  ZDriverScopeMajor scope(request);
 
-  if (should_collect_young_before_major(request.cause())) {
-    minor_unblock();
-    _minor->collect(GCCause::_z_major_young_preclean);
-    minor_block();
+  if (should_collect_young_before_old(request.cause())) {
+    abortable(collect_young_promote_all());
   }
 
-  if (ZAbort::should_abort()) {
-    return;
-  }
+  abortable(collect_young_initiate_old());
+  check_out_of_memory_young();
+  abortable(collect_old());
+}
 
-  ZDriverOldGCScope old_scope(request);
-
-  // Phase 1: Pause Mark Starts
-  pause_mark_start();
-
-  minor_start();
-  minor_await();
-
-  // Phase 2: Concurrent Mark
-  abortable(concurrent_mark());
-
-  // FIXME: Is this still needed now that purge dead remset is gone?
-  minor_block();
-
-  // Phase 3: Pause Mark End
-  while (!pause_mark_end()) {
-    minor_unblock();
-    // Phase 3.5: Concurrent Mark Continue
-    abortable(concurrent_mark_continue());
-    minor_block();
-  }
-
-  minor_unblock();
-
-  // Phase 4: Concurrent Mark Free
-  abortable(concurrent_mark_free());
-
-  // Phase 5: Concurrent Process Non-Strong References
-  abortable(concurrent_process_non_strong_references());
-
-  // Phase 6: Concurrent Reset Relocation Set
-  abortable(concurrent_reset_relocation_set());
-
-  // Phase 7: Pause Verify
-  pause_verify();
-
-  // Phase 8: Concurrent Select Relocation Set
-  abortable(concurrent_select_relocation_set());
-
-  minor_block();
-
-  // Phase 9: Concurrent Roots Remap
-  abortable(concurrent_roots_remap());
-
-  // Phase 10: Pause Relocate Start
-  pause_relocate_start();
-
-  minor_unblock();
-
-  // Phase 11: Concurrent Relocate
-  abortable(concurrent_relocate());
-
-  minor_block();
+void ZDriverMajor::check_out_of_memory() const {
+  check_out_of_memory_old();
 }
 
 void ZDriverMajor::run_service() {
@@ -985,24 +883,25 @@ void ZDriverMajor::run_service() {
       continue;
     }
 
+    ZDriverLocker locker;
+
     ZBreakpoint::at_before_gc();
 
-    minor_block();
+    if (ZAbort::should_abort()) {
+      return;
+    }
 
     // Run GC
     gc(request);
 
     if (ZAbort::should_abort()) {
-      minor_unblock();
-      break;
+      return;
     }
 
     // Notify GC completed
     _port.ack();
 
-    minor_unblock();
-
-    // Check for out of memory condition
+    // Check out of memory
     check_out_of_memory();
 
     ZBreakpoint::at_after_gc();

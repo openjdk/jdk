@@ -132,15 +132,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _z_minor_high_usage:
       return "Minor High Usage";
 
-    case _z_major_young_preclean:
-      return "Major Young Preclean";
-
-    case _z_major_young:
-      return "Major Young";
-
-    case _z_major_old:
-      return "Major Old";
-
     case _z_major_timer:
       return "Major Timer";
 

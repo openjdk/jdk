@@ -25,6 +25,7 @@
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zCPU.hpp"
+#include "gc/z/zDriver.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/z/zInitialize.hpp"
@@ -55,6 +56,7 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   ZHeuristics::set_medium_page_size();
   ZBarrierSet::set_barrier_set(barrier_set);
   ZJNICritical::initialize();
+  ZDriverLock::initialize();
 
   pd_initialize();
 }

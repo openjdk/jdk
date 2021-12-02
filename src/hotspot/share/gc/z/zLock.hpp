@@ -27,7 +27,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 
-class ZLock {
+class ZLock : public CHeapObj<mtGC> {
 private:
   os::PlatformMutex _lock;
 

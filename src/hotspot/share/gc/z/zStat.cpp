@@ -622,20 +622,18 @@ const char* ZStatPhase::name() const {
   return _sampler.name();
 }
 
-ZStatPhaseMajorCycle::ZStatPhaseMajorCycle(const char* name) :
-    ZStatPhase("Collector", name) {}
+ZStatPhaseCollection::ZStatPhaseCollection(const char* name) :
+    ZStatPhase("Collection", name) {}
 
-void ZStatPhaseMajorCycle::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+void ZStatPhaseCollection::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   timer->register_gc_start(start);
 
-  log_info(gc, start)("Garbage Collection (%s)",
-                       GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+  log_info(gc, start)("%s (%s)", name(), GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
 }
 
-void ZStatPhaseMajorCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
+void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
   if (ZAbort::should_abort()) {
-    log_info(gc)("Garbage Collection (%s) Aborted",
-                 GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+    log_info(gc)("%s (%s) Aborted", name(), GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
     return;
   }
 
@@ -644,70 +642,47 @@ void ZStatPhaseMajorCycle::register_end(ConcurrentGCTimer* timer, const Ticks& s
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  ZOldCollector* collector = ZHeap::heap()->old_collector();
-
-  log_info(gc)("Garbage Collection (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
+  const ZStatHeap* const stat = ZHeap::heap()->old_collector()->stat_heap();
+  log_info(gc)("%s (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
+               name(),
                GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
-               ZSIZE_ARGS(collector->stat_heap()->used_at_collection_start()),
-               ZSIZE_ARGS(collector->stat_heap()->used_at_collection_end()));
+               ZSIZE_ARGS(stat->used_at_collection_start()),
+               ZSIZE_ARGS(stat->used_at_collection_end()));
 }
 
-ZStatPhaseMinorCycle::ZStatPhaseMinorCycle(const char* name) :
-    ZStatPhase("Collector", name) {}
+ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id) :
+    ZStatPhase("Generation", name),
+    _id(id) {}
 
-void ZStatPhaseMinorCycle::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
-  timer->register_gc_start(start);
-}
-
-void ZStatPhaseMinorCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
-  if (ZAbort::should_abort()) {
-    return;
-  }
-
-  timer->register_gc_end(end);
-
-  const Tickspan duration = end - start;
-  ZStatSample(_sampler, duration.value());
-}
-
-ZStatPhaseGenerationCycle::ZStatPhaseGenerationCycle(ZGenerationId generation_id, const char* name) :
-    ZStatPhase("Collector", name),
-    _generation_id(generation_id) {}
-
-void ZStatPhaseGenerationCycle::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+void ZStatPhaseGeneration::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   timer->register_gc_start(start);
 
-  GCTracer* tracer = ZHeap::heap()->collector(_generation_id)->tracer();
-
+  GCTracer* const tracer = ZHeap::heap()->collector(_id)->tracer();
   tracer->report_gc_start(ZCollectedHeap::heap()->gc_cause(), start);
 
   ZCollectedHeap::heap()->print_heap_before_gc();
   ZCollectedHeap::heap()->trace_heap_before_gc(tracer);
 
-  log_info(gc, start)("Garbage Collection (%s)",
-                       GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+  log_info(gc, phases, start)("%s", name());
 }
 
-void ZStatPhaseGenerationCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
+void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
   if (ZAbort::should_abort()) {
-    log_info(gc)("Garbage Collection (%s) Aborted",
-                 GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+    log_info(gc)("%s Aborted", name());
     return;
   }
 
   timer->register_gc_end(end);
 
-  GCTracer* tracer = ZHeap::heap()->collector(_generation_id)->tracer();
+  ZCollector* const collector = ZHeap::heap()->collector(_id);
+  GCTracer* const tracer = collector->tracer();
+  tracer->report_gc_end(end, timer->time_partitions());
 
   ZCollectedHeap::heap()->print_heap_after_gc();
   ZCollectedHeap::heap()->trace_heap_after_gc(tracer);
 
-  tracer->report_gc_end(end, timer->time_partitions());
-
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
-
-  ZCollector* collector = ZHeap::heap()->collector(_generation_id);
 
   ZStatLoad::print();
   ZStatMMU::print();
@@ -720,17 +695,11 @@ void ZStatPhaseGenerationCycle::register_end(ConcurrentGCTimer* timer, const Tic
   collector->stat_relocation()->print();
   collector->stat_heap()->print(collector);
 
-  log_info(gc)("Garbage Collection (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
-               GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
+  log_info(gc, phases)("%s " ZSIZE_FMT "->" ZSIZE_FMT,
+               name(),
                ZSIZE_ARGS(collector->stat_heap()->used_at_generation_collection_start()),
                ZSIZE_ARGS(collector->stat_heap()->used_at_collection_end()));
 }
-
-ZStatPhaseYoungCycle::ZStatPhaseYoungCycle(const char* name) :
-    ZStatPhaseGenerationCycle(ZGenerationId::young, name) {}
-
-ZStatPhaseOldCycle::ZStatPhaseOldCycle(const char* name) :
-    ZStatPhaseGenerationCycle(ZGenerationId::old, name) {}
 
 Tickspan ZStatPhasePause::_max;
 
@@ -1163,11 +1132,10 @@ void ZStatCycle::at_start() {
   _start_of_last = Ticks::now();
 }
 
-void ZStatCycle::at_end(GCCause::Cause cause, uint active_workers) {
+void ZStatCycle::at_end(uint active_workers) {
   _end_of_last = Ticks::now();
 
-  // FIXME: This should really check for the warmup GCCause.
-  if (cause == GCCause::_z_major_old && _nwarmup_cycles < 3) {
+  if (ZCollectedHeap::heap()->gc_cause() == GCCause::_z_major_warmup && _nwarmup_cycles < 3) {
     _nwarmup_cycles++;
   }
 
@@ -1421,25 +1389,25 @@ void ZStatReferences::print() {
 //
 ZStatHeap::ZAtInitialize ZStatHeap::_at_initialize;
 
-size_t ZStatHeap::capacity_high() {
+size_t ZStatHeap::capacity_high() const {
   return MAX4(_at_mark_start.capacity,
               _at_mark_end.capacity,
               _at_relocate_start.capacity,
               _at_relocate_end.capacity);
 }
 
-size_t ZStatHeap::capacity_low() {
+size_t ZStatHeap::capacity_low() const {
   return MIN4(_at_mark_start.capacity,
               _at_mark_end.capacity,
               _at_relocate_start.capacity,
               _at_relocate_end.capacity);
 }
 
-size_t ZStatHeap::free(size_t used) {
+size_t ZStatHeap::free(size_t used) const {
   return _at_initialize.max_capacity - used;
 }
 
-size_t ZStatHeap::mutator_allocated(size_t used_generation, size_t freed, size_t relocated) {
+size_t ZStatHeap::mutator_allocated(size_t used_generation, size_t freed, size_t relocated) const {
   // The amount of allocated memory between point A and B is used(B) - used(A).
   // However, we might also have reclaimed memory between point A and B. This
   // means the current amount of used memory must be incremented by the amount
@@ -1449,11 +1417,11 @@ size_t ZStatHeap::mutator_allocated(size_t used_generation, size_t freed, size_t
   return  used_generation_delta + freed - relocated;
 }
 
-size_t ZStatHeap::garbage(size_t freed, size_t relocated, size_t promoted) {
+size_t ZStatHeap::garbage(size_t freed, size_t relocated, size_t promoted) const {
   return _at_mark_end.garbage - (freed - promoted - relocated);
 }
 
-size_t ZStatHeap::reclaimed(size_t freed, size_t relocated, size_t promoted) {
+size_t ZStatHeap::reclaimed(size_t freed, size_t relocated, size_t promoted) const {
   return freed - relocated - promoted;
 }
 
@@ -1538,31 +1506,31 @@ size_t ZStatHeap::max_capacity() {
   return _at_initialize.max_capacity;
 }
 
-size_t ZStatHeap::used_at_collection_start() {
+size_t ZStatHeap::used_at_collection_start() const {
   return _at_collection_start.used;
 }
 
-size_t ZStatHeap::used_at_generation_collection_start() {
+size_t ZStatHeap::used_at_generation_collection_start() const {
   return _at_generation_collection_start.used;
 }
 
-size_t ZStatHeap::used_at_mark_start() {
+size_t ZStatHeap::used_at_mark_start() const {
   return _at_mark_start.used;
 }
 
-size_t ZStatHeap::live_at_mark_end() {
+size_t ZStatHeap::live_at_mark_end() const {
   return _at_mark_end.live;
 }
 
-size_t ZStatHeap::used_at_relocate_end() {
+size_t ZStatHeap::used_at_relocate_end() const {
   return _at_relocate_end.used;
 }
 
-size_t ZStatHeap::used_at_collection_end() {
+size_t ZStatHeap::used_at_collection_end() const {
   return used_at_relocate_end();
 }
 
-void ZStatHeap::print(ZCollector* collector) {
+void ZStatHeap::print(const ZCollector* collector) const {
   log_info(gc, heap)("Min Capacity: "
                      ZSIZE_FMT, ZSIZE_ARGS(_at_initialize.min_capacity));
   log_info(gc, heap)("Max Capacity: "
@@ -1570,7 +1538,7 @@ void ZStatHeap::print(ZCollector* collector) {
   log_info(gc, heap)("Soft Max Capacity: "
                      ZSIZE_FMT, ZSIZE_ARGS(_at_mark_start.soft_max_capacity));
 
-  log_info(gc, heap)("Java heap statistics:");
+  log_info(gc, heap)("Heap Statistics:");
   ZStatTablePrinter heap_table(10, 18);
   log_info(gc, heap)("%s", heap_table()
                      .fill()
@@ -1608,7 +1576,8 @@ void ZStatHeap::print(ZCollector* collector) {
                      .left(ZTABLE_ARGS(_at_relocate_end.used_high))
                      .left(ZTABLE_ARGS(_at_relocate_end.used_low))
                      .end());
-  log_info(gc, heap)("%s statistics:", collector->is_old() ? "Old generation" : "Young generation");
+
+  log_info(gc, heap)("%s Generation Statistics:", collector->is_young() ? "Young" : "Old");
   ZStatTablePrinter gen_table(10, 18);
   log_info(gc, heap)("%s", gen_table()
                      .fill()

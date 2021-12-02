@@ -164,7 +164,6 @@ public:
 
 class ZYoungCollector : public ZCollector {
 private:
-  bool              _skip_mark_start;
   ZYoungTracer      _tracer;
   ConcurrentGCTimer _minor_timer;
 
@@ -178,9 +177,6 @@ public:
   void mark_roots();
   void mark_follow();
   bool mark_end();
-
-  bool should_skip_mark_start();
-  void skip_mark_start();
 
   void relocate_start();
   void relocate();

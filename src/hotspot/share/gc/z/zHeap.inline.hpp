@@ -359,16 +359,16 @@ inline bool ZHeap::is_remembered(volatile zpointer* p) {
   return _young_generation.is_remembered(p);
 }
 
-inline bool ZHeap::is_alloc_stalling_for_major() const {
-  return _page_allocator.is_alloc_stalling_for_major();
+inline bool ZHeap::is_alloc_stalling_for_old() const {
+  return _page_allocator.is_alloc_stalling_for_old();
 }
 
-inline void ZHeap::check_minor_out_of_memory() {
-  _page_allocator.check_minor_out_of_memory();
+inline void ZHeap::check_out_of_memory_young() {
+  _page_allocator.check_out_of_memory_young();
 }
 
-inline void ZHeap::check_major_out_of_memory() {
-  _page_allocator.check_major_out_of_memory();
+inline void ZHeap::check_out_of_memory_old() {
+  _page_allocator.check_out_of_memory_old();
 }
 
 inline bool ZHeap::is_oop(uintptr_t addr) const {
