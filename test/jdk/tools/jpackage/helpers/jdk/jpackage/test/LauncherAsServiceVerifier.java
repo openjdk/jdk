@@ -102,7 +102,7 @@ public final class LauncherAsServiceVerifier {
     }
 
     private static Path appOutputDir() {
-        return Path.of("/tmp");
+        return Path.of(System.getProperty("java.io.tmpdir"));
     }
 
     private final String expectedValue;
