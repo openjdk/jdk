@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1EVACUATIONFAILUREOBJSINHR_HPP
-#define SHARE_GC_G1_G1EVACUATIONFAILUREOBJSINHR_HPP
+#ifndef SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_HPP
+#define SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_HPP
 
 #include "gc/g1/g1EvacFailureParScanTask.hpp"
 #include "gc/g1/g1SegmentedArray.hpp"
@@ -35,7 +35,7 @@ class HeapRegion;
 
 // This class collects addresses of objects that failed evacuation in a specific
 // heap region.
-// Provides sorted iteration of these elements for processing during the remove
+// Provides sorted iteration of these objects for processing during the remove
 // self forwards phase.
 class G1EvacFailureObjectsSet {
   // Storage type of an object that failed evacuation within a region. Given
@@ -71,18 +71,18 @@ class G1EvacFailureObjectsSet {
     void iterate(ObjectClosure* closure, G1EvacFailureParScanTask& task);
     void reset();
 
-    // Callback of G1SegmentedArray::iterate_nodes
-    void do_buffer(G1SegmentedArrayBuffer<mtGC>* node, uint length);
-
+    // Callback of G1SegmentedArray::iterate_segments
+    void do_segment(G1SegmentedArraySegment<mtGC>* segment, uint length);
   };
 
-  static const uint BufferLength = 256;
+  static const uint SegmentLength = 256;
+
   static const uint Alignment = 4;
 
   static const G1SegmentedArrayAllocOptions _alloc_options;
 
   // This free list is shared among evacuation failure process in all regions.
-  static G1SegmentedArrayBufferList<mtGC> _free_buffer_list;
+  static G1SegmentedArrayFreeList<mtGC> _free_segment_list;
 
   const uint _region_idx;
 
@@ -121,4 +121,4 @@ public:
 };
 
 
-#endif //SHARE_GC_G1_G1EVACUATIONFAILUREOBJSINHR_HPP
+#endif //SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_HPP

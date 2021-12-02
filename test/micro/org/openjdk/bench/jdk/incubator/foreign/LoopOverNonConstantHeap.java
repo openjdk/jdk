@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
@@ -46,7 +45,10 @@ import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
 import static jdk.incubator.foreign.MemoryLayout.PathElement.sequenceElement;
-import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
+import static jdk.incubator.foreign.ValueLayout.JAVA_DOUBLE;
+import static jdk.incubator.foreign.ValueLayout.JAVA_FLOAT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -63,7 +65,7 @@ public class LoopOverNonConstantHeap {
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
     static final int UNSAFE_BYTE_BASE = unsafe.arrayBaseOffset(byte[].class);
 
-    static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(int.class, sequenceElement());
+    static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(sequenceElement());
     MemorySegment segment;
     byte[] base;
 
@@ -79,13 +81,13 @@ public class LoopOverNonConstantHeap {
             MemorySegment intI = MemorySegment.ofArray(new int[ALLOC_SIZE]);
             MemorySegment intD = MemorySegment.ofArray(new double[ALLOC_SIZE]);
             MemorySegment intF = MemorySegment.ofArray(new float[ALLOC_SIZE]);
-            MemorySegment s = MemorySegment.allocateNative(ALLOC_SIZE, 1, ResourceScope.newConfinedScope(Cleaner.create()));
+            MemorySegment s = MemorySegment.allocateNative(ALLOC_SIZE, 1, ResourceScope.newConfinedScope());
             for (int i = 0; i < ALLOC_SIZE; i++) {
-                MemoryAccess.setByteAtOffset(intB, i, (byte)i);
-                MemoryAccess.setIntAtIndex(intI, i, i);
-                MemoryAccess.setDoubleAtIndex(intD, i, i);
-                MemoryAccess.setFloatAtIndex(intF, i, i);
-                MemoryAccess.setByteAtOffset(s, i, (byte) i);
+                intB.set(JAVA_BYTE, i, (byte)i);
+                intI.setAtIndex(JAVA_INT, i, i);
+                intD.setAtIndex(JAVA_DOUBLE, i, i);
+                intF.setAtIndex(JAVA_FLOAT, i, i);
+                s.set(JAVA_BYTE, i, (byte) i);
             }
         }
 
@@ -134,10 +136,10 @@ public class LoopOverNonConstantHeap {
     }
 
     @Benchmark
-    public int segment_loop_static() {
+    public int segment_loop_instance() {
         int res = 0;
         for (int i = 0; i < ELEM_SIZE; i ++) {
-            res += MemoryAccess.getIntAtIndex(segment, i);
+            res += segment.get(JAVA_INT, i * CARRIER_SIZE);
         }
         return res;
     }

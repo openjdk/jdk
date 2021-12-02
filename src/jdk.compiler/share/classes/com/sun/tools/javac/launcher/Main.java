@@ -354,6 +354,7 @@ public class Main {
         javacOpts.add("-Xdiags:verbose");
         javacOpts.add("-Xlint:deprecation");
         javacOpts.add("-Xlint:unchecked");
+        javacOpts.add("-Xlint:-options");
         return javacOpts;
     }
 

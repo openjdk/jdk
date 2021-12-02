@@ -526,7 +526,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     switch (n) {
       case 1:
       case 2: {
-        operation = VectorNode::make(sopc, opd1, opd2, vt, is_vector_mask(vbox_klass));
+        operation = VectorNode::make(sopc, opd1, opd2, vt, is_vector_mask(vbox_klass), VectorNode::is_shift_opcode(opc));
         break;
       }
       case 3: {

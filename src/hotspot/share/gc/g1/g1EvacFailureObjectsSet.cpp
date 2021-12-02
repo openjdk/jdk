@@ -32,9 +32,9 @@
 #include "utilities/quickSort.hpp"
 
 const G1SegmentedArrayAllocOptions G1EvacFailureObjectsSet::_alloc_options =
-  G1SegmentedArrayAllocOptions((uint)sizeof(OffsetInRegion), BufferLength, UINT_MAX, Alignment);
+  G1SegmentedArrayAllocOptions((uint)sizeof(OffsetInRegion), SegmentLength, UINT_MAX, Alignment);
 
-G1SegmentedArrayBufferList<mtGC> G1EvacFailureObjectsSet::_free_buffer_list;
+G1SegmentedArrayFreeList<mtGC> G1EvacFailureObjectsSet::_free_segment_list;
 
 #ifdef ASSERT
 void G1EvacFailureObjectsSet::assert_is_valid_offset(size_t offset) const {
@@ -58,7 +58,7 @@ G1EvacFailureObjectsSet::OffsetInRegion G1EvacFailureObjectsSet::to_offset(oop o
 G1EvacFailureObjectsSet::G1EvacFailureObjectsSet(uint region_idx, HeapWord* bottom) :
   _region_idx(region_idx),
   _bottom(bottom),
-  _offsets(&_alloc_options, &_free_buffer_list),
+  _offsets(&_alloc_options, &_free_segment_list),
   _helper(this, _region_idx),
   _word_size(0) {
   assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
@@ -69,7 +69,7 @@ int G1EvacFailureObjectsSet::G1EvacFailureObjectsIterationHelper::order_oop(Offs
 }
 
 void G1EvacFailureObjectsSet::G1EvacFailureObjectsIterationHelper::join_and_sort() {
-  _segments->iterate_nodes(*this);
+  _segments->iterate_segments(*this);
 
   QuickSort::sort(_offset_array, _array_length, order_oop, true);
 }
@@ -109,7 +109,7 @@ G1EvacFailureObjectsSet::G1EvacFailureObjectsIterationHelper::G1EvacFailureObjec
   _region_idx(region_idx) { }
 
 void G1EvacFailureObjectsSet::G1EvacFailureObjectsIterationHelper::prepare(G1EvacFailureParScanTasksQueue* queue) {
-  uint num = _segments->num_allocated_nodes();
+  uint num = _segments->num_allocated_slots();
   _offset_array = NEW_C_HEAP_ARRAY(OffsetInRegion, num, mtGC);
 
   join_and_sort();
@@ -132,9 +132,9 @@ void G1EvacFailureObjectsSet::G1EvacFailureObjectsIterationHelper::reset() {
   _array_length = 0;
 }
 
-// Callback of G1SegmentedArray::iterate_nodes
-void G1EvacFailureObjectsSet::G1EvacFailureObjectsIterationHelper::do_buffer(G1SegmentedArrayBuffer<mtGC>* node, uint length) {
-  node->copy_to(&_offset_array[_array_length]);
+// Callback of G1SegmentedArray::iterate_segments
+void G1EvacFailureObjectsSet::G1EvacFailureObjectsIterationHelper::do_segment(G1SegmentedArraySegment<mtGC>* segment, uint length) {
+  segment->copy_to(&_offset_array[_array_length]);
   _array_length += length;
 }
 

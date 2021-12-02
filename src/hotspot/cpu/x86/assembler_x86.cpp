@@ -4306,6 +4306,20 @@ void Assembler::vpmovmskb(Register dst, XMMRegister src, int vec_enc) {
   emit_int16((unsigned char)0xD7, (0xC0 | encode));
 }
 
+void Assembler::vmovmskps(Register dst, XMMRegister src, int vec_enc) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionAttr attributes(vec_enc, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x50, (0xC0 | encode));
+}
+
+void Assembler::vmovmskpd(Register dst, XMMRegister src, int vec_enc) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionAttr attributes(vec_enc, /* rex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x50, (0xC0 | encode));
+}
+
 void Assembler::vpmaskmovd(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
   assert((VM_Version::supports_avx2() && vector_len == AVX_256bit), "");
   InstructionMark im(this);
