@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ public class bug4908142 {
             });
 
             robot.waitForIdle();
+            robot.delay(1000);
 
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -70,7 +71,7 @@ public class bug4908142 {
             });
 
             robot.waitForIdle();
-
+            robot.delay(500);
 
             robot.keyPress(KeyEvent.VK_A);
             robot.keyRelease(KeyEvent.VK_A);
@@ -114,6 +115,7 @@ public class bug4908142 {
 
         JScrollPane sp = new JScrollPane(tree);
         fr.getContentPane().add(sp);
+        fr.setLocationRelativeTo(null);
         fr.setSize(200, 200);
         fr.setVisible(true);
     }
