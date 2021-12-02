@@ -229,11 +229,10 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 // Replace the dominated test with an obvious true or false.  Place it on the
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
-void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exclude_loop_predicate ) {
+void PhaseIdealLoop::dominated_by(IfProjNode *prevdom, IfNode *iff, bool flip, bool exclude_loop_predicate) {
   if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
-  assert(iff->is_If(), "must be");
   assert(iff->Opcode() == Op_If ||
          iff->Opcode() == Op_CountedLoopEnd ||
          iff->Opcode() == Op_LongCountedLoopEnd ||
@@ -263,7 +262,7 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
   // Make control-dependent data Nodes on the live path (path that will remain
   // once the dominated IF is removed) become control-dependent on the
   // dominating projection.
-  Node* dp = iff->as_If()->proj_out_or_null(pop == Op_IfTrue);
+  Node* dp = iff->proj_out_or_null(pop == Op_IfTrue);
 
   // Loop predicates may have depending checks which should not
   // be skipped. For example, range check predicate has two checks
@@ -272,7 +271,7 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
     return;
 
   ProjNode* dp_proj  = dp->as_Proj();
-  ProjNode* unc_proj = iff->as_If()->proj_out(1 - dp_proj->_con)->as_Proj();
+  ProjNode* unc_proj = iff->proj_out(1 - dp_proj->_con)->as_Proj();
   if (exclude_loop_predicate &&
       (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate) != NULL ||
        unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_profile_predicate) != NULL ||
@@ -1175,14 +1174,14 @@ bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
     return false;
   }
 
-  IfNode* n_if = n->as_If();
-  if (n_if->proj_out(0)->outcnt() > 1 || n_if->proj_out(1)->outcnt() > 1) {
-    // Removing the dominated If node by using the split-if optimization does not work if there are data dependencies.
-    // Some data dependencies depend on its immediate dominator If node and should not be separated from it (e.g. null
-    // checks, division by zero checks etc.). Bail out for now until data dependencies are correctly handled when
-    // optimizing back-to-back ifs.
-    return false;
-  }
+//  IfNode* n_if = n->as_If();
+//  if (n_if->proj_out(0)->outcnt() > 1 || n_if->proj_out(1)->outcnt() > 1) {
+//    // Removing the dominated If node by using the split-if optimization does not work if there are data dependencies.
+//    // Some data dependencies depend on its immediate dominator If node and should not be separated from it (e.g. null
+//    // checks, division by zero checks etc.). Bail out for now until data dependencies are correctly handled when
+//    // optimizing back-to-back ifs.
+//    return false;
+//  }
 
   Node* region = n->in(0);
   Node* dom = idom(region);
@@ -1363,16 +1362,17 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
     Node *n_ctrl = n->in(0);
 //    PhiNode* bolphi = PhiNode::make_blank(n_ctrl, n->in(1));
     IfNode* dom_if = idom(n_ctrl)->as_If();
-    Node* proj_true = dom_if->proj_out(1);
-    Node* proj_false = dom_if->proj_out(0);
+    ProjNode* dom_proj_true = dom_if->proj_out(1);
+    ProjNode* dom_proj_false = dom_if->proj_out(0);
+    ProjNode* proj_false = n->as_If()->proj_out(0);
 //    Node* con_true = _igvn.makecon(TypeInt::ONE);
 //    Node* con_false = _igvn.makecon(TypeInt::ZERO);
 //
 //    for (uint i = 1; i < n_ctrl->req(); i++) {
-//      if (is_dominator(proj_true, n_ctrl->in(i))) {
+//      if (is_dominator(dom_proj_true, n_ctrl->in(i))) {
 //        bolphi->init_req(i, con_true);
 //      } else {
-//        assert(is_dominator(proj_false, n_ctrl->in(i)), "bad if");
+//        assert(is_dominator(dom_proj_false, n_ctrl->in(i)), "bad if");
 //        bolphi->init_req(i, con_false);
 //      }
 //    }
@@ -1392,16 +1392,55 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 #endif
     assert(new_false->in(1)->in(0)->in(1) == dom_if->in(1), "");
 
+//    lazy_replace(new_true, dom_proj_true);
+//    lazy_replace(new_false, dom_proj_false);
+
+//    C->print_method(PHASE_DEBUG, 2);
+
+//    dominated_by(dom_proj_true, new_true, false, false);
+//    dominated_by(dom_proj_false, new_false, false, false);
+
+    push_pinned_nodes_thru_region(dom_if, new_true);
+    push_pinned_nodes_thru_region(dom_if, new_false);
+
+//    Node *phi = PhiNode::make_blank(blk1, n);
+//    for( uint j = 1; j < blk1->req(); j++ ) {
+//      Node *x = n->clone();
+//      // Widen the type of the ConvI2L when pushing up.
+//      if (rtype != NULL) x->as_Type()->set_type(rtype);
+//      if( n->in(0) && n->in(0) == blk1 )
+//        x->set_req( 0, blk1->in(j) );
+//      for( uint i = 1; i < n->req(); i++ ) {
+//        Node *m = n->in(i);
+//        if( get_ctrl(m) == blk1 ) {
+//          assert( m->in(0) == blk1, "" );
+//          x->set_req( i, m->in(j) );
+//        }
+//      }
+//      register_new_node( x, blk1->in(j) );
+//      phi->init_req( j, x );
+//    }
+//    // Announce phi to optimizer
+//    register_new_node(phi, blk1);
+
+    // Remove cloned-up value from optimizer; use phi instead
+//    _igvn.replace_node( n, phi );
+
+
     for (uint i = 1; i < new_false->req(); i++) {
-      if (is_dominator(proj_true, new_false->in(i))) {
-        dominated_by(proj_true, new_false->in(i)->in(0), false, false);
+      if (is_dominator(dom_proj_true, new_false->in(i))) {
+        dominated_by(dom_proj_true->as_IfProj(), new_false->in(i)->in(0)->as_If(), false, false);
       } else {
-        assert(is_dominator(proj_false, new_false->in(i)), "bad if");
-        dominated_by(proj_false, new_false->in(i)->in(0), false, false);
+        assert(is_dominator(dom_proj_false, new_false->in(i)), "bad if");
+        dominated_by(dom_proj_false->as_IfProj(), new_false->in(i)->in(0)->as_If(), false, false);
       }
     }
 
     C->print_method(PHASE_DEBUG, 2);
+//    new_false->dump();
+//    new_true->dump();
+//    dom_if->dump();
+
     return;
   }
 
@@ -1437,7 +1476,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
           // Replace the dominated test with an obvious true or false.
           // Place it on the IGVN worklist for later cleanup.
           C->set_major_progress();
-          dominated_by(prevdom, n, false, true);
+          dominated_by(prevdom->as_IfProj(), n->as_If(), false, true);
 #ifndef PRODUCT
           if( VerifyLoopOptimizations ) verify();
 #endif
@@ -1459,6 +1498,35 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       n->in(1) != NULL &&
       get_loop(get_ctrl(n)) == get_loop(get_ctrl(n->in(1))) ) {
     _igvn.replace_node( n, n->in(1) );
+  }
+}
+
+void PhaseIdealLoop::push_pinned_nodes_thru_region(IfNode* dom_if, Node* region) {
+  for (DUIterator i = region->outs(); region->has_out(i); i++) {
+    Node* u = region->out(i);
+    if (!has_ctrl(u) || u->is_Phi()) {
+      continue;
+    }
+    assert(u->in(0) == region, "");
+    uint j = 1;
+    for (; j < u->req(); ++j) {
+      Node* in = u->in(j);
+      if (!is_dominator(ctrl_or_self(in), dom_if)) {
+        break;
+      }
+    }
+    if (j == u->req()) {
+      Node *phi = PhiNode::make_blank(region, u);
+      for (uint k = 1; k < region->req(); ++k) {
+        Node* clone = u->clone();
+        clone->set_req(0, region->in(k));
+        register_new_node(clone, region->in(k));
+        phi->init_req(k, clone);
+      }
+      register_new_node(phi, region);
+      _igvn.replace_node(u, phi);
+      --i;
+    }
   }
 }
 
