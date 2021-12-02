@@ -384,6 +384,8 @@ public class ObjectInputStream
      * <p>The constructor initializes the deserialization filter to the filter returned
      * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
+     * When the filter factory {@code apply} method is invoked it may throw a runtime exception
+     * preventing the {@code ObjectInputStream} from being constructed.
      *
      * <p>If a security manager is installed, this constructor will check for
      * the "enableSubclassImplementation" SerializablePermission when invoked
@@ -421,6 +423,8 @@ public class ObjectInputStream
      * <p>The constructor initializes the deserialization filter to the filter returned
      * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
+     * When the filter factory {@code apply} method is invoked it may throw a runtime exception
+     * preventing the {@code ObjectInputStream} from being constructed.
      *
      * <p>If there is a security manager installed, this method first calls the
      * security manager's {@code checkPermission} method with the
