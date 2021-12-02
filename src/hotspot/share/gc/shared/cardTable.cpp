@@ -439,7 +439,7 @@ MemRegion CardTable::dirty_card_range_after_reset(MemRegion mr,
                next_entry <= limit && *next_entry == dirty_card;
                dirty_cards++, next_entry++);
           MemRegion cur_cards(addr_for(cur_entry),
-                              dirty_cards*_card_size_in_words);
+                              dirty_cards * _card_size_in_words);
           if (reset) {
             for (size_t i = 0; i < dirty_cards; i++) {
               cur_entry[i] = reset_val;

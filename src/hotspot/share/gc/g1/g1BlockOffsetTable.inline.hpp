@@ -41,7 +41,7 @@ inline HeapWord* G1BlockOffsetTablePart::threshold_for_addr(const void* addr) {
   }
 
   // Calculate next threshold.
-  HeapWord* threshold = card_boundary + BOTConstants::bot_card_size_words();
+  HeapWord* threshold = card_boundary + BOTConstants::card_size_in_words();
   return threshold;
 }
 
@@ -84,7 +84,7 @@ void G1BlockOffsetTable::set_offset_array(size_t left, size_t right, u_char offs
 
 // Variant of index_for that does not check the index for validity.
 inline size_t G1BlockOffsetTable::index_for_raw(const void* p) const {
-  return pointer_delta((char*)p, _reserved.start(), sizeof(char)) >> BOTConstants::log_bot_card_size();
+  return pointer_delta((char*)p, _reserved.start(), sizeof(char)) >> BOTConstants::log_card_size();
 }
 
 inline size_t G1BlockOffsetTable::index_for(const void* p) const {
@@ -122,15 +122,15 @@ inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr)
   HeapWord* q = _bot->address_for_index(index);
 
   uint offset = _bot->offset_array(index);  // Extend u_char to uint.
-  while (offset >= BOTConstants::bot_card_size_words()) {
+  while (offset >= BOTConstants::card_size_in_words()) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.
     size_t n_cards_back = BOTConstants::entry_to_cards_back(offset);
-    q -= (BOTConstants::bot_card_size_words() * n_cards_back);
+    q -= (BOTConstants::card_size_in_words() * n_cards_back);
     index -= n_cards_back;
     offset = _bot->offset_array(index);
   }
-  assert(offset < BOTConstants::bot_card_size_words(), "offset too large");
+  assert(offset < BOTConstants::card_size_in_words(), "offset too large");
   q -= offset;
   return q;
 }
