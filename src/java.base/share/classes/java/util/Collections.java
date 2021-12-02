@@ -1114,6 +1114,83 @@ public class Collections {
 
     /**
      * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified ReversibleCollection. Query operations on the returned collection "read through"
+     * to the specified collection, and attempts to modify the returned
+     * collection, whether direct or via its iterator, result in an
+     * {@code UnsupportedOperationException}.<p>
+     *
+     * The returned collection does <i>not</i> pass the hashCode and equals
+     * operations through to the backing collection, but relies on
+     * {@code Object}'s {@code equals} and {@code hashCode} methods.  This
+     * is necessary to preserve the contracts of these operations in the case
+     * that the backing collection is a set or a list.<p>
+     *
+     * The returned collection will be serializable if the specified collection
+     * is serializable.
+     *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
+     * @param  <T> the class of the objects in the collection
+     * @param  c the collection for which an unmodifiable view is to be
+     *         returned.
+     * @return an unmodifiable view of the specified collection.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> ReversibleCollection<T> unmodifiableReversibleCollection(ReversibleCollection<? extends T> c) {
+        if (c.getClass() == UnmodifiableReversibleCollection.class) {
+            return (ReversibleCollection<T>) c;
+        }
+        return new UnmodifiableReversibleCollection<>(c);
+    }
+
+    /**
+     * @serial include
+     */
+    static class UnmodifiableReversibleCollection<E> extends UnmodifiableCollection<E>
+            implements ReversibleCollection<E>, Serializable {
+
+        @java.io.Serial
+        private static final long serialVersionUID = -6060065079711684830L;
+
+        UnmodifiableReversibleCollection(ReversibleCollection<? extends E> c) {
+            super(c);
+        }
+
+        @SuppressWarnings("unchecked")
+        private ReversibleCollection<E> rc() {
+            return (ReversibleCollection<E>) c;
+        }
+
+        public ReversibleCollection<E> reversed() {
+            return new UnmodifiableReversibleCollection<>(rc().reversed());
+        }
+
+        public void addFirst(E e) {
+            throw new UnsupportedOperationException();
+        }
+
+        public void addLast(E e) {
+            throw new UnsupportedOperationException();
+        }
+
+        public E getFirst() {
+            return rc().getFirst();
+        }
+
+        public E getLast() {
+            return rc().getLast();
+        }
+
+        public E removeFirst() {
+            throw new UnsupportedOperationException();
+        }
+
+        public E removeLast() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
      * specified set. Query operations on the returned set "read through" to the specified
      * set, and attempts to modify the returned set, whether direct or via its
      * iterator, result in an {@code UnsupportedOperationException}.<p>
@@ -1146,6 +1223,51 @@ public class Collections {
         UnmodifiableSet(Set<? extends E> s)     {super(s);}
         public boolean equals(Object o) {return o == this || c.equals(o);}
         public int hashCode()           {return c.hashCode();}
+    }
+
+    /**
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified reversible set. Query operations on the returned set "read through" to the specified
+     * set, and attempts to modify the returned set, whether direct or via its
+     * iterator, result in an {@code UnsupportedOperationException}.<p>
+     *
+     * The returned set will be serializable if the specified set
+     * is serializable.
+     *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
+     * @param  <T> the class of the objects in the set
+     * @param  s the set for which an unmodifiable view is to be returned.
+     * @return an unmodifiable view of the specified reversible set.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> ReversibleSet<T> unmodifiableReversibleSet(ReversibleSet<? extends T> s) {
+        // Not checking for subclasses because of heap pollution and information leakage.
+        if (s.getClass() == UnmodifiableReversibleSet.class) {
+            return (ReversibleSet<T>) s;
+        }
+        return new UnmodifiableReversibleSet<>(s);
+    }
+
+    /**
+     * @serial include
+     */
+    static class UnmodifiableReversibleSet<E> extends UnmodifiableReversibleCollection<E>
+                                              implements ReversibleSet<E>, Serializable {
+        @java.io.Serial
+        private static final long serialVersionUID = -2153469532349793522L;
+
+        UnmodifiableReversibleSet(ReversibleSet<? extends E> s)  {super(s);}
+        public boolean equals(Object o)                          {return o == this || c.equals(o);}
+        public int hashCode()                                    {return c.hashCode();}
+
+        @SuppressWarnings("unchecked")
+        private ReversibleSet<E> rs() {
+            return (ReversibleSet<E>) c;
+        }
+
+        public ReversibleSet<E> reversed() {
+            return new UnmodifiableReversibleSet<>(rs().reversed());
+        }
     }
 
     /**
