@@ -80,13 +80,13 @@ public class TestMemoryAccessInstance {
 
         void test() {
             try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-                MemorySegment segment = MemorySegment.allocateNative(128, scope);
+                MemorySegment segment = MemorySegment.allocateNative(64, scope);
                 ByteBuffer buffer = segment.asByteBuffer();
                 T t = transform.apply(segment);
-                segmentSetter.set(t, layout, 8, value);
-                assertEquals(bufferGetter.get(buffer, 8), value);
-                bufferSetter.set(buffer, 8, value);
-                assertEquals(value, segmentGetter.get(t, layout, 8));
+                segmentSetter.set(t, layout, 4, value);
+                assertEquals(bufferGetter.get(buffer, 4), value);
+                bufferSetter.set(buffer, 4, value);
+                assertEquals(value, segmentGetter.get(t, layout, 4));
             }
         }
 
