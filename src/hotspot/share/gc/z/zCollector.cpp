@@ -220,7 +220,7 @@ void ZCollector::reset_statistics() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   _freed = 0;
   _promoted = 0;
-  _relocated = 0;
+  _compacted = 0;
   _used_high = _used_low = _page_allocator->used();
 }
 
@@ -248,12 +248,12 @@ void ZCollector::increase_promoted(size_t size) {
   Atomic::add(&_promoted, size, memory_order_relaxed);
 }
 
-size_t ZCollector::relocated() const {
-  return _relocated;
+size_t ZCollector::compacted() const {
+  return _compacted;
 }
 
-void ZCollector::increase_relocated(size_t size) {
-  Atomic::add(&_relocated, size, memory_order_relaxed);
+void ZCollector::increase_compacted(size_t size) {
+  Atomic::add(&_compacted, size, memory_order_relaxed);
 }
 
 void ZCollector::update_used(size_t used) {

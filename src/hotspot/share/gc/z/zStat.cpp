@@ -1501,19 +1501,18 @@ void ZStatHeap::set_at_select_relocation_set(const ZRelocationSetSelectorStats& 
 }
 
 void ZStatHeap::set_at_relocate_start(const ZPageAllocatorStats& stats) {
-  // In-place aging doesn't increment relocated
-  assert(stats.relocated() == 0, "Nothing should have been relocated");
+  assert(stats.compacted() == 0, "Nothing should have been compacted");
 
   _at_relocate_start.capacity = stats.capacity();
   _at_relocate_start.free = free(stats.used());
   _at_relocate_start.used = stats.used();
   _at_relocate_start.used_generation = stats.used_generation();
   _at_relocate_start.live = _at_mark_end.live - stats.promoted();
-  _at_relocate_start.garbage = garbage(stats.freed(), stats.relocated(), stats.promoted());
-  _at_relocate_start.mutator_allocated = mutator_allocated(stats.used_generation(), stats.freed(), stats.relocated());
-  _at_relocate_start.reclaimed = reclaimed(stats.freed(), stats.relocated(), stats.promoted());
+  _at_relocate_start.garbage = garbage(stats.freed(), stats.compacted(), stats.promoted());
+  _at_relocate_start.mutator_allocated = mutator_allocated(stats.used_generation(), stats.freed(), stats.compacted());
+  _at_relocate_start.reclaimed = reclaimed(stats.freed(), stats.compacted(), stats.promoted());
   _at_relocate_start.promoted = stats.promoted();
-  _at_relocate_start.relocated = stats.relocated();
+  _at_relocate_start.compacted = stats.compacted();
 }
 
 void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats) {
@@ -1528,11 +1527,11 @@ void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats) {
   _at_relocate_end.used_low = stats.used_low();
   _at_relocate_end.used_generation = stats.used_generation();
   _at_relocate_end.live = _at_mark_end.live - stats.promoted();
-  _at_relocate_end.garbage = garbage(stats.freed(), stats.relocated(), stats.promoted());
-  _at_relocate_end.mutator_allocated = mutator_allocated(stats.used_generation(), stats.freed(), stats.relocated());
-  _at_relocate_end.reclaimed = reclaimed(stats.freed(), stats.relocated(), stats.promoted());
+  _at_relocate_end.garbage = garbage(stats.freed(), stats.compacted(), stats.promoted());
+  _at_relocate_end.mutator_allocated = mutator_allocated(stats.used_generation(), stats.freed(), stats.compacted());
+  _at_relocate_end.reclaimed = reclaimed(stats.freed(), stats.compacted(), stats.promoted());
   _at_relocate_end.promoted = stats.promoted();
-  _at_relocate_end.relocated = stats.relocated();
+  _at_relocate_end.compacted = stats.compacted();
 }
 
 size_t ZStatHeap::max_capacity() {
@@ -1663,11 +1662,11 @@ void ZStatHeap::print(ZCollector* collector) {
                        .end());
   }
   log_info(gc, heap)("%s", gen_table()
-                     .right("Relocated:")
+                     .right("Compacted:")
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS(_at_relocate_end.relocated))
+                     .left(ZTABLE_ARGS(_at_relocate_end.compacted))
                      .end());
 }
 

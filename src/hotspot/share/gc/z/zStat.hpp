@@ -620,7 +620,7 @@ private:
     size_t mutator_allocated;
     size_t reclaimed;
     size_t promoted;
-    size_t relocated;
+    size_t compacted;
   } _at_relocate_start;
 
   struct ZAtRelocateEnd {
@@ -639,7 +639,7 @@ private:
     size_t mutator_allocated;
     size_t reclaimed;
     size_t promoted;
-    size_t relocated;
+    size_t compacted;
   } _at_relocate_end;
 
   size_t capacity_high();

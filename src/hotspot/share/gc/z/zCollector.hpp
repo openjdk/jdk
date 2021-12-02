@@ -68,7 +68,7 @@ protected:
   size_t            _used_high;
   size_t            _used_low;
   volatile size_t   _freed;
-  volatile size_t   _relocated;
+  volatile size_t   _compacted;
   volatile size_t   _promoted;
 
   Phase             _phase;
@@ -114,8 +114,8 @@ public:
   void increase_freed(size_t size);
   size_t promoted() const;
   void increase_promoted(size_t size);
-  size_t relocated() const;
-  void increase_relocated(size_t size);
+  size_t compacted() const;
+  void increase_compacted(size_t size);
   void update_used(size_t used);
 
   ConcurrentGCTimer* timer();

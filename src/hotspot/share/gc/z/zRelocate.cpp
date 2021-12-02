@@ -324,7 +324,7 @@ static void retire_target_page(ZCollector* collector, ZPage* page) {
   if (collector->is_young() && page->is_old()) {
     collector->increase_promoted(page->used());
   } else {
-    collector->increase_relocated(page->used());
+    collector->increase_compacted(page->used());
   }
 
   // Free target page if it is empty. We can end up with an empty target
@@ -479,7 +479,7 @@ private:
   ZPage*            _target;
   ZCollector* const _collector;
   size_t            _other_promoted;
-  size_t            _other_relocated;
+  size_t            _other_compacted;
 
   size_t object_alignment() const {
     return 1 << _forwarding->object_alignment_shift();
@@ -490,7 +490,7 @@ private:
     if (_forwarding->is_promotion()) {
       _other_promoted += aligned_size;
     } else {
-      _other_relocated += aligned_size;
+      _other_compacted += aligned_size;
     }
   }
 
@@ -740,12 +740,13 @@ public:
       _target(NULL),
       _collector(collector),
       _other_promoted(0),
-      _other_relocated(0) {}
+      _other_compacted(0) {}
 
   ~ZRelocateWork() {
     _allocator->free_target_page(_target);
+    // Report statistics on-behalf of non-worker threads
     _collector->increase_promoted(_other_promoted);
-    _collector->increase_relocated(_other_relocated);
+    _collector->increase_compacted(_other_compacted);
   }
 
   void do_forwarding(ZForwarding* forwarding) {

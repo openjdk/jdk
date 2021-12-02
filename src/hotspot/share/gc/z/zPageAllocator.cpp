@@ -331,7 +331,7 @@ ZPageAllocatorStats ZPageAllocator::stats(ZCollector* collector) const {
                              generation->used(),
                              collector->freed(),
                              collector->promoted(),
-                             collector->relocated());
+                             collector->compacted());
 }
 
 size_t ZPageAllocator::increase_capacity(size_t size) {
