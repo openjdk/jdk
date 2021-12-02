@@ -51,7 +51,7 @@ public class GenOutOfMemoryError {
 
     public static void main(String[] args) {
         GenOutOfMemoryError genOutOfMemoryError = new GenOutOfMemoryError();
-       
+
         for (int i = 0; i < 7; i++) {
             genOutOfMemoryError.badMethod(i + 1);
         }
