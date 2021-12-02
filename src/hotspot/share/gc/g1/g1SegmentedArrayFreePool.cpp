@@ -53,7 +53,7 @@ void G1SegmentedArrayFreePool<flag>::update_unlink_processors(G1ReturnMemoryProc
 }
 
 template<MEMFLAGS flag>
-void G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::visit_free_list(G1SegmentedArrayBufferList<flag>* source) {
+void G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::visit_free_list(G1SegmentedArrayFreeList<flag>* source) {
   assert(_source == nullptr, "already visited");
   if (_return_to_vm_size > 0) {
     _source = source;
@@ -78,13 +78,13 @@ void G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::visit_free_list(G1
 template<MEMFLAGS flag>
 bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_vm(jlong deadline) {
   assert(!finished_return_to_vm(), "already returned everything to the VM");
-  assert(_first != nullptr, "must have element to return");
+  assert(_first != nullptr, "must have segment to return");
 
   size_t keep_size = 0;
   size_t keep_num = 0;
 
-  G1SegmentedArrayBuffer<flag>* cur = _first;
-  G1SegmentedArrayBuffer<flag>* last = nullptr;
+  G1SegmentedArraySegment<flag>* cur = _first;
+  G1SegmentedArraySegment<flag>* last = nullptr;
 
   while (cur != nullptr && _return_to_vm_size > 0) {
     size_t cur_size = cur->mem_size();
@@ -111,7 +111,7 @@ bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_vm(jlong
   _source->bulk_add(*_first, *last, keep_num, keep_size);
   _first = cur;
 
-  log_trace(gc, task)("Segmented Array Free Memory: Returned to VM %zu buffers size %zu", keep_num, keep_size);
+  log_trace(gc, task)("Segmented Array Free Memory: Returned to VM %zu segments size %zu", keep_num, keep_size);
 
   // _return_to_vm_size may be larger than what is available in the list at the
   // time we actually get the list. I.e. the list and _return_to_vm_size may be
@@ -135,7 +135,7 @@ bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_os(jlong
   size_t mem_size_deleted = 0;
 
   while (_first != nullptr) {
-    G1SegmentedArrayBuffer<flag>* next = _first->next();
+    G1SegmentedArraySegment<flag>* next = _first->next();
     num_delete++;
     mem_size_deleted += _first->mem_size();
     delete _first;
@@ -147,7 +147,7 @@ bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_os(jlong
     }
   }
 
-  log_trace(gc, task)("Segmented Array Free Memory: Return to OS %zu buffers size %zu", num_delete, mem_size_deleted);
+  log_trace(gc, task)("Segmented Array Free Memory: Return to OS %zu segments size %zu", num_delete, mem_size_deleted);
 
   return _first != nullptr;
 }
@@ -159,16 +159,16 @@ template<MEMFLAGS flag>
 G1SegmentedArrayFreePool<flag>::G1SegmentedArrayFreePool(uint num_free_lists) :
   _num_free_lists(num_free_lists) {
 
-  _free_lists = NEW_C_HEAP_ARRAY(G1SegmentedArrayBufferList<flag>, _num_free_lists, mtGC);
+  _free_lists = NEW_C_HEAP_ARRAY(G1SegmentedArrayFreeList < flag >, _num_free_lists, mtGC);
   for (uint i = 0; i < _num_free_lists; i++) {
-    new (&_free_lists[i]) G1SegmentedArrayBufferList<flag>();
+    new (&_free_lists[i]) G1SegmentedArrayFreeList<flag>();
   }
 }
 
 template<MEMFLAGS flag>
 G1SegmentedArrayFreePool<flag>::~G1SegmentedArrayFreePool() {
   for (uint i = 0; i < _num_free_lists; i++) {
-    _free_lists[i].~G1SegmentedArrayBufferList<flag>();
+    _free_lists[i].~G1SegmentedArrayFreeList<flag>();
   }
   FREE_C_HEAP_ARRAY(mtGC, _free_lists);
 }
@@ -179,7 +179,7 @@ G1SegmentedArrayMemoryStats G1SegmentedArrayFreePool<flag>::memory_sizes() const
   assert(free_list_stats.num_pools() == num_free_lists(), "must be");
   for (uint i = 0; i < num_free_lists(); i++) {
     free_list_stats._num_mem_sizes[i] = _free_lists[i].mem_size();
-    free_list_stats._num_segments[i] = _free_lists[i].num_buffers();
+    free_list_stats._num_segments[i] = _free_lists[i].num_segments();
   }
   return free_list_stats;
 }
