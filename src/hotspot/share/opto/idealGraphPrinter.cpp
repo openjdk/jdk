@@ -418,6 +418,14 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         break;
     }
 
+    Node_Notes* nn = C->node_notes_at(node->_idx);
+    if (nn != NULL && !nn->is_clear() && nn->jvms() != NULL) {
+      buffer[0] = 0;
+      stringStream ss(buffer, sizeof(buffer) - 1);
+      nn->jvms()->dump_spec(&ss);
+      print_prop("jvms", buffer);
+    }
+
     const jushort flags = node->flags();
     if (flags & Node::Flag_is_Copy) {
       print_prop("is_copy", "true");

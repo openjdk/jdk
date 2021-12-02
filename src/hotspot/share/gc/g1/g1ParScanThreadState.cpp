@@ -482,6 +482,10 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), obj_ptr, word_sz);
 
   const oop obj = cast_to_oop(obj_ptr);
+  // Because the forwarding is done with memory_order_relaxed there is no
+  // ordering with the above copy.  Clients that get the forwardee must not
+  // examine its contents without other synchronization, since the contents
+  // may not be up to date for them.
   const oop forward_ptr = old->forward_to_atomic(obj, old_mark, memory_order_relaxed);
   if (forward_ptr == NULL) {
 

@@ -32,7 +32,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+UseSerialGC -Xbatch -XX:-UseOnStackReplacement -XX:-TieredCompilation
+ *                   -Xbatch -XX:-UseOnStackReplacement -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.uncommontrap.Decompile::uncommonTrap
  *                   -XX:CompileCommand=inline,compiler.uncommontrap.Decompile*::foo
  *                   compiler.uncommontrap.Decompile
@@ -54,7 +54,8 @@ public class Decompile {
     private static final int Tier0InvokeNotifyFreq = (int)Math.pow(2, WB.getIntxVMFlag("Tier0InvokeNotifyFreqLog"));
     // VM builds without JVMCI like x86_32 call the bimorphic inlining trap just 'bimorphic'
     // while all the other builds with JVMCI call it 'bimorphic_or_optimized_type_check'.
-    private static final boolean isJVMCISupported = WhiteBox.getWhiteBox().isJVMCISupportedByGC();
+    // Only builds with JVMCI have the "EnableJVMCI" flag.
+    private static final boolean isJVMCISupported = (WB.getBooleanVMFlag("EnableJVMCI") != null);
     private static final String bimorphicTrapName = isJVMCISupported ? "bimorphic_or_optimized_type_check" : "bimorphic";
 
     static class Base {
