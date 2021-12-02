@@ -255,7 +255,7 @@ public class JmodTest {
              jmod3.toString())
             .assertFailure()
             .resultChecker(r -> {
-                assertContains(r.output, "is out of the valid year range 1980->2099");
+                assertContains(r.output, "is out of the valid range");
             });
 
         // Use a date after 2099 and assert failure error
@@ -267,7 +267,7 @@ public class JmodTest {
              jmod3.toString())
             .assertFailure()
             .resultChecker(r -> {
-                assertContains(r.output, "is out of the valid year range 1980->2099");
+                assertContains(r.output, "is out of the valid range");
             });
     }
 

@@ -168,6 +168,10 @@ public class JmodTask {
         LocalDateTime date;
     }
 
+    // Valid --date range
+    static final ZonedDateTime DATE_MIN = ZonedDateTime.parse("1980-01-01T00:00:02Z");
+    static final ZonedDateTime DATE_MAX = ZonedDateTime.parse("2099-12-31T23:59:59Z");
+
     public int run(String[] args) {
 
         try {
@@ -1161,12 +1165,12 @@ public class JmodTask {
         @Override
         public LocalDateTime convert(String value) {
             try {
-                LocalDateTime date = ZonedDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME)
-                                         .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
-                if (date.getYear() < 1980 || date.getYear() > 2099) {
+                ZonedDateTime date = ZonedDateTime.parse(value, DateTimeFormatter.ISO_ZONED_DATE_TIME)
+                                                          .withZoneSameInstant(ZoneOffset.UTC);
+                if (date.isBefore(DATE_MIN) || date.isAfter(DATE_MAX)) {
                     throw new CommandException("err.date.out.of.range", value);
                 }
-                return date;
+                return date.toLocalDateTime();
             } catch (DateTimeParseException x) {
                 throw new CommandException("err.invalid.date", value, x.getMessage());
             }

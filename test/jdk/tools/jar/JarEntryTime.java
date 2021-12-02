@@ -173,11 +173,13 @@ public class JarEntryTime {
         check(cleanup(dirOuter));
 
         // Test --date source date
-        String[] sourceDates = {"1986-06-24T01:02:03+00:00",
+        String[] sourceDates = {"1980-01-01T00:00:02+00:00",
+                                "1986-06-24T01:02:03+00:00",
                                 "2022-03-15T00:00:00+00:00",
                                 "2022-03-15T00:00:00+06:00",
                                 "2038-11-26T06:06:06+00:00",
-                                "2098-02-18T00:00:00-08:00"};
+                                "2098-02-18T00:00:00-08:00",
+                                "2099-12-31T23:59:59+00:00"};
         for (String sourceDate : sourceDates) {
             jarFileSourceDate1.delete();
             createOuterInnerDirs(dirOuter, dirInner);
@@ -248,7 +250,9 @@ public class JarEntryTime {
 
         // Negative Tests --date out of range source date
         String[] badSourceDates = {"1976-06-24T01:02:03+00:00",
-                                   "2100-02-18T00:00:00-11:00"};
+                                   "1980-01-01T00:00:01+00:00",
+                                   "2100-01-01T00:00:00+00:00", 
+                                   "2138-02-18T00:00:00-11:00"};
         for (String sourceDate : badSourceDates) {
             createOuterInnerDirs(dirOuter, dirInner);
             check(JAR_TOOL.run(System.out, System.err,
