@@ -27,12 +27,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.CRC32C;
 import org.openjdk.jmh.annotations.*;
 
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 2)
-@Warmup(iterations = 2, time = 30, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 3, time = 60, timeUnit = TimeUnit.SECONDS)
+//@Warmup(iterations = 2, time = 30, timeUnit = TimeUnit.SECONDS)
+//@Measurement(iterations = 3, time = 60, timeUnit = TimeUnit.SECONDS)
 
 public class TestCRC32C {
 
