@@ -711,8 +711,8 @@ void BlockBegin::iterate_preorder(boolArray& mark, BlockClosure* closure) {
     mark.at_put(block_id(), true);
     closure->block_do(this);
     BlockEnd* e = end(); // must do this after block_do because block_do may change it!
-    { for (int i = number_of_exception_handlers() - 1; i >= 0; i--) exception_handler_at(i)->iterate_preorder(mark, closure); }
-    { for (int i = e->number_of_sux            () - 1; i >= 0; i--) e->sux_at           (i)->iterate_preorder(mark, closure); }
+    { for (int i = number_of_exception_handlers()    - 1; i >= 0; i--) exception_handler_at(i)->iterate_preorder(mark, closure); }
+    if (e != NULL) { for (int i = e->number_of_sux() - 1; i >= 0; i--) e->sux_at           (i)->iterate_preorder(mark, closure); }
   }
 }
 
@@ -721,8 +721,8 @@ void BlockBegin::iterate_postorder(boolArray& mark, BlockClosure* closure) {
   if (!mark.at(block_id())) {
     mark.at_put(block_id(), true);
     BlockEnd* e = end();
-    { for (int i = number_of_exception_handlers() - 1; i >= 0; i--) exception_handler_at(i)->iterate_postorder(mark, closure); }
-    { for (int i = e->number_of_sux            () - 1; i >= 0; i--) e->sux_at           (i)->iterate_postorder(mark, closure); }
+    { for (int i = number_of_exception_handlers()    - 1; i >= 0; i--) exception_handler_at(i)->iterate_postorder(mark, closure); }
+    if (e != NULL) { for (int i = e->number_of_sux() - 1; i >= 0; i--) e->sux_at           (i)->iterate_postorder(mark, closure); }
     closure->block_do(this);
   }
 }
@@ -753,6 +753,42 @@ void BlockBegin::block_values_do(ValueVisitor* f) {
    #define TRACE_PHI(coce)
 #endif
 
+
+// Closure to find node which uses a given predecessor as input.
+class SearchUsageClosure : public BlockClosure {
+  Value _pred, _result;
+ public:
+  SearchUsageClosure(Value pred) : _pred(pred), _result(NULL) {}
+  Value result() const { return _result; }
+
+  virtual void block_do(BlockBegin* block) {
+    for (Value v = (Value)block; v != NULL; v = v->next()) {
+      // Ignore illegal Phi.
+      if (v->as_Phi() == NULL || !v->as_Phi()->is_illegal()) {
+        int index;
+        Value value;
+        ValueStack* vs = v->state_before();
+        if (vs != NULL) {
+          for_each_local_value(vs, index, value) {
+            if (value == _pred) {
+              _result = v;
+              return;
+            }
+          }
+        }
+        vs = v->exception_state();
+        if (vs != NULL) {
+          for_each_local_value(vs, index, value) {
+            if (value == _pred) {
+              _result = v;
+              return;
+            }
+          }
+        }
+      }
+    }
+  }
+};
 
 bool BlockBegin::try_merge(ValueStack* new_state) {
   TRACE_PHI(tty->print_cr("********** try_merge for block B%d", block_id()));
@@ -835,7 +871,17 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
           // In really rare cases we will bail out in LIRGenerator::move_to_phi.
           existing_phi->make_illegal();
           existing_state->invalidate_local(index);
-          TRACE_PHI(tty->print_cr("invalidating local %d because of type mismatch", index));
+          TRACE_PHI(tty->print_cr("invalidating local %d because of type mismatch%s",
+                                  index, new_value == NULL ? " (new_value is NULL)" : ""));
+          // Check if illegal phi gets used.
+          SearchUsageClosure search(existing_phi);
+          iterate_preorder(&search);
+          Value usage = search.result();
+          if (usage != NULL) {
+            TRACE_PHI(tty->print_cr("Bailing out because %s (id %d) uses illegal phi (id %d)",
+                                    usage->name(), usage->id(), existing_phi->id()));
+            return false;
+          }
         }
       }
 
