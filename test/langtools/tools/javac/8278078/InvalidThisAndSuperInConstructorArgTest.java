@@ -1,3 +1,6 @@
+
+import java.util.function.Supplier;
+
 /**
  * @test /nodynamiccopyright/
  * @bug 8278078
@@ -52,8 +55,14 @@ public class InvalidThisAndSuperInConstructorArgTest  {
         InnerClass(float[] ff) {
             super(InterfaceWithDefault.super.get());
         }
+        InnerClass(char[] chch) {
+            this(InnerClass.this::toString);
+        }
         InnerClass(String s) {
             super(s);
+        }
+        InnerClass(Supplier<String> sup) {
+            super(sup);
         }
     }
 }
