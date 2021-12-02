@@ -25,12 +25,12 @@
 #ifndef SHARE_MEMORY_HEAPINSPECTION_HPP
 #define SHARE_MEMORY_HEAPINSPECTION_HPP
 
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
 #include "oops/annotations.hpp"
 #include "utilities/macros.hpp"
-#include "gc/shared/workgroup.hpp"
 
 class ParallelObjectIterator;
 
@@ -153,22 +153,6 @@ class KlassInfoHisto : public StackObj {
   void print_elements(outputStream* st) const;
   bool is_selected(const char *col_name);
 
-  template <class T> static int count_bytes(T* x) {
-    return (HeapWordSize * ((x) ? (x)->size() : 0));
-  }
-
-  template <class T> static int count_bytes_array(T* x) {
-    if (x == NULL) {
-      return 0;
-    }
-    if (x->length() == 0) {
-      // This is a shared array, e.g., Universe::the_empty_int_array(). Don't
-      // count it to avoid double-counting.
-      return 0;
-    }
-    return HeapWordSize * x->size();
-  }
-
   static void print_julong(outputStream* st, int width, julong n) {
     int num_spaces = width - julong_width(n);
     if (num_spaces > 0) {
@@ -226,7 +210,7 @@ class HeapInspection : public StackObj {
 // Parallel heap inspection task. Parallel inspection can fail due to
 // a native OOM when allocating memory for TL-KlassInfoTable.
 // _success will be set false on an OOM, and serial inspection tried.
-class ParHeapInspectTask : public AbstractGangTask {
+class ParHeapInspectTask : public WorkerTask {
  private:
   ParallelObjectIterator* _poi;
   KlassInfoTable* _shared_cit;
@@ -239,13 +223,13 @@ class ParHeapInspectTask : public AbstractGangTask {
   ParHeapInspectTask(ParallelObjectIterator* poi,
                      KlassInfoTable* shared_cit,
                      BoolObjectClosure* filter) :
-      AbstractGangTask("Iterating heap"),
+      WorkerTask("Iterating heap"),
       _poi(poi),
       _shared_cit(shared_cit),
       _filter(filter),
       _missed_count(0),
       _success(true),
-      _mutex(Mutex::nosafepoint, "ParHeapInspectTask_lock", Mutex::_safepoint_check_never) {}
+      _mutex(Mutex::nosafepoint, "ParHeapInspectTask_lock") {}
 
   uintx missed_count() const {
     return _missed_count;

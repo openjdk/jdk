@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.testng.SkipException;
 import org.testng.annotations.Test;
+
 import jdk.internal.jshell.tool.JShellTool;
 import jdk.internal.jshell.tool.JShellToolBuilder;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -337,7 +340,10 @@ public class CommandCompletionTest extends ReplToolTesting {
             selectedFile = content.filter(CLASSPATH_FILTER)
                                   .findAny()
                                   .map(file -> file.getFileName().toString())
-                                  .get();
+                                  .orElse(null);
+        }
+        if (selectedFile == null) {
+            throw new SkipException("No suitable file(s) found for this test in " + home);
         }
         try (Stream<Path> content = Files.list(home)) {
             completions = content.filter(CLASSPATH_FILTER)

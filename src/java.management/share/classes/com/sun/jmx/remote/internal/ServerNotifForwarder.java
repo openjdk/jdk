@@ -121,9 +121,7 @@ public class ServerNotifForwarder {
                                             name.getKeyPropertyList());
             } catch (MalformedObjectNameException mfoe) {
                 // impossible, but...
-                IOException ioe = new IOException(mfoe.getMessage());
-                ioe.initCause(mfoe);
-                throw ioe;
+                throw new IOException(mfoe.getMessage(), mfoe);
             }
         }
 

@@ -259,8 +259,6 @@ class CompileBroker: AllStatic {
                            int compilable, const char* failure_reason);
   static void update_compile_perf_data(CompilerThread *thread, const methodHandle& method, bool is_osr);
 
-  static void push_jni_handle_block();
-  static void pop_jni_handle_block();
   static void collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task);
 
   static void compile_method_base(const methodHandle& method,

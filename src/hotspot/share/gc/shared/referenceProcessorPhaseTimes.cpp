@@ -101,10 +101,7 @@ RefProcWorkerTimeTracker::~RefProcWorkerTimeTracker() {
 RefProcSubPhasesWorkerTimeTracker::RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
                                                                      ReferenceProcessorPhaseTimes* phase_times,
                                                                      uint worker_id) :
-  RefProcWorkerTimeTracker(phase_times->sub_phase_worker_time_sec(phase), worker_id) {
-}
-
-RefProcSubPhasesWorkerTimeTracker::~RefProcSubPhasesWorkerTimeTracker() {
+  _tracker(phase_times->sub_phase_worker_time_sec(phase), worker_id) {
 }
 
 RefProcPhaseTimeBaseTracker::RefProcPhaseTimeBaseTracker(const char* title,
@@ -200,7 +197,6 @@ void ReferenceProcessorPhaseTimes::set_phase_time_ms(ReferenceProcessor::RefProc
 void ReferenceProcessorPhaseTimes::reset() {
   for (int i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
     _sub_phases_worker_time_sec[i]->reset();
-    _sub_phases_total_time_ms[i] = uninitialized();
   }
 
   for (int i = 0; i < ReferenceProcessor::RefPhaseMax; i++) {
@@ -225,17 +221,6 @@ ReferenceProcessorPhaseTimes::~ReferenceProcessorPhaseTimes() {
     delete _sub_phases_worker_time_sec[i];
   }
   delete _soft_weak_final_refs_phase_worker_time_sec;
-}
-
-double ReferenceProcessorPhaseTimes::sub_phase_total_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase) const {
-  ASSERT_SUB_PHASE(sub_phase);
-  return _sub_phases_total_time_ms[sub_phase];
-}
-
-void ReferenceProcessorPhaseTimes::set_sub_phase_total_phase_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase,
-                                                                     double time_ms) {
-  ASSERT_SUB_PHASE(sub_phase);
-  _sub_phases_total_time_ms[sub_phase] = time_ms;
 }
 
 void ReferenceProcessorPhaseTimes::add_ref_cleared(ReferenceType ref_type, size_t count) {

@@ -211,7 +211,7 @@ public final class JVM {
      *
      * @throws IllegalStateException if wrong JVMTI phase.
      */
-    public native synchronized void retransformClasses(Class<?>[] classes);
+    public synchronized native void retransformClasses(Class<?>[] classes);
 
     /**
      * Enable event

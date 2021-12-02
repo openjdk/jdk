@@ -352,7 +352,9 @@ public class Main {
         // add implicit options
         javacOpts.add("-proc:none");
         javacOpts.add("-Xdiags:verbose");
-
+        javacOpts.add("-Xlint:deprecation");
+        javacOpts.add("-Xlint:unchecked");
+        javacOpts.add("-Xlint:-options");
         return javacOpts;
     }
 

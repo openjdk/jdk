@@ -26,6 +26,7 @@
 #include "net_util.h"
 
 #include "java_net_InetAddress.h"
+#include "java_net_spi_InetAddressResolver_LookupPolicy.h"
 
 int IPv4_supported();
 int IPv6_supported();
@@ -331,4 +332,24 @@ in_cksum(unsigned short *addr, int len) {
     sum += (sum >> 16);
     answer = ~sum;
     return (answer);
+}
+
+int lookupCharacteristicsToAddressFamily(int characteristics) {
+    int ipv4 = characteristics & java_net_spi_InetAddressResolver_LookupPolicy_IPV4;
+    int ipv6 = characteristics & java_net_spi_InetAddressResolver_LookupPolicy_IPV6;
+
+    if (ipv4 != 0 && ipv6 == 0) {
+        return AF_INET;
+    }
+
+    if (ipv4 == 0 && ipv6 != 0) {
+        return AF_INET6;
+    }
+    return AF_UNSPEC;
+}
+
+int addressesInSystemOrder(int characteristics) {
+    return (characteristics &
+           (java_net_spi_InetAddressResolver_LookupPolicy_IPV4_FIRST |
+            java_net_spi_InetAddressResolver_LookupPolicy_IPV6_FIRST)) == 0;
 }

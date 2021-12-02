@@ -37,7 +37,7 @@ class ShenandoahHeap;
 class ShenandoahHeapRegion;
 class ShenandoahNMethodTable;
 class ShenandoahNMethodTableSnapshot;
-class WorkGang;
+class WorkerThreads;
 
 class ShenandoahParallelCodeHeapIterator {
   friend class CodeCache;
@@ -95,8 +95,8 @@ public:
   }
 
   // Concurrent nmethod unloading support
-  static void unlink(WorkGang* workers, bool unloading_occurred);
-  static void purge(WorkGang* workers);
+  static void unlink(WorkerThreads* workers, bool unloading_occurred);
+  static void purge(WorkerThreads* workers);
   static void arm_nmethods();
   static void disarm_nmethods();
   static int  disarmed_value()         { return _disarmed_value; }

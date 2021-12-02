@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8078320 8132096
+ * @bug 7021614 8078320 8132096 8273244
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -38,7 +38,7 @@ class FirstSentenceTest {
     /** */
     void empty() { }
 /*
-DocComment[DOC_COMMENT, pos:-1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: empty
@@ -46,7 +46,7 @@ DocComment[DOC_COMMENT, pos:-1
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:-1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: empty

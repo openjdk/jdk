@@ -36,6 +36,7 @@
 import java.io.File;
 import java.io.IOException;
 import jdk.test.lib.cds.CDSArchiveUtils;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class ArchiveConsistency extends DynamicArchiveTestBase {
@@ -50,6 +51,31 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         String baseArchiveName = getNewArchiveName("base");
         TestCommon.dumpBaseArchive(baseArchiveName);
         doTest(baseArchiveName, topArchiveName);
+    }
+
+    static void runTwo(String base, String top,
+                       String jarName, String mainClassName, int exitValue,
+                       String ... checkMessages) throws Exception {
+        CDSTestUtils.Result result = run2(base, top,
+                "-Xlog:cds",
+                "-Xlog:cds+dynamic=debug",
+                "-XX:+VerifySharedSpaces",
+                "-cp",
+                jarName,
+                mainClassName);
+        if (exitValue == 0) {
+            result.assertNormalExit( output -> {
+                for (String s : checkMessages) {
+                    output.shouldContain(s);
+                }
+            });
+        } else {
+            result.assertAbnormalExit( output -> {
+                for (String s : checkMessages) {
+                    output.shouldContain(s);
+                }
+            });
+        }
     }
 
     private static void doTest(String baseArchiveName, String topArchiveName) throws Exception {
@@ -68,20 +94,84 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
             throw new IOException(jsa + " does not exist!");
         }
 
-        // Modify the CRC values in the header of the top archive.
+        // 1. Modify the CRC values in the header of the top archive.
+        System.out.println("\n1. Modify the CRC values in the header of the top archive");
         String modTop = getNewArchiveName("modTopRegionsCrc");
         File copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, modTop);
         CDSArchiveUtils.modifyAllRegionsCrc(copiedJsa);
 
-        run2(baseArchiveName, modTop,
-            "-Xlog:class+load",
-            "-Xlog:cds+dynamic=debug,cds=debug",
-            "-XX:+VerifySharedSpaces",
-            "-cp", appJar, mainClass)
-            .assertAbnormalExit(output -> {
-                    output.shouldContain("Header checksum verification failed")
-                          .shouldContain("Unable to use shared archive")
-                          .shouldHaveExitValue(1);
-                });
+        runTwo(baseArchiveName, modTop,
+               appJar, mainClass, 1,
+               new String[] {"Header checksum verification failed",
+                             "Unable to use shared archive"});
+
+        // 2. Make header size larger than the archive size
+        System.out.println("\n2. Make header size larger than the archive size");
+        String largerHeaderSize = getNewArchiveName("largerHeaderSize");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, largerHeaderSize);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetHeaderSize(),  (int)copiedJsa.length() + 1024);
+        runTwo(baseArchiveName, largerHeaderSize,
+               appJar, mainClass, 1,
+               new String[] {"_header_size should be equal to _base_archive_name_offset plus _base_archive_name_size",
+                             "Unable to use shared archive"});
+
+        // 3. Make base archive path offset beyond of header size
+        System.out.println("\n3. Make base archive path offset beyond of header size.");
+        String wrongBaseArchiveNameOffset = getNewArchiveName("wrongBaseArchiveNameOffset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseArchiveNameOffset);
+        int fileHeaderSize = (int)CDSArchiveUtils.fileHeaderSize(copiedJsa);
+        int baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetBaseArchiveNameOffset(), baseArchiveNameOffset + 1024);
+        runTwo(baseArchiveName, wrongBaseArchiveNameOffset,
+               appJar, mainClass, 1,
+               new String[] {"_header_size should be equal to _base_archive_name_offset plus _base_archive_name_size",
+                             "The shared archive file has an incorrect header size",
+                             "Unable to use shared archive"});
+
+        // 4. Make base archive path offset points to middle of name size
+        System.out.println("\n4. Make base archive path offset points to middle of name size");
+        String wrongBaseNameOffset = getNewArchiveName("wrongBaseNameOffset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseNameOffset);
+        int baseArchiveNameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
+        baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, baseArchiveNameOffset,
+                                             baseArchiveNameOffset + baseArchiveNameSize/2);
+        runTwo(baseArchiveName, wrongBaseNameOffset,
+               appJar, mainClass, 1,
+               new String[] {"An error has occurred while processing the shared archive file.",
+                             "Header checksum verification failed",
+                             "Unable to use shared archive"});
+
+        // 5. Make base archive name not terminated with '\0'
+        System.out.println("\n5. Make base archive name not terminated with '\0'");
+        String wrongBaseName = getNewArchiveName("wrongBaseName");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseName);
+        baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
+        baseArchiveNameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
+        long offset = baseArchiveNameOffset + baseArchiveNameSize - 1;  // end of line
+        CDSArchiveUtils.writeData(copiedJsa, offset, new byte[] {(byte)'X'});
+
+        runTwo(baseArchiveName, wrongBaseName,
+               appJar, mainClass, 1,
+               new String[] {"Base archive name is damaged",
+                             "Header checksum verification failed"});
+
+        // 6. Modify base archive name to a file that doesn't exist.
+        System.out.println("\n6. Modify base archive name to a file that doesn't exist");
+        String wrongBaseName2 = getNewArchiveName("wrongBaseName2");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseName2);
+        baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
+        baseArchiveNameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
+        offset = baseArchiveNameOffset + baseArchiveNameSize - 2;  // the "a" in ".jsa"
+        CDSArchiveUtils.writeData(copiedJsa, offset, new byte[] {(byte)'b'}); // .jsa -> .jsb
+
+        // Make sure it doesn't exist
+        String badName = baseArchiveName.replace(".jsa", ".jsb");
+        (new File(badName)).delete();
+
+        runTwo(baseArchiveName, wrongBaseName2,
+               appJar, mainClass, 1,
+               new String[] {"Base archive " + badName + " does not exist",
+                             "Header checksum verification failed"});
     }
 }

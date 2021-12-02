@@ -38,10 +38,9 @@
 #define NUM_CDS_REGIONS 7 // this must be the same as MetaspaceShared::n_regions
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
-#define CURRENT_CDS_ARCHIVE_VERSION 11
-#define INVALID_CDS_ARCHIVE_VERSION -1
+#define CURRENT_CDS_ARCHIVE_VERSION 12
 
-struct CDSFileMapRegion {
+typedef struct CDSFileMapRegion {
   int     _crc;               // CRC checksum of this region.
   int     _read_only;         // read only region?
   int     _allow_exec;        // executable code in this region?
@@ -58,15 +57,37 @@ struct CDSFileMapRegion {
   size_t  _oopmap_offset;     // Bitmap for relocating embedded oops (offset from SharedBaseAddress).
   size_t  _oopmap_size_in_bits;
   char*   _mapped_base;       // Actually mapped address (NULL if this region is not mapped).
-};
+} CDSFileMapRegion;
 
-struct CDSFileMapHeaderBase {
-  unsigned int _magic;           // identify file type
-  int          _crc;             // header crc checksum
-  int          _version;         // must be CURRENT_CDS_ARCHIVE_VERSION
-  struct CDSFileMapRegion _space[NUM_CDS_REGIONS];
-};
+// This portion of the archive file header must remain unchanged for _version >= 12.
+// This makes it possible to read important information from a CDS archive created by
+// a different version of HotSpot, so that we can automatically regenerate the archive as necessary.
+typedef struct GenericCDSFileMapHeader {
+  unsigned int _magic;                    // identification of file type
+  int          _crc;                      // header crc checksum
+  int          _version;                  // CURRENT_CDS_ARCHIVE_VERSION of the jdk that dumped the this archive
+  unsigned int _header_size;              // total size of the header, in bytes
+  unsigned int _base_archive_name_offset; // offset where the base archive name is stored
+                                          //   static archive:  0
+                                          //   dynamic archive:
+                                          //     0 for default base archive
+                                          //     non-zero for non-default base archive
+                                          //       (char*)this + _base_archive_name_offset
+                                          //       points to a 0-terminated string for the base archive name
+  unsigned int _base_archive_name_size;   // size of base archive name including ending '\0'
+                                          //   static:  0
+                                          //   dynamic:
+                                          //     0 for default base archive
+                                          //     non-zero for non-default base archive
+} GenericCDSFileMapHeader;
 
-typedef struct CDSFileMapHeaderBase CDSFileMapHeaderBase;
+// This type is used by the Serviceability Agent to access the contents of
+// a memory-mapped CDS archive.
+typedef struct CDSFileMapHeaderBase {
+  // We cannot inherit from GenericCDSFileMapHeader as this type may be used
+  // by both C and C++ code.
+  GenericCDSFileMapHeader _generic_header;
+  CDSFileMapRegion _space[NUM_CDS_REGIONS];
+} CDSFileMapHeaderBase;
 
 #endif // SHARE_INCLUDE_CDS_H

@@ -580,11 +580,10 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
       ex_obj = env()->ArrayIndexOutOfBoundsException_instance();
       break;
     case Deoptimization::Reason_class_check:
-      if (java_bc() == Bytecodes::_aastore) {
-        ex_obj = env()->ArrayStoreException_instance();
-      } else {
-        ex_obj = env()->ClassCastException_instance();
-      }
+      ex_obj = env()->ClassCastException_instance();
+      break;
+    case Deoptimization::Reason_array_check:
+      ex_obj = env()->ArrayStoreException_instance();
       break;
     default:
       break;
@@ -1748,14 +1747,15 @@ Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
 }
 
 //-------------------------load_array_element-------------------------
-Node* GraphKit::load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAryPtr* arytype) {
+Node* GraphKit::load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl) {
   const Type* elemtype = arytype->elem();
   BasicType elembt = elemtype->array_element_basic_type();
   Node* adr = array_element_address(ary, idx, elembt, arytype->size());
   if (elembt == T_NARROWOOP) {
     elembt = T_OBJECT; // To satisfy switch in LoadNode::make()
   }
-  Node* ld = make_load(ctl, adr, elemtype, elembt, arytype, MemNode::unordered);
+  Node* ld = access_load_at(ary, adr, arytype, elemtype, elembt,
+                            IN_HEAP | IS_ARRAY | (set_ctrl ? C2_CONTROL_DEPENDENT_LOAD : 0));
   return ld;
 }
 
@@ -3339,7 +3339,10 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
         // It needs a null check because a null will *pass* the cast check.
         // A non-null value will always produce an exception.
         if (!objtp->maybe_null()) {
-          builtin_throw(Deoptimization::Reason_class_check, makecon(TypeKlassPtr::make(objtp->klass())));
+          bool is_aastore = (java_bc() == Bytecodes::_aastore);
+          Deoptimization::DeoptReason reason = is_aastore ?
+            Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
+          builtin_throw(reason, makecon(TypeKlassPtr::make(objtp->klass())));
           return top();
         } else if (!too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
           return null_assert(obj);
@@ -3421,7 +3424,10 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
       if (not_subtype_ctrl != top()) { // If failure is possible
         PreserveJVMState pjvms(this);
         set_control(not_subtype_ctrl);
-        builtin_throw(Deoptimization::Reason_class_check, load_object_klass(not_null_obj));
+        bool is_aastore = (java_bc() == Bytecodes::_aastore);
+        Deoptimization::DeoptReason reason = is_aastore ?
+          Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
+        builtin_throw(reason, load_object_klass(not_null_obj));
       }
     } else {
       (*failure_control) = not_subtype_ctrl;
@@ -4258,7 +4264,7 @@ void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* coun
   record_for_igvn(mem);
   set_control(head);
   set_memory(mem, TypeAryPtr::BYTES);
-  Node* ch = load_array_element(control(), src, i_byte, TypeAryPtr::BYTES);
+  Node* ch = load_array_element(src, i_byte, TypeAryPtr::BYTES, /* set_ctrl */ true);
   Node* st = store_to_memory(control(), array_element_address(dst, i_char, T_BYTE),
                              AndI(ch, intcon(0xff)), T_CHAR, TypeAryPtr::BYTES, MemNode::unordered,
                              false, false, true /* mismatched */);

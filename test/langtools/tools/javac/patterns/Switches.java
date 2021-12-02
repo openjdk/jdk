@@ -28,7 +28,7 @@ import java.util.function.Function;
 
 /*
  * @test
- * @bug 8262891 8268333 8268896 8269802 8269808 8270151
+ * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113
  * @summary Check behavior of pattern switches.
  * @compile --enable-preview -source ${jdk.version} Switches.java
  * @run main/othervm --enable-preview Switches
@@ -71,6 +71,7 @@ public class Switches {
         runFallThrough(this::testFallThrough2Expression);
         npeTest(this::npeTestStatement);
         npeTest(this::npeTestExpression);
+        npeTest(this::switchOverNullNPE);
         exhaustiveStatementSane("");
         exhaustiveStatementSane(null);
         exhaustiveStatementSane2(null);
@@ -81,6 +82,9 @@ public class Switches {
         switchNestingTest(this::switchNestingExpressionStatement);
         switchNestingTest(this::switchNestingExpressionExpression);
         switchNestingTest(this::switchNestingIfSwitch);
+        assertEquals(2, switchOverNull1());
+        assertEquals(2, switchOverNull2());
+        assertEquals(2, switchOverNull3());
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -261,8 +265,8 @@ public class Switches {
         switch (e) {
             case A: return "a";
             case B: return "b";
-            case E x && "A".equals(x.name()): return "broken";
             case C: return String.valueOf(e);
+            case E x && "A".equals(x.name()): return "broken";
             case null, E x: return String.valueOf(x);
         }
     }
@@ -271,8 +275,8 @@ public class Switches {
         return switch (e) {
             case A -> "a";
             case B -> "b";
-            case E x && "A".equals(x.name()) -> "broken";
             case C -> String.valueOf(e);
+            case E x && "A".equals(x.name()) -> "broken";
             case null, E x -> String.valueOf(x);
         };
     }
@@ -282,8 +286,7 @@ public class Switches {
             case A: return "a";
             case B: return "b";
             case E x && "C".equals(x.name()): return "C";
-            case C: return "broken";
-            case null, E x: return String.valueOf(x);
+            case null, E x: return e == E.C ? "broken" : String.valueOf(x);
         }
     }
 
@@ -292,8 +295,7 @@ public class Switches {
             case A -> "a";
             case B -> "b";
             case E x && "C".equals(x.name()) -> "C";
-            case C -> "broken";
-            case null, E x -> String.valueOf(x);
+            case null, E x -> e == E.C ? "broken" : String.valueOf(x);
         };
     }
 
@@ -302,8 +304,7 @@ public class Switches {
             case A: return "a";
             case B: return "b";
             case Object x && "C".equals(x.toString()): return "C";
-            case C: return "broken";
-            case null, E x: return String.valueOf(x);
+            case null, E x: return e == E.C ? "broken" : String.valueOf(x);
         }
     }
 
@@ -312,8 +313,7 @@ public class Switches {
             case A -> "a";
             case B -> "b";
             case Object x && "C".equals(x.toString()) -> "C";
-            case C -> "broken";
-            case null, E x -> String.valueOf(x);
+            case null, E x -> e == E.C ? "broken" : String.valueOf(x);
         };
     }
 
@@ -322,8 +322,7 @@ public class Switches {
             case A: return "a";
             case B: return "b";
             case Runnable x && "C".equals(x.toString()): return "C";
-            case C: return "broken";
-            case null, E x: return String.valueOf(x);
+            case null, E x: return e == E.C ? "broken" : String.valueOf(x);
         }
     }
 
@@ -332,8 +331,7 @@ public class Switches {
             case A -> "a";
             case B -> "b";
             case Runnable x && "C".equals(x.toString()) -> "C";
-            case C -> "broken";
-            case null, E x -> String.valueOf(x);
+            case null, E x -> e == E.C ? "broken" : String.valueOf(x);
         };
     }
 
@@ -342,8 +340,7 @@ public class Switches {
             case "A": return "a";
             case Switches.ConstantClassClash: return "b";
             case String x && "C".equals(x): return "C";
-            case "C": return "broken";
-            case null, String x: return String.valueOf(x);
+            case null, String x: return "C".equals(x) ? "broken" : String.valueOf(x);
         }
     }
 
@@ -352,8 +349,7 @@ public class Switches {
             case "A" -> "a";
             case ConstantClassClash -> "b";
             case String x && "C".equals(x) -> "C";
-            case "C" -> "broken";
-            case null, String x -> String.valueOf(x);
+            case null, String x -> e == E.C ? "broken" : String.valueOf(x);
         };
     }
 
@@ -362,8 +358,7 @@ public class Switches {
             case 0: return "a";
             case 1: return "b";
             case Integer x && x.equals(2): return "C";
-            case 2: return "broken";
-            case null, Integer x: return String.valueOf(x);
+            case null, Integer x: return Objects.equals(x, 2) ? "broken" : String.valueOf(x);
         }
     }
 
@@ -372,8 +367,7 @@ public class Switches {
             case 0 -> "a";
             case 1 -> "b";
             case Integer x && x.equals(2) -> "C";
-            case 2 -> "broken";
-            case null, Integer x -> String.valueOf(x);
+            case null, Integer x -> Objects.equals(x, 2) ? "broken" : String.valueOf(x);
         };
     }
 
@@ -408,7 +402,6 @@ public class Switches {
         switch (i) {
             case Integer o && o != null:
                 r = 1;
-            case -1: r = 1;
             case null, default:
                 r = 2;
         }
@@ -420,7 +413,6 @@ public class Switches {
         int r = switch (i) {
             case Integer o && o != null:
                 r = 1;
-            case -1: r = 1;
             case null, default:
                 r = 2;
                 yield r;
@@ -571,6 +563,32 @@ public class Switches {
             }
         };
         return f.apply(o1, o2);
+    }
+
+    private void switchOverNullNPE(I i) {
+        int r = switch (null) {
+            default -> 1;
+        };
+    }
+
+    private int  switchOverNull1() {
+        return switch (null) {
+            case Object o -> 2;
+        };
+    }
+
+    private int  switchOverNull2() {
+        return switch (null) {
+            case null -> 2;
+            default -> 1;
+        };
+    }
+
+    private int  switchOverNull3() {
+        return switch (null) {
+            case null -> 2;
+            case Object o -> 1;
+        };
     }
 
     //verify that for cases like:

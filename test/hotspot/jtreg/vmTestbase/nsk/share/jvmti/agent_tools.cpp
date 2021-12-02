@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,34 +138,25 @@ jvmtiEnv* nsk_jvmti_getAgentJVMTIEnv() {
     return jvmti_env;
 }
 
-/* ============================================================================= */
-static void set_agent_thread_state(thread_state_t value) {
-    rawMonitorEnter(jvmti_env, agent_data.monitor);
-    agent_data.thread_state = value;
-    rawMonitorNotify(jvmti_env, agent_data.monitor);
-    rawMonitorExit(jvmti_env, agent_data.monitor);
-}
-
 /** Wrapper for user agent thread. */
 static void JNICALL
 agentThreadWrapper(jvmtiEnv* jvmti_env, JNIEnv* agentJNI, void* arg) {
     jni_env = agentJNI;
 
-    /* run user agent proc */
-    {
-        set_agent_thread_state(RUNNABLE);
+    rawMonitorEnter(jvmti_env, agent_data.monitor);
+    agent_data.thread_state = RUNNABLE;
+    rawMonitorNotify(jvmti_env, agent_data.monitor);
+    rawMonitorExit(jvmti_env, agent_data.monitor);
 
-        NSK_TRACE((*agentThreadProc)(jvmti_env, agentJNI, agentThreadArg));
+    NSK_TRACE((*agentThreadProc)(jvmti_env, agentJNI, agentThreadArg));
 
-        set_agent_thread_state(TERMINATED);
-    }
+    rawMonitorEnter(jvmti_env, agent_data.monitor);
+    agent_data.thread_state = TERMINATED;
+    agentJNI->DeleteGlobalRef(agentThread);
+    agentThread = NULL;
+    rawMonitorNotify(jvmti_env, agent_data.monitor);
+    rawMonitorExit(jvmti_env, agent_data.monitor);
 
-    /* finalize agent thread */
-    {
-        /* gelete global ref for agent thread */
-        agentJNI->DeleteGlobalRef(agentThread);
-        agentThread = NULL;
-    }
 }
 
 /** Start wrapper for user agent thread. */

@@ -471,6 +471,8 @@ GetJavaProperties(JNIEnv* env)
          * Windows Server 2012          6               2  (!VER_NT_WORKSTATION)
          * Windows Server 2012 R2       6               3  (!VER_NT_WORKSTATION)
          * Windows 10                   10              0  (VER_NT_WORKSTATION)
+         * Windows 11                   10              0  (VER_NT_WORKSTATION)
+         *       where (buildNumber >= 22000)
          * Windows Server 2016          10              0  (!VER_NT_WORKSTATION)
          * Windows Server 2019          10              0  (!VER_NT_WORKSTATION)
          *       where (buildNumber > 17762)
@@ -544,7 +546,14 @@ GetJavaProperties(JNIEnv* env)
             } else if (majorVersion == 10) {
                 if (is_workstation) {
                     switch (minorVersion) {
-                    case  0: sprops.os_name = "Windows 10";           break;
+                    case  0:
+                        /* Windows 11 21H2 (original release) build number is 22000 */
+                        if (buildNumber >= 22000) {
+                            sprops.os_name = "Windows 11";
+                        } else {
+                            sprops.os_name = "Windows 10";
+                        }
+                        break;
                     default: sprops.os_name = "Windows NT (unknown)";
                     }
                 } else {

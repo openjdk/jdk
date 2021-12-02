@@ -145,8 +145,8 @@ import sun.security.action.GetIntegerAction;
  * entire graphs.
  *
  * <p>Serializable classes that require special handling during the
- * serialization and deserialization process should implement the following
- * methods:
+ * serialization and deserialization process should implement methods
+ * with the following signatures:
  *
  * <pre>
  * private void writeObject(java.io.ObjectOutputStream stream)
@@ -156,6 +156,12 @@ import sun.security.action.GetIntegerAction;
  * private void readObjectNoData()
  *     throws ObjectStreamException;
  * </pre>
+ *
+ * <p>The method name, modifiers, return type, and number and type of
+ * parameters must match exactly for the method to be used by
+ * serialization or deserialization. The methods should only be
+ * declared to throw checked exceptions consistent with these
+ * signatures.
  *
  * <p>The readObject method is responsible for reading and restoring the state
  * of the object for its particular class using data written to the stream by
@@ -290,6 +296,15 @@ public class ObjectInputStream
          */
         static final boolean SET_FILTER_AFTER_READ = GetBooleanAction
                 .privilegedGetProperty("jdk.serialSetFilterAfterRead");
+
+        /**
+         * Property to control {@link GetField#get(String, Object)} conversion of
+         * {@link ClassNotFoundException} to {@code null}. If set to {@code true}
+         * {@link GetField#get(String, Object)} returns null otherwise
+         * throwing {@link ClassNotFoundException}.
+         */
+        private static final boolean GETFIELD_CNFE_RETURNS_NULL = GetBooleanAction
+                .privilegedGetProperty("jdk.serialGetFieldCnfeReturnsNull");
 
         /**
          * Property to override the implementation limit on the number
@@ -1590,12 +1605,13 @@ public class ObjectInputStream
          * @param  val the default value to use if {@code name} does not
          *         have a value
          * @return the value of the named {@code Object} field
+         * @throws ClassNotFoundException Class of a serialized object cannot be found.
          * @throws IOException if there are I/O errors while reading from the
          *         underlying {@code InputStream}
          * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
-        public abstract Object get(String name, Object val) throws IOException;
+        public abstract Object get(String name, Object val) throws IOException, ClassNotFoundException;
     }
 
     /**
@@ -2639,13 +2655,19 @@ public class ObjectInputStream
             return (off >= 0) ? Bits.getDouble(primValues, off) : val;
         }
 
-        public Object get(String name, Object val) {
+        public Object get(String name, Object val) throws ClassNotFoundException {
             int off = getFieldOffset(name, Object.class);
             if (off >= 0) {
                 int objHandle = objHandles[off];
                 handles.markDependency(passHandle, objHandle);
-                return (handles.lookupException(objHandle) == null) ?
-                    objValues[off] : null;
+                ClassNotFoundException ex = handles.lookupException(objHandle);
+                if (ex == null)
+                    return objValues[off];
+                if (Caches.GETFIELD_CNFE_RETURNS_NULL) {
+                    // Revert to the prior behavior; return null instead of CNFE
+                    return null;
+                }
+                throw ex;
             } else {
                 return val;
             }

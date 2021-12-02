@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@
 #include "awt_Win32GraphicsDevice.h"
 #include "Hashtable.h"
 #include "ComCtl32Util.h"
+#include "math.h"
 
 #include <Region.h>
 
@@ -2234,8 +2235,8 @@ void AwtComponent::PaintUpdateRgn(const RECT *insets)
          */
         RECT* r = (RECT*)(buffer + rgndata->rdh.dwSize);
         RECT* un[2] = {0, 0};
-    DWORD i;
-    for (i = 0; i < rgndata->rdh.nCount; i++, r++) {
+        DWORD i;
+        for (i = 0; i < rgndata->rdh.nCount; i++, r++) {
             int width = r->right-r->left;
             int height = r->bottom-r->top;
             if (width > 0 && height > 0) {
@@ -2247,13 +2248,22 @@ void AwtComponent::PaintUpdateRgn(const RECT *insets)
                 }
             }
         }
+        // The Windows may request to update the small region of pixels that
+        // cannot be represented in the user's space, in this case, we will
+        // request to repaint the smallest non-empty bounding box in the user's
+        // space
+        int screen = GetScreenImOn();
+        Devices::InstanceAccess devices;
+        AwtWin32GraphicsDevice* device = devices->GetDevice(screen);
+        float scaleX = (device == NULL) ? 1 : device->GetScaleX();
+        float scaleY = (device == NULL) ? 1 : device->GetScaleY();
         for(i = 0; i < 2; i++) {
             if (un[i] != 0) {
-                DoCallback("handleExpose", "(IIII)V",
-                           ScaleDownX(un[i]->left),
-                           ScaleDownY(un[i]->top),
-                           ScaleDownX(un[i]->right - un[i]->left),
-                           ScaleDownY(un[i]->bottom - un[i]->top));
+                int x1 = floor(un[i]->left / scaleX);
+                int y1 = floor(un[i]->top / scaleY);
+                int x2 = ceil(un[i]->right / scaleX);
+                int y2 = ceil(un[i]->bottom  / scaleY);
+                DoCallback("handleExpose", "(IIII)V", x1, y1, x2 - x1, y2 - y1);
             }
         }
         delete [] buffer;

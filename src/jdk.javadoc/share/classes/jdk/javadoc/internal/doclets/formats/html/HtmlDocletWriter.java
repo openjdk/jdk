@@ -178,11 +178,6 @@ public class HtmlDocletWriter {
     protected final HtmlIds htmlIds;
 
     /**
-     * To check whether annotation heading is printed or not.
-     */
-    protected boolean printedAnnotationHeading = false;
-
-    /**
      * To check whether the repeated annotations is documented or not.
      */
     private boolean isAnnotationDocumented = false;
@@ -464,6 +459,7 @@ public class HtmlDocletWriter {
                 .setCharset(options.charset())
                 .addKeywords(metakeywords)
                 .setStylesheets(configuration.getMainStylesheet(), additionalStylesheets)
+                .setAdditionalScripts(configuration.getAdditionalScripts())
                 .setIndex(options.createIndex(), mainBodyScript)
                 .addContent(extraHeadContent);
 
@@ -1829,7 +1825,8 @@ public class HtmlDocletWriter {
         if (lower.startsWith("mailto:")
                 || lower.startsWith("http:")
                 || lower.startsWith("https:")
-                || lower.startsWith("file:")) {
+                || lower.startsWith("file:")
+                || lower.startsWith("ftp:")) {
             return text;
         }
         if (text.startsWith("#")) {
