@@ -32,6 +32,10 @@ header exports java/io,java/lang,java/lang/annotation,java/lang/constant,java/la
 class name java/io/FileInputStream
 method name transferTo descriptor (Ljava/io/OutputStream;)J thrownTypes java/io/IOException flags 1
 
+class name java/io/ObjectInputStream$GetField
+-method name get descriptor (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+method name get descriptor (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object; thrownTypes java/io/IOException,java/lang/ClassNotFoundException flags 401
+
 class name java/io/PrintStream
 header extends java/io/FilterOutputStream implements java/lang/Appendable,java/io/Closeable flags 21
 innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
@@ -97,6 +101,10 @@ method name ceilMod descriptor (JJ)J flags 9
 
 class name java/lang/SuppressWarnings
 header extends java/lang/Object implements java/lang/annotation/Annotation flags 2601 runtimeAnnotations @Ljava/lang/annotation/Target;(value={eLjava/lang/annotation/ElementType;TYPE;eLjava/lang/annotation/ElementType;FIELD;eLjava/lang/annotation/ElementType;METHOD;eLjava/lang/annotation/ElementType;PARAMETER;eLjava/lang/annotation/ElementType;CONSTRUCTOR;eLjava/lang/annotation/ElementType;LOCAL_VARIABLE;eLjava/lang/annotation/ElementType;MODULE;})@Ljava/lang/annotation/Retention;(value=eLjava/lang/annotation/RetentionPolicy;SOURCE;)
+
+class name java/lang/Thread
+-method name stop descriptor ()V
+method name stop descriptor ()V flags 11 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
 
 class name java/lang/constant/ClassDesc
 header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfField sealed true flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfField<Ljava/lang/constant/ClassDesc;>;
