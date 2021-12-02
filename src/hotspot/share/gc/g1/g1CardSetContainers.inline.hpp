@@ -252,14 +252,14 @@ inline void G1CardSetBitMap::iterate(CardVisitor& found, size_t size_in_bits, ui
 
 inline G1CardSetHowl::G1CardSetHowl(EntryCountType card_in_region, G1CardSetConfiguration* config) :
   G1CardSetContainer(),
-  _num_entries((config->num_cards_in_array() + 1)) /* Card Transfer will not increment _num_entries */ {
+  _num_entries((config->max_cards_in_array() + 1)) /* Card Transfer will not increment _num_entries */ {
   EntryCountType num_buckets = config->num_buckets_in_howl();
   EntryCountType bucket = config->howl_bucket_index(card_in_region);
   for (uint i = 0; i < num_buckets; ++i) {
     _buckets[i] = G1CardSetInlinePtr();
     if (i == bucket) {
       G1CardSetInlinePtr value(&_buckets[i], _buckets[i]);
-      value.add(card_in_region, config->inline_ptr_bits_per_card(), config->num_cards_in_inline_ptr());
+      value.add(card_in_region, config->inline_ptr_bits_per_card(), config->max_cards_in_inline_ptr());
     }
   }
 }
@@ -275,7 +275,7 @@ inline bool G1CardSetHowl::contains(uint card_idx, G1CardSetConfiguration* confi
     }
     case G1CardSet::CardSetBitMap: {
       uint card_offset = config->howl_bitmap_offset(card_idx);
-      return G1CardSet::card_set_ptr<G1CardSetBitMap>(card_set)->contains(card_offset, config->num_cards_in_howl_bitmap());
+      return G1CardSet::card_set_ptr<G1CardSetBitMap>(card_set)->contains(card_offset, config->max_cards_in_howl_bitmap());
     }
     case G1CardSet::CardSetInlinePtr: {
       G1CardSetInlinePtr ptr(card_set);
@@ -321,28 +321,28 @@ inline void G1CardSetHowl::iterate_cardset(CardSetPtr const card_set, uint index
     }
     case G1CardSet::CardSetBitMap: {
       if (found.start_iterate(G1GCPhaseTimes::MergeRSHowlBitmap)) {
-        uint offset = index << config->log2_num_cards_in_howl_bitmap();
-        G1CardSet::card_set_ptr<G1CardSetBitMap>(card_set)->iterate(found, config->num_cards_in_howl_bitmap(), offset);
+        uint offset = index << config->log2_max_cards_in_howl_bitmap();
+        G1CardSet::card_set_ptr<G1CardSetBitMap>(card_set)->iterate(found, config->max_cards_in_howl_bitmap(), offset);
       }
       return;
     }
     case G1CardSet::CardSetHowl: { // actually FullCardSet
       assert(card_set == G1CardSet::FullCardSet, "Must be");
       if (found.start_iterate(G1GCPhaseTimes::MergeRSHowlFull)) {
-        uint offset = index << config->log2_num_cards_in_howl_bitmap();
-        found(offset, config->num_cards_in_howl_bitmap());
+        uint offset = index << config->log2_max_cards_in_howl_bitmap();
+        found(offset, config->max_cards_in_howl_bitmap());
       }
       return;
     }
   }
 }
 
-inline G1CardSetHowl::EntryCountType G1CardSetHowl::num_buckets(size_t size_in_bits, size_t num_cards_in_array, size_t max_num_buckets) {
+inline G1CardSetHowl::EntryCountType G1CardSetHowl::num_buckets(size_t size_in_bits, size_t max_cards_in_array, size_t max_num_buckets) {
   size_t size_bitmap_bytes = BitMap::calc_size_in_words(size_in_bits) * BytesPerWord;
   // Ensure that in the worst case arrays consume half the memory size
   // of storing the entire bitmap
   size_t max_size_arrays_bytes = size_bitmap_bytes / 2;
-  size_t size_array_bytes = num_cards_in_array * sizeof(G1CardSetArray::EntryDataType);
+  size_t size_array_bytes = max_cards_in_array * sizeof(G1CardSetArray::EntryDataType);
   size_t num_arrays = max_size_arrays_bytes / size_array_bytes;
   // We use shifts and masks for indexing the array. So round down to the next
   // power of two to not use more than expected memory.

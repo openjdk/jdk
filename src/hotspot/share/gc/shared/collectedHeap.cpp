@@ -110,6 +110,18 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
   st.print_cr("}");
 }
 
+ParallelObjectIterator::ParallelObjectIterator(uint thread_num) :
+  _impl(Universe::heap()->parallel_object_iterator(thread_num))
+{}
+
+ParallelObjectIterator::~ParallelObjectIterator() {
+  delete _impl;
+}
+
+void ParallelObjectIterator::object_iterate(ObjectClosure* cl, uint worker_id) {
+  _impl->object_iterate(cl, worker_id);
+}
+
 size_t CollectedHeap::unused() const {
   MutexLocker ml(Heap_lock);
   return capacity() - used();

@@ -541,7 +541,7 @@ void CompactibleSpace::compact() {
 
   debug_only(HeapWord* prev_obj = NULL);
   while (cur_obj < end_of_live) {
-    if (!cast_to_oop(cur_obj)->is_gc_marked()) {
+    if (!cast_to_oop(cur_obj)->is_forwarded()) {
       debug_only(prev_obj = cur_obj);
       // The first word of the dead object contains a pointer to the next live object or end of space.
       cur_obj = *(HeapWord**)cur_obj;

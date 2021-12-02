@@ -31,6 +31,7 @@
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceCriticalAllocation.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
@@ -877,6 +878,9 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   assert(loader_data != NULL, "Should never pass around a NULL loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");
 
+  // Deal with concurrent unloading failed allocation starvation
+  MetaspaceCriticalAllocation::block_if_concurrent_purge();
+
   MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
 
   // Try to allocate metadata.
@@ -992,6 +996,10 @@ const char* Metaspace::metadata_type_name(Metaspace::MetadataType mdtype) {
 }
 
 void Metaspace::purge() {
+  // The MetaspaceCritical_lock is used by a concurrent GC to block out concurrent metaspace
+  // allocations, that would starve critical metaspace allocations, that are about to throw
+  // OOM if they fail; they need precedence for correctness.
+  MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
   ChunkManager* cm = ChunkManager::chunkmanager_nonclass();
   if (cm != NULL) {
     cm->purge();
@@ -1002,6 +1010,8 @@ void Metaspace::purge() {
       cm->purge();
     }
   }
+
+  MetaspaceCriticalAllocation::satisfy();
 }
 
 bool Metaspace::contains(const void* ptr) {

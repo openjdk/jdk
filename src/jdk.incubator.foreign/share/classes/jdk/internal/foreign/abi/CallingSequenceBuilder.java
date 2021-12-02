@@ -100,7 +100,6 @@ public class CallingSequenceBuilder {
         //ALLOC_BUFFER,
         //BOX_ADDRESS,
         UNBOX_ADDRESS,
-        BASE_ADDRESS,
         //TO_SEGMENT,
         DUP
     );
@@ -129,7 +128,6 @@ public class CallingSequenceBuilder {
         ALLOC_BUFFER,
         BOX_ADDRESS,
         //UNBOX_ADDRESS,
-        //BASE_ADDRESS,
         TO_SEGMENT,
         DUP
     );

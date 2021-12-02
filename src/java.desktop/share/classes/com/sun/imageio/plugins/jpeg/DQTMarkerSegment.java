@@ -171,7 +171,7 @@ class DQTMarkerSegment extends MarkerSegment {
     /**
      * A quantization table within a DQT marker segment.
      */
-    class Qtable implements Cloneable {
+    static class Qtable implements Cloneable {
         int elementPrecision;
         int tableID;
         final int QTABLE_SIZE = 64;

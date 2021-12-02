@@ -1801,21 +1801,21 @@ const intx ObjectAlignmentInBytes = 8;
   /* Shared spaces */                                                       \
                                                                             \
   product(bool, UseSharedSpaces, true,                                      \
-          "Use shared spaces for metadata")                                 \
+          "(Deprecated) Use shared spaces for metadata")                    \
                                                                             \
   product(bool, VerifySharedSpaces, false,                                  \
           "Verify integrity of shared spaces")                              \
                                                                             \
   product(bool, RequireSharedSpaces, false,                                 \
-          "Require shared spaces for metadata")                             \
+          "(Deprecated) Require shared spaces for metadata")                \
                                                                             \
   product(bool, DumpSharedSpaces, false,                                    \
-          "Special mode: JVM reads a class list, loads classes, builds "    \
-          "shared spaces, and dumps the shared spaces to a file to be "     \
-          "used in future JVM runs")                                        \
+          "(Deprecated) Special mode: JVM reads a class list, loads "       \
+          "classes, builds shared spaces, and dumps the shared spaces to "  \
+          "a file to be used in future JVM runs")                           \
                                                                             \
   product(bool, DynamicDumpSharedSpaces, false,                             \
-          "Dynamic archive")                                                \
+          "(Deprecated) Dynamic archive")                                   \
                                                                             \
   product(bool, RecordDynamicDumpInfo, false,                               \
           "Record class info for jcmd VM.cds dynamic_dump")                 \

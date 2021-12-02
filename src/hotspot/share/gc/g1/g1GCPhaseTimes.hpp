@@ -123,6 +123,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ScanHRScannedCards,
     ScanHRScannedBlocks,
     ScanHRClaimedChunks,
+    ScanHRFoundRoots,
     ScanHRScannedOptRefs,
     ScanHRUsedMemory
   };
