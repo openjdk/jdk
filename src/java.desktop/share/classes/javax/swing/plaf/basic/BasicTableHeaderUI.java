@@ -405,7 +405,9 @@ public class BasicTableHeaderUI extends TableHeaderUI {
     /**
      * Uninstalls default properties
      */
-    protected void uninstallDefaults() {}
+    protected void uninstallDefaults() {
+        LookAndFeel.uninstallColorsAndFont(header);
+    }
 
     /**
      * Unregisters listeners.

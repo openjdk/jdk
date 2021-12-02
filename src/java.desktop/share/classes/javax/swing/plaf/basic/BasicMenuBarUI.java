@@ -169,6 +169,7 @@ public class BasicMenuBarUI extends MenuBarUI  {
     protected void uninstallDefaults() {
         if (menuBar!=null) {
             LookAndFeel.uninstallBorder(menuBar);
+            LookAndFeel.uninstallColorsAndFont(menuBar);
         }
     }
 

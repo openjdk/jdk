@@ -273,6 +273,7 @@ public class BasicSpinnerUI extends SpinnerUI
      */
     protected void uninstallDefaults() {
         LookAndFeel.uninstallBorder(spinner);
+        LookAndFeel.uninstallColorsAndFont(spinner);
         spinner.setLayout(null);
     }
 

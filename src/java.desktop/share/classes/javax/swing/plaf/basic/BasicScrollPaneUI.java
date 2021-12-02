@@ -250,6 +250,7 @@ public class BasicScrollPaneUI
      */
     protected void uninstallDefaults(JScrollPane c) {
         LookAndFeel.uninstallBorder(scrollpane);
+        LookAndFeel.uninstallColorsAndFont(scrollpane);
 
         if (scrollpane.getViewportBorder() instanceof UIResource) {
             scrollpane.setViewportBorder(null);

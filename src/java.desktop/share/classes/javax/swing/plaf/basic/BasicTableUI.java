@@ -1671,6 +1671,7 @@ public class BasicTableUI extends TableUI
         if (table.getTransferHandler() instanceof UIResource) {
             table.setTransferHandler(null);
         }
+        LookAndFeel.uninstallColorsAndFont(table);
     }
 
     /**
