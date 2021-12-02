@@ -57,21 +57,11 @@ public class ScrollBarBorderTest {
     private static JPanel panel;
     private static JFrame frame;
     private static Robot robot;
-    private int thumbPressed = 0;
 
     public void createAndShowGUI() {
         // create scroll bar
         scrollBar = new JScrollBar(Scrollbar.HORIZONTAL);
         scrollBar.setBorder(new CustomBorder());
-        scrollBar.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) throws RuntimeException {
-                thumbPressed++;
-                if(thumbPressed > 1) {
-                    throw new RuntimeException("Thumb was able to move into the border.");
-                }
-            }
-        });
 
         // create panel
         panel = new JPanel();
@@ -103,25 +93,21 @@ public class ScrollBarBorderTest {
         } catch (Exception e) {
             throw new RuntimeException("Unable to create Robot.");
         }
+
         robot.setAutoDelay(50);
         robot.waitForIdle();
 
         Point p = frame.getLocationOnScreen();
 
-        robot.mouseMove(p.x + 40, p.y + 95);
-        robot.mousePress(MouseEvent.getMaskForButton(MouseEvent.BUTTON1));
-        robot.waitForIdle();
+        Color c1 = robot.getPixelColor(p.x + 480, p.y + 95);
+        scrollBar.setValue(Integer.MAX_VALUE);
+        Color c2 = robot.getPixelColor(p.x + 480, p.y + 95);
 
-        robot.mouseMove(p.x + 480, p.y + 95);
-        robot.mouseRelease(MouseEvent.getMaskForButton(MouseEvent.BUTTON1));
-        robot.waitForIdle();
-
-        robot.mousePress(MouseEvent.getMaskForButton(MouseEvent.BUTTON1));
-        robot.waitForIdle();
-
-        robot.mouseRelease(MouseEvent.getMaskForButton(MouseEvent.BUTTON1));
-        robot.waitForIdle();
-
+        if (c1.getRGB() != c2.getRGB()) {
+            System.out.println("Color before " + c1.getRed());
+            System.out.println("Color after " + c2.getRGB());
+            throw new RuntimeException("Thumb was able to move into border.");
+        }
 
         cleanUp();
     }
