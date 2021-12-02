@@ -43,7 +43,7 @@ public class GenOutOfMemoryError {
         } catch (Throwable t){
             StackTraceElement[] traces  = t.getStackTrace();
             if (traces.length != 0) {
-                OOME_HAS_STACK_CNT++; 
+                OOME_HAS_STACK_CNT++;
             }
             t.printStackTrace();
         }
