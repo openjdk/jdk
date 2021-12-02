@@ -54,6 +54,8 @@ endif
 #   FOLLOW_SYMLINKS - Set to explicitly follow symlinks. Affects performance of
 #                     finding files.
 #   ZIP_OPTIONS extra options to pass to zip
+#   REPRODUCIBLE override ENABLE_REPRODUCIBLE_BUILD (to make zip reproducible or not)
+
 SetupZipArchive = $(NamedParamsMacroTemplate)
 define SetupZipArchiveBody
 
@@ -127,6 +129,10 @@ define SetupZipArchiveBody
     ) \
   )
 
+  ifeq ($$($1_REPRODUCIBLE), )
+    $1_REPRODUCIBLE := $$(ENABLE_REPRODUCIBLE_BUILD)
+  endif
+
   # Use a slightly shorter name for logging, but with enough path to identify this zip.
   $1_NAME:=$$(subst $$(OUTPUTDIR)/,,$$($1_ZIP))
 
@@ -169,7 +175,7 @@ define SetupZipArchiveBody
 	        || test "$$$$?" = "12" \
 	    ))$$(NEWLINE) \
 	) true
-        ifeq ($(ENABLE_REPRODUCIBLE_BUILD), true)
+        ifeq ($$($1_REPRODUCIBLE), true)
 	    $$(call ExecuteWithLog, \
 		$$(SUPPORT_OUTPUTDIR)/makezipreproducible/$$(patsubst $$(OUTPUTDIR)/%,%, $$@), \
 		($(RM) $$(SUPPORT_OUTPUTDIR)/ziptmp/$1/tmp.zip && \
