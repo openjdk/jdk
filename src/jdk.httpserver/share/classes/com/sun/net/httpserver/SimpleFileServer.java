@@ -104,12 +104,12 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  *    server.start();
  * }</pre>
  *
- * <h2>Main entry point</h2>
+ * <h2>jwebserver Tool</h2>
  *
- * <p>A <a id="server-impl">simple HTTP file server implementation</a> is
- * provided via the
- * <a href="{@docRoot}/jdk.httpserver/module-summary.html#entry-point">main entry point</a>
- * of the {@code jdk.httpserver} module.
+ * <p>A simple HTTP file server implementation is provided via the
+ * {@code jwebserver} tool.
+ *
+ * @toolGuide jwebserver
  *
  * @since 18
  */
