@@ -189,18 +189,6 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
       return new AddINode(in1, phase->intcon(-i->get_con()));
   }
 
-  // Convert "c0 - (x + c1)" into "(c0 - c1) - x"
-  if (in2->Opcode() == Op_AddI
-      && phase->type(in1)->isa_int() != NULL
-      && phase->type(in1)->isa_int()->is_con()
-      && phase->type(in2->in(2))->isa_int() != NULL
-      && phase->type(in2->in(2))->isa_int()->is_con()
-      && ok_to_convert(in2)) {
-    jint c0 = phase->type(in1)->isa_int()->get_con();
-    jint c1 = phase->type(in2->in(2))->isa_int()->get_con();
-    return new SubINode(phase->intcon(java_subtract(c0, c1)), in2->in(1));
-  }
-
   // Convert "(x+c0) - y" into (x-y) + c0"
   // Do not collapse (x+c0)-y if "+" is a loop increment or
   // if "y" is a loop induction variable.
@@ -212,16 +200,23 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     }
   }
 
-
-  // Convert "x - (y+c0)" into "(x-y) - c0"
+  // Convert "x - (y+c0)" into "(x-y) - c0" AND
+  // Convert "c1 - (y+c0)" into "(c1-c0) - y"
   // Need the same check as in above optimization but reversed.
-  if (op2 == Op_AddI && ok_to_convert(in2, in1)) {
+  if (op2 == Op_AddI
+      && ok_to_convert(in2, in1)
+      && in2->in(2)->Opcode() == Op_ConI) {
+    jint c0 = phase->type(in2->in(2))->isa_int()->get_con();
     Node* in21 = in2->in(1);
-    Node* in22 = in2->in(2);
-    const TypeInt* tcon = phase->type(in22)->isa_int();
-    if (tcon != NULL && tcon->is_con()) {
-      Node* sub2 = phase->transform( new SubINode(in1, in21) );
-      Node* neg_c0 = phase->intcon(- tcon->get_con());
+    if (in1->Opcode() == Op_ConI) {
+      // Match c1
+      jint c1 = phase->type(in1)->isa_int()->get_con();
+      Node* sub2 = phase->intcon(java_subtract(c1, c0));
+      return new SubINode(sub2, in21);
+    } else {
+      // Match x
+      Node* sub2 = phase->transform(new SubINode(in1, in21));
+      Node* neg_c0 = phase->intcon(-c0);
       return new AddINode(sub2, neg_c0);
     }
   }
