@@ -28,15 +28,17 @@ package sun.net.httpserver;
 import java.nio.*;
 import java.io.*;
 import java.nio.channels.*;
+import java.util.Objects;
+
 import com.sun.net.httpserver.*;
 
 /**
  */
 class Request {
 
-    final static int BUF_LEN = 2048;
-    final static byte CR = 13;
-    final static byte LF = 10;
+    static final int BUF_LEN = 2048;
+    static final byte CR = 13;
+    static final byte LF = 10;
 
     private String startLine;
     private SocketChannel chan;
@@ -228,7 +230,7 @@ class Request {
         int readlimit;
         static long readTimeout;
         ServerImpl server;
-        final static int BUFSIZE = 8 * 1024;
+        static final int BUFSIZE = 8 * 1024;
 
         public ReadStream (ServerImpl server, SocketChannel chan) throws IOException {
             this.channel = chan;
@@ -265,9 +267,7 @@ class Request {
 
             assert channel.isBlocking();
 
-            if (off < 0 || srclen < 0|| srclen > (b.length-off)) {
-                throw new IndexOutOfBoundsException ();
-            }
+            Objects.checkFromIndexSize(srclen, off, b.length);
 
             if (reset) { /* satisfy from markBuf */
                 canreturn = markBuf.remaining ();

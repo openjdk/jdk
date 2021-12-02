@@ -100,11 +100,12 @@ class Disassembler : public AbstractDisassembler {
   }
 
   // Directly disassemble code blob.
-  static void decode(CodeBlob *cb,               outputStream* st = NULL);
+  static void decode(CodeBlob* cb,               outputStream* st = NULL);
   // Directly disassemble nmethod.
   static void decode(nmethod* nm,                outputStream* st = NULL);
   // Disassemble an arbitrary memory range.
-  static void decode(address start, address end, outputStream* st = NULL, const CodeStrings* = NULL);
+  static void decode(address start, address end, outputStream* st = NULL
+                     NOT_PRODUCT(COMMA const AsmRemarks* remarks = NULL COMMA ptrdiff_t disp = 0));
 
   static void _hook(const char* file, int line, class MacroAssembler* masm);
 

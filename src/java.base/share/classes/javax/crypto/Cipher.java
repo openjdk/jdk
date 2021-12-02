@@ -272,7 +272,8 @@ public class Cipher {
         // See bug 4341369 & 4334690 for more info.
         // If the caller is trusted, then okay.
         // Otherwise throw an IllegalArgumentException.
-        if (!JceSecurityManager.INSTANCE.isCallerTrusted(provider)) {
+        if (!JceSecurityManager.INSTANCE.isCallerTrusted(
+                JceSecurityManager.WALKER.getCallerClass(), provider)) {
             throw new IllegalArgumentException("Cannot construct cipher");
         }
         this.spi = cipherSpi;

@@ -242,6 +242,21 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
+    interface FMaskReductionOp {
+        int apply(boolean[] a, int idx);
+    }
+
+    static void assertMaskReductionArraysEquals(int[] r, boolean[] a, FMaskReductionOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i += SPECIES.length()) {
+                Assert.assertEquals(r[i], f.apply(a, i));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
+        }
+    }
+
     static void assertInsertArraysEquals($type$[] r, $type$[] a, $type$ element, int index) {
         int i = 0;
         try {
@@ -1367,6 +1382,30 @@ public class $vectorteststype$ extends AbstractVectorTest {
                 a[i] = v;
             }
         }
+    }
+
+    static $type$ ROL_scalar($type$ a, $type$ b) {
+#if[intOrLong]
+        return $Wideboxtype$.rotateLeft(a, ((int)b));
+#else[intOrLong]
+#if[short]
+        return (short)(((((short)a) & 0xFFFF) << (b & 15)) | ((((short)a) & 0xFFFF) >>> (16 - (b & 15))));
+#else[short]
+        return (byte)(((((byte)a) & 0xFF) << (b & 7)) | ((((byte)a) & 0xFF) >>> (8 - (b & 7))));
+#end[short]
+#end[intOrLong]
+    }
+
+    static $type$ ROR_scalar($type$ a, $type$ b) {
+#if[intOrLong]
+        return $Wideboxtype$.rotateRight(a, ((int)b));
+#else[intOrLong]
+#if[short]
+        return (short)(((((short)a) & 0xFFFF) >>> (b & 15)) | ((((short)a) & 0xFFFF) << (16 - (b & 15))));
+#else[short]
+        return (byte)(((((byte)a) & 0xFF) >>> (b & 7)) | ((((byte)a) & 0xFF) << (8 - (b & 7))));
+#end[short]
+#end[intOrLong]
     }
 #end[BITWISE]
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,23 +31,25 @@
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/atomic.hpp"
 
-inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
-  if (addr >= _hr->bottom() && addr < _hr->end()) {
-    HeapWord* q = block_at_or_preceding(addr, true, _next_offset_index-1);
-    return forward_to_block_containing_addr(q, addr);
-  } else {
-    return NULL;
+inline HeapWord* G1BlockOffsetTablePart::threshold_for_addr(const void* addr) {
+  assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
+  size_t index = _bot->index_for(addr);
+  HeapWord* card_boundary = _bot->address_for_index(index);
+  // Address at card boundary, use as threshold.
+  if (card_boundary == addr) {
+    return card_boundary;
   }
+
+  // Calculate next threshold.
+  HeapWord* threshold = card_boundary + BOTConstants::N_words;
+  return threshold;
 }
 
-inline HeapWord* G1BlockOffsetTablePart::block_start_const(const void* addr) const {
-  if (addr >= _hr->bottom() && addr < _hr->end()) {
-    HeapWord* q = block_at_or_preceding(addr, true, _next_offset_index-1);
-    HeapWord* n = q + block_size(q);
-    return forward_to_block_containing_addr_const(q, n, addr);
-  } else {
-    return NULL;
-  }
+inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
+  assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
+  HeapWord* q = block_at_or_preceding(addr);
+  HeapWord* n = q + block_size(q);
+  return forward_to_block_containing_addr(q, n, addr);
 }
 
 u_char G1BlockOffsetTable::offset_array(size_t index) const {
@@ -110,18 +112,13 @@ inline size_t G1BlockOffsetTablePart::block_size(const HeapWord* p) const {
   return _hr->block_size(p);
 }
 
-inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr,
-                                                               bool has_max_index,
-                                                               size_t max_index) const {
+inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr) const {
   assert(_object_can_span || _bot->offset_array(_bot->index_for(_hr->bottom())) == 0,
          "Object crossed region boundary, found offset %u instead of 0",
          (uint) _bot->offset_array(_bot->index_for(_hr->bottom())));
+
   size_t index = _bot->index_for(addr);
-  // We must make sure that the offset table entry we use is valid.  If
-  // "addr" is past the end, start at the last known one and go forward.
-  if (has_max_index) {
-    index = MIN2(index, max_index);
-  }
+
   HeapWord* q = _bot->address_for_index(index);
 
   uint offset = _bot->offset_array(index);  // Extend u_char to uint.
@@ -138,10 +135,16 @@ inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr,
   return q;
 }
 
-inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
-                                                                                const void* addr) const {
-  if (addr >= _hr->top()) return _hr->top();
+inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
+                                                                          const void* addr) const {
   while (n <= addr) {
+    // When addr is not covered by the block starting at q we need to
+    // step forward until we find the correct block. With the BOT
+    // being precise, we should never have to step through more than
+    // a single card.
+    assert(_bot->index_for(n) == _bot->index_for(addr),
+           "BOT not precise. Index for n: " SIZE_FORMAT " must be equal to the index for addr: " SIZE_FORMAT,
+           _bot->index_for(n), _bot->index_for(addr));
     q = n;
     oop obj = cast_to_oop(q);
     if (obj->klass_or_null_acquire() == NULL) {
@@ -151,23 +154,6 @@ inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_const(
   }
   assert(q <= n, "wrong order for q and addr");
   assert(addr < n, "wrong order for addr and n");
-  return q;
-}
-
-inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWord* q,
-                                                                          const void* addr) {
-  if (cast_to_oop(q)->klass_or_null_acquire() == NULL) {
-    return q;
-  }
-  HeapWord* n = q + block_size(q);
-  // In the normal case, where the query "addr" is a card boundary, and the
-  // offset table chunks are the same size as cards, the block starting at
-  // "q" will contain addr, so the test below will fail, and we'll fall
-  // through quickly.
-  if (n <= addr) {
-    q = forward_to_block_containing_addr_slow(q, n, addr);
-  }
-  assert(q <= addr, "wrong order for current and arg");
   return q;
 }
 

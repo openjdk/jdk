@@ -210,6 +210,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_multiplyExactI();
   bool inline_math_multiplyExactL();
   bool inline_math_multiplyHigh();
+  bool inline_math_unsignedMultiplyHigh();
   bool inline_math_negateExactI();
   bool inline_math_negateExactL();
   bool inline_math_subtractExactI(bool is_decrement);
@@ -285,7 +286,7 @@ class LibraryCallKit : public GraphKit {
   Node* get_state_from_digest_object(Node *digestBase_object, const char* state_type);
   Node* get_digest_length_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
-  bool inline_encodeISOArray();
+  bool inline_encodeISOArray(bool ascii);
   bool inline_updateCRC32();
   bool inline_updateBytesCRC32();
   bool inline_updateByteBufferCRC32();
@@ -305,6 +306,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_fma(vmIntrinsics::ID id);
   bool inline_character_compare(vmIntrinsics::ID id);
   bool inline_fp_min_max(vmIntrinsics::ID id);
+  bool inline_galoisCounterMode_AESCrypt();
+  Node* inline_galoisCounterMode_AESCrypt_predicate();
 
   bool inline_profileBoolean();
   bool inline_isCompileConstant();
@@ -316,6 +319,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_shuffle_iota();
   bool inline_vector_mask_operation();
   bool inline_vector_mem_operation(bool is_store);
+  bool inline_vector_mem_masked_operation(bool is_store);
   bool inline_vector_gather_scatter(bool is_scatter);
   bool inline_vector_reduction();
   bool inline_vector_test();
@@ -329,13 +333,15 @@ class LibraryCallKit : public GraphKit {
   Node* gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 
   enum VectorMaskUseType {
-    VecMaskUseLoad,
-    VecMaskUseStore,
-    VecMaskUseAll,
-    VecMaskNotUsed
+    VecMaskUseLoad  = 1 << 0,
+    VecMaskUseStore = 1 << 1,
+    VecMaskUseAll   = VecMaskUseLoad | VecMaskUseStore,
+    VecMaskUsePred  = 1 << 2,
+    VecMaskNotUsed  = 1 << 3
   };
 
   bool arch_supports_vector(int op, int num_elem, BasicType type, VectorMaskUseType mask_use_type, bool has_scalar_args = false);
+  bool arch_supports_vector_rotate(int opc, int num_elem, BasicType elem_bt, VectorMaskUseType mask_use_type, bool has_scalar_args = false);
 
   void clear_upper_avx() {
 #ifdef X86

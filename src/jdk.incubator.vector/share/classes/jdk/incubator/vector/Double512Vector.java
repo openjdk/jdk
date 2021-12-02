@@ -236,8 +236,8 @@ final class Double512Vector extends DoubleVector {
 
     @ForceInline
     final @Override
-    double rOp(double v, FBinOp f) {
-        return super.rOpTemplate(v, f);  // specialize
+    double rOp(double v, VectorMask<Double> m, FBinOp f) {
+        return super.rOpTemplate(v, m, f);  // specialize
     }
 
     @Override
@@ -275,8 +275,20 @@ final class Double512Vector extends DoubleVector {
 
     @Override
     @ForceInline
+    public Double512Vector lanewise(Unary op, VectorMask<Double> m) {
+        return (Double512Vector) super.lanewiseTemplate(op, Double512Mask.class, (Double512Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Double512Vector lanewise(Binary op, Vector<Double> v) {
         return (Double512Vector) super.lanewiseTemplate(op, v);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Double512Vector lanewise(Binary op, Vector<Double> v, VectorMask<Double> m) {
+        return (Double512Vector) super.lanewiseTemplate(op, Double512Mask.class, v, (Double512Mask) m);  // specialize
     }
 
 
@@ -285,8 +297,16 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     public final
     Double512Vector
-    lanewise(VectorOperators.Ternary op, Vector<Double> v1, Vector<Double> v2) {
+    lanewise(Ternary op, Vector<Double> v1, Vector<Double> v2) {
         return (Double512Vector) super.lanewiseTemplate(op, v1, v2);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final
+    Double512Vector
+    lanewise(Ternary op, Vector<Double> v1, Vector<Double> v2, VectorMask<Double> m) {
+        return (Double512Vector) super.lanewiseTemplate(op, Double512Mask.class, v1, v2, (Double512Mask) m);  // specialize
     }
 
     @Override
@@ -308,7 +328,7 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     public final double reduceLanes(VectorOperators.Associative op,
                                     VectorMask<Double> m) {
-        return super.reduceLanesTemplate(op, m);  // specialized
+        return super.reduceLanesTemplate(op, Double512Mask.class, (Double512Mask) m);  // specialized
     }
 
     @Override
@@ -321,7 +341,7 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     public final long reduceLanesToLong(VectorOperators.Associative op,
                                         VectorMask<Double> m) {
-        return (long) super.reduceLanesTemplate(op, m);  // specialized
+        return (long) super.reduceLanesTemplate(op, Double512Mask.class, (Double512Mask) m);  // specialized
     }
 
     @ForceInline
@@ -356,6 +376,13 @@ final class Double512Vector extends DoubleVector {
     public final Double512Mask compare(Comparison op, long s) {
         return super.compareTemplate(Double512Mask.class, op, s);  // specialize
     }
+
+    @Override
+    @ForceInline
+    public final Double512Mask compare(Comparison op, Vector<Double> v, VectorMask<Double> m) {
+        return super.compareTemplate(Double512Mask.class, op, v, (Double512Mask) m);
+    }
+
 
     @Override
     @ForceInline
@@ -413,6 +440,7 @@ final class Double512Vector extends DoubleVector {
                                   VectorMask<Double> m) {
         return (Double512Vector)
             super.rearrangeTemplate(Double512Shuffle.class,
+                                    Double512Mask.class,
                                     (Double512Shuffle) shuffle,
                                     (Double512Mask) m);  // specialize
     }
@@ -580,18 +608,10 @@ final class Double512Vector extends DoubleVector {
         @ForceInline
         private final <E>
         VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
-            assert(length() == dsp.laneCount());
+            if (length() != dsp.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            return switch (dsp.laneType.switchKey) {
-                     case LaneType.SK_BYTE   -> new Byte512Vector.Byte512Mask(maskArray).check(dsp);
-                     case LaneType.SK_SHORT  -> new Short512Vector.Short512Mask(maskArray).check(dsp);
-                     case LaneType.SK_INT    -> new Int512Vector.Int512Mask(maskArray).check(dsp);
-                     case LaneType.SK_LONG   -> new Long512Vector.Long512Mask(maskArray).check(dsp);
-                     case LaneType.SK_FLOAT  -> new Float512Vector.Float512Mask(maskArray).check(dsp);
-                     case LaneType.SK_DOUBLE -> new Double512Vector.Double512Mask(maskArray).check(dsp);
-                     default                 -> throw new AssertionError(dsp);
-            };
+            return  dsp.maskFactory(maskArray).check(dsp);
         }
 
         @Override
@@ -600,16 +620,12 @@ final class Double512Vector extends DoubleVector {
             AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
-            if (VSIZE == species.vectorBitSize()) {
-                Class<?> dtype = species.elementType();
-                Class<?> dmtype = species.maskType();
-                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    this.getClass(), ETYPE, VLENGTH,
-                    dmtype, dtype, VLENGTH,
-                    this, species,
-                    Double512Mask::defaultMaskCast);
-            }
-            return this.defaultMaskCast(species);
+
+            return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                this.getClass(), ETYPE, VLENGTH,
+                species.maskType(), species.elementType(), VLENGTH,
+                this, species,
+                (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
 
         @Override
@@ -635,9 +651,9 @@ final class Double512Vector extends DoubleVector {
         public Double512Mask and(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double512Mask m = (Double512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Double512Mask.class, long.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a & b));
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Double512Mask.class, null, long.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
 
         @Override
@@ -645,9 +661,9 @@ final class Double512Vector extends DoubleVector {
         public Double512Mask or(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double512Mask m = (Double512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Double512Mask.class, long.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a | b));
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Double512Mask.class, null, long.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
         @ForceInline
@@ -655,9 +671,9 @@ final class Double512Vector extends DoubleVector {
         Double512Mask xor(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double512Mask m = (Double512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Double512Mask.class, long.class, VLENGTH,
-                                          this, m,
-                                          (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Double512Mask.class, null, long.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
 
         // Mask Query operations
@@ -665,22 +681,32 @@ final class Double512Vector extends DoubleVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Double512Mask.class, long.class, VLENGTH, this,
-                                                      (m) -> trueCountHelper(((Double512Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Double512Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Double512Mask.class, long.class, VLENGTH, this,
-                                                      (m) -> firstTrueHelper(((Double512Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Double512Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Double512Mask.class, long.class, VLENGTH, this,
-                                                      (m) -> lastTrueHelper(((Double512Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Double512Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(m.getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public long toLong() {
+            if (length() > Long.SIZE) {
+                throw new UnsupportedOperationException("too many lanes for one long");
+            }
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Double512Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> toLongHelper(m.getBits()));
         }
 
         // Reductions
@@ -762,24 +788,7 @@ final class Double512Vector extends DoubleVector {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte512Vector.Byte512Shuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short512Vector.Short512Shuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new Int512Vector.Int512Shuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long512Vector.Long512Shuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float512Vector.Float512Shuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double512Vector.Double512Shuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
@@ -808,6 +817,20 @@ final class Double512Vector extends DoubleVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m) {
+        return super.fromArray0Template(Double512Mask.class, a, offset, (Double512Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    DoubleVector fromArray0(double[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Double> m) {
+        return super.fromArray0Template(Double512Mask.class, a, offset, indexMap, mapOffset, (Double512Mask) m);
+    }
+
 
 
     @ForceInline
@@ -820,8 +843,22 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     @Override
     final
+    DoubleVector fromByteArray0(byte[] a, int offset, VectorMask<Double> m) {
+        return super.fromByteArray0Template(Double512Mask.class, a, offset, (Double512Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
     DoubleVector fromByteBuffer0(ByteBuffer bb, int offset) {
         return super.fromByteBuffer0Template(bb, offset);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m) {
+        return super.fromByteBuffer0Template(Double512Mask.class, bb, offset, (Double512Mask) m);  // specialize
     }
 
     @ForceInline
@@ -834,9 +871,39 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     @Override
     final
+    void intoArray0(double[] a, int offset, VectorMask<Double> m) {
+        super.intoArray0Template(Double512Mask.class, a, offset, (Double512Mask) m);
+    }
+
+    @ForceInline
+    @Override
+    final
+    void intoArray0(double[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Double> m) {
+        super.intoArray0Template(Double512Mask.class, a, offset, indexMap, mapOffset, (Double512Mask) m);
+    }
+
+
+    @ForceInline
+    @Override
+    final
     void intoByteArray0(byte[] a, int offset) {
         super.intoByteArray0Template(a, offset);  // specialize
     }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteArray0(byte[] a, int offset, VectorMask<Double> m) {
+        super.intoByteArray0Template(Double512Mask.class, a, offset, (Double512Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m) {
+        super.intoByteBuffer0Template(Double512Mask.class, bb, offset, (Double512Mask) m);
+    }
+
 
     // End of specialized low-level memory operations.
 

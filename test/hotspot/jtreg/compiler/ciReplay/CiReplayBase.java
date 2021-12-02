@@ -24,10 +24,17 @@
 package compiler.ciReplay;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
-import java.io.IOException;
-import java.io.File;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.CoreUtils;
+
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,14 +43,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import jdk.test.lib.Platform;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
-import jdk.test.lib.util.CoreUtils;
 
 public abstract class CiReplayBase {
     public static final String REPLAY_FILE_NAME = "test_replay.txt";
@@ -68,22 +67,36 @@ public abstract class CiReplayBase {
         "-XX:CompilerThreadStackSize=512", "-XX:ParallelGCThreads=1", "-XX:CICompilerCount=2",
         "-XX:-BackgroundCompilation", "-XX:CompileCommand=inline,java.io.PrintStream::*",
         "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222", // extra profile data as a stress test
-        "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError",
-        "-XX:+PreferInterpreterNativeStubs", REPLAY_FILE_OPTION};
+        "-XX:+CICountNative", "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError",
+        REPLAY_FILE_OPTION};
     private static final String[] REPLAY_OPTIONS = new String[]{DISABLE_COREDUMP_ON_CRASH,
         "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222",
-        "-XX:+ReplayCompiles", REPLAY_FILE_OPTION};
+        "-XX:+ReplayCompiles"};
     protected final Optional<Boolean> runServer;
     private static int dummy;
 
+    static interface Lambda {
+        int value();
+    }
+
     public static class TestMain {
+        private static final String emptyString;
+
+        static {
+          emptyString = "";
+        }
+
         public static void main(String[] args) {
-            for (int i = 0; i < 20_000; i++) {
+            // explicitly trigger native compilation
+            Lambda start = () -> 0;
+
+            for (int i = start.value(); i < 20_000; i++) {
                 test(i);
             }
         }
 
         static void test(int i) {
+            i += ((Lambda)(() -> 0)).value();
             if ((i % 1000) == 0) {
                 System.out.println("Hello World!");
             }
@@ -124,7 +137,7 @@ public abstract class CiReplayBase {
 
     public abstract void testAction();
 
-    private static void remove(String item) {
+    public static void remove(String item) {
         File toDelete = new File(item);
         toDelete.delete();
         if (Platform.isWindows()) {
@@ -138,12 +151,16 @@ public abstract class CiReplayBase {
                 .forEach(File::delete);
     }
 
-    public static void cleanup() {
+    public void cleanup() {
         removeFromCurrentDirectoryStartingWith("core");
         removeFromCurrentDirectoryStartingWith("replay");
         removeFromCurrentDirectoryStartingWith(HS_ERR_NAME);
         remove(TEST_CORE_FILE_NAME);
         remove(REPLAY_FILE_NAME);
+    }
+
+    public String getReplayFileName() {
+        return REPLAY_FILE_NAME;
     }
 
     public boolean generateReplay(boolean needCoreDump, String... vmopts) {
@@ -156,14 +173,14 @@ public abstract class CiReplayBase {
             options.add(needCoreDump ? ENABLE_COREDUMP_ON_CRASH : DISABLE_COREDUMP_ON_CRASH);
             if (needCoreDump) {
                 // CiReplayBase$TestMain needs to be quoted because of shell eval
-                options.add("-XX:CompileOnly='" + TestMain.class.getName() + "::test'");
-                options.add("'" + TestMain.class.getName() + "'");
+                options.add("-XX:CompileOnly='" + getTestClass() + "::" + getTestMethod() + "'");
+                options.add("'" + getTestClass() + "'");
                 crashOut = ProcessTools.executeProcess(
                         CoreUtils.addCoreUlimitCommand(
                                 ProcessTools.createTestJvm(options.toArray(new String[0]))));
             } else {
-                options.add("-XX:CompileOnly=" + TestMain.class.getName() + "::test");
-                options.add(TestMain.class.getName());
+                options.add("-XX:CompileOnly=" + getTestClass() + "::" + getTestMethod());
+                options.add(getTestClass());
                 crashOut = ProcessTools.executeProcess(ProcessTools.createTestJvm(options));
             }
             crashOutputString = crashOut.getOutput();
@@ -186,6 +203,14 @@ public abstract class CiReplayBase {
         return true;
     }
 
+    public String getTestClass() {
+        return TestMain.class.getName();
+    }
+
+    public String getTestMethod() {
+        return "test";
+    }
+
     public void commonTests() {
         positiveTest();
         if (Platform.isTieredSupported()) {
@@ -197,6 +222,7 @@ public abstract class CiReplayBase {
         try {
             List<String> allAdditionalOpts = new ArrayList<>();
             allAdditionalOpts.addAll(Arrays.asList(REPLAY_OPTIONS));
+            allAdditionalOpts.add("-XX:ReplayDataFile=" + getReplayFileName());
             allAdditionalOpts.addAll(Arrays.asList(additionalVmOpts));
             OutputAnalyzer oa = ProcessTools.executeProcess(getTestJvmCommandlineWithPrefix(
                     RUN_SHELL_ZERO_LIMIT, allAdditionalOpts.toArray(new String[0])));
@@ -225,13 +251,17 @@ public abstract class CiReplayBase {
     }
 
     public int getCompLevelFromReplay() {
-        try(BufferedReader br = new BufferedReader(new FileReader(REPLAY_FILE_NAME))) {
+        return getCompLevelFromReplay(REPLAY_FILE_NAME);
+    }
+
+    public int getCompLevelFromReplay(String replayFile) {
+        try (BufferedReader br = new BufferedReader(new FileReader(replayFile))) {
             return br.lines()
-                    .filter(s -> s.startsWith("compile "))
-                    .map(s -> s.split("\\s+")[5])
-                    .map(Integer::parseInt)
-                    .findAny()
-                    .get();
+                     .filter(s -> s.startsWith("compile "))
+                     .map(s -> s.split("\\s+")[5])
+                     .map(Integer::parseInt)
+                     .findAny()
+                     .orElseThrow();
         } catch (IOException ioe) {
             throw new Error("Failed to read replay data: " + ioe, ioe);
         }
@@ -263,6 +293,43 @@ public abstract class CiReplayBase {
                 + (Platform.isWindows() ? cmd.replace('\\', '/').replace(";", "\\;").replace("|", "\\|") : cmd)};
         } catch(Throwable t) {
             throw new Error("Can't create process builder: " + t, t);
+        }
+    }
+
+    protected void removeVersionFromReplayFile() {
+        setNewVersionLineInReplayFile(null);
+    }
+
+    protected void setNewVersionInReplayFile(int newVersionNumber) {
+        setNewVersionLineInReplayFile("version " + newVersionNumber);
+    }
+
+    private void setNewVersionLineInReplayFile(String firstLineString) {
+        List<String> newLines = new ArrayList<>();
+        Path replayFilePath = Paths.get(getReplayFileName());
+        try (var br = Files.newBufferedReader(replayFilePath)) {
+            String line;
+            boolean firstLine = true;
+            while ((line = br.readLine()) != null) {
+                if (firstLine) {
+                    firstLine = false;
+                    Asserts.assertTrue(line.startsWith("version"), "version number must exist in a proper replay file");
+                    if (firstLineString != null) {
+                        newLines.add(firstLineString);
+                    }
+                    // Else: Remove first line by skipping it.
+                } else {
+                    newLines.add(line);
+                }
+            }
+            Asserts.assertFalse(firstLine, replayFilePath + " should not be empty");
+        } catch (IOException e) {
+            throw new Error("Failed to read replay data: " + e, e);
+        }
+        try {
+            Files.write(replayFilePath, newLines, StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            throw new Error("Failed to write replay data: " + e, e);
         }
     }
 }

@@ -54,7 +54,8 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -62,7 +63,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vmThread.hpp"
@@ -210,9 +210,10 @@ public:
     assert(worker_id < _max_workers, "sanity");
     PSPromotionManager* promotion_manager = (_tm == RefProcThreadModel::Single) ? PSPromotionManager::vm_thread_promotion_manager() : PSPromotionManager::gc_thread_promotion_manager(worker_id);
     PSIsAliveClosure is_alive;
-    PSKeepAliveClosure keep_alive(promotion_manager);;
+    PSKeepAliveClosure keep_alive(promotion_manager);
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     PSEvacuateFollowersClosure complete_gc(promotion_manager, (_marks_oops_alive && _tm == RefProcThreadModel::Multi) ? &_terminator : nullptr, worker_id);;
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {
@@ -277,7 +278,7 @@ public:
   }
 };
 
-class ScavengeRootsTask : public AbstractGangTask {
+class ScavengeRootsTask : public WorkerTask {
   StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_strong_par_state;
   SequentialSubTasksDone _subtasks;
@@ -292,7 +293,7 @@ public:
                     HeapWord* gen_top,
                     uint active_workers,
                     bool is_empty) :
-      AbstractGangTask("ScavengeRootsTask"),
+      WorkerTask("ScavengeRootsTask"),
       _strong_roots_scope(active_workers),
       _subtasks(ParallelRootType::sentinel),
       _old_gen(old_gen),
@@ -449,8 +450,7 @@ bool PSScavenge::invoke_no_policy() {
     DerivedPointerTable::clear();
 #endif
 
-    reference_processor()->enable_discovery();
-    reference_processor()->setup_policy(false);
+    reference_processor()->start_discovery(false /* always_clear */);
 
     const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
@@ -464,10 +464,10 @@ bool PSScavenge::invoke_no_policy() {
     HeapWord* old_top = old_gen->object_space()->top();
 
     const uint active_workers =
-      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().total_workers(),
+      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().max_workers(),
                                         ParallelScavengeHeap::heap()->workers().active_workers(),
                                         Threads::number_of_non_daemon_threads());
-    ParallelScavengeHeap::heap()->workers().update_active_workers(active_workers);
+    ParallelScavengeHeap::heap()->workers().set_active_workers(active_workers);
 
     PSPromotionManager::pre_scavenge();
 
@@ -486,7 +486,6 @@ bool PSScavenge::invoke_no_policy() {
     {
       GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
-      reference_processor()->setup_policy(false); // not always_clear
       reference_processor()->set_active_mt_degree(active_workers);
       ReferenceProcessorStats stats;
       ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->max_num_queues());
@@ -655,8 +654,6 @@ bool PSScavenge::invoke_no_policy() {
     DerivedPointerTable::update_pointers();
 #endif
 
-    NOT_PRODUCT(reference_processor()->verify_no_references_recorded());
-
     // Re-verify object start arrays
     if (VerifyObjectStartArray &&
         VerifyAfterGC) {
@@ -802,9 +799,8 @@ void PSScavenge::initialize() {
   _ref_processor =
     new ReferenceProcessor(&_span_based_discoverer,
                            ParallelGCThreads,          // mt processing degree
-                           true,                       // mt discovery
                            ParallelGCThreads,          // mt discovery degree
-                           true,                       // atomic_discovery
+                           false,                      // concurrent_discovery
                            NULL);                      // header provides liveness info
 
   // Cache the cardtable

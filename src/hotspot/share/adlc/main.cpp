@@ -229,7 +229,6 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "opto/regalloc.hpp");
   AD.addInclude(AD._CPP_file, "opto/regmask.hpp");
   AD.addInclude(AD._CPP_file, "opto/runtime.hpp");
-  AD.addInclude(AD._CPP_file, "runtime/biasedLocking.hpp");
   AD.addInclude(AD._CPP_file, "runtime/safepointMechanism.hpp");
   AD.addInclude(AD._CPP_file, "runtime/sharedRuntime.hpp");
   AD.addInclude(AD._CPP_file, "runtime/stubRoutines.hpp");

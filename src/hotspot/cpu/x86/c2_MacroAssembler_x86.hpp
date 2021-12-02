@@ -38,7 +38,6 @@ public:
   // See full desription in macroAssembler_x86.cpp.
   void fast_lock(Register obj, Register box, Register tmp,
                  Register scr, Register cx1, Register cx2,
-                 BiasedLockingCounters* counters,
                  RTMLockingCounters* rtm_counters,
                  RTMLockingCounters* stack_rtm_counters,
                  Metadata* method_data,
@@ -142,7 +141,9 @@ public:
   void evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, XMMRegister src2, int comparison, int vector_len);
   void evpblend(BasicType typ, XMMRegister dst, KRegister kmask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
 
-  void load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt);
+  void load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt, bool is_legacy);
+  void load_vector_mask(KRegister dst, XMMRegister src, XMMRegister xtmp, Register tmp, bool novlbwdq, int vlen_enc);
+
   void load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes);
 
   // vector compare
@@ -223,11 +224,12 @@ public:
 
  public:
 #ifdef _LP64
-  void vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp, Register tmp,
-                             KRegister ktmp, int masklen, int vec_enc);
+  void vector_mask_operation_helper(int opc, Register dst, Register tmp, int masklen);
 
-  void vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp, XMMRegister xtmp1,
-                             Register tmp, int masklen, int vec_enc);
+  void vector_mask_operation(int opc, Register dst, KRegister mask, Register tmp, int masklen, int masksize, int vec_enc);
+
+  void vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
+                             Register tmp, int masklen, BasicType bt, int vec_enc);
 #endif
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
@@ -274,4 +276,18 @@ public:
                      Register limit, Register result, Register chr,
                      XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
 
+
+  void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
+                   XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                   bool merge, int vlen_enc, bool is_varshift = false);
+
+  void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
+                   XMMRegister dst, XMMRegister src1, Address src2,
+                   bool merge, int vlen_enc);
+
+  void evmasked_op(int ideal_opc, BasicType eType, KRegister mask, XMMRegister dst,
+                   XMMRegister src1, int imm8, bool merge, int vlen_enc);
+
+  void masked_op(int ideal_opc, int mask_len, KRegister dst,
+                 KRegister src1, KRegister src2);
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

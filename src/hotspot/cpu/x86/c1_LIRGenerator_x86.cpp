@@ -212,7 +212,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 
 
 LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
-  LIR_Opr r = NULL;
+  LIR_Opr r;
   if (type == T_LONG) {
     r = LIR_OprFact::longConst(x);
   } else if (type == T_INT) {
@@ -288,11 +288,6 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
 
   // "lock" stores the address of the monitor stack slot, so this is not an oop
   LIR_Opr lock = new_register(T_INT);
-  // Need a scratch register for biased locking on x86
-  LIR_Opr scratch = LIR_OprFact::illegalOpr;
-  if (UseBiasedLocking) {
-    scratch = new_register(T_INT);
-  }
 
   CodeEmitInfo* info_for_exception = NULL;
   if (x->needs_null_check()) {
@@ -301,7 +296,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   // this CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expect object to be unlocked)
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, syncTempOpr(), scratch,
+  monitor_enter(obj.result(), lock, syncTempOpr(), LIR_OprFact::illegalOpr,
                         x->monitor_no(), info_for_exception, info);
 }
 
@@ -818,9 +813,15 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
 #endif
 
   switch(x->id()) {
-    case vmIntrinsics::_dabs:   __ abs  (calc_input, calc_result, tmp); break;
-    case vmIntrinsics::_dsqrt:  __ sqrt (calc_input, calc_result, LIR_OprFact::illegalOpr); break;
-    default:                    ShouldNotReachHere();
+    case vmIntrinsics::_dabs:
+      __ abs(calc_input, calc_result, tmp);
+      break;
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict:
+      __ sqrt(calc_input, calc_result, LIR_OprFact::illegalOpr);
+      break;
+    default:
+      ShouldNotReachHere();
   }
 
   if (use_fpu) {

@@ -55,6 +55,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -133,8 +134,7 @@ void ClassLoaderData::initialize_name(Handle class_loader) {
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder) :
   _metaspace(NULL),
-  _metaspace_lock(new Mutex(Mutex::leaf+1, "Metaspace allocation lock", true,
-                            Mutex::_safepoint_check_never)),
+  _metaspace_lock(new Mutex(Mutex::nosafepoint-2, "MetaspaceAllocation_lock")),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
   _modified_oops(true),
   // A non-strong hidden class loader data doesn't have anything to keep
@@ -302,9 +302,7 @@ bool ClassLoaderData::try_claim(int claim) {
 // it is being defined, therefore _keep_alive is not volatile or atomic.
 void ClassLoaderData::inc_keep_alive() {
   if (has_class_mirror_holder()) {
-    if (!Arguments::is_dumping_archive()) {
-      assert(_keep_alive > 0, "Invalid keep alive increment count");
-    }
+    assert(_keep_alive > 0, "Invalid keep alive increment count");
     _keep_alive++;
   }
 }
@@ -355,6 +353,9 @@ void ClassLoaderData::methods_do(void f(Method*)) {
 }
 
 void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
+  // To call this, one must have the MultiArray_lock held, but the _klasses list still has lock free reads.
+  assert_locked_or_safepoint(MultiArray_lock);
+
   // Lock-free access requires load_acquire
   for (Klass* k = Atomic::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
     // Do not filter ArrayKlass oops here...
@@ -550,6 +551,21 @@ void ClassLoaderData::unload() {
   // after erroneous classes are released.
   classes_do(InstanceKlass::unload_class);
 
+  // Method::clear_jmethod_ids only sets the jmethod_ids to NULL without
+  // releasing the memory for related JNIMethodBlocks and JNIMethodBlockNodes.
+  // This is done intentionally because native code (e.g. JVMTI agent) holding
+  // jmethod_ids may access them after the associated classes and class loader
+  // are unloaded. The Java Native Interface Specification says "method ID
+  // does not prevent the VM from unloading the class from which the ID has
+  // been derived. After the class is unloaded, the method or field ID becomes
+  // invalid". In real world usages, the native code may rely on jmethod_ids
+  // being NULL after class unloading. Hence, it is unsafe to free the memory
+  // from the VM side without knowing when native code is going to stop using
+  // them.
+  if (_jmethod_ids != NULL) {
+    Method::clear_jmethod_ids(this);
+  }
+
   // Clean up global class iterator for compiler
   ClassLoaderDataGraph::adjust_saved_class(this);
 }
@@ -694,20 +710,7 @@ ClassLoaderData::~ClassLoaderData() {
     _metaspace = NULL;
     delete m;
   }
-  // Method::clear_jmethod_ids only sets the jmethod_ids to NULL without
-  // releasing the memory for related JNIMethodBlocks and JNIMethodBlockNodes.
-  // This is done intentionally because native code (e.g. JVMTI agent) holding
-  // jmethod_ids may access them after the associated classes and class loader
-  // are unloaded. The Java Native Interface Specification says "method ID
-  // does not prevent the VM from unloading the class from which the ID has
-  // been derived. After the class is unloaded, the method or field ID becomes
-  // invalid". In real world usages, the native code may rely on jmethod_ids
-  // being NULL after class unloading. Hence, it is unsafe to free the memory
-  // from the VM side without knowing when native code is going to stop using
-  // them.
-  if (_jmethod_ids != NULL) {
-    Method::clear_jmethod_ids(this);
-  }
+
   // Delete lock
   delete _metaspace_lock;
 
@@ -804,6 +807,7 @@ void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
   if (dest.resolve() != NULL) {
     return;
   } else {
+    record_modified_oops();
     dest = _handles.add(h());
   }
 }
@@ -884,6 +888,8 @@ void ClassLoaderData::free_deallocate_list_C_heap_structures() {
       // Remove the class so unloading events aren't triggered for
       // this class (scratch or error class) in do_unloading().
       remove_class(ik);
+      // But still have to remove it from the dumptime_table.
+      SystemDictionaryShared::handle_class_unloading(ik);
     }
   }
 }
@@ -961,11 +967,13 @@ void ClassLoaderData::print_on(outputStream* out) const {
   out->print_cr(" - keep alive          %d", _keep_alive);
   out->print   (" - claim               ");
   switch(_claim) {
-    case _claim_none:       out->print_cr("none"); break;
-    case _claim_finalizable:out->print_cr("finalizable"); break;
-    case _claim_strong:     out->print_cr("strong"); break;
-    case _claim_other:      out->print_cr("other"); break;
-    default:                ShouldNotReachHere();
+    case _claim_none:                       out->print_cr("none"); break;
+    case _claim_finalizable:                out->print_cr("finalizable"); break;
+    case _claim_strong:                     out->print_cr("strong"); break;
+    case _claim_other:                      out->print_cr("other"); break;
+    case _claim_other | _claim_finalizable: out->print_cr("other and finalizable"); break;
+    case _claim_other | _claim_strong:      out->print_cr("other and strong"); break;
+    default:                                ShouldNotReachHere();
   }
   out->print_cr(" - handles             %d", _handles.count());
   out->print_cr(" - dependency count    %d", _dependency_count);

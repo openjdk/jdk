@@ -236,8 +236,8 @@ final class Double256Vector extends DoubleVector {
 
     @ForceInline
     final @Override
-    double rOp(double v, FBinOp f) {
-        return super.rOpTemplate(v, f);  // specialize
+    double rOp(double v, VectorMask<Double> m, FBinOp f) {
+        return super.rOpTemplate(v, m, f);  // specialize
     }
 
     @Override
@@ -275,8 +275,20 @@ final class Double256Vector extends DoubleVector {
 
     @Override
     @ForceInline
+    public Double256Vector lanewise(Unary op, VectorMask<Double> m) {
+        return (Double256Vector) super.lanewiseTemplate(op, Double256Mask.class, (Double256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Double256Vector lanewise(Binary op, Vector<Double> v) {
         return (Double256Vector) super.lanewiseTemplate(op, v);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Double256Vector lanewise(Binary op, Vector<Double> v, VectorMask<Double> m) {
+        return (Double256Vector) super.lanewiseTemplate(op, Double256Mask.class, v, (Double256Mask) m);  // specialize
     }
 
 
@@ -285,8 +297,16 @@ final class Double256Vector extends DoubleVector {
     @ForceInline
     public final
     Double256Vector
-    lanewise(VectorOperators.Ternary op, Vector<Double> v1, Vector<Double> v2) {
+    lanewise(Ternary op, Vector<Double> v1, Vector<Double> v2) {
         return (Double256Vector) super.lanewiseTemplate(op, v1, v2);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final
+    Double256Vector
+    lanewise(Ternary op, Vector<Double> v1, Vector<Double> v2, VectorMask<Double> m) {
+        return (Double256Vector) super.lanewiseTemplate(op, Double256Mask.class, v1, v2, (Double256Mask) m);  // specialize
     }
 
     @Override
@@ -308,7 +328,7 @@ final class Double256Vector extends DoubleVector {
     @ForceInline
     public final double reduceLanes(VectorOperators.Associative op,
                                     VectorMask<Double> m) {
-        return super.reduceLanesTemplate(op, m);  // specialized
+        return super.reduceLanesTemplate(op, Double256Mask.class, (Double256Mask) m);  // specialized
     }
 
     @Override
@@ -321,7 +341,7 @@ final class Double256Vector extends DoubleVector {
     @ForceInline
     public final long reduceLanesToLong(VectorOperators.Associative op,
                                         VectorMask<Double> m) {
-        return (long) super.reduceLanesTemplate(op, m);  // specialized
+        return (long) super.reduceLanesTemplate(op, Double256Mask.class, (Double256Mask) m);  // specialized
     }
 
     @ForceInline
@@ -356,6 +376,13 @@ final class Double256Vector extends DoubleVector {
     public final Double256Mask compare(Comparison op, long s) {
         return super.compareTemplate(Double256Mask.class, op, s);  // specialize
     }
+
+    @Override
+    @ForceInline
+    public final Double256Mask compare(Comparison op, Vector<Double> v, VectorMask<Double> m) {
+        return super.compareTemplate(Double256Mask.class, op, v, (Double256Mask) m);
+    }
+
 
     @Override
     @ForceInline
@@ -413,6 +440,7 @@ final class Double256Vector extends DoubleVector {
                                   VectorMask<Double> m) {
         return (Double256Vector)
             super.rearrangeTemplate(Double256Shuffle.class,
+                                    Double256Mask.class,
                                     (Double256Shuffle) shuffle,
                                     (Double256Mask) m);  // specialize
     }
@@ -572,18 +600,10 @@ final class Double256Vector extends DoubleVector {
         @ForceInline
         private final <E>
         VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
-            assert(length() == dsp.laneCount());
+            if (length() != dsp.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            return switch (dsp.laneType.switchKey) {
-                     case LaneType.SK_BYTE   -> new Byte256Vector.Byte256Mask(maskArray).check(dsp);
-                     case LaneType.SK_SHORT  -> new Short256Vector.Short256Mask(maskArray).check(dsp);
-                     case LaneType.SK_INT    -> new Int256Vector.Int256Mask(maskArray).check(dsp);
-                     case LaneType.SK_LONG   -> new Long256Vector.Long256Mask(maskArray).check(dsp);
-                     case LaneType.SK_FLOAT  -> new Float256Vector.Float256Mask(maskArray).check(dsp);
-                     case LaneType.SK_DOUBLE -> new Double256Vector.Double256Mask(maskArray).check(dsp);
-                     default                 -> throw new AssertionError(dsp);
-            };
+            return  dsp.maskFactory(maskArray).check(dsp);
         }
 
         @Override
@@ -592,16 +612,12 @@ final class Double256Vector extends DoubleVector {
             AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
-            if (VSIZE == species.vectorBitSize()) {
-                Class<?> dtype = species.elementType();
-                Class<?> dmtype = species.maskType();
-                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    this.getClass(), ETYPE, VLENGTH,
-                    dmtype, dtype, VLENGTH,
-                    this, species,
-                    Double256Mask::defaultMaskCast);
-            }
-            return this.defaultMaskCast(species);
+
+            return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                this.getClass(), ETYPE, VLENGTH,
+                species.maskType(), species.elementType(), VLENGTH,
+                this, species,
+                (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
 
         @Override
@@ -627,9 +643,9 @@ final class Double256Vector extends DoubleVector {
         public Double256Mask and(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double256Mask m = (Double256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Double256Mask.class, long.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a & b));
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Double256Mask.class, null, long.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
 
         @Override
@@ -637,9 +653,9 @@ final class Double256Vector extends DoubleVector {
         public Double256Mask or(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double256Mask m = (Double256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Double256Mask.class, long.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a | b));
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Double256Mask.class, null, long.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
         @ForceInline
@@ -647,9 +663,9 @@ final class Double256Vector extends DoubleVector {
         Double256Mask xor(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double256Mask m = (Double256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Double256Mask.class, long.class, VLENGTH,
-                                          this, m,
-                                          (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Double256Mask.class, null, long.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
 
         // Mask Query operations
@@ -657,22 +673,32 @@ final class Double256Vector extends DoubleVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Double256Mask.class, long.class, VLENGTH, this,
-                                                      (m) -> trueCountHelper(((Double256Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Double256Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Double256Mask.class, long.class, VLENGTH, this,
-                                                      (m) -> firstTrueHelper(((Double256Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Double256Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Double256Mask.class, long.class, VLENGTH, this,
-                                                      (m) -> lastTrueHelper(((Double256Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Double256Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(m.getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public long toLong() {
+            if (length() > Long.SIZE) {
+                throw new UnsupportedOperationException("too many lanes for one long");
+            }
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Double256Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> toLongHelper(m.getBits()));
         }
 
         // Reductions
@@ -754,24 +780,7 @@ final class Double256Vector extends DoubleVector {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte256Vector.Byte256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short256Vector.Short256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new Int256Vector.Int256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long256Vector.Long256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float256Vector.Float256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double256Vector.Double256Shuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
@@ -800,6 +809,20 @@ final class Double256Vector extends DoubleVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m) {
+        return super.fromArray0Template(Double256Mask.class, a, offset, (Double256Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    DoubleVector fromArray0(double[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Double> m) {
+        return super.fromArray0Template(Double256Mask.class, a, offset, indexMap, mapOffset, (Double256Mask) m);
+    }
+
 
 
     @ForceInline
@@ -812,8 +835,22 @@ final class Double256Vector extends DoubleVector {
     @ForceInline
     @Override
     final
+    DoubleVector fromByteArray0(byte[] a, int offset, VectorMask<Double> m) {
+        return super.fromByteArray0Template(Double256Mask.class, a, offset, (Double256Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
     DoubleVector fromByteBuffer0(ByteBuffer bb, int offset) {
         return super.fromByteBuffer0Template(bb, offset);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m) {
+        return super.fromByteBuffer0Template(Double256Mask.class, bb, offset, (Double256Mask) m);  // specialize
     }
 
     @ForceInline
@@ -826,9 +863,39 @@ final class Double256Vector extends DoubleVector {
     @ForceInline
     @Override
     final
+    void intoArray0(double[] a, int offset, VectorMask<Double> m) {
+        super.intoArray0Template(Double256Mask.class, a, offset, (Double256Mask) m);
+    }
+
+    @ForceInline
+    @Override
+    final
+    void intoArray0(double[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Double> m) {
+        super.intoArray0Template(Double256Mask.class, a, offset, indexMap, mapOffset, (Double256Mask) m);
+    }
+
+
+    @ForceInline
+    @Override
+    final
     void intoByteArray0(byte[] a, int offset) {
         super.intoByteArray0Template(a, offset);  // specialize
     }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteArray0(byte[] a, int offset, VectorMask<Double> m) {
+        super.intoByteArray0Template(Double256Mask.class, a, offset, (Double256Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m) {
+        super.intoByteBuffer0Template(Double256Mask.class, bb, offset, (Double256Mask) m);
+    }
+
 
     // End of specialized low-level memory operations.
 

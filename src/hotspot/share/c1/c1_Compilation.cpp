@@ -399,6 +399,11 @@ int Compilation::compile_java_method() {
   }
   CHECK_BAILOUT_(no_frame_size);
 
+  // Dump compilation data to replay it.
+  if (_directive->DumpReplayOption) {
+    env()->dump_replay_data(env()->compile_id());
+  }
+
   {
     PhaseTraceTime timeit(_t_codeemit);
     return emit_code_body();
@@ -598,6 +603,9 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 }
 
 Compilation::~Compilation() {
+  // simulate crash during compilation
+  assert(CICrashAt < 0 || (uintx)_env->compile_id() != (uintx)CICrashAt, "just as planned");
+
   _env->set_compiler_data(NULL);
 }
 

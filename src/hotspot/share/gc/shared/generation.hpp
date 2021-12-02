@@ -118,18 +118,13 @@ class Generation: public CHeapObj<mtGC> {
   };
 
   // allocate and initialize ("weak") refs processing support
-  virtual void ref_processor_init();
+  void ref_processor_init();
   void set_ref_processor(ReferenceProcessor* rp) {
     assert(_ref_processor == NULL, "clobbering existing _ref_processor");
     _ref_processor = rp;
   }
 
   virtual Generation::Name kind() { return Generation::Other; }
-
-  // This properly belongs in the collector, but for now this
-  // will do.
-  virtual bool refs_discovery_is_atomic() const { return true;  }
-  virtual bool refs_discovery_is_mt()     const { return false; }
 
   // Space inquiries (results in bytes)
   size_t initial_size();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4947618
+ * @bug 4947618 8268349
  * @summary Recursion problem in security manager and policy code
  *
  * @run main/othervm/policy=Recursion.policy -Djava.security.debug=domain RecursionDebug
@@ -87,7 +87,5 @@ public class RecursionDebug {
             throw new Exception
                 ("Test with custom non-bootclass SecurityManager failed");
         }
-
-        System.setSecurityManager(null);
     }
 }

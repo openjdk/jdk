@@ -527,7 +527,7 @@ public class Proxy implements java.io.Serializable {
             if (proxyPkg == null) {
                 // all proxy interfaces are public and exported
                 if (!m.isNamed())
-                    throw new InternalError("ununamed module: " + m);
+                    throw new InternalError("unnamed module: " + m);
                 proxyPkg = nonExported ? PROXY_PACKAGE_PREFIX + "." + m.getName()
                                        : m.getName();
             } else if (proxyPkg.isEmpty() && m.isNamed()) {
@@ -708,6 +708,10 @@ public class Proxy implements java.io.Serializable {
 
                 if (intf.isHidden()) {
                     throw new IllegalArgumentException(intf.getName() + " is a hidden interface");
+                }
+
+                if (intf.isSealed()) {
+                    throw new IllegalArgumentException(intf.getName() + " is a sealed interface");
                 }
 
                 /*
@@ -930,7 +934,8 @@ public class Proxy implements java.io.Serializable {
      * if any of the following restrictions is violated:</a>
      * <ul>
      * <li>All of {@code Class} objects in the given {@code interfaces} array
-     * must represent {@linkplain Class#isHidden() non-hidden} interfaces,
+     * must represent {@linkplain Class#isHidden() non-hidden} and
+     * {@linkplain Class#isSealed() non-sealed} interfaces,
      * not classes or primitive types.
      *
      * <li>No two elements in the {@code interfaces} array may

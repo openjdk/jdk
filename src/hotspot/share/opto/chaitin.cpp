@@ -77,6 +77,7 @@ void LRG::dump() const {
   if( _is_oop ) tty->print("Oop ");
   if( _is_float ) tty->print("Float ");
   if( _is_vector ) tty->print("Vector ");
+  if( _is_predicate ) tty->print("Predicate ");
   if( _is_scalable ) tty->print("Scalable ");
   if( _was_spilled1 ) tty->print("Spilled ");
   if( _was_spilled2 ) tty->print("Spilled2 ");
@@ -210,10 +211,10 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
 #endif
   , _lrg_map(Thread::current()->resource_area(), unique)
   , _scheduling_info_generated(scheduling_info_generated)
-  , _sched_int_pressure(0, INTPRESSURE)
-  , _sched_float_pressure(0, FLOATPRESSURE)
-  , _scratch_int_pressure(0, INTPRESSURE)
-  , _scratch_float_pressure(0, FLOATPRESSURE)
+  , _sched_int_pressure(0, Matcher::int_pressure_limit())
+  , _sched_float_pressure(0, Matcher::float_pressure_limit())
+  , _scratch_int_pressure(0, Matcher::int_pressure_limit())
+  , _scratch_float_pressure(0, Matcher::float_pressure_limit())
 {
   Compile::TracePhase tp("ctorChaitin", &timers[_t_ctorChaitin]);
 
@@ -638,7 +639,8 @@ void PhaseChaitin::Register_Allocate() {
       LRG &lrg = lrgs(_lrg_map.live_range_id(i));
       if (!lrg.alive()) {
         set_bad(i);
-      } else if (lrg.num_regs() == 1) {
+      } else if ((lrg.num_regs() == 1 && !lrg.is_scalable()) ||
+                 (lrg.is_scalable() && lrg.scalable_reg_slots() == 1)) {
         set1(i, lrg.reg());
       } else {                  // Must be a register-set
         if (!lrg._fat_proj) {   // Must be aligned adjacent register set
@@ -653,15 +655,19 @@ void PhaseChaitin::Register_Allocate() {
             // num_regs, which reflects the physical length of scalable registers.
             num_regs = lrg.scalable_reg_slots();
           }
-          OptoReg::Name lo = OptoReg::add(hi, (1-num_regs)); // Find lo
-          // We have to use pair [lo,lo+1] even for wide vectors because
-          // the rest of code generation works only with pairs. It is safe
-          // since for registers encoding only 'lo' is used.
-          // Second reg from pair is used in ScheduleAndBundle on SPARC where
-          // vector max size is 8 which corresponds to registers pair.
-          // It is also used in BuildOopMaps but oop operations are not
-          // vectorized.
-          set2(i, lo);
+          if (num_regs == 1) {
+            set1(i, hi);
+          } else {
+            OptoReg::Name lo = OptoReg::add(hi, (1 - num_regs)); // Find lo
+            // We have to use pair [lo,lo+1] even for wide vectors/vmasks because
+            // the rest of code generation works only with pairs. It is safe
+            // since for registers encoding only 'lo' is used.
+            // Second reg from pair is used in ScheduleAndBundle with vector max
+            // size 8 which corresponds to registers pair.
+            // It is also used in BuildOopMaps but oop operations are not
+            // vectorized.
+            set2(i, lo);
+          }
         } else {                // Misaligned; extract 2 bits
           OptoReg::Name hi = lrg.reg(); // Get hi register
           lrg.Remove(hi);       // Yank from mask
@@ -824,8 +830,22 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
             lrg.set_scalable_reg_slots(Matcher::scalable_vector_reg_size(T_FLOAT));
           }
         }
+
+        if (ireg == Op_RegVectMask) {
+          assert(Matcher::has_predicated_vectors(), "predicated vector should be supported");
+          lrg._is_predicate = 1;
+          if (Matcher::supports_scalable_vector()) {
+            lrg._is_scalable = 1;
+            // For scalable predicate, when it is allocated in physical register,
+            // num_regs is RegMask::SlotsPerRegVectMask for reg mask,
+            // which may not be the actual physical register size.
+            // If it is allocated in stack, we need to get the actual
+            // physical length of scalable predicate register.
+            lrg.set_scalable_reg_slots(Matcher::scalable_predicate_reg_slots());
+          }
+        }
         assert(n_type->isa_vect() == NULL || lrg._is_vector ||
-               ireg == Op_RegD || ireg == Op_RegL  || ireg == Op_RegVectMask,
+               ireg == Op_RegD || ireg == Op_RegL || ireg == Op_RegVectMask,
                "vector must be in vector registers");
 
         // Check for bound register masks
@@ -919,6 +939,8 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           }
           break;
         case Op_RegVectMask:
+          assert(Matcher::has_predicated_vectors(), "sanity");
+          assert(RegMask::num_registers(Op_RegVectMask) == RegMask::SlotsPerRegVectMask, "sanity");
           lrg.set_num_regs(RegMask::SlotsPerRegVectMask);
           lrg.set_reg_pressure(1);
           break;
@@ -1371,6 +1393,11 @@ static OptoReg::Name find_first_set(LRG &lrg, RegMask mask, int chunk) {
         }
       }
       return OptoReg::Bad; // will cause chunk change, and retry next chunk
+    } else if (lrg._is_predicate) {
+      assert(num_regs == RegMask::SlotsPerRegVectMask, "scalable predicate register");
+      num_regs = lrg.scalable_reg_slots();
+      mask.clear_to_sets(num_regs);
+      return mask.find_first_set(lrg, num_regs);
     }
   }
 
@@ -1417,7 +1444,7 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
   }
 
   // If no bias info exists, just go with the register selection ordering
-  if (lrg._is_vector || lrg.num_regs() == 2) {
+  if (lrg._is_vector || lrg.num_regs() == 2 || lrg.is_scalable()) {
     // Find an aligned set
     return OptoReg::add(find_first_set(lrg, lrg.mask(), chunk), chunk);
   }

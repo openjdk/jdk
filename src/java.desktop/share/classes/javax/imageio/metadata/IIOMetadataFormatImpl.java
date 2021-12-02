@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package javax.imageio.metadata;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -92,7 +90,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
     // Element name (String) -> Element
     private HashMap<String, Element> elementMap = new HashMap<>();
 
-    class Element {
+    static class Element {
         String elementName;
 
         int childPolicy;
@@ -113,7 +111,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         ObjectValue<?> objectValue;
     }
 
-    class Attribute {
+    static class Attribute {
         String attrName;
 
         int valueType = VALUE_ARBITRARY;
@@ -133,7 +131,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         int listMaxLength;
     }
 
-    class ObjectValue<T> {
+    static class ObjectValue<T> {
         int valueType = VALUE_NONE;
         // ? extends T So that ObjectValue<Object> can take Class<?>
         Class<? extends T> classType = null;

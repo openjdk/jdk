@@ -47,7 +47,7 @@ import java.util.function.LongBinaryOperator;
  * for classes supporting dynamic striping on 64bit values. The class
  * extends Number so that concrete subclasses must publicly do so.
  */
-@SuppressWarnings({"removal","serial"})
+@SuppressWarnings("serial")
 abstract class Striped64 extends Number {
     /*
      * This class maintains a lazily-initialized table of atomically
@@ -382,12 +382,13 @@ abstract class Striped64 extends Number {
     private static final VarHandle THREAD_PROBE;
     static {
         try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            BASE = l.findVarHandle(Striped64.class,
+            MethodHandles.Lookup l1 = MethodHandles.lookup();
+            BASE = l1.findVarHandle(Striped64.class,
                     "base", long.class);
-            CELLSBUSY = l.findVarHandle(Striped64.class,
+            CELLSBUSY = l1.findVarHandle(Striped64.class,
                     "cellsBusy", int.class);
-            l = java.security.AccessController.doPrivileged(
+            @SuppressWarnings("removal")
+            MethodHandles.Lookup l2 = java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<>() {
                         public MethodHandles.Lookup run() {
                             try {
@@ -396,7 +397,7 @@ abstract class Striped64 extends Number {
                                 throw new ExceptionInInitializerError(e);
                             }
                         }});
-            THREAD_PROBE = l.findVarHandle(Thread.class,
+            THREAD_PROBE = l2.findVarHandle(Thread.class,
                     "threadLocalRandomProbe", int.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);

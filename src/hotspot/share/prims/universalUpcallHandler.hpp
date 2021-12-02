@@ -25,6 +25,7 @@
 #define SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP
 
 #include "asm/codeBuffer.hpp"
+#include "code/codeBlob.hpp"
 #include "prims/foreign_globals.hpp"
 
 class JavaThread;
@@ -47,8 +48,11 @@ private:
   static void attach_thread_and_do_upcall(jobject rec, address buff);
 
   static void handle_uncaught_exception(oop exception);
-  static Thread* maybe_attach_and_get_thread(bool* should_detach);
-  static void detach_thread(Thread* thread);
+  static JavaThread* maybe_attach_and_get_thread(bool* should_detach);
+  static void detach_current_thread();
+
+  static JavaThread* on_entry(OptimizedEntryBlob::FrameData* context);
+  static void on_exit(OptimizedEntryBlob::FrameData* context);
 public:
   static address generate_optimized_upcall_stub(jobject mh, Method* entry, jobject jabi, jobject jconv);
   static address generate_upcall_stub(jobject rec, jobject abi, jobject buffer_layout);

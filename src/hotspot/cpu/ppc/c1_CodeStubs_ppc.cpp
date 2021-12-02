@@ -71,7 +71,7 @@ RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
 }
 
 RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
-  : _index(index), _array(NULL), _throw_index_out_of_bounds_exception(true) {
+  : _index(index), _array(), _throw_index_out_of_bounds_exception(true) {
   assert(info != NULL, "must have info");
   _info = new CodeEmitInfo(info);
 }
@@ -491,12 +491,14 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   ce->verify_oop_map(info());
 
 #ifndef PRODUCT
-  const address counter = (address)&Runtime1::_arraycopy_slowcase_cnt;
-  const Register tmp = R3, tmp2 = R4;
-  int simm16_offs = __ load_const_optimized(tmp, counter, tmp2, true);
-  __ lwz(tmp2, simm16_offs, tmp);
-  __ addi(tmp2, tmp2, 1);
-  __ stw(tmp2, simm16_offs, tmp);
+  if (PrintC1Statistics) {
+    const address counter = (address)&Runtime1::_arraycopy_slowcase_cnt;
+    const Register tmp = R3, tmp2 = R4;
+    int simm16_offs = __ load_const_optimized(tmp, counter, tmp2, true);
+    __ lwz(tmp2, simm16_offs, tmp);
+    __ addi(tmp2, tmp2, 1);
+    __ stw(tmp2, simm16_offs, tmp);
+  }
 #endif
 
   __ b(_continuation);

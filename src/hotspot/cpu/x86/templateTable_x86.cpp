@@ -4023,15 +4023,9 @@ void TemplateTable::_new() {
 
     // initialize object header only.
     __ bind(initialize_header);
-    if (UseBiasedLocking) {
-      __ pop(rcx);   // get saved klass back in the register.
-      __ movptr(rbx, Address(rcx, Klass::prototype_header_offset()));
-      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes ()), rbx);
-    } else {
-      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes ()),
-                (intptr_t)markWord::prototype().value()); // header
-      __ pop(rcx);   // get saved klass back in the register.
-    }
+    __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),
+              (intptr_t)markWord::prototype().value()); // header
+    __ pop(rcx);   // get saved klass back in the register.
 #ifdef _LP64
     __ xorl(rsi, rsi); // use zero reg to clear memory (shorter code)
     __ store_klass_gap(rax, rsi);  // zero klass gap for compressed oops
@@ -4044,7 +4038,7 @@ void TemplateTable::_new() {
       // Trigger dtrace event for fastpath
       __ push(atos);
       __ call_VM_leaf(
-           CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc), rax);
+           CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), rax);
       __ pop(atos);
     }
 

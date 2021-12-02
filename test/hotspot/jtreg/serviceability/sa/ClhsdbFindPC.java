@@ -32,7 +32,7 @@ import jdk.test.lib.util.CoreUtils;
 import jtreg.SkippedException;
 
 /**
- * @test
+ * @test id=xcomp-process
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on live process
  * @requires vm.hasSA
@@ -43,7 +43,7 @@ import jtreg.SkippedException;
  */
 
 /**
- * @test
+ * @test id=xcomp-core
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on core file
  * @requires vm.compMode != "Xcomp"
@@ -54,7 +54,7 @@ import jtreg.SkippedException;
  */
 
 /**
- * @test
+ * @test id=no-xcomp-process
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on live process
  * @requires vm.hasSA
@@ -65,7 +65,7 @@ import jtreg.SkippedException;
  */
 
 /**
- * @test
+ * @test id=no-xcomp-core
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on core file
  * @requires vm.compMode != "Xcomp"

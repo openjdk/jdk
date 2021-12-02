@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.imageio.plugins.tiff;
 
 import java.awt.Point;
@@ -34,8 +35,8 @@ import java.awt.image.ComponentSampleModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.awt.image.IndexColorModel;
-import java.awt.image.RenderedImage;
 import java.awt.image.Raster;
+import java.awt.image.RenderedImage;
 import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.EOFException;
@@ -44,27 +45,30 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import javax.imageio.IIOException;
 import javax.imageio.IIOImage;
+import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
-import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataFormatImpl;
-import javax.imageio.spi.ImageWriterSpi;
-import javax.imageio.stream.ImageOutputStream;
-import org.w3c.dom.Node;
-import com.sun.imageio.plugins.common.ImageUtil;
 import javax.imageio.plugins.tiff.BaselineTIFFTagSet;
 import javax.imageio.plugins.tiff.ExifParentTIFFTagSet;
 import javax.imageio.plugins.tiff.ExifTIFFTagSet;
 import javax.imageio.plugins.tiff.TIFFField;
 import javax.imageio.plugins.tiff.TIFFTag;
 import javax.imageio.plugins.tiff.TIFFTagSet;
+import javax.imageio.spi.ImageWriterSpi;
+import javax.imageio.stream.ImageOutputStream;
+
+import com.sun.imageio.plugins.common.ImageUtil;
 import com.sun.imageio.plugins.common.SimpleRenderedImage;
 import com.sun.imageio.plugins.common.SingleTileRenderedImage;
-import java.nio.charset.StandardCharsets;
+import org.w3c.dom.Node;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class TIFFImageWriter extends ImageWriter {
 
@@ -1512,7 +1516,7 @@ public class TIFFImageWriter extends ImageWriter {
                         (exifTags.getTag(ExifTIFFTagSet.TAG_EXIF_VERSION),
                          TIFFTag.TIFF_UNDEFINED,
                          4,
-                         ExifTIFFTagSet.EXIF_VERSION_2_2.getBytes(StandardCharsets.US_ASCII));
+                         ExifTIFFTagSet.EXIF_VERSION_2_2.getBytes(US_ASCII));
                     exifIFD.addTIFFField(f);
                 }
 

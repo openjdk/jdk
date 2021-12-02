@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,7 @@ public class LocationImpl extends MirrorImpl implements Location {
     }
 
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof Location)) {
-            Location other = (Location)obj;
+        if (obj instanceof Location other) {
             return (method().equals(other.method())) &&
                    (codeIndex() == other.codeIndex()) &&
                    super.equals(obj);

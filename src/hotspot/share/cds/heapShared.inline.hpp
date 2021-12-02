@@ -26,20 +26,28 @@
 #define SHARE_CDS_HEAPSHARED_INLINE_HPP
 
 #include "cds/heapShared.hpp"
-
-#include "gc/shared/collectedHeap.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "utilities/align.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
 
-bool HeapShared::is_archived_object(oop p) {
-  return Universe::heap()->is_archived_object(p);
-}
-
 inline oop HeapShared::decode_from_archive(narrowOop v) {
   assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
-  oop result = cast_to_oop((uintptr_t)_narrow_oop_base + ((uintptr_t)v << _narrow_oop_shift));
+  uintptr_t p = ((uintptr_t)_narrow_oop_base) + ((uintptr_t)v << _narrow_oop_shift);
+  if (p >= _dumptime_base_0) {
+    assert(p < _dumptime_top, "must be");
+    if (p >= _dumptime_base_3) {
+      p += _runtime_offset_3;
+    } else if (p >= _dumptime_base_2) {
+      p += _runtime_offset_2;
+    } else if (p >= _dumptime_base_1) {
+      p += _runtime_offset_1;
+    } else {
+      p += _runtime_offset_0;
+    }
+  }
+
+  oop result = cast_to_oop((uintptr_t)p);
   assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
   return result;
 }

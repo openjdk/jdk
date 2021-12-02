@@ -47,12 +47,10 @@ import java.awt.event.FocusEvent;
 import java.awt.event.WindowEvent;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.WindowPeer;
-import java.io.UnsupportedEncodingException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,6 +64,8 @@ import sun.awt.X11GraphicsDevice;
 import sun.awt.X11GraphicsEnvironment;
 import sun.java2d.pipe.Region;
 import sun.util.logging.PlatformLogger;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 class XWindowPeer extends XPanelPeer implements WindowPeer,
                                                 DisplayChangedListener {
@@ -305,8 +305,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (iconImages.size() != 0) {
             //read icon images from target
             winAttr.iconsInherited = false;
-            for (Iterator<Image> i = iconImages.iterator(); i.hasNext(); ) {
-                Image image = i.next();
+            for (Image image : iconImages) {
                 if (image == null) {
                     if (log.isLoggable(PlatformLogger.Level.FINEST)) {
                         log.finest("XWindowPeer.updateIconImages: Skipping the image passed into Java because it's null.");
@@ -402,8 +401,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     static void dumpIcons(java.util.List<IconInfo> icons) {
         if (iconLog.isLoggable(PlatformLogger.Level.FINEST)) {
             iconLog.finest(">>> Sizes of icon images:");
-            for (Iterator<IconInfo> i = icons.iterator(); i.hasNext(); ) {
-                iconLog.finest("    {0}", i.next());
+            for (IconInfo icon : icons) {
+                iconLog.finest("    {0}", icon);
             }
         }
     }
@@ -1358,12 +1357,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
         messageBuilder.append('"');
         messageBuilder.append('\0');
-        final byte[] message;
-        try {
-            message = messageBuilder.toString().getBytes("UTF-8");
-        } catch (UnsupportedEncodingException cannotHappen) {
-            return;
-        }
+        final byte[] message = messageBuilder.toString().getBytes(UTF_8);
 
         XClientMessageEvent req = null;
 
@@ -1544,7 +1538,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      */
     static Vector<XWindowPeer> collectJavaToplevels() {
         Vector<XWindowPeer> javaToplevels = new Vector<XWindowPeer>();
-        Vector<Long> v = new Vector<Long>();
+        ArrayList<Long> v = new ArrayList<Long>();
         X11GraphicsEnvironment ge =
             (X11GraphicsEnvironment)GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();

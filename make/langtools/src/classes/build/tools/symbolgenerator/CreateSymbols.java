@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,7 @@ import com.sun.tools.classfile.InnerClasses_attribute;
 import com.sun.tools.classfile.InnerClasses_attribute.Info;
 import com.sun.tools.classfile.Method;
 import com.sun.tools.classfile.MethodParameters_attribute;
+import com.sun.tools.classfile.ModuleMainClass_attribute;
 import com.sun.tools.classfile.ModuleResolution_attribute;
 import com.sun.tools.classfile.ModuleTarget_attribute;
 import com.sun.tools.classfile.Module_attribute;
@@ -229,6 +230,7 @@ public class CreateSymbols {
                                                                     : null,
                                      Paths.get(ctDescriptionFile));
 
+        stripNonExistentAnnotations(data);
         splitHeaders(data.classes);
 
         Map<String, Map<Character, String>> package2Version2Module = new HashMap<>();
@@ -299,6 +301,50 @@ public class CreateSymbols {
                 }
             }
         }
+    }
+
+    private static final String PREVIEW_FEATURE_ANNOTATION_OLD =
+            "Ljdk/internal/PreviewFeature;";
+    private static final String PREVIEW_FEATURE_ANNOTATION_NEW =
+            "Ljdk/internal/javac/PreviewFeature;";
+    private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
+            "Ljdk/internal/PreviewFeature+Annotation;";
+    private static final String VALUE_BASED_ANNOTATION =
+            "Ljdk/internal/ValueBased;";
+    private static final String VALUE_BASED_ANNOTATION_INTERNAL =
+            "Ljdk/internal/ValueBased+Annotation;";
+    public static final Set<String> HARDCODED_ANNOTATIONS = new HashSet<>(
+            List.of("Ljdk/Profile+Annotation;",
+                    "Lsun/Proprietary+Annotation;",
+                    PREVIEW_FEATURE_ANNOTATION_OLD,
+                    PREVIEW_FEATURE_ANNOTATION_NEW,
+                    VALUE_BASED_ANNOTATION));
+
+    private void stripNonExistentAnnotations(LoadDescriptions data) {
+        Set<String> allClasses = data.classes.name2Class.keySet();
+        data.modules.values().forEach(mod -> {
+            stripNonExistentAnnotations(allClasses, mod.header);
+        });
+        data.classes.classes.forEach(clazz -> {
+            stripNonExistentAnnotations(allClasses, clazz.header);
+            stripNonExistentAnnotations(allClasses, clazz.fields);
+            stripNonExistentAnnotations(allClasses, clazz.methods);
+        });
+    }
+
+    private void stripNonExistentAnnotations(Set<String> allClasses, Iterable<? extends FeatureDescription> descs) {
+        descs.forEach(d -> stripNonExistentAnnotations(allClasses, d));
+    }
+
+    private void stripNonExistentAnnotations(Set<String> allClasses, FeatureDescription d) {
+        stripNonExistentAnnotations(allClasses, d.classAnnotations);
+        stripNonExistentAnnotations(allClasses, d.runtimeAnnotations);
+    }
+
+    private void stripNonExistentAnnotations(Set<String> allClasses, List<AnnotationDescription> annotations) {
+        if (annotations != null)
+            annotations.removeIf(ann -> !HARDCODED_ANNOTATIONS.contains(ann.annotationType) &&
+                                        !allClasses.contains(ann.annotationType.substring(1, ann.annotationType.length() - 1)));
     }
 
     private ZipEntry createZipEntry(String name, long timestamp) {
@@ -883,6 +929,12 @@ public class CreateSymbols {
             attributes.put(Attribute.ModuleTarget,
                            new ModuleTarget_attribute(attrIdx, targetIdx));
         }
+        if (header.moduleMainClass != null) {
+            int attrIdx = addString(cp, Attribute.ModuleMainClass);
+            int targetIdx = addString(cp, header.moduleMainClass);
+            attributes.put(Attribute.ModuleMainClass,
+                           new ModuleMainClass_attribute(attrIdx, targetIdx));
+        }
         int attrIdx = addString(cp, Attribute.Module);
         attributes.put(Attribute.Module,
                        new Module_attribute(attrIdx,
@@ -1140,17 +1192,16 @@ public class CreateSymbols {
             values.put("reflective", essentialAPI != null && !essentialAPI);
         }
 
+        if (VALUE_BASED_ANNOTATION.equals(annotationType)) {
+            //the non-public ValueBased annotation will not be available in ct.sym,
+            //replace with purely synthetic javac-internal annotation:
+            annotationType = VALUE_BASED_ANNOTATION_INTERNAL;
+        }
+
         return new Annotation(null,
                               addString(constantPool, annotationType),
                               createElementPairs(constantPool, values));
     }
-    //where:
-        private static final String PREVIEW_FEATURE_ANNOTATION_OLD =
-                "Ljdk/internal/PreviewFeature;";
-        private static final String PREVIEW_FEATURE_ANNOTATION_NEW =
-                "Ljdk/internal/javac/PreviewFeature;";
-        private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
-                "Ljdk/internal/PreviewFeature+Annotation;";
 
     private element_value_pair[] createElementPairs(List<CPInfo> constantPool, Map<String, Object> annotationAttributes) {
         element_value_pair[] pairs = new element_value_pair[annotationAttributes.size()];
@@ -2250,6 +2301,13 @@ public class CreateSymbols {
                 chd.isSealed = true;
                 break;
             }
+            case Attribute.ModuleMainClass: {
+                ModuleMainClass_attribute moduleMainClass = (ModuleMainClass_attribute) attr;
+                assert feature instanceof ModuleHeaderDescription;
+                ModuleHeaderDescription mhd = (ModuleHeaderDescription) feature;
+                mhd.moduleMainClass = moduleMainClass.getMainClassName(cf.constant_pool);
+                break;
+            }
             default:
                 throw new IllegalStateException("Unhandled attribute: " +
                                                 attrName);
@@ -2687,6 +2745,7 @@ public class CreateSymbols {
         List<ProvidesDescription> provides = new ArrayList<>();
         Integer moduleResolution;
         String moduleTarget;
+        String moduleMainClass;
 
         @Override
         public int hashCode() {
@@ -2699,6 +2758,7 @@ public class CreateSymbols {
             hash = 83 * hash + Objects.hashCode(this.provides);
             hash = 83 * hash + Objects.hashCode(this.moduleResolution);
             hash = 83 * hash + Objects.hashCode(this.moduleTarget);
+            hash = 83 * hash + Objects.hashCode(this.moduleMainClass);
             return hash;
         }
 
@@ -2735,6 +2795,10 @@ public class CreateSymbols {
             }
             if (!Objects.equals(this.moduleResolution,
                                 other.moduleResolution)) {
+                return false;
+            }
+            if (!Objects.equals(this.moduleMainClass,
+                                other.moduleMainClass)) {
                 return false;
             }
             return true;
@@ -2774,6 +2838,8 @@ public class CreateSymbols {
                 output.append(" resolution " +
                               quote(Integer.toHexString(moduleResolution),
                                     true));
+            if (moduleMainClass != null)
+                output.append(" moduleMainClass " + quote(moduleMainClass, true));
             writeAttributes(output);
             output.append("\n");
             writeInnerClasses(output, baselineVersion, version);
@@ -2817,6 +2883,8 @@ public class CreateSymbols {
                         reader.attributes.get("resolution");
                 moduleResolution = Integer.parseInt(resolutionFlags, 16);
             }
+
+            moduleMainClass = reader.attributes.get("moduleMainClass");
 
             readAttributes(reader);
             reader.moveNext();

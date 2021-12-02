@@ -410,7 +410,7 @@ public final class ValueRange implements Serializable {
         long hash = minSmallest + (minLargest << 16) + (minLargest >> 48) +
                 (maxSmallest << 32) + (maxSmallest >> 32) + (maxLargest << 48) +
                 (maxLargest >> 16);
-        return (int) (hash ^ (hash >>> 32));
+        return Long.hashCode(hash);
     }
 
     //-----------------------------------------------------------------------

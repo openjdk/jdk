@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,13 +597,12 @@ public final class OffsetDateTime
     @Override
     public int get(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case INSTANT_SECONDS:
-                    throw new UnsupportedTemporalTypeException("Invalid field 'InstantSeconds' for get() method, use getLong() instead");
-                case OFFSET_SECONDS:
-                    return getOffset().getTotalSeconds();
-            }
-            return dateTime.get(field);
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> throw new UnsupportedTemporalTypeException("Invalid field " +
+                                         "'InstantSeconds' for get() method, use getLong() instead");
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
+                default -> dateTime.get(field);
+            };
         }
         return Temporal.super.get(field);
     }
@@ -634,11 +633,11 @@ public final class OffsetDateTime
     @Override
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case INSTANT_SECONDS: return toEpochSecond();
-                case OFFSET_SECONDS: return getOffset().getTotalSeconds();
-            }
-            return dateTime.getLong(field);
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> toEpochSecond();
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
+                default -> dateTime.getLong(field);
+            };
         }
         return field.getFrom(this);
     }
@@ -968,13 +967,12 @@ public final class OffsetDateTime
     @Override
     public OffsetDateTime with(TemporalField field, long newValue) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case INSTANT_SECONDS: return ofInstant(Instant.ofEpochSecond(newValue, getNano()), offset);
-                case OFFSET_SECONDS: {
-                    return with(dateTime, ZoneOffset.ofTotalSeconds(chronoField.checkValidIntValue(newValue)));
-                }
-            }
-            return with(dateTime.with(field, newValue), offset);
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> ofInstant(Instant.ofEpochSecond(newValue, getNano()), offset);
+                case OFFSET_SECONDS ->
+                     with(dateTime, ZoneOffset.ofTotalSeconds(chronoField.checkValidIntValue(newValue)));
+                default -> with(dateTime.with(field, newValue), offset);
+            };
         }
         return field.adjustInto(this, newValue);
     }
@@ -1899,7 +1897,7 @@ public final class OffsetDateTime
     /**
      * Outputs this date-time as a {@code String}, such as {@code 2007-12-03T10:15:30+01:00}.
      * <p>
-     * The output will be one of the following ISO-8601 formats:
+     * The output will be one of the following formats:
      * <ul>
      * <li>{@code uuuu-MM-dd'T'HH:mmXXXXX}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ssXXXXX}</li>
@@ -1908,7 +1906,8 @@ public final class OffsetDateTime
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSSXXXXX}</li>
      * </ul>
      * The format used will be the shortest that outputs the full value of
-     * the time where the omitted parts are implied to be zero.
+     * the time where the omitted parts are implied to be zero. The output
+     * is compatible with ISO 8601 if the seconds in the offset are zero.
      *
      * @return a string representation of this date-time, not null
      */

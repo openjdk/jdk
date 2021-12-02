@@ -79,7 +79,7 @@ public class ConstantPoolCache extends Metadata {
   }
 
   public ConstantPoolCacheEntry getEntryAt(int i) {
-    if (i < 0 || i >= getLength()) throw new IndexOutOfBoundsException(i + " " + getLength());
+    Objects.checkIndex(i, getLength());
     return new ConstantPoolCacheEntry(this, i);
   }
 

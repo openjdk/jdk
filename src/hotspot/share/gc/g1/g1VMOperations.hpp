@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,17 @@
 class VM_G1CollectFull : public VM_GC_Operation {
   bool _gc_succeeded;
 
+protected:
+  bool skip_operation() const override;
+
 public:
   VM_G1CollectFull(uint gc_count_before,
                    uint full_gc_count_before,
                    GCCause::Cause cause) :
     VM_GC_Operation(gc_count_before, cause, full_gc_count_before, true),
     _gc_succeeded(false) { }
-  virtual VMOp_Type type() const { return VMOp_G1CollectFull; }
-  virtual void doit();
+  VMOp_Type type() const override { return VMOp_G1CollectFull; }
+  void doit() override;
   bool gc_succeeded() const { return _gc_succeeded; }
 };
 

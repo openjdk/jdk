@@ -613,7 +613,7 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
   methodHandle mh(current, m);
   MethodCounters* counters;
   if (current->is_Java_thread()) {
-    JavaThread* THREAD = current->as_Java_thread(); // For exception macros.
+    JavaThread* THREAD = JavaThread::cast(current); // For exception macros.
     // Use the TRAPS version for a JavaThread so it will adjust the GC threshold
     // if needed.
     counters = MethodCounters::allocate_with_exception(mh, THREAD);
@@ -1645,21 +1645,6 @@ void Method::init_intrinsic_id(vmSymbolID klass_id) {
 
   // A few slightly irregular cases:
   switch (klass_id) {
-  case VM_SYMBOL_ENUM_NAME(java_lang_StrictMath):
-    // Second chance: check in regular Math.
-    switch (name_id) {
-    case VM_SYMBOL_ENUM_NAME(min_name):
-    case VM_SYMBOL_ENUM_NAME(max_name):
-    case VM_SYMBOL_ENUM_NAME(sqrt_name):
-      // pretend it is the corresponding method in the non-strict class:
-      klass_id = VM_SYMBOL_ENUM_NAME(java_lang_Math);
-      id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
-      break;
-    default:
-      break;
-    }
-    break;
-
   // Signature-polymorphic methods: MethodHandle.invoke*, InvokeDynamic.*., VarHandle
   case VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle):
   case VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle):
@@ -2254,10 +2239,15 @@ bool Method::is_method_id(jmethodID mid) {
 Method* Method::checked_resolve_jmethod_id(jmethodID mid) {
   if (mid == NULL) return NULL;
   Method* o = resolve_jmethod_id(mid);
-  if (o == NULL || o == JNIMethodBlock::_free_method || !((Metadata*)o)->is_method()) {
+  if (o == NULL || o == JNIMethodBlock::_free_method) {
     return NULL;
   }
-  return o;
+  // Method should otherwise be valid. Assert for testing.
+  assert(is_valid_method(o), "should be valid jmethodid");
+  // If the method's class holder object is unreferenced, but not yet marked as
+  // unloaded, we need to return NULL here too because after a safepoint, its memory
+  // will be reclaimed.
+  return o->method_holder()->is_loader_alive() ? o : NULL;
 };
 
 void Method::set_on_stack(const bool value) {

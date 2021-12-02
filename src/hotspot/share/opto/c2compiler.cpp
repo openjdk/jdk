@@ -104,7 +104,8 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
 
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
-    Compile C(env, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing, do_locks_coarsening, install_code, directive);
+    Options options(subsume_loads, do_escape_analysis, eliminate_boxing, do_locks_coarsening, install_code);
+    Compile C(env, target, entry_bci, options, directive);
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != NULL) {
@@ -215,6 +216,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     break;
   case vmIntrinsics::_copyMemory:
     if (StubRoutines::unsafe_arraycopy() == NULL) return false;
+    break;
+  case vmIntrinsics::_encodeAsciiArray:
+    if (!Matcher::match_rule_supported(Op_EncodeISOArray) || !Matcher::supports_encode_ascii_array) return false;
     break;
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
@@ -423,6 +427,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_multiplyHigh:
     if (!Matcher::match_rule_supported(Op_MulHiL)) return false;
     break;
+  case vmIntrinsics::_unsignedMultiplyHigh:
+    if (!Matcher::match_rule_supported(Op_UMulHiL)) return false;
+    break;
   case vmIntrinsics::_getCallerClass:
     if (vmClasses::reflect_CallerSensitive_klass() == NULL) return false;
     break;
@@ -448,15 +455,19 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     if (!Matcher::match_rule_supported(Op_Whitespace)) return false;
     break;
   case vmIntrinsics::_maxF:
+  case vmIntrinsics::_maxF_strict:
     if (!Matcher::match_rule_supported(Op_MaxF)) return false;
     break;
   case vmIntrinsics::_minF:
+  case vmIntrinsics::_minF_strict:
     if (!Matcher::match_rule_supported(Op_MinF)) return false;
     break;
   case vmIntrinsics::_maxD:
+  case vmIntrinsics::_maxD_strict:
     if (!Matcher::match_rule_supported(Op_MaxD)) return false;
     break;
   case vmIntrinsics::_minD:
+  case vmIntrinsics::_minD_strict:
     if (!Matcher::match_rule_supported(Op_MinD)) return false;
     break;
   case vmIntrinsics::_writeback0:
@@ -497,12 +508,15 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_labs:
   case vmIntrinsics::_datan2:
   case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dpow:
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:
+  case vmIntrinsics::_min_strict:
+  case vmIntrinsics::_max_strict:
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_indexOfL:
   case vmIntrinsics::_indexOfU:
@@ -598,6 +612,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_putLongUnaligned:
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
+  case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:
   case vmIntrinsics::_currentThread:
 #ifdef JFR_HAVE_INTRINSICS
@@ -640,6 +655,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
   case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
   case vmIntrinsics::_counterMode_AESCrypt:
+  case vmIntrinsics::_galoisCounterMode_AESCrypt:
   case vmIntrinsics::_md5_implCompress:
   case vmIntrinsics::_sha_implCompress:
   case vmIntrinsics::_sha2_implCompress:
@@ -678,7 +694,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_VectorShuffleIota:
   case vmIntrinsics::_VectorShuffleToVector:
   case vmIntrinsics::_VectorLoadOp:
+  case vmIntrinsics::_VectorLoadMaskedOp:
   case vmIntrinsics::_VectorStoreOp:
+  case vmIntrinsics::_VectorStoreMaskedOp:
   case vmIntrinsics::_VectorGatherOp:
   case vmIntrinsics::_VectorScatterOp:
   case vmIntrinsics::_VectorReductionCoerced:

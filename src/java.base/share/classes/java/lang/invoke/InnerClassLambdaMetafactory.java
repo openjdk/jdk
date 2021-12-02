@@ -36,7 +36,6 @@ import java.io.FilePermission;
 import java.io.Serializable;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -45,8 +44,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.PropertyPermission;
 import java.util.Set;
 
+import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
+import static java.lang.invoke.MethodType.methodType;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
@@ -56,7 +57,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * @see LambdaMetafactory
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
-    private static final int CLASSFILE_VERSION = 59;
     private static final String METHOD_DESCRIPTOR_VOID = Type.getMethodDescriptor(Type.VOID_TYPE);
     private static final String JAVA_LANG_OBJECT = "java/lang/Object";
     private static final String NAME_CTOR = "<init>";
@@ -105,7 +105,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
 
         // condy to load implMethod from class data
-        MethodType classDataMType = MethodType.methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
+        MethodType classDataMType = methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
         Handle classDataBsm = new Handle(H_INVOKESTATIC, Type.getInternalName(MethodHandles.class), "classData",
                                          classDataMType.descriptorString(), false);
         implMethodCondy = new ConstantDynamic(ConstantDescs.DEFAULT_NAME, MethodHandle.class.descriptorString(), classDataBsm);
@@ -187,7 +187,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         // to invoke directly. (javac prefers to avoid this situation by
         // generating bridges in the target class)
         useImplMethodHandle = (Modifier.isProtected(implInfo.getModifiers()) &&
-                               !VerifyAccess.isSamePackage(implClass, implInfo.getDeclaringClass())) ||
+                               !VerifyAccess.isSamePackage(targetClass, implInfo.getDeclaringClass())) ||
                                implKind == H_INVOKESPECIAL;
         cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         int parameterCount = factoryType.parameterCount();
@@ -226,50 +226,28 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     @Override
     CallSite buildCallSite() throws LambdaConversionException {
         final Class<?> innerClass = spinInnerClass();
-        if (factoryType.parameterCount() == 0) {
-            // In the case of a non-capturing lambda, we optimize linkage by pre-computing a single instance,
-            // unless we've suppressed eager initialization
-            if (disableEagerInitialization) {
-                try {
-                    return new ConstantCallSite(caller.findStaticGetter(innerClass, LAMBDA_INSTANCE_FIELD,
-                            factoryType.returnType()));
-                } catch (ReflectiveOperationException e) {
-                    throw new LambdaConversionException(
-                            "Exception finding " +  LAMBDA_INSTANCE_FIELD + " static field", e);
-                }
-            } else {
-                @SuppressWarnings("removal")
-                final Constructor<?>[] ctrs = AccessController.doPrivileged(
-                        new PrivilegedAction<>() {
-                            @Override
-                            public Constructor<?>[] run() {
-                                Constructor<?>[] ctrs = innerClass.getDeclaredConstructors();
-                                if (ctrs.length == 1) {
-                                    // The lambda implementing inner class constructor is private, set
-                                    // it accessible (by us) before creating the constant sole instance
-                                    ctrs[0].setAccessible(true);
-                                }
-                                return ctrs;
-                            }
-                        });
-                if (ctrs.length != 1) {
-                    throw new LambdaConversionException("Expected one lambda constructor for "
-                            + innerClass.getCanonicalName() + ", got " + ctrs.length);
-                }
-
-                try {
-                    Object inst = ctrs[0].newInstance();
-                    return new ConstantCallSite(MethodHandles.constant(interfaceClass, inst));
-                } catch (ReflectiveOperationException e) {
-                    throw new LambdaConversionException("Exception instantiating lambda object", e);
-                }
+        if (factoryType.parameterCount() == 0 && disableEagerInitialization) {
+            try {
+                return new ConstantCallSite(caller.findStaticGetter(innerClass, LAMBDA_INSTANCE_FIELD,
+                                                                    factoryType.returnType()));
+            } catch (ReflectiveOperationException e) {
+                throw new LambdaConversionException(
+                        "Exception finding " + LAMBDA_INSTANCE_FIELD + " static field", e);
             }
         } else {
             try {
                 MethodHandle mh = caller.findConstructor(innerClass, constructorType);
-                return new ConstantCallSite(mh.asType(factoryType));
+                if (factoryType.parameterCount() == 0) {
+                    // In the case of a non-capturing lambda, we optimize linkage by pre-computing a single instance
+                    Object inst = mh.asType(methodType(Object.class)).invokeExact();
+                    return new ConstantCallSite(MethodHandles.constant(interfaceClass, inst));
+                } else {
+                    return new ConstantCallSite(mh.asType(factoryType));
+                }
             } catch (ReflectiveOperationException e) {
                 throw new LambdaConversionException("Exception finding constructor", e);
+            } catch (Throwable e) {
+                throw new LambdaConversionException("Exception instantiating lambda object", e);
             }
         }
     }
@@ -564,7 +542,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             convertArgumentTypes(methodType);
 
             if (useImplMethodHandle) {
-                MethodType mtype = implInfo.getMethodType().insertParameterTypes(0, implClass);
+                MethodType mtype = implInfo.getMethodType();
+                if (implKind != MethodHandleInfo.REF_invokeStatic) {
+                    mtype = mtype.insertParameterTypes(0, implClass);
+                }
                 visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle",
                                 "invokeExact", mtype.descriptorString(), false);
             } else {

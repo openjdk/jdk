@@ -249,7 +249,7 @@ var getJibProfilesCommon = function (input, data) {
         dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf", "jmh", "jcov"],
         default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
         configure_args: concat("--enable-jtreg-failure-handler",
-            "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
+            "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
             "--disable-jvm-feature-shenandoahgc",
             versionArgs(input, common))
@@ -394,13 +394,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    if (input.build_os == 'macosx' && input.build_cpu == 'aarch64') {
-        common.boot_jdk_version = "17";
-        common.boot_jdk_build_number = "24";
-    } else {
-        common.boot_jdk_version = "16";
-        common.boot_jdk_build_number = "36";
-    }
+    common.boot_jdk_version = "17";
+    common.boot_jdk_build_number = "35";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -455,7 +450,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-aarch64": {
             target_os: "macosx",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest"],
+            dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=11.00.00"),
         },
@@ -564,7 +559,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             "ANT_HOME": input.get("ant", "home_path")
         }
     };
-    [ "linux-x64", "macosx-x64", "windows-x64"]
+    [ "linux-x64", "macosx-x64", "windows-x64", "linux-aarch64"]
         .forEach(function (name) {
             var maketestName = name + "-testmake";
             profiles[maketestName] = concatObjects(profiles[name], testmakeBase);
@@ -585,6 +580,17 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64-zero": {
             target_os: "linux",
             target_cpu: "x64",
+            dependencies: ["devkit", "gtest"],
+            configure_args: concat(common.configure_args_64bit, [
+                "--with-zlib=system",
+                "--with-jvm-variants=zero",
+                "--enable-libffi-bundling"
+            ])
+        },
+
+        "linux-aarch64-zero": {
+            target_os: "linux",
+            target_cpu: "aarch64",
             dependencies: ["devkit", "gtest"],
             configure_args: concat(common.configure_args_64bit, [
                 "--with-zlib=system",
@@ -638,7 +644,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     // Bootcycle profiles runs the build with itself as the boot jdk. This can
     // be done in two ways. Either using the builtin bootcycle target in the
     // build system. Or by supplying the main jdk build as bootjdk to configure.
-    [ "linux-x64", "macosx-x64", "windows-x64" ]
+    [ "linux-x64", "macosx-x64", "windows-x64", "linux-aarch64" ]
         .forEach(function (name) {
             var bootcycleName = name + "-bootcycle";
             var bootcyclePrebuiltName = name + "-bootcycle-prebuilt";
@@ -1073,11 +1079,7 @@ var getJibProfilesDependencies = function (input, common) {
     }
     var boot_jdk_os = input.build_os;
     if (input.build_os == "macosx") {
-        if (input.build_cpu == "aarch64") {
-            boot_jdk_os = "macos";
-        } else {
-            boot_jdk_os = "osx";
-        }
+        boot_jdk_os = "macos";
     }
     var boot_jdk_platform = boot_jdk_os + "-" + input.build_cpu;
     var boot_jdk_ext = (input.build_os == "windows" ? ".zip" : ".tar.gz")
@@ -1096,6 +1098,17 @@ var getJibProfilesDependencies = function (input, common) {
             + boot_jdk_platform + "_bin" + boot_jdk_ext,
         configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
         environment_path: common.boot_jdk_home + "/bin"
+    }
+
+    var pandoc_version;
+    if (input.build_cpu == "aarch64") {
+        if (input.build_os == "macosx") {
+            pandoc_version = "2.14.0.2+1.0";
+        } else {
+            pandoc_version = "2.5+1.0";
+        }
+    } else {
+        pandoc_version = "2.3.1+1.0";
     }
 
     var makeBinDir = (input.build_os == "windows"
@@ -1141,9 +1154,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "6",
+            version: "6.1",
             build_number: "1",
-            file: "bundles/jtreg-6+1.zip",
+            file: "bundles/jtreg-6.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1152,7 +1165,7 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.28+1.0"
+            revision: "1.33+1.0"
         },
 
         jcov: {
@@ -1164,7 +1177,7 @@ var getJibProfilesDependencies = function (input, common) {
             // build_number: "b07",
             // file: "bundles/jcov-3_0.zip",
             organization: common.organization,
-            revision: "3.0-7-jdk-asm+1.0",
+            revision: "3.0-9-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
@@ -1210,7 +1223,7 @@ var getJibProfilesDependencies = function (input, common) {
         pandoc: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: (input.build_cpu == 'aarch64' ? "2.5+1.0" : "2.3.1+1.0"),
+            revision: pandoc_version,
             module: "pandoc-" + input.build_platform,
             configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc",
             environment_path: input.get("pandoc", "install_path") + "/pandoc"

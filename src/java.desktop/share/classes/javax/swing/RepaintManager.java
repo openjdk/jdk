@@ -799,8 +799,7 @@ public class RepaintManager
 
         Set<Window> windows = new HashSet<Window>();
         Set<Component> dirtyComps = dirtyComponents.keySet();
-        for (Iterator<Component> it = dirtyComps.iterator(); it.hasNext();) {
-            Component dirty = it.next();
+        for (Component dirty : dirtyComps) {
             Window window = dirty instanceof Window ?
                 (Window)dirty :
                 SwingUtilities.getWindowAncestor(dirty);
@@ -1813,7 +1812,7 @@ public class RepaintManager
         }
     }
 
-    private class DoubleBufferInfo {
+    private static class DoubleBufferInfo {
         public Image image;
         public Dimension size;
         public boolean needsReset = false;

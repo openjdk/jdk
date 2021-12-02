@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -149,7 +149,7 @@ public class ErrClassSymbolTypeFixed extends TestRunner {
                         out.write(B_JAVA);
                     }
                 } catch (IOException e) {
-                    messager.printMessage(Diagnostic.Kind.ERROR, "problem writing file: " + e);
+                    messager.printError("problem writing file: " + e);
                 }
             }
         }

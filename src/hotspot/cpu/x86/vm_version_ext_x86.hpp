@@ -27,6 +27,7 @@
 
 #include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/sizes.hpp"
 
 class VM_Version_Ext : public VM_Version {
 

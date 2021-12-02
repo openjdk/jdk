@@ -27,6 +27,7 @@ package nsk.jdi.TypeComponent.isSynthetic;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+import java.util.Objects;
 
 
 public class issynthetic001a {
@@ -94,5 +95,10 @@ class ClassToCheck {
         protected Inter ER0,        ER1[]={ER0}, ER2[][]={ER1};
         transient Inter ET0,        ET1[]={ET0}, ET2[][]={ET1};
         volatile  Inter EV0,        EV1[]={EV0}, EV2[][]={EV1};
+
+        {
+          // access enclosing instance so this$0 field is generated
+          Objects.requireNonNull(ClassToCheck.this);
+        }
     }
 }

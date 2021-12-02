@@ -108,6 +108,10 @@ class JfrTraceIdEpoch : AllStatic {
   }
 
   static bool has_changed_tag_state() {
+    return _tag_state.is_signaled_with_reset();
+  }
+
+  static bool has_changed_tag_state_no_reset() {
     return _tag_state.is_signaled();
   }
 

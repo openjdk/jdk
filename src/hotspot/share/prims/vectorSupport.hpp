@@ -28,7 +28,7 @@
 #include "jni.h"
 #include "code/debugInfo.hpp"
 #include "memory/allocation.hpp"
-#include "oops/typeArrayOop.inline.hpp"
+#include "oops/typeArrayOop.hpp"
 #include "runtime/registerMap.hpp"
 #include "utilities/exceptions.hpp"
 
@@ -82,6 +82,11 @@ class VectorSupport : AllStatic {
     VECTOR_OP_MASK_TRUECOUNT = 19,
     VECTOR_OP_MASK_FIRSTTRUE = 20,
     VECTOR_OP_MASK_LASTTRUE  = 21,
+    VECTOR_OP_MASK_TOLONG    = 22,
+
+    // Rotate operations
+    VECTOR_OP_LROTATE = 23,
+    VECTOR_OP_RROTATE = 24,
 
     // Vector Math Library
     VECTOR_OP_TAN   = 101,

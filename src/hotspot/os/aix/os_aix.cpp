@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,8 +182,6 @@ int       os::Aix::_extshm = -1;
 // local variables
 
 static volatile jlong max_real_time = 0;
-static jlong    initial_time_count = 0;
-static int      clock_tics_per_sec = 100;
 
 // Process break recorded at startup.
 static address g_brk_at_startup = NULL;
@@ -265,18 +263,6 @@ julong os::Aix::available_memory() {
 
 julong os::physical_memory() {
   return Aix::physical_memory();
-}
-
-// Return true if user is running as root.
-
-bool os::have_special_privileges() {
-  static bool init = false;
-  static bool privileges = false;
-  if (!init) {
-    privileges = (getuid() != geteuid()) || (getgid() != getegid());
-    init = true;
-  }
-  return privileges;
 }
 
 // Helper function, emulates disclaim64 using multiple 32bit disclaims
@@ -788,7 +774,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // JDK-8187028: It was observed that on some configurations (4K backed thread stacks)
   // the real thread stack size may be smaller than the requested stack size, by as much as 64K.
   // This very much looks like a pthread lib error. As a workaround, increase the stack size
-  // by 64K for small thread stacks (arbitrarily choosen to be < 4MB)
+  // by 64K for small thread stacks (arbitrarily chosen to be < 4MB)
   if (stack_size < 4096 * K) {
     stack_size += 64 * K;
   }
@@ -814,19 +800,24 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     ret = pthread_attr_setguardsize(&attr, 0);
   }
 
+  ResourceMark rm;
   pthread_t tid = 0;
+
   if (ret == 0) {
-    ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
+    int limit = 3;
+    do {
+      ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
+    } while (ret == EAGAIN && limit-- > 0);
   }
 
   if (ret == 0) {
     char buf[64];
-    log_info(os, thread)("Thread started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
-      (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+    log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+                         thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
   } else {
     char buf[64];
-    log_warning(os, thread)("Failed to start thread - pthread_create failed (%d=%s) for attributes: %s.",
-      ret, os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+    log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%d=%s) for attributes: %s.",
+                            thread->name(), ret, os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     // Log some OS information which might explain why creating the thread failed.
     log_info(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
     LogStream st(Log(os, thread)::info());
@@ -928,21 +919,6 @@ void os::free_thread(OSThread* osthread) {
 ////////////////////////////////////////////////////////////////////////////////
 // time support
 
-// Time since start-up in seconds to a fine granularity.
-double os::elapsedTime() {
-  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
-}
-
-jlong os::elapsed_counter() {
-  return javaTimeNanos() - initial_time_count;
-}
-
-jlong os::elapsed_frequency() {
-  return NANOSECS_PER_SEC; // nanosecond resolution
-}
-
-bool os::supports_vtime() { return true; }
-
 double os::elapsedVTime() {
   struct rusage usage;
   int retval = getrusage(RUSAGE_THREAD, &usage);
@@ -1007,41 +983,6 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->may_skip_backward = false;
   info_ptr->may_skip_forward = false;
   info_ptr->kind = JVMTI_TIMER_ELAPSED;    // elapsed not CPU time
-}
-
-// Return the real, user, and system times in seconds from an
-// arbitrary fixed point in the past.
-bool os::getTimesSecs(double* process_real_time,
-                      double* process_user_time,
-                      double* process_system_time) {
-  struct tms ticks;
-  clock_t real_ticks = times(&ticks);
-
-  if (real_ticks == (clock_t) (-1)) {
-    return false;
-  } else {
-    double ticks_per_second = (double) clock_tics_per_sec;
-    *process_user_time = ((double) ticks.tms_utime) / ticks_per_second;
-    *process_system_time = ((double) ticks.tms_stime) / ticks_per_second;
-    *process_real_time = ((double) real_ticks) / ticks_per_second;
-
-    return true;
-  }
-}
-
-char * os::local_time_string(char *buf, size_t buflen) {
-  struct tm t;
-  time_t long_time;
-  time(&long_time);
-  localtime_r(&long_time, &t);
-  jio_snprintf(buf, buflen, "%d-%02d-%02d %02d:%02d:%02d",
-               t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
-               t.tm_hour, t.tm_min, t.tm_sec);
-  return buf;
-}
-
-struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
-  return localtime_r(clock, res);
 }
 
 intx os::current_thread_id() {
@@ -1175,15 +1116,6 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
   }
   return NULL;
-}
-
-void* os::dll_lookup(void* handle, const char* name) {
-  void* res = dlsym(handle, name);
-  return res;
-}
-
-void* os::get_default_process_handle() {
-  return (void*)::dlopen(NULL, RTLD_LAZY);
 }
 
 void os::print_dll_info(outputStream *st) {
@@ -2409,12 +2341,8 @@ void os::init(void) {
   // need libperfstat etc.
   os::Aix::initialize_system_info();
 
-  clock_tics_per_sec = sysconf(_SC_CLK_TCK);
-
   // _main_thread points to the thread that created/loaded the JVM.
   Aix::_main_thread = pthread_self();
-
-  initial_time_count = javaTimeNanos();
 
   os::Posix::init();
 }
@@ -2510,11 +2438,6 @@ int os::active_processor_count() {
 void os::set_native_thread_name(const char *name) {
   // Not yet implemented.
   return;
-}
-
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2665,9 +2588,7 @@ int os::open(const char *path, int oflag, int mode) {
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = O_WRONLY | O_CREAT;
-  if (!rewrite_existing) {
-    oflags |= O_EXCL;
-  }
+  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
   return ::open64(path, oflags, S_IREAD | S_IWRITE);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,7 @@ import javax.tools.*;
 public class AnnoProc extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {
         if (renv.processingOver()) {
-            Messager m = processingEnv.getMessager();
-            m.printMessage(Diagnostic.Kind.NOTE, "Note!");
+            processingEnv.getMessager().printNote("Note!");
         }
         return true;
     }

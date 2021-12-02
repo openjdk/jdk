@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -88,8 +88,8 @@ inline void G1ScanEvacuatedObjClosure::do_oop_work(T* p) {
     prefetch_and_push(p, obj);
   } else if (!HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(region_attr, p, obj);
-    assert(_scanning_in_young != Uninitialized, "Scan location has not been initialized.");
-    if (_scanning_in_young == True) {
+    assert(_skip_card_enqueue != Uninitialized, "Scan location has not been initialized.");
+    if (_skip_card_enqueue == True) {
       return;
     }
     _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
@@ -180,6 +180,7 @@ inline void G1ScanCardClosure::do_oop_work(T* p) {
     // Since the source is always from outside the collection set, here we implicitly know
     // that this is a cross-region reference too.
     prefetch_and_push(p, obj);
+    _heap_roots_found++;
   } else if (!HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(region_attr, p, obj);
     _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);

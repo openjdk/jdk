@@ -27,6 +27,7 @@
 
 #include "asm/codeBuffer.hpp"
 #include "compiler/compilerDefinitions.hpp"
+#include "runtime/javaFrameAnchor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/align.hpp"
@@ -34,6 +35,7 @@
 
 class ImmutableOopMap;
 class ImmutableOopMapSet;
+class JNIHandleBlock;
 class OopMapSet;
 
 // CodeBlob Types
@@ -77,7 +79,7 @@ struct CodeBlobType {
 
 class CodeBlobLayout;
 class OptimizedEntryBlob; // for as_optimized_entry_blob()
-class JavaFrameAnchor; // for EntryBlob::jfa_for_frame
+class JavaFrameAnchor; // for OptimizedEntryBlob::jfa_for_frame
 
 class CodeBlob {
   friend class VMStructs;
@@ -110,15 +112,22 @@ protected:
   const char*         _name;
   S390_ONLY(int       _ctable_offset;)
 
-  NOT_PRODUCT(CodeStrings _strings;)
+#ifndef PRODUCT
+  AsmRemarks _asm_remarks;
+  DbgStrings _dbg_strings;
+
+ ~CodeBlob() {
+    _asm_remarks.clear();
+    _dbg_strings.clear();
+  }
+#endif // not PRODUCT
 
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
 
 public:
   // Only used by unit test.
-  CodeBlob()
-    : _type(compiler_none) {}
+  CodeBlob() : _type(compiler_none) {}
 
   // Returns the space needed for CodeBlob
   static unsigned int allocation_size(CodeBuffer* cb, int header_size);
@@ -230,18 +239,21 @@ public:
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
   void print_code();
 
-  // Print the comment associated with offset on stream, if there is one
+  // Print to stream, any comments associated with offset.
   virtual void print_block_comment(outputStream* stream, address block_begin) const {
-  #ifndef PRODUCT
-    intptr_t offset = (intptr_t)(block_begin - code_begin());
-    _strings.print_block_comment(stream, offset);
-  #endif
+#ifndef PRODUCT
+    ptrdiff_t offset = block_begin - code_begin();
+    assert(offset >= 0, "Expecting non-negative offset!");
+    _asm_remarks.print(uint(offset), stream);
+#endif
   }
 
 #ifndef PRODUCT
-  void set_strings(CodeStrings& strings) {
-    _strings.copy(strings);
-  }
+  AsmRemarks &asm_remarks() { return _asm_remarks; }
+  DbgStrings &dbg_strings() { return _dbg_strings; }
+
+  void use_remarks(AsmRemarks &remarks) { _asm_remarks.share(remarks); }
+  void use_strings(DbgStrings &strings) { _dbg_strings.share(strings); }
 #endif
 };
 
@@ -726,28 +738,40 @@ class SafepointBlob: public SingletonBlob {
 
 //----------------------------------------------------------------------------------------------------
 
-// For optimized upcall stubs
+class ProgrammableUpcallHandler;
+
 class OptimizedEntryBlob: public BufferBlob {
+  friend class ProgrammableUpcallHandler;
  private:
   intptr_t _exception_handler_offset;
   jobject _receiver;
-  ByteSize _jfa_sp_offset;
+  ByteSize _frame_data_offset;
 
   OptimizedEntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
-            jobject receiver, ByteSize jfa_sp_offset);
+                     jobject receiver, ByteSize frame_data_offset);
 
+  struct FrameData {
+    JavaFrameAnchor jfa;
+    JavaThread* thread;
+    JNIHandleBlock* old_handles;
+    JNIHandleBlock* new_handles;
+    bool should_detach;
+  };
+
+  // defined in frame_ARCH.cpp
+  FrameData* frame_data_for_frame(const frame& frame) const;
  public:
   // Creation
   static OptimizedEntryBlob* create(const char* name, CodeBuffer* cb,
-                           intptr_t exception_handler_offset, jobject receiver,
-                           ByteSize jfa_sp_offset);
+                                    intptr_t exception_handler_offset, jobject receiver,
+                                    ByteSize frame_data_offset);
 
   address exception_handler() { return code_begin() + _exception_handler_offset; }
   jobject receiver() { return _receiver; }
-  ByteSize jfa_sp_offset() const { return _jfa_sp_offset; }
 
-  // defined in frame_ARCH.cpp
   JavaFrameAnchor* jfa_for_frame(const frame& frame) const;
+
+  void oops_do(OopClosure* f, const frame& frame);
 
   // Typing
   virtual bool is_optimized_entry_blob() const override { return true; }

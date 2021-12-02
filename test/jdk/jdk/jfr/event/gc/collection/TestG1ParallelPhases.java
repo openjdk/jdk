@@ -115,7 +115,11 @@ public class TestG1ParallelPhases {
             "MergePSS",
             "NonYoungFreeCSet",
             "YoungFreeCSet",
-            "RebuildFreeList"
+            "RebuildFreeList",
+            "SampleCandidates",
+            "CLDClearClaimedMarks",
+            "ResetMarkingState",
+            "NoteStartOfMark"
         );
 
         // Some GC phases may or may not occur depending on environment. Filter them out

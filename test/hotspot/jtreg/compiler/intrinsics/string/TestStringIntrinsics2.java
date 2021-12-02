@@ -39,7 +39,7 @@
  *        -XX:+WhiteBoxAPI
  *        -XX:+IgnoreUnrecognizedVMOptions
  *        -XX:MaxInlineSize=70
- *        -XX:MinInliningThreshold=0
+ *        -XX:MinInlineFrequencyRatio=0
  *        compiler.intrinsics.string.TestStringIntrinsics2
  */
 

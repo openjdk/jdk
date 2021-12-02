@@ -47,6 +47,14 @@ import javax.tools.JavaFileObject;
 
 import jdk.javadoc.doclet.Reporter;
 
+import com.sun.source.doctree.CommentTree;
+import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.DocTypeTree;
+import com.sun.source.doctree.ReferenceTree;
+import com.sun.source.doctree.TextTree;
+import com.sun.tools.javac.tree.DCTree.DCDocComment;
+import com.sun.tools.javac.tree.DCTree;
+
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.util.Context.Factory;
 import com.sun.tools.javac.util.DiagnosticSource;
@@ -245,6 +253,49 @@ public class JavadocLog extends Log implements Reporter {
         DiagnosticSource ds = getDiagnosticSource(path);
         DiagnosticPosition dp = getDiagnosticPosition(path);
         report(dt, flags, ds, dp, message);
+    }
+
+    @Override // Reporter
+    public void print(Diagnostic.Kind kind, DocTreePath path, int start, int pos, int end, String message) {
+        if (!(start <= pos && pos <= end)) {
+            throw new IllegalArgumentException("start:" + start + ",pos:" + pos + ",end:" + end);
+        }
+
+        DocTree t = path.getLeaf();
+        String s = switch (t.getKind()) {
+            case COMMENT -> ((CommentTree) t).getBody();
+            case DOC_TYPE -> ((DocTypeTree) t).getText();
+            case REFERENCE -> ((ReferenceTree) t).getSignature();
+            case TEXT -> ((TextTree) t).getBody();
+            default -> throw new IllegalArgumentException(t.getKind().toString());
+        };
+
+        if (start < 0 || end > s.length()) {
+            throw new StringIndexOutOfBoundsException("start:" + start + ",pos:" + pos + ",end:" + end
+                    + "; string length " + s.length());
+        }
+
+        DiagnosticType dt = getDiagnosticType(kind);
+        Set<DiagnosticFlag> flags = getDiagnosticFlags(kind);
+        DiagnosticSource ds = getDiagnosticSource(path);
+
+        DCTree.DCDocComment docComment = (DCTree.DCDocComment) path.getDocComment();
+        DCTree docTree = (DCTree) path.getLeaf();
+        // note: it is important to evaluate the offsets in the context of the position
+        // within the comment text, and not in the context of the overall source text
+        int dtStart = docTree.getStartPosition();
+        int sStart = docComment.getSourcePosition(dtStart + start);
+        int sPos = docComment.getSourcePosition(dtStart + pos);
+        int sEnd = docComment.getSourcePosition(dtStart + end);
+        DiagnosticPosition dp = createDiagnosticPosition(null, sStart, sPos, sEnd);
+
+        report(dt, flags, ds, dp, message);
+    }
+
+    private int getSourcePos(DocTreePath path, int offset) {
+        DCTree.DCDocComment docComment = (DCTree.DCDocComment) path.getDocComment();
+        DCTree tree = (DCTree) path.getLeaf();
+        return docComment.getSourcePosition(tree.getStartPosition() + offset);
     }
 
     @Override  // Reporter
@@ -518,11 +569,9 @@ public class JavadocLog extends Log implements Reporter {
      * @return the diagnostic position
      */
     private DiagnosticPosition getDiagnosticPosition(DocTreePath path) {
-        DocSourcePositions posns = getSourcePositions();
-        CompilationUnitTree compUnit = path.getTreePath().getCompilationUnit();
-        int start = (int) posns.getStartPosition(compUnit, path.getDocComment(), path.getLeaf());
-        int end = (int) posns.getEndPosition(compUnit, path.getDocComment(), path.getLeaf());
-        return createDiagnosticPosition(null, start, start, end);
+        DCDocComment dc = (DCDocComment) path.getDocComment();
+        DCTree dcTree = (DCTree) path.getLeaf();
+        return dcTree.pos(dc);
     }
 
     /**
@@ -609,7 +658,7 @@ public class JavadocLog extends Log implements Reporter {
     }
 
     /**
-     * Returns the diagnostic source for an documentation tree node.
+     * Returns the diagnostic source for a documentation tree node.
      *
      * @param path the path for the documentation tree node
      * @return the diagnostic source

@@ -113,15 +113,14 @@ import static jdk.internal.net.http.frame.SettingsFrame.*;
 class Http2Connection  {
 
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
-    final static Logger DEBUG_LOGGER =
+    static final Logger DEBUG_LOGGER =
             Utils.getDebugLogger("Http2Connection"::toString, Utils.DEBUG);
     private final Logger debugHpack =
             Utils.getHpackLogger(this::dbgString, Utils.DEBUG_HPACK);
     static final ByteBuffer EMPTY_TRIGGER = ByteBuffer.allocate(0);
 
-    static private final int MAX_CLIENT_STREAM_ID = Integer.MAX_VALUE; // 2147483647
-    static private final int MAX_SERVER_STREAM_ID = Integer.MAX_VALUE - 1; // 2147483646
-    static private final int BUFFER = 8; // added as an upper bound
+    private static final int MAX_CLIENT_STREAM_ID = Integer.MAX_VALUE; // 2147483647
+    private static final int MAX_SERVER_STREAM_ID = Integer.MAX_VALUE - 1; // 2147483646
 
     /**
      * Flag set when no more streams to be opened on this connection.
@@ -469,10 +468,11 @@ class Http2Connection  {
             CompletableFuture<Void> cf = new MinimalFuture<>();
             SSLEngine engine = aconn.getEngine();
             String engineAlpn = engine.getApplicationProtocol();
-            assert Objects.equals(alpn, engineAlpn)
-                    : "alpn: %s, engine: %s".formatted(alpn, engineAlpn);
-
-            DEBUG_LOGGER.log("checkSSLConfig: alpn: %s", alpn );
+            DEBUG_LOGGER.log("checkSSLConfig: alpn: '%s', engine: '%s'", alpn, engineAlpn);
+            if (alpn == null && engineAlpn != null) {
+                alpn = engineAlpn;
+            }
+            DEBUG_LOGGER.log("checkSSLConfig: alpn: '%s'", alpn );
 
             if (alpn == null || !alpn.equals("h2")) {
                 String msg;
@@ -495,6 +495,8 @@ class Http2Connection  {
                 cf.completeExceptionally(new ALPNException(msg, aconn));
                 return cf;
             }
+            assert Objects.equals(alpn, engineAlpn)
+                    : "alpn: %s, engine: %s".formatted(alpn, engineAlpn);
             cf.complete(null);
             return cf;
         };
@@ -1006,7 +1008,7 @@ class Http2Connection  {
         throws IOException
     {
         shutdown(new IOException(
-                        String.valueOf(connection.channel().getLocalAddress())
+                        connection.channel().getLocalAddress()
                         +": GOAWAY received"));
     }
 

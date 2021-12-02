@@ -25,6 +25,7 @@
  * @test
  * @requires vm.cds
  * @summary test that --patch-module works with CDS
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
@@ -52,6 +53,7 @@ public class PatchModuleCDS {
             "-version");
         new OutputAnalyzer(pb.start())
             // --patch-module is not supported during CDS dumping
+            .shouldNotHaveExitValue(0)
             .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         // Case 2: Test that directory in --patch-module is supported for CDS dumping
@@ -76,6 +78,7 @@ public class PatchModuleCDS {
             "-version");
         new OutputAnalyzer(pb.start())
             // --patch-module is not supported during CDS dumping
+            .shouldNotHaveExitValue(0)
             .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         // Case 3a: Test CDS dumping with jar file in --patch-module
@@ -91,6 +94,7 @@ public class PatchModuleCDS {
             "PatchModuleMain", "javax.naming.spi.NamingManager");
         new OutputAnalyzer(pb.start())
             // --patch-module is not supported during CDS dumping
+            .shouldNotHaveExitValue(0)
             .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         // Case 3b: Test CDS run with jar file in --patch-module

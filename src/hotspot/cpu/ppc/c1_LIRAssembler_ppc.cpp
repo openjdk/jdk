@@ -714,7 +714,7 @@ void LIR_Assembler::explicit_null_check(Register addr, CodeEmitInfo* info) {
 
 
 // Attention: caller must encode oop if needed
-int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType type, bool wide, bool unaligned) {
+int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType type, bool wide) {
   int store_offset;
   if (!Assembler::is_simm16(offset)) {
     // For offsets larger than a simm16 we setup the offset.
@@ -794,7 +794,7 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, Register disp, BasicTy
 }
 
 
-int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType type, bool wide, bool unaligned) {
+int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType type, bool wide) {
   int load_offset;
   if (!Assembler::is_simm16(offset)) {
     // For offsets larger than a simm16 we setup the offset.
@@ -812,12 +812,7 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
       case T_LONG  :   __ ld(to_reg->as_register_lo(), offset, base); break;
       case T_METADATA: __ ld(to_reg->as_register(), offset, base); break;
       case T_ADDRESS:
-        if (offset == oopDesc::klass_offset_in_bytes() && UseCompressedClassPointers) {
-          __ lwz(to_reg->as_register(), offset, base);
-          __ decode_klass_not_null(to_reg->as_register());
-        } else {
-          __ ld(to_reg->as_register(), offset, base);
-        }
+        __ ld(to_reg->as_register(), offset, base);
         break;
       case T_ARRAY : // fall through
       case T_OBJECT:
@@ -965,7 +960,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
     offset = store(tmp, base, addr->index()->as_pointer_register(), type, wide);
   } else {
     assert(Assembler::is_simm16(addr->disp()), "can't handle larger addresses");
-    offset = store(tmp, base, addr->disp(), type, wide, false);
+    offset = store(tmp, base, addr->disp(), type, wide);
   }
 
   if (info != NULL) {
@@ -1120,7 +1115,7 @@ Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
 
 
 void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type,
-                            LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide, bool unaligned) {
+                            LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
 
   assert(type != T_METADATA, "load of metadata ptr not supported");
   LIR_Address* addr = src_opr->as_address_ptr();
@@ -1170,9 +1165,8 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type,
 
   if (disp_reg == noreg) {
     assert(Assembler::is_simm16(disp_value), "should have set this up");
-    offset = load(src, disp_value, to_reg, type, wide, unaligned);
+    offset = load(src, disp_value, to_reg, type, wide);
   } else {
-    assert(!unaligned, "unexpected");
     offset = load(src, disp_reg, to_reg, type, wide);
   }
 
@@ -1193,8 +1187,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
     addr = frame_map()->address_for_double_slot(src->double_stack_ix());
   }
 
-  bool unaligned = addr.disp() % 8 != 0;
-  load(addr.base(), addr.disp(), dest, dest->type(), true /*wide*/, unaligned);
+  load(addr.base(), addr.disp(), dest, dest->type(), true /*wide*/);
 }
 
 
@@ -1205,8 +1198,8 @@ void LIR_Assembler::reg2stack(LIR_Opr from_reg, LIR_Opr dest, BasicType type, bo
   } else if (dest->is_double_word())  {
     addr = frame_map()->address_for_slot(dest->double_stack_ix());
   }
-  bool unaligned = addr.disp() % 8 != 0;
-  store(from_reg, addr.base(), addr.disp(), from_reg->type(), true /*wide*/, unaligned);
+
+  store(from_reg, addr.base(), addr.disp(), from_reg->type(), true /*wide*/);
 }
 
 
@@ -1242,7 +1235,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
 
 void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack,
-                            bool wide, bool unaligned) {
+                            bool wide) {
   assert(type != T_METADATA, "store of metadata ptr not supported");
   LIR_Address* addr = dest->as_address_ptr();
 
@@ -1299,9 +1292,8 @@ void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
 
   if (disp_reg == noreg) {
     assert(Assembler::is_simm16(disp_value), "should have set this up");
-    offset = store(from_reg, src, disp_value, type, wide, unaligned);
+    offset = store(from_reg, src, disp_value, type, wide);
   } else {
-    assert(!unaligned, "unexpected");
     offset = store(from_reg, src, disp_reg, type, wide);
   }
 
@@ -2735,6 +2727,26 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   __ bind(*op->stub()->continuation());
 }
 
+void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
+  Register obj = op->obj()->as_pointer_register();
+  Register result = op->result_opr()->as_pointer_register();
+
+  CodeEmitInfo* info = op->info();
+  if (info != NULL) {
+    if (!os::zero_page_read_protected() || !ImplicitNullChecks) {
+      explicit_null_check(obj, info);
+    } else {
+      add_debug_info_for_null_check_here(info);
+    }
+  }
+
+  if (UseCompressedClassPointers) {
+    __ lwz(result, oopDesc::klass_offset_in_bytes(), obj);
+    __ decode_klass_not_null(result);
+  } else {
+    __ ld(result, oopDesc::klass_offset_in_bytes(), obj);
+  }
+}
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();

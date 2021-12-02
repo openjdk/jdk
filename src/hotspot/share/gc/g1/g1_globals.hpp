@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,68 @@
 
 #include "runtime/globals_shared.hpp"
 
+// Enable evacuation failure injector by default in non-product builds.
+
+#ifdef EVAC_FAILURE_INJECTOR
+#error "EVAC_FAILURE_INJECTOR already defined"
+#endif
+#ifndef PRODUCT
+#define EVAC_FAILURE_INJECTOR 1
+#else
+#define EVAC_FAILURE_INJECTOR 0
+#endif
+
+#if EVAC_FAILURE_INJECTOR
+#define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \
+                                       develop_pd,                          \
+                                       product,                             \
+                                       product_pd,                          \
+                                       notproduct,                          \
+                                       range,                               \
+                                       constraint)                          \
+                                                                            \
+  product(bool, G1EvacuationFailureALot, false,                             \
+          "Force use of evacuation failure handling during certain "        \
+          "evacuation pauses")                                              \
+                                                                            \
+  product(uintx, G1EvacuationFailureALotCount, 1000,                        \
+          "Number of successful evacuations between evacuation failures "   \
+          "occurring at object copying per thread")                         \
+                                                                            \
+  product(uintx, G1EvacuationFailureALotInterval, 5,                        \
+          "Total collections between forced triggering of evacuation "      \
+          "failures")                                                       \
+                                                                            \
+  product(bool, G1EvacuationFailureALotDuringConcMark, true,                \
+          "Force use of evacuation failure handling during evacuation "     \
+          "pauses when marking is in progress")                             \
+                                                                            \
+  product(bool, G1EvacuationFailureALotDuringConcurrentStart, true,         \
+          "Force use of evacuation failure handling during concurrent "     \
+          "start evacuation pauses")                                        \
+                                                                            \
+  product(bool, G1EvacuationFailureALotDuringYoungGC, true,                 \
+          "Force use of evacuation failure handling during young "          \
+          "evacuation pauses")                                              \
+                                                                            \
+  product(bool, G1EvacuationFailureALotDuringMixedGC, true,                 \
+          "Force use of evacuation failure handling during mixed "          \
+          "evacuation pauses")                                              \
+                                                                            \
+  product(uint, G1EvacuationFailureALotCSetPercent, 100,                    \
+          "The percentage of regions in the collection set starting "       \
+          "from the beginning where the forced evacuation failure "         \
+          "injection will be applied.")                                     \
+          range(1, 100)
+#else
+#define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \
+                                       develop_pd,                          \
+                                       product,                             \
+                                       product_pd,                          \
+                                       notproduct,                          \
+                                       range,                               \
+                                       constraint)
+#endif
 //
 // Defines all globals flags used by the garbage-first compiler.
 //
@@ -130,15 +192,16 @@
           range(0, max_jint)                                                \
                                                                             \
   product(size_t, G1ConcRefinementThresholdStep, 2,                         \
-          "Each time the rset update queue increases by this amount "       \
-          "activate the next refinement thread if available. "              \
+          "Each time the remembered set update queue increases by this "    \
+          "amount activate the next refinement thread if available. "       \
           "The actual step size will be selected ergonomically by "         \
           "default, with this value used to determine a lower bound.")      \
           range(1, SIZE_MAX)                                                \
                                                                             \
   product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
-          "process RS update buffers during the collection pause.")         \
+          "processing remembered set update buffers during the collection " \
+          "pause.")                                                         \
           range(0, 100)                                                     \
                                                                             \
   product(bool, G1UseAdaptiveConcRefinement, true,                          \
@@ -153,26 +216,40 @@
           "The threshold that defines (>=) a hot card.")                    \
           range(0, max_jubyte)                                              \
                                                                             \
-  develop(intx, G1RSetRegionEntriesBase, 256,                               \
-          "Max number of regions in a fine-grain table per MB.")            \
-          range(1, max_jint/wordSize)                                       \
+  develop(uint, G1RemSetArrayOfCardsEntriesBase, 4,                         \
+          "Maximum number of entries per region in the Array of Cards "     \
+          "card set container per MB of a heap region.")                    \
+          range(1, 65536)                                                   \
                                                                             \
-  product(intx, G1RSetRegionEntries, 0,                                     \
-          "Max number of regions for which we keep bitmaps."                \
-          "Will be set ergonomically by default")                           \
-          range(0, max_jint/wordSize)                                       \
-          constraint(G1RSetRegionEntriesConstraintFunc,AfterErgo)           \
+  product(uint, G1RemSetArrayOfCardsEntries, 0,  EXPERIMENTAL,              \
+          "Maximum number of entries per Array of Cards card set "          \
+          "container. Will be set ergonomically by default.")               \
+          range(0, 65536)                                                   \
+          constraint(G1RemSetArrayOfCardsEntriesConstraintFunc,AfterErgo)   \
                                                                             \
-  develop(intx, G1RSetSparseRegionEntriesBase, 4,                           \
-          "Max number of entries per region in a sparse table "             \
-          "per MB.")                                                        \
-          range(1, max_jint/wordSize)                                       \
+  product(uint, G1RemSetHowlMaxNumBuckets, 8, EXPERIMENTAL,                 \
+          "Maximum number of buckets per Howl card set container. The "     \
+          "default gives at worst bitmaps of size 8k. This showed to be a " \
+          "good tradeoff between bitmap size (waste) and cacheability of "  \
+          "the bucket array. Must be a power of two.")                      \
+          range(1, 1024)                                                    \
+          constraint(G1RemSetHowlMaxNumBucketsConstraintFunc,AfterErgo)     \
                                                                             \
-  product(intx, G1RSetSparseRegionEntries, 0,                               \
-          "Max number of entries per region in a sparse table."             \
-          "Will be set ergonomically by default.")                          \
-          range(0, max_jint/wordSize)                                       \
-          constraint(G1RSetSparseRegionEntriesConstraintFunc,AfterErgo)     \
+  product(uint, G1RemSetHowlNumBuckets, 0, EXPERIMENTAL,                    \
+          "Number of buckets per Howl card set container. Must be a power " \
+          "of two. Will be set ergonomically by default.")                  \
+          range(0, 1024)                                                    \
+          constraint(G1RemSetHowlNumBucketsConstraintFunc,AfterErgo)        \
+                                                                            \
+  product(uint, G1RemSetCoarsenHowlBitmapToHowlFullPercent, 90, EXPERIMENTAL, \
+          "Percentage at which to coarsen a Howl bitmap to Howl full card " \
+          "set container.")                                                 \
+          range(1, 100)                                                     \
+                                                                            \
+  product(uint, G1RemSetCoarsenHowlToFullPercent, 90, EXPERIMENTAL,         \
+          "Percentage at which to coarsen a Howl card set to Full card "    \
+          "set container.")                                                 \
+          range(1, 100)                                                     \
                                                                             \
   develop(intx, G1MaxVerifyFailures, -1,                                    \
           "The maximum number of verification failures to print.  "         \
@@ -186,11 +263,11 @@
                                                                             \
   product(size_t, G1HeapRegionSize, 0,                                      \
           "Size of the G1 regions.")                                        \
-          range(0, 32*M)                                                    \
+          range(0, NOT_LP64(32*M) LP64_ONLY(512*M))                         \
           constraint(G1HeapRegionSizeConstraintFunc,AfterMemoryInit)        \
                                                                             \
   product(uint, G1ConcRefinementThreads, 0,                                 \
-          "The number of parallel rem set update threads. "                 \
+          "The number of parallel remembered set update threads. "          \
           "Will be set ergonomically by default.")                          \
           range(0, (max_jint-1)/wordSize)                                   \
                                                                             \
@@ -254,34 +331,6 @@
           "as a percentage of the heap size.")                              \
           range(0, 100)                                                     \
                                                                             \
-  notproduct(bool, G1EvacuationFailureALot, false,                          \
-          "Force use of evacuation failure handling during certain "        \
-          "evacuation pauses")                                              \
-                                                                            \
-  develop(uintx, G1EvacuationFailureALotCount, 1000,                        \
-          "Number of successful evacuations between evacuation failures "   \
-          "occurring at object copying")                                    \
-                                                                            \
-  develop(uintx, G1EvacuationFailureALotInterval, 5,                        \
-          "Total collections between forced triggering of evacuation "      \
-          "failures")                                                       \
-                                                                            \
-  develop(bool, G1EvacuationFailureALotDuringConcMark, true,                \
-          "Force use of evacuation failure handling during evacuation "     \
-          "pauses when marking is in progress")                             \
-                                                                            \
-  develop(bool, G1EvacuationFailureALotDuringConcurrentStart, true,         \
-          "Force use of evacuation failure handling during concurrent "     \
-          "start evacuation pauses")                                        \
-                                                                            \
-  develop(bool, G1EvacuationFailureALotDuringYoungGC, true,                 \
-          "Force use of evacuation failure handling during young "          \
-          "evacuation pauses")                                              \
-                                                                            \
-  develop(bool, G1EvacuationFailureALotDuringMixedGC, true,                 \
-          "Force use of evacuation failure handling during mixed "          \
-          "evacuation pauses")                                              \
-                                                                            \
   product(bool, G1VerifyRSetsDuringFullGC, false, DIAGNOSTIC,               \
           "If true, perform verification of each heap region's "            \
           "remembered set when verifying the heap during a full GC.")       \
@@ -309,10 +358,34 @@
           "disables this check.")                                           \
           range(0.0, (double)max_uintx)                                     \
                                                                             \
-  product(bool, G1AllowPreventiveGC, true, DIAGNOSTIC,                       \
+  product(uint, G1RemSetFreeMemoryRescheduleDelayMillis, 10, EXPERIMENTAL,  \
+          "Time after which the card set free memory task reschedules "     \
+          "itself if there is work remaining.")                             \
+          range(1, UINT_MAX)                                                \
+                                                                            \
+  product(double, G1RemSetFreeMemoryStepDurationMillis, 1, EXPERIMENTAL,    \
+          "The amount of time that the free memory task should spend "      \
+          "before a pause of G1RemSetFreeMemoryRescheduleDelayMillis "      \
+          "length.")                                                        \
+          range(1e-3, 1e+6)                                                 \
+                                                                            \
+  product(double, G1RemSetFreeMemoryKeepExcessRatio, 0.1, EXPERIMENTAL,     \
+          "The percentage of free card set memory that G1 should keep as "  \
+          "percentage of the currently used memory.")                       \
+          range(0.0, 1.0)                                                   \
+                                                                            \
+  product(bool, G1UsePreventiveGC, true, DIAGNOSTIC,                        \
           "Allows collections to be triggered proactively based on the      \
            number of free regions and the expected survival rates in each   \
-           section of the heap.")
+           section of the heap.")                                           \
+                                                                            \
+  GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
+                    develop_pd,                                             \
+                    product,                                                \
+                    product_pd,                                             \
+                    notproduct,                                             \
+                    range,                                                  \
+                    constraint)
 
 // end of GC_G1_FLAGS
 

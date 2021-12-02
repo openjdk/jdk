@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
+ * @modules jdk.incubator.foreign jdk.incubator.vector java.base/jdk.internal.vm.annotation
 #if[MaxBit]
  * @run testng/othervm --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
  *      -XX:-TieredCompilation $vectorteststype$
@@ -57,12 +57,11 @@ import java.nio.$Type$Buffer;
 #end[!byte]
 import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.*;
 
 @Test
-public class $vectorteststype$ extends AbstractVectorTest {
+public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 #if[MaxBit]
     static final VectorSpecies<$Wideboxtype$> SPECIES =
                 $Type$Vector.SPECIES_MAX;

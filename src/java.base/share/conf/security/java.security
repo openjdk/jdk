@@ -558,7 +558,7 @@ sun.security.krb5.maxReferrals=5
 # can be included in the disabledAlgorithms properties.  These properties are
 # to help manage common actions easier across multiple disabledAlgorithm
 # properties.
-# There is one defined security property:  jdk.disabled.NamedCurves
+# There is one defined security property:  jdk.disabled.namedCurves
 # See the property for more specific details.
 #
 #
@@ -635,7 +635,7 @@ sun.security.krb5.maxReferrals=5
 #
 jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
     RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224, \
-    SHA1 jdkCA & usage SignedJAR & denyAfter 2019-01-01
+    SHA1 usage SignedJAR & denyAfter 2019-01-01
 
 #
 # Legacy algorithms for certification path (CertPath) processing and
@@ -699,7 +699,7 @@ jdk.security.legacyAlgorithms=SHA1, \
 # See "jdk.certpath.disabledAlgorithms" for syntax descriptions.
 #
 jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
-      DSA keySize < 1024, SHA1 jdkCA & denyAfter 2019-01-01
+      DSA keySize < 1024, SHA1 denyAfter 2019-01-01
 
 #
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security
@@ -981,14 +981,12 @@ jdk.xml.dsig.secureValidationPolicy=\
 
 
 #
-# Deserialization system-wide filter factory
+# Deserialization JVM-wide filter factory
 #
-# A filter factory class name is used to configure the system-wide filter factory.
-# The filter factory value "OVERRIDE" in combination with setting "jdk.serialFilter"
-# indicates that the builtin filter factory can be overridden by the application.
+# A filter factory class name is used to configure the JVM-wide filter factory.
 # The class must be public, must have a public zero-argument constructor, implement the
-# java.util.stream.BinaryOperator<ObjectInputFilter> interface, provide its implementation and
-# be accessible via the application class loader.
+# java.util.function.BinaryOperator<java.io.ObjectInputFilter> interface, provide its
+# implementation and be accessible via the application class loader.
 # A builtin filter factory is used if no filter factory is defined.
 # See java.io.ObjectInputFilter.Config for more information.
 #
@@ -998,7 +996,7 @@ jdk.xml.dsig.secureValidationPolicy=\
 #jdk.serialFilterFactory=<classname>
 
 #
-# Deserialization system-wide filter
+# Deserialization JVM-wide filter
 #
 # A filter, if configured, is used by the filter factory to provide the filter used by
 # java.io.ObjectInputStream during deserialization to check the contents of the stream.
@@ -1367,3 +1365,29 @@ jdk.tls.alpnCharset=ISO_8859_1
 # The default pattern value allows any object factory class specified by the reference
 # instance to recreate the referenced object.
 #jdk.jndi.object.factoriesFilter=*
+
+#
+# Policy for non-forwardable service ticket in a S4U2proxy request
+#
+# The Service for User to Proxy (S4U2proxy) Kerberos extension enables a middle service
+# to obtain a service ticket to another service on behalf of a user. It requires that
+# the user's service ticket to the first service has the forwardable flag set [1].
+# However, some KDC implementations ignore this requirement and accept service tickets
+# with the flag unset.
+#
+# If this security property is set to "true", then
+#
+# 1) The user service ticket, when obtained by the middle service after a S4U2self
+#    impersonation, is not required to have the forwardable flag set; and,
+#
+# 2) If a S4U2proxy request receives a KRB_ERROR of the KDC_ERR_BADOPTION error code
+#    and the ticket to the middle service is not forwardable, OpenJDK will try the same
+#    request with another KDC instead of treating it as a fatal failure.
+#
+# The default value is "false".
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+# [1] https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-sfu/bde93b0e-f3c9-4ddf-9f44-e1453be7af5a
+#jdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket=false

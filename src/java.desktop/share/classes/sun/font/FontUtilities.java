@@ -38,7 +38,6 @@ import sun.util.logging.PlatformLogger;
 /**
  * A collection of utility methods.
  */
-@SuppressWarnings("removal")
 public final class FontUtilities {
 
     public static boolean isLinux;
@@ -56,7 +55,11 @@ public final class FontUtilities {
 
     // This static initializer block figures out the OS constants.
     static {
+        initStatic();
+    }
 
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @SuppressWarnings("deprecation") // PlatformLogger.setLevel is deprecated.
             @Override

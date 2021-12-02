@@ -54,10 +54,37 @@ Assembler::SIMD_Arrangement Assembler::_esize2arrangement_table[9][2] = {
   /*   8  */      {T1D,                 T2D}
   };
 
+Assembler::SIMD_RegVariant Assembler::_esize2regvariant[9] = {
+  INVALID,
+  B,
+  H,
+  INVALID,
+  S,
+  INVALID,
+  INVALID,
+  INVALID,
+  D,
+};
 
-Assembler::SIMD_Arrangement Assembler::esize2arrangement(int esize, bool isQ) {
-    guarantee(esize == 1 || esize == 2 || esize == 4 || esize == 8, "unsupported element size");
-    return _esize2arrangement_table[esize][isQ];
+Assembler::SIMD_Arrangement Assembler::esize2arrangement(unsigned esize, bool isQ) {
+  guarantee(esize < ARRAY_SIZE(_esize2arrangement_table) &&
+         _esize2arrangement_table[esize][isQ] != INVALID_ARRANGEMENT, "unsupported element size");
+  return _esize2arrangement_table[esize][isQ];
+}
+
+Assembler::SIMD_RegVariant Assembler::elemBytes_to_regVariant(unsigned esize) {
+  guarantee(esize < ARRAY_SIZE(_esize2regvariant) && _esize2regvariant[esize] != INVALID,
+         "unsupported element size");
+  return _esize2regvariant[esize];
+}
+
+Assembler::SIMD_RegVariant Assembler::elemType_to_regVariant(BasicType bt) {
+  return elemBytes_to_regVariant(type2aelembytes(bt));
+}
+
+unsigned Assembler::regVariant_to_elemBits(Assembler::SIMD_RegVariant T){
+  guarantee(T != Q, "Invalid register variant");
+  return 1 << (T + 3);
 }
 
 void Assembler::emit_data64(jlong data,
@@ -134,7 +161,16 @@ void Assembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) 
 
 #undef __
 
-#define starti Instruction_aarch64 do_not_use(this); set_current(&do_not_use)
+#define starti Instruction_aarch64 current_insn(this);
+
+#define f current_insn.f
+#define sf current_insn.sf
+#define rf current_insn.rf
+#define srf current_insn.srf
+#define zrf current_insn.zrf
+#define prf current_insn.prf
+#define pgrf current_insn.pgrf
+#define fixed current_insn.fixed
 
   void Assembler::adr(Register Rd, address adr) {
     intptr_t offset = adr - pc();
@@ -155,6 +191,53 @@ void Assembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) 
     f(1, 31), f(offset_lo, 30, 29), f(0b10000, 28, 24), sf(offset, 23, 5);
     rf(Rd, 0);
   }
+
+// An "all-purpose" add/subtract immediate, per ARM documentation:
+// A "programmer-friendly" assembler may accept a negative immediate
+// between -(2^24 -1) and -1 inclusive, causing it to convert a
+// requested ADD operation to a SUB, or vice versa, and then encode
+// the absolute value of the immediate as for uimm24.
+void Assembler::add_sub_immediate(Instruction_aarch64 &current_insn,
+                                  Register Rd, Register Rn, unsigned uimm, int op,
+                                  int negated_op) {
+  bool sets_flags = op & 1;   // this op sets flags
+  union {
+    unsigned u;
+    int imm;
+  };
+  u = uimm;
+  bool shift = false;
+  bool neg = imm < 0;
+  if (neg) {
+    imm = -imm;
+    op = negated_op;
+  }
+  assert(Rd != sp || imm % 16 == 0, "misaligned stack");
+  if (imm >= (1 << 11)
+      && ((imm >> 12) << 12 == imm)) {
+    imm >>= 12;
+    shift = true;
+  }
+  f(op, 31, 29), f(0b10001, 28, 24), f(shift, 23, 22), f(imm, 21, 10);
+
+  // add/subtract immediate ops with the S bit set treat r31 as zr;
+  // with S unset they use sp.
+  if (sets_flags)
+    zrf(Rd, 0);
+  else
+    srf(Rd, 0);
+
+  srf(Rn, 5);
+}
+
+#undef f
+#undef sf
+#undef rf
+#undef srf
+#undef zrf
+#undef prf
+#undef pgrf
+#undef fixed
 
 #undef starti
 
@@ -260,57 +343,20 @@ void Assembler::wrap_label(Label &L, prfop op, prefetch_insn insn) {
   }
 }
 
-// An "all-purpose" add/subtract immediate, per ARM documentation:
-// A "programmer-friendly" assembler may accept a negative immediate
-// between -(2^24 -1) and -1 inclusive, causing it to convert a
-// requested ADD operation to a SUB, or vice versa, and then encode
-// the absolute value of the immediate as for uimm24.
-void Assembler::add_sub_immediate(Register Rd, Register Rn, unsigned uimm, int op,
-                                  int negated_op) {
-  bool sets_flags = op & 1;   // this op sets flags
-  union {
-    unsigned u;
-    int imm;
-  };
-  u = uimm;
-  bool shift = false;
-  bool neg = imm < 0;
-  if (neg) {
-    imm = -imm;
-    op = negated_op;
-  }
-  assert(Rd != sp || imm % 16 == 0, "misaligned stack");
-  if (imm >= (1 << 11)
-      && ((imm >> 12) << 12 == imm)) {
-    imm >>= 12;
-    shift = true;
-  }
-  f(op, 31, 29), f(0b10001, 28, 24), f(shift, 23, 22), f(imm, 21, 10);
-
-  // add/subtract immediate ops with the S bit set treat r31 as zr;
-  // with S unset they use sp.
-  if (sets_flags)
-    zrf(Rd, 0);
-  else
-    srf(Rd, 0);
-
-  srf(Rn, 5);
+bool Assembler::operand_valid_for_add_sub_immediate(int64_t imm) {
+  return operand_valid_for_immediate_bits(imm, 12);
 }
 
-bool Assembler::operand_valid_for_add_sub_immediate(int64_t imm) {
-  bool shift = false;
-  uint64_t uimm = (uint64_t)uabs((jlong)imm);
-  if (uimm < (1 << 12))
-    return true;
-  if (uimm < (1 << 24)
-      && ((uimm >> 12) << 12 == uimm)) {
-    return true;
-  }
-  return false;
+bool Assembler::operand_valid_for_sve_add_sub_immediate(int64_t imm) {
+  return operand_valid_for_immediate_bits(imm, 8);
 }
 
 bool Assembler::operand_valid_for_logical_immediate(bool is32, uint64_t imm) {
   return encode_logical_immediate(is32, imm) != 0xffffffff;
+}
+
+bool Assembler::operand_valid_for_sve_logical_immediate(unsigned elembits, uint64_t imm) {
+  return encode_sve_logical_immediate(elembits, imm) != 0xffffffff;
 }
 
 static uint64_t doubleTo64Bits(jdouble d) {
@@ -342,6 +388,17 @@ int AbstractAssembler::code_fill_byte() {
 // n.b. this is implemented in subclass MacroAssembler
 void Assembler::bang_stack_with_offset(int offset) { Unimplemented(); }
 
+bool asm_util::operand_valid_for_immediate_bits(int64_t imm, unsigned nbits) {
+  guarantee(nbits == 8 || nbits == 12, "invalid nbits value");
+  uint64_t uimm = (uint64_t)uabs((jlong)imm);
+  if (uimm < (UCONST64(1) << nbits))
+    return true;
+  if (uimm < (UCONST64(1) << (2 * nbits))
+      && ((uimm >> nbits) << nbits == uimm)) {
+    return true;
+  }
+  return false;
+}
 
 // and now the routines called by the assembler which encapsulate the
 // above encode and decode functions
@@ -357,6 +414,25 @@ asm_util::encode_logical_immediate(bool is32, uint64_t imm)
     /* Replicate the 32 lower bits to the 32 upper bits.  */
     imm &= 0xffffffff;
     imm |= imm << 32;
+  }
+
+  return encoding_for_logical_immediate(imm);
+}
+
+uint32_t
+asm_util::encode_sve_logical_immediate(unsigned elembits, uint64_t imm) {
+  guarantee(elembits == 8 || elembits == 16 ||
+            elembits == 32 || elembits == 64, "unsupported element size");
+  uint64_t upper = UCONST64(-1) << (elembits/2) << (elembits/2);
+  /* Allow all zeros or all ones in top bits, so that
+   * constant expressions like ~1 are permitted. */
+  if ((imm & ~upper) != imm && (imm | upper) != imm)
+    return 0xffffffff;
+
+  // Replicate the immediate in different element sizes to 64 bits.
+  imm &= ~upper;
+  for (unsigned i = elembits; i < 64; i *= 2) {
+    imm |= (imm << i);
   }
 
   return encoding_for_logical_immediate(imm);

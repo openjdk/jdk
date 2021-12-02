@@ -362,9 +362,14 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   return fr;
 }
 
-JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
+OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
   ShouldNotCallThis();
   return nullptr;
+}
+
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
 }
 
 frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
@@ -809,7 +814,6 @@ frame::frame(void* sp, void* fp, void* pc) {
   init((intptr_t*)sp, (intptr_t*)fp, (address)pc);
 }
 
-void frame::pd_ps() {}
 #endif
 
 void JavaFrameAnchor::make_walkable(JavaThread* thread) {

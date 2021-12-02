@@ -186,8 +186,6 @@ class os: AllStatic {
   static jint init_2(void);                    // Called after command line parsing
                                                // and VM ergonomics processing
 
-  // unset environment variable
-  static bool unsetenv(const char* name);
   // Get environ pointer, platform independently
   static char** get_environ();
 
@@ -277,10 +275,6 @@ class os: AllStatic {
     assert(_initial_active_processor_count > 0, "Initial active processor count not set yet.");
     return _initial_active_processor_count;
   }
-
-  // Binds the current process to a processor.
-  //    Returns true if it worked, false if it didn't.
-  static bool bind_to_processor(uint processor_id);
 
   // Give a name to the current thread.
   static void set_native_thread_name(const char *name);
@@ -445,8 +439,7 @@ class os: AllStatic {
 
   enum ThreadType {
     vm_thread,
-    cgc_thread,        // Concurrent GC thread
-    pgc_thread,        // Parallel GC thread
+    gc_thread,         // GC thread
     java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,
@@ -522,13 +515,14 @@ class os: AllStatic {
 
   // run cmd in a separate process and return its exit code; or -1 on failures.
   // Note: only safe to use in fatal error situations.
-  // The "prefer_vfork" argument is only used on POSIX platforms to
-  // indicate whether vfork should be used instead of fork to spawn the
-  // child process (ignored on AIX, which always uses vfork).
-  static int fork_and_exec(const char *cmd, bool prefer_vfork = false);
+  static int fork_and_exec(const char *cmd);
 
-  // Call ::exit() on all platforms but Windows
+  // Call ::exit() on all platforms
   static void exit(int num);
+
+  // Call ::_exit() on all platforms. Similar semantics to die() except we never
+  // want a core dump.
+  static void _exit(int num);
 
   // Terminate the VM, but don't exit the process
   static void shutdown();
@@ -551,6 +545,7 @@ class os: AllStatic {
   static FILE* fopen(const char* path, const char* mode);
   static int close(int fd);
   static jlong lseek(int fd, jlong offset, int whence);
+  static bool file_exists(const char* file);
   // This function, on Windows, canonicalizes a given path (see os_windows.cpp for details).
   // On Posix, this function is a noop: it does not change anything and just returns
   // the input pointer.

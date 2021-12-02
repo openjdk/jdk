@@ -1077,12 +1077,6 @@ void CodeCache::old_nmethods_do(MetadataClosure* f) {
   log_debug(redefine, class, nmethod)("Walked %d nmethods for mark_on_stack", length);
 }
 
-// Just marks the methods in this class as needing deoptimization
-void CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-}
-
-
 // Walk compiled methods and mark dependent methods for deoptimization.
 int CodeCache::mark_dependents_for_evol_deoptimization() {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
@@ -1232,7 +1226,9 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
   CodeHeap* heap = get_code_heap(code_blob_type);
   assert(heap != NULL, "heap is null");
 
-  if ((heap->full_count() == 0) || print) {
+  heap->report_full();
+
+  if ((heap->full_count() == 1) || print) {
     // Not yet reported for this heap, report
     if (SegmentedCodeCache) {
       ResourceMark rm;
@@ -1269,14 +1265,12 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
       tty->print("%s", s.as_string());
     }
 
-    if (heap->full_count() == 0) {
+    if (heap->full_count() == 1) {
       if (PrintCodeHeapAnalytics) {
         CompileBroker::print_heapinfo(tty, "all", 4096); // details, may be a lot!
       }
     }
   }
-
-  heap->report_full();
 
   EventCodeCacheFull event;
   if (event.should_commit()) {

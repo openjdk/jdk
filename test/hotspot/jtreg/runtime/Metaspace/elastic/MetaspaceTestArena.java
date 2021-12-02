@@ -25,8 +25,6 @@
 
 import sun.hotspot.WhiteBox;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 public class MetaspaceTestArena {
 
     long arena;
@@ -38,7 +36,7 @@ public class MetaspaceTestArena {
     long numAllocated = 0;
     long deallocatedWords = 0;
     long numDeallocated = 0;
-    long numAllocationFailures = 0;
+    volatile long numAllocationFailures = 0;
 
     private synchronized boolean reachedCeiling() {
         return (allocatedWords - deallocatedWords) > allocationCeiling;

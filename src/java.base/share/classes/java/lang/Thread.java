@@ -417,14 +417,14 @@ public class Thread implements Runnable {
             }
         }
 
-        /* checkAccess regardless of whether or not threadgroup is
-           explicitly passed in. */
-        g.checkAccess();
-
         /*
          * Do we have the required permissions?
          */
         if (security != null) {
+            /* checkAccess regardless of whether or not threadgroup is
+               explicitly passed in. */
+            security.checkAccess(g);
+
             if (isCCLOverridden(getClass())) {
                 security.checkPermission(
                         SecurityConstants.SUBCLASS_IMPLEMENTATION_PERMISSION);
@@ -922,7 +922,7 @@ public class Thread implements Runnable {
      *       <a href="{@docRoot}/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
      *       are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     public final void stop() {
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
@@ -1247,7 +1247,7 @@ public class Thread implements Runnable {
      *          if {@link java.lang.ThreadGroup#checkAccess} determines that
      *          the current thread cannot access its thread group
      */
-    public static int enumerate(Thread tarray[]) {
+    public static int enumerate(Thread[] tarray) {
         return currentThread().getThreadGroup().enumerate(tarray);
     }
 

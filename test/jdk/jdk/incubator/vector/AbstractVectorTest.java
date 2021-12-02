@@ -84,20 +84,6 @@ public class AbstractVectorTest {
         };
     }
 
-    static final Collection<ByteOrder> BYTE_ORDER_VALUES = Set.of(
-            ByteOrder.BIG_ENDIAN, ByteOrder.LITTLE_ENDIAN);
-
-    static final List<IntFunction<ByteBuffer>> BYTE_BUFFER_GENERATORS = List.of(
-            withToString("HB:RW:NE", (int s) -> {
-                return ByteBuffer.allocate(s)
-                        .order(ByteOrder.nativeOrder());
-            }),
-            withToString("DB:RW:NE", (int s) -> {
-                return ByteBuffer.allocateDirect(s)
-                        .order(ByteOrder.nativeOrder());
-            })
-    );
-
     static final List<IntFunction<boolean[]>> BOOL_ARRAY_GENERATORS = List.of(
             withToString("boolean[i % 2]", (int s) -> {
                 return fill_boolean(s,

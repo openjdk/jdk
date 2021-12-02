@@ -55,7 +55,6 @@
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -408,7 +407,11 @@ JRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* current, 
   // lookup exception klass
   TempNewSymbol s = SymbolTable::new_symbol(name);
   if (ProfileTraps) {
-    note_trap(current, Deoptimization::Reason_class_check);
+    if (s == vmSymbols::java_lang_ArrayStoreException()) {
+      note_trap(current, Deoptimization::Reason_array_check);
+    } else {
+      note_trap(current, Deoptimization::Reason_class_check);
+    }
   }
   // create exception, with klass name as detail message
   Handle exception = Exceptions::new_exception(current, s, klass_name);
@@ -727,9 +730,6 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, B
 #ifdef ASSERT
   current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
-  if (PrintBiasedLockingStatistics) {
-    Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
-  }
   Handle h_obj(current, elem->obj());
   assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be NULL or an object");
@@ -829,7 +829,18 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
     JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, receiver, pool,
                                  last_frame.get_index_u2_cpcache(bytecode), bytecode,
-                                 CHECK);
+                                 THREAD);
+
+    if (HAS_PENDING_EXCEPTION) {
+      if (ProfileTraps && PENDING_EXCEPTION->klass()->name() == vmSymbols::java_lang_NullPointerException()) {
+        // Preserve the original exception across the call to note_trap()
+        PreserveExceptionMark pm(current);
+        // Recording the trap will help the compiler to potentially recognize this exception as "hot"
+        note_trap(current, Deoptimization::Reason_null_check);
+      }
+      return;
+    }
+
     if (JvmtiExport::can_hotswap_or_post_breakpoint() && info.resolved_method()->is_old()) {
       resolved_method = methodHandle(current, info.resolved_method()->get_new_method());
     } else {
@@ -1032,27 +1043,6 @@ JRT_ENTRY(nmethod*,
   if (osr_nm != NULL && bs_nm != NULL) {
     if (!bs_nm->nmethod_osr_entry_barrier(osr_nm)) {
       osr_nm = NULL;
-    }
-  }
-
-  if (osr_nm != NULL) {
-    // We may need to do on-stack replacement which requires that no
-    // monitors in the activation are biased because their
-    // BasicObjectLocks will need to migrate during OSR. Force
-    // unbiasing of all monitors in the activation now (even though
-    // the OSR nmethod might be invalidated) because we don't have a
-    // safepoint opportunity later once the migration begins.
-    if (UseBiasedLocking) {
-      ResourceMark rm;
-      GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
-      for( BasicObjectLock *kptr = last_frame.monitor_end();
-           kptr < last_frame.monitor_begin();
-           kptr = last_frame.next_monitor(kptr) ) {
-        if( kptr->obj() != NULL ) {
-          objects_to_revoke->append(Handle(current, kptr->obj()));
-        }
-      }
-      BiasedLocking::revoke(objects_to_revoke, current);
     }
   }
   return osr_nm;
@@ -1345,7 +1335,8 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
                           fingerprint,
                           buffer.insts_size());
             if (buffer.insts_size() > 0) {
-              Disassembler::decode(handler, handler + buffer.insts_size());
+              Disassembler::decode(handler, handler + buffer.insts_size(), tty
+                                   NOT_PRODUCT(COMMA &buffer.asm_remarks()));
             }
 #ifndef PRODUCT
             address rh_begin = Interpreter::result_handler(method()->result_type());

@@ -63,7 +63,6 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   _has_finalizer = access_flags.has_finalizer();
   _has_subklass = flags().is_final() ? subklass_false : subklass_unknown;
   _init_state = ik->init_state();
-  _nonstatic_field_size = ik->nonstatic_field_size();
   _has_nonstatic_fields = ik->has_nonstatic_fields();
   _has_nonstatic_concrete_methods = ik->has_nonstatic_concrete_methods();
   _is_hidden = ik->is_hidden();
@@ -88,7 +87,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
     (void)CURRENT_ENV->get_object(holder);
   }
 
-  Thread *thread = Thread::current();
+  JavaThread *thread = JavaThread::current();
   if (ciObjectFactory::is_initialized()) {
     _loader = JNIHandles::make_local(thread, ik->class_loader());
     _protection_domain = JNIHandles::make_local(thread,
@@ -123,7 +122,6 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
 {
   assert(name->char_at(0) != JVM_SIGNATURE_ARRAY, "not an instance klass");
   _init_state = (InstanceKlass::ClassState)0;
-  _nonstatic_field_size = -1;
   _has_nonstatic_fields = false;
   _nonstatic_fields = NULL;
   _has_injected_fields = -1;
@@ -205,12 +203,12 @@ ciConstantPoolCache* ciInstanceKlass::field_cache() {
 //
 ciInstanceKlass* ciInstanceKlass::get_canonical_holder(int offset) {
   #ifdef ASSERT
-  if (!(offset >= 0 && offset < layout_helper())) {
+  if (!(offset >= 0 && offset < layout_helper_size_in_bytes())) {
     tty->print("*** get_canonical_holder(%d) on ", offset);
     this->print();
     tty->print_cr(" ***");
   };
-  assert(offset >= 0 && offset < layout_helper(), "offset must be tame");
+  assert(offset >= 0 && offset < layout_helper_size_in_bytes(), "offset must be tame");
   #endif
 
   if (offset < instanceOopDesc::base_offset_in_bytes()) {
@@ -227,7 +225,9 @@ ciInstanceKlass* ciInstanceKlass::get_canonical_holder(int offset) {
     for (;;) {
       assert(self->is_loaded(), "must be loaded to have size");
       ciInstanceKlass* super = self->super();
-      if (super == NULL || super->nof_nonstatic_fields() == 0) {
+      if (super == NULL ||
+          super->nof_nonstatic_fields() == 0 ||
+          super->layout_helper_size_in_bytes() <= offset) {
         return self;
       } else {
         self = super;  // return super->get_canonical_holder(offset)
@@ -494,9 +494,6 @@ int ciInstanceKlass::compute_nonstatic_fields() {
   }
   assert(!is_java_lang_Object(), "bootstrap OK");
 
-  // Size in bytes of my fields, including inherited fields.
-  int fsize = nonstatic_field_size() * heapOopSize;
-
   ciInstanceKlass* super = this->super();
   GrowableArray<ciField*>* super_fields = NULL;
   if (super != NULL && super->has_nonstatic_fields()) {
@@ -705,7 +702,7 @@ class StaticFinalFieldPrinter : public FieldClosure {
             assert(fd->field_type() == T_OBJECT, "");
             if (value->is_a(vmClasses::String_klass())) {
               const char* ascii_value = java_lang_String::as_quoted_ascii(value);
-              _out->print("\"%s\"", (ascii_value != NULL) ? ascii_value : "");
+              _out->print_cr("\"%s\"", (ascii_value != NULL) ? ascii_value : "");
             } else {
               const char* klass_name  = value->klass()->name()->as_quoted_ascii();
               _out->print_cr("%s", klass_name);
@@ -731,6 +728,22 @@ class StaticFinalFieldPrinter : public FieldClosure {
   }
 };
 
+const char *ciInstanceKlass::replay_name() const {
+  return CURRENT_ENV->replay_name(get_instanceKlass());
+}
+
+void ciInstanceKlass::dump_replay_instanceKlass(outputStream* out, InstanceKlass* ik) {
+  if (ik->is_hidden()) {
+    const char *name = CURRENT_ENV->dyno_name(ik);
+    if (name != NULL) {
+      out->print_cr("instanceKlass %s # %s", name, ik->name()->as_quoted_ascii());
+    } else {
+      out->print_cr("# instanceKlass %s", ik->name()->as_quoted_ascii());
+    }
+  } else {
+    out->print_cr("instanceKlass %s", ik->name()->as_quoted_ascii());
+  }
+}
 
 void ciInstanceKlass::dump_replay_data(outputStream* out) {
   ResourceMark rm;
@@ -741,8 +754,9 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
   // Try to record related loaded classes
   Klass* sub = ik->subklass();
   while (sub != NULL) {
-    if (sub->is_instance_klass() && !sub->is_hidden()) {
-      out->print_cr("instanceKlass %s", sub->name()->as_quoted_ascii());
+    if (sub->is_instance_klass()) {
+      InstanceKlass *isub = InstanceKlass::cast(sub);
+      dump_replay_instanceKlass(out, isub);
     }
     sub = sub->next_sibling();
   }
@@ -751,7 +765,8 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
   // tags will be validated for things which shouldn't change and
   // classes will be resolved if the tags indicate that they were
   // resolved at compile time.
-  out->print("ciInstanceKlass %s %d %d %d", ik->name()->as_quoted_ascii(),
+  const char *name = replay_name();
+  out->print("ciInstanceKlass %s %d %d %d", name,
              is_linked(), is_initialized(), cp->length());
   for (int index = 1; index < cp->length(); index++) {
     out->print(" %d", cp->tags()->at(index));
@@ -760,7 +775,7 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
   if (is_initialized()) {
     //  Dump out the static final fields in case the compilation relies
     //  on their value for correct replay.
-    StaticFinalFieldPrinter sffp(out, ik->name()->as_quoted_ascii());
+    StaticFinalFieldPrinter sffp(out, name);
     ik->do_local_static_fields(&sffp);
   }
 }

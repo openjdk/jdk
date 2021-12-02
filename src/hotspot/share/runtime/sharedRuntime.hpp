@@ -271,8 +271,9 @@ class SharedRuntime: AllStatic {
   static void register_finalizer(JavaThread* thread, oopDesc* obj);
 
   // dtrace notifications
-  static int dtrace_object_alloc(oopDesc* o, int size);
-  static int dtrace_object_alloc_base(Thread* thread, oopDesc* o, int size);
+  static int dtrace_object_alloc(oopDesc* o);
+  static int dtrace_object_alloc(Thread* thread, oopDesc* o);
+  static int dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size);
   static int dtrace_method_entry(JavaThread* thread, Method* m);
   static int dtrace_method_exit(JavaThread* thread, Method* m);
 
@@ -383,8 +384,6 @@ class SharedRuntime: AllStatic {
                                        uint num_bits,
                                        uint total_args_passed);
 
-  static size_t trampoline_size();
-
   // Generate I2C and C2I adapters. These adapters are simple argument marshalling
   // blobs. Unlike adapters in the tiger and earlier releases the code in these
   // blobs does not create a new frame and are therefore virtually invisible
@@ -473,15 +472,13 @@ class SharedRuntime: AllStatic {
   // returns.
   //
   // The wrapper may contain special-case code if the given method
-  // is a JNI critical method, or a compiled method handle adapter,
-  // such as _invokeBasic, _linkToVirtual, etc.
+  // is a compiled method handle adapter, such as _invokeBasic, _linkToVirtual, etc.
   static nmethod* generate_native_wrapper(MacroAssembler* masm,
                                           const methodHandle& method,
                                           int compile_id,
                                           BasicType* sig_bt,
                                           VMRegPair* regs,
-                                          BasicType ret_type,
-                                          address critical_entry);
+                                          BasicType ret_type);
 
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.
@@ -534,7 +531,6 @@ class SharedRuntime: AllStatic {
   static void trace_ic_miss(address at);
 
  public:
-  static int _throw_null_ctr;                    // throwing a null-pointer exception
   static int _ic_miss_ctr;                       // total # of IC misses
   static int _wrong_method_ctr;
   static int _resolve_static_ctr;
@@ -555,7 +551,7 @@ class SharedRuntime: AllStatic {
 
   static int _new_instance_ctr;            // 'new' object requires GC
   static int _new_array_ctr;               // 'new' array requires GC
-  static int _multi1_ctr, _multi2_ctr, _multi3_ctr, _multi4_ctr, _multi5_ctr;
+  static int _multi2_ctr, _multi3_ctr, _multi4_ctr, _multi5_ctr;
   static int _find_handler_ctr;            // find exception handler
   static int _rethrow_ctr;                 // rethrow exception
   static int _mon_enter_stub_ctr;          // monitor enter stub

@@ -66,13 +66,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * will not overflow the range of values of the computation.
  * The best practice is to choose the primitive type and algorithm to avoid
  * overflow. In cases where the size is {@code int} or {@code long} and
- * overflow errors need to be detected, the methods {@code addExact},
- * {@code subtractExact}, {@code multiplyExact}, {@code toIntExact},
- * {@code incrementExact}, {@code decrementExact} and {@code negateExact}
- * throw an {@code ArithmeticException} when the results overflow.
- * For the arithmetic operations divide and absolute value, overflow
- * occurs only with a specific minimum or maximum value and
- * should be checked against the minimum or maximum as appropriate.
+ * overflow errors need to be detected, the methods whose names end with
+ * {@code Exact} throw an {@code ArithmeticException} when the results overflow.
  *
  * <h2><a id=Ieee754RecommendedOps>IEEE 754 Recommended
  * Operations</a></h2>
@@ -859,6 +854,180 @@ public final class StrictMath {
     }
 
     /**
+     * Returns the quotient of the arguments, throwing an exception if the
+     * result overflows an {@code int}.  Such overflow occurs in this method if
+     * {@code x} is {@link Integer#MIN_VALUE} and {@code y} is {@code -1}.
+     * In contrast, if {@code Integer.MIN_VALUE / -1} were evaluated directly,
+     * the result would be {@code Integer.MIN_VALUE} and no exception would be
+     * thrown.
+     * <p>
+     * If {@code y} is zero, an {@code ArithmeticException} is thrown
+     * (JLS {@jls 15.17.2}).
+     * <p>
+     * The built-in remainder operator "{@code %}" is a suitable counterpart
+     * both for this method and for the built-in division operator "{@code /}".
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the quotient {@code x / y}
+     * @throws ArithmeticException if {@code y} is zero or the quotient
+     * overflows an int
+     * @jls 15.17.2 Division Operator /
+     * @see Math#divideExact(int,int)
+     * @since 18
+     */
+    public static int divideExact(int x, int y) {
+        return Math.divideExact(x, y);
+    }
+
+    /**
+     * Returns the quotient of the arguments, throwing an exception if the
+     * result overflows a {@code long}.  Such overflow occurs in this method if
+     * {@code x} is {@link Long#MIN_VALUE} and {@code y} is {@code -1}.
+     * In contrast, if {@code Long.MIN_VALUE / -1} were evaluated directly,
+     * the result would be {@code Long.MIN_VALUE} and no exception would be
+     * thrown.
+     * <p>
+     * If {@code y} is zero, an {@code ArithmeticException} is thrown
+     * (JLS {@jls 15.17.2}).
+     * <p>
+     * The built-in remainder operator "{@code %}" is a suitable counterpart
+     * both for this method and for the built-in division operator "{@code /}".
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the quotient {@code x / y}
+     * @throws ArithmeticException if {@code y} is zero or the quotient
+     * overflows a long
+     * @jls 15.17.2 Division Operator /
+     * @see Math#divideExact(long,long)
+     * @since 18
+     */
+    public static long divideExact(long x, long y) {
+        return Math.divideExact(x, y);
+    }
+
+    /**
+     * Returns the largest (closest to positive infinity)
+     * {@code int} value that is less than or equal to the algebraic quotient.
+     * This method is identical to {@link #floorDiv(int,int)} except that it
+     * throws an {@code ArithmeticException} when the dividend is
+     * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is
+     * {@code -1} instead of ignoring the integer overflow and returning
+     * {@code Integer.MIN_VALUE}.
+     * <p>
+     * The floor modulus method {@link #floorMod(int,int)} is a suitable
+     * counterpart both for this method and for the {@link #floorDiv(int,int)}
+     * method.
+     * <p>
+     * See {@link Math#floorDiv(int, int) Math.floorDiv} for examples and
+     * a comparison to the integer division {@code /} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the largest (closest to positive infinity)
+     * {@code int} value that is less than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero, or the
+     * dividend {@code x} is {@code Integer.MIN_VALUE} and the divisor {@code y}
+     * is {@code -1}.
+     * @see Math#floorDiv(int, int)
+     * @since 18
+     */
+    public static int floorDivExact(int x, int y) {
+        return Math.floorDivExact(x, y);
+    }
+
+    /**
+     * Returns the largest (closest to positive infinity)
+     * {@code long} value that is less than or equal to the algebraic quotient.
+     * This method is identical to {@link #floorDiv(long,long)} except that it
+     * throws an {@code ArithmeticException} when the dividend is
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is
+     * {@code -1} instead of ignoring the integer overflow and returning
+     * {@code Long.MIN_VALUE}.
+     * <p>
+     * The floor modulus method {@link #floorMod(long,long)} is a suitable
+     * counterpart both for this method and for the {@link #floorDiv(long,long)}
+     * method.
+     * <p>
+     * For examples, see {@link Math#floorDiv(int, int) Math.floorDiv}.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the largest (closest to positive infinity)
+     * {@code long} value that is less than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero, or the
+     * dividend {@code x} is {@code Long.MIN_VALUE} and the divisor {@code y}
+     * is {@code -1}.
+     * @see Math#floorDiv(int, int)
+     * @see Math#floorDiv(long,long)
+     * @since 18
+     */
+    public static long floorDivExact(long x, long y) {
+        return Math.floorDivExact(x, y);
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code int} value that is greater than or equal to the algebraic quotient.
+     * This method is identical to {@link #ceilDiv(int,int)} except that it
+     * throws an {@code ArithmeticException} when the dividend is
+     * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is
+     * {@code -1} instead of ignoring the integer overflow and returning
+     * {@code Integer.MIN_VALUE}.
+     * <p>
+     * The ceil modulus method {@link #ceilMod(int,int)} is a suitable
+     * counterpart both for this method and for the {@link #ceilDiv(int,int)}
+     * method.
+     * <p>
+     * See {@link Math#ceilDiv(int, int) Math.ceilDiv} for examples and
+     * a comparison to the integer division {@code /} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code int} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero, or the
+     * dividend {@code x} is {@code Integer.MIN_VALUE} and the divisor {@code y}
+     * is {@code -1}.
+     * @see Math#ceilDiv(int, int)
+     * @since 18
+     */
+    public static int ceilDivExact(int x, int y) {
+        return Math.ceilDivExact(x, y);
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * This method is identical to {@link #ceilDiv(long,long)} except that it
+     * throws an {@code ArithmeticException} when the dividend is
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is
+     * {@code -1} instead of ignoring the integer overflow and returning
+     * {@code Long.MIN_VALUE}.
+     * <p>
+     * The ceil modulus method {@link #ceilMod(long,long)} is a suitable
+     * counterpart both for this method and for the {@link #ceilDiv(long,long)}
+     * method.
+     * <p>
+     * For examples, see {@link Math#ceilDiv(int, int) Math.ceilDiv}.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero, or the
+     * dividend {@code x} is {@code Long.MIN_VALUE} and the divisor {@code y}
+     * is {@code -1}.
+     * @see Math#ceilDiv(int, int)
+     * @see Math#ceilDiv(long,long)
+     * @since 18
+     */
+    public static long ceilDivExact(long x, long y) {
+        return Math.ceilDivExact(x, y);
+    }
+
+    /**
      * Returns the argument incremented by one,
      * throwing an exception if the result overflows an {@code int}.
      * The overflow only occurs for {@linkplain Integer#MAX_VALUE the maximum value}.
@@ -982,6 +1151,7 @@ public final class StrictMath {
      * @param x the first value
      * @param y the second value
      * @return the result
+     * @see #unsignedMultiplyHigh
      * @see Math#multiplyHigh(long,long)
      * @since 9
      */
@@ -990,12 +1160,27 @@ public final class StrictMath {
     }
 
     /**
+     * Returns as a {@code long} the most significant 64 bits of the unsigned
+     * 128-bit product of two unsigned 64-bit factors.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @see #multiplyHigh
+     * @see Math#unsignedMultiplyHigh(long,long)
+     * @since 18
+     */
+    public static long unsignedMultiplyHigh(long x, long y) {
+        return Math.unsignedMultiplyHigh(x, y);
+    }
+
+    /**
      * Returns the largest (closest to positive infinity)
      * {@code int} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
-     * the result is equal to the {@code Integer.MIN_VALUE}.
+     * the result is equal to {@code Integer.MIN_VALUE}.
      * <p>
      * See {@link Math#floorDiv(int, int) Math.floorDiv} for examples and
      * a comparison to the integer division {@code /} operator.
@@ -1016,7 +1201,7 @@ public final class StrictMath {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Long.MIN_VALUE}.
@@ -1027,7 +1212,7 @@ public final class StrictMath {
      * @param x the dividend
      * @param y the divisor
      * @return the largest (closest to positive infinity)
-     * {@code int} value that is less than or equal to the algebraic quotient.
+     * {@code long} value that is less than or equal to the algebraic quotient.
      * @throws ArithmeticException if the divisor {@code y} is zero
      * @see Math#floorDiv(long, int)
      * @see Math#floor(double)
@@ -1040,10 +1225,10 @@ public final class StrictMath {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
-     * the result is equal to the {@code Long.MIN_VALUE}.
+     * the result is equal to {@code Long.MIN_VALUE}.
      * <p>
      * See {@link Math#floorDiv(int, int) Math.floorDiv} for examples and
      * a comparison to the integer division {@code /} operator.
@@ -1064,13 +1249,14 @@ public final class StrictMath {
     /**
      * Returns the floor modulus of the {@code int} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
      * See {@link Math#floorMod(int, int) Math.floorMod} for examples and
@@ -1091,14 +1277,14 @@ public final class StrictMath {
     /**
      * Returns the floor modulus of the {@code long} and {@code int} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
      *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
      * See {@link Math#floorMod(int, int) Math.floorMod} for examples and
@@ -1119,13 +1305,14 @@ public final class StrictMath {
     /**
      * Returns the floor modulus of the {@code long} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
      * See {@link Math#floorMod(int, int) Math.floorMod} for examples and
@@ -1141,6 +1328,162 @@ public final class StrictMath {
      */
     public static long floorMod(long x, long y) {
         return Math.floorMod(x, y);
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code int} value that is greater than or equal to the algebraic quotient.
+     * There is one special case: if the dividend is
+     * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to {@code Integer.MIN_VALUE}.
+     * <p>
+     * See {@link Math#ceilDiv(int, int) Math.ceilDiv} for examples and
+     * a comparison to the integer division {@code /} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code int} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilDiv(int, int)
+     * @see Math#ceil(double)
+     * @since 18
+     */
+    public static int ceilDiv(int x, int y) {
+        return Math.ceilDiv(x, y);
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * There is one special case: if the dividend is
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to {@code Long.MIN_VALUE}.
+     * <p>
+     * See {@link Math#ceilDiv(int, int) Math.ceilDiv} for examples and
+     * a comparison to the integer division {@code /} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilDiv(long, int)
+     * @see Math#ceil(double)
+     * @since 18
+     */
+    public static long ceilDiv(long x, int y) {
+        return Math.ceilDiv(x, y);
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * There is one special case: if the dividend is
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to {@code Long.MIN_VALUE}.
+     * <p>
+     * See {@link Math#ceilDiv(int, int) Math.ceilDiv} for examples and
+     * a comparison to the integer division {@code /} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilDiv(long, long)
+     * @see Math#ceil(double)
+     * @since 18
+     */
+    public static long ceilDiv(long x, long y) {
+        return Math.ceilDiv(x, y);
+    }
+
+    /**
+     * Returns the ceiling modulus of the {@code int} arguments.
+     * <p>
+     * The ceiling modulus is {@code r = x - (ceilDiv(x, y) * y)},
+     * has the opposite sign as the divisor {@code y} or is zero, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
+     * <p>
+     * The relationship between {@code ceilDiv} and {@code ceilMod} is such that:
+     * <ul>
+     *   <li>{@code ceilDiv(x, y) * y + ceilMod(x, y) == x}</li>
+     * </ul>
+     * <p>
+     * See {@link Math#ceilMod(int, int) Math.ceilMod} for examples and
+     * a comparison to the {@code %} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the ceiling modulus {@code x - (ceilDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilMod(int, int)
+     * @see StrictMath#ceilDiv(int, int)
+     * @since 18
+     */
+    public static int ceilMod(int x, int y) {
+        return Math.ceilMod(x , y);
+    }
+
+    /**
+     * Returns the ceiling modulus of the {@code long} and {@code int} arguments.
+     * <p>
+     * The ceiling modulus is {@code r = x - (ceilDiv(x, y) * y)},
+     * has the opposite sign as the divisor {@code y} or is zero, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
+     * <p>
+     * The relationship between {@code ceilDiv} and {@code ceilMod} is such that:
+     * <ul>
+     *   <li>{@code ceilDiv(x, y) * y + ceilMod(x, y) == x}</li>
+     * </ul>
+     * <p>
+     * See {@link Math#ceilMod(int, int) Math.ceilMod} for examples and
+     * a comparison to the {@code %} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the ceiling modulus {@code x - (ceilDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilMod(long, int)
+     * @see StrictMath#ceilDiv(long, int)
+     * @since 18
+     */
+    public static int ceilMod(long x, int y) {
+        return Math.ceilMod(x , y);
+    }
+
+    /**
+     * Returns the ceiling modulus of the {@code long} arguments.
+     * <p>
+     * The ceiling modulus is {@code r = x - (ceilDiv(x, y) * y)},
+     * has the opposite sign as the divisor {@code y} or is zero, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
+     * <p>
+     * The relationship between {@code ceilDiv} and {@code ceilMod} is such that:
+     * <ul>
+     *   <li>{@code ceilDiv(x, y) * y + ceilMod(x, y) == x}</li>
+     * </ul>
+     * <p>
+     * See {@link Math#ceilMod(int, int) Math.ceilMod} for examples and
+     * a comparison to the {@code %} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the ceiling modulus {@code x - (ceilDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilMod(long, long)
+     * @see StrictMath#ceilDiv(long, long)
+     * @since 18
+     */
+    public static long ceilMod(long x, long y) {
+        return Math.ceilMod(x, y);
     }
 
     /**

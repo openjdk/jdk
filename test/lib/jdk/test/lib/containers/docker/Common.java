@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,10 @@ public class Common {
     public static DockerRunOptions newOpts(String imageNameAndTag) {
         return new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", "-version")
             .addJavaOpts("-Xlog:os+container=trace");
+    }
+
+    public static DockerRunOptions newOptsShowSettings(String imageNameAndTag) {
+        return new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", "-version", "-XshowSettings:system");
     }
 
 

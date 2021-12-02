@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
         if (monitor->owner_is_scalar_replaced()) {
           dest->set_obj(NULL);
         } else {
-          assert(monitor->owner() == NULL || (!monitor->owner()->is_unlocked() && !monitor->owner()->has_bias_pattern()), "object must be null or locked, and unbiased");
+          assert(monitor->owner() == NULL || !monitor->owner()->is_unlocked(), "object must be null or locked");
           dest->set_obj(monitor->owner());
           monitor->lock()->move_to(monitor->owner(), dest->lock());
         }
@@ -337,6 +337,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   for(i = 0; i < expressions()->size(); i++) {
     StackValue *value = expressions()->at(i);
     intptr_t*   addr  = iframe()->interpreter_frame_expression_stack_at(i);
+    assert(!is_bottom_frame || !(caller->is_compiled_caller() && addr >= caller->unextended_sp()), "overwriting caller frame!");
     switch(value->type()) {
       case T_INT:
         *addr = value->get_int();
@@ -375,6 +376,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   for(i = 0; i < locals()->size(); i++) {
     StackValue *value = locals()->at(i);
     intptr_t* addr  = iframe()->interpreter_frame_local_at(i);
+    assert(!is_bottom_frame || !(caller->is_compiled_caller() && addr >= caller->unextended_sp()), "overwriting caller frame!");
     switch(value->type()) {
       case T_INT:
         *addr = value->get_int();

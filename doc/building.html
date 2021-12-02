@@ -96,6 +96,7 @@
 <li><a href="#specific-build-issues">Specific Build Issues</a></li>
 <li><a href="#getting-help">Getting Help</a></li>
 </ul></li>
+<li><a href="#reproducible-builds">Reproducible Builds</a></li>
 <li><a href="#hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</a><ul>
 <li><a href="#bash-completion">Bash Completion</a></li>
 <li><a href="#using-multiple-configurations">Using Multiple Configurations</a></li>
@@ -488,7 +489,7 @@
 <li><code>CONF</code> and <code>CONF_NAME</code> - Selecting the configuration(s) to use. See <a href="#using-multiple-configurations">Using Multiple Configurations</a></li>
 </ul>
 <h4 id="test-make-control-variables">Test Make Control Variables</h4>
-<p>These make control variables only make sense when running tests. Please see <a href="testing.html">Testing the JDK</a> for details.</p>
+<p>These make control variables only make sense when running tests. Please see <strong>Testing the JDK</strong> (<a href="testing.html">html</a>, <a href="testing.md">markdown</a>) for details.</p>
 <ul>
 <li><code>TEST</code></li>
 <li><code>TEST_JOBS</code></li>
@@ -506,7 +507,7 @@
 </ul>
 <h2 id="running-tests">Running Tests</h2>
 <p>Most of the JDK tests are using the <a href="http://openjdk.java.net/jtreg">JTReg</a> test framework. Make sure that your configuration knows where to find your installation of JTReg. If this is not picked up automatically, use the <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to the JTReg framework. Note that this option should point to the JTReg home, i.e. the top directory, containing <code>lib/jtreg.jar</code> etc.</p>
-<p>The <a href="https://wiki.openjdk.java.net/display/Adoption">Adoption Group</a> provides recent builds of jtreg <a href="https://ci.adoptopenjdk.net/view/Dependencies/job/jtreg/lastSuccessfulBuild/artifact">here</a>. Download the latest <code>.tar.gz</code> file, unpack it, and point <code>--with-jtreg</code> to the <code>jtreg</code> directory that you just unpacked.</p>
+<p>The <a href="https://wiki.openjdk.java.net/display/Adoption">Adoption Group</a> provides recent builds of jtreg <a href="https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/">here</a>. Download the latest <code>.tar.gz</code> file, unpack it, and point <code>--with-jtreg</code> to the <code>jtreg</code> directory that you just unpacked.</p>
 <p>Building of Hotspot Gtest suite requires the source code of Google Test framework. The top directory, which contains both <code>googletest</code> and <code>googlemock</code> directories, should be specified via <code>--with-gtest</code>. The supported version of Google Test is 1.8.1, whose source code can be obtained:</p>
 <ul>
 <li>by downloading and unpacking the source bundle from <a href="https://github.com/google/googletest/releases/tag/release-1.8.1">here</a></li>
@@ -514,7 +515,7 @@
 </ul>
 <p>To execute the most basic tests (tier 1), use:</p>
 <pre><code>make run-test-tier1</code></pre>
-<p>For more details on how to run tests, please see the <a href="testing.html">Testing the JDK</a> document.</p>
+<p>For more details on how to run tests, please see <strong>Testing the JDK</strong> (<a href="testing.html">html</a>, <a href="testing.md">markdown</a>).</p>
 <h2 id="cross-compiling">Cross-compiling</h2>
 <p>Cross-compiling means using one platform (the <em>build</em> platform) to generate output that can ran on another platform (the <em>target</em> platform).</p>
 <p>The typical reason for cross-compiling is that the build is performed on a more powerful desktop computer, but the resulting binaries will be able to run on a different, typically low-performing system. Most of the complications that arise when building for embedded is due to this separation of <em>build</em> and <em>target</em> systems.</p>
@@ -884,6 +885,32 @@ spawn failed</code></pre>
 <h3 id="getting-help">Getting Help</h3>
 <p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <a href="mailto:build-dev@openjdk.java.net">build-dev@openjdk.java.net</a>. Please include the relevant parts of the configure and/or build log.</p>
 <p>If you need general help or advice about developing for the JDK, you can also contact the Adoption Group. See the section on <a href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more information.</p>
+<h2 id="reproducible-builds">Reproducible Builds</h2>
+<p>Build reproducibility is the property of getting exactly the same bits out when building, every time, independent on who builds the product, or where. This is for many reasons a harder goal than it initially appears, but it is an important goal, for security reasons and others. Please see <a href="https://reproducible-builds.org">Reproducible Builds</a> for more information about the background and reasons for reproducible builds.</p>
+<p>Currently, it is not possible to build OpenJDK fully reproducibly, but getting there is an ongoing effort. There are some things you can do to minimize non-determinism and make a larger part of the build reproducible:</p>
+<ul>
+<li>Turn on build system support for reproducible builds</li>
+</ul>
+<p>Add the flag <code>--enable-reproducible-build</code> to your <code>configure</code> command line. This will turn on support for reproducible builds where it could otherwise be lacking.</p>
+<ul>
+<li>Do not rely on <code>configure</code>'s default adhoc version strings</li>
+</ul>
+<p>Default adhoc version strings OPT segment include user name, source directory and timestamp. You can either override just the OPT segment using <code>--with-version-opt=&lt;any fixed string&gt;</code>, or you can specify the entire version string using <code>--with-version-string=&lt;your version&gt;</code>.</p>
+<ul>
+<li>Specify how the build sets <code>SOURCE_DATE_EPOCH</code></li>
+</ul>
+<p>The JDK build system will set the <code>SOURCE_DATE_EPOCH</code> environment variable during building, depending on the value of the <code>--with-source-date</code> option for <code>configure</code>. The default value is <code>updated</code>, which means that <code>SOURCE_DATE_EPOCH</code> will be set to the current time each time you are running <code>make</code>.</p>
+<p>The <a href="https://reproducible-builds.org/docs/source-date-epoch/"><code>SOURCE_DATE_EPOCH</code> environment variable</a> is an industry standard, that many tools, such as gcc, recognize, and use in place of the current time when generating output.</p>
+<p>For reproducible builds, you need to set this to a fixed value. You can use the special value <code>version</code> which will use the nominal release date for the current JDK version, or a value describing a date, either an epoch based timestamp as an integer, or a valid ISO-8601 date.</p>
+<p><strong>Hint:</strong> If your build environment already sets <code>SOURCE_DATE_EPOCH</code>, you can propagate this using <code>--with-source-date=$SOURCE_DATE_EPOCH</code>.</p>
+<ul>
+<li>Specify a hotspot build time</li>
+</ul>
+<p>Set a fixed hotspot build time. This will be included in the hotspot library (<code>libjvm.so</code> or <code>jvm.dll</code>) and defaults to the current time when building hotspot. Use <code>--with-hotspot-build-time=&lt;any fixed string&gt;</code> for reproducible builds. It's a string so you don't need to format it specifically, so e.g. <code>n/a</code> will do. Another solution is to use the <code>SOURCE_DATE_EPOCH</code> variable, e.g. <code>--with-hotspot-build-time=$(date --date=@$SOURCE_DATE_EPOCH)</code>.</p>
+<ul>
+<li>Copyright year</li>
+</ul>
+<p>The copyright year in some generated text files are normally set to the current year. This can be overridden by <code>--with-copyright-year=&lt;year&gt;</code>. For fully reproducible builds, this needs to be set to a fixed value.</p>
 <h2 id="hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</h2>
 <h3 id="bash-completion">Bash Completion</h3>
 <p>The <code>configure</code> and <code>make</code> commands tries to play nice with bash command-line completion (using <code>&lt;tab&gt;</code> or <code>&lt;tab&gt;&lt;tab&gt;</code>). To use this functionality, make sure you enable completion in your <code>~/.bashrc</code> (see instructions for bash in your operating system).</p>

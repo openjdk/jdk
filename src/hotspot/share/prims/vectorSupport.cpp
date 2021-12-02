@@ -30,6 +30,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -291,6 +292,7 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    return Op_NegI;
+        case T_LONG:   return Op_NegL;
         case T_FLOAT:  return Op_NegF;
         case T_DOUBLE: return Op_NegD;
         default: fatal("NEG: %s", type2name(bt));
@@ -373,6 +375,26 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
+    case VECTOR_OP_LROTATE: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:  return Op_RotateLeft;
+        default: fatal("LROTATE: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_RROTATE: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:  return Op_RotateRight;
+        default: fatal("RROTATE: %s", type2name(bt));
+      }
+      break;
+    }
     case VECTOR_OP_MASK_LASTTRUE: {
       switch (bt) {
         case T_BYTE:  // fall-through
@@ -406,6 +428,18 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_FLOAT: // fall-through
         case T_DOUBLE: return Op_VectorMaskTrueCount;
         default: fatal("MASK_TRUECOUNT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_MASK_TOLONG: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_VectorMaskToLong;
+        default: fatal("MASK_TOLONG: %s", type2name(bt));
       }
       break;
     }

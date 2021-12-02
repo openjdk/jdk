@@ -76,10 +76,10 @@ class CESU_8 extends Unicode
         dst.position(dp - dst.arrayOffset());
     }
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     private static class Decoder extends CharsetDecoder
                                  implements ArrayDecoder {
-
-        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
@@ -434,7 +434,6 @@ class CESU_8 extends Unicode
         }
 
         private Surrogate.Parser sgp;
-        private char[] c2;
         private CoderResult encodeArrayLoop(CharBuffer src,
                                             ByteBuffer dst)
         {
@@ -445,11 +444,12 @@ class CESU_8 extends Unicode
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            int dlASCII = dp + Math.min(sl - sp, dl - dp);
 
-            // ASCII only loop
-            while (dp < dlASCII && sa[sp] < '\u0080')
-                da[dp++] = (byte) sa[sp++];
+            // Handle ASCII-only prefix
+            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            sp += n;
+            dp += n;
+
             while (sp < sl) {
                 char c = sa[sp];
                 if (c < 0x80) {
@@ -549,11 +549,11 @@ class CESU_8 extends Unicode
         public int encode(char[] sa, int sp, int len, byte[] da) {
             int sl = sp + len;
             int dp = 0;
-            int dlASCII = dp + Math.min(len, da.length);
 
-            // ASCII only optimized loop
-            while (dp < dlASCII && sa[sp] < '\u0080')
-                da[dp++] = (byte) sa[sp++];
+            // Handle ASCII-only prefix
+            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(len, da.length));
+            sp += n;
+            dp += n;
 
             while (sp < sl) {
                 char c = sa[sp++];

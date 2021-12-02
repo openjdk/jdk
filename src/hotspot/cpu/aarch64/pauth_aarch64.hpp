@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
-#define CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
+#ifndef CPU_AARCH64_PAUTH_AARCH64_HPP
+#define CPU_AARCH64_PAUTH_AARCH64_HPP
 
 #include OS_CPU_HEADER_INLINE(pauth)
 
@@ -32,4 +32,4 @@ inline bool pauth_ptr_is_raw(address ptr) {
   return ptr == pauth_strip_pointer(ptr);
 }
 
-#endif // CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
+#endif // CPU_AARCH64_PAUTH_AARCH64_HPP

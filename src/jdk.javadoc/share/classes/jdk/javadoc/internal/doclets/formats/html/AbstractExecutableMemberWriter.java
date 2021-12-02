@@ -133,13 +133,13 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     /**
      * Add the parameter for the executable member.
      *
-     * @param member the member to write parameter for.
      * @param param the parameter that needs to be written.
+     * @param paramType the type of the parameter.
      * @param isVarArg true if this is a link to var arg.
      * @param tree the content tree to which the parameter information will be added.
      */
-    protected void addParam(ExecutableElement member, VariableElement param, TypeMirror paramType,
-            boolean isVarArg, Content tree) {
+    protected void addParam(VariableElement param, TypeMirror paramType, boolean isVarArg,
+                            Content tree) {
         Content link = writer.getLink(new HtmlLinkInfo(configuration, EXECUTABLE_MEMBER_PARAM,
                 paramType).varargs(isVarArg));
         tree.add(link);
@@ -249,7 +249,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                                 .add(" ");
                     }
                 }
-                addParam(member, param, paramType,
+                addParam(param, paramType,
                     (paramstart == parameters.size() - 1) && member.isVarArgs(), paramTree);
                 break;
             }
@@ -268,7 +268,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                             .add(" ");
                 }
             }
-            addParam(member, parameters.get(i), instMeth.getParameterTypes().get(i),
+            addParam(parameters.get(i), instMeth.getParameterTypes().get(i),
                     (i == parameters.size() - 1) && member.isVarArgs(),
                     paramTree);
         }

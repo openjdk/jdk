@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_HEAPREGION_HPP
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
+#include "gc/g1/g1EvacFailureObjectsSet.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
@@ -36,6 +37,7 @@
 #include "runtime/mutex.hpp"
 #include "utilities/macros.hpp"
 
+class G1CardSetConfiguration;
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1Predictions;
@@ -75,7 +77,7 @@ class HeapRegion : public CHeapObj<mtGC> {
   HeapWord* _compaction_top;
 
   G1BlockOffsetTablePart _bot_part;
-  Mutex _par_alloc_lock;
+
   // When we need to retire an allocation region, while other threads
   // are also concurrently trying to allocate into it, we typically
   // allocate a dummy object at the end of the region to ensure that
@@ -150,23 +152,29 @@ public:
 
   void object_iterate(ObjectClosure* blk);
 
-  // Allocation (return NULL if full).  Assumes the caller has established
-  // mutually exclusive access to the HeapRegion.
-  HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
-  // Allocation (return NULL if full).  Enforces mutual exclusion internally.
-  HeapWord* par_allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
+  // At the given address create an object with the given size. If the region
+  // is old the BOT will be updated if the object spans a threshold.
+  void fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap = true);
 
-  HeapWord* allocate(size_t word_size);
-  HeapWord* par_allocate(size_t word_size);
+  // All allocations are done without updating the BOT. The BOT
+  // needs to be kept in sync for old generation regions and
+  // this is done by explicit updates when crossing thresholds.
+  inline HeapWord* par_allocate(size_t min_word_size, size_t desired_word_size, size_t* word_size);
+  inline HeapWord* allocate(size_t word_size);
+  inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
-  inline HeapWord* par_allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* word_size);
-  inline HeapWord* allocate_no_bot_updates(size_t word_size);
-  inline HeapWord* allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
+  // Update the BOT for the given address if it crosses the next
+  // BOT threshold at or after obj_start.
+  inline void update_bot_at(HeapWord* obj_start, size_t obj_size);
+  // Update BOT at the given threshold for the given object. The
+  // given object must cross the threshold.
+  inline void update_bot_crossing_threshold(HeapWord** threshold, HeapWord* obj_start, HeapWord* obj_end);
+  inline HeapWord* bot_threshold_for_addr(const void* addr);
 
   // Full GC support methods.
 
-  HeapWord* initialize_threshold();
-  HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
+  void initialize_bot_threshold();
+  void alloc_block_in_bot(HeapWord* start, HeapWord* end);
 
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc();
@@ -196,6 +204,10 @@ public:
 
   void update_bot() {
     _bot_part.update();
+  }
+
+  void update_bot_threshold() {
+    _bot_part.set_threshold(top());
   }
 
 private:
@@ -256,6 +268,8 @@ private:
 
   uint _node_index;
 
+  G1EvacFailureObjectsSet _evac_failure_objs;
+
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
   // Returns whether the given object address refers to a dead object, and either the
@@ -281,7 +295,10 @@ private:
   // starting at p extending to at most the prev TAMS using the given mark bitmap.
   inline size_t block_size_using_bitmap(const HeapWord* p, const G1CMBitMap* const prev_bitmap) const;
 public:
-  HeapRegion(uint hrm_index, G1BlockOffsetTable* bot, MemRegion mr);
+  HeapRegion(uint hrm_index,
+             G1BlockOffsetTable* bot,
+             MemRegion mr,
+             G1CardSetConfiguration* config);
 
   // If this region is a member of a HeapRegionManager, the index in that
   // sequence, otherwise -1.
@@ -445,6 +462,7 @@ public:
   // Unsets the humongous-related fields on the region.
   void clear_humongous();
 
+  void set_rem_set(HeapRegionRemSet* rem_set) { _rem_set = rem_set; }
   // If the region has a remembered set, return a pointer to it.
   HeapRegionRemSet* rem_set() const {
     return _rem_set;
@@ -548,6 +566,11 @@ public:
 
   // Update the region state after a failed evacuation.
   void handle_evacuation_failure();
+  // Record an object that failed evacuation within this region.
+  void record_evac_failure_obj(oop obj);
+  // Applies the given closure to all previously recorded objects
+  // that failed evacuation in ascending address order.
+  void process_and_drop_evac_failure_objs(ObjectClosure* closure);
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for

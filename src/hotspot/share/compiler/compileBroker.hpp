@@ -174,20 +174,19 @@ class CompileBroker: AllStatic {
   // These counters are used for assigning id's to each compilation
   static volatile jint _compilation_id;
   static volatile jint _osr_compilation_id;
+  static volatile jint _native_compilation_id;
 
   static CompileQueue* _c2_compile_queue;
   static CompileQueue* _c1_compile_queue;
 
   // performance counters
   static PerfCounter* _perf_total_compilation;
-  static PerfCounter* _perf_native_compilation;
   static PerfCounter* _perf_osr_compilation;
   static PerfCounter* _perf_standard_compilation;
 
   static PerfCounter* _perf_total_bailout_count;
   static PerfCounter* _perf_total_invalidated_count;
   static PerfCounter* _perf_total_compile_count;
-  static PerfCounter* _perf_total_native_compile_count;
   static PerfCounter* _perf_total_osr_compile_count;
   static PerfCounter* _perf_total_standard_compile_count;
 
@@ -260,8 +259,6 @@ class CompileBroker: AllStatic {
                            int compilable, const char* failure_reason);
   static void update_compile_perf_data(CompilerThread *thread, const methodHandle& method, bool is_osr);
 
-  static void push_jni_handle_block();
-  static void pop_jni_handle_block();
   static void collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task);
 
   static void compile_method_base(const methodHandle& method,

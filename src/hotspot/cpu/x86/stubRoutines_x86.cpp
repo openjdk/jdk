@@ -48,6 +48,7 @@ address StubRoutines::x86::_vector_int_to_byte_mask = NULL;
 address StubRoutines::x86::_vector_int_to_short_mask = NULL;
 address StubRoutines::x86::_vector_all_bits_set = NULL;
 address StubRoutines::x86::_vector_byte_shuffle_mask = NULL;
+address StubRoutines::x86::_vector_int_mask_cmp_bits = NULL;
 address StubRoutines::x86::_vector_short_shuffle_mask = NULL;
 address StubRoutines::x86::_vector_int_shuffle_mask = NULL;
 address StubRoutines::x86::_vector_long_shuffle_mask = NULL;
@@ -65,14 +66,22 @@ address StubRoutines::x86::_k256_W_adr = NULL;
 address StubRoutines::x86::_k512_W_addr = NULL;
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr_sha512 = NULL;
 // Base64 masks
-address StubRoutines::x86::_bswap_mask = NULL;
-address StubRoutines::x86::_base64_charset = NULL;
-address StubRoutines::x86::_gather_mask = NULL;
-address StubRoutines::x86::_right_shift_mask = NULL;
-address StubRoutines::x86::_left_shift_mask = NULL;
-address StubRoutines::x86::_and_mask = NULL;
-address StubRoutines::x86::_url_charset = NULL;
+address StubRoutines::x86::_encoding_table_base64 = NULL;
+address StubRoutines::x86::_shuffle_base64 = NULL;
+address StubRoutines::x86::_avx2_shuffle_base64 = NULL;
+address StubRoutines::x86::_avx2_input_mask_base64 = NULL;
+address StubRoutines::x86::_avx2_lut_base64 = NULL;
 address StubRoutines::x86::_counter_mask_addr = NULL;
+address StubRoutines::x86::_lookup_lo_base64 = NULL;
+address StubRoutines::x86::_lookup_hi_base64 = NULL;
+address StubRoutines::x86::_lookup_lo_base64url = NULL;
+address StubRoutines::x86::_lookup_hi_base64url = NULL;
+address StubRoutines::x86::_pack_vec_base64 = NULL;
+address StubRoutines::x86::_join_0_1_base64 = NULL;
+address StubRoutines::x86::_join_1_2_base64 = NULL;
+address StubRoutines::x86::_join_2_3_base64 = NULL;
+address StubRoutines::x86::_decoding_table_base64 = NULL;
+address StubRoutines::x86::_ghash_poly512_addr = NULL;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
 
@@ -209,6 +218,23 @@ juint StubRoutines::x86::_crc_table_avx512[] =
     0x74359406UL, 0x00000001UL, 0x3db1ecdcUL, 0x00000000UL,
     0x5a546366UL, 0x00000001UL, 0xf1da05aaUL, 0x00000000UL,
     0xccaa009eUL, 0x00000000UL, 0x751997d0UL, 0x00000001UL,
+    0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL
+};
+
+juint StubRoutines::x86::_crc32c_table_avx512[] =
+{
+    0xb9e02b86UL, 0x00000000UL, 0xdcb17aa4UL, 0x00000000UL,
+    0x493c7d27UL, 0x00000000UL, 0xc1068c50UL, 0x0000000eUL,
+    0x06e38d70UL, 0x00000002UL, 0x6992cea2UL, 0x00000000UL,
+    0x493c7d27UL, 0x00000000UL, 0xdd45aab8UL, 0x00000000UL,
+    0xdea713f0UL, 0x00000000UL, 0x05ec76f0UL, 0x00000001UL,
+    0x47db8317UL, 0x00000000UL, 0x2ad91c30UL, 0x00000000UL,
+    0x0715ce53UL, 0x00000000UL, 0xc49f4f67UL, 0x00000000UL,
+    0x39d3b296UL, 0x00000000UL, 0x083a6eecUL, 0x00000000UL,
+    0x9e4addf8UL, 0x00000000UL, 0x740eef02UL, 0x00000000UL,
+    0xddc0152bUL, 0x00000000UL, 0x1c291d04UL, 0x00000000UL,
+    0xba4fc28eUL, 0x00000000UL, 0x3da6d0cbUL, 0x00000000UL,
+    0x493c7d27UL, 0x00000000UL, 0xc1068c50UL, 0x0000000eUL,
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL
 };
 

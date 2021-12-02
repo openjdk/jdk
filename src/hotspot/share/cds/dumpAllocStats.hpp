@@ -30,7 +30,7 @@
 
 // This is for dumping detailed statistics for the allocations
 // in the shared spaces.
-class DumpAllocStats : public ResourceObj {
+class DumpAllocStats : public StackObj {
 public:
 
   // Here's poor man's enum inheritance

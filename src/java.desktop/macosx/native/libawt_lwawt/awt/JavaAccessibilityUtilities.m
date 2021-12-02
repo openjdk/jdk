@@ -27,6 +27,7 @@
 #import "JNIUtilities.h"
 
 #import <AppKit/AppKit.h>
+#import "ThreadUtilities.h"
 
 static BOOL JavaAccessibilityIsSupportedAttribute(id element, NSString *attribute);
 static void JavaAccessibilityLogError(NSString *message);
@@ -50,17 +51,21 @@ static jclass sjc_CAccessibility = NULL;
 
 NSSize getAxComponentSize(JNIEnv *env, jobject axComponent, jobject component)
 {
+    GET_CACCESSIBILITY_CLASS_RETURN(NSZeroSize);
     DECLARE_CLASS_RETURN(jc_Dimension, "java/awt/Dimension", NSZeroSize);
     DECLARE_FIELD_RETURN(jf_width, jc_Dimension, "width", "I", NSZeroSize);
     DECLARE_FIELD_RETURN(jf_height, jc_Dimension, "height", "I", NSZeroSize);
     DECLARE_STATIC_METHOD_RETURN(jm_getSize, sjc_CAccessibility, "getSize",
            "(Ljavax/accessibility/AccessibleComponent;Ljava/awt/Component;)Ljava/awt/Dimension;", NSZeroSize);
 
-    jobject dimension = (*env)->CallStaticObjectMethod(env, jc_Dimension, jm_getSize, axComponent, component);
+    jobject dimension = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getSize, axComponent, component);
     CHECK_EXCEPTION();
 
     if (dimension == NULL) return NSZeroSize;
-    return NSMakeSize((*env)->GetIntField(env, dimension, jf_width), (*env)->GetIntField(env, dimension, jf_height));
+
+    NSSize size = NSMakeSize((*env)->GetIntField(env, dimension, jf_width), (*env)->GetIntField(env, dimension, jf_height));
+    (*env)->DeleteLocalRef(env, dimension);
+    return size;
 }
 
 NSString *getJavaRole(JNIEnv *env, jobject axComponent, jobject component)
@@ -199,6 +204,20 @@ BOOL isSelectable(JNIEnv *env, jobject axContext, jobject component)
     return selectable;
 }
 
+BOOL isExpanded(JNIEnv *env, jobject axContext, jobject component)
+{
+    GET_ACCESSIBLESTATE_CLASS_RETURN(NO);
+    DECLARE_STATIC_FIELD_RETURN(jm_EXPANDED,
+                                    sjc_AccessibleState,
+                                    "EXPANDED",
+                                    "Ljavax/accessibility/AccessibleState;", NO );
+    jobject axExpandedState = (*env)->GetStaticObjectField(env, sjc_AccessibleState, jm_EXPANDED);
+    CHECK_EXCEPTION_NULL_RETURN(axExpandedState, NO);
+    BOOL expanded = containsAxState(env, axContext, axExpandedState, component);
+    (*env)->DeleteLocalRef(env, axExpandedState);
+    return expanded;
+}
+
 NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject component)
 {
     GET_CACCESSIBILITY_CLASS_RETURN(NSZeroPoint);
@@ -211,7 +230,9 @@ NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject
                       axComponent, component);
     CHECK_EXCEPTION();
     if (jpoint == NULL) return NSZeroPoint;
-    return NSMakePoint((*env)->GetIntField(env, jpoint, sjf_X), (*env)->GetIntField(env, jpoint, sjf_Y));
+    NSPoint p = NSMakePoint((*env)->GetIntField(env, jpoint, sjf_X), (*env)->GetIntField(env, jpoint, sjf_Y));
+    (*env)->DeleteLocalRef(env, jpoint);
+    return p;
 }
 
 jint getAxTextCharCount(JNIEnv *env, jobject axText, jobject component)
@@ -348,6 +369,75 @@ static void JavaAccessibilityLogError(NSString *message)
     NSLog(@"!!! %@", message);
 }
 
+/*
+ * Returns Object.equals for the two items
+ * This may use LWCToolkit.invokeAndWait(); don't call while holding fLock
+ * and try to pass a component so the event happens on the correct thread.
+ */
+BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component)
+{
+    DECLARE_CLASS_RETURN(sjc_Object, "java/lang/Object", NO);
+    DECLARE_METHOD_RETURN(jm_equals, sjc_Object, "equals", "(Ljava/lang/Object;)Z", NO);
+
+    if ((a == NULL) && (b == NULL)) return YES;
+    if ((a == NULL) || (b == NULL)) return NO;
+
+    if (pthread_main_np() != 0) {
+        // If we are on the AppKit thread
+        DECLARE_CLASS_RETURN(sjc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit", NO);
+        DECLARE_STATIC_METHOD_RETURN(jm_doEquals, sjc_LWCToolkit, "doEquals",
+                                     "(Ljava/lang/Object;Ljava/lang/Object;Ljava/awt/Component;)Z", NO);
+        return (*env)->CallStaticBooleanMethod(env, sjc_LWCToolkit, jm_doEquals, a, b, component);
+        CHECK_EXCEPTION();
+    }
+
+    jboolean jb = (*env)->CallBooleanMethod(env, a, jm_equals, b);
+    CHECK_EXCEPTION();
+    return jb;
+}
+
+/*
+ * The java/lang/Number concrete class could be for any of the Java primitive
+ * numerical types or some other subclass.
+ * All existing A11Y code uses Integer so that is what we look for first
+ * But all must be able to return a double and NSNumber accepts a double,
+ * so that's the fall back.
+ */
+NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber) {
+    if (jnumber == NULL) {
+        return nil;
+    }
+    DECLARE_CLASS_RETURN(jnumber_Class, "java/lang/Number", nil);
+    DECLARE_CLASS_RETURN(jinteger_Class, "java/lang/Integer", nil);
+    DECLARE_METHOD_RETURN(jm_intValue, jnumber_Class, "intValue", "()I", nil);
+    DECLARE_METHOD_RETURN(jm_doubleValue, jnumber_Class, "doubleValue", "()D", nil);
+    if ((*env)->IsInstanceOf(env, jnumber, jinteger_Class)) {
+        jint i = (*env)->CallIntMethod(env, jnumber, jm_intValue);
+        CHECK_EXCEPTION();
+        return [NSNumber numberWithInteger:i];
+    } else {
+        jdouble d = (*env)->CallDoubleMethod(env, jnumber, jm_doubleValue);
+        CHECK_EXCEPTION();
+        return [NSNumber numberWithDouble:d];
+    }
+}
+
+/*
+ * Converts an int array to an NSRange wrapped inside an NSValue
+ * takes [start, end] values and returns [start, end - start]
+ */
+NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array) {
+    jint *values = (*env)->GetIntArrayElements(env, array, 0);
+    if (values == NULL) {
+        // Note: Java will not be on the stack here so a java exception can't happen and no need to call ExceptionCheck.
+        NSLog(@"%s failed calling GetIntArrayElements", __FUNCTION__);
+        return nil;
+    };
+    NSValue *value = [NSValue valueWithRange:NSMakeRange(values[0], values[1] - values[0])];
+    (*env)->ReleaseIntArrayElements(env, array, values, 0);
+    return value;
+}
+
 // end appKit copies
 
 /*
@@ -417,13 +507,13 @@ void initializeRoles()
     [sRoles setObject:NSAccessibilitySplitGroupRole forKey:@"splitpane"];
     [sRoles setObject:NSAccessibilityValueIndicatorRole forKey:@"statusbar"];
     [sRoles setObject:NSAccessibilityGroupRole forKey:@"swingcomponent"];
-    [sRoles setObject:NSAccessibilityGridRole forKey:@"table"];
+    [sRoles setObject:NSAccessibilityTableRole forKey:@"table"];
     [sRoles setObject:NSAccessibilityTextFieldRole forKey:@"text"];
     [sRoles setObject:NSAccessibilityTextAreaRole forKey:@"textarea"]; // supports top/bottom of document notifications: CAccessability.getAccessibleRole()
     [sRoles setObject:NSAccessibilityCheckBoxRole forKey:@"togglebutton"];
     [sRoles setObject:NSAccessibilityToolbarRole forKey:@"toolbar"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"tooltip"];
-    [sRoles setObject:NSAccessibilityBrowserRole forKey:@"tree"];
+    [sRoles setObject:NSAccessibilityOutlineRole forKey:@"tree"];
     [sRoles setObject:NSAccessibilityUnknownRole forKey:@"unknown"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"viewport"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"window"];

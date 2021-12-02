@@ -413,7 +413,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   // Move the control dependence if it is pinned to not-null block.
   // Don't change it in other cases: NULL or dominating control.
   Node* ctrl = best->in(0);
-  if (get_block_for_node(ctrl) == not_null_block) {
+  if (ctrl != NULL && get_block_for_node(ctrl) == not_null_block) {
     // Set it to control edge of null check.
     best->set_req(0, proj->in(0)->in(0));
   }
@@ -518,7 +518,7 @@ Node* PhaseCFG::select(
   uint score   = 0; // Bigger is better
   int idx = -1;     // Index in worklist
   int cand_cnt = 0; // Candidate count
-  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
+  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   for( uint i=0; i<cnt; i++ ) { // Inspect entire worklist
     // Order in worklist is used to break ties.
@@ -702,8 +702,9 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         case Op_StoreP:
         case Op_StoreN:
         case Op_StoreVector:
-        case Op_StoreVectorScatter:
         case Op_StoreVectorMasked:
+        case Op_StoreVectorScatter:
+        case Op_StoreVectorScatterMasked:
         case Op_StoreNKlass:
           for (uint k = 1; k < m->req(); k++) {
             Node *in = m->in(k);
@@ -948,7 +949,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     return true;
   }
 
-  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
+  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   // We track the uses of local definitions as input dependences so that
   // we know when a given instruction is avialable to be scheduled.
@@ -1076,11 +1077,10 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
   if (OptoRegScheduling && block_size_threshold_ok) {
     // To stage register pressure calculations we need to examine the live set variables
     // breaking them up by register class to compartmentalize the calculations.
-    uint float_pressure = Matcher::float_pressure(FLOATPRESSURE);
-    _regalloc->_sched_int_pressure.init(INTPRESSURE);
-    _regalloc->_sched_float_pressure.init(float_pressure);
-    _regalloc->_scratch_int_pressure.init(INTPRESSURE);
-    _regalloc->_scratch_float_pressure.init(float_pressure);
+    _regalloc->_sched_int_pressure.init(Matcher::int_pressure_limit());
+    _regalloc->_sched_float_pressure.init(Matcher::float_pressure_limit());
+    _regalloc->_scratch_int_pressure.init(Matcher::int_pressure_limit());
+    _regalloc->_scratch_float_pressure.init(Matcher::float_pressure_limit());
 
     _regalloc->compute_entry_block_pressure(block);
   }

@@ -308,7 +308,7 @@ inline int Node::Init(int req) {
   // Allocate memory for the necessary number of edges.
   if (req > 0) {
     // Allocate space for _in array to have double alignment.
-    _in = (Node **) ((char *) (C->node_arena()->Amalloc_D(req * sizeof(void*))));
+    _in = (Node **) ((char *) (C->node_arena()->AmallocWords(req * sizeof(void*))));
   }
   // If there are default notes floating around, capture them:
   Node_Notes* nn = C->default_node_notes();
@@ -499,7 +499,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 Node *Node::clone() const {
   Compile* C = Compile::current();
   uint s = size_of();           // Size of inherited Node
-  Node *n = (Node*)C->node_arena()->Amalloc_D(size_of() + _max*sizeof(Node*));
+  Node *n = (Node*)C->node_arena()->AmallocWords(size_of() + _max*sizeof(Node*));
   Copy::conjoint_words_to_lower((HeapWord*)this, (HeapWord*)n, s);
   // Set the new input pointer array
   n->_in = (Node**)(((char*)n)+s);
@@ -527,6 +527,10 @@ Node *Node::clone() const {
     // Don't add cloned node to Compile::_for_post_loop_opts_igvn list automatically.
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
+  }
+  if (n->is_reduction()) {
+    // Do not copy reduction information. This must be explicitly set by the calling code.
+    n->remove_flag(Node::Flag_is_reduction);
   }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->register_potential_barrier_node(n);

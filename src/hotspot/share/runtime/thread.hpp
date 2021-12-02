@@ -54,7 +54,6 @@
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
 
-
 class SafeThreadsListPtr;
 class ThreadSafepointState;
 class ThreadsList;
@@ -100,7 +99,6 @@ class JavaThread;
 //       - VMThread
 //       - ConcurrentGCThread
 //       - WorkerThread
-//         - GangWorker
 //     - WatcherThread
 //     - JfrThreadSampler
 //     - LogAsyncWriter
@@ -164,9 +162,6 @@ class Thread: public ThreadShadow {
 
   DEBUG_ONLY(static Thread* _starting_thread;)
 
-  // Support for forcing alignment of thread objects for biased locking
-  void*       _real_malloc_address;
-
   // JavaThread lifecycle support:
   friend class SafeThreadsListPtr;  // for _threads_list_ptr, cmpxchg_threads_hazard_ptr(), {dec_,inc_,}nested_threads_hazard_ptr_cnt(), {g,s}et_threads_hazard_ptr(), inc_nested_handle_cnt(), tag_hazard_ptr() access
   friend class ScanHazardPtrGatherProtectedThreadsClosure;  // for cmpxchg_threads_hazard_ptr(), get_threads_hazard_ptr(), is_hazard_ptr_tagged() access
@@ -204,9 +199,12 @@ class Thread: public ThreadShadow {
   }
 
  public:
-  // Is the target JavaThread protected by the calling Thread
-  // or by some other mechanism:
-  static bool is_JavaThread_protected(const JavaThread* p);
+  // Is the target JavaThread protected by the calling Thread or by some other
+  // mechanism?
+  static bool is_JavaThread_protected(const JavaThread* target);
+  // Is the target JavaThread protected by a ThreadsListHandle (TLH) associated
+  // with the calling Thread?
+  static bool is_JavaThread_protected_by_TLH(const JavaThread* target);
 
   void* operator new(size_t size) throw() { return allocate(size, true); }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
@@ -241,12 +239,6 @@ class Thread: public ThreadShadow {
 #endif
 
  private:
-  // Active_handles points to a block of handles
-  JNIHandleBlock* _active_handles;
-
-  // One-element thread local free list
-  JNIHandleBlock* _free_handle_block;
-
   // Point to the last handle mark
   HandleMark* _last_handle_mark;
 
@@ -338,10 +330,6 @@ class Thread: public ThreadShadow {
   virtual bool is_monitor_deflation_thread() const   { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
-  // True iff the thread can perform GC operations at a safepoint.
-  // Generally will be true only of VM thread and parallel GC WorkGang
-  // threads.
-  virtual bool is_GC_task_thread() const             { return false; }
   virtual bool is_Watcher_thread() const             { return false; }
   virtual bool is_ConcurrentGC_thread() const        { return false; }
   virtual bool is_Named_thread() const               { return false; }
@@ -355,11 +343,15 @@ class Thread: public ThreadShadow {
   // If so it must participate in the safepoint protocol.
   virtual bool is_active_Java_thread() const         { return false; }
 
-  // Casts
-  inline JavaThread* as_Java_thread();
-  inline const JavaThread* as_Java_thread() const;
+  // All threads are given names. For singleton subclasses we can
+  // just hard-wire the known name of the instance. JavaThreads and
+  // NamedThreads support multiple named instances, and dynamic
+  // changing of the name of an instance.
+  virtual const char* name() const { return "Unknown thread"; }
 
-  virtual char* name() const { return (char*)"Unknown thread"; }
+  // A thread's type name is also made available for debugging
+  // and logging.
+  virtual const char* type_name() const { return "Thread"; }
 
   // Returns the current thread (ASSERTS if NULL)
   static inline Thread* current();
@@ -418,12 +410,6 @@ class Thread: public ThreadShadow {
 
   OSThread* osthread() const                     { return _osthread;   }
   void set_osthread(OSThread* thread)            { _osthread = thread; }
-
-  // JNI handle support
-  JNIHandleBlock* active_handles() const         { return _active_handles; }
-  void set_active_handles(JNIHandleBlock* block) { _active_handles = block; }
-  JNIHandleBlock* free_handle_block() const      { return _free_handle_block; }
-  void set_free_handle_block(JNIHandleBlock* block) { _free_handle_block = block; }
 
   // Internal handle support
   HandleArea* handle_area() const                { return _handle_area; }
@@ -575,6 +561,7 @@ protected:
   virtual void print_on(outputStream* st) const { print_on(st, false); }
   void print() const;
   virtual void print_on_error(outputStream* st, char* buf, int buflen) const;
+  // Basic, non-virtual, printing support that is simple and always safe.
   void print_value_on(outputStream* st) const;
 
   // Debug-only code
@@ -609,7 +596,6 @@ protected:
   // Code generation
   static ByteSize exception_file_offset()        { return byte_offset_of(Thread, _exception_file); }
   static ByteSize exception_line_offset()        { return byte_offset_of(Thread, _exception_line); }
-  static ByteSize active_handles_offset()        { return byte_offset_of(Thread, _active_handles); }
 
   static ByteSize stack_base_offset()            { return byte_offset_of(Thread, _stack_base); }
   static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size); }
@@ -748,6 +734,13 @@ class JavaThread: public Thread {
   ObjectMonitor* volatile _current_pending_monitor;     // ObjectMonitor this thread is waiting to lock
   bool           _current_pending_monitor_is_from_java; // locking is from Java code
   ObjectMonitor* volatile _current_waiting_monitor;     // ObjectMonitor on which this thread called Object.wait()
+
+  // Active_handles points to a block of handles
+  JNIHandleBlock* _active_handles;
+
+  // One-element thread local free list
+  JNIHandleBlock* _free_handle_block;
+
  public:
   volatile intptr_t _Stalled;
 
@@ -774,6 +767,15 @@ class JavaThread: public Thread {
   void set_current_waiting_monitor(ObjectMonitor* monitor) {
     Atomic::store(&_current_waiting_monitor, monitor);
   }
+
+  // JNI handle support
+  JNIHandleBlock* active_handles() const         { return _active_handles; }
+  void set_active_handles(JNIHandleBlock* block) { _active_handles = block; }
+  JNIHandleBlock* free_handle_block() const      { return _free_handle_block; }
+  void set_free_handle_block(JNIHandleBlock* block) { _free_handle_block = block; }
+
+  void push_jni_handle_block();
+  void pop_jni_handle_block();
 
  private:
   MonitorChunk* _monitor_chunks;              // Contains the off stack monitors
@@ -805,37 +807,21 @@ class JavaThread: public Thread {
 
   // Asynchronous exceptions support
  private:
-  enum AsyncExceptionCondition {
-    _no_async_condition = 0,
-    _async_exception,
-    _async_unsafe_access_error
-  };
-  AsyncExceptionCondition _async_exception_condition;
-  oop                     _pending_async_exception;
+  oop     _pending_async_exception;
+#ifdef ASSERT
+  bool    _is_unsafe_access_error;
+#endif
 
-  void set_async_exception_condition(AsyncExceptionCondition aec) { _async_exception_condition = aec; }
-  AsyncExceptionCondition clear_async_exception_condition() {
-    AsyncExceptionCondition x = _async_exception_condition;
-    _async_exception_condition = _no_async_condition;
-    return x;
-  }
-
+  inline bool clear_async_exception_condition();
  public:
-  bool has_async_exception_condition(bool check_unsafe_access_error = true) {
-    return check_unsafe_access_error ? _async_exception_condition != _no_async_condition
-                                     : _async_exception_condition == _async_exception;
+  bool has_async_exception_condition() {
+    return (_suspend_flags & _has_async_exception) != 0;
   }
   inline void set_pending_async_exception(oop e);
-  void set_pending_unsafe_access_error()  {
-    // Don't overwrite an asynchronous exception sent by another thread
-    if (_async_exception_condition == _no_async_condition) {
-      set_async_exception_condition(_async_unsafe_access_error);
-    }
-  }
-  void check_and_handle_async_exceptions();
-  // Installs a pending exception to be inserted later
-  static void send_async_exception(oop thread_oop, oop java_throwable);
+  inline void set_pending_unsafe_access_error();
+  static void send_async_exception(JavaThread* jt, oop java_throwable);
   void send_thread_stop(oop throwable);
+  void check_and_handle_async_exceptions();
 
   // Safepoint support
  public:                                                        // Expose _thread_state for SafeFetchInt()
@@ -957,8 +943,8 @@ class JavaThread: public Thread {
   jlong*    _jvmci_counters;
 
   // Fast thread locals for use by JVMCI
-  intptr_t*  _jvmci_reserved0;
-  intptr_t*  _jvmci_reserved1;
+  jlong      _jvmci_reserved0;
+  jlong      _jvmci_reserved1;
   oop        _jvmci_reserved_oop0;
 
  public:
@@ -968,6 +954,30 @@ class JavaThread: public Thread {
   bool resize_counters(int current_size, int new_size);
 
   static bool resize_all_jvmci_counters(int new_size);
+
+  void set_jvmci_reserved_oop0(oop value) {
+    _jvmci_reserved_oop0 = value;
+  }
+
+  oop get_jvmci_reserved_oop0() {
+    return _jvmci_reserved_oop0;
+  }
+
+  void set_jvmci_reserved0(jlong value) {
+    _jvmci_reserved0 = value;
+  }
+
+  jlong get_jvmci_reserved0() {
+    return _jvmci_reserved0;
+  }
+
+  void set_jvmci_reserved1(jlong value) {
+    _jvmci_reserved1 = value;
+  }
+
+  jlong get_jvmci_reserved1() {
+    return _jvmci_reserved1;
+  }
 
  private:
 #endif // INCLUDE_JVMCI
@@ -1125,6 +1135,8 @@ class JavaThread: public Thread {
   void set_requires_cross_modify_fence(bool val) PRODUCT_RETURN NOT_PRODUCT({ _requires_cross_modify_fence = val; })
 
  private:
+  DEBUG_ONLY(void verify_frame_info();)
+
   // Support for thread handshake operations
   HandshakeState _handshake;
  public:
@@ -1154,8 +1166,7 @@ class JavaThread: public Thread {
   // Return true if JavaThread has an asynchronous condition or
   // if external suspension is requested.
   bool has_special_runtime_exit_condition() {
-    return (_async_exception_condition != _no_async_condition) ||
-           (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
+    return (_suspend_flags & (_has_async_exception | _obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }
 
   // Fast-locking support
@@ -1276,6 +1287,8 @@ class JavaThread: public Thread {
   static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
   static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
 
+  static ByteSize active_handles_offset()        { return byte_offset_of(JavaThread, _active_handles); }
+
   // StackOverflow offsets
   static ByteSize stack_overflow_limit_offset()  {
     return byte_offset_of(JavaThread, _stack_overflow_state._stack_overflow_limit);
@@ -1354,6 +1367,9 @@ class JavaThread: public Thread {
  private:
   void set_entry_point(ThreadFunction entry_point) { _entry_point = entry_point; }
 
+  // factor out low-level mechanics for use in both normal and error cases
+  const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
+
  public:
 
   // Frame iteration; calls the function f for all frames on the stack
@@ -1373,7 +1389,10 @@ class JavaThread: public Thread {
   DEBUG_ONLY(void verify_states_for_handshake();)
 
   // Misc. operations
-  char* name() const { return (char*)get_thread_name(); }
+  const char* name() const;
+  const char* type_name() const { return "JavaThread"; }
+  static const char* name_for(oop thread_obj);
+
   void print_on(outputStream* st, bool print_extended_info) const;
   void print_on(outputStream* st) const { print_on(st, false); }
   void print() const;
@@ -1381,11 +1400,7 @@ class JavaThread: public Thread {
   void print_on_error(outputStream* st, char* buf, int buflen) const;
   void print_name_on_error(outputStream* st, char* buf, int buflen) const;
   void verify();
-  const char* get_thread_name() const;
- protected:
-  // factor out low-level mechanics for use in both normal and error cases
-  virtual const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
- public:
+
   // Accessing frames
   frame last_frame() {
     _anchor.make_walkable(this);
@@ -1420,7 +1435,23 @@ class JavaThread: public Thread {
 
  public:
   // Returns the running thread as a JavaThread
-  static inline JavaThread* current();
+  static JavaThread* current() {
+    return JavaThread::cast(Thread::current());
+  }
+
+  // Returns the current thread as a JavaThread, or NULL if not attached
+  static inline JavaThread* current_or_null();
+
+  // Casts
+  static JavaThread* cast(Thread* t) {
+    assert(t->is_Java_thread(), "incorrect cast to JavaThread");
+    return static_cast<JavaThread*>(t);
+  }
+
+  static const JavaThread* cast(const Thread* t) {
+    assert(t->is_Java_thread(), "incorrect cast to const JavaThread");
+    return static_cast<const JavaThread*>(t);
+  }
 
   // Returns the active Java thread.  Do not use this if you know you are calling
   // from a JavaThread, as it's slower than JavaThread::current.  If called from
@@ -1551,13 +1582,7 @@ class JavaThread: public Thread {
  public:
   Parker* parker() { return &_parker; }
 
-  // Biased locking support
- private:
-  GrowableArray<MonitorInfo*>* _cached_monitor_info;
  public:
-  GrowableArray<MonitorInfo*>* cached_monitor_info() { return _cached_monitor_info; }
-  void set_cached_monitor_info(GrowableArray<MonitorInfo*>* info) { _cached_monitor_info = info; }
-
   // clearing/querying jni attach status
   bool is_attaching_via_jni() const { return _jni_attach_state == _attaching_via_jni; }
   bool has_attached_via_jni() const { return is_attaching_via_jni() || _jni_attach_state == _attached_via_jni; }
@@ -1584,21 +1609,26 @@ public:
   static OopStorage* thread_oop_storage();
 
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
+
+  // Helper function to create the java.lang.Thread object for a
+  // VM-internal thread. The thread will have the given name, be
+  // part of the System ThreadGroup and if is_visible is true will be
+  // discoverable via the system ThreadGroup.
+  static Handle create_system_thread_object(const char* name, bool is_visible, TRAPS);
+
+  // Helper function to start a VM-internal daemon thread.
+  // E.g. ServiceThread, NotificationThread, CompilerThread etc.
+  static void start_internal_daemon(JavaThread* current, JavaThread* target,
+                                    Handle thread_oop, ThreadPriority prio);
+
+  // Helper function to do vm_exit_on_initialization for osthread
+  // resource allocation failure.
+  static void vm_exit_on_osthread_failure(JavaThread* thread);
 };
 
-// Inline implementation of JavaThread::current
-inline JavaThread* JavaThread::current() {
-  return Thread::current()->as_Java_thread();
-}
-
-inline JavaThread* Thread::as_Java_thread() {
-  assert(is_Java_thread(), "incorrect cast to JavaThread");
-  return static_cast<JavaThread*>(this);
-}
-
-inline const JavaThread* Thread::as_Java_thread() const {
-  assert(is_Java_thread(), "incorrect cast to const JavaThread");
-  return static_cast<const JavaThread*>(this);
+inline JavaThread* JavaThread::current_or_null() {
+  Thread* current = Thread::current_or_null();
+  return current != nullptr ? JavaThread::cast(current) : nullptr;
 }
 
 // The active thread queue. It also keeps track of the current used
@@ -1719,6 +1749,15 @@ class UnlockFlagSaver {
     ~UnlockFlagSaver() {
       _thread->set_do_not_unlock_if_synchronized(_do_not_unlock);
     }
+};
+
+class JNIHandleMark : public StackObj {
+  JavaThread* _thread;
+ public:
+  JNIHandleMark(JavaThread* thread) : _thread(thread) {
+    thread->push_jni_handle_block();
+  }
+  ~JNIHandleMark() { _thread->pop_jni_handle_block(); }
 };
 
 #endif // SHARE_RUNTIME_THREAD_HPP

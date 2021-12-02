@@ -26,7 +26,7 @@
 #include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_Optimizer.hpp"
 #include "c1/c1_ValueMap.hpp"
-#include "c1/c1_ValueSet.inline.hpp"
+#include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -336,140 +336,135 @@ class BlockMerger: public BlockClosure {
 
   bool try_merge(BlockBegin* block) {
     BlockEnd* end = block->end();
-    if (end->as_Goto() != NULL) {
-      assert(end->number_of_sux() == 1, "end must have exactly one successor");
-      // Note: It would be sufficient to check for the number of successors (= 1)
-      //       in order to decide if this block can be merged potentially. That
-      //       would then also include switch statements w/ only a default case.
-      //       However, in that case we would need to make sure the switch tag
-      //       expression is executed if it can produce observable side effects.
-      //       We should probably have the canonicalizer simplifying such switch
-      //       statements and then we are sure we don't miss these merge opportunities
-      //       here (was bug - gri 7/7/99).
-      BlockBegin* sux = end->default_sux();
-      if (sux->number_of_preds() == 1 && !sux->is_entry_block() && !end->is_safepoint()) {
-        // merge the two blocks
+    if (end->as_Goto() == NULL) return false;
+
+    assert(end->number_of_sux() == 1, "end must have exactly one successor");
+    // Note: It would be sufficient to check for the number of successors (= 1)
+    //       in order to decide if this block can be merged potentially. That
+    //       would then also include switch statements w/ only a default case.
+    //       However, in that case we would need to make sure the switch tag
+    //       expression is executed if it can produce observable side effects.
+    //       We should probably have the canonicalizer simplifying such switch
+    //       statements and then we are sure we don't miss these merge opportunities
+    //       here (was bug - gri 7/7/99).
+    BlockBegin* sux = end->default_sux();
+    if (sux->number_of_preds() != 1 || sux->is_entry_block() || end->is_safepoint()) return false;
+    // merge the two blocks
 
 #ifdef ASSERT
-        // verify that state at the end of block and at the beginning of sux are equal
-        // no phi functions must be present at beginning of sux
-        ValueStack* sux_state = sux->state();
-        ValueStack* end_state = end->state();
+    // verify that state at the end of block and at the beginning of sux are equal
+    // no phi functions must be present at beginning of sux
+    ValueStack* sux_state = sux->state();
+    ValueStack* end_state = end->state();
 
-        assert(end_state->scope() == sux_state->scope(), "scopes must match");
-        assert(end_state->stack_size() == sux_state->stack_size(), "stack not equal");
-        assert(end_state->locals_size() == sux_state->locals_size(), "locals not equal");
+    assert(end_state->scope() == sux_state->scope(), "scopes must match");
+    assert(end_state->stack_size() == sux_state->stack_size(), "stack not equal");
+    assert(end_state->locals_size() == sux_state->locals_size(), "locals not equal");
 
-        int index;
-        Value sux_value;
-        for_each_stack_value(sux_state, index, sux_value) {
-          assert(sux_value == end_state->stack_at(index), "stack not equal");
-        }
-        for_each_local_value(sux_state, index, sux_value) {
-          Phi* sux_phi = sux_value->as_Phi();
-          if (sux_phi != NULL && sux_phi->is_illegal()) continue;
-          assert(sux_value == end_state->local_at(index), "locals not equal");
-        }
-        assert(sux_state->caller_state() == end_state->caller_state(), "caller not equal");
+    int index;
+    Value sux_value;
+    for_each_stack_value(sux_state, index, sux_value) {
+      assert(sux_value == end_state->stack_at(index), "stack not equal");
+    }
+    for_each_local_value(sux_state, index, sux_value) {
+      Phi* sux_phi = sux_value->as_Phi();
+      if (sux_phi != NULL && sux_phi->is_illegal()) continue;
+      assert(sux_value == end_state->local_at(index), "locals not equal");
+    }
+    assert(sux_state->caller_state() == end_state->caller_state(), "caller not equal");
 #endif
 
-        // find instruction before end & append first instruction of sux block
-        Instruction* prev = end->prev();
-        Instruction* next = sux->next();
-        assert(prev->as_BlockEnd() == NULL, "must not be a BlockEnd");
-        prev->set_next(next);
-        prev->fixup_block_pointers();
-        sux->disconnect_from_graph();
-        block->set_end(sux->end());
-        // add exception handlers of deleted block, if any
-        for (int k = 0; k < sux->number_of_exception_handlers(); k++) {
-          BlockBegin* xhandler = sux->exception_handler_at(k);
-          block->add_exception_handler(xhandler);
+    // find instruction before end & append first instruction of sux block
+    Instruction* prev = end->prev();
+    Instruction* next = sux->next();
+    assert(prev->as_BlockEnd() == NULL, "must not be a BlockEnd");
+    prev->set_next(next);
+    prev->fixup_block_pointers();
+    sux->disconnect_from_graph();
+    block->set_end(sux->end());
+    // add exception handlers of deleted block, if any
+    for (int k = 0; k < sux->number_of_exception_handlers(); k++) {
+      BlockBegin* xhandler = sux->exception_handler_at(k);
+      block->add_exception_handler(xhandler);
 
-          // also substitute predecessor of exception handler
-          assert(xhandler->is_predecessor(sux), "missing predecessor");
-          xhandler->remove_predecessor(sux);
-          if (!xhandler->is_predecessor(block)) {
-            xhandler->add_predecessor(block);
+      // also substitute predecessor of exception handler
+      assert(xhandler->is_predecessor(sux), "missing predecessor");
+      xhandler->remove_predecessor(sux);
+      if (!xhandler->is_predecessor(block)) {
+        xhandler->add_predecessor(block);
+      }
+    }
+
+    // debugging output
+    _merge_count++;
+    if (PrintBlockElimination) {
+      tty->print_cr("%d. merged B%d & B%d (stack size = %d)",
+                    _merge_count, block->block_id(), sux->block_id(), sux->state()->stack_size());
+    }
+
+    _hir->verify();
+
+    If* if_ = block->end()->as_If();
+    if (if_) {
+      IfOp* ifop    = if_->x()->as_IfOp();
+      Constant* con = if_->y()->as_Constant();
+      bool swapped = false;
+      if (!con || !ifop) {
+        ifop = if_->y()->as_IfOp();
+        con  = if_->x()->as_Constant();
+        swapped = true;
+      }
+      if (con && ifop) {
+        Constant* tval = ifop->tval()->as_Constant();
+        Constant* fval = ifop->fval()->as_Constant();
+        if (tval && fval) {
+          // Find the instruction before if_, starting with ifop.
+          // When if_ and ifop are not in the same block, prev
+          // becomes NULL In such (rare) cases it is not
+          // profitable to perform the optimization.
+          Value prev = ifop;
+          while (prev != NULL && prev->next() != if_) {
+            prev = prev->next();
           }
-        }
 
-        // debugging output
-        _merge_count++;
-        if (PrintBlockElimination) {
-          tty->print_cr("%d. merged B%d & B%d (stack size = %d)",
-                        _merge_count, block->block_id(), sux->block_id(), sux->state()->stack_size());
-        }
+          if (prev != NULL) {
+            Instruction::Condition cond = if_->cond();
+            BlockBegin* tsux = if_->tsux();
+            BlockBegin* fsux = if_->fsux();
+            if (swapped) {
+              cond = Instruction::mirror(cond);
+            }
 
-        _hir->verify();
+            BlockBegin* tblock = tval->compare(cond, con, tsux, fsux);
+            BlockBegin* fblock = fval->compare(cond, con, tsux, fsux);
+            if (tblock != fblock && !if_->is_safepoint()) {
+              If* newif = new If(ifop->x(), ifop->cond(), false, ifop->y(),
+                                 tblock, fblock, if_->state_before(), if_->is_safepoint());
+              newif->set_state(if_->state()->copy());
 
-        If* if_ = block->end()->as_If();
-        if (if_) {
-          IfOp* ifop    = if_->x()->as_IfOp();
-          Constant* con = if_->y()->as_Constant();
-          bool swapped = false;
-          if (!con || !ifop) {
-            ifop = if_->y()->as_IfOp();
-            con  = if_->x()->as_Constant();
-            swapped = true;
-          }
-          if (con && ifop) {
-            Constant* tval = ifop->tval()->as_Constant();
-            Constant* fval = ifop->fval()->as_Constant();
-            if (tval && fval) {
-              // Find the instruction before if_, starting with ifop.
-              // When if_ and ifop are not in the same block, prev
-              // becomes NULL In such (rare) cases it is not
-              // profitable to perform the optimization.
-              Value prev = ifop;
-              while (prev != NULL && prev->next() != if_) {
-                prev = prev->next();
+              assert(prev->next() == if_, "must be guaranteed by above search");
+              NOT_PRODUCT(newif->set_printable_bci(if_->printable_bci()));
+              prev->set_next(newif);
+              block->set_end(newif);
+
+              _merge_count++;
+              if (PrintBlockElimination) {
+                tty->print_cr("%d. replaced If and IfOp at end of B%d with single If", _merge_count, block->block_id());
               }
 
-              if (prev != NULL) {
-                Instruction::Condition cond = if_->cond();
-                BlockBegin* tsux = if_->tsux();
-                BlockBegin* fsux = if_->fsux();
-                if (swapped) {
-                  cond = Instruction::mirror(cond);
-                }
-
-                BlockBegin* tblock = tval->compare(cond, con, tsux, fsux);
-                BlockBegin* fblock = fval->compare(cond, con, tsux, fsux);
-                if (tblock != fblock && !if_->is_safepoint()) {
-                  If* newif = new If(ifop->x(), ifop->cond(), false, ifop->y(),
-                                     tblock, fblock, if_->state_before(), if_->is_safepoint());
-                  newif->set_state(if_->state()->copy());
-
-                  assert(prev->next() == if_, "must be guaranteed by above search");
-                  NOT_PRODUCT(newif->set_printable_bci(if_->printable_bci()));
-                  prev->set_next(newif);
-                  block->set_end(newif);
-
-                  _merge_count++;
-                  if (PrintBlockElimination) {
-                    tty->print_cr("%d. replaced If and IfOp at end of B%d with single If", _merge_count, block->block_id());
-                  }
-
-                  _hir->verify();
-                }
-              }
+              _hir->verify();
             }
           }
         }
-
-        return true;
       }
     }
-    return false;
+
+    return true;
   }
 
   virtual void block_do(BlockBegin* block) {
-    _hir->verify();
     // repeat since the same block may merge again
-    while (try_merge(block)) {
-      _hir->verify();
-    }
+    while (try_merge(block)) ;
   }
 };
 
@@ -529,11 +524,9 @@ public:
   void do_OsrEntry       (OsrEntry*        x);
   void do_ExceptionObject(ExceptionObject* x);
   void do_RoundFP        (RoundFP*         x);
-  void do_UnsafeGetRaw   (UnsafeGetRaw*    x);
-  void do_UnsafePutRaw   (UnsafePutRaw*    x);
-  void do_UnsafeGetObject(UnsafeGetObject* x);
-  void do_UnsafePutObject(UnsafePutObject* x);
-  void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);
+  void do_UnsafeGet      (UnsafeGet*       x);
+  void do_UnsafePut      (UnsafePut*       x);
+  void do_UnsafeGetAndSet(UnsafeGetAndSet* x);
   void do_ProfileCall    (ProfileCall*     x);
   void do_ProfileReturnType (ProfileReturnType*  x);
   void do_ProfileInvoke  (ProfileInvoke*   x);
@@ -714,11 +707,9 @@ void NullCheckVisitor::do_Base           (Base*            x) {}
 void NullCheckVisitor::do_OsrEntry       (OsrEntry*        x) {}
 void NullCheckVisitor::do_ExceptionObject(ExceptionObject* x) { nce()->handle_ExceptionObject(x); }
 void NullCheckVisitor::do_RoundFP        (RoundFP*         x) {}
-void NullCheckVisitor::do_UnsafeGetRaw   (UnsafeGetRaw*    x) {}
-void NullCheckVisitor::do_UnsafePutRaw   (UnsafePutRaw*    x) {}
-void NullCheckVisitor::do_UnsafeGetObject(UnsafeGetObject* x) {}
-void NullCheckVisitor::do_UnsafePutObject(UnsafePutObject* x) {}
-void NullCheckVisitor::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {}
+void NullCheckVisitor::do_UnsafeGet      (UnsafeGet*       x) {}
+void NullCheckVisitor::do_UnsafePut      (UnsafePut*       x) {}
+void NullCheckVisitor::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}
 void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_last_explicit_null_check();
                                                                 nce()->handle_ProfileCall(x); }
 void NullCheckVisitor::do_ProfileReturnType (ProfileReturnType* x) { nce()->handle_ProfileReturnType(x); }

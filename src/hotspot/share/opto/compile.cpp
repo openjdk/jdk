@@ -475,6 +475,9 @@ CompileWrapper::CompileWrapper(Compile* compile) : _compile(compile) {
   _compile->clone_map().set_debug(_compile->has_method() && _compile->directive()->CloneMapDebugOption);
 }
 CompileWrapper::~CompileWrapper() {
+  // simulate crash during compilation
+  assert(CICrashAt < 0 || _compile->compile_id() != CICrashAt, "just as planned");
+
   _compile->end_method();
   _compile->env()->set_compiler_data(NULL);
 }
@@ -484,25 +487,25 @@ CompileWrapper::~CompileWrapper() {
 void Compile::print_compile_messages() {
 #ifndef PRODUCT
   // Check if recompiling
-  if (_subsume_loads == false && PrintOpto) {
+  if (!subsume_loads() && PrintOpto) {
     // Recompiling without allowing machine instructions to subsume loads
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without subsuming loads          **");
     tty->print_cr("*********************************************************");
   }
-  if (_do_escape_analysis != DoEscapeAnalysis && PrintOpto) {
+  if ((do_escape_analysis() != DoEscapeAnalysis) && PrintOpto) {
     // Recompiling without escape analysis
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without escape analysis          **");
     tty->print_cr("*********************************************************");
   }
-  if (_eliminate_boxing != EliminateAutoBox && PrintOpto) {
+  if ((eliminate_boxing() != EliminateAutoBox) && PrintOpto) {
     // Recompiling without boxing elimination
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without boxing elimination       **");
     tty->print_cr("*********************************************************");
   }
-  if ((_do_locks_coarsening != EliminateLocks) && PrintOpto) {
+  if ((do_locks_coarsening() != EliminateLocks) && PrintOpto) {
     // Recompiling without locks coarsening
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without locks coarsening         **");
@@ -535,17 +538,13 @@ debug_only( int Compile::_debug_idx = 100000; )
 
 
 Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
-                  bool subsume_loads, bool do_escape_analysis, bool eliminate_boxing,
-                  bool do_locks_coarsening, bool install_code, DirectiveSet* directive)
+                  Options options, DirectiveSet* directive)
                 : Phase(Compiler),
                   _compile_id(ci_env->compile_id()),
-                  _subsume_loads(subsume_loads),
-                  _do_escape_analysis(do_escape_analysis),
-                  _install_code(install_code),
-                  _eliminate_boxing(eliminate_boxing),
-                  _do_locks_coarsening(do_locks_coarsening),
+                  _options(options),
                   _method(target),
                   _entry_bci(osr_bci),
+                  _ilt(NULL),
                   _stub_function(NULL),
                   _stub_name(NULL),
                   _stub_entry_point(NULL),
@@ -770,8 +769,12 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   // If any phase is randomized for stress testing, seed random number
   // generation and log the seed for repeatability.
   if (StressLCM || StressGCM || StressIGVN || StressCCP) {
-    _stress_seed = FLAG_IS_DEFAULT(StressSeed) ?
-      static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
+    if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && RepeatCompilation)) {
+      _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
+      FLAG_SET_ERGO(StressSeed, _stress_seed);
+    } else {
+      _stress_seed = StressSeed;
+    }
     if (_log != NULL) {
       _log->elem("stress_test seed='%u'", _stress_seed);
     }
@@ -838,11 +841,7 @@ Compile::Compile( ciEnv* ci_env,
                   DirectiveSet* directive)
   : Phase(Compiler),
     _compile_id(0),
-    _subsume_loads(true),
-    _do_escape_analysis(false),
-    _install_code(true),
-    _eliminate_boxing(false),
-    _do_locks_coarsening(false),
+    _options(Options::for_runtime_stub()),
     _method(NULL),
     _entry_bci(InvocationEntryBci),
     _stub_function(stub_function),
@@ -1026,8 +1025,9 @@ void Compile::Init(int aliaslevel) {
   //   Type::update_loaded_types(_method, _method->constants());
 
   // Init alias_type map.
-  if (!_do_escape_analysis && aliaslevel == 3)
+  if (!do_escape_analysis() && aliaslevel == 3) {
     aliaslevel = 2;  // No unique types without escape analysis
+  }
   _AliasLevel = aliaslevel;
   const int grow_ats = 16;
   _max_alias_types = grow_ats;
@@ -1352,7 +1352,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     ciInstanceKlass *k = to->klass()->as_instance_klass();
     if( ptr == TypePtr::Constant ) {
       if (to->klass() != ciEnv::current()->Class_klass() ||
-          offset < k->size_helper() * wordSize) {
+          offset < k->layout_helper_size_in_bytes()) {
         // No constant oop pointers (such as Strings); they alias with
         // unknown strings.
         assert(!is_known_inst, "not scalarizable allocation");
@@ -1376,7 +1376,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       if (!is_known_inst) { // Do it only for non-instance types
         tj = to = TypeInstPtr::make(TypePtr::BotPTR, env()->Object_klass(), false, NULL, offset);
       }
-    } else if (offset < 0 || offset >= k->size_helper() * wordSize) {
+    } else if (offset < 0 || offset >= k->layout_helper_size_in_bytes()) {
       // Static fields are in the space above the normal instance
       // fields in the java.lang.Class instance.
       if (to->klass() != ciEnv::current()->Class_klass()) {
@@ -1386,6 +1386,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       }
     } else {
       ciInstanceKlass *canonical_holder = k->get_canonical_holder(offset);
+      assert(offset < canonical_holder->layout_helper_size_in_bytes(), "");
       if (!k->equals(canonical_holder) || tj->offset() != offset) {
         if( is_known_inst ) {
           tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, true, NULL, offset, to->instance_id());
@@ -1406,7 +1407,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     if ( offset == Type::OffsetBot || (offset >= 0 && (size_t)offset < sizeof(Klass)) ) {
 
       tj = tk = TypeKlassPtr::make(TypePtr::NotNull,
-                                   TypeKlassPtr::OBJECT->klass(),
+                                   TypeInstKlassPtr::OBJECT->klass(),
                                    offset);
     }
 
@@ -1453,7 +1454,9 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     case Type::RawPtr:   tj = TypeRawPtr::BOTTOM;   break;
     case Type::AryPtr:   // do not distinguish arrays at all
     case Type::InstPtr:  tj = TypeInstPtr::BOTTOM;  break;
-    case Type::KlassPtr: tj = TypeKlassPtr::OBJECT; break;
+    case Type::KlassPtr:
+    case Type::AryKlassPtr:
+    case Type::InstKlassPtr: tj = TypeInstKlassPtr::OBJECT; break;
     case Type::AnyPtr:   tj = TypePtr::BOTTOM;      break;  // caller checks it
     default: ShouldNotReachHere();
     }
@@ -1658,7 +1661,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       ciField* field;
       if (tinst->const_oop() != NULL &&
           tinst->klass() == ciEnv::current()->Class_klass() &&
-          tinst->offset() >= (tinst->klass()->as_instance_klass()->size_helper() * wordSize)) {
+          tinst->offset() >= (tinst->klass()->as_instance_klass()->layout_helper_size_in_bytes())) {
         // static field
         ciInstanceKlass* k = tinst->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
         field = k->get_field_by_offset(tinst->offset(), true);
@@ -2108,10 +2111,6 @@ void Compile::Optimize() {
     if (failing())  return;
   }
 
-  // Now that all inlining is over, cut edge from root to loop
-  // safepoints
-  remove_root_to_sfpts_edges(igvn);
-
   // Remove the speculative part of types and clean up the graph from
   // the extra CastPP nodes whose only purpose is to carry them. Do
   // that early so that optimizations are not disrupted by the extra
@@ -2135,7 +2134,8 @@ void Compile::Optimize() {
   if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp("", &timers[_t_renumberLive]);
     initial_gvn()->replace_with(&igvn);
-    for_igvn()->clear();
+    Unique_Node_List* old_worklist = for_igvn();
+    old_worklist->clear();
     Unique_Node_List new_worklist(C->comp_arena());
     {
       ResourceMark rm;
@@ -2145,11 +2145,15 @@ void Compile::Optimize() {
     set_for_igvn(&new_worklist);
     igvn = PhaseIterGVN(initial_gvn());
     igvn.optimize();
-    set_for_igvn(save_for_igvn);
+    set_for_igvn(old_worklist); // new_worklist is dead beyond this point
   }
 
+  // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
+  // safepoints
+  remove_root_to_sfpts_edges(igvn);
+
   // Perform escape analysis
-  if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
+  if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
@@ -2221,7 +2225,7 @@ void Compile::Optimize() {
     TracePhase tp("ccp", &timers[_t_ccp]);
     ccp.do_transform();
   }
-  print_method(PHASE_CPP1, 2);
+  print_method(PHASE_CCP1, 2);
 
   assert( true, "Break here to ccp.dump_old2new_map()");
 
@@ -2355,6 +2359,7 @@ bool Compile::has_vbox_nodes() {
 
 static bool is_vector_unary_bitwise_op(Node* n) {
   return n->Opcode() == Op_XorV &&
+         n->req() == 2 &&
          VectorNode::is_vector_bitwise_not_pattern(n);
 }
 
@@ -2362,7 +2367,7 @@ static bool is_vector_binary_bitwise_op(Node* n) {
   switch (n->Opcode()) {
     case Op_AndV:
     case Op_OrV:
-      return true;
+      return n->req() == 2;
 
     case Op_XorV:
       return !is_vector_unary_bitwise_op(n);
@@ -3421,6 +3426,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_StoreVector:
   case Op_LoadVectorGather:
   case Op_StoreVectorScatter:
+  case Op_LoadVectorGatherMasked:
+  case Op_StoreVectorScatterMasked:
   case Op_VectorCmpMasked:
   case Op_VectorMaskGen:
   case Op_LoadVectorMasked:
@@ -4514,7 +4521,9 @@ bool Compile::coarsened_locks_consistent() {
     bool modified = false; // track locks kind modifications
     Lock_List* locks_list = (Lock_List*)_coarsened_locks.at(i);
     uint size = locks_list->size();
-    if (size != locks_list->origin_cnt()) {
+    if (size == 0) {
+      unbalanced = false; // All locks were eliminated - good
+    } else if (size != locks_list->origin_cnt()) {
       unbalanced = true; // Some locks were removed from list
     } else {
       for (uint j = 0; j < size; j++) {
@@ -4579,10 +4588,12 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
           modified++;
         }
       }
-      uint max = n->len();
-      for( uint i = 0; i < max; ++i ) {
-        Node *m = n->in(i);
-        if (not_a_node(m))  continue;
+      // Iterate over outs - endless loops is unreachable from below
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node *m = n->fast_out(i);
+        if (not_a_node(m)) {
+          continue;
+        }
         worklist.push(m);
       }
     }
@@ -4603,10 +4614,12 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
         t = n->as_Type()->type();
         assert(t == t->remove_speculative(), "no more speculative types");
       }
-      uint max = n->len();
-      for( uint i = 0; i < max; ++i ) {
-        Node *m = n->in(i);
-        if (not_a_node(m))  continue;
+      // Iterate over outs - endless loops is unreachable from below
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node *m = n->fast_out(i);
+        if (not_a_node(m)) {
+          continue;
+        }
         worklist.push(m);
       }
     }

@@ -30,7 +30,7 @@
 #include "runtime/globals.hpp"
 
 class G1CollectionSetCandidates;
-class WorkGang;
+class WorkerThreads;
 
 // Helper class to calculate collection set candidates, and containing some related
 // methods.
@@ -59,7 +59,7 @@ public:
 
   // Build and return set of collection set candidates sorted by decreasing gc
   // efficiency.
-  static G1CollectionSetCandidates* build(WorkGang* workers, uint max_num_regions);
+  static G1CollectionSetCandidates* build(WorkerThreads* workers, uint max_num_regions);
 };
 
 #endif // SHARE_GC_G1_G1COLLECTIONSETCHOOSER_HPP
