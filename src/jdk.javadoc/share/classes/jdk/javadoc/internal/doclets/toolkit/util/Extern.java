@@ -514,7 +514,7 @@ public class Extern {
             DocPath elempath;
             String moduleName = null;
             DocPath basePath  = DocPath.create(path);
-            boolean issueWarning = true;
+            boolean showDiagnostic = true;
             while ((elemname = in.readLine()) != null) {
                 if (elemname.length() > 0) {
                     elempath = basePath;
@@ -534,14 +534,14 @@ public class Extern {
                         // For user provided libraries we check whether modularity matches the actual library.
                         // We trust modularity to be correct for platform library element lists.
                         if (platformVersion == 0) {
-                            actualModuleName = checkLinkCompatibility(elemname, moduleName, path, issueWarning);
+                            actualModuleName = checkLinkCompatibility(elemname, moduleName, path, showDiagnostic);
                         } else {
                             actualModuleName = moduleName == null ? DocletConstants.DEFAULT_ELEMENT_NAME : moduleName;
                         }
                         Item item = new Item(elemname, elempath, relative);
                         packageItems.computeIfAbsent(actualModuleName, k -> new TreeMap<>())
                             .putIfAbsent(elemname, item); // first-one-wins semantics
-                        issueWarning = false;
+                        showDiagnostic = false;
                     }
                 }
             }
@@ -556,25 +556,23 @@ public class Extern {
      * @param packageName the package name
      * @param moduleName the module name or null
      * @param path the documentation path
-     * @param issueWarning whether to print a warning in case of modularity mismatch
+     * @param showDiagnostic whether to print a diagnostic message in case of modularity mismatch
      * @return the module name to use according to actual modularity of the package
      */
-    private String checkLinkCompatibility(String packageName, String moduleName, String path, boolean issueWarning)  {
+    private String checkLinkCompatibility(String packageName, String moduleName, String path, boolean showDiagnostic)  {
         PackageElement pe = utils.elementUtils.getPackageElement(packageName);
         if (pe != null) {
             ModuleElement me = (ModuleElement)pe.getEnclosingElement();
             if (me == null || me.isUnnamed()) {
-                if (moduleName != null && issueWarning) {
-                    configuration.getReporter().print(Kind.WARNING,
-                            resources.getText("doclet.linkMismatch_PackagedLinkedtoModule", path));
+                if (moduleName != null && showDiagnostic) {
+                    printModularityMismatchDiagnostic("doclet.linkMismatch_PackagedLinkedtoModule", path);
                 }
                 // library is not modular, ignore module name even if documentation is modular
                 return DocletConstants.DEFAULT_ELEMENT_NAME;
             } else if (moduleName == null) {
-                // suppress the warning message in the case of automatic modules
-                if (!utils.elementUtils.isAutomaticModule(me) && issueWarning) {
-                    configuration.getReporter().print(Kind.WARNING,
-                            resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage", path));
+                // suppress the diagnostic message in the case of automatic modules
+                if (!utils.elementUtils.isAutomaticModule(me) && showDiagnostic) {
+                    printModularityMismatchDiagnostic("doclet.linkMismatch_ModuleLinkedtoPackage", path);
                 }
                 // library is modular, use module name for lookup even though documentation is not
                 return utils.getModuleName(me);
@@ -658,5 +656,12 @@ public class Extern {
         }
 
         return in;
+    }
+
+    private void printModularityMismatchDiagnostic(String key, Object arg) {
+        switch (configuration.getOptions().linkModularityMismatch()) {
+            case INFO -> configuration.getMessages().notice(key, arg);
+            case WARN -> configuration.getMessages().warning(key, arg);
+        }
     }
 }
