@@ -660,8 +660,8 @@ public class Extern {
 
     private void printModularityMismatchDiagnostic(String key, Object arg) {
         switch (configuration.getOptions().linkModularityMismatch()) {
-            case info -> configuration.getMessages().notice(key, arg);
-            case warn -> configuration.getMessages().warning(key, arg);
+            case INFO -> configuration.getMessages().notice(key, arg);
+            case WARN -> configuration.getMessages().warning(key, arg);
         }
     }
 }
