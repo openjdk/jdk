@@ -99,7 +99,7 @@ public class ClassFileVersionsTest {
             result[base + 1] = new Object[]{i + 44, 0, Set.of(TRANSITIVE)};
             result[base + 2] = new Object[]{i + 44, 0, Set.of(STATIC, TRANSITIVE)};
         }
-        
+
         result[unsupportedCount - 1] = new Object[]{FEATURE+1+44, 0, Set.of()};
         return result;
     }
