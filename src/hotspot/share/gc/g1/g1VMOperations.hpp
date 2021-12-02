@@ -88,11 +88,13 @@ private:
 
 // Concurrent G1 stop-the-world operations such as remark and cleanup.
 class VM_G1PauseConcurrent : public VM_Operation {
-protected:
+private:
   uint         _gc_id;
   const char*  _message;
+
+protected:
   VM_G1PauseConcurrent(const char* message) :
-      _gc_id(GCId::current()), _message(message) { }
+    _gc_id(GCId::current()), _message(message) { }
 
 public:
   virtual bool doit_prologue();
