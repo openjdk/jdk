@@ -61,6 +61,15 @@ public class Hello implements OpenFilesHandler {
         var outputFile = getOutputFile(args);
         trace(String.format("Output file: [%s]", outputFile));
         Files.write(outputFile, lines);
+
+        if (Optional.ofNullable(System.getProperty("jpackage.test.noexit")).map(
+                Boolean::parseBoolean).orElse(false)) {
+            trace("noexit");
+            var lock = new Object();
+            synchronized (lock) {
+                lock.wait();
+            }
+        }
     }
 
     private static List<String> printArgs(String[] args) {

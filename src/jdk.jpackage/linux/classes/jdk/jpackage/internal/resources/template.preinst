@@ -19,7 +19,7 @@ LAUNCHER_AS_SERVICE_SCRIPTS
 case "$1" in
     install|upgrade)
 if [ -n "$2" ]; then
-LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL
+  true; LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL
 fi
     ;;
 

@@ -57,22 +57,21 @@ public class ServiceTest {
 
         var pkg = new PackageTest()
                 .addHelloAppInitializer(null)
-                .disablePackageUninstaller()
-                .forTypes(PackageType.WINDOWS)
-                .addInitializer(cmd -> {
-                    cmd.addArguments("--win-upgrade-uuid", upgradeCode);
-                });
+                .disablePackageUninstaller();
+        pkg.forTypes(PackageType.WINDOWS, () -> pkg.addInitializer(cmd -> {
+            cmd.addArguments("--win-upgrade-uuid", upgradeCode);
+        }));
+
         new LauncherAsServiceVerifier("Default").applyTo(pkg);
 
         var pkg2 = new PackageTest()
                 .addHelloAppInitializer(null)
                 .addInitializer(cmd -> {
                     cmd.addArguments("--app-version", "2.0");
-                })
-                .forTypes(PackageType.WINDOWS)
-                .addInitializer(cmd -> {
-                    cmd.addArguments("--win-upgrade-uuid", upgradeCode);
                 });
+        pkg2.forTypes(PackageType.WINDOWS, () -> pkg2.addInitializer(cmd -> {
+            cmd.addArguments("--win-upgrade-uuid", upgradeCode);
+        }));
 
         new LauncherAsServiceVerifier("foo", "foo-launcher-as-service.txt",
                 "Foo").applyTo(pkg);
