@@ -24,10 +24,11 @@
 import jdk.jpackage.test.LauncherAsServiceVerifier;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.PackageType;
 
 /**
  * Launcher as service packaging test. Output of the test should be
- * servicetest*.* package bundle.
+ * servicetest*.* updateservicetest*.* and package bundles.
  */
 
 /*
@@ -52,15 +53,25 @@ public class ServiceTest {
 
     @Test
     public static void testUpdate() {
+        final String upgradeCode = "4050AD4D-D6CC-452A-9CB0-58E5FA8C410F";
+
         var pkg = new PackageTest()
                 .addHelloAppInitializer(null)
-                .disablePackageUninstaller();
+                .disablePackageUninstaller()
+                .forTypes(PackageType.WINDOWS)
+                .addInitializer(cmd -> {
+                    cmd.addArguments("--win-upgrade-uuid", upgradeCode);
+                });
         new LauncherAsServiceVerifier("Default").applyTo(pkg);
 
         var pkg2 = new PackageTest()
                 .addHelloAppInitializer(null)
                 .addInitializer(cmd -> {
                     cmd.addArguments("--app-version", "2.0");
+                })
+                .forTypes(PackageType.WINDOWS)
+                .addInitializer(cmd -> {
+                    cmd.addArguments("--win-upgrade-uuid", upgradeCode);
                 });
 
         new LauncherAsServiceVerifier("foo", "foo-launcher-as-service.txt",

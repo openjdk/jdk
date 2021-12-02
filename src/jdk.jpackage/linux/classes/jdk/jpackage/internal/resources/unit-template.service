@@ -1,5 +1,5 @@
 [Unit]
-Description=APPLICATION_DESCRIPTION
+Description=SERVICE_DESCRIPTION
 
 [Service]
 ExecStart=APPLICATION_LAUNCHER
