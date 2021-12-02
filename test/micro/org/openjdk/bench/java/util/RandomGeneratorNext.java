@@ -52,9 +52,9 @@ public class RandomGeneratorNext {
     @Setup
     public void setup() {
         buffer = new long[SIZE];
-        rngL128X128MixRandom = RandomGeneratorFactory.of("L128X128MixRandom").create();
-        rngL128X256MixRandom = RandomGeneratorFactory.of("L128X256MixRandom").create();
-        rngL128X1024MixRandom = RandomGeneratorFactory.of("L128X1024MixRandom").create();
+        rngL128X128MixRandom = RandomGeneratorFactory.of("L128X128MixRandom").create(42);
+        rngL128X256MixRandom = RandomGeneratorFactory.of("L128X256MixRandom").create(174);
+        rngL128X1024MixRandom = RandomGeneratorFactory.of("L128X1024MixRandom").create(308);
     }
 
     @Benchmark
