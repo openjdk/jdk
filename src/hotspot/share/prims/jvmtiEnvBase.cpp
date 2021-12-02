@@ -1393,6 +1393,9 @@ SetForceEarlyReturn::doit(Thread *target, bool self) {
   Thread* current_thread = Thread::current();
   HandleMark   hm(current_thread);
 
+  if (java_thread->is_exiting()) {
+    return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
+  }
   if (!self) {
     if (!java_thread->is_suspended()) {
       _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
@@ -1523,6 +1526,10 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   Thread* current_thread  = Thread::current();
   HandleMark hm(current_thread);
   JavaThread* java_thread = JavaThread::cast(target);
+
+  if (java_thread->is_exiting()) {
+    return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
+  }
   assert(java_thread == _state->get_thread(), "Must be");
 
   if (!self && !java_thread->is_suspended()) {
@@ -1599,14 +1606,12 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   // It's fine to update the thread state here because no JVMTI events
   // shall be posted for this PopFrame.
 
-  if (!java_thread->is_exiting() && java_thread->threadObj() != NULL) {
-    _state->update_for_pop_top_frame();
-    java_thread->set_popframe_condition(JavaThread::popframe_pending_bit);
-    // Set pending step flag for this popframe and it is cleared when next
-    // step event is posted.
-    _state->set_pending_step_for_popframe();
-    _result = JVMTI_ERROR_NONE;
-  }
+  _state->update_for_pop_top_frame();
+  java_thread->set_popframe_condition(JavaThread::popframe_pending_bit);
+  // Set pending step flag for this popframe and it is cleared when next
+  // step event is posted.
+  _state->set_pending_step_for_popframe();
+  _result = JVMTI_ERROR_NONE;
 }
 
 void
@@ -1614,6 +1619,9 @@ SetFramePopClosure::doit(Thread *target, bool self) {
   ResourceMark rm;
   JavaThread* java_thread = JavaThread::cast(target);
 
+  if (java_thread->is_exiting()) {
+    return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
+  }
   assert(_state->get_thread() == java_thread, "Must be");
 
   if (!self && !java_thread->is_suspended()) {
@@ -1633,9 +1641,6 @@ SetFramePopClosure::doit(Thread *target, bool self) {
   }
 
   assert(vf->frame_pointer() != NULL, "frame pointer mustn't be NULL");
-  if (java_thread->is_exiting() || java_thread->threadObj() == NULL) {
-    return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
-  }
   int frame_number = _state->count_frames() - _depth;
   _state->env_thread_state((JvmtiEnvBase*)_env)->set_frame_pop(frame_number);
   _result = JVMTI_ERROR_NONE;

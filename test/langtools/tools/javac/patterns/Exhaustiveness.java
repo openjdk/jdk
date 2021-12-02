@@ -799,6 +799,94 @@ public class Exhaustiveness extends TestRunner {
                """);
     }
 
+    @Test
+    public void testOnlyApplicable(Path base) throws Exception {
+        record TestCase(String cases, String... errors) {}
+        TestCase[] subCases = new TestCase[] {
+            new TestCase("""
+                                     case C3<Integer> c -> {}
+                                     case C5<Integer, ?> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """), //OK
+            new TestCase("""
+                                     case C5<Integer, ?> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """,
+                         "Test.java:11:9: compiler.err.not.exhaustive.statement",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case C3<Integer> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """,
+                         "Test.java:11:9: compiler.err.not.exhaustive.statement",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case C3<Integer> c -> {}
+                                     case C5<Integer, ?> c -> {}
+                         """,
+                         "Test.java:11:9: compiler.err.not.exhaustive.statement",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case C1 c -> {}
+                                     case C3<Integer> c -> {}
+                                     case C5<Integer, ?> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """,
+                         "Test.java:12:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C1)",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case C2<?> c -> {}
+                                     case C3<Integer> c -> {}
+                                     case C5<Integer, ?> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """,
+                         "Test.java:12:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C2<?>)",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case C4<?, ?> c -> {}
+                                     case C3<Integer> c -> {}
+                                     case C5<Integer, ?> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """,
+                         "Test.java:12:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C4<?,?>)",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+        };
+        for (TestCase tc : subCases) {
+            doTest(base,
+                   new String[0],
+                   """
+                   package test;
+                   public class Test {
+                       sealed interface I<T> {}
+                       final class C1 implements I<String> {}
+                       final class C2<T> implements I<String> {}
+                       final class C3<T> implements I<T> {}
+                       final class C4<T, E> implements I<String> {}
+                       final class C5<T, E> implements I<T> {}
+                       final class C6<T, E> implements I<E> {}
+                       void t(I<Integer> i) {
+                           switch (i) {
+                   ${cases}
+                           }
+                       }
+                   }
+                   """.replace("${cases}", tc.cases),
+                   tc.errors);
+        }
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");

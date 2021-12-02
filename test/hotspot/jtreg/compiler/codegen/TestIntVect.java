@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public class TestIntVect {
   static int test() {
     int[] a1 = new int[ARRLEN];
     int[] a2 = new int[ARRLEN];
+    int[] a3 = new int[ARRLEN];
     System.out.println("Warmup");
     for (int i=0; i<ITERS; i++) {
       test_ci(a1);
@@ -94,6 +95,13 @@ public class TestIntVect {
       test_cp_unalnsrc(a1, a2);
       test_2ci_unaln(a1, a2);
       test_2vi_unaln(a1, a2, (int)123, (int)103);
+      test_addImm127(a1, a2);
+      test_addImm(a1, a2, a3);
+      test_addImm256(a1, a2);
+      test_subImm(a1, a2, a3);
+      test_andImm(a1, a2, a3);
+      test_orImm(a1, a2);
+      test_xorImm(a1, a2);
     }
     // Initialize
     for (int i=0; i<ARRLEN; i++) {
@@ -487,6 +495,63 @@ public class TestIntVect {
       for (int i=ARRLEN-UNALIGN_OFF; i<ARRLEN; i++) {
         errn += verify("test_2vi_unaln_overlap: a1", i, a1[i], (int)103);
       }
+      // Reset for binary operation with immediate
+      int base = 10;
+      for (int i = 0; i < ARRLEN; i++) {
+          a1[i] = 10;
+      }
+      int golden = base + 127;
+      test_addImm127(a1, a2);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_addImm127: a2", i, a2[i], golden);
+      }
+      test_addImm(a1, a2, a3);
+      golden = base + 127;
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_addImm: a2", i, a2[i], golden);
+      }
+      golden = base + 255;
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_addImm: a3", i, a3[i], golden);
+      }
+      test_addImm256(a1, a2);
+      golden = base + 256;
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_addImm256: a2", i, a2[i], golden);
+      }
+      // Reset for sub test
+      base = 10000;
+      for (int i = 0; i < ARRLEN; i++) {
+        a1[i] = 10000;
+      }
+      test_subImm(a1, a2, a3);
+      golden = base - 2304;
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_subImm: a2", i, a2[i], golden);
+      }
+      golden = base - 65280;
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_subImm: a3", i, a3[i], golden);
+      }
+      test_andImm(a1, a2, a3);
+      golden = base + 2560;
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_andImm: a2", i, a2[i], golden);
+      }
+      golden = base & 516096;
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_andImm: a3", i, a3[i], golden);
+      }
+      test_orImm(a1, a2);
+      golden = base | 8257536;
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_orImm: a2", i, a2[i], golden);
+      }
+      test_xorImm(a1, a2);
+      golden = base ^ 2032;
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_xorImm: a2", i, a2[i], golden);
+      }
 
     }
 
@@ -730,6 +795,48 @@ public class TestIntVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_2vi_unaln: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_addImm127(a1, a2);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_addImm127: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_addImm(a1, a2, a3);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_addImm: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_addImm256(a1, a2);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_addImm256: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_subImm(a1, a2, a3);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_subImm: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_andImm(a1, a2, a3);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_andImm: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_orImm(a1, a2);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_orImm: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_xorImm(a1, a2);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_xorImm: " + (end - start));
 
     return errn;
   }
@@ -945,6 +1052,50 @@ public class TestIntVect {
       b[i+UNALIGN_OFF] = d;
     }
   }
+  static void test_addImm127(int[] a, int[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = a[i] + 127;
+    }
+  }
+  static void test_addImm(int[] a, int[] b, int[] c) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = a[i] + 127;
+      c[i] = a[i] + 255;
+    }
+  }
+  static void test_addImm256(int[] a, int[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = a[i] + 256;
+    }
+  }
+  static void test_subImm(int[] a, int[] b, int[] c) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = a[i] - 2304;
+      c[i] = a[i] - 65280;
+    }
+  }
+  static void test_andImm21(int[] a, int[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = a[i] & 21;
+    }
+  }
+  static void test_andImm(int[] a, int[] b, int[] c) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = a[i] + 2560;
+      c[i] = a[i] & 516096;
+    }
+  }
+  static void test_orImm(int[] a, int[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = a[i] | 8257536;
+    }
+  }
+  static void test_xorImm(int[] a, int[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = a[i] ^ 2032;
+    }
+  }
+
 
   static int verify(String text, int i, int elem, int val) {
     if (elem != val) {

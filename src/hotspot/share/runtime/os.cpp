@@ -669,13 +669,14 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   // NMT support
   NMT_TrackingLevel level = MemTracker::tracking_level();
-  size_t            nmt_header_size = MemTracker::malloc_header_size(level);
+  const size_t nmt_overhead =
+      MemTracker::malloc_header_size(level) + MemTracker::malloc_footer_size(level);
 
 #ifndef ASSERT
-  const size_t alloc_size = size + nmt_header_size;
+  const size_t alloc_size = size + nmt_overhead;
 #else
-  const size_t alloc_size = GuardedMemory::get_total_size(size + nmt_header_size);
-  if (size + nmt_header_size > alloc_size) { // Check for rollover.
+  const size_t alloc_size = GuardedMemory::get_total_size(size + nmt_overhead);
+  if (size + nmt_overhead > alloc_size) { // Check for rollover.
     return NULL;
   }
 #endif
@@ -693,7 +694,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
     return NULL;
   }
   // Wrap memory with guard
-  GuardedMemory guarded(ptr, size + nmt_header_size);
+  GuardedMemory guarded(ptr, size + nmt_overhead);
   ptr = guarded.get_user_ptr();
 
   if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
@@ -741,8 +742,9 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
    // NMT support
   NMT_TrackingLevel level = MemTracker::tracking_level();
   void* membase = MemTracker::record_free(memblock, level);
-  size_t  nmt_header_size = MemTracker::malloc_header_size(level);
-  void* ptr = ::realloc(membase, size + nmt_header_size);
+  const size_t nmt_overhead =
+      MemTracker::malloc_header_size(level) + MemTracker::malloc_footer_size(level);
+  void* ptr = ::realloc(membase, size + nmt_overhead);
   return MemTracker::record_malloc(ptr, size, memflags, stack, level);
 #else
   if (memblock == NULL) {
@@ -761,7 +763,10 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   if (ptr != NULL ) {
     GuardedMemory guarded(MemTracker::malloc_base(memblock));
     // Guard's user data contains NMT header
-    size_t memblock_size = guarded.get_user_size() - MemTracker::malloc_header_size(memblock);
+    NMT_TrackingLevel level = MemTracker::tracking_level();
+    const size_t nmt_overhead =
+        MemTracker::malloc_header_size(level) + MemTracker::malloc_footer_size(level);
+    size_t memblock_size = guarded.get_user_size() - nmt_overhead;
     memcpy(ptr, memblock, MIN2(size, memblock_size));
     if (paranoid) {
       verify_memory(MemTracker::malloc_base(ptr));

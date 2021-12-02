@@ -289,7 +289,9 @@ public abstract class KeyStoreSpi {
      * integrity with the given password.
      *
      * @param stream the output stream to which this keystore is written.
-     * @param password the password to generate the keystore integrity check
+     * @param password the password to generate the keystore integrity check.
+     *                 May be {@code null} if the keystore does not support
+     *                 or require an integrity check.
      *
      * @throws    IOException if there was an I/O problem with data
      * @throws    NoSuchAlgorithmException if the appropriate data integrity
