@@ -162,13 +162,8 @@ public class MakeZipReproducible {
 
     // Process input zip file and add to sorted entries set
     boolean processInputEntries(File inFile) throws IOException {
-        try (FileInputStream fis = new FileInputStream(inFile);
-             ZipInputStream  zis = new ZipInputStream(fis)) {
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-                entries.put(entry.getName(), entry);
-            }
-        }
+        ZipFile zipFile = new ZipFile(inFile);
+        zipFile.stream().forEach(entry -> entries.put(entry.getName(), entry));
 
         return true;
     }
