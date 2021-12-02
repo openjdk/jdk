@@ -40,7 +40,7 @@ public class TestStringHashCode {
     static final int INVOCATIONS = 1_000_000;
     static final int[] STRING_LENGTHS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000};
 
-    static int hashCodeLatin1Vanila(byte[] value) {
+    static int hashCodeLatin1Vanilla(byte[] value) {
         int sum = 0;
         for (byte b : value) {
             sum = sum * 31 + Byte.toUnsignedInt(b);
@@ -48,7 +48,7 @@ public class TestStringHashCode {
         return sum;
     }
 
-    static int hashCodeUTF16Vanila(byte[] value) {
+    static int hashCodeUTF16Vanilla(byte[] value) {
         int sum = 0;
         int length = value.length / 2;
         for (int i = 0; i < length; i++) {
@@ -66,7 +66,7 @@ public class TestStringHashCode {
         } else {
             HI_BYTE_SHIFT = 0;
             LO_BYTE_SHIFT = Byte.SIZE;
-        } 
+        }
         return ((Byte.toUnsignedInt(val[index])     << HI_BYTE_SHIFT) |
                 (Byte.toUnsignedInt(val[index + 1]) << LO_BYTE_SHIFT));
     }
@@ -77,7 +77,7 @@ public class TestStringHashCode {
             byte[] value = new byte[length];
             for (int i = 0; i < INVOCATIONS; i++) {
                 random.nextBytes(value);
-                Asserts.assertEquals(hashCodeLatin1Vanila(value), Helper.hashCodeLatin1(value));
+                Asserts.assertEquals(hashCodeLatin1Vanilla(value), Helper.hashCodeLatin1(value));
             }
         }
 
@@ -85,7 +85,7 @@ public class TestStringHashCode {
             byte[] value = new byte[length * 2];
             for (int i = 0; i < INVOCATIONS; i++) {
                 random.nextBytes(value);
-                Asserts.assertEquals(hashCodeUTF16Vanila(value), Helper.hashCodeUTF16(value));
+                Asserts.assertEquals(hashCodeUTF16Vanilla(value), Helper.hashCodeUTF16(value));
             }
         }
     }
