@@ -113,7 +113,7 @@ void MallocHeader::mark_block_as_dead() {
 }
 
 void MallocHeader::release() {
-  assert(MemTracker::tracking_level() >= NMT_summary, "Sanity");
+  assert(MemTracker::enabled(), "Sanity");
 
   check_block_integrity();
 

@@ -110,7 +110,7 @@ void Tracker::record(address addr, size_t size) {
 
 // Report during error reporting.
 void MemTracker::error_report(outputStream* output) {
-  if (tracking_level() >= NMT_summary) {
+  if (enabled()) {
     report(true, output, MemReporterBase::default_scale); // just print summary for error case.
     output->print("Preinit state:");
     NMTPreInit::print_state(output);
@@ -126,9 +126,8 @@ void MemTracker::final_report(outputStream* output) {
   // the final report again. In addition, it should be guarded from
   // recursive calls in case NMT reporting itself crashes.
   if (Atomic::cmpxchg(&g_final_report_did_run, false, true) == false) {
-    NMT_TrackingLevel level = tracking_level();
-    if (level >= NMT_summary) {
-      report(level == NMT_summary, output, 1);
+    if (enabled()) {
+      report(tracking_level() == NMT_summary, output, 1);
     }
   }
 }

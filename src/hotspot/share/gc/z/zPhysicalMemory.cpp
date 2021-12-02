@@ -282,7 +282,7 @@ void ZPhysicalMemoryManager::nmt_commit(uintptr_t offset, size_t size) const {
 }
 
 void ZPhysicalMemoryManager::nmt_uncommit(uintptr_t offset, size_t size) const {
-  if (MemTracker::tracking_level() >= NMT_summary) {
+  if (MemTracker::enabled()) {
     const uintptr_t addr = ZAddress::marked0(offset);
     Tracker tracker(Tracker::uncommit);
     tracker.record((address)addr, size);

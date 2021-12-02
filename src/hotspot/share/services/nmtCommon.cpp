@@ -28,10 +28,13 @@
 #define MEMORY_TYPE_DECLARE_NAME(type, human_readable) \
   human_readable,
 
+STATIC_ASSERT(NMT_off > NMT_unknown);
+STATIC_ASSERT(NMT_summary > NMT_off);
+STATIC_ASSERT(NMT_detail > NMT_summary);
+
 const char* NMTUtil::_memory_type_names[] = {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_NAME)
 };
-
 
 const char* NMTUtil::scale_name(size_t scale) {
   switch(scale) {
