@@ -1087,7 +1087,7 @@ bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
   Node* vector_mask = VectorNode::scalar2vector(intcon(bt == T_BYTE ? 0xff : 0xffff), vector_length, TypeInt::INT);
   vector_mask = _gvn.transform(vector_mask);
 
-  // vector_iter_coef = {31**vl} * vl;  
+  // vector_iter_coef = {31**vl} * vl;
   jint vector_iter_coef_val = 1;
   for (int i = 0; i < vector_length; i++) {
     vector_iter_coef_val = java_multiply(vector_iter_coef_val, 31);
@@ -1232,7 +1232,7 @@ bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
   _gvn.set_type(vector_index, TypeInt::POS);
   record_for_igvn(vector_index);
   vector_index->init_req(2, AddI(vector_index, intcon(lvt->length())));
-  
+
   Node* vector_loop_cmp = CmpI(vector_index, vector_loop_bound);
   Node* vector_loop_test = Bool(vector_loop_cmp, BoolTest::lt);
   IfNode* vector_loop_end = create_and_map_if(control(), vector_loop_test, PROB_FAIR, COUNT_UNKNOWN);
@@ -1260,7 +1260,7 @@ bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
   vector_merge->init_req(1, no_vector_loop);
   vector_merge->init_req(2, vector_break);
   record_for_igvn(vector_merge);
-  
+
   PhiNode* scalar_sum_start = new PhiNode(vector_merge, TypeInt::INT);
   scalar_sum_start->init_req(1, intcon(0));
   scalar_sum_start->init_req(2, vector_sum_end);
