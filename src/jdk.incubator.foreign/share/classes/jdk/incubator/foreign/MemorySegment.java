@@ -1051,6 +1051,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void set(ValueLayout.OfByte layout, long offset, byte value) {
@@ -1084,6 +1085,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void set(ValueLayout.OfBoolean layout, long offset, boolean value) {
@@ -1117,6 +1119,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void set(ValueLayout.OfChar layout, long offset, char value) {
@@ -1150,6 +1153,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void set(ValueLayout.OfShort layout, long offset, short value) {
@@ -1183,6 +1187,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void set(ValueLayout.OfInt layout, long offset, int value) {
@@ -1216,6 +1221,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void set(ValueLayout.OfFloat layout, long offset, float value) {
@@ -1249,6 +1255,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void set(ValueLayout.OfLong layout, long offset, long value) {
@@ -1282,6 +1289,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void set(ValueLayout.OfDouble layout, long offset, double value) {
@@ -1315,6 +1323,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void set(ValueLayout.OfAddress layout, long offset, Addressable value) {
@@ -1348,6 +1357,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfChar layout, long index, char value) {
@@ -1381,6 +1391,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfShort layout, long index, short value) {
@@ -1414,6 +1425,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfInt layout, long index, int value) {
@@ -1447,6 +1459,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfFloat layout, long index, float value) {
@@ -1480,6 +1493,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfLong layout, long index, long value) {
@@ -1513,6 +1527,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfDouble layout, long index, double value) {
@@ -1546,6 +1561,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfAddress layout, long index, Addressable value) {
