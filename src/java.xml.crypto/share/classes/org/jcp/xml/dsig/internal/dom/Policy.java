@@ -43,7 +43,6 @@ import java.util.Set;
  */
 public final class Policy {
 
-    // all restrictions are initialized to be unconstrained
     private static Set<URI> disallowedAlgs;
     private static int maxTrans;
     private static int maxRefs;
@@ -64,6 +63,8 @@ public final class Policy {
     private Policy() {}
 
     private static void initialize() {
+        // First initialized to be unconstrained and then parse the
+        // security property "jdk.xml.dsig.secureValidationPolicy"
         disallowedAlgs = new HashSet<>();
         maxTrans = Integer.MAX_VALUE;
         maxRefs = Integer.MAX_VALUE;
