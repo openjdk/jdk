@@ -162,13 +162,31 @@ public:
   void threads_do(ThreadClosure* tc) const;
 };
 
+enum class ZYoungType {
+  minor,
+  major_preclean,
+  major_roots,
+  undefined
+};
+
+class ZYoungTypeSetter {
+public:
+  ZYoungTypeSetter(ZYoungType type);
+  ~ZYoungTypeSetter();
+};
+
 class ZYoungCollector : public ZCollector {
+  friend class ZYoungTypeSetter;
+
 private:
+  ZYoungType        _type;
   ZYoungTracer      _tracer;
   ConcurrentGCTimer _minor_timer;
 
 public:
   ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
+
+  ZYoungType type() const;
 
   ConcurrentGCTimer* minor_timer();
 

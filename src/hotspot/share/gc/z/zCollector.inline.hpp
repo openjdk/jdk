@@ -115,6 +115,11 @@ inline zaddress ZCollector::remap_object(zaddress_unsafe addr) {
   return _relocate.forward_object(forwarding, addr);
 }
 
+inline ZYoungType ZYoungCollector::type() const {
+  assert(_type != ZYoungType::undefined, "Invalid type");
+  return _type;
+}
+
 inline ReferenceDiscoverer* ZOldCollector::reference_discoverer() {
   return &_reference_processor;
 }

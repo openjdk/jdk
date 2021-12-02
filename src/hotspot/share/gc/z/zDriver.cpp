@@ -45,8 +45,14 @@
 
 static const ZStatPhaseCollection ZPhaseCollectionMinor("Minor Garbage Collection");
 static const ZStatPhaseCollection ZPhaseCollectionMajor("Major Garbage Collection");
-static const ZStatPhaseGeneration ZPhaseGenerationYoung("Young Generation", ZGenerationId::young);
-static const ZStatPhaseGeneration ZPhaseGenerationOld("Old Generation", ZGenerationId::old);
+
+static const ZStatPhaseGeneration ZPhaseGenerationYoung[] {
+  ZStatPhaseGeneration("Young Generation (Minor)", ZGenerationId::young),
+  ZStatPhaseGeneration("Young Generation (Major Preclean)", ZGenerationId::young),
+  ZStatPhaseGeneration("Young Generation (Major Roots)", ZGenerationId::young)
+};
+
+static const ZStatPhaseGeneration ZPhaseGenerationOld("Old Generation (Major)", ZGenerationId::old);
 
 static const ZStatPhasePause      ZPhasePauseMarkStartYoung("Pause Mark Start (Young)");
 static const ZStatPhasePause      ZPhasePauseMarkStartYoungAndOld("Pause Mark Start (Young + Old)");
@@ -303,8 +309,8 @@ static bool pause() {
   return op.success();
 }
 
-static void pause_mark_start_young(bool initiate_old) {
-  if (initiate_old) {
+static void pause_mark_start_young() {
+  if (ZHeap::heap()->young_collector()->type() == ZYoungType::major_roots) {
     pause<VM_ZMarkStartYoungAndOld>();
   } else {
     pause<VM_ZMarkStartYoung>();
@@ -336,8 +342,9 @@ static void concurrent_reset_relocation_set_young() {
   ZHeap::heap()->young_collector()->reset_relocation_set();
 }
 
-static void concurrent_select_relocation_set_young(bool promote_all) {
+static void concurrent_select_relocation_set_young() {
   ZStatTimerYoung timer(ZPhaseConcurrentSelectRelocationSetYoung);
+  const bool promote_all = ZHeap::heap()->young_collector()->type() == ZYoungType::major_preclean;
   ZHeap::heap()->young_collector()->select_relocation_set(promote_all);
 }
 
@@ -356,12 +363,14 @@ static void check_out_of_memory_young() {
 
 class ZDriverScopeYoung : public StackObj {
 private:
+  ZYoungTypeSetter           _type_setter;
   ZStatTimerYoung            _timer;
   ZServiceabilityCycleTracer _tracer;
 
 public:
-  ZDriverScopeYoung() :
-      _timer(ZPhaseGenerationYoung),
+  ZDriverScopeYoung(ZYoungType type) :
+      _type_setter(type),
+      _timer(ZPhaseGenerationYoung[(int)type]),
       _tracer(ZCollectorId::young) {
     ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
 
@@ -377,11 +386,11 @@ public:
   }
 };
 
-static void collect_young_inner(bool promote_all, bool initiate_old) {
-  ZDriverScopeYoung scope;
+static void collect_young(ZYoungType type) {
+  ZDriverScopeYoung scope(type);
 
   // Phase 1: Pause Mark Start
-  pause_mark_start_young(initiate_old);
+  pause_mark_start_young();
 
   // Phase 2: Concurrent Mark
   abortable(concurrent_mark_young());
@@ -399,25 +408,13 @@ static void collect_young_inner(bool promote_all, bool initiate_old) {
   abortable(concurrent_reset_relocation_set_young());
 
   // Phase 6: Concurrent Select Relocation Set
-  abortable(concurrent_select_relocation_set_young(promote_all));
+  abortable(concurrent_select_relocation_set_young());
 
   // Phase 7: Pause Relocate Start
   pause_relocate_start_young();
 
   // Phase 8: Concurrent Relocate
   abortable(concurrent_relocate_young());
-}
-
-static void collect_young() {
-  collect_young_inner(false /* promote_all */, false /* initiate_old */);
-}
-
-static void collect_young_promote_all() {
-  collect_young_inner(true /* promote_all */, false /* initiate_old */);
-}
-
-static void collect_young_initiate_old() {
-  collect_young_inner(false /* promote_all */, true /* initiate_old */);
 }
 
 ZDriverMinor::ZDriverMinor() :
@@ -475,7 +472,7 @@ public:
 
 void ZDriverMinor::gc(const ZDriverRequest& request) {
   ZDriverScopeMinor scope(request);
-  abortable(collect_young());
+  abortable(collect_young(ZYoungType::minor));
 }
 
 void ZDriverMinor::check_out_of_memory() const {
@@ -673,8 +670,8 @@ static bool should_clear_soft_references(GCCause::Cause cause) {
   return false;
 }
 
-static bool should_collect_young_before_old(GCCause::Cause cause) {
-  // Collect young if implied by the GC cause
+static bool should_preclean_young(GCCause::Cause cause) {
+  // Preclean young if implied by the GC cause
   switch (cause) {
   case GCCause::_wb_full_gc:
   case GCCause::_wb_breakpoint:
@@ -697,12 +694,12 @@ static bool should_collect_young_before_old(GCCause::Cause cause) {
     fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
   }
 
-  // Collect young if threads are stalled waiting for an old collection
+  // Preclean young if threads are stalled waiting for an old collection
   if (ZHeap::heap()->is_alloc_stalling_for_old()) {
     return true;
   }
 
-  // Collect young if implied by configuration
+  // Preclean young if implied by configuration
   return ScavengeBeforeFullGC;
 }
 
@@ -861,11 +858,11 @@ public:
 void ZDriverMajor::gc(const ZDriverRequest& request) {
   ZDriverScopeMajor scope(request);
 
-  if (should_collect_young_before_old(request.cause())) {
-    abortable(collect_young_promote_all());
+  if (should_preclean_young(request.cause())) {
+    abortable(collect_young(ZYoungType::major_preclean));
   }
 
-  abortable(collect_young_initiate_old());
+  abortable(collect_young(ZYoungType::major_roots));
   check_out_of_memory_young();
   abortable(collect_old());
 }
