@@ -1178,7 +1178,6 @@ void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& th
                                                     objArrayHandle info, int pos,
                                                     bool must_resolve, Handle if_not_available,
                                                     TRAPS) {
-  int argc;
   int limit = pos + end_arg - start_arg;
   // checks: index in range [0..this_cp->length),
   // tag at index, start..end in range [0..argc],
@@ -1187,7 +1186,7 @@ void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& th
       !(this_cp->tag_at(index).is_invoke_dynamic()    ||
         this_cp->tag_at(index).is_dynamic_constant()) ||
       (0 > start_arg || start_arg > end_arg) ||
-      (end_arg > (argc = this_cp->bootstrap_argument_count_at(index))) ||
+      (end_arg > this_cp->bootstrap_argument_count_at(index)) ||
       (0 > pos       || pos > limit)         ||
       (info.is_null() || limit > info->length())) {
     // An index or something else went wrong; throw an error.
