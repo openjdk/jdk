@@ -87,18 +87,32 @@ private:
 };
 
 // Concurrent G1 stop-the-world operations such as remark and cleanup.
-class VM_G1Concurrent : public VM_Operation {
-  VoidClosure* _cl;
-  const char*  _message;
+class VM_G1PauseConcurrent : public VM_Operation {
+protected:
   uint         _gc_id;
+  const char*  _message;
+  VM_G1PauseConcurrent(const char* message) :
+      _gc_id(GCId::current()), _message(message) { }
 
 public:
-  VM_G1Concurrent(VoidClosure* cl, const char* message) :
-    _cl(cl), _message(message), _gc_id(GCId::current()) { }
-  virtual VMOp_Type type() const { return VMOp_G1Concurrent; }
-  virtual void doit();
   virtual bool doit_prologue();
   virtual void doit_epilogue();
+  virtual void doit();
+  virtual void work() = 0;
+};
+
+class VM_G1PauseRemark : public VM_G1PauseConcurrent {
+public:
+  VM_G1PauseRemark() : VM_G1PauseConcurrent("Pause Remark") { }
+  virtual VMOp_Type type() const { return VMOp_G1PauseRemark; }
+  virtual void work();
+};
+
+class VM_G1PauseCleanup : public VM_G1PauseConcurrent {
+public:
+  VM_G1PauseCleanup() : VM_G1PauseConcurrent("Pause Cleanup") { }
+  virtual VMOp_Type type() const { return VMOp_G1PauseCleanup; }
+  virtual void work();
 };
 
 #endif // SHARE_GC_G1_G1VMOPERATIONS_HPP

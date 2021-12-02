@@ -170,7 +170,7 @@ void VM_G1CollectForAllocation::doit() {
   }
 }
 
-void VM_G1Concurrent::doit() {
+void VM_G1PauseConcurrent::doit() {
   GCIdMark gc_id_mark(_gc_id);
   GCTraceCPUTime tcpu;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -184,17 +184,28 @@ void VM_G1Concurrent::doit() {
   TraceCollectorStats tcs(g1h->monitoring_support()->conc_collection_counters());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsGCActiveMark x;
-  _cl->do_void();
+
+  work();
 }
 
-bool VM_G1Concurrent::doit_prologue() {
+bool VM_G1PauseConcurrent::doit_prologue() {
   Heap_lock->lock();
   return true;
 }
 
-void VM_G1Concurrent::doit_epilogue() {
+void VM_G1PauseConcurrent::doit_epilogue() {
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }
   Heap_lock->unlock();
+}
+
+void VM_G1PauseRemark::work() {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  g1h->concurrent_mark()->remark();
+}
+
+void VM_G1PauseCleanup::work() {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  g1h->concurrent_mark()->cleanup();
 }
