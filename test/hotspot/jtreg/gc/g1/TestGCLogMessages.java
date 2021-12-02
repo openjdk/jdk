@@ -142,6 +142,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Scanned Cards", Level.DEBUG),
         new LogMessageWithLevel("Scanned Blocks", Level.DEBUG),
         new LogMessageWithLevel("Claimed Chunks", Level.DEBUG),
+        new LogMessageWithLevel("Found Roots", Level.DEBUG),
         // Code Roots Scan
         new LogMessageWithLevel("Code Root Scan", Level.DEBUG),
         // Object Copy

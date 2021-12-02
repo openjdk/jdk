@@ -4060,61 +4060,123 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
 }
 
 #ifdef _LP64
-void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, KRegister mask,
-                                              Register tmp, int masklen, int masksize,
-                                              int vec_enc) {
+void C2_MacroAssembler::vector_mask_operation_helper(int opc, Register dst, Register tmp, int masklen) {
+  switch(opc) {
+    case Op_VectorMaskTrueCount:
+      popcntq(dst, tmp);
+      break;
+    case Op_VectorMaskLastTrue:
+      if (VM_Version::supports_lzcnt()) {
+        lzcntq(tmp, tmp);
+        movl(dst, 63);
+        subl(dst, tmp);
+      } else {
+        movl(dst, -1);
+        bsrq(tmp, tmp);
+        cmov32(Assembler::notZero, dst, tmp);
+      }
+      break;
+    case Op_VectorMaskFirstTrue:
+      if (VM_Version::supports_bmi1()) {
+        if (masklen < 32) {
+          orl(tmp, 1 << masklen);
+          tzcntl(dst, tmp);
+        } else if (masklen == 32) {
+          tzcntl(dst, tmp);
+        } else {
+          assert(masklen == 64, "");
+          tzcntq(dst, tmp);
+        }
+      } else {
+        if (masklen < 32) {
+          orl(tmp, 1 << masklen);
+          bsfl(dst, tmp);
+        } else {
+          assert(masklen == 32 || masklen == 64, "");
+          movl(dst, masklen);
+          if (masklen == 32)  {
+            bsfl(tmp, tmp);
+          } else {
+            bsfq(tmp, tmp);
+          }
+          cmov32(Assembler::notZero, dst, tmp);
+        }
+      }
+      break;
+    case Op_VectorMaskToLong:
+      assert(dst == tmp, "Dst and tmp should be the same for toLong operations");
+      break;
+    default: assert(false, "Unhandled mask operation");
+  }
+}
+
+void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, KRegister mask, Register tmp,
+                                              int masklen, int masksize, int vec_enc) {
+  assert(VM_Version::supports_popcnt(), "");
+
   if(VM_Version::supports_avx512bw()) {
     kmovql(tmp, mask);
   } else {
     assert(masklen <= 16, "");
     kmovwl(tmp, mask);
   }
-  if (masksize < 16) {
-    andq(tmp, (((jlong)1 << masklen) - 1));
+
+  // Mask generated out of partial vector comparisons/replicate/mask manipulation
+  // operations needs to be clipped.
+  if (masksize < 16 && opc != Op_VectorMaskFirstTrue) {
+    andq(tmp, (1 << masklen) - 1);
   }
-  switch(opc) {
-    case Op_VectorMaskTrueCount:
-      popcntq(dst, tmp);
-      break;
-    case Op_VectorMaskLastTrue:
-      mov64(dst, -1);
-      bsrq(tmp, tmp);
-      cmov(Assembler::notZero, dst, tmp);
-      break;
-    case Op_VectorMaskFirstTrue:
-      mov64(dst, masklen);
-      bsfq(tmp, tmp);
-      cmov(Assembler::notZero, dst, tmp);
-      break;
-    default: assert(false, "Unhandled mask operation");
-  }
+
+  vector_mask_operation_helper(opc, dst, tmp, masklen);
 }
 
 void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
-                                              XMMRegister xtmp1, Register tmp, int masklen, int masksize,
-                                              int vec_enc) {
-  assert(VM_Version::supports_avx(), "");
-  vpxor(xtmp, xtmp, xtmp, vec_enc);
-  vpsubb(xtmp, xtmp, mask, vec_enc);
-  vpmovmskb(tmp, xtmp, vec_enc);
-  if (masksize < 16) {
-    andq(tmp, (((jlong)1 << masklen) - 1));
+                                              Register tmp, int masklen, BasicType bt, int vec_enc) {
+  assert(vec_enc == AVX_128bit && VM_Version::supports_avx() ||
+         vec_enc == AVX_256bit && (VM_Version::supports_avx2() || type2aelembytes(bt) >= 4), "");
+  assert(VM_Version::supports_popcnt(), "");
+
+  bool need_clip = false;
+  switch(bt) {
+    case T_BOOLEAN:
+      // While masks of other types contain 0, -1; boolean masks contain lane values of 0, 1
+      vpxor(xtmp, xtmp, xtmp, vec_enc);
+      vpsubb(xtmp, xtmp, mask, vec_enc);
+      vpmovmskb(tmp, xtmp, vec_enc);
+      need_clip = masklen < 16;
+      break;
+    case T_BYTE:
+      vpmovmskb(tmp, mask, vec_enc);
+      need_clip = masklen < 16;
+      break;
+    case T_SHORT:
+      vpacksswb(xtmp, mask, mask, vec_enc);
+      if (masklen >= 16) {
+        vpermpd(xtmp, xtmp, 8, vec_enc);
+      }
+      vpmovmskb(tmp, xtmp, Assembler::AVX_128bit);
+      need_clip = masklen < 16;
+      break;
+    case T_INT:
+    case T_FLOAT:
+      vmovmskps(tmp, mask, vec_enc);
+      need_clip = masklen < 4;
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      vmovmskpd(tmp, mask, vec_enc);
+      need_clip = masklen < 2;
+      break;
+    default: assert(false, "Unhandled type, %s", type2name(bt));
   }
-  switch(opc) {
-    case Op_VectorMaskTrueCount:
-      popcntq(dst, tmp);
-      break;
-    case Op_VectorMaskLastTrue:
-      mov64(dst, -1);
-      bsrq(tmp, tmp);
-      cmov(Assembler::notZero, dst, tmp);
-      break;
-    case Op_VectorMaskFirstTrue:
-      mov64(dst, masklen);
-      bsfq(tmp, tmp);
-      cmov(Assembler::notZero, dst, tmp);
-      break;
-    default: assert(false, "Unhandled mask operation");
+
+  // Mask generated out of partial vector comparisons/replicate/mask manipulation
+  // operations needs to be clipped.
+  if (need_clip && opc != Op_VectorMaskFirstTrue) {
+    // need_clip implies masklen < 32
+    andq(tmp, (1 << masklen) - 1);
   }
+
+  vector_mask_operation_helper(opc, dst, tmp, masklen);
 }
 #endif
