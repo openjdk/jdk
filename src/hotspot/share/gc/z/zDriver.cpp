@@ -170,6 +170,18 @@ public:
   }
 };
 
+static ZCollectedHeap* collected_heap() {
+  return ZCollectedHeap::heap();
+}
+
+static ZYoungCollector* young_collector() {
+  return ZHeap::heap()->young_collector();
+}
+
+static ZOldCollector* old_collector() {
+  return ZHeap::heap()->old_collector();
+}
+
 class VM_ZMarkStartYoung : public VM_ZOperation {
 public:
   virtual VMOp_Type type() const {
@@ -184,8 +196,8 @@ public:
     ZStatTimerYoung timer(ZPhasePauseMarkStartYoung);
     ZServiceabilityPauseTracer tracer(ZCollectorId::young);
 
-    ZCollectedHeap::heap()->increment_total_collections(false /* full */);
-    ZHeap::heap()->young_collector()->mark_start();
+    collected_heap()->increment_total_collections(false /* full */);
+    young_collector()->mark_start();
     return true;
   }
 };
@@ -204,9 +216,9 @@ public:
     ZStatTimerYoung timer(ZPhasePauseMarkStartYoungAndOld);
     ZServiceabilityPauseTracer tracer(ZCollectorId::young);
 
-    ZCollectedHeap::heap()->increment_total_collections(true /* full */);
-    ZHeap::heap()->young_collector()->mark_start();
-    ZHeap::heap()->old_collector()->mark_start();
+    collected_heap()->increment_total_collections(true /* full */);
+    young_collector()->mark_start();
+    old_collector()->mark_start();
     return true;
   }
 };
@@ -220,7 +232,7 @@ public:
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseMarkEndYoung);
     ZServiceabilityPauseTracer tracer(ZCollectorId::young);
-    return ZHeap::heap()->young_collector()->mark_end();
+    return young_collector()->mark_end();
   }
 };
 
@@ -237,7 +249,7 @@ public:
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseRelocateStartYoung);
     ZServiceabilityPauseTracer tracer(ZCollectorId::young);
-    ZHeap::heap()->young_collector()->relocate_start();
+    young_collector()->relocate_start();
     return true;
   }
 };
@@ -308,7 +320,7 @@ static bool pause() {
 }
 
 static void pause_mark_start_young() {
-  if (ZHeap::heap()->young_collector()->type() == ZYoungType::major_roots) {
+  if (young_collector()->type() == ZYoungType::major_roots) {
     pause<VM_ZMarkStartYoungAndOld>();
   } else {
     pause<VM_ZMarkStartYoung>();
@@ -317,8 +329,8 @@ static void pause_mark_start_young() {
 
 static void concurrent_mark_young() {
   ZStatTimerYoung timer(ZPhaseConcurrentMarkYoung);
-  ZHeap::heap()->young_collector()->mark_roots();
-  ZHeap::heap()->young_collector()->mark_follow();
+  young_collector()->mark_roots();
+  young_collector()->mark_follow();
 }
 
 static bool pause_mark_end_young() {
@@ -327,23 +339,23 @@ static bool pause_mark_end_young() {
 
 static void concurrent_mark_continue_young() {
   ZStatTimerYoung timer(ZPhaseConcurrentMarkContinueYoung);
-  ZHeap::heap()->young_collector()->mark_follow();
+  young_collector()->mark_follow();
 }
 
 static void concurrent_mark_free_young() {
   ZStatTimerYoung timer(ZPhaseConcurrentMarkFreeYoung);
-  ZHeap::heap()->young_collector()->mark_free();
+  young_collector()->mark_free();
 }
 
 static void concurrent_reset_relocation_set_young() {
   ZStatTimerYoung timer(ZPhaseConcurrentResetRelocationSetYoung);
-  ZHeap::heap()->young_collector()->reset_relocation_set();
+  young_collector()->reset_relocation_set();
 }
 
 static void concurrent_select_relocation_set_young() {
   ZStatTimerYoung timer(ZPhaseConcurrentSelectRelocationSetYoung);
-  const bool promote_all = ZHeap::heap()->young_collector()->type() == ZYoungType::major_preclean;
-  ZHeap::heap()->young_collector()->select_relocation_set(promote_all);
+  const bool promote_all = young_collector()->type() == ZYoungType::major_preclean;
+  young_collector()->select_relocation_set(promote_all);
 }
 
 static void pause_relocate_start_young() {
@@ -352,7 +364,7 @@ static void pause_relocate_start_young() {
 
 static void concurrent_relocate_young() {
   ZStatTimerYoung timer(ZPhaseConcurrentRelocatedYoung);
-  ZHeap::heap()->young_collector()->relocate();
+  young_collector()->relocate();
 }
 
 static void check_out_of_memory_young() {
@@ -370,17 +382,13 @@ public:
       _type_setter(type),
       _timer(ZPhaseGenerationYoung[(int)type]),
       _tracer(ZCollectorId::young) {
-    ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
-
     // Update statistics
-    young_collector->set_at_generation_collection_start();
+    young_collector()->set_at_generation_collection_start();
   }
 
   ~ZDriverScopeYoung() {
-    ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
-
     // Update statistics
-    young_collector->stat_cycle()->at_end(young_collector->active_workers());
+    young_collector()->stat_cycle()->at_end(young_collector()->active_workers());
   }
 };
 
@@ -465,16 +473,14 @@ public:
   ZDriverScopeMinor(const ZDriverRequest& request) :
       _gc_id(),
       _gc_cause(request.cause()),
-      _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
+      _gc_cause_setter(collected_heap(), _gc_cause),
       _timer(ZPhaseCollectionMinor) {
-    ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
-
     // Update statistics
-    young_collector->set_at_collection_start();
+    young_collector()->set_at_collection_start();
 
     // Select number of young worker threads to use
     const uint young_nworkers = select_active_young_worker_threads(request);
-    young_collector->set_active_workers(young_nworkers);
+    young_collector()->set_active_workers(young_nworkers);
   }
 };
 
@@ -523,7 +529,7 @@ public:
   virtual bool do_operation() {
     ZStatTimerOld timer(ZPhasePauseMarkEndOld);
     ZServiceabilityPauseTracer tracer(ZCollectorId::old);
-    return ZHeap::heap()->old_collector()->mark_end();
+    return old_collector()->mark_end();
   }
 };
 
@@ -540,7 +546,7 @@ public:
   virtual bool do_operation() {
     ZStatTimerOld timer(ZPhasePauseRelocateStartOld);
     ZServiceabilityPauseTracer tracer(ZCollectorId::old);
-    ZHeap::heap()->old_collector()->relocate_start();
+    old_collector()->relocate_start();
     return true;
   }
 };
@@ -563,8 +569,8 @@ public:
 static void concurrent_mark_old() {
   ZStatTimerOld timer(ZPhaseConcurrentMarkOld);
   ZBreakpoint::at_after_marking_started();
-  ZHeap::heap()->old_collector()->mark_roots();
-  ZHeap::heap()->old_collector()->mark_follow();
+  old_collector()->mark_roots();
+  old_collector()->mark_follow();
   ZBreakpoint::at_before_marking_completed();
 }
 
@@ -575,23 +581,23 @@ static bool pause_mark_end_old() {
 
 static void concurrent_mark_continue_old() {
   ZStatTimerOld timer(ZPhaseConcurrentMarkContinueOld);
-  ZHeap::heap()->old_collector()->mark_follow();
+  old_collector()->mark_follow();
 }
 
 static void concurrent_mark_free_old() {
   ZStatTimerOld timer(ZPhaseConcurrentMarkFreeOld);
-  ZHeap::heap()->old_collector()->mark_free();
+  old_collector()->mark_free();
 }
 
 static void concurrent_process_non_strong_references_old() {
   ZStatTimerOld timer(ZPhaseConcurrentProcessNonStrongReferencesOld);
   ZBreakpoint::at_after_reference_processing_started();
-  ZHeap::heap()->old_collector()->process_non_strong_references();
+  old_collector()->process_non_strong_references();
 }
 
 static void concurrent_reset_relocation_set_old() {
   ZStatTimerOld timer(ZPhaseConcurrentResetRelocationSetOld);
-  ZHeap::heap()->old_collector()->reset_relocation_set();
+  old_collector()->reset_relocation_set();
 }
 
 static void pause_verify_old() {
@@ -617,7 +623,7 @@ static void pause_verify_old() {
 
 static void concurrent_select_relocation_set_old() {
   ZStatTimerOld timer(ZPhaseConcurrentSelectRelocationSetOld);
-  ZHeap::heap()->old_collector()->select_relocation_set(false /* promote_all */);
+  old_collector()->select_relocation_set(false /* promote_all */);
 }
 
 static void pause_relocate_start_old() {
@@ -626,12 +632,12 @@ static void pause_relocate_start_old() {
 
 static void concurrent_relocate_old() {
   ZStatTimerOld timer(ZPhaseConcurrentRelocatedOld);
-  ZHeap::heap()->old_collector()->relocate();
+  old_collector()->relocate();
 }
 
 static void concurrent_roots_remap_old() {
   ZStatTimerOld timer(ZPhaseConcurrentRootsRemapOld);
-  ZHeap::heap()->old_collector()->roots_remap();
+  old_collector()->roots_remap();
 }
 
 static void check_out_of_memory_old() {
@@ -715,17 +721,13 @@ public:
       _timer(ZPhaseGenerationOld),
       _tracer(ZCollectorId::old),
       _unlocker() {
-    ZOldCollector* const old_collector = ZHeap::heap()->old_collector();
-
     // Update statistics
-    old_collector->set_at_generation_collection_start();
+    old_collector()->set_at_generation_collection_start();
   }
 
   ~ZDriverScopeOld() {
-    ZOldCollector* const old_collector = ZHeap::heap()->old_collector();
-
     // Update statistics
-    old_collector->stat_cycle()->at_end(old_collector->active_workers());
+    old_collector()->stat_cycle()->at_end(old_collector()->active_workers());
   }
 };
 
@@ -840,33 +842,30 @@ public:
   ZDriverScopeMajor(const ZDriverRequest& request) :
       _gc_id(),
       _gc_cause(request.cause()),
-      _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
+      _gc_cause_setter(collected_heap(), _gc_cause),
       _timer(ZPhaseCollectionMajor) {
-    ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
-    ZOldCollector* const old_collector = ZHeap::heap()->old_collector();
-
     // Update statistics
-    old_collector->set_at_collection_start();
+    old_collector()->set_at_collection_start();
 
     // Set up soft reference policy
     const bool clear = should_clear_soft_references(request.cause());
-    old_collector->set_soft_reference_policy(clear);
+    old_collector()->set_soft_reference_policy(clear);
 
     // Select number of young worker threads to use
     const uint young_nworkers = select_active_young_worker_threads(request);
-    young_collector->set_active_workers(young_nworkers);
+    young_collector()->set_active_workers(young_nworkers);
 
     // Select number of old worker threads to use
     const uint old_nworkers = select_active_old_worker_threads(request);
-    old_collector->set_active_workers(old_nworkers);
+    old_collector()->set_active_workers(old_nworkers);
   }
 
   ~ZDriverScopeMajor() {
     // Update data used by soft reference policy
-    Universe::heap()->update_capacity_and_used_at_gc();
+    collected_heap()->update_capacity_and_used_at_gc();
 
     // Signal that we have completed a visit to all live objects
-    Universe::heap()->record_whole_heap_examined_timestamp();
+    collected_heap()->record_whole_heap_examined_timestamp();
   }
 };
 
