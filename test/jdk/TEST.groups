@@ -199,7 +199,7 @@ jdk_rmi = \
     sun/rmi
 
 jdk_security1 = \
-    java/security
+    sun/security/pkcs11
 
 jdk_security2 = \
     javax/crypto \
