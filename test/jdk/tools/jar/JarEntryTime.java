@@ -251,7 +251,7 @@ public class JarEntryTime {
         // Negative Tests --date out of range source date
         String[] badSourceDates = {"1976-06-24T01:02:03+00:00",
                                    "1980-01-01T00:00:01+00:00",
-                                   "2100-01-01T00:00:00+00:00", 
+                                   "2100-01-01T00:00:00+00:00",
                                    "2138-02-18T00:00:00-11:00"};
         for (String sourceDate : badSourceDates) {
             createOuterInnerDirs(dirOuter, dirInner);
