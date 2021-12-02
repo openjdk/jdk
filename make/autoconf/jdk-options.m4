@@ -172,6 +172,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   # Choose cacerts source folder for user provided PEM files
   AC_ARG_WITH(cacerts-src, [AS_HELP_STRING([--with-cacerts-src],
       [specify alternative cacerts source folder containing certificates])])
+  CACERTS_SRC=""
   AC_MSG_CHECKING([for cacerts source])
   if test "x$with_cacerts_src" == x; then
     AC_MSG_RESULT([default])
