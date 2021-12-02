@@ -639,19 +639,6 @@ abstract class AbstractVector<E> extends Vector<E> {
         throw new AssertionError();
     }
 
-    /**
-     * Helper function for unsigned upcasts.
-     * This function kicks in after intrinsic failure.
-     */
-    /*package-private*/
-    @ForceInline
-    final <F>
-    AbstractVector<F> defaultUnsignedCast(AbstractSpecies<F> dsp) {
-        AbstractSpecies<?> dspi = dsp.asIntegral();
-        AbstractVector<?> bitv = resizeLanes0(this, dspi);
-        return (dspi == dsp ? bitv.check0(dsp) : bitv.convert0('X', dsp));
-    }
-
     // Constant-folded access to conversion intrinsics:
 
     /**
@@ -678,16 +665,10 @@ abstract class AbstractVector<E> extends Vector<E> {
         int rlength;
         switch (kind) {
         case 'Z':  // lane-wise size change, maybe with sign clip
-            rtype = rsp.elementType();
-            rlength = rsp.laneCount();
-            etype = this.elementType(); // (profile)
-            vlength = this.length();  // (profile)
-            rvtype = rsp.dummyVector().getClass();  // (profile)
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_UCAST,
-                    this.getClass(), etype, vlength,
-                    rvtype, rtype, rlength,
-                    this, rsp,
-                    AbstractVector::defaultUnsignedCast);
+            // Maybe this should be an intrinsic also.
+            AbstractSpecies<?> rspi = rsp.asIntegral();
+            AbstractVector<?> bitv = resizeLanes0(this, rspi);
+            return (rspi == rsp ? bitv.check0(rsp) : bitv.convert0('X', rsp));
         case 'C':  // lane-wise cast (but not identity)
             rtype = rsp.elementType();
             rlength = rsp.laneCount();

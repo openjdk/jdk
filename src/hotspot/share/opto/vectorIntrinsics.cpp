@@ -755,7 +755,7 @@ bool LibraryCallKit::inline_vector_shuffle_to_vector() {
     return false;
   }
 
-  int cast_vopc = VectorCastNode::opcode(T_BYTE, false); // from shuffle of type T_BYTE
+  int cast_vopc = VectorCastNode::opcode(T_BYTE); // from shuffle of type T_BYTE
   // Make sure that cast is implemented to particular type/size combination.
   if (!arch_supports_vector(cast_vopc, num_elem, elem_bt, VecMaskNotUsed)) {
     if (C->print_intrinsics()) {
@@ -2348,10 +2348,8 @@ bool LibraryCallKit::inline_vector_convert() {
   }
 
   assert(opr->get_con() == VectorSupport::VECTOR_OP_CAST ||
-         opr->get_con() == VectorSupport::VECTOR_OP_UCAST ||
          opr->get_con() == VectorSupport::VECTOR_OP_REINTERPRET, "wrong opcode");
-  bool is_cast = (opr->get_con() == VectorSupport::VECTOR_OP_CAST || opr->get_con() == VectorSupport::VECTOR_OP_UCAST);
-  bool is_ucast = (opr->get_con() == VectorSupport::VECTOR_OP_UCAST);
+  bool is_cast = (opr->get_con() == VectorSupport::VECTOR_OP_CAST);
 
   ciKlass* vbox_klass_from = vector_klass_from->const_oop()->as_instance()->java_lang_Class_klass();
   ciKlass* vbox_klass_to = vector_klass_to->const_oop()->as_instance()->java_lang_Class_klass();
@@ -2436,7 +2434,7 @@ bool LibraryCallKit::inline_vector_convert() {
     if (is_mask && is_floating_point_type(elem_bt_from)) {
       new_elem_bt_from = elem_bt_from == T_FLOAT ? T_INT : T_LONG;
     }
-    int cast_vopc = VectorCastNode::opcode(new_elem_bt_from, is_ucast);
+    int cast_vopc = VectorCastNode::opcode(new_elem_bt_from);
     // Make sure that cast is implemented to particular type/size combination.
     if (!arch_supports_vector(cast_vopc, num_elem_to, elem_bt_to, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {

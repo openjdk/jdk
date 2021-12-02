@@ -1454,9 +1454,6 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorCastL2X:
     case Op_VectorCastF2X:
     case Op_VectorCastD2X:
-    case Op_VectorUCastB2X:
-    case Op_VectorUCastS2X:
-    case Op_VectorUCastI2X:
       if (UseAVX < 1) { // enabled for AVX only
         return false;
       }
@@ -1802,21 +1799,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         // implementable with vectors.
         return false; // Implementation limitation
       }
-    case Op_VectorUCastB2X:
-      if (size_in_bits == 256 && UseAVX < 2) {
-        return false; // Implementation limitation
-      }
-      break;
-    case Op_VectorUCastS2X:
-      if (size_in_bits == 256 && UseAVX < 2) {
-        return false;
-      }
-      break;
-    case Op_VectorUCastI2X:
-      if (size_in_bits == 256 && UseAVX < 2) {
-        return false;
-      }
-      break;
     case Op_MulReductionVI:
       if (bt == T_BYTE && size_in_bits == 512 && !VM_Version::supports_avx512bw()) {
         return false;
@@ -7190,72 +7172,6 @@ instruct vcastDtoF_reg(vec dst, vec src) %{
   ins_encode %{
     int vlen_enc = vector_length_encoding(this, $src);
     __ vcvtpd2ps($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vucastBtoX(vec dst, vec src) %{
-  match(Set dst (VectorUCastB2X src));
-  format %{ "vector_ucast_b2x $dst,$src\t!" %}
-  ins_encode %{
-    assert(UseAVX > 0, "required");
-
-    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
-    int vlen_enc = vector_length_encoding(this);
-    switch (to_elem_bt) {
-      case T_SHORT:
-        __ vpmovzxbw($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-        break;
-      case T_INT:
-        __ vpmovzxbd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-        break;
-      case T_LONG:
-        __ vpmovzxbq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vucastStoX(vec dst, vec src) %{
-  match(Set dst (VectorUCastS2X src));
-  format %{ "vector_ucast_s2x $dst,$src\t!" %}
-  ins_encode %{
-    assert(UseAVX > 0, "required");
-
-    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
-    int vlen_enc = vector_length_encoding(this);
-    switch (to_elem_bt) {
-      case T_INT:
-        __ vpmovzxwd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-        break;
-      case T_LONG:
-        __ vpmovzxwq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vucastItoX(vec dst, vec src) %{
-  match(Set dst (VectorUCastI2X src));
-  format %{ "vector_ucast_i2x $dst,$src\t!" %}
-  ins_encode %{
-    assert(UseAVX > 0, "required");
-
-    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
-    int vlen_enc = vector_length_encoding(this);
-    switch (to_elem_bt) {
-      case T_LONG:
-        __ vpmovzxdq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
   %}
   ins_pipe( pipe_slow );
 %}
