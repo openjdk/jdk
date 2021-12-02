@@ -159,10 +159,6 @@ static bool ok_to_convert(Node* inc, Node* var) {
   return !(is_cloop_increment(inc) || var->is_cloop_ind_var());
 }
 
-static bool ok_to_convert(Node* inc) {
-  return !is_cloop_increment(inc);
-}
-
 //------------------------------Ideal------------------------------------------
 Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   Node *in1 = in(1);
