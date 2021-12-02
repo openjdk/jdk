@@ -279,14 +279,12 @@ static uint select_active_old_worker_threads(const ZDriverRequest& request) {
   }
 }
 
-// Macro to execute a termination check after a concurrent phase. Note
-// that it's important that the abortion check comes after the call
-// to the function f, since we can't abort between pause_relocate_start()
-// and concurrent_relocate(). We need to let concurrent_relocate() call
-// abort_page() on the remaining entries in the relocation set.
-#define abortable(f)                  \
+// Macro to execute a abortion check. Note that we can't abort between
+// pause_relocate_start() and concurrent_relocate(). We need to let
+// concurrent_relocate() call abort_page() on the remaining entries
+// in the relocation set.
+#define abortpoint()                  \
   do {                                \
-    f;                                \
     if (ZAbort::should_abort()) {     \
       return;                         \
     }                                 \
@@ -393,28 +391,38 @@ static void collect_young(ZYoungType type) {
   pause_mark_start_young();
 
   // Phase 2: Concurrent Mark
-  abortable(concurrent_mark_young());
+  concurrent_mark_young();
+
+  abortpoint();
 
   // Phase 3: Pause Mark End
   while (!pause_mark_end_young()) {
     // Phase 3.5: Concurrent Mark Continue
-    abortable(concurrent_mark_continue_young());
+    concurrent_mark_continue_young();
+
+    abortpoint();
   }
 
   // Phase 4: Concurrent Mark Free
-  abortable(concurrent_mark_free_young());
+  concurrent_mark_free_young();
+
+  abortpoint();
 
   // Phase 5: Concurrent Reset Relocation Set
-  abortable(concurrent_reset_relocation_set_young());
+  concurrent_reset_relocation_set_young();
+
+  abortpoint();
 
   // Phase 6: Concurrent Select Relocation Set
-  abortable(concurrent_select_relocation_set_young());
+  concurrent_select_relocation_set_young();
+
+  abortpoint();
 
   // Phase 7: Pause Relocate Start
   pause_relocate_start_young();
 
   // Phase 8: Concurrent Relocate
-  abortable(concurrent_relocate_young());
+  concurrent_relocate_young();
 }
 
 ZDriverMinor::ZDriverMinor() :
@@ -472,7 +480,7 @@ public:
 
 void ZDriverMinor::gc(const ZDriverRequest& request) {
   ZDriverScopeMinor scope(request);
-  abortable(collect_young(ZYoungType::minor));
+  collect_young(ZYoungType::minor);
 }
 
 void ZDriverMinor::check_out_of_memory() const {
@@ -481,25 +489,18 @@ void ZDriverMinor::check_out_of_memory() const {
 
 void ZDriverMinor::run_service() {
   // Main loop
-  while (!ZAbort::should_abort()) {
+  for (;;) {
     // Wait for GC request
     const ZDriverRequest request = _port.receive();
-    if (request.cause() == GCCause::_no_gc) {
-      continue;
-    }
 
     ZDriverLocker locker;
 
-    if (ZAbort::should_abort()) {
-      return;
-    }
+    abortpoint();
 
     // Run GC
     gc(request);
 
-    if (ZAbort::should_abort()) {
-      return;
-    }
+    abortpoint();
 
     // Notify GC completed
     _port.ack();
@@ -732,41 +733,55 @@ static void collect_old() {
   ZDriverScopeOld scope;
 
   // Phase 1: Concurrent Mark
-  abortable(concurrent_mark_old());
+  concurrent_mark_old();
+
+  abortpoint();
 
   // Phase 2: Pause Mark End
   while (!pause_mark_end_old()) {
     // Phase 2.5: Concurrent Mark Continue
-    abortable(concurrent_mark_continue_old());
+    concurrent_mark_continue_old();
+
+    abortpoint();
   }
 
   // Phase 3: Concurrent Mark Free
-  abortable(concurrent_mark_free_old());
+  concurrent_mark_free_old();
+
+  abortpoint();
 
   // Phase 4: Concurrent Process Non-Strong References
-  abortable(concurrent_process_non_strong_references_old());
+  concurrent_process_non_strong_references_old();
+
+  abortpoint();
 
   // Phase 5: Concurrent Reset Relocation Set
-  abortable(concurrent_reset_relocation_set_old());
+  concurrent_reset_relocation_set_old();
+
+  abortpoint();
 
   // Phase 6: Pause Verify
   pause_verify_old();
 
   // Phase 7: Concurrent Select Relocation Set
-  abortable(concurrent_select_relocation_set_old());
+  concurrent_select_relocation_set_old();
+
+  abortpoint();
 
   {
     ZDriverLocker locker;
 
     // Phase 8: Concurrent Roots Remap
-    abortable(concurrent_roots_remap_old());
+    concurrent_roots_remap_old();
+
+    abortpoint();
 
     // Phase 9: Pause Relocate Start
     pause_relocate_start_old();
   }
 
   // Phase 10: Concurrent Relocate
-  abortable(concurrent_relocate_old());
+  concurrent_relocate_old();
 }
 
 ZDriverMajor::ZDriverMajor(ZDriverMinor* minor) :
@@ -859,12 +874,20 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
   ZDriverScopeMajor scope(request);
 
   if (should_preclean_young(request.cause())) {
-    abortable(collect_young(ZYoungType::major_preclean));
+    collect_young(ZYoungType::major_preclean);
   }
 
-  abortable(collect_young(ZYoungType::major_roots));
+  abortpoint();
+
+  collect_young(ZYoungType::major_roots);
+
+  abortpoint();
+
   check_out_of_memory_young();
-  abortable(collect_old());
+
+  abortpoint();
+
+  collect_old();
 }
 
 void ZDriverMajor::check_out_of_memory() const {
@@ -873,27 +896,20 @@ void ZDriverMajor::check_out_of_memory() const {
 
 void ZDriverMajor::run_service() {
   // Main loop
-  while (!ZAbort::should_abort()) {
+  for (;;) {
     // Wait for GC request
     const ZDriverRequest request = _port.receive();
-    if (request.cause() == GCCause::_no_gc) {
-      continue;
-    }
 
     ZDriverLocker locker;
 
     ZBreakpoint::at_before_gc();
 
-    if (ZAbort::should_abort()) {
-      return;
-    }
+    abortpoint();
 
     // Run GC
     gc(request);
 
-    if (ZAbort::should_abort()) {
-      return;
-    }
+    abortpoint();
 
     // Notify GC completed
     _port.ack();
