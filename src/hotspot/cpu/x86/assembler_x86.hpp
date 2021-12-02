@@ -1774,6 +1774,8 @@ private:
 
   void pmovmskb(Register dst, XMMRegister src);
   void vpmovmskb(Register dst, XMMRegister src, int vec_enc);
+  void vmovmskps(Register dst, XMMRegister src, int vec_enc);
+  void vmovmskpd(Register dst, XMMRegister src, int vec_enc);
   void vpmaskmovd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
   // SSE 4.1 extract

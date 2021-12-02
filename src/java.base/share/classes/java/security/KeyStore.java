@@ -1384,7 +1384,9 @@ public class KeyStore {
      * integrity with the given password.
      *
      * @param stream the output stream to which this keystore is written.
-     * @param password the password to generate the keystore integrity check
+     * @param password the password to generate the keystore integrity check.
+     *                 May be {@code null} if the keystore does not support
+     *                 or require an integrity check.
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).
