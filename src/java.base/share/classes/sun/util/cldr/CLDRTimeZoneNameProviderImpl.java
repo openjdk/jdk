@@ -82,7 +82,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
         }
 
         if (namesSuper != null) {
-            // CLDR's resource bundle has an translated entry for this id.
+            // CLDR's resource bundle has a translated entry for this id.
             // Fix up names if needed, either missing or no-inheritance
             namesSuper[INDEX_TZID] = id;
 
@@ -149,13 +149,12 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
             return;
         }
 
-        // Check parent locale first
+        // Check parent locales first
         if (!exists(names, index)) {
             CLDRLocaleProviderAdapter clpa = (CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(Type.CLDR);
             var cands = clpa.getCandidateLocales("", locale);
-            if (cands.size() > 1) {
-                var parentLoc = cands.get(1); // immediate parent locale
-                String[] parentNames = super.getDisplayNameArray(id, parentLoc);
+            for (int i = 1; i < cands.size() ; i++) {
+                String[] parentNames = super.getDisplayNameArray(id, cands.get(i));
                 if (parentNames != null && !parentNames[index].isEmpty()) {
                     names[index] = parentNames[index];
                     return;
@@ -163,19 +162,15 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
             }
         }
 
-        // Check if COMPAT can substitute the name
-        if (LocaleProviderAdapter.getAdapterPreference().contains(Type.JRE)) {
+        // Check if COMPAT can substitute the short name (CLDR does not provide most short names)
+        if (index % 2 == 0 && !exists(names, index) &&
+            LocaleProviderAdapter.getAdapterPreference().contains(Type.JRE)) {
             String[] compatNames = (String[])LocaleProviderAdapter.forJRE()
                 .getLocaleResources(mapChineseLocale(locale))
                 .getTimeZoneNames(id);
             if (compatNames != null) {
-                for (int i = INDEX_STD_LONG; i <= INDEX_GEN_SHORT; i++) {
-                    // Assumes COMPAT has no empty slots
-                    if (i == index || !exists(names, i)) {
-                        names[i] = compatNames[i];
-                    }
-                }
-                return;
+                // Assumes COMPAT has no empty slots
+                names[index] = compatNames[index];
             }
         }
 
