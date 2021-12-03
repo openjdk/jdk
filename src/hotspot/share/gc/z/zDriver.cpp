@@ -47,12 +47,12 @@ static const ZStatPhaseCollection ZPhaseCollectionMinor("Minor Garbage Collectio
 static const ZStatPhaseCollection ZPhaseCollectionMajor("Major Garbage Collection");
 
 static const ZStatPhaseGeneration ZPhaseGenerationYoung[] {
-  ZStatPhaseGeneration("Young Generation (Minor)", ZGenerationId::young),
-  ZStatPhaseGeneration("Young Generation (Major Preclean)", ZGenerationId::young),
-  ZStatPhaseGeneration("Young Generation (Major Roots)", ZGenerationId::young)
+  ZStatPhaseGeneration("Young Generation (Minor)", ZCollectorId::young),
+  ZStatPhaseGeneration("Young Generation (Major Preclean)", ZCollectorId::young),
+  ZStatPhaseGeneration("Young Generation (Major Roots)", ZCollectorId::young)
 };
 
-static const ZStatPhaseGeneration ZPhaseGenerationOld("Old Generation (Major)", ZGenerationId::old);
+static const ZStatPhaseGeneration ZPhaseGenerationOld("Old Generation (Major)", ZCollectorId::old);
 
 static const ZStatPhasePause      ZPhasePauseMarkStartYoung("Pause Mark Start (Young)");
 static const ZStatPhasePause      ZPhasePauseMarkStartYoungAndOld("Pause Mark Start (Young + Old)");

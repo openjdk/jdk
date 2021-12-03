@@ -319,7 +319,7 @@ size_t ZPageAllocator::unused() const {
 }
 
 ZPageAllocatorStats ZPageAllocator::stats(ZCollector* collector) const {
-  ZGeneration* generation = ZHeap::heap()->generation(collector->id());
+  ZGeneration* generation = ZHeap::heap()->generation(collector->generation_id());
   ZLocker<ZLock> locker(&_lock);
   return ZPageAllocatorStats(_min_capacity,
                              _max_capacity,

@@ -43,14 +43,6 @@ inline ZHeap* ZHeap::heap() {
   return _heap;
 }
 
-inline ZGeneration* ZHeap::generation(ZCollectorId id) {
-  if (id == ZCollectorId::young) {
-    return &_young_generation;
-  } else {
-    return &_old_generation;
-  }
-}
-
 inline ZGeneration* ZHeap::generation(ZGenerationId id) {
   if (id == ZGenerationId::young) {
     return &_young_generation;
@@ -69,14 +61,6 @@ inline ZOldGeneration* ZHeap::old_generation() {
 
 inline ZCollector* ZHeap::collector(ZCollectorId id) {
   if (id == ZCollectorId::young) {
-    return &_young_collector;
-  } else {
-    return &_old_collector;
-  }
-}
-
-inline ZCollector* ZHeap::collector(ZGenerationId id) {
-  if (id == ZGenerationId::young) {
     return &_young_collector;
   } else {
     return &_old_collector;

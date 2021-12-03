@@ -50,6 +50,10 @@ inline ZCollectorId ZCollector::id() const {
   return _id;
 }
 
+inline ZGenerationId ZCollector::generation_id() const {
+  return _generation_id;
+}
+
 inline bool ZCollector::is_young() const {
   return _id == ZCollectorId::young;
 }

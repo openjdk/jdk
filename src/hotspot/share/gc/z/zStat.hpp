@@ -231,10 +231,10 @@ public:
 
 class ZStatPhaseGeneration : public ZStatPhase {
 private:
-  const ZGenerationId _id;
+  const ZCollectorId _id;
 
 public:
-  ZStatPhaseGeneration(const char* name, ZGenerationId id);
+  ZStatPhaseGeneration(const char* name, ZCollectorId id);
 
   virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
   virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;

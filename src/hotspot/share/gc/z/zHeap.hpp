@@ -69,14 +69,12 @@ public:
   void out_of_memory();
 
   // Generations
-  ZGeneration* generation(ZCollectorId id);
   ZGeneration* generation(ZGenerationId id);
   ZYoungGeneration* young_generation();
   ZOldGeneration* old_generation();
 
   // Collectors
   ZCollector* collector(ZCollectorId id);
-  ZCollector* collector(ZGenerationId id);
   ZYoungCollector* young_collector();
   ZOldCollector* old_collector();
 

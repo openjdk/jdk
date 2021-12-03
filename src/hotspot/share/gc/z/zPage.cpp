@@ -36,6 +36,7 @@
 ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
     _type(type),
     _generation_id(ZGenerationId::young),
+    _collector_id(ZCollectorId::young),
     _age(ZPageAge::eden),
     _numa_id((uint8_t)-1),
     _seqnum(0),
@@ -72,9 +73,9 @@ ZPage* ZPage::clone_limited_promote_flipped() const {
   return page;
 }
 
-void ZPage::reset_seqnum(ZGenerationId generation_id) {
-  Atomic::store(&_seqnum, ZHeap::heap()->collector(generation_id)->seqnum());
-  Atomic::store(&_seqnum_other, ZHeap::heap()->collector(generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
+void ZPage::reset_seqnum(ZCollectorId collector_id) {
+  Atomic::store(&_seqnum, ZHeap::heap()->collector(collector_id)->seqnum());
+  Atomic::store(&_seqnum_other, ZHeap::heap()->collector(collector_id == ZCollectorId::young ? ZCollectorId::old : ZCollectorId::young)->seqnum());
 }
 
 void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
@@ -126,7 +127,8 @@ void ZPage::reset(ZGenerationId generation_id, ZPageAge age, ZPageResetType type
   _age = age;
   _last_used = 0;
   _generation_id = generation_id;
-  reset_seqnum(_generation_id);
+  _collector_id = generation_id == ZGenerationId::young ? ZCollectorId::young : ZCollectorId::old;
+  reset_seqnum(_collector_id);
 
   // Flip aged pages are still filled with the same objects, need to retain the top pointer.
   if (type != ZPageResetType::FlipAging) {

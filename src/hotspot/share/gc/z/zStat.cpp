@@ -650,7 +650,7 @@ void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& s
                ZSIZE_ARGS(stat->used_at_collection_end()));
 }
 
-ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id) :
+ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZCollectorId id) :
     ZStatPhase("Generation", name),
     _id(id) {}
 

@@ -39,8 +39,8 @@ inline void ZLiveMap::reset() {
   _seqnum = 0;
 }
 
-inline bool ZLiveMap::is_marked(ZGenerationId generation_id) const {
-  return Atomic::load_acquire(&_seqnum) == ZHeap::heap()->collector(generation_id)->seqnum();
+inline bool ZLiveMap::is_marked(ZCollectorId collector_id) const {
+  return Atomic::load_acquire(&_seqnum) == ZHeap::heap()->collector(collector_id)->seqnum();
 }
 
 inline uint32_t ZLiveMap::live_objects() const {
@@ -95,18 +95,18 @@ inline BitMap::idx_t ZLiveMap::index_to_segment(BitMap::idx_t index) const {
   return index >> _segment_shift;
 }
 
-inline bool ZLiveMap::get(ZGenerationId generation_id, size_t index) const {
+inline bool ZLiveMap::get(ZCollectorId collector_id, size_t index) const {
   BitMap::idx_t segment = index_to_segment(index);
-  return is_marked(generation_id) &&                  // Page is marked
+  return is_marked(collector_id) &&                   // Page is marked
          is_segment_live(segment) &&                  // Segment is marked
          _bitmap.par_at(index, memory_order_relaxed); // Object is marked
 }
 
-inline bool ZLiveMap::set(ZGenerationId generation_id, size_t index, bool finalizable, bool& inc_live) {
-  if (!is_marked(generation_id)) {
+inline bool ZLiveMap::set(ZCollectorId collector_id, size_t index, bool finalizable, bool& inc_live) {
+  if (!is_marked(collector_id)) {
     // First object to be marked during this
     // cycle, reset marking information.
-    reset(generation_id, index);
+    reset(collector_id, index);
   }
 
   const BitMap::idx_t segment = index_to_segment(index);
@@ -154,8 +154,8 @@ inline void ZLiveMap::iterate_segment(BitMap::idx_t segment, Function function) 
 }
 
 template <typename Function>
-inline void ZLiveMap::iterate(ZGenerationId generation_id, Function function) {
-  if (!is_marked(generation_id)) {
+inline void ZLiveMap::iterate(ZCollectorId collector_id, Function function) {
+  if (!is_marked(collector_id)) {
     return;
   }
 

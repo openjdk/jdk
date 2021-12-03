@@ -48,7 +48,6 @@ private:
   const size_t           _object_alignment_shift;
   const AttachedArray    _entries;
   ZPage* const           _page;
-  ZGenerationId          _generation_id;
   ZPageAge               _from_age;
   ZPageAge               _to_age;
   volatile bool          _claimed;
@@ -82,7 +81,6 @@ public:
   static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page, ZPageAge to_age);
 
   uint8_t type() const;
-  ZGenerationId generation_id() const;
   ZPageAge from_age() const;
   ZPageAge to_age() const;
   zoffset start() const;

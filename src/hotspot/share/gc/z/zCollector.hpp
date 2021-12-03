@@ -57,31 +57,32 @@ protected:
     Relocate
   };
 
-  ZCollectorId      _id;
-  ZPageAllocator*   _page_allocator;
-  ZPageTable*       _page_table;
-  ZForwardingTable  _forwarding_table;
-  ZWorkers          _workers;
-  ZMark             _mark;
-  ZRelocate         _relocate;
-  ZRelocationSet    _relocation_set;
+  const ZCollectorId    _id;
+  const ZGenerationId   _generation_id;
+  ZPageAllocator* const _page_allocator;
+  ZPageTable* const     _page_table;
+  ZForwardingTable      _forwarding_table;
+  ZWorkers              _workers;
+  ZMark                 _mark;
+  ZRelocate             _relocate;
+  ZRelocationSet        _relocation_set;
 
-  size_t            _used_high;
-  size_t            _used_low;
-  volatile size_t   _freed;
-  volatile size_t   _compacted;
-  volatile size_t   _promoted;
+  size_t                _used_high;
+  size_t                _used_low;
+  volatile size_t       _freed;
+  volatile size_t       _compacted;
+  volatile size_t       _promoted;
 
-  Phase             _phase;
-  uint32_t          _seqnum;
+  Phase                 _phase;
+  uint32_t              _seqnum;
 
-  ZStatHeap         _stat_heap;
-  ZStatCycle        _stat_cycle;
-  ZStatWorkers      _stat_workers;
-  ZStatMark         _stat_mark;
-  ZStatRelocation   _stat_relocation;
+  ZStatHeap             _stat_heap;
+  ZStatCycle            _stat_cycle;
+  ZStatWorkers          _stat_workers;
+  ZStatMark             _stat_mark;
+  ZStatRelocation       _stat_relocation;
 
-  ConcurrentGCTimer _timer;
+  ConcurrentGCTimer     _timer;
 
   void free_empty_pages(ZRelocationSetSelector* selector, int bulk);
   void flip_age_pages(const ZRelocationSetSelector* selector);
@@ -104,6 +105,7 @@ public:
   uint32_t seqnum() const;
 
   ZCollectorId id() const;
+  ZGenerationId generation_id() const;
   bool is_young() const;
   bool is_old() const;
 

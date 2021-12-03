@@ -61,7 +61,6 @@ inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries) :
     _object_alignment_shift(page->object_alignment_shift()),
     _entries(nentries),
     _page(page),
-    _generation_id(page->generation_id()),
     _from_age(page->age()),
     _to_age(to_age),
     _claimed(false),
@@ -76,10 +75,6 @@ inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries) :
 
 inline uint8_t ZForwarding::type() const {
   return _page->type();
-}
-
-inline ZGenerationId ZForwarding::generation_id() const {
-  return _generation_id;
 }
 
 inline ZPageAge ZForwarding::from_age() const {

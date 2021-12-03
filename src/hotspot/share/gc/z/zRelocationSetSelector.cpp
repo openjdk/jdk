@@ -105,7 +105,7 @@ void ZRelocationSetSelectorGroup::semi_sort() {
   _live_pages.swap(&sorted_live_pages);
 }
 
-void ZRelocationSetSelectorGroup::select_inner(ZGenerationId generation_id) {
+void ZRelocationSetSelectorGroup::select_inner() {
   // Calculate the number of pages to relocate by successively including pages in
   // a candidate relocation set and calculate the maximum space requirement for
   // their live objects.
@@ -169,7 +169,7 @@ void ZRelocationSetSelectorGroup::select_inner(ZGenerationId generation_id) {
                        _name, selected_from, selected_to, npages - selected_from, selected_forwarding_entries);
 }
 
-void ZRelocationSetSelectorGroup::select(ZGenerationId generation_id) {
+void ZRelocationSetSelectorGroup::select() {
   if (is_disabled()) {
     return;
   }
@@ -177,7 +177,7 @@ void ZRelocationSetSelectorGroup::select(ZGenerationId generation_id) {
   EventZRelocationSetGroup event;
 
   if (is_selectable()) {
-    select_inner(generation_id);
+    select_inner();
   } else {
     // Mark pages as not selected
     const int npages = _live_pages.length();
@@ -198,7 +198,7 @@ ZRelocationSetSelector::ZRelocationSetSelector(bool promote_all) :
     _empty_pages(),
     _promote_all(promote_all) {}
 
-void ZRelocationSetSelector::select(ZGenerationId generation_id) {
+void ZRelocationSetSelector::select() {
   // Select pages to relocate. The resulting relocation set will be
   // sorted such that medium pages comes first, followed by small
   // pages. Pages within each page group will be semi-sorted by live
@@ -208,9 +208,9 @@ void ZRelocationSetSelector::select(ZGenerationId generation_id) {
   EventZRelocationSet event;
 
   // Select pages from each group
-  _large.select(generation_id);
-  _medium.select(generation_id);
-  _small.select(generation_id);
+  _large.select();
+  _medium.select();
+  _small.select();
 
   // Send event
   event.commit(total(), empty(), relocate());

@@ -306,7 +306,7 @@ zaddress ZRelocate::forward_object(ZForwarding* forwarding, zaddress_unsafe from
   return to_addr;
 }
 
-static ZPage* alloc_page(const ZForwarding* forwarding, ZGenerationId generation, ZPageAge age) {
+static ZPage* alloc_page(const ZForwarding* forwarding, ZGenerationId generation_id, ZPageAge age) {
   if (ZStressRelocateInPlace) {
     // Simulate failure to allocate a new page. This will
     // cause the page being relocated to be relocated in-place.
@@ -317,7 +317,7 @@ static ZPage* alloc_page(const ZForwarding* forwarding, ZGenerationId generation
   flags.set_non_blocking();
   flags.set_gc_relocation();
 
-  return ZHeap::heap()->alloc_page(forwarding->type(), forwarding->size(), flags, generation, age);
+  return ZHeap::heap()->alloc_page(forwarding->type(), forwarding->size(), flags, generation_id, age);
 }
 
 static void retire_target_page(ZCollector* collector, ZPage* page) {
@@ -339,19 +339,19 @@ static void retire_target_page(ZCollector* collector, ZPage* page) {
 class ZRelocateSmallAllocator {
 private:
   volatile size_t _in_place_count;
-  ZGenerationId   _generation;
+  ZGenerationId   _to_generation_id;
   ZPageAge        _age;
   ZCollector*     _collector;
 
 public:
-  ZRelocateSmallAllocator(ZGenerationId generation, ZPageAge age, ZCollector* collector) :
+  ZRelocateSmallAllocator(ZGenerationId to_generation_id, ZPageAge age, ZCollector* collector) :
       _in_place_count(0),
-      _generation(generation),
+      _to_generation_id(to_generation_id),
       _age(age),
       _collector(collector) {}
 
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
-    ZPage* const page = alloc_page(forwarding, _generation, _age);
+    ZPage* const page = alloc_page(forwarding, _to_generation_id, _age);
     if (page == NULL) {
       Atomic::inc(&_in_place_count);
     }
@@ -393,17 +393,17 @@ private:
   ZPage*              _shared;
   bool                _in_place;
   volatile size_t     _in_place_count;
-  ZGenerationId       _generation;
+  ZGenerationId       _to_generation_id;
   ZPageAge            _age;
   ZCollector*         _collector;
 
 public:
-  ZRelocateMediumAllocator(ZGenerationId generation, ZPageAge age, ZCollector* collector) :
+  ZRelocateMediumAllocator(ZGenerationId to_generation_id, ZPageAge age, ZCollector* collector) :
       _lock(),
       _shared(NULL),
       _in_place(false),
       _in_place_count(0),
-      _generation(generation),
+      _to_generation_id(to_generation_id),
       _age(age),
       _collector(collector) {}
 
@@ -426,7 +426,7 @@ public:
     // current target page if another thread shared a page, or allocated
     // a new page.
     if (_shared == target) {
-      _shared = alloc_page(forwarding, _generation, _age);
+      _shared = alloc_page(forwarding, _to_generation_id, _age);
       if (_shared == NULL) {
         Atomic::inc(&_in_place_count);
         _in_place = true;
@@ -1030,7 +1030,7 @@ public:
       assert(from_age != ZPageAge::old, "invalid age for a young collection");
 
       // Figure out if this is proper promotion
-      const ZGenerationId to_generation = to_age == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
+      const ZGenerationId to_generation_id = to_age == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
       const bool promotion = to_age == ZPageAge::old;
 
       // Logging
@@ -1038,7 +1038,7 @@ public:
 
       // Setup to-space page
       ZPage* const new_page = promotion ? prev_page->clone_limited_promote_flipped() : prev_page;
-      new_page->reset(to_generation, to_age, ZPageResetType::FlipAging);
+      new_page->reset(to_generation_id, to_age, ZPageResetType::FlipAging);
 
       if (promotion) {
         ZHeap::heap()->young_collector()->flip_promote(prev_page, new_page);

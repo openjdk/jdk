@@ -79,7 +79,7 @@ private:
   bool is_disabled();
   bool is_selectable();
   void semi_sort();
-  void select_inner(ZGenerationId generation_id);
+  void select_inner();
 
 public:
   ZRelocationSetSelectorGroup(const char* name,
@@ -89,7 +89,7 @@ public:
 
   void register_live_page(ZPage* page);
   void register_empty_page(ZPage* page);
-  void select(ZGenerationId generation_id);
+  void select();
 
   const ZArray<ZPage*>* live_pages() const;
   const ZArray<ZPage*>* selected_pages() const;
@@ -123,7 +123,7 @@ public:
   const ZArray<ZPage*>* empty_pages() const;
   void clear_empty_pages();
 
-  void select(ZGenerationId generation_id);
+  void select();
 
   const ZArray<ZPage*>* selected_small() const;
   const ZArray<ZPage*>* selected_medium() const;

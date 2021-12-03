@@ -62,6 +62,7 @@ static const ZStatSubPhase ZSubPhaseConcurrentOldRemapRootUncolored("Concurrent 
 
 ZCollector::ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator) :
     _id(id),
+    _generation_id(id == ZCollectorId::young ? ZGenerationId::young : ZGenerationId::old),
     _page_allocator(page_allocator),
     _page_table(page_table),
     _forwarding_table(),
@@ -129,12 +130,10 @@ void ZCollector::flip_age_pages(const ZRelocationSetSelector* selector) {
 }
 
 void ZCollector::select_relocation_set(bool promote_all) {
-  ZGenerationId collected_generation = ZHeap::heap()->generation(_id)->id();
-
   // Register relocatable pages with selector
   ZRelocationSetSelector selector(promote_all);
   {
-    ZGenerationPagesIterator pt_iter(_page_table, collected_generation, _page_allocator);
+    ZGenerationPagesIterator pt_iter(_page_table, _generation_id, _page_allocator);
     for (ZPage* page; pt_iter.next(&page);) {
       if (!page->is_relocatable()) {
         // Not relocatable, don't register
@@ -180,7 +179,7 @@ void ZCollector::select_relocation_set(bool promote_all) {
   }
 
   // Select relocation set
-  selector.select(collected_generation);
+  selector.select();
 
   // Install relocation set
   _relocation_set.install(&selector);
