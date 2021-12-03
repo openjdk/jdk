@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.lang.ref.Reference;
 import java.net.Authenticator;
 import java.net.CookieHandler;
-import java.net.InetAddress;
 import java.net.ProxySelector;
 import java.time.Duration;
 import java.util.Optional;
@@ -156,11 +155,6 @@ public final class HttpClientFacade extends HttpClient implements Trackable {
         } finally {
             Reference.reachabilityFence(this);
         }
-    }
-
-    @Override
-    public InetAddress localAddress() {
-        return impl.localAddress();
     }
 
     @Override

@@ -1184,8 +1184,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return version;
     }
 
-    @Override
-    public InetAddress localAddress() {
+    InetAddress localAddress() {
         return localAddr;
     }
 

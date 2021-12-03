@@ -113,23 +113,22 @@ public class HttpClientLocalAddrTest {
             // HTTP request, by the server side handler used in this test.
             builder.proxy(HttpClient.Builder.NO_PROXY);
             // no localAddr set
-            clients.add(new Object[]{builder.build()});
+            clients.add(new Object[]{builder.build(), null});
             // null localAddr set
-            clients.add(new Object[]{builder.localAddress(null).build()});
+            clients.add(new Object[]{builder.localAddress(null).build(), null});
             // localAddr set to loopback address
-            clients.add(new Object[]{builder.localAddress(
-                    InetAddress.getLoopbackAddress()).build()});
+            var loopbackAddr = InetAddress.getLoopbackAddress();
+            clients.add(new Object[]{builder.localAddress(loopbackAddr).build(), loopbackAddr});
             // anyAddress
             if (Boolean.getBoolean("java.net.preferIPv6Addresses")) {
                 // ipv6 wildcard
-                clients.add(new Object[]{builder.localAddress(
-                        InetAddress.getByName("::1")).build()});
+                var localAddr = InetAddress.getByName("::1");
+                clients.add(new Object[]{builder.localAddress(localAddr).build(), localAddr});
             } else {
                 // ipv4 wildcard
-                clients.add(new Object[]{builder.localAddress(
-                        InetAddress.getByName("0.0.0.0")).build()});
+                var localAddr = InetAddress.getByName("0.0.0.0");
+                clients.add(new Object[]{builder.localAddress(localAddr).build(), localAddr});
             }
-
         }
         return clients.stream().toArray(Object[][]::new);
     }
@@ -141,15 +140,15 @@ public class HttpClientLocalAddrTest {
      * {@code client}
      */
     @Test(dataProvider = "httpClients")
-    public void testSend(HttpClient client) throws Exception {
-        System.out.println("Testing using a HTTP client with local address " + client.localAddress());
+    public void testSend(HttpClient client, InetAddress localAddress) throws Exception {
+        System.out.println("Testing using a HTTP client with local address " + localAddress);
         // GET request
         var req = HttpRequest.newBuilder(rootURI).build();
         var resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
         // verify the address only if a specific one was set on the client
-        if (client.localAddress() != null && !client.localAddress().isAnyLocalAddress()) {
-            Assert.assertEquals(resp.body(), client.localAddress().getHostAddress(),
+        if (localAddress != null && !localAddress.isAnyLocalAddress()) {
+            Assert.assertEquals(resp.body(), localAddress.getHostAddress(),
                     "Unexpected client address seen by the server handler");
         }
     }
@@ -161,8 +160,8 @@ public class HttpClientLocalAddrTest {
      * {@code client}
      */
     @Test(dataProvider = "httpClients")
-    public void testSendAsync(HttpClient client) throws Exception {
-        System.out.println("Testing using a HTTP client with local address " + client.localAddress());
+    public void testSendAsync(HttpClient client, InetAddress localAddress) throws Exception {
+        System.out.println("Testing using a HTTP client with local address " + localAddress);
         // GET request
         var req = HttpRequest.newBuilder(rootURI).build();
         var cf = client.sendAsync(req,
@@ -170,8 +169,8 @@ public class HttpClientLocalAddrTest {
         var resp = cf.get();
         Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
         // verify the address only if a specific one was set on the client
-        if (client.localAddress() != null && !client.localAddress().isAnyLocalAddress()) {
-            Assert.assertEquals(resp.body(), client.localAddress().getHostAddress(),
+        if (localAddress != null && !localAddress.isAnyLocalAddress()) {
+            Assert.assertEquals(resp.body(), localAddress.getHostAddress(),
                     "Unexpected client address seen by the server handler");
         }
     }
@@ -183,7 +182,7 @@ public class HttpClientLocalAddrTest {
      * the {@code client}
      */
     @Test(dataProvider = "httpClients")
-    public void testMultiSendRequests(HttpClient client) throws Exception {
+    public void testMultiSendRequests(HttpClient client, InetAddress localAddress) throws Exception {
         int numThreads = 10;
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
         List<Future<Void>> taskResults = new ArrayList<>();
@@ -195,9 +194,9 @@ public class HttpClientLocalAddrTest {
                     public Void call() throws Exception {
                         // test some for send and some for sendAsync
                         if (currentIdx % 2 == 0) {
-                            testSend(client);
+                            testSend(client, localAddress);
                         } else {
-                            testSendAsync(client);
+                            testSendAsync(client, localAddress);
                         }
                         return null;
                     }
@@ -211,21 +210,6 @@ public class HttpClientLocalAddrTest {
         } finally {
             executor.shutdownNow();
         }
-    }
-
-    /**
-     * Verifies that the local address set on the HTTPClient builder does indeed
-     * end up correctly on the built HTTPClient
-     */
-    @Test
-    public void testConfiguredLocalAddr() throws Exception {
-        Assert.assertNull(HttpClient.newBuilder().version(HTTP_1_1).build().localAddress(),
-                "localAddress was expected to be null by default on HTTPClient");
-        final var h1 = HttpClient.newBuilder().version(HTTP_1_1).localAddress(null).build();
-        Assert.assertNull(h1.localAddress(), "localAddress was expected to be null");
-        InetAddress i1 = InetAddress.getLoopbackAddress();
-        final var h2 = HttpClient.newBuilder().version(HTTP_1_1).localAddress(i1).build();
-        Assert.assertSame(h2.localAddress(), i1, "Unexpected localAddress on HTTPClient");
     }
 }
 

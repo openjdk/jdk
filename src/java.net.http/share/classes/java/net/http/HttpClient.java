@@ -657,22 +657,6 @@ public abstract class HttpClient {
               PushPromiseHandler<T> pushPromiseHandler);
 
     /**
-     * Returns an {@link InetAddress} which will be used by this client
-     * to bind a socket when creating connections. If no
-     * {@link Builder#localAddress() local address} was set in the
-     * client's builder, then this method returns null, in which case
-     * the sockets created by this client will be bound to automatically
-     * assigned socket addresses.
-     *
-     * @return the local address that will be used by this client when
-     *         creating connections
-     * @since 19
-     */
-    public InetAddress localAddress() {
-        return null;
-    }
-
-    /**
      * Creates a new {@code WebSocket} builder (optional operation).
      *
      * <p> <b>Example</b>
