@@ -1180,7 +1180,7 @@ void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& th
                                                     TRAPS) {
   int limit = pos + end_arg - start_arg;
   // checks: index in range [0..this_cp->length),
-  // tag at index, start..end in range [0..argc],
+  // tag at index, start..end in range [0..this_cp->bootstrap_argument_count],
   // info array non-null, pos..limit in [0..info.length]
   if ((0 >= index    || index >= this_cp->length())  ||
       !(this_cp->tag_at(index).is_invoke_dynamic()    ||
