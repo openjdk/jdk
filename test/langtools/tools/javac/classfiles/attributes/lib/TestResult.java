@@ -26,7 +26,7 @@ import java.io.StringWriter;
 import java.util.*;
 
 /**
- * This class accumulates test results. Test results can be checked with method @{code checkStatus}.
+ * This class accumulates test results. Test results can be checked with method {@code checkStatus}.
  */
 public class TestResult extends TestBase {
 

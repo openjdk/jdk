@@ -143,7 +143,7 @@ void G1Arguments::initialize_card_set_configuration() {
   // Round to next 8 byte boundary for array to maximize space usage.
   size_t const cur_size = G1CardSetArray::size_in_bytes(G1RemSetArrayOfCardsEntries);
   FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries,
-                G1RemSetArrayOfCardsEntries + (uint)(align_up(cur_size, G1CardSetAllocOptions::BufferAlignment) - cur_size) / sizeof(G1CardSetArray::EntryDataType));
+                G1RemSetArrayOfCardsEntries + (uint)(align_up(cur_size, G1CardSetAllocOptions::SlotAlignment) - cur_size) / sizeof(G1CardSetArray::EntryDataType));
 
   // Howl card set container globals.
   if (FLAG_IS_DEFAULT(G1RemSetHowlNumBuckets)) {
@@ -243,7 +243,7 @@ void G1Arguments::initialize() {
   // the refcount in G1CardSetContainer.
   uint max_parallel_refinement_threads = G1ConcRefinementThreads + G1DirtyCardQueueSet::num_par_ids();
   uint const divisor = 3;  // Safe divisor; we increment by 2 for each claim, but there is a small initial value.
-  if (max_parallel_refinement_threads > UINTPTR_MAX / divisor) {
+  if (max_parallel_refinement_threads > UINT_MAX / divisor) {
     vm_exit_during_initialization("Too large parallelism for remembered sets.");
   }
 }

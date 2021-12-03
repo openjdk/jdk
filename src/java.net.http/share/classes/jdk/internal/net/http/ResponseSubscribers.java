@@ -1086,7 +1086,7 @@ public class ResponseSubscribers {
      * Invokes bs::getBody using the provided executor.
      * If invoking bs::getBody requires an executor, and the given executor
      * is a {@link HttpClientImpl.DelegatingExecutor}, then the executor's
-     * delegate is used. If an error occurs anywhere then the given {code cf}
+     * delegate is used. If an error occurs anywhere then the given {@code cf}
      * is completed exceptionally (this method does not throw).
      * @param e   The executor that should be used to call bs::getBody
      * @param bs  The BodySubscriber

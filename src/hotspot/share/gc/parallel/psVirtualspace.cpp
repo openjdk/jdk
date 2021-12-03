@@ -56,16 +56,10 @@ PSVirtualSpace::PSVirtualSpace():
 }
 
 // Deprecated.
-bool PSVirtualSpace::initialize(ReservedSpace rs,
-                                size_t commit_size) {
+void PSVirtualSpace::initialize(ReservedSpace rs) {
   set_reserved(rs);
   set_committed(reserved_low_addr(), reserved_low_addr());
-
-  // Commit to initial size.
-  assert(commit_size <= rs.size(), "commit_size too big");
-  bool result = commit_size > 0 ? expand_by(commit_size) : true;
   DEBUG_ONLY(verify());
-  return result;
 }
 
 PSVirtualSpace::~PSVirtualSpace() {

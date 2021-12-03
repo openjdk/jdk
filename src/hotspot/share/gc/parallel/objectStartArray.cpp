@@ -65,9 +65,7 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
   MemTracker::record_virtual_memory_type((address)backing_store.base(), mtGC);
 
   // We do not commit any memory initially
-  if (!_virtual_space.initialize(backing_store, 0)) {
-    vm_exit_during_initialization("Could not commit space for ObjectStartArray");
-  }
+  _virtual_space.initialize(backing_store);
 
   _raw_base = (jbyte*)_virtual_space.low_boundary();
 
