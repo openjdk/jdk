@@ -483,7 +483,7 @@ void RefProcTask::process_discovered_list(uint worker_id,
                                                                        keep_alive,
                                                                        enqueue,
                                                                        do_enqueue_and_clear);
-    _phase_times->add_ref_cleared(ref_type, removed);
+    _phase_times->add_ref_dropped(ref_type, removed);
   }
 }
 

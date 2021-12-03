@@ -82,7 +82,9 @@ public class TestPrintReferences {
         String countRegex = "[0-9]+";
         return gcLogTimeRegex + indent(6) + reftype + ":\n" +
                gcLogTimeRegex + indent(8) + "Discovered: " + countRegex + "\n" +
-               gcLogTimeRegex + indent(8) + "Cleared: " + countRegex + "\n";
+               gcLogTimeRegex + indent(8) + "Dropped: "    + countRegex + "\n" +
+               gcLogTimeRegex + indent(8) + "Processed: "  + countRegex + "\n"
+               ;
     }
 
     private static void checkRefsLogFormat(OutputAnalyzer output) {
