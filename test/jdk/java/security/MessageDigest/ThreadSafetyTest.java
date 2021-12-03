@@ -25,7 +25,7 @@
  * @test
  * @bug 8241960 8277353
  * @summary Confirm that java.security.MessageDigest is thread-safe after clone.
- * @run main/othervm/timeout=200 ThreadSafetyTest 5 4
+ * @run main ThreadSafetyTest 4 2
  */
 
 import java.security.MessageDigest;
@@ -56,7 +56,7 @@ public class ThreadSafetyTest {
             duration = Integer.parseInt(args[1]);
         }
         int nProcessors = Runtime.getRuntime().availableProcessors();
-        int nTasks = nProcessors * threadsFactor;
+        int nTasks = Math.min(nProcessors, 4) * threadsFactor;
 
         System.out.println("Testing with " + nTasks + " threads on " +
                            nProcessors + " processors for " + duration +
