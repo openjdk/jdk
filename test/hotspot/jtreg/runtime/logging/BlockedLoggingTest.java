@@ -70,7 +70,6 @@ public class BlockedLoggingTest {
             BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
             String line = in.readLine();
             while (line != null) {
-                System.out.print(line);
                 // block stdin once we have seen the banner.
                 if (line.contains(BANNER)) {
                     while (true);
