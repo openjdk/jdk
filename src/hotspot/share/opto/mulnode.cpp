@@ -1746,7 +1746,7 @@ bool MulNode::AndIL_shift_and_mask(PhaseGVN* phase, Node* mask, Node* shift, Bas
   if ((1L << shift_con) > mask_t->hi_as_long() && mask_t->lo_as_long() >= 0) {
     return true;
   }
-  
+
   return false;
 }
 
