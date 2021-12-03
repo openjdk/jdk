@@ -29,9 +29,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Param;
-
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
 import java.util.concurrent.TimeUnit;
@@ -44,12 +42,12 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class RandomGeneratorNext {
 
-    public RandomGenerator randomGenerator;
+    RandomGenerator randomGenerator;
 
     @Param({"L128X128MixRandom", "L128X256MixRandom", "L128X1024MixRandom"})
     String randomGeneratorName;
 
-    public static long[] buffer;
+    long[] buffer;
 
     @Param("1024")
     int size;
@@ -66,9 +64,9 @@ public class RandomGeneratorNext {
     }
 
     @Benchmark
-    @Fork(1)
-    public void testFillBufferWithNextLong() {
+    public long[] testFillBufferWithNextLong() {
         for (int i = 0; i < size; i++) buffer[i] = randomGenerator.nextLong();
+        return buffer;
     }
 
 }
