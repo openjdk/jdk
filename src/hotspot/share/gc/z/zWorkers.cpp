@@ -63,12 +63,13 @@ public:
   }
 };
 
-ZWorkers::ZWorkers(const char* name, ZGenerationId id) :
-    _workers(name,
+ZWorkers::ZWorkers(ZGenerationId id, ZStatWorkers* stats) :
+    _workers(id == ZGenerationId::young ? "ZWorkerYoung" : "ZWorkerOld",
              UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads)),
-    _generation_id(id),
+    _generation_name(id == ZGenerationId::young ? "young" : "old"),
     _thread_resize_lock(),
-    _resize_workers_request() {
+    _resize_workers_request(),
+    _stats(stats) {
 
   if (UseDynamicNumberOfGCThreads) {
     log_info_p(gc, init)("GC Workers: %u (dynamic)", _workers.max_workers());
@@ -93,23 +94,21 @@ uint ZWorkers::active_workers() const {
 }
 
 void ZWorkers::set_active_workers(uint nworkers) {
-  log_info(gc, task)("Using %u workers for %s generation",
-                     nworkers, _generation_id == ZGenerationId::young ? "young" : "old");
+  log_info(gc, task)("Using %u workers for %s generation", nworkers, _generation_name);
   _workers.set_active_workers(nworkers);
 }
 
 void ZWorkers::run(ZTask* task) {
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), active_workers());
 
-  ZStatWorkers* stat_workers = ZHeap::heap()->collector(_generation_id)->stat_workers();
   {
     ZLocker<ZConditionLock> locker(&_thread_resize_lock);
-    stat_workers->at_start();
+    _stats->at_start(active_workers());
   }
   _workers.run_task(task->worker_task());
   {
     ZLocker<ZConditionLock> locker(&_thread_resize_lock);
-    stat_workers->at_end();
+    _stats->at_end(active_workers());
   }
 }
 
@@ -136,17 +135,16 @@ void ZWorkers::threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
 }
 
-ZWorkerResizeStats ZWorkers::resize_stats() {
-  ZCollector* collector = ZHeap::heap()->collector(_generation_id);
+ZWorkerResizeStats ZWorkers::resize_stats(double duration_since_start) {
   ZLocker<ZConditionLock> locker(&_thread_resize_lock);
 
-  double parallel_gc_duration_passed = collector->stat_workers()->accumulated_duration();
-  double parallel_gc_time_passed = collector->stat_workers()->accumulated_time();
-  double gc_duration_passed = collector->stat_cycle()->duration_since_start();
+  double parallel_gc_duration_passed = _stats->accumulated_duration();
+  double parallel_gc_time_passed = _stats->accumulated_time();
+  double gc_duration_passed = duration_since_start;
 
   double serial_gc_time_passed = gc_duration_passed - parallel_gc_duration_passed;
 
-  uint nworkers = collector->stat_workers()->active_workers();
+  uint nworkers = _stats->active_workers();
   bool is_active = nworkers != 0;
 
   return {
@@ -164,22 +162,24 @@ void ZWorkers::request_resize_workers(uint nworkers) {
     return;
   }
   log_info(gc, director)("Request worker resize for %s generation to: %d",
-                         _generation_id == ZGenerationId::young ? "young" : "old", nworkers);
+                         _generation_name, nworkers);
   _resize_workers_request = nworkers;
   _thread_resize_lock.notify_all();
 }
 
 bool ZWorkers::try_resize_workers(ZRestartableTask* task, ZWorkers* workers) {
-  ZCollector* collector = ZHeap::heap()->collector(_generation_id);
   ZLocker<ZConditionLock> locker(&_thread_resize_lock);
   uint result = _resize_workers_request;
   _resize_workers_request = 0;
   if (result != 0) {
-    collector->stat_workers()->at_end();
+    _stats->at_end(active_workers());
     // The task has gotten a request to restart with a different thread count
     set_active_workers(result);
+    // FIXME: set_active_workers is not guaranteed to succeed, or do we rely
+    // on pre-initialization
+    assert(result == active_workers(), "set_active_workers failed");
     task->resize_workers(result);
-    collector->stat_workers()->at_start();
+    _stats->at_start(active_workers());
     return true;
   }
   return false;

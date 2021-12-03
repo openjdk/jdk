@@ -86,7 +86,7 @@ protected:
   void flip_age_pages(const ZRelocationSetSelector* selector);
   void flip_age_pages(const ZArray<ZPage*>* pages);
 
-  ZCollector(ZGenerationId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZCollector(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   void log_phase_switch(Phase from, Phase to);
 
@@ -128,6 +128,7 @@ public:
 
   void set_at_collection_start();
   void set_at_generation_collection_start();
+  void set_at_generation_collection_end();
 
   // Workers
   ZWorkers* workers();

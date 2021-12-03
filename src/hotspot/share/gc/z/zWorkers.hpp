@@ -30,24 +30,26 @@
 
 class ThreadClosure;
 class ZRestartableTask;
+class ZStatWorkers;
 class ZTask;
 
 struct ZWorkerResizeStats {
   bool   _gc_active;
   double _serial_gc_time_passed;
   double _parallel_gc_time_passed;
-  uint _nworkers_current;
+  uint   _nworkers_current;
 };
 
 class ZWorkers {
 private:
-  WorkerThreads  _workers;
-  ZGenerationId  _generation_id;
-  ZConditionLock _thread_resize_lock;
-  volatile uint  _resize_workers_request;
+  WorkerThreads       _workers;
+  const char*         _generation_name;
+  ZConditionLock      _thread_resize_lock;
+  volatile uint       _resize_workers_request;
+  ZStatWorkers* const _stats;
 
 public:
-  ZWorkers(const char* name, ZGenerationId id);
+  ZWorkers(ZGenerationId id, ZStatWorkers* stats);
 
   uint active_workers() const;
   void set_active_workers(uint nworkers);
@@ -59,7 +61,7 @@ public:
   void threads_do(ThreadClosure* tc) const;
 
   // Worker resizing
-  ZWorkerResizeStats resize_stats();
+  ZWorkerResizeStats resize_stats(double duration_since_start);
   void request_resize_workers(uint nworkers);
   void clear_pending_resize();
 

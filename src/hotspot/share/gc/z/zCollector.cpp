@@ -60,12 +60,12 @@ static const ZStatSubPhase ZSubPhaseConcurrentOldMarkRoots("Concurrent Old Mark 
 static const ZStatSubPhase ZSubPhaseConcurrentOldMarkFollow("Concurrent Old Mark Follow");
 static const ZStatSubPhase ZSubPhaseConcurrentOldRemapRootUncolored("Concurrent Old Remap Root Uncolored");
 
-ZCollector::ZCollector(ZGenerationId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator) :
+ZCollector::ZCollector(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator) :
     _id(id),
     _page_allocator(page_allocator),
     _page_table(page_table),
     _forwarding_table(),
-    _workers(worker_prefix, id),
+    _workers(id, &_stat_workers),
     _mark(this, page_table),
     _relocate(this),
     _relocation_set(this),
@@ -75,8 +75,8 @@ ZCollector::ZCollector(ZGenerationId id, const char* worker_prefix, ZPageTable* 
     _phase(Phase::Relocate),
     _seqnum(1),
     _stat_heap(),
-    _stat_cycle(id),
-    _stat_workers(id),
+    _stat_cycle(),
+    _stat_workers(),
     _stat_mark() {
 }
 
@@ -325,6 +325,13 @@ void ZCollector::set_at_collection_start() {
 void ZCollector::set_at_generation_collection_start() {
   stat_cycle()->at_start();
   stat_heap()->set_at_generation_collection_start(_page_allocator->stats(this));
+
+  workers()->clear_pending_resize();
+}
+
+void ZCollector::set_at_generation_collection_end() {
+  stat_cycle()->at_end(stat_workers());
+  // The heap at generation collection end data is gathered at relocate end
 }
 
 const char* ZCollector::phase_to_string() const {
@@ -356,7 +363,7 @@ ZYoungTypeSetter::~ZYoungTypeSetter() {
 }
 
 ZYoungCollector::ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-    ZCollector(ZGenerationId::young, "ZWorkerYoung", page_table, page_allocator),
+    ZCollector(ZGenerationId::young, page_table, page_allocator),
     _active_type(ZYoungType::none),
     _remembered(page_table, page_allocator),
     _tracer() {}
@@ -491,7 +498,7 @@ GCTracer* ZYoungCollector::tracer() {
 }
 
 ZOldCollector::ZOldCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-  ZCollector(ZGenerationId::old, "ZWorkerOld", page_table, page_allocator),
+  ZCollector(ZGenerationId::old, page_table, page_allocator),
   _reference_processor(&_workers),
   _weak_roots_processor(&_workers),
   _unload(&_workers),

@@ -521,8 +521,8 @@ public:
     // Flush GC threads
     if (_gc_threads) {
       SuspendibleThreadSet::synchronize();
-      ZHeap::heap()->young_collector()->workers()->threads_do(_cl);
-      ZHeap::heap()->old_collector()->workers()->threads_do(_cl);
+      ZHeap::heap()->young_collector()->threads_do(_cl);
+      ZHeap::heap()->old_collector()->threads_do(_cl);
       SuspendibleThreadSet::desynchronize();
     }
     // Flush VM thread

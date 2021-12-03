@@ -42,6 +42,7 @@ class ZPageAllocatorStats;
 class ZRelocationSetSelectorGroupStats;
 class ZStatSampler;
 class ZStatSamplerHistory;
+class ZStatWorkers;
 struct ZStatCounterData;
 struct ZStatSamplerData;
 
@@ -416,13 +417,12 @@ private:
   NumberSeq    _parallelizable_time;
   NumberSeq    _parallelizable_duration;
   double       _last_active_workers;
-  ZGenerationId _generation_id;
 
 public:
-  ZStatCycle(ZGenerationId id);
+  ZStatCycle();
 
   void at_start();
-  void at_end();
+  void at_end(ZStatWorkers* stats_workers);
 
   bool is_warm();
   uint64_t nwarmup_cycles();
@@ -443,17 +443,16 @@ public:
 //
 class ZStatWorkers {
 private:
-  uint          _active_workers;
-  Ticks         _start_of_last;
-  Tickspan      _accumulated_duration;
-  Tickspan      _accumulated_time;
-  ZGenerationId _generation_id;
+  uint     _active_workers;
+  Ticks    _start_of_last;
+  Tickspan _accumulated_duration;
+  Tickspan _accumulated_time;
 
 public:
-  ZStatWorkers(ZGenerationId id);
+  ZStatWorkers();
 
-  void at_start();
-  void at_end();
+  void at_start(uint active_workers);
+  void at_end(uint active_workers);
 
   double get_and_reset_duration();
   double get_and_reset_time();
@@ -658,6 +657,7 @@ public:
   size_t live_at_mark_end() const;
   size_t used_at_relocate_end() const;
   size_t used_at_collection_end() const;
+  size_t used_at_generation_collection_end() const;
 
   void print(const ZCollector* collector) const;
 };
