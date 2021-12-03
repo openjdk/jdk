@@ -465,9 +465,6 @@ public abstract class KeyStoreSpi {
      *      {@link #engineGetEntry} and can be retrieved by calling
      *      the {@link Entry#getAttributes} method.
      *
-     * @throws KeyStoreException if the keystore has not been initialized
-     * (loaded).
-     *
      * @since 18
      */
     public Set<Entry.Attribute> engineGetAttributes(String alias) {
