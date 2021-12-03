@@ -111,10 +111,10 @@ private:
   ZList<ZPage>               _pages;
   ZListNode<ZPageAllocation> _node;
   ZFuture<bool>              _stall_result;
-  ZGenerationId const        _generation;
+  ZGenerationId const        _generation_id;
 
 public:
-  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation) :
+  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id) :
       _type(type),
       _size(size),
       _flags(flags),
@@ -125,7 +125,7 @@ public:
       _pages(),
       _node(),
       _stall_result(),
-      _generation(generation) {}
+      _generation_id(generation_id) {}
 
   uint8_t type() const {
     return _type;
@@ -176,7 +176,7 @@ public:
   }
 
   ZGenerationId generation_id() const {
-    return _generation;
+    return _generation_id;
   }
 
   bool gc_relocation() const {
