@@ -75,8 +75,10 @@ public class bug4908142 {
 
             robot.keyPress(KeyEvent.VK_A);
             robot.keyRelease(KeyEvent.VK_A);
+            robot.waitForIdle();
             robot.keyPress(KeyEvent.VK_A);
             robot.keyRelease(KeyEvent.VK_A);
+            robot.waitForIdle();
             robot.keyPress(KeyEvent.VK_D);
             robot.keyRelease(KeyEvent.VK_D);
             robot.waitForIdle();
