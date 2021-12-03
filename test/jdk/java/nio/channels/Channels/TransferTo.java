@@ -214,7 +214,7 @@ public class TransferTo {
             pipe.source().close();
             pipe.sink().close();
         }
-}
+    }
 
     /*
      * Asserts that the transferred content is correct, i. e. compares the actually transferred bytes
