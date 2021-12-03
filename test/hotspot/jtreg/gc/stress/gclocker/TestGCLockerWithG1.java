@@ -29,11 +29,11 @@ package gc.stress.gclocker;
  * @library /
  * @requires vm.gc.G1
  * @summary Stress G1's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseG1GC gc.stress.gclocker.TestGCLockerWithG1
+ * @run main/native/othervm/timeout=260 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseG1GC gc.stress.gclocker.TestGCLockerWithG1
  */
 public class TestGCLockerWithG1 {
     public static void main(String[] args) {
-        String[] testArgs = {"2", "G1 Old Gen"};
+        String[] testArgs = {"3", "G1 Old Gen"};
         TestGCLocker.main(testArgs);
     }
 }

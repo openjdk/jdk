@@ -78,10 +78,16 @@ class MemoryWatcher {
     private MemoryPoolMXBean bean;
     private final int thresholdPromille = 750;
     private final int criticalThresholdPromille = 800;
+    private final int maxThresholdPromille = 1000;
     private final int minGCWaitMS = 1000;
     private final int minFreeWaitElapsedMS = 30000;
     private final int minFreeCriticalWaitMS;
 
+    public static final int FREEUP_LEVEL_UNNECESSARY = 0;
+    public static final int FREEUP_LEVEL_NECESSARY = 1;
+    public static final int FREEUP_LEVEL_AVOID_OOME =  2;
+
+    private boolean g1gc = false;
     private int lastUsage = 0;
     private long lastGCDetected = System.currentTimeMillis();
     private long lastFree = System.currentTimeMillis();
@@ -95,6 +101,7 @@ class MemoryWatcher {
                 break;
             }
         }
+        if (mxBeanName.equals("G1 Old Gen")) g1gc = true;
     }
 
     private int getMemoryUsage() {
@@ -109,7 +116,7 @@ class MemoryWatcher {
         }
     }
 
-    public synchronized boolean shouldFreeUpSpace() {
+    public synchronized int freeUpSpaceLevel() {
         int usage = getMemoryUsage();
         long now = System.currentTimeMillis();
 
@@ -126,15 +133,19 @@ class MemoryWatcher {
 
         if (usage > criticalThresholdPromille && elapsed > minFreeCriticalWaitMS) {
             lastFree = now;
-            return true;
+            return FREEUP_LEVEL_NECESSARY;
         } else if (usage > thresholdPromille && !detectedGC) {
-            if (elapsed > minFreeWaitElapsedMS || timeSinceLastGC > minGCWaitMS) {
+            if (usage == maxThresholdPromille && g1gc) {
                 lastFree = now;
-                return true;
+                return FREEUP_LEVEL_AVOID_OOME;
+            }
+            else if (elapsed > minFreeWaitElapsedMS || timeSinceLastGC > minGCWaitMS) {
+                lastFree = now;
+                return FREEUP_LEVEL_NECESSARY;
             }
         }
 
-        return false;
+        return FREEUP_LEVEL_UNNECESSARY;
     }
 }
 
@@ -143,8 +154,12 @@ class MemoryUser extends Exitable implements Runnable {
     private final MemoryWatcher watcher;
 
     private void load() {
-        if (watcher.shouldFreeUpSpace()) {
+        int freeuplevel = watcher.freeUpSpaceLevel();
+        if (freeuplevel >= watcher.FREEUP_LEVEL_NECESSARY) {
             int toRemove = cache.size() / 5;
+            if (freeuplevel == watcher.FREEUP_LEVEL_AVOID_OOME) {
+                toRemove = cache.size() * 3 / 5;
+            }
             for (int i = 0; i < toRemove; i++) {
                 cache.remove();
             }
