@@ -239,21 +239,22 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
     public static <E> VectorMask<E> fromLong(VectorSpecies<E> species, long bits) {
         AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
         bits = bits & (0xFFFFFFFFFFFFFFFFL >>> (64 - vsp.laneCount()));
-        return VectorSupport.broadcastCoerced(vsp.maskType(), vsp.elementType(), vsp.laneCount(), bits, 1, vsp,
-                                              (m, s) -> {
-                                                  if (m == (m >> 1)) {
-                                                      // Special case.
-                                                      assert(m == 0 || m == -1);
-                                                      return s.maskAll(m != 0);
-                                                  }
+        return VectorSupport.fromBitsCoerced(vsp.maskType(), vsp.elementType(), vsp.laneCount(), bits,
+                                             VectorSupport.MODE_BITS_COERCED_LONG_TO_MASK, vsp,
+                                             (m, s) -> {
+                                                 if (m == (m >> 1)) {
+                                                     // Special case.
+                                                     assert(m == 0 || m == -1);
+                                                     return s.maskAll(m != 0);
+                                                 }
 
-                                                  long shifted = m;
-                                                  boolean[] a = new boolean[s.laneCount()];
-                                                  for (int i = 0; i < a.length; i++) {
-                                                      a[i] = ((shifted & 1) != 0);
-                                                      shifted >>= 1;  // replicate sign bit
-                                                  }
-                                                  return fromValues(s, a);
+                                                 long shifted = m;
+                                                 boolean[] a = new boolean[s.laneCount()];
+                                                 for (int i = 0; i < a.length; i++) {
+                                                     a[i] = ((shifted & 1) != 0);
+                                                     shifted >>= 1;  // replicate sign bit
+                                                 }
+                                                 return fromValues(s, a);
                                               });
     }
 

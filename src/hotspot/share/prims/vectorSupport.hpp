@@ -121,6 +121,12 @@ class VectorSupport : AllStatic {
     NUM_VEC_SIZES = 4
   };
 
+  enum {
+    MODE_BROADCAST = 0,
+    MODE_BITS_COERCED_BROADCAST = 1,
+    MODE_BITS_COERCED_LONG_TO_MASK = 2
+  };
+
   static const char* svmlname[VectorSupport::NUM_SVML_OP];
 
   static int vop2ideal(jint vop, BasicType bt);

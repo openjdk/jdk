@@ -789,25 +789,22 @@ bool LibraryCallKit::inline_vector_shuffle_to_vector() {
 // <M,
 //  S extends VectorSpecies<E>,
 //  E>
-// M broadcastCoerced(Class<? extends M> vmClass, Class<E> elementType, int length,
-//                    long bits, int bitwise, S s,
+// M fromBitsCoerced(Class<? extends M> vmClass, Class<E> elementType, int length,
+//                    long bits, int mode, S s,
 //                    BroadcastOperation<M, E, S> defaultImpl)
-bool LibraryCallKit::inline_vector_broadcast_coerced() {
+bool LibraryCallKit::inline_vector_frombits_coerced() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+  // Mode argument determines the mode of operation it can take following values:-
+  // MODE_BROADCAST for vector Vector.boradcast operation.
+  // MODE_BITS_COERCED_BROADCAST for VectorMask.maskAll operation.
+  // MODE_BITS_COERCED_LONG_TO_MASK for VectorMask.fromLong operation.
+  const TypeInt*     mode         = gvn().type(argument(5))->isa_int();
 
-  // bitwise argument signifies that each bit of source is to be considered while
-  // broadcasting. It is used to differentiate between VectorMask.maskAll and
-  // VectoMask.fromLong operations, where in former case long 'bits' contains
-  // mask value (true/false) to be replicated across mask lanes and in later
-  // case each bit of long argument is considered separately while setting
-  // corresponding mask lane.
-  const TypeInt*     bitwise      = gvn().type(argument(5))->isa_int();
-
-  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL || bitwise == NULL ||
+  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL || mode == NULL ||
       vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL ||
-      !vlen->is_con() || !bitwise->is_con()) {
+      !vlen->is_con() || !mode->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s bitwise=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -837,16 +834,16 @@ bool LibraryCallKit::inline_vector_broadcast_coerced() {
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
   bool is_mask = is_vector_mask(vbox_klass);
-  bool is_fromlong = is_mask ? bitwise->get_con() == 1 : false;
+  int  bcast_mode = mode->get_con();
   VectorMaskUseType checkFlags = (VectorMaskUseType)(is_mask ? VecMaskUseAll : VecMaskNotUsed);
-  int opc = is_fromlong ? Op_VectorLongToMask : VectorNode::replicate_opcode(elem_bt);
+  int opc = bcast_mode == VectorSupport::MODE_BITS_COERCED_LONG_TO_MASK ? Op_VectorLongToMask : VectorNode::replicate_opcode(elem_bt);
 
   if (!arch_supports_vector(opc, num_elem, elem_bt, checkFlags, true /*has_scalar_args*/)) {
     if (C->print_intrinsics()) {
-      tty->print_cr("  ** not supported: arity=0 op=broadcast vlen=%d etype=%s ismask=%d isfromlong=%d",
+      tty->print_cr("  ** not supported: arity=0 op=broadcast vlen=%d etype=%s ismask=%d bcast_mode=%d",
                     num_elem, type2name(elem_bt),
                     is_mask ? 1 : 0,
-                    is_fromlong ? 1 : 0);
+                    bcast_mode);
     }
     return false; // not supported
   }
@@ -855,7 +852,7 @@ bool LibraryCallKit::inline_vector_broadcast_coerced() {
   Node* bits = argument(3); // long
   Node* elem = bits;
 
-  if (is_fromlong) {
+  if (opc == Op_VectorLongToMask) {
     const TypeVect* vt = TypeVect::makemask(elem_bt, num_elem);
     if (vt->isa_vectmask()) {
       broadcast = gvn().transform(new VectorLongToMaskNode(elem, vt));
@@ -889,7 +886,7 @@ bool LibraryCallKit::inline_vector_broadcast_coerced() {
       }
       default: fatal("%s", type2name(elem_bt));
     }
-    broadcast = VectorNode::scalar2vector(elem, num_elem, Type::get_const_basic_type(elem_bt), is_mask);
+    broadcast = VectorNode::scalar2vector(elem, num_elem, Type::get_const_basic_type(elem_bt), bcast_mode);
     broadcast = gvn().transform(broadcast);
   }
 

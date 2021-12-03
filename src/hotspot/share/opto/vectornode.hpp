@@ -29,6 +29,7 @@
 #include "opto/memnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "prims/vectorSupport.hpp"
 
 //------------------------------VectorNode-------------------------------------
 // Vector Operation
@@ -70,7 +71,7 @@ class VectorNode : public TypeNode {
     return type()->ideal_reg();
   }
 
-  static VectorNode* scalar2vector(Node* s, uint vlen, const Type* opd_t, bool is_mask = false);
+  static VectorNode* scalar2vector(Node* s, uint vlen, const Type* opd_t, int mode = VectorSupport::MODE_BROADCAST);
   static VectorNode* shift_count(int opc, Node* cnt, uint vlen, BasicType bt);
   static VectorNode* make(int opc, Node* n1, Node* n2, uint vlen, BasicType bt, bool is_var_shift = false);
   static VectorNode* make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask = false, bool is_var_shift = false);
