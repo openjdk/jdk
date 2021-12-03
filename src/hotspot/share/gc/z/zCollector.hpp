@@ -185,14 +185,11 @@ class ZYoungCollector : public ZCollector {
 private:
   ZYoungType        _type;
   ZYoungTracer      _tracer;
-  ConcurrentGCTimer _minor_timer;
 
 public:
   ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   ZYoungType type() const;
-
-  ConcurrentGCTimer* minor_timer();
 
   // GC operations
   void mark_start();
@@ -219,12 +216,9 @@ private:
   ZUnload             _unload;
   int                 _total_collections_at_end;
   ZOldTracer          _tracer;
-  ConcurrentGCTimer   _major_timer;
 
 public:
   ZOldCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
-
-  ConcurrentGCTimer* major_timer();
 
   // Reference processing
   ReferenceDiscoverer* reference_discoverer();
@@ -245,6 +239,26 @@ public:
   int total_collections_at_end() const;
 
   virtual GCTracer* tracer();
+};
+
+class ZMinorCollector {
+private:
+  ConcurrentGCTimer _timer;
+
+public:
+  ZMinorCollector();
+
+  ConcurrentGCTimer* timer();
+};
+
+class ZMajorCollector {
+private:
+  ConcurrentGCTimer _timer;
+
+public:
+  ZMajorCollector();
+
+  ConcurrentGCTimer* timer();
 };
 
 #endif // SHARE_GC_Z_ZCOLLECTOR_HPP

@@ -834,10 +834,10 @@ ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase) :
     ZStatTimer(phase, ZHeap::heap()->old_collector()->timer()) {}
 
 ZStatTimerMinor::ZStatTimerMinor(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->young_collector()->minor_timer()) {}
+    ZStatTimer(phase, ZHeap::heap()->minor_collector()->timer()) {}
 
 ZStatTimerMajor::ZStatTimerMajor(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->old_collector()->major_timer()) {}
+    ZStatTimer(phase, ZHeap::heap()->major_collector()->timer()) {}
 
 //
 // Stat timer

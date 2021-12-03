@@ -359,12 +359,7 @@ ZYoungTypeSetter::~ZYoungTypeSetter() {
 ZYoungCollector::ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     ZCollector(ZCollectorId::young, "ZWorkerYoung", page_table, page_allocator),
     _type(ZYoungType::undefined),
-    _tracer(),
-    _minor_timer() {}
-
-ConcurrentGCTimer* ZYoungCollector::minor_timer() {
-  return &_minor_timer;
-}
+    _tracer() {}
 
 void ZYoungCollector::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
@@ -492,10 +487,6 @@ ZOldCollector::ZOldCollector(ZPageTable* page_table, ZPageAllocator* page_alloca
   _weak_roots_processor(&_workers),
   _unload(&_workers),
   _total_collections_at_end(0) {}
-
-ConcurrentGCTimer* ZOldCollector::major_timer() {
-  return &_major_timer;
-}
 
 void ZOldCollector::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
@@ -768,4 +759,19 @@ int ZOldCollector::total_collections_at_end() const {
 
 GCTracer* ZOldCollector::tracer() {
   return &_tracer;
+}
+
+ZMinorCollector::ZMinorCollector() :
+    _timer() {}
+
+ConcurrentGCTimer* ZMinorCollector::timer() {
+  return &_timer;
+}
+
+
+ZMajorCollector::ZMajorCollector() :
+    _timer() {}
+
+ConcurrentGCTimer* ZMajorCollector::timer() {
+  return &_timer;
 }
