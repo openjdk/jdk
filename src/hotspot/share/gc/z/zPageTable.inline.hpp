@@ -72,9 +72,10 @@ inline void ZPageTableParallelIterator::do_pages(Function function) {
       const size_t start_index = untype(page->start()) >> ZGranuleSizeShift;
       if (size_t(index) == start_index) {
         // Next page found
-        function(page);
+        return function(page);
       }
     }
+    return true;
   });
 }
 
@@ -103,8 +104,9 @@ template <typename Function>
 inline void ZGenerationPagesParallelIterator::do_pages(Function function) {
   _iterator.do_pages([&](ZPage* page) {
     if (page->generation_id() == _generation_id) {
-      function(page);
+      return function(page);
     }
+    return true;
   });
 }
 

@@ -143,7 +143,14 @@ ZWorkers* ZMark::workers() const {
 }
 
 void ZMark::prepare_work() {
-  assert(_nworkers == workers()->active_workers(), "Invalid number of workers");
+  // Set number of workers to use
+  _nworkers = workers()->active_workers();
+
+  // Set number of mark stripes to use, based on number
+  // of workers we will use in the concurrent mark phase.
+  const size_t nstripes = calculate_nstripes(_nworkers);
+  _stripes.set_nstripes(nstripes);
+
   // Set number of active workers
   _terminate.reset(_nworkers);
 

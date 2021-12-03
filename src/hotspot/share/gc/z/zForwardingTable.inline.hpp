@@ -71,8 +71,9 @@ inline void ZForwardingTableParallelIterator::do_forwardings(Function function) 
     ZForwarding* const forwarding = _table->at(index);
     if (forwarding != NULL) {
       // Next forwarding found
-      function(forwarding);
+      return function(forwarding);
     }
+    return true;
   });
 }
 

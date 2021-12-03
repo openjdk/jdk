@@ -924,13 +924,13 @@ static void remap_and_maybe_add_remset(volatile zpointer* p) {
   ZRelocate::add_remset(p);
 }
 
-class ZRelocateAddRemsetForInPlacePromoted : public ZTask {
+class ZRelocateAddRemsetForInPlacePromoted : public ZRestartableTask {
 private:
   ZArrayParallelIterator<ZPage*> _iter;
 
 public:
   ZRelocateAddRemsetForInPlacePromoted(ZArray<ZPage*>* pages) :
-      ZTask("ZRelocateAddRemsetForInPlacePromoted"),
+      ZRestartableTask("ZRelocateAddRemsetForInPlacePromoted"),
       _iter(pages) {}
 
   virtual void work() {
@@ -942,17 +942,20 @@ public:
       });
 
       SuspendibleThreadSet::yield();
+      if (ZHeap::heap()->young_collector()->should_worker_stop()) {
+        return;
+      }
     }
   }
 };
 
-class ZRelocateAddRemsetForNormalPromoted : public ZTask {
+class ZRelocateAddRemsetForNormalPromoted : public ZRestartableTask {
 private:
   ZForwardingTableParallelIterator _iter;
 
 public:
   ZRelocateAddRemsetForNormalPromoted() :
-      ZTask("ZRelocateAddRemsetForNormalPromoted"),
+      ZRestartableTask("ZRelocateAddRemsetForNormalPromoted"),
       _iter(ZHeap::heap()->young_collector()->forwarding_table()) {}
 
   virtual void work() {
@@ -962,6 +965,7 @@ public:
       forwarding->oops_do_in_forwarded_via_table(remap_and_maybe_add_remset);
 
       SuspendibleThreadSet::yield();
+      return !ZHeap::heap()->young_collector()->should_worker_stop();
     });
   }
 };

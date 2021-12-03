@@ -171,14 +171,14 @@ void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context) const 
   }
 }
 
-class ZRememberedScanForwardingTask : public ZTask {
+class ZRememberedScanForwardingTask : public ZRestartableTask {
 private:
   ZForwardingTableParallelIterator _iterator;
   const ZRemembered&               _remembered;
 
 public:
   ZRememberedScanForwardingTask(const ZRemembered& remembered) :
-      ZTask("ZRememberedScanForwardingTask"),
+      ZRestartableTask("ZRememberedScanForwardingTask"),
       _iterator(ZHeap::heap()->old_collector()->forwarding_table()),
       _remembered(remembered) {}
 
@@ -187,18 +187,19 @@ public:
 
     _iterator.do_forwardings([&](ZForwarding* forwarding) {
       _remembered.scan_forwarding(forwarding, &containing_array);
+      return !ZHeap::heap()->young_collector()->should_worker_stop();
     });
   }
 };
 
-class ZRememberedScanPageTask : public ZTask {
+class ZRememberedScanPageTask : public ZRestartableTask {
 private:
   ZGenerationPagesParallelIterator _iterator;
   const ZRemembered&               _remembered;
 
 public:
   ZRememberedScanPageTask(const ZRemembered& remembered) :
-      ZTask("ZRememberedScanPageTask"),
+      ZRestartableTask("ZRememberedScanPageTask"),
       _iterator(remembered._page_table, ZGenerationId::old, remembered._page_allocator),
       _remembered(remembered) {}
 
@@ -210,6 +211,7 @@ public:
         // ... and as a side-effect clear the previous entries
         page->clear_previous_remembered();
       }
+      return !ZHeap::heap()->young_collector()->should_worker_stop();
     });
   }
 };

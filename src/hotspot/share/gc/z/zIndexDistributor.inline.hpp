@@ -66,14 +66,18 @@ public:
     // Use claiming
     for (int i; (i = claim_stripe()) < count;) {
       for (int index; (index = Atomic::fetch_and_add(claim_addr(i), 1, memory_order_relaxed)) < stripe_max;) {
-        function(i * stripe_max + index);
+        if (!function(i * stripe_max + index)) {
+          return;
+        }
       }
     }
 
     // Use stealing
     for (int i = 0; i < count; i++) {
       for (int index; (index = Atomic::fetch_and_add(claim_addr(i), 1, memory_order_relaxed)) < stripe_max;) {
-        function(i * stripe_max + index);
+        if (!function(i * stripe_max + index)) {
+          return;
+        }
       }
     }
   }
