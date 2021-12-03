@@ -69,6 +69,7 @@ public class LambdaWithJavaAgent {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-cp", appJar,
+                       "-XX:+UnlockDiagnosticVMOptions",
                        "-XX:+AllowArchivingWithJavaAgent",
                        useJavaAgent,
                        "-Xlog:class+load,cds+class=debug,cds")
@@ -81,6 +82,7 @@ public class LambdaWithJavaAgent {
         // run with archive
         CDSOptions runOpts = (new CDSOptions())
             .addPrefix("-cp", appJar, "-Xlog:class+load,cds=debug",
+                       "-XX:+UnlockDiagnosticVMOptions",
                        "-XX:+AllowArchivingWithJavaAgent",
                        useJavaAgent)
             .setArchiveName(archiveName)
