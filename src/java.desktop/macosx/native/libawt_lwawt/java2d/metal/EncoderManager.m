@@ -42,6 +42,7 @@ const SurfaceRasterFlags defaultRasterFlags = { JNI_FALSE, JNI_TRUE };
 
 - (void)reset:(id<MTLTexture>)destination
          isAA:(jboolean)isAA
+       isText:(jboolean)isText
         isLCD:(jboolean)isLCD;
 
 - (void)updateEncoder:(id<MTLRenderCommandEncoder>)encoder
