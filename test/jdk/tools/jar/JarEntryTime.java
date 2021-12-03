@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4225317 6969651 8276766
+ * @bug 4225317 6969651 8277422 8276766
  * @modules jdk.jartool
  * @summary Check extracted files have date as per those in the .jar file
  */
@@ -33,6 +33,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.spi.ToolProvider;
@@ -102,6 +103,14 @@ public class JarEntryTime {
         cleanup(dirOuter);
         jarFile.delete();
         testFile.delete();
+
+        var date = new Date();
+        var defZone = ZoneId.systemDefault();
+        if (defZone.getRules().getTransition(
+                date.toInstant().atZone(defZone).toLocalDateTime()) != null) {
+            System.out.println("At the offset transition.  JarEntryTime test skipped.");
+            return;
+        }
 
         /* Create a directory structure
          * outer/

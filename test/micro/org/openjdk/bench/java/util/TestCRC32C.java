@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,42 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package org.openjdk.bench.java.util;
 
-package gc.stress.gclocker;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.CRC32C;
+import org.openjdk.jmh.annotations.*;
 
-/*
- * @test TestGCLockerWithSerial
- * @library /
- * @requires vm.gc.Serial
- * @requires vm.flavor != "minimal"
- * @summary Stress Serial's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseSerialGC gc.stress.gclocker.TestGCLockerWithSerial
- */
-public class TestGCLockerWithSerial {
-    public static void main(String[] args) {
-        String[] testArgs = {"2", "Tenured Gen"};
-        TestGCLocker.main(testArgs);
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@State(Scope.Benchmark)
+@Fork(value = 2)
+
+public class TestCRC32C {
+
+    private CRC32C crc32c;
+    private Random random;
+    private byte[] bytes;
+
+    @Param({"64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "32768", "65536"})
+    private int count;
+
+    public TestCRC32C() {
+        crc32c = new CRC32C();
+        random = new Random(2147483648L);
+        bytes = new byte[1000000];
+        random.nextBytes(bytes);
+    }
+
+    @Setup(Level.Iteration)
+    public void setupBytes() {
+        crc32c.reset();
+    }
+
+    @Benchmark
+    public void testCRC32CUpdate() {
+        crc32c.update(bytes, 0, count);
     }
 }

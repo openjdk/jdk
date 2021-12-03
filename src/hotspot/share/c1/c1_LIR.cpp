@@ -132,17 +132,15 @@ void LIR_Opr::validate_type() const {
              size_field() == double_size, "must match");
       break;
     case T_FLOAT:
-      // FP return values can be also in CPU registers on ARM and PPC32 (softfp ABI)
+      // FP return values can be also in CPU registers on ARM (softfp ABI)
       assert((kindfield == fpu_register || kindfield == stack_value
-             ARM_ONLY(|| kindfield == cpu_register)
-             PPC32_ONLY(|| kindfield == cpu_register) ) &&
+             ARM_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == single_size, "must match");
       break;
     case T_DOUBLE:
-      // FP return values can be also in CPU registers on ARM and PPC32 (softfp ABI)
+      // FP return values can be also in CPU registers on ARM (softfp ABI)
       assert((kindfield == fpu_register || kindfield == stack_value
-             ARM_ONLY(|| kindfield == cpu_register)
-             PPC32_ONLY(|| kindfield == cpu_register) ) &&
+             ARM_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == double_size, "must match");
       break;
     case T_BOOLEAN:
@@ -497,10 +495,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(opConvert->_info == NULL, "must be");
       if (opConvert->_opr->is_valid())       do_input(opConvert->_opr);
       if (opConvert->_result->is_valid())    do_output(opConvert->_result);
-#ifdef PPC32
-      if (opConvert->_tmp1->is_valid())      do_temp(opConvert->_tmp1);
-      if (opConvert->_tmp2->is_valid())      do_temp(opConvert->_tmp2);
-#endif
       do_stub(opConvert->_stub);
 
       break;
@@ -1874,12 +1868,6 @@ void LIR_OpConvert::print_instr(outputStream* out) const {
   print_bytecode(out, bytecode());
   in_opr()->print(out);                  out->print(" ");
   result_opr()->print(out);              out->print(" ");
-#ifdef PPC32
-  if(tmp1()->is_valid()) {
-    tmp1()->print(out); out->print(" ");
-    tmp2()->print(out); out->print(" ");
-  }
-#endif
 }
 
 void LIR_OpConvert::print_bytecode(outputStream* out, Bytecodes::Code code) {
