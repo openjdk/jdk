@@ -942,9 +942,10 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
       tmp = FrameMap::R0_opr;
       if (UseCompressedOops && !wide && c->as_jobject() != NULL) {
         AddressLiteral oop_addr = __ constant_oop_address(c->as_jobject());
-        __ lis(R0, oop_addr.value() >> 16); // Don't care about sign extend (will use stw).
+        // Don't care about sign extend (will use stw).
+        __ lis(R0, 0); // Will get patched.
         __ relocate(oop_addr.rspec(), /*compressed format*/ 1);
-        __ ori(R0, R0, oop_addr.value() & 0xffff);
+        __ ori(R0, R0, 0); // Will get patched.
       } else {
         jobject2reg(c->as_jobject(), R0);
       }
