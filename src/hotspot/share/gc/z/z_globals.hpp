@@ -57,9 +57,6 @@
   product(bool, ZUncommit, true,                                            \
           "Uncommit unused memory")                                         \
                                                                             \
-  product(bool, ZPrefetchStores, false,                                     \
-          "Prefetch stores")                                                \
-                                                                            \
   product(bool, ZBufferStoreBarriers, true,                                 \
           "Buffer store barriers")                                          \
                                                                             \
