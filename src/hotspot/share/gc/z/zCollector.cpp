@@ -347,19 +347,19 @@ const char* ZCollector::phase_to_string() const {
 
 ZYoungTypeSetter::ZYoungTypeSetter(ZYoungType type) {
   ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
-  assert(young_collector->_type == ZYoungType::undefined, "Invalid type");
-  young_collector->_type = type;
+  assert(young_collector->_active_type == ZYoungType::none, "Invalid type");
+  young_collector->_active_type = type;
 }
 
 ZYoungTypeSetter::~ZYoungTypeSetter() {
   ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
-  assert(young_collector->_type != ZYoungType::undefined, "Invalid type");
-  young_collector->_type = ZYoungType::undefined;
+  assert(young_collector->_active_type != ZYoungType::none, "Invalid type");
+  young_collector->_active_type = ZYoungType::none;
 }
 
 ZYoungCollector::ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     ZCollector(ZCollectorId::young, "ZWorkerYoung", page_table, page_allocator),
-    _type(ZYoungType::undefined),
+    _active_type(ZYoungType::none),
     _remembered(page_table, page_allocator),
     _tracer() {}
 

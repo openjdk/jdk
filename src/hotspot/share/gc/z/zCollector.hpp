@@ -171,7 +171,7 @@ enum class ZYoungType {
   minor,
   major_preclean,
   major_roots,
-  undefined
+  none
 };
 
 class ZYoungTypeSetter {
@@ -184,7 +184,7 @@ class ZYoungCollector : public ZCollector {
   friend class ZYoungTypeSetter;
 
 private:
-  ZYoungType   _type;
+  ZYoungType   _active_type;
   ZRemembered  _remembered;
   ZYoungTracer _tracer;
 

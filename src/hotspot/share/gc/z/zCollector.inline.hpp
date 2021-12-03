@@ -126,8 +126,8 @@ inline zaddress ZCollector::remap_object(zaddress_unsafe addr) {
 }
 
 inline ZYoungType ZYoungCollector::type() const {
-  assert(_type != ZYoungType::undefined, "Invalid type");
-  return _type;
+  assert(_active_type != ZYoungType::none, "Invalid type");
+  return _active_type;
 }
 
 inline void ZYoungCollector::remember(volatile zpointer* p) {
