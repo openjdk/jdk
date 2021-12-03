@@ -205,8 +205,8 @@ void ZHeap::out_of_memory() {
   log_info(gc)("Out Of Memory (%s)", Thread::current()->name());
 }
 
-ZPage* ZHeap::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation, ZPageAge age) {
-  ZPage* const page = _page_allocator.alloc_page(type, size, flags, generation, age);
+ZPage* ZHeap::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId id, ZPageAge age) {
+  ZPage* const page = _page_allocator.alloc_page(type, size, flags, id, age);
   if (page != NULL) {
     // Insert page table entry
     _page_table.insert(page);
@@ -279,16 +279,16 @@ void ZHeap::serviceability_initialize() {
   _serviceability.initialize();
 }
 
-GCMemoryManager* ZHeap::serviceability_cycle_memory_manager(ZCollectorId collector_id) {
-  return _serviceability.cycle_memory_manager(collector_id);
+GCMemoryManager* ZHeap::serviceability_cycle_memory_manager(ZGenerationId id) {
+  return _serviceability.cycle_memory_manager(id);
 }
 
-GCMemoryManager* ZHeap::serviceability_pause_memory_manager(ZCollectorId collector_id) {
-  return _serviceability.pause_memory_manager(collector_id);
+GCMemoryManager* ZHeap::serviceability_pause_memory_manager(ZGenerationId id) {
+  return _serviceability.pause_memory_manager(id);
 }
 
-MemoryPool* ZHeap::serviceability_memory_pool(ZGenerationId generation_id) {
-  return _serviceability.memory_pool(generation_id);
+MemoryPool* ZHeap::serviceability_memory_pool(ZGenerationId id) {
+  return _serviceability.memory_pool(id);
 }
 
 ZServiceabilityCounters* ZHeap::serviceability_counters() {

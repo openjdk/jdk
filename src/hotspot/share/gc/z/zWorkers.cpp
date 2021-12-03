@@ -63,10 +63,10 @@ public:
   }
 };
 
-ZWorkers::ZWorkers(const char* name, ZCollectorId collector) :
+ZWorkers::ZWorkers(const char* name, ZGenerationId id) :
     _workers(name,
              UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads)),
-    _collector(collector),
+    _generation_id(id),
     _thread_resize_lock(),
     _resize_workers_request() {
 
@@ -94,14 +94,14 @@ uint ZWorkers::active_workers() const {
 
 void ZWorkers::set_active_workers(uint nworkers) {
   log_info(gc, task)("Using %u workers for %s generation",
-                     nworkers, _collector == ZCollectorId::young ? "young" : "old");
+                     nworkers, _generation_id == ZGenerationId::young ? "young" : "old");
   _workers.set_active_workers(nworkers);
 }
 
 void ZWorkers::run(ZTask* task) {
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), active_workers());
-  ZCollector* collector = ZHeap::heap()->collector(_collector);
-  ZStatWorkers* stat_workers = collector->stat_workers();
+
+  ZStatWorkers* stat_workers = ZHeap::heap()->collector(_generation_id)->stat_workers();
   {
     ZLocker<ZConditionLock> locker(&_thread_resize_lock);
     stat_workers->at_start();
@@ -137,7 +137,7 @@ void ZWorkers::threads_do(ThreadClosure* tc) const {
 }
 
 ZWorkerResizeStats ZWorkers::resize_stats() {
-  ZCollector* collector = ZHeap::heap()->collector(_collector);
+  ZCollector* collector = ZHeap::heap()->collector(_generation_id);
   ZLocker<ZConditionLock> locker(&_thread_resize_lock);
 
   double parallel_gc_duration_passed = collector->stat_workers()->accumulated_duration();
@@ -164,13 +164,13 @@ void ZWorkers::request_resize_workers(uint nworkers) {
     return;
   }
   log_info(gc, director)("Request worker resize for %s generation to: %d",
-                         _collector == ZCollectorId::young ? "young" : "old", nworkers);
+                         _generation_id == ZGenerationId::young ? "young" : "old", nworkers);
   _resize_workers_request = nworkers;
   _thread_resize_lock.notify_all();
 }
 
 bool ZWorkers::try_resize_workers(ZRestartableTask* task, ZWorkers* workers) {
-  ZCollector* collector = ZHeap::heap()->collector(_collector);
+  ZCollector* collector = ZHeap::heap()->collector(_generation_id);
   ZLocker<ZConditionLock> locker(&_thread_resize_lock);
   uint result = _resize_workers_request;
   _resize_workers_request = 0;

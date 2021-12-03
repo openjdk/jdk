@@ -39,8 +39,8 @@ public:
     _old_heap = ZHeap::_heap;
     ZHeap::_heap = (ZHeap*)os::malloc(sizeof(ZHeap), mtTest);
 
-    *(ZCollectorId*)&ZHeap::_heap->_old_collector._id = ZCollectorId::old;
-    *(ZCollectorId*)&ZHeap::_heap->_young_collector._id = ZCollectorId::young;
+    *(ZGenerationId*)&ZHeap::_heap->_old_collector._id = ZGenerationId::old;
+    *(ZGenerationId*)&ZHeap::_heap->_young_collector._id = ZGenerationId::young;
 
     ZHeap::_heap->_old_collector._seqnum = 1;
     ZHeap::_heap->_young_collector._seqnum = 2;
@@ -60,16 +60,16 @@ protected:
     uintptr_t object = 0u;
 
     // Mark the object strong.
-    livemap.set(ZCollectorId::old, object, false /* finalizable */, inc_live);
+    livemap.set(ZGenerationId::old, object, false /* finalizable */, inc_live);
 
     // Check that both bits are in the same segment.
     ASSERT_EQ(livemap.index_to_segment(0), livemap.index_to_segment(1));
 
     // Check that the object was marked.
-    ASSERT_TRUE(livemap.get(ZCollectorId::old, 0));
+    ASSERT_TRUE(livemap.get(ZGenerationId::old, 0));
 
     // Check that the object was strongly marked.
-    ASSERT_TRUE(livemap.get(ZCollectorId::old, 1));
+    ASSERT_TRUE(livemap.get(ZGenerationId::old, 1));
 
     ASSERT_TRUE(inc_live);
   }

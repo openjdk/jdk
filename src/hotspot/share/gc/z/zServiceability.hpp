@@ -74,9 +74,9 @@ public:
 
   void initialize();
 
-  MemoryPool* memory_pool(ZGenerationId generation_id);
-  GCMemoryManager* cycle_memory_manager(ZCollectorId collector_id);
-  GCMemoryManager* pause_memory_manager(ZCollectorId collector_id);
+  MemoryPool* memory_pool(ZGenerationId id);
+  GCMemoryManager* cycle_memory_manager(ZGenerationId id);
+  GCMemoryManager* pause_memory_manager(ZGenerationId id);
   ZServiceabilityCounters* counters();
 };
 
@@ -85,18 +85,18 @@ private:
   TraceMemoryManagerStats _memory_manager_stats;
 
 public:
-  ZServiceabilityCycleTracer(ZCollectorId collector_id);
+  ZServiceabilityCycleTracer(ZGenerationId id);
 };
 
 class ZServiceabilityPauseTracer : public StackObj {
 private:
-  const ZCollectorId      _collector_id;
+  const ZGenerationId     _generation_id;
   SvcGCMarker             _svc_gc_marker;
   TraceCollectorStats     _counters_stats;
   TraceMemoryManagerStats _memory_manager_stats;
 
 public:
-  ZServiceabilityPauseTracer(ZCollectorId collector_id);
+  ZServiceabilityPauseTracer(ZGenerationId id);
   ~ZServiceabilityPauseTracer();
 };
 

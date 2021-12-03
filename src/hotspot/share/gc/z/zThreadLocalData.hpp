@@ -25,7 +25,7 @@
 #define SHARE_GC_Z_ZTHREADLOCALDATA_HPP
 
 #include "gc/z/zAddress.hpp"
-#include "gc/z/zCollectorId.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zMarkStack.hpp"
 #include "gc/z/zStoreBarrierBuffer.hpp"
 #include "runtime/thread.hpp"
@@ -102,8 +102,8 @@ public:
     data(thread)->_nmethod_disarmed = value;
   }
 
-  static ZMarkThreadLocalStacks* mark_stacks(Thread* thread, ZCollectorId collector_id) {
-    return &data(thread)->_mark_stacks[(int)collector_id];
+  static ZMarkThreadLocalStacks* mark_stacks(Thread* thread, ZGenerationId id) {
+    return &data(thread)->_mark_stacks[(int)id];
   }
 
   static ZStoreBarrierBuffer* store_barrier_buffer(Thread* thread) {

@@ -24,7 +24,6 @@
 #ifndef SHARE_GC_Z_ZCOLLECTOR_HPP
 #define SHARE_GC_Z_ZCOLLECTOR_HPP
 
-#include "gc/z/zCollectorId.hpp"
 #include "gc/z/zForwardingTable.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zMark.hpp"
@@ -57,8 +56,7 @@ protected:
     Relocate
   };
 
-  const ZCollectorId    _id;
-  const ZGenerationId   _generation_id;
+  const ZGenerationId   _id;
   ZPageAllocator* const _page_allocator;
   ZPageTable* const     _page_table;
   ZForwardingTable      _forwarding_table;
@@ -88,7 +86,7 @@ protected:
   void flip_age_pages(const ZRelocationSetSelector* selector);
   void flip_age_pages(const ZArray<ZPage*>* pages);
 
-  ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZCollector(ZGenerationId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   void log_phase_switch(Phase from, Phase to);
 
@@ -104,8 +102,7 @@ public:
 
   uint32_t seqnum() const;
 
-  ZCollectorId id() const;
-  ZGenerationId generation_id() const;
+  ZGenerationId id() const;
   bool is_young() const;
   bool is_old() const;
 

@@ -958,15 +958,15 @@ bool ZMark::flush_and_free(Thread* thread) {
 class ZVerifyMarkStacksEmptyClosure : public ThreadClosure {
 private:
   const ZMarkStripeSet* const _stripes;
-  const ZCollectorId _collector_id;
+  const ZGenerationId _generation_id;
 
 public:
-  ZVerifyMarkStacksEmptyClosure(const ZMarkStripeSet* stripes, ZCollectorId collector_id) :
+  ZVerifyMarkStacksEmptyClosure(const ZMarkStripeSet* stripes, ZGenerationId id) :
       _stripes(stripes),
-      _collector_id(collector_id) {}
+      _generation_id(id) {}
 
   void do_thread(Thread* thread) {
-    ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(thread, _collector_id);
+    ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(thread, _generation_id);
     guarantee(stacks->is_empty(_stripes), "Should be empty");
   }
 };

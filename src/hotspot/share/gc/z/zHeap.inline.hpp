@@ -29,8 +29,8 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zCollector.inline.hpp"
-#include "gc/z/zCollectorId.hpp"
 #include "gc/z/zGeneration.inline.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
@@ -59,8 +59,8 @@ inline ZOldGeneration* ZHeap::old_generation() {
   return &_old_generation;
 }
 
-inline ZCollector* ZHeap::collector(ZCollectorId id) {
-  if (id == ZCollectorId::young) {
+inline ZCollector* ZHeap::collector(ZGenerationId id) {
+  if (id == ZGenerationId::young) {
     return &_young_collector;
   } else {
     return &_old_collector;

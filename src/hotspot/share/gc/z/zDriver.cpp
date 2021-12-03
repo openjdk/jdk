@@ -47,12 +47,12 @@ static const ZStatPhaseCollection ZPhaseCollectionMinor("Minor Garbage Collectio
 static const ZStatPhaseCollection ZPhaseCollectionMajor("Major Garbage Collection");
 
 static const ZStatPhaseGeneration ZPhaseGenerationYoung[] {
-  ZStatPhaseGeneration("Young Generation (Minor)", ZCollectorId::young),
-  ZStatPhaseGeneration("Young Generation (Major Preclean)", ZCollectorId::young),
-  ZStatPhaseGeneration("Young Generation (Major Roots)", ZCollectorId::young)
+  ZStatPhaseGeneration("Young Generation (Minor)", ZGenerationId::young),
+  ZStatPhaseGeneration("Young Generation (Major Preclean)", ZGenerationId::young),
+  ZStatPhaseGeneration("Young Generation (Major Roots)", ZGenerationId::young)
 };
 
-static const ZStatPhaseGeneration ZPhaseGenerationOld("Old Generation (Major)", ZCollectorId::old);
+static const ZStatPhaseGeneration ZPhaseGenerationOld("Old Generation (Major)", ZGenerationId::old);
 
 static const ZStatPhasePause      ZPhasePauseMarkStartYoung("Pause Mark Start (Young)");
 static const ZStatPhasePause      ZPhasePauseMarkStartYoungAndOld("Pause Mark Start (Young + Old)");
@@ -194,7 +194,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseMarkStartYoung);
-    ZServiceabilityPauseTracer tracer(ZCollectorId::young);
+    ZServiceabilityPauseTracer tracer(ZGenerationId::young);
 
     collected_heap()->increment_total_collections(false /* full */);
     young_collector()->mark_start();
@@ -214,7 +214,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseMarkStartYoungAndOld);
-    ZServiceabilityPauseTracer tracer(ZCollectorId::young);
+    ZServiceabilityPauseTracer tracer(ZGenerationId::young);
 
     collected_heap()->increment_total_collections(true /* full */);
     young_collector()->mark_start();
@@ -231,7 +231,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseMarkEndYoung);
-    ZServiceabilityPauseTracer tracer(ZCollectorId::young);
+    ZServiceabilityPauseTracer tracer(ZGenerationId::young);
     return young_collector()->mark_end();
   }
 };
@@ -248,7 +248,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseRelocateStartYoung);
-    ZServiceabilityPauseTracer tracer(ZCollectorId::young);
+    ZServiceabilityPauseTracer tracer(ZGenerationId::young);
     young_collector()->relocate_start();
     return true;
   }
@@ -381,7 +381,7 @@ public:
   ZDriverScopeYoung(ZYoungType type) :
       _type_setter(type),
       _timer(ZPhaseGenerationYoung[(int)type]),
-      _tracer(ZCollectorId::young) {
+      _tracer(ZGenerationId::young) {
     // Update statistics
     young_collector()->set_at_generation_collection_start();
   }
@@ -528,7 +528,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerOld timer(ZPhasePauseMarkEndOld);
-    ZServiceabilityPauseTracer tracer(ZCollectorId::old);
+    ZServiceabilityPauseTracer tracer(ZGenerationId::old);
     return old_collector()->mark_end();
   }
 };
@@ -545,7 +545,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerOld timer(ZPhasePauseRelocateStartOld);
-    ZServiceabilityPauseTracer tracer(ZCollectorId::old);
+    ZServiceabilityPauseTracer tracer(ZGenerationId::old);
     old_collector()->relocate_start();
     return true;
   }
@@ -719,7 +719,7 @@ private:
 public:
   ZDriverScopeOld() :
       _timer(ZPhaseGenerationOld),
-      _tracer(ZCollectorId::old),
+      _tracer(ZGenerationId::old),
       _unlocker() {
     // Update statistics
     old_collector()->set_at_generation_collection_start();

@@ -650,7 +650,7 @@ void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& s
                ZSIZE_ARGS(stat->used_at_collection_end()));
 }
 
-ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZCollectorId id) :
+ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id) :
     ZStatPhase("Generation", name),
     _id(id) {}
 
@@ -1118,7 +1118,7 @@ public:
 //
 // Stat cycle
 //
-ZStatCycle::ZStatCycle(ZCollectorId collector) :
+ZStatCycle::ZStatCycle(ZGenerationId id) :
     _nwarmup_cycles(0),
     _start_of_last(),
     _end_of_last(),
@@ -1126,11 +1126,11 @@ ZStatCycle::ZStatCycle(ZCollectorId collector) :
     _parallelizable_time(0.7 /* alpha */),
     _parallelizable_duration(0.7 /* alpha */),
     _last_active_workers(0.0),
-    _collector(collector) {
+    _generation_id(id) {
 }
 
 void ZStatCycle::at_start() {
-  ZCollector* collector = ZHeap::heap()->collector(_collector);
+  ZCollector* collector = ZHeap::heap()->collector(_generation_id);
   _start_of_last = Ticks::now();
 
   collector->workers()->clear_pending_resize();
@@ -1143,7 +1143,7 @@ void ZStatCycle::at_end() {
     _nwarmup_cycles++;
   }
 
-  ZCollector* collector = ZHeap::heap()->collector(_collector);
+  ZCollector* collector = ZHeap::heap()->collector(_generation_id);
 
   // Calculate serial and parallelizable GC cycle times
   const double duration = (_end_of_last - _start_of_last).seconds();
@@ -1213,22 +1213,22 @@ double ZStatCycle::time_since_last() {
 //
 // Stat workers
 //
-ZStatWorkers::ZStatWorkers(ZCollectorId collector) :
+ZStatWorkers::ZStatWorkers(ZGenerationId id) :
     _active_workers(0),
     _start_of_last(),
     _accumulated_duration(),
     _accumulated_time(),
-    _collector(collector) {}
+    _generation_id(id) {}
 
 void ZStatWorkers::at_start() {
   _start_of_last = Ticks::now();
-  ZCollector* collector = ZHeap::heap()->collector(_collector);
+  ZCollector* collector = ZHeap::heap()->collector(_generation_id);
   uint nworkers = collector->workers()->active_workers();
   _active_workers = nworkers;
 }
 
 void ZStatWorkers::at_end() {
-  ZCollector* collector = ZHeap::heap()->collector(_collector);
+  ZCollector* collector = ZHeap::heap()->collector(_generation_id);
   uint nworkers = collector->workers()->active_workers();
   const Ticks now = Ticks::now();
   const Tickspan duration = now - _start_of_last;
@@ -1242,7 +1242,7 @@ void ZStatWorkers::at_end() {
 }
 
 double ZStatWorkers::accumulated_time() {
-  ZCollector* collector = ZHeap::heap()->collector(_collector);
+  ZCollector* collector = ZHeap::heap()->collector(_generation_id);
   uint nworkers = _active_workers;
   const Ticks now = Ticks::now();
   Ticks start = _start_of_last;
@@ -1708,4 +1708,3 @@ void ZStatHeap::print(const ZCollector* collector) const {
                      .left(ZTABLE_ARGS(_at_relocate_end.compacted))
                      .end());
 }
-

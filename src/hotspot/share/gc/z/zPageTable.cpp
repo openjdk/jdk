@@ -60,9 +60,9 @@ void ZPageTable::replace(ZPage* old_page, ZPage* new_page) {
   _map.release_put(offset, size, new_page);
 }
 
-ZGenerationPagesParallelIterator::ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId generation_id, ZPageAllocator* page_allocator) :
+ZGenerationPagesParallelIterator::ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator) :
     _iterator(page_table),
-    _generation_id(generation_id),
+    _generation_id(id),
     _page_allocator(page_allocator) {
   _page_allocator->enable_safe_destroy();
   _page_allocator->enable_safe_recycle();
@@ -73,9 +73,9 @@ ZGenerationPagesParallelIterator::~ZGenerationPagesParallelIterator() {
   _page_allocator->disable_safe_destroy();
 }
 
-ZGenerationPagesIterator::ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId generation_id, ZPageAllocator* page_allocator) :
+ZGenerationPagesIterator::ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator) :
     _iterator(page_table),
-    _generation_id(generation_id),
+    _generation_id(id),
     _page_allocator(page_allocator) {
   _page_allocator->enable_safe_destroy();
   _page_allocator->enable_safe_recycle();

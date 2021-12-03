@@ -74,7 +74,7 @@ public:
   ZOldGeneration* old_generation();
 
   // Collectors
-  ZCollector* collector(ZCollectorId id);
+  ZCollector* collector(ZGenerationId id);
   ZYoungCollector* young_collector();
   ZOldCollector* old_collector();
 
@@ -126,7 +126,7 @@ public:
   void remember_fields(zaddress addr);
 
   // Page allocation
-  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation, ZPageAge age);
+  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId id, ZPageAge age);
   void undo_alloc_page(ZPage* page);
   void free_page(ZPage* page);
   size_t free_pages(const ZArray<ZPage*>* pages);
@@ -145,9 +145,9 @@ public:
 
   // Serviceability
   void serviceability_initialize();
-  GCMemoryManager* serviceability_cycle_memory_manager(ZCollectorId collector_id);
-  GCMemoryManager* serviceability_pause_memory_manager(ZCollectorId collector_id);
-  MemoryPool* serviceability_memory_pool(ZGenerationId generation_id);
+  GCMemoryManager* serviceability_cycle_memory_manager(ZGenerationId id);
+  GCMemoryManager* serviceability_pause_memory_manager(ZGenerationId id);
+  MemoryPool* serviceability_memory_pool(ZGenerationId id);
   ZServiceabilityCounters* serviceability_counters();
 
   // Printing

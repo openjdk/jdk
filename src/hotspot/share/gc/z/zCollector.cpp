@@ -60,9 +60,8 @@ static const ZStatSubPhase ZSubPhaseConcurrentOldMarkRoots("Concurrent Old Mark 
 static const ZStatSubPhase ZSubPhaseConcurrentOldMarkFollow("Concurrent Old Mark Follow");
 static const ZStatSubPhase ZSubPhaseConcurrentOldRemapRootUncolored("Concurrent Old Remap Root Uncolored");
 
-ZCollector::ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator) :
+ZCollector::ZCollector(ZGenerationId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator) :
     _id(id),
-    _generation_id(id == ZCollectorId::young ? ZGenerationId::young : ZGenerationId::old),
     _page_allocator(page_allocator),
     _page_table(page_table),
     _forwarding_table(),
@@ -133,7 +132,7 @@ void ZCollector::select_relocation_set(bool promote_all) {
   // Register relocatable pages with selector
   ZRelocationSetSelector selector(promote_all);
   {
-    ZGenerationPagesIterator pt_iter(_page_table, _generation_id, _page_allocator);
+    ZGenerationPagesIterator pt_iter(_page_table, _id, _page_allocator);
     for (ZPage* page; pt_iter.next(&page);) {
       if (!page->is_relocatable()) {
         // Not relocatable, don't register
@@ -357,7 +356,7 @@ ZYoungTypeSetter::~ZYoungTypeSetter() {
 }
 
 ZYoungCollector::ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-    ZCollector(ZCollectorId::young, "ZWorkerYoung", page_table, page_allocator),
+    ZCollector(ZGenerationId::young, "ZWorkerYoung", page_table, page_allocator),
     _active_type(ZYoungType::none),
     _remembered(page_table, page_allocator),
     _tracer() {}
@@ -492,7 +491,7 @@ GCTracer* ZYoungCollector::tracer() {
 }
 
 ZOldCollector::ZOldCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-  ZCollector(ZCollectorId::old, "ZWorkerOld", page_table, page_allocator),
+  ZCollector(ZGenerationId::old, "ZWorkerOld", page_table, page_allocator),
   _reference_processor(&_workers),
   _weak_roots_processor(&_workers),
   _unload(&_workers),

@@ -185,11 +185,11 @@ inline uint32_t ZPage::seqnum() const {
 }
 
 inline bool ZPage::is_allocating() const {
-  return _seqnum == ZHeap::heap()->collector(_collector_id)->seqnum();
+  return _seqnum == ZHeap::heap()->collector(_generation_id)->seqnum();
 }
 
 inline bool ZPage::is_relocatable() const {
-  return _seqnum < ZHeap::heap()->collector(_collector_id)->seqnum();
+  return _seqnum < ZHeap::heap()->collector(_generation_id)->seqnum();
 }
 
 inline uint64_t ZPage::last_used() const {
@@ -232,7 +232,7 @@ inline zoffset ZPage::global_offset(uintptr_t local_offset) const {
 
 inline bool ZPage::is_marked() const {
   assert(is_relocatable(), "Invalid page state");
-  return _livemap.is_marked(_collector_id);
+  return _livemap.is_marked(_generation_id);
 }
 
 inline size_t ZPage::bit_index(zaddress addr) const {
@@ -252,13 +252,13 @@ inline oop ZPage::object_from_bit_index(BitMap::idx_t index) const {
 inline bool ZPage::is_live_bit_set(zaddress addr) const {
   assert(is_relocatable(), "Invalid page state");
   const size_t index = bit_index(addr);
-  return _livemap.get(_collector_id, index);
+  return _livemap.get(_generation_id, index);
 }
 
 inline bool ZPage::is_strong_bit_set(zaddress addr) const {
   assert(is_relocatable(), "Invalid page state");
   const size_t index = bit_index(addr);
-  return _livemap.get(_collector_id, index + 1);
+  return _livemap.get(_generation_id, index + 1);
 }
 
 inline bool ZPage::is_object_live(zaddress addr) const {
@@ -298,7 +298,7 @@ inline bool ZPage::mark_object(zaddress addr, bool finalizable, bool& inc_live) 
 
   // Set mark bit
   const size_t index = bit_index(addr);
-  return _livemap.set(_collector_id, index, finalizable, inc_live);
+  return _livemap.set(_generation_id, index, finalizable, inc_live);
 }
 
 inline void ZPage::inc_live(uint32_t objects, size_t bytes) {
@@ -335,7 +335,7 @@ inline void ZPage::object_iterate(Function function) {
     return true;
   };
 
-  _livemap.iterate(_collector_id, do_bit);
+  _livemap.iterate(_generation_id, do_bit);
 }
 
 inline void ZPage::remember(volatile zpointer* p) {

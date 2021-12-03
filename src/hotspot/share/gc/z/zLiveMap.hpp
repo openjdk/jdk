@@ -26,7 +26,7 @@
 
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zBitMap.hpp"
-#include "gc/z/zCollectorId.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "memory/allocation.hpp"
 
 class ObjectClosure;
@@ -65,7 +65,7 @@ private:
 
   bool claim_segment(BitMap::idx_t segment);
 
-  void reset(ZCollectorId collector_id, size_t index);
+  void reset(ZGenerationId id, size_t index);
   void reset_segment(BitMap::idx_t segment);
 
   size_t do_object(ObjectClosure* cl, zaddress addr) const;
@@ -80,18 +80,18 @@ public:
   void reset();
   void resize(uint32_t size);
 
-  bool is_marked(ZCollectorId collector_id) const;
+  bool is_marked(ZGenerationId id) const;
 
   uint32_t live_objects() const;
   size_t live_bytes() const;
 
-  bool get(ZCollectorId collector_id, size_t index) const;
-  bool set(ZCollectorId collector_id, size_t index, bool finalizable, bool& inc_live);
+  bool get(ZGenerationId id, size_t index) const;
+  bool set(ZGenerationId id, size_t index, bool finalizable, bool& inc_live);
 
   void inc_live(uint32_t objects, size_t bytes);
 
   template <typename Function>
-  void iterate(ZCollectorId collector_id, Function function);
+  void iterate(ZGenerationId id, Function function);
 
   size_t find_base_bit(size_t index);
   size_t find_base_bit(size_t start, size_t end);

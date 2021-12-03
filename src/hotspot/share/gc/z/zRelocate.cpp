@@ -306,7 +306,7 @@ zaddress ZRelocate::forward_object(ZForwarding* forwarding, zaddress_unsafe from
   return to_addr;
 }
 
-static ZPage* alloc_page(const ZForwarding* forwarding, ZGenerationId generation_id, ZPageAge age) {
+static ZPage* alloc_page(const ZForwarding* forwarding, ZGenerationId id, ZPageAge age) {
   if (ZStressRelocateInPlace) {
     // Simulate failure to allocate a new page. This will
     // cause the page being relocated to be relocated in-place.
@@ -317,7 +317,7 @@ static ZPage* alloc_page(const ZForwarding* forwarding, ZGenerationId generation
   flags.set_non_blocking();
   flags.set_gc_relocation();
 
-  return ZHeap::heap()->alloc_page(forwarding->type(), forwarding->size(), flags, generation_id, age);
+  return ZHeap::heap()->alloc_page(forwarding->type(), forwarding->size(), flags, id, age);
 }
 
 static void retire_target_page(ZCollector* collector, ZPage* page) {

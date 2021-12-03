@@ -50,8 +50,8 @@ public:
     _old_heap = ZHeap::_heap;
     ZHeap::_heap = (ZHeap*)os::malloc(sizeof(ZHeap), mtTest);
 
-    *(ZCollectorId*)&ZHeap::_heap->_old_collector._id = ZCollectorId::old;
-    *(ZCollectorId*)&ZHeap::_heap->_young_collector._id = ZCollectorId::young;
+    *(ZGenerationId*)&ZHeap::_heap->_old_collector._id = ZGenerationId::old;
+    *(ZGenerationId*)&ZHeap::_heap->_young_collector._id = ZGenerationId::young;
 
     ZHeap::_heap->_old_collector._seqnum = 1;
     ZHeap::_heap->_young_collector._seqnum = 2;
@@ -191,7 +191,7 @@ public:
     {
       bool dummy = false;
       const size_t index = page.bit_index(object);
-      page._livemap.set(page._collector_id, index, dummy, dummy);
+      page._livemap.set(page._generation_id, index, dummy, dummy);
     }
 
     const uint32_t live_objects = size;

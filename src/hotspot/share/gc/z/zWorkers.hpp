@@ -25,7 +25,7 @@
 #define SHARE_GC_Z_ZWORKERS_HPP
 
 #include "gc/shared/workerThread.hpp"
-#include "gc/z/zCollectorId.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zLock.hpp"
 
 class ThreadClosure;
@@ -42,12 +42,12 @@ struct ZWorkerResizeStats {
 class ZWorkers {
 private:
   WorkerThreads  _workers;
-  ZCollectorId   _collector;
+  ZGenerationId  _generation_id;
   ZConditionLock _thread_resize_lock;
   volatile uint  _resize_workers_request;
 
 public:
-  ZWorkers(const char* name, ZCollectorId collector);
+  ZWorkers(const char* name, ZGenerationId id);
 
   uint active_workers() const;
   void set_active_workers(uint nworkers);

@@ -62,7 +62,7 @@ private:
   zaddress alloc_object(size_t size, ZAllocationFlags flags);
 
 public:
-  ZObjectAllocator(ZGenerationId generation_id, ZPageAge age);
+  ZObjectAllocator(ZGenerationId id, ZPageAge age);
 
   zaddress alloc_object(size_t size);
   zaddress alloc_object_for_relocation(size_t size, bool promotion);

@@ -82,7 +82,7 @@ private:
   ZPageAllocator*    _page_allocator;
 
 public:
-  ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId generation_id, ZPageAllocator* page_allocator);
+  ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator);
   ~ZGenerationPagesIterator();
 
   bool next(ZPage** page);
@@ -98,7 +98,7 @@ private:
   ZPageAllocator*            _page_allocator;
 
 public:
-  ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId generation_id, ZPageAllocator* page_allocator);
+  ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator);
   ~ZGenerationPagesParallelIterator();
 
   template <typename Function>

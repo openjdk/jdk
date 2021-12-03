@@ -46,20 +46,16 @@ inline uint32_t ZCollector::seqnum() const {
   return _seqnum;
 }
 
-inline ZCollectorId ZCollector::id() const {
+inline ZGenerationId ZCollector::id() const {
   return _id;
 }
 
-inline ZGenerationId ZCollector::generation_id() const {
-  return _generation_id;
-}
-
 inline bool ZCollector::is_young() const {
-  return _id == ZCollectorId::young;
+  return _id == ZGenerationId::young;
 }
 
 inline bool ZCollector::is_old() const {
-  return _id == ZCollectorId::old;
+  return _id == ZGenerationId::old;
 }
 
 inline ZForwarding* ZCollector::forwarding(zaddress_unsafe addr) const {

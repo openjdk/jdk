@@ -57,8 +57,8 @@ ZLiveMap::ZLiveMap(const ZLiveMap& other) :
     _bitmap(other._bitmap),
     _segment_shift(other._segment_shift) {}
 
-void ZLiveMap::reset(ZCollectorId collector_id, size_t index) {
-  ZCollector* const collector = ZHeap::heap()->heap()->collector(collector_id);
+void ZLiveMap::reset(ZGenerationId id, size_t index) {
+  ZCollector* const collector = ZHeap::heap()->heap()->collector(id);
   const uint32_t seqnum_initializing = (uint32_t)-1;
   bool contention = false;
 

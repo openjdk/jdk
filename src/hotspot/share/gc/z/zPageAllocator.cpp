@@ -27,7 +27,6 @@
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zCollector.inline.hpp"
-#include "gc/z/zCollectorId.hpp"
 #include "gc/z/zFuture.inline.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -114,7 +113,7 @@ private:
   ZGenerationId const        _generation_id;
 
 public:
-  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id) :
+  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId id) :
       _type(type),
       _size(size),
       _flags(flags),
@@ -125,7 +124,7 @@ public:
       _pages(),
       _node(),
       _stall_result(),
-      _generation_id(generation_id) {}
+      _generation_id(id) {}
 
   uint8_t type() const {
     return _type;
@@ -319,7 +318,7 @@ size_t ZPageAllocator::unused() const {
 }
 
 ZPageAllocatorStats ZPageAllocator::stats(ZCollector* collector) const {
-  ZGeneration* generation = ZHeap::heap()->generation(collector->generation_id());
+  ZGeneration* generation = ZHeap::heap()->generation(collector->id());
   ZLocker<ZLock> locker(&_lock);
   return ZPageAllocatorStats(_min_capacity,
                              _max_capacity,
@@ -668,11 +667,11 @@ ZPage* ZPageAllocator::alloc_page_finalize(ZPageAllocation* allocation) {
   return NULL;
 }
 
-ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id, ZPageAge age) {
+ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId id, ZPageAge age) {
   EventZPageAllocation event;
 
 retry:
-  ZPageAllocation allocation(type, size, flags, generation_id);
+  ZPageAllocation allocation(type, size, flags, id);
 
   // Allocate one or more pages from the page cache. If the allocation
   // succeeds but the returned pages don't cover the complete allocation,
@@ -695,12 +694,12 @@ retry:
   // The generation's used is tracked here when the page is handed out
   // to the allocating thread. The overall heap "used" is tracked in
   // the lower-level allocation code.
-  ZHeap::heap()->generation(generation_id)->increase_used(size);
+  ZHeap::heap()->generation(id)->increase_used(size);
 
   // Reset page. This updates the page's sequence number and must
   // be done after we potentially blocked in a safepoint (stalled)
   // where the global sequence number was updated.
-  page->reset(generation_id, age, ZPageResetType::Allocation);
+  page->reset(id, age, ZPageResetType::Allocation);
 
   // Update allocation statistics. Exclude gc relocations to avoid
   // artificial inflation of the allocation rate during relocation.

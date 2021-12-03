@@ -75,9 +75,9 @@ private:
 public:
   ZServiceabilityCounters(size_t initial_capacity, size_t min_capacity, size_t max_capacity);
 
-  CollectorCounters* collector_counters(ZCollectorId collector_id);
+  CollectorCounters* collector_counters(ZGenerationId id);
 
-  void update_sizes(ZCollectorId collector_id);
+  void update_sizes(ZGenerationId id);
 };
 
 ZServiceabilityCounters::ZServiceabilityCounters(size_t initial_capacity, size_t min_capacity, size_t max_capacity) :
@@ -120,13 +120,13 @@ ZServiceabilityCounters::ZServiceabilityCounters(size_t initial_capacity, size_t
         "Z old collection pauses" /* name */,
         2                         /* ordinal */) {}
 
-CollectorCounters* ZServiceabilityCounters::collector_counters(ZCollectorId collector_id) {
-  return collector_id == ZCollectorId::young
+CollectorCounters* ZServiceabilityCounters::collector_counters(ZGenerationId id) {
+  return id == ZGenerationId::young
       ? &_young_collector_counters
       : &_old_collector_counters;
 }
 
-void ZServiceabilityCounters::update_sizes(ZCollectorId collector_id) {
+void ZServiceabilityCounters::update_sizes(ZGenerationId id) {
   if (UsePerfData) {
     ZMemoryUsageInfo info = compute_memory_usage_info();
     _young_generation_counters.update_capacity(info._young_capacity);
@@ -188,20 +188,20 @@ void ZServiceability::initialize() {
   _counters = new ZServiceabilityCounters(_initial_capacity, _min_capacity, _max_capacity);
 }
 
-MemoryPool* ZServiceability::memory_pool(ZGenerationId generation_id) {
-  return generation_id == ZGenerationId::young
+MemoryPool* ZServiceability::memory_pool(ZGenerationId id) {
+  return id == ZGenerationId::young
       ? &_young_memory_pool
       : &_old_memory_pool;
 }
 
-GCMemoryManager* ZServiceability::cycle_memory_manager(ZCollectorId collector_id) {
-  return collector_id == ZCollectorId::young
+GCMemoryManager* ZServiceability::cycle_memory_manager(ZGenerationId id) {
+  return id == ZGenerationId::young
       ? &_young_cycle_memory_manager
       : &_old_cycle_memory_manager;
 }
 
-GCMemoryManager* ZServiceability::pause_memory_manager(ZCollectorId collector_id) {
-  return collector_id == ZCollectorId::young
+GCMemoryManager* ZServiceability::pause_memory_manager(ZGenerationId id) {
+  return id == ZGenerationId::young
       ? &_young_pause_memory_manager
       : &_old_pause_memory_manager;
 }
@@ -210,8 +210,8 @@ ZServiceabilityCounters* ZServiceability::counters() {
   return _counters;
 }
 
-ZServiceabilityCycleTracer::ZServiceabilityCycleTracer(ZCollectorId collector_id) :
-    _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(collector_id),
+ZServiceabilityCycleTracer::ZServiceabilityCycleTracer(ZGenerationId id) :
+    _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(id),
                           ZCollectedHeap::heap()->gc_cause(),
                           true /* allMemoryPoolsAffected */,
                           true /* recordGCBeginTime */,
@@ -222,11 +222,11 @@ ZServiceabilityCycleTracer::ZServiceabilityCycleTracer(ZCollectorId collector_id
                           true /* recordGCEndTime */,
                           true /* countCollection */) {}
 
-ZServiceabilityPauseTracer::ZServiceabilityPauseTracer(ZCollectorId collector_id) :
-    _collector_id(collector_id),
+ZServiceabilityPauseTracer::ZServiceabilityPauseTracer(ZGenerationId id) :
+    _generation_id(id),
     _svc_gc_marker(SvcGCMarker::CONCURRENT),
-    _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters(collector_id)),
-    _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(collector_id),
+    _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters(id)),
+    _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(id),
                           ZCollectedHeap::heap()->gc_cause(),
                           true  /* allMemoryPoolsAffected */,
                           true  /* recordGCBeginTime */,
@@ -238,6 +238,6 @@ ZServiceabilityPauseTracer::ZServiceabilityPauseTracer(ZCollectorId collector_id
                           true  /* countCollection */) {}
 
 ZServiceabilityPauseTracer::~ZServiceabilityPauseTracer()  {
-  ZHeap::heap()->serviceability_counters()->update_sizes(_collector_id);
+  ZHeap::heap()->serviceability_counters()->update_sizes(_generation_id);
   MemoryService::track_memory_usage();
 }

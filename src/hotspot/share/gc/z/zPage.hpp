@@ -53,7 +53,6 @@ class ZPage : public CHeapObj<mtGC> {
 private:
   uint8_t          _type;
   ZGenerationId    _generation_id;
-  ZCollectorId     _collector_id;
   ZPageAge         _age;
   uint8_t          _numa_id;
   uint32_t         _seqnum;
@@ -76,7 +75,7 @@ private:
   bool is_live_bit_set(zaddress addr) const;
   bool is_strong_bit_set(zaddress addr) const;
 
-  void reset_seqnum(ZCollectorId collector_id);
+  void reset_seqnum(ZGenerationId id);
   void reset_remembered_set(ZPageAge prev_age, ZPageResetType type);
 
   ZPage* split_with_pmem(uint8_t type, const ZPhysicalMemory& pmem);
@@ -122,7 +121,7 @@ public:
   uint64_t last_used() const;
   void set_last_used();
 
-  void reset(ZGenerationId generation_id, ZPageAge age, ZPageResetType type);
+  void reset(ZGenerationId id, ZPageAge age, ZPageResetType type);
 
   void finalize_reset_for_in_place_relocation();
 

@@ -27,6 +27,7 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTimer.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zMetronome.hpp"
 #include "gc/z/zRelocationSetSelector.hpp"
 #include "logging/logHandle.hpp"
@@ -36,7 +37,6 @@
 #include "utilities/ticks.hpp"
 
 class ZCollector;
-enum class ZCollectorId;
 class ZPage;
 class ZPageAllocatorStats;
 class ZRelocationSetSelectorGroupStats;
@@ -231,10 +231,10 @@ public:
 
 class ZStatPhaseGeneration : public ZStatPhase {
 private:
-  const ZCollectorId _id;
+  const ZGenerationId _id;
 
 public:
-  ZStatPhaseGeneration(const char* name, ZCollectorId id);
+  ZStatPhaseGeneration(const char* name, ZGenerationId id);
 
   virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
   virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;
@@ -416,10 +416,10 @@ private:
   NumberSeq    _parallelizable_time;
   NumberSeq    _parallelizable_duration;
   double       _last_active_workers;
-  ZCollectorId _collector;
+  ZGenerationId _generation_id;
 
 public:
-  ZStatCycle(ZCollectorId collector);
+  ZStatCycle(ZGenerationId id);
 
   void at_start();
   void at_end();
@@ -443,14 +443,14 @@ public:
 //
 class ZStatWorkers {
 private:
-  uint         _active_workers;
-  Ticks        _start_of_last;
-  Tickspan     _accumulated_duration;
-  Tickspan     _accumulated_time;
-  ZCollectorId _collector;
+  uint          _active_workers;
+  Ticks         _start_of_last;
+  Tickspan      _accumulated_duration;
+  Tickspan      _accumulated_time;
+  ZGenerationId _generation_id;
 
 public:
-  ZStatWorkers(ZCollectorId collector);
+  ZStatWorkers(ZGenerationId id);
 
   void at_start();
   void at_end();
