@@ -519,6 +519,8 @@ needs_g1gc = \
   jdk/jfr/event/gc/objectcount/TestObjectCountAfterGCEventWithG1ConcurrentMark.java \
   jdk/jfr/event/gc/heapsummary/TestHeapSummaryEventG1.java
 
+#  This set of tests will be executed in an ipv6 only environment
+
 jdk_ipv6_only = \
     :jdk_net \
     :jdk_nio_networkchannel
