@@ -574,6 +574,12 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(in1->in(2)) == TypeLong::MINUS_1) {
     return new SubLNode(phase->makecon(TypeLong::ZERO), in1->in(1));
   }
+
+  // Convert "x + x" into "x << 1"
+  if (in1 == in2) {
+    return new LShiftLNode(in1, phase->intcon(1));
+  }
+
   return AddNode::Ideal(phase, can_reshape);
 }
 

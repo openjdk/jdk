@@ -47,17 +47,21 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 3 , jvmArgsAppend = {"-XX:-TieredCompilation", "-Xbatch", "-Xcomp"})
-public class AddIdeal {
+public class AddIdealXPlusX {
 
     private final int size = 100_000;
 
     private int[] ints_a;
 
+    private long[] longs_a;
+
     @Setup
     public void init() {
         ints_a = new int[size];
+        longs_a = new long[size];
         for (int i = 0; i < size; i++) {
             ints_a[i] = i;
+            longs_a[i] = i * i;
         }
     }
 
@@ -65,6 +69,7 @@ public class AddIdeal {
     public void baseline() {
         for (int i = 0; i < size; i++) {
             sink(ints_a[i]);
+            sink(longs_a[i]);
         }
     }
 
@@ -72,16 +77,25 @@ public class AddIdeal {
     public void test() {
         for (int i = 0; i < size; i++) {
             sink(helper(ints_a[i]));
+            sink(helper(longs_a[i]));
         }
     }
 
-    // Convert "x + x" into "x << 1".
+    // Convert "x + x" into "x << 1" for int.
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     private static int helper(int x) {
         return x + x;
     }
 
+    // Convert "x + x" into "x << 1" for long.
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static void sink(int v) {
+    private static long helper(long x) {
+        return x + x;
     }
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    private static void sink(int v) {}
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    private static void sink(long v) {}
 }

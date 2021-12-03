@@ -26,23 +26,38 @@
  * @bug 8278114
  * @summary New addnode ideal optimization: converting "x + x" into "x << 1"
  * @library /test/lib
- * @run main/othervm -XX:-TieredCompilation
- *                   -XX:CompileCommand=dontinline,compiler.c2.TestAddSameNumberIdeal::test*
- *                   compiler.c2.TestAddSameNumberIdeal
+ * @run main/othervm -XX:-TieredCompilation -Xbatch
+ *                   -XX:CompileCommand=dontinline,compiler.c2.TestAddIdealXPlusX::test*
+ *                   -XX:CompileCommand=compileonly,compiler.c2.TestAddIdealXPlusX::test*
+ *                   compiler.c2.TestAddIdealXPlusX
  */
 package compiler.c2;
 
 import jdk.test.lib.Asserts;
 
-public class TestAddSameNumberIdeal {
+public class TestAddIdealXPlusX {
 
     public static int test1(int x) {
+        return x + x;
+    }
+
+    public static long test1(long x) {
         return x + x;
     }
 
     public static void main(String... args) {
         for (int i = 0; i < 50_000; i++) {
             Asserts.assertTrue(test1(10) == 20);
+            // Overflow (Integer.MAX_VALUE == 2147483647)
+            Asserts.assertTrue(test1(1073741824) == Integer.MIN_VALUE);
+            // Underflow (Integer.MIN_VALUE == -2147483648)
+            Asserts.assertTrue(test1(-1073741825) == 2147483646);
+
+            Asserts.assertTrue(test1(100_000_000_000L) == 200_000_000_000L);
+            // Overflow (Long.MAX_VALUE == 9223372036854775807)
+            Asserts.assertTrue(test1(4611686018427387904L) == Long.MIN_VALUE);
+            // Underflow (Long.MIN_VALUE == -9223372036854775808)
+            Asserts.assertTrue(test1(-4611686018427387905L) == 9223372036854775806L);
         }
     }
 }
