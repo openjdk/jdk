@@ -23,9 +23,11 @@
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -43,6 +45,7 @@ import org.testng.annotations.Test;
 import jdk.test.lib.RandomFactory;
 
 import static java.lang.String.format;
+import static java.nio.file.StandardOpenOption.*;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
@@ -143,9 +146,21 @@ public class TransferTo {
             // preparing two temporary files which will be compared at the end of the test
             Path targetFile = Files.createTempFile("test2GBtarget", null);
             try {
-                // writing 3 GB of random bytes into source file
-                for (int i = 0; i < NUM_WRITES; i++)
-                    Files.write(sourceFile, createRandomBytes(BYTES_PER_WRITE, 0), StandardOpenOption.APPEND);
+                // create (hopefully sparse) file less than 2GB in size
+                final long initLen = (2*1024 - 1)*BYTES_PER_WRITE;
+                try (RandomAccessFile raf =
+                    new RandomAccessFile(sourceFile.toFile(), "rw")) {
+                    raf.setLength(initLen);
+                }
+                // fill the remainder of the file with random bytes
+                try (FileChannel fc = FileChannel.open(sourceFile, WRITE, APPEND);) {
+                    int nw = (int)(NUM_WRITES - initLen/BYTES_PER_WRITE);
+                    for (int i = 0; i < nw; i++) {
+                        ByteBuffer src =
+                            ByteBuffer.wrap(createRandomBytes(BYTES_PER_WRITE, 0));
+                        fc.write(src);
+                    }
+                }
 
                 // performing actual transfer, effectively by multiple invocations of Filechannel.transferTo(FileChannel)
                 long count;
