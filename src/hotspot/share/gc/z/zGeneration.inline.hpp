@@ -29,16 +29,16 @@
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zPageTable.hpp"
 
-inline ZGenerationId ZGeneration::generation_id() const {
-  return _generation_id;
+inline ZGenerationId ZGeneration::id() const {
+  return _id;
 }
 
 inline bool ZGeneration::is_young() const {
-  return _generation_id == ZGenerationId::young;
+  return _id == ZGenerationId::young;
 }
 
 inline bool ZGeneration::is_old() const {
-  return _generation_id == ZGenerationId::old;
+  return _id == ZGenerationId::old;
 }
 
 inline zaddress ZYoungGeneration::alloc_tlab(size_t size) {
@@ -56,19 +56,4 @@ inline zaddress ZYoungGeneration::alloc_object(size_t size) {
   return addr;
 }
 
-inline void ZYoungGeneration::remember(volatile zpointer* p) {
-  _remembered.remember(p);
-}
-
-inline void ZYoungGeneration::scan_remembered_field(volatile zpointer* p) {
-  _remembered.scan_field(p);
-}
-
-inline bool ZYoungGeneration::is_remembered(volatile zpointer* p) {
-  return _remembered.is_remembered(p);
-}
-
-inline void ZYoungGeneration::remember_fields(zaddress addr) {
-  _remembered.remember_fields(addr);
-}
 #endif // SHARE_GC_Z_ZGENERATION_INLINE_HPP

@@ -54,6 +54,7 @@
 
 static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRoots("Concurrent Young Mark Roots");
 static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkFollow("Concurrent Young Mark Follow");
+static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootRemset("Concurrent Young Mark Root Remset");
 
 static const ZStatSubPhase ZSubPhaseConcurrentOldMarkRoots("Concurrent Old Mark Roots");
 static const ZStatSubPhase ZSubPhaseConcurrentOldMarkFollow("Concurrent Old Mark Follow");
@@ -128,7 +129,7 @@ void ZCollector::flip_age_pages(const ZRelocationSetSelector* selector) {
 }
 
 void ZCollector::select_relocation_set(bool promote_all) {
-  ZGenerationId collected_generation = ZHeap::heap()->generation(_id)->generation_id();
+  ZGenerationId collected_generation = ZHeap::heap()->generation(_id)->id();
 
   // Register relocatable pages with selector
   ZRelocationSetSelector selector(promote_all);
@@ -359,6 +360,7 @@ ZYoungTypeSetter::~ZYoungTypeSetter() {
 ZYoungCollector::ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     ZCollector(ZCollectorId::young, "ZWorkerYoung", page_table, page_allocator),
     _type(ZYoungType::undefined),
+    _remembered(page_table, page_allocator),
     _tracer() {}
 
 void ZYoungCollector::mark_start() {
@@ -380,7 +382,7 @@ void ZYoungCollector::mark_start() {
   _mark.start();
 
   // Flip remembered set bits
-  ZHeap::heap()->young_generation()->flip_remembered_sets();
+  flip_remembered_sets();
 
   // Update statistics
   stat_heap()->set_at_mark_start(_page_allocator->stats(this));
@@ -458,8 +460,8 @@ void ZYoungCollector::flip_promote(ZPage* from_page, ZPage* to_page) {
   ZHeap::heap()->young_generation()->decrease_used(from_page->size());
   ZHeap::heap()->old_generation()->increase_used(from_page->size());
 
-  ZHeap::heap()->young_collector()->increase_freed(from_page->size());
-  ZHeap::heap()->young_collector()->increase_promoted(from_page->live_bytes());
+  increase_freed(from_page->size());
+  increase_promoted(from_page->live_bytes());
 }
 
 void ZYoungCollector::in_place_relocate_promote(ZPage* from_page, ZPage* to_page) {
@@ -475,6 +477,15 @@ void ZYoungCollector::register_flip_promoted(const ZArray<ZPage*>& pages) {
 
 void ZYoungCollector::register_in_place_relocate_promoted(ZPage* page) {
   _relocation_set.register_in_place_relocate_promoted(page);
+}
+
+void ZYoungCollector::scan_remembered_sets() {
+  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootRemset);
+  _remembered.scan();
+}
+
+void ZYoungCollector::flip_remembered_sets() {
+  _remembered.flip();
 }
 
 GCTracer* ZYoungCollector::tracer() {

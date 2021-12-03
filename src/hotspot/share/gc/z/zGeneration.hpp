@@ -28,17 +28,16 @@
 #include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.hpp"
-#include "gc/z/zRemembered.hpp"
 
 class ZGeneration {
 protected:
-  ZGenerationId _generation_id;
-  size_t        _used;
+  const ZGenerationId _id;
+  size_t              _used;
 
 public:
-  ZGeneration(ZGenerationId generation_id);
+  ZGeneration(ZGenerationId id);
 
-  ZGenerationId generation_id() const;
+  ZGenerationId id() const;
 
   void increase_used(size_t size);
   void decrease_used(size_t size);
@@ -55,26 +54,11 @@ public:
 
 class ZYoungGeneration : public ZGeneration {
 private:
-  ZRemembered      _remembered;
   ZObjectAllocator _eden_allocator;
   ZObjectAllocator _survivor_allocator;
 
 public:
-  ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator);
-
-  // Add to remembered set
-  void remember(volatile zpointer* p);
-  void remember_fields(zaddress addr);
-
-  // Scan a remembered set entry
-  void scan_remembered_field(volatile zpointer* p);
-
-  // Scan all remembered sets
-  void scan_remembered_sets();
-
-  // Save the current remembered sets,
-  // and switch over to empty remembered sets.
-  void flip_remembered_sets();
+  ZYoungGeneration();
 
   // Allocation
   zaddress alloc_tlab(size_t size);
@@ -86,9 +70,6 @@ public:
   // Statistics
   size_t tlab_used() const;
   size_t remaining() const;
-
-  // Verification
-  bool is_remembered(volatile zpointer* p);
 };
 
 class ZOldGeneration : public ZGeneration {

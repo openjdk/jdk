@@ -130,6 +130,22 @@ inline ZYoungType ZYoungCollector::type() const {
   return _type;
 }
 
+inline void ZYoungCollector::remember(volatile zpointer* p) {
+  _remembered.remember(p);
+}
+
+inline void ZYoungCollector::remember_fields(zaddress addr) {
+  _remembered.remember_fields(addr);
+}
+
+inline void ZYoungCollector::scan_remembered_field(volatile zpointer* p) {
+  _remembered.scan_field(p);
+}
+
+inline bool ZYoungCollector::is_remembered(volatile zpointer* p) const {
+  return _remembered.is_remembered(p);
+}
+
 inline ReferenceDiscoverer* ZOldCollector::reference_discoverer() {
   return &_reference_processor;
 }

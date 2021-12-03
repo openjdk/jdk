@@ -55,7 +55,7 @@ ZHeap* ZHeap::_heap = NULL;
 ZHeap::ZHeap() :
     _page_allocator(MinHeapSize, InitialHeapSize, MaxHeapSize),
     _page_table(),
-    _young_generation(&_page_table, &_page_allocator),
+    _young_generation(),
     _old_generation(),
     _serviceability(initial_capacity(), min_capacity(), max_capacity(), &_young_generation, &_old_generation),
     _young_collector(&_page_table, &_page_allocator),

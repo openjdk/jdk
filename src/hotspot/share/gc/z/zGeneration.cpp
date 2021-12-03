@@ -25,10 +25,8 @@
 #include "gc/z/zGeneration.hpp"
 #include "gc/z/zHeap.inline.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootRemset("Concurrent Young Mark Root Remset");
-
-ZGeneration::ZGeneration(ZGenerationId generation_id) :
-    _generation_id(generation_id),
+ZGeneration::ZGeneration(ZGenerationId id) :
+    _id(id),
     _used(0) {
 }
 
@@ -46,20 +44,10 @@ size_t ZGeneration::used() const {
   return Atomic::load(&_used);
 }
 
-ZYoungGeneration::ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator) :
+ZYoungGeneration::ZYoungGeneration() :
     ZGeneration(ZGenerationId::young),
-    _remembered(page_table, page_allocator),
     _eden_allocator(ZGenerationId::young, ZPageAge::eden),
     _survivor_allocator(ZGenerationId::young, ZPageAge::survivor) {
-}
-
-void ZYoungGeneration::scan_remembered_sets() {
-  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootRemset);
-  _remembered.scan();
-}
-
-void ZYoungGeneration::flip_remembered_sets() {
-  _remembered.flip();
 }
 
 zaddress ZYoungGeneration::alloc_object_for_relocation(size_t size, bool promotion) {

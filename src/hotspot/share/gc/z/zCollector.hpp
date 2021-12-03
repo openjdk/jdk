@@ -31,6 +31,7 @@
 #include "gc/z/zReferenceProcessor.hpp"
 #include "gc/z/zRelocate.hpp"
 #include "gc/z/zRelocationSet.hpp"
+#include "gc/z/zRemembered.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.hpp"
 #include "gc/z/zUnload.hpp"
@@ -183,19 +184,24 @@ class ZYoungCollector : public ZCollector {
   friend class ZYoungTypeSetter;
 
 private:
-  ZYoungType        _type;
-  ZYoungTracer      _tracer;
+  ZYoungType   _type;
+  ZRemembered  _remembered;
+  ZYoungTracer _tracer;
+
 
 public:
   ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   ZYoungType type() const;
 
-  // GC operations
+  // Marking
+
   void mark_start();
   void mark_roots();
   void mark_follow();
   bool mark_end();
+
+  // Relocation
 
   void relocate_start();
   void relocate();
@@ -205,6 +211,26 @@ public:
 
   void register_flip_promoted(const ZArray<ZPage*>& pages);
   void register_in_place_relocate_promoted(ZPage* page);
+
+  // Remembered set
+
+  void remember(volatile zpointer* p);
+  void remember_fields(zaddress addr);
+
+  // Scan a remembered set entry
+  void scan_remembered_field(volatile zpointer* p);
+
+  // Scan all remembered sets
+  void scan_remembered_sets();
+
+  // Save the current remembered sets,
+  // and switch over to empty remembered sets.
+  void flip_remembered_sets();
+
+  // Verification
+  bool is_remembered(volatile zpointer* p) const;
+
+  // Tracing
 
   virtual GCTracer* tracer();
 };

@@ -350,7 +350,7 @@ inline void ZHeap::mark_young_object(zaddress addr) {
 }
 
 inline void ZHeap::remember(volatile zpointer* p) {
-  _young_generation.remember(p);
+  _young_collector.remember(p);
 }
 
 inline void ZHeap::remember_filtered(volatile zpointer* p) {
@@ -360,11 +360,11 @@ inline void ZHeap::remember_filtered(volatile zpointer* p) {
 }
 
 inline void ZHeap::remember_fields(zaddress addr) {
-  _young_generation.remember_fields(addr);
+  _young_collector.remember_fields(addr);
 }
 
 inline bool ZHeap::is_remembered(volatile zpointer* p) {
-  return _young_generation.is_remembered(p);
+  return _young_collector.is_remembered(p);
 }
 
 inline bool ZHeap::is_alloc_stalling_for_old() const {
