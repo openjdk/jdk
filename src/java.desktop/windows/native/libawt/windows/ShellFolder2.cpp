@@ -1098,8 +1098,6 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
                         free(maskBits);
                     }
                 }
-                // Release DC
-                ReleaseDC(NULL, dc);
                 // Create java array
                 iconBits = env->NewIntArray(nBits);
                 if (!(env->ExceptionCheck())) {
@@ -1108,6 +1106,8 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
                 }
                 free(colorBits);
             }
+            // Release DC
+            ReleaseDC(NULL, dc);
         }
         // Fix 4745575 GDI Resource Leak
         // MSDN
