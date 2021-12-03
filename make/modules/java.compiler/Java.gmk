@@ -25,3 +25,6 @@
 
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
+
+EXCLUDES += \
+    javax/tools/snippet-files \
