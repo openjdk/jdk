@@ -873,19 +873,23 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
   ZDriverScopeMajor scope(request);
 
   if (should_preclean_young(request.cause())) {
+    // Collect young generation and promote everything to old generation
     collect_young(ZYoungType::major_preclean);
   }
 
   abortpoint();
 
+  // Collect young generation and gather roots pointing into old generation
   collect_young(ZYoungType::major_roots);
 
   abortpoint();
 
+  // Check out of memory
   check_out_of_memory_young();
 
   abortpoint();
 
+  // Collect old generation
   collect_old();
 }
 
