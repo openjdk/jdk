@@ -224,10 +224,12 @@ public:
 
  public:
 #ifdef _LP64
+  void vector_mask_operation_helper(int opc, Register dst, Register tmp, int masklen);
+
   void vector_mask_operation(int opc, Register dst, KRegister mask, Register tmp, int masklen, int masksize, int vec_enc);
 
-  void vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp, XMMRegister xtmp1,
-                             Register tmp, int masklen, int masksize, int vec_enc);
+  void vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
+                             Register tmp, int masklen, BasicType bt, int vec_enc);
 #endif
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);

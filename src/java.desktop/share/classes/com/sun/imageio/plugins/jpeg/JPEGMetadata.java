@@ -371,8 +371,8 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
         JPEGImageWriteParam jparam = null;
 
-        if ((param != null) && (param instanceof JPEGImageWriteParam)) {
-            jparam = (JPEGImageWriteParam) param;
+        if (param instanceof JPEGImageWriteParam p) {
+            jparam = p;
             if (!jparam.areTablesSet()) {
                 jparam = null;
             }

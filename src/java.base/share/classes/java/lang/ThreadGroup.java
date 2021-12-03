@@ -628,6 +628,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *     {@link Thread#stop} for details.
      */
     @Deprecated(since="1.2", forRemoval=true)
+    @SuppressWarnings("removal")
     public final void stop() {
         if (stopOrSuspend(false))
             Thread.currentThread().stop();

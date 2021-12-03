@@ -90,9 +90,9 @@ public abstract class Media extends EnumSyntax
      *         attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
-        return(object != null && object instanceof Media &&
-               object.getClass() == this.getClass() &&
-               ((Media)object).getValue() == this.getValue());
+        return object instanceof Media other &&
+                object.getClass() == this.getClass() &&
+                other.getValue() == this.getValue();
     }
 
     /**

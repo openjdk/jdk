@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Negative tests for simpleserver command-line tool
+ * @summary Negative tests for java -m jdk.httpserver command
  * @library /test/lib
  * @modules jdk.httpserver
  * @run testng/othervm CommandLineNegativeTest

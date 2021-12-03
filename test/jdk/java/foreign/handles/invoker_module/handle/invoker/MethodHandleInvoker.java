@@ -28,10 +28,11 @@ import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayouts;
+import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SegmentAllocator;
 import jdk.incubator.foreign.SymbolLookup;
+import jdk.incubator.foreign.ValueLayout;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -52,7 +53,7 @@ public class MethodHandleInvoker {
                 throw new AssertionError("Caller module is not lookup_module!");
             }
         } catch (Throwable ex) {
-            throw new AssertionError("Call to restricted method did not fail as expected!");
+            throw new AssertionError("Call to restricted method did not fail as expected!", ex);
         }
     }
 
@@ -63,8 +64,7 @@ public class MethodHandleInvoker {
     }
 
     static {
-        addDefaultMapping(CLinker.class, CLinker.getInstance());
-        addDefaultMapping(long.class, 0L);
+        addDefaultMapping(CLinker.class, CLinker.systemCLinker());
         addDefaultMapping(Path.class, Path.of("nonExistent"));
         addDefaultMapping(String.class, "Hello!");
         addDefaultMapping(Runnable.class, () -> {});
@@ -73,11 +73,28 @@ public class MethodHandleInvoker {
         addDefaultMapping(MethodType.class, MethodType.methodType(void.class));
         addDefaultMapping(MemoryAddress.class, MemoryAddress.NULL);
         addDefaultMapping(Addressable.class, MemoryAddress.NULL);
-        addDefaultMapping(MemoryLayout.class, MemoryLayouts.JAVA_INT);
+        addDefaultMapping(MemoryLayout.class, ValueLayout.JAVA_INT);
         addDefaultMapping(FunctionDescriptor.class, FunctionDescriptor.ofVoid());
         addDefaultMapping(SymbolLookup.class, SymbolLookup.loaderLookup());
         addDefaultMapping(ResourceScope.class, ResourceScope.newImplicitScope());
-        addDefaultMapping(SegmentAllocator.class, (size, align) -> null);
+        addDefaultMapping(SegmentAllocator.class, SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new byte[10])));
+        addDefaultMapping(ValueLayout.OfByte.class, ValueLayout.JAVA_BYTE);
+        addDefaultMapping(ValueLayout.OfBoolean.class, ValueLayout.JAVA_BOOLEAN);
+        addDefaultMapping(ValueLayout.OfChar.class, ValueLayout.JAVA_CHAR);
+        addDefaultMapping(ValueLayout.OfShort.class, ValueLayout.JAVA_SHORT);
+        addDefaultMapping(ValueLayout.OfInt.class, ValueLayout.JAVA_INT);
+        addDefaultMapping(ValueLayout.OfFloat.class, ValueLayout.JAVA_FLOAT);
+        addDefaultMapping(ValueLayout.OfLong.class, ValueLayout.JAVA_LONG);
+        addDefaultMapping(ValueLayout.OfDouble.class, ValueLayout.JAVA_DOUBLE);
+        addDefaultMapping(ValueLayout.OfAddress.class, ValueLayout.ADDRESS);
+        addDefaultMapping(byte.class, (byte)0);
+        addDefaultMapping(boolean.class, true);
+        addDefaultMapping(char.class, (char)0);
+        addDefaultMapping(short.class, (short)0);
+        addDefaultMapping(int.class, 0);
+        addDefaultMapping(float.class, 0f);
+        addDefaultMapping(long.class, 0L);
+        addDefaultMapping(double.class, 0d);
     }
 
     static Object[] makeArgs(MethodType type) {

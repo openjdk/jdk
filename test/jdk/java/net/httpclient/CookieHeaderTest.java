@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,8 +331,8 @@ public class CookieHeaderTest implements HttpServerAdapters {
                     (new RuntimeException(msg)).printStackTrace();
                     t.sendResponseHeaders(500, -1);
                     os.write(msg.getBytes(UTF_8));
-                } else if (cookie.size() == 2 && !cookie.get(1).equals("ORDER=BISCUITS")) {
-                    String msg = "Incorrect cookie header value:[" + cookie.get(0) + "]";
+                } else if (cookie.size() > 1 && !cookie.get(1).equals("ORDER=BISCUITS")) {
+                    String msg = "Incorrect cookie header value:[" + cookie.get(1) + "]";
                     (new RuntimeException(msg)).printStackTrace();
                     t.sendResponseHeaders(500, -1);
                     os.write(msg.getBytes(UTF_8));
