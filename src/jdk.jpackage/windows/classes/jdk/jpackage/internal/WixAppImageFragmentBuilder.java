@@ -50,6 +50,11 @@ import java.util.stream.Stream;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import jdk.jpackage.internal.IOUtils.XmlConsumer;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
@@ -116,13 +121,24 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         launchersAsServices = launchers.stream()
                 .filter(LauncherInfo::isService)
-                .collect(Collectors.toMap(launcher -> {
-                    return addExeSuffixToPath(
+                .map(launcher -> {
+                    var launcherPath = addExeSuffixToPath(
                     installedAppImage.launchersDirectory().resolve(
                             launcher.getName()));
-                }, launcher -> {
-                    return new WixLauncherAsService(launcher.getName(), params);
-                }));
+                    var id = Id.File.of(launcherPath);
+                    return new WixLauncherAsService(launcher.getName(), params)
+                            .setLauncherInstallPath(toWixPath(launcherPath))
+                            .setLauncherInstallPathId(id);
+                }).toList();
+
+        if (!launchersAsServices.isEmpty()) {
+            serviceInstaller = SERVICE_INSTALLER.fetchFrom(params);
+            // Service installer tool will be installed in launchers directory
+            serviceInstaller = new InstallableFile(
+                    serviceInstaller.srcPath().toAbsolutePath().normalize(),
+                    installedAppImage.launchersDirectory().resolve(
+                            serviceInstaller.installPath()));
+        }
 
         programMenuFolderName = MENU_GROUP.fetchFrom(params);
 
@@ -400,8 +416,11 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         xmlConsumer.accept(xml);
         xml.writeEndElement();
 
-        if (role == Component.File && launchersAsServices.containsKey(path)) {
-            launchersAsServices.get(path).apply(Id.File.of(path), xml);
+        if (role == Component.File && serviceInstaller != null && path.equals(
+                serviceInstaller.installPath())) {
+            for (var launcherAsService : launchersAsServices) {
+                launcherAsService.writeServiceInstall(xml);
+            }
         }
 
         xml.writeEndElement(); // <Component>
@@ -900,7 +919,9 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private List<LauncherInfo> launchers;
 
-    private Map<Path, WixLauncherAsService> launchersAsServices;
+    private List<WixLauncherAsService> launchersAsServices;
+
+    private InstallableFile serviceInstaller;
 
     private ApplicationLayout appImage;
     private ApplicationLayout installedAppImage;
