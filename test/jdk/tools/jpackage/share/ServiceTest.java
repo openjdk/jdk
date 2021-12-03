@@ -21,10 +21,16 @@
  * questions.
  */
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.function.Consumer;
 import jdk.jpackage.test.LauncherAsServiceVerifier;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.TKit;
 
 /**
  * Launcher as service packaging test. Output of the test should be
@@ -36,6 +42,7 @@ import jdk.jpackage.test.PackageType;
  * @summary Launcher as service packaging test
  * @library ../helpers
  * @key jpackagePlatformPackage
+ * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ServiceTest.java
@@ -44,16 +51,33 @@ import jdk.jpackage.test.PackageType;
  */
 public class ServiceTest {
 
-    @Test
-    public static void test() {
-        var test = new PackageTest().addHelloAppInitializer(null);
-        new LauncherAsServiceVerifier("A1").applyTo(test);
-        test.run();
+    public ServiceTest() {
+        if (TKit.isWindows()) {
+            final String propName = "jpackage.test.ServiceTest.service-installer";
+            winServiceInstaller = Optional.ofNullable(System.getProperty(
+                    propName)).map(Path::of).orElseThrow(
+                    () -> TKit.throwSkippedException(String.format(
+                            "%s system property not set", propName)));
+
+        } else {
+            winServiceInstaller = null;
+        }
     }
 
     @Test
-    public static void testUpdate() {
+    public void test() throws IOException {
+        var pkgInitializer = configureWinServiceInstaller();
+        var pkg = new PackageTest().addHelloAppInitializer(null);
+        new LauncherAsServiceVerifier("A1").applyTo(pkg);
+        pkgInitializer.accept(pkg);
+        pkg.run();
+    }
+
+    @Test
+    public void testUpdate() throws IOException {
         final String upgradeCode = "4050AD4D-D6CC-452A-9CB0-58E5FA8C410F";
+
+        var pkgInitializer = configureWinServiceInstaller();
 
         var pkg = new PackageTest()
                 .addHelloAppInitializer(null)
@@ -61,6 +85,7 @@ public class ServiceTest {
         pkg.forTypes(PackageType.WINDOWS, () -> pkg.addInitializer(cmd -> {
             cmd.addArguments("--win-upgrade-uuid", upgradeCode);
         }));
+        pkgInitializer.accept(pkg);
 
         new LauncherAsServiceVerifier("Default").applyTo(pkg);
 
@@ -72,6 +97,7 @@ public class ServiceTest {
         pkg2.forTypes(PackageType.WINDOWS, () -> pkg2.addInitializer(cmd -> {
             cmd.addArguments("--win-upgrade-uuid", upgradeCode);
         }));
+        pkgInitializer.accept(pkg2);
 
         new LauncherAsServiceVerifier("foo", "foo-launcher-as-service.txt",
                 "Foo").applyTo(pkg);
@@ -82,4 +108,24 @@ public class ServiceTest {
 
         new PackageTest.Group(pkg, pkg2).run();
     }
+
+    private Consumer<PackageTest> configureWinServiceInstaller() throws
+            IOException {
+        if (winServiceInstaller == null) {
+            return null;
+        }
+
+        var resourceDir = TKit.createTempDirectory("resource-dir");
+        Files.copy(winServiceInstaller, resourceDir.resolve(
+                "service-installer.exe"));
+
+        return test -> {
+            test.forTypes(PackageType.WINDOWS, () -> test.addInitializer(
+                    cmd -> {
+                        cmd.addArguments("--resource-dir", resourceDir);
+                    }));
+        };
+    }
+
+    private final Path winServiceInstaller;
 }

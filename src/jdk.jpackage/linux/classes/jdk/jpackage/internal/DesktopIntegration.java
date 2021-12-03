@@ -373,24 +373,25 @@ final class DesktopIntegration extends ShellCustomAction {
     private class DesktopFile {
 
         DesktopFile(String fileName) {
-            installPath = thePackage
+            var installPath = thePackage
                     .installedApplicationLayout()
                     .destktopIntegrationDirectory().resolve(fileName);
-            srcPath = thePackage
+            var srcPath = thePackage
                     .sourceApplicationLayout()
                     .destktopIntegrationDirectory().resolve(fileName);
+
+            impl = new InstallableFile(srcPath, installPath);
         }
 
-        private final Path installPath;
-        private final Path srcPath;
-
         Path installPath() {
-            return installPath;
+            return impl.installPath();
         }
 
         Path srcPath() {
-            return srcPath;
+            return impl.srcPath();
         }
+
+        private final InstallableFile impl;
     }
 
     private void appendFileAssociation(XMLStreamWriter xml,

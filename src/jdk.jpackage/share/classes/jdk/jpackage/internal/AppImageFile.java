@@ -238,27 +238,26 @@ public final class AppImageFile {
     static List<LauncherInfo> getLaunchers(Path appImageDir,
             Map<String, ? super Object> params) {
         List<LauncherInfo> launchers = new ArrayList<>();
-        try {
-            AppImageFile appImageInfo = AppImageFile.load(appImageDir);
-            if (appImageInfo != null) {
-                launchers.add(new LauncherInfo(appImageInfo.getLauncherName(),
-                        params));
-                launchers.addAll(appImageInfo.getAddLaunchers());
-                return launchers;
+        if (appImageDir != null) {
+            try {
+                AppImageFile appImageInfo = AppImageFile.load(appImageDir);
+                if (appImageInfo != null) {
+                    launchers.add(new LauncherInfo(appImageInfo.getLauncherName(),
+                            params));
+                    launchers.addAll(appImageInfo.getAddLaunchers());
+                    return launchers;
+                }
+            } catch (NoSuchFileException nsfe) {
+                // non jpackage generated app-image (no app/.jpackage.xml)
+                Log.info(MessageFormat.format(I18N.getString(
+                        "warning.foreign-app-image"), appImageDir));
+            } catch (IOException ioe) {
+                Log.verbose(ioe);
+                Log.info(MessageFormat.format(I18N.getString(
+                        "warning.invalid-app-image"), appImageDir));
             }
-        } catch (NoSuchFileException nsfe) {
-            // non jpackage generated app-image (no app/.jpackage.xml)
-            Log.info(MessageFormat.format(I18N.getString(
-                    "warning.foreign-app-image"), appImageDir));
-        } catch (IOException ioe) {
-            Log.verbose(ioe);
-            Log.info(MessageFormat.format(I18N.getString(
-                    "warning.invalid-app-image"), appImageDir));
-
         }
 
-        // this should never be the case, but maintaining behavior of
-        // creating default launchers without AppImageFile present
         launchers.add(new LauncherInfo(params));
         ADD_LAUNCHERS.fetchFrom(params).stream()
                 .map(launcherParams -> new LauncherInfo(launcherParams))

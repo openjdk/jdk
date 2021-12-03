@@ -2,9 +2,13 @@
 
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
          xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <!--
+    Value of ServiceInstall/@Arguments corresponds 
+    to NSSM
+  -->
   <ServiceInstall Type="ownProcess"
                   Start="auto"
-                  Id="SERVICE_INSTALL_ID"
+                  Id="si_APPLICATION_LAUNCHER_ID"
                   Name="SERVICE_NAME"
                   Description="SERVICE_DESCRIPTION"
                   ErrorControl="normal"
@@ -15,7 +19,7 @@
                   Stop="both"
                   Remove="uninstall"
                   Wait="yes"
-                  Id="SERVICE_CONTROL_ID"
+                  Id="sc_APPLICATION_LAUNCHER_ID"
                   Name="SERVICE_NAME"
   />
 </Include>
