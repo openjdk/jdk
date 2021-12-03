@@ -30,6 +30,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Param;
 
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
@@ -43,51 +44,31 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class RandomGeneratorNext {
 
-    public RandomGenerator rngL128X128MixRandom;
-    public RandomGenerator rngL128X256MixRandom;
-    public RandomGenerator rngL128X1024MixRandom;
+    public RandomGenerator randomGenerator;
+
+    @Param({"L128X128MixRandom", "L128X256MixRandom", "L128X1024MixRandom"})
+    String randomGeneratorName;
+
     public static long[] buffer;
-    public static final int SIZE = 1024;
+
+    @Param("1024")
+    int size;
 
     @Setup
     public void setup() {
-        buffer = new long[SIZE];
-        rngL128X128MixRandom = RandomGeneratorFactory.of("L128X128MixRandom").create(42);
-        rngL128X256MixRandom = RandomGeneratorFactory.of("L128X256MixRandom").create(174);
-        rngL128X1024MixRandom = RandomGeneratorFactory.of("L128X1024MixRandom").create(308);
+        buffer = new long[size];
+        randomGenerator = RandomGeneratorFactory.of(randomGeneratorName).create(randomGeneratorName.hashCode());
     }
 
     @Benchmark
-    public long testL128X128MixRandomNextLong() {
-        return rngL128X128MixRandom.nextLong();
-    }
-
-    @Benchmark
-    public long testL128X256MixRandomNextLong() {
-        return rngL128X256MixRandom.nextLong();
-    }
-
-    @Benchmark
-    public long testL128X1024MixRandomNextLong() {
-        return rngL128X1024MixRandom.nextLong();
+    public long testNextLong() {
+        return randomGenerator.nextLong();
     }
 
     @Benchmark
     @Fork(1)
-    public void testL128X128MixRandomNextLongLoop() {
-        for (int i = 0; i < SIZE; i++) buffer[i] = rngL128X128MixRandom.nextLong();
-    }
-
-    @Benchmark
-    @Fork(1)
-    public void testL128X256MixRandomNextLongLoop() {
-        for (int i = 0; i < SIZE; i++) buffer[i] = rngL128X256MixRandom.nextLong();
-    }
-
-    @Benchmark
-    @Fork(1)
-    public void testL128X1024MixRandomNextLongLoop() {
-        for (int i = 0; i < SIZE; i++) buffer[i] = rngL128X1024MixRandom.nextLong();
+    public void testFillBufferWithNextLong() {
+        for (int i = 0; i < size; i++) buffer[i] = randomGenerator.nextLong();
     }
 
 }
