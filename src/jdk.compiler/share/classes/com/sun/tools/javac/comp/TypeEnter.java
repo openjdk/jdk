@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -1257,6 +1258,7 @@ public class TypeEnter implements Completer {
        TypeSymbol owner();
        List<Name> superArgs();
        default JCMethodDecl finalAdjustment(JCMethodDecl md) { return md; }
+       default JCMethodDecl methodDecl() { return null; }
     }
 
     class BasicConstructorHelper implements DefaultConstructorHelper {
@@ -1315,6 +1317,7 @@ public class TypeEnter implements Completer {
         MethodSymbol constr;
         Type encl;
         boolean based = false;
+        JCMethodDecl methodDecl;
 
         AnonClassConstructorHelper(TypeSymbol owner, MethodSymbol constr, JCExpression encl) {
             super(owner);
@@ -1343,9 +1346,10 @@ public class TypeEnter implements Completer {
                 csym.flags_field |= ANONCONSTR | (constr.flags() & VARARGS);
                 csym.flags_field |= based ? ANONCONSTR_BASED : 0;
 
-                ListBuffer<Attribute.Compound> paramAttrs;
                 csym.appendAttributes(constr.getRawAttributes());
-                csym.appendUniqueTypeAttributes(constr.getRawTypeAttributes());
+                csym.appendUniqueTypeAttributes(constr.getRawTypeAttributes().stream()
+                        .filter(anno -> anno.position.type == TargetType.METHOD_RETURN)
+                        .collect(List.collector()));
 
                 ListBuffer<VarSymbol> params = new ListBuffer<>();
                 List<Type> argtypes = constructorType().getParameterTypes();
@@ -1363,10 +1367,48 @@ public class TypeEnter implements Completer {
                     }
                 }
                 csym.params = params.toList();
+
+                // now lets create the tree to make sure that it is created according to our needs
+                methodDecl = make.MethodDef(constrParams(csym),
+                        typeParams(csym.type.getTypeArguments()), csym, csym.type, null);
                 return csym;
             }
             return constructorSymbol;
         }
+
+        // helper methods
+            private List<JCVariableDecl> constrParams(MethodSymbol csym) {
+                ListBuffer<JCVariableDecl> params = new ListBuffer<>();
+                if (csym.params != null) {
+                    for (VarSymbol param : csym.params) {
+                        /* the compiler will issue an error if a type annotation is applied to, for example, `java.lang.String`
+                         * but it won't if the type annotation is applied to `String`, at this point all types will be represented
+                         * in its fully unfolded form so we need to go back to the short form if type annotations are present for a
+                         * given parameter
+                         */
+                        if (!param.getRawTypeAttributes().isEmpty()) {
+                            params.append(make.VarDef(param, make.Ident(param.type.tsym), null));
+                        } else {
+                            params.append(make.VarDef(param,null));
+                        }
+                    }
+                }
+                return params.toList();
+            }
+
+            private List<JCTypeParameter> typeParams(List<Type> typarams) {
+                ListBuffer<JCTypeParameter> tparams = new ListBuffer<>();
+                final AtomicInteger paramIndex = new AtomicInteger(0);
+                for (List<Type> l = typarams; l.nonEmpty(); l = l.tail) {
+                    tparams.append(make.TypeParam(l.head.tsym.name, (TypeVar) l.head,
+                            constr.getRawTypeAttributes().stream()
+                                    .filter(anno -> anno.position.type == TargetType.METHOD_TYPE_PARAMETER && anno.position.parameter_index == paramIndex.get())
+                                    .map(anno -> make.TypeAnnotation(anno))
+                                    .collect(List.collector())));
+                    paramIndex.incrementAndGet();
+                }
+                return tparams.toList();
+            }
 
         @Override
         public Type enclosingType() {
@@ -1380,6 +1422,11 @@ public class TypeEnter implements Completer {
                 params = params.tail;
             }
             return params.map(vd -> vd.name);
+        }
+
+        @Override
+        public JCMethodDecl methodDecl() {
+            return methodDecl;
         }
     }
 
@@ -1448,6 +1495,7 @@ public class TypeEnter implements Completer {
     JCTree defaultConstructor(TreeMaker make, DefaultConstructorHelper helper) {
         Type initType = helper.constructorType();
         MethodSymbol initSym = helper.constructorSymbol();
+        JCMethodDecl result = helper.methodDecl();
         ListBuffer<JCStatement> stats = new ListBuffer<>();
         if (helper.owner().type != syms.objectType) {
             JCExpression meth;
@@ -1461,7 +1509,12 @@ public class TypeEnter implements Completer {
             JCStatement superCall = make.Exec(make.Apply(typeargs, meth, helper.superArgs().map(make::Ident)));
             stats.add(superCall);
         }
-        JCMethodDecl result = make.MethodDef(initSym, make.Block(0, stats.toList()));
+        if (result == null) {
+            result = make.MethodDef(initSym, make.Block(0, stats.toList()));
+        } else {
+            result.body = make.Block(0, stats.toList());
+        }
+
         return helper.finalAdjustment(result);
     }
 

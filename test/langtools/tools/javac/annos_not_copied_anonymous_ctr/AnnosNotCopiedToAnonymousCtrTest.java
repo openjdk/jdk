@@ -44,6 +44,13 @@ import com.sun.tools.javac.util.Assert;
 
 public class AnnosNotCopiedToAnonymousCtrTest {
 
+    String[] typeAnnosInfo = new String[] {
+        "@AnnosNotCopiedToAnonymousCtrTest$TypeAnnoForTypeParams; pos: [METHOD_TYPE_PARAMETER, param_index = 0, pos = -1]",
+        "@AnnosNotCopiedToAnonymousCtrTest$TypeAnnoForTypeParams2; pos: [METHOD_TYPE_PARAMETER, param_index = 1, pos = -1]",
+        "@AnnosNotCopiedToAnonymousCtrTest$TypeAnno; pos: [METHOD_RETURN, location = ([INNER_TYPE, INNER_TYPE]), pos = -1]",
+        "@AnnosNotCopiedToAnonymousCtrTest$TypeAnno; pos: [METHOD_FORMAL_PARAMETER, param_index = 1, pos = -1]"
+    };
+
     public static void main(String[] args) throws Throwable {
         new AnnosNotCopiedToAnonymousCtrTest().run();
     }
@@ -53,27 +60,27 @@ public class AnnosNotCopiedToAnonymousCtrTest {
                 this.getClass().getSimpleName() + "$Test$1.class"));
     }
 
-    record AnnoData(String attributeName, String annoName, int positionOfAnnotatedParam) {}
+    record DeclAnnoData(String attributeName, String annoName, int positionOfAnnotatedParam) {}
 
     void checkClassFile(final Path cfilePath) throws Throwable {
         ClassFile classFile = ClassFile.read(
                 new BufferedInputStream(Files.newInputStream(cfilePath)));
         for (Method method : classFile.methods) {
             if (method.getName(classFile.constant_pool).equals("<init>")) {
-                checkForAttr(classFile,
+                checkForDeclAnnos(classFile,
                         method.attributes,
                         "Annotations hasn't been propagated",
-                        new AnnoData(Attribute.RuntimeVisibleAnnotations, "LAnnosNotCopiedToAnonymousCtrTest$VisibleCtrAnnotation;", -1),
-                        new AnnoData(Attribute.RuntimeInvisibleAnnotations, "LAnnosNotCopiedToAnonymousCtrTest$InvisibleCtrAnnotation;", -1),
-                        new AnnoData(Attribute.RuntimeVisibleParameterAnnotations, "LAnnosNotCopiedToAnonymousCtrTest$VisibleParamAnnotation;", 1),
-                        new AnnoData(Attribute.RuntimeInvisibleParameterAnnotations, "LAnnosNotCopiedToAnonymousCtrTest$InvisibleParamAnnotation;", 2) );
+                        new DeclAnnoData(Attribute.RuntimeInvisibleAnnotations, "LAnnosNotCopiedToAnonymousCtrTest$CtrAnnotation;", -1),
+                        new DeclAnnoData(Attribute.RuntimeInvisibleParameterAnnotations, "LAnnosNotCopiedToAnonymousCtrTest$ParamAnnotation;", 2) );
+
+                checkForTypeAnnos(method.attributes, typeAnnosInfo);
             }
         }
     }
 
-    void checkForAttr(ClassFile classFile, Attributes attrs, String errorMsg, AnnoData... attrAndParamPos)
+    void checkForDeclAnnos(ClassFile classFile, Attributes attrs, String errorMsg, DeclAnnoData... attrAndParamPos)
             throws Throwable {
-        for (AnnoData attrAndPos : attrAndParamPos) {
+        for (DeclAnnoData attrAndPos : attrAndParamPos) {
             Assert.checkNonNull(attrs.get(attrAndPos.attributeName()), errorMsg);
             boolean isParamAnno = attrs.get(attrAndPos.attributeName()) instanceof RuntimeParameterAnnotations_attribute;
             if (isParamAnno) {
@@ -96,29 +103,36 @@ public class AnnosNotCopiedToAnonymousCtrTest {
         }
     }
 
-    @Target(value = {ElementType.PARAMETER})
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface VisibleParamAnnotation {}
+    void checkForTypeAnnos(Attributes attrs, String... expectedInfo)
+            throws Throwable {
+        RuntimeTypeAnnotations_attribute typeAnnosAttr =
+                (RuntimeTypeAnnotations_attribute) attrs.get(Attribute.RuntimeInvisibleTypeAnnotations);
+        TypeAnnotation[] annos = typeAnnosAttr.annotations;
+        Assert.check(annos.length == expectedInfo.length);
+        for (int i = 0; i < expectedInfo.length; i++) {
+            Assert.check(annos[i].toString().equals(expectedInfo[i]));
+        }
+    }
 
     @Target(value = {ElementType.PARAMETER})
-    @interface InvisibleParamAnnotation {}
+    @interface ParamAnnotation {}
 
     @Target(value = {ElementType.CONSTRUCTOR})
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface VisibleCtrAnnotation {}
-
-    @Target(value = {ElementType.CONSTRUCTOR})
-    @interface InvisibleCtrAnnotation {}
+    @interface CtrAnnotation {}
 
     @Target({ElementType.TYPE_USE})
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface TypeAnno {}
+    @interface TypeAnno {}
 
-    public class Test {
-        @VisibleCtrAnnotation
-        @InvisibleCtrAnnotation
+    @Target({ElementType.TYPE_PARAMETER})
+    @interface TypeAnnoForTypeParams {}
+
+    @Target({ElementType.TYPE_PARAMETER})
+    @interface TypeAnnoForTypeParams2 {}
+
+    class Test {
+        @CtrAnnotation
         @TypeAnno
-        public Test(String firstParam, @VisibleParamAnnotation @TypeAnno String secondParam, @InvisibleParamAnnotation String thirdParam) {}
+        <@TypeAnnoForTypeParams T, @TypeAnnoForTypeParams2 X> Test(String firstParam, @TypeAnno String secondParam, @ParamAnnotation String thirdParam) {}
 
         public void m() {
             // let's create an anonymous inner class

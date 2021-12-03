@@ -884,6 +884,17 @@ public class TreeMaker implements JCTree.Factory {
                 v).setPos(pos).setType(v.type);
     }
 
+    // this version also copies the type annotations from the var symbol
+    public JCVariableDecl VarDef(VarSymbol v, JCExpression typeDec, JCExpression init) {
+        return (JCVariableDecl)
+                new JCVariableDecl(
+                        Modifiers(v.flags(), Annotations(v.getRawAttributes()).appendList(TypeAnnotations(v.getRawTypeAttributes()))),
+                        v.name,
+                        typeDec,
+                        init,
+                        v).setPos(pos).setType(v.type);
+    }
+
     /** Create annotation trees from annotations.
      */
     public List<JCAnnotation> Annotations(List<Attribute.Compound> attributes) {
@@ -892,6 +903,16 @@ public class TreeMaker implements JCTree.Factory {
         for (List<Attribute.Compound> i = attributes; i.nonEmpty(); i=i.tail) {
             Attribute a = i.head;
             result.append(Annotation(a));
+        }
+        return result.toList();
+    }
+
+    public List<JCAnnotation> TypeAnnotations(List<Attribute.TypeCompound> attributes) {
+        if (attributes == null) return List.nil();
+        ListBuffer<JCAnnotation> result = new ListBuffer<>();
+        for (List<Attribute.TypeCompound> i = attributes; i.nonEmpty(); i=i.tail) {
+            Attribute a = i.head;
+            result.append(TypeAnnotation(a));
         }
         return result.toList();
     }
@@ -1030,11 +1051,33 @@ public class TreeMaker implements JCTree.Factory {
                 m).setPos(pos).setType(mtype);
     }
 
+    // this version also copies the type annotations from the method symbol
+    public JCMethodDecl MethodDef(List<JCVariableDecl> params, List<JCTypeParameter> typeParameters, MethodSymbol m, Type mtype, JCBlock body) {
+        return (JCMethodDecl)
+                new JCMethodDecl(
+                        Modifiers(m.flags(), Annotations(m.getRawAttributes()).appendList(TypeAnnotations(m.getRawTypeAttributes()))),
+                        m.name,
+                        m.name != names.init ? Type(mtype.getReturnType()) : null,
+                        typeParameters,
+                        null, // receiver type
+                        params,
+                        Types(mtype.getThrownTypes()),
+                        body,
+                        null,
+                        m).setPos(pos).setType(mtype);
+    }
+
     /** Create a type parameter tree from its name and type.
      */
     public JCTypeParameter TypeParam(Name name, TypeVar tvar) {
-        return (JCTypeParameter)
-            TypeParameter(name, Types(types.getBounds(tvar))).setPos(pos).setType(tvar);
+        return TypeParam(name, tvar, null);
+    }
+
+    public JCTypeParameter TypeParam(Name name, TypeVar tvar, List<JCAnnotation> annotations) {
+        JCTypeParameter typeParameter = (JCTypeParameter)
+                TypeParameter(name, Types(types.getBounds(tvar))).setPos(pos).setType(tvar);
+        typeParameter.annotations = annotations;
+        return typeParameter;
     }
 
     /** Create a list of type parameter trees from a list of type variables.
