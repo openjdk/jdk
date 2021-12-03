@@ -772,42 +772,42 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
   Node* iv = _head->as_BaseCountedLoop()->phi();
   Compile* C = Compile::current();
   const uint old_unique_idx = C->unique();
-  if (is_range_check_if(iff, phase, T_INT, iv, range, offset, scale)) {
-    if (!invar.is_invariant(range)) {
+  if (!is_range_check_if(iff, phase, T_INT, iv, range, offset, scale)) {
+    return false;
+  }
+  if (!invar.is_invariant(range)) {
+    return false;
+  }
+  if (offset != NULL) {
+    if (!invar.is_invariant(offset)) { // offset must be invariant
       return false;
     }
-    if (offset != NULL) {
-      if (!invar.is_invariant(offset)) { // offset must be invariant
+    Node* data_dependency_on = invar.data_dependency_on();
+    if (data_dependency_on != NULL && old_unique_idx < C->unique()) {
+      // 'offset' node was newly created in is_range_check_if(). Check that it does not depend on the entry projection
+      // into the loop. If it does, we cannot perform loop predication (see Invariant::Invariant()).
+      assert(!offset->is_CFG(), "offset must be a data node");
+      if (_phase->get_ctrl(offset) == data_dependency_on) {
         return false;
       }
-      Node* data_dependency_on = invar.data_dependency_on();
-      if (data_dependency_on != NULL && old_unique_idx < C->unique()) {
-        // 'offset' node was newly created in is_range_check_if(). Check that it does not depend on the entry projection
-        // into the loop. If it does, we cannot perform loop predication (see Invariant::Invariant()).
-        assert(!offset->is_CFG(), "offset must be a data node");
-        if (_phase->get_ctrl(offset) == data_dependency_on) {
-          return false;
-        }
-      }
     }
-#ifdef ASSERT
-    if (offset && phase->has_ctrl(offset)) {
-      Node* offset_ctrl = phase->get_ctrl(offset);
-      if (phase->get_loop(predicate_proj) == phase->get_loop(offset_ctrl) &&
-          phase->is_dominator(predicate_proj, offset_ctrl)) {
-        // If the control of offset is loop predication promoted by previous pass,
-        // then it will lead to cyclic dependency.
-        // Previously promoted loop predication is in the same loop of predication
-        // point.
-        // This situation can occur when pinning nodes too conservatively - can we do better?
-        assert(false, "cyclic dependency prevents range check elimination, idx: offset %d, offset_ctrl %d, predicate_proj %d",
-               offset->_idx, offset_ctrl->_idx, predicate_proj->_idx);
-      }
-    }
-#endif
-    return true;
   }
-  return false;
+#ifdef ASSERT
+  if (offset && phase->has_ctrl(offset)) {
+    Node* offset_ctrl = phase->get_ctrl(offset);
+    if (phase->get_loop(predicate_proj) == phase->get_loop(offset_ctrl) &&
+        phase->is_dominator(predicate_proj, offset_ctrl)) {
+      // If the control of offset is loop predication promoted by previous pass,
+      // then it will lead to cyclic dependency.
+      // Previously promoted loop predication is in the same loop of predication
+      // point.
+      // This situation can occur when pinning nodes too conservatively - can we do better?
+      assert(false, "cyclic dependency prevents range check elimination, idx: offset %d, offset_ctrl %d, predicate_proj %d",
+             offset->_idx, offset_ctrl->_idx, predicate_proj->_idx);
+    }
+  }
+#endif
+  return true;
 }
 
 //------------------------------rc_predicate-----------------------------------
