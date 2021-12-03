@@ -48,7 +48,7 @@ private:
   ZDriverPort _port;
 
   void gc(const ZDriverRequest& request);
-  void check_out_of_memory() const;
+  void handle_alloc_stalls() const;
 
 protected:
   virtual void run_service();
@@ -68,7 +68,7 @@ private:
   ZDriverMinor* const _minor;
 
   void gc(const ZDriverRequest& request);
-  void check_out_of_memory() const;
+  void handle_alloc_stalls() const;
 
 protected:
   virtual void run_service();

@@ -363,12 +363,12 @@ inline bool ZHeap::is_alloc_stalling_for_old() const {
   return _page_allocator.is_alloc_stalling_for_old();
 }
 
-inline void ZHeap::check_out_of_memory_young() {
-  _page_allocator.check_out_of_memory_young();
+inline void ZHeap::handle_alloc_stalling_for_young() {
+  _page_allocator.handle_alloc_stalling_for_young();
 }
 
-inline void ZHeap::check_out_of_memory_old() {
-  _page_allocator.check_out_of_memory_old();
+inline void ZHeap::handle_alloc_stalling_for_old() {
+  _page_allocator.handle_alloc_stalling_for_old();
 }
 
 inline bool ZHeap::is_oop(uintptr_t addr) const {

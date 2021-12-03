@@ -367,8 +367,8 @@ static void concurrent_relocate_young() {
   young_collector()->relocate();
 }
 
-static void check_out_of_memory_young() {
-  ZHeap::heap()->check_out_of_memory_young();
+static void handle_alloc_stalling_for_young() {
+  ZHeap::heap()->handle_alloc_stalling_for_young();
 }
 
 class ZDriverScopeYoung : public StackObj {
@@ -489,8 +489,8 @@ void ZDriverMinor::gc(const ZDriverRequest& request) {
   collect_young(ZYoungType::minor);
 }
 
-void ZDriverMinor::check_out_of_memory() const {
-  check_out_of_memory_young();
+void ZDriverMinor::handle_alloc_stalls() const {
+  handle_alloc_stalling_for_young();
 }
 
 void ZDriverMinor::run_service() {
@@ -511,8 +511,8 @@ void ZDriverMinor::run_service() {
     // Notify GC completed
     _port.ack();
 
-    // Check out of memory
-    check_out_of_memory();
+    // Handle allocation stalls
+    handle_alloc_stalls();
   }
 }
 
@@ -640,8 +640,8 @@ static void concurrent_roots_remap_old() {
   old_collector()->roots_remap();
 }
 
-static void check_out_of_memory_old() {
-  ZHeap::heap()->check_out_of_memory_old();
+static void handle_alloc_stalling_for_old() {
+  ZHeap::heap()->handle_alloc_stalling_for_old();
 }
 
 static bool should_clear_soft_references(GCCause::Cause cause) {
@@ -884,8 +884,8 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
 
   abortpoint();
 
-  // Check out of memory
-  check_out_of_memory_young();
+  // Handle allocations waiting for a young collection
+  handle_alloc_stalling_for_young();
 
   abortpoint();
 
@@ -893,8 +893,8 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
   collect_old();
 }
 
-void ZDriverMajor::check_out_of_memory() const {
-  check_out_of_memory_old();
+void ZDriverMajor::handle_alloc_stalls() const {
+  handle_alloc_stalling_for_old();
 }
 
 void ZDriverMajor::run_service() {
@@ -917,8 +917,8 @@ void ZDriverMajor::run_service() {
     // Notify GC completed
     _port.ack();
 
-    // Check out of memory
-    check_out_of_memory();
+    // Handle allocation stalls
+    handle_alloc_stalls();
 
     ZBreakpoint::at_after_gc();
   }

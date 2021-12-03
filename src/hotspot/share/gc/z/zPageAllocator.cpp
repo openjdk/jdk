@@ -907,17 +907,27 @@ bool ZPageAllocator::is_alloc_stalling_for_old() const {
   return has_alloc_seen_young(allocation) && !has_alloc_seen_old(allocation);
 }
 
-void ZPageAllocator::check_out_of_memory_young() {
-  ZLocker<ZLock> locker(&_lock);
+void ZPageAllocator::notify_out_of_memory() {
+  // Fail allocation requests that were enqueued before the last major GC started
+  for (ZPageAllocation* allocation = _stalled.first(); allocation != NULL; allocation = _stalled.first()) {
+    if (!has_alloc_seen_old(allocation)) {
+      // Not out of memory, keep remaining allocation requests enqueued
+      return;
+    }
 
+    // Out of memory, dequeue and fail allocation request
+    _stalled.remove(allocation);
+    allocation->satisfy(false);
+  }
+}
+
+void ZPageAllocator::restart_gc() const {
   ZPageAllocation* const allocation = _stalled.first();
   if (allocation == NULL) {
     // No stalled allocations
     return;
   }
 
-  // Start a minor GC if the first allocation request was enqueued
-  // after the last minor GC started, otherwise start a major GC.
   if (!has_alloc_seen_young(allocation)) {
     // Start a minor GC, keep allocation requests enqueued
     ZCollectedHeap::heap()->collect(GCCause::_z_minor_allocation_stall);
@@ -927,22 +937,15 @@ void ZPageAllocator::check_out_of_memory_young() {
   }
 }
 
-void ZPageAllocator::check_out_of_memory_old() {
+void ZPageAllocator::handle_alloc_stalling_for_young() {
   ZLocker<ZLock> locker(&_lock);
+  restart_gc();
+}
 
-  // Fail allocation requests that were enqueued before
-  // the last major GC started, otherwise start a major GC.
-  for (ZPageAllocation* allocation = _stalled.first(); allocation != NULL; allocation = _stalled.first()) {
-    if (!has_alloc_seen_old(allocation)) {
-      // Start a major GC, keep allocation requests enqueued
-      ZCollectedHeap::heap()->collect(GCCause::_z_major_allocation_stall);
-      return;
-    }
-
-    // Out of memory, fail allocation request
-    _stalled.remove(allocation);
-    allocation->satisfy(false);
-  }
+void ZPageAllocator::handle_alloc_stalling_for_old() {
+  ZLocker<ZLock> locker(&_lock);
+  notify_out_of_memory();
+  restart_gc();
 }
 
 void ZPageAllocator::threads_do(ThreadClosure* tc) const {

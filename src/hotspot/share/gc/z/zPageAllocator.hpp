@@ -112,6 +112,9 @@ private:
 
   size_t uncommit(uint64_t* timeout);
 
+  void notify_out_of_memory();
+  void restart_gc() const;
+
 public:
   ZPageAllocator(size_t min_capacity,
                  size_t initial_capacity,
@@ -144,8 +147,8 @@ public:
   void disable_safe_recycle() const;
 
   bool is_alloc_stalling_for_old() const;
-  void check_out_of_memory_young();
-  void check_out_of_memory_old();
+  void handle_alloc_stalling_for_young();
+  void handle_alloc_stalling_for_old();
 
   void threads_do(ThreadClosure* tc) const;
 };

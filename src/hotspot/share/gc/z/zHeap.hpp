@@ -129,8 +129,8 @@ public:
 
   // Object allocation
   bool is_alloc_stalling_for_old() const;
-  void check_out_of_memory_young();
-  void check_out_of_memory_old();
+  void handle_alloc_stalling_for_young();
+  void handle_alloc_stalling_for_old();
 
   // Iteration
   void object_iterate(ObjectClosure* object_cl, bool visit_weaks);
