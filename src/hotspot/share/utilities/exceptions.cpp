@@ -461,11 +461,9 @@ volatile int Exceptions::_out_of_memory_error_metaspace_errors = 0;
 volatile int Exceptions::_out_of_memory_error_class_metaspace_errors = 0;
 
 void Exceptions::count_out_of_memory_exceptions(Handle exception) {
-  oop msg_oop = java_lang_Throwable::message(exception());
-  const char * msg_str = java_lang_String::as_utf8_string(msg_oop);
-  if (strcmp("Metaspace", msg_str) == 0) {
+  if (Universe::is_out_of_memory_error_metaspace(exception())) {
      Atomic::inc(&_out_of_memory_error_metaspace_errors, memory_order_relaxed);
-  } else if (strcmp("Compressed class space", msg_str) == 0) {
+  } else if (Universe::is_out_of_memory_error_class_metaspace(exception())) {
      Atomic::inc(&_out_of_memory_error_class_metaspace_errors, memory_order_relaxed);
   } else {
      // everything else reported as java heap OOM

@@ -162,7 +162,8 @@ class Universe: AllStatic {
   static objArrayOop out_of_memory_errors();
   // generate an out of memory error; if possible using an error with preallocated backtrace;
   // otherwise return the given default error.
-  static oop        gen_out_of_memory_error(oop default_err);
+  static oop gen_out_of_memory_error(oop default_err);
+  static bool is_out_of_memory_error(oop obj, const char* msg);
 
   static OopStorage* _vm_weak;
   static OopStorage* _vm_global;
@@ -289,6 +290,8 @@ class Universe: AllStatic {
   static oop out_of_memory_error_array_size();
   static oop out_of_memory_error_gc_overhead_limit();
   static oop out_of_memory_error_realloc_objects();
+  static bool is_out_of_memory_error_metaspace(oop obj);
+  static bool is_out_of_memory_error_class_metaspace(oop obj);
 
   // Throw default _out_of_memory_error_retry object as it will never propagate out of the VM
   static oop out_of_memory_error_retry();
