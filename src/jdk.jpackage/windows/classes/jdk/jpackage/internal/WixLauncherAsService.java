@@ -27,23 +27,17 @@ package jdk.jpackage.internal;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Result;
 import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stax.StAXResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -58,77 +52,76 @@ class WixLauncherAsService extends LauncherAsService {
 
     WixLauncherAsService(String name, Map<String, ? super Object> mainParams) {
         super(name, mainParams,
-                createResource("service.wxi", mainParams).setCategory(
+                createResource("service-install.wxi", mainParams).setCategory(
                         I18N.getString("resource.launcher-as-service-wix-file")));
 
-        String publicName = getName() + "-" + "service.wxi";
+        serviceConfigResource = createResource("service-config.wxi", mainParams).setCategory(
+                I18N.getString("resource.launcher-as-service-wix-file"));
 
-        getResource()
-                .setPublicName(publicName)
-                .addSubstitutionDataEntry("SERVICE_NAME", getName());
+        addSubstitutionDataEntry("SERVICE_NAME", getName());
+
+        setPublicName(getResource());
+        setPublicName(serviceConfigResource);
     }
 
-    void apply(String launcherPathId, XMLStreamWriter xml) throws
-            XMLStreamException, IOException {
-        var buffer = new ByteArrayOutputStream();
-        getResource()
-                .addSubstitutionDataEntry("SERVICE_INSTALL_ID", "svi_"
-                        + launcherPathId)
-                .addSubstitutionDataEntry("SERVICE_CONTROL_ID", "svc_"
-                        + launcherPathId)
-                .saveToStream(buffer);
+    WixLauncherAsService setLauncherInstallPath(String v) {
+        return addSubstitutionDataEntry("APPLICATION_LAUNCHER", v);
+    }
 
-        xml = (XMLStreamWriter) Proxy.newProxyInstance(
-                XMLStreamWriter.class.getClassLoader(), new Class<?>[]{
-            XMLStreamWriter.class}, new SkipDocumentHandler(xml));
+    WixLauncherAsService setLauncherInstallPathId(String v) {
+        return addSubstitutionDataEntry("APPLICATION_LAUNCHER_ID", v);
+    }
+
+    void writeServiceConfig(XMLStreamWriter xml) throws XMLStreamException,
+            IOException {
+        writeResource(serviceConfigResource, xml);
+    }
+
+    void writeServiceInstall(XMLStreamWriter xml) throws XMLStreamException,
+            IOException {
+        writeResource(getResource(), xml);
+    }
+
+    private WixLauncherAsService addSubstitutionDataEntry(String name,
+            String value) {
+        getResource().addSubstitutionDataEntry(name, value);
+        serviceConfigResource.addSubstitutionDataEntry(name, value);
+        return this;
+    }
+
+    private OverridableResource setPublicName(OverridableResource r) {
+        return r.setPublicName(getName() + "-" + r.getDefaultName());
+    }
+
+    private void writeResource(OverridableResource resource, XMLStreamWriter xml)
+            throws XMLStreamException, IOException {
+        var buffer = new ByteArrayOutputStream();
+        resource.saveToStream(buffer);
 
         try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newDefaultInstance();
-            dbf.setFeature(
-                    "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-                    false);
-            DocumentBuilder b = dbf.newDocumentBuilder();
-            Document doc = b.parse(
+            Document doc = IOUtils.initDocumentBuilder().parse(
                     new ByteArrayInputStream(buffer.toByteArray()));
-
-            TransformerFactory tf = TransformerFactory.newInstance();
-            Result result = new StAXResult(xml);
 
             XPath xPath = XPathFactory.newInstance().newXPath();
 
             NodeList nodes = (NodeList) xPath.evaluate("/Include/*", doc,
                     XPathConstants.NODESET);
+
+            List<Source> sources = new ArrayList<>();
             for (int i = 0; i != nodes.getLength(); i++) {
                 Node n = nodes.item(i);
-                Source src = new DOMSource(n);
-                tf.newTransformer().transform(src, result);
+                sources.add(new DOMSource(n));
             }
+
+            IOUtils.mergeXmls(xml, sources);
+
         } catch (SAXException ex) {
             throw new IOException(ex);
-        } catch (XPathExpressionException | ParserConfigurationException
-                | TransformerException ex) {
+        } catch (XPathExpressionException ex) {
             // Should never happen
             throw new RuntimeException(ex);
         }
     }
 
-    private static class SkipDocumentHandler implements InvocationHandler {
-
-        SkipDocumentHandler(XMLStreamWriter target) {
-            this.target = target;
-        }
-
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws
-                Throwable {
-            switch (method.getName()) {
-                case "writeStartDocument", "writeEndDocument" -> {
-                }
-                default -> method.invoke(target, args);
-            }
-            return null;
-        }
-
-        private final XMLStreamWriter target;
-    }
+    private final OverridableResource serviceConfigResource;
 }
