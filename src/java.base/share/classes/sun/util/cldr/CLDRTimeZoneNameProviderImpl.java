@@ -28,6 +28,7 @@ package sun.util.cldr;
 import static sun.util.locale.provider.LocaleProviderAdapter.Type;
 
 import java.text.MessageFormat;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
@@ -91,7 +92,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                 case "":
                     // Fill in empty elements
                     deriveFallbackName(namesSuper, i, locale,
-                                       !TimeZone.getTimeZone(id).useDaylightTime());
+                                       TimeZone.getTimeZone(id).toZoneId().getRules().isFixedOffset());
                     break;
                 case NO_INHERITANCE_MARKER:
                     // CLDR's "no inheritance marker"
@@ -129,7 +130,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
 
     // Derive fallback time zone name according to LDML's logic
     private void deriveFallbackNames(String[] names, Locale locale) {
-        boolean noDST = !TimeZone.getTimeZone(names[0]).useDaylightTime();
+        boolean noDST = TimeZone.getTimeZone(names[0]).toZoneId().getRules().isFixedOffset();
 
         for (int i = INDEX_STD_LONG; i <= INDEX_GEN_SHORT; i++) {
             deriveFallbackName(names, i, locale, noDST);
