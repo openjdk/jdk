@@ -35,25 +35,43 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.lang.RuntimeException;
+import java.util.AbstractQueue;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.ProcessTools;
 
 public class BlockedLoggingTest {
     static String BANNER = "User-defined Java Program has started.";
+    static int ThreadNum = 1;
 
+    // process 0 emits unified log to stdout. We must ensure that nobody except for UL emits to stdout.
+    // we expect to demonstrate that process 0 with -Xlog:async can still terminate even though its
+    // stdout is blocked.
     public static class UserDefinedJavaProgram {
         public static void main(String[] args) {
             System.out.println(BANNER);
             System.out.flush();
 
-            System.gc(); // trigger some gc activities.
-            new Thread().start(); // launch a new thread.
+            Thread[] threads = new Thread[ThreadNum];
+            // the size of pipe buffer is hard to tell. just churn many gc-related logs
+            // in ChurnThread.Duration sececonds. it's presumably 64k on Linux.
+            for(int i = 0; i < ThreadNum; ++i) {
+                threads[i] = new ChurnThread();
+                threads[i].start();
+            }
 
-            // if the control reaches here, we have demonstrated that the current process isn't
+            try {
+                for (int i = 0; i < ThreadNum; ++i) {
+                    threads[i].join();
+                }
+            } catch (InterruptedException ie) {
+                // ignore
+            }
+
+            // If the control reaches here, we have demonstrated that the current process isn't
             // blocked by StdinBlocker because of -Xlog:async.
             //
             // the reason we throw a RuntimeException because the normal exit of JVM still needs
@@ -63,16 +81,63 @@ public class BlockedLoggingTest {
         }
     }
 
+    static class ChurnThread extends Thread {
+        static long Duration = 3; // seconds;  Program will exit after Duration of seconds.
+        static int ReferenceSize = 1024 * 10;  // each reference object size;
+        static int CountDownSize = 1000 * 100;
+        static int EachRemoveSize = 1000 * 50; // remove # of elements each time.
+
+        long timeZero = System.currentTimeMillis();
+        long finishedUnit = 0;
+
+        public ChurnThread() {}
+
+        public void run() {
+            AbstractQueue<String> q = new ArrayBlockingQueue<String>(CountDownSize);
+            char[] srcArray =new char[ReferenceSize];
+            String emptystr = new String(srcArray);
+            long prevTime = timeZero;
+
+            while (true) {
+                // Simulate object use to force promotion into OldGen and then GC
+                if (q.size() >= CountDownSize) {
+                    String strHuge_remove = null;
+
+                    for (int j = 0; j < EachRemoveSize; j++) {
+                        strHuge_remove = q.remove();
+                    }
+
+                    // every 1000 removal is counted as 1 unit.
+                    long curTime = System.currentTimeMillis();
+                    long totalTime = curTime - timeZero;
+                    prevTime = curTime;
+
+                    if (Duration != -1 && totalTime > Duration * 1000) {
+                        return;
+                    }
+                }
+
+                srcArray = new char[ReferenceSize];
+                emptystr = new String(srcArray);
+                String str = emptystr.replace('\0', 'a');
+                q.add(str);
+            }
+        }
+    }
+
     // StdinBlocker echoes whatever it sees from stdin until it encounters BANNER.
     // it will hang and leave stdin alone.
     public static class StdinBlocker {
         public static void main(String[] args) throws IOException {
             BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
             String line = in.readLine();
+
             while (line != null) {
                 // block stdin once we have seen the banner.
                 if (line.contains(BANNER)) {
-                    while (true);
+                    while (true) {
+                        Thread.yield();
+                    }
                 }
                 line = in.readLine();
             }
@@ -86,14 +151,15 @@ public class BlockedLoggingTest {
             ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:AbortVMOnException=java.lang.RuntimeException",
             // VMError::report_and_die() doesn't honor DisplayVMOutputToStderr, therefore we have to suppress it to avoid starvation
             "-XX:+DisplayVMOutputToStderr", "-XX:+SuppressFatalErrorMessage", "-XX:-UsePerfData",
-             "-Xlog:all=debug", "-Xlog:async", UserDefinedJavaProgram.class.getName()),
+            "-Xlog:all=debug", "-Xlog:async", UserDefinedJavaProgram.class.getName()),
             ProcessTools.createJavaProcessBuilder(StdinBlocker.class.getName())
         };
 
         List<Process> processes = ProcessBuilder.startPipeline(Arrays.asList(builders));
-        // if process 0 should abort from Exceptions::debug_check_abort()
+        // process 0 should abort from Exceptions::debug_check_abort()
         int exitcode = processes.get(0).waitFor();
-        Asserts.assertEQ(exitcode, Integer.valueOf(134));
+        // exitcode may be 1 or 134.
+        Asserts.assertNE(exitcode, Integer.valueOf(0));
         // terminate StdinBlocker by force
         processes.get(1).destroyForcibly();
     }
