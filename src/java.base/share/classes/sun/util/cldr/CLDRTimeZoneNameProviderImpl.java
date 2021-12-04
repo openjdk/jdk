@@ -162,18 +162,6 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
             }
         }
 
-        // Check if COMPAT can substitute the short name (CLDR does not provide most short names)
-        if (index % 2 == 0 && !exists(names, index) &&
-            LocaleProviderAdapter.getAdapterPreference().contains(Type.JRE)) {
-            String[] compatNames = (String[])LocaleProviderAdapter.forJRE()
-                .getLocaleResources(mapChineseLocale(locale))
-                .getTimeZoneNames(id);
-            if (compatNames != null) {
-                // Assumes COMPAT has no empty slots
-                names[index] = compatNames[index];
-            }
-        }
-
         // Region Fallback
         if (regionFormatFallback(names, index, locale)) {
             return;
@@ -182,6 +170,19 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
         // Type Fallback
         if (noDST && typeFallback(names, index)) {
             return;
+        }
+
+        // Check if COMPAT can substitute the name
+        if (!exists(names, index) &&
+                LocaleProviderAdapter.getAdapterPreference().contains(Type.JRE)) {
+            String[] compatNames = (String[])LocaleProviderAdapter.forJRE()
+                    .getLocaleResources(mapChineseLocale(locale))
+                    .getTimeZoneNames(id);
+            if (compatNames != null) {
+                // Assumes COMPAT has no empty slots
+                names[index] = compatNames[index];
+                return;
+            }
         }
 
         // last resort
