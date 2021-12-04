@@ -214,6 +214,7 @@ import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON;
  * @author      Arthur van Hoff
  * @author      Sami Shaio
  */
+@SuppressWarnings("doclint:missing")
 public abstract class Component implements ImageObserver, MenuContainer,
                                            Serializable
 {
