@@ -364,11 +364,20 @@ public abstract class HttpClient {
          * HTTP client will be bound to an automatically
          * assigned socket address.
          *
+         * @implSpec The default implementation of this method throws
+         * {@code UnsupportedOperationException}. {@code Builder}s obtained
+         * through {@link HttpClient#newBuilder()} provide an implementation
+         * of this method that allows setting the local address.
+         *
          * @param localAddr The local socket address. Can be null.
          * @return this builder
+         * @throws UnsupportedOperationException if this builder doesn't support
+         *         configuring a local address
          * @since 19
          */
-        public Builder localAddress(SocketAddress localAddr);
+        default Builder localAddress(SocketAddress localAddr) {
+            throw new UnsupportedOperationException();
+        }
 
         /**
          * Returns a new {@link HttpClient} built from the current state of this
