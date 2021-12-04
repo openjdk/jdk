@@ -36,14 +36,13 @@ static bool    returns_to_call_stub(address return_pc)   {
 
 enum platform_dependent_constants {
   code_size1 = 19000,          // simply increase if too small (assembler will crash if too small)
-  code_size2 = 28000           // simply increase if too small (assembler will crash if too small)
+  code_size2 = 45000           // simply increase if too small (assembler will crash if too small)
 };
 
 class aarch64 {
  friend class StubGenerator;
 
  private:
-  static address _get_previous_fp_entry;
   static address _get_previous_sp_entry;
 
   static address _f2i_fixup;
@@ -76,11 +75,6 @@ class aarch64 {
   static bool _completed;
 
  public:
-
-  static address get_previous_fp_entry()
-  {
-    return _get_previous_fp_entry;
-  }
 
   static address get_previous_sp_entry()
   {

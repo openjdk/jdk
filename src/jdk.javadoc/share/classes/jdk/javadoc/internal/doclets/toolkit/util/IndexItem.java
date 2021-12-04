@@ -348,7 +348,6 @@ public class IndexItem {
         };
     }
 
-    @SuppressWarnings("preview")
     protected Category getCategory(Element element) {
         return new SimpleElementVisitor14<Category, Void>() {
             @Override

@@ -413,8 +413,8 @@ public final class ConstantBootstraps {
         MethodHandle conv = MethodHandles.explicitCastArguments(id, mt);
         try {
             return conv.invoke(value);
-        } catch (ClassCastException e) {
-            throw e; // specified, let CCE through
+        } catch (RuntimeException|Error e) {
+            throw e; // let specified CCE and other runtime exceptions/errors through
         } catch (Throwable throwable) {
             throw new InternalError(throwable); // Not specified, throw InternalError
         }

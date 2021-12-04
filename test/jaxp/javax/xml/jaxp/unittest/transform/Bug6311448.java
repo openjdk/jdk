@@ -42,7 +42,7 @@ import org.w3c.dom.Element;
  * @test
  * @bug 6311448
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6311448
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6311448
  * @run testng/othervm transform.Bug6311448
  * @summary Test XML transformer can output Unicode surrorate pair.
  */

@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true datatype.DatatypeFactoryTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow datatype.DatatypeFactoryTest
  * @run testng/othervm datatype.DatatypeFactoryTest
  * @summary Test DatatypeFactory.
  */

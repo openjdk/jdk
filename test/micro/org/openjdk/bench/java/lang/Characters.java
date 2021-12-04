@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class Characters {
 
-    @Param({"9", "48", "65", "97", "128", "170", "192", "223"})
+    @Param({"9", "65", "97", "128", "170", "223", "410", "430"})
     private int codePoint;
 
     @Benchmark

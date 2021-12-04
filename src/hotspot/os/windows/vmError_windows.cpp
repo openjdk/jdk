@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/metaspaceShared.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/vmError.hpp"
-
-int VMError::get_resetted_sigflags(int sig) {
-  return -1;
-}
-
-address VMError::get_resetted_sighandler(int sig) {
-  return NULL;
-}
 
 LONG WINAPI crash_handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
   DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
@@ -44,7 +36,7 @@ LONG WINAPI crash_handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-void VMError::reset_signal_handlers() {
+void VMError::install_secondary_signal_handler() {
   SetUnhandledExceptionFilter(crash_handler);
 }
 

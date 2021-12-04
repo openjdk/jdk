@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,12 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
@@ -124,7 +123,6 @@ void warning(const char* format, ...) {
     va_end(ap);
     fputc('\n', err);
   }
-  if (BreakAtWarning) BREAKPOINT;
 }
 
 #ifndef PRODUCT
@@ -237,6 +235,34 @@ void report_vm_error(const char* file, int line, const char* error_msg)
   report_vm_error(file, line, error_msg, "%s", "");
 }
 
+
+static void print_error_for_unit_test(const char* message, const char* detail_fmt, va_list detail_args) {
+  if (ExecutingUnitTests) {
+    char detail_msg[256];
+    if (detail_fmt != NULL) {
+      // Special handling for the sake of gtest death tests which expect the assert
+      // message to be printed in one short line to stderr (see TEST_VM_ASSERT_MSG) and
+      // cannot be tweaked to accept our normal assert message.
+      va_list detail_args_copy;
+      va_copy(detail_args_copy, detail_args);
+      jio_vsnprintf(detail_msg, sizeof(detail_msg), detail_fmt, detail_args_copy);
+
+      // the VM assert tests look for "assert failed: "
+      if (message == NULL) {
+        fprintf(stderr, "assert failed: %s", detail_msg);
+      } else {
+        if (strlen(detail_msg) > 0) {
+          fprintf(stderr, "assert failed: %s: %s", message, detail_msg);
+        } else {
+          fprintf(stderr, "assert failed: Error: %s", message);
+        }
+      }
+      ::fflush(stderr);
+      va_end(detail_args_copy);
+    }
+  }
+}
+
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
 {
   if (Debugging || error_is_suppressed(file, line)) return;
@@ -249,20 +275,7 @@ void report_vm_error(const char* file, int line, const char* error_msg, const ch
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-#ifdef ASSERT
-  if (detail_fmt != NULL && ExecutingUnitTests) {
-    // Special handling for the sake of gtest death tests which expect the assert
-    // message to be printed in one short line to stderr (see TEST_VM_ASSERT_MSG) and
-    // cannot be tweaked to accept our normal assert message.
-    va_list detail_args_copy;
-    va_copy(detail_args_copy, detail_args);
-    ::fputs("assert failed: ", stderr);
-    ::vfprintf(stderr, detail_fmt, detail_args_copy);
-    ::fputs("\n", stderr);
-    ::fflush(stderr);
-    va_end(detail_args_copy);
-  }
-#endif
+  print_error_for_unit_test(error_msg, detail_fmt, detail_args);
 
   VMError::report_and_die(Thread::current_or_null(), context, file, line, error_msg, detail_fmt, detail_args);
   va_end(detail_args);
@@ -273,8 +286,7 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
   report_vm_error(file, line, error_msg, "error %s(%d), %s", os::errno_name(status), status, detail);
 }
 
-void report_fatal(const char* file, int line, const char* detail_fmt, ...)
-{
+void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) {
   if (Debugging || error_is_suppressed(file, line)) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
@@ -284,7 +296,12 @@ void report_fatal(const char* file, int line, const char* detail_fmt, ...)
     context = g_assertion_context;
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
-  VMError::report_and_die(Thread::current_or_null(), context, file, line, "fatal error", detail_fmt, detail_args);
+
+  print_error_for_unit_test("fatal error", detail_fmt, detail_args);
+
+  VMError::report_and_die(error_type, "fatal error", detail_fmt, detail_args,
+                          Thread::current_or_null(), NULL, NULL, context,
+                          file, line, 0);
   va_end(detail_args);
 }
 
@@ -293,6 +310,9 @@ void report_vm_out_of_memory(const char* file, int line, size_t size,
   if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
+
+  print_error_for_unit_test(NULL, detail_fmt, detail_args);
+
   VMError::report_and_die(Thread::current_or_null(), file, line, size, vm_err_type, detail_fmt, detail_args);
   va_end(detail_args);
 
@@ -339,12 +359,12 @@ void report_java_out_of_memory(const char* message) {
 
     if (CrashOnOutOfMemoryError) {
       tty->print_cr("Aborting due to java.lang.OutOfMemoryError: %s", message);
-      fatal("OutOfMemory encountered: %s", message);
+      report_fatal(OOM_JAVA_HEAP_FATAL, __FILE__, __LINE__, "OutOfMemory encountered: %s", message);
     }
 
     if (ExitOnOutOfMemoryError) {
       tty->print_cr("Terminating due to java.lang.OutOfMemoryError: %s", message);
-      os::exit(3);
+      os::_exit(3); // quick exit with no cleanup hooks run
     }
   }
 }
@@ -378,22 +398,20 @@ class Command : public StackObj {
 
 int Command::level = 0;
 
-#ifndef PRODUCT
-
-extern "C" void blob(CodeBlob* cb) {
+extern "C" JNIEXPORT void blob(CodeBlob* cb) {
   Command c("blob");
   cb->print();
 }
 
 
-extern "C" void dump_vtable(address p) {
+extern "C" JNIEXPORT void dump_vtable(address p) {
   Command c("dump_vtable");
   Klass* k = (Klass*)p;
   k->vtable().print();
 }
 
 
-extern "C" void nm(intptr_t p) {
+extern "C" JNIEXPORT void nm(intptr_t p) {
   // Actually we look through all CodeBlobs (the nm name has been kept for backwards compatability)
   Command c("nm");
   CodeBlob* cb = CodeCache::find_blob((address)p);
@@ -405,7 +423,7 @@ extern "C" void nm(intptr_t p) {
 }
 
 
-extern "C" void disnm(intptr_t p) {
+extern "C" JNIEXPORT void disnm(intptr_t p) {
   Command c("disnm");
   CodeBlob* cb = CodeCache::find_blob((address) p);
   if (cb != NULL) {
@@ -420,7 +438,7 @@ extern "C" void disnm(intptr_t p) {
 }
 
 
-extern "C" void printnm(intptr_t p) {
+extern "C" JNIEXPORT void printnm(intptr_t p) {
   char buffer[256];
   sprintf(buffer, "printnm: " INTPTR_FORMAT, p);
   Command c(buffer);
@@ -432,13 +450,13 @@ extern "C" void printnm(intptr_t p) {
 }
 
 
-extern "C" void universe() {
+extern "C" JNIEXPORT void universe() {
   Command c("universe");
   Universe::print_on(tty);
 }
 
 
-extern "C" void verify() {
+extern "C" JNIEXPORT void verify() {
   // try to run a verify on the entire system
   // note: this may not be safe if we're not at a safepoint; for debugging,
   // this manipulates the safepoint settings to avoid assertion failures
@@ -455,11 +473,11 @@ extern "C" void verify() {
 }
 
 
-extern "C" void pp(void* p) {
+extern "C" JNIEXPORT void pp(void* p) {
   Command c("pp");
   FlagSetting fl(DisplayVMOutput, true);
   if (Universe::heap()->is_in(p)) {
-    oop obj = oop(p);
+    oop obj = cast_to_oop(p);
     obj->print();
   } else {
     tty->print(PTR_FORMAT, p2i(p));
@@ -467,16 +485,11 @@ extern "C" void pp(void* p) {
 }
 
 
-// pv: print vm-printable object
-extern "C" void pa(intptr_t p)   { ((AllocatedObj*) p)->print(); }
-extern "C" void findpc(intptr_t x);
+extern "C" JNIEXPORT void findpc(intptr_t x);
 
-#endif // !PRODUCT
-
-extern "C" void ps() { // print stack
+extern "C" JNIEXPORT void ps() { // print stack
   if (Thread::current_or_null() == NULL) return;
   Command c("ps");
-
 
   // Prints the stack of the current Java thread
   JavaThread* p = JavaThread::active();
@@ -487,25 +500,20 @@ extern "C" void ps() { // print stack
   if (p->has_last_Java_frame()) {
     // If the last_Java_fp is set we are in C land and
     // can call the standard stack_trace function.
-#ifdef PRODUCT
     p->print_stack();
-  } else {
-    tty->print_cr("Cannot find the last Java frame, printing stack disabled.");
-#else // !PRODUCT
-    p->trace_stack();
+#ifndef PRODUCT
+    if (Verbose) p->trace_stack();
   } else {
     frame f = os::current_frame();
     RegisterMap reg_map(p);
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
-    f.pd_ps();
-#endif // PRODUCT
+#endif
   }
-
 }
 
-extern "C" void pfl() {
+extern "C" JNIEXPORT void pfl() {
   // print frame layout
   Command c("pfl");
   JavaThread* p = JavaThread::active();
@@ -517,9 +525,7 @@ extern "C" void pfl() {
   }
 }
 
-#ifndef PRODUCT
-
-extern "C" void psf() { // print stack frames
+extern "C" JNIEXPORT void psf() { // print stack frames
   {
     Command c("psf");
     JavaThread* p = JavaThread::active();
@@ -533,37 +539,36 @@ extern "C" void psf() { // print stack frames
 }
 
 
-extern "C" void threads() {
+extern "C" JNIEXPORT void threads() {
   Command c("threads");
   Threads::print(false, true);
 }
 
 
-extern "C" void psd() {
+extern "C" JNIEXPORT void psd() {
   Command c("psd");
   SystemDictionary::print();
 }
 
-#endif // !PRODUCT
 
-extern "C" void pss() { // print all stacks
+extern "C" JNIEXPORT void pss() { // print all stacks
   if (Thread::current_or_null() == NULL) return;
   Command c("pss");
   Threads::print(true, PRODUCT_ONLY(false) NOT_PRODUCT(true));
 }
 
-#ifndef PRODUCT
+// #ifndef PRODUCT
 
-extern "C" void debug() {               // to set things up for compiler debugging
+extern "C" JNIEXPORT void debug() {               // to set things up for compiler debugging
   Command c("debug");
-  WizardMode = true;
+  NOT_PRODUCT(WizardMode = true;)
   PrintCompilation = true;
   PrintInlining = PrintAssembly = true;
   tty->flush();
 }
 
 
-extern "C" void ndebug() {              // undo debug()
+extern "C" JNIEXPORT void ndebug() {              // undo debug()
   Command c("ndebug");
   PrintCompilation = false;
   PrintInlining = PrintAssembly = false;
@@ -571,50 +576,42 @@ extern "C" void ndebug() {              // undo debug()
 }
 
 
-extern "C" void flush()  {
+extern "C" JNIEXPORT void flush()  {
   Command c("flush");
   tty->flush();
 }
 
-extern "C" void events() {
+extern "C" JNIEXPORT void events() {
   Command c("events");
   Events::print();
 }
 
-extern "C" Method* findm(intptr_t pc) {
+extern "C" JNIEXPORT Method* findm(intptr_t pc) {
   Command c("findm");
   nmethod* nm = CodeCache::find_nmethod((address)pc);
   return (nm == NULL) ? (Method*)NULL : nm->method();
 }
 
 
-extern "C" nmethod* findnm(intptr_t addr) {
+extern "C" JNIEXPORT nmethod* findnm(intptr_t addr) {
   Command c("findnm");
   return  CodeCache::find_nmethod((address)addr);
 }
 
-// Another interface that isn't ambiguous in dbx.
-// Can we someday rename the other find to hsfind?
-extern "C" void hsfind(intptr_t x) {
-  Command c("hsfind");
-  os::print_location(tty, x, false);
-}
-
-
-extern "C" void find(intptr_t x) {
+extern "C" JNIEXPORT void find(intptr_t x) {
   Command c("find");
   os::print_location(tty, x, false);
 }
 
 
-extern "C" void findpc(intptr_t x) {
+extern "C" JNIEXPORT void findpc(intptr_t x) {
   Command c("findpc");
   os::print_location(tty, x, true);
 }
 
 
 // Need method pointer to find bcp, when not in permgen.
-extern "C" void findbcp(intptr_t method, intptr_t bcp) {
+extern "C" JNIEXPORT void findbcp(intptr_t method, intptr_t bcp) {
   Command c("findbcp");
   Method* mh = (Method*)method;
   if (!mh->is_native()) {
@@ -633,7 +630,6 @@ void help() {
   Command c("help");
   tty->print_cr("basic");
   tty->print_cr("  pp(void* p)   - try to make sense of p");
-  tty->print_cr("  pv(intptr_t p)- ((PrintableResourceObj*) p)->print()");
   tty->print_cr("  ps()          - print current thread stack");
   tty->print_cr("  pss()         - print all thread stacks");
   tty->print_cr("  pm(int pc)    - print Method* given compiled PC");
@@ -658,7 +654,8 @@ void help() {
   tty->print_cr("  ndebug()      - undo debug");
 }
 
-extern "C" void pns(void* sp, void* fp, void* pc) { // print native stack
+#ifndef PRODUCT
+extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native stack
   Command c("pns");
   static char buf[O_BUFLEN];
   Thread* t = Thread::current_or_null();
@@ -675,7 +672,7 @@ extern "C" void pns(void* sp, void* fp, void* pc) { // print native stack
 // WARNING: Only intended for use when debugging. Do not leave calls to
 // pns2() in committed source (product or debug).
 //
-extern "C" void pns2() { // print native stack
+extern "C" JNIEXPORT void pns2() { // print native stack
   Command c("pns2");
   static char buf[O_BUFLEN];
   if (os::platform_print_native_stack(tty, NULL, buf, sizeof(buf))) {
@@ -687,8 +684,8 @@ extern "C" void pns2() { // print native stack
     VMError::print_native_stack(tty, fr, t, buf, sizeof(buf));
   }
 }
+#endif
 
-#endif // !PRODUCT
 
 //////////////////////////////////////////////////////////////////////////////
 // Test multiple STATIC_ASSERT forms in various scopes.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,10 @@ enum CompilerPhaseType {
   PHASE_PHASEIDEALLOOP1,
   PHASE_PHASEIDEALLOOP2,
   PHASE_PHASEIDEALLOOP3,
-  PHASE_CPP1,
+  PHASE_CCP1,
   PHASE_ITER_GVN2,
   PHASE_PHASEIDEALLOOP_ITERATIONS,
   PHASE_OPTIMIZE_FINISHED,
-  PHASE_AFTER_MATCHING,
   PHASE_GLOBAL_CODE_MOTION,
   PHASE_FINAL_CODE,
   PHASE_AFTER_EA,
@@ -60,6 +59,7 @@ enum CompilerPhaseType {
   PHASE_MATCHING,
   PHASE_INCREMENTAL_INLINE,
   PHASE_INCREMENTAL_INLINE_STEP,
+  PHASE_INCREMENTAL_INLINE_CLEANUP,
   PHASE_INCREMENTAL_BOXING_INLINE,
   PHASE_CALL_CATCH_CLEANUP,
   PHASE_INSERT_BARRIER,
@@ -95,11 +95,10 @@ class CompilerPhaseTypeHelper {
       case PHASE_PHASEIDEALLOOP1:            return "PhaseIdealLoop 1";
       case PHASE_PHASEIDEALLOOP2:            return "PhaseIdealLoop 2";
       case PHASE_PHASEIDEALLOOP3:            return "PhaseIdealLoop 3";
-      case PHASE_CPP1:                       return "PhaseCPP 1";
+      case PHASE_CCP1:                       return "PhaseCCP 1";
       case PHASE_ITER_GVN2:                  return "Iter GVN 2";
       case PHASE_PHASEIDEALLOOP_ITERATIONS:  return "PhaseIdealLoop iterations";
       case PHASE_OPTIMIZE_FINISHED:          return "Optimize finished";
-      case PHASE_AFTER_MATCHING:             return "After Matching";
       case PHASE_GLOBAL_CODE_MOTION:         return "Global code motion";
       case PHASE_FINAL_CODE:                 return "Final Code";
       case PHASE_AFTER_EA:                   return "After Escape Analysis";
@@ -111,6 +110,7 @@ class CompilerPhaseTypeHelper {
       case PHASE_MATCHING:                   return "After matching";
       case PHASE_INCREMENTAL_INLINE:         return "Incremental Inline";
       case PHASE_INCREMENTAL_INLINE_STEP:    return "Incremental Inline Step";
+      case PHASE_INCREMENTAL_INLINE_CLEANUP: return "Incremental Inline Cleanup";
       case PHASE_INCREMENTAL_BOXING_INLINE:  return "Incremental Boxing Inline";
       case PHASE_CALL_CATCH_CLEANUP:         return "Call catch cleanup";
       case PHASE_INSERT_BARRIER:             return "Insert barrier";

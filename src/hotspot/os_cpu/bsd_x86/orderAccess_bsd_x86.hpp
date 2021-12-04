@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,13 @@ inline void OrderAccess::fence() {
   compiler_barrier();
 }
 
-inline void OrderAccess::cross_modify_fence() {
-  int idx = 0;
-  __asm__ volatile ("cpuid " : "+a" (idx) : : "ebx", "ecx", "edx", "memory");
+inline void OrderAccess::cross_modify_fence_impl() {
+  if (VM_Version::supports_serialize()) {
+    __asm__ volatile (".byte 0x0f, 0x01, 0xe8\n\t" : : :); //serialize
+  } else {
+    int idx = 0;
+    __asm__ volatile ("cpuid " : "+a" (idx) : : "ebx", "ecx", "edx", "memory");
+  }
 }
 
 #endif // OS_CPU_BSD_X86_ORDERACCESS_BSD_X86_HPP

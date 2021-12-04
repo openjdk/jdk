@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.ArrayList;
+import jdk.test.lib.cds.CDSTestUtils;
 
 /*
  * @test
@@ -38,10 +39,12 @@ import java.util.ArrayList;
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build LoadClasses
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar loadclasses.jar LoadClasses
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar loadclasses.jar LoadClasses
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main/othervm/timeout=500 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./whitebox.jar DynamicLotsOfClasses
  */
+
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
 
@@ -58,7 +61,7 @@ public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
         ArrayList<String> list = new ArrayList<>();
         TestCommon.findAllClasses(list);
 
-        String classList = System.getProperty("user.dir") + File.separator +
+        String classList = CDSTestUtils.getOutputDir() + File.separator +
                            "LotsOfClasses.list";
         List<String> lines = list;
         Path file = Paths.get(classList);
@@ -74,13 +77,12 @@ public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
              "ALL-SYSTEM",
              "-Xlog:hashtables",
              "-Xmx500m",
-             "-Xlog:cds,cds+dynamic",
+             "-Xlog:cds=debug", // test detailed metadata info printing
+             "-Xlog:cds+dynamic=info",
              bootClassPath,
              "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
              "-cp", appJar, mainClass, classList)
-             .assertNormalExit(output -> {
-                 output.shouldContain("Buffer-space to target-space delta")
-                        .shouldContain("Written dynamic archive 0x");
-             });
+            .assertNormalExit("Written dynamic archive 0x",
+                              "Detailed metadata info");
     }
 }

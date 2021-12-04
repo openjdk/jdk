@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "code/codeCache.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
+#include "gc/parallel/parallelInitLogger.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMemoryPool.hpp"
@@ -40,9 +41,11 @@
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -63,12 +66,7 @@ jint ParallelScavengeHeap::initialize() {
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment);
 
-  os::trace_page_sizes("Heap",
-                       MinHeapSize,
-                       reserved_heap_size,
-                       GenAlignment,
-                       heap_rs.base(),
-                       heap_rs.size());
+  trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 
   initialize_reserved_region(heap_rs);
 
@@ -87,7 +85,7 @@ jint ParallelScavengeHeap::initialize() {
   ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
 
-  // Set up WorkGang
+  // Set up WorkerThreads
   _workers.initialize_workers();
 
   // Create and initialize the generations.
@@ -133,7 +131,7 @@ jint ParallelScavengeHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  GCInitLogger::print();
+  ParallelInitLogger::print();
 
   return JNI_OK;
 }
@@ -165,6 +163,17 @@ void ParallelScavengeHeap::initialize_serviceability() {
 
 }
 
+void ParallelScavengeHeap::safepoint_synchronize_begin() {
+  if (UseStringDeduplication) {
+    SuspendibleThreadSet::synchronize();
+  }
+}
+
+void ParallelScavengeHeap::safepoint_synchronize_end() {
+  if (UseStringDeduplication) {
+    SuspendibleThreadSet::desynchronize();
+  }
+}
 class PSIsScavengable : public BoolObjectClosure {
   bool do_object_b(oop obj) {
     return ParallelScavengeHeap::heap()->is_in_young(obj);
@@ -187,7 +196,6 @@ void ParallelScavengeHeap::update_counters() {
   young_gen()->update_counters();
   old_gen()->update_counters();
   MetaspaceCounters::update_performance_counters();
-  CompressedClassSpaceCounters::update_performance_counters();
 }
 
 size_t ParallelScavengeHeap::capacity() const {
@@ -402,10 +410,19 @@ ParallelScavengeHeap::death_march_check(HeapWord* const addr, size_t size) {
   }
 }
 
+HeapWord* ParallelScavengeHeap::allocate_old_gen_and_record(size_t size) {
+  assert_locked_or_safepoint(Heap_lock);
+  HeapWord* res = old_gen()->allocate(size);
+  if (res != NULL) {
+    _size_policy->tenured_allocation(size * HeapWordSize);
+  }
+  return res;
+}
+
 HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
   if (!should_alloc_in_eden(size) || GCLocker::is_active_and_needs_gc()) {
     // Size is too big for eden, or gc is locked out.
-    return old_gen()->allocate(size);
+    return allocate_old_gen_and_record(size);
   }
 
   // If a "death march" is in progress, allocate from the old gen a limited
@@ -413,7 +430,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
   if (_death_march_count > 0) {
     if (_death_march_count < 64) {
       ++_death_march_count;
-      return old_gen()->allocate(size);
+      return allocate_old_gen_and_record(size);
     } else {
       _death_march_count = 0;
     }
@@ -461,7 +478,7 @@ HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   //   After mark sweep and young generation allocation failure,
   //   allocate in old generation.
   if (result == NULL) {
-    result = old_gen()->allocate(size);
+    result = allocate_old_gen_and_record(size);
   }
 
   // Fourth level allocation failure. We're running out of memory.
@@ -474,7 +491,7 @@ HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   // Fifth level allocation failure.
   //   After more complete mark sweep, allocate in old generation.
   if (result == NULL) {
-    result = old_gen()->allocate(size);
+    result = allocate_old_gen_and_record(size);
   }
 
   return result;
@@ -583,7 +600,7 @@ void ParallelScavengeHeap::object_iterate_parallel(ObjectClosure* cl,
   }
 }
 
-class PSScavengeParallelObjectIterator : public ParallelObjectIterator {
+class PSScavengeParallelObjectIterator : public ParallelObjectIteratorImpl {
 private:
   ParallelScavengeHeap*  _heap;
   HeapBlockClaimer      _claimer;
@@ -598,7 +615,7 @@ public:
   }
 };
 
-ParallelObjectIterator* ParallelScavengeHeap::parallel_object_iterator(uint thread_num) {
+ParallelObjectIteratorImpl* ParallelScavengeHeap::parallel_object_iterator(uint thread_num) {
   return new PSScavengeParallelObjectIterator();
 }
 
@@ -607,7 +624,7 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
     assert(young_gen()->is_in(addr),
            "addr should be in allocated part of young gen");
     // called from os::print_location by find or VMError
-    if (Debugging || VMError::fatal_error_in_progress())  return NULL;
+    if (Debugging || VMError::is_error_reported())  return NULL;
     Unimplemented();
   } else if (old_gen()->is_in_reserved(addr)) {
     assert(old_gen()->is_in(addr),
@@ -739,6 +756,19 @@ void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
   }
 }
 
+void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs) {
+  // Check if Info level is enabled, since os::trace_page_sizes() logs on Info level.
+  if(log_is_enabled(Info, pagesize)) {
+    const size_t page_size = rs.page_size();
+    os::trace_page_sizes("Heap",
+                         MinHeapSize,
+                         reserved_heap_size,
+                         page_size,
+                         rs.base(),
+                         rs.size());
+  }
+}
+
 void ParallelScavengeHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const PSHeapSummary& heap_summary = create_ps_heap_summary();
   gc_tracer->report_gc_heap_summary(when, heap_summary);
@@ -764,14 +794,6 @@ void ParallelScavengeHeap::resize_young_gen(size_t eden_size,
 void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
   // Delegate the resize to the generation.
   _old_gen->resize(desired_free_space);
-}
-
-ParallelScavengeHeap::ParStrongRootsScope::ParStrongRootsScope() {
-  // nothing particular
-}
-
-ParallelScavengeHeap::ParStrongRootsScope::~ParStrongRootsScope() {
-  // nothing particular
 }
 
 #ifndef PRODUCT

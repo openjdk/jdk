@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class ClhsdbJdis {
             cmds = new ArrayList<String>();
 
             String cmdStr = null;
-            String[] parts = output.split("LingeredApp.main");
+            String[] parts = output.split("LingeredApp.steadyState");
             String[] tokens = parts[1].split(" ");
             for (String token : tokens) {
                 if (token.contains("Method")) {
@@ -72,7 +72,7 @@ public class ClhsdbJdis {
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put(cmdStr, List.of(
-                    "public static void main\\(java\\.lang\\.String\\[\\]\\)",
+                    "private static void steadyState\\(java\\.lang\\.Object\\)",
                     "Holder Class",
                     "public class jdk.test.lib.apps.LingeredApp @",
                     "public class jdk\\.test\\.lib\\.apps\\.LingeredApp @",
@@ -93,4 +93,3 @@ public class ClhsdbJdis {
         System.out.println("Test PASSED");
     }
 }
-

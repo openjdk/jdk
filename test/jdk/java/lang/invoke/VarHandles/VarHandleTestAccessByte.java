@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1230,127 +1230,127 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         for (int i : new int[]{-1, Integer.MIN_VALUE, 10, 11, Integer.MAX_VALUE}) {
             final int ci = i;
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte x = (byte) vh.get(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.set(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte x = (byte) vh.getVolatile(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setVolatile(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte x = (byte) vh.getAcquire(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setRelease(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte x = (byte) vh.getOpaque(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setOpaque(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.compareAndSet(array, ci, (byte)0x01, (byte)0x23);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte r = (byte) vh.compareAndExchange(array, ci, (byte)0x23, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte r = (byte) vh.compareAndExchangeAcquire(array, ci, (byte)0x23, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte r = (byte) vh.compareAndExchangeRelease(array, ci, (byte)0x23, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetPlain(array, ci, (byte)0x01, (byte)0x23);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, (byte)0x01, (byte)0x23);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetAcquire(array, ci, (byte)0x01, (byte)0x23);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetRelease(array, ci, (byte)0x01, (byte)0x23);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndSet(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndSetAcquire(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndSetRelease(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndAdd(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndAddAcquire(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndAddRelease(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndBitwiseOr(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndBitwiseOrAcquire(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndBitwiseOrRelease(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndBitwiseAnd(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndBitwiseAndAcquire(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndBitwiseAndRelease(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndBitwiseXor(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndBitwiseXorAcquire(array, ci, (byte)0x01);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 byte o = (byte) vh.getAndBitwiseXorRelease(array, ci, (byte)0x01);
             });
         }

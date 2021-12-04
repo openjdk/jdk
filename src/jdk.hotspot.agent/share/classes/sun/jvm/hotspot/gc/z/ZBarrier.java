@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,14 +41,7 @@ class ZBarrier {
     }
 
     private static Address relocate(Address addr) {
-        ZHeap heap = zheap();
-        if (heap.is_relocating(addr)) {
-            // Forward
-            return heap.relocate_object(addr);
-        }
-
-        // Remap
-        return ZAddress.good(addr);
+        return zheap().relocate_object(addr);
     }
 
     private static ZHeap zheap() {
@@ -57,14 +50,7 @@ class ZBarrier {
     }
 
     private static Address remap(Address addr) {
-        ZHeap heap = zheap();
-        if (heap.is_relocating(addr)) {
-            // Forward
-            return heap.forward_object(addr);
-        }
-
-        // Remap
-        return ZAddress.good(addr);
+        return zheap().remapObject(addr);
     }
 
     private static Address relocate_or_remap(Address addr) {

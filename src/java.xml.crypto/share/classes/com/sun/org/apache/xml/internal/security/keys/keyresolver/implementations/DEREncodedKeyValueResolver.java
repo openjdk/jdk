@@ -47,21 +47,16 @@ public class DEREncodedKeyValueResolver extends KeyResolverSpi {
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(DEREncodedKeyValueResolver.class);
 
-    /** {{@inheritDoc}}. */
-    public boolean engineCanResolve(Element element, String baseURI, StorageResolver storage) {
+    /** {@inheritDoc} */
+    @Override
+    protected boolean engineCanResolve(Element element, String baseURI, StorageResolver storage) {
         return XMLUtils.elementIsInSignature11Space(element, Constants._TAG_DERENCODEDKEYVALUE);
     }
 
-    /** {{@inheritDoc}}. */
-    public PublicKey engineLookupAndResolvePublicKey(Element element, String baseURI, StorageResolver storage)
+    /** {@inheritDoc} */
+    @Override
+    protected PublicKey engineResolvePublicKey(Element element, String baseURI, StorageResolver storage, boolean secureValidation)
         throws KeyResolverException {
-
-        LOG.debug("Can I resolve {}", element.getTagName());
-
-        if (!engineCanResolve(element, baseURI, storage)) {
-            return null;
-        }
-
         try {
             DEREncodedKeyValue derKeyValue = new DEREncodedKeyValue(element, baseURI);
             return derKeyValue.getPublicKey();
@@ -72,24 +67,33 @@ public class DEREncodedKeyValueResolver extends KeyResolverSpi {
         return null;
     }
 
-    /** {{@inheritDoc}}. */
-    public X509Certificate engineLookupResolveX509Certificate(Element element, String baseURI, StorageResolver storage)
+    /** {@inheritDoc} */
+    @Override
+    protected X509Certificate engineResolveX509Certificate(Element element, String baseURI, StorageResolver storage, boolean secureValidation)
         throws KeyResolverException {
         return null;
     }
 
-    /** {{@inheritDoc}}. */
-    public SecretKey engineLookupAndResolveSecretKey(Element element, String baseURI, StorageResolver storage)
+    /** {@inheritDoc} */
+    @Override
+    protected SecretKey engineResolveSecretKey(Element element, String baseURI, StorageResolver storage, boolean secureValidation)
         throws KeyResolverException {
         return null;
     }
 
-    /** {{@inheritDoc}}. */
-    public PrivateKey engineLookupAndResolvePrivateKey(Element element, String baseURI, StorageResolver storage)
+    /** {@inheritDoc} */
+    @Override
+    public PrivateKey engineLookupAndResolvePrivateKey(Element element, String baseURI, StorageResolver storage, boolean secureValidation)
         throws KeyResolverException {
         return null;
     }
 
-
+    /** {@inheritDoc} */
+    @Override
+    protected PrivateKey engineResolvePrivateKey(
+        Element element, String baseURI, StorageResolver storage, boolean secureValidation
+    ) {
+        return null;
+    }
 
 }

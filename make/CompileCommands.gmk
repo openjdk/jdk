@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,6 @@ $(OUTPUTDIR)/compile_commands.json: $(wildcard $(MAKESUPPORT_OUTPUTDIR)/compile-
 	$(RM) $@
 	$(FIND) $(MAKESUPPORT_OUTPUTDIR)/compile-commands/ -name \*.json | \
 	    $(SORT) | $(XARGS) $(CAT) >> $@.tmp
-	$(if $(FIXPATH),$(FIXPATH) $(AWK) 'BEGIN { \
-	    tmpfile = substr(ARGV[2],2); \
-	    cmd = "$(CP) " "\047" tmpfile "\047" " $@.tmp"; \
-	    system(cmd); \
-	}' -- @$@.tmp)
 	$(SED) -e '1s/^/[\$(NEWLINE)/' -e '$(DOLLAR)s/,\s\{0,\}$(DOLLAR)/\$(NEWLINE)]/' $@.tmp > $@
 	$(RM) $@.tmp
 

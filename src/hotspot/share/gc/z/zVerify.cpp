@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zNMethod.hpp"
@@ -40,6 +41,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/thread.hpp"
@@ -216,7 +218,7 @@ public:
   virtual void do_thread(Thread* thread) {
     thread->oops_do_no_frames(_cl, NULL);
 
-    JavaThread* const jt = thread->as_Java_thread();
+    JavaThread* const jt = JavaThread::cast(thread);
     if (!jt->has_last_Java_frame()) {
       return;
     }
@@ -251,13 +253,16 @@ public:
   }
 };
 
-void ZVerify::roots_concurrent_strong(bool verify_fixed) {
+void ZVerify::roots_strong(bool verify_fixed) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+  assert(!ZResurrection::is_blocked(), "Invalid phase");
+
   ZVerifyRootClosure cl(verify_fixed);
   ZVerifyCLDClosure cld_cl(&cl);
   ZVerifyThreadClosure thread_cl(&cl);
   ZVerifyNMethodClosure nm_cl(&cl, verify_fixed);
 
-  ZConcurrentRootsIterator iter(ClassLoaderData::_claim_none);
+  ZRootsIterator iter(ClassLoaderData::_claim_none);
   iter.apply(&cl,
              &cld_cl,
              &thread_cl,
@@ -265,29 +270,12 @@ void ZVerify::roots_concurrent_strong(bool verify_fixed) {
 }
 
 void ZVerify::roots_weak() {
-  AlwaysTrueClosure is_alive;
-  ZVerifyRootClosure cl(true /* verify_fixed */);
-  ZWeakRootsIterator iter;
-  iter.apply(&is_alive, &cl);
-}
-
-void ZVerify::roots_concurrent_weak() {
-  ZVerifyRootClosure cl(true /* verify_fixed */);
-  ZConcurrentWeakRootsIterator iter;
-  iter.apply(&cl);
-}
-
-void ZVerify::roots(bool verify_concurrent_strong, bool verify_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
-  if (ZVerifyRoots) {
-    roots_concurrent_strong(verify_concurrent_strong);
-    if (verify_weaks) {
-      roots_weak();
-      roots_concurrent_weak();
-    }
-  }
+  ZVerifyRootClosure cl(true /* verify_fixed */);
+  ZWeakRootsIterator iter;
+  iter.apply(&cl);
 }
 
 void ZVerify::objects(bool verify_weaks) {
@@ -295,34 +283,40 @@ void ZVerify::objects(bool verify_weaks) {
   assert(ZGlobalPhase == ZPhaseMarkCompleted, "Invalid phase");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
-  if (ZVerifyObjects) {
-    ZVerifyOopClosure cl(verify_weaks);
-    ObjectToOopClosure object_cl(&cl);
-    ZHeap::heap()->object_iterate(&object_cl, verify_weaks);
-  }
-}
-
-void ZVerify::roots_and_objects(bool verify_concurrent_strong, bool verify_weaks) {
-  roots(verify_concurrent_strong, verify_weaks);
-  objects(verify_weaks);
+  ZVerifyOopClosure cl(verify_weaks);
+  ObjectToOopClosure object_cl(&cl);
+  ZHeap::heap()->object_iterate(&object_cl, verify_weaks);
 }
 
 void ZVerify::before_zoperation() {
   // Verify strong roots
   ZStatTimerDisable disable;
-  roots(false /* verify_concurrent_strong */, false /* verify_weaks */);
+  if (ZVerifyRoots) {
+    roots_strong(false /* verify_fixed */);
+  }
 }
 
 void ZVerify::after_mark() {
   // Verify all strong roots and strong references
   ZStatTimerDisable disable;
-  roots_and_objects(true /* verify_concurrent_strong*/, false /* verify_weaks */);
+  if (ZVerifyRoots) {
+    roots_strong(true /* verify_fixed */);
+  }
+  if (ZVerifyObjects) {
+    objects(false /* verify_weaks */);
+  }
 }
 
 void ZVerify::after_weak_processing() {
   // Verify all roots and all references
   ZStatTimerDisable disable;
-  roots_and_objects(true /* verify_concurrent_strong*/, true /* verify_weaks */);
+  if (ZVerifyRoots) {
+    roots_strong(true /* verify_fixed */);
+    roots_weak();
+  }
+  if (ZVerifyObjects) {
+    objects(true /* verify_weaks */);
+  }
 }
 
 template <bool Map>
@@ -387,10 +381,10 @@ class StackWatermarkProcessingMark {
 
 public:
   StackWatermarkProcessingMark(Thread* thread) :
-    _rnhm(),
-    _hm(thread),
-    _pem(thread),
-    _rm(thread) { }
+      _rnhm(),
+      _hm(thread),
+      _pem(thread),
+      _rm(thread) {}
 };
 
 void ZVerify::verify_frame_bad(const frame& fr, RegisterMap& register_map) {

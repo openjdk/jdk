@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing.event;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.EventListener;
+
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -268,6 +274,7 @@ public class EventListenerList implements Serializable {
     }
 
     // Serialization support.
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Object[] lList = listenerList;
         s.defaultWriteObject();
@@ -276,7 +283,7 @@ public class EventListenerList implements Serializable {
         for (int i = 0; i < lList.length; i+=2) {
             Class<?> t = (Class)lList[i];
             EventListener l = (EventListener)lList[i+1];
-            if ((l!=null) && (l instanceof Serializable)) {
+            if (l instanceof Serializable) {
                 s.writeObject(t.getName());
                 s.writeObject(l);
             }
@@ -285,6 +292,7 @@ public class EventListenerList implements Serializable {
         s.writeObject(null);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         listenerList = NULL_ARRAY;

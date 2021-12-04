@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,8 +174,7 @@ public class SimpleOCSPServer {
                     issuerAlias + " not found");
             }
         }
-
-        sigAlgId = AlgorithmId.get("Sha256withRSA");
+        sigAlgId = AlgorithmId.get(SignatureUtil.getDefaultSigAlgForKey(signerKey));
         respId = new ResponderId(signerCert.getSubjectX500Principal());
         listenAddress = addr;
         listenPort = port;
@@ -703,21 +702,21 @@ public class SimpleOCSPServer {
                     OutputStream out = ocspSocket.getOutputStream()) {
                 peerSockAddr =
                         (InetSocketAddress)ocspSocket.getRemoteSocketAddress();
-                log("Received incoming connection from " + peerSockAddr);
                 String[] headerTokens = readLine(in).split(" ");
                 LocalOcspRequest ocspReq = null;
                 LocalOcspResponse ocspResp = null;
                 ResponseStatus respStat = ResponseStatus.INTERNAL_ERROR;
                 try {
                     if (headerTokens[0] != null) {
+                        log("Received incoming HTTP " + headerTokens[0] +
+                                " from " + peerSockAddr);
                         switch (headerTokens[0]) {
                             case "POST":
-                                    ocspReq = parseHttpOcspPost(in);
+                                ocspReq = parseHttpOcspPost(in);
                                 break;
                             case "GET":
-                                // req = parseHttpOcspGet(in);
-                                // TODO implement the GET parsing
-                                throw new IOException("GET method unsupported");
+                                ocspReq = parseHttpOcspGet(headerTokens);
+                                break;
                             default:
                                 respStat = ResponseStatus.MALFORMED_REQUEST;
                                 throw new IOException("Not a GET or POST");
@@ -837,6 +836,30 @@ public class SimpleOCSPServer {
             } else {
                 return null;
             }
+        }
+
+        /**
+         * Parse the incoming HTTP GET of an OCSP Request.
+         *
+         * @param headerTokens the individual String tokens from the first
+         * line of the HTTP GET.
+         *
+         * @return the OCSP Request as a {@code LocalOcspRequest}
+         *
+         * @throws IOException if there are network related issues or problems
+         * occur during parsing of the OCSP request.
+         * @throws CertificateException if one or more of the certificates in
+         * the OCSP request cannot be read/parsed.
+         */
+        private LocalOcspRequest parseHttpOcspGet(String[] headerTokens)
+                throws IOException, CertificateException {
+            // We have already established headerTokens[0] to be "GET".
+            // We should have the URL-encoded base64 representation of the
+            // OCSP request in headerTokens[1].  We need to strip any leading
+            // "/" off before decoding.
+            return new LocalOcspRequest(Base64.getMimeDecoder().decode(
+                    URLDecoder.decode(headerTokens[1].replaceAll("/", ""),
+                            "UTF-8")));
         }
 
         /**
@@ -1324,13 +1347,14 @@ public class SimpleOCSPServer {
             basicORItemStream.write(tbsResponseBytes);
 
             try {
-                sigAlgId.derEncode(basicORItemStream);
-
                 // Create the signature
-                Signature sig = Signature.getInstance(sigAlgId.getName());
-                sig.initSign(signerKey);
+                Signature sig = SignatureUtil.fromKey(
+                        sigAlgId.getName(), signerKey, (Provider)null);
                 sig.update(tbsResponseBytes);
                 signature = sig.sign();
+                // Rewrite signAlg, RSASSA-PSS needs some parameters.
+                sigAlgId = SignatureUtil.fromSignature(sig, signerKey);
+                sigAlgId.derEncode(basicORItemStream);
                 basicORItemStream.putBitString(signature);
             } catch (GeneralSecurityException exc) {
                 err(exc);

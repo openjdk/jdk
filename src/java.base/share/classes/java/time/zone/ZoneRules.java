@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,10 +259,12 @@ public final class ZoneRules implements Serializable {
         }
 
         // last rules
-        if (lastRules.size() > 16) {
+        Object[] temp = lastRules.toArray();
+        ZoneOffsetTransitionRule[] rulesArray = Arrays.copyOf(temp, temp.length, ZoneOffsetTransitionRule[].class);
+        if (rulesArray.length > 16) {
             throw new IllegalArgumentException("Too many transition rules");
         }
-        this.lastRules = lastRules.toArray(new ZoneOffsetTransitionRule[lastRules.size()]);
+        this.lastRules = rulesArray;
     }
 
     /**
@@ -428,7 +430,10 @@ public final class ZoneRules implements Serializable {
     }
 
     /**
-     * Reads the state from the stream.
+     * Reads the state from the stream. The 1,024 limit to the lengths
+     * of stdTrans and savSize is intended to be the size well enough
+     * to accommodate the max number of transitions in current tzdb data
+     * (203 for Asia/Tehran).
      *
      * @param in  the input stream, not null
      * @return the created object, not null
@@ -436,6 +441,9 @@ public final class ZoneRules implements Serializable {
      */
     static ZoneRules readExternal(DataInput in) throws IOException, ClassNotFoundException {
         int stdSize = in.readInt();
+        if (stdSize > 1024) {
+            throw new InvalidObjectException("Too many transitions");
+        }
         long[] stdTrans = (stdSize == 0) ? EMPTY_LONG_ARRAY
                                          : new long[stdSize];
         for (int i = 0; i < stdSize; i++) {
@@ -446,6 +454,9 @@ public final class ZoneRules implements Serializable {
             stdOffsets[i] = Ser.readOffset(in);
         }
         int savSize = in.readInt();
+        if (savSize > 1024) {
+            throw new InvalidObjectException("Too many saving offsets");
+        }
         long[] savTrans = (savSize == 0) ? EMPTY_LONG_ARRAY
                                          : new long[savSize];
         for (int i = 0; i < savSize; i++) {
@@ -456,6 +467,9 @@ public final class ZoneRules implements Serializable {
             savOffsets[i] = Ser.readOffset(in);
         }
         int ruleSize = in.readByte();
+        if (ruleSize > 16) {
+            throw new InvalidObjectException("Too many transition rules");
+        }
         ZoneOffsetTransitionRule[] rules = (ruleSize == 0) ?
             EMPTY_LASTRULES : new ZoneOffsetTransitionRule[ruleSize];
         for (int i = 0; i < ruleSize; i++) {
@@ -1025,15 +1039,12 @@ public final class ZoneRules implements Serializable {
         if (this == otherRules) {
            return true;
         }
-        if (otherRules instanceof ZoneRules) {
-            ZoneRules other = (ZoneRules) otherRules;
-            return Arrays.equals(standardTransitions, other.standardTransitions) &&
-                    Arrays.equals(standardOffsets, other.standardOffsets) &&
-                    Arrays.equals(savingsInstantTransitions, other.savingsInstantTransitions) &&
-                    Arrays.equals(wallOffsets, other.wallOffsets) &&
-                    Arrays.equals(lastRules, other.lastRules);
-        }
-        return false;
+        return (otherRules instanceof ZoneRules other)
+                && Arrays.equals(standardTransitions, other.standardTransitions)
+                && Arrays.equals(standardOffsets, other.standardOffsets)
+                && Arrays.equals(savingsInstantTransitions, other.savingsInstantTransitions)
+                && Arrays.equals(wallOffsets, other.wallOffsets)
+                && Arrays.equals(lastRules, other.lastRules);
     }
 
     /**

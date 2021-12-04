@@ -3,5 +3,5 @@
     static void [[TEST]]$vectorteststype$Masked(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb,
                                           IntFunction<boolean[]> fm) {
 [[KERNEL]]
-        assertArraysEquals(a, b, r, mask, $vectorteststype$::[[TEST]]);
+        assertArraysEquals(r, a, b, mask, $vectorteststype$::[[TEST]]);
     }

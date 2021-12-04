@@ -47,7 +47,7 @@ import java.util.Hashtable;
  * @author Rosanna Lee
  */
 
-abstract public class GenericURLDirContext extends GenericURLContext
+public abstract class GenericURLDirContext extends GenericURLContext
 implements DirContext {
 
     protected GenericURLDirContext(Hashtable<?,?> env) {

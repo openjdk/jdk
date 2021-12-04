@@ -34,8 +34,13 @@
   // Method entries
   static int normal_entry(Method* method, intptr_t UNUSED, TRAPS);
   static int native_entry(Method* method, intptr_t UNUSED, TRAPS);
-  static int accessor_entry(Method* method, intptr_t UNUSED, TRAPS);
+  static int getter_entry(Method* method, intptr_t UNUSED, TRAPS);
+  static int setter_entry(Method* method, intptr_t UNUSED, TRAPS);
   static int empty_entry(Method* method, intptr_t UNUSED, TRAPS);
+  static int Reference_get_entry(Method* method, intptr_t UNUSED, TRAPS);
+
+  // Stack watermark machinery
+  static void stack_watermark_unwind_check(JavaThread* thread);
 
  public:
   // Main loop of normal_entry

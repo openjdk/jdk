@@ -37,6 +37,7 @@ public:
   static void at_after_gc();
   static void at_after_marking_started();
   static void at_before_marking_completed();
+  static void at_after_reference_processing_started();
 };
 
 #endif // SHARE_GC_Z_ZBREAKPOINT_HPP

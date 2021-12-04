@@ -31,10 +31,20 @@
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true CheckSessionContext
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=false CheckSessionContext
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true CheckSessionContext
+ * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=true CheckSessionContext
  *
  */
 
+import javax.net.ssl.SSLSession;
+
 public class CheckSessionContext {
+
+    static void toHex(byte[] id) {
+        for (byte b : id) {
+            System.out.printf("%02X ", b);
+        }
+        System.out.println();
+    }
 
     public static void main(String[] args) throws Exception {
         TLSBase.Server server = new TLSBase.Server();
@@ -45,6 +55,17 @@ public class CheckSessionContext {
             throw new Exception("Context was null");
         } else {
             System.out.println("Context was found");
+        }
+        SSLSession ss = server.getSession(client1);
+        System.out.println(ss);
+        byte[] id = ss.getId();
+        System.out.print("id = ");
+        toHex(id);
+        System.out.println("ss.getSessionContext().getSession(id) = " + ss.getSessionContext().getSession(id));
+        if (ss.getSessionContext().getSession(id) != null) {
+            id = ss.getSessionContext().getSession(id).getId();
+            System.out.print("id = ");
+            toHex(id);
         }
         server.close(client1);
         client1.close();

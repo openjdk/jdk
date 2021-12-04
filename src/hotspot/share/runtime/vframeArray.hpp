@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/monitorChunk.hpp"
+#include "runtime/registerMap.hpp"
 #include "utilities/growableArray.hpp"
 
 // A vframeArray is an array used for momentarily storing off stack Java method activations

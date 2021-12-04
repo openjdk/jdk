@@ -225,7 +225,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     private static class SupportedSignatureAlgorithmConstraints
                                     implements AlgorithmConstraints {
         // supported signature algorithms
-        private String[] supportedAlgorithms;
+        private final String[] supportedAlgorithms;
 
         SupportedSignatureAlgorithmConstraints(String[] supportedAlgorithms) {
             if (supportedAlgorithms != null) {

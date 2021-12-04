@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,6 +419,10 @@ Form::CallType InstructForm::is_ideal_call() const {
   idx = 0;
   if(_matrule->find_type("CallLeafNoFP",idx))     return Form::JAVA_LEAF;
   idx = 0;
+  if(_matrule->find_type("CallLeafVector",idx))   return Form::JAVA_LEAF;
+  idx = 0;
+  if(_matrule->find_type("CallNative",idx))       return Form::JAVA_NATIVE;
+  idx = 0;
 
   return Form::invalid_type;
 }
@@ -762,6 +766,11 @@ int InstructForm::memory_operand(FormDict &globals) const {
 bool InstructForm::captures_bottom_type(FormDict &globals) const {
   if (_matrule && _matrule->_rChild &&
       (!strcmp(_matrule->_rChild->_opType,"CastPP")       ||  // new result type
+       !strcmp(_matrule->_rChild->_opType,"CastDD")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastFF")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastII")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastLL")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastVV")       ||
        !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
        !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
        !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
@@ -779,6 +788,9 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN") ||
 #endif
+       !strcmp(_matrule->_rChild->_opType,"StrInflatedCopy") ||
+       !strcmp(_matrule->_rChild->_opType,"VectorCmpMasked")||
+       !strcmp(_matrule->_rChild->_opType,"VectorMaskGen")||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN"))) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
@@ -1130,6 +1142,9 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   }
   else if( is_ideal_call() == Form::JAVA_LEAF ) {
     return "MachCallLeafNode";
+  }
+  else if( is_ideal_call() == Form::JAVA_NATIVE ) {
+    return "MachCallNativeNode";
   }
   else if (is_ideal_return()) {
     return "MachReturnNode";
@@ -1514,6 +1529,7 @@ Predicate *InstructForm::build_predicate() {
   for( DictI i(&names); i.test(); ++i ) {
     uintptr_t cnt = (uintptr_t)i._value;
     if( cnt > 1 ) {             // Need a predicate at all?
+      int path_bitmask = 0;
       assert( cnt == 2, "Unimplemented" );
       // Handle many pairs
       if( first ) first=0;
@@ -1524,10 +1540,10 @@ Predicate *InstructForm::build_predicate() {
       // Add predicate to working buffer
       sprintf(s,"/*%s*/(",(char*)i._key);
       s += strlen(s);
-      mnode->build_instr_pred(s,(char*)i._key,0);
+      mnode->build_instr_pred(s,(char*)i._key, 0, path_bitmask, 0);
       s += strlen(s);
       strcpy(s," == "); s += strlen(s);
-      mnode->build_instr_pred(s,(char*)i._key,1);
+      mnode->build_instr_pred(s,(char*)i._key, 1, path_bitmask, 0);
       s += strlen(s);
       strcpy(s,")"); s += strlen(s);
     }
@@ -2265,6 +2281,7 @@ bool OperandForm::is_bound_register() const {
   if (strcmp(name, "RegD") == 0) size = 2;
   if (strcmp(name, "RegL") == 0) size = 2;
   if (strcmp(name, "RegN") == 0) size = 1;
+  if (strcmp(name, "RegVectMask") == 0) size = globalAD->get_preproc_def("AARCH64") ? 1 : 2;
   if (strcmp(name, "VecX") == 0) size = 4;
   if (strcmp(name, "VecY") == 0) size = 8;
   if (strcmp(name, "VecZ") == 0) size = 16;
@@ -3411,21 +3428,35 @@ void MatchNode::count_instr_names( Dict &names ) {
 //------------------------------build_instr_pred-------------------------------
 // Build a path to 'name' in buf.  Actually only build if cnt is zero, so we
 // can skip some leading instances of 'name'.
-int MatchNode::build_instr_pred( char *buf, const char *name, int cnt ) {
+int MatchNode::build_instr_pred( char *buf, const char *name, int cnt, int path_bitmask, int level) {
   if( _lChild ) {
-    if( !cnt ) strcpy( buf, "_kids[0]->" );
-    cnt = _lChild->build_instr_pred( buf+strlen(buf), name, cnt );
-    if( cnt < 0 ) return cnt;   // Found it, all done
+    cnt = _lChild->build_instr_pred(buf, name, cnt, path_bitmask, level+1);
+    if( cnt < 0 ) {
+      return cnt;   // Found it, all done
+    }
   }
   if( _rChild ) {
-    if( !cnt ) strcpy( buf, "_kids[1]->" );
-    cnt = _rChild->build_instr_pred( buf+strlen(buf), name, cnt );
-    if( cnt < 0 ) return cnt;   // Found it, all done
+    path_bitmask |= 1 << level;
+    cnt = _rChild->build_instr_pred( buf, name, cnt, path_bitmask, level+1);
+    if( cnt < 0 ) {
+      return cnt;   // Found it, all done
+    }
   }
   if( !_lChild && !_rChild ) {  // Found a leaf
     // Wrong name?  Give up...
     if( strcmp(name,_name) ) return cnt;
-    if( !cnt ) strcpy(buf,"_leaf");
+    if( !cnt )  {
+      for(int i = 0; i < level; i++) {
+        int kid = path_bitmask &  (1 << i);
+        if (0 == kid) {
+          strcpy( buf, "_kids[0]->" );
+        } else {
+          strcpy( buf, "_kids[1]->" );
+        }
+        buf += 10;
+      }
+      strcpy( buf, "_leaf" );
+    }
     return cnt-1;
   }
   return cnt;
@@ -3484,7 +3515,8 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
-    "StoreVector", "LoadVector", "LoadVectorGather", "StoreVectorScatter",
+    "StoreVector", "LoadVector", "LoadVectorMasked", "StoreVectorMasked",
+    "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
     "LoadPLocked",
     "StorePConditional", "StoreIConditional", "StoreLConditional",
@@ -3788,52 +3820,77 @@ bool MatchNode::equivalent(FormDict &globals, MatchNode *mNode2) {
   return true;
 }
 
-//-------------------------- has_commutative_op -------------------------------
+//-------------------------- count_commutative_op -------------------------------
 // Recursively check for commutative operations with subtree operands
 // which could be swapped.
 void MatchNode::count_commutative_op(int& count) {
   static const char *commut_op_list[] = {
     "AddI","AddL","AddF","AddD",
-    "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
     "AndI","AndL",
-    "AndV",
     "MaxI","MinI","MaxF","MinF","MaxD","MinD",
-    "MaxV", "MinV",
     "MulI","MulL","MulF","MulD",
-    "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
-    "MinV","MaxV",
     "OrI","OrL",
-    "OrV",
-    "XorI","XorL",
-    "XorV"
+    "XorI","XorL"
   };
-  int cnt = sizeof(commut_op_list)/sizeof(char*);
 
-  if( _lChild && _rChild && (_lChild->_lChild || _rChild->_lChild) ) {
+  static const char *commut_vector_op_list[] = {
+    "AddVB", "AddVS", "AddVI", "AddVL", "AddVF", "AddVD",
+    "MulVB", "MulVS", "MulVI", "MulVL", "MulVF", "MulVD",
+    "AndV", "OrV", "XorV",
+    "MaxV", "MinV"
+  };
+
+  if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
     // Don't swap if right operand is an immediate constant.
     bool is_const = false;
-    if( _rChild->_lChild == NULL && _rChild->_rChild == NULL ) {
+    if (_rChild->_lChild == NULL && _rChild->_rChild == NULL) {
       FormDict &globals = _AD.globalNames();
       const Form *form = globals[_rChild->_opType];
-      if ( form ) {
-        OperandForm  *oper = form->is_operand();
-        if( oper && oper->interface_type(globals) == Form::constant_interface )
+      if (form) {
+        OperandForm *oper = form->is_operand();
+        if (oper && oper->interface_type(globals) == Form::constant_interface)
           is_const = true;
       }
     }
-    if( !is_const ) {
-      for( int i=0; i<cnt; i++ ) {
-        if( strcmp(_opType, commut_op_list[i]) == 0 ) {
-          count++;
-          _commutative_id = count; // id should be > 0
+
+    if (!is_const) {
+      int scalar_cnt = sizeof(commut_op_list)/sizeof(char*);
+      int vector_cnt = sizeof(commut_vector_op_list)/sizeof(char*);
+      bool matched = false;
+
+      // Check the commutative vector op first. It's noncommutative if
+      // the current node is a masked vector op, since a mask value
+      // is added to the original vector node's input list and the original
+      // first two inputs are packed into one BinaryNode. So don't swap
+      // if one of the operands is a BinaryNode.
+      for (int i = 0; i < vector_cnt; i++) {
+        if (strcmp(_opType, commut_vector_op_list[i]) == 0) {
+          if (strcmp(_lChild->_opType, "Binary") != 0 &&
+              strcmp(_rChild->_opType, "Binary") != 0) {
+            count++;
+            _commutative_id = count; // id should be > 0
+          }
+          matched = true;
           break;
+        }
+      }
+
+      // Then check the scalar op if the current op is not in
+      // the commut_vector_op_list.
+      if (!matched) {
+        for (int i = 0; i < scalar_cnt; i++) {
+          if (strcmp(_opType, commut_op_list[i]) == 0) {
+            count++;
+            _commutative_id = count; // id should be > 0
+            break;
+          }
         }
       }
     }
   }
-  if( _lChild )
+  if (_lChild)
     _lChild->count_commutative_op(count);
-  if( _rChild )
+  if (_rChild)
     _rChild->count_commutative_op(count);
 }
 
@@ -3943,7 +4000,7 @@ bool MatchRule::is_base_register(FormDict &globals) const {
          strcmp(opType,"RegL")==0 ||
          strcmp(opType,"RegF")==0 ||
          strcmp(opType,"RegD")==0 ||
-         strcmp(opType,"RegVMask")==0 ||
+         strcmp(opType,"RegVectMask")==0 ||
          strcmp(opType,"VecA")==0 ||
          strcmp(opType,"VecS")==0 ||
          strcmp(opType,"VecD")==0 ||
@@ -4059,6 +4116,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"AndReductionV")==0 ||
         strcmp(opType,"OrReductionV")==0 ||
         strcmp(opType,"XorReductionV")==0 ||
+        strcmp(opType,"MaskAll")==0 ||
         0 /* 0 to line up columns nicely */ )
       return 1;
   }
@@ -4088,6 +4146,7 @@ bool MatchRule::is_ideal_membar() const {
     !strcmp(_opType,"MemBarReleaseLock") ||
     !strcmp(_opType,"LoadFence" ) ||
     !strcmp(_opType,"StoreFence") ||
+    !strcmp(_opType,"StoreStoreFence") ||
     !strcmp(_opType,"MemBarVolatile") ||
     !strcmp(_opType,"MemBarCPUOrder") ||
     !strcmp(_opType,"MemBarStoreStore") ||
@@ -4152,7 +4211,6 @@ bool MatchRule::is_vector() const {
     "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
     "CMoveVD", "CMoveVF",
     "DivVF","DivVD",
-    "MinV","MaxV",
     "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
     "NegVF","NegVD","NegVI",
     "SqrtVD","SqrtVF",
@@ -4171,13 +4229,15 @@ bool MatchRule::is_vector() const {
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
     "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD",
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
-    "LoadVectorGather", "StoreVectorScatter",
+    "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
     "VectorRearrange","VectorLoadShuffle", "VectorLoadConst",
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
-    "VectorMaskWrapper", "VectorMaskCmp", "VectorReinterpret",
+    "VectorMaskWrapper", "VectorMaskCmp", "VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
     "FmaVD", "FmaVF","PopCountVI",
+    // Next are vector mask ops.
+    "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
     "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "ci/ciSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
@@ -89,7 +89,10 @@ void Parse::do_checkcast() {
     return;
   }
 
-  Node *res = gen_checkcast(obj, makecon(TypeKlassPtr::make(klass)) );
+  Node* res = gen_checkcast(obj, makecon(TypeKlassPtr::make(klass)));
+  if (stopped()) {
+    return;
+  }
 
   // Pop from stack AFTER gen_checkcast because it can uncommon trap and
   // the debug info has to be correct.
@@ -165,7 +168,7 @@ void Parse::array_store_check() {
   if (MonomorphicArrayCheck
       && !too_many_traps(Deoptimization::Reason_array_check)
       && !tak->klass_is_exact()
-      && tak != TypeKlassPtr::OBJECT) {
+      && tak != TypeInstKlassPtr::OBJECT) {
       // Regarding the fourth condition in the if-statement from above:
       //
       // If the compiler has determined that the type of array 'ary' (represented
@@ -242,7 +245,7 @@ void Parse::do_new() {
 
   // Should throw an InstantiationError?
   if (klass->is_abstract() || klass->is_interface() ||
-      klass->name() == ciSymbol::java_lang_Class() ||
+      klass->name() == ciSymbols::java_lang_Class() ||
       iter().is_unresolved_klass()) {
     uncommon_trap(Deoptimization::Reason_unhandled,
                   Deoptimization::Action_none,

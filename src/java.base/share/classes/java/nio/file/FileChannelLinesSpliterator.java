@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,11 @@ import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Spliterator;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.JavaNioAccess;
 
 /**
  * A file-based lines spliterator, leveraging a shared mapped byte buffer and
@@ -49,13 +53,13 @@ import java.util.function.Consumer;
  *
  * <p>
  * When the root spliterator is first split a mapped byte buffer will be created
- * over the file for it's size that was observed when the stream was created.
+ * over the file for its size that was observed when the stream was created.
  * Thus a mapped byte buffer is only required for parallel stream execution.
  * Sub-spliterators will share that mapped byte buffer.  Splitting will use the
  * mapped byte buffer to find the closest line feed characters(s) to the left or
  * right of the mid-point of covered range of bytes of the file.  If a line feed
  * is found then the spliterator is split with returned spliterator containing
- * the identified line feed characters(s) at the end of it's covered range of
+ * the identified line feed characters(s) at the end of its covered range of
  * bytes.
  *
  * <p>
@@ -84,19 +88,31 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     // Non-null when traversing
     private BufferedReader reader;
 
+    // Number of references to the shared mapped buffer.  Initialized to unity
+    // when the buffer is created by the root spliterator.  Incremented in the
+    // sub-spliterator constructor.  Decremented when 'buffer' transitions from
+    // non-null to null, either when traversing begins or if the spliterator is
+    // closed before traversal.  If the count is zero after decrementing, then
+    // the buffer is unmapped.
+    private final AtomicInteger bufRefCount;
+
     FileChannelLinesSpliterator(FileChannel fc, Charset cs, int index, int fence) {
         this.fc = fc;
         this.cs = cs;
         this.index = index;
         this.fence = fence;
+        this.bufRefCount = new AtomicInteger();
     }
 
-    private FileChannelLinesSpliterator(FileChannel fc, Charset cs, int index, int fence, ByteBuffer buffer) {
+    private FileChannelLinesSpliterator(FileChannel fc, Charset cs, int index,
+        int fence, ByteBuffer buffer, AtomicInteger bufRefCount) {
         this.fc = fc;
-        this.buffer = buffer;
         this.cs = cs;
         this.index = index;
         this.fence = fence;
+        this.buffer = buffer;
+        this.bufRefCount = bufRefCount;
+        this.bufRefCount.incrementAndGet();
     }
 
     @Override
@@ -167,7 +183,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     private String readLine() {
         if (reader == null) {
             reader = getBufferedReader();
-            buffer = null;
+            unmap();
         }
 
         try {
@@ -178,13 +194,6 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     }
 
     private ByteBuffer getMappedByteBuffer() {
-        // TODO can the mapped byte buffer be explicitly unmapped?
-        // It's possible, via a shared-secret mechanism, when either
-        // 1) the spliterator starts traversing, although traversal can
-        //    happen concurrently for mulitple spliterators, so care is
-        //    needed in this case; or
-        // 2) when the stream is closed using some shared holder to pass
-        //    the mapped byte buffer when it is created.
         try {
             return fc.map(FileChannel.MapMode.READ_ONLY, 0, fence);
         } catch (IOException e) {
@@ -201,6 +210,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         ByteBuffer b;
         if ((b = buffer) == null) {
             b = buffer = getMappedByteBuffer();
+            bufRefCount.set(1);
         }
 
         final int hi = fence, lo = index;
@@ -246,7 +256,8 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
         // The left spliterator will have the line-separator at the end
         return (mid > lo && mid < hi)
-               ? new FileChannelLinesSpliterator(fc, cs, lo, index = mid, b)
+               ? new FileChannelLinesSpliterator(fc, cs, lo, index = mid,
+                                                 b, bufRefCount)
                : null;
     }
 
@@ -266,5 +277,23 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     @Override
     public int characteristics() {
         return Spliterator.ORDERED | Spliterator.NONNULL;
+    }
+
+    private void unmap() {
+        if (buffer != null) {
+            ByteBuffer b = buffer;
+            buffer = null;
+            if (bufRefCount.decrementAndGet() == 0) {
+                JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
+                try {
+                    nioAccess.unmapper(b).unmap();
+                } catch (UnsupportedOperationException ignored) {
+                }
+            }
+        }
+    }
+
+    void close() {
+        unmap();
     }
 }

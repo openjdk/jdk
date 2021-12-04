@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 #include "ci/ciObject.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+
+// Not inlined to preserve visibility of ciMetaData vtable symbol. Required by SA.
+bool ciMetadata::is_classless() const { return false; }
 
 // ------------------------------------------------------------------
 // ciMetadata::print

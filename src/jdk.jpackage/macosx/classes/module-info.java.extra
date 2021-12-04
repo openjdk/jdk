@@ -25,7 +25,6 @@
 
 provides jdk.jpackage.internal.Bundler with
     jdk.jpackage.internal.MacAppBundler,
-    jdk.jpackage.internal.MacAppStoreBundler,
     jdk.jpackage.internal.MacDmgBundler,
     jdk.jpackage.internal.MacPkgBundler;
 

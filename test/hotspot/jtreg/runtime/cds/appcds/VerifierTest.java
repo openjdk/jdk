@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ public class VerifierTest implements Opcodes {
 
     static final String ERR =
         "ERROR: class VerifierTestC was loaded unexpectedly";
-    static final String MAP_FAIL =
-        "shared archive file was created with less restrictive verification setting";
+    static final String MAP_FAIL_VFY_LOCAL =
+        "shared archive file's BytecodeVerificationLocal setting";
     static final String VFY_ERR = "java.lang.VerifyError";
     static final String PASS_RESULT = "Hi, how are you?";
     static final String VFY_INFO_MESSAGE =
@@ -132,7 +132,7 @@ public class VerifierTest implements Opcodes {
 
             // Dump app/ext with -Xverify:remote
             {"app",   VFY_REMOTE, VFY_REMOTE, VFY_ERR},
-            {"app",   VFY_REMOTE, VFY_ALL,    MAP_FAIL},
+            {"app",   VFY_REMOTE, VFY_ALL,    MAP_FAIL_VFY_LOCAL},
             {"app",   VFY_REMOTE, VFY_NONE,   ERR },
             // Dump app/ext with -Xverify:all
             {"app",   VFY_ALL,    VFY_REMOTE, VFY_ERR },
@@ -140,11 +140,11 @@ public class VerifierTest implements Opcodes {
             {"app",   VFY_ALL,    VFY_NONE,   ERR },
             // Dump app/ext with verifier turned off
             {"app",   VFY_NONE,   VFY_REMOTE, VFY_ERR},
-            {"app",   VFY_NONE,   VFY_ALL,    MAP_FAIL},
+            {"app",   VFY_NONE,   VFY_ALL,    MAP_FAIL_VFY_LOCAL},
             {"app",   VFY_NONE,   VFY_NONE,   ERR },
             // Dump sys only with -Xverify:remote
             {"noApp", VFY_REMOTE, VFY_REMOTE, VFY_ERR},
-            {"noApp", VFY_REMOTE, VFY_ALL,    VFY_ERR},
+            {"noApp", VFY_REMOTE, VFY_ALL,    MAP_FAIL_VFY_LOCAL},
             {"noApp", VFY_REMOTE, VFY_NONE,   ERR},
             // Dump sys only with -Xverify:all
             {"noApp", VFY_ALL, VFY_REMOTE,    VFY_ERR},
@@ -152,7 +152,7 @@ public class VerifierTest implements Opcodes {
             {"noApp", VFY_ALL, VFY_NONE,      ERR},
             // Dump sys only with verifier turned off
             {"noApp", VFY_NONE, VFY_REMOTE,   VFY_ERR},
-            {"noApp", VFY_NONE, VFY_ALL,      VFY_ERR},
+            {"noApp", VFY_NONE, VFY_ALL,      MAP_FAIL_VFY_LOCAL},
             {"noApp", VFY_NONE, VFY_NONE,     ERR},
         };
 
@@ -245,7 +245,7 @@ public class VerifierTest implements Opcodes {
 
             // Dump app/ext with -Xverify:remote
             {"app",   VFY_REMOTE, VFY_REMOTE, PASS_RESULT},
-            {"app",   VFY_REMOTE, VFY_ALL,    MAP_FAIL},
+            {"app",   VFY_REMOTE, VFY_ALL,    MAP_FAIL_VFY_LOCAL},
             {"app",   VFY_REMOTE, VFY_NONE,   PASS_RESULT },
             // Dump app/ext with -Xverify:all
             {"app",   VFY_ALL,    VFY_REMOTE, PASS_RESULT },
@@ -253,7 +253,7 @@ public class VerifierTest implements Opcodes {
             {"app",   VFY_ALL,    VFY_NONE,   PASS_RESULT },
             // Dump app/ext with verifier turned off
             {"app",   VFY_NONE,   VFY_REMOTE, PASS_RESULT},
-            {"app",   VFY_NONE,   VFY_ALL,    MAP_FAIL},
+            {"app",   VFY_NONE,   VFY_ALL,    MAP_FAIL_VFY_LOCAL},
             {"app",   VFY_NONE,   VFY_NONE,   PASS_RESULT },
         };
         String prev_dump_setting = "";

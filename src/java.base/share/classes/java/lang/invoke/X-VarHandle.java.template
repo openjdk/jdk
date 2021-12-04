@@ -830,7 +830,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.get$Type$Volatile(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase);
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase);
         }
 
         @ForceInline
@@ -842,7 +842,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             UNSAFE.put$Type$Volatile(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
 
@@ -855,7 +855,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.get$Type$Opaque(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase);
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase);
         }
 
         @ForceInline
@@ -867,7 +867,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             UNSAFE.put$Type$Opaque(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
 
@@ -880,7 +880,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.get$Type$Acquire(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase);
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase);
         }
 
         @ForceInline
@@ -892,7 +892,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             UNSAFE.put$Type$Release(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
 #if[CAS]
@@ -906,7 +906,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.compareAndSet$Type$(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
@@ -920,7 +920,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.compareAndExchange$Type$(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
@@ -934,7 +934,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.compareAndExchange$Type$Acquire(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
@@ -948,7 +948,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.compareAndExchange$Type$Release(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
@@ -962,7 +962,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.weakCompareAndSet$Type$Plain(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
@@ -976,7 +976,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.weakCompareAndSet$Type$(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
@@ -990,7 +990,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.weakCompareAndSet$Type$Acquire(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
@@ -1004,7 +1004,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.weakCompareAndSet$Type$Release(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
@@ -1018,7 +1018,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.getAndSet$Type$(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
 
@@ -1031,7 +1031,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.getAndSet$Type$Acquire(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
 
@@ -1044,7 +1044,7 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.getAndSet$Type$Release(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     {#if[Object]?runtimeTypeCheck(handle, array, value):value});
         }
 #end[CAS]
@@ -1055,7 +1055,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndAdd$Type$(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     value);
         }
 
@@ -1064,7 +1064,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndAdd$Type$Acquire(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     value);
         }
 
@@ -1073,7 +1073,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndAdd$Type$Release(array,
-                    (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                     value);
         }
 #end[AtomicAdd]
@@ -1084,7 +1084,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndBitwiseOr$Type$(array,
-                                       (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                                       (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                                        value);
         }
 
@@ -1093,7 +1093,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndBitwiseOr$Type$Release(array,
-                                       (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                                       (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                                        value);
         }
 
@@ -1102,7 +1102,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndBitwiseOr$Type$Acquire(array,
-                                       (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                                       (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                                        value);
         }
 
@@ -1111,7 +1111,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndBitwiseAnd$Type$(array,
-                                       (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                                       (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                                        value);
         }
 
@@ -1120,7 +1120,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndBitwiseAnd$Type$Release(array,
-                                       (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                                       (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                                        value);
         }
 
@@ -1129,7 +1129,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndBitwiseAnd$Type$Acquire(array,
-                                       (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                                       (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                                        value);
         }
 
@@ -1138,7 +1138,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndBitwiseXor$Type$(array,
-                                       (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                                       (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                                        value);
         }
 
@@ -1147,7 +1147,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndBitwiseXor$Type$Release(array,
-                                       (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                                       (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                                        value);
         }
 
@@ -1156,7 +1156,7 @@ final class VarHandle$Type$s {
             Array handle = (Array)ob;
             $type$[] array = ($type$[]) oarray;
             return UNSAFE.getAndBitwiseXor$Type$Acquire(array,
-                                       (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                                       (((long) Preconditions.checkIndex(index, array.length, Preconditions.AIOOBE_FORMATTER)) << handle.ashift) + handle.abase,
                                        value);
         }
 #end[Bitwise]

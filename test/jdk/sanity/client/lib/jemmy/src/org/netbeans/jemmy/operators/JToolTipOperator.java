@@ -320,9 +320,8 @@ public class JToolTipOperator extends JComponentOperator {
         try {
             return stateWaiter.waitAction(null);
         } catch (InterruptedException e) {
-           Thread.currentThread().interrupt();
-           throw (new JemmyException("Waiting of " + waitable.getDescription()
-               + " state has been interrupted!"));
+           throw new JemmyException("Waiting of " + waitable.getDescription()
+               + " state has been interrupted!");
         }
     }
 

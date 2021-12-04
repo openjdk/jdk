@@ -33,7 +33,6 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::aarch64::_get_previous_fp_entry = NULL;
 address StubRoutines::aarch64::_get_previous_sp_entry = NULL;
 
 address StubRoutines::aarch64::_f2i_fixup = NULL;

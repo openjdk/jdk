@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -96,7 +94,7 @@ public class TestPrintXML {
 
         // Verify that all data was written correctly
         List<RecordedEvent> events = RecordingFile.readAllEvents(recordingFile);
-        Collections.sort(events, (e1, e2) -> e1.getEndTime().compareTo(e2.getEndTime()));
+        Collections.sort(events, new EndTicksComparator());
         Iterator<RecordedEvent> it = events.iterator();
         for (XMLEvent xmlEvent : handler.events) {
             RecordedEvent re = it.next();

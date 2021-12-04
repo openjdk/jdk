@@ -35,6 +35,7 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
@@ -426,7 +427,7 @@ void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrier
   Register pre_val_reg = stub->pre_val()->as_register();
 
   if (stub->do_load()) {
-    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/, false /*unaligned*/);
+    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/);
   }
 
   __ z_ltgr(Z_R1_scratch, pre_val_reg); // Pass oop in Z_R1_scratch to Runtime1::g1_pre_barrier_slow_id.

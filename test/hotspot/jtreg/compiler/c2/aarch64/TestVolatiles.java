@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,28 +75,28 @@ public class TestVolatiles {
         // i.e. GC type plus GC conifg
         switch(testType) {
         case "G1":
-            argcount = 8;
+            argcount = 9;
             procArgs = new String[argcount];
             procArgs[argcount - 2] = "-XX:+UseG1GC";
             break;
         case "Parallel":
-            argcount = 8;
+            argcount = 9;
             procArgs = new String[argcount];
             procArgs[argcount - 2] = "-XX:+UseParallelGC";
             break;
         case "Serial":
-            argcount = 8;
+            argcount = 9;
             procArgs = new String[argcount];
             procArgs[argcount - 2] = "-XX:+UseSerialGC";
             break;
         case "Shenandoah":
-            argcount = 9;
+            argcount = 10;
             procArgs = new String[argcount];
             procArgs[argcount - 3] = "-XX:+UnlockExperimentalVMOptions";
             procArgs[argcount - 2] = "-XX:+UseShenandoahGC";
             break;
         case "ShenandoahIU":
-            argcount = 10;
+            argcount = 11;
             procArgs = new String[argcount];
             procArgs[argcount - 4] = "-XX:+UnlockExperimentalVMOptions";
             procArgs[argcount - 3] = "-XX:+UseShenandoahGC";
@@ -113,11 +114,12 @@ public class TestVolatiles {
         // disable the transform.
 
         procArgs[0] = "-XX:+UseCompressedOops";
-        procArgs[1] = "-XX:-TieredCompilation";
-        procArgs[2] = "-XX:+PrintOptoAssembly";
-        procArgs[3] = "-XX:CompileCommand=compileonly," + fullclassname + "::" + "test*";
-        procArgs[4] = "--add-exports";
-        procArgs[5] = "java.base/jdk.internal.misc=ALL-UNNAMED";
+        procArgs[1] = "-XX:-BackgroundCompilation";
+        procArgs[2] = "-XX:-TieredCompilation";
+        procArgs[3] = "-XX:+PrintOptoAssembly";
+        procArgs[4] = "-XX:CompileCommand=compileonly," + fullclassname + "::" + "test*";
+        procArgs[5] = "--add-exports";
+        procArgs[6] = "java.base/jdk.internal.misc=ALL-UNNAMED";
         procArgs[argcount - 1] = fullclassname;
 
         runtest(classname, testType, true, procArgs);

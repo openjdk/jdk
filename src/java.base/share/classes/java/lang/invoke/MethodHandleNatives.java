@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 
 package java.lang.invoke;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.VM;
 import jdk.internal.ref.CleanerFactory;
 import sun.invoke.util.Wrapper;
 
@@ -205,18 +204,18 @@ class MethodHandleNatives {
     }
     static String refKindName(byte refKind) {
         assert(refKindIsValid(refKind));
-        switch (refKind) {
-        case REF_getField:          return "getField";
-        case REF_getStatic:         return "getStatic";
-        case REF_putField:          return "putField";
-        case REF_putStatic:         return "putStatic";
-        case REF_invokeVirtual:     return "invokeVirtual";
-        case REF_invokeStatic:      return "invokeStatic";
-        case REF_invokeSpecial:     return "invokeSpecial";
-        case REF_newInvokeSpecial:  return "newInvokeSpecial";
-        case REF_invokeInterface:   return "invokeInterface";
-        default:                    return "REF_???";
-        }
+        return switch (refKind) {
+            case REF_getField         -> "getField";
+            case REF_getStatic        -> "getStatic";
+            case REF_putField         -> "putField";
+            case REF_putStatic        -> "putStatic";
+            case REF_invokeVirtual    -> "invokeVirtual";
+            case REF_invokeStatic     -> "invokeStatic";
+            case REF_invokeSpecial    -> "invokeSpecial";
+            case REF_newInvokeSpecial -> "newInvokeSpecial";
+            case REF_invokeInterface  -> "invokeInterface";
+            default -> "REF_???";
+        };
     }
 
     private static native int getNamedCon(int which, Object[] name);
@@ -247,6 +246,7 @@ class MethodHandleNatives {
         return true;
     }
     static {
+        VM.setJavaLangInvokeInited();
         assert(verifyConstants());
     }
 
@@ -257,7 +257,6 @@ class MethodHandleNatives {
      * The JVM is linking an invokedynamic instruction.  Create a reified call site for it.
      */
     static MemberName linkCallSite(Object callerObj,
-                                   int indexInCP,
                                    Object bootstrapMethodObj,
                                    Object nameObj, Object typeObj,
                                    Object staticArguments,
@@ -316,7 +315,6 @@ class MethodHandleNatives {
 
     // this implements the upcall from the JVM, MethodHandleNatives.linkDynamicConstant:
     static Object linkDynamicConstant(Object callerObj,
-                                      int indexInCP,
                                       Object bootstrapMethodObj,
                                       Object nameObj, Object typeObj,
                                       Object staticArguments) {
@@ -577,7 +575,7 @@ class MethodHandleNatives {
             // Fall back to lambda form linkage if guard method is not available
             // TODO Optionally log fallback ?
         }
-        return Invokers.varHandleInvokeLinkerMethod(ak, mtype);
+        return Invokers.varHandleInvokeLinkerMethod(mtype);
     }
     static String getVarHandleGuardMethodName(MethodType guardType) {
         String prefix = "guard_";
@@ -666,11 +664,7 @@ class MethodHandleNatives {
 
     static boolean canBeCalledVirtual(MemberName mem) {
         assert(mem.isInvocable());
-        switch (mem.getName()) {
-        case "getContextClassLoader":
-            return canBeCalledVirtual(mem, java.lang.Thread.class);
-        }
-        return false;
+        return mem.getName().equals("getContextClassLoader") && canBeCalledVirtual(mem, java.lang.Thread.class);
     }
 
     static boolean canBeCalledVirtual(MemberName symbolicRef, Class<?> definingClass) {
@@ -679,14 +673,5 @@ class MethodHandleNatives {
         if (symbolicRef.isStatic() || symbolicRef.isPrivate())  return false;
         return (definingClass.isAssignableFrom(symbolicRefClass) ||  // Msym overrides Mdef
                 symbolicRefClass.isInterface());                     // Mdef implements Msym
-    }
-
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-    /*
-     * A convenient method for LambdaForms to get the class data of a given class.
-     * LambdaForms cannot use condy via MethodHandles.classData
-     */
-    static Object classData(Class<?> c) {
-        return JLA.classData(c);
     }
 }

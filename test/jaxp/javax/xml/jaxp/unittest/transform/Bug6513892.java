@@ -42,7 +42,7 @@ import org.w3c.dom.Document;
  * @test
  * @bug 6513892
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6513892
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6513892
  * @run testng/othervm transform.Bug6513892
  * @summary Test the output encoding of the transform is the same as that of the redirect extension.
  */

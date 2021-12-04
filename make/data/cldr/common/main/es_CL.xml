@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -176,28 +176,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
 				<dateFormats>
 					<dateFormatLength type="medium">
 						<dateFormat>
@@ -270,11 +248,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
-		<fields>
-			<field type="dayperiod">
-				<displayName draft="contributed">a. m./p. m.</displayName>
-			</field>
-		</fields>
 		<timeZoneNames>
 			<metazone type="Chile">
 				<short>
@@ -322,6 +295,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="electric-ohm">
 				<unitPattern count="one">{0} ohmio</unitPattern>
 				<unitPattern count="other">{0} ohmios</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="electric-volt">
+				<displayName draft="contributed">voltios</displayName>
+			</unit>
+			<unit type="power-watt">
+				<displayName draft="contributed">vatios</displayName>
 			</unit>
 		</unitLength>
 		<durationUnit type="hms">

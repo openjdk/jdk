@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,22 @@ public abstract class Tool implements Runnable {
 
    public Tool(JVMDebugger d) {
       jvmDebugger = d;
+   }
+
+   public Tool(HotSpotAgent agent) {
+      this.agent = agent;
+      if (agent == null) {
+          jvmDebugger = null;
+          debugeeType = -1;
+      } else {
+          jvmDebugger = agent.getDebugger();
+          debugeeType = switch (agent.getStartupMode()) {
+              case HotSpotAgent.PROCESS_MODE   -> DEBUGEE_PID;
+              case HotSpotAgent.CORE_FILE_MODE -> DEBUGEE_CORE;
+              case HotSpotAgent.REMOTE_MODE    -> DEBUGEE_REMOTE;
+              default -> throw new IllegalStateException("Invalid attach mode");
+          };
+      }
    }
 
    public String getName() {

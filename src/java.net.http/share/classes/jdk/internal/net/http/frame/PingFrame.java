@@ -53,11 +53,10 @@ public class PingFrame extends Http2Frame {
 
     @Override
     public String flagAsString(int flag) {
-        switch (flag) {
-        case ACK:
-            return "ACK";
-        }
-        return super.flagAsString(flag);
+        return switch (flag) {
+            case ACK -> "ACK";
+            default -> super.flagAsString(flag);
+        };
     }
 
     public byte[] getData() {

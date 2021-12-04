@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
+import java.util.Arrays;
 
 import sun.security.jca.JCAUtil;
 
@@ -104,7 +105,9 @@ public class XDHKeyPairGenerator extends KeyPairGeneratorSpi {
 
         byte[] privateKey = ops.generatePrivate(random);
         // computePublic may modify the private key, so clone it first
-        BigInteger publicKey = ops.computePublic(privateKey.clone());
+        byte[] cloned = privateKey.clone();
+        BigInteger publicKey = ops.computePublic(cloned);
+        Arrays.fill(cloned, (byte)0);
 
         try {
             return new KeyPair(
@@ -113,6 +116,8 @@ public class XDHKeyPairGenerator extends KeyPairGeneratorSpi {
             );
         } catch (InvalidKeyException ex) {
             throw new ProviderException(ex);
+        } finally {
+            Arrays.fill(privateKey, (byte)0);
         }
     }
 

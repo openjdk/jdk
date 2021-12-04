@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -34,7 +34,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
@@ -374,7 +373,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
   // Now we do a depth first traversal of the class hierachry. The class_stack will
   // maintain the list of classes we still need to process. Start things off
   // by priming it with java.lang.Object.
-  KlassInfoEntry* jlo_cie = cit.lookup(SystemDictionary::Object_klass());
+  KlassInfoEntry* jlo_cie = cit.lookup(vmClasses::Object_klass());
   assert(jlo_cie != NULL, "could not lookup java.lang.Object");
   class_stack.push(jlo_cie);
 
@@ -474,12 +473,6 @@ void KlassHierarchy::print_class(outputStream* st, KlassInfoEntry* cie, bool pri
   if (klass->is_interface()) {
     st->print(" (intf)");
   }
-  // Special treatment for generated core reflection accessor classes: print invocation target.
-  if (ReflectionAccessorImplKlassHelper::is_generated_accessor(klass)) {
-    st->print(" (invokes: ");
-    ReflectionAccessorImplKlassHelper::print_invocation_target(st, klass);
-    st->print(")");
-  }
   st->print("\n");
 
   // Print any interfaces the class has.
@@ -561,7 +554,7 @@ void ParHeapInspectTask::work(uint worker_id) {
   _poi->object_iterate(&ric, worker_id);
   missed_count = ric.missed_count();
   {
-    MutexLocker x(&_mutex);
+    MutexLocker x(&_mutex, Mutex::_no_safepoint_check_flag);
     merge_success = _shared_cit->merge(&cit);
   }
   if (merge_success) {
@@ -577,25 +570,20 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
   if (parallel_thread_num > 1) {
     ResourceMark rm;
 
-    WorkGang* gang = Universe::heap()->safepoint_workers();
-    if (gang != NULL) {
-      // The GC provided a WorkGang to be used during a safepoint.
+    WorkerThreads* workers = Universe::heap()->safepoint_workers();
+    if (workers != NULL) {
+      // The GC provided a WorkerThreads to be used during a safepoint.
 
-      // Can't run with more threads than provided by the WorkGang.
-      WithUpdatedActiveWorkers update_and_restore(gang, parallel_thread_num);
+      // Can't run with more threads than provided by the WorkerThreads.
+      const uint capped_parallel_thread_num = MIN2(parallel_thread_num, workers->max_workers());
+      WithActiveWorkers with_active_workers(workers, capped_parallel_thread_num);
 
-      ParallelObjectIterator* poi = Universe::heap()->parallel_object_iterator(gang->active_workers());
-      if (poi != NULL) {
-        // The GC supports parallel object iteration.
-
-        ParHeapInspectTask task(poi, cit, filter);
-        // Run task with the active workers.
-        gang->run_task(&task);
-
-        delete poi;
-        if (task.success()) {
-          return task.missed_count();
-        }
+      ParallelObjectIterator poi(workers->active_workers());
+      ParHeapInspectTask task(&poi, cit, filter);
+      // Run task with the active workers.
+      workers->run_task(&task);
+      if (task.success()) {
+        return task.missed_count();
       }
     }
   }

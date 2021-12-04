@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,15 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "classfile/altHashing.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/archiveBuilder.hpp"
-#include "memory/dynamicArchive.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -91,7 +91,14 @@ static volatile bool   _has_items_to_clean = false;
 
 
 static volatile bool _alt_hash = false;
+
+#ifdef USE_LIBRARY_BASED_TLS_ONLY
 static volatile bool _lookup_shared_first = false;
+#else
+// "_lookup_shared_first" can get highly contended with many cores if multiple threads
+// are updating "lookup success history" in a global shared variable. If built-in TLS is available, use it.
+static THREAD_LOCAL bool _lookup_shared_first = false;
+#endif
 
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = NULL;
@@ -132,11 +139,11 @@ public:
     }
   }
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size, Value const& value) {
+  static void* allocate_node(void* context, size_t size, Value const& value) {
     SymbolTable::item_added();
     return AllocateHeap(size, mtSymbol);
   }
-  static void free_node(void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value const& value) {
     // We get here because #1 some threads lost a race to insert a newly created Symbol
     // or #2 we're cleaning up unused symbol.
     // If #1, then the symbol can be either permanent,
@@ -275,6 +282,13 @@ void SymbolTable::symbols_do(SymbolClosure *cl) {
   _local_table->do_safepoint_scan(sd);
 }
 
+// Call function for all symbols in shared table. Used by -XX:+PrintSharedArchiveAndExit
+void SymbolTable::shared_symbols_do(SymbolClosure *cl) {
+  SharedSymbolIterator iter(cl);
+  _shared_table.iterate(&iter);
+  _dynamic_shared_table.iterate(&iter);
+}
+
 Symbol* SymbolTable::lookup_dynamic(const char* name,
                                     int len, unsigned int hash) {
   Symbol* sym = do_lookup(name, len, hash);
@@ -348,7 +362,6 @@ Symbol* SymbolTable::new_symbol(const Symbol* sym, int begin, int end) {
 
 class SymbolTableLookup : StackObj {
 private:
-  Thread* _thread;
   uintx _hash;
   int _len;
   const char* _str;
@@ -446,7 +459,7 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
 void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
                               int names_count, const char** names, int* lengths,
                               int* cp_indices, unsigned int* hashValues) {
-  // Note that c_heap will be true for non-strong hidden classes and unsafe anonymous classes
+  // Note that c_heap will be true for non-strong hidden classes.
   // even if their loader is the boot loader because they will have a different cld.
   bool c_heap = !loader_data->is_the_null_class_loader_data();
   for (int i = 0; i < names_count; i++) {
@@ -466,17 +479,17 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   bool clean_hint = false;
   bool rehash_warning = false;
   Symbol* sym = NULL;
-  Thread* THREAD = Thread::current();
+  Thread* current = Thread::current();
 
   do {
     // Callers have looked up the symbol once, insert the symbol.
     sym = allocate_symbol(name, len, heap);
-    if (_local_table->insert(THREAD, lookup, sym, &rehash_warning, &clean_hint)) {
+    if (_local_table->insert(current, lookup, sym, &rehash_warning, &clean_hint)) {
       break;
     }
     // In case another thread did a concurrent add, return value already in the table.
     // This could fail if the symbol got deleted concurrently, so loop back until success.
-    if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
+    if (_local_table->get(current, lookup, stg, &rehash_warning)) {
       sym = stg.get_res_sym();
       break;
     }
@@ -585,6 +598,7 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
 #if INCLUDE_CDS
 void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
                                            CompactHashtableWriter* writer) {
+  ArchiveBuilder* builder = ArchiveBuilder::current();
   int len = symbols->length();
   for (int i = 0; i < len; i++) {
     Symbol* sym = ArchiveBuilder::get_relocated_symbol(symbols->at(i));
@@ -592,10 +606,7 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");
     sym->set_permanent();
-    if (DynamicDumpSharedSpaces) {
-      sym = DynamicArchive::buffer_to_target(sym);
-    }
-    writer->add(fixed_hash, MetaspaceShared::object_delta_u4(sym));
+    writer->add(fixed_hash, builder->buffer_to_offset_u4((address)sym));
   }
 }
 
@@ -604,21 +615,11 @@ size_t SymbolTable::estimate_size_for_archive() {
 }
 
 void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {
-  CompactHashtableWriter writer(int(_items_count),
-                                &MetaspaceShared::stats()->symbol);
+  CompactHashtableWriter writer(int(_items_count), ArchiveBuilder::symbol_stats());
   copy_shared_symbol_table(symbols, &writer);
   if (!DynamicDumpSharedSpaces) {
     _shared_table.reset();
     writer.dump(&_shared_table, "symbol");
-
-    // Verify the written shared table is correct -- at this point,
-    // vmSymbols has already been relocated to point to the archived
-    // version of the Symbols.
-    Symbol* sym = vmSymbols::java_lang_Object();
-    const char* name = (const char*)sym->bytes();
-    int len = sym->utf8_length();
-    unsigned int hash = hash_symbol(name, len, _alt_hash);
-    assert(sym == _shared_table.lookup(name, hash, len), "sanity");
   } else {
     _dynamic_shared_table.reset();
     writer.dump(&_dynamic_shared_table, "symbol");
@@ -886,15 +887,4 @@ void SymboltableDCmd::execute(DCmdSource source, TRAPS) {
   VM_DumpHashtable dumper(output(), VM_DumpHashtable::DumpSymbols,
                          _verbose.value());
   VMThread::execute(&dumper);
-}
-
-int SymboltableDCmd::num_arguments() {
-  ResourceMark rm;
-  SymboltableDCmd* dcmd = new SymboltableDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }

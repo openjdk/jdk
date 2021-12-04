@@ -65,13 +65,12 @@ public class PushPromiseFrame extends HeaderFrame {
 
     @Override
     public String flagAsString(int flag) {
-        switch (flag) {
-            case PADDED:
-                return "PADDED";
-            case END_HEADERS:
-                return "END_HEADERS";
-        }
-        return super.flagAsString(flag);
+        return switch (flag) {
+            case PADDED      -> "PADDED";
+            case END_HEADERS -> "END_HEADERS";
+
+            default -> super.flagAsString(flag);
+        };
     }
 
     public void setPadLength(int padLength) {

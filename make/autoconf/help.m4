@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 AC_DEFUN_ONCE([HELP_SETUP_DEPENDENCY_HELP],
 [
-  AC_CHECK_PROGS(PKGHANDLER, zypper apt-get yum brew port pkgutil pkgadd)
+  UTIL_LOOKUP_PROGS(PKGHANDLER, zypper apt-get yum brew port pkgutil pkgadd pacman)
 ])
 
 AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
@@ -38,26 +38,26 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
     HELP_MSG="OpenJDK distributions are available at http://jdk.java.net/."
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     cygwin_help $MISSING_DEPENDENCY
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    msys_help $MISSING_DEPENDENCY
   else
     PKGHANDLER_COMMAND=
 
     case $PKGHANDLER in
-      apt-get)
+      *apt-get)
         apt_help     $MISSING_DEPENDENCY ;;
-      yum)
+      *yum)
         yum_help     $MISSING_DEPENDENCY ;;
-      brew)
+      *brew)
         brew_help    $MISSING_DEPENDENCY ;;
-      port)
+      *port)
         port_help    $MISSING_DEPENDENCY ;;
-      pkgutil)
+      *pkgutil)
         pkgutil_help $MISSING_DEPENDENCY ;;
-      pkgadd)
+      *pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      zypper)
+      *zypper)
         zypper_help  $MISSING_DEPENDENCY ;;
+      *pacman)
+        pacman_help  $MISSING_DEPENDENCY ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -80,11 +80,15 @@ cygwin_help() {
       PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P make )"
       HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
       ;;
+    i686-w64-mingw32-gcc)
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P gcc-core i686-w64-mingw32-gcc-core mingw64-i686-glib2.0 )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
+    x86_64-w64-mingw32-gcc)
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P gcc-core x86_64-w64-mingw32-gcc-core mingw64-x86_64-glib2.0 )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
   esac
-}
-
-msys_help() {
-  PKGHANDLER_COMMAND=""
 }
 
 apt_help() {
@@ -165,6 +169,17 @@ brew_help() {
   esac
 }
 
+pacman_help() {
+  case $1 in
+    unzip)
+      PKGHANDLER_COMMAND="sudo pacman -S unzip" ;;
+    zip)
+      PKGHANDLER_COMMAND="sudo pacman -S zip" ;;
+    make)
+      PKGHANDLER_COMMAND="sudo pacman -S make" ;;
+  esac
+}
+
 port_help() {
   PKGHANDLER_COMMAND=""
 }
@@ -238,6 +253,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
 
   printf "\n"
   printf "Configuration summary:\n"
+  printf "* Name:           $CONF_NAME\n"
   printf "* Debug level:    $DEBUG_LEVEL\n"
   printf "* HS debug level: $HOTSPOT_DEBUG_LEVEL\n"
   printf "* JVM variants:   $JVM_VARIANTS\n"
@@ -256,20 +272,17 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "\n"
   printf "Tools summary:\n"
   if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-    printf "* Environment:    $WINDOWS_ENV_VENDOR version $WINDOWS_ENV_VERSION. Windows version $WINDOWS_VERSION"
-    if test "x$WINDOWS_ENV_ROOT_PATH" != "x"; then
-      printf ". Root at $WINDOWS_ENV_ROOT_PATH"
-    fi
-    printf "\n"
+    printf "* Environment:    %s version %s; windows version %s; prefix \"%s\"; root \"%s\"\n" \
+        "$WINENV_VENDOR" "$WINENV_VERSION" "$WINDOWS_VERSION" "$WINENV_PREFIX" "$WINENV_ROOT"
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
   printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
-  printf "* C Compiler:     Version $CC_VERSION_NUMBER (at $CC)\n"
-  printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at $CXX)\n"
+  printf "* C Compiler:     Version $CC_VERSION_NUMBER (at ${CC#"$FIXPATH "})\n"
+  printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at ${CXX#"$FIXPATH "})\n"
 
   printf "\n"
   printf "Build performance summary:\n"
-  printf "* Cores to use:   $JOBS\n"
+  printf "* Build jobs:     $JOBS\n"
   printf "* Memory limit:   $MEMORY_SIZE MB\n"
   if test "x$CCACHE_STATUS" != "x"; then
     printf "* ccache status:  $CCACHE_STATUS\n"

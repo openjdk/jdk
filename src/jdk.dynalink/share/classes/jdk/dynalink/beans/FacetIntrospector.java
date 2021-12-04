@@ -96,6 +96,12 @@ abstract class FacetIntrospector {
     abstract Map<String, MethodHandle> getInnerClassGetters();
 
     /**
+     * Returns getter methods for record components.
+     * @return getter methods for record components.
+     */
+    abstract Collection<Method> getRecordComponentGetters();
+
+    /**
      * Returns the fields for the class facet.
      * @return the fields for the class facet.
      */
@@ -140,7 +146,6 @@ abstract class FacetIntrospector {
     Collection<Method> getMethods() {
         return membersLookup.getMethods();
     }
-
 
     MethodHandle unreflectGetter(final Field field) {
         return editMethodHandle(Lookup.PUBLIC.unreflectGetter(field));

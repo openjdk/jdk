@@ -516,7 +516,7 @@ class NativeMovConstReg: public NativeInstruction {
 // The instruction sequence looks like this:
 //   iihf        %r1,$bits1              ; load offset for mem access
 //   iilf        %r1,$bits2
-//   [compress oop]                      ; optional, load only
+//   [compress oop]                      ; optional, store only
 //   load/store  %r2,0(%r1,%r2)          ; memory access
 
 class NativeMovRegMem;

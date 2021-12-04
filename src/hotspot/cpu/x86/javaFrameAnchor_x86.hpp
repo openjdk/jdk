@@ -70,8 +70,6 @@ public:
 
   address last_Java_pc(void)                     { return _last_Java_pc; }
 
-private:
-
   static ByteSize last_Java_fp_offset()          { return byte_offset_of(JavaFrameAnchor, _last_Java_fp); }
 
 public:

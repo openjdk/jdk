@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,11 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
@@ -199,7 +201,7 @@ class EnterInterpOnlyModeClosure : public HandshakeClosure {
  public:
   EnterInterpOnlyModeClosure() : HandshakeClosure("EnterInterpOnlyMode"), _completed(false) { }
   void do_thread(Thread* th) {
-    JavaThread* jt = th->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(th);
     JvmtiThreadState* state = jt->jvmti_thread_state();
 
     // Set up the current stack depth for later tracking
@@ -304,6 +306,9 @@ public:
 
   static void trace_changed(JvmtiThreadState *state, jlong now_enabled, jlong changed);
   static void trace_changed(jlong now_enabled, jlong changed);
+
+  static void flush_object_free_events(JvmtiEnvBase *env);
+  static void set_enabled_events_with_lock(JvmtiEnvBase *env, jlong now_enabled);
 };
 
 bool JvmtiEventControllerPrivate::_initialized = false;
@@ -394,6 +399,31 @@ JvmtiEventControllerPrivate::trace_changed(jlong now_enabled, jlong changed) {
 }
 
 
+void
+JvmtiEventControllerPrivate::flush_object_free_events(JvmtiEnvBase* env) {
+  // Some of the objects recorded by this env may have died.  If we're
+  // (potentially) changing the enable state for ObjectFree events, we
+  // need to ensure the env is cleaned up and any events that should
+  // be posted are posted.
+  JvmtiTagMap* tag_map = env->tag_map_acquire();
+  if (tag_map != NULL) {
+    tag_map->flush_object_free_events();
+  }
+}
+
+void
+JvmtiEventControllerPrivate::set_enabled_events_with_lock(JvmtiEnvBase* env, jlong now_enabled) {
+  // The state for ObjectFree events must be enabled or disabled
+  // under the TagMap lock, to allow pending object posting events to complete.
+  JvmtiTagMap* tag_map = env->tag_map_acquire();
+  if (tag_map != NULL) {
+    MutexLocker ml(tag_map->lock(), Mutex::_no_safepoint_check_flag);
+    env->env_event_enable()->_event_enabled.set_bits(now_enabled);
+  } else {
+    env->env_event_enable()->_event_enabled.set_bits(now_enabled);
+  }
+}
+
 // For the specified env: compute the currently truly enabled events
 // set external state accordingly.
 // Return value and set value must include all events.
@@ -427,8 +457,8 @@ JvmtiEventControllerPrivate::recompute_env_enabled(JvmtiEnvBase* env) {
     break;
   }
 
-  // will we really send these events to this env
-  env->env_event_enable()->_event_enabled.set_bits(now_enabled);
+  // Set/reset the event enabled under the tagmap lock.
+  set_enabled_events_with_lock(env, now_enabled);
 
   trace_changed(now_enabled, (now_enabled ^ was_enabled)  & ~THREAD_FILTERED_EVENT_BITS);
 
@@ -586,8 +616,18 @@ JvmtiEventControllerPrivate::recompute_enabled() {
   }
 
   // compute and set thread-filtered events
-  for (JvmtiThreadState *state = JvmtiThreadState::first(); state != NULL; state = state->next()) {
-    any_env_thread_enabled |= recompute_thread_enabled(state);
+  JvmtiThreadState *state = JvmtiThreadState::first();
+  if (state != nullptr) {
+    // If we have a JvmtiThreadState, then we've reached the point where
+    // threads can exist so create a ThreadsListHandle to protect them.
+    // The held JvmtiThreadState_lock prevents exiting JavaThreads from
+    // being removed from the JvmtiThreadState list we're about to walk
+    // so this ThreadsListHandle exists just to satisfy the lower level sanity
+    // checks that the target JavaThreads are protected.
+    ThreadsListHandle tlh;
+    for (; state != nullptr; state = state->next()) {
+      any_env_thread_enabled |= recompute_thread_enabled(state);
+    }
   }
 
   // set universal state (across all envs and threads)
@@ -684,6 +724,9 @@ void JvmtiEventControllerPrivate::set_event_callbacks(JvmtiEnvBase *env,
                                                       jint size_of_callbacks) {
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
   EC_TRACE(("[*] # set event callbacks"));
+
+  // May be changing the event handler for ObjectFree.
+  flush_object_free_events(env);
 
   env->set_event_callbacks(callbacks, size_of_callbacks);
   jlong enabled_bits = 0;
@@ -796,6 +839,10 @@ JvmtiEventControllerPrivate::set_user_enabled(JvmtiEnvBase *env, JavaThread *thr
   EC_TRACE(("[%s] # user %s event %s",
             thread==NULL? "ALL": JvmtiTrace::safe_get_thread_name(thread),
             enabled? "enabled" : "disabled", JvmtiTrace::event_name(event_type)));
+
+  if (event_type == JVMTI_EVENT_OBJECT_FREE) {
+    flush_object_free_events(env);
+  }
 
   if (thread == NULL) {
     env->env_event_enable()->set_user_enabled(event_type, enabled);

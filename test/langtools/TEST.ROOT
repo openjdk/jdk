@@ -15,10 +15,14 @@ keys=intermittent randomness
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=5.1 b1
+requiredVersion=6.1+1
 
 # Use new module options
 useNewOptions=true
 
 # Use --patch-module instead of -Xmodule:
 useNewPatchModule=true
+
+# Path to libraries in the topmost test directory. This is needed so @library
+# does not need ../../ notation to reach them
+external.lib.roots = ../../

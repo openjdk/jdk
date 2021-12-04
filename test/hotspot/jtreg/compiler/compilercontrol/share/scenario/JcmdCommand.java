@@ -37,6 +37,17 @@ public class JcmdCommand extends CompileCommand {
         this.jcmdType = jcmdType;
     }
 
+    public JcmdCommand(Command command,
+                       MethodDescriptor methodDescriptor,
+                       Scenario.Compiler compiler,
+                       Scenario.Type type,
+                       Scenario.JcmdType jcmdType,
+                       String argument) {
+        super(command, methodDescriptor, compiler, type, argument);
+        this.jcmdType = jcmdType;
+    }
+
+
     /**
      * Enchances parent's class method with the the JCMDtype printing:
      * {@code ... JCMDType: <jcmd_type>}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
+#include "compiler/oopMap.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -45,6 +47,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
@@ -62,11 +65,15 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/sweeper.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/xmlstream.hpp"
 #if INCLUDE_JVMCI
@@ -433,7 +440,6 @@ void nmethod::init_defaults() {
   _stack_traversal_mark       = 0;
   _load_reported              = false; // jvmti state
   _unload_reported            = false;
-  _is_far_code                = false; // nmethods are located in CodeCache
 
 #ifdef ASSERT
   _oops_are_stale             = false;
@@ -496,7 +502,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level
+  int comp_level,
+  const GrowableArrayView<RuntimeStub*>& native_invokers
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -518,6 +525,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
       CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
       + adjust_pcs_size(debug_info->pcs_size())
       + align_up((int)dependencies->size_in_bytes(), oopSize)
+      + align_up(checked_cast<int>(native_invokers.data_size_in_bytes()), oopSize)
       + align_up(handler_table->size_in_bytes()    , oopSize)
       + align_up(nul_chk_table->size_in_bytes()    , oopSize)
 #if INCLUDE_JVMCI
@@ -533,7 +541,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
             handler_table,
             nul_chk_table,
             compiler,
-            comp_level
+            comp_level,
+            native_invokers
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
@@ -621,7 +630,8 @@ nmethod::nmethod(
     scopes_data_offset       = _metadata_offset     + align_up(code_buffer->total_metadata_size(), wordSize);
     _scopes_pcs_offset       = scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
-    _handler_table_offset    = _dependencies_offset;
+    _native_invokers_offset     = _dependencies_offset;
+    _handler_table_offset    = _native_invokers_offset;
     _nul_chk_table_offset    = _handler_table_offset;
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset;
@@ -717,7 +727,8 @@ nmethod::nmethod(
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level
+  int comp_level,
+  const GrowableArrayView<RuntimeStub*>& native_invokers
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -794,7 +805,8 @@ nmethod::nmethod(
 
     _scopes_pcs_offset       = scopes_data_offset    + align_up(debug_info->data_size       (), oopSize);
     _dependencies_offset     = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
-    _handler_table_offset    = _dependencies_offset  + align_up((int)dependencies->size_in_bytes (), oopSize);
+    _native_invokers_offset  = _dependencies_offset  + align_up((int)dependencies->size_in_bytes(), oopSize);
+    _handler_table_offset    = _native_invokers_offset + align_up(checked_cast<int>(native_invokers.data_size_in_bytes()), oopSize);
     _nul_chk_table_offset    = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
@@ -816,6 +828,10 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
     debug_info->copy_to(this);
     dependencies->copy_to(this);
+    if (native_invokers.is_nonempty()) { // can not get address of zero-length array
+      // Copy native stubs
+      memcpy(native_invokers_begin(), native_invokers.adr_at(0), native_invokers.data_size_in_bytes());
+    }
     clear_unloading_state();
 
     Universe::heap()->register_nmethod(this);
@@ -921,6 +937,8 @@ void nmethod::maybe_print_nmethod(DirectiveSet* directive) {
 }
 
 void nmethod::print_nmethod(bool printmethod) {
+  run_nmethod_entry_barrier(); // ensure all embedded OOPs are valid before printing
+
   ttyLocker ttyl;  // keep the following output all in one block
   if (xtty != NULL) {
     xtty->begin_head("print_nmethod");
@@ -966,16 +984,20 @@ void nmethod::print_nmethod(bool printmethod) {
 #if defined(SUPPORT_DATA_STRUCTS)
   if (AbstractDisassembler::show_structs()) {
     methodHandle mh(Thread::current(), _method);
-    if (printmethod || PrintDebugInfo || CompilerOracle::has_option_string(mh, "PrintDebugInfo")) {
+    if (printmethod || PrintDebugInfo || CompilerOracle::has_option(mh, CompileCommand::PrintDebugInfo)) {
       print_scopes();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
-    if (printmethod || PrintRelocations || CompilerOracle::has_option_string(mh, "PrintRelocations")) {
+    if (printmethod || PrintRelocations || CompilerOracle::has_option(mh, CompileCommand::PrintRelocations)) {
       print_relocations();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
-    if (printmethod || PrintDependencies || CompilerOracle::has_option_string(mh, "PrintDependencies")) {
+    if (printmethod || PrintDependencies || CompilerOracle::has_option(mh, CompileCommand::PrintDependencies)) {
       print_dependencies();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+    }
+    if (printmethod && native_invokers_begin() < native_invokers_end()) {
+      print_native_invokers();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
     if (printmethod || PrintExceptionHandlers) {
@@ -1005,9 +1027,9 @@ inline void nmethod::initialize_immediate_oop(oop* dest, jobject handle) {
   if (handle == NULL ||
       // As a special case, IC oops are initialized to 1 or -1.
       handle == (jobject) Universe::non_oop_word()) {
-    (*dest) = (oop) handle;
+    *(void**)dest = handle;
   } else {
-    (*dest) = JNIHandles::resolve_non_null(handle);
+    *dest = JNIHandles::resolve_non_null(handle);
   }
 }
 
@@ -1035,6 +1057,12 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   Metadata** dest = metadata_begin();
   for (int index = 0 ; index < length; index++) {
     dest[index] = array->at(index);
+  }
+}
+
+void nmethod::free_native_invokers() {
+  for (RuntimeStub** it = native_invokers_begin(); it < native_invokers_end(); it++) {
+    CodeCache::free(*it);
   }
 }
 
@@ -1142,7 +1170,7 @@ void nmethod::inc_decompile_count() {
 
 bool nmethod::try_transition(int new_state_int) {
   signed char new_state = new_state_int;
-#ifdef DEBUG
+#ifdef ASSERT
   if (new_state != unloaded) {
     assert_lock_strong(CompiledMethod_lock);
   }
@@ -1166,7 +1194,9 @@ void nmethod::make_unloaded() {
   // recorded in instanceKlasses get flushed.
   // Since this work is being done during a GC, defer deleting dependencies from the
   // InstanceKlass.
-  assert(Universe::heap()->is_gc_active() || Thread::current()->is_ConcurrentGC_thread(),
+  assert(Universe::heap()->is_gc_active() ||
+         Thread::current()->is_ConcurrentGC_thread() ||
+         Thread::current()->is_Worker_thread(),
          "should only be called during gc");
   flush_dependencies(/*delete_immediately*/false);
 
@@ -1206,7 +1236,9 @@ void nmethod::make_unloaded() {
   }
 
   // Make the class unloaded - i.e., change state and notify sweeper
-  assert(SafepointSynchronize::is_at_safepoint() || Thread::current()->is_ConcurrentGC_thread(),
+  assert(SafepointSynchronize::is_at_safepoint() ||
+         Thread::current()->is_ConcurrentGC_thread() ||
+         Thread::current()->is_Worker_thread(),
          "must be at safepoint");
 
   {
@@ -1248,7 +1280,6 @@ void nmethod::make_unloaded() {
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != NULL) {
     nmethod_data->invalidate_nmethod_mirror(this);
-    nmethod_data->clear_nmethod_mirror(this);
   }
 #endif
 }
@@ -1528,7 +1559,9 @@ oop nmethod::oop_at_phantom(int index) const {
 // notifies instanceKlasses that are reachable
 
 void nmethod::flush_dependencies(bool delete_immediately) {
-  DEBUG_ONLY(bool called_by_gc = Universe::heap()->is_gc_active() || Thread::current()->is_ConcurrentGC_thread();)
+  DEBUG_ONLY(bool called_by_gc = Universe::heap()->is_gc_active() ||
+                                 Thread::current()->is_ConcurrentGC_thread() ||
+                                 Thread::current()->is_Worker_thread();)
   assert(called_by_gc != delete_immediately,
   "delete_immediately is false if and only if we are called during GC");
   if (!has_flushed_dependencies()) {
@@ -1570,8 +1603,20 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
 
   // Don't post this nmethod load event if it is already dying
   // because the sweeper might already be deleting this nmethod.
-  if (is_not_entrant() && can_convert_to_zombie()) {
-    return;
+  {
+    MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+    // When the nmethod is acquired from the CodeCache iterator, it can racingly become zombie
+    // before this code is called. Filter them out here under the CompiledMethod_lock.
+    if (!is_alive()) {
+      return;
+    }
+    // As for is_alive() nmethods, we also don't want them to racingly become zombie once we
+    // release this lock, so we check that this is not going to be the case.
+    if (is_not_entrant() && can_convert_to_zombie()) {
+      return;
+    }
+    // Ensure the sweeper can't collect this nmethod until it become "active" with JvmtiThreadState::nmethods_do.
+    mark_as_seen_on_stack();
   }
 
   // This is a bad time for a safepoint.  We don't want
@@ -1731,10 +1776,10 @@ public:
 bool nmethod::is_unloading() {
   uint8_t state = RawAccess<MO_RELAXED>::load(&_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);
-  uint8_t state_unloading_cycle = IsUnloadingState::unloading_cycle(state);
   if (state_is_unloading) {
     return true;
   }
+  uint8_t state_unloading_cycle = IsUnloadingState::unloading_cycle(state);
   uint8_t current_cycle = CodeCache::unloading_cycle();
   if (state_unloading_cycle == current_cycle) {
     return false;
@@ -2189,8 +2234,10 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   // Turn off dependency tracing while actually testing dependencies.
   NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
 
-  typedef ResourceHashtable<DependencySignature, int, &DependencySignature::hash,
-                            &DependencySignature::equals, 11027> DepTable;
+  typedef ResourceHashtable<DependencySignature, int, 11027,
+                            ResourceObj::RESOURCE_AREA, mtInternal,
+                            &DependencySignature::hash,
+                            &DependencySignature::equals> DepTable;
 
   DepTable* table = new DepTable();
 
@@ -2282,7 +2329,6 @@ nmethodLocker::nmethodLocker(address pc) {
 // should pass zombie_ok == true.
 void nmethodLocker::lock_nmethod(CompiledMethod* cm, bool zombie_ok) {
   if (cm == NULL)  return;
-  if (cm->is_aot()) return;  // FIXME: Revisit once _lock_count is added to aot_method
   nmethod* nm = cm->as_nmethod();
   Atomic::inc(&nm->_lock_count);
   assert(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method: %p", nm);
@@ -2290,7 +2336,6 @@ void nmethodLocker::lock_nmethod(CompiledMethod* cm, bool zombie_ok) {
 
 void nmethodLocker::unlock_nmethod(CompiledMethod* cm) {
   if (cm == NULL)  return;
-  if (cm->is_aot()) return;  // FIXME: Revisit once _lock_count is added to aot_method
   nmethod* nm = cm->as_nmethod();
   Atomic::dec(&nm->_lock_count);
   assert(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
@@ -2438,11 +2483,11 @@ void nmethod::verify_scopes() {
         verify_interrupt_point(iter.addr());
         break;
       case relocInfo::opt_virtual_call_type:
-        stub = iter.opt_virtual_call_reloc()->static_stub(false);
+        stub = iter.opt_virtual_call_reloc()->static_stub();
         verify_interrupt_point(iter.addr());
         break;
       case relocInfo::static_call_type:
-        stub = iter.static_call_reloc()->static_stub(false);
+        stub = iter.static_call_reloc()->static_stub();
         //verify_interrupt_point(iter.addr());
         break;
       case relocInfo::runtime_call_type:
@@ -2484,7 +2529,7 @@ void nmethod::print(outputStream* st) const {
     st->print("(n/a) ");
   }
 
-  print_on(tty, NULL);
+  print_on(st, NULL);
 
   if (WizardMode) {
     st->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
@@ -2590,7 +2635,7 @@ void nmethod::print_oops(outputStream* st) {
     for (oop* p = oops_begin(); p < oops_end(); p++) {
       Disassembler::print_location((unsigned char*)p, (unsigned char*)oops_begin(), (unsigned char*)oops_end(), st, true, false);
       st->print(PTR_FORMAT " ", *((uintptr_t*)p));
-      if (*p == Universe::non_oop_word()) {
+      if (Universe::contains_non_oop_word(p)) {
         st->print_cr("NON_OOP");
         continue;  // skip non-oops
       }
@@ -2670,12 +2715,50 @@ void nmethod::print_pcs_on(outputStream* st) {
   }
 }
 
+void nmethod::print_native_invokers() {
+  ResourceMark m;       // in case methods get printed via debugger
+  tty->print_cr("Native invokers:");
+  for (RuntimeStub** itt = native_invokers_begin(); itt < native_invokers_end(); itt++) {
+    (*itt)->print_on(tty);
+  }
+}
+
 void nmethod::print_handler_table() {
-  ExceptionHandlerTable(this).print();
+  ExceptionHandlerTable(this).print(code_begin());
 }
 
 void nmethod::print_nul_chk_table() {
   ImplicitExceptionTable(this).print(code_begin());
+}
+
+void nmethod::print_recorded_oop(int log_n, int i) {
+  void* value;
+
+  if (i == 0) {
+    value = NULL;
+  } else {
+    // Be careful around non-oop words. Don't create an oop
+    // with that value, or it will assert in verification code.
+    if (Universe::contains_non_oop_word(oop_addr_at(i))) {
+      value = Universe::non_oop_word();
+    } else {
+      value = oop_at(i);
+    }
+  }
+
+  tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(value));
+
+  if (value == Universe::non_oop_word()) {
+    tty->print("non-oop word");
+  } else {
+    if (value == 0) {
+      tty->print("NULL-oop");
+    } else {
+      oop_at(i)->print_value_on(tty);
+    }
+  }
+
+  tty->cr();
 }
 
 void nmethod::print_recorded_oops() {
@@ -2685,16 +2768,7 @@ void nmethod::print_recorded_oops() {
   if (n > 0) {
     tty->cr();
     for (int i = 0; i < n; i++) {
-      oop o = oop_at(i);
-      tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(o));
-      if (o == (oop)Universe::non_oop_word()) {
-        tty->print("non-oop word");
-      } else if (o == NULL) {
-        tty->print("NULL-oop");
-      } else {
-        o->print_value_on(tty);
-      }
-      tty->cr();
+      print_recorded_oop(log_n, i);
     }
   } else {
     tty->print_cr(" <list empty>");
@@ -2806,6 +2880,9 @@ void nmethod::decode2(outputStream* ost) const {
                                                                   AbstractDisassembler::show_block_comment());
 #endif
 
+  // Decoding an nmethod can write to a PcDescCache (see PcDescCache::add_pc_desc)
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
+
   st->cr();
   this->print(st);
   st->cr();
@@ -2815,7 +2892,10 @@ void nmethod::decode2(outputStream* ost) const {
   //---<  Print real disassembly  >---
   //----------------------------------
   if (! use_compressed_format) {
+    st->print_cr("[Disassembly]");
     Disassembler::decode(const_cast<nmethod*>(this), st);
+    st->bol();
+    st->print_cr("[/Disassembly]");
     return;
   }
 #endif
@@ -3353,28 +3433,11 @@ public:
   }
 
   virtual void set_destination_mt_safe(address dest) {
-#if INCLUDE_AOT
-    if (UseAOT) {
-      CodeBlob* callee = CodeCache::find_blob(dest);
-      CompiledMethod* cm = callee->as_compiled_method_or_null();
-      if (cm != NULL && cm->is_far_code()) {
-        // Temporary fix, see JDK-8143106
-        CompiledDirectStaticCall* csc = CompiledDirectStaticCall::at(instruction_address());
-        csc->set_to_far(methodHandle(Thread::current(), cm->method()), dest);
-        return;
-      }
-    }
-#endif
     _call->set_destination_mt_safe(dest);
   }
 
   virtual void set_to_interpreted(const methodHandle& method, CompiledICInfo& info) {
     CompiledDirectStaticCall* csc = CompiledDirectStaticCall::at(instruction_address());
-#if INCLUDE_AOT
-    if (info.to_aot()) {
-      csc->set_to_far(method, info.entry());
-    } else
-#endif
     {
       csc->set_to_interpreted(method, info.entry());
     }

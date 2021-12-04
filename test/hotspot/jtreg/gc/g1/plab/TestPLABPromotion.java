@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/timeout=240 gc.g1.plab.TestPLABPromotion
  */
 package gc.g1.plab;
@@ -72,7 +72,7 @@ public class TestPLABPromotion {
     private static final int PLAB_SIZE_HIGH = 65536;
     private static final int OBJECT_SIZE_SMALL = 10;
     private static final int OBJECT_SIZE_MEDIUM = 100;
-    private static final int OBJECT_SIZE_HIGH = 1000;
+    private static final int OBJECT_SIZE_HIGH = 3250;
     private static final int GC_NUM_SMALL = 1;
     private static final int GC_NUM_MEDIUM = 3;
     private static final int GC_NUM_HIGH = 7;
@@ -222,7 +222,7 @@ public class TestPLABPromotion {
      * @return true if checkedValue is less than MEM_DIFFERENCE_PCT percent of controlValue
      */
     private static boolean checkRatio(long checkedValue, long controlValue) {
-        return (Math.abs(checkedValue) / controlValue) * 100L < MEM_DIFFERENCE_PCT;
+        return Math.abs(checkedValue * 100.0 / controlValue) < MEM_DIFFERENCE_PCT;
     }
 
     /**
@@ -235,7 +235,7 @@ public class TestPLABPromotion {
      * MEM_DIFFERENCE_PCT percent of controlValue
      */
     private static boolean checkDifferenceRatio(long checkedValue, long controlValue) {
-        return (Math.abs(checkedValue - controlValue) / controlValue) * 100L < MEM_DIFFERENCE_PCT;
+        return Math.abs((checkedValue - controlValue) * 100.0 / controlValue) < MEM_DIFFERENCE_PCT;
     }
 
     /**
@@ -304,6 +304,7 @@ public class TestPLABPromotion {
         public List<String> toOptions() {
             return Arrays.asList("-XX:ParallelGCThreads=" + parGCThreads,
                     "-XX:ParallelGCBufferWastePct=" + wastePct,
+                    "-XX:ParallelGCThreads=1", // Avoid dynamic sizing of threads.
                     "-XX:OldPLABSize=" + plabSize,
                     "-XX:YoungPLABSize=" + plabSize,
                     "-XX:" + (plabIsFixed ? "-" : "+") + "ResizePLAB",

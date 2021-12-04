@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,9 +142,6 @@ public final class JVM {
     @IntrinsicCandidate
     public static native long getClassId(Class<?> clazz);
 
-    // temporary workaround until we solve intrinsics supporting epoch shift tagging
-    public static native long getClassIdNonIntrinsic(Class<?> clazz);
-
     /**
      * Return process identifier.
      *
@@ -189,6 +186,17 @@ public final class JVM {
     public static native void log(int tagSetId, int level, String message);
 
     /**
+     * Log an event to jfr+event or jfr+event+system.
+     * <p>
+     * Caller should ensure that message is not null or too large to handle.
+     *
+     * @param level log level
+     * @param lines lines to log
+     * @param system if lines should be written to jfr+event+system
+     */
+    public static native void logEvent(int level, String[] lines, boolean system);
+
+    /**
      * Subscribe to LogLevel updates for LogTag
      *
      * @param lt the log tag to subscribe
@@ -203,7 +211,7 @@ public final class JVM {
      *
      * @throws IllegalStateException if wrong JVMTI phase.
      */
-    public native synchronized void retransformClasses(Class<?>[] classes);
+    public synchronized native void retransformClasses(Class<?>[] classes);
 
     /**
      * Enable event
@@ -488,18 +496,9 @@ public final class JVM {
      *
      * @param s string constant to be added, not null
      *
-     * @return the current epoch of this insertion attempt
+     * @return true, if the string was successfully added.
      */
-    public static native boolean addStringConstant(boolean epoch, long id, String s);
-
-    /**
-     * Gets the address of the jboolean epoch.
-     *
-     * The epoch alternates every checkpoint.
-     *
-     * @return The address of the jboolean.
-     */
-    public native long getEpochAddress();
+    public static native boolean addStringConstant(long id, String s);
 
     public native void uncaughtException(Thread thread, Throwable t);
 
@@ -515,6 +514,18 @@ public final class JVM {
      * @return true, if it could be set
      */
     public native boolean setCutoff(long eventTypeId, long cutoffTicks);
+
+    /**
+     * Sets the event emission rate in event sample size per time unit.
+     *
+     * Determines how events are throttled.
+     *
+     * @param eventTypeId the id of the event type
+     * @param eventSampleSize event sample size
+     * @param period_ms time period in milliseconds
+     * @return true, if it could be set
+     */
+    public native boolean setThrottle(long eventTypeId, long eventSampleSize, long period_ms);
 
     /**
      * Emit old object sample events.

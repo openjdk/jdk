@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test CommandLineFlagCombo
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @comment This test explicitly chooses the type of GC to be used by sub-processes. It may conflict with the GC type set
  * via the -vmoptions command line option of JTREG. vm.gc==null will help the test case to discard the explicitly passed
  * vm options.
@@ -33,7 +33,7 @@
  *          could likely affect the behaviour of AppCDS
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @compile test-classes/Hello.java
  * @run main/othervm/timeout=240 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. CommandLineFlagCombo
  */
@@ -50,7 +50,6 @@ public class CommandLineFlagCombo {
     // shared base address test table
     private static final String[] testTable = {
         "-XX:+UseG1GC", "-XX:+UseSerialGC", "-XX:+UseParallelGC",
-        "-XX:+FlightRecorder",
         "-XX:+UseLargePages", // may only take effect on machines with large-pages
         "-XX:+UseCompressedClassPointers",
         "-XX:+UseCompressedOops",
@@ -122,7 +121,7 @@ public class CommandLineFlagCombo {
             }
         }
 
-        if (!WhiteBox.getWhiteBox().isJFRIncludedInVmBuild() && testEntry.equals("-XX:+FlightRecorder"))
+        if (!WhiteBox.getWhiteBox().isJFRIncluded())
         {
             System.out.println("JFR does not exist");
             return true;

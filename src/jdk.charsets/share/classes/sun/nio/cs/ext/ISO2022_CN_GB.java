@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,8 @@
 package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CoderResult;
 import sun.nio.cs.*;
 import sun.nio.cs.HistoricallyNamedCharset;
 
@@ -65,15 +62,15 @@ public class ISO2022_CN_GB extends ISO2022 implements HistoricallyNamedCharset
 
     private static class Encoder extends ISO2022.Encoder {
 
+        private static final Charset gb2312 = new EUC_CN();
+
+        private static final byte[] SOD = new byte[] {'$', ')', 'A' };
+
         public Encoder(Charset cs)
         {
             super(cs);
-            SODesig = new byte[] { '$', ')', 'A'};
-
-            try {
-                Charset cset = Charset.forName("EUC_CN"); // GB2312
-                ISOEncoder = cset.newEncoder();
-            } catch (Exception e) { }
+            SODesig = SOD;
+            ISOEncoder = gb2312.newEncoder();
         }
 
         /*

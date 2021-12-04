@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,24 +27,24 @@ import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Tests the overheads of I/O API.
+ * Tests the overheads of creating File objects, and converting such objects to Paths.
  */
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
 @Warmup(time=2, iterations=5)
 @Measurement(time=3, iterations=5)
 @Fork(value=2, jvmArgs="-Xmx1g")
 public class FileOpen {
 
-    public String normalFile = "/test/dir/file/name.txt";
-    public String root = "/";
-    public String trailingSlash = "/test/dir/file/name.txt/";
-    public String notNormalizedFile = "/test/dir/file//name.txt";
+    private String normalFile = "/test/dir/file/name.txt";
+    private String root = "/";
+    private String trailingSlash = "/test/dir/file/name.txt/";
+    private String notNormalizedFile = "/test/dir/file//name.txt";
 
     public File tmp;
 
@@ -69,6 +69,11 @@ public class FileOpen {
     }
 
     @Benchmark
+    public File root() {
+        return new File(root);
+    }
+
+    @Benchmark
     public File trailingSlash() {
         return new File(trailingSlash);
     }
@@ -84,5 +89,33 @@ public class FileOpen {
                 && tmp.isHidden()
                 && tmp.isDirectory()
                 && tmp.isFile();
+    }
+
+    @Benchmark
+    public void mixToPath(Blackhole bh)  {
+        bh.consume(new File(normalFile).toPath());
+        bh.consume(new File(root).toPath());
+        bh.consume(new File(trailingSlash).toPath());
+        bh.consume(new File(notNormalizedFile).toPath());
+    }
+
+    @Benchmark
+    public Path normalizedToPath() {
+        return new File(normalFile).toPath();
+    }
+
+    @Benchmark
+    public Path rootToPath() {
+        return new File(root).toPath();
+    }
+
+    @Benchmark
+    public Path trailingSlashToPath() {
+        return new File(trailingSlash).toPath();
+    }
+
+    @Benchmark
+    public Path notNormalizedToPath() {
+        return new File(notNormalizedFile).toPath();
     }
 }

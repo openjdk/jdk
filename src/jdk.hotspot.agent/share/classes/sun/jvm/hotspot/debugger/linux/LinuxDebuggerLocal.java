@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 package sun.jvm.hotspot.debugger.linux;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -91,16 +90,15 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     }
 
     // called by native method attach0
-    private LoadObject createLoadObject(String fileName, long textsize,
+    private LoadObject createLoadObject(String fileName, long size,
                                         long base) {
-       File f = new File(fileName);
        Address baseAddr = newAddress(base);
-       return new SharedObject(this, fileName, f.length(), baseAddr);
+       return new SharedObject(this, fileName, size, baseAddr);
     }
 
     // native methods
 
-    private native static void init0()
+    private static native void init0()
                                 throws DebuggerException;
     private native void setSAAltRoot0(String altroot);
     private native void attach0(int pid)
@@ -117,7 +115,7 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
                                 throws DebuggerException;
     private native byte[] readBytesFromProcess0(long address, long numBytes)
                                 throws DebuggerException;
-    public native static int  getAddressSize() ;
+    public static native int  getAddressSize() ;
 
     @Override
     public native String demangle(String sym);

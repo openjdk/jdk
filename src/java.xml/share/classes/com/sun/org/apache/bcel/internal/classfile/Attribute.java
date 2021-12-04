@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -47,7 +47,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * @see Synthetic
  * @see Deprecated
  * @see Signature
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public abstract class Attribute implements Cloneable, Node {
     private static final boolean debug = false;

@@ -44,8 +44,11 @@ ifeq ($(call isTargetOs, aix), true)
 endif
 
 ################################################################################
-# Copy the microsoft runtime libraries on windows
-ifeq ($(call isTargetOs, windows), true)
+# Copy the microsoft runtime libraries on windows, but only if we are not
+# creating a buildjdk. If we are, the provided runtime librareis are made for
+# the target platform, not the build platform (and we should not need to bundle
+# anything with the minimalistic, locally-only buildjdk.)
+ifeq ($(call isTargetOs, windows)+$(CREATING_BUILDJDK), true+false)
 
   # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
   define copy-and-chmod
@@ -92,16 +95,10 @@ ifeq ($(call And, $(call isTargetOs, windows) $(call isTargetCpu, x86)), true)
 endif
 DEFAULT_CFG_VARIANT ?= server
 
-# Any variant other than server, client or minimal is represented as server in
-# the cfg file.
-VALID_CFG_VARIANTS := server client minimal
-CFG_VARIANTS := $(filter $(VALID_CFG_VARIANTS), $(JVM_VARIANTS)) \
-    $(if $(filter-out $(VALID_CFG_VARIANTS), $(JVM_VARIANTS)), server)
-
 # Change the order to put the default variant first if present.
 ORDERED_CFG_VARIANTS := \
-    $(if $(filter $(DEFAULT_CFG_VARIANT), $(CFG_VARIANTS)), $(DEFAULT_CFG_VARIANT)) \
-    $(filter-out $(DEFAULT_CFG_VARIANT), $(CFG_VARIANTS))
+    $(if $(filter $(DEFAULT_CFG_VARIANT), $(JVM_VARIANTS)), $(DEFAULT_CFG_VARIANT)) \
+    $(filter-out $(DEFAULT_CFG_VARIANT), $(JVM_VARIANTS))
 
 JVMCFG := $(LIB_DST_DIR)/jvm.cfg
 

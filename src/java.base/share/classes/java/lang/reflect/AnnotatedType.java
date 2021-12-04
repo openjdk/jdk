@@ -55,8 +55,8 @@ public interface AnnotatedType extends AnnotatedElement {
      * {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
      *
      * <p>Returns {@code null} if this {@code AnnotatedType} represents a
-     *     top-level type, or a local or anonymous class, or a primitive type, or
-     *     void.
+     *     top-level class or interface, or a local or anonymous class, or
+     *     a primitive type, or void.
      *
      * <p>Returns {@code null} if this {@code AnnotatedType} is an instance of
      *     {@code AnnotatedArrayType}, {@code AnnotatedTypeVariable}, or
@@ -69,7 +69,7 @@ public interface AnnotatedType extends AnnotatedElement {
      * @return an {@code AnnotatedType} object representing the potentially
      *     annotated type that this type is a member of, or {@code null}
      * @throws TypeNotPresentException if the owner type
-     *     refers to a non-existent type declaration
+     *     refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if the owner type
      *     refers to a parameterized type that cannot be instantiated
      *     for any reason

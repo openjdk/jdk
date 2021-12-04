@@ -172,7 +172,9 @@ public class IndexBuilder {
         }
 
         itemsByCategory.computeIfAbsent(item.getCategory(),
-                    c -> new TreeSet<>(mainComparator))
+                    c -> new TreeSet<>(c == IndexItem.Category.TYPES
+                            ? makeTypeSearchIndexComparator()
+                            : makeGenericSearchIndexComparator()))
                 .add(item);
     }
 
@@ -344,4 +346,28 @@ public class IndexBuilder {
         };
     }
 
+    /**
+     * Returns a Comparator for IndexItems in the types category of the search index.
+     * Items are compared by short name, falling back to the main comparator if names are equal.
+     *
+     * @return a Comparator
+     */
+    public Comparator<IndexItem> makeTypeSearchIndexComparator() {
+        Comparator<IndexItem> simpleNameComparator =
+                (ii1, ii2) -> utils.compareStrings(ii1.getSimpleName(), ii2.getSimpleName());
+        return simpleNameComparator.thenComparing(mainComparator);
+    }
+
+    /**
+     * Returns a Comparator for IndexItems in the modules, packages, members, and search tags
+     * categories of the search index.
+     * Items are compared by label, falling back to the main comparator if names are equal.
+     *
+     * @return a Comparator
+     */
+    public Comparator<IndexItem> makeGenericSearchIndexComparator() {
+        Comparator<IndexItem> labelComparator =
+                (ii1, ii2) -> utils.compareStrings(ii1.getLabel(), ii2.getLabel());
+        return labelComparator.thenComparing(mainComparator);
+    }
 }

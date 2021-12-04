@@ -26,6 +26,7 @@
 #define SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP
 
 #include "services/mallocTracker.hpp"
+
 #include "services/memTracker.hpp"
 
 inline void* MallocTracker::get_base(void* memblock){

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, Intel Corporation.
+* Copyright (c) 2020, 2021, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/compiler_globals.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -113,7 +114,7 @@ void MacroAssembler::arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KReg
                                                            bool use64byteVector, Label& L_entry, Label& L_exit) {
   Label L_entry_64, L_entry_96, L_entry_128;
   Label L_entry_160, L_entry_192;
-  bool avx3 = MaxVectorSize > 32 && AVX3Threshold == 0;
+  bool avx3 = (MaxVectorSize > 32) && (VM_Version::avx3_threshold() == 0);
 
   int size_mat[][6] = {
   /* T_BYTE */ {32 , 64,  96 , 128 , 160 , 192 },
@@ -195,13 +196,11 @@ void MacroAssembler::copy64_masked_avx(Register dst, Register src, XMMRegister x
   } else {
     Address::ScaleFactor scale = (Address::ScaleFactor)(shift);
     assert(MaxVectorSize == 64, "vector length != 64");
-    negptr(length);
-    addq(length, 64);
-    mov64(temp, -1);
-    shrxq(temp, temp, length);
+    mov64(temp, -1L);
+    bzhiq(temp, temp, length);
     kmovql(mask, temp);
-    evmovdqu(xmm, mask, Address(src, index, scale, offset), Assembler::AVX_512bit, type[shift]);
-    evmovdqu(Address(dst, index, scale, offset), mask, xmm, Assembler::AVX_512bit, type[shift]);
+    evmovdqu(type[shift], mask, xmm, Address(src, index, scale, offset), Assembler::AVX_512bit);
+    evmovdqu(type[shift], mask, Address(dst, index, scale, offset), xmm, Assembler::AVX_512bit);
   }
 }
 
@@ -212,12 +211,11 @@ void MacroAssembler::copy32_masked_avx(Register dst, Register src, XMMRegister x
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
   BasicType type[] = { T_BYTE,  T_SHORT,  T_INT,   T_LONG};
   Address::ScaleFactor scale = (Address::ScaleFactor)(shift);
-  mov64(temp, 1);
-  shlxq(temp, temp, length);
-  decq(temp);
+  mov64(temp, -1L);
+  bzhiq(temp, temp, length);
   kmovql(mask, temp);
-  evmovdqu(xmm, mask, Address(src, index, scale, offset), Assembler::AVX_256bit, type[shift]);
-  evmovdqu(Address(dst, index, scale, offset), mask, xmm, Assembler::AVX_256bit, type[shift]);
+  evmovdqu(type[shift], mask, xmm, Address(src, index, scale, offset), Assembler::AVX_256bit);
+  evmovdqu(type[shift], mask, Address(dst, index, scale, offset), xmm, Assembler::AVX_256bit);
 }
 
 

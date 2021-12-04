@@ -203,14 +203,10 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
 
     @SuppressWarnings("deprecation")
     static final class LegacyTrafficKeyDerivation implements SSLKeyDerivation {
-        private final HandshakeContext context;
-        private final SecretKey masterSecret;
         private final TlsKeyMaterialSpec keyMaterialSpec;
 
         LegacyTrafficKeyDerivation(
                 HandshakeContext context, SecretKey masterSecret) {
-            this.context = context;
-            this.masterSecret = masterSecret;
 
             CipherSuite cipherSuite = context.negotiatedCipherSuite;
             ProtocolVersion protocolVersion = context.negotiatedProtocol;

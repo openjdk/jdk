@@ -28,14 +28,11 @@ package jdk.internal.foreign;
 import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.internal.access.JavaLangInvokeAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
 
 import jdk.incubator.foreign.GroupLayout;
 import jdk.incubator.foreign.SequenceLayout;
 import jdk.incubator.foreign.ValueLayout;
-import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -54,18 +51,25 @@ import java.util.function.UnaryOperator;
  * (see {@link #sequenceElement()}, {@link #sequenceElement(long)}, {@link #sequenceElement(long, long)}, {@link #groupElement(String)}).
  * Once a path has been fully constructed, clients can ask for the offset associated with the layout element selected
  * by the path (see {@link #offset}), or obtain a memory access var handle to access the selected layout element
- * given an address pointing to a segment associated with the root layout (see {@link #dereferenceHandle(Class)}).
+ * given an address pointing to a segment associated with the root layout (see {@link #dereferenceHandle()}).
  */
 public class LayoutPath {
 
-    private static final JavaLangInvokeAccess JLI = SharedSecrets.getJavaLangInvokeAccess();
-
     private static final MethodHandle ADD_STRIDE;
+    private static final MethodHandle MH_ADD_SCALED_OFFSET;
+    private static final MethodHandle MH_SLICE;
+
+    private static final int UNSPECIFIED_ELEM_INDEX = -1;
 
     static {
         try {
-            ADD_STRIDE = MethodHandles.lookup().findStatic(LayoutPath.class, "addStride",
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            ADD_STRIDE = lookup.findStatic(LayoutPath.class, "addStride",
                     MethodType.methodType(long.class, MemorySegment.class, long.class, long.class, long.class));
+            MH_ADD_SCALED_OFFSET = lookup.findStatic(LayoutPath.class, "addScaledOffset",
+                    MethodType.methodType(long.class, long.class, long.class, long.class));
+            MH_SLICE = lookup.findVirtual(MemorySegment.class, "asSlice",
+                    MethodType.methodType(MemorySegment.class, long.class, long.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -93,7 +97,7 @@ public class LayoutPath {
         check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
         SequenceLayout seq = (SequenceLayout)layout;
         MemoryLayout elem = seq.elementLayout();
-        return LayoutPath.nestedPath(elem, offset, addStride(sizeFunc.applyAsLong(elem)), -1, this);
+        return LayoutPath.nestedPath(elem, offset, addStride(sizeFunc.applyAsLong(elem)), UNSPECIFIED_ELEM_INDEX, this);
     }
 
     public LayoutPath sequenceElement(long start, long step) {
@@ -102,7 +106,8 @@ public class LayoutPath {
         checkSequenceBounds(seq, start);
         MemoryLayout elem = seq.elementLayout();
         long elemSize = sizeFunc.applyAsLong(elem);
-        return LayoutPath.nestedPath(elem, offset + (start * elemSize), addStride(elemSize * step), -1, this);
+        return LayoutPath.nestedPath(elem, offset + (start * elemSize), addStride(elemSize * step),
+                UNSPECIFIED_ELEM_INDEX, this);
     }
 
     public LayoutPath sequenceElement(long index) {
@@ -147,16 +152,10 @@ public class LayoutPath {
         return offset;
     }
 
-    public VarHandle dereferenceHandle(Class<?> carrier) {
-        if (!(layout instanceof ValueLayout)) {
-            throw badLayoutPath("layout path does not select a value layout");
+    public VarHandle dereferenceHandle() {
+        if (!(layout instanceof ValueLayout valueLayout)) {
+            throw new IllegalArgumentException("Path does not select a value layout");
         }
-
-        if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class // illegal carrier?
-                || Wrapper.forPrimitiveType(carrier).bitWidth() != layout.bitSize()) { // carrier has the right size?
-            throw new IllegalArgumentException("Invalid carrier: " + carrier + ", for layout " + layout);
-        }
-
         checkAlignment(this);
 
         List<Class<?>> expectedCoordinates = new ArrayList<>();
@@ -164,8 +163,7 @@ public class LayoutPath {
         perms.addFirst(0);
         expectedCoordinates.add(MemorySegment.class);
 
-        VarHandle handle = Utils.fixUpVarHandle(JLI.memoryAccessVarHandle(carrier, true, layout.byteAlignment() - 1,
-                ((ValueLayout)layout).order()));
+        VarHandle handle = Utils.makeMemoryAccessVarHandle(valueLayout, true);
 
         for (int i = 0 ; i < strides.length ; i++) {
             expectedCoordinates.add(long.class);
@@ -185,6 +183,38 @@ public class LayoutPath {
         return handle;
     }
 
+    private static long addScaledOffset(long base, long index, long stride) {
+        return base + (stride * index);
+    }
+
+    public MethodHandle offsetHandle() {
+        MethodHandle mh = MethodHandles.identity(long.class);
+        for (int i = strides.length - 1; i >=0; i--) {
+            MethodHandle collector = MethodHandles.insertArguments(MH_ADD_SCALED_OFFSET, 2, strides[i]);
+            // (J, ...) -> J to (J, J, ...) -> J
+            // i.e. new coord is prefixed. Last coord will correspond to innermost layout
+            mh = MethodHandles.collectArguments(mh, 0, collector);
+        }
+        mh = MethodHandles.insertArguments(mh, 0, offset);
+        return mh;
+    }
+
+    public MethodHandle sliceHandle() {
+        if (strides.length == 0) {
+            // trigger checks eagerly
+            Utils.bitsToBytesOrThrow(offset, Utils.bitsToBytesThrowOffset);
+        }
+
+        MethodHandle offsetHandle = offsetHandle(); // bit offset
+        offsetHandle = MethodHandles.filterReturnValue(offsetHandle, Utils.MH_bitsToBytesOrThrowForOffset); // byte offset
+
+        MethodHandle sliceHandle = MH_SLICE; // (MS, long, long) -> MS
+        sliceHandle = MethodHandles.insertArguments(sliceHandle, 2, layout.byteSize()); // (MS, long) -> MS
+        sliceHandle = MethodHandles.collectArguments(sliceHandle, 1, offsetHandle); // (MS, ...) -> MS
+
+        return sliceHandle;
+    }
+
     public MemoryLayout layout() {
         return layout;
     }
@@ -193,22 +223,20 @@ public class LayoutPath {
         MemoryLayout newLayout = op.apply(layout);
         if (enclosing == null) {
             return newLayout;
-        } else if (enclosing.layout instanceof SequenceLayout) {
-            SequenceLayout seq = (SequenceLayout)enclosing.layout;
+        } else if (enclosing.layout instanceof SequenceLayout seq) {
             if (seq.elementCount().isPresent()) {
-                return enclosing.map(l -> dup(l, MemoryLayout.ofSequence(seq.elementCount().getAsLong(), newLayout)));
+                return enclosing.map(l -> dup(l, MemoryLayout.sequenceLayout(seq.elementCount().getAsLong(), newLayout)));
             } else {
-                return enclosing.map(l -> dup(l, MemoryLayout.ofSequence(newLayout)));
+                return enclosing.map(l -> dup(l, MemoryLayout.sequenceLayout(newLayout)));
             }
-        } else if (enclosing.layout instanceof GroupLayout) {
-            GroupLayout g = (GroupLayout)enclosing.layout;
+        } else if (enclosing.layout instanceof GroupLayout g) {
             List<MemoryLayout> newElements = new ArrayList<>(g.memberLayouts());
             //if we selected a layout in a group we must have a valid index
             newElements.set((int)elementIndex, newLayout);
             if (g.isUnion()) {
-                return enclosing.map(l -> dup(l, MemoryLayout.ofUnion(newElements.toArray(new MemoryLayout[0]))));
+                return enclosing.map(l -> dup(l, MemoryLayout.unionLayout(newElements.toArray(new MemoryLayout[0]))));
             } else {
-                return enclosing.map(l -> dup(l, MemoryLayout.ofStruct(newElements.toArray(new MemoryLayout[0]))));
+                return enclosing.map(l -> dup(l, MemoryLayout.structLayout(newElements.toArray(new MemoryLayout[0]))));
             }
         } else {
             return newLayout;
@@ -284,7 +312,7 @@ public class LayoutPath {
      * This class provides an immutable implementation for the {@code PathElement} interface. A path element implementation
      * is simply a pointer to one of the selector methods provided by the {@code LayoutPath} class.
      */
-    public static class PathElementImpl implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+    public static final class PathElementImpl implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
 
         public enum PathKind {
             SEQUENCE_ELEMENT("unbound sequence element"),

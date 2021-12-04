@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.awt.peer.MenuPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.EventListener;
 import java.util.Vector;
@@ -114,9 +116,10 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     private static final String base = "menu";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = -8809584163345499784L;
 
     /**
@@ -322,14 +325,14 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             }
 
             int nitems = getItemCount();
-            Vector<MenuItem> tempItems = new Vector<>();
+            ArrayList<MenuItem> tempItems = new ArrayList<>();
 
             /* Remove the item at index, nitems-index times
                storing them in a temporary vector in the
                order they appear on the menu.
             */
             for (int i = index ; i < nitems; i++) {
-                tempItems.addElement(getItem(index));
+                tempItems.add(getItem(index));
                 remove(index);
             }
 
@@ -339,7 +342,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
                already in the correct order in the temp vector.
             */
             for (int i = 0; i < tempItems.size()  ; i++) {
-                add(tempItems.elementAt(i));
+                add(tempItems.get(i));
             }
         }
     }
@@ -388,14 +391,14 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             }
 
             int nitems = getItemCount();
-            Vector<MenuItem> tempItems = new Vector<>();
+            ArrayList<MenuItem> tempItems = new ArrayList<>();
 
             /* Remove the item at index, nitems-index times
                storing them in a temporary vector in the
                order they appear on the menu.
             */
             for (int i = index ; i < nitems; i++) {
-                tempItems.addElement(getItem(index));
+                tempItems.add(getItem(index));
                 remove(index);
             }
 
@@ -405,7 +408,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
                already in the correct order in the temp vector.
             */
             for (int i = 0; i < tempItems.size()  ; i++) {
-                add(tempItems.elementAt(i));
+                add(tempItems.get(i));
             }
         }
     }
@@ -497,7 +500,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             } else {
                 MenuShortcut ms = mi.getShortcut();
                 if (ms != null) {
-                    shortcuts.addElement(ms);
+                    shortcuts.add(ms);
                 }
             }
         }
@@ -531,6 +534,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
       throws java.io.IOException
     {
@@ -550,6 +554,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws IOException, ClassNotFoundException, HeadlessException
     {
@@ -622,9 +627,10 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      */
     protected class AccessibleAWTMenu extends AccessibleAWTMenuItem
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 5228160894980069094L;
 
         /**

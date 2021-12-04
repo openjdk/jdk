@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -155,11 +155,15 @@ public class CK_MECHANISM {
         init(mechanism, params);
     }
 
+    public CK_MECHANISM(long mechanism,
+            CK_SALSA20_CHACHA20_POLY1305_PARAMS params) {
+        init(mechanism, params);
+    }
+
     // For PSS. the parameter may be set multiple times, use the
     // CK_MECHANISM(long) constructor and setParameter(CK_RSA_PKCS_PSS_PARAMS)
     // methods instead of creating yet another constructor
     public void setParameter(CK_RSA_PKCS_PSS_PARAMS params) {
-        assert(this.mechanism == CKM_RSA_PKCS_PSS);
         assert(params != null);
         if (this.pParameter != null && this.pParameter.equals(params)) {
             return;

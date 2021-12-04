@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ define SetupTextFileProcessingBody
     $1_INCLUDES_PARTIAL_AWK := $$(subst $$(SPACE);,,$$(subst $$(SPACE)=>$$(SPACE),"$$(RIGHT_PAREN)$$(RIGHT_PAREN) \
         { include$$(LEFT_PAREN)",$$(subst $$(SPACE);$$(SPACE),"$$(RIGHT_PAREN) } \
         else if $$(LEFT_PAREN)matches$$(LEFT_PAREN)",$$(strip $$($1_INCLUDES)))))
-    $1_INCLUDES_COMMAND_LINE := $(NAWK) '$$($1_INCLUDES_HEADER_AWK) \
+    $1_INCLUDES_COMMAND_LINE := $(AWK) '$$($1_INCLUDES_HEADER_AWK) \
         { if (matches("$$($1_INCLUDES_PARTIAL_AWK)") } else print }'
   else
     # We don't have any includes, just pipe the file through cat.

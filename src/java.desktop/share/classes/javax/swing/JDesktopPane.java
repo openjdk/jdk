@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package javax.swing;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import javax.swing.plaf.*;
-import javax.accessibility.*;
+package javax.swing;
 
 import java.awt.Component;
 import java.awt.Container;
-import java.beans.JavaBean;
 import java.beans.BeanProperty;
-import java.io.ObjectOutputStream;
-import java.io.IOException;
+import java.beans.JavaBean;
 import java.beans.PropertyVetoException;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.LinkedHashSet;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.swing.plaf.DesktopPaneUI;
 
 /**
  * A container used to create a multiple-document interface or a virtual desktop.
@@ -324,12 +327,7 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      */
     public JInternalFrame[] getAllFramesInLayer(int layer) {
         Collection<JInternalFrame> allFrames = getAllFrames(this);
-        Iterator<JInternalFrame> iterator = allFrames.iterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().getLayer() != layer) {
-                iterator.remove();
-            }
-        }
+        allFrames.removeIf(frame -> frame.getLayer() != layer);
         return allFrames.toArray(new JInternalFrame[0]);
     }
 
@@ -548,6 +546,7 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      * See readObject() and writeObject() in JComponent for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

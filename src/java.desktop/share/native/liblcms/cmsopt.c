@@ -408,7 +408,20 @@ Prelin16Data* PrelinOpt16alloc(cmsContext ContextID,
 
 
     p16 -> EvalCurveOut16 = (_cmsInterpFn16*) _cmsCalloc(ContextID, nOutputs, sizeof(_cmsInterpFn16));
+    if (p16->EvalCurveOut16 == NULL)
+    {
+        _cmsFree(ContextID, p16);
+        return NULL;
+    }
+
     p16 -> ParamsCurveOut16 = (cmsInterpParams**) _cmsCalloc(ContextID, nOutputs, sizeof(cmsInterpParams* ));
+    if (p16->ParamsCurveOut16 == NULL)
+    {
+
+        _cmsFree(ContextID, p16->EvalCurveOut16);
+        _cmsFree(ContextID, p16);
+        return NULL;
+    }
 
     for (i=0; i < nOutputs; i++) {
 
@@ -435,7 +448,9 @@ Prelin16Data* PrelinOpt16alloc(cmsContext ContextID,
 // Sampler implemented by another LUT. This is a clean way to precalculate the devicelink 3D CLUT for
 // almost any transform. We use floating point precision and then convert from floating point to 16 bits.
 static
-cmsInt32Number XFormSampler16(CMSREGISTER const cmsUInt16Number In[], CMSREGISTER cmsUInt16Number Out[], CMSREGISTER void* Cargo)
+cmsInt32Number XFormSampler16(CMSREGISTER const cmsUInt16Number In[],
+                              CMSREGISTER cmsUInt16Number Out[],
+                              CMSREGISTER void* Cargo)
 {
     cmsPipeline* Lut = (cmsPipeline*) Cargo;
     cmsFloat32Number InFloat[cmsMAXCHANNELS], OutFloat[cmsMAXCHANNELS];
@@ -794,7 +809,7 @@ Error:
 
     if (DataSetIn == NULL && DataSetOut == NULL) {
 
-        _cmsPipelineSetOptimizationParameters(Dest, (_cmsOPTeval16Fn) DataCLUT->Params->Interpolation.Lerp16, DataCLUT->Params, NULL, NULL);
+        _cmsPipelineSetOptimizationParameters(Dest, (_cmsPipelineEval16Fn) DataCLUT->Params->Interpolation.Lerp16, DataCLUT->Params, NULL, NULL);
     }
     else {
 
@@ -939,8 +954,8 @@ void* Prelin8dup(cmsContext ContextID, const void* ptr)
 #define DENS(i,j,k) (LutTable[(i)+(j)+(k)+OutChan])
 static CMS_NO_SANITIZE
 void PrelinEval8(CMSREGISTER const cmsUInt16Number Input[],
-                  CMSREGISTER cmsUInt16Number Output[],
-                  CMSREGISTER const void* D)
+                 CMSREGISTER cmsUInt16Number Output[],
+                 CMSREGISTER const void* D)
 {
 
     cmsUInt8Number         r, g, b;
@@ -957,9 +972,9 @@ void PrelinEval8(CMSREGISTER const cmsUInt16Number Input[],
     g = (cmsUInt8Number) (Input[1] >> 8);
     b = (cmsUInt8Number) (Input[2] >> 8);
 
-    X0 = X1 = (cmsS15Fixed16Number) p8->X0[r];
-    Y0 = Y1 = (cmsS15Fixed16Number) p8->Y0[g];
-    Z0 = Z1 = (cmsS15Fixed16Number) p8->Z0[b];
+    X0 = (cmsS15Fixed16Number) p8->X0[r];
+    Y0 = (cmsS15Fixed16Number) p8->Y0[g];
+    Z0 = (cmsS15Fixed16Number) p8->Z0[b];
 
     rx = p8 ->rx[r];
     ry = p8 ->ry[g];
@@ -1361,8 +1376,8 @@ Curves16Data* CurvesAlloc(cmsContext ContextID, cmsUInt32Number nCurves, cmsUInt
 
 static
 void FastEvaluateCurves8(CMSREGISTER const cmsUInt16Number In[],
-                          CMSREGISTER cmsUInt16Number Out[],
-                          CMSREGISTER const void* D)
+                         CMSREGISTER cmsUInt16Number Out[],
+                         CMSREGISTER const void* D)
 {
     Curves16Data* Data = (Curves16Data*) D;
     int x;
@@ -1922,7 +1937,7 @@ cmsBool  _cmsRegisterOptimizationPlugin(cmsContext ContextID, cmsPluginBase* Dat
 }
 
 // The entry point for LUT optimization
-cmsBool _cmsOptimizePipeline(cmsContext ContextID,
+cmsBool CMSEXPORT _cmsOptimizePipeline(cmsContext ContextID,
                              cmsPipeline**    PtrLut,
                              cmsUInt32Number  Intent,
                              cmsUInt32Number* InputFormat,

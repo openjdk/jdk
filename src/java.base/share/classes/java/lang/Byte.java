@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,18 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * byte}, as well as other constants and methods useful when dealing
  * with a {@code byte}.
  *
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
+ *
  * @author  Nakul Saraiya
  * @author  Joseph D. Darcy
  * @see     java.lang.Number
  * @since   1.1
  */
+@jdk.internal.ValueBased
 public final class Byte extends Number implements Comparable<Byte>, Constable {
 
     /**
@@ -83,7 +90,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @see java.lang.Integer#toString(int)
      */
     public static String toString(byte b) {
-        return Integer.toString((int)b, 10);
+        return Integer.toString(b);
     }
 
     /**
@@ -337,7 +344,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * {@link #valueOf(byte)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Byte(byte value) {
         this.value = value;
     }
@@ -360,7 +367,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * {@code byte} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Byte} object.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Byte(String s) throws NumberFormatException {
         this.value = parseByte(s, 10);
     }
@@ -429,8 +436,9 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @return  a string representation of the value of this object in
      *          base&nbsp;10.
      */
+    @Override
     public String toString() {
-        return Integer.toString((int)value);
+        return Integer.toString(value);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.*;
 import java.security.spec.*;
 import java.security.interfaces.*;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 
 /*
@@ -100,8 +101,8 @@ public class TestSigGen15 {
                     " due to no support");
                 continue;
             }
-            byte[] msgBytes = SigRecord.toByteArray(v.msg);
-            byte[] expSigBytes = SigRecord.toByteArray(v.sig);
+            byte[] msgBytes = HexFormat.of().parseHex(v.msg);
+            byte[] expSigBytes = HexFormat.of().parseHex(v.sig);
 
             sig.initSign(privKey);
             sig.update(msgBytes);
@@ -114,7 +115,7 @@ public class TestSigGen15 {
                 System.out.println("\tSHAALG       = " + v.mdAlg);
                 System.out.println("\tMsg          = " + v.msg);
                 System.out.println("\tExpected Sig = " + v.sig);
-                System.out.println("\tActual Sig   = " + SigRecord.toHexString(actualSigBytes));
+                System.out.println("\tActual Sig   = " + HexFormat.of().formatHex(actualSigBytes));
             } else {
                 System.out.println("\t" + v.mdAlg + " Test Vector Passed");
             }

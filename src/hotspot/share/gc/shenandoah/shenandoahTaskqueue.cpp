@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
 
 void ShenandoahObjToScanQueueSet::clear() {
   uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();

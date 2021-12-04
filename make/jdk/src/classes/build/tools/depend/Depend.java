@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,6 +60,7 @@ import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.element.ModuleElement.UsesDirective;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.QualifiedNameable;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
@@ -101,7 +103,7 @@ public class Depend implements Plugin {
             private final MessageDigest apiHash;
             {
                 try {
-                    apiHash = MessageDigest.getInstance("MD5");
+                    apiHash = MessageDigest.getInstance("SHA-256");
                 } catch (NoSuchAlgorithmException ex) {
                     throw new IllegalStateException(ex);
                 }
@@ -155,13 +157,7 @@ public class Depend implements Plugin {
     }
 
     private String toString(byte[] digest) {
-        StringBuilder result = new StringBuilder();
-
-        for (byte b : digest) {
-            result.append(String.format("%X", b));
-        }
-
-        return result.toString();
+        return HexFormat.of().withUpperCase().formatHex(digest);
     }
 
     private static final class APIVisitor implements ElementVisitor<Void, Void>,
@@ -255,6 +251,13 @@ public class Depend implements Plugin {
             visit(e.getSuperclass());
             visit(e.getInterfaces());
             visit(e.getEnclosedElements(), p);
+            return null;
+        }
+
+        @Override
+        public Void visitRecordComponent(@SuppressWarnings("preview")RecordComponentElement e, Void p) {
+            update(e.getSimpleName());
+            visit(e.asType());
             return null;
         }
 

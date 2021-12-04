@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.awt.event;
 
 import java.awt.Component;
 import java.io.ObjectStreamException;
+import java.io.Serial;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
@@ -180,9 +181,10 @@ public class FocusEvent extends ComponentEvent {
      */
     transient Component opposite;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 523753786457416396L;
 
     /**
@@ -388,6 +390,7 @@ public class FocusEvent extends ComponentEvent {
      * @see #cause
      * @since 9
      */
+    @Serial
     @SuppressWarnings("serial")
     Object readResolve() throws ObjectStreamException {
         if (cause != null) {

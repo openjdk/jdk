@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,7 @@ public class CLDRConverter {
         ResourceBundle.Control.getControl(ResourceBundle.Control.FORMAT_DEFAULT);
 
     private static Set<String> AVAILABLE_TZIDS;
+    static int copyrightYear;
     private static String zoneNameTempFile;
     private static String tzDataDir;
     private static final Map<String, String> canonicalTZMap = new HashMap<>();
@@ -217,6 +218,10 @@ public class CLDRConverter {
                         verbose = true;
                         break;
 
+                    case "-year":
+                        copyrightYear = Integer.parseInt(args[++i]);
+                        break;
+
                     case "-zntempfile":
                         zoneNameTempFile = args[++i];
                         break;
@@ -235,7 +240,7 @@ public class CLDRConverter {
                     }
                 }
             } catch (RuntimeException e) {
-                severe("unknown or imcomplete arg(s): " + currentArg);
+                severe("unknown or incomplete arg(s): " + currentArg);
                 usage();
                 System.exit(1);
             }
@@ -258,6 +263,10 @@ public class CLDRConverter {
 
         if (BASE_LOCALES.isEmpty()) {
             setupBaseLocales("en-US");
+        }
+
+        if (copyrightYear == 0) {
+            copyrightYear = ZonedDateTime.now(ZoneId.of("America/Los_Angeles")).getYear();
         }
 
         bundleGenerator = new ResourceBundleGenerator();
@@ -292,6 +301,7 @@ public class CLDRConverter {
                 + "\t-basemodule    generates bundles that go into java.base module%n"
                 + "\t-baselocales loc(,loc)*      locales that go into the base module%n"
                 + "\t-o dir         output directory (default: ./build/gensrc)%n"
+                + "\t-year year     copyright year in output%n"
                 + "\t-zntempfile    template file for java.time.format.ZoneName.java%n"
                 + "\t-tzdatadir     tzdata directory for java.time.format.ZoneName.java%n"
                 + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n");
@@ -521,6 +531,8 @@ public class CLDRConverter {
     }
 
     private static void convertBundles(List<Bundle> bundles) throws Exception {
+        var availableLangTags = metaInfo.get("AvailableLocales");
+
         // parent locales map. The mappings are put in base metaInfo file
         // for now.
         if (isBaseModule) {
@@ -532,8 +544,8 @@ public class CLDRConverter {
             // visible for the bundle's locale
 
             Map<String, Object> targetMap = bundle.getTargetMap();
-
             EnumSet<Bundle.Type> bundleTypes = bundle.getBundleTypes();
+            var id = bundle.getID();
 
             if (bundle.isRoot()) {
                 // Add DateTimePatternChars because CLDR no longer supports localized patterns.
@@ -543,40 +555,51 @@ public class CLDRConverter {
             // Now the map contains just the entries that need to be in the resources bundles.
             // Go ahead and generate them.
             if (bundleTypes.contains(Bundle.Type.LOCALENAMES)) {
-                Map<String, Object> localeNamesMap = extractLocaleNames(targetMap, bundle.getID());
+                Map<String, Object> localeNamesMap = extractLocaleNames(targetMap, id);
                 if (!localeNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "LocaleNames", bundle.getJavaID(), true, localeNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "LocaleNames", id, true, localeNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CURRENCYNAMES)) {
-                Map<String, Object> currencyNamesMap = extractCurrencyNames(targetMap, bundle.getID(), bundle.getCurrencies());
+                Map<String, Object> currencyNamesMap = extractCurrencyNames(targetMap, id, bundle.getCurrencies());
                 if (!currencyNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "CurrencyNames", bundle.getJavaID(), true, currencyNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "CurrencyNames", id, true, currencyNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.TIMEZONENAMES)) {
-                Map<String, Object> zoneNamesMap = extractZoneNames(targetMap, bundle.getID());
+                Map<String, Object> zoneNamesMap = extractZoneNames(targetMap, id);
                 if (!zoneNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "TimeZoneNames", bundle.getJavaID(), true, zoneNamesMap, BundleType.TIMEZONE);
+                    bundleGenerator.generateBundle("util", "TimeZoneNames", id, true, zoneNamesMap, BundleType.TIMEZONE);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CALENDARDATA)) {
-                Map<String, Object> calendarDataMap = extractCalendarData(targetMap, bundle.getID());
+                Map<String, Object> calendarDataMap = extractCalendarData(targetMap, id);
                 if (!calendarDataMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "CalendarData", bundle.getJavaID(), true, calendarDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("util", "CalendarData", id, true, calendarDataMap, BundleType.PLAIN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.FORMATDATA)) {
-                Map<String, Object> formatDataMap = extractFormatData(targetMap, bundle.getID());
+                Map<String, Object> formatDataMap = extractFormatData(targetMap, id);
                 if (!formatDataMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("text", "FormatData", bundle.getJavaID(), true, formatDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("text", "FormatData", id, true, formatDataMap, BundleType.PLAIN);
                 }
             }
 
             // For AvailableLocales
-            metaInfo.get("AvailableLocales").add(toLanguageTag(bundle.getID()));
-            addLikelySubtags(metaInfo, "AvailableLocales", bundle.getID());
+            var langTag = toLanguageTag(id);
+            availableLangTags.add(langTag);
+            addLikelySubtags(langTag);
         }
+
+        // Add extra language tags from likely subtags that meet the following conditions
+        // 1. Its likely subtag is supported (already in the available langtag set)
+        // 2. Neither of old obsolete ones (in/iw/ji)
+        handlerLikelySubtags.getData().entrySet().stream()
+            .filter(e -> availableLangTags.contains(e.getValue()))
+            .map(Map.Entry::getKey)
+            .filter(t -> !t.equals("in") && !t.equals("iw") && !t.equals("ji"))
+            .forEach(availableLangTags::add);
+
         bundleGenerator.generateMetaInfo(metaInfo);
     }
 
@@ -968,7 +991,7 @@ public class CLDRConverter {
         return outBuffer.toString();
     }
 
-    private static String toLanguageTag(String locName) {
+    static String toLanguageTag(String locName) {
         if (locName.indexOf('_') == -1) {
             return locName;
         }
@@ -977,11 +1000,12 @@ public class CLDRConverter {
         return loc.toLanguageTag();
     }
 
-    private static void addLikelySubtags(Map<String, SortedSet<String>> metaInfo, String category, String id) {
-        String likelySubtag = handlerLikelySubtags.get(id);
+    private static void addLikelySubtags(String langTag) {
+        String likelySubtag = handlerLikelySubtags.get(langTag);
         if (likelySubtag != null) {
-            // Remove Script for now
-            metaInfo.get(category).add(toLanguageTag(likelySubtag).replaceFirst("-[A-Z][a-z]{3}", ""));
+            var availableLangTags = metaInfo.get("AvailableLocales");
+            availableLangTags.add(likelySubtag.replaceFirst("-[A-Z][a-z]{3}", ""));
+            availableLangTags.add(likelySubtag);
         }
     }
 
@@ -1023,6 +1047,10 @@ public class CLDRConverter {
                 Objects.nonNull(p) &&
                 !candidates.get(i+1).equals(p)) {
                 List<Locale> applied = candidates.subList(0, i+1);
+                if (applied.contains(p)) {
+                    // avoid circular recursion (could happen with nb/no case)
+                    continue;
+                }
                 applied.addAll(applyParentLocales(baseName, defCon.getCandidateLocales(baseName, p)));
                 return applied;
             }

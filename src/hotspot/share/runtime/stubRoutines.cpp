@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,13 @@
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/vectorSupport.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/vmError.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -73,15 +73,6 @@ address StubRoutines::_atomic_cmpxchg_long_entry                = NULL;
 address StubRoutines::_atomic_add_entry                         = NULL;
 address StubRoutines::_atomic_add_long_entry                    = NULL;
 address StubRoutines::_fence_entry                              = NULL;
-address StubRoutines::_d2i_wrapper                              = NULL;
-address StubRoutines::_d2l_wrapper                              = NULL;
-
-jint    StubRoutines::_fpu_cntrl_wrd_std                        = 0;
-jint    StubRoutines::_fpu_cntrl_wrd_24                         = 0;
-jint    StubRoutines::_fpu_cntrl_wrd_trunc                      = 0;
-jint    StubRoutines::_mxcsr_std                                = 0;
-jint    StubRoutines::_fpu_subnormal_bias1[3]                   = { 0, 0, 0 };
-jint    StubRoutines::_fpu_subnormal_bias2[3]                   = { 0, 0, 0 };
 
 // Compiled code entry points default values
 // The default functions don't have separate disjoint versions.
@@ -133,6 +124,7 @@ address StubRoutines::_cipherBlockChaining_decryptAESCrypt = NULL;
 address StubRoutines::_electronicCodeBook_encryptAESCrypt  = NULL;
 address StubRoutines::_electronicCodeBook_decryptAESCrypt  = NULL;
 address StubRoutines::_counterMode_AESCrypt                = NULL;
+address StubRoutines::_galoisCounterMode_AESCrypt          = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
 address StubRoutines::_base64_encodeBlock                  = NULL;
 address StubRoutines::_base64_decodeBlock                  = NULL;
@@ -182,6 +174,9 @@ address StubRoutines::_safefetch32_continuation_pc       = NULL;
 address StubRoutines::_safefetchN_entry                  = NULL;
 address StubRoutines::_safefetchN_fault_pc               = NULL;
 address StubRoutines::_safefetchN_continuation_pc        = NULL;
+
+address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};
+address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};
 
 // Initialization
 //
@@ -268,40 +263,7 @@ static void test_arraycopy_func(address func, int alignment) {
     assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
   }
 }
-
-// simple test for SafeFetch32
-static void test_safefetch32() {
-  if (CanUseSafeFetch32()) {
-    int dummy = 17;
-    int* const p_invalid = (int*) VMError::get_segfault_address();
-    int* const p_valid = &dummy;
-    int result_invalid = SafeFetch32(p_invalid, 0xABC);
-    assert(result_invalid == 0xABC, "SafeFetch32 error");
-    int result_valid = SafeFetch32(p_valid, 0xABC);
-    assert(result_valid == 17, "SafeFetch32 error");
-  }
-}
-
-// simple test for SafeFetchN
-static void test_safefetchN() {
-  if (CanUseSafeFetchN()) {
-#ifdef _LP64
-    const intptr_t v1 = UCONST64(0xABCD00000000ABCD);
-    const intptr_t v2 = UCONST64(0xDEFD00000000DEFD);
-#else
-    const intptr_t v1 = 0xABCDABCD;
-    const intptr_t v2 = 0xDEFDDEFD;
-#endif
-    intptr_t dummy = v1;
-    intptr_t* const p_invalid = (intptr_t*) VMError::get_segfault_address();
-    intptr_t* const p_valid = &dummy;
-    intptr_t result_invalid = SafeFetchN(p_invalid, v2);
-    assert(result_invalid == v2, "SafeFetchN error");
-    intptr_t result_valid = SafeFetchN(p_valid, v2);
-    assert(result_valid == v1, "SafeFetchN error");
-  }
-}
-#endif
+#endif // ASSERT
 
 void StubRoutines::initialize2() {
   if (_code2 == NULL) {
@@ -319,6 +281,8 @@ void StubRoutines::initialize2() {
   }
 
 #ifdef ASSERT
+
+  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
 
 #define TEST_ARRAYCOPY(type)                                                    \
   test_arraycopy_func(          type##_arraycopy(),          sizeof(type));     \
@@ -393,12 +357,7 @@ void StubRoutines::initialize2() {
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_conjoint_words), sizeof(jlong));
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_disjoint_words), sizeof(jlong));
 
-  // test safefetch routines
-  // Not on Windows 32bit until 8074860 is fixed
-#if ! (defined(_WIN32) && defined(_M_IX86))
-  test_safefetch32();
-  test_safefetchN();
-#endif
+  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 
 #endif
 }
@@ -524,6 +483,7 @@ address StubRoutines::select_fill_function(BasicType t, bool aligned, const char
   case T_NARROWOOP:
   case T_NARROWKLASS:
   case T_ADDRESS:
+  case T_VOID:
     // Currently unsupported
     return NULL;
 
@@ -555,8 +515,8 @@ StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint
   name = #xxx_arraycopy; \
   return StubRoutines::xxx_arraycopy(); }
 
-#define RETURN_STUB_PARM(xxx_arraycopy, parm) {           \
-  name = #xxx_arraycopy; \
+#define RETURN_STUB_PARM(xxx_arraycopy, parm) { \
+  name = parm ? #xxx_arraycopy "_uninit": #xxx_arraycopy; \
   return StubRoutines::xxx_arraycopy(parm); }
 
   switch (t) {

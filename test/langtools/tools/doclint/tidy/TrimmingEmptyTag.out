@@ -1,52 +1,43 @@
 TrimmingEmptyTag.java:14: warning: empty <b> tag
  * <b></b>
       ^
-TrimmingEmptyTag.java:15: warning: empty <table> tag
- * <table summary=description></table>
-                              ^
-TrimmingEmptyTag.java:16: warning: empty <caption> tag
+TrimmingEmptyTag.java:15: warning: empty <caption> tag
  * <table><caption></caption></table>
                    ^
-TrimmingEmptyTag.java:17: warning: empty <code> tag
+TrimmingEmptyTag.java:16: warning: empty <code> tag
  * <code></code>
          ^
-TrimmingEmptyTag.java:18: warning: empty <dl> tag
+TrimmingEmptyTag.java:17: warning: empty <dl> tag
  * <dl></dl>
        ^
-TrimmingEmptyTag.java:19: warning: empty <dt> tag
+TrimmingEmptyTag.java:18: warning: empty <dt> tag
  * <dl><dt></dt><dd></dd></dl>
            ^
-TrimmingEmptyTag.java:19: warning: empty <dd> tag
+TrimmingEmptyTag.java:18: warning: empty <dd> tag
  * <dl><dt></dt><dd></dd></dl>
                     ^
-TrimmingEmptyTag.java:20: warning: empty <font> tag
- * <font></font>
-         ^
-TrimmingEmptyTag.java:21: warning: empty <i> tag
+TrimmingEmptyTag.java:19: warning: empty <i> tag
  * <i></i>
       ^
-TrimmingEmptyTag.java:22: warning: empty <ol> tag
+TrimmingEmptyTag.java:20: warning: empty <ol> tag
  * <ol></ol>
        ^
-TrimmingEmptyTag.java:23: warning: empty <p> tag
+TrimmingEmptyTag.java:21: warning: empty <p> tag
  * <p></p>
       ^
-TrimmingEmptyTag.java:24: warning: empty <pre> tag
+TrimmingEmptyTag.java:22: warning: empty <pre> tag
  * <pre></pre>
         ^
-TrimmingEmptyTag.java:25: warning: empty <span> tag
+TrimmingEmptyTag.java:23: warning: empty <span> tag
  * <span></span>
          ^
-TrimmingEmptyTag.java:26: warning: empty <tt> tag
- * <tt></tt>
-       ^
-TrimmingEmptyTag.java:27: warning: empty <ul> tag
+TrimmingEmptyTag.java:24: warning: empty <ul> tag
  * <ul></ul>
        ^
-TrimmingEmptyTag.java:31: warning: empty <p> tag
+TrimmingEmptyTag.java:28: warning: empty <p> tag
     /** <p> */
         ^
-TrimmingEmptyTag.java:33: warning: empty <p> tag
+TrimmingEmptyTag.java:30: warning: empty <p> tag
     /** <p> <ul><li>text</ul> */
         ^
-17 warnings
+14 warnings

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,19 @@
 package java.lang.invoke;
 
 
+import jdk.internal.loader.ClassLoaders;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
-import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static java.lang.invoke.MethodHandleInfo.*;
 import static java.lang.invoke.MethodHandleStatics.*;
@@ -449,15 +451,11 @@ public abstract class MethodHandle implements Constable {
     @interface PolymorphicSignature { }
 
     private final MethodType type;
-    /*private*/
-    final LambdaForm form;
-    // form is not private so that invokers can easily fetch it
-    /*private*/
-    MethodHandle asTypeCache;
-    // asTypeCache is not private so that invokers can easily fetch it
-    /*non-public*/
-    byte customizationCount;
-    // customizationCount should be accessible from invokers
+    /*private*/ final LambdaForm form; // form is not private so that invokers can easily fetch it
+    private MethodHandle asTypeCache;
+    private SoftReference<MethodHandle> asTypeSoftCache;
+
+    private byte customizationCount;
 
     /**
      * Reports the type of this method handle.
@@ -604,6 +602,10 @@ public abstract class MethodHandle implements Constable {
     @IntrinsicCandidate
     /*non-public*/
     static native @PolymorphicSignature Object linkToInterface(Object... args) throws Throwable;
+
+    /** TODO */
+    @IntrinsicCandidate
+    /*non-public*/ static native @PolymorphicSignature Object linkToNative(Object... args) throws Throwable;
 
     /**
      * Performs a variable arity invocation, passing the arguments in the given array
@@ -852,34 +854,120 @@ public abstract class MethodHandle implements Constable {
      * @throws WrongMethodTypeException if the conversion cannot be made
      * @see MethodHandles#explicitCastArguments
      */
-    public MethodHandle asType(MethodType newType) {
+    public final MethodHandle asType(MethodType newType) {
         // Fast path alternative to a heavyweight {@code asType} call.
         // Return 'this' if the conversion will be a no-op.
         if (newType == type) {
             return this;
         }
         // Return 'this.asTypeCache' if the conversion is already memoized.
-        MethodHandle atc = asTypeCached(newType);
-        if (atc != null) {
-            return atc;
+        MethodHandle at = asTypeCached(newType);
+        if (at != null) {
+            return at;
         }
-        return asTypeUncached(newType);
+        return setAsTypeCache(asTypeUncached(newType));
     }
 
     private MethodHandle asTypeCached(MethodType newType) {
         MethodHandle atc = asTypeCache;
         if (atc != null && newType == atc.type) {
-            return atc;
+            return atc; // cache hit
+        }
+        SoftReference<MethodHandle> softCache = asTypeSoftCache;
+        if (softCache != null) {
+            atc = softCache.get();
+            if (atc != null && newType == atc.type) {
+                return atc; // soft cache hit
+            }
         }
         return null;
+    }
+
+    private MethodHandle setAsTypeCache(MethodHandle at) {
+        // Don't introduce a strong reference in the cache if newType depends on any class loader other than
+        // current method handle already does to avoid class loader leaks.
+        if (isSafeToCache(at.type)) {
+            asTypeCache = at;
+        } else {
+            asTypeSoftCache = new SoftReference<>(at);
+        }
+        return at;
     }
 
     /** Override this to change asType behavior. */
     /*non-public*/
     MethodHandle asTypeUncached(MethodType newType) {
-        if (!type.isConvertibleTo(newType))
-            throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
-        return asTypeCache = MethodHandleImpl.makePairwiseConvert(this, newType, true);
+        if (!type.isConvertibleTo(newType)) {
+            throw new WrongMethodTypeException("cannot convert " + this + " to " + newType);
+        }
+        return MethodHandleImpl.makePairwiseConvert(this, newType, true);
+    }
+
+    /**
+     * Returns true if {@code newType} does not depend on any class loader other than current method handle already does.
+     * May conservatively return false in order to be efficient.
+     */
+    private boolean isSafeToCache(MethodType newType) {
+        ClassLoader loader = getApproximateCommonClassLoader(type);
+        return keepsAlive(newType, loader);
+    }
+
+    /**
+     * Tries to find the most specific {@code ClassLoader} which keeps all the classes mentioned in {@code mt} alive.
+     * In the worst case, returns a {@code ClassLoader} which relates to some of the classes mentioned in {@code mt}.
+     */
+    private static ClassLoader getApproximateCommonClassLoader(MethodType mt) {
+        ClassLoader loader = mt.rtype().getClassLoader();
+        for (Class<?> ptype : mt.ptypes()) {
+            ClassLoader ploader = ptype.getClassLoader();
+            if (isAncestorLoaderOf(loader, ploader)) {
+                loader = ploader; // pick more specific loader
+            } else {
+                // Either loader is a descendant of ploader or loaders are unrelated. Ignore both cases.
+                // When loaders are not related, just pick one and proceed. It reduces the precision of keepsAlive, but
+                // doesn't compromise correctness.
+            }
+        }
+        return loader;
+    }
+
+    /* Returns true when {@code loader} keeps components of {@code mt} reachable either directly or indirectly through the loader delegation chain. */
+    private static boolean keepsAlive(MethodType mt, ClassLoader loader) {
+        for (Class<?> ptype : mt.ptypes()) {
+            if (!keepsAlive(ptype, loader)) {
+                return false;
+            }
+        }
+        return keepsAlive(mt.rtype(), loader);
+    }
+
+    /* Returns true when {@code loader} keeps {@code cls} either directly or indirectly through the loader delegation chain. */
+    private static boolean keepsAlive(Class<?> cls, ClassLoader loader) {
+        ClassLoader defLoader = cls.getClassLoader();
+        if (isBuiltinLoader(defLoader)) {
+            return true; // built-in loaders are always reachable
+        }
+        return isAncestorLoaderOf(defLoader, loader);
+    }
+
+    private static boolean isAncestorLoaderOf(ClassLoader ancestor, ClassLoader descendant) {
+        // Assume built-in loaders are interchangeable and all custom loaders delegate to one of them.
+        if (isBuiltinLoader(ancestor)) {
+            return true;
+        }
+        // Climb up the descendant chain until a built-in loader is encountered.
+        for (ClassLoader loader = descendant; !isBuiltinLoader(loader); loader = loader.getParent()) {
+            if (loader == ancestor) {
+                return true;
+            }
+        }
+        return false; // no direct relation between loaders is found
+    }
+
+    private static boolean isBuiltinLoader(ClassLoader loader) {
+        return loader == null ||
+               loader == ClassLoaders.platformClassLoader() ||
+               loader == ClassLoaders.appClassLoader();
     }
 
     /**
@@ -1241,13 +1329,9 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
         asCollectorChecks(arrayType, collectArgPos, arrayLength);
         BoundMethodHandle mh = rebind();
         MethodType resultType = type().asCollectorType(arrayType, collectArgPos, arrayLength);
-        MethodHandle newArray = MethodHandleImpl.varargsArray(arrayType, arrayLength);
-        LambdaForm lform = mh.editor().collectArgumentArrayForm(1 + collectArgPos, newArray);
-        if (lform != null) {
-            return mh.copyWith(resultType, lform);
-        }
-        lform = mh.editor().collectArgumentsForm(1 + collectArgPos, newArray.type().basicType());
-        return mh.copyWithExtendL(resultType, lform, newArray);
+        MethodHandle collector = MethodHandleImpl.varargsArray(arrayType, arrayLength);
+        LambdaForm lform = mh.editor().collectArgumentsForm(1 + collectArgPos, collector.type().basicType());
+        return mh.copyWithExtendL(resultType, lform, collector);
     }
 
     /**
@@ -1315,7 +1399,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * a new array of type {@code arrayType}, whose elements
      * comprise (in order) the replaced arguments.
      * <p>
-     * The caller type must provides as least enough arguments,
+     * The caller type must provide at least enough arguments,
      * and of the correct type, to satisfy the target's requirement for
      * positional arguments before the trailing array argument.
      * Thus, the caller must supply, at a minimum, {@code N-1} arguments,
@@ -1409,7 +1493,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      * array or a single element of an array to be collected.
      * Note that the dynamic type of the trailing argument has no
      * effect on this decision, only a comparison between the symbolic
-     * type descriptor of the call site and the type descriptor of the method handle.)
+     * type descriptor of the call site and the type descriptor of the method handle.
      *
      * @param arrayType often {@code Object[]}, the type of the array argument which will collect the arguments
      * @return a new method handle which can collect any number of trailing arguments
@@ -1464,7 +1548,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      * except that {@link #isVarargsCollector isVarargsCollector}
      * will be false.
      * The fixed-arity method handle may (or may not) be the
-     * a previous argument to {@code asVarargsCollector}.
+     * previous argument to {@code asVarargsCollector}.
      * <p>
      * Here is an example, of a list-making variable arity method handle:
      * <blockquote><pre>{@code
@@ -1559,32 +1643,22 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
             return Optional.empty();
         }
 
-        switch (info.getReferenceKind()) {
-            case REF_getField:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.GETTER, owner, name, type.returnType()));
-            case REF_putField:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.SETTER, owner, name, type.parameterType(0)));
-            case REF_getStatic:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_GETTER, owner, name, type.returnType()));
-            case REF_putStatic:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_SETTER, owner, name, type.parameterType(0)));
-            case REF_invokeVirtual:
-                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.VIRTUAL, owner, name, type));
-            case REF_invokeStatic:
-                return isInterface ?
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_STATIC, owner, name, type)) :
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, owner, name, type));
-            case REF_invokeSpecial:
-                return isInterface ?
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_SPECIAL, owner, name, type)) :
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.SPECIAL, owner, name, type));
-            case REF_invokeInterface:
-                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL, owner, name, type));
-            case REF_newInvokeSpecial:
-                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.CONSTRUCTOR, owner, name, type));
-            default:
-                return Optional.empty();
-        }
+        return switch (info.getReferenceKind()) {
+            case REF_getField         -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.GETTER, owner, name, type.returnType()));
+            case REF_putField         -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.SETTER, owner, name, type.parameterType(0)));
+            case REF_getStatic        -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_GETTER, owner, name, type.returnType()));
+            case REF_putStatic        -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_SETTER, owner, name, type.parameterType(0)));
+            case REF_invokeVirtual    -> Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.VIRTUAL, owner, name, type));
+            case REF_invokeStatic     -> isInterface ?
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_STATIC, owner, name, type)) :
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, owner, name, type));
+            case REF_invokeSpecial    -> isInterface ?
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_SPECIAL, owner, name, type)) :
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.SPECIAL, owner, name, type));
+            case REF_invokeInterface  -> Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL, owner, name, type));
+            case REF_newInvokeSpecial -> Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.CONSTRUCTOR, owner, name, type));
+            default -> Optional.empty();
+        };
     }
 
     /**
@@ -1681,6 +1755,11 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
 
     /*non-public*/
+    Object intrinsicData() {
+        return null;
+    }
+
+    /*non-public*/
     MethodHandle withInternalMemberName(MemberName member, boolean isInvokeSpecial) {
         if (member != null) {
             return MethodHandleImpl.makeWrappedMember(this, member, isInvokeSpecial);
@@ -1729,6 +1808,30 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      */
     abstract BoundMethodHandle rebind();
 
+    /* non-public */
+    void maybeCustomize() {
+        if (form.customized == null) {
+            byte count = customizationCount;
+            if (count >= CUSTOMIZE_THRESHOLD) {
+                customize();
+            } else {
+                customizationCount = (byte) (count + 1);
+            }
+        }
+    }
+
+    /** Craft a LambdaForm customized for this particular MethodHandle. */
+    /*non-public*/
+    void customize() {
+        updateForm(new Function<>() {
+                public LambdaForm apply(LambdaForm oldForm) {
+                    return oldForm.customize(MethodHandle.this);
+                }
+            });
+    }
+
+    private volatile boolean updateInProgress; // = false;
+
     /**
      * Replace the old lambda form of this method handle with a new one.
      * The new one must be functionally equivalent to the old one.
@@ -1737,26 +1840,26 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      * Use with discretion.
      */
     /*non-public*/
-    void updateForm(LambdaForm newForm) {
-        assert(newForm.customized == null || newForm.customized == this);
-        if (form == newForm)  return;
-        newForm.prepare();  // as in MethodHandle.<init>
-        UNSAFE.putReference(this, FORM_OFFSET, newForm);
-        UNSAFE.fullFence();
-    }
-
-    /** Craft a LambdaForm customized for this particular MethodHandle */
-    /*non-public*/
-    void customize() {
-        final LambdaForm form = this.form;
-        if (form.customized == null) {
-            LambdaForm newForm = form.customize(this);
-            updateForm(newForm);
+    void updateForm(Function<LambdaForm, LambdaForm> updater) {
+        if (UNSAFE.compareAndSetBoolean(this, UPDATE_OFFSET, false, true)) { // updateInProgress = true
+            // Only 1 thread wins the race and updates MH.form field.
+            try {
+                LambdaForm oldForm = form;
+                LambdaForm newForm = updater.apply(oldForm);
+                if (oldForm != newForm) {
+                    assert (newForm.customized == null || newForm.customized == this);
+                    newForm.prepare(); // as in MethodHandle.<init>
+                    UNSAFE.putReference(this, FORM_OFFSET, newForm);
+                    UNSAFE.fullFence();
+                }
+            } finally {
+                updateInProgress = false;
+            }
         } else {
-            assert(form.customized == this);
+            // Update got lost due to concurrent update. But callers don't care.
         }
     }
 
-    private static final long FORM_OFFSET
-            = UNSAFE.objectFieldOffset(MethodHandle.class, "form");
+    private static final long   FORM_OFFSET = UNSAFE.objectFieldOffset(MethodHandle.class, "form");
+    private static final long UPDATE_OFFSET = UNSAFE.objectFieldOffset(MethodHandle.class, "updateInProgress");
 }

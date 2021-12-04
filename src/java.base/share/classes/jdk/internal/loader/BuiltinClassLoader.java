@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,6 +288,7 @@ public class BuiltinClassLoader
      * Returns an input stream to a resource of the given name in a module
      * defined to this class loader.
      */
+    @SuppressWarnings("removal")
     public InputStream findResourceAsStream(String mn, String name)
         throws IOException
     {
@@ -435,6 +436,7 @@ public class BuiltinClassLoader
      *
      * The cache used by this method avoids repeated searching of all modules.
      */
+    @SuppressWarnings("removal")
     private List<URL> findMiscResource(String name) throws IOException {
         SoftReference<Map<String, List<URL>>> ref = this.resourceCache;
         Map<String, List<URL>> map = (ref != null) ? ref.get() : null;
@@ -488,6 +490,7 @@ public class BuiltinClassLoader
     /**
      * Returns the URL to a resource in a module or {@code null} if not found.
      */
+    @SuppressWarnings("removal")
     private URL findResource(ModuleReference mref, String name) throws IOException {
         URI u;
         if (System.getSecurityManager() == null) {
@@ -527,6 +530,7 @@ public class BuiltinClassLoader
     /**
      * Returns a URL to a resource on the class path.
      */
+    @SuppressWarnings("removal")
     private URL findResourceOnClassPath(String name) {
         if (hasClassPath()) {
             if (System.getSecurityManager() == null) {
@@ -544,6 +548,7 @@ public class BuiltinClassLoader
     /**
      * Returns the URLs of all resources of the given name on the class path.
      */
+    @SuppressWarnings("removal")
     private Enumeration<URL> findResourcesOnClassPath(String name) {
         if (hasClassPath()) {
             if (System.getSecurityManager() == null) {
@@ -730,6 +735,7 @@ public class BuiltinClassLoader
      *
      * @return the resulting Class or {@code null} if not found
      */
+    @SuppressWarnings("removal")
     private Class<?> findClassInModuleOrNull(LoadedModule loadedModule, String cn) {
         if (System.getSecurityManager() == null) {
             return defineClass(cn, loadedModule);
@@ -744,6 +750,7 @@ public class BuiltinClassLoader
      *
      * @return the resulting Class or {@code null} if not found
      */
+    @SuppressWarnings("removal")
     private Class<?> findClassOnClassPathOrNull(String cn) {
         String path = cn.replace('.', '/').concat(".class");
         if (System.getSecurityManager() == null) {

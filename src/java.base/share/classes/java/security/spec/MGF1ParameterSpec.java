@@ -25,8 +25,6 @@
 
 package java.security.spec;
 
-import java.security.spec.AlgorithmParameterSpec;
-
 /**
  * This class specifies the set of parameters used with mask generation
  * function MGF1 in OAEP Padding and RSASSA-PSS signature scheme, as
@@ -161,5 +159,10 @@ public class MGF1ParameterSpec implements AlgorithmParameterSpec {
      */
     public String getDigestAlgorithm() {
         return mdName;
+    }
+
+    @Override
+    public String toString() {
+        return "MGF1ParameterSpec[hashAlgorithm=" + mdName + "]";
     }
 }

@@ -44,14 +44,28 @@ import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
 public class LinuxHelper {
-    private static String getRelease(JPackageCommand cmd) {
-        return cmd.getArgumentValue("--linux-app-release", () -> "1");
+    private static String getReleaseSuffix(JPackageCommand cmd) {
+        String value = null;
+        final PackageType packageType = cmd.packageType();
+        switch (packageType) {
+            case LINUX_DEB:
+                value = Optional.ofNullable(cmd.getArgumentValue(
+                        "--linux-app-release", () -> null)).map(v -> "-" + v).orElse(
+                        "");
+                break;
+
+            case LINUX_RPM:
+                value = "-" + cmd.getArgumentValue("--linux-app-release",
+                        () -> "1");
+                break;
+        }
+        return value;
     }
 
     public static String getPackageName(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.LINUX);
         return cmd.getArgumentValue("--linux-package-name",
-                () -> cmd.name().toLowerCase());
+                () -> cmd.installerName().toLowerCase());
     }
 
     public static Path getDesktopFile(JPackageCommand cmd) {
@@ -74,18 +88,18 @@ public class LinuxHelper {
         String format = null;
         switch (packageType) {
             case LINUX_DEB:
-                format = "%s_%s-%s_%s";
+                format = "%s_%s%s_%s";
                 break;
 
             case LINUX_RPM:
-                format = "%s-%s-%s.%s";
+                format = "%s-%s%s.%s";
                 break;
         }
 
-        final String release = getRelease(cmd);
+        final String releaseSuffix = getReleaseSuffix(cmd);
         final String version = cmd.version();
 
-        return String.format(format, getPackageName(cmd), version, release,
+        return String.format(format, getPackageName(cmd), version, releaseSuffix,
                 getDefaultPackageArch(packageType)) + packageType.getSuffix();
     }
 
@@ -282,8 +296,8 @@ public class LinuxHelper {
                     actualCriticalRuntimePaths);
         } else {
             // AppImagePackageTest.testEmpty() will have no dependencies,
-            // but will have more then 0 and less than 1K content size.
-            checkPrerequisites = packageSize > 1;
+            // but will have more then 0 and less than 5K content size when --icon is used.
+            checkPrerequisites = packageSize > 5;
         }
 
         List<String> prerequisites = LinuxHelper.getPrerequisitePackages(cmd);

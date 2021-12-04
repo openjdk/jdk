@@ -10,7 +10,7 @@
             $abstractvectortype$ bv = $abstractvectortype$.fromArray(SPECIES, b, i);
             av.lanewise(VectorOperators.[[TEST]], bv, c[i]).intoArray(r, i);
         }
-        assertBroadcastArraysEquals(a, b, c, r, $vectorteststype$::[[TEST]]);
+        assertBroadcastArraysEquals(r, a, b, c, $vectorteststype$::[[TEST]]);
     }
 
     @Test(dataProvider = "$type$TernaryOpProvider")
@@ -25,5 +25,5 @@
             $abstractvectortype$ cv = $abstractvectortype$.fromArray(SPECIES, c, i);
             av.lanewise(VectorOperators.[[TEST]], b[i], cv).intoArray(r, i);
         }
-        assertAltBroadcastArraysEquals(a, b, c, r, $vectorteststype$::[[TEST]]);
+        assertAltBroadcastArraysEquals(r, a, b, c, $vectorteststype$::[[TEST]]);
     }

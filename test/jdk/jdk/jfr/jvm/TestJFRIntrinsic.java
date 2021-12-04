@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -35,9 +33,8 @@
  *          java.management
  *
  * @build sun.hotspot.WhiteBox
- * @build ClassFileInstaller
  *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:. -ea -Xmixed -Xbatch -XX:TieredStopAtLevel=4 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      jdk.jfr.jvm.TestJFRIntrinsic
@@ -62,24 +59,20 @@ public class TestJFRIntrinsic {
     public Object eventWriter;
 
     public static void main(String... args) throws Exception {
-        /*
-        Temporarily excluded until getClassId is reworked to accommodate epoch shift tagging
+        JVM.getJVM().createNativeJFR();
+        TestJFRIntrinsic ti = new TestJFRIntrinsic();
         Method classid = TestJFRIntrinsic.class.getDeclaredMethod("getClassIdIntrinsic",  Class.class);
         ti.runIntrinsicTest(classid);
-        */
-        TestJFRIntrinsic ti = new TestJFRIntrinsic();
         Method eventWriterMethod = TestJFRIntrinsic.class.getDeclaredMethod("getEventWriterIntrinsic", Class.class);
         ti.runIntrinsicTest(eventWriterMethod);
     }
 
-    /*
     public void getClassIdIntrinsic(Class<?> cls) {
         long exp = JVM.getClassId(cls);
         if (exp == 0) {
             throw new RuntimeException("Class id is zero");
         }
     }
-    */
 
     public void getEventWriterIntrinsic(Class<?> cls) {
         Object o = JVM.getEventWriter();

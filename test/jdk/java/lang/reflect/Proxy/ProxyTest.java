@@ -81,4 +81,20 @@ public class ProxyTest {
 
         assertTrue(exitValue == 0);
     }
+
+    /**
+     * Tests invocation of default methods in exported and non-exported types
+     * in a named module
+     */
+    @Test
+    public void runDefaultMethodsTest() throws Exception {
+        int exitValue = executeTestJava("-cp", CPATH_DIR.toString(),
+                "--module-path", MODS_DIR.toString(),
+                "-m", "test/jdk.test.DefaultMethods")
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue();
+
+        assertTrue(exitValue == 0);
+    }
 }

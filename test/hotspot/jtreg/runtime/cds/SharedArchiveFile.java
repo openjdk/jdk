@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,8 @@
  *          java.management
  */
 
+import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 
 
 // NOTE: This test serves as a sanity test and also as an example for simple
@@ -41,23 +40,20 @@ import jdk.test.lib.process.OutputAnalyzer;
 // methods to form command line to create/use shared archive.
 public class SharedArchiveFile {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
-                                "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
-                                "-Xshare:dump", "-Xlog:cds");
-        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");
-        CDSTestUtils.checkDump(out);
+        CDSOptions opts = (new CDSOptions())
+            .addPrefix("-Xlog:cds")
+            .setArchiveName("./SharedArchiveFile.jsa");
+        CDSTestUtils.createArchiveAndCheck(opts);
 
         // -XX:+DumpSharedSpaces should behave the same as -Xshare:dump
-        pb = ProcessTools.createTestJvm(
-                                "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
-                                "-XX:+DumpSharedSpaces", "-Xlog:cds");
-        out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");
-        CDSTestUtils.checkDump(out);
+        opts = (new CDSOptions())
+            .addPrefix("-XX:+DumpSharedSpaces", "-Xlog:cds")
+            .setArchiveName("./SharedArchiveFile.jsa");
+        CDSTestUtils.createArchiveAndCheck(opts);
 
-        pb = ProcessTools.createTestJvm(
-                              "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
-                              "-Xshare:on", "-version");
-        out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");
-        CDSTestUtils.checkExec(out);
+        opts = (new CDSOptions())
+            .setArchiveName("./SharedArchiveFile.jsa");
+        CDSTestUtils.run(opts)
+                    .assertNormalExit();
     }
 }

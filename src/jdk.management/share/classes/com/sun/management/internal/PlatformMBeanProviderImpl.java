@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,9 @@ import javax.management.DynamicMBean;
 import sun.management.ManagementFactoryHelper;
 import sun.management.spi.PlatformMBeanProvider;
 
+@SuppressWarnings("removal")
 public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
-    final static String DIAGNOSTIC_COMMAND_MBEAN_NAME =
+    static final String DIAGNOSTIC_COMMAND_MBEAN_NAME =
         "com.sun.management:type=DiagnosticCommand";
 
     private final List<PlatformComponent<?>> mxbeanList;
@@ -204,8 +205,7 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<com.sun.management.HotSpotDiagnosticMXBean>() {
             private final Set<String> hotSpotDiagnosticMXBeanInterfaceNames =
-                    Collections.unmodifiableSet(Collections.<String>singleton(
-                            "com.sun.management.HotSpotDiagnosticMXBean"));
+                    Collections.singleton("com.sun.management.HotSpotDiagnosticMXBean");
 
             @Override
             public Set<Class<? extends com.sun.management.HotSpotDiagnosticMXBean>> mbeanInterfaces() {
@@ -237,8 +237,7 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
         if (diagMBean != null) {
             initMBeanList.add(new PlatformComponent<DynamicMBean>() {
                 final Set<String> dynamicMBeanInterfaceNames
-                        = Collections.unmodifiableSet(Collections.<String>singleton(
-                                "javax.management.DynamicMBean"));
+                        = Collections.singleton("javax.management.DynamicMBean");
 
                 @Override
                 public Set<String> mbeanInterfaceNames() {

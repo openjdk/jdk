@@ -118,7 +118,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * class Driver2 { // ...
  *   void main() throws InterruptedException {
  *     CountDownLatch doneSignal = new CountDownLatch(N);
- *     Executor e = ...
+ *     Executor e = ...;
  *
  *     for (int i = 0; i < N; ++i) // create and start threads
  *       e.execute(new WorkerRunnable(doneSignal, i));
@@ -135,10 +135,8 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  *     this.i = i;
  *   }
  *   public void run() {
- *     try {
- *       doWork(i);
- *       doneSignal.countDown();
- *     } catch (InterruptedException ex) {} // return;
+ *     doWork();
+ *     doneSignal.countDown();
  *   }
  *
  *   void doWork() { ... }

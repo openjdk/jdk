@@ -42,7 +42,7 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.jpackage.internal.resources.WinResources");
 
-    private static final String TEMPLATE_APP_ICON ="java48.ico";
+    private static final String TEMPLATE_APP_ICON ="JavaApp.ico";
 
     public static final BundlerParamInfo<Path> ICON_ICO =
             new StandardBundlerParam<>(
@@ -75,7 +75,7 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
     }
 
     private void writeEntry(InputStream in, Path dstFile) throws IOException {
-        Files.createDirectories(dstFile.getParent());
+        Files.createDirectories(IOUtils.getParent(dstFile));
         Files.copy(in, dstFile);
     }
 

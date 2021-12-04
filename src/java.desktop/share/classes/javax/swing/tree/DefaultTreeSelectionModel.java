@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,12 @@
 package javax.swing.tree;
 
 import java.beans.PropertyChangeListener;
-import java.io.*;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Enumeration;
@@ -34,8 +39,12 @@ import java.util.EventListener;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
-import javax.swing.event.*;
+
 import javax.swing.DefaultListSelectionModel;
+import javax.swing.event.EventListenerList;
+import javax.swing.event.SwingPropertyChangeSupport;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 
 /**
  * Default implementation of TreeSelectionModel.  Listeners are notified
@@ -1165,10 +1174,9 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
         sb.append(getClass().getName() + " " + hashCode() + " [ ");
         for(int counter = 0; counter < selCount; counter++) {
             if(rows != null)
-                sb.append(selection[counter].toString() + "@" +
-                          Integer.toString(rows[counter])+ " ");
+                sb.append(selection[counter] + "@" + rows[counter] + " ");
             else
-                sb.append(selection[counter].toString() + " ");
+                sb.append(selection[counter] + " ");
         }
         sb.append("]");
         return sb.toString();
@@ -1203,12 +1211,13 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
     }
 
     // Serialization support.
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Object[]             tValues;
 
         s.defaultWriteObject();
         // Save the rowMapper, if it implements Serializable
-        if(rowMapper != null && rowMapper instanceof Serializable) {
+        if (rowMapper instanceof Serializable) {
             tValues = new Object[2];
             tValues[0] = "rowMapper";
             tValues[1] = rowMapper;
@@ -1219,6 +1228,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
     }
 
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();

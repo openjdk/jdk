@@ -57,3 +57,7 @@ void ZBreakpoint::at_after_marking_started() {
 void ZBreakpoint::at_before_marking_completed() {
   ConcurrentGCBreakpoints::at("BEFORE MARKING COMPLETED");
 }
+
+void ZBreakpoint::at_after_reference_processing_started() {
+  ConcurrentGCBreakpoints::at("AFTER CONCURRENT REFERENCE PROCESSING STARTED");
+}

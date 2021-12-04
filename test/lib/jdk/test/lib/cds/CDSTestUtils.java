@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,8 @@ public class CDSTestUtils {
         "UseSharedSpaces: Unable to allocate region, range is not within java heap.";
     public static final String MSG_RANGE_ALREADT_IN_USE =
         "Unable to allocate region, java heap range is already in use.";
-
+    public static final String MSG_DYNAMIC_NOT_SUPPORTED =
+        "-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded";
     public static final boolean DYNAMIC_DUMP = Boolean.getBoolean("test.dynamic.cds.archive");
 
     public interface Checker {
@@ -271,8 +272,7 @@ public class CDSTestUtils {
         if (!DYNAMIC_DUMP) {
             output.shouldContain("Loading classes to share");
         } else {
-            output.shouldContain("Buffer-space to target-space delta")
-                  .shouldContain("Written dynamic archive 0x");
+            output.shouldContain("Written dynamic archive 0x");
         }
         output.shouldHaveExitValue(0);
 
@@ -326,9 +326,7 @@ public class CDSTestUtils {
         // Special case -- sometimes Xshare:on fails because it failed to map
         // at given address. This behavior is platform-specific, machine config-specific
         // and can be random (see ASLR).
-        if (isUnableToMap(output)) {
-            throw new SkippedException(UnableToMapMsg);
-        }
+        checkMappingFailure(output);
 
         if (e != null) {
             throw e;
@@ -351,28 +349,28 @@ public class CDSTestUtils {
     //    instead of utilizing multiple messages.
     // These are suggestions to improve testibility of the VM. However, implementing them
     // could also improve usability in the field.
-    public static boolean isUnableToMap(OutputAnalyzer output) {
+    private static String hasUnableToMapMessage(OutputAnalyzer output) {
         String outStr = output.getOutput();
-        if ((output.getExitValue() == 1) && (
-            outStr.contains("Unable to reserve shared space at required address") ||
-            outStr.contains("Unable to map ReadOnly shared space at required address") ||
-            outStr.contains("Unable to map ReadWrite shared space at required address") ||
-            outStr.contains("Unable to map MiscData shared space at required address") ||
-            outStr.contains("Unable to map MiscCode shared space at required address") ||
-            outStr.contains("Unable to map OptionalData shared space at required address") ||
-            outStr.contains("Could not allocate metaspace at a compatible address") ||
-            outStr.contains("UseSharedSpaces: Unable to allocate region, range is not within java heap") ||
-            outStr.contains("DynamicDumpSharedSpaces is unsupported when base CDS archive is not loaded") ))
-        {
-            return true;
+        if ((output.getExitValue() == 1)) {
+            if (outStr.contains(MSG_RANGE_NOT_WITHIN_HEAP)) {
+                return MSG_RANGE_NOT_WITHIN_HEAP;
+            }
+            if (outStr.contains(MSG_DYNAMIC_NOT_SUPPORTED)) {
+                return MSG_DYNAMIC_NOT_SUPPORTED;
+            }
         }
 
-        return false;
+        return null;
+    }
+
+    public static boolean isUnableToMap(OutputAnalyzer output) {
+        return hasUnableToMapMessage(output) != null;
     }
 
     public static void checkMappingFailure(OutputAnalyzer out) throws SkippedException {
-        if (isUnableToMap(out)) {
-            throw new SkippedException(UnableToMapMsg);
+        String match = hasUnableToMapMessage(out);
+        if (match != null) {
+            throw new SkippedException(UnableToMapMsg + ": " + match);
         }
     }
 
@@ -387,6 +385,18 @@ public class CDSTestUtils {
         return new Result(opts, runWithArchive(opts));
     }
 
+    // Dump a classlist using the -XX:DumpLoadedClassList option.
+    public static Result dumpClassList(String classListName, String... cli)
+        throws Exception {
+        CDSOptions opts = (new CDSOptions())
+            .setUseVersion(false)
+            .setXShareMode("auto")
+            .addPrefix("-XX:DumpLoadedClassList=" + classListName)
+            .addSuffix(cli);
+        Result res = run(opts).assertNormalExit();
+        return res;
+    }
+
     // Execute JVM with CDS archive, specify command line args suffix
     public static OutputAnalyzer runWithArchive(String... cliPrefix)
         throws Exception {
@@ -396,15 +406,18 @@ public class CDSTestUtils {
                                .addPrefix(cliPrefix) );
     }
 
+    // Enable basic verification (VerifyArchivedFields=1, no side effects) for all CDS
+    // tests to make sure the archived heap objects are mapped/loaded properly.
+    public static void addVerifyArchivedFields(ArrayList<String> cmd) {
+        cmd.add("-XX:+UnlockDiagnosticVMOptions");
+        cmd.add("-XX:VerifyArchivedFields=1");
+    }
 
     // Execute JVM with CDS archive, specify CDSOptions
     public static OutputAnalyzer runWithArchive(CDSOptions opts)
         throws Exception {
 
-        ArrayList<String> cmd = new ArrayList<String>();
-
-        for (String p : opts.prefix) cmd.add(p);
-
+        ArrayList<String> cmd = opts.getRuntimePrefix();
         cmd.add("-Xshare:" + opts.xShareMode);
         cmd.add("-Dtest.timeout.factor=" + TestTimeoutFactor);
 
@@ -413,6 +426,7 @@ public class CDSTestUtils {
                 opts.archiveName = getDefaultArchiveName();
             cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);
         }
+        addVerifyArchivedFields(cmd);
 
         if (opts.useVersion)
             cmd.add("-version");
@@ -465,10 +479,7 @@ public class CDSTestUtils {
     public static OutputAnalyzer checkExecExpectError(OutputAnalyzer output,
                                              int expectedExitValue,
                                              String... extraMatches) throws Exception {
-        if (isUnableToMap(output)) {
-            throw new SkippedException(UnableToMapMsg);
-        }
-
+        checkMappingFailure(output);
         output.shouldHaveExitValue(expectedExitValue);
         checkMatches(output, extraMatches);
         return output;
@@ -492,6 +503,10 @@ public class CDSTestUtils {
 
     public static String getOutputDir() {
         return outputDir;
+    }
+
+    public static File getOutputDirAsFile() {
+        return outputDirAsFile;
     }
 
     // get the file object for the test artifact

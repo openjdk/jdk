@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,12 @@ import static java.lang.String.UTF16;
  * {@code int}, as well as other constants and methods useful when
  * dealing with an {@code int}.
  *
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
+ *
  * <p>Implementation note: The implementations of the "bit twiddling"
  * methods (such as {@link #highestOneBit(int) highestOneBit} and
  * {@link #numberOfTrailingZeros(int) numberOfTrailingZeros}) are
@@ -62,6 +68,7 @@ import static java.lang.String.UTF16;
  * @author  Joseph D. Darcy
  * @since 1.0
  */
+@jdk.internal.ValueBased
 public final class Integer extends Number
         implements Comparable<Integer>, Constable, ConstantDesc {
     /**
@@ -258,9 +265,17 @@ public final class Integer extends Number
      *  {@code Integer.toHexString(n).toUpperCase()}
      * </blockquote>
      *
+     * @apiNote
+     * The {@link java.util.HexFormat} class provides formatting and parsing
+     * of byte arrays and primitives to return a string or adding to an {@link Appendable}.
+     * {@code HexFormat} formats and parses uppercase or lowercase hexadecimal characters,
+     * with leading zeros and for byte arrays includes for each byte
+     * a delimiter, prefix, and suffix.
+     *
      * @param   i   an integer to be converted to a string.
      * @return  the string representation of the unsigned integer value
      *          represented by the argument in hexadecimal (base&nbsp;16).
+     * @see java.util.HexFormat
      * @see #parseUnsignedInt(String, int)
      * @see #toUnsignedString(int, int)
      * @since   1.0.2
@@ -612,7 +627,7 @@ public final class Integer extends Number
          */
 
         if (s == null) {
-            throw new NumberFormatException("null");
+            throw new NumberFormatException("Cannot parse null string");
         }
 
         if (radix < Character.MIN_RADIX) {
@@ -694,10 +709,8 @@ public final class Integer extends Number
     public static int parseInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException("radix " + radix +
                                             " less than Character.MIN_RADIX");
@@ -817,7 +830,7 @@ public final class Integer extends Number
     public static int parseUnsignedInt(String s, int radix)
                 throws NumberFormatException {
         if (s == null)  {
-            throw new NumberFormatException("null");
+            throw new NumberFormatException("Cannot parse null string");
         }
 
         int len = s.length();
@@ -877,10 +890,8 @@ public final class Integer extends Number
     public static int parseUnsignedInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         int start = beginIndex, len = endIndex - beginIndex;
 
         if (len > 0) {
@@ -1085,7 +1096,7 @@ public final class Integer extends Number
      * {@link #valueOf(int)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Integer(int value) {
         this.value = value;
     }
@@ -1107,7 +1118,7 @@ public final class Integer extends Number
      * {@code int} primitive, or use {@link #valueOf(String)}
      * to convert a string to an {@code Integer} object.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Integer(String s) throws NumberFormatException {
         this.value = parseInt(s, 10);
     }
@@ -1402,7 +1413,7 @@ public final class Integer extends Number
         int radix = 10;
         int index = 0;
         boolean negative = false;
-        Integer result;
+        int result;
 
         if (nm.isEmpty())
             throw new NumberFormatException("Zero length string");
@@ -1432,15 +1443,15 @@ public final class Integer extends Number
             throw new NumberFormatException("Sign character in wrong position");
 
         try {
-            result = Integer.valueOf(nm.substring(index), radix);
-            result = negative ? Integer.valueOf(-result.intValue()) : result;
+            result = parseInt(nm, index, nm.length(), radix);
+            result = negative ? -result : result;
         } catch (NumberFormatException e) {
             // If number is Integer.MIN_VALUE, we'll end up here. The next line
             // handles this case, and causes any genuine format error to be
             // rethrown.
             String constant = negative ? ("-" + nm.substring(index))
                                        : nm.substring(index);
-            result = Integer.valueOf(constant, radix);
+            result = parseInt(constant, radix);
         }
         return result;
     }

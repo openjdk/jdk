@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 #ifndef SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP
 #define SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
@@ -48,29 +50,26 @@ class ContiguousSpace;
 
 class BOTConstants : public AllStatic {
 public:
-  static const uint LogN = 9;
-  static const uint LogN_words = LogN - LogHeapWordSize;
-  static const uint N_bytes = 1 << LogN;
-  static const uint N_words = 1 << LogN_words;
+  static uint LogN;
+  static uint LogN_words;
+  static uint N_bytes;
+  static uint N_words;
+
   // entries "e" of at least N_words mean "go back by Base^(e-N_words)."
   // All entries are less than "N_words + N_powers".
   static const uint LogBase = 4;
   static const uint Base = (1 << LogBase);
   static const uint N_powers = 14;
 
+  // Initialize bot size based on card size
+  static void initialize_bot_size(uint card_shift);
+
   static size_t power_to_cards_back(uint i) {
     return (size_t)1 << (LogBase * i);
-  }
-  static size_t power_to_words_back(uint i) {
-    return power_to_cards_back(i) * N_words;
   }
   static size_t entry_to_cards_back(u_char entry) {
     assert(entry >= N_words, "Precondition");
     return power_to_cards_back(entry - N_words);
-  }
-  static size_t entry_to_words_back(u_char entry) {
-    assert(entry >= N_words, "Precondition");
-    return power_to_words_back(entry - N_words);
   }
 };
 
@@ -92,6 +91,7 @@ public:
   BlockOffsetTable(HeapWord* bottom, HeapWord* end):
     _bottom(bottom), _end(end) {
     assert(_bottom <= _end, "arguments out of order");
+    assert(BOTConstants::N_bytes == CardTable::card_size, "sanity");
   }
 
   // Note that the committed size of the covered space may have changed,
@@ -405,9 +405,9 @@ class BlockOffsetArrayContigSpace: public BlockOffsetArray {
   void set_contig_space(ContiguousSpace* sp) { set_space((Space*)sp); }
 
   // Initialize the threshold for an empty heap.
-  HeapWord* initialize_threshold();
+  void initialize_threshold();
   // Zero out the entry for _bottom (offset will be zero)
-  void      zero_bottom_entry();
+  void zero_bottom_entry();
 
   // Return the next threshold, the point at which the table should be
   // updated.

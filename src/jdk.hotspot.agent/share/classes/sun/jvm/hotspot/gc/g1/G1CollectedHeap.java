@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,19 +48,19 @@ import sun.jvm.hotspot.tools.HeapSummary;
 
 public class G1CollectedHeap extends CollectedHeap {
     // HeapRegionManager _hrm;
-    static private long hrmFieldOffset;
+    private static long hrmFieldOffset;
     // MemRegion _g1_reserved;
-    static private long g1ReservedFieldOffset;
+    private static long g1ReservedFieldOffset;
     // size_t _summary_bytes_used;
-    static private CIntegerField summaryBytesUsedField;
-    // G1MonitoringSupport* _g1mm;
-    static private AddressField g1mmField;
+    private static CIntegerField summaryBytesUsedField;
+    // G1MonitoringSupport* _monitoring_support;
+    private static AddressField monitoringSupportField;
     // HeapRegionSet _old_set;
-    static private long oldSetFieldOffset;
+    private static long oldSetFieldOffset;
     // HeapRegionSet _archive_set;
-    static private long archiveSetFieldOffset;
+    private static long archiveSetFieldOffset;
     // HeapRegionSet _humongous_set;
-    static private long humongousSetFieldOffset;
+    private static long humongousSetFieldOffset;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -70,12 +70,12 @@ public class G1CollectedHeap extends CollectedHeap {
             });
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("G1CollectedHeap");
 
         hrmFieldOffset = type.getField("_hrm").getOffset();
         summaryBytesUsedField = type.getCIntegerField("_summary_bytes_used");
-        g1mmField = type.getAddressField("_g1mm");
+        monitoringSupportField = type.getAddressField("_monitoring_support");
         oldSetFieldOffset = type.getField("_old_set").getOffset();
         archiveSetFieldOffset = type.getField("_archive_set").getOffset();
         humongousSetFieldOffset = type.getField("_humongous_set").getOffset();
@@ -99,9 +99,9 @@ public class G1CollectedHeap extends CollectedHeap {
                                                              hrmAddr);
     }
 
-    public G1MonitoringSupport g1mm() {
-        Address g1mmAddr = g1mmField.getValue(addr);
-        return (G1MonitoringSupport) VMObjectFactory.newObject(G1MonitoringSupport.class, g1mmAddr);
+    public G1MonitoringSupport monitoringSupport() {
+        Address monitoringSupportAddr = monitoringSupportField.getValue(addr);
+        return (G1MonitoringSupport) VMObjectFactory.newObject(G1MonitoringSupport.class, monitoringSupportAddr);
     }
 
     public HeapRegionSetBase oldSet() {
@@ -156,7 +156,7 @@ public class G1CollectedHeap extends CollectedHeap {
         tty.println(" region size " + (HeapRegion.grainBytes() / 1024) + "K");
 
         HeapSummary sum = new HeapSummary();
-        sum.printG1HeapSummary(this);
+        sum.printG1HeapSummary(tty, this);
     }
 
     public void printRegionDetails(PrintStream tty) {

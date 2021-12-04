@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import jdk.internal.net.http.hpack.DecodingCallback;
 import jdk.internal.net.http.hpack.Encoder;
 import sun.net.www.http.ChunkedInputStream;
 import sun.net.www.http.HttpClient;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
 
@@ -304,9 +305,11 @@ public class Http2TestServerConnection {
     private void readPreface() throws IOException {
         int len = clientPreface.length;
         byte[] bytes = new byte[len];
-        is.readNBytes(bytes, 0, len);
+        int n = is.readNBytes(bytes, 0, len);
         if (Arrays.compare(clientPreface, bytes) != 0) {
-            throw new IOException("Invalid preface: " + new String(bytes, 0, len));
+            System.err.printf("Invalid preface: read %d/%d bytes%n", n, len);
+            throw new IOException("Invalid preface: " +
+                    new String(bytes, 0, len, ISO_8859_1));
         }
     }
 
@@ -723,6 +726,8 @@ public class Http2TestServerConnection {
                 }
                 //System.err.printf("TestServer: received frame %s\n", frame);
                 int stream = frame.streamid();
+                int next = nextstream;
+                int nextPush = nextPushStreamId;
                 if (stream == 0) {
                     if (frame.type() == WindowUpdateFrame.TYPE) {
                         WindowUpdateFrame wup = (WindowUpdateFrame) frame;
@@ -770,6 +775,16 @@ public class Http2TestServerConnection {
                                 // but the continuation, even after a reset
                                 // should be handle gracefully by the client
                                 // anyway.
+                            } else if (isClientStreamId(stream) && stream < next) {
+                                // We may receive a reset on a client stream that has already
+                                // been closed. Just ignore it.
+                                System.err.println("TestServer: received ResetFrame on closed stream: " + stream);
+                                System.err.println(frame);
+                            } else if (isServerStreamId(stream) && stream < nextPush) {
+                                // We may receive a reset on a push stream that has already
+                                // been closed. Just ignore it.
+                                System.err.println("TestServer: received ResetFrame on closed push stream: " + stream);
+                                System.err.println(frame);
                             } else {
                                 System.err.println("TestServer: Unexpected frame on: " + stream);
                                 System.err.println(frame);
@@ -788,6 +803,14 @@ public class Http2TestServerConnection {
             }
             close(ErrorFrame.PROTOCOL_ERROR);
         }
+    }
+
+    static boolean isClientStreamId(int streamid) {
+        return (streamid & 0x01) == 0x01;
+    }
+
+    static boolean isServerStreamId(int streamid) {
+        return (streamid & 0x01) == 0x00;
     }
 
     /** Encodes an group of headers, without any ordering guarantees. */

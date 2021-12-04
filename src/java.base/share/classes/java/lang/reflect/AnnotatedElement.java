@@ -248,7 +248,7 @@ import sun.reflect.annotation.AnnotationType;
  *
  * <p>Similarly, attempting to read an enum-valued member will result in
  * a {@link EnumConstantNotPresentException} if the enum constant in the
- * annotation is no longer present in the enum type.
+ * annotation is no longer present in the enum class.
  *
  * <p>If an annotation type <i>T</i> is (meta-)annotated with an
  * {@code @Repeatable} annotation whose value element indicates a type

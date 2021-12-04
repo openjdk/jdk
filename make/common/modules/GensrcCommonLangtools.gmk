@@ -85,14 +85,16 @@ define SetupCompileProperties
       $$(addprefix _SPACE_, $$(PROPJAVAS)))))
 
   # Now setup the rule for the generation of the resource bundles.
-  $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_props: $$(PROPSOURCES)
+  PROPS_BASE := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_props
+  $$(PROPS_BASE): $$(PROPSOURCES)
 	$$(call MakeDir, $$(@D) $$(PROPDIRS))
 	$(FIND) $$(@D) -name "*.java" -a ! -name "*Properties.java" $(FIND_DELETE)
 	$(ECHO) Compiling $$(words $$(PROPSOURCES)) properties into resource bundles for $(MODULE)
-	$(TOOL_COMPILEPROPS_CMD) $$(PROPCMDLINE)
+	$$(call ExecuteWithLog, $$(PROPS_BASE)_exec, \
+	    $(TOOL_COMPILEPROPS_CMD) $$(PROPCMDLINE))
 	$(TOUCH) $$@
 
-  $$(strip $1) += $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_props
+  $$(strip $1) += $$(PROPS_BASE)
 endef
 
 ################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interp_masm_aarch64.hpp"
@@ -38,7 +39,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -473,7 +473,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 
   if (needs_thread_local_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    ldr(rscratch2, Address(rthread, Thread::polling_word_offset()));
+    ldr(rscratch2, Address(rthread, JavaThread::polling_word_offset()));
     tbnz(rscratch2, exact_log2(SafepointMechanism::poll_bit()), safepoint);
   }
 
@@ -681,14 +681,16 @@ void InterpreterMacroAssembler::remove_activation(
 
   // remove activation
   // get sender esp
-  ldr(esp,
+  ldr(rscratch2,
       Address(rfp, frame::interpreter_frame_sender_sp_offset * wordSize));
   if (StackReservedPages > 0) {
     // testing if reserved zone needs to be re-enabled
     Label no_reserved_zone_enabling;
 
+    // look for an overflow into the stack reserved zone, i.e.
+    // interpreter_frame_sender_sp <= JavaThread::reserved_stack_activation
     ldr(rscratch1, Address(rthread, JavaThread::reserved_stack_activation_offset()));
-    cmp(esp, rscratch1);
+    cmp(rscratch2, rscratch1);
     br(Assembler::LS, no_reserved_zone_enabling);
 
     call_VM_leaf(
@@ -699,6 +701,9 @@ void InterpreterMacroAssembler::remove_activation(
 
     bind(no_reserved_zone_enabling);
   }
+
+  // restore sender esp
+  mov(esp, rscratch2);
   // remove frame anchor
   leave();
   // If we're returning to interpreted code we will shortly be
@@ -741,15 +746,11 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // Load object pointer into obj_reg %c_rarg3
     ldr(obj_reg, Address(lock_reg, obj_offset));
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, obj_reg);
       ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
-      tstw(tmp, JVM_ACC_IS_BOX_CLASS);
+      tstw(tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
       br(Assembler::NE, slow_case);
-    }
-
-    if (UseBiasedLocking) {
-      biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp, false, done, &slow_case);
     }
 
     // Load (object->mark() | 1) into swap_reg
@@ -763,27 +764,35 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
            "displached header must be first word in BasicObjectLock");
 
     Label fail;
-    if (PrintBiasedLockingStatistics) {
-      Label fast;
-      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, fast, &fail);
-      bind(fast);
-      atomic_incw(Address((address)BiasedLocking::fast_path_entry_count_addr()),
-                  rscratch2, rscratch1, tmp);
-      b(done);
-      bind(fail);
-    } else {
-      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
-    }
+    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
 
-    // Test if the oopMark is an obvious stack pointer, i.e.,
+    // Fast check for recursive lock.
+    //
+    // Can apply the optimization only if this is a stack lock
+    // allocated in this thread. For efficiency, we can focus on
+    // recently allocated stack locks (instead of reading the stack
+    // base and checking whether 'mark' points inside the current
+    // thread stack):
     //  1) (mark & 7) == 0, and
-    //  2) rsp <= mark < mark + os::pagesize()
+    //  2) sp <= mark < mark + os::pagesize()
+    //
+    // Warning: sp + os::pagesize can overflow the stack base. We must
+    // neither apply the optimization for an inflated lock allocated
+    // just above the thread stack (this is why condition 1 matters)
+    // nor apply the optimization if the stack lock is inside the stack
+    // of another thread. The latter is avoided even in case of overflow
+    // because we have guard pages at the end of all stacks. Hence, if
+    // we go over the stack base and hit the stack of another thread,
+    // this should not be in a writeable area that could contain a
+    // stack lock allocated by that thread. As a consequence, a stack
+    // lock less than page size away from sp is guaranteed to be
+    // owned by the current thread.
     //
     // These 3 tests can be done by evaluating the following
-    // expression: ((mark - rsp) & (7 - os::vm_page_size())),
+    // expression: ((mark - sp) & (7 - os::vm_page_size())),
     // assuming both stack pointer and pagesize have their
     // least significant 3 bits clear.
-    // NOTE: the oopMark is in swap_reg %r0 as the result of cmpxchg
+    // NOTE: the mark is in swap_reg %r0 as the result of cmpxchg
     // NOTE2: aarch64 does not like to subtract sp from rn so take a
     // copy
     mov(rscratch1, sp);
@@ -792,12 +801,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     // Save the test result, for recursive case, the result is zero
     str(swap_reg, Address(lock_reg, mark_offset));
-
-    if (PrintBiasedLockingStatistics) {
-      br(Assembler::NE, slow_case);
-      atomic_incw(Address((address)BiasedLocking::fast_path_entry_count_addr()),
-                  rscratch2, rscratch1, tmp);
-    }
     br(Assembler::EQ, done);
 
     bind(slow_case);
@@ -847,10 +850,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     // Free entry
     str(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
-
-    if (UseBiasedLocking) {
-      biased_locking_exit(obj_reg, header_reg, done);
-    }
 
     // Load the old header from BasicLock structure
     ldr(header_reg, Address(swap_reg,
@@ -1599,7 +1598,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
     Label L;
     ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
     cbz(rscratch1, L);
-    stop("InterpreterMacroAssembler::call_VM_leaf_base:"
+    stop("InterpreterMacroAssembler::call_VM_base:"
          " last_sp != NULL");
     bind(L);
   }
@@ -1760,7 +1759,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       br(Assembler::EQ, do_profile);
       get_method(tmp);
       ldrh(rscratch1, Address(tmp, Method::intrinsic_id_offset_in_bytes()));
-      subs(zr, rscratch1, vmIntrinsics::_compiledLambdaForm);
+      subs(zr, rscratch1, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       br(Assembler::NE, profile_continue);
 
       bind(do_profile);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,7 @@ public abstract class MBeanServerAccessController
         MBeanException,
         NotCompliantMBeanException {
         checkCreate(className);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             Object object = getMBeanServer().instantiate(className);
@@ -198,6 +199,7 @@ public abstract class MBeanServerAccessController
         MBeanException,
         NotCompliantMBeanException {
         checkCreate(className);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             Object object = getMBeanServer().instantiate(className,
@@ -226,6 +228,7 @@ public abstract class MBeanServerAccessController
         NotCompliantMBeanException,
         InstanceNotFoundException {
         checkCreate(className);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             Object object = getMBeanServer().instantiate(className,
@@ -254,6 +257,7 @@ public abstract class MBeanServerAccessController
         NotCompliantMBeanException,
         InstanceNotFoundException {
         checkCreate(className);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             Object object = getMBeanServer().instantiate(className,
@@ -619,6 +623,7 @@ public abstract class MBeanServerAccessController
     private void checkMLetMethods(ObjectName name, String operation)
     throws InstanceNotFoundException {
         // Check if security manager installed
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             return;
@@ -645,6 +650,7 @@ public abstract class MBeanServerAccessController
             // for this property is false.
             final String propName = "jmx.remote.x.mlet.allow.getMBeansFromURL";
             GetPropertyAction propAction = new GetPropertyAction(propName);
+            @SuppressWarnings("removal")
             String propValue = AccessController.doPrivileged(propAction);
             boolean allowGetMBeansFromURL = "true".equalsIgnoreCase(propValue);
             if (!allowGetMBeansFromURL) {

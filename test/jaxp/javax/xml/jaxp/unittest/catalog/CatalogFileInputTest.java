@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package catalog;
 
 import java.io.BufferedOutputStream;
@@ -31,22 +32,24 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import static java.nio.file.StandardOpenOption.APPEND;
-import static java.nio.file.StandardOpenOption.CREATE;
+
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
 
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
-import jaxp.library.SimpleHttpServer;
-import jdk.test.lib.util.JarUtils;
 
+import jdk.test.lib.util.JarUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -54,11 +57,13 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
+import jdk.test.lib.net.SimpleHttpServer;
 
 /*
  * @test
  * @bug 8151154 8171243
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest /test/lib
+ * @build jdk.test.lib.net.SimpleHttpServer
  * @run testng/othervm catalog.CatalogFileInputTest
  * @summary Verifies that the Catalog API accepts valid URIs only;
  *          Verifies that the CatalogFeatures' builder throws
@@ -72,7 +77,6 @@ public class CatalogFileInputTest extends CatalogSupportBase {
 
     static final CatalogFeatures FEATURES = CatalogFeatures.builder().
             with(CatalogFeatures.Feature.PREFER, "system").build();
-    static String USER_DIR = getSystemProperty("user.dir");
     static String CLS_DIR = getSystemProperty("test.classes");
     static String SRC_DIR = System.getProperty("test.src");
     static String JAR_CONTENT = "META-INF";
@@ -80,8 +84,8 @@ public class CatalogFileInputTest extends CatalogSupportBase {
     static final String REMOTE_FILE_LOCATION = "/jar/META-INF";
     static final String DOCROOT = SRC_DIR;
     static final String TESTCONTEXT = REMOTE_FILE_LOCATION;  //mapped to local file path
-    SimpleHttpServer _httpserver;
-    String _remoteFilePath;
+    private SimpleHttpServer httpserver;
+    private String remoteFilePath;
 
     /*
      * Initializing fields
@@ -89,18 +93,16 @@ public class CatalogFileInputTest extends CatalogSupportBase {
     @BeforeClass
     public void setUpClass() throws Exception {
         super.setUp();
-
         // set up HttpServer
-        _httpserver = new SimpleHttpServer(TESTCONTEXT, DOCROOT);
-        _httpserver.start();
-        _remoteFilePath = _httpserver.getAddress() + REMOTE_FILE_LOCATION;
-
+        httpserver = new SimpleHttpServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), TESTCONTEXT, DOCROOT);
+        httpserver.start();
+        remoteFilePath = httpserver.getAddress() + REMOTE_FILE_LOCATION;
     }
 
     @AfterClass
-    protected void tearDown() throws Exception {
-        if (_httpserver != null) {
-            _httpserver.stop();
+    protected void tearDown() {
+        if (httpserver != null) {
+            httpserver.stop();
         }
     }
 
@@ -109,8 +111,8 @@ public class CatalogFileInputTest extends CatalogSupportBase {
      * and http URL, and used to resolve a systemId as expected.
      */
     @Test(dataProvider = "acceptedURI")
-    public void testMatch(String uri, String sysId, String pubId,
-            String expectedId, String msg) throws Exception {
+    public void testMatch(final String uri, final String sysId, final String pubId,
+            final String expectedId, final String msg) {
         CatalogResolver cr = CatalogManager.catalogResolver(FEATURES, URI.create(uri));
         InputSource is = cr.resolveEntity(pubId, sysId);
         Assert.assertNotNull(is, msg);
@@ -118,42 +120,42 @@ public class CatalogFileInputTest extends CatalogSupportBase {
     }
 
     @Test(dataProvider = "invalidCatalog")
-    public void testEmptyCatalog(String uri, String publicId, String msg) {
-        Catalog c = CatalogManager.catalog(FEATURES, uri != null? URI.create(uri) : null);
+    public void testEmptyCatalog(final String uri, final String publicId, final String msg) {
+        Catalog c = CatalogManager.catalog(FEATURES, uri != null ? URI.create(uri) : null);
         Assert.assertNull(c.matchSystem(publicId), msg);
     }
 
     @Test(dataProvider = "invalidCatalog", expectedExceptions = CatalogException.class)
-    public void testCatalogResolverWEmptyCatalog(String uri, String publicId, String msg) {
+    public void testCatalogResolverWEmptyCatalog(final String uri, final String publicId, final String msg) {
         CatalogResolver cr = CatalogManager.catalogResolver(
                 CatalogFeatures.builder().with(CatalogFeatures.Feature.RESOLVE, "strict").build(),
-                uri != null? URI.create(uri) : null);
+                uri != null ? URI.create(uri) : null);
         InputSource is = cr.resolveEntity(publicId, "");
     }
 
     @Test(dataProvider = "invalidCatalog")
-    public void testCatalogResolverWEmptyCatalog1(String uri, String publicId, String msg) {
+    public void testCatalogResolverWEmptyCatalog1(final String uri, final String publicId, final String msg) {
         CatalogResolver cr = CatalogManager.catalogResolver(
                 CatalogFeatures.builder().with(CatalogFeatures.Feature.RESOLVE, "continue").build(),
-                uri != null? URI.create(uri) : null);
+                uri != null ? URI.create(uri) : null);
         Assert.assertNull(cr.resolveEntity(publicId, ""), msg);
     }
 
     @Test(dataProvider = "invalidInput", expectedExceptions = IllegalArgumentException.class)
-    public void testFileInput(String file) {
+    public void testFileInput(final String file) {
         CatalogFeatures features = CatalogFeatures.builder()
             .with(CatalogFeatures.Feature.FILES, file)
             .build();
     }
 
     @Test(dataProvider = "invalidInput", expectedExceptions = IllegalArgumentException.class)
-    public void testInvalidUri(String file) {
-        CatalogResolver cr = CatalogManager.catalogResolver(FEATURES, file != null? URI.create(file) : null);
+    public void testInvalidUri(final String file) {
+        CatalogResolver cr = CatalogManager.catalogResolver(FEATURES, file != null ? URI.create(file) : null);
     }
 
     @Test(dataProvider = "invalidInput", expectedExceptions = IllegalArgumentException.class)
-    public void testInvalidUri1(String file) {
-        Catalog c = CatalogManager.catalog(FEATURES, file != null? URI.create(file) : null);
+    public void testInvalidUri1(final String file) {
+        Catalog c = CatalogManager.catalog(FEATURES, file != null ? URI.create(file) : null);
         System.err.println("Catalog =" + c);
     }
 
@@ -177,10 +179,10 @@ public class CatalogFileInputTest extends CatalogSupportBase {
         Catalog c = CatalogManager.catalog(FEATURES, uri);
     }
 
-    String systemId = "http://www.sys00test.com/rewrite.dtd";
-    String publicId = "PUB-404";
-    String expected = "http://www.groupxmlbase.com/dtds/rewrite.dtd";
-    String errMsg = "Relative rewriteSystem with xml:base at group level failed";
+    private String systemId = "http://www.sys00test.com/rewrite.dtd";
+    private String publicId = "PUB-404";
+    private String expected = "http://www.groupxmlbase.com/dtds/rewrite.dtd";
+    private String errMsg = "Relative rewriteSystem with xml:base at group level failed";
 
     /*
         DataProvider: used to verify CatalogResolver's resolveEntity function.
@@ -191,8 +193,8 @@ public class CatalogFileInputTest extends CatalogSupportBase {
     Object[][] getData() throws Exception {
         String filename = "rewriteSystem_id.xml";
         String urlFile = getClass().getResource(filename).toExternalForm();
-        String urlHttp = _remoteFilePath + "/jax-ws-catalog.xml";
-        String remoteXSD = _remoteFilePath + "/catalog/ws-addr.xsd";
+        String urlHttp = remoteFilePath + "/jax-ws-catalog.xml";
+        String remoteXSD = remoteFilePath + "/catalog/ws-addr.xsd";
         File file = new File(CLS_DIR + "/JDK8171243.jar!/META-INF/jax-ws-catalog.xml");
         String jarPath = SCHEME_JARFILE + file.toURI().toString();
         String xsd = jarPath.substring(0, jarPath.lastIndexOf("/")) + "/catalog/ws-addr.xsd";
@@ -220,7 +222,7 @@ public class CatalogFileInputTest extends CatalogSupportBase {
      *  rejected with an IAE.
      */
     @DataProvider(name = "invalidCatalog")
-    public Object[][] getInvalidCatalog() throws Exception {
+    public Object[][] getInvalidCatalog() {
         String catalogUri = getClass().getResource("catalog_invalid.xml").toExternalForm();
         return new Object[][]{
             {catalogUri, "-//W3C//DTD XHTML 1.0 Strict//EN",
@@ -259,22 +261,20 @@ public class CatalogFileInputTest extends CatalogSupportBase {
        DataProvider: a list of invalid inputs
      */
     @DataProvider(name = "nullTest")
-    public Object[][] getNull() throws Exception {
-
+    public Object[][] getNull() {
         return new Object[][]{
             {null},
         };
     }
 
-    void copyFile(Path src, Path target) throws Exception {
-
+    void copyFile(final Path src, final Path target) throws Exception {
         try (InputStream in = Files.newInputStream(src);
                 BufferedReader reader
                 = new BufferedReader(new InputStreamReader(in));
                 OutputStream out = new BufferedOutputStream(
                         Files.newOutputStream(target, CREATE, APPEND));
                 BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out))) {
-            String line = null;
+            String line;
             while ((line = reader.readLine()) != null) {
                 bw.write(line);
             }

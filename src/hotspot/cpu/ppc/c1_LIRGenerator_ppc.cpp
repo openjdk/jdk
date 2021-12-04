@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 #include "ci/ciTypeArrayKlass.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_ppc.inline.hpp"
 
@@ -242,7 +243,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 
 
 LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
-  LIR_Opr r = NULL;
+  LIR_Opr r;
   if (type == T_LONG) {
     r = LIR_OprFact::longConst(x);
   } else if (type == T_INT) {
@@ -293,11 +294,11 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
   assert(left != result, "should be different registers");
   if (is_power_of_2(c + 1)) {
-    __ shift_left(left, log2_int(c + 1), result);
+    __ shift_left(left, log2i_exact(c + 1), result);
     __ sub(result, left, result);
     return true;
   } else if (is_power_of_2(c - 1)) {
-    __ shift_left(left, log2_int(c - 1), result);
+    __ shift_left(left, log2i_exact(c - 1), result);
     __ add(result, left, result);
     return true;
   }
@@ -308,12 +309,7 @@ bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result
 void LIRGenerator::store_stack_parameter(LIR_Opr item, ByteSize offset_from_sp) {
   BasicType t = item->type();
   LIR_Opr sp_opr = FrameMap::SP_opr;
-  if ((t == T_LONG || t == T_DOUBLE) &&
-      (in_bytes(offset_from_sp) % 8 != 0)) {
-    __ unaligned_move(item, new LIR_Address(sp_opr, in_bytes(offset_from_sp), t));
-  } else {
-    __ move(item, new LIR_Address(sp_opr, in_bytes(offset_from_sp), t));
-  }
+  __ move(item, new LIR_Address(sp_opr, in_bytes(offset_from_sp), t));
 }
 
 
@@ -393,7 +389,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
     left.load_item();
     right.load_item();
     rlock_result(x);
-    arithmetic_op_fpu(x->op(), x->operand(), left.result(), right.result(), x->is_strictfp());
+    arithmetic_op_fpu(x->op(), x->operand(), left.result(), right.result());
   }
   break;
 
@@ -726,7 +722,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       __ abs(value.result(), dst, LIR_OprFact::illegalOpr);
       break;
     }
-    case vmIntrinsics::_dsqrt: {
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict: {
       if (VM_Version::has_fsqrt()) {
         assert(x->number_of_arguments() == 1, "wrong type");
         LIRItem value(x->argument_at(0), this);
@@ -747,6 +744,7 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       address runtime_entry = NULL;
       switch (x->id()) {
         case vmIntrinsics::_dsqrt:
+        case vmIntrinsics::_dsqrt_strict:
           runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);
           break;
         case vmIntrinsics::_dsin:

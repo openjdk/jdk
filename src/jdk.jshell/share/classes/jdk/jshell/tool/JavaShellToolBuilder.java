@@ -184,6 +184,32 @@ public interface JavaShellToolBuilder {
     JavaShellToolBuilder promptCapture(boolean capture);
 
     /**
+     * Set to true to specify the inputs and outputs are connected to an interactive terminal
+     * that can interpret the ANSI escape codes. The characters sent to the output streams are
+     * assumed to be interpreted by a terminal and shown to the user, and the exact order and nature
+     * of characters sent to the outputs are unspecified.
+     *
+     * Set to false to specify a legacy simpler behavior whose output can be parsed by automatic
+     * tools.
+     *
+     * When the input stream for this Java Shell is {@code System.in}, this value is ignored,
+     * and the behavior is similar to specifying {@code true} in this method, but is more closely
+     * following the specific terminal connected to {@code System.in}.
+     *
+     * @implSpec If this method is not called, the behavior should be
+     * equivalent to calling {@code interactiveTerminal(false)}. The default implementation of
+     * this method returns {@code this}.
+     *
+     * @param terminal if {@code true}, an terminal that can interpret the ANSI escape codes is
+     *                 assumed to interpret the output. If {@code false}, a simpler output is selected.
+     * @return the {@code JavaShellToolBuilder} instance
+     * @since 17
+     */
+    default JavaShellToolBuilder interactiveTerminal(boolean terminal) {
+        return this;
+    }
+
+    /**
      * Run an instance of the Java shell tool as configured by the other methods
      * in this interface.  This call is not destructive, more than one call of
      * this method may be made from a configured builder. The  exit code from

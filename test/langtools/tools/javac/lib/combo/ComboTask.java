@@ -213,6 +213,10 @@ public class ComboTask {
         });
     }
 
+    public List<JavaFileObject> getSources() {
+        return sources;
+    }
+
     interface Convertor<V> {
         public Iterable<? extends V> convert(JavacTask task) throws IOException;
     }

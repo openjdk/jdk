@@ -184,7 +184,7 @@ public class SSLTube implements FlowTube {
     // The DelegateWrapper wraps a subscribed {@code Flow.Subscriber} and
     // tracks the subscriber's state. In particular it makes sure that
     // onComplete/onError are not called before onSubscribed.
-    final static class DelegateWrapper implements FlowTube.TubeSubscriber {
+    static final class DelegateWrapper implements FlowTube.TubeSubscriber {
         private final FlowTube.TubeSubscriber delegate;
         private final Logger debug;
         volatile boolean subscribedCalled;

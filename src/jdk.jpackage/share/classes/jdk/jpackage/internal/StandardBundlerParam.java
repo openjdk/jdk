@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,9 @@ import java.util.stream.Stream;
 class StandardBundlerParam<T> extends BundlerParamInfo<T> {
 
     private static final String JAVABASEJMOD = "java.base.jmod";
-    private final static String DEFAULT_VERSION = "1.0";
-    private final static String DEFAULT_RELEASE = "1";
-    private final static String[] DEFAULT_JLINK_OPTIONS = {
+    private static final String DEFAULT_VERSION = "1.0";
+    private static final String DEFAULT_RELEASE = "1";
+    private static final String[] DEFAULT_JLINK_OPTIONS = {
             "--strip-native-commands",
             "--strip-debug",
             "--no-man-pages",
@@ -128,25 +128,59 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> Path.of(s)
             );
 
-    static final StandardBundlerParam<String> APP_NAME =
+    static final StandardBundlerParam<Path> PREDEFINED_APP_IMAGE =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.PREDEFINED_APP_IMAGE.getId(),
+            Path.class,
+            params -> null,
+            (s, p) -> Path.of(s));
+
+    // this is the raw --app-name arg - used in APP_NAME and INSTALLER_NAME
+    static final StandardBundlerParam<String> NAME =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.NAME.getId(),
                     String.class,
+                    params -> null,
+                    (s, p) -> s
+            );
+
+    // this is the application name, either from the app-image (if given),
+    // the name (if given) derived from the main-class, or the runtime image
+    static final StandardBundlerParam<String> APP_NAME =
+            new StandardBundlerParam<>(
+                    "application-name",
+                    String.class,
                     params -> {
-                        String s = MAIN_CLASS.fetchFrom(params);
-                        if (s != null) {
-                            int idx = s.lastIndexOf(".");
-                            if (idx >= 0) {
-                                return s.substring(idx+1);
-                            }
-                            return s;
-                        } else if (isRuntimeInstaller(params)) {
-                            Path f = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
-                            if (f != null) {
-                                return f.getFileName().toString();
+                        Path appImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
+                        String appName = NAME.fetchFrom(params);
+                        if (appImage != null) {
+                            String name = AppImageFile.extractAppName(appImage);
+                            appName  = (name != null) ? name : appName;
+                        } else if (appName == null) {
+                            String s = MAIN_CLASS.fetchFrom(params);
+                            if (s != null) {
+                                int idx = s.lastIndexOf(".");
+                                appName = (idx < 0) ? s : s.substring(idx+1);
+                            } else if (isRuntimeInstaller(params)) {
+                                Path f = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
+                                if (f != null) {
+                                    appName = f.getFileName().toString();
+                                }
                             }
                         }
-                        return null;
+                        return appName;
+                    },
+                    (s, p) -> s
+            );
+
+    static final StandardBundlerParam<String> INSTALLER_NAME =
+            new StandardBundlerParam<>(
+                    "installer-name",
+                    String.class,
+                    params -> {
+                        String installerName = NAME.fetchFrom(params);
+                        return (installerName != null) ? installerName :
+                                APP_NAME.fetchFrom(params);
                     },
                     (s, p) -> s
             );
@@ -157,6 +191,14 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     Path.class,
                     params -> null,
                     (s, p) -> Path.of(s)
+            );
+
+    static final StandardBundlerParam<String> ABOUT_URL =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.ABOUT_URL.getId(),
+                    String.class,
+                    params -> null,
+                    (s, p) -> s
             );
 
     static final StandardBundlerParam<String> VENDOR =
@@ -269,6 +311,24 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                             true : Boolean.valueOf(s)
             );
 
+    static final StandardBundlerParam<Boolean> SHORTCUT_HINT  =
+            new StandardBundlerParam<>(
+                    "shortcut-hint", // not directly related to a CLI option
+                    Boolean.class,
+                    params -> true,  // defaults to true
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                            true : Boolean.valueOf(s)
+            );
+
+    static final StandardBundlerParam<Boolean> MENU_HINT  =
+            new StandardBundlerParam<>(
+                    "menu-hint", // not directly related to a CLI option
+                    Boolean.class,
+                    params -> true,  // defaults to true
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                            true : Boolean.valueOf(s)
+            );
+
     static final StandardBundlerParam<Path> RESOURCE_DIR =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.RESOURCE_DIR.getId(),
@@ -285,12 +345,6 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> s
     );
 
-    static final StandardBundlerParam<Path> PREDEFINED_APP_IMAGE =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.PREDEFINED_APP_IMAGE.getId(),
-            Path.class,
-            params -> null,
-            (s, p) -> Path.of(s));
 
     @SuppressWarnings("unchecked")
     static final StandardBundlerParam<List<Map<String, ? super Object>>> ADD_LAUNCHERS =
@@ -351,6 +405,24 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
             );
 
     @SuppressWarnings("unchecked")
+    static final BundlerParamInfo<List<String>> DMG_CONTENT =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.DMG_CONTENT.getId(),
+                    (Class<List<String>>) (Object)List.class,
+                    p -> Collections.emptyList(),
+                    (s, p) -> Arrays.asList(s.split(","))
+            );
+
+    @SuppressWarnings("unchecked")
+    static final StandardBundlerParam<List<String>> APP_CONTENT =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.APP_CONTENT.getId(),
+                    (Class<List<String>>) (Object)List.class,
+                    p->Collections.emptyList(),
+                    (s, p) -> Arrays.asList(s.split(","))
+            );
+
+    @SuppressWarnings("unchecked")
     static final BundlerParamInfo<List<Path>> MODULE_PATH =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.MODULE_PATH.getId(),
@@ -359,7 +431,7 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> {
                         List<Path> modulePath = Stream.of(s.split(File.pathSeparator))
                                 .map(Path::of)
-                                .collect(Collectors.toList());
+                                .toList();
                         Path javaBasePath = findPathOfModule(modulePath, JAVABASEJMOD);
 
                         // Add the default JDK module path to the module path.
@@ -367,7 +439,8 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                             List<Path> jdkModulePath = getDefaultModulePath();
 
                             if (jdkModulePath != null) {
-                                modulePath.addAll(jdkModulePath);
+                                modulePath = Stream.concat(modulePath.stream(),
+                                        jdkModulePath.stream()).toList();
                                 javaBasePath = findPathOfModule(modulePath, JAVABASEJMOD);
                             }
                         }
@@ -429,6 +502,16 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     p -> new LinkedHashSet<String>(),
                     (s, p) -> new LinkedHashSet<>(Arrays.asList(s.split(",")))
             );
+
+    static final StandardBundlerParam<Boolean> SIGN_BUNDLE =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.MAC_SIGN.getId(),
+                    Boolean.class,
+                    params -> false,
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                    null : Boolean.valueOf(s)
+        );
+
 
     static boolean isRuntimeInstaller(Map<String, ? super Object> params) {
         if (params.containsKey(MODULE.getID()) ||

@@ -23,7 +23,7 @@
  * questions.
  */
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import "JNIUtilities.h"
 
 #import "AWTFont.h"
 #import "CoreTextSupport.h"
@@ -41,12 +41,12 @@ Java_sun_font_CCharToGlyphMapper_countGlyphs
 {
     jint numGlyphs = 0;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     AWTFont *awtFont = (AWTFont *)jlong_to_ptr(awtFontPtr);
     numGlyphs = [awtFont->fFont numberOfGlyphs];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return numGlyphs;
 }
@@ -90,7 +90,7 @@ Java_sun_font_CCharToGlyphMapper_nativeCharsToGlyphs
     (JNIEnv *env, jclass clazz,
      jlong awtFontPtr, jint count, jcharArray unicodes, jintArray glyphs)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     AWTFont *awtFont = (AWTFont *)jlong_to_ptr(awtFontPtr);
 
@@ -111,5 +111,5 @@ JNF_COCOA_ENTER(env);
                                               unicodesAsChars, JNI_ABORT);
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }

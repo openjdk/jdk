@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.io.FilterWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static java.util.Collections.*;
 
@@ -62,8 +63,10 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
 import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.main.Option;
+import java.util.stream.Collectors;
 
 /**
  * The FilerImplementation class must maintain a number of
@@ -275,6 +278,13 @@ public class JavacFiler implements Filer, Closeable {
             this.fileObject = fileObject;
         }
 
+        @Override
+        public void write(byte b[], int off, int len) throws IOException {
+            Objects.checkFromIndexSize(off, len, b.length);
+            out.write(b, off, len);
+        }
+
+        @Override
         public synchronized void close() throws IOException {
             if (!closed) {
                 closed = true;
@@ -312,6 +322,7 @@ public class JavacFiler implements Filer, Closeable {
             this.fileObject = fileObject;
         }
 
+        @Override
         public synchronized void close() throws IOException {
             if (!closed) {
                 closed = true;
@@ -424,14 +435,14 @@ public class JavacFiler implements Filer, Closeable {
     public JavaFileObject createSourceFile(CharSequence nameAndModule,
                                            Element... originatingElements) throws IOException {
         Pair<ModuleSymbol, String> moduleAndClass = checkOrInferModule(nameAndModule);
-        return createSourceOrClassFile(moduleAndClass.fst, true, moduleAndClass.snd);
+        return createSourceOrClassFile(moduleAndClass.fst, true, moduleAndClass.snd, originatingElements);
     }
 
     @Override @DefinedBy(Api.ANNOTATION_PROCESSING)
     public JavaFileObject createClassFile(CharSequence nameAndModule,
                                           Element... originatingElements) throws IOException {
         Pair<ModuleSymbol, String> moduleAndClass = checkOrInferModule(nameAndModule);
-        return createSourceOrClassFile(moduleAndClass.fst, false, moduleAndClass.snd);
+        return createSourceOrClassFile(moduleAndClass.fst, false, moduleAndClass.snd, originatingElements);
     }
 
     private Pair<ModuleSymbol, String> checkOrInferModule(CharSequence moduleAndPkg) throws FilerException {
@@ -475,7 +486,7 @@ public class JavacFiler implements Filer, Closeable {
         return Pair.of(explicitModule, pkg);
     }
 
-    private JavaFileObject createSourceOrClassFile(ModuleSymbol mod, boolean isSourceFile, String name) throws IOException {
+    private JavaFileObject createSourceOrClassFile(ModuleSymbol mod, boolean isSourceFile, String name, Element... originatingElements) throws IOException {
         Assert.checkNonNull(mod);
 
         if (lint) {
@@ -498,7 +509,7 @@ public class JavacFiler implements Filer, Closeable {
                                     JavaFileObject.Kind.CLASS);
 
         JavaFileObject fileObject =
-            fileManager.getJavaFileForOutput(loc, name, kind, null);
+            fileManager.getJavaFileForOutputForOriginatingFiles(loc, name, kind, originatingFiles(originatingElements));
         checkFileReopening(fileObject, true);
 
         if (lastRound)
@@ -511,6 +522,17 @@ public class JavacFiler implements Filer, Closeable {
         openTypeNames.add(name);
 
         return new FilerOutputJavaFileObject(mod, name, fileObject);
+    }
+
+    private JavaFileObject[] originatingFiles(Element[] originatingElements) {
+        if (originatingElements == null) {
+            return new JavaFileObject[0];
+        }
+        JavaFileObject[] originatingFiles = Stream.of(originatingElements)
+                .map(elementUtils::getFileObjectOf)
+                .filter(fo -> fo != null)
+                .toArray(s -> new JavaFileObject[s]);
+        return originatingFiles;
     }
 
     @Override @DefinedBy(Api.ANNOTATION_PROCESSING)
@@ -530,22 +552,21 @@ public class JavacFiler implements Filer, Closeable {
             checkName(strPkg);
 
         FileObject fileObject =
-            fileManager.getFileForOutput(location, strPkg,
-                                         relativeName.toString(), null);
+            fileManager.getFileForOutputForOriginatingFiles(location, strPkg,
+                                                            relativeName.toString(), originatingFiles(originatingElements));
         checkFileReopening(fileObject, true);
 
-        if (fileObject instanceof JavaFileObject)
-            return new FilerOutputJavaFileObject(msym, null, (JavaFileObject)fileObject);
+        if (fileObject instanceof JavaFileObject javaFileObject)
+            return new FilerOutputJavaFileObject(msym, null, javaFileObject);
         else
             return new FilerOutputFileObject(msym, null, fileObject);
     }
 
     private void locationCheck(JavaFileManager.Location location) {
-        if (location instanceof StandardLocation) {
-            StandardLocation stdLoc = (StandardLocation) location;
-            if (!stdLoc.isOutputLocation())
+        if (location instanceof StandardLocation standardLocation) {
+            if (!standardLocation.isOutputLocation())
                 throw new IllegalArgumentException("Resource creation not supported in location " +
-                                                   stdLoc);
+                                                    standardLocation);
         }
     }
 
@@ -572,10 +593,9 @@ public class JavacFiler implements Filer, Closeable {
         // invocation.
         FileObject fileObject;
         if (location.isOutputLocation()) {
-            fileObject = fileManager.getFileForOutput(location,
+            fileObject = fileManager.getFileForOutputForOriginatingFiles(location,
                     pkg,
-                    relativeName.toString(),
-                    null);
+                    relativeName.toString());
         } else {
             fileObject = fileManager.getFileForInput(location,
                     pkg,
@@ -881,9 +901,8 @@ public class JavacFiler implements Filer, Closeable {
          * subject to annotation processing.
          */
         if ((typeName != null)) {
-            if (!(fileObject instanceof JavaFileObject))
+            if (!(fileObject instanceof JavaFileObject javaFileObject))
                 throw new AssertionError("JavaFileObject not found for " + fileObject);
-            JavaFileObject javaFileObject = (JavaFileObject)fileObject;
             switch(javaFileObject.getKind()) {
             case SOURCE:
                 generatedSourceNames.add(typeName);

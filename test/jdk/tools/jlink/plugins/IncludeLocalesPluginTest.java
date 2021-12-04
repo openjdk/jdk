@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import tests.Result;
 /*
  * @test
  * @bug 8152143 8152704 8155649 8165804 8185841 8176841 8190918
- *      8179071 8202537 8221432 8222098
+ *      8179071 8202537 8221432 8222098 8251317 8258794
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
@@ -146,7 +146,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
-                "(root)", "en", "en_US", "en_US_POSIX", "en_001", "en_150", "en_AG", "en_AI",
+                "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "en_001", "en_150", "en_AG", "en_AI",
                 "en_AT", "en_AU", "en_BB", "en_BE", "en_BM", "en_BS", "en_BW", "en_BZ",
                 "en_CA", "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_DE",
                 "en_DG", "en_DK", "en_DM", "en_ER", "en_FI", "en_FJ", "en_FK", "en_FM",
@@ -196,8 +196,8 @@ public class IncludeLocalesPluginTest {
                 "en_PH", "en_PK", "en_PN", "en_PR", "en_PW", "en_RW", "en_SB", "en_SC",
                 "en_SD", "en_SE", "en_SG", "en_SH", "en_SI", "en_SL", "en_SS", "en_SX",
                 "en_SZ", "en_TC", "en_TK", "en_TO", "en_TT", "en_TV", "en_TZ", "en_UG",
-                "en_UM", "en_US", "en_US_POSIX", "en_VC", "en_VG", "en_VI", "en_VU",
-                "en_WS", "en_ZA", "en_ZM", "en_ZW", "ja", "ja_JP",
+                "en_UM", "en_US", "en_US_#Latn", "en_US_POSIX", "en_VC", "en_VG", "en_VI", "en_VU",
+                "en_WS", "en_ZA", "en_ZM", "en_ZW", "ja", "ja_JP", "ja_JP_#Jpan",
                 "ja_JP_JP_#u-ca-japanese"),
             "",
         },
@@ -225,7 +225,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
-                "(root)", "en", "en_US", "en_US_POSIX", "en_001", "en_150", "en_AT",
+                "(root)", "en", "en_001", "en_150", "en_AT", "en_US", "en_US_#Latn", "en_US_POSIX",
                 "de", "de_AT"),
             "",
         },
@@ -254,13 +254,15 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_zh.class"),
             List.of(
-                "(root)", "as_IN", "as", "bn_IN", "bn", "bo_IN", "bo", "brx_IN", "brx",
-                "ccp", "ccp_IN","en", "en_001", "en_IN", "en_US", "en_US_POSIX", "gu_IN",
-                "gu", "hi_IN", "hi", "kn_IN", "kn", "kok_IN", "kok", "ks_IN", "ks", "mai",
-                "mai_IN", "mni", "mni_IN", "mni_IN_#Beng", "mni__#Beng", "ml_IN", "ml",
-                "mr_IN", "mr", "ne_IN", "ne", "or_IN", "or", "pa", "pa_IN_#Guru",
-                "pa__#Guru", "sat", "sat_IN", "sat_IN_#Olck", "sat__#Olck", "sd", "sd_IN",
-                "sd_IN_#Deva", "sd__#Deva", "ta_IN", "ta", "te_IN", "te", "ur_IN", "ur"),
+                "(root)", "as", "as_IN", "as_IN_#Beng", "bn", "bn_IN", "bo", "bo_IN", "brx", "brx_IN",
+                "brx_IN_#Deva", "ccp", "ccp_IN", "doi", "doi_IN", "doi_IN_#Deva", "en", "en_001", "en_IN",
+                "en_US", "en_US_#Latn", "en_US_POSIX", "gu", "gu_IN", "gu_IN_#Gujr", "hi", "hi_IN",
+                "hi_IN_#Deva", "kn", "kn_IN", "kn_IN_#Knda", "kok", "kok_IN", "kok_IN_#Deva", "ks_IN_#Arab",
+                "ks_IN", "ks__#Arab", "ks", "mai", "mai_IN", "mai_IN_#Deva", "mni", "mni__#Beng",
+                "mni_IN", "mni_IN_#Beng", "ml", "ml_IN", "ml_IN_#Mlym", "mr", "mr_IN", "mr_IN_#Deva", "ne",
+                "ne_IN", "or", "or_IN", "or_IN_#Orya", "pa", "pa__#Guru", "pa_IN", "pa_IN_#Guru", "sa",
+                "sa_IN", "sa_IN_#Deva", "sat", "sat__#Olck", "sat_IN", "sat_IN_#Olck", "sd", "sd__#Deva",
+                "sd_IN", "sd_IN_#Deva", "ta", "ta_IN", "ta_IN_#Taml", "te", "te_IN", "te_IN_#Telu", "ur_IN", "ur"),
             "",
         },
 
@@ -283,8 +285,8 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_zh.class"),
             List.of(
-                "(root)", "en", "en_US", "en_US_POSIX", "th", "th_TH",
-                "th_TH_TH_#u-nu-thai"),
+                "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "th", "th_TH",
+                "th_TH_#Thai", "th_TH_TH_#u-nu-thai"),
             "",
         },
 
@@ -310,7 +312,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
-                "(root)", "en", "en_US", "en_US_POSIX", "zh", "zh__#Hans", "zh__#Hant",
+                "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "zh", "zh__#Hans", "zh__#Hant",
                 "zh_HK", "zh_HK_#Hans", "zh_HK_#Hant"),
             "",
         },
@@ -336,8 +338,8 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
-                "(root)", "en", "en_US", "en_US_POSIX", "zh", "zh__#Hans", "zh_CN",
-                "zh_CN_#Hans", "zh_HK_#Hans", "zh_MO_#Hans", "zh_SG", "zh_SG_#Hans"),
+                "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "zh", "zh__#Hans", "zh_CN",
+                "zh_CN_#Hans", "zh_HK", "zh_HK_#Hans", "zh_MO", "zh_MO_#Hans", "zh_SG", "zh_SG_#Hans"),
             "",
         },
 
@@ -350,7 +352,8 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/FormatData_no_NO.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_no_NO_NY.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_nb.class",
-                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_nn.class"),
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_nn.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_no.class"),
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/LineBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
@@ -363,8 +366,9 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
-                "(root)", "en", "en_US", "en_US_POSIX", "nb", "nb_NO", "nb_SJ", "nn",
-                "nn_NO", "no", "no_NO", "no_NO_NY"),
+                "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "nb", "nb_NO",
+                "nb_NO_#Latn", "nb_SJ", "nn", "nn_NO", "nn_NO_#Latn", "no", "no_NO", "no_NO_NY",
+                "no_NO_#Latn"),
             "",
         },
 
@@ -373,13 +377,13 @@ public class IncludeLocalesPluginTest {
             "--include-locales=he,id,yi",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_in.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_in_ID.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_iw.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_iw_IL.class",
-                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_in.class",
-                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_iw.class",
-                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ji.class"),
+                "/jdk.localedata/sun/text/resources/ext/FormatData_he.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_he_IL.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_id.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_id_ID.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_he.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_id.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_yi.class"),
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/LineBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
@@ -392,8 +396,8 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
-                "(root)", "en", "en_US", "en_US_POSIX", "in", "in_ID", "iw", "iw_IL",
-                "ji", "ji_001"),
+                "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "id", "id_ID",
+                "id_ID_#Latn", "he", "he_IL", "he_IL_#Hebr", "yi", "yi_001", "yi_001_#Hebr"),
             "",
         },
 
@@ -420,7 +424,7 @@ public class IncludeLocalesPluginTest {
                 "en_PH", "en_PK", "en_PN", "en_PR", "en_PW", "en_RW", "en_SB", "en_SC",
                 "en_SD", "en_SE", "en_SG", "en_SH", "en_SI", "en_SL", "en_SS", "en_SX",
                 "en_SZ", "en_TC", "en_TK", "en_TO", "en_TT", "en_TV", "en_TZ", "en_UG",
-                "en_UM", "en_US", "en_US_POSIX", "en_VC", "en_VG", "en_VI", "en_VU",
+                "en_UM", "en_US", "en_US_#Latn", "en_US_POSIX", "en_VC", "en_VG", "en_VI", "en_VU",
                 "en_WS", "en_ZA", "en_ZM", "en_ZW"),
             "",
         },

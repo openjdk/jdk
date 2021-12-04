@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -821,11 +822,6 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
 
         // Code stolen from DigestAuthentication:
 
-        private static final char charArray[] = {
-            '0', '1', '2', '3', '4', '5', '6', '7',
-            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-        };
-
         private static String encode(String src, char[] passwd, MessageDigest md) {
             try {
                 md.update(src.getBytes("ISO-8859-1"));
@@ -840,15 +836,7 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                 Arrays.fill(passwdBytes, (byte)0x00);
             }
             byte[] digest = md.digest();
-
-            StringBuilder res = new StringBuilder(digest.length * 2);
-            for (int i = 0; i < digest.length; i++) {
-                int hashchar = ((digest[i] >>> 4) & 0xf);
-                res.append(charArray[hashchar]);
-                hashchar = (digest[i] & 0xf);
-                res.append(charArray[hashchar]);
-            }
-            return res.toString();
+            return HexFormat.of().formatHex(digest);
         }
 
         public static String computeDigest(boolean isRequest,

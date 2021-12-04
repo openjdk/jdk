@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public final class Recording implements Closeable {
      *         FlightRecorderPermission "accessFlightRecorder" is not set.
      */
     public Recording() {
-        this(new HashMap<String, String>());
+        this(Map.of());
      }
 
     /**
@@ -436,7 +436,7 @@ public final class Recording implements Closeable {
          * @since 14
          */
         /*package private*/ void setFlushInterval(Duration interval) {
-            Objects.nonNull(interval);
+            Objects.requireNonNull(interval);
             if (interval.isNegative()) {
                 throw new IllegalArgumentException("Stream interval can't be negative");
             }
@@ -577,6 +577,9 @@ public final class Recording implements Closeable {
      * Creates a data stream for a specified interval.
      * <p>
      * The stream may contain some data outside the specified range.
+     * <p>
+     * If the recording is not to disk, a stream can't be created
+     * and {@code null} is returned.
      *
      * @param start the start time for the stream, or {@code null} to get data from
      *        start time of the recording
@@ -585,12 +588,14 @@ public final class Recording implements Closeable {
      *        present time.
      *
      * @return an input stream, or {@code null} if no data is available in the
-     *         interval.
+     *         interval, or the recording was not recorded to disk
      *
      * @throws IllegalArgumentException if {@code end} happens before
      *         {@code start}
      *
      * @throws IOException if a stream can't be opened
+     *
+     * @see #setToDisk(boolean)
      */
     public InputStream getStream(Instant start, Instant end) throws IOException {
         if (start != null && end != null && end.isBefore(start)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
  * @bug 8193222
  * @summary Check EnsureLocalCapacity doesn't shrink unexpectedly
  * @library /test/lib
- * @run main/othervm/native TestCheckedEnsureLocalCapacity launch
+ * @run main/native TestCheckedEnsureLocalCapacity launch
  */
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -65,6 +66,7 @@ public class TestCheckedEnsureLocalCapacity {
 
         // No warning
         ProcessTools.executeTestJvm("-Xcheck:jni",
+                                    "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                                     "TestCheckedEnsureLocalCapacity",
                                     Integer.toString(testArgs[0][0]),
                                     Integer.toString(testArgs[0][1])).
@@ -77,6 +79,7 @@ public class TestCheckedEnsureLocalCapacity {
 
         // Warning
         ProcessTools.executeTestJvm("-Xcheck:jni",
+                                    "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                                     "TestCheckedEnsureLocalCapacity",
                                     Integer.toString(testArgs[1][0]),
                                     Integer.toString(testArgs[1][1])).

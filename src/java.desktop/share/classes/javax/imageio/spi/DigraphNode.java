@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.imageio.spi;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -40,6 +41,11 @@ import java.util.Set;
  *
  */
 class DigraphNode<E> implements Cloneable, Serializable {
+
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = 5308261378582246841L;
 
     /** The data associated with this node. */

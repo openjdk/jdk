@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,10 @@ package java.rmi;
  * extends <code>java.rmi.Remote</code> are available remotely.
  *
  * <p>Implementation classes can implement any number of remote interfaces and
- * can extend other remote implementation classes.  RMI provides some
- * convenience classes that remote object implementations can extend which
- * facilitate remote object creation.  These classes are
- * <code>java.rmi.server.UnicastRemoteObject</code> and
- * <code>java.rmi.activation.Activatable</code>.
+ * can extend other remote implementation classes.  RMI provides a convenience
+ * class {@link java.rmi.server.UnicastRemoteObject UnicastRemoteObject}
+ * that remote object implementations can extend and that facilitates remote
+ * object creation.
  *
  * <p>For complete details on RMI, see the <a
  * href="{@docRoot}/../specs/rmi/index.html">RMI Specification</a> which
@@ -45,7 +44,5 @@ package java.rmi;
  *
  * @since   1.1
  * @author  Ann Wollrath
- * @see     java.rmi.server.UnicastRemoteObject
- * @see     java.rmi.activation.Activatable
  */
 public interface Remote {}

@@ -46,14 +46,14 @@ private:
   static ciSymbol*                 _shared_ci_symbols[];
   static int                       _shared_ident_limit;
 
-  Arena*                    _arena;
-  GrowableArray<ciMetadata*>*        _ci_metadata;
-  GrowableArray<ciMethod*>* _unloaded_methods;
-  GrowableArray<ciKlass*>* _unloaded_klasses;
-  GrowableArray<ciInstance*>* _unloaded_instances;
-  GrowableArray<ciReturnAddress*>* _return_addresses;
-  GrowableArray<ciSymbol*>* _symbols;  // keep list of symbols created
-  int                       _next_ident;
+  Arena*                           _arena;
+  GrowableArray<ciMetadata*>       _ci_metadata;
+  GrowableArray<ciMethod*>         _unloaded_methods;
+  GrowableArray<ciKlass*>          _unloaded_klasses;
+  GrowableArray<ciInstance*>       _unloaded_instances;
+  GrowableArray<ciReturnAddress*>  _return_addresses;
+  GrowableArray<ciSymbol*>         _symbols;  // keep list of symbols created
+  int                              _next_ident;
 
 public:
   struct NonPermObject : public ResourceObj {
@@ -139,7 +139,7 @@ public:
 
   ciReturnAddress* get_return_address(int bci);
 
-  GrowableArray<ciMetadata*>* get_ci_metadata() const { return _ci_metadata; }
+  GrowableArray<ciMetadata*>* get_ci_metadata() { return &_ci_metadata; }
   // RedefineClasses support
   void metadata_do(MetadataClosure* f);
 

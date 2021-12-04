@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,12 @@ class test2 {
         Integer staticFcalls;
         if (staticFunctionDepth.intValue() > 0) {
             numFcalls = functionDepth;
-            staticFcalls = new Integer(staticFunctionDepth.intValue() - 1);
+            staticFcalls = Integer.valueOf(staticFunctionDepth.intValue() - 1);
             methodCallStr = Globals.returnNextStaticMethod(MethodID[1]);
 
             Globals.addFunctionIDToVector(methodCallStr.id, ID);
         } else {
-            numFcalls = new Long(functionDepth.longValue() - 1);
+            numFcalls = Long.valueOf(functionDepth.longValue() - 1);
             staticFcalls = staticFunctionDepth;
             Globals.addFunctionIDToVector(MethodID[0], ID);
             callMe(summation, ID, numFcalls, staticFcalls);
@@ -94,11 +94,11 @@ class test2 {
         Integer staticFcalls;
         if (staticFunctionDepth.intValue() > 0) {
             numFcalls = functionDepth;
-            staticFcalls = new Integer(staticFunctionDepth.intValue() - 1);
+            staticFcalls = Integer.valueOf(staticFunctionDepth.intValue() - 1);
             methodCallStr = Globals.returnNextStaticMethod(MethodID[0]);
 
         } else {
-            numFcalls = new Long(functionDepth.longValue() - 1);
+            numFcalls = Long.valueOf(functionDepth.longValue() - 1);
             staticFcalls = staticFunctionDepth;
             methodCallStr = Globals.nextRandomMethod();
         }

@@ -87,7 +87,7 @@ public class ProxyClassAccessTest {
      * Test unnamed module has no access to other proxy interface
      */
     @Test
-    public void testNoReadAccess() throws Exception {
+    public void testNoReadAccess() throws Throwable {
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
         ModuleLayer bootLayer = ModuleLayer.boot();
         Configuration cf = bootLayer
@@ -104,7 +104,7 @@ public class ProxyClassAccessTest {
         checkIAE(loader, interfaces);
     }
 
-    private void checkIAE(ClassLoader loader, Class<?>[] interfaces) {
+    private void checkIAE(ClassLoader loader, Class<?>[] interfaces)  throws Throwable {
         try {
             Proxy.getProxyClass(loader, interfaces);
             throw new RuntimeException("Expected IllegalArgumentException thrown");

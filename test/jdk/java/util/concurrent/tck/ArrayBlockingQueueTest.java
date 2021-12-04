@@ -64,7 +64,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
                 boolean fair = randomBoolean();
                 return populatedQueue(0, SIZE, 2 * SIZE, fair);
             }
-            public Object makeElement(int i) { return i; }
+            public Object makeElement(int i) { return JSR166TestCase.itemFor(i); }
             public boolean isConcurrent() { return true; }
             public boolean permitsNulls() { return false; }
         }
@@ -77,48 +77,48 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     }
 
     public static class Fair extends BlockingQueueTest {
-        protected BlockingQueue emptyCollection() {
+        protected BlockingQueue<Item> emptyCollection() {
             return populatedQueue(0, SIZE, 2 * SIZE, true);
         }
     }
 
     public static class NonFair extends BlockingQueueTest {
-        protected BlockingQueue emptyCollection() {
+        protected BlockingQueue<Item> emptyCollection() {
             return populatedQueue(0, SIZE, 2 * SIZE, false);
         }
     }
 
     /**
      * Returns a new queue of given size containing consecutive
-     * Integers 0 ... n - 1.
+     * Items 0 ... n - 1.
      */
-    static ArrayBlockingQueue<Integer> populatedQueue(int n) {
+    static ArrayBlockingQueue<Item> populatedQueue(int n) {
         return populatedQueue(n, n, n, false);
     }
 
     /**
      * Returns a new queue of given size containing consecutive
-     * Integers 0 ... n - 1, with given capacity range and fairness.
+     * Items 0 ... n - 1, with given capacity range and fairness.
      */
-    static ArrayBlockingQueue<Integer> populatedQueue(
+    static ArrayBlockingQueue<Item> populatedQueue(
         int size, int minCapacity, int maxCapacity, boolean fair) {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         int capacity = rnd.nextInt(minCapacity, maxCapacity + 1);
-        ArrayBlockingQueue<Integer> q = new ArrayBlockingQueue<>(capacity);
+        ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(capacity);
         assertTrue(q.isEmpty());
         // shuffle circular array elements so they wrap
         {
             int n = rnd.nextInt(capacity);
-            for (int i = 0; i < n; i++) q.add(42);
+            for (int i = 0; i < n; i++) q.add(fortytwo);
             for (int i = 0; i < n; i++) q.remove();
         }
         for (int i = 0; i < size; i++)
-            assertTrue(q.offer((Integer) i));
-        assertEquals(size == 0, q.isEmpty());
-        assertEquals(capacity - size, q.remainingCapacity());
-        assertEquals(size, q.size());
+            mustOffer(q, i);
+        mustEqual(size == 0, q.isEmpty());
+        mustEqual(capacity - size, q.remainingCapacity());
+        mustEqual(size, q.size());
         if (size > 0)
-            assertEquals((Integer) 0, q.peek());
+            mustEqual(0, q.peek());
         return q;
     }
 
@@ -126,7 +126,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * A new queue has the indicated capacity
      */
     public void testConstructor1() {
-        assertEquals(SIZE, new ArrayBlockingQueue(SIZE).remainingCapacity());
+        mustEqual(SIZE, new ArrayBlockingQueue<Item>(SIZE).remainingCapacity());
     }
 
     /**
@@ -135,12 +135,12 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     public void testConstructor_nonPositiveCapacity() {
         for (int i : new int[] { 0, -1, Integer.MIN_VALUE }) {
             try {
-                new ArrayBlockingQueue(i);
+                new ArrayBlockingQueue<Item>(i);
                 shouldThrow();
             } catch (IllegalArgumentException success) {}
             for (boolean fair : new boolean[] { true, false }) {
                 try {
-                    new ArrayBlockingQueue(i, fair);
+                    new ArrayBlockingQueue<Item>(i, fair);
                     shouldThrow();
                 } catch (IllegalArgumentException success) {}
             }
@@ -152,7 +152,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      */
     public void testConstructor_nullCollection() {
         try {
-            new ArrayBlockingQueue(1, true, null);
+            new ArrayBlockingQueue<Item>(1, true, null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -161,9 +161,9 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * Initializing from Collection of null elements throws NPE
      */
     public void testConstructor4() {
-        Collection<Integer> elements = Arrays.asList(new Integer[SIZE]);
+        Collection<Item> elements = Arrays.asList(new Item[SIZE]);
         try {
-            new ArrayBlockingQueue(SIZE, false, elements);
+            new ArrayBlockingQueue<Item>(SIZE, false, elements);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -172,12 +172,10 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * Initializing from Collection with some null elements throws NPE
      */
     public void testConstructor5() {
-        Integer[] ints = new Integer[SIZE];
-        for (int i = 0; i < SIZE - 1; ++i)
-            ints[i] = i;
-        Collection<Integer> elements = Arrays.asList(ints);
+        Item[] items = new Item[2]; items[0] = zero;
+        Collection<Item> elements = Arrays.asList(items);
         try {
-            new ArrayBlockingQueue(SIZE, false, elements);
+            new ArrayBlockingQueue<Item>(SIZE, false, elements);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -187,10 +185,10 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      */
     public void testConstructor_collectionTooLarge() {
         // just barely fits - succeeds
-        new ArrayBlockingQueue(SIZE, false,
-                               Collections.nCopies(SIZE, ""));
+        new ArrayBlockingQueue<Object>(SIZE, false,
+                                       Collections.nCopies(SIZE, ""));
         try {
-            new ArrayBlockingQueue(SIZE - 1, false,
+            new ArrayBlockingQueue<Object>(SIZE - 1, false,
                                    Collections.nCopies(SIZE, ""));
             shouldThrow();
         } catch (IllegalArgumentException success) {}
@@ -200,27 +198,25 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * Queue contains all elements of collection used to initialize
      */
     public void testConstructor7() {
-        Integer[] ints = new Integer[SIZE];
+        Item[] items = defaultItems;
+        Collection<Item> elements = Arrays.asList(items);
+        ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(SIZE, true, elements);
         for (int i = 0; i < SIZE; ++i)
-            ints[i] = i;
-        Collection<Integer> elements = Arrays.asList(ints);
-        ArrayBlockingQueue q = new ArrayBlockingQueue(SIZE, true, elements);
-        for (int i = 0; i < SIZE; ++i)
-            assertEquals(ints[i], q.poll());
+            mustEqual(items[i], q.poll());
     }
 
     /**
      * Queue transitions from empty to full when elements added
      */
     public void testEmptyFull() {
-        BlockingQueue q = populatedQueue(0, 2, 2, false);
+        BlockingQueue<Item> q = populatedQueue(0, 2, 2, false);
         assertTrue(q.isEmpty());
-        assertEquals(2, q.remainingCapacity());
+        mustEqual(2, q.remainingCapacity());
         q.add(one);
         assertFalse(q.isEmpty());
         assertTrue(q.offer(two));
         assertFalse(q.isEmpty());
-        assertEquals(0, q.remainingCapacity());
+        mustEqual(0, q.remainingCapacity());
         assertFalse(q.offer(three));
     }
 
@@ -229,18 +225,18 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      */
     public void testRemainingCapacity() {
         int size = ThreadLocalRandom.current().nextInt(1, SIZE);
-        BlockingQueue q = populatedQueue(size, size, 2 * size, false);
+        BlockingQueue<Item> q = populatedQueue(size, size, 2 * size, false);
         int spare = q.remainingCapacity();
         int capacity = spare + size;
         for (int i = 0; i < size; i++) {
-            assertEquals(spare + i, q.remainingCapacity());
-            assertEquals(capacity, q.size() + q.remainingCapacity());
-            assertEquals(i, q.remove());
+            mustEqual(spare + i, q.remainingCapacity());
+            mustEqual(capacity, q.size() + q.remainingCapacity());
+            mustEqual(i, q.remove());
         }
         for (int i = 0; i < size; i++) {
-            assertEquals(capacity - i, q.remainingCapacity());
-            assertEquals(capacity, q.size() + q.remainingCapacity());
-            assertTrue(q.add(i));
+            mustEqual(capacity - i, q.remainingCapacity());
+            mustEqual(capacity, q.size() + q.remainingCapacity());
+            mustAdd(q, i);
         }
     }
 
@@ -248,7 +244,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * Offer succeeds if not full; fails if full
      */
     public void testOffer() {
-        ArrayBlockingQueue q = new ArrayBlockingQueue(1);
+        ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(1);
         assertTrue(q.offer(zero));
         assertFalse(q.offer(one));
     }
@@ -257,11 +253,11 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * add succeeds if not full; throws IllegalStateException if full
      */
     public void testAdd() {
-        ArrayBlockingQueue q = new ArrayBlockingQueue(SIZE);
-        for (int i = 0; i < SIZE; i++) assertTrue(q.add((Integer) i));
-        assertEquals(0, q.remainingCapacity());
+        ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(SIZE);
+        for (int i = 0; i < SIZE; i++) assertTrue(q.add(itemFor(i)));
+        mustEqual(0, q.remainingCapacity());
         try {
-            q.add((Integer) SIZE);
+            q.add(itemFor(SIZE));
             shouldThrow();
         } catch (IllegalStateException success) {}
     }
@@ -270,7 +266,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * addAll(this) throws IllegalArgumentException
      */
     public void testAddAllSelf() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         try {
             q.addAll(q);
             shouldThrow();
@@ -282,12 +278,10 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * possibly adding some elements
      */
     public void testAddAll3() {
-        ArrayBlockingQueue q = new ArrayBlockingQueue(SIZE);
-        Integer[] ints = new Integer[SIZE];
-        for (int i = 0; i < SIZE - 1; ++i)
-            ints[i] = new Integer(i);
+        ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(SIZE);
+        Item[] items = new Item[2]; items[0] = zero;
         try {
-            q.addAll(Arrays.asList(ints));
+            q.addAll(Arrays.asList(items));
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -297,15 +291,15 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      */
     public void testAddAll_insufficientSpace() {
         int size = ThreadLocalRandom.current().nextInt(1, SIZE);
-        ArrayBlockingQueue q = populatedQueue(0, size, size, false);
+        ArrayBlockingQueue<Item> q = populatedQueue(0, size, size, false);
         // Just fits:
         q.addAll(populatedQueue(size, size, 2 * size, false));
-        assertEquals(0, q.remainingCapacity());
-        assertEquals(size, q.size());
-        assertEquals(0, q.peek());
+        mustEqual(0, q.remainingCapacity());
+        mustEqual(size, q.size());
+        mustEqual(0, q.peek());
         try {
             q = populatedQueue(0, size, size, false);
-            q.addAll(Collections.nCopies(size + 1, 42));
+            q.addAll(Collections.nCopies(size + 1, fortytwo));
             shouldThrow();
         } catch (IllegalStateException success) {}
     }
@@ -314,53 +308,51 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * Queue contains all elements, in traversal order, of successful addAll
      */
     public void testAddAll5() {
-        Integer[] empty = new Integer[0];
-        Integer[] ints = new Integer[SIZE];
-        for (int i = 0; i < SIZE; ++i)
-            ints[i] = new Integer(i);
-        ArrayBlockingQueue q = new ArrayBlockingQueue(SIZE);
+        Item[] empty = new Item[0];
+        Item[] items = defaultItems;
+        ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(SIZE);
         assertFalse(q.addAll(Arrays.asList(empty)));
-        assertTrue(q.addAll(Arrays.asList(ints)));
+        assertTrue(q.addAll(Arrays.asList(items)));
         for (int i = 0; i < SIZE; ++i)
-            assertEquals(ints[i], q.poll());
+            mustEqual(items[i], q.poll());
     }
 
     /**
      * all elements successfully put are contained
      */
     public void testPut() throws InterruptedException {
-        ArrayBlockingQueue q = new ArrayBlockingQueue(SIZE);
+        ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(SIZE);
         for (int i = 0; i < SIZE; ++i) {
-            Integer x = new Integer(i);
+            Item x = itemFor(i);
             q.put(x);
-            assertTrue(q.contains(x));
+            mustContain(q, x);
         }
-        assertEquals(0, q.remainingCapacity());
+        mustEqual(0, q.remainingCapacity());
     }
 
     /**
      * put blocks interruptibly if full
      */
     public void testBlockingPut() throws InterruptedException {
-        final ArrayBlockingQueue q = new ArrayBlockingQueue(SIZE);
+        final ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(SIZE);
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 for (int i = 0; i < SIZE; ++i)
-                    q.put(i);
-                assertEquals(SIZE, q.size());
-                assertEquals(0, q.remainingCapacity());
+                    q.put(itemFor(i));
+                mustEqual(SIZE, q.size());
+                mustEqual(0, q.remainingCapacity());
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.put(99);
+                    q.put(ninetynine);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    q.put(99);
+                    q.put(ninetynine);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
@@ -370,8 +362,8 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
         if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
-        assertEquals(SIZE, q.size());
-        assertEquals(0, q.remainingCapacity());
+        mustEqual(SIZE, q.size());
+        mustEqual(0, q.remainingCapacity());
     }
 
     /**
@@ -379,66 +371,66 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      */
     public void testPutWithTake() throws InterruptedException {
         final int capacity = 2;
-        final ArrayBlockingQueue q = new ArrayBlockingQueue(capacity);
+        final ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(capacity);
         final CountDownLatch pleaseTake = new CountDownLatch(1);
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 for (int i = 0; i < capacity; i++)
-                    q.put(i);
+                    q.put(itemFor(i));
                 pleaseTake.countDown();
-                q.put(86);
+                q.put(eightysix);
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.put(99);
+                    q.put(ninetynine);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    q.put(99);
+                    q.put(ninetynine);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
             }});
 
         await(pleaseTake);
-        assertEquals(0, q.remainingCapacity());
-        assertEquals(0, q.take());
+        mustEqual(0, q.remainingCapacity());
+        mustEqual(0, q.take());
 
         await(pleaseInterrupt);
         if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
-        assertEquals(0, q.remainingCapacity());
+        mustEqual(0, q.remainingCapacity());
     }
 
     /**
      * timed offer times out if full and elements not taken
      */
     public void testTimedOffer() {
-        final ArrayBlockingQueue q = new ArrayBlockingQueue(2);
+        final ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(2);
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                q.put(new Object());
-                q.put(new Object());
+                q.put(one);
+                q.put(two);
                 long startTime = System.nanoTime();
-                assertFalse(q.offer(new Object(), timeoutMillis(), MILLISECONDS));
+                assertFalse(q.offer(zero, timeoutMillis(), MILLISECONDS));
                 assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.offer(new Object(), randomTimeout(), randomTimeUnit());
+                    q.offer(three, randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    q.offer(new Object(), LONGER_DELAY_MS, MILLISECONDS);
+                    q.offer(four, LONGER_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
@@ -454,9 +446,9 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * take retrieves elements in FIFO order
      */
     public void testTake() throws InterruptedException {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         for (int i = 0; i < SIZE; ++i) {
-            assertEquals(i, q.take());
+            mustEqual(i, q.take());
         }
     }
 
@@ -464,11 +456,11 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * Take removes existing elements until empty, then blocks interruptibly
      */
     public void testBlockingTake() throws InterruptedException {
-        final ArrayBlockingQueue q = populatedQueue(SIZE);
+        final ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                for (int i = 0; i < SIZE; i++) assertEquals(i, q.take());
+                for (int i = 0; i < SIZE; i++) mustEqual(i, q.take());
 
                 Thread.currentThread().interrupt();
                 try {
@@ -495,9 +487,9 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * poll succeeds unless empty
      */
     public void testPoll() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         for (int i = 0; i < SIZE; ++i) {
-            assertEquals(i, q.poll());
+            mustEqual(i, q.poll());
         }
         assertNull(q.poll());
     }
@@ -506,9 +498,9 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * timed poll with zero timeout succeeds when non-empty, else times out
      */
     public void testTimedPoll0() throws InterruptedException {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         for (int i = 0; i < SIZE; ++i) {
-            assertEquals(i, q.poll(0, MILLISECONDS));
+            mustEqual(i, q.poll(0, MILLISECONDS));
         }
         assertNull(q.poll(0, MILLISECONDS));
         checkEmpty(q);
@@ -518,10 +510,10 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * timed poll with nonzero timeout succeeds when non-empty, else times out
      */
     public void testTimedPoll() throws InterruptedException {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         for (int i = 0; i < SIZE; ++i) {
             long startTime = System.nanoTime();
-            assertEquals(i, q.poll(LONG_DELAY_MS, MILLISECONDS));
+            mustEqual(i, q.poll(LONG_DELAY_MS, MILLISECONDS));
             assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
         }
         long startTime = System.nanoTime();
@@ -535,12 +527,12 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * returning timeout status
      */
     public void testInterruptedTimedPoll() throws InterruptedException {
-        final BlockingQueue<Integer> q = populatedQueue(SIZE);
+        final BlockingQueue<Item> q = populatedQueue(SIZE);
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 for (int i = 0; i < SIZE; i++)
-                    assertEquals(i, (int) q.poll(LONG_DELAY_MS, MILLISECONDS));
+                    mustEqual(i, q.poll(LONG_DELAY_MS, MILLISECONDS));
 
                 Thread.currentThread().interrupt();
                 try {
@@ -568,10 +560,10 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * peek returns next element, or null if empty
      */
     public void testPeek() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         for (int i = 0; i < SIZE; ++i) {
-            assertEquals(i, q.peek());
-            assertEquals(i, q.poll());
+            mustEqual(i, q.peek());
+            mustEqual(i, q.poll());
             assertTrue(q.peek() == null ||
                        !q.peek().equals(i));
         }
@@ -582,10 +574,10 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * element returns next element, or throws NSEE if empty
      */
     public void testElement() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         for (int i = 0; i < SIZE; ++i) {
-            assertEquals(i, q.element());
-            assertEquals(i, q.poll());
+            mustEqual(i, q.element());
+            mustEqual(i, q.poll());
         }
         try {
             q.element();
@@ -597,9 +589,9 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * remove removes next element, or throws NSEE if empty
      */
     public void testRemove() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         for (int i = 0; i < SIZE; ++i) {
-            assertEquals(i, q.remove());
+            mustEqual(i, q.remove());
         }
         try {
             q.remove();
@@ -612,12 +604,12 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      */
     public void testContains() {
         int size = ThreadLocalRandom.current().nextInt(1, SIZE);
-        ArrayBlockingQueue q = populatedQueue(size, size, 2 * size, false);
+        ArrayBlockingQueue<Item> q = populatedQueue(size, size, 2 * size, false);
         assertFalse(q.contains(null));
         for (int i = 0; i < size; ++i) {
-            assertTrue(q.contains(new Integer(i)));
-            assertEquals(i, q.poll());
-            assertFalse(q.contains(new Integer(i)));
+            mustContain(q, i);
+            mustEqual(i, q.poll());
+            mustNotContain(q, i);
         }
     }
 
@@ -626,15 +618,15 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      */
     public void testClear() {
         int size = ThreadLocalRandom.current().nextInt(1, 5);
-        ArrayBlockingQueue q = populatedQueue(size, size, 2 * size, false);
+        ArrayBlockingQueue<Item> q = populatedQueue(size, size, 2 * size, false);
         int capacity = size + q.remainingCapacity();
         q.clear();
         assertTrue(q.isEmpty());
-        assertEquals(0, q.size());
-        assertEquals(capacity, q.remainingCapacity());
+        mustEqual(0, q.size());
+        mustEqual(capacity, q.remainingCapacity());
         q.add(one);
         assertFalse(q.isEmpty());
-        assertTrue(q.contains(one));
+        mustContain(q, one);
         q.clear();
         assertTrue(q.isEmpty());
     }
@@ -643,12 +635,12 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * containsAll(c) is true when c contains a subset of elements
      */
     public void testContainsAll() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
-        ArrayBlockingQueue p = new ArrayBlockingQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> p = new ArrayBlockingQueue<>(SIZE);
         for (int i = 0; i < SIZE; ++i) {
             assertTrue(q.containsAll(p));
             assertFalse(p.containsAll(q));
-            p.add(new Integer(i));
+            mustAdd(p, i);
         }
         assertTrue(p.containsAll(q));
     }
@@ -657,8 +649,8 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * retainAll(c) retains only those elements of c and reports true if changed
      */
     public void testRetainAll() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
-        ArrayBlockingQueue p = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> p = populatedQueue(SIZE);
         for (int i = 0; i < SIZE; ++i) {
             boolean changed = q.retainAll(p);
             if (i == 0)
@@ -667,7 +659,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
                 assertTrue(changed);
 
             assertTrue(q.containsAll(p));
-            assertEquals(SIZE - i, q.size());
+            mustEqual(SIZE - i, q.size());
             p.remove();
         }
     }
@@ -677,45 +669,45 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      */
     public void testRemoveAll() {
         for (int i = 1; i < SIZE; ++i) {
-            ArrayBlockingQueue q = populatedQueue(SIZE);
-            ArrayBlockingQueue p = populatedQueue(i);
+            ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
+            ArrayBlockingQueue<Item> p = populatedQueue(i);
             assertTrue(q.removeAll(p));
-            assertEquals(SIZE - i, q.size());
+            mustEqual(SIZE - i, q.size());
             for (int j = 0; j < i; ++j) {
-                Integer x = (Integer)(p.remove());
-                assertFalse(q.contains(x));
+                Item x = p.remove();
+                mustNotContain(q, x);
             }
         }
     }
 
-    void checkToArray(ArrayBlockingQueue<Integer> q) {
+    void checkToArray(ArrayBlockingQueue<Item> q) {
         int size = q.size();
         Object[] a1 = q.toArray();
-        assertEquals(size, a1.length);
-        Integer[] a2 = q.toArray(new Integer[0]);
-        assertEquals(size, a2.length);
-        Integer[] a3 = q.toArray(new Integer[Math.max(0, size - 1)]);
-        assertEquals(size, a3.length);
-        Integer[] a4 = new Integer[size];
+        mustEqual(size, a1.length);
+        Item[] a2 = q.toArray(new Item[0]);
+        mustEqual(size, a2.length);
+        Item[] a3 = q.toArray(new Item[Math.max(0, size - 1)]);
+        mustEqual(size, a3.length);
+        Item[] a4 = new Item[size];
         assertSame(a4, q.toArray(a4));
-        Integer[] a5 = new Integer[size + 1];
-        Arrays.fill(a5, 42);
+        Item[] a5 = new Item[size + 1];
+        Arrays.fill(a5, fortytwo);
         assertSame(a5, q.toArray(a5));
-        Integer[] a6 = new Integer[size + 2];
-        Arrays.fill(a6, 42);
+        Item[] a6 = new Item[size + 2];
+        Arrays.fill(a6, fortytwo);
         assertSame(a6, q.toArray(a6));
         Object[][] as = { a1, a2, a3, a4, a5, a6 };
         for (Object[] a : as) {
             if (a.length > size) assertNull(a[size]);
-            if (a.length > size + 1) assertEquals(42, a[size + 1]);
+            if (a.length > size + 1) mustEqual(fortytwo, a[size + 1]);
         }
-        Iterator it = q.iterator();
-        Integer s = q.peek();
+        Iterator<? extends Item> it = q.iterator();
+        Item s = q.peek();
         for (int i = 0; i < size; i++) {
-            Integer x = (Integer) it.next();
-            assertEquals(s + i, (int) x);
+            Item x = (Item) it.next();
+            mustEqual(s.value + i, x);
             for (Object[] a : as)
-                assertSame(a1[i], x);
+                mustEqual(a[i], x);
         }
     }
 
@@ -726,29 +718,30 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
         final ThreadLocalRandom rnd = ThreadLocalRandom.current();
         final int size = rnd.nextInt(6);
         final int capacity = Math.max(1, size + rnd.nextInt(size + 1));
-        ArrayBlockingQueue<Integer> q = new ArrayBlockingQueue<>(capacity);
+        ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(capacity);
         for (int i = 0; i < size; i++) {
             checkToArray(q);
-            q.add(i);
+            mustAdd(q, i);
         }
         // Provoke wraparound
         int added = size * 2;
         for (int i = 0; i < added; i++) {
             checkToArray(q);
-            assertEquals((Integer) i, q.poll());
-            q.add(size + i);
+            mustEqual(i, q.poll());
+            q.add(new Item(size + i));
         }
         for (int i = 0; i < size; i++) {
             checkToArray(q);
-            assertEquals((Integer) (added + i), q.poll());
+            mustEqual((added + i), q.poll());
         }
     }
 
     /**
      * toArray(incompatible array type) throws ArrayStoreException
      */
+    @SuppressWarnings("CollectionToArraySafeParameter")
     public void testToArray_incompatibleArrayType() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         try {
             q.toArray(new String[10]);
             shouldThrow();
@@ -763,18 +756,18 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * iterator iterates through all elements
      */
     public void testIterator() throws InterruptedException {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
-        Iterator it = q.iterator();
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
+        Iterator<? extends Item> it = q.iterator();
         int i;
         for (i = 0; it.hasNext(); i++)
-            assertTrue(q.contains(it.next()));
-        assertEquals(i, SIZE);
+            mustContain(q, it.next());
+        mustEqual(i, SIZE);
         assertIteratorExhausted(it);
 
         it = q.iterator();
         for (i = 0; it.hasNext(); i++)
-            assertEquals(it.next(), q.take());
-        assertEquals(i, SIZE);
+            mustEqual(it.next(), q.take());
+        mustEqual(i, SIZE);
         assertIteratorExhausted(it);
     }
 
@@ -782,19 +775,19 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * iterator of empty collection has no elements
      */
     public void testEmptyIterator() {
-        assertIteratorExhausted(new ArrayBlockingQueue(SIZE).iterator());
+        assertIteratorExhausted(new ArrayBlockingQueue<>(SIZE).iterator());
     }
 
     /**
      * iterator.remove removes current element
      */
     public void testIteratorRemove() {
-        final ArrayBlockingQueue q = new ArrayBlockingQueue(3);
+        final ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(3);
         q.add(two);
         q.add(one);
         q.add(three);
 
-        Iterator it = q.iterator();
+        Iterator<? extends Item> it = q.iterator();
         it.next();
         it.remove();
 
@@ -808,7 +801,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * iterator ordering is FIFO
      */
     public void testIteratorOrdering() {
-        final ArrayBlockingQueue q = new ArrayBlockingQueue(3);
+        final ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(3);
         q.add(one);
         q.add(two);
         q.add(three);
@@ -816,32 +809,32 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
         assertEquals("queue should be full", 0, q.remainingCapacity());
 
         int k = 0;
-        for (Iterator it = q.iterator(); it.hasNext();) {
-            assertEquals(++k, it.next());
+        for (Iterator<? extends Item> it = q.iterator(); it.hasNext();) {
+            mustEqual(++k, it.next());
         }
-        assertEquals(3, k);
+        mustEqual(3, k);
     }
 
     /**
      * Modifications do not cause iterators to fail
      */
     public void testWeaklyConsistentIteration() {
-        final ArrayBlockingQueue q = new ArrayBlockingQueue(3);
+        final ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(3);
         q.add(one);
         q.add(two);
         q.add(three);
-        for (Iterator it = q.iterator(); it.hasNext();) {
+        for (Iterator<? extends Item> it = q.iterator(); it.hasNext();) {
             q.remove();
             it.next();
         }
-        assertEquals(0, q.size());
+        mustEqual(0, q.size());
     }
 
     /**
      * toString contains toStrings of elements
      */
     public void testToString() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         String s = q.toString();
         for (int i = 0; i < SIZE; ++i) {
             assertTrue(s.contains(String.valueOf(i)));
@@ -852,7 +845,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * offer transfers elements across Executor tasks
      */
     public void testOfferInExecutor() {
-        final ArrayBlockingQueue q = new ArrayBlockingQueue(2);
+        final ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(2);
         q.add(one);
         q.add(two);
         final CheckedBarrier threadsStarted = new CheckedBarrier(2);
@@ -863,13 +856,13 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
                     assertFalse(q.offer(three));
                     threadsStarted.await();
                     assertTrue(q.offer(three, LONG_DELAY_MS, MILLISECONDS));
-                    assertEquals(0, q.remainingCapacity());
+                    mustEqual(0, q.remainingCapacity());
                 }});
 
             executor.execute(new CheckedRunnable() {
                 public void realRun() throws InterruptedException {
                     threadsStarted.await();
-                    assertEquals(0, q.remainingCapacity());
+                    mustEqual(0, q.remainingCapacity());
                     assertSame(one, q.take());
                 }});
         }
@@ -879,7 +872,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * timed poll retrieves elements across Executor threads
      */
     public void testPollInExecutor() {
-        final ArrayBlockingQueue q = new ArrayBlockingQueue(2);
+        final ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(2);
         final CheckedBarrier threadsStarted = new CheckedBarrier(2);
         final ExecutorService executor = Executors.newFixedThreadPool(2);
         try (PoolCleaner cleaner = cleaner(executor)) {
@@ -903,16 +896,16 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * A deserialized/reserialized queue has same elements in same order
      */
     public void testSerialization() throws Exception {
-        Queue x = populatedQueue(SIZE);
-        Queue y = serialClone(x);
+        Queue<Item> x = populatedQueue(SIZE);
+        Queue<Item> y = serialClone(x);
 
         assertNotSame(x, y);
-        assertEquals(x.size(), y.size());
-        assertEquals(x.toString(), y.toString());
+        mustEqual(x.size(), y.size());
+        mustEqual(x.toString(), y.toString());
         assertTrue(Arrays.equals(x.toArray(), y.toArray()));
         while (!x.isEmpty()) {
             assertFalse(y.isEmpty());
-            assertEquals(x.remove(), y.remove());
+            mustEqual(x.remove(), y.remove());
         }
         assertTrue(y.isEmpty());
     }
@@ -921,42 +914,42 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * drainTo(c) empties queue into another collection c
      */
     public void testDrainTo() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
-        ArrayList l = new ArrayList();
+        ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
+        ArrayList<Item> l = new ArrayList<>();
         q.drainTo(l);
-        assertEquals(0, q.size());
-        assertEquals(SIZE, l.size());
+        mustEqual(0, q.size());
+        mustEqual(SIZE, l.size());
         for (int i = 0; i < SIZE; ++i)
-            assertEquals(l.get(i), new Integer(i));
+            mustEqual(l.get(i), i);
         q.add(zero);
         q.add(one);
         assertFalse(q.isEmpty());
-        assertTrue(q.contains(zero));
-        assertTrue(q.contains(one));
+        mustContain(q, zero);
+        mustContain(q, one);
         l.clear();
         q.drainTo(l);
-        assertEquals(0, q.size());
-        assertEquals(2, l.size());
+        mustEqual(0, q.size());
+        mustEqual(2, l.size());
         for (int i = 0; i < 2; ++i)
-            assertEquals(l.get(i), new Integer(i));
+            mustEqual(l.get(i), i);
     }
 
     /**
      * drainTo empties full queue, unblocking a waiting put.
      */
     public void testDrainToWithActivePut() throws InterruptedException {
-        final ArrayBlockingQueue q = populatedQueue(SIZE);
+        final ArrayBlockingQueue<Item> q = populatedQueue(SIZE);
         Thread t = new Thread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                q.put(new Integer(SIZE + 1));
+                q.put(new Item(SIZE + 1));
             }});
 
         t.start();
-        ArrayList l = new ArrayList();
+        ArrayList<Item> l = new ArrayList<>();
         q.drainTo(l);
         assertTrue(l.size() >= SIZE);
         for (int i = 0; i < SIZE; ++i)
-            assertEquals(l.get(i), new Integer(i));
+            mustEqual(l.get(i), i);
         t.join();
         assertTrue(q.size() + l.size() >= SIZE);
     }
@@ -965,17 +958,17 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * drainTo(c, n) empties first min(n, size) elements of queue into c
      */
     public void testDrainToN() {
-        ArrayBlockingQueue q = new ArrayBlockingQueue(SIZE * 2);
+        ArrayBlockingQueue<Item> q = new ArrayBlockingQueue<>(SIZE * 2);
         for (int i = 0; i < SIZE + 2; ++i) {
             for (int j = 0; j < SIZE; j++)
-                assertTrue(q.offer(new Integer(j)));
-            ArrayList l = new ArrayList();
+                mustOffer(q, j);
+            ArrayList<Item> l = new ArrayList<>();
             q.drainTo(l, i);
             int k = (i < SIZE) ? i : SIZE;
-            assertEquals(k, l.size());
-            assertEquals(SIZE - k, q.size());
+            mustEqual(k, l.size());
+            mustEqual(SIZE - k, q.size());
             for (int j = 0; j < k; ++j)
-                assertEquals(l.get(j), new Integer(j));
+                mustEqual(l.get(j), j);
             do {} while (q.poll() != null);
         }
     }

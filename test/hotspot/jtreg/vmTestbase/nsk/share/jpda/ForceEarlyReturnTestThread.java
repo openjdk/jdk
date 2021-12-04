@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,14 +451,14 @@ extends Thread
     public static ClassLoader expectedClassLoaderValue = new URLClassLoader(new URL[]{});
     public static String expectedStringValue = "EXPECTED STRING";
     public static Object expectedObjectValue = new Object();
-    public static Boolean expectedBooleanWrapperValue = new Boolean(Boolean.TRUE);
-    public static Byte expectedByteWrapperValue = new Byte(Byte.MAX_VALUE);
-    public static Character expectedCharWrapperValue = new Character(Character.MAX_VALUE);
-    public static Short expectedShortWrapperValue = new Short(Short.MAX_VALUE);
-    public static Integer expectedIntWrapperValue = new Integer(Integer.MAX_VALUE);
-    public static Long expectedLongWrapperValue = new Long(Long.MAX_VALUE);
-    public static Float expectedFloatWrapperValue = new Float(Float.MAX_VALUE);
-    public static Double expectedDoubleWrapperValue = new Double(Double.MAX_VALUE);
+    public static Boolean expectedBooleanWrapperValue = Boolean.valueOf(Boolean.TRUE);
+    public static Byte expectedByteWrapperValue = Byte.valueOf(Byte.MAX_VALUE);
+    public static Character expectedCharWrapperValue = Character.valueOf(Character.MAX_VALUE);
+    public static Short expectedShortWrapperValue = Short.valueOf(Short.MAX_VALUE);
+    public static Integer expectedIntWrapperValue = Integer.valueOf(Integer.MAX_VALUE);
+    public static Long expectedLongWrapperValue = Long.valueOf(Long.MAX_VALUE);
+    public static Float expectedFloatWrapperValue = Float.valueOf(Float.MAX_VALUE);
+    public static Double expectedDoubleWrapperValue = Double.valueOf(Double.MAX_VALUE);
 
     // values which should be returned from test methods without forceEarlyReturn():
 
@@ -477,14 +477,14 @@ extends Thread
     public static Class<?> unexpectedClassObjectValue = Object.class;
     public static ClassLoader unexpectedClassLoaderValue = new URLClassLoader(new URL[]{});
     public static Object unexpectedObjectValue = new Object();
-    public static Boolean unexpectedBooleanWrapperValue = new Boolean(Boolean.FALSE);
-    public static Byte unexpectedByteWrapperValue = new Byte((byte)0);
-    public static Character unexpectedCharWrapperValue = new Character((char)0);
-    public static Short unexpectedShortWrapperValue = new Short((short)0);
-    public static Integer unexpectedIntWrapperValue = new Integer(0);
-    public static Long unexpectedLongWrapperValue = new Long(0);
-    public static Float unexpectedFloatWrapperValue = new Float(0);
-    public static Double unexpectedDoubleWrapperValue = new Double(0);
+    public static Boolean unexpectedBooleanWrapperValue = Boolean.valueOf(Boolean.FALSE);
+    public static Byte unexpectedByteWrapperValue = Byte.valueOf((byte)0);
+    public static Character unexpectedCharWrapperValue = Character.valueOf((char)0);
+    public static Short unexpectedShortWrapperValue = Short.valueOf((short)0);
+    public static Integer unexpectedIntWrapperValue = Integer.valueOf(0);
+    public static Long unexpectedLongWrapperValue = Long.valueOf(0);
+    public static Float unexpectedFloatWrapperValue = Float.valueOf(0);
+    public static Double unexpectedDoubleWrapperValue = Double.valueOf(0);
 
     public static int[] breakpointLines = {
         49,
@@ -534,13 +534,13 @@ extends Thread
     public static Class<?> invalidThreadGroupValue = ForceEarlyReturnTestThread.class;
     public static ClassLoader invalidClassObjectValue = new URLClassLoader(new URL[]{});
     public static Object invalidClassLoaderValue = new Object();
-    public static Byte invalidBooleanWrapperValue = new Byte(Byte.MAX_VALUE);
-    public static Short invalidByteWrapperValue = new Short(Short.MAX_VALUE);
-    public static Character invalidShortWrapperValue = new Character(Character.MAX_VALUE);
-    public static Integer invalidCharWrapperValue = new Integer(Integer.MAX_VALUE);
-    public static Long invalidIntWrapperValue = new Long(Long.MAX_VALUE);
-    public static Float invalidLongWrapperValue = new Float(Float.MAX_VALUE);
-    public static Double invalidFloatWrapperValue = new Double(Double.MAX_VALUE);
+    public static Byte invalidBooleanWrapperValue = Byte.valueOf(Byte.MAX_VALUE);
+    public static Short invalidByteWrapperValue = Short.valueOf(Short.MAX_VALUE);
+    public static Character invalidShortWrapperValue = Character.valueOf(Character.MAX_VALUE);
+    public static Integer invalidCharWrapperValue = Integer.valueOf(Integer.MAX_VALUE);
+    public static Long invalidIntWrapperValue = Long.valueOf(Long.MAX_VALUE);
+    public static Float invalidLongWrapperValue = Float.valueOf(Float.MAX_VALUE);
+    public static Double invalidFloatWrapperValue = Double.valueOf(Double.MAX_VALUE);
     public static Object[] invalidDoubleWrapperValue = new Object[1000];
 
     // names of tested types, this names can be used to derive names of tested methods(typeName + 'Method'),

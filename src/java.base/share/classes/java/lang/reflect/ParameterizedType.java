@@ -32,15 +32,15 @@ package java.lang.reflect;
  *
  * <p>A parameterized type is created the first time it is needed by a
  * reflective method, as specified in this package. When a
- * parameterized type p is created, the generic type declaration that
- * p instantiates is resolved, and all type arguments of p are created
+ * parameterized type p is created, the generic class or interface declaration
+ * that p instantiates is resolved, and all type arguments of p are created
  * recursively. See {@link java.lang.reflect.TypeVariable
  * TypeVariable} for details on the creation process for type
  * variables. Repeated creation of a parameterized type has no effect.
  *
  * <p>Instances of classes that implement this interface must implement
  * an equals() method that equates any two instances that share the
- * same generic type declaration and have equal type parameters.
+ * same generic class or interface declaration and have equal type parameters.
  *
  * @jls 4.5 Parameterized Types
  * @since 1.5
@@ -56,8 +56,8 @@ public interface ParameterizedType extends Type {
      *
      * @return an array of {@code Type} objects representing the actual type
      *     arguments to this type
-     * @throws TypeNotPresentException if any of the
-     *     actual type arguments refers to a non-existent type declaration
+     * @throws TypeNotPresentException if any of the actual type arguments
+     *     refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if any of the
      *     actual type parameters refer to a parameterized type that cannot
      *     be instantiated for any reason
@@ -86,7 +86,7 @@ public interface ParameterizedType extends Type {
      *     this type is a member of. If this type is a top-level type,
      *     {@code null} is returned
      * @throws TypeNotPresentException if the owner type
-     *     refers to a non-existent type declaration
+     *     refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if the owner type
      *     refers to a parameterized type that cannot be instantiated
      *     for any reason

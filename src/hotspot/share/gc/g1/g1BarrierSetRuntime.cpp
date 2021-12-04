@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,17 +45,17 @@ void G1BarrierSetRuntime::write_ref_array_post_entry(HeapWord* dst, size_t lengt
 }
 
 // G1 pre write barrier slowpath
-JRT_LEAF(void, G1BarrierSetRuntime::write_ref_field_pre_entry(oopDesc* orig, JavaThread *thread))
-  if (orig == NULL) {
-    assert(false, "should be optimized out");
-    return;
-  }
+JRT_LEAF(void, G1BarrierSetRuntime::write_ref_field_pre_entry(oopDesc* orig, JavaThread* thread))
+  assert(orig != nullptr, "should be optimized out");
   assert(oopDesc::is_oop(orig, true /* ignore mark word */), "Error");
   // store the original value that was in the field reference
-  G1ThreadLocalData::satb_mark_queue(thread).enqueue(orig);
+  SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
+  G1BarrierSet::satb_mark_queue_set().enqueue(queue, orig);
 JRT_END
 
 // G1 post write barrier slowpath
-JRT_LEAF(void, G1BarrierSetRuntime::write_ref_field_post_entry(void* card_addr, JavaThread* thread))
-  G1ThreadLocalData::dirty_card_queue(thread).enqueue(card_addr);
+JRT_LEAF(void, G1BarrierSetRuntime::write_ref_field_post_entry(volatile G1CardTable::CardValue* card_addr,
+                                                               JavaThread* thread))
+  G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thread);
+  G1BarrierSet::dirty_card_queue_set().enqueue(queue, card_addr);
 JRT_END

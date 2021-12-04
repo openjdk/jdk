@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package nsk.jdi.TypeComponent.isSynthetic;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+import java.util.Objects;
 
 
 public class issynthetic001a {
@@ -79,7 +80,7 @@ class ClassToCheck {
         Class     X0, X1[]={X0}, X2[][]={X1};
         Object    O0, O1[]={O0}, O2[][]={O1};
 
-        final     Long LF0 = new Long(1), LF1[]={LF0}, LF2[][]={LF1};
+        final     Long LF0 = Long.valueOf(1), LF1[]={LF0}, LF2[][]={LF1};
         private   Long LP0,               LP1[]={LP0}, LP2[][]={LP1};
         public    Long LU0,               LU1[]={LU0}, LU2[][]={LU1};
         protected Long LR0,               LR1[]={LR0}, LR2[][]={LR1};
@@ -94,5 +95,10 @@ class ClassToCheck {
         protected Inter ER0,        ER1[]={ER0}, ER2[][]={ER1};
         transient Inter ET0,        ET1[]={ET0}, ET2[][]={ET1};
         volatile  Inter EV0,        EV1[]={EV0}, EV2[][]={EV1};
+
+        {
+          // access enclosing instance so this$0 field is generated
+          Objects.requireNonNull(ClassToCheck.this);
+        }
     }
 }

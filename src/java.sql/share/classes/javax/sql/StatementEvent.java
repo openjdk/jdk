@@ -33,9 +33,9 @@ import java.sql.SQLException;
 import java.util.EventObject;
 
 /**
- * A <code>StatementEvent</code> is sent to all <code>StatementEventListener</code>s which were
- * registered with a <code>PooledConnection</code>. This occurs when the driver determines that a
- * <code>PreparedStatement</code> that is associated with the <code>PooledConnection</code> has been closed or the driver determines
+ * A {@code StatementEvent} is sent to all {@code StatementEventListener}s which were
+ * registered with a {@code PooledConnection}. This occurs when the driver determines that a
+ * {@code PreparedStatement} that is associated with the {@code PooledConnection} has been closed or the driver determines
  * is invalid.
  *
  * @since 1.6
@@ -55,15 +55,15 @@ public class StatementEvent extends EventObject {
         private PreparedStatement       statement;
 
         /**
-         * Constructs a <code>StatementEvent</code> with the specified <code>PooledConnection</code> and
-         * <code>PreparedStatement</code>.  The <code>SQLException</code> contained in the event defaults to
+         * Constructs a {@code StatementEvent} with the specified {@code PooledConnection} and
+         * {@code PreparedStatement}.  The {@code SQLException} contained in the event defaults to
          * null.
          *
-         * @param con                   The <code>PooledConnection</code> that the closed or invalid
-         * <code>PreparedStatement</code>is associated with.
-         * @param statement             The <code>PreparedStatement</code> that is being closed or is invalid
+         * @param con                   The {@code PooledConnection} that the closed or invalid
+         * {@code PreparedStatement}is associated with.
+         * @param statement             The {@code PreparedStatement} that is being closed or is invalid
          *
-         * @throws IllegalArgumentException if <code>con</code> is null.
+         * @throws IllegalArgumentException if {@code con} is null.
          *
          * @since 1.6
          */
@@ -77,16 +77,16 @@ public class StatementEvent extends EventObject {
         }
 
         /**
-         * Constructs a <code>StatementEvent</code> with the specified <code>PooledConnection</code>,
-         * <code>PreparedStatement</code> and <code>SQLException</code>
+         * Constructs a {@code StatementEvent} with the specified {@code PooledConnection},
+         * {@code PreparedStatement} and {@code SQLException}
          *
-         * @param con                   The <code>PooledConnection</code> that the closed or invalid <code>PreparedStatement</code>
+         * @param con                   The {@code PooledConnection} that the closed or invalid {@code PreparedStatement}
          * is associated with.
-         * @param statement             The <code>PreparedStatement</code> that is being closed or is invalid
-         * @param exception             The <code>SQLException </code>the driver is about to throw to
+         * @param statement             The {@code PreparedStatement} that is being closed or is invalid
+         * @param exception             The {@code SQLException }the driver is about to throw to
          *                                              the application
          *
-         * @throws IllegalArgumentException if <code>con</code> is null.
+         * @throws IllegalArgumentException if {@code con} is null.
          *
          * @since 1.6
          */
@@ -101,9 +101,9 @@ public class StatementEvent extends EventObject {
         }
 
         /**
-         * Returns the <code>PreparedStatement</code> that is being closed or is invalid
+         * Returns the {@code PreparedStatement} that is being closed or is invalid
          *
-         * @return      The <code>PreparedStatement</code> that is being closed or is invalid
+         * @return      The {@code PreparedStatement} that is being closed or is invalid
          *
          * @since 1.6
          */
@@ -113,9 +113,9 @@ public class StatementEvent extends EventObject {
         }
 
         /**
-         * Returns the <code>SQLException</code> the driver is about to throw
+         * Returns the {@code SQLException} the driver is about to throw
          *
-         * @return      The <code>SQLException</code> the driver is about to throw
+         * @return      The {@code SQLException} the driver is about to throw
          *
          * @since 1.6
          */

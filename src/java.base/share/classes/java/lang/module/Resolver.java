@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -475,24 +476,16 @@ final class Resolver {
                     if (actualHash == null)
                         findFail("Unable to compute the hash of module %s", dn);
                     if (!Arrays.equals(recordedHash, actualHash)) {
+                        HexFormat hex = HexFormat.of();
                         findFail("Hash of %s (%s) differs to expected hash (%s)" +
-                                 " recorded in %s", dn, toHexString(actualHash),
-                                 toHexString(recordedHash), descriptor.name());
+                                 " recorded in %s", dn, hex.formatHex(actualHash),
+                                hex.formatHex(recordedHash), descriptor.name());
                     }
                 }
             }
 
         }
     }
-
-    private static String toHexString(byte[] ba) {
-        StringBuilder sb = new StringBuilder(ba.length * 2);
-        for (byte b: ba) {
-            sb.append(String.format("%02x", b & 0xff));
-        }
-        return sb.toString();
-    }
-
 
     /**
      * Computes the readability graph for the modules in the given Configuration.
@@ -560,7 +553,7 @@ final class Resolver {
             for (ModuleDescriptor.Requires requires : descriptor.requires()) {
                 String dn = requires.name();
 
-                ResolvedModule m2 = null;
+                ResolvedModule m2;
                 ModuleReference mref2 = nameToReference.get(dn);
                 if (mref2 != null) {
                     // same configuration
@@ -571,6 +564,14 @@ final class Resolver {
                     if (m2 == null) {
                         assert requires.modifiers().contains(Modifier.STATIC);
                         continue;
+                    }
+
+                    // m2 is automatic module in parent configuration => m1 reads
+                    // all automatic modules that m2 reads.
+                    if (m2.descriptor().isAutomatic()) {
+                        m2.reads().stream()
+                                .filter(d -> d.descriptor().isAutomatic())
+                                .forEach(reads::add);
                     }
                 }
 
@@ -838,9 +839,7 @@ final class Resolver {
      * Invokes the beforeFinder to find method to find the given module.
      */
     private ModuleReference findWithBeforeFinder(String mn) {
-
         return beforeFinder.find(mn).orElse(null);
-
     }
 
     /**

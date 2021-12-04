@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,12 @@ public class SALauncher {
         // --pid <pid>
         // --exe <exe>
         // --core <core>
-        // --connect [<id>@]<host>
+        // --connect [<id>@]<host>[:registryport]
         System.out.println("    --pid <pid>             To attach to and operate on the given live process.");
         System.out.println("    --core <corefile>       To operate on the given core file.");
         System.out.println("    --exe <executable for corefile>");
         if (canConnectToRemote) {
-            System.out.println("    --connect [<id>@]<host> To connect to a remote debug server (debugd).");
+            System.out.println("    --connect [<serverid>@]<host>[:registryport][/servername] To connect to a remote debug server (debugd).");
         }
         System.out.println();
         System.out.println("    The --core and --exe options must be set together to give the core");
@@ -85,21 +85,20 @@ public class SALauncher {
         System.out.println("    Examples: jhsdb " + mode + " --pid 1234");
         System.out.println("          or  jhsdb " + mode + " --core ./core.1234 --exe ./myexe");
         if (canConnectToRemote) {
-            System.out.println("          or  jhsdb " + mode + " --connect debugserver");
-            System.out.println("          or  jhsdb " + mode + " --connect id@debugserver");
+            System.out.println("          or  jhsdb " + mode + " --connect serverid@debugserver:1234/servername");
         }
         return false;
     }
 
     private static boolean debugdHelp() {
-        // [options] <pid> [server-id]
-        // [options] <executable> <core> [server-id]
-        System.out.println("    --serverid <id>         A unique identifier for this debug server.");
+        System.out.println("    --serverid <id>         A unique identifier for this debugd server.");
+        System.out.println("    --servername <name>     Instance name of debugd server.");
         System.out.println("    --rmiport <port>        Sets the port number to which the RMI connector is bound." +
                 " If not specified a random available port is used.");
         System.out.println("    --registryport <port>   Sets the RMI registry port." +
                 " This option overrides the system property 'sun.jvm.hotspot.rmi.port'. If not specified," +
                 " the system property is used. If the system property is not set, the default port 1099 is used.");
+        System.out.println("    --disable-registry      Do not start RMI registry (use already started RMI registry)");
         System.out.println("    --hostname <hostname>   Sets the hostname the RMI connector is bound. The value could" +
                 " be a hostname or an IPv4/IPv6 address. This option overrides the system property" +
                 " 'java.rmi.server.hostname'. If not specified, the system property is used. If the system" +
@@ -126,7 +125,8 @@ public class SALauncher {
         System.out.println("    <no option>             To print same info as Solaris pmap.");
         System.out.println("    --heap                  To print java heap summary.");
         System.out.println("    --binaryheap            To dump java heap in hprof binary format.");
-        System.out.println("    --dumpfile <name>       The name of the dump file.");
+        System.out.println("    --dumpfile <name>       The name of the dump file. Only valid with --binaryheap.");
+        System.out.println("    --gz <1-9>              The compression level for gzipped dump file. Only valid with --binaryheap.");
         System.out.println("    --histo                 To print histogram of java object heap.");
         System.out.println("    --clstats               To print class loader statistics.");
         System.out.println("    --finalizerinfo         To print information on objects awaiting finalization.");
@@ -160,7 +160,7 @@ public class SALauncher {
                 return debugdHelp();
             case "hsdb":
             case "clhsdb":
-                return commonHelp(toolName);
+                return commonHelpWithConnect(toolName);
             default:
                 return launcherHelp();
         }
@@ -275,7 +275,8 @@ public class SALauncher {
     private static void runCLHSDB(String[] oldArgs) {
         Map<String, String> longOptsMap = Map.of("exe=", "exe",
                                                  "core=", "core",
-                                                 "pid=", "pid");
+                                                 "pid=", "pid",
+                                                 "connect=", "connect");
         Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
         CLHSDB.main(buildAttachArgs(newArgMap, true));
     }
@@ -283,7 +284,8 @@ public class SALauncher {
     private static void runHSDB(String[] oldArgs) {
         Map<String, String> longOptsMap = Map.of("exe=", "exe",
                                                  "core=", "core",
-                                                 "pid=", "pid");
+                                                 "pid=", "pid",
+                                                 "connect=", "connect");
         Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
         HSDB.main(buildAttachArgs(newArgMap, true));
     }
@@ -301,33 +303,40 @@ public class SALauncher {
     }
 
     private static void runJMAP(String[] oldArgs) {
-        Map<String, String> longOptsMap = Map.of("exe=", "exe",
-                                                 "core=", "core",
-                                                 "pid=", "pid",
-                                                 "connect=", "connect",
-                                                 "heap", "-heap",
-                                                 "binaryheap", "binaryheap",
-                                                 "dumpfile=", "dumpfile",
-                                                 "histo", "-histo",
-                                                 "clstats", "-clstats",
-                                                 "finalizerinfo", "-finalizerinfo");
+        Map<String, String> longOptsMap = Map.ofEntries(
+                Map.entry("exe=", "exe"),
+                Map.entry("core=", "core"),
+                Map.entry("pid=", "pid"),
+                Map.entry("connect=", "connect"),
+                Map.entry("heap", "-heap"),
+                Map.entry("binaryheap", "binaryheap"),
+                Map.entry("dumpfile=", "dumpfile"),
+                Map.entry("gz=", "gz"),
+                Map.entry("histo", "-histo"),
+                Map.entry("clstats", "-clstats"),
+                Map.entry("finalizerinfo", "-finalizerinfo"));
         Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
 
         boolean requestHeapdump = newArgMap.containsKey("binaryheap");
         String dumpfile = newArgMap.get("dumpfile");
+        String gzLevel = newArgMap.get("gz");
+        String command = "-heap:format=b";
         if (!requestHeapdump && (dumpfile != null)) {
             throw new IllegalArgumentException("Unexpected argument: dumpfile");
         }
         if (requestHeapdump) {
-            if (dumpfile == null) {
-                newArgMap.put("-heap:format=b", null);
-            } else {
-                newArgMap.put("-heap:format=b,file=" + dumpfile, null);
+            if (gzLevel != null) {
+                command += ",gz=" + gzLevel;
             }
+            if (dumpfile != null) {
+                command += ",file=" + dumpfile;
+            }
+            newArgMap.put(command, null);
         }
 
         newArgMap.remove("binaryheap");
         newArgMap.remove("dumpfile");
+        newArgMap.remove("gz");
         JMap.main(buildAttachArgs(newArgMap, false));
     }
 
@@ -365,7 +374,9 @@ public class SALauncher {
                 "serverid=", "serverid",
                 "rmiport=", "rmiport",
                 "registryport=", "registryport",
-                "hostname=", "hostname");
+                "disable-registry", "disable-registry",
+                "hostname=", "hostname",
+                "servername=", "servername");
 
         Map<String, String> argMap = parseOptions(args, longOptsMap);
 
@@ -380,6 +391,7 @@ public class SALauncher {
         String javaExecutableName = argMap.get("exe");
         String coreFileName = argMap.get("core");
         String pidString = argMap.get("pid");
+        String serverName = argMap.get("servername");
 
         // Set RMI registry port, if specified
         if (registryPort != null) {
@@ -389,6 +401,11 @@ public class SALauncher {
                 throw new SAGetoptException("Invalid registry port: " + registryPort);
             }
             System.setProperty("sun.jvm.hotspot.rmi.port", registryPort);
+        }
+
+        // Disable RMI registry if specified
+        if (argMap.containsKey("disable-registry")) {
+            System.setProperty("sun.jvm.hotspot.rmi.startRegistry", "false");
         }
 
         // Set RMI connector hostname, if specified
@@ -418,7 +435,7 @@ public class SALauncher {
             System.err.println("Attaching to process ID " + pid + " and starting RMI services," +
                     " please wait...");
             try {
-                agent.startServer(pid, serverID, rmiPort);
+                agent.startServer(pid, serverID, serverName, rmiPort);
             } catch (DebuggerException e) {
                 System.err.print("Error attaching to process or starting server: ");
                 e.printStackTrace();
@@ -430,7 +447,7 @@ public class SALauncher {
             System.err.println("Attaching to core " + coreFileName +
                     " from executable " + javaExecutableName + " and starting RMI services, please wait...");
             try {
-                agent.startServer(javaExecutableName, coreFileName, serverID, rmiPort);
+                agent.startServer(javaExecutableName, coreFileName, serverID, serverName, rmiPort);
             } catch (DebuggerException e) {
                 System.err.print("Error attaching to core file or starting server: ");
                 e.printStackTrace();
@@ -485,6 +502,8 @@ public class SALauncher {
         } catch (SAGetoptException e) {
             System.err.println(e.getMessage());
             toolHelp(args[0]);
+            // Exit with error status
+            System.exit(1);
         }
     }
 }

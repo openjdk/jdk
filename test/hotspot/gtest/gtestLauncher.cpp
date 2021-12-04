@@ -23,11 +23,23 @@
 
 #include "jni.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#include <excpt.h>
+extern LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
+#endif
+
 extern "C" {
   JNIIMPORT void JNICALL runUnitTests(int argv, char** argc);
 }
 
 int main(int argc, char** argv) {
+#ifdef _WIN32
+  __try {
+#endif
   runUnitTests(argc, argv);
+#ifdef _WIN32
+  } __except(topLevelExceptionFilter(GetExceptionInformation())) {}
+#endif
   return 0;
 }

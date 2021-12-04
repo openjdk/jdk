@@ -41,7 +41,7 @@ import org.w3c.dom.Document;
  * @test
  * @bug 6652519
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.CR6652519Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.CR6652519Test
  * @run testng/othervm transform.CR6652519Test
  * @summary Test transfoming from StreamSource to DOMResult.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *
  * @summary DatagramSocket.send should throw exception when connected
  *  to an invalid destination (on platforms that support it).
- * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl=false SendDatagramToBadAddress
+ * @run main/othervm SendDatagramToBadAddress
  */
 
 import java.net.*;

@@ -62,13 +62,13 @@ public class TestOverriddenDeprecatedMethods extends JavadocTester {
                 """
                     <span class="annotations">@Deprecated
                     </span><span class="modifiers">public</span>&nbsp;<span class="return-type">void\
-                    </span>&nbsp;<span class="member-name">func1</span>()""",
+                    </span>&nbsp;<span class="element-name">func1</span>()""",
                 """
                     <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>""",
                 """
                     <span class="annotations">@Deprecated
                     </span><span class="modifiers">public</span>&nbsp;<span class="return-type">void\
-                    </span>&nbsp;<span class="member-name">func2</span>()""",
+                    </span>&nbsp;<span class="element-name">func2</span>()""",
                 """
                     <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>""",
                 """

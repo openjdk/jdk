@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -43,7 +43,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="afternoon1">ظهرًا</dayPeriod>
 							<dayPeriod type="afternoon2">بعد الظهر</dayPeriod>
 							<dayPeriod type="evening1">مساءً</dayPeriod>
-							<dayPeriod type="night1">منتصف الليل</dayPeriod>
+							<dayPeriod type="night1">في المساء</dayPeriod>
 							<dayPeriod type="night2">ل</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>

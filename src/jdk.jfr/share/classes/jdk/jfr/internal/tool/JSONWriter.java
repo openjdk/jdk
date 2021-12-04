@@ -90,8 +90,7 @@ final class JSONWriter extends EventPrintWriter {
                 printAsString(value);
                 return;
             }
-            if (value instanceof Double) {
-                Double dValue = (Double) value;
+            if (value instanceof Double dValue) {
                 if (Double.isNaN(dValue) || Double.isInfinite(dValue)) {
                     printNull();
                     return;
@@ -99,8 +98,7 @@ final class JSONWriter extends EventPrintWriter {
                 printAsString(value);
                 return;
             }
-            if (value instanceof Float) {
-                Float fValue = (Float) value;
+            if (value instanceof Float fValue) {
                 if (Float.isNaN(fValue) || Float.isInfinite(fValue)) {
                     printNull();
                     return;

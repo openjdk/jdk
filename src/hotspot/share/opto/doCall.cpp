@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciMethodHandle.hpp"
+#include "ci/ciSymbols.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -39,7 +40,6 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "prims/methodHandles.hpp"
-#include "prims/nativeLookup.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
@@ -71,6 +71,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   int             bci      = jvms->bci();
   Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
   guarantee(callee != NULL, "failed method resolution");
+
+  const bool is_virtual_or_interface = (bytecode == Bytecodes::_invokevirtual) ||
+                                       (bytecode == Bytecodes::_invokeinterface);
 
   // Dtrace currently doesn't work unless all calls are vanilla
   if (env()->dtrace_method_probes()) {
@@ -114,8 +117,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // Special case the handling of certain common, profitable library
   // methods.  If these methods are replaced with specialized code,
   // then we return it as the inlined version of the call.
-  // We do this before the strict f.p. check below because the
-  // intrinsics handle strict f.p. correctly.
   CallGenerator* cg_intrinsic = NULL;
   if (allow_inline && allow_intrinsics) {
     CallGenerator* cg = find_intrinsic(callee, call_does_dispatch);
@@ -135,7 +136,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       if (cg->does_virtual_dispatch()) {
         cg_intrinsic = cg;
         cg = NULL;
-      } else if (should_delay_vector_inlining(callee, jvms)) {
+      } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
         return CallGenerator::for_late_inline(callee, cg);
       } else {
         return cg;
@@ -148,14 +149,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // MethodHandle.invoke* are native methods which obviously don't
   // have bytecodes and so normal inlining fails.
   if (callee->is_method_handle_intrinsic()) {
-    CallGenerator* cg = CallGenerator::for_method_handle_call(jvms, caller, callee);
+    CallGenerator* cg = CallGenerator::for_method_handle_call(jvms, caller, callee, allow_inline);
     return cg;
-  }
-
-  // If explicit rounding is required, do not inline strict into non-strict code (or the reverse).
-  if (Matcher::strict_fp_requires_explicit_rounding &&
-      caller->is_strict() != callee->is_strict()) {
-    allow_inline = false;
   }
 
   // Attempt to inline...
@@ -169,17 +164,22 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // Try inlining a bytecoded method:
     if (!call_does_dispatch) {
       InlineTree* ilt = InlineTree::find_subtree_from_root(this->ilt(), jvms->caller(), jvms->method());
-      WarmCallInfo scratch_ci;
-      bool should_delay = false;
-      WarmCallInfo* ci = ilt->ok_to_inline(callee, jvms, profile, &scratch_ci, should_delay);
-      assert(ci != &scratch_ci, "do not let this pointer escape");
-      bool allow_inline   = (ci != NULL && !ci->is_cold());
-      bool require_inline = (allow_inline && ci->is_hot());
-
-      if (allow_inline) {
+      bool should_delay = AlwaysIncrementalInline;
+      if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {
         CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
+        // For optimized virtual calls assert at runtime that receiver object
+        // is a subtype of the inlined method holder. CHA can report a method
+        // as a unique target under an abstract method, but receiver type
+        // sometimes has a broader type. Similar scenario is possible with
+        // default methods when type system loses information about implemented
+        // interfaces.
+        if (cg != NULL && is_virtual_or_interface && !callee->is_static()) {
+          CallGenerator* trap_cg = CallGenerator::for_uncommon_trap(callee,
+              Deoptimization::Reason_receiver_constraint, Deoptimization::Action_none);
 
-        if (require_inline && cg != NULL) {
+          cg = CallGenerator::for_guarded_call(callee->holder(), trap_cg, cg);
+        }
+        if (cg != NULL) {
           // Delay the inlining of this method to give us the
           // opportunity to perform some high level optimizations
           // first.
@@ -189,17 +189,11 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             return CallGenerator::for_boxing_late_inline(callee, cg);
           } else if (should_delay_vector_reboxing_inlining(callee, jvms)) {
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
-          } else if ((should_delay || AlwaysIncrementalInline)) {
+          } else if (should_delay) {
             return CallGenerator::for_late_inline(callee, cg);
+          } else {
+            return cg;
           }
-        }
-        if (cg == NULL || should_delay) {
-          // Fall through.
-        } else if (require_inline || !InlineWarmCalls) {
-          return cg;
-        } else {
-          CallGenerator* cold_cg = call_generator(callee, vtable_index, call_does_dispatch, jvms, false, prof_factor);
-          return CallGenerator::for_warm_call(ci, cold_cg, cg);
         }
       }
     }
@@ -274,7 +268,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           } else {
             // Generate virtual call for class check failure path
             // in case of polymorphic virtual call site.
-            miss_cg = CallGenerator::for_virtual_call(callee, vtable_index);
+            miss_cg = (IncrementalInlineVirtual ? CallGenerator::for_late_inline_virtual(callee, vtable_index, prof_factor)
+                                                : CallGenerator::for_virtual_call(callee, vtable_index));
           }
           if (miss_cg != NULL) {
             if (next_hit_cg != NULL) {
@@ -315,8 +310,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           caller->get_declared_method_holder_at_bci(bci)->as_instance_klass();
       ciInstanceKlass* singleton = declared_interface->unique_implementor();
 
-      if (singleton != NULL &&
-          (!callee->is_default_method() || callee->is_overpass()) /* CHA doesn't support default methods yet */) {
+      if (singleton != NULL) {
         assert(singleton != declared_interface, "not a unique implementor");
 
         ciMethod* cha_monomorphic_target =
@@ -336,32 +330,45 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
 
           CallGenerator* cg = CallGenerator::for_guarded_call(holder, miss_cg, hit_cg);
           if (hit_cg != NULL && cg != NULL) {
-            dependencies()->assert_unique_concrete_method(declared_interface, cha_monomorphic_target);
+            dependencies()->assert_unique_concrete_method(declared_interface, cha_monomorphic_target, declared_interface, callee);
             return cg;
           }
         }
       }
-    }
-  }
+    } // call_does_dispatch && bytecode == Bytecodes::_invokeinterface
 
-  // Nothing claimed the intrinsic, we go with straight-forward inlining
-  // for already discovered intrinsic.
-  if (allow_inline && allow_intrinsics && cg_intrinsic != NULL) {
-    assert(cg_intrinsic->does_virtual_dispatch(), "sanity");
-    return cg_intrinsic;
-  }
+    // Nothing claimed the intrinsic, we go with straight-forward inlining
+    // for already discovered intrinsic.
+    if (allow_intrinsics && cg_intrinsic != NULL) {
+      assert(cg_intrinsic->does_virtual_dispatch(), "sanity");
+      return cg_intrinsic;
+    }
+  } // allow_inline
 
   // There was no special inlining tactic, or it bailed out.
   // Use a more generic tactic, like a simple call.
   if (call_does_dispatch) {
     const char* msg = "virtual call";
-    if (PrintInlining) print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
+    if (C->print_inlining()) {
+      print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
+    }
     C->log_inline_failure(msg);
-    return CallGenerator::for_virtual_call(callee, vtable_index);
+    if (IncrementalInlineVirtual && allow_inline) {
+      return CallGenerator::for_late_inline_virtual(callee, vtable_index, prof_factor); // attempt to inline through virtual call later
+    } else {
+      return CallGenerator::for_virtual_call(callee, vtable_index);
+    }
   } else {
-    // Class Hierarchy Analysis or Type Profile reveals a unique target,
-    // or it is a static or special call.
-    return CallGenerator::for_direct_call(callee, should_delay_inlining(callee, jvms));
+    // Class Hierarchy Analysis or Type Profile reveals a unique target, or it is a static or special call.
+    CallGenerator* cg = CallGenerator::for_direct_call(callee, should_delay_inlining(callee, jvms));
+    // For optimized virtual calls assert at runtime that receiver object
+    // is a subtype of the method holder.
+    if (cg != NULL && is_virtual_or_interface && !callee->is_static()) {
+      CallGenerator* trap_cg = CallGenerator::for_uncommon_trap(callee,
+          Deoptimization::Reason_receiver_constraint, Deoptimization::Action_none);
+      cg = CallGenerator::for_guarded_call(callee->holder(), trap_cg, cg);
+    }
+    return cg;
   }
 }
 
@@ -558,7 +565,7 @@ void Parse::do_call() {
     // finalize() won't be compiled as vtable calls (IC call
     // resolution will catch the illegal call) and the few legal calls
     // on array types won't be either.
-    callee = C->optimize_virtual_call(method(), bci(), klass, holder, orig_callee,
+    callee = C->optimize_virtual_call(method(), klass, holder, orig_callee,
                                       receiver_type, is_virtual,
                                       call_does_dispatch, vtable_index);  // out-parameters
     speculative_receiver_type = receiver_type != NULL ? receiver_type->speculative_type() : NULL;
@@ -568,9 +575,7 @@ void Parse::do_call() {
   ciKlass* receiver_constraint = NULL;
   if (iter().cur_bc_raw() == Bytecodes::_invokespecial && !orig_callee->is_object_initializer()) {
     ciInstanceKlass* calling_klass = method()->holder();
-    ciInstanceKlass* sender_klass =
-        calling_klass->is_unsafe_anonymous() ? calling_klass->unsafe_anonymous_host() :
-                                               calling_klass;
+    ciInstanceKlass* sender_klass = calling_klass;
     if (sender_klass->is_interface()) {
       receiver_constraint = sender_klass;
     }
@@ -688,9 +693,6 @@ void Parse::do_call() {
       Node* cast = cast_not_null(receiver);
       // %%% assert(receiver == cast, "should already have cast the receiver");
     }
-
-    // Round double result after a call from strict to non-strict code
-    round_double_result(cg->method());
 
     ciType* rtype = cg->method()->return_type();
     ciType* ctype = declared_signature->return_type();
@@ -914,7 +916,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   Node* ex_klass_node = NULL;
   if (has_ex_handler() && !ex_type->klass_is_exact()) {
     Node* p = basic_plus_adr( ex_node, ex_node, oopDesc::klass_offset_in_bytes());
-    ex_klass_node = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT));
+    ex_klass_node = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
 
     // Compute the exception klass a little more cleverly.
     // Obvious solution is to simple do a LoadKlass from the 'ex_node'.
@@ -923,7 +925,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
     // I'm loading the class from, I can replace the LoadKlass with the
     // klass constant for the exception oop.
     if (ex_node->is_Phi()) {
-      ex_klass_node = new PhiNode(ex_node->in(0), TypeKlassPtr::OBJECT);
+      ex_klass_node = new PhiNode(ex_node->in(0), TypeInstKlassPtr::OBJECT);
       for (uint i = 1; i < ex_node->req(); i++) {
         Node* ex_in = ex_node->in(i);
         if (ex_in == top() || ex_in == NULL) {
@@ -932,10 +934,10 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
           continue;
         }
         Node* p = basic_plus_adr(ex_in, ex_in, oopDesc::klass_offset_in_bytes());
-        Node* k = _gvn.transform( LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT));
+        Node* k = _gvn.transform( LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
         ex_klass_node->init_req( i, k );
       }
-      _gvn.set_type(ex_klass_node, TypeKlassPtr::OBJECT);
+      _gvn.set_type(ex_klass_node, TypeInstKlassPtr::OBJECT);
 
     }
   }
@@ -1067,7 +1069,7 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
 #endif //PRODUCT
 
 
-ciMethod* Compile::optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKlass* klass,
+ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klass,
                                          ciKlass* holder, ciMethod* callee,
                                          const TypeOopPtr* receiver_type, bool is_virtual,
                                          bool& call_does_dispatch, int& vtable_index,
@@ -1077,7 +1079,7 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKl
   vtable_index       = Method::invalid_vtable_index;
 
   // Choose call strategy.
-  ciMethod* optimized_virtual_method = optimize_inlining(caller, bci, klass, callee,
+  ciMethod* optimized_virtual_method = optimize_inlining(caller, klass, holder, callee,
                                                          receiver_type, check_access);
 
   // Have the call been sufficiently improved such that it is no longer a virtual?
@@ -1092,7 +1094,7 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKl
 }
 
 // Identify possible target method and inlining style
-ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass* klass,
+ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, ciKlass* holder,
                                      ciMethod* callee, const TypeOopPtr* receiver_type,
                                      bool check_access) {
   // only use for virtual or interface calls
@@ -1105,61 +1107,38 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass*
     return callee;
   }
 
+  if (receiver_type == NULL) {
+    return NULL; // no receiver type info
+  }
+
   // Attempt to improve the receiver
   bool actual_receiver_is_exact = false;
   ciInstanceKlass* actual_receiver = klass;
-  if (receiver_type != NULL) {
-    // Array methods are all inherited from Object, and are monomorphic.
-    // finalize() call on array is not allowed.
-    if (receiver_type->isa_aryptr() &&
-        callee->holder() == env()->Object_klass() &&
-        callee->name() != ciSymbol::finalize_method_name()) {
-      return callee;
-    }
+  // Array methods are all inherited from Object, and are monomorphic.
+  // finalize() call on array is not allowed.
+  if (receiver_type->isa_aryptr() &&
+      callee->holder() == env()->Object_klass() &&
+      callee->name() != ciSymbols::finalize_method_name()) {
+    return callee;
+  }
 
-    // All other interesting cases are instance klasses.
-    if (!receiver_type->isa_instptr()) {
-      return NULL;
-    }
+  // All other interesting cases are instance klasses.
+  if (!receiver_type->isa_instptr()) {
+    return NULL;
+  }
 
-    ciInstanceKlass *ikl = receiver_type->klass()->as_instance_klass();
-    if (ikl->is_loaded() && ikl->is_initialized() && !ikl->is_interface() &&
-        (ikl == actual_receiver || ikl->is_subtype_of(actual_receiver))) {
-      // ikl is a same or better type than the original actual_receiver,
-      // e.g. static receiver from bytecodes.
-      actual_receiver = ikl;
-      // Is the actual_receiver exact?
-      actual_receiver_is_exact = receiver_type->klass_is_exact();
-    }
+  ciInstanceKlass* receiver_klass = receiver_type->klass()->as_instance_klass();
+  if (receiver_klass->is_loaded() && receiver_klass->is_initialized() && !receiver_klass->is_interface() &&
+      (receiver_klass == actual_receiver || receiver_klass->is_subtype_of(actual_receiver))) {
+    // ikl is a same or better type than the original actual_receiver,
+    // e.g. static receiver from bytecodes.
+    actual_receiver = receiver_klass;
+    // Is the actual_receiver exact?
+    actual_receiver_is_exact = receiver_type->klass_is_exact();
   }
 
   ciInstanceKlass*   calling_klass = caller->holder();
   ciMethod* cha_monomorphic_target = callee->find_monomorphic_target(calling_klass, klass, actual_receiver, check_access);
-  if (cha_monomorphic_target != NULL) {
-    assert(!cha_monomorphic_target->is_abstract(), "");
-    // Look at the method-receiver type.  Does it add "too much information"?
-    ciKlass*    mr_klass = cha_monomorphic_target->holder();
-    const Type* mr_type  = TypeInstPtr::make(TypePtr::BotPTR, mr_klass);
-    if (receiver_type == NULL || !receiver_type->higher_equal(mr_type)) {
-      // Calling this method would include an implicit cast to its holder.
-      // %%% Not yet implemented.  Would throw minor asserts at present.
-      // %%% The most common wins are already gained by +UseUniqueSubclasses.
-      // To fix, put the higher_equal check at the call of this routine,
-      // and add a CheckCastPP to the receiver.
-      if (TraceDependencies) {
-        tty->print_cr("found unique CHA method, but could not cast up");
-        tty->print("  method  = ");
-        cha_monomorphic_target->print();
-        tty->cr();
-      }
-      if (log() != NULL) {
-        log()->elem("missed_CHA_opportunity klass='%d' method='%d'",
-                       log()->identify(klass),
-                       log()->identify(cha_monomorphic_target));
-      }
-      cha_monomorphic_target = NULL;
-    }
-  }
 
   if (cha_monomorphic_target != NULL) {
     // Hardwiring a virtual.
@@ -1171,7 +1150,7 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass*
       // by dynamic class loading.  Be sure to test the "static" receiver
       // dest_method here, as opposed to the actual receiver, which may
       // falsely lead us to believe that the receiver is final or private.
-      dependencies()->assert_unique_concrete_method(actual_receiver, cha_monomorphic_target);
+      dependencies()->assert_unique_concrete_method(actual_receiver, cha_monomorphic_target, holder, callee);
     }
     return cha_monomorphic_target;
   }
@@ -1183,11 +1162,6 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass*
     // such method can be changed when its class is redefined.
     ciMethod* exact_method = callee->resolve_invoke(calling_klass, actual_receiver);
     if (exact_method != NULL) {
-      if (PrintOpto) {
-        tty->print("  Calling method via exact type @%d --- ", bci);
-        exact_method->print_name();
-        tty->cr();
-      }
       return exact_method;
     }
   }

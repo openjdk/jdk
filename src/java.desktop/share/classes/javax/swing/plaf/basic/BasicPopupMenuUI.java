@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,26 +28,18 @@ package javax.swing.plaf.basic;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
-import javax.swing.border.*;
 
 import java.applet.Applet;
 
 import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.KeyboardFocusManager;
 import java.awt.Window;
 import java.awt.event.*;
 import java.awt.AWTEvent;
 import java.awt.Toolkit;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-
 import java.util.*;
 
-import sun.swing.DefaultLookup;
 import sun.swing.UIAction;
 
 import sun.awt.AppContext;
@@ -294,7 +286,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
      *
      * @since 1.4
      */
-    private class BasicPopupMenuListener implements PopupMenuListener {
+    private static class BasicPopupMenuListener implements PopupMenuListener {
         public void popupMenuCanceled(PopupMenuEvent e) {
         }
 
@@ -778,6 +770,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
+        @SuppressWarnings("removal")
         void grabWindow(MenuElement[] newPath) {
             // A grab needs to be added
             final Toolkit tk = Toolkit.getDefaultToolkit();
@@ -813,6 +806,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
+        @SuppressWarnings("removal")
         void ungrabWindow() {
             final Toolkit tk = Toolkit.getDefaultToolkit();
             // The grab should be removed
@@ -932,7 +926,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         boolean isInPopup(Component src) {
             for (Component c=src; c!=null; c=c.getParent()) {
                 if (c instanceof Applet || c instanceof Window) {
@@ -1150,7 +1144,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         public void stateChanged(ChangeEvent ev) {
             if (!(UIManager.getLookAndFeel() instanceof BasicLookAndFeel)) {
                 uninstall();

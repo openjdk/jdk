@@ -25,20 +25,26 @@
 
 #import "sun_lwawt_macosx_CDropTargetContextPeer.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "CDataTransferer.h"
 #import "CDropTarget.h"
 #import "DnDUtilities.h"
 #import "ThreadUtilities.h"
+#import "JNIUtilities.h"
 
-JNF_CLASS_CACHE(jc_CDropTargetContextPeer, "sun/lwawt/macosx/CDropTargetContextPeer");
+jclass jc_CDropTargetContextPeer = NULL;
+#define GET_DTCP_CLASS() \
+    GET_CLASS(jc_CDropTargetContextPeer, "sun/lwawt/macosx/CDropTargetContextPeer");
+
+#define GET_DTCP_CLASS_RETURN(ret) \
+    GET_CLASS_RETURN(jc_CDropTargetContextPeer, "sun/lwawt/macosx/CDropTargetContextPeer", ret);
 
 
 static void TransferFailed(JNIEnv *env, jobject jthis, jlong jdroptarget, jlong jdroptransfer, jlong jformat) {
     AWT_ASSERT_NOT_APPKIT_THREAD;
-    JNF_MEMBER_CACHE(transferFailedMethod, jc_CDropTargetContextPeer, "transferFailed", "(J)V");
-    JNFCallVoidMethod(env, jthis, transferFailedMethod, jformat); // AWT_THREADING Safe (!appKit)
+    GET_DTCP_CLASS();
+    DECLARE_METHOD(transferFailedMethod, jc_CDropTargetContextPeer, "transferFailed", "(J)V");
+    (*env)->CallVoidMethod(env, jthis, transferFailedMethod, jformat); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
 }
 
 static CDropTarget* GetCDropTarget(jlong jdroptarget) {
@@ -68,7 +74,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDropTargetContextPeer_startTransf
     // works off a data copy and doesn't have to go to the native event thread to get the data.
     // We can have endTransfer just call startTransfer.
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     // Get the drop target native object:
     CDropTarget* dropTarget = GetCDropTarget(jdroptarget);
     if (dropTarget == nil) {
@@ -77,7 +83,8 @@ JNF_COCOA_ENTER(env);
         return result;
     }
 
-    JNF_MEMBER_CACHE(newDataMethod, jc_CDropTargetContextPeer, "newData", "(J[B)V");
+    GET_DTCP_CLASS_RETURN(result);
+    DECLARE_METHOD_RETURN(newDataMethod, jc_CDropTargetContextPeer, "newData", "(J[B)V", result);
     if ((*env)->ExceptionOccurred(env) || !newDataMethod) {
         DLog2(@"[CDropTargetContextPeer startTransfer]: couldn't get newData method for %d.\n", (NSInteger) jdroptarget);
         TransferFailed(env, jthis, jdroptarget, (jlong) 0L, jformat);
@@ -94,17 +101,17 @@ JNF_COCOA_ENTER(env);
 
     // Pass the data to drop target:
     @try {
-        JNFCallVoidMethod(env, jthis, newDataMethod, jformat, jdropdata); // AWT_THREADING Safe (!appKit)
+        (*env)->CallVoidMethod(env, jthis, newDataMethod, jformat, jdropdata); // AWT_THREADING Safe (!appKit)
     } @catch (NSException *ex) {
         DLog2(@"[CDropTargetContextPeer startTransfer]: exception in newData() for %d.\n", (NSInteger) jdroptarget);
-        JNFDeleteGlobalRef(env, jdropdata);
+        (*env)->DeleteGlobalRef(env, jdropdata);
         TransferFailed(env, jthis, jdroptarget, (jlong) 0L, jformat);
         return result;
     }
 
     // if no error return dropTarget's draggingSequence
     result = [dropTarget getDraggingSequenceNumber];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return result;
 }
@@ -135,7 +142,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CDropTargetContextPeer_dropDone
   (JNIEnv *env, jobject jthis, jlong jdroptarget, jlong jdroptransfer, jboolean jislocal, jboolean jsuccess, jint jdropaction)
 {
     // Get the drop target native object:
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     CDropTarget* dropTarget = GetCDropTarget(jdroptarget);
     if (dropTarget == nil) {
         DLog2(@"[CDropTargetContextPeer dropDone]: GetCDropTarget failed for %d.\n", (NSInteger) jdroptarget);
@@ -144,7 +151,7 @@ JNF_COCOA_ENTER(env);
 
     // Notify drop target Java is all done with this dragging sequence:
     [dropTarget javaDraggingEnded:(jlong)jdroptransfer success:jsuccess action:jdropaction];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return;
 }

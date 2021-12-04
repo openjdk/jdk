@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -97,6 +97,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">çeroki</language>
 			<language type="chy">çeyen</language>
 			<language type="ckb">Mərkəzi kürdcə</language>
+			<language type="ckb" alt="menu">Kürdcə, mərkəzi</language>
+			<language type="ckb" alt="variant">Kürdcə, sorani</language>
 			<language type="co">korsika</language>
 			<language type="cop">kopt</language>
 			<language type="cr">kri</language>
@@ -400,7 +402,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">moldav</language>
 			<language type="rof">rombo</language>
 			<language type="rom">roman</language>
-			<language type="root">rut</language>
 			<language type="ru">rus</language>
 			<language type="rup">aroman</language>
 			<language type="rw">kinyarvanda</language>
@@ -1402,16 +1403,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">yanvar</month>
-							<month type="2">Fevral</month>
+							<month type="2">fevral</month>
 							<month type="3">mart</month>
-							<month type="4">Aprel</month>
-							<month type="5">May</month>
-							<month type="6">İyun</month>
-							<month type="7">İyul</month>
-							<month type="8">Avqust</month>
-							<month type="9">Sentyabr</month>
-							<month type="10">Oktyabr</month>
-							<month type="11">Noyabr</month>
+							<month type="4">aprel</month>
+							<month type="5">may</month>
+							<month type="6">iyun</month>
+							<month type="7">iyul</month>
+							<month type="8">avqust</month>
+							<month type="9">sentyabr</month>
+							<month type="10">oktyabr</month>
+							<month type="11">noyabr</month>
 							<month type="12">dekabr</month>
 						</monthWidth>
 					</monthContext>
@@ -2582,9 +2583,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>Santa İzabel</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Koordinasiya edilmiş ümumdünya vaxtı</standard>
@@ -2704,11 +2702,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Broken Hill</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Kuriye</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melburn</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>Kuriye</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Hobart</exemplarCity>
@@ -3523,9 +3521,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kalininqrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moskva</exemplarCity>
 			</zone>
@@ -3721,6 +3716,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiyev</exemplarCity>
 			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
+			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporojye</exemplarCity>
 			</zone>
@@ -3738,6 +3736,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Nom</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>Conston</exemplarCity>
@@ -4492,9 +4493,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Norfolk Adası Vaxtı</generic>
-					<standard draft="contributed">Norfolk Adası Standart Vaxtı</standard>
-					<daylight draft="contributed">Norfolk Adası Yay Vaxtı</daylight>
+					<generic>Norfolk Adası Vaxtı</generic>
+					<standard>Norfolk Adası Standart Vaxtı</standard>
+					<daylight>Norfolk Adası Yay Vaxtı</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4774,6 +4775,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<percentSign>%</percentSign>
 			<plusSign draft="contributed">+</plusSign>
 			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -6403,7 +6405,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Fil Dişi Sahili Frankı</displayName>
 				<displayName count="one">Fil Dişi Sahili frankı</displayName>
 				<displayName count="other">Fil Dişi Sahili frankı</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>Palladium</displayName>
@@ -6579,6 +6581,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>eksbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobe{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -6598,9 +6624,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} g qüvvəsi</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<displayName>metr saniyə kvadratı</displayName>
-				<unitPattern count="one">{0} metr saniyə kvadratı</unitPattern>
-				<unitPattern count="other">{0} metr saniyə kvadratı</unitPattern>
+				<displayName>metr kvadrat saniyə</displayName>
+				<unitPattern count="one">{0} metr kvadrat saniyə</unitPattern>
+				<unitPattern count="other">{0} metr kvadrat saniyə</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>dövrə</displayName>
@@ -6687,7 +6713,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} karat</unitPattern>
 				<unitPattern count="other">{0} karat</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>milliqram/desilitr</displayName>
 				<unitPattern count="one">{0} milliqram/desilitr</unitPattern>
 				<unitPattern count="other">{0} milliqram/desilitr</unitPattern>
@@ -6699,8 +6725,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>milyonda hissəcik</displayName>
-				<unitPattern count="one">milyonda {0} hissəcik</unitPattern>
-				<unitPattern count="other">milyonda {0} hissəcik</unitPattern>
+				<unitPattern count="one">{0} milyonda hissəcik</unitPattern>
+				<unitPattern count="other">{0} milyonda hissəcik</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>faiz</displayName>
@@ -6987,6 +7013,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} nöqtə / düym</unitPattern>
 				<unitPattern count="other">{0} nöqtə / düym</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>dot nöqtə</displayName>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>yer radiusu</displayName>
+				<unitPattern count="one">{0} yer radiusu</unitPattern>
+				<unitPattern count="other">{0} yer radiusu</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometr</displayName>
 				<unitPattern count="one">{0} kilometr</unitPattern>
@@ -7016,9 +7050,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} millimetr</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µm</displayName>
-				<unitPattern count="one">{0} µm</unitPattern>
-				<unitPattern count="other">{0} µm</unitPattern>
+				<displayName>μm</displayName>
+				<unitPattern count="one">{0} μm</unitPattern>
+				<unitPattern count="other">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nm</displayName>
@@ -7067,6 +7101,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} astronomik vahid</unitPattern>
 				<unitPattern count="other">{0} astronomik vahid</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>farlonq</displayName>
+				<unitPattern count="one">{0} farlonq</unitPattern>
+				<unitPattern count="other">{0} farlonq</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fatom</displayName>
+				<unitPattern count="one">{0} fatom</unitPattern>
+				<unitPattern count="other">{0} fatom</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>
 				<unitPattern count="one">{0} nmi</unitPattern>
@@ -7091,6 +7135,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lüks</displayName>
 				<unitPattern count="one">{0} lüks</unitPattern>
 				<unitPattern count="other">{0} lüks</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kandela</displayName>
+				<unitPattern count="one">{0} kandela</unitPattern>
+				<unitPattern count="other">{0} kandela</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lümen</displayName>
+				<unitPattern count="one">{0} lümen</unitPattern>
+				<unitPattern count="other">{0} lümen</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>gün işığı</displayName>
@@ -7170,6 +7224,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>günəş kütləsi</displayName>
 				<unitPattern count="one">{0} günəş kütləsi</unitPattern>
 				<unitPattern count="other">{0} günəş kütləsi</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>qranul</displayName>
+				<unitPattern count="one">{0} qranul</unitPattern>
+				<unitPattern count="other">{0} qranul</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>giqavatt</displayName>
@@ -7379,6 +7438,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} akr-fut</unitPattern>
 				<unitPattern count="other">{0} akr-fut</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>buşel</displayName>
+				<unitPattern count="one">{0} buşel</unitPattern>
+				<unitPattern count="other">{0} buşel</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>qallon</displayName>
 				<unitPattern count="one">{0} qallon</unitPattern>
@@ -7429,6 +7493,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-barrel">
 				<displayName>barrel</displayName>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dessert qaşığı</displayName>
+				<unitPattern count="one">{0} dessert qaşığı</unitPattern>
+				<unitPattern count="other">{0} dessert qaşığı</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>İmp. dessert qaşığı</displayName>
+				<unitPattern count="one">{0} İmp. dessert qaşığı</unitPattern>
+				<unitPattern count="other">{0} İmp. dessert qaşığı</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>damcı</displayName>
+				<unitPattern count="one">{0} damcı</unitPattern>
+				<unitPattern count="other">{0} damcı</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram</displayName>
+				<unitPattern count="one">{0} dram</unitPattern>
+				<unitPattern count="other">{0} dram</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>çimdik</displayName>
+				<unitPattern count="one">{0} çimdik</unitPattern>
+				<unitPattern count="other">{0} çimdik</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>İmp. kvarta</displayName>
+				<unitPattern count="one">{0} İmp. kvarta</unitPattern>
+				<unitPattern count="other">{0} İmp. kvarta</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>kardinal istiqamət</displayName>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
@@ -7447,6 +7541,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p-3">
 				<unitPrefixPattern>m{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -7459,7 +7577,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<displayName>m/s²</displayName>
+				<displayName>metr/s²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
@@ -7548,7 +7666,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mq/dl</displayName>
 				<unitPattern count="one">{0} mq/dl</unitPattern>
 				<unitPattern count="other">{0} mq/dl</unitPattern>
@@ -7842,6 +7960,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} dpi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
+			<unit type="length-earth-radius">
+				<displayName>yer radiusu</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometr</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
@@ -7871,9 +7994,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µm</displayName>
-				<unitPattern count="one">{0} µm</unitPattern>
-				<unitPattern count="other">{0} µm</unitPattern>
+				<displayName>μm</displayName>
+				<unitPattern count="one">{0} μm</unitPattern>
+				<unitPattern count="other">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nm</displayName>
@@ -7922,6 +8045,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} av</unitPattern>
 				<unitPattern count="other">{0} av</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>farlonq</displayName>
+				<unitPattern count="one">{0} farlonq</unitPattern>
+				<unitPattern count="other">{0} farlonq</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fatom</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>
 				<unitPattern count="one">{0} nmi</unitPattern>
@@ -7944,6 +8077,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lx</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kd</displayName>
+				<unitPattern count="one">{0} kd</unitPattern>
+				<unitPattern count="other">{0} kd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>gün işığı</displayName>
@@ -7971,9 +8114,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mq</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>µq</displayName>
-				<unitPattern count="one">{0} µq</unitPattern>
-				<unitPattern count="other">{0} µq</unitPattern>
+				<displayName>μq</displayName>
+				<unitPattern count="one">{0} μq</unitPattern>
+				<unitPattern count="other">{0} μq</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>tn</displayName>
@@ -8015,6 +8158,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>günəş kütləsi</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>qranul</displayName>
+				<unitPattern count="one">{0} qranul</unitPattern>
+				<unitPattern count="other">{0} qranul</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -8058,8 +8206,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>civə düymü</displayName>
-				<unitPattern count="one">{0} inHg</unitPattern>
-				<unitPattern count="other">{0} inHg</unitPattern>
+				<unitPattern count="one">{0} civə düymü</unitPattern>
+				<unitPattern count="other">{0} civə düymü</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>millibar</displayName>
@@ -8204,6 +8352,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ac ft</unitPattern>
 				<unitPattern count="other">{0} ac ft</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>buşel</displayName>
+				<unitPattern count="one">{0} buşel</unitPattern>
+				<unitPattern count="other">{0} buşel</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>qal</displayName>
 				<unitPattern count="one">{0} qal</unitPattern>
@@ -8251,6 +8404,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} çyqş</unitPattern>
 				<unitPattern count="other">{0} çyqş</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>des.qaş.</displayName>
+				<unitPattern count="one">{0} des.qaş.</unitPattern>
+				<unitPattern count="other">{0} des.qaş.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>des.qaş. İmp.</displayName>
+				<unitPattern count="one">{0} des.qaş. İmp</unitPattern>
+				<unitPattern count="other">{0} des.qaş. İmp.</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>damcı</displayName>
+				<unitPattern count="one">{0} damcı</unitPattern>
+				<unitPattern count="other">{0} damcı</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName draft="provisional">dram</displayName>
+				<unitPattern count="one" draft="provisional">{0} dram</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dram</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>çimdik</displayName>
+				<unitPattern count="one">{0} çimdik</unitPattern>
+				<unitPattern count="other">{0} çimdik</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>kvarta İmp.</displayName>
+				<unitPattern count="one">{0} kvarta İmp.</unitPattern>
+				<unitPattern count="other">{0} kvarta İmp.</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>istiqamət</displayName>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
@@ -8268,6 +8451,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p-3">
 				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -8570,6 +8777,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">Yazılar — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} Vurğu</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} Vurğu</characterLabelPattern>
+		<characterLabelPattern type="subscript">indeks {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">üst indeks {0}</characterLabelPattern>
 		<characterLabel type="activities">Aktivitələr</characterLabel>
 		<characterLabel type="african_scripts">Afrika Yazıları</characterLabel>
 		<characterLabel type="american_scripts">Amerika Yazıları</characterLabel>

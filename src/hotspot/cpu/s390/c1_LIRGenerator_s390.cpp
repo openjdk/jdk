@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -228,12 +228,12 @@ bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result
   if (tmp->is_valid()) {
     if (is_power_of_2(c + 1)) {
       __ move(left, tmp);
-      __ shift_left(left, log2_int(c + 1), left);
+      __ shift_left(left, log2i_exact(c + 1), left);
       __ sub(left, tmp, result);
       return true;
     } else if (is_power_of_2(c - 1)) {
       __ move(left, tmp);
-      __ shift_left(left, log2_int(c - 1), left);
+      __ shift_left(left, log2i_exact(c - 1), left);
       __ add(left, tmp, result);
       return true;
     }
@@ -331,7 +331,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
   } else {
     LIR_Opr reg = rlock(x);
     LIR_Opr tmp = LIR_OprFact::illegalOpr;
-    arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), x->is_strictfp(), tmp);
+    arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), tmp);
     set_result(x, reg);
   }
 }
@@ -629,14 +629,16 @@ LIR_Opr LIRGenerator::atomic_add(BasicType type, LIR_Opr addr, LIRItem& value) {
 void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   switch (x->id()) {
     case vmIntrinsics::_dabs:
-    case vmIntrinsics::_dsqrt: {
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict: {
       assert(x->number_of_arguments() == 1, "wrong type");
       LIRItem value(x->argument_at(0), this);
       value.load_item();
       LIR_Opr dst = rlock_result(x);
 
       switch (x->id()) {
-        case vmIntrinsics::_dsqrt: {
+        case vmIntrinsics::_dsqrt:
+        case vmIntrinsics::_dsqrt_strict: {
           __ sqrt(value.result(), dst, LIR_OprFact::illegalOpr);
           break;
         }

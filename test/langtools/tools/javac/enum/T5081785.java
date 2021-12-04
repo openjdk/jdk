@@ -1,9 +1,10 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 5081785
- * @summary Empty Enums allowed in non-static contexts
+ * @summary enums should be allowed in non-static contexts
  * @author Peter von der Ah\u00e9
- * @compile/fail/ref=T5081785.out -XDrawDiagnostics  T5081785.java
+ * @compile/fail/ref=T5081785.out -XDrawDiagnostics -source 15 T5081785.java
+ * @compile T5081785.java
  */
 
 class A1 {

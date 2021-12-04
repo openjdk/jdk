@@ -37,11 +37,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class OptimizeModuleHandlingTest {
 
-    private static final Path USER_DIR = Paths.get(System.getProperty("user.dir"));
+    private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
 
     private static final String TEST_SRC = System.getProperty("test.src");
 

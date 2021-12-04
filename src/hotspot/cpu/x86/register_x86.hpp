@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ class RegisterImpl: public AbstractRegisterImpl {
 #else
     number_of_registers      = 16,
     number_of_byte_registers = 16,
-    max_slots_per_register   = 1
+    max_slots_per_register   = 2
 #endif // AMD64
   };
 
@@ -218,7 +218,9 @@ class KRegisterImpl : public AbstractRegisterImpl {
 public:
   enum {
     number_of_registers = 8,
-    max_slots_per_register = 1
+    // opmask registers are 64bit wide on both 32 and 64 bit targets.
+    // thus two slots are reserved per register.
+    max_slots_per_register = 2
   };
 
   // construction
@@ -256,13 +258,14 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   // There is no requirement that any ordering here matches any ordering c2 gives
   // it's optoregs.
 
-    number_of_registers = RegisterImpl::number_of_registers +
-#ifdef AMD64
-      RegisterImpl::number_of_registers +  // "H" half of a 64bit register
-#endif // AMD64
-      2 * FloatRegisterImpl::number_of_registers +
+  // x86_32.ad defines additional dummy FILL0-FILL7 registers, in order to tally
+  // REG_COUNT (computed by ADLC based on the number of reg_defs seen in .ad files)
+  // with ConcreteRegisterImpl::number_of_registers additional count of 8 is being
+  // added for 32 bit jvm.
+    number_of_registers = RegisterImpl::number_of_registers * RegisterImpl::max_slots_per_register +
+      2 * FloatRegisterImpl::number_of_registers + NOT_LP64(8) LP64_ONLY(0) +
       XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers +
-      KRegisterImpl::number_of_registers + // mask registers
+      KRegisterImpl::number_of_registers * KRegisterImpl::max_slots_per_register + // mask registers
       1 // eflags
   };
 

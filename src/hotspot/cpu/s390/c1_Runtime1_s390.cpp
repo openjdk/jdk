@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "ci/ciUtilities.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
@@ -41,6 +42,7 @@
 #include "registerSaver_s390.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -665,7 +667,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         save_live_registers(sasm, 1);
 
         __ NOT_LP64(push(rax)) LP64_ONLY(mov(c_rarg0, rax));
-        __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc)));
+        __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc))));
         NOT_LP64(__ pop(rax));
 
         restore_live_registers(sasm);

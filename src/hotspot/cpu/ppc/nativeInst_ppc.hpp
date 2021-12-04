@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
 
 // We have interfaces for the following instructions:
 //
@@ -80,7 +83,6 @@ class NativeInstruction {
 #endif
 
   bool is_safepoint_poll() {
-    // Is the current instruction a POTENTIAL read access to the polling page?
     // The current arguments of the instruction are not checked!
     if (USE_POLL_BIT_ONLY) {
       int encoding = SafepointMechanism::poll_bit();
@@ -88,6 +90,12 @@ class NativeInstruction {
                                     -1, encoding);
     }
     return MacroAssembler::is_load_from_polling_page(long_at(0), NULL);
+  }
+
+  bool is_safepoint_poll_return() {
+    // Safepoint poll at nmethod return with watermark check.
+    return MacroAssembler::is_td(long_at(0), Assembler::traptoGreaterThanUnsigned,
+                                 /* R1_SP */ 1, /* any reg */ -1);
   }
 
   address get_stack_bang_address(void *ucontext) {

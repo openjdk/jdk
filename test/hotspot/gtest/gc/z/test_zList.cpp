@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,13 @@ TEST_F(ZListTest, test_insert) {
 
   EXPECT_EQ(list.size(), 6u);
   assert_sorted(&list);
+
+  for (int i = 0; i < 6; i++) {
+    ZTestEntry* e = list.remove_first();
+    EXPECT_EQ(e->id(), i);
+  }
+
+  EXPECT_EQ(list.size(), 0u);
 }
 
 TEST_F(ZListTest, test_remove) {
@@ -142,81 +149,6 @@ TEST_F(ZListTest, test_remove) {
     }
 
     EXPECT_EQ(list.size(), 0u);
-  }
-}
-
-TEST_F(ZListTest, test_transfer) {
-  // Transfer empty to empty
-  {
-    ZList<ZTestEntry> list0;
-    ZList<ZTestEntry> list1;
-
-    EXPECT_TRUE(list0.is_empty());
-    EXPECT_TRUE(list1.is_empty());
-
-    list0.transfer(&list1);
-
-    EXPECT_TRUE(list0.is_empty());
-    EXPECT_TRUE(list1.is_empty());
-  }
-
-  // Transfer non-empty to empty
-  {
-    ZList<ZTestEntry> list0;
-    ZList<ZTestEntry> list1;
-    ZTestEntry e0(0);
-    ZTestEntry e1(1);
-    ZTestEntry e2(2);
-    ZTestEntry e3(3);
-    ZTestEntry e4(4);
-    ZTestEntry e5(5);
-
-    list1.insert_last(&e0);
-    list1.insert_last(&e1);
-    list1.insert_last(&e2);
-    list1.insert_last(&e3);
-    list1.insert_last(&e4);
-    list1.insert_last(&e5);
-
-    EXPECT_EQ(list0.size(), 0u);
-    EXPECT_EQ(list1.size(), 6u);
-
-    list0.transfer(&list1);
-
-    EXPECT_EQ(list0.size(), 6u);
-    EXPECT_EQ(list1.size(), 0u);
-
-    assert_sorted(&list0);
-  }
-
-  // Transfer non-empty to non-empty
-  {
-    ZList<ZTestEntry> list0;
-    ZList<ZTestEntry> list1;
-    ZTestEntry e0(0);
-    ZTestEntry e1(1);
-    ZTestEntry e2(2);
-    ZTestEntry e3(3);
-    ZTestEntry e4(4);
-    ZTestEntry e5(5);
-
-    list0.insert_last(&e0);
-    list0.insert_last(&e1);
-    list0.insert_last(&e2);
-
-    list1.insert_last(&e3);
-    list1.insert_last(&e4);
-    list1.insert_last(&e5);
-
-    EXPECT_EQ(list0.size(), 3u);
-    EXPECT_EQ(list1.size(), 3u);
-
-    list0.transfer(&list1);
-
-    EXPECT_EQ(list0.size(), 6u);
-    EXPECT_EQ(list1.size(), 0u);
-
-    assert_sorted(&list0);
   }
 }
 

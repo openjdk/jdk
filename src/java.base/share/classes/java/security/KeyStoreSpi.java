@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,9 @@ public abstract class KeyStoreSpi {
      * integrity with the given password.
      *
      * @param stream the output stream to which this keystore is written.
-     * @param password the password to generate the keystore integrity check
+     * @param password the password to generate the keystore integrity check.
+     *                 May be {@code null} if the keystore does not support
+     *                 or require an integrity check.
      *
      * @throws    IOException if there was an I/O problem with data
      * @throws    NoSuchAlgorithmException if the appropriate data integrity
@@ -302,20 +304,25 @@ public abstract class KeyStoreSpi {
 
     /**
      * Stores this keystore using the given
-     * {@code KeyStore.LoadStoreParmeter}.
+     * {@code KeyStore.LoadStoreParameter}.
      *
-     * @param param the {@code KeyStore.LoadStoreParmeter}
+     * @implSpec The default implementation throws
+     *          an {@link UnsupportedOperationException}.
+     *
+     * @param param the {@code KeyStore.LoadStoreParameter}
      *          that specifies how to store the keystore,
      *          which may be {@code null}
      *
      * @throws    IllegalArgumentException if the given
-     *          {@code KeyStore.LoadStoreParmeter}
+     *          {@code KeyStore.LoadStoreParameter}
      *          input is not recognized
      * @throws    IOException if there was an I/O problem with data
      * @throws    NoSuchAlgorithmException if the appropriate data integrity
      *          algorithm could not be found
      * @throws    CertificateException if any of the certificates included in
      *          the keystore data could not be stored
+     * @throws    UnsupportedOperationException if the implementation does
+     *          not support this operation
      *
      * @since 1.5
      */
@@ -438,6 +445,30 @@ public abstract class KeyStoreSpi {
         }
         engineLoad(stream, password);
         return;
+    }
+
+    /**
+     * Retrieves the attributes associated with the given alias.
+     *
+     * @implSpec
+     * The default implementation returns an empty {@code Set}.
+     * {@code KeyStoreSpi} implementations that support attributes
+     * should override this method.
+     *
+     * @param alias the alias name
+     * @return an unmodifiable {@code Set} of attributes. This set is
+     *      empty if the given alias does not exist or there are no
+     *      attributes associated with the alias. This set may also be
+     *      empty for {@code PrivateKeyEntry} or {@code SecretKeyEntry}
+     *      entries that contain protected attributes. These protected
+     *      attributes should be populated into the result returned by
+     *      {@link #engineGetEntry} and can be retrieved by calling
+     *      the {@link Entry#getAttributes} method.
+     *
+     * @since 18
+     */
+    public Set<Entry.Attribute> engineGetAttributes(String alias) {
+        return Collections.emptySet();
     }
 
     /**

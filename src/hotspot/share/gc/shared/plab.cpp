@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/plab.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -135,6 +137,9 @@ void PLABStats::log_sizing(size_t calculated_words, size_t net_desired_words) {
 
 // Calculates plab size for current number of gc worker threads.
 size_t PLABStats::desired_plab_sz(uint no_of_gc_workers) {
+  if (!ResizePLAB) {
+      return _default_plab_sz;
+  }
   return align_object_size(clamp(_desired_net_plab_sz / no_of_gc_workers, min_size(), max_size()));
 }
 

@@ -45,7 +45,7 @@ import javax.naming.ldap.UnsolicitedNotificationListener;
  * @author      Rosanna Lee (modified for JNDI-related events)
  */
 final class EventQueue implements Runnable {
-    final static private boolean debug = false;
+    private static final boolean debug = false;
 
     private static class QueueElement {
         QueueElement next = null;

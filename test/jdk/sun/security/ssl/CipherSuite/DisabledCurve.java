@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8246330
- * @library /javax/net/ssl/templates
+ * @library /javax/net/ssl/templates /test/lib
  * @run main/othervm -Djdk.tls.namedGroups="secp384r1"
         DisabledCurve DISABLE_NONE PASS
  * @run main/othervm -Djdk.tls.namedGroups="secp384r1"
@@ -36,6 +36,8 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class DisabledCurve extends SSLSocketTemplate {
 
@@ -96,6 +98,9 @@ public class DisabledCurve extends SSLSocketTemplate {
             disabled = true;
             Security.setProperty("jdk.certpath.disabledAlgorithms", "secp384r1");
         }
+
+        // Re-enable TLSv1 and TLSv1.1 since test depends on it.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
 
         for (index = 0; index < protocols.length; index++) {
             try {

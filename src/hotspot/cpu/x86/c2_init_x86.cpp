@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,11 @@
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #include "opto/optoreg.hpp"
+#include "runtime/vm_version.hpp"
 
 // processor dependent initialization for i486
 
-LP64_ONLY(extern void reg_mask_init();)
+extern void reg_mask_init();
 
 void Compile::pd_compiler2_init() {
   guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "" );
@@ -60,5 +61,5 @@ void Compile::pd_compiler2_init() {
       OptoReg::invalidate(i);
     }
   }
-  LP64_ONLY(reg_mask_init();)
+  reg_mask_init();
 }

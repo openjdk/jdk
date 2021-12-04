@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.beans.JavaBean;
 import java.beans.BeanProperty;
-import java.io.ObjectOutputStream;
+import java.beans.JavaBean;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 
-import javax.accessibility.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
 
 /**
  * An implementation of a radio button menu item.
@@ -205,6 +209,7 @@ public class JRadioButtonMenuItem extends JMenuItem implements Accessible {
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

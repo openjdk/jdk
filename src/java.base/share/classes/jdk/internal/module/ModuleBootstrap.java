@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,14 +141,13 @@ public final class ModuleBootstrap {
     private static boolean canUseArchivedBootLayer() {
         return getProperty("jdk.module.upgrade.path") == null &&
                getProperty("jdk.module.path") == null &&
-               getProperty("jdk.module.patch.0") == null &&    // --patch-module
-               getProperty("jdk.module.main") == null &&
-               getProperty("jdk.module.addmods.0") == null  && // --add-modules
-               getProperty("jdk.module.limitmods") == null &&
+               getProperty("jdk.module.patch.0") == null &&       // --patch-module
+               getProperty("jdk.module.main") == null &&          // --module
+               getProperty("jdk.module.addmods.0") == null  &&    // --add-modules
+               getProperty("jdk.module.limitmods") == null &&     // --limit-modules
                getProperty("jdk.module.addreads.0") == null &&    // --add-reads
                getProperty("jdk.module.addexports.0") == null &&  // --add-exports
-               getProperty("jdk.module.addopens.0") == null &&    // --add-opens
-               getProperty("jdk.module.illegalAccess") == null;
+               getProperty("jdk.module.addopens.0") == null;      // --add-opens
     }
 
     /**
@@ -172,12 +171,6 @@ public final class ModuleBootstrap {
             // assume boot layer has at least one module providing a service
             // that is mapped to the application class loader.
             JLA.bindToLoader(bootLayer, ClassLoaders.appClassLoader());
-
-            // IllegalAccessLogger needs to be set
-            var illegalAccessLoggerBuilder = archivedBootLayer.illegalAccessLoggerBuilder();
-            if (illegalAccessLoggerBuilder != null) {
-                illegalAccessLoggerBuilder.complete();
-            }
         } else {
             bootLayer = boot2();
         }
@@ -192,7 +185,6 @@ public final class ModuleBootstrap {
         ModuleFinder upgradeModulePath = finderFor("jdk.module.upgrade.path");
         ModuleFinder appModulePath = finderFor("jdk.module.path");
         boolean isPatched = patcher.hasPatches();
-
         String mainModule = System.getProperty("jdk.module.main");
         Set<String> addModules = addModules();
         Set<String> limitModules = limitModules();
@@ -273,7 +265,9 @@ public final class ModuleBootstrap {
         if (baseUri == null)
             throw new InternalError(JAVA_BASE + " does not have a location");
         BootLoader.loadModule(base);
-        Modules.defineModule(null, base.descriptor(), baseUri);
+
+        Module baseModule = Modules.defineModule(null, base.descriptor(), baseUri);
+        JLA.addEnableNativeAccess(baseModule);
 
         // Step 2a: Scan all modules when --validate-modules specified
 
@@ -460,25 +454,13 @@ public final class ModuleBootstrap {
             checkIncubatingStatus(cf);
         }
 
-        // --add-reads, --add-exports/--add-opens, and --illegal-access
+        // --add-reads, --add-exports/--add-opens
         addExtraReads(bootLayer);
         boolean extraExportsOrOpens = addExtraExportsAndOpens(bootLayer);
 
-        Map<String, Set<String>> concealedPackagesToOpen;
-        Map<String, Set<String>> exportedPackagesToOpen;
-        if (archivedModuleGraph != null) {
-            concealedPackagesToOpen = archivedModuleGraph.concealedPackagesToOpen();
-            exportedPackagesToOpen = archivedModuleGraph.exportedPackagesToOpen();
-        } else {
-            concealedPackagesToOpen = systemModules.concealedPackagesToOpen();
-            exportedPackagesToOpen = systemModules.exportedPackagesToOpen();
-        }
-        IllegalAccessLogger.Builder builder =
-            addIllegalAccess(upgradeModulePath,
-                             concealedPackagesToOpen,
-                             exportedPackagesToOpen,
-                             bootLayer,
-                             extraExportsOrOpens);
+        // add enable native access
+        addEnableNativeAccess(bootLayer);
+
         Counters.add("jdk.module.boot.7.adjustModulesTime");
 
         // save module finders for later use
@@ -495,12 +477,9 @@ public final class ModuleBootstrap {
                                         hasIncubatorModules,
                                         systemModuleFinder,
                                         cf,
-                                        clf,
-                                        concealedPackagesToOpen,
-                                        exportedPackagesToOpen);
-
+                                        clf);
             if (!hasSplitPackages && !hasIncubatorModules) {
-                ArchivedBootLayer.archive(bootLayer, builder);
+                ArchivedBootLayer.archive(bootLayer);
             }
         }
 
@@ -794,100 +773,44 @@ public final class ModuleBootstrap {
     }
 
     /**
-     * Process the --illegal-access option (and its default) to open packages
-     * of system modules in the boot layer to code in unnamed modules.
+     * Process the --enable-native-access option to grant access to restricted methods to selected modules.
      */
-    private static IllegalAccessLogger.Builder
-        addIllegalAccess(ModuleFinder upgradeModulePath,
-                         Map<String, Set<String>> concealedPackagesToOpen,
-                         Map<String, Set<String>> exportedPackagesToOpen,
-                         ModuleLayer bootLayer,
-                         boolean extraExportsOrOpens) {
-        String value = getAndRemoveProperty("jdk.module.illegalAccess");
-        IllegalAccessLogger.Mode mode = IllegalAccessLogger.Mode.ONESHOT;
-        if (value != null) {
-            switch (value) {
-                case "deny":
-                    return null;
-                case "permit":
-                    break;
-                case "warn":
-                    mode = IllegalAccessLogger.Mode.WARN;
-                    break;
-                case "debug":
-                    mode = IllegalAccessLogger.Mode.DEBUG;
-                    break;
-                default:
-                    fail("Value specified to --illegal-access not recognized:"
-                            + " '" + value + "'");
-                    return null;
-            }
-        }
-        IllegalAccessLogger.Builder builder
-            = new IllegalAccessLogger.Builder(mode, System.err);
-
-        if (concealedPackagesToOpen.isEmpty() && exportedPackagesToOpen.isEmpty()) {
-            // need to generate (exploded build)
-            IllegalAccessMaps maps = IllegalAccessMaps.generate(limitedFinder());
-            concealedPackagesToOpen = maps.concealedPackagesToOpen();
-            exportedPackagesToOpen = maps.exportedPackagesToOpen();
-        }
-
-        // open specific packages in the system modules
-        Set<String> emptySet = Set.of();
-        for (Module m : bootLayer.modules()) {
-            ModuleDescriptor descriptor = m.getDescriptor();
-            String name = m.getName();
-
-            // skip open modules
-            if (descriptor.isOpen()) {
-                continue;
-            }
-
-            // skip modules loaded from the upgrade module path
-            if (upgradeModulePath != null
-                && upgradeModulePath.find(name).isPresent()) {
-                continue;
-            }
-
-            Set<String> concealedPackages = concealedPackagesToOpen.getOrDefault(name, emptySet);
-            Set<String> exportedPackages = exportedPackagesToOpen.getOrDefault(name, emptySet);
-
-            // refresh the set of concealed and exported packages if needed
-            if (extraExportsOrOpens) {
-                concealedPackages = new HashSet<>(concealedPackages);
-                exportedPackages = new HashSet<>(exportedPackages);
-                Iterator<String> iterator = concealedPackages.iterator();
-                while (iterator.hasNext()) {
-                    String pn = iterator.next();
-                    if (m.isExported(pn, BootLoader.getUnnamedModule())) {
-                        // concealed package is exported to ALL-UNNAMED
-                        iterator.remove();
-                        exportedPackages.add(pn);
-                    }
-                }
-                iterator = exportedPackages.iterator();
-                while (iterator.hasNext()) {
-                    String pn = iterator.next();
-                    if (m.isOpen(pn, BootLoader.getUnnamedModule())) {
-                        // exported package is opened to ALL-UNNAMED
-                        iterator.remove();
-                    }
+    private static void addEnableNativeAccess(ModuleLayer layer) {
+        for (String name : decodeEnableNativeAccess()) {
+            if (name.equals("ALL-UNNAMED")) {
+                JLA.addEnableNativeAccessAllUnnamed();
+            } else {
+                Optional<Module> module = layer.findModule(name);
+                if (module.isPresent()) {
+                    JLA.addEnableNativeAccess(module.get());
+                } else {
+                    warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
                 }
             }
-
-            // log reflective access to all types in concealed packages
-            builder.logAccessToConcealedPackages(m, concealedPackages);
-
-            // log reflective access to non-public members/types in exported packages
-            builder.logAccessToExportedPackages(m, exportedPackages);
-
-            // open the packages to unnamed modules
-            JLA.addOpensToAllUnnamed(m, concealedPackages, exportedPackages);
         }
+    }
 
-        builder.complete();
-        return builder;
+    /**
+     * Returns the set of module names specified by --enable-native-access options.
+     */
+    private static Set<String> decodeEnableNativeAccess() {
+        String prefix = "jdk.module.enable.native.access.";
+        int index = 0;
+        // the system property is removed after decoding
+        String value = getAndRemoveProperty(prefix + index);
+        Set<String> modules = new HashSet<>();
+        if (value == null) {
+            return modules;
+        }
+        while (value != null) {
+            for (String s : value.split(",")) {
+                if (!s.isEmpty())
+                    modules.add(s);
+            }
+            index++;
+            value = getAndRemoveProperty(prefix + index);
+        }
+        return modules;
     }
 
     /**
@@ -1013,7 +936,7 @@ public final class ModuleBootstrap {
     private static final String ADD_OPENS    = "--add-opens";
     private static final String ADD_READS    = "--add-reads";
     private static final String PATCH_MODULE = "--patch-module";
-
+    private static final String ENABLE_NATIVE_ACCESS = "--enable-native-access";
 
     /*
      * Returns the command-line option name corresponds to the specified

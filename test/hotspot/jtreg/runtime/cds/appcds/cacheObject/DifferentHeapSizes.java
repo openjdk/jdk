@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 /*
  * @test
  * @summary Test automatic relocation of archive heap regions dur to heap size changes.
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile ../test-classes/Hello.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=160 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DifferentHeapSizes
  */
 

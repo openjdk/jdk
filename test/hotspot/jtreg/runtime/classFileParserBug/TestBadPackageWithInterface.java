@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8245487
  * @summary Check that if the VM rejects classes from packages starting with "java/", it will exit
  *          cleanly after InstanceKlass::verify_on(), and not leave freed memory in _local_interfaces.
+ * @requires vm.flagless
  * @library /test/lib
  * @compile BadClassPackage.jasm
  * @run driver TestBadPackageWithInterface

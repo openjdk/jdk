@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/allocation.inline.hpp"
@@ -35,6 +35,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/ticks.hpp"
 
@@ -55,7 +56,7 @@ public:
   OopStorageParIterPerf();
   ~OopStorageParIterPerf();
 
-  WorkGang* workers() const;
+  WorkerThreads* workers() const;
 
   class VM_ParStateTime;
   class Task;
@@ -65,29 +66,26 @@ public:
   void show_task(const Task* task, Tickspan duration, uint nthreads);
   void run_test(uint nthreads);
 
-  static WorkGang* _workers;
+  static WorkerThreads* _workers;
 
   OopStorage _storage;
   oop* _entries[_storage_entries];
 };
 
-WorkGang* OopStorageParIterPerf::_workers = NULL;
+WorkerThreads* OopStorageParIterPerf::_workers = NULL;
 
-WorkGang* OopStorageParIterPerf::workers() const {
+WorkerThreads* OopStorageParIterPerf::workers() const {
   if (_workers == NULL) {
-    WorkGang* wg = new WorkGang("OopStorageParIterPerf workers",
-                                _num_workers,
-                                false,
-                                false);
+    WorkerThreads* wg = new WorkerThreads("OopStorageParIterPerf workers", _num_workers);
     wg->initialize_workers();
-    wg->update_active_workers(_num_workers);
+    wg->set_active_workers(_num_workers);
     _workers = wg;
   }
   return _workers;
 }
 
 OopStorageParIterPerf::OopStorageParIterPerf() :
-  _storage("Test Storage")
+  _storage("Test Storage", mtGC)
 {
   for (size_t i = 0; i < _storage_entries; ++i) {
     _entries[i] = _storage.allocate();
@@ -101,7 +99,7 @@ OopStorageParIterPerf::~OopStorageParIterPerf() {
 
 class OopStorageParIterPerf::VM_ParStateTime : public VM_GTestExecuteAtSafepoint {
 public:
-  VM_ParStateTime(WorkGang* workers, AbstractGangTask* task, uint nthreads) :
+  VM_ParStateTime(WorkerThreads* workers, WorkerTask* task, uint nthreads) :
     _workers(workers), _task(task), _nthreads(nthreads)
   {}
 
@@ -110,12 +108,12 @@ public:
   }
 
 private:
-  WorkGang* _workers;
-  AbstractGangTask* _task;
+  WorkerThreads* _workers;
+  WorkerTask* _task;
   uint _nthreads;
 };
 
-class OopStorageParIterPerf::Task : public AbstractGangTask {
+class OopStorageParIterPerf::Task : public WorkerTask {
   typedef OopStorage::ParState<false, false> StateType;
 
   Tickspan* _worker_times;
@@ -124,7 +122,7 @@ class OopStorageParIterPerf::Task : public AbstractGangTask {
 
 public:
   Task(OopStorage* storage, OopClosure* closure, uint nthreads) :
-    AbstractGangTask("OopStorageParIterPerf::Task"),
+    WorkerTask("OopStorageParIterPerf::Task"),
     _worker_times(NULL),
     _state(storage, nthreads),
     _closure(closure)

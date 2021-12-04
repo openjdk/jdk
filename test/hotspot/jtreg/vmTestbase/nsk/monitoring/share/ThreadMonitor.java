@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ public class ThreadMonitor extends Monitor {
             return mbean.getThreadInfo(id, maxDepth);
 
         case SERVER_MODE:
-            Object[] params = {new Long(id), new Integer(maxDepth)};
+            Object[] params = {Long.valueOf(id), Integer.valueOf(maxDepth)};
             String[] signature = {"long", "int"};
 
             try {
@@ -311,7 +311,7 @@ public class ThreadMonitor extends Monitor {
             return mbean.getThreadCpuTime(id);
 
         case SERVER_MODE:
-            Object[] params = {new Long(id)};
+            Object[] params = {Long.valueOf(id)};
             String[] signature = {"long"};
 
             try {

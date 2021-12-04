@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestDH2048
- * @run main/othervm TestDH2048 sm
+ * @run main/othervm -Djava.security.manager=allow TestDH2048 sm
  */
 
 import java.security.InvalidParameterException;

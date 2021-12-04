@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,8 @@ final class CertificateStatus {
     static final class CertificateStatusMessage extends HandshakeMessage {
 
         final CertStatusRequestType statusType;
-        int encodedResponsesLen = 0;
-        int messageLength = -1;
+        final int encodedResponsesLen;
+        final int messageLength;
         final List<byte[]> encodedResponses = new ArrayList<>();
 
         CertificateStatusMessage(HandshakeContext handshakeContext) {
@@ -114,6 +114,7 @@ final class CertificateStatus {
             // Walk the certificate list and add the correct encoded responses
             // to the encoded responses list
             statusType = stapleParams.statReqType;
+            int encodedLen = 0;
             if (statusType == CertStatusRequestType.OCSP) {
                 // Just worry about the first cert in the chain
                 byte[] resp = stapleParams.responseMap.get(certChain[0]);
@@ -124,7 +125,7 @@ final class CertificateStatus {
                     resp = new byte[0];
                 }
                 encodedResponses.add(resp);
-                encodedResponsesLen += resp.length + 3;
+                encodedLen += resp.length + 3;
             } else if (statusType == CertStatusRequestType.OCSP_MULTI) {
                 for (X509Certificate cert : certChain) {
                     byte[] resp = stapleParams.responseMap.get(cert);
@@ -132,14 +133,15 @@ final class CertificateStatus {
                         resp = new byte[0];
                     }
                     encodedResponses.add(resp);
-                    encodedResponsesLen += resp.length + 3;
+                    encodedLen += resp.length + 3;
                 }
             } else {
                 throw new IllegalArgumentException(
                         "Unsupported StatusResponseType: " + statusType);
             }
 
-            messageLength = messageLength();
+            encodedResponsesLen = encodedLen;
+            messageLength = messageLength(statusType, encodedResponsesLen);
         }
 
         CertificateStatusMessage(HandshakeContext handshakeContext,
@@ -182,7 +184,18 @@ final class CertificateStatus {
                         Alert.HANDSHAKE_FAILURE,
                         "Unsupported StatusResponseType: " + statusType);
             }
-            messageLength = messageLength();
+            messageLength = messageLength(statusType, encodedResponsesLen);
+        }
+
+        private static int messageLength(
+                CertStatusRequestType statusType, int encodedResponsesLen) {
+            if (statusType == CertStatusRequestType.OCSP) {
+                return 1 + encodedResponsesLen;
+            } else if (statusType == CertStatusRequestType.OCSP_MULTI) {
+                return 4 + encodedResponsesLen;
+            }
+
+            return -1;
         }
 
         @Override
@@ -192,17 +205,6 @@ final class CertificateStatus {
 
         @Override
         public int messageLength() {
-            int len = 1;
-
-            if (messageLength == -1) {
-                if (statusType == CertStatusRequestType.OCSP) {
-                    len += encodedResponsesLen;
-                } else if (statusType == CertStatusRequestType.OCSP_MULTI) {
-                    len += 3 + encodedResponsesLen;
-                }
-                messageLength = len;
-            }
-
             return messageLength;
         }
 
@@ -214,11 +216,7 @@ final class CertificateStatus {
             } else if (statusType == CertStatusRequestType.OCSP_MULTI) {
                 s.putInt24(encodedResponsesLen);
                 for (byte[] respBytes : encodedResponses) {
-                    if (respBytes != null) {
-                        s.putBytes24(respBytes);
-                    } else {
-                        s.putBytes24(null);
-                    }
+                    s.putBytes24(respBytes);
                 }
             } else {
                 // It is highly unlikely that we will fall into this section

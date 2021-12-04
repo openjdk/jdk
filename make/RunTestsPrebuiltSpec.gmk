@@ -116,16 +116,13 @@ JAVAC_CMD := $(BOOT_JDK)/bin/javac
 JAR_CMD := $(BOOT_JDK)/bin/jar
 JLINK_CMD := $(JDK_OUTPUTDIR)/bin/jlink
 JMOD_CMD := $(JDK_OUTPUTDIR)/bin/jmod
-JARSIGNER_CMD := $(BOOT_JDK)/bin/jarsigner
 
 JAVA := $(FIXPATH) $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
 JAVA_SMALL := $(FIXPATH) $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
-JAVA_DETACH := $(FIXPATH) $(FIXPATH_DETACH_FLAG) $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
 JAVAC := $(FIXPATH) $(JAVAC_CMD)
 JAR := $(FIXPATH) $(JAR_CMD)
 JLINK := $(FIXPATH) $(JLINK_CMD)
 JMOD := $(FIXPATH) $(JMOD_CMD)
-JARSIGNER := $(FIXPATH) $(JARSIGNER_CMD)
 
 BUILD_JAVA := $(JDK_IMAGE_DIR)/bin/JAVA
 ################################################################################
@@ -153,7 +150,6 @@ LN := ln
 MIG := mig
 MKDIR := mkdir
 MV := mv
-NAWK := nawk
 NICE := nice
 PATCH := patch
 PRINTF := printf
@@ -167,7 +163,6 @@ TAIL := tail
 TEE := tee
 TR := tr
 TOUCH := touch
-UNIQ := uniq
 WC := wc
 XARGS := xargs
 ZIPEXE := zip
@@ -178,7 +173,7 @@ HG := hg
 ULIMIT := ulimit
 
 ifeq ($(OPENJDK_BUILD_OS), windows)
-  CYGPATH := cygpath
+  PATHTOOL := cygpath
 endif
 
 ################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,11 @@ public class CUPSPrinter  {
     private static int cupsPort = 0;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         // load awt library to access native code
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
@@ -282,6 +287,7 @@ public class CUPSPrinter  {
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
+                @SuppressWarnings("removal")
                 OutputStream os = java.security.AccessController.
                     doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
                         public OutputStream run() {
@@ -382,6 +388,7 @@ public class CUPSPrinter  {
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
+                @SuppressWarnings("removal")
                 OutputStream os = java.security.AccessController.
                     doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
                         public OutputStream run() {

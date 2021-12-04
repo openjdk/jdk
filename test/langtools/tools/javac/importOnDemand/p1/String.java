@@ -1,3 +1,5 @@
+/* /nodynamiccopyright/ */
+
 package p1;
 
 import p2.*;

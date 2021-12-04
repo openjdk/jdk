@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@
  */
 
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.MemoryLayouts;
+import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.*;
 
 import java.lang.invoke.VarHandle;
@@ -36,19 +37,49 @@ import java.lang.invoke.WrongMethodTypeException;
 
 public class TestTypeAccess {
 
-    static final VarHandle INT_HANDLE = MemoryLayouts.JAVA_INT.varHandle(int.class);
+    static final VarHandle INT_HANDLE = ValueLayout.JAVA_INT.varHandle();
+    static final VarHandle ADDR_HANDLE = ValueLayout.ADDRESS.varHandle();
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressCoordinateAsString() {
-        try (MemorySegment s = MemorySegment.allocateNative(8)) {
-            int v = (int)INT_HANDLE.get("string");
-        }
+        int v = (int)INT_HANDLE.get("string");
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryCoordinatePrimitive() {
-        try (MemorySegment s = MemorySegment.allocateNative(8)) {
-            int v = (int)INT_HANDLE.get(1);
+        int v = (int)INT_HANDLE.get(1);
+    }
+
+    @Test(expectedExceptions=ClassCastException.class)
+    public void testMemoryAddressValueGetAsString() {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, scope);
+            String address = (String)ADDR_HANDLE.get(s.address());
         }
     }
+
+    @Test(expectedExceptions=ClassCastException.class)
+    public void testMemoryAddressValueSetAsString() {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, scope);
+            ADDR_HANDLE.set(s.address(), "string");
+        }
+    }
+
+    @Test(expectedExceptions=WrongMethodTypeException.class)
+    public void testMemoryAddressValueGetAsPrimitive() {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, scope);
+            int address = (int)ADDR_HANDLE.get(s.address());
+        }
+    }
+
+    @Test(expectedExceptions=WrongMethodTypeException.class)
+    public void testMemoryAddressValueSetAsPrimitive() {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, scope);
+            ADDR_HANDLE.set(s.address(), 1);
+        }
+    }
+
 }

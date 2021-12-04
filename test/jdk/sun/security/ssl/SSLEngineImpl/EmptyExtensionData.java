@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @test
  * @bug 6728126
  * @summary Parsing Extensions in Client Hello message is done in a wrong way
+ * @library /test/lib
  * @run main/othervm EmptyExtensionData
  */
 
@@ -38,6 +39,8 @@ import javax.net.ssl.SSLEngineResult.*;
 import java.io.*;
 import java.security.*;
 import java.nio.*;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class EmptyExtensionData {
 
@@ -154,6 +157,8 @@ public class EmptyExtensionData {
     }
 
     public static void main(String args[]) throws Exception {
+        // Re-enable TLSv1 since test depends on it.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
 
         SSLEngine ssle = createSSLEngine(keyFilename, trustFilename);
         runTest(ssle);

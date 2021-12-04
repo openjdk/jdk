@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,8 @@ ifneq ($(BUILD_CRYPTO), false)
         DISABLED_WARNINGS_clang := deprecated-declarations, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
-        LIBS := -framework JavaNativeFoundation -framework Cocoa \
-            -framework SystemConfiguration -framework Kerberos, \
+        LIBS := -framework Cocoa -framework SystemConfiguration \
+            -framework Kerberos, \
     ))
 
     TARGETS += $(BUILD_LIBOSXKRB5)

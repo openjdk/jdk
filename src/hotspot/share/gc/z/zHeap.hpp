@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ private:
   void flip_to_marked();
   void flip_to_remapped();
 
-  void free_garbage_pages(ZRelocationSetSelector* selector, int bulk);
+  void free_empty_pages(ZRelocationSetSelector* selector, int bulk);
 
   void out_of_memory();
 
@@ -81,13 +81,8 @@ public:
   size_t max_capacity() const;
   size_t soft_max_capacity() const;
   size_t capacity() const;
-  size_t max_reserve() const;
-  size_t used_high() const;
-  size_t used_low() const;
   size_t used() const;
   size_t unused() const;
-  size_t allocated() const;
-  size_t reclaimed() const;
 
   size_t tlab_capacity() const;
   size_t tlab_used() const;
@@ -98,9 +93,8 @@ public:
   uint32_t hash_oop(uintptr_t addr) const;
 
   // Threads
-  uint nconcurrent_worker_threads() const;
-  uint nconcurrent_no_boost_worker_threads() const;
-  void set_boost_worker_threads(bool boost);
+  uint active_workers() const;
+  void set_active_workers(uint nworkers);
   void threads_do(ThreadClosure* tc) const;
 
   // Reference processing
@@ -121,17 +115,18 @@ public:
   uintptr_t alloc_object(size_t size);
   uintptr_t alloc_object_for_relocation(size_t size);
   void undo_alloc_object_for_relocation(uintptr_t addr, size_t size);
-  bool is_alloc_stalled() const;
+  bool has_alloc_stalled() const;
   void check_out_of_memory();
 
   // Marking
   bool is_object_live(uintptr_t addr) const;
   bool is_object_strongly_live(uintptr_t addr) const;
-  template <bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
+  template <bool gc_thread, bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
   void mark_start();
   void mark(bool initial);
   void mark_flush_and_free(Thread* thread);
   bool mark_end();
+  void mark_free();
   void keep_alive(oop obj);
 
   // Relocation set
@@ -146,12 +141,13 @@ public:
 
   // Iteration
   void object_iterate(ObjectClosure* cl, bool visit_weaks);
-  ParallelObjectIterator* parallel_object_iterator(uint nworkers, bool visit_weaks);
+  ParallelObjectIteratorImpl* parallel_object_iterator(uint nworkers, bool visit_weaks);
   void pages_do(ZPageClosure* cl);
 
   // Serviceability
   void serviceability_initialize();
-  GCMemoryManager* serviceability_memory_manager();
+  GCMemoryManager* serviceability_cycle_memory_manager();
+  GCMemoryManager* serviceability_pause_memory_manager();
   MemoryPool* serviceability_memory_pool();
   ZServiceabilityCounters* serviceability_counters();
 

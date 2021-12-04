@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +31,16 @@
 #include "libproc.h"
 #include "symtab.h"
 
+#define UNSUPPORTED_ARCH "Unsupported architecture!"
+
+#if defined(__x86_64__) && !defined(amd64)
+#define amd64 1
+#endif
+
+#if defined(__arm64__) && !defined(aarch64)
+#define aarch64 1
+#endif
+
 #ifdef __APPLE__
 #include <inttypes.h>     // for PRIx64, 32, ...
 #include <pthread.h>
@@ -42,6 +53,7 @@
 #define register_t uint64_t
 #endif
 
+#if defined(amd64)
 /*** registers copied from bsd/amd64 */
 typedef struct reg {
   register_t      r_r15;
@@ -71,6 +83,48 @@ typedef struct reg {
   register_t      r_rsp;
   register_t      r_ss;          // not used
 } reg;
+
+#elif defined(aarch64)
+/*** registers copied from bsd/arm64 */
+typedef struct reg {
+  register_t      r_r0;
+  register_t      r_r1;
+  register_t      r_r2;
+  register_t      r_r3;
+  register_t      r_r4;
+  register_t      r_r5;
+  register_t      r_r6;
+  register_t      r_r7;
+  register_t      r_r8;
+  register_t      r_r9;
+  register_t      r_r10;
+  register_t      r_r11;
+  register_t      r_r12;
+  register_t      r_r13;
+  register_t      r_r14;
+  register_t      r_r15;
+  register_t      r_r16;
+  register_t      r_r17;
+  register_t      r_r18;
+  register_t      r_r19;
+  register_t      r_r20;
+  register_t      r_r21;
+  register_t      r_r22;
+  register_t      r_r23;
+  register_t      r_r24;
+  register_t      r_r25;
+  register_t      r_r26;
+  register_t      r_r27;
+  register_t      r_r28;
+  register_t      r_fp;
+  register_t      r_lr;
+  register_t      r_sp;
+  register_t      r_pc;
+} reg;
+
+#else
+#error UNSUPPORTED_ARCH
+#endif
 
 // convenient defs
 typedef struct mach_header_64 mach_header_64;

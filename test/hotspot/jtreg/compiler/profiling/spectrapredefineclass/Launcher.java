@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          java.instrument
  * @requires vm.jvmti
  * @build compiler.profiling.spectrapredefineclass.Agent
- * @run driver ClassFileInstaller compiler.profiling.spectrapredefineclass.Agent
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.profiling.spectrapredefineclass.Agent
  * @run driver compiler.profiling.spectrapredefineclass.Launcher
  * @run main/othervm -XX:CompilationMode=high-only -XX:-BackgroundCompilation -XX:CompileThreshold=10000
  *                   -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222

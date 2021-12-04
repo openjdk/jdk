@@ -91,7 +91,7 @@ public class ModuleAccessTest {
      *
      * [A0] targetClass becomes the lookup class
      * [A1] no change in previous lookup class
-     * [A2] PROTECTED and PRIVATE are dropped
+     * [A2] PROTECTED, PRIVATE and ORIGINAL are dropped
      */
     @Test(dataProvider = "samePackage")
     public void testLookupInSamePackage(Lookup lookup, Class<?> targetClass) throws Exception {
@@ -102,7 +102,7 @@ public class ModuleAccessTest {
         assertTrue(lookupClass.getModule() == targetClass.getModule());
         assertTrue(lookup2.lookupClass() == targetClass);   // [A0]
         assertTrue(lookup2.previousLookupClass() == lookup.previousLookupClass());  // [A1]
-        assertTrue(lookup2.lookupModes() == (lookup.lookupModes() & ~(PROTECTED|PRIVATE)));  // [A2]
+        assertTrue(lookup2.lookupModes() == (lookup.lookupModes() & ~(PROTECTED|PRIVATE|ORIGINAL)));  // [A2]
     }
 
     @DataProvider(name = "sameModule")
@@ -119,7 +119,7 @@ public class ModuleAccessTest {
      *
      * [A0] targetClass becomes the lookup class
      * [A1] no change in previous lookup class
-     * [A2] PROTECTED, PRIVATE and PACKAGE are dropped
+     * [A2] PROTECTED, PRIVATE, PACKAGE and ORIGINAL are dropped
      */
     @Test(dataProvider = "sameModule")
     public void testLookupInSameModule(Lookup lookup, Class<?> targetClass) throws Exception {
@@ -130,7 +130,7 @@ public class ModuleAccessTest {
         assertTrue(lookupClass.getModule() == targetClass.getModule());
         assertTrue(lookup2.lookupClass() == targetClass);   // [A0]
         assertTrue(lookup2.previousLookupClass() == lookup.previousLookupClass());  // [A1]
-        assertTrue(lookup2.lookupModes() == (lookup.lookupModes() & ~(PROTECTED|PRIVATE|PACKAGE))); // [A2]
+        assertTrue(lookup2.lookupModes() == (lookup.lookupModes() & ~(PROTECTED|PRIVATE|PACKAGE|ORIGINAL))); // [A2]
     }
 
     @DataProvider(name = "anotherModule")
@@ -148,7 +148,7 @@ public class ModuleAccessTest {
      *
      * [A0] targetClass becomes the lookup class
      * [A1] lookup class becomes previous lookup class
-     * [A2] PROTECTED, PRIVATE, PACKAGE, and MODULE are dropped
+     * [A2] PROTECTED, PRIVATE, PACKAGE, MODULE and ORIGINAL are dropped
      * [A3] no access to module internal types in m0 and m1
      * [A4] if m1 reads m0, can access public types in m0; otherwise no access.
      * [A5] can access public types in m1 exported to m0
@@ -168,7 +168,7 @@ public class ModuleAccessTest {
         Lookup lookup2 = lookup.in(targetClass);
         assertTrue(lookup2.lookupClass() == targetClass);   // [A0]
         assertTrue(lookup2.previousLookupClass() == lookup.lookupClass());  // [A1]
-        assertTrue(lookup2.lookupModes() == (lookup.lookupModes() & ~(PROTECTED|PRIVATE|PACKAGE|MODULE)));  // [A2]
+        assertTrue(lookup2.lookupModes() == (lookup.lookupModes() & ~(PROTECTED|PRIVATE|PACKAGE|MODULE|ORIGINAL)));  // [A2]
 
         // [A3] no access to module internal type in m0
         // [A4] if m1 reads m0,
@@ -289,7 +289,7 @@ public class ModuleAccessTest {
         Lookup lookup1 = lookup.in(c1);
         assertTrue(lookup1.lookupClass() == c1);
         assertTrue(lookup1.previousLookupClass() == c0);
-        assertTrue(lookup1.lookupModes() == (lookup.lookupModes() & ~(PROTECTED|PRIVATE|PACKAGE|MODULE)));
+        assertTrue(lookup1.lookupModes() == (lookup.lookupModes() & ~(PROTECTED|PRIVATE|PACKAGE|MODULE|ORIGINAL)));
 
         Lookup lookup2 = lookup1.in(c2);
         assertTrue(lookup2.lookupClass() == c2);                    // [A0]

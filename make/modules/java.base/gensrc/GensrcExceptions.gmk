@@ -36,7 +36,7 @@ $(GENSRC_EXCEPTIONS_DST)/_the.%.marker: $(GENSRC_EXCEPTIONS_SRC)/%/exceptions \
     $(GENSRC_EXCEPTIONS_CMD)
 	$(call LogInfo, Generating exceptions java.nio $*)
 	$(call MakeDir, $(@D)/$*)
-	SCRIPTS="$(TOPDIR)/make/scripts" NAWK="$(NAWK)" SH="$(SH)" $(SH) \
+	SCRIPTS="$(TOPDIR)/make/scripts" AWK="$(AWK)" SH="$(SH)" $(SH) \
 	    $(GENSRC_EXCEPTIONS_CMD) $< $(@D)/$* $(LOG_DEBUG)
 	$(TOUCH) $@
 

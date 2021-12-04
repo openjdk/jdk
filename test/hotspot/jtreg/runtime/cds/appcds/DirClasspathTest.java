@@ -33,6 +33,7 @@
  */
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
 import java.nio.file.Files;
@@ -52,7 +53,7 @@ public class DirClasspathTest {
     }
 
     public static void main(String[] args) throws Exception {
-        File dir = new File(System.getProperty("user.dir"));
+        File dir = CDSTestUtils.getOutputDirAsFile();
         File emptydir = new File(dir, "emptydir");
         emptydir.mkdir();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,12 @@ private:
   static THREAD_LOCAL bool      _is_vm;
   static THREAD_LOCAL bool      _is_java;
   static THREAD_LOCAL bool      _is_worker;
-  static THREAD_LOCAL bool      _is_runtime_worker;
   static THREAD_LOCAL uint      _worker_id;
 
   static void initialize();
   static void ensure_initialized();
 
   static void set_worker();
-  static void set_runtime_worker();
 
   static bool has_worker_id();
   static void set_worker_id(uint worker_id);
@@ -57,7 +55,6 @@ public:
   static bool is_vm();
   static bool is_java();
   static bool is_worker();
-  static bool is_runtime_worker();
   static uint worker_id();
 };
 

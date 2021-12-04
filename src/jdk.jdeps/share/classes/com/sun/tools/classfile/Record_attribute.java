@@ -44,6 +44,12 @@ public class Record_attribute extends Attribute {
         }
     }
 
+    public Record_attribute(int name_index, ComponentInfo[] component_info_arr) {
+        super(name_index, 2);
+        this.component_count = component_info_arr.length;
+        this.component_info_arr = component_info_arr;
+    }
+
     @Override
     public <R, D> R accept(Visitor<R, D> visitor, D data) {
         return visitor.visitRecord(this, data);
@@ -57,6 +63,12 @@ public class Record_attribute extends Attribute {
             name_index = cr.readUnsignedShort();
             descriptor = new Descriptor(cr);
             attributes = new Attributes(cr);
+        }
+
+        public ComponentInfo(int name_index, Descriptor descriptor, Attributes attributes) {
+            this.name_index = name_index;
+            this.descriptor = descriptor;
+            this.attributes = attributes;
         }
 
         public String getName(ConstantPool constant_pool) throws ConstantPoolException {

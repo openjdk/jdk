@@ -69,7 +69,7 @@ import java.util.function.Predicate;
  * perform some action upon state updates.
  *
  * <pre> {@code
- * class Handler { void handle(); ... }
+ * class Handler { void handle() { ... } }
  *
  * class X {
  *   private final CopyOnWriteArraySet<Handler> handlers

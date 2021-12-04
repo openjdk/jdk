@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "runtime/globals.hpp"
@@ -71,16 +72,17 @@ void ZArguments::initialize() {
     vm_exit_during_initialization("The flag -XX:+UseZGC can not be combined with -XX:ConcGCThreads=0");
   }
 
-  // Select medium page size so that we can calculate the max reserve
-  ZHeuristics::set_medium_page_size();
-
-  // MinHeapSize/InitialHeapSize must be at least as large as the max reserve
-  const size_t max_reserve = ZHeuristics::max_reserve();
-  if (MinHeapSize < max_reserve) {
-    FLAG_SET_ERGO(MinHeapSize, max_reserve);
+  // Large page size must match granule size
+  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != ZGranuleSize) {
+    vm_exit_during_initialization(err_msg("Incompatible -XX:LargePageSizeInBytes, only "
+                                          SIZE_FORMAT "M large pages are supported by ZGC",
+                                          ZGranuleSize / M));
   }
-  if (InitialHeapSize < max_reserve) {
-    FLAG_SET_ERGO(InitialHeapSize, max_reserve);
+
+  // The heuristics used when UseDynamicNumberOfGCThreads is
+  // enabled defaults to using a ZAllocationSpikeTolerance of 1.
+  if (UseDynamicNumberOfGCThreads && FLAG_IS_DEFAULT(ZAllocationSpikeTolerance)) {
+    FLAG_SET_DEFAULT(ZAllocationSpikeTolerance, 1);
   }
 
 #ifdef COMPILER2
@@ -104,6 +106,10 @@ void ZArguments::initialize() {
     FLAG_SET_DEFAULT(ZVerifyRoots, true);
     FLAG_SET_DEFAULT(ZVerifyObjects, true);
   }
+}
+
+size_t ZArguments::heap_virtual_to_physical_ratio() {
+  return ZHeapViews * ZVirtualToPhysicalRatio;
 }
 
 size_t ZArguments::conservative_max_heap_alignment() {

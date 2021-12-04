@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
 import java.awt.event.FocusEvent;
@@ -29,6 +30,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.LightweightPeer;
+import java.io.Serial;
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -81,6 +83,11 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private static boolean fxAppThreadIsDispatchThread;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AWTAccessor.setDefaultKeyboardFocusManagerAccessor(
             new AWTAccessor.DefaultKeyboardFocusManagerAccessor() {
                 public void consumeNextKeyTyped(DefaultKeyboardFocusManager dkfm, KeyEvent e) {
@@ -227,9 +234,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private static class DefaultKeyboardFocusManagerSentEvent
         extends SentEvent
     {
-        /*
-         * serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.6 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = -2924743257508701758L;
 
         public DefaultKeyboardFocusManagerSentEvent(AWTEvent nested,
@@ -879,11 +887,11 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         boolean stopPostProcessing = false;
         java.util.List<KeyEventPostProcessor> processors = getKeyEventPostProcessors();
         if (processors != null) {
-            for (java.util.Iterator<KeyEventPostProcessor> iter = processors.iterator();
-                 !stopPostProcessing && iter.hasNext(); )
-            {
-                stopPostProcessing = iter.next().
-                            postProcessKeyEvent(e);
+            for (KeyEventPostProcessor processor : processors) {
+                stopPostProcessing = processor.postProcessKeyEvent(e);
+                if (stopPostProcessing) {
+                    break;
+                }
             }
         }
         if (!stopPostProcessing) {
@@ -971,9 +979,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             focusLog.finest(">>> Markers dump, time: {0}", System.currentTimeMillis());
             synchronized (this) {
                 if (typeAheadMarkers.size() != 0) {
-                    Iterator<TypeAheadMarker> iter = typeAheadMarkers.iterator();
-                    while (iter.hasNext()) {
-                        TypeAheadMarker marker = iter.next();
+                    for (TypeAheadMarker marker : typeAheadMarkers) {
                         focusLog.finest("    {0}", marker);
                     }
                 }
@@ -1072,8 +1078,8 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * @since 1.5
      */
     private boolean hasMarker(Component comp) {
-        for (Iterator<TypeAheadMarker> iter = typeAheadMarkers.iterator(); iter.hasNext(); ) {
-            if (iter.next().untilFocused == comp) {
+        for (TypeAheadMarker typeAheadMarker : typeAheadMarkers) {
+            if (typeAheadMarker.untilFocused == comp) {
                 return true;
             }
         }
@@ -1131,15 +1137,11 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
 
         java.util.List<KeyEventDispatcher> dispatchers = getKeyEventDispatchers();
         if (dispatchers != null) {
-            for (java.util.Iterator<KeyEventDispatcher> iter = dispatchers.iterator();
-                 iter.hasNext(); )
-             {
-                 if (iter.next().
-                     dispatchKeyEvent(ke))
-                 {
-                     return true;
-                 }
-             }
+            for (KeyEventDispatcher dispatcher : dispatchers) {
+                if (dispatcher.dispatchKeyEvent(ke)) {
+                    return true;
+                }
+            }
         }
         return dispatchKeyEvent(ke);
     }

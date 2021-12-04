@@ -47,19 +47,24 @@ public class TestModifierEx extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("pkg1/Abstract.html", true,
                 """
-                    <pre>public abstract class <span class="type-name-label">Abstract</span>""");
+                    <div class="type-signature"><span class="modifiers">public abstract class </span\
+                    ><span class="element-name type-name-label">Abstract</span>""");
         checkOutput("pkg1/Interface.html", true,
                 """
-                    <pre>interface <span class="type-name-label">Interface</span></pre>""");
+                    <div class="type-signature"><span class="modifiers">interface </span><span class\
+                    ="element-name type-name-label">Interface</span></div>""");
         checkOutput("pkg1/Interface.Kind.html", true,
                 """
-                    <pre>public static interface <span class="type-name-label">Interface.Kind</span></pre>""");
+                    <div class="type-signature"><span class="modifiers">public static interface </sp\
+                    an><span class="element-name type-name-label">Interface.Kind</span></div>""");
         checkOutput("pkg1/Enum.html", true,
                 """
-                    <pre>public enum <span class="type-name-label">Enum</span>""");
+                    <div class="type-signature"><span class="modifiers">public enum </span><span cla\
+                    ss="element-name type-name-label">Enum</span>""");
         checkOutput("pkg1/Klass.StaticEnum.html", true,
                 """
-                    <pre>public static enum <span class="type-name-label">Klass.StaticEnum</span>""");
+                    <div class="type-signature"><span class="modifiers">public static enum </span><s\
+                    pan class="element-name type-name-label">Klass.StaticEnum</span>""");
     }
 
 }

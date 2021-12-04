@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,16 @@
 
 /*
  * @test
- * @bug 8249607
+ * @bug 8249607 8260420
+ * @library /test/lib
  * @summary A LoadNode is pinned in split_if_with_blocks_post() on a loop exit node x that is part of a strip mined loop. It has a late control y outside
             the outer strip mined loop. After pre-main-post, the dominator chain of y does not include x anymore resulting in an assertion failure.
  * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,compiler.loopopts.TestSplitIfPinnedLoadInStripMinedLoop::*
  *                   compiler.loopopts.TestSplitIfPinnedLoadInStripMinedLoop
  */
 package compiler.loopopts;
+
+import jdk.test.lib.Asserts;
 
 public class TestSplitIfPinnedLoadInStripMinedLoop {
 
@@ -39,7 +42,7 @@ public class TestSplitIfPinnedLoadInStripMinedLoop {
     public static float fFld= 6.0f;
     public static int iArrFld[] = new int[400];
 
-    public void test() {
+    public void test1() {
         int x = 7;
         int y = 8;
         int a = 9;
@@ -97,10 +100,72 @@ public class TestSplitIfPinnedLoadInStripMinedLoop {
             }
         }
     }
+
+    static class MyClass {
+        int x = 42;
+    }
+
+    int res = 0;
+
+    // The obj1.x load has two uses: The 'res' store and the return. After cloning, both loads end up in the
+    // OuterStripMinedLoop which triggers an assert in LoopNode::verify_strip_mined:
+    // assert(found_sfpt) failed: no node in loop that's not input to safepoint
+    int test2(MyClass obj1, MyClass obj2) {
+        for (int i = 0; i < 10; ++i) {
+            for (int j = 0; j < 10; ++j) {
+                obj2.x = 42; // Prevents obj1.x load from floating up because obj2 could alias obj1
+                res = obj1.x;
+            }
+            for (int j = 0; j < 10_000; ++j) {
+            }
+        }
+        return res;
+    }
+
+    // Same as test2 but with reference to outer loop induction variable 'i' and different order of instructions.
+    // Triggers an assert in PhaseIdealLoop::build_loop_late_post_work if loop strip mining verification is disabled:
+    // assert(false) failed: Bad graph detected in build_loop_late
+    int test3(MyClass obj1, MyClass obj2) {
+        for (int i = 0; i < 10; ++i) {
+            for (int j = 0; j < 10; ++j) {
+                res = obj1.x + i;
+                obj2.x = 42;
+            }
+            for (int j = 0; j < 10_000; ++j) {
+            }
+        }
+        return res;
+    }
+
+    // Same as test2 but with reference to inner loop induction variable 'j' and different order of instructions.
+    // Triggers an assert in PhaseCFG::insert_anti_dependences if loop strip mining verification is disabled:
+    // assert(!LCA_orig->dominates(pred_block) || early->dominates(pred_block)) failed: early is high enough
+    int test4(MyClass obj1, MyClass obj2) {
+        for (int i = 0; i < 10; ++i) {
+            for (int j = 0; j < 10; ++j) {
+                res = obj1.x + j;
+                obj2.x = 42;
+            }
+            for (int j = 0; j < 10_000; ++j) {
+            }
+        }
+        return res;
+    }
+
     public static void main(String[] strArr) {
         TestSplitIfPinnedLoadInStripMinedLoop t = new TestSplitIfPinnedLoadInStripMinedLoop();
+        MyClass obj = new MyClass();
         for (int i = 0; i < 10; i++) {
-            t.test();
+            t.test1();
+            int res = t.test2(obj, obj);
+            Asserts.assertEquals(res, t.res);
+            Asserts.assertEquals(res, 42);
+            res = t.test3(obj, obj);
+            Asserts.assertEquals(res, t.res);
+            Asserts.assertEquals(res, 51);
+            res = t.test4(obj, obj);
+            Asserts.assertEquals(res, t.res);
+            Asserts.assertEquals(res, 51);
         }
     }
 }

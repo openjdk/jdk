@@ -42,9 +42,6 @@ class ciCallSite : public ciInstance {
 
   bool is_fully_initialized_constant_call_site();
 
-  // Return the target MethodHandle of this CallSite.
-  ciMethodHandle* get_target() const;
-
   void print();
 };
 

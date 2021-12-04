@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,6 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
     public static final String XMSGS_CUSTOM_PREFIX = "-Xmsgs:";
     private static final String STATS = "-stats";
     public static final String XCUSTOM_TAGS_PREFIX = "-XcustomTags:";
-    public static final String XHTML_VERSION_PREFIX = "-XhtmlVersion:";
     public static final String XCHECK_PACKAGE = "-XcheckPackage:";
     public static final String SEPARATOR = ",";
 
@@ -223,14 +222,6 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
                 env.messages.setOptions(arg.substring(arg.indexOf(":") + 1));
             } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
                 env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
-            } else if (arg.startsWith(XHTML_VERSION_PREFIX)) {
-                String argsVersion = arg.substring(arg.indexOf(":") + 1);
-                HtmlVersion htmlVersion = HtmlVersion.getHtmlVersion(argsVersion);
-                if (htmlVersion != null) {
-                    env.setHtmlVersion(htmlVersion);
-                } else {
-                    throw new BadArgs("dc.bad.value.for.option", arg, argsVersion);
-                }
             } else if (arg.equals("-h") || arg.equals("-help") || arg.equals("--help")
                     || arg.equals("-?") || arg.equals("-usage")) {
                 needHelp = true;
@@ -296,7 +287,6 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
                 void visitDecl(Tree tree, Name name) {
                     TreePath p = getCurrentPath();
                     DocCommentTree dc = env.trees.getDocCommentTree(p);
-
                     checker.scan(dc, p);
                 }
             };
@@ -345,14 +335,6 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
                 env.messages.setOptions(arg.substring(arg.indexOf(":") + 1));
             } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
                 env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
-            } else if (arg.startsWith(XHTML_VERSION_PREFIX)) {
-                String argsVersion = arg.substring(arg.indexOf(":") + 1);
-                HtmlVersion htmlVersion = HtmlVersion.getHtmlVersion(argsVersion);
-                if (htmlVersion != null) {
-                    env.setHtmlVersion(htmlVersion);
-                } else {
-                    throw new IllegalArgumentException(argsVersion);
-                }
             } else if (arg.startsWith(XCHECK_PACKAGE)) {
                 env.setCheckPackages(arg.substring(arg.indexOf(":") + 1));
             } else
@@ -396,7 +378,7 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
 
     // <editor-fold defaultstate="collapsed" desc="DeclScanner">
 
-    static abstract class DeclScanner extends TreePathScanner<Void, Void> {
+    abstract static class DeclScanner extends TreePathScanner<Void, Void> {
         final Env env;
 
         public DeclScanner(Env env) {

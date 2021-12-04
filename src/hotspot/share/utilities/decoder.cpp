@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +26,6 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
-#include "runtime/os.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/vmError.hpp"
 
@@ -84,19 +84,16 @@ Mutex* Decoder::shared_decoder_lock() {
 }
 
 bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const char* modulepath, bool demangle) {
-  bool error_handling_thread = os::current_thread_id() == VMError::get_first_error_tid();
-  if (error_handling_thread) {
+  if (VMError::is_error_reported_in_current_thread()) {
     return get_error_handler_instance()->decode(addr, buf, buflen, offset, modulepath, demangle);
   } else {
     MutexLocker locker(shared_decoder_lock(), Mutex::_no_safepoint_check_flag);
     return get_shared_instance()->decode(addr, buf, buflen, offset, modulepath, demangle);
   }
-
 }
 
 bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const void* base) {
-  bool error_handling_thread = os::current_thread_id() == VMError::get_first_error_tid();
-  if (error_handling_thread) {
+  if (VMError::is_error_reported_in_current_thread()) {
     return get_error_handler_instance()->decode(addr, buf, buflen, offset, base);
   } else {
     MutexLocker locker(shared_decoder_lock(), Mutex::_no_safepoint_check_flag);
@@ -104,10 +101,8 @@ bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const voi
   }
 }
 
-
 bool Decoder::demangle(const char* symbol, char* buf, int buflen) {
-  bool error_handling_thread = os::current_thread_id() == VMError::get_first_error_tid();
-  if (error_handling_thread) {
+  if (VMError::is_error_reported_in_current_thread()) {
     return get_error_handler_instance()->demangle(symbol, buf, buflen);
   } else {
     MutexLocker locker(shared_decoder_lock(), Mutex::_no_safepoint_check_flag);

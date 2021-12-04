@@ -48,10 +48,12 @@ public:
 class ZVirtualMemoryManager {
 private:
   ZMemoryManager _manager;
+  uintptr_t      _reserved;
   bool           _initialized;
 
   // Platform specific implementation
-  void pd_initialize();
+  void pd_initialize_before_reserve();
+  void pd_initialize_after_reserve();
   bool pd_reserve(uintptr_t addr, size_t size);
   void pd_unreserve(uintptr_t addr, size_t size);
 
@@ -67,6 +69,9 @@ public:
   ZVirtualMemoryManager(size_t max_capacity);
 
   bool is_initialized() const;
+
+  size_t reserved() const;
+  uintptr_t lowest_available_address() const;
 
   ZVirtualMemory alloc(size_t size, bool force_low_address);
   void free(const ZVirtualMemory& vmem);

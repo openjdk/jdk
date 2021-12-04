@@ -31,7 +31,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.*;
 
 /**
- * A visitor of the values of annotation type elements, using a
+ * A visitor of the values of annotation interface elements, using a
  * variant of the visitor design pattern.  Unlike a standard visitor
  * which dispatches based on the concrete type of a member of a type
  * hierarchy, this visitor dispatches based on the type of data

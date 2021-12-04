@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,9 +75,10 @@ public class SwingUtilities implements SwingConstants
      * Returns true if <code>setTransferHandler</code> should change the
      * <code>DropTarget</code>.
      */
+    @SuppressWarnings("removal")
     private static boolean getSuppressDropTarget() {
         if (!checkedSuppressDropSupport) {
-            suppressDropSupport = Boolean.valueOf(
+            suppressDropSupport = Boolean.parseBoolean(
                 AccessController.doPrivileged(
                     new GetPropertyAction("suppressSwingDropSupport")));
             checkedSuppressDropSupport = true;
@@ -105,12 +106,12 @@ public class SwingUtilities implements SwingConstants
     }
 
     /**
-     * Return {@code true} if @{code a} contains {@code b}
+     * Return {@code true} if {@code a} contains {@code b}
      *
      * @param a the first rectangle
      * @param b the second rectangle
      *
-     * @return {@code true} if @{code a} contains {@code b}
+     * @return {@code true} if {@code a} contains {@code b}
      */
     public static final boolean isRectangleContainingRectangle(Rectangle a,Rectangle b) {
         return b.x >= a.x && (b.x + b.width) <= (a.x + a.width) &&
@@ -421,7 +422,7 @@ public class SwingUtilities implements SwingConstants
      * @param p  a Point object (converted to the new coordinate system)
      * @param c  a Component object
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public static void convertPointToScreen(Point p,Component c) {
             Rectangle b;
             int x,y;
@@ -461,7 +462,7 @@ public class SwingUtilities implements SwingConstants
      * @param p  a Point object (converted to the new coordinate system)
      * @param c  a Component object
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public static void convertPointFromScreen(Point p,Component c) {
         Rectangle b;
         int x,y;
@@ -1662,7 +1663,7 @@ public class SwingUtilities implements SwingConstants
      * @param c the component
      * @return the first ancestor of c that's a Window or the last Applet ancestor
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public static Component getRoot(Component c) {
         Component applet = null;
         for(Component p = c; p != null; p = p.getParent()) {
@@ -1703,7 +1704,7 @@ public class SwingUtilities implements SwingConstants
      * @return true if a binding has found and processed
      * @since 1.4
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public static boolean processKeyBindings(KeyEvent event) {
         if (event != null) {
             if (event.isConsumed()) {
@@ -2053,8 +2054,8 @@ public class SwingUtilities implements SwingConstants
      * ImageIcon, and the image it contains is the same as <code>image</code>.
      */
     static boolean doesIconReferenceImage(Icon icon, Image image) {
-        Image iconImage = (icon != null && (icon instanceof ImageIcon)) ?
-                           ((ImageIcon)icon).getImage() : null;
+        Image iconImage = (icon instanceof ImageIcon i) ?
+                           i.getImage() : null;
         return (iconImage == image);
     }
 
@@ -2218,7 +2219,7 @@ public class SwingUtilities implements SwingConstants
      * @see java.awt.Component#isVisible()
      * @since 1.7
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     static Container getValidateRoot(Container c, boolean visibleOnly) {
         Container root = null;
 

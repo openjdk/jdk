@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "tstrings.h"
 
 class Jvm;
-class LogAppender;
 
 class AppLauncher {
 public:
@@ -51,6 +50,11 @@ public:
         return *this;
     }
 
+    AppLauncher& setLibEnvVariableName(const tstring& v) {
+        libEnvVarName = v;
+        return *this;
+    }
+
     AppLauncher& setInitJvmFromCmdlineOnly(bool v) {
         initJvmFromCmdlineOnly = v;
         return *this;
@@ -61,26 +65,18 @@ public:
         return *this;
     }
 
+    bool libEnvVariableContainsAppDir() const;
+
     Jvm* createJvmLauncher() const;
 
     void launch() const;
-
-    static LogAppender& defaultLastErrorLogAppender();
-
-    static bool isWithLogging();
-
-    typedef void (*LauncherFunc) ();
-
-    static int launch(const std::nothrow_t&, LauncherFunc func,
-            LogAppender* lastErrorLogAppender = 0);
-
-    static std::string lastErrorMsg();
 
 private:
     tstring_array args;
     tstring launcherPath;
     tstring defaultRuntimePath;
     tstring appDirPath;
+    tstring libEnvVarName;
     tstring imageRoot;
     tstring_array jvmLibNames;
     bool initJvmFromCmdlineOnly;

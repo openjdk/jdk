@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -77,6 +77,6 @@ inline void OrderAccess::storeload()  { FULL_MEM_BARRIER;  }
 inline void OrderAccess::acquire()    { LIGHT_MEM_BARRIER; }
 inline void OrderAccess::release()    { LIGHT_MEM_BARRIER; }
 inline void OrderAccess::fence()      { FULL_MEM_BARRIER;  }
-inline void OrderAccess::cross_modify_fence()            { }
+inline void OrderAccess::cross_modify_fence_impl()             { }
 
 #endif // OS_CPU_BSD_ZERO_ORDERACCESS_BSD_ZERO_HPP

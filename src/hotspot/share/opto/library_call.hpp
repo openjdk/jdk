@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ class LibraryCallKit : public GraphKit {
 
  private:
   void fatal_unexpected_iid(vmIntrinsics::ID iid) {
-    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+    fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
   }
 
   void  set_result(Node* n) { assert(_result == NULL, "only set once"); _result = n; }
@@ -181,8 +181,8 @@ class LibraryCallKit : public GraphKit {
   CallJavaNode* generate_method_call_virtual(vmIntrinsics::ID method_id) {
     return generate_method_call(method_id, true, false);
   }
-  Node * load_field_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass * fromKls);
-  Node * field_address_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass * fromKls);
+  Node* load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, DecoratorSet decorators, bool is_static, ciInstanceKlass* fromKls);
+  Node* field_address_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass* fromKls);
 
   Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2, StrIntrinsicNode::ArgEnc ae);
   bool inline_string_compareTo(StrIntrinsicNode::ArgEnc ae);
@@ -201,6 +201,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_native(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
   bool inline_double_math(vmIntrinsics::ID id);
+  bool inline_math_pow();
   template <typename OverflowOp>
   bool inline_math_overflow(Node* arg1, Node* arg2);
   void inline_math_mathExact(Node* math, Node* test);
@@ -209,6 +210,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_multiplyExactI();
   bool inline_math_multiplyExactL();
   bool inline_math_multiplyHigh();
+  bool inline_math_unsignedMultiplyHigh();
   bool inline_math_negateExactI();
   bool inline_math_negateExactL();
   bool inline_math_subtractExactI(bool is_decrement);
@@ -218,7 +220,7 @@ class LibraryCallKit : public GraphKit {
   Node* generate_min_max(vmIntrinsics::ID id, Node* x, Node* y);
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
   int classify_unsafe_addr(Node* &base, Node* &offset, BasicType type);
-  Node* make_unsafe_address(Node*& base, Node* offset, DecoratorSet decorators, BasicType type = T_ILLEGAL, bool can_cast = false);
+  Node* make_unsafe_address(Node*& base, Node* offset, BasicType type = T_ILLEGAL, bool can_cast = false);
 
   typedef enum { Relaxed, Opaque, Volatile, Acquire, Release } AccessKind;
   DecoratorSet mo_decorator_for_access_kind(AccessKind kind);
@@ -241,7 +243,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
   bool inline_array_equals(StrIntrinsicNode::ArgEnc ae);
-  bool inline_preconditions_checkIndex();
+  bool inline_preconditions_checkIndex(BasicType bt);
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array);
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
@@ -251,8 +253,7 @@ class LibraryCallKit : public GraphKit {
 
   // Helper functions for inlining arraycopy
   bool inline_arraycopy();
-  AllocateArrayNode* tightly_coupled_allocation(Node* ptr,
-                                                RegionNode* slow_region);
+  AllocateArrayNode* tightly_coupled_allocation(Node* ptr);
   JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
   void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp,
                                       uint new_idx);
@@ -264,6 +265,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
+  bool inline_reference_refersTo0(bool is_phantom);
   bool inline_Class_cast();
   bool inline_aescrypt_Block(vmIntrinsics::ID id);
   bool inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id);
@@ -284,7 +286,7 @@ class LibraryCallKit : public GraphKit {
   Node* get_state_from_digest_object(Node *digestBase_object, const char* state_type);
   Node* get_digest_length_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
-  bool inline_encodeISOArray();
+  bool inline_encodeISOArray(bool ascii);
   bool inline_updateCRC32();
   bool inline_updateBytesCRC32();
   bool inline_updateByteBufferCRC32();
@@ -304,6 +306,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_fma(vmIntrinsics::ID id);
   bool inline_character_compare(vmIntrinsics::ID id);
   bool inline_fp_min_max(vmIntrinsics::ID id);
+  bool inline_galoisCounterMode_AESCrypt();
+  Node* inline_galoisCounterMode_AESCrypt_predicate();
 
   bool inline_profileBoolean();
   bool inline_isCompileConstant();
@@ -313,7 +317,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_broadcast_coerced();
   bool inline_vector_shuffle_to_vector();
   bool inline_vector_shuffle_iota();
+  bool inline_vector_mask_operation();
   bool inline_vector_mem_operation(bool is_store);
+  bool inline_vector_mem_masked_operation(bool is_store);
   bool inline_vector_gather_scatter(bool is_scatter);
   bool inline_vector_reduction();
   bool inline_vector_test();
@@ -324,18 +330,18 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_convert();
   bool inline_vector_extract();
   bool inline_vector_insert();
-  Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType bt, int num_elem);
-  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType bt, int num_elem, bool shuffle_to_vector = false);
-  Node* shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
+  Node* gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 
   enum VectorMaskUseType {
-    VecMaskUseLoad,
-    VecMaskUseStore,
-    VecMaskUseAll,
-    VecMaskNotUsed
+    VecMaskUseLoad  = 1 << 0,
+    VecMaskUseStore = 1 << 1,
+    VecMaskUseAll   = VecMaskUseLoad | VecMaskUseStore,
+    VecMaskUsePred  = 1 << 2,
+    VecMaskNotUsed  = 1 << 3
   };
 
   bool arch_supports_vector(int op, int num_elem, BasicType type, VectorMaskUseType mask_use_type, bool has_scalar_args = false);
+  bool arch_supports_vector_rotate(int opc, int num_elem, BasicType elem_bt, VectorMaskUseType mask_use_type, bool has_scalar_args = false);
 
   void clear_upper_avx() {
 #ifdef X86
@@ -346,5 +352,7 @@ class LibraryCallKit : public GraphKit {
   }
 
   bool inline_getObjectSize();
+
+  bool inline_blackhole();
 };
 

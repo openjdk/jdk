@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2020, 2021, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,4 +96,10 @@ void VM_Version::get_os_cpu_info() {
       _revision = si.wProcessorRevision & 0xFF;
     }
   }
+}
+
+void VM_Version::get_compatible_board(char *buf, int buflen) {
+  assert(buf != NULL, "invalid argument");
+  assert(buflen >= 1, "invalid argument");
+  *buf = '\0';
 }

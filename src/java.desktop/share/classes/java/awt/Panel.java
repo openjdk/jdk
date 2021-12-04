@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
-import javax.accessibility.*;
+import java.io.Serial;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
 
 /**
  * {@code Panel} is the simplest container class. A panel
@@ -42,9 +47,10 @@ public class Panel extends Container implements Accessible {
     private static final String base = "panel";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = -2728009084054400034L;
 
     /**
@@ -117,6 +123,10 @@ public class Panel extends Container implements Accessible {
      */
     protected class AccessibleAWTPanel extends AccessibleAWTContainer {
 
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
+         */
+        @Serial
         private static final long serialVersionUID = -6409552226660031050L;
 
         /**

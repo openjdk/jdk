@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.JavaBean;
+import java.awt.AWTEvent;
+import java.awt.Component;
+import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.beans.BeanProperty;
-
-import javax.swing.plaf.*;
-import javax.accessibility.*;
-
-import java.io.ObjectOutputStream;
+import java.beans.JavaBean;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.Iterator;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.swing.plaf.ButtonUI;
 
 /**
  * An implementation of a two-state button.
@@ -413,6 +423,7 @@ public class JToggleButton extends AbstractButton implements Accessible {
      * See readObject() and writeObject() in JComponent for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

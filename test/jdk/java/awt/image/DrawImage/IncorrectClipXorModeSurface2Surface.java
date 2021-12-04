@@ -45,6 +45,9 @@ import static java.awt.geom.Rectangle2D.Double;
  * @summary Tests drawing volatile image to volatile image using different
  *          clips + xor mode. Results of the blit compatibleImage to
  *          compatibleImage is used for comparison.
+ * @run main/othervm -Dsun.java2d.uiScale=1 IncorrectClipXorModeSurface2Surface
+ * @run main/othervm -Dsun.java2d.uiScale=2 IncorrectClipXorModeSurface2Surface
+ * @run main/othervm -Dsun.java2d.uiScale=4 IncorrectClipXorModeSurface2Surface
  */
 public final class IncorrectClipXorModeSurface2Surface {
 

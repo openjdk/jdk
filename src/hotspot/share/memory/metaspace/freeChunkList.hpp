@@ -70,7 +70,6 @@ class FreeChunkList {
   Metachunk* _last;
 
   IntCounter _num_chunks;
-  SizeCounter _committed_word_size;
 
   void add_front(Metachunk* c) {
     if (_first == NULL) {
@@ -129,7 +128,6 @@ public:
     }
     c->set_next(NULL);
     c->set_prev(NULL);
-    _committed_word_size.decrement_by(c->committed_words());
     _num_chunks.decrement();
     return c;
   }
@@ -144,7 +142,6 @@ public:
     } else {
       add_front(c);
     }
-    _committed_word_size.increment_by(c->committed_words());
     _num_chunks.increment();
   }
 
@@ -186,8 +183,8 @@ public:
   // Returns number of chunks
   int num_chunks() const { return _num_chunks.get(); }
 
-  // Returns total committed word size
-  size_t committed_word_size() const { return _committed_word_size.get(); }
+  // Calculates total number of committed words over all chunks (walks chunks).
+  size_t calc_committed_word_size() const;
 
   void print_on(outputStream* st) const;
 
@@ -226,11 +223,6 @@ public:
     return list_for_level(lvl)->num_chunks();
   }
 
-  // Returns number of chunks for a given level.
-  size_t committed_word_size_at_level(chunklevel_t lvl) const {
-    return list_for_level(lvl)->committed_word_size();
-  }
-
   // Returns reference to first chunk at this level, or NULL if sublist is empty.
   Metachunk* first_at_level(chunklevel_t lvl) const {
     return list_for_level(lvl)->first();
@@ -247,11 +239,14 @@ public:
   // Return NULL if no such chunk was found.
   Metachunk* search_chunk_descending(chunklevel_t level, size_t min_committed_words);
 
-  // Returns total size in all lists (regardless of commit state of underlying memory)
+  // Returns total size in all lists (including uncommitted areas)
   size_t word_size() const;
 
-  // Returns total committed size in all lists
-  size_t committed_word_size() const;
+  // Calculates total number of committed words over all chunks (walks chunks).
+  size_t calc_committed_word_size_at_level(chunklevel_t lvl) const;
+
+  // Calculates total number of committed words over all chunks (walks chunks).
+  size_t calc_committed_word_size() const;
 
   // Returns number of chunks in all lists
   int num_chunks() const;

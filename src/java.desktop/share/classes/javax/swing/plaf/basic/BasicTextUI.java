@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,8 +182,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             String prefix = getPropertyPrefix();
             Object o = DefaultLookup.get(editor, this,
                 prefix + ".keyBindings");
-            if ((o != null) && (o instanceof JTextComponent.KeyBinding[])) {
-                JTextComponent.KeyBinding[] bindings = (JTextComponent.KeyBinding[]) o;
+            if (o instanceof JTextComponent.KeyBinding[] bindings) {
                 JTextComponent.loadKeymap(map, bindings, getComponent().getActions());
             }
         }
@@ -303,10 +302,8 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
     /**
      * Initializes component properties, such as font, foreground,
      * background, caret color, selection color, selected text color,
-     * disabled text color, and border color.  The font, foreground, and
-     * background properties are only set if their current value is either null
-     * or a UIResource, other properties are set if the current
-     * value is null.
+     * disabled text color, border, and margin. Each property is set
+     * if its current value is either null or a UIResource.
      *
      * @see #uninstallDefaults
      * @see #installUI
@@ -538,8 +535,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          * should allow Tab to keyboard - accessibility
          */
         EditorKit editorKit = getEditorKit(editor);
-        if ( editorKit != null
-             && editorKit instanceof DefaultEditorKit) {
+        if (editorKit instanceof DefaultEditorKit) {
             Set<AWTKeyStroke> storedForwardTraversalKeys = editor.
                 getFocusTraversalKeys(KeyboardFocusManager.
                                       FORWARD_TRAVERSAL_KEYS);
@@ -619,9 +615,8 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         if (getEditorKit(editor) instanceof DefaultEditorKit) {
             if (map != null) {
                 Object obj = map.get(DefaultEditorKit.insertBreakAction);
-                if (obj != null
-                    && obj instanceof DefaultEditorKit.InsertBreakAction) {
-                    Action action =  new TextActionWrapper((TextAction)obj);
+                if (obj instanceof DefaultEditorKit.InsertBreakAction breakAction) {
+                    Action action = new TextActionWrapper(breakAction);
                     componentMap.put(action.getValue(Action.NAME),action);
                 }
             }
@@ -1908,6 +1903,14 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             } else if ("componentOrientation" == propertyName) {
                 // Changes in ComponentOrientation require the views to be
                 // rebuilt.
+                Document document = editor.getDocument();
+                final String I18NProperty = "i18n";
+                // if a default direction of right-to-left has been specified,
+                // we want complex layout even if the text is all left to right.
+                if (ComponentOrientation.RIGHT_TO_LEFT == newValue
+                    && ! Boolean.TRUE.equals(document.getProperty(I18NProperty))) {
+                    document.putProperty(I18NProperty, Boolean.TRUE);
+                }
                 modelChanged();
             } else if ("font" == propertyName) {
                 modelChanged();
@@ -2408,13 +2411,13 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 int nch;
                 boolean lastWasCR = false;
                 int last;
-                StringBuffer sbuff = null;
+                StringBuilder sbuff = null;
 
                 // Read in a block at a time, mapping \r\n to \n, as well as single
                 // \r to \n.
                 while ((nch = in.read(buff, 0, buff.length)) != -1) {
                     if (sbuff == null) {
-                        sbuff = new StringBuffer(nch);
+                        sbuff = new StringBuilder(nch);
                     }
                     last = 0;
                     for(int counter = 0; counter < nch; counter++) {

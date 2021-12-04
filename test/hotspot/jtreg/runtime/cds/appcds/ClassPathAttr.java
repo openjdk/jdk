@@ -85,16 +85,6 @@ public class ClassPathAttr {
             output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
             output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
           });
-
-      //  Make sure aliased TraceClassPaths still works
-      TestCommon.run(
-          "-XX:+TraceClassPaths",
-          "-cp", cp,
-          "CpAttr1")
-        .assertNormalExit(output -> {
-            output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
-            output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
-          });
     }
   }
 

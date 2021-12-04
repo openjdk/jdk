@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,12 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zNMethodData.hpp"
 #include "gc/z/zNMethodTable.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "logging/log.hpp"
@@ -41,6 +41,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
@@ -125,8 +126,10 @@ void ZNMethod::log_register(const nmethod* nm) {
     oop* const begin = nm->oops_begin();
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
+      const oop o = Atomic::load(p); // C1 PatchingStub may replace it concurrently.
+      const char* external_name = (o == nullptr) ? "N/A" : o->klass()->external_name();
       log_oops.print("           Oop[" SIZE_FORMAT "] " PTR_FORMAT " (%s)",
-                     (p - begin), p2i(*p), (*p)->klass()->external_name());
+                     (p - begin), p2i(o), external_name);
     }
   }
 
@@ -218,7 +221,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
     oop* const begin = nm->oops_begin();
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
-      if (*p != Universe::non_oop_word()) {
+      if (!Universe::contains_non_oop_word(p)) {
         cl->do_oop(p);
       }
     }
@@ -231,7 +234,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
     oop** const begin = oops->immediates_begin();
     oop** const end = oops->immediates_end();
     for (oop** p = begin; p < end; p++) {
-      if (**p != Universe::non_oop_word()) {
+      if (*p != Universe::non_oop_word()) {
         cl->do_oop(*p);
       }
     }
@@ -241,6 +244,26 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
   if (oops->has_non_immediates()) {
     nm->fix_oop_relocations();
   }
+}
+
+class ZNMethodOopClosure : public OopClosure {
+public:
+  virtual void do_oop(oop* p) {
+    if (ZResurrection::is_blocked()) {
+      ZBarrier::keep_alive_barrier_on_phantom_root_oop_field(p);
+    } else {
+      ZBarrier::load_barrier_on_root_oop_field(p);
+    }
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
+void ZNMethod::nmethod_oops_barrier(nmethod* nm) {
+  ZNMethodOopClosure cl;
+  nmethod_oops_do_inner(nm, &cl);
 }
 
 void ZNMethod::nmethods_do_begin() {
@@ -307,8 +330,7 @@ public:
 
     if (ZNMethod::is_armed(nm)) {
       // Heal oops and disarm
-      ZNMethodOopClosure cl;
-      ZNMethod::nmethod_oops_do(nm, &cl);
+      ZNMethod::nmethod_oops_barrier(nm);
       ZNMethod::disarm(nm);
     }
 
@@ -356,7 +378,7 @@ void ZNMethod::unlink(ZWorkers* workers, bool unloading_occurred) {
 
     {
       ZNMethodUnlinkTask task(unloading_occurred, &verifier);
-      workers->run_concurrent(&task);
+      workers->run(&task);
       if (task.success()) {
         return;
       }
@@ -401,5 +423,5 @@ public:
 
 void ZNMethod::purge(ZWorkers* workers) {
   ZNMethodPurgeTask task;
-  workers->run_concurrent(&task);
+  workers->run(&task);
 }

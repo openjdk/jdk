@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,6 +257,7 @@ public class CtwRunner {
     private String[] cmd(long classStart, long classStop) {
         String phase = phaseName(classStart);
         Path file = Paths.get(phase + ".cmd");
+        var rng = Utils.getRandomInstance();
         try {
             Files.write(file, List.of(
                     "-Xbatch",
@@ -283,6 +284,14 @@ public class CtwRunner {
                     String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
                     // MethodHandle MUST NOT be compiled
                     "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
+                    // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
+                    "-XX:+IgnoreUnrecognizedVMOptions",
+                    "-XX:+StressLCM",
+                    "-XX:+StressGCM",
+                    "-XX:+StressIGVN",
+                    "-XX:+StressCCP",
+                    // StressSeed is uint
+                    "-XX:StressSeed=" + Math.abs(rng.nextLong()),
                     // CTW entry point
                     CompileTheWorld.class.getName(),
                     target));

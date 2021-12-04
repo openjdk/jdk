@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "interp_masm_x86.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -34,7 +35,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -152,7 +152,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
         // CallTypeData/VirtualCallTypeData to reach its end. Non null
         // if there's a return to profile.
         assert(ReturnTypeEntry::static_cell_count() < TypeStackSlotEntries::per_arg_count(), "can't move past ret type");
-        shll(tmp, exact_log2(DataLayout::cell_size));
+        shll(tmp, log2i_exact((int)DataLayout::cell_size));
         addptr(mdp, tmp);
       }
       movptr(Address(rbp, frame::interpreter_frame_mdp_offset * wordSize), mdp);
@@ -190,7 +190,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       cmpb(Address(_bcp_register, 0), Bytecodes::_invokehandle);
       jcc(Assembler::equal, do_profile);
       get_method(tmp);
-      cmpw(Address(tmp, Method::intrinsic_id_offset_in_bytes()), vmIntrinsics::_compiledLambdaForm);
+      cmpw(Address(tmp, Method::intrinsic_id_offset_in_bytes()), static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       jcc(Assembler::notEqual, profile_continue);
 
       bind(do_profile);
@@ -857,7 +857,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   Label no_safepoint, dispatch;
   if (table != safepoint_table && generate_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    testb(Address(r15_thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+    testb(Address(r15_thread, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
 
     jccb(Assembler::zero, no_safepoint);
     lea(rscratch1, ExternalAddress((address)safepoint_table));
@@ -876,7 +876,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     Label no_safepoint;
     const Register thread = rcx;
     get_thread(thread);
-    testb(Address(thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+    testb(Address(thread, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
 
     jccb(Assembler::zero, no_safepoint);
     ArrayAddress dispatch_addr(ExternalAddress((address)safepoint_table), index);
@@ -1204,8 +1204,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     Label done;
 
     const Register swap_reg = rax; // Must use rax for cmpxchg instruction
-    const Register tmp_reg = rbx; // Will be passed to biased_locking_enter to avoid a
-                                  // problematic case where tmp_reg = no_reg.
+    const Register tmp_reg = rbx;
     const Register obj_reg = LP64_ONLY(c_rarg3) NOT_LP64(rcx); // Will contain the oop
     const Register rklass_decode_tmp = LP64_ONLY(rscratch1) NOT_LP64(noreg);
 
@@ -1219,15 +1218,11 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     // Load object pointer into obj_reg
     movptr(obj_reg, Address(lock_reg, obj_offset));
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp_reg, obj_reg, rklass_decode_tmp);
       movl(tmp_reg, Address(tmp_reg, Klass::access_flags_offset()));
-      testl(tmp_reg, JVM_ACC_IS_BOX_CLASS);
+      testl(tmp_reg, JVM_ACC_IS_VALUE_BASED_CLASS);
       jcc(Assembler::notZero, slow_case);
-    }
-
-    if (UseBiasedLocking) {
-      biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp_reg, rklass_decode_tmp, false, done, &slow_case);
     }
 
     // Load immediate 1 into swap_reg %rax
@@ -1244,33 +1239,42 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 
     lock();
     cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-    if (PrintBiasedLockingStatistics) {
-      cond_inc32(Assembler::zero,
-                 ExternalAddress((address) BiasedLocking::fast_path_entry_count_addr()));
-    }
     jcc(Assembler::zero, done);
 
     const int zero_bits = LP64_ONLY(7) NOT_LP64(3);
 
-    // Test if the oopMark is an obvious stack pointer, i.e.,
+    // Fast check for recursive lock.
+    //
+    // Can apply the optimization only if this is a stack lock
+    // allocated in this thread. For efficiency, we can focus on
+    // recently allocated stack locks (instead of reading the stack
+    // base and checking whether 'mark' points inside the current
+    // thread stack):
     //  1) (mark & zero_bits) == 0, and
     //  2) rsp <= mark < mark + os::pagesize()
+    //
+    // Warning: rsp + os::pagesize can overflow the stack base. We must
+    // neither apply the optimization for an inflated lock allocated
+    // just above the thread stack (this is why condition 1 matters)
+    // nor apply the optimization if the stack lock is inside the stack
+    // of another thread. The latter is avoided even in case of overflow
+    // because we have guard pages at the end of all stacks. Hence, if
+    // we go over the stack base and hit the stack of another thread,
+    // this should not be in a writeable area that could contain a
+    // stack lock allocated by that thread. As a consequence, a stack
+    // lock less than page size away from rsp is guaranteed to be
+    // owned by the current thread.
     //
     // These 3 tests can be done by evaluating the following
     // expression: ((mark - rsp) & (zero_bits - os::vm_page_size())),
     // assuming both stack pointer and pagesize have their
     // least significant bits clear.
-    // NOTE: the oopMark is in swap_reg %rax as the result of cmpxchg
+    // NOTE: the mark is in swap_reg %rax as the result of cmpxchg
     subptr(swap_reg, rsp);
     andptr(swap_reg, zero_bits - os::vm_page_size());
 
     // Save the test result, for recursive case, the result is zero
     movptr(Address(lock_reg, mark_offset), swap_reg);
-
-    if (PrintBiasedLockingStatistics) {
-      cond_inc32(Assembler::zero,
-                 ExternalAddress((address) BiasedLocking::fast_path_entry_count_addr()));
-    }
     jcc(Assembler::zero, done);
 
     bind(slow_case);
@@ -1321,10 +1325,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 
     // Free entry
     movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), (int32_t)NULL_WORD);
-
-    if (UseBiasedLocking) {
-      biased_locking_exit(obj_reg, header_reg, done);
-    }
 
     // Load the old header from BasicLock structure
     movptr(header_reg, Address(swap_reg,

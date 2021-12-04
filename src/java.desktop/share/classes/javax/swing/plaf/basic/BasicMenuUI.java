@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.ArrayList;
  * @author David Karlton
  * @author Arnaud Weber
  */
+@SuppressWarnings("doclint:missing")
 public class BasicMenuUI extends BasicMenuItemUI
 {
     /**
@@ -297,20 +298,20 @@ public class BasicMenuUI extends BasicMenuItemUI
             final MenuSelectionManager defaultManager = MenuSelectionManager.defaultManager();
             if(force) {
                 Container cnt = menu.getParent();
-                if(cnt != null && cnt instanceof JMenuBar) {
+                if (cnt instanceof JMenuBar menuBar) {
                     MenuElement[] me;
                     MenuElement[] subElements;
 
                     subElements = menu.getPopupMenu().getSubElements();
                     if(subElements.length > 0) {
                         me = new MenuElement[4];
-                        me[0] = (MenuElement) cnt;
+                        me[0] = menuBar;
                         me[1] = menu;
                         me[2] = menu.getPopupMenu();
                         me[3] = subElements[0];
                     } else {
                         me = new MenuElement[3];
-                        me[0] = (MenuElement)cnt;
+                        me[0] = menuBar;
                         me[1] = menu;
                         me[2] = menu.getPopupMenu();
                     }
@@ -512,10 +513,10 @@ public class BasicMenuUI extends BasicMenuItemUI
                     manager.clearSelectedPath();
                 } else {
                     Container cnt = menu.getParent();
-                    if(cnt != null && cnt instanceof JMenuBar) {
+                    if (cnt instanceof JMenuBar menuBar) {
                         MenuElement[] me = new MenuElement[2];
-                        me[0]=(MenuElement)cnt;
-                        me[1]=menu;
+                        me[0] = menuBar;
+                        me[1] = menu;
                         manager.setSelectedPath(me);
                     }
                 }

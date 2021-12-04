@@ -196,12 +196,14 @@ void VersionInfo::fillBuffer(std::ostream& buf) const {
         writeWORD(buf, 0); // wValueLength
         writeWORD(buf, 1); // wType
 
-        const std::wstring strLangId = (std::wstringstream()
+        std::wstringstream strLangIdBuf;
+        strLangIdBuf
             << std::uppercase
             << std::hex
             << std::setw(8)
             << std::setfill(L'0')
-            << engLangId).str();
+            << engLangId;
+        const std::wstring strLangId = strLangIdBuf.str();
         write(buf, strLangId); // szKey
         add32bitPadding(buf); // Padding
 

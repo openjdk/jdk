@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,27 @@
 /*
  * @test
  * @key headful
- * @bug 5074573
+ * @bug 5074573 8196100
  * @summary tests delte-next-word and delete-prev-word actions for all text compnents and all look&feels
- * @author Igor Kushnirskiy
  * @run main bug5074573
  */
 
-import java.util.*;
 import java.awt.Robot;
-import java.awt.Toolkit;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.text.*;
+import java.awt.event.KeyEvent;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.swing.JEditorPane;
+import javax.swing.JFormattedTextField;
+import javax.swing.JFrame;
+import javax.swing.JPasswordField;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.text.Caret;
+import javax.swing.text.JTextComponent;
 
 public class bug5074573 {
 
@@ -148,6 +157,7 @@ public class bug5074573 {
             textComponent.setText(testString);
             frame.add(textComponent);
             frame.pack();
+            frame.setLocationRelativeTo(null);
             frame.setVisible(true);
             textComponent.requestFocus();
             Caret caret = textComponent.getCaret();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,29 +27,12 @@ package java.net;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.Set;
 
 /**
  * Abstract datagram and multicast socket implementation base class.
- *
- * @implNote Sockets created with the {@code DatagramSocket} and {@code
- * MulticastSocket} public constructors historically delegated all socket
- * operations to a {@code DatagramSocketImpl} implementation named
- * "PlainDatagramSocketImpl". {@code DatagramSocket} and {@code MulticastSocket}
- * have since been changed to a new implementation based on {@code DatagramChannel}.
- * The JDK continues to ship with the older implementation to allow code to run
- * that depends on unspecified behavior that differs between the old and new
- * implementations. The old implementation will be used if the Java virtual
- * machine is started with the system property {@systemProperty
- * jdk.net.usePlainDatagramSocketImpl} set to use the old implementation. It may
- * also be set in the JDK's network configuration file, located in {@code
- * ${java.home}/conf/net.properties}. The value of the property is the string
- * representation of a boolean. If set without a value then it defaults to {@code
- * true}, hence running with {@code -Djdk.net.usePlainDatagramSocketImpl} or
- * {@code -Djdk.net.usePlainDatagramSocketImpl=true} will configure the Java
- * virtual machine to use the old implementation. The property and old
- * implementation will be removed in a future version.
  *
  * @author Pavani Diwanji
  * @since  1.1
@@ -117,19 +100,30 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      * packet has been received for that address, then a subsequent call to
      * send or receive may throw a PortUnreachableException.
      * Note, there is no guarantee that the exception will be thrown.
+     *
+     * @implSpec The default implementation of this method throws {@code SocketException}.
+     *
      * @param   address the remote InetAddress to connect to
      * @param   port the remote port number
      * @throws  SocketException may be thrown if the socket cannot be
      *          connected to the remote destination
      * @since   1.4
      */
-    protected void connect(InetAddress address, int port) throws SocketException {}
+    protected void connect(InetAddress address, int port) throws SocketException {
+        throw new SocketException("connect not implemented");
+    }
 
     /**
      * Disconnects a datagram socket from its remote destination.
+     *
+     * @implSpec The default implementation of this method throws {@code UncheckedIOException}.
+     *
+     * @throws UncheckedIOException if disconnect fails or no implementation is provided
      * @since 1.4
      */
-    protected void disconnect() {}
+    protected void disconnect() {
+        throw new UncheckedIOException(new SocketException("disconnect not implemented"));
+    }
 
     /**
      * Peek at the packet to see who it is from. Updates the specified {@code InetAddress}

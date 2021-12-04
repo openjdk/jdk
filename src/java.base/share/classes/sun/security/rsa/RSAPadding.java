@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,39 +238,31 @@ public final class RSAPadding {
     /**
      * Pad the data and return the padded block.
      */
-    public byte[] pad(byte[] data, int ofs, int len)
-            throws BadPaddingException {
-        return pad(RSACore.convert(data, ofs, len));
+    public byte[] pad(byte[] data) throws BadPaddingException {
+        return pad(data, 0, data.length);
     }
 
     /**
      * Pad the data and return the padded block.
      */
-    public byte[] pad(byte[] data) throws BadPaddingException {
-        if (data.length > maxDataSize) {
+    public byte[] pad(byte[] data, int ofs, int len)
+            throws BadPaddingException {
+        if (len > maxDataSize) {
             throw new BadPaddingException("Data must be shorter than "
                 + (maxDataSize + 1) + " bytes but received "
-                + data.length + " bytes.");
+                + len + " bytes.");
         }
         switch (type) {
         case PAD_NONE:
-            return data;
+            return RSACore.convert(data, ofs, len);
         case PAD_BLOCKTYPE_1:
         case PAD_BLOCKTYPE_2:
-            return padV15(data);
+            return padV15(data, ofs, len);
         case PAD_OAEP_MGF1:
-            return padOAEP(data);
+            return padOAEP(data, ofs, len);
         default:
             throw new AssertionError();
         }
-    }
-
-    /**
-     * Unpad the padded block and return the data.
-     */
-    public byte[] unpad(byte[] padded, int ofs, int len)
-            throws BadPaddingException {
-        return unpad(RSACore.convert(padded, ofs, len));
     }
 
     /**
@@ -298,11 +290,10 @@ public final class RSAPadding {
     /**
      * PKCS#1 v1.5 padding (blocktype 1 and 2).
      */
-    private byte[] padV15(byte[] data) throws BadPaddingException {
+    private byte[] padV15(byte[] data, int ofs, int len) throws BadPaddingException {
         byte[] padded = new byte[paddedSize];
-        System.arraycopy(data, 0, padded, paddedSize - data.length,
-            data.length);
-        int psSize = paddedSize - 3 - data.length;
+        System.arraycopy(data, ofs, padded, paddedSize - len, len);
+        int psSize = paddedSize - 3 - len;
         int k = 0;
         padded[k++] = 0;
         padded[k++] = (byte)type;
@@ -388,7 +379,7 @@ public final class RSAPadding {
      * PKCS#1 v2.0 OAEP padding (MGF1).
      * Paragraph references refer to PKCS#1 v2.1 (June 14, 2002)
      */
-    private byte[] padOAEP(byte[] M) throws BadPaddingException {
+    private byte[] padOAEP(byte[] M, int ofs, int len) throws BadPaddingException {
         if (random == null) {
             random = JCAUtil.getSecureRandom();
         }
@@ -415,7 +406,7 @@ public final class RSAPadding {
         int dbLen = EM.length - dbStart;
 
         // start of message M in EM
-        int mStart = paddedSize - M.length;
+        int mStart = paddedSize - len;
 
         // build DB
         // 2.b: Concatenate lHash, PS, a single octet with hexadecimal value
@@ -424,7 +415,7 @@ public final class RSAPadding {
         // (note that PS is all zeros)
         System.arraycopy(lHash, 0, EM, dbStart, hLen);
         EM[mStart - 1] = 1;
-        System.arraycopy(M, 0, EM, mStart, M.length);
+        System.arraycopy(M, ofs, EM, mStart, len);
 
         // produce maskedDB
         mgf.generateAndXor(EM, seedStart, seedLen, dbLen, EM, dbStart);

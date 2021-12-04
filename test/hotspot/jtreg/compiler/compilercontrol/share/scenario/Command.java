@@ -39,6 +39,7 @@ public enum Command {
             "-XX:+LogCompilation", "-XX:LogFile=" + LogProcessor.LOG_FILE),
     PRINT("print", ""),
     QUIET("quiet", ""),
+    INTRINSIC("ControlIntrinsic", ""),
     NONEXISTENT("nonexistent", ""); // wrong command for a negative case
 
     /**

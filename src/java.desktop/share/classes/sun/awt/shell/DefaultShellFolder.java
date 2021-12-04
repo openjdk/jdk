@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package sun.awt.shell;
 
 import java.io.File;
-import java.security.AccessController;
-import javax.swing.Icon;
-import sun.security.action.GetPropertyAction;
+import java.io.Serial;
 
 /**
  * @author Michael Martak
@@ -52,6 +50,7 @@ class DefaultShellFolder extends ShellFolder {
      *
      * @return a java.io.File replacement object.
      */
+    @Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
         return new File(getPath());
     }

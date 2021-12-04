@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,6 @@ if [ "x$COPYRIGHT_YEARS" != x ]; then
 __END__
 fi
 
-$NAWK ' /^#.*Copyright.*Oracle/ { next }
+$AWK ' /^#.*Copyright.*Oracle/ { next }
     /^#([^!]|$)/ { sub(/^#/, " *"); print }
     /^$/ { print " */"; exit } ' $0

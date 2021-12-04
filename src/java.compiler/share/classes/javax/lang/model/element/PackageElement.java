@@ -40,9 +40,8 @@ import javax.lang.model.type.TypeMirror;
  */
 public interface PackageElement extends Element, QualifiedNameable {
     /**
-     * Returns a {@linkplain javax.lang.model.type.NoType pseudo-type}
-     * for this package.
-     * @return a pseudo-type for this package
+     * {@return a {@linkplain javax.lang.model.type.NoType pseudo-type}
+     * for this package}
      *
      * @see javax.lang.model.type.NoType
      * @see javax.lang.model.type.TypeKind#PACKAGE
@@ -81,38 +80,31 @@ public interface PackageElement extends Element, QualifiedNameable {
     Name getSimpleName();
 
     /**
-     * Returns the {@linkplain NestingKind#TOP_LEVEL top-level}
-     * classes and interfaces within this package.  Note that
+     * {@return the {@linkplain NestingKind#TOP_LEVEL top-level}
+     * classes and interfaces within this package}  Note that
      * subpackages are <em>not</em> considered to be enclosed by a
      * package.
-     *
-     * @return the top-level classes and interfaces within this
-     * package
      */
     @Override
     List<? extends Element> getEnclosedElements();
 
     /**
-     * Returns {@code true} if this is an unnamed package and {@code
-     * false} otherwise.
+     * {@return {@code true} if this is an unnamed package and {@code
+     * false} otherwise}
      *
-     * @return {@code true} if this is an unnamed package and {@code
-     * false} otherwise
      * @jls 7.4.2 Unnamed Packages
      */
     boolean isUnnamed();
 
     /**
-     * Returns the enclosing module if such a module exists; otherwise
-     * returns {@code null}.
+     * {@return the enclosing module if such a module exists; otherwise
+     * {@code null}}
      *
      * One situation where a module does not exist for a package is if
      * the environment does not include modules, such as an annotation
      * processing environment configured for a {@linkplain
      * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
      * source version} without modules.
-     *
-     * @return the enclosing module or {@code null} if no such module exists
      *
      * @revised 9
      */

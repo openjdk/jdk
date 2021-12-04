@@ -1368,9 +1368,7 @@ public final class SunGraphics2D
         interpolationHint = -1;
         interpolationType = AffineTransformOp.TYPE_NEAREST_NEIGHBOR;
         boolean customHintPresent = false;
-        Iterator<?> iter = hints.keySet().iterator();
-        while (iter.hasNext()) {
-            Object key = iter.next();
+        for (Object key : hints.keySet()) {
             if (key == SunHints.KEY_RENDERING ||
                 key == SunHints.KEY_ANTIALIASING ||
                 key == SunHints.KEY_TEXT_ANTIALIASING ||
@@ -1399,9 +1397,7 @@ public final class SunGraphics2D
      */
     public void addRenderingHints(Map<?,?> hints) {
         boolean customHintPresent = false;
-        Iterator<?> iter = hints.keySet().iterator();
-        while (iter.hasNext()) {
-            Object key = iter.next();
+        for (Object key : hints.keySet()) {
             if (key == SunHints.KEY_RENDERING ||
                 key == SunHints.KEY_ANTIALIASING ||
                 key == SunHints.KEY_TEXT_ANTIALIASING ||
@@ -3180,8 +3176,6 @@ public final class SunGraphics2D
 
                         if (xform != null) {
                             assert dx1 == 0 && dy1 == 0;
-                            assert dx2 == img.getWidth(observer);
-                            assert dy2 == img.getHeight(observer);
                             AffineTransform renderTX = new AffineTransform(xform);
                             renderTX.scale(1 / widthScale, 1 / heightScale);
                             return transformImage(img, renderTX, observer);

@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
-class WorkGang;
+class WorkerThreads;
 
 class G1MappingChangedListener {
  public:
@@ -66,9 +66,11 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
 
   void set_mapping_changed_listener(G1MappingChangedListener* listener) { _listener = listener; }
 
+  void signal_mapping_changed(uint start_idx, size_t num_regions);
+
   virtual ~G1RegionToSpaceMapper() {}
 
-  virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkGang* pretouch_workers = NULL) = 0;
+  virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkerThreads* pretouch_workers = NULL) = 0;
   virtual void uncommit_regions(uint start_idx, size_t num_regions = 1) = 0;
 
   // Creates an appropriate G1RegionToSpaceMapper for the given parameters.

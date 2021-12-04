@@ -58,8 +58,7 @@ final class SocketChannelImplInstrumentor {
             long duration = EventHandler.timestamp() - start;
             if (handler.shouldCommit(duration))  {
                 SocketAddress remoteAddress = getRemoteAddress();
-                if (remoteAddress instanceof InetSocketAddress) {
-                    InetSocketAddress isa = (InetSocketAddress) remoteAddress;
+                if (remoteAddress instanceof InetSocketAddress isa) {
                     String hostString  = isa.getAddress().toString();
                     int delimiterIndex = hostString.lastIndexOf('/');
 
@@ -101,8 +100,7 @@ final class SocketChannelImplInstrumentor {
             long duration = EventHandler.timestamp() - start;
             if (handler.shouldCommit(duration)) {
                 SocketAddress remoteAddress = getRemoteAddress();
-                if (remoteAddress instanceof InetSocketAddress) {
-                    InetSocketAddress isa = (InetSocketAddress) remoteAddress;
+                if (remoteAddress instanceof InetSocketAddress isa) {
                     String hostString  = isa.getAddress().toString();
                     int delimiterIndex = hostString.lastIndexOf('/');
 
@@ -145,8 +143,7 @@ final class SocketChannelImplInstrumentor {
             if (handler.shouldCommit(duration)) {
                 long bytes = bytesWritten < 0 ? 0 : bytesWritten;
                 SocketAddress remoteAddress = getRemoteAddress();
-                if (remoteAddress instanceof InetSocketAddress) {
-                    InetSocketAddress isa = (InetSocketAddress) remoteAddress;
+                if (remoteAddress instanceof InetSocketAddress isa) {
                     String hostString  = isa.getAddress().toString();
                     int delimiterIndex = hostString.lastIndexOf('/');
 
@@ -186,8 +183,7 @@ final class SocketChannelImplInstrumentor {
             if (handler.shouldCommit(duration)) {
                 long bytes = bytesWritten < 0 ? 0 : bytesWritten;
                 SocketAddress remoteAddress = getRemoteAddress();
-                if (remoteAddress instanceof InetSocketAddress) {
-                    InetSocketAddress isa = (InetSocketAddress) remoteAddress;
+                if (remoteAddress instanceof InetSocketAddress isa) {
                     String hostString  = isa.getAddress().toString();
                     int delimiterIndex = hostString.lastIndexOf('/');
 

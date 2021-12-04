@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,10 @@ public class SettingsFrame extends Http2Frame {
 
     @Override
     public String flagAsString(int flag) {
-        switch (flag) {
-        case ACK:
-            return "ACK";
-        }
-        return super.flagAsString(flag);
+        return switch (flag) {
+            case ACK -> "ACK";
+            default -> super.flagAsString(flag);
+        };
     }
 
     @Override
@@ -56,7 +55,7 @@ public class SettingsFrame extends Http2Frame {
             if (parameters[i] != -1) {
                 sb.append(name(i))
                   .append("=")
-                  .append(Integer.toString(parameters[i]))
+                  .append(parameters[i])
                   .append(' ');
             }
         }
@@ -72,21 +71,16 @@ public class SettingsFrame extends Http2Frame {
     public static final int MAX_HEADER_LIST_SIZE = 0x6;
 
     private String name(int i) {
-        switch (i+1) {
-        case HEADER_TABLE_SIZE:
-            return "HEADER_TABLE_SIZE";
-        case ENABLE_PUSH:
-            return "ENABLE_PUSH";
-        case MAX_CONCURRENT_STREAMS:
-            return "MAX_CONCURRENT_STREAMS";
-        case INITIAL_WINDOW_SIZE:
-            return "INITIAL_WINDOW_SIZE";
-        case MAX_FRAME_SIZE:
-            return "MAX_FRAME_SIZE";
-        case MAX_HEADER_LIST_SIZE:
-            return "MAX_HEADER_LIST_SIZE";
-        }
-        return "unknown parameter";
+        return switch (i + 1) {
+            case HEADER_TABLE_SIZE      -> "HEADER_TABLE_SIZE";
+            case ENABLE_PUSH            -> "ENABLE_PUSH";
+            case MAX_CONCURRENT_STREAMS -> "MAX_CONCURRENT_STREAMS";
+            case INITIAL_WINDOW_SIZE    -> "INITIAL_WINDOW_SIZE";
+            case MAX_FRAME_SIZE         -> "MAX_FRAME_SIZE";
+            case MAX_HEADER_LIST_SIZE   -> "MAX_HEADER_LIST_SIZE";
+
+            default -> "unknown parameter";
+        };
     }
     public static final int MAX_PARAM = 0x6;
 

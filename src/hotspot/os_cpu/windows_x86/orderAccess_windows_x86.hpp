@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,22 @@ inline void OrderAccess::fence() {
   compiler_barrier();
 }
 
-inline void OrderAccess::cross_modify_fence() {
+inline void OrderAccess::cross_modify_fence_impl()
+#if _MSC_VER >= 1928
+{
+//_serialize() intrinsic is supported starting from VS2019-16.7.2
+  if (VM_Version::supports_serialize()) {
+    _serialize();
+  } else {
+    int regs[4];
+    __cpuid(regs, 0);
+  }
+}
+#else
+{
   int regs[4];
   __cpuid(regs, 0);
 }
+#endif
 
 #endif // OS_CPU_WINDOWS_X86_ORDERACCESS_WINDOWS_X86_HPP

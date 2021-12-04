@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "logging/log.hpp"
@@ -72,13 +72,12 @@ TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
   _n_threads(n_threads),
   _queue_set(queue_set),
   _offered_termination(0),
-  _blocker(Mutex::leaf, "TaskTerminator", false, Monitor::_safepoint_check_never),
+  _blocker(Mutex::nosafepoint, "TaskTerminator_lock"),
   _spin_master(NULL) { }
 
 TaskTerminator::~TaskTerminator() {
   if (_offered_termination != 0) {
     assert(_offered_termination == _n_threads, "Must be terminated or aborted");
-    assert_queue_set_empty();
   }
 
   assert(_spin_master == NULL, "Should have been reset");

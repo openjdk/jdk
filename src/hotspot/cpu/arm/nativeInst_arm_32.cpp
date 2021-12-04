@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "assembler_arm.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "code/codeCache.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_arm.hpp"

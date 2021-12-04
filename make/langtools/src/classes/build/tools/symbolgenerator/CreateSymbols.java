@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,8 @@ import com.sun.tools.classfile.Field;
 import com.sun.tools.classfile.InnerClasses_attribute;
 import com.sun.tools.classfile.InnerClasses_attribute.Info;
 import com.sun.tools.classfile.Method;
+import com.sun.tools.classfile.MethodParameters_attribute;
+import com.sun.tools.classfile.ModuleMainClass_attribute;
 import com.sun.tools.classfile.ModuleResolution_attribute;
 import com.sun.tools.classfile.ModuleTarget_attribute;
 import com.sun.tools.classfile.Module_attribute;
@@ -131,6 +133,9 @@ import com.sun.tools.classfile.Module_attribute.ProvidesEntry;
 import com.sun.tools.classfile.Module_attribute.RequiresEntry;
 import com.sun.tools.classfile.NestHost_attribute;
 import com.sun.tools.classfile.NestMembers_attribute;
+import com.sun.tools.classfile.PermittedSubclasses_attribute;
+import com.sun.tools.classfile.Record_attribute;
+import com.sun.tools.classfile.Record_attribute.ComponentInfo;
 import com.sun.tools.classfile.RuntimeAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
@@ -225,6 +230,7 @@ public class CreateSymbols {
                                                                     : null,
                                      Paths.get(ctDescriptionFile));
 
+        stripNonExistentAnnotations(data);
         splitHeaders(data.classes);
 
         Map<String, Map<Character, String>> package2Version2Module = new HashMap<>();
@@ -295,6 +301,50 @@ public class CreateSymbols {
                 }
             }
         }
+    }
+
+    private static final String PREVIEW_FEATURE_ANNOTATION_OLD =
+            "Ljdk/internal/PreviewFeature;";
+    private static final String PREVIEW_FEATURE_ANNOTATION_NEW =
+            "Ljdk/internal/javac/PreviewFeature;";
+    private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
+            "Ljdk/internal/PreviewFeature+Annotation;";
+    private static final String VALUE_BASED_ANNOTATION =
+            "Ljdk/internal/ValueBased;";
+    private static final String VALUE_BASED_ANNOTATION_INTERNAL =
+            "Ljdk/internal/ValueBased+Annotation;";
+    public static final Set<String> HARDCODED_ANNOTATIONS = new HashSet<>(
+            List.of("Ljdk/Profile+Annotation;",
+                    "Lsun/Proprietary+Annotation;",
+                    PREVIEW_FEATURE_ANNOTATION_OLD,
+                    PREVIEW_FEATURE_ANNOTATION_NEW,
+                    VALUE_BASED_ANNOTATION));
+
+    private void stripNonExistentAnnotations(LoadDescriptions data) {
+        Set<String> allClasses = data.classes.name2Class.keySet();
+        data.modules.values().forEach(mod -> {
+            stripNonExistentAnnotations(allClasses, mod.header);
+        });
+        data.classes.classes.forEach(clazz -> {
+            stripNonExistentAnnotations(allClasses, clazz.header);
+            stripNonExistentAnnotations(allClasses, clazz.fields);
+            stripNonExistentAnnotations(allClasses, clazz.methods);
+        });
+    }
+
+    private void stripNonExistentAnnotations(Set<String> allClasses, Iterable<? extends FeatureDescription> descs) {
+        descs.forEach(d -> stripNonExistentAnnotations(allClasses, d));
+    }
+
+    private void stripNonExistentAnnotations(Set<String> allClasses, FeatureDescription d) {
+        stripNonExistentAnnotations(allClasses, d.classAnnotations);
+        stripNonExistentAnnotations(allClasses, d.runtimeAnnotations);
+    }
+
+    private void stripNonExistentAnnotations(Set<String> allClasses, List<AnnotationDescription> annotations) {
+        if (annotations != null)
+            annotations.removeIf(ann -> !HARDCODED_ANNOTATIONS.contains(ann.annotationType) &&
+                                        !allClasses.contains(ann.annotationType.substring(1, ann.annotationType.length() - 1)));
     }
 
     private ZipEntry createZipEntry(String name, long timestamp) {
@@ -879,6 +929,12 @@ public class CreateSymbols {
             attributes.put(Attribute.ModuleTarget,
                            new ModuleTarget_attribute(attrIdx, targetIdx));
         }
+        if (header.moduleMainClass != null) {
+            int attrIdx = addString(cp, Attribute.ModuleMainClass);
+            int targetIdx = addString(cp, header.moduleMainClass);
+            attributes.put(Attribute.ModuleMainClass,
+                           new ModuleMainClass_attribute(attrIdx, targetIdx));
+        }
         int attrIdx = addString(cp, Attribute.Module);
         attributes.put(Attribute.Module,
                        new Module_attribute(attrIdx,
@@ -959,6 +1015,32 @@ public class CreateSymbols {
             attributes.put(Attribute.NestMembers,
                            new NestMembers_attribute(attributeString, nestMembers));
         }
+        if (header.isRecord) {
+            assert header.recordComponents != null;
+            int attributeString = addString(constantPool, Attribute.Record);
+            ComponentInfo[] recordComponents = new ComponentInfo[header.recordComponents.size()];
+            int i = 0;
+            for (RecordComponentDescription rcd : header.recordComponents) {
+                int name = addString(constantPool, rcd.name);
+                Descriptor desc = new Descriptor(addString(constantPool, rcd.descriptor));
+                Map<String, Attribute> nestedAttrs = new HashMap<>();
+                addGenericAttributes(rcd, constantPool, nestedAttrs);
+                Attributes attrs = new Attributes(nestedAttrs);
+                recordComponents[i++] = new ComponentInfo(name, desc, attrs);
+            }
+            attributes.put(Attribute.Record,
+                           new Record_attribute(attributeString, recordComponents));
+        }
+        if (header.isSealed) {
+            int attributeString = addString(constantPool, Attribute.PermittedSubclasses);
+            int[] subclasses = new int[header.permittedSubclasses.size()];
+            int i = 0;
+            for (String intf : header.permittedSubclasses) {
+                subclasses[i++] = addClass(constantPool, intf);
+            }
+            attributes.put(Attribute.PermittedSubclasses,
+                    new PermittedSubclasses_attribute(attributeString, subclasses));
+        }
         addInnerClassesAttribute(header, constantPool, attributes);
     }
 
@@ -1016,6 +1098,18 @@ public class CreateSymbols {
             attributes.put(Attribute.RuntimeVisibleParameterAnnotations,
                            new RuntimeVisibleParameterAnnotations_attribute(attributeString,
                                    annotations));
+        }
+        if (desc.methodParameters != null && !desc.methodParameters.isEmpty()) {
+            int attributeString =
+                    addString(constantPool, Attribute.MethodParameters);
+            MethodParameters_attribute.Entry[] entries =
+                    desc.methodParameters
+                        .stream()
+                        .map(p -> new MethodParameters_attribute.Entry(addString(constantPool, p.name),
+                                                                        p.flags))
+                        .toArray(s -> new MethodParameters_attribute.Entry[s]);
+            attributes.put(Attribute.MethodParameters,
+                           new MethodParameters_attribute(attributeString, entries));
         }
     }
 
@@ -1081,22 +1175,33 @@ public class CreateSymbols {
 
     private Annotation createAnnotation(List<CPInfo> constantPool, AnnotationDescription desc) {
         String annotationType = desc.annotationType;
+        Map<String, Object> values = desc.values;
 
-        if (PREVIEW_FEATURE_ANNOTATION.equals(annotationType)) {
+        if (PREVIEW_FEATURE_ANNOTATION_NEW.equals(annotationType)) {
             //the non-public PreviewFeature annotation will not be available in ct.sym,
             //replace with purely synthetic javac-internal annotation:
             annotationType = PREVIEW_FEATURE_ANNOTATION_INTERNAL;
         }
 
+        if (PREVIEW_FEATURE_ANNOTATION_OLD.equals(annotationType)) {
+            //the non-public PreviewFeature annotation will not be available in ct.sym,
+            //replace with purely synthetic javac-internal annotation:
+            annotationType = PREVIEW_FEATURE_ANNOTATION_INTERNAL;
+            values = new HashMap<>(values);
+            Boolean essentialAPI = (Boolean) values.remove("essentialAPI");
+            values.put("reflective", essentialAPI != null && !essentialAPI);
+        }
+
+        if (VALUE_BASED_ANNOTATION.equals(annotationType)) {
+            //the non-public ValueBased annotation will not be available in ct.sym,
+            //replace with purely synthetic javac-internal annotation:
+            annotationType = VALUE_BASED_ANNOTATION_INTERNAL;
+        }
+
         return new Annotation(null,
                               addString(constantPool, annotationType),
-                              createElementPairs(constantPool, desc.values));
+                              createElementPairs(constantPool, values));
     }
-    //where:
-        private static final String PREVIEW_FEATURE_ANNOTATION =
-                "Ljdk/internal/PreviewFeature;";
-        private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
-                "Ljdk/internal/PreviewFeature+Annotation;";
 
     private element_value_pair[] createElementPairs(List<CPInfo> constantPool, Map<String, Object> annotationAttributes) {
         element_value_pair[] pairs = new element_value_pair[annotationAttributes.size()];
@@ -1595,7 +1700,9 @@ public class CreateSymbols {
                         StringWriter data = new StringWriter();
                         ModuleDescription module = modules.get(e.getKey());
 
-                        module.write(data, desc.basePlatform, desc.version);
+                        if (module != null) { //module == null should only be in tests.
+                            module.write(data, desc.basePlatform, desc.version);
+                        }
 
                         for (ClassDescription clazz : e.getValue()) {
                             clazz.write(data, desc.basePlatform, desc.version);
@@ -2153,6 +2260,54 @@ public class CreateSymbols {
                                         .collect(Collectors.toList());
                 break;
             }
+            case Attribute.Record: {
+                assert feature instanceof ClassHeaderDescription;
+                Record_attribute record = (Record_attribute) attr;
+                List<RecordComponentDescription> components = new ArrayList<>();
+                for (ComponentInfo info : record.component_info_arr) {
+                    RecordComponentDescription rcd = new RecordComponentDescription();
+                    rcd.name = info.getName(cf.constant_pool);
+                    rcd.descriptor = info.descriptor.getValue(cf.constant_pool);
+                    for (Attribute nestedAttr : info.attributes) {
+                        readAttribute(cf, rcd, nestedAttr);
+                    }
+                    components.add(rcd);
+                }
+                ClassHeaderDescription chd = (ClassHeaderDescription) feature;
+                chd.isRecord = true;
+                chd.recordComponents = components;
+                break;
+            }
+            case Attribute.MethodParameters: {
+                assert feature instanceof MethodDescription;
+                MethodParameters_attribute params = (MethodParameters_attribute) attr;
+                MethodDescription method = (MethodDescription) feature;
+                method.methodParameters = new ArrayList<>();
+                for (MethodParameters_attribute.Entry e : params.method_parameter_table) {
+                    String name = cf.constant_pool.getUTF8Value(e.name_index);
+                    MethodDescription.MethodParam param =
+                            new MethodDescription.MethodParam(e.flags, name);
+                    method.methodParameters.add(param);
+                }
+                break;
+            }
+            case Attribute.PermittedSubclasses: {
+                assert feature instanceof ClassHeaderDescription;
+                PermittedSubclasses_attribute permittedSubclasses = (PermittedSubclasses_attribute) attr;
+                ClassHeaderDescription chd = (ClassHeaderDescription) feature;
+                chd.permittedSubclasses = Arrays.stream(permittedSubclasses.subtypes)
+                        .mapToObj(i -> getClassName(cf, i))
+                        .collect(Collectors.toList());
+                chd.isSealed = true;
+                break;
+            }
+            case Attribute.ModuleMainClass: {
+                ModuleMainClass_attribute moduleMainClass = (ModuleMainClass_attribute) attr;
+                assert feature instanceof ModuleHeaderDescription;
+                ModuleHeaderDescription mhd = (ModuleHeaderDescription) feature;
+                mhd.moduleMainClass = moduleMainClass.getMainClassName(cf.constant_pool);
+                break;
+            }
             default:
                 throw new IllegalStateException("Unhandled attribute: " +
                                                 attrName);
@@ -2590,6 +2745,7 @@ public class CreateSymbols {
         List<ProvidesDescription> provides = new ArrayList<>();
         Integer moduleResolution;
         String moduleTarget;
+        String moduleMainClass;
 
         @Override
         public int hashCode() {
@@ -2602,6 +2758,7 @@ public class CreateSymbols {
             hash = 83 * hash + Objects.hashCode(this.provides);
             hash = 83 * hash + Objects.hashCode(this.moduleResolution);
             hash = 83 * hash + Objects.hashCode(this.moduleTarget);
+            hash = 83 * hash + Objects.hashCode(this.moduleMainClass);
             return hash;
         }
 
@@ -2638,6 +2795,10 @@ public class CreateSymbols {
             }
             if (!Objects.equals(this.moduleResolution,
                                 other.moduleResolution)) {
+                return false;
+            }
+            if (!Objects.equals(this.moduleMainClass,
+                                other.moduleMainClass)) {
                 return false;
             }
             return true;
@@ -2677,6 +2838,8 @@ public class CreateSymbols {
                 output.append(" resolution " +
                               quote(Integer.toHexString(moduleResolution),
                                     true));
+            if (moduleMainClass != null)
+                output.append(" moduleMainClass " + quote(moduleMainClass, true));
             writeAttributes(output);
             output.append("\n");
             writeInnerClasses(output, baselineVersion, version);
@@ -2720,6 +2883,8 @@ public class CreateSymbols {
                         reader.attributes.get("resolution");
                 moduleResolution = Integer.parseInt(resolutionFlags, 16);
             }
+
+            moduleMainClass = reader.attributes.get("moduleMainClass");
 
             readAttributes(reader);
             reader.moveNext();
@@ -2999,6 +3164,10 @@ public class CreateSymbols {
         List<String> implementsAttr;
         String nestHost;
         List<String> nestMembers;
+        boolean isRecord;
+        List<RecordComponentDescription> recordComponents;
+        boolean isSealed;
+        List<String> permittedSubclasses;
 
         @Override
         public int hashCode() {
@@ -3007,6 +3176,10 @@ public class CreateSymbols {
             hash = 17 * hash + Objects.hashCode(this.implementsAttr);
             hash = 17 * hash + Objects.hashCode(this.nestHost);
             hash = 17 * hash + Objects.hashCode(this.nestMembers);
+            hash = 17 * hash + Objects.hashCode(this.isRecord);
+            hash = 17 * hash + Objects.hashCode(this.recordComponents);
+            hash = 17 * hash + Objects.hashCode(this.isSealed);
+            hash = 17 * hash + Objects.hashCode(this.permittedSubclasses);
             return hash;
         }
 
@@ -3031,6 +3204,18 @@ public class CreateSymbols {
             if (!listEquals(this.nestMembers, other.nestMembers)) {
                 return false;
             }
+            if (this.isRecord != other.isRecord) {
+                return false;
+            }
+            if (!listEquals(this.recordComponents, other.recordComponents)) {
+                return false;
+            }
+            if (this.isSealed != other.isSealed) {
+                return false;
+            }
+            if (!listEquals(this.permittedSubclasses, other.permittedSubclasses)) {
+                return false;
+            }
             return true;
         }
 
@@ -3048,8 +3233,15 @@ public class CreateSymbols {
                 output.append(" nestHost " + nestHost);
             if (nestMembers != null && !nestMembers.isEmpty())
                 output.append(" nestMembers " + serializeList(nestMembers));
+            if (isRecord) {
+                output.append(" record true");
+            }
+            if (isSealed) {
+                output.append(" sealed true");
+            }
             writeAttributes(output);
             output.append("\n");
+            writeRecordComponents(output, baselineVersion, version);
             writeInnerClasses(output, baselineVersion, version);
         }
 
@@ -3065,14 +3257,42 @@ public class CreateSymbols {
             nestHost = reader.attributes.get("nestHost");
             String nestMembersList = reader.attributes.get("nestMembers");
             nestMembers = deserializeList(nestMembersList);
+            isRecord = reader.attributes.containsKey("record");
 
             readAttributes(reader);
             reader.moveNext();
+            if (isRecord) {
+                readRecordComponents(reader);
+            }
             readInnerClasses(reader);
+            isSealed = reader.attributes.containsKey("permittedSubclasses");
+            if (isSealed) {
+                String subclassesList = reader.attributes.get("permittedSubclasses");
+                permittedSubclasses = deserializeList(subclassesList);
+            }
 
             return true;
         }
 
+        protected void writeRecordComponents(Appendable output,
+                                              String baselineVersion,
+                                              String version) throws IOException {
+            if (recordComponents != null) {
+                for (RecordComponentDescription rcd : recordComponents) {
+                    rcd.write(output, "", "");
+                }
+            }
+        }
+
+        protected void readRecordComponents(LineBasedReader reader) throws IOException {
+            recordComponents = new ArrayList<>();
+
+            while ("recordcomponent".equals(reader.lineKey)) {
+                RecordComponentDescription rcd = new RecordComponentDescription();
+                rcd.read(reader);
+                recordComponents.add(rcd);
+            }
+        }
     }
 
     static abstract class HeaderDescription extends FeatureDescription {
@@ -3145,6 +3365,7 @@ public class CreateSymbols {
         Object annotationDefaultValue;
         List<List<AnnotationDescription>> classParameterAnnotations;
         List<List<AnnotationDescription>> runtimeParameterAnnotations;
+        List<MethodParam> methodParameters;
 
         public MethodDescription() {
             flagsNormalization = METHODS_FLAGS_NORMALIZATION;
@@ -3221,6 +3442,15 @@ public class CreateSymbols {
                     output.append(";");
                 }
             }
+            if (methodParameters != null && !methodParameters.isEmpty()) {
+                Function<MethodParam, String> param2String =
+                        p -> Integer.toHexString(p.flags) + ":" + p.name;
+                List<String> paramsAsStrings =
+                        methodParameters.stream()
+                                         .map(param2String)
+                                         .collect(Collectors.toList());
+                output.append(" methodParameters " + serializeList(paramsAsStrings));
+            }
             output.append("\n");
         }
 
@@ -3268,17 +3498,41 @@ public class CreateSymbols {
                 runtimeParameterAnnotations = annos;
             }
 
+            String inMethodParameters = reader.attributes.get("methodParameters");
+            if (inMethodParameters != null) {
+                Function<String, MethodParam> string2Param =
+                        p -> {
+                            int sep = p.indexOf(':');
+                            return new MethodParam(Integer.parseInt(p.substring(0, sep)),
+                                                    p.substring(sep + 1));
+                        };
+                methodParameters =
+                        deserializeList(inMethodParameters).stream()
+                                                          .map(string2Param)
+                                                          .collect(Collectors.toList());
+            }
+
             reader.moveNext();
 
             return true;
         }
 
+        public static class MethodParam {
+            public final int flags;
+            public final String name;
+
+            public MethodParam(int flags, String name) {
+                this.flags = flags;
+                this.name = name;
+            }
+        }
     }
 
     static class FieldDescription extends FeatureDescription {
         String name;
         String descriptor;
         Object constantValue;
+        String keyName = "field";
 
         @Override
         public int hashCode() {
@@ -3315,13 +3569,13 @@ public class CreateSymbols {
             if (shouldIgnore(baselineVersion, version))
                 return ;
             if (!versions.contains(version)) {
-                output.append("-field");
+                output.append("-" + keyName);
                 output.append(" name " + quote(name, false));
                 output.append(" descriptor " + quote(descriptor, false));
                 output.append("\n");
                 return ;
             }
-            output.append("field");
+            output.append(keyName);
             output.append(" name " + name);
             output.append(" descriptor " + descriptor);
             if (constantValue != null) {
@@ -3333,7 +3587,7 @@ public class CreateSymbols {
 
         @Override
         public boolean read(LineBasedReader reader) throws IOException {
-            if (!"field".equals(reader.lineKey))
+            if (!keyName.equals(reader.lineKey))
                 return false;
 
             name = reader.attributes.get("name");
@@ -3362,6 +3616,19 @@ public class CreateSymbols {
             reader.moveNext();
 
             return true;
+        }
+
+    }
+
+    static final class RecordComponentDescription extends FieldDescription {
+
+        public RecordComponentDescription() {
+            this.keyName = "recordcomponent";
+        }
+
+        @Override
+        protected boolean shouldIgnore(String baselineVersion, String version) {
+            return false;
         }
 
     }

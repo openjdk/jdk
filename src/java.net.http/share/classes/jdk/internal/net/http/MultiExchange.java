@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@ import java.lang.ref.WeakReference;
 import java.net.ConnectException;
 import java.net.http.HttpConnectTimeoutException;
 import java.time.Duration;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.security.AccessControlContext;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
@@ -79,6 +79,7 @@ class MultiExchange<T> implements Cancelable {
     private final HttpRequest userRequest; // the user request
     private final HttpRequestImpl request; // a copy of the user request
     private final ConnectTimeoutTracker connectTimeout; // null if no timeout
+    @SuppressWarnings("removal")
     final AccessControlContext acc;
     final HttpClientImpl client;
     final HttpResponse.BodyHandler<T> responseHandler;
@@ -99,7 +100,7 @@ class MultiExchange<T> implements Cancelable {
             "jdk.httpclient.redirects.retrylimit", DEFAULT_MAX_ATTEMPTS
     );
 
-    private final LinkedList<HeaderFilter> filters;
+    private final List<HeaderFilter> filters;
     ResponseTimerEvent responseTimerEvent;
     volatile boolean cancelled;
     AtomicReference<CancellationException> interrupted = new AtomicReference<>();
@@ -155,7 +156,7 @@ class MultiExchange<T> implements Cancelable {
                   HttpClientImpl client,
                   HttpResponse.BodyHandler<T> responseHandler,
                   PushPromiseHandler<T> pushPromiseHandler,
-                  AccessControlContext acc) {
+                  @SuppressWarnings("removal") AccessControlContext acc) {
         this.previous = null;
         this.userRequest = userRequest;
         this.request = requestImpl;
@@ -240,9 +241,9 @@ class MultiExchange<T> implements Cancelable {
     private HttpRequestImpl responseFilters(Response response) throws IOException
     {
         Log.logTrace("Applying response filters");
-        Iterator<HeaderFilter> reverseItr = filters.descendingIterator();
-        while (reverseItr.hasNext()) {
-            HeaderFilter filter = reverseItr.next();
+        ListIterator<HeaderFilter> reverseItr = filters.listIterator(filters.size());
+        while (reverseItr.hasPrevious()) {
+            HeaderFilter filter = reverseItr.previous();
             Log.logTrace("Applying {0}", filter);
             HttpRequestImpl newreq = filter.response(response);
             if (newreq != null) {
@@ -471,18 +472,15 @@ class MultiExchange<T> implements Cancelable {
     /** True if ALL ( even non-idempotent ) requests can be automatic retried. */
     private static final boolean RETRY_ALWAYS = retryPostValue();
     /** True if ConnectException should cause a retry. Enabled by default */
-    private static final boolean RETRY_CONNECT = !disableRetryConnect();
+    static final boolean RETRY_CONNECT = !disableRetryConnect();
 
     /** Returns true is given request has an idempotent method. */
     private static boolean isIdempotentRequest(HttpRequest request) {
         String method = request.method();
-        switch (method) {
-            case "GET" :
-            case "HEAD" :
-                return true;
-            default :
-                return false;
-        }
+        return switch (method) {
+            case "GET", "HEAD" -> true;
+            default -> false;
+        };
     }
 
     /** Returns true if the given request can be automatically retried. */

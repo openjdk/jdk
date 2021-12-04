@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,10 @@ public class ProxyTest {
         try {
             Constructor<?> cons = proxyClass.getConstructor(InvocationHandler.class);
             cons.newInstance(handler);
-            throw new RuntimeException("Expected IllegalAccessException: " + proxyClass);
+            // the exported package has the same name as the dynamic module
+            if (!proxyClass.getPackageName().equals(m.getName())) {
+                throw new RuntimeException("Expected IllegalAccessException: " + proxyClass);
+            }
         } catch (IllegalAccessException e) {
             // expected
         } catch (NoSuchMethodException|InstantiationException|InvocationTargetException e) {

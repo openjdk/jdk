@@ -37,8 +37,7 @@ public class GSSUtil {
     /**
      * Do not call.
      */
-    @Deprecated(since="16", forRemoval=true)
-    public GSSUtil() {}
+    private GSSUtil() {}
 
     /**
      * Use this method to convert a GSSName and GSSCredential into a

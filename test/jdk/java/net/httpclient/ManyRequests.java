@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8087112 8180044
+ * @bug 8087112 8180044 8256459
  * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
@@ -51,14 +51,20 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Builder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.CompletableFuture;
@@ -81,16 +87,21 @@ public class ManyRequests {
 
         InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         HttpsServer server = HttpsServer.create(addr, 0);
+        ExecutorService executor = executorFor("HTTPS/1.1 Server Thread");
         server.setHttpsConfigurator(new Configurator(ctx));
+        server.setExecutor(executor);
 
         HttpClient client = HttpClient.newBuilder()
+                                      .proxy(Builder.NO_PROXY)
                                       .sslContext(ctx)
+                                      .connectTimeout(Duration.ofMillis(120_000)) // 2mins
                                       .build();
         try {
             test(server, client);
             System.out.println("OK");
         } finally {
             server.stop(0);
+            executor.shutdownNow();
         }
     }
 
@@ -102,7 +113,7 @@ public class ManyRequests {
     static final boolean XFIXED = Boolean.getBoolean("test.XFixed");
 
     static class TestEchoHandler extends EchoHandler {
-        final Random rand = new Random();
+        final Random rand = jdk.test.lib.RandomFactory.getRandom();
         @Override
         public void handle(HttpExchange e) throws IOException {
             System.out.println("Server: received " + e.getRequestURI());
@@ -279,4 +290,18 @@ public class ManyRequests {
             params.setSSLParameters(getSSLContext().getSupportedSSLParameters());
         }
     }
+
+    private static ExecutorService executorFor(String serverThreadName) {
+        ThreadFactory factory = new ThreadFactory() {
+            final AtomicInteger counter = new AtomicInteger();
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName(serverThreadName + "#" + counter.incrementAndGet());
+                return thread;
+            }
+        };
+        return Executors.newCachedThreadPool(factory);
+    }
+
 }

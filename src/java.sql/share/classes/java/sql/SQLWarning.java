@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ package java.sql;
  * warnings. Warnings are silently chained to the object whose method
  * caused it to be reported.
  * <P>
- * Warnings may be retrieved from <code>Connection</code>, <code>Statement</code>,
- * and <code>ResultSet</code> objects.  Trying to retrieve a warning on a
+ * Warnings may be retrieved from {@code Connection}, {@code Statement},
+ * and {@code ResultSet} objects.  Trying to retrieve a warning on a
  * connection after it has been closed will cause an exception to be thrown.
  * Similarly, trying to retrieve a warning on a statement after it has been
  * closed or on a result set after it has been closed will cause
@@ -46,11 +46,11 @@ package java.sql;
 public class SQLWarning extends SQLException {
 
     /**
-     * Constructs a  <code>SQLWarning</code> object
-     *  with a given <code>reason</code>, <code>SQLState</code>  and
-     * <code>vendorCode</code>.
+     * Constructs a  {@code SQLWarning} object
+     *  with a given {@code reason}, {@code SQLState}  and
+     * {@code vendorCode}.
      *
-     * The <code>cause</code> is not initialized, and may subsequently be
+     * The {@code cause} is not initialized, and may subsequently be
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method.
      *
@@ -67,10 +67,10 @@ public class SQLWarning extends SQLException {
 
 
     /**
-     * Constructs a <code>SQLWarning</code> object
-     * with a given <code>reason</code> and <code>SQLState</code>.
+     * Constructs a {@code SQLWarning} object
+     * with a given {@code reason} and {@code SQLState}.
      *
-     * The <code>cause</code> is not initialized, and may subsequently be
+     * The {@code cause} is not initialized, and may subsequently be
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method. The vendor code
      * is initialized to 0.
@@ -85,12 +85,12 @@ public class SQLWarning extends SQLException {
     }
 
     /**
-     * Constructs a <code>SQLWarning</code> object
-     * with a given <code>reason</code>. The <code>SQLState</code>
-     * is initialized to <code>null</code> and the vendor code is initialized
+     * Constructs a {@code SQLWarning} object
+     * with a given {@code reason}. The {@code SQLState}
+     * is initialized to {@code null} and the vendor code is initialized
      * to 0.
      *
-     * The <code>cause</code> is not initialized, and may subsequently be
+     * The {@code cause} is not initialized, and may subsequently be
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method.
      *
@@ -102,11 +102,11 @@ public class SQLWarning extends SQLException {
     }
 
     /**
-     * Constructs a  <code>SQLWarning</code> object.
-     * The <code>reason</code>, <code>SQLState</code> are initialized
-     * to <code>null</code> and the vendor code is initialized to 0.
+     * Constructs a  {@code SQLWarning} object.
+     * The {@code reason}, {@code SQLState} are initialized
+     * to {@code null} and the vendor code is initialized to 0.
      *
-     * The <code>cause</code> is not initialized, and may subsequently be
+     * The {@code cause} is not initialized, and may subsequently be
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method.
      *
@@ -117,15 +117,15 @@ public class SQLWarning extends SQLException {
     }
 
     /**
-     * Constructs a <code>SQLWarning</code> object
-     * with a given  <code>cause</code>.
-     * The <code>SQLState</code> is initialized
-     * to <code>null</code> and the vendor code is initialized to 0.
-     * The <code>reason</code>  is initialized to <code>null</code> if
-     * <code>cause==null</code> or to <code>cause.toString()</code> if
-     * <code>cause!=null</code>.
+     * Constructs a {@code SQLWarning} object
+     * with a given  {@code cause}.
+     * The {@code SQLState} is initialized
+     * to {@code null} and the vendor code is initialized to 0.
+     * The {@code reason}  is initialized to {@code null} if
+     * {@code cause==null} or to {@code cause.toString()} if
+     * {@code cause!=null}.
      *
-     * @param cause the underlying reason for this <code>SQLWarning</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
+     * @param cause the underlying reason for this {@code SQLWarning} (which is saved for later retrieval by the {@code getCause()} method); may be null indicating
      *     the cause is non-existent or unknown.
      */
     public SQLWarning(Throwable cause) {
@@ -134,15 +134,15 @@ public class SQLWarning extends SQLException {
     }
 
     /**
-     * Constructs a <code>SQLWarning</code> object
+     * Constructs a {@code SQLWarning} object
      * with a given
-     * <code>reason</code> and  <code>cause</code>.
-     * The <code>SQLState</code> is  initialized to <code>null</code>
+     * {@code reason} and  {@code cause}.
+     * The {@code SQLState} is  initialized to {@code null}
      * and the vendor code is initialized to 0.
      *
      * @param reason a description of the warning
-     * @param cause  the underlying reason for this <code>SQLWarning</code>
-     * (which is saved for later retrieval by the <code>getCause()</code> method);
+     * @param cause  the underlying reason for this {@code SQLWarning}
+     * (which is saved for later retrieval by the {@code getCause()} method);
      * may be null indicating the cause is non-existent or unknown.
      */
     public SQLWarning(String reason, Throwable cause) {
@@ -151,14 +151,14 @@ public class SQLWarning extends SQLException {
     }
 
     /**
-     * Constructs a <code>SQLWarning</code> object
+     * Constructs a {@code SQLWarning} object
      * with a given
-     * <code>reason</code>, <code>SQLState</code> and  <code>cause</code>.
+     * {@code reason}, {@code SQLState} and  {@code cause}.
      * The vendor code is initialized to 0.
      *
      * @param reason a description of the warning
      * @param SQLState an XOPEN or SQL:2003 code identifying the warning
-     * @param cause the underlying reason for this <code>SQLWarning</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
+     * @param cause the underlying reason for this {@code SQLWarning} (which is saved for later retrieval by the {@code getCause()} method); may be null indicating
      *     the cause is non-existent or unknown.
      */
     public SQLWarning(String reason, String SQLState, Throwable cause) {
@@ -168,15 +168,15 @@ public class SQLWarning extends SQLException {
     }
 
     /**
-     * Constructs a<code>SQLWarning</code> object
+     * Constructs a{@code SQLWarning} object
      * with a given
-     * <code>reason</code>, <code>SQLState</code>, <code>vendorCode</code>
-     * and  <code>cause</code>.
+     * {@code reason}, {@code SQLState}, {@code vendorCode}
+     * and  {@code cause}.
      *
      * @param reason a description of the warning
      * @param SQLState an XOPEN or SQL:2003 code identifying the warning
      * @param vendorCode a database vendor-specific warning code
-     * @param cause the underlying reason for this <code>SQLWarning</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
+     * @param cause the underlying reason for this {@code SQLWarning} (which is saved for later retrieval by the {@code getCause()} method); may be null indicating
      *     the cause is non-existent or unknown.
      */
     public SQLWarning(String reason, String SQLState, int vendorCode, Throwable cause) {
@@ -187,10 +187,10 @@ public class SQLWarning extends SQLException {
 
     }
     /**
-     * Retrieves the warning chained to this <code>SQLWarning</code> object by
-     * <code>setNextWarning</code>.
+     * Retrieves the warning chained to this {@code SQLWarning} object by
+     * {@code setNextWarning}.
      *
-     * @return the next <code>SQLException</code> in the chain; <code>null</code> if none
+     * @return the next {@code SQLException} in the chain; {@code null} if none
      * @see #setNextWarning
      */
     public SQLWarning getNextWarning() {
@@ -205,9 +205,9 @@ public class SQLWarning extends SQLException {
     }
 
     /**
-     * Adds a <code>SQLWarning</code> object to the end of the chain.
+     * Adds a {@code SQLWarning} object to the end of the chain.
      *
-     * @param w the new end of the <code>SQLException</code> chain
+     * @param w the new end of the {@code SQLException} chain
      * @see #getNextWarning
      */
     public void setNextWarning(SQLWarning w) {

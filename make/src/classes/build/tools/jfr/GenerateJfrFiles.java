@@ -172,6 +172,7 @@ public class GenerateJfrFiles {
         boolean startTime;
         String period = "";
         boolean cutoff;
+        boolean throttle;
         boolean experimental;
         long id;
         boolean isEvent;
@@ -194,6 +195,7 @@ public class GenerateJfrFiles {
             pos.writeBoolean(startTime);
             pos.writeUTF(period);
             pos.writeBoolean(cutoff);
+            pos.writeBoolean(throttle);
             pos.writeBoolean(experimental);
             pos.writeLong(id);
             pos.writeBoolean(isEvent);
@@ -490,6 +492,7 @@ public class GenerateJfrFiles {
                 currentType.startTime = getBoolean(attributes, "startTime", true);
                 currentType.period = getString(attributes, "period");
                 currentType.cutoff = getBoolean(attributes, "cutoff", false);
+                currentType.throttle = getBoolean(attributes, "throttle", false);
                 currentType.commitState = getString(attributes, "commitState");
                 currentType.isEvent = "Event".equals(qName);
                 currentType.isRelation = "Relation".equals(qName);
@@ -759,6 +762,7 @@ public class GenerateJfrFiles {
             out.write("  void set_starttime(const Ticks&) const {}");
             out.write("  void set_endtime(const Ticks&) const {}");
             out.write("  bool should_commit() const { return false; }");
+            out.write("  bool is_started() const { return false; }");
             out.write("  static bool is_enabled() { return false; }");
             out.write("  void commit() {}");
             out.write("};");
@@ -820,6 +824,7 @@ public class GenerateJfrFiles {
             out.write("  static const bool hasStackTrace = " + event.stackTrace + ";");
             out.write("  static const bool isInstant = " + !event.startTime + ";");
             out.write("  static const bool hasCutoff = " + event.cutoff + ";");
+            out.write("  static const bool hasThrottle = " + event.throttle + ";");
             out.write("  static const bool isRequestable = " + !event.period.isEmpty() + ";");
             out.write("  static const JfrEventId eventId = Jfr" + event.name + "Event;");
             out.write("");

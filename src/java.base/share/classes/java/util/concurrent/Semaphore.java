@@ -66,7 +66,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  *
  *   // Not a particularly efficient data structure; just for demo
  *
- *   protected Object[] items = ... whatever kinds of items being managed
+ *   protected Object[] items = ...; // whatever kinds of items being managed
  *   protected boolean[] used = new boolean[MAX_AVAILABLE];
  *
  *   protected synchronized Object getNextAvailableItem() {

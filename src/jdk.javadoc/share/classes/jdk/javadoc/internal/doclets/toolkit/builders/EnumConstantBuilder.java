@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
 
                 buildSignature(enumConstantsTree);
                 buildDeprecationInfo(enumConstantsTree);
+                buildPreviewInfo(enumConstantsTree);
                 buildEnumConstantComments(enumConstantsTree);
                 buildTagInfo(enumConstantsTree);
 
@@ -152,6 +153,15 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
      */
     protected void buildDeprecationInfo(Content enumConstantsTree) {
         writer.addDeprecated(currentElement, enumConstantsTree);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param enumConstantsTree the content tree to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content enumConstantsTree) {
+        writer.addPreview(currentElement, enumConstantsTree);
     }
 
     /**

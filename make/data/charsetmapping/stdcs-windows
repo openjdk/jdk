@@ -2,6 +2,7 @@
 #   generate these charsets into sun.nio.cs
 #
 GBK
+GB18030
 Johab
 MS1255
 MS1256

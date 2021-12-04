@@ -32,7 +32,7 @@
  * @library /test/lib /test/hotspot/jtreg
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run compile -g EATests.java
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
@@ -41,7 +41,7 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -49,7 +49,7 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:-EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking -XX:-UseOptoBiasInlining
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:-EliminateLocks -XX:+EliminateNestedLocks
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -57,7 +57,7 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                 -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -65,31 +65,7 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
- * @run driver EATests
- *                 -XX:+UnlockDiagnosticVMOptions
- *                 -Xms256m -Xmx256m
- *                 -Xbootclasspath/a:.
- *                 -XX:CompileCommand=dontinline,*::dontinline_*
- *                 -XX:+WhiteBoxAPI
- *                 -Xbatch
- *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:-UseBiasedLocking
- * @run driver EATests
- *                 -XX:+UnlockDiagnosticVMOptions
- *                 -Xms256m -Xmx256m
- *                 -Xbootclasspath/a:.
- *                 -XX:CompileCommand=dontinline,*::dontinline_*
- *                 -XX:+WhiteBoxAPI
- *                 -Xbatch
- *                 -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:-UseBiasedLocking
- * @run driver EATests
- *                 -XX:+UnlockDiagnosticVMOptions
- *                 -Xms256m -Xmx256m
- *                 -Xbootclasspath/a:.
- *                 -XX:CompileCommand=dontinline,*::dontinline_*
- *                 -XX:+WhiteBoxAPI
- *                 -Xbatch
- *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:-UseBiasedLocking
+ *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *
  * @comment Excercise -XX:+DeoptimizeObjectsALot. Mostly to prevent bit-rot because the option is meant to stress object deoptimization
  *          with non-synthetic workloads.
@@ -100,7 +76,7 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:-UseBiasedLocking
+ *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                 -XX:+IgnoreUnrecognizedVMOptions -XX:+DeoptimizeObjectsALot
  *
  */
@@ -119,7 +95,7 @@
  * @library /test/lib /test/hotspot/jtreg
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run compile -g EATests.java
  *
  * @comment Test with Graal. Some testcases are expected to fail because Graal does not provide all information about non-escaping
@@ -232,14 +208,11 @@ class EATestsTarget {
 
         // Relocking test cases
         new EARelockingSimpleTarget()                                                       .run();
-        new EARelockingSimple_2Target()                                                     .run();
         new EARelockingRecursiveTarget()                                                    .run();
         new EARelockingNestedInflatedTarget()                                               .run();
         new EARelockingNestedInflated_02Target()                                            .run();
         new EARelockingArgEscapeLWLockedInCalleeFrameTarget()                               .run();
         new EARelockingArgEscapeLWLockedInCalleeFrame_2Target()                             .run();
-        new EARelockingArgEscapeLWLockedInCalleeFrame_3Target()                             .run();
-        new EARelockingArgEscapeLWLockedInCalleeFrame_4Target()                             .run();
         new EAGetOwnedMonitorsTarget()                                                      .run();
         new EAEntryCountTarget()                                                            .run();
         new EARelockingObjectCurrentlyWaitingOnTarget()                                     .run();
@@ -349,14 +322,11 @@ public class EATests extends TestScaffold {
 
         // Relocking test cases
         new EARelockingSimple()                                                       .run(this);
-        new EARelockingSimple_2()                                                     .run(this);
         new EARelockingRecursive()                                                    .run(this);
         new EARelockingNestedInflated()                                               .run(this);
         new EARelockingNestedInflated_02()                                            .run(this);
         new EARelockingArgEscapeLWLockedInCalleeFrame()                               .run(this);
         new EARelockingArgEscapeLWLockedInCalleeFrame_2()                             .run(this);
-        new EARelockingArgEscapeLWLockedInCalleeFrame_3()                             .run(this);
-        new EARelockingArgEscapeLWLockedInCalleeFrame_4()                             .run(this);
         new EAGetOwnedMonitors()                                                      .run(this);
         new EAEntryCount()                                                            .run(this);
         new EARelockingObjectCurrentlyWaitingOn()                                     .run(this);
@@ -448,15 +418,25 @@ abstract class EATestCaseBaseDebugger  extends EATestCaseBaseShared {
         }
     }
 
+    /**
+     * Set a breakpoint in the given method and resume all threads. The
+     * breakpoint is configured to suspend just the thread that reaches it
+     * instead of all threads. This is important when running with graal.
+     */
+    public BreakpointEvent resumeTo(String clsName, String methodName, String signature) {
+        boolean suspendThreadOnly = true;
+        return env.resumeTo(clsName, methodName, signature, suspendThreadOnly);
+    }
+
     public void resumeToWarmupDone() throws Exception {
         msg("resuming to " + TARGET_TESTCASE_BASE_NAME + ".warmupDone()V");
-        env.resumeTo(TARGET_TESTCASE_BASE_NAME, "warmupDone", "()V");
+        resumeTo(TARGET_TESTCASE_BASE_NAME, "warmupDone", "()V");
         testCase = env.targetMainThread.frame(0).thisObject();
     }
 
     public void resumeToTestCaseDone() {
         msg("resuming to " + TARGET_TESTCASE_BASE_NAME + ".testCaseDone()V");
-        env.resumeTo(TARGET_TESTCASE_BASE_NAME, "testCaseDone", "()V");
+        resumeTo(TARGET_TESTCASE_BASE_NAME, "testCaseDone", "()V");
     }
 
     public void checkPostConditions() throws Exception {
@@ -783,8 +763,6 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     public static final boolean DoEscapeAnalysis = unbox(WB.getBooleanVMFlag("DoEscapeAnalysis"), UseJVMCICompiler);
     public static final boolean EliminateAllocations = unbox(WB.getBooleanVMFlag("EliminateAllocations"), UseJVMCICompiler);
     public static final boolean DeoptimizeObjectsALot = WB.getBooleanVMFlag("DeoptimizeObjectsALot");
-    public static final long BiasedLockingBulkRebiasThreshold = WB.getIntxVMFlag("BiasedLockingBulkRebiasThreshold");
-    public static final long BiasedLockingBulkRevokeThreshold = WB.getIntxVMFlag("BiasedLockingBulkRevokeThreshold");
     public static final boolean ZGCIsSelected = GC.Z.isSelected();
 
     public String testMethodName;
@@ -798,13 +776,6 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
 
 
     public boolean warmupDone;
-    // With UseJVMCICompiler it is possible that a compilation is made a
-    // background compilation even though -Xbatch is given (e.g. if JVMCI is not
-    // yet fully initialized). Therefore it is possible that the test method has
-    // not reached the highest compilation level after warm-up.
-    public boolean testMethodReachedHighestCompLevel;
-
-    public volatile Object biasToBeRevoked;
 
     // an object with an inflated monitor
     public static XYVal inflatedLock;
@@ -915,7 +886,7 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
                     testCaseName + ": test method not found at depth " + testMethodDepth);
             // check if the frame is (not) deoptimized as expected
             if (!DeoptimizeObjectsALot) {
-                if (testFrameShouldBeDeoptimized() && testMethodReachedHighestCompLevel) {
+                if (testFrameShouldBeDeoptimized()) {
                     Asserts.assertTrue(WB.isFrameDeoptimized(testMethodDepth+1),
                             testCaseName + ": expected test method frame at depth " + testMethodDepth + " to be deoptimized");
                 } else {
@@ -969,16 +940,24 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
         } catch (NoSuchMethodException | SecurityException e) {
             Asserts.fail("could not check compilation level of", e);
         }
-        // Background compilation (-Xbatch) cannot always be disabled with JVMCI
-        // compiler (e.g. if JVMCI is not yet fully initialized), therefore it
-        // is possible that due to background compilation we reach here before
-        // the test method is compiled on the highest level.
         int highestLevel = CompilerUtils.getMaxCompilationLevel();
         int compLevel = WB.getMethodCompilationLevel(m);
-        testMethodReachedHighestCompLevel = highestLevel == compLevel;
         if (!UseJVMCICompiler) {
             Asserts.assertEQ(highestLevel, compLevel,
                              m + " not on expected compilation level");
+        } else {
+            // Background compilation (-Xbatch) will block a thread with timeout
+            // (see CompileBroker::wait_for_jvmci_completion()). Therefore it is
+            // possible to reach here before the main test method is compiled.
+            // In that case we wait for it to be compiled.
+            while (compLevel != highestLevel) {
+                msg(TESTMETHOD_DEFAULT_NAME + " is compiled on level " + compLevel +
+                    ". Wait until highes level (" + highestLevel + ") is reached.");
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) { /* ignored */ }
+                compLevel = WB.getMethodCompilationLevel(m);
+            }
         }
     }
 
@@ -1041,46 +1020,6 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
         }
     }
 
-    /**
-     * Trigger bulk rebiasing for the given class by creating new instances and calling <code> hashCode() </code> on them.
-     * @param cls The class to bulk rebias
-     */
-    public void dontinline_bulkRebiasAfterWarmup(Class<?> cls) {
-        if (warmupDone) {
-            try {
-                for (int i=0; i < BiasedLockingBulkRebiasThreshold+2; i++) {
-                    biasToBeRevoked = cls.getDeclaredConstructor(int.class, int.class).newInstance(1, 1);
-                    synchronized (biasToBeRevoked) { // bias towards current thread
-                        checkSum++;
-                    }
-                    biasToBeRevoked.hashCode(); // calling hashCode triggers revocation
-                }
-            } catch (Throwable e) {
-                Asserts.fail("failed to create new instance of " + cls.getName(), e);
-            }
-        }
-    }
-
-    /**
-     * Trigger bulk revoke of biases for the given class by creating new instances and calling <code> hashCode() </code> on them.
-     * @param cls The class to bulk rebias
-     */
-    public void dontinline_bulkRevokeAfterWarmup(Class<?> cls) {
-        if (warmupDone) {
-            try {
-                for (int i=0; i < BiasedLockingBulkRevokeThreshold+2; i++) {
-                    biasToBeRevoked = cls.getDeclaredConstructor(int.class, int.class).newInstance(1, 1);
-                    synchronized (biasToBeRevoked) { // bias towards current thread
-                        checkSum++;
-                    }
-                    biasToBeRevoked.hashCode(); // calling hashCode triggers revocation
-                }
-            } catch (Throwable e) {
-                Asserts.fail("failed to create new instance of " + cls.getName(), e);
-            }
-        }
-    }
-
     static class LinkedList {
         LinkedList l;
         public long[] array;
@@ -1140,7 +1079,7 @@ class EAGetWithoutMaterializeTarget extends EATestCaseBaseTarget {
 class EAGetWithoutMaterialize extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         ObjectReference o = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "xy");
         checkPrimitiveField(o, FD.I, "x", 4);
@@ -1164,7 +1103,7 @@ class EAMaterializeLocalVariableUponGet extends EATestCaseBaseDebugger {
     private ObjectReference o;
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         // check 1.
         o = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "xy");
@@ -1203,7 +1142,7 @@ class EAMaterializeLocalVariableUponGetTarget extends EATestCaseBaseTarget {
 // call that will return another object
 class EAMaterializeLocalAtObjectReturn extends EATestCaseBaseDebugger {
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         ObjectReference o = getLocalRef(bpe.thread().frame(2), XYVAL_NAME, "xy");
         checkPrimitiveField(o, FD.I, "x", 4);
@@ -1248,17 +1187,22 @@ class EAMaterializeLocalAtObjectReturnTarget extends EATestCaseBaseTarget {
 class EAMaterializeLocalAtObjectPollReturnReturn extends EATestCaseBaseDebugger {
     public void runTestCase() throws Exception {
         msg("Resume " + env.targetMainThread);
-        env.targetMainThread.resume();
+        env.vm().resume();
         waitUntilTargetHasEnteredEndlessLoop();
         ObjectReference o = null;
+        int retryCount = 0;
         do {
             env.targetMainThread.suspend();
             printStack(env.targetMainThread);
             try {
                 o = getLocalRef(env.targetMainThread.frame(0), XYVAL_NAME, "xy");
             } catch (Exception e) {
-                msg("The local variable xy is out of scope because we suspended at the wrong bci. Resume and try again!");
+                ++retryCount;
+                msg("The local variable xy is out of scope because we suspended at the wrong bci. Resume and try again! (" + retryCount + ")");
                 env.targetMainThread.resume();
+                if ((retryCount % 10) == 0) {
+                    Thread.sleep(200);
+                }
             }
         } while (o == null);
         checkPrimitiveField(o, FD.I, "x", 4);
@@ -1327,7 +1271,7 @@ class EAMaterializeIntArrayTarget extends EATestCaseBaseTarget {
 
 class EAMaterializeIntArray extends EATestCaseBaseDebugger {
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         int[] expectedVals = {1, 2, 3};
         checkLocalPrimitiveArray(bpe.thread().frame(1), "nums", FD.I, expectedVals);
@@ -1352,7 +1296,7 @@ class EAMaterializeLongArrayTarget extends EATestCaseBaseTarget {
 
 class EAMaterializeLongArray extends EATestCaseBaseDebugger {
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         long[] expectedVals = {1, 2, 3};
         checkLocalPrimitiveArray(bpe.thread().frame(1), "nums", FD.J, expectedVals);
@@ -1377,7 +1321,7 @@ class EAMaterializeFloatArrayTarget extends EATestCaseBaseTarget {
 
 class EAMaterializeFloatArray extends EATestCaseBaseDebugger {
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         float[] expectedVals = {1.1f, 2.2f, 3.3f};
         checkLocalPrimitiveArray(bpe.thread().frame(1), "nums", FD.F, expectedVals);
@@ -1402,7 +1346,7 @@ class EAMaterializeDoubleArrayTarget extends EATestCaseBaseTarget {
 
 class EAMaterializeDoubleArray extends EATestCaseBaseDebugger {
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         double[] expectedVals = {1.1d, 2.2d, 3.3d};
         checkLocalPrimitiveArray(bpe.thread().frame(1), "nums", FD.D, expectedVals);
@@ -1427,7 +1371,7 @@ class EAMaterializeObjectArrayTarget extends EATestCaseBaseTarget {
 
 class EAMaterializeObjectArray extends EATestCaseBaseDebugger {
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         ReferenceType clazz = bpe.thread().frame(0).location().declaringType();
         ObjectReference[] expectedVals = {
@@ -1465,7 +1409,7 @@ class EAMaterializeObjectWithConstantAndNotConstantValuesTarget extends EATestCa
 
 class EAMaterializeObjectWithConstantAndNotConstantValues extends EATestCaseBaseDebugger {
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         ObjectReference o = getLocalRef(bpe.thread().frame(1), "ILFDO", "o");
         checkPrimitiveField(o, FD.I, "i", 1);
@@ -1508,7 +1452,7 @@ class EAMaterializeObjReferencedBy2LocalsTarget extends EATestCaseBaseTarget {
 class EAMaterializeObjReferencedBy2Locals extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         ObjectReference xy = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "xy");
         ObjectReference alias = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "alias");
@@ -1539,7 +1483,7 @@ class EAMaterializeObjReferencedBy2LocalsAndModifyTarget extends EATestCaseBaseT
 class EAMaterializeObjReferencedBy2LocalsAndModify extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         ObjectReference alias = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "alias");
         setField(alias, "x", env.vm().mirrorOf(42));
@@ -1580,7 +1524,7 @@ class EAMaterializeObjReferencedBy2LocalsInDifferentVirtFramesTarget extends EAT
 class EAMaterializeObjReferencedBy2LocalsInDifferentVirtFrames extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         ObjectReference xy = getLocalRef(bpe.thread().frame(2), XYVAL_NAME, "xy");
         ObjectReference alias = getLocalRef(bpe.thread().frame(1), "testMethod_inlined", "alias", XYVAL_NAME);
@@ -1623,7 +1567,7 @@ class EAMaterializeObjReferencedBy2LocalsInDifferentVirtFramesAndModifyTarget ex
 class EAMaterializeObjReferencedBy2LocalsInDifferentVirtFramesAndModify extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         ObjectReference alias = getLocalRef(bpe.thread().frame(1), "testMethod_inlined", "alias", XYVAL_NAME);
         setField(alias, "x", env.vm().mirrorOf(42));
@@ -1669,7 +1613,7 @@ class EAMaterializeObjReferencedFromOperandStackTarget extends EATestCaseBaseTar
 class EAMaterializeObjReferencedFromOperandStack extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         ObjectReference xy1 = getLocalRef(bpe.thread().frame(2), XYVAL_NAME, "xy1");
         checkPrimitiveField(xy1, FD.I, "x", 2);
@@ -1689,7 +1633,7 @@ class EAMaterializeObjReferencedFromOperandStack extends EATestCaseBaseDebugger 
 class EAMaterializeLocalVariableUponGetAfterSetInteger extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         setLocal(bpe.thread().frame(1), "i", env.vm().mirrorOf(43));
         ObjectReference o = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "xy");
@@ -1727,7 +1671,7 @@ class EAMaterializeLocalVariableUponGetAfterSetIntegerTarget extends EATestCaseB
 class EARelockingSimple extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
         ObjectReference o = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "l1");
@@ -1740,38 +1684,6 @@ class EARelockingSimpleTarget extends EATestCaseBaseTarget {
         XYVal l1 = new XYVal(4, 2);
         synchronized (l1) {
             dontinline_brkpt();
-        }
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-/**
- * Test if the bias of an object O that escapes globally is revoked correctly if local objects
- * escape through JVMTI. O is referenced by field l0.
- * This tests a regression of a previous version of the implementation.
- */
-class EARelockingSimple_2 extends EATestCaseBaseDebugger {
-
-    public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
-        printStack(bpe.thread());
-        @SuppressWarnings("unused")
-        ObjectReference o = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "l1");
-    }
-}
-
-class EARelockingSimple_2Target extends EATestCaseBaseTarget {
-
-    public XYVal l0;
-
-    public void dontinline_testMethod() {
-        l0 = new XYVal(4, 2);         // GobalEscape
-        XYVal l1 = new XYVal(4, 2);
-        synchronized (l0) {
-            synchronized (l1) {
-                dontinline_brkpt();
-            }
         }
     }
 }
@@ -1804,7 +1716,7 @@ class EARelockingRecursiveTarget extends EATestCaseBaseTarget {
 class EARelockingRecursive extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
         ObjectReference o = getLocalRef(bpe.thread().frame(2), XYVAL_NAME, "l1");
@@ -1846,7 +1758,7 @@ class EARelockingNestedInflatedTarget extends EATestCaseBaseTarget {
 class EARelockingNestedInflated extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
         ObjectReference o = getLocalRef(bpe.thread().frame(2), XYVAL_NAME, "l1");
@@ -1863,7 +1775,7 @@ class EARelockingNestedInflated extends EATestCaseBaseDebugger {
 class EARelockingNestedInflated_02 extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
         ObjectReference o = getLocalRef(bpe.thread().frame(2), XYVAL_NAME, "l1");
@@ -1903,7 +1815,7 @@ class EARelockingNestedInflated_02Target extends EATestCaseBaseTarget {
 class EARelockingArgEscapeLWLockedInCalleeFrame extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
         ObjectReference o = getLocalRef(bpe.thread().frame(2), XYVAL_NAME, "l1");
@@ -1942,7 +1854,7 @@ class EARelockingArgEscapeLWLockedInCalleeFrameTarget extends EATestCaseBaseTarg
 class EARelockingArgEscapeLWLockedInCalleeFrame_2 extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
         ObjectReference o = getLocalRef(bpe.thread().frame(2), XYVAL_NAME, "l1");
@@ -1977,112 +1889,13 @@ class EARelockingArgEscapeLWLockedInCalleeFrame_2Target extends EATestCaseBaseTa
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Similar to {@link EARelockingArgEscapeLWLockedInCalleeFrame}.
- * A bulk rebias operation is triggered at a position where all locks on the local object referenced
- * by l1 are eliminated. This leaves the object with an outdated biased locking epoch which has to be
- * considered when relocking.
- * This tests a regression in a previous version.
- */
-class EARelockingArgEscapeLWLockedInCalleeFrame_3 extends EATestCaseBaseDebugger {
-
-    public static final String XYVAL_LOCAL_NAME = EARelockingArgEscapeLWLockedInCalleeFrame_3Target.XYValLocal.class.getName();
-
-    public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
-        printStack(bpe.thread());
-        @SuppressWarnings("unused")
-        ObjectReference o = getLocalRef(bpe.thread().frame(1), XYVAL_LOCAL_NAME, "l1");
-    }
-}
-
-class EARelockingArgEscapeLWLockedInCalleeFrame_3Target extends EATestCaseBaseTarget {
-
-    // Using local type to avoid side effects on biased locking heuristics
-    public static class XYValLocal extends XYVal {
-        public XYValLocal(int x, int y) {
-            super(x,y);
-        }
-    }
-
-    public void dontinline_testMethod() {
-        XYVal l1 = new XYValLocal(1, 1);       // ArgEscape
-        synchronized (l1) {                    // eliminated
-            l1.dontinline_sync_method_no_brkpt(this);  // l1 escapes
-            // trigger bulk rebias
-            dontinline_bulkRebiasAfterWarmup(l1.getClass());
-            // Now the epoch of l1 does not match the epoch of its class.
-            // This has to be considered when relocking because of JVMTI access
-            dontinline_brkpt();
-        }
-    }
-
-    @Override
-    public boolean testFrameShouldBeDeoptimized() {
-        // Graal does not provide debug info about arg escape objects, therefore the frame is not deoptimized
-        return !UseJVMCICompiler && super.testFrameShouldBeDeoptimized();
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-/**
- * Similar to {@link EARelockingArgEscapeLWLockedInCalleeFrame_3}.
- * But instead of a bulk rebias a bulk revoke operation is triggered.
- * This leaves the object with a stale bias as the prototype header of its calls lost its bias
- * pattern in the bulk revoke which has to be considered during relocking.
- * This tests a regression in a previous version.
- */
-class EARelockingArgEscapeLWLockedInCalleeFrame_4 extends EATestCaseBaseDebugger {
-
-    public static final String XYVAL_LOCAL_NAME = EARelockingArgEscapeLWLockedInCalleeFrame_4Target.XYValLocal.class.getName();
-
-    public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
-        printStack(bpe.thread());
-        @SuppressWarnings("unused")
-        ObjectReference o = getLocalRef(bpe.thread().frame(1), XYVAL_LOCAL_NAME, "l1");
-    }
-}
-
-class EARelockingArgEscapeLWLockedInCalleeFrame_4Target extends EATestCaseBaseTarget {
-
-    // Using local type to avoid side effects on biased locking heuristics
-    public static class XYValLocal extends XYVal {
-        public XYValLocal(int x, int y) {
-            super(x,y);
-        }
-    }
-
-    public void dontinline_testMethod() {
-        XYVal l1 = new XYValLocal(1, 1);       // ArgEscape
-        synchronized (l1) {                    // eliminated
-            l1.dontinline_sync_method_no_brkpt(this);  // l1 escapes
-            // trigger bulk rebias
-            dontinline_bulkRevokeAfterWarmup(l1.getClass());
-            // Now the epoch of l1 does not match the epoch of its class.
-            // This has to be considered when relocking because of JVMTI access
-            dontinline_brkpt();
-        }
-    }
-
-
-    @Override
-    public boolean testFrameShouldBeDeoptimized() {
-        // Graal does not provide debug info about arg escape objects, therefore the frame is not deoptimized
-        return !UseJVMCICompiler && super.testFrameShouldBeDeoptimized();
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-/**
  * Test relocking eliminated (nested) locks of an object on which the
  * target thread currently waits.
  */
 class EARelockingObjectCurrentlyWaitingOn extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        env.targetMainThread.resume();
+        env.vm().resume();
         boolean inWait = false;
         do {
             Thread.sleep(100);
@@ -2184,7 +1997,7 @@ class EARelockingObjectCurrentlyWaitingOnTarget extends EATestCaseBaseTarget {
 class EADeoptFrameAfterReadLocalObject_01 extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
         ObjectReference xy = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "xy");
@@ -2239,7 +2052,7 @@ class EADeoptFrameAfterReadLocalObject_01BTarget extends EATestCaseBaseTarget {
 class EADeoptFrameAfterReadLocalObject_01B extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
         ObjectReference xy = getLocalRef(bpe.thread().frame(1), "callee", "xy", XYVAL_NAME);
@@ -2256,7 +2069,7 @@ class EADeoptFrameAfterReadLocalObject_01B extends EATestCaseBaseDebugger {
 class EADeoptFrameAfterReadLocalObject_02 extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
         ObjectReference xy = getLocalRef(bpe.thread().frame(1), "dontinline_callee", "xy", XYVAL_NAME);
@@ -2302,7 +2115,7 @@ class EADeoptFrameAfterReadLocalObject_02Target extends EATestCaseBaseTarget {
 class EADeoptFrameAfterReadLocalObject_02B extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
         ObjectReference xy = getLocalRef(bpe.thread().frame(1), "dontinline_callee", "xy", XYVAL_NAME);
@@ -2351,7 +2164,7 @@ class EADeoptFrameAfterReadLocalObject_02BTarget extends EATestCaseBaseTarget {
 class EADeoptFrameAfterReadLocalObject_02C extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
         ObjectReference xy = getLocalRef(bpe.thread().frame(1), "dontinline_callee_accessed_by_debugger", "xy", XYVAL_NAME);
@@ -2385,7 +2198,9 @@ class EADeoptFrameAfterReadLocalObject_02CTarget extends EATestCaseBaseTarget {
     @Override
     public void setUp() {
         super.setUp();
-        testMethodDepth = 8;
+        // the method depth in debuggee is 11 as it includes all hidden frames
+        // the expected method depth is 6 excluding 5 hidden frames
+        testMethodDepth = 11-5;
     }
 
     @Override
@@ -2405,7 +2220,7 @@ class EADeoptFrameAfterReadLocalObject_02CTarget extends EATestCaseBaseTarget {
 class EADeoptFrameAfterReadLocalObject_03 extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         ObjectReference xy = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "xy");
         setField(xy, "x", env.vm().mirrorOf(1));
@@ -2462,7 +2277,7 @@ class EAGetOwnedMonitors extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
         msg("resume");
-        env.targetMainThread.resume();
+        env.vm().resume();
         waitUntilTargetHasEnteredEndlessLoop();
         // In contrast to JVMTI, JDWP requires a target thread to be suspended, before the owned monitors can be queried
         msg("suspend target");
@@ -2511,7 +2326,7 @@ class EAEntryCount extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
         msg("resume");
-        env.targetMainThread.resume();
+        env.vm().resume();
         waitUntilTargetHasEnteredEndlessLoop();
         // In contrast to JVMTI, JDWP requires a target thread to be suspended, before the owned monitors can be queried
         msg("suspend target");
@@ -2538,7 +2353,7 @@ class EAEntryCount extends EATestCaseBaseDebugger {
 class EAPopFrameNotInlined extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         msg("PopFrame");
         bpe.thread().popFrames(bpe.thread().frame(0));
@@ -2590,7 +2405,7 @@ class EAPopFrameNotInlinedTarget extends EATestCaseBaseTarget {
 class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         ThreadReference thread = bpe.thread();
         printStack(thread);
         // frame[0]: EATestCaseBaseTarget.dontinline_brkpt()
@@ -2683,7 +2498,7 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
 
     public void runTestCase() throws Exception {
         ThreadReference thread = env.targetMainThread;
-        thread.resume();
+        env.vm().resume();
         waitUntilTargetHasEnteredEndlessLoop();
 
         thread.suspend();
@@ -2800,7 +2615,7 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailureTarget extends EA
 class EAForceEarlyReturnNotInlined extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
-        BreakpointEvent bpe = env.resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         ThreadReference thread = bpe.thread();
         printStack(thread);
         // frame[0]: EATestCaseBaseTarget.dontinline_brkpt()
@@ -2867,7 +2682,7 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjects extends EATestC
 
     public void runTestCase() throws Exception {
         ThreadReference thread = env.targetMainThread;
-        thread.resume();
+        env.vm().resume();
         waitUntilTargetHasEnteredEndlessLoop();
 
         thread.suspend();
@@ -2951,7 +2766,7 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
 
     public void runTestCase() throws Exception {
         ThreadReference thread = env.targetMainThread;
-        thread.resume();
+        env.vm().resume();
         waitUntilTargetHasEnteredEndlessLoop();
 
         thread.suspend();
@@ -3073,7 +2888,7 @@ class EAGetInstancesOfReferenceType extends EATestCaseBaseDebugger {
         ReferenceType cls = ((ClassObjectReference)getField(testCase, "cls")).reflectedType();
         msg("reflected type is " + cls);
         msg("resume");
-        env.targetMainThread.resume();
+        env.vm().resume();
         waitUntilTargetHasEnteredEndlessLoop();
         // do this while thread is running!
         msg("Retrieve instances of " + cls.name());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSTestUtils.Result;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import sun.hotspot.WhiteBox;
 
 /**
@@ -153,7 +154,7 @@ class DynamicArchiveTestBase {
         String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");
         if (!(new File(wbJar)).exists()) {
             throw new RuntimeException("Test error: your test must have " +
-                                       "'@run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox'");
+                                       "'@run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox'");
         }
         return wbJar;
     }
@@ -290,7 +291,7 @@ class DynamicArchiveTestBase {
      *   UseCompressedClassPointers options. Those "compressed" options were
      *   enabled when the default CDS archive was built.
      */
-    private static boolean isUseSharedSpacesDisabled() {
+    public static boolean isUseSharedSpacesDisabled() {
         return (WB.getBooleanVMFlag("UseSharedSpaces") == false);
     }
 }

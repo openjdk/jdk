@@ -57,18 +57,6 @@ import org.w3c.dom.Document;
  *  --jpt-run=jdk.jpackage.tests.ModulePathTest3
  */
 
-/*
- * @test
- * @summary jpackage for app's module linked in external runtime
- * @library ../../../../helpers
- * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile ModulePathTest3.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.ModulePathTest3
- *  --jpt-exclude=test8248418
- */
-
 public final class ModulePathTest3 {
 
     public ModulePathTest3(String jlinkOutputSubdir, String runtimeSubdir) {
@@ -83,15 +71,6 @@ public final class ModulePathTest3 {
     @Test
     public void test8248254() throws XPathExpressionException, IOException {
         testIt("me.mymodule/me.mymodule.Main");
-    }
-
-    /**
-     * Test case for JDK-8248418.
-     * App's module with version specified in runtime directory.
-     */
-    @Test
-    public void test8248418() throws XPathExpressionException, IOException {
-        testIt("me.mymodule/me.mymodule.Main@3.7");
     }
 
     private void testIt(String mainAppDesc) throws XPathExpressionException,

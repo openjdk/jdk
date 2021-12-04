@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.spec.EdDSAParameterSpec;
 import java.util.Arrays;
-import jdk.test.lib.Convert;
+import java.util.HexFormat;
 
 /*
  * @test
@@ -78,7 +78,7 @@ public class EdDSAParamSpec {
             for (byte[] context : new byte[][]{"others".getBytes(), maxCtx}) {
                 System.out.printf("Testing signature for name: %s,"
                         + " algorithm spec: (prehash:%s, context:%s)%n",
-                        name, preHash, Convert.byteArrayToHexString(context));
+                        name, preHash, HexFormat.of().withUpperCase().formatHex(context));
                 EdDSAParameterSpec params
                         = new EdDSAParameterSpec(preHash, context);
                 verifyPublic(sig, kp.getPublic(), MSG, params, initParam,
@@ -129,8 +129,8 @@ public class EdDSAParamSpec {
                 throw new RuntimeException(String.format("Signature verification"
                         + " success with different param context(actual:%s, "
                         + "expected:%s), Prehash(actual:%s, expected:%s)",
-                        Convert.byteArrayToHexString(context),
-                        Convert.byteArrayToHexString(initContext),
+                        HexFormat.of().withUpperCase().formatHex(context),
+                        HexFormat.of().withUpperCase().formatHex(initContext),
                         preHash, initPreHash));
             } else {
                 System.out.println("Atleast a case matched");
@@ -165,8 +165,8 @@ public class EdDSAParamSpec {
         boolean equals = Arrays.equals(actual, expected);
         if (!equals) {
             throw new RuntimeException(String.format("Actual array: %s, "
-                    + "Expected array:%s", Convert.byteArrayToHexString(actual),
-                    Convert.byteArrayToHexString(expected)));
+                    + "Expected array:%s", HexFormat.of().withUpperCase().formatHex(actual),
+                    HexFormat.of().withUpperCase().formatHex(expected)));
         }
         return equals;
     }

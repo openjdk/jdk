@@ -81,6 +81,7 @@ public class AtomicLongArrayTest extends JSR166TestCase {
     /**
      * get and set for out of bound indices throw IndexOutOfBoundsException
      */
+    @SuppressWarnings("deprecation")
     public void testIndexing() {
         AtomicLongArray aa = new AtomicLongArray(SIZE);
         for (int index : new int[] { -1, SIZE }) {
@@ -186,6 +187,7 @@ public class AtomicLongArrayTest extends JSR166TestCase {
      * repeated weakCompareAndSet succeeds in changing value when equal
      * to expected
      */
+    @SuppressWarnings("deprecation")
     public void testWeakCompareAndSet() {
         AtomicLongArray aa = new AtomicLongArray(SIZE);
         for (int i = 0; i < SIZE; i++) {

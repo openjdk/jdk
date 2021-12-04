@@ -45,7 +45,6 @@ public class ciObjectFactory extends VMObject {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type      = db.lookupType("ciObjectFactory");
-    unloadedMethodsField = type.getAddressField("_unloaded_methods");
     ciMetadataField = type.getAddressField("_ci_metadata");
     symbolsField = type.getAddressField("_symbols");
 
@@ -54,7 +53,6 @@ public class ciObjectFactory extends VMObject {
     ciSymbolConstructor = new VirtualBaseConstructor<ciSymbol>(db, db.lookupType("ciSymbol"), "sun.jvm.hotspot.ci", ciSymbol.class);
   }
 
-  private static AddressField unloadedMethodsField;
   private static AddressField ciMetadataField;
   private static AddressField symbolsField;
 
@@ -75,11 +73,13 @@ public class ciObjectFactory extends VMObject {
   }
 
   public GrowableArray<ciMetadata> objects() {
-    return GrowableArray.create(ciMetadataField.getValue(getAddress()), ciMetadataConstructor);
+    Address addr = getAddress().addOffsetTo(ciMetadataField.getOffset());
+    return GrowableArray.create(addr, ciMetadataConstructor);
   }
 
   public GrowableArray<ciSymbol> symbols() {
-    return GrowableArray.create(symbolsField.getValue(getAddress()), ciSymbolConstructor);
+    Address addr = getAddress().addOffsetTo(symbolsField.getOffset());
+    return GrowableArray.create(addr, ciSymbolConstructor);
   }
 
   public ciObjectFactory(Address addr) {

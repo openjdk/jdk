@@ -56,7 +56,7 @@ class G1EvacStats : public PLABStats {
   virtual size_t compute_desired_plab_sz();
 
  public:
-  G1EvacStats(const char* description, size_t desired_plab_sz_, unsigned wt);
+  G1EvacStats(const char* description, size_t default_per_thread_plab_size, unsigned wt);
 
   ~G1EvacStats();
 

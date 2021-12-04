@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,6 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
     private static final int MIDI_TYPE_0 = 0;
     private static final int MIDI_TYPE_1 = 1;
 
-    private static final int bufferSize = 16384;  // buffersize for write
     private DataOutputStream tddos;               // data output stream for track writing
 
     /**
@@ -117,22 +116,12 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
         if (!isFileTypeSupported(type, in)) {
             throw new IllegalArgumentException("Could not write MIDI file");
         }
-        byte [] buffer = null;
-
-        int bytesRead = 0;
-        long bytesWritten = 0;
-
         // First get the fileStream from this sequence
         InputStream fileStream = getFileStream(type,in);
         if (fileStream == null) {
             throw new IllegalArgumentException("Could not write MIDI file");
         }
-        buffer = new byte[bufferSize];
-
-        while( (bytesRead = fileStream.read( buffer )) >= 0 ) {
-            out.write( buffer, 0, bytesRead );
-            bytesWritten += bytesRead;
-        }
+        long bytesWritten = fileStream.transferTo(out);
         // Done....return bytesWritten
         return (int) bytesWritten;
     }

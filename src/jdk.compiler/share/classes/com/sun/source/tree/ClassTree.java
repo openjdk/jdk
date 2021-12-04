@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,23 +87,14 @@ public interface ClassTree extends StatementTree {
     List<? extends Tree> getImplementsClause();
 
     /**
-     * {@preview Associated with sealed classes, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>sealed classes</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns the subclasses permitted by this type declaration.
      *
      * @implSpec this implementation returns an empty list
      *
      * @return the subclasses
      *
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SEALED_CLASSES,
-                                             essentialAPI=false)
     default List<? extends Tree> getPermitsClause() {
         return List.of();
     }

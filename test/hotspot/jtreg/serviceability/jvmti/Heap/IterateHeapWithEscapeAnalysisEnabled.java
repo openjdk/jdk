@@ -31,7 +31,7 @@
  * @requires ((vm.compMode == "Xmixed") & vm.compiler2.enabled & vm.jvmti)
  * @library /test/lib /test/hotspot/jtreg
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @compile IterateHeapWithEscapeAnalysisEnabled.java
  *
  * @comment BLOCK BEGIN EXCLUSIVE TESTCASES {
@@ -110,7 +110,7 @@
  *                  -XX:+PrintInlining
  *                  -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                  -Xbatch
- *                  -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                  -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                  IterateHeapWithEscapeAnalysisEnabled
  * @run main/othervm/native
  *                  -agentlib:IterateHeapWithEscapeAnalysisEnabled
@@ -121,7 +121,7 @@
  *                  -XX:+PrintInlining
  *                  -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                  -Xbatch
- *                  -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                  -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                  IterateHeapWithEscapeAnalysisEnabled
  * @run main/othervm/native
  *                  -agentlib:IterateHeapWithEscapeAnalysisEnabled
@@ -132,7 +132,7 @@
  *                  -XX:+PrintInlining
  *                  -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                  -Xbatch
- *                  -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                  -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                  IterateHeapWithEscapeAnalysisEnabled
  *
  * @comment } BLOCK END NON EXCLUSIVE TESTCASES

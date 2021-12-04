@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,6 +399,11 @@ int Compilation::compile_java_method() {
   }
   CHECK_BAILOUT_(no_frame_size);
 
+  // Dump compilation data to replay it.
+  if (_directive->DumpReplayOption) {
+    env()->dump_replay_data(env()->compile_id());
+  }
+
   {
     PhaseTraceTime timeit(_t_codeemit);
     return emit_code_body();
@@ -446,7 +451,7 @@ void Compilation::compile_method() {
     dependency_recorder()->assert_evol_method(method());
   }
 
-  if (directive()->BreakAtCompileOption) {
+  if (env()->break_at_compile()) {
     BREAKPOINT;
   }
 
@@ -583,7 +588,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 #endif
   compile_method();
   if (bailed_out()) {
-    _env->record_method_not_compilable(bailout_msg(), !TieredCompilation);
+    _env->record_method_not_compilable(bailout_msg());
     if (is_profiling()) {
       // Compilation failed, create MDO, which would signal the interpreter
       // to start profiling on its own.
@@ -598,6 +603,9 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 }
 
 Compilation::~Compilation() {
+  // simulate crash during compilation
+  assert(CICrashAt < 0 || (uintx)_env->compile_id() != (uintx)CICrashAt, "just as planned");
+
   _env->set_compiler_data(NULL);
 }
 

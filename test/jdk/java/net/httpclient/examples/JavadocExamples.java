@@ -119,6 +119,18 @@ public class JavadocExamples {
                 .uri(URI.create("https://foo.com/"))
                 .POST(BodyPublishers.ofByteArray(new byte[] { /*...*/ }))
                 .build();
+
+        // HttpRequest.Builder
+        // API note - newBuilder(HttpRequest, BiPredicate<String, String>)
+        // Retain all headers:
+        HttpRequest.newBuilder(request, (n, v) -> true);
+
+        //Remove all headers:
+        HttpRequest.newBuilder(request, (n, v) -> false);
+
+        // Remove a particular header (e.g. Foo-Bar):
+        HttpRequest.newBuilder(request, (name, value) ->
+                !name.equalsIgnoreCase("Foo-Bar"));
     }
 
     void fromHttpResponse() throws Exception {

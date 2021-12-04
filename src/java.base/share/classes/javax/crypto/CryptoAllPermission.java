@@ -32,7 +32,6 @@ import java.util.Vector;
 /**
  * The CryptoAllPermission is a permission that implies
  * any other crypto permissions.
- * <p>
  *
  * @see java.security.Permission
  * @see java.security.AllPermission

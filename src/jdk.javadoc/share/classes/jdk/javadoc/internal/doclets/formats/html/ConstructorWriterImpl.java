@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,11 @@ import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.ConstructorWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -101,7 +100,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public void addSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.constructorSummary,
-                SectionName.CONSTRUCTOR_SUMMARY, summariesList, content);
+                HtmlIds.CONSTRUCTOR_SUMMARY, summariesList, content);
     }
 
     @Override
@@ -116,29 +115,35 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
 
     @Override
     public Content getConstructorDocTreeHeader(ExecutableElement constructor) {
-        String erasureAnchor;
         Content constructorDocTree = new ContentBuilder();
         HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
-                new StringContent(name(constructor)));
-        if ((erasureAnchor = getErasureAnchor(constructor)) != null) {
+                Text.of(name(constructor)));
+        HtmlId erasureAnchor = htmlIds.forErasure(constructor);
+        if (erasureAnchor != null) {
             heading.setId(erasureAnchor);
         }
         constructorDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, constructorDocTree)
-                .setId(links.getAnchor(constructor));
+                .setId(htmlIds.forMember(constructor));
     }
 
     @Override
     public Content getSignature(ExecutableElement constructor) {
-        return new MemberSignature(constructor)
-                .addParameters(getParameters(constructor, true))
-                .addExceptions(getExceptions(constructor))
+        return new Signatures.MemberSignature(constructor, this)
+                .setParameters(getParameters(constructor, true))
+                .setExceptions(getExceptions(constructor))
+                .setAnnotations(writer.getAnnotationInfo(constructor, true))
                 .toContent();
     }
 
     @Override
     public void addDeprecated(ExecutableElement constructor, Content constructorDocTree) {
         addDeprecatedInfo(constructor, constructorDocTree);
+    }
+
+    @Override
+    public void addPreview(ExecutableElement constructor, Content constructorDocTree) {
+        addPreviewInfo(constructor, constructorDocTree);
     }
 
     @Override
@@ -155,7 +160,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     public Content getConstructorDetails(Content constructorDetailsTreeHeader, Content constructorDetailsTree) {
         return writer.getDetailsListItem(
                 HtmlTree.SECTION(HtmlStyle.constructorDetails)
-                        .setId(SectionName.CONSTRUCTOR_DETAIL.getName())
+                        .setId(HtmlIds.CONSTRUCTOR_DETAIL)
                         .add(constructorDetailsTreeHeader)
                         .add(constructorDetailsTree));
     }

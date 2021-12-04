@@ -23,7 +23,7 @@
  * questions.
  */
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import "JNIUtilities.h"
 
 #import "apple_laf_JRSUIFocus.h"
 #import "apple_laf_JRSUIControl.h"

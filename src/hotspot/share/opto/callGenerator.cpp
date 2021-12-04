@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "ci/ciNativeEntryPoint.hpp"
+#include "utilities/debug.hpp"
 
 // Utility function.
 const TypeFunc* CallGenerator::tf() const {
@@ -119,6 +121,9 @@ class DirectCallGenerator : public CallGenerator {
   // paths to facilitate late inlinig.
   bool                _separate_io_proj;
 
+protected:
+  void set_call_node(CallStaticJavaNode* call) { _call_node = call; }
+
  public:
   DirectCallGenerator(ciMethod* method, bool separate_io_proj)
     : CallGenerator(method),
@@ -127,7 +132,12 @@ class DirectCallGenerator : public CallGenerator {
   }
   virtual JVMState* generate(JVMState* jvms);
 
-  CallStaticJavaNode* call_node() const { return _call_node; }
+  virtual CallNode* call_node() const { return _call_node; }
+  virtual CallGenerator* with_call_node(CallNode* call) {
+    DirectCallGenerator* dcg = new DirectCallGenerator(method(), _separate_io_proj);
+    dcg->set_call_node(call->as_CallStaticJava());
+    return dcg;
+  }
 };
 
 JVMState* DirectCallGenerator::generate(JVMState* jvms) {
@@ -141,7 +151,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     kit.C->log()->elem("direct_call bci='%d'", jvms->bci());
   }
 
-  CallStaticJavaNode *call = new CallStaticJavaNode(kit.C, tf(), target, method(), kit.bci());
+  CallStaticJavaNode* call = new CallStaticJavaNode(kit.C, tf(), target, method());
   if (is_inlined_method_handle_intrinsic(jvms, method())) {
     // To be able to issue a direct call and skip a call to MH.linkTo*/invokeBasic adapter,
     // additional information about the method being invoked should be attached
@@ -177,15 +187,30 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
 class VirtualCallGenerator : public CallGenerator {
 private:
   int _vtable_index;
+  bool _separate_io_proj;
+  CallDynamicJavaNode* _call_node;
+
+protected:
+  void set_call_node(CallDynamicJavaNode* call) { _call_node = call; }
+
 public:
-  VirtualCallGenerator(ciMethod* method, int vtable_index)
-    : CallGenerator(method), _vtable_index(vtable_index)
+  VirtualCallGenerator(ciMethod* method, int vtable_index, bool separate_io_proj)
+    : CallGenerator(method), _vtable_index(vtable_index), _separate_io_proj(separate_io_proj), _call_node(NULL)
   {
     assert(vtable_index == Method::invalid_vtable_index ||
            vtable_index >= 0, "either invalid or usable");
   }
   virtual bool      is_virtual() const          { return true; }
   virtual JVMState* generate(JVMState* jvms);
+
+  virtual CallNode* call_node() const { return _call_node; }
+  int vtable_index() const { return _vtable_index; }
+
+  virtual CallGenerator* with_call_node(CallNode* call) {
+    VirtualCallGenerator* cg = new VirtualCallGenerator(method(), _vtable_index, _separate_io_proj);
+    cg->set_call_node(call->as_CallDynamicJava());
+    return cg;
+  }
 };
 
 JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
@@ -240,7 +265,7 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
          "no vtable calls if +UseInlineCaches ");
   address target = SharedRuntime::get_resolve_virtual_call_stub();
   // Normal inline cache used for call
-  CallDynamicJavaNode *call = new CallDynamicJavaNode(tf(), target, method(), _vtable_index, kit.bci());
+  CallDynamicJavaNode* call = new CallDynamicJavaNode(tf(), target, method(), _vtable_index);
   if (is_inlined_method_handle_intrinsic(jvms, method())) {
     // To be able to issue a direct call (optimized virtual or virtual)
     // and skip a call to MH.linkTo*/invokeBasic adapter, additional information
@@ -248,9 +273,11 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
     // make resolution logic work (see SharedRuntime::resolve_{virtual,opt_virtual}_call_C).
     call->set_override_symbolic_info(true);
   }
+  _call_node = call;  // Save the call node in case we need it later
+
   kit.set_arguments_for_java_call(call);
-  kit.set_edges_for_java_call(call);
-  Node* ret = kit.set_results_for_java_call(call);
+  kit.set_edges_for_java_call(call, false /*must_throw*/, _separate_io_proj);
+  Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
   kit.push_node(method()->return_type()->basic_type(), ret);
 
   // Represent the effect of an implicit receiver null_check
@@ -283,7 +310,7 @@ CallGenerator* CallGenerator::for_direct_call(ciMethod* m, bool separate_io_proj
 CallGenerator* CallGenerator::for_virtual_call(ciMethod* m, int vtable_index) {
   assert(!m->is_static(), "for_virtual_call mismatch");
   assert(!m->is_method_handle_intrinsic(), "should be a direct call");
-  return new VirtualCallGenerator(m, vtable_index);
+  return new VirtualCallGenerator(m, vtable_index, false /*separate_io_projs*/);
 }
 
 // Allow inlining decisions to be delayed
@@ -294,7 +321,9 @@ class LateInlineCallGenerator : public DirectCallGenerator {
 
  protected:
   CallGenerator* _inline_cg;
-  virtual bool do_late_inline_check(JVMState* jvms) { return true; }
+  virtual bool do_late_inline_check(Compile* C, JVMState* jvms) { return true; }
+  virtual CallGenerator* inline_cg() const { return _inline_cg; }
+  virtual bool is_pure_call() const { return _is_pure_call; }
 
  public:
   LateInlineCallGenerator(ciMethod* method, CallGenerator* inline_cg, bool is_pure_call = false) :
@@ -339,11 +368,266 @@ class LateInlineCallGenerator : public DirectCallGenerator {
   virtual jlong unique_id() const {
     return _unique_id;
   }
+
+  virtual CallGenerator* with_call_node(CallNode* call) {
+    LateInlineCallGenerator* cg = new LateInlineCallGenerator(method(), _inline_cg, _is_pure_call);
+    cg->set_call_node(call->as_CallStaticJava());
+    return cg;
+  }
 };
 
+CallGenerator* CallGenerator::for_late_inline(ciMethod* method, CallGenerator* inline_cg) {
+  return new LateInlineCallGenerator(method, inline_cg);
+}
+
+class LateInlineMHCallGenerator : public LateInlineCallGenerator {
+  ciMethod* _caller;
+  bool _input_not_const;
+
+  virtual bool do_late_inline_check(Compile* C, JVMState* jvms);
+
+ public:
+  LateInlineMHCallGenerator(ciMethod* caller, ciMethod* callee, bool input_not_const) :
+    LateInlineCallGenerator(callee, NULL), _caller(caller), _input_not_const(input_not_const) {}
+
+  virtual bool is_mh_late_inline() const { return true; }
+
+  // Convert the CallStaticJava into an inline
+  virtual void do_late_inline();
+
+  virtual JVMState* generate(JVMState* jvms) {
+    JVMState* new_jvms = LateInlineCallGenerator::generate(jvms);
+
+    Compile* C = Compile::current();
+    if (_input_not_const) {
+      // inlining won't be possible so no need to enqueue right now.
+      call_node()->set_generator(this);
+    } else {
+      C->add_late_inline(this);
+    }
+    return new_jvms;
+  }
+
+  virtual CallGenerator* with_call_node(CallNode* call) {
+    LateInlineMHCallGenerator* cg = new LateInlineMHCallGenerator(_caller, method(), _input_not_const);
+    cg->set_call_node(call->as_CallStaticJava());
+    return cg;
+  }
+};
+
+bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms) {
+  // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
+  bool allow_inline = C->inlining_incrementally();
+  bool input_not_const = true;
+  CallGenerator* cg = for_method_handle_inline(jvms, _caller, method(), allow_inline, input_not_const);
+  assert(!input_not_const, "sanity"); // shouldn't have been scheduled for inlining in the first place
+
+  if (cg != NULL) {
+    assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline, "we're doing late inlining");
+    _inline_cg = cg;
+    C->dec_number_of_mh_late_inlines();
+    return true;
+  } else {
+    // Method handle call which has a constant appendix argument should be either inlined or replaced with a direct call
+    // unless there's a signature mismatch between caller and callee. If the failure occurs, there's not much to be improved later,
+    // so don't reinstall the generator to avoid pushing the generator between IGVN and incremental inlining indefinitely.
+    return false;
+  }
+}
+
+CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* callee, bool input_not_const) {
+  assert(IncrementalInlineMH, "required");
+  Compile::current()->inc_number_of_mh_late_inlines();
+  CallGenerator* cg = new LateInlineMHCallGenerator(caller, callee, input_not_const);
+  return cg;
+}
+
+// Allow inlining decisions to be delayed
+class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
+ private:
+  jlong          _unique_id;   // unique id for log compilation
+  CallGenerator* _inline_cg;
+  ciMethod*      _callee;
+  bool           _is_pure_call;
+  float          _prof_factor;
+
+ protected:
+  virtual bool do_late_inline_check(Compile* C, JVMState* jvms);
+  virtual CallGenerator* inline_cg() const { return _inline_cg; }
+  virtual bool is_pure_call() const { return _is_pure_call; }
+
+ public:
+  LateInlineVirtualCallGenerator(ciMethod* method, int vtable_index, float prof_factor)
+  : VirtualCallGenerator(method, vtable_index, true /*separate_io_projs*/),
+    _unique_id(0), _inline_cg(NULL), _callee(NULL), _is_pure_call(false), _prof_factor(prof_factor) {
+    assert(IncrementalInlineVirtual, "required");
+  }
+
+  virtual bool is_late_inline() const { return true; }
+
+  virtual bool is_virtual_late_inline() const { return true; }
+
+  // Convert the CallDynamicJava into an inline
+  virtual void do_late_inline();
+
+  virtual void set_callee_method(ciMethod* m) {
+    assert(_callee == NULL, "repeated inlining attempt");
+    _callee = m;
+  }
+
+  virtual JVMState* generate(JVMState* jvms) {
+    // Emit the CallDynamicJava and request separate projections so
+    // that the late inlining logic can distinguish between fall
+    // through and exceptional uses of the memory and io projections
+    // as is done for allocations and macro expansion.
+    JVMState* new_jvms = VirtualCallGenerator::generate(jvms);
+    if (call_node() != NULL) {
+      call_node()->set_generator(this);
+    }
+    return new_jvms;
+  }
+
+  virtual void print_inlining_late(const char* msg) {
+    CallNode* call = call_node();
+    Compile* C = Compile::current();
+    C->print_inlining_assert_ready();
+    C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), msg);
+    C->print_inlining_move_to(this);
+    C->print_inlining_update_delayed(this);
+  }
+
+  virtual void set_unique_id(jlong id) {
+    _unique_id = id;
+  }
+
+  virtual jlong unique_id() const {
+    return _unique_id;
+  }
+
+  virtual CallGenerator* with_call_node(CallNode* call) {
+    LateInlineVirtualCallGenerator* cg = new LateInlineVirtualCallGenerator(method(), vtable_index(), _prof_factor);
+    cg->set_call_node(call->as_CallDynamicJava());
+    return cg;
+  }
+};
+
+bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms) {
+  // Method handle linker case is handled in CallDynamicJavaNode::Ideal().
+  // Unless inlining is performed, _override_symbolic_info bit will be set in DirectCallGenerator::generate().
+
+  // Implicit receiver null checks introduce problems when exception states are combined.
+  Node* receiver = jvms->map()->argument(jvms, 0);
+  const Type* recv_type = C->initial_gvn()->type(receiver);
+  if (recv_type->maybe_null()) {
+    return false;
+  }
+  // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
+  bool allow_inline = C->inlining_incrementally();
+  if (!allow_inline && _callee->holder()->is_interface()) {
+    // Don't convert the interface call to a direct call guarded by an interface subtype check.
+    return false;
+  }
+  CallGenerator* cg = C->call_generator(_callee,
+                                        vtable_index(),
+                                        false /*call_does_dispatch*/,
+                                        jvms,
+                                        allow_inline,
+                                        _prof_factor,
+                                        NULL /*speculative_receiver_type*/,
+                                        true /*allow_intrinsics*/);
+
+  if (cg != NULL) {
+    assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline, "we're doing late inlining");
+    _inline_cg = cg;
+    return true;
+  } else {
+    // Virtual call which provably doesn't dispatch should be either inlined or replaced with a direct call.
+    assert(false, "no progress");
+    return false;
+  }
+}
+
+CallGenerator* CallGenerator::for_late_inline_virtual(ciMethod* m, int vtable_index, float prof_factor) {
+  assert(IncrementalInlineVirtual, "required");
+  assert(!m->is_static(), "for_virtual_call mismatch");
+  assert(!m->is_method_handle_intrinsic(), "should be a direct call");
+  return new LateInlineVirtualCallGenerator(m, vtable_index, prof_factor);
+}
+
 void LateInlineCallGenerator::do_late_inline() {
+  CallGenerator::do_late_inline_helper();
+}
+
+void LateInlineMHCallGenerator::do_late_inline() {
+  CallGenerator::do_late_inline_helper();
+}
+
+void LateInlineVirtualCallGenerator::do_late_inline() {
+  assert(_callee != NULL, "required"); // set up in CallDynamicJavaNode::Ideal
+  CallGenerator::do_late_inline_helper();
+}
+
+static bool has_non_debug_usages(Node* n) {
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* m = n->fast_out(i);
+    if (!m->is_SafePoint()
+        || (m->is_Call() && m->as_Call()->has_non_debug_use(n))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool is_box_cache_valid(CallNode* call) {
+  ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
+  return klass->is_box_cache_valid();
+}
+
+// delay box in runtime, treat box as a scalarized object
+static void scalarize_debug_usages(CallNode* call, Node* resproj) {
+  GraphKit kit(call->jvms());
+  PhaseGVN& gvn = kit.gvn();
+
+  ProjNode* res = resproj->as_Proj();
+  ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
+  int n_fields = klass->nof_nonstatic_fields();
+  assert(n_fields == 1, "the klass must be an auto-boxing klass");
+
+  for (DUIterator_Last imin, i = res->last_outs(imin); i >= imin;) {
+    SafePointNode* sfpt = res->last_out(i)->as_SafePoint();
+    uint first_ind = sfpt->req() - sfpt->jvms()->scloff();
+    Node* sobj = new SafePointScalarObjectNode(gvn.type(res)->isa_oopptr(),
+#ifdef ASSERT
+                                                call,
+#endif // ASSERT
+                                                first_ind, n_fields, true);
+    sobj->init_req(0, kit.root());
+    sfpt->add_req(call->in(TypeFunc::Parms));
+    sobj = gvn.transform(sobj);
+    JVMState* jvms = sfpt->jvms();
+    jvms->set_endoff(sfpt->req());
+    int start = jvms->debug_start();
+    int end   = jvms->debug_end();
+    int num_edges = sfpt->replace_edges_in_range(res, sobj, start, end, &gvn);
+    i -= num_edges;
+  }
+
+  assert(res->outcnt() == 0, "the box must have no use after replace");
+
+#ifndef PRODUCT
+  if (PrintEliminateAllocations) {
+    tty->print("++++ Eliminated: %d ", call->_idx);
+    call->as_CallStaticJava()->method()->print_short_name(tty);
+    tty->cr();
+  }
+#endif
+}
+
+void CallGenerator::do_late_inline_helper() {
+  assert(is_late_inline(), "only late inline allowed");
+
   // Can't inline it
-  CallStaticJavaNode* call = call_node();
+  CallNode* call = call_node();
   if (call == NULL || call->outcnt() == 0 ||
       call->in(0) == NULL || call->in(0)->is_top()) {
     return;
@@ -361,18 +645,24 @@ void LateInlineCallGenerator::do_late_inline() {
     assert(Compile::current()->inlining_incrementally(), "shouldn't happen during parsing");
     return;
   }
+  if (call->in(TypeFunc::Memory)->is_MergeMem()) {
+    MergeMemNode* merge_mem = call->in(TypeFunc::Memory)->as_MergeMem();
+    if (merge_mem->base_memory() == merge_mem->empty_memory()) {
+      return; // dead path
+    }
+  }
 
   // check for unreachable loop
   CallProjections callprojs;
   call->extract_projections(&callprojs, true);
-  if (callprojs.fallthrough_catchproj == call->in(0) ||
-      callprojs.catchall_catchproj == call->in(0) ||
-      callprojs.fallthrough_memproj == call->in(TypeFunc::Memory) ||
-      callprojs.catchall_memproj == call->in(TypeFunc::Memory) ||
-      callprojs.fallthrough_ioproj == call->in(TypeFunc::I_O) ||
-      callprojs.catchall_ioproj == call->in(TypeFunc::I_O) ||
+  if ((callprojs.fallthrough_catchproj == call->in(0)) ||
+      (callprojs.catchall_catchproj    == call->in(0)) ||
+      (callprojs.fallthrough_memproj   == call->in(TypeFunc::Memory)) ||
+      (callprojs.catchall_memproj      == call->in(TypeFunc::Memory)) ||
+      (callprojs.fallthrough_ioproj    == call->in(TypeFunc::I_O)) ||
+      (callprojs.catchall_ioproj       == call->in(TypeFunc::I_O)) ||
       (callprojs.resproj != NULL && call->find_edge(callprojs.resproj) != -1) ||
-      (callprojs.exobj != NULL && call->find_edge(callprojs.exobj) != -1)) {
+      (callprojs.exobj   != NULL && call->find_edge(callprojs.exobj) != -1)) {
     return;
   }
 
@@ -382,10 +672,24 @@ void LateInlineCallGenerator::do_late_inline() {
     C->remove_macro_node(call);
   }
 
-  bool result_not_used = (callprojs.resproj == NULL || callprojs.resproj->outcnt() == 0);
-  if (_is_pure_call && result_not_used) {
+  bool result_not_used = false;
+
+  if (is_pure_call()) {
+    // Disabled due to JDK-8276112
+    if (false && is_boxing_late_inline() && callprojs.resproj != nullptr) {
+      // replace box node to scalar node only in case it is directly referenced by debug info
+      assert(call->as_CallStaticJava()->is_boxing_method(), "sanity");
+      if (!has_non_debug_usages(callprojs.resproj) && is_box_cache_valid(call)) {
+        scalarize_debug_usages(call, callprojs.resproj);
+      }
+    }
+
     // The call is marked as pure (no important side effects), but result isn't used.
     // It's safe to remove the call.
+    result_not_used = (callprojs.resproj == NULL || callprojs.resproj->outcnt() == 0);
+  }
+
+  if (result_not_used) {
     GraphKit kit(call->jvms());
     kit.replace_call(call, C->top(), true);
   } else {
@@ -426,10 +730,10 @@ void LateInlineCallGenerator::do_late_inline() {
 
     C->log_late_inline(this);
 
-    // This check is done here because for_method_handle_inline() method
-    // needs jvms for inlined state.
-    if (!do_late_inline_check(jvms)) {
+    // JVMState is ready, so time to perform some checks and prepare for inlining attempt.
+    if (!do_late_inline_check(C, jvms)) {
       map->disconnect_inputs(C);
+      C->print_inlining_update_delayed(this);
       return;
     }
 
@@ -442,7 +746,7 @@ void LateInlineCallGenerator::do_late_inline() {
     }
 
     // Now perform the inlining using the synthesized JVMState
-    JVMState* new_jvms = _inline_cg->generate(jvms);
+    JVMState* new_jvms = inline_cg()->generate(jvms);
     if (new_jvms == NULL)  return;  // no change
     if (C->failing())      return;
 
@@ -456,71 +760,14 @@ void LateInlineCallGenerator::do_late_inline() {
       result = (result_size == 1) ? kit.pop() : kit.pop_pair();
     }
 
-    C->env()->notice_inlined_method(_inline_cg->method());
+    if (inline_cg()->is_inline()) {
+      C->set_has_loops(C->has_loops() || inline_cg()->method()->has_loops());
+      C->env()->notice_inlined_method(inline_cg()->method());
+    }
     C->set_inlining_progress(true);
     C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
     kit.replace_call(call, result, true);
   }
-}
-
-
-CallGenerator* CallGenerator::for_late_inline(ciMethod* method, CallGenerator* inline_cg) {
-  return new LateInlineCallGenerator(method, inline_cg);
-}
-
-class LateInlineMHCallGenerator : public LateInlineCallGenerator {
-  ciMethod* _caller;
-  int _attempt;
-  bool _input_not_const;
-
-  virtual bool do_late_inline_check(JVMState* jvms);
-  virtual bool already_attempted() const { return _attempt > 0; }
-
- public:
-  LateInlineMHCallGenerator(ciMethod* caller, ciMethod* callee, bool input_not_const) :
-    LateInlineCallGenerator(callee, NULL), _caller(caller), _attempt(0), _input_not_const(input_not_const) {}
-
-  virtual bool is_mh_late_inline() const { return true; }
-
-  virtual JVMState* generate(JVMState* jvms) {
-    JVMState* new_jvms = LateInlineCallGenerator::generate(jvms);
-
-    Compile* C = Compile::current();
-    if (_input_not_const) {
-      // inlining won't be possible so no need to enqueue right now.
-      call_node()->set_generator(this);
-    } else {
-      C->add_late_inline(this);
-    }
-    return new_jvms;
-  }
-};
-
-bool LateInlineMHCallGenerator::do_late_inline_check(JVMState* jvms) {
-
-  CallGenerator* cg = for_method_handle_inline(jvms, _caller, method(), _input_not_const);
-
-  Compile::current()->print_inlining_update_delayed(this);
-
-  if (!_input_not_const) {
-    _attempt++;
-  }
-
-  if (cg != NULL && cg->is_inline()) {
-    assert(!cg->is_late_inline(), "we're doing late inlining");
-    _inline_cg = cg;
-    Compile::current()->dec_number_of_mh_late_inlines();
-    return true;
-  }
-
-  call_node()->set_generator(this);
-  return false;
-}
-
-CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* callee, bool input_not_const) {
-  Compile::current()->inc_number_of_mh_late_inlines();
-  CallGenerator* cg = new LateInlineMHCallGenerator(caller, callee, input_not_const);
-  return cg;
 }
 
 class LateInlineStringCallGenerator : public LateInlineCallGenerator {
@@ -541,6 +788,12 @@ class LateInlineStringCallGenerator : public LateInlineCallGenerator {
   }
 
   virtual bool is_string_late_inline() const { return true; }
+
+  virtual CallGenerator* with_call_node(CallNode* call) {
+    LateInlineStringCallGenerator* cg = new LateInlineStringCallGenerator(method(), _inline_cg);
+    cg->set_call_node(call->as_CallStaticJava());
+    return cg;
+  }
 };
 
 CallGenerator* CallGenerator::for_string_late_inline(ciMethod* method, CallGenerator* inline_cg) {
@@ -562,6 +815,14 @@ class LateInlineBoxingCallGenerator : public LateInlineCallGenerator {
 
     JVMState* new_jvms = DirectCallGenerator::generate(jvms);
     return new_jvms;
+  }
+
+  virtual bool is_boxing_late_inline() const { return true; }
+
+  virtual CallGenerator* with_call_node(CallNode* call) {
+    LateInlineBoxingCallGenerator* cg = new LateInlineBoxingCallGenerator(method(), _inline_cg);
+    cg->set_call_node(call->as_CallStaticJava());
+    return cg;
   }
 };
 
@@ -585,87 +846,18 @@ class LateInlineVectorReboxingCallGenerator : public LateInlineCallGenerator {
     JVMState* new_jvms = DirectCallGenerator::generate(jvms);
     return new_jvms;
   }
+
+  virtual CallGenerator* with_call_node(CallNode* call) {
+    LateInlineVectorReboxingCallGenerator* cg = new LateInlineVectorReboxingCallGenerator(method(), _inline_cg);
+    cg->set_call_node(call->as_CallStaticJava());
+    return cg;
+  }
 };
 
 //   static CallGenerator* for_vector_reboxing_late_inline(ciMethod* m, CallGenerator* inline_cg);
 CallGenerator* CallGenerator::for_vector_reboxing_late_inline(ciMethod* method, CallGenerator* inline_cg) {
   return new LateInlineVectorReboxingCallGenerator(method, inline_cg);
 }
-//---------------------------WarmCallGenerator--------------------------------
-// Internal class which handles initial deferral of inlining decisions.
-class WarmCallGenerator : public CallGenerator {
-  WarmCallInfo*   _call_info;
-  CallGenerator*  _if_cold;
-  CallGenerator*  _if_hot;
-  bool            _is_virtual;   // caches virtuality of if_cold
-  bool            _is_inline;    // caches inline-ness of if_hot
-
-public:
-  WarmCallGenerator(WarmCallInfo* ci,
-                    CallGenerator* if_cold,
-                    CallGenerator* if_hot)
-    : CallGenerator(if_cold->method())
-  {
-    assert(method() == if_hot->method(), "consistent choices");
-    _call_info  = ci;
-    _if_cold    = if_cold;
-    _if_hot     = if_hot;
-    _is_virtual = if_cold->is_virtual();
-    _is_inline  = if_hot->is_inline();
-  }
-
-  virtual bool      is_inline() const           { return _is_inline; }
-  virtual bool      is_virtual() const          { return _is_virtual; }
-  virtual bool      is_deferred() const         { return true; }
-
-  virtual JVMState* generate(JVMState* jvms);
-};
-
-
-CallGenerator* CallGenerator::for_warm_call(WarmCallInfo* ci,
-                                            CallGenerator* if_cold,
-                                            CallGenerator* if_hot) {
-  return new WarmCallGenerator(ci, if_cold, if_hot);
-}
-
-JVMState* WarmCallGenerator::generate(JVMState* jvms) {
-  Compile* C = Compile::current();
-  C->print_inlining_update(this);
-
-  if (C->log() != NULL) {
-    C->log()->elem("warm_call bci='%d'", jvms->bci());
-  }
-  jvms = _if_cold->generate(jvms);
-  if (jvms != NULL) {
-    Node* m = jvms->map()->control();
-    if (m->is_CatchProj()) m = m->in(0);  else m = C->top();
-    if (m->is_Catch())     m = m->in(0);  else m = C->top();
-    if (m->is_Proj())      m = m->in(0);  else m = C->top();
-    if (m->is_CallJava()) {
-      _call_info->set_call(m->as_Call());
-      _call_info->set_hot_cg(_if_hot);
-#ifndef PRODUCT
-      if (PrintOpto || PrintOptoInlining) {
-        tty->print_cr("Queueing for warm inlining at bci %d:", jvms->bci());
-        tty->print("WCI: ");
-        _call_info->print();
-      }
-#endif
-      _call_info->set_heat(_call_info->compute_heat());
-      C->set_warm_calls(_call_info->insert_into(C->warm_calls()));
-    }
-  }
-  return jvms;
-}
-
-void WarmCallInfo::make_hot() {
-  Unimplemented();
-}
-
-void WarmCallInfo::make_cold() {
-  // No action:  Just dequeue.
-}
-
 
 //------------------------PredictedCallGenerator------------------------------
 // Internal class which handles all out-of-line calls checking receiver type.
@@ -767,12 +959,12 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   }
 
   if (kit.stopped()) {
-    // Instance exactly does not matches the desired type.
+    // Instance does not match the predicted type.
     kit.set_jvms(slow_jvms);
     return kit.transfer_exceptions_into_jvms();
   }
 
-  // fall through if the instance exactly matches the desired type
+  // Fall through if the instance matches the desired type.
   kit.replace_in_map(receiver, casted_receiver);
 
   // Make the hot call:
@@ -842,10 +1034,10 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
 }
 
 
-CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* caller, ciMethod* callee) {
+CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool allow_inline) {
   assert(callee->is_method_handle_intrinsic(), "for_method_handle_call mismatch");
   bool input_not_const;
-  CallGenerator* cg = CallGenerator::for_method_handle_inline(jvms, caller, callee, input_not_const);
+  CallGenerator* cg = CallGenerator::for_method_handle_inline(jvms, caller, callee, allow_inline, input_not_const);
   Compile* C = Compile::current();
   if (cg != NULL) {
     if (AlwaysIncrementalInline) {
@@ -858,7 +1050,7 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
   ciCallProfile profile = caller->call_profile_at_bci(bci);
   int call_site_count = caller->scale_count(profile.count());
 
-  if (IncrementalInline && call_site_count > 0 &&
+  if (IncrementalInlineMH && call_site_count > 0 &&
       (input_not_const || !C->inlining_incrementally() || C->over_inlining_cutoff())) {
     return CallGenerator::for_mh_late_inline(caller, callee, input_not_const);
   } else {
@@ -867,12 +1059,40 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
   }
 }
 
-CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool& input_not_const) {
+class NativeCallGenerator : public CallGenerator {
+private:
+  address _call_addr;
+  ciNativeEntryPoint* _nep;
+public:
+  NativeCallGenerator(ciMethod* m, address call_addr, ciNativeEntryPoint* nep)
+   : CallGenerator(m), _call_addr(call_addr), _nep(nep) {}
+
+  virtual JVMState* generate(JVMState* jvms);
+};
+
+JVMState* NativeCallGenerator::generate(JVMState* jvms) {
+  GraphKit kit(jvms);
+
+  Node* call = kit.make_native_call(_call_addr, tf(), method()->arg_size(), _nep); // -fallback, - nep
+  if (call == NULL) return NULL;
+
+  kit.C->print_inlining_update(this);
+  if (kit.C->log() != NULL) {
+    kit.C->log()->elem("l2n_intrinsification_success bci='%d' entry_point='" INTPTR_FORMAT "'", jvms->bci(), p2i(_call_addr));
+  }
+
+  return kit.transfer_exceptions_into_jvms();
+}
+
+CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool allow_inline, bool& input_not_const) {
   GraphKit kit(jvms);
   PhaseGVN& gvn = kit.gvn();
   Compile* C = kit.C;
   vmIntrinsics::ID iid = callee->intrinsic_id();
   input_not_const = true;
+  if (StressMethodHandleLinkerInlining) {
+    allow_inline = false;
+  }
   switch (iid) {
   case vmIntrinsics::_invokeBasic:
     {
@@ -893,7 +1113,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         CallGenerator* cg = C->call_generator(target, vtable_index,
                                               false /* call_does_dispatch */,
                                               jvms,
-                                              true /* allow_inline */,
+                                              allow_inline,
                                               PROB_ALWAYS);
         return cg;
       } else {
@@ -933,7 +1153,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
           const Type*       sig_type = TypeOopPtr::make_from_klass(signature->accessing_klass());
           if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-            const Type* recv_type = arg_type->join_speculative(sig_type); // keep speculative part
+            const Type* recv_type = arg_type->filter_speculative(sig_type); // keep speculative part
             Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, recv_type));
             kit.set_argument(0, cast_obj);
           }
@@ -946,7 +1166,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
             const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
             const Type*       sig_type = TypeOopPtr::make_from_klass(t->as_klass());
             if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-              const Type* narrowed_arg_type = arg_type->join_speculative(sig_type); // keep speculative part
+              const Type* narrowed_arg_type = arg_type->filter_speculative(sig_type); // keep speculative part
               Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, narrowed_arg_type));
               kit.set_argument(receiver_skip + j, cast_obj);
             }
@@ -969,7 +1189,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           // optimize_virtual_call() takes 2 different holder
           // arguments for a corner case that doesn't apply here (see
           // Parse::do_call())
-          target = C->optimize_virtual_call(caller, jvms->bci(), klass, klass,
+          target = C->optimize_virtual_call(caller, klass, klass,
                                             target, receiver_type, is_virtual,
                                             call_does_dispatch, vtable_index, // out-parameters
                                             false /* check_access */);
@@ -978,7 +1198,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           speculative_receiver_type = (receiver_type != NULL) ? receiver_type->speculative_type() : NULL;
         }
         CallGenerator* cg = C->call_generator(target, vtable_index, call_does_dispatch, jvms,
-                                              !StressMethodHandleLinkerInlining /* allow_inline */,
+                                              allow_inline,
                                               PROB_ALWAYS,
                                               speculative_receiver_type);
         return cg;
@@ -989,8 +1209,27 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
     }
     break;
 
+    case vmIntrinsics::_linkToNative:
+    {
+      Node* addr_n = kit.argument(1); // target address
+      Node* nep_n = kit.argument(callee->arg_size() - 1); // NativeEntryPoint
+      // This check needs to be kept in sync with the one in CallStaticJavaNode::Ideal
+      if (addr_n->Opcode() == Op_ConL && nep_n->Opcode() == Op_ConP) {
+        input_not_const = false;
+        const TypeLong* addr_t = addr_n->bottom_type()->is_long();
+        const TypeOopPtr* nep_t = nep_n->bottom_type()->is_oopptr();
+        address addr = (address) addr_t->get_con();
+        ciNativeEntryPoint* nep = nep_t->const_oop()->as_native_entry_point();
+        return new NativeCallGenerator(callee, addr, nep);
+      } else {
+        print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
+                               "NativeEntryPoint not constant");
+      }
+    }
+    break;
+
   default:
-    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+    fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
     break;
   }
   return NULL;
@@ -1013,7 +1252,7 @@ public:
   }
 
   virtual bool      is_virtual()   const    { return true; }
-  virtual bool      is_inlined()   const    { return true; }
+  virtual bool      is_inline()    const    { return true; }
   virtual bool      is_intrinsic() const    { return true; }
 
   virtual JVMState* generate(JVMState* jvms);
@@ -1257,158 +1496,3 @@ JVMState* UncommonTrapCallGenerator::generate(JVMState* jvms) {
 // (Note:  Moved hook_up_call to GraphKit::set_edges_for_java_call.)
 
 // (Node:  Merged hook_up_exits into ParseGenerator::generate.)
-
-#define NODES_OVERHEAD_PER_METHOD (30.0)
-#define NODES_PER_BYTECODE (9.5)
-
-void WarmCallInfo::init(JVMState* call_site, ciMethod* call_method, ciCallProfile& profile, float prof_factor) {
-  int call_count = profile.count();
-  int code_size = call_method->code_size();
-
-  // Expected execution count is based on the historical count:
-  _count = call_count < 0 ? 1 : call_site->method()->scale_count(call_count, prof_factor);
-
-  // Expected profit from inlining, in units of simple call-overheads.
-  _profit = 1.0;
-
-  // Expected work performed by the call in units of call-overheads.
-  // %%% need an empirical curve fit for "work" (time in call)
-  float bytecodes_per_call = 3;
-  _work = 1.0 + code_size / bytecodes_per_call;
-
-  // Expected size of compilation graph:
-  // -XX:+PrintParseStatistics once reported:
-  //  Methods seen: 9184  Methods parsed: 9184  Nodes created: 1582391
-  //  Histogram of 144298 parsed bytecodes:
-  // %%% Need an better predictor for graph size.
-  _size = NODES_OVERHEAD_PER_METHOD + (NODES_PER_BYTECODE * code_size);
-}
-
-// is_cold:  Return true if the node should never be inlined.
-// This is true if any of the key metrics are extreme.
-bool WarmCallInfo::is_cold() const {
-  if (count()  <  WarmCallMinCount)        return true;
-  if (profit() <  WarmCallMinProfit)       return true;
-  if (work()   >  WarmCallMaxWork)         return true;
-  if (size()   >  WarmCallMaxSize)         return true;
-  return false;
-}
-
-// is_hot:  Return true if the node should be inlined immediately.
-// This is true if any of the key metrics are extreme.
-bool WarmCallInfo::is_hot() const {
-  assert(!is_cold(), "eliminate is_cold cases before testing is_hot");
-  if (count()  >= HotCallCountThreshold)   return true;
-  if (profit() >= HotCallProfitThreshold)  return true;
-  if (work()   <= HotCallTrivialWork)      return true;
-  if (size()   <= HotCallTrivialSize)      return true;
-  return false;
-}
-
-// compute_heat:
-float WarmCallInfo::compute_heat() const {
-  assert(!is_cold(), "compute heat only on warm nodes");
-  assert(!is_hot(),  "compute heat only on warm nodes");
-  int min_size = MAX2(0,   (int)HotCallTrivialSize);
-  int max_size = MIN2(500, (int)WarmCallMaxSize);
-  float method_size = (size() - min_size) / MAX2(1, max_size - min_size);
-  float size_factor;
-  if      (method_size < 0.05)  size_factor = 4;   // 2 sigmas better than avg.
-  else if (method_size < 0.15)  size_factor = 2;   // 1 sigma better than avg.
-  else if (method_size < 0.5)   size_factor = 1;   // better than avg.
-  else                          size_factor = 0.5; // worse than avg.
-  return (count() * profit() * size_factor);
-}
-
-bool WarmCallInfo::warmer_than(WarmCallInfo* that) {
-  assert(this != that, "compare only different WCIs");
-  assert(this->heat() != 0 && that->heat() != 0, "call compute_heat 1st");
-  if (this->heat() > that->heat())   return true;
-  if (this->heat() < that->heat())   return false;
-  assert(this->heat() == that->heat(), "no NaN heat allowed");
-  // Equal heat.  Break the tie some other way.
-  if (!this->call() || !that->call())  return (address)this > (address)that;
-  return this->call()->_idx > that->call()->_idx;
-}
-
-//#define UNINIT_NEXT ((WarmCallInfo*)badAddress)
-#define UNINIT_NEXT ((WarmCallInfo*)NULL)
-
-WarmCallInfo* WarmCallInfo::insert_into(WarmCallInfo* head) {
-  assert(next() == UNINIT_NEXT, "not yet on any list");
-  WarmCallInfo* prev_p = NULL;
-  WarmCallInfo* next_p = head;
-  while (next_p != NULL && next_p->warmer_than(this)) {
-    prev_p = next_p;
-    next_p = prev_p->next();
-  }
-  // Install this between prev_p and next_p.
-  this->set_next(next_p);
-  if (prev_p == NULL)
-    head = this;
-  else
-    prev_p->set_next(this);
-  return head;
-}
-
-WarmCallInfo* WarmCallInfo::remove_from(WarmCallInfo* head) {
-  WarmCallInfo* prev_p = NULL;
-  WarmCallInfo* next_p = head;
-  while (next_p != this) {
-    assert(next_p != NULL, "this must be in the list somewhere");
-    prev_p = next_p;
-    next_p = prev_p->next();
-  }
-  next_p = this->next();
-  debug_only(this->set_next(UNINIT_NEXT));
-  // Remove this from between prev_p and next_p.
-  if (prev_p == NULL)
-    head = next_p;
-  else
-    prev_p->set_next(next_p);
-  return head;
-}
-
-WarmCallInfo WarmCallInfo::_always_hot(WarmCallInfo::MAX_VALUE(), WarmCallInfo::MAX_VALUE(),
-                                       WarmCallInfo::MIN_VALUE(), WarmCallInfo::MIN_VALUE());
-WarmCallInfo WarmCallInfo::_always_cold(WarmCallInfo::MIN_VALUE(), WarmCallInfo::MIN_VALUE(),
-                                        WarmCallInfo::MAX_VALUE(), WarmCallInfo::MAX_VALUE());
-
-WarmCallInfo* WarmCallInfo::always_hot() {
-  assert(_always_hot.is_hot(), "must always be hot");
-  return &_always_hot;
-}
-
-WarmCallInfo* WarmCallInfo::always_cold() {
-  assert(_always_cold.is_cold(), "must always be cold");
-  return &_always_cold;
-}
-
-
-#ifndef PRODUCT
-
-void WarmCallInfo::print() const {
-  tty->print("%s : C=%6.1f P=%6.1f W=%6.1f S=%6.1f H=%6.1f -> %p",
-             is_cold() ? "cold" : is_hot() ? "hot " : "warm",
-             count(), profit(), work(), size(), compute_heat(), next());
-  tty->cr();
-  if (call() != NULL)  call()->dump();
-}
-
-void print_wci(WarmCallInfo* ci) {
-  ci->print();
-}
-
-void WarmCallInfo::print_all() const {
-  for (const WarmCallInfo* p = this; p != NULL; p = p->next())
-    p->print();
-}
-
-int WarmCallInfo::count_all() const {
-  int cnt = 0;
-  for (const WarmCallInfo* p = this; p != NULL; p = p->next())
-    cnt++;
-  return cnt;
-}
-
-#endif //PRODUCT

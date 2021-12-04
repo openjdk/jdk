@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MainModuleOnly
  * @summary Test some scenarios with a main modular jar specified in the --module-path and -cp options in the command line.
  */
@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSTestUtils.Result;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
@@ -47,7 +48,7 @@ import sun.hotspot.code.Compiler;
 
 public class MainModuleOnly {
 
-    private static final Path USER_DIR = Paths.get(System.getProperty("user.dir"));
+    private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
 
     private static final String TEST_SRC = System.getProperty("test.src");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,6 @@ public final class SunNativeProvider extends Provider {
     private static final String INFO = "Sun Native GSS provider";
     private static final String MF_CLASS =
         "sun.security.jgss.wrapper.NativeGSSFactory";
-    private static final HashMap<String, String> MECH_MAP;
-    static final Provider INSTANCE;
     static boolean DEBUG;
     static void debug(String message) {
         if (DEBUG) {
@@ -63,16 +61,20 @@ public final class SunNativeProvider extends Provider {
         }
     }
 
-    static {
-        MECH_MAP =
+    @SuppressWarnings("removal")
+    private static final HashMap<String, String> MECH_MAP =
             AccessController.doPrivileged(
                 new PrivilegedAction<>() {
                     public HashMap<String, String> run() {
                         DEBUG = Boolean.parseBoolean(
                             System.getProperty("sun.security.nativegss.debug"));
                         try {
+                            // Ensure the InetAddress class is loaded before
+                            // loading j2gss. The library will access this class
+                            // and a deadlock might happen. See JDK-8210373.
+                            Class.forName("java.net.InetAddress");
                             System.loadLibrary("j2gss");
-                        } catch (Error err) {
+                        } catch (ClassNotFoundException | Error err) {
                             debug("No j2gss library found!");
                             if (DEBUG) err.printStackTrace();
                             return null;
@@ -119,10 +121,11 @@ public final class SunNativeProvider extends Provider {
                         return null;
                     }
                 });
-        // initialize INSTANCE after MECH_MAP is constructed
-        INSTANCE = new SunNativeProvider();
-    }
 
+    // initialize INSTANCE after MECH_MAP is constructed
+    static final Provider INSTANCE = new SunNativeProvider();
+
+    @SuppressWarnings("removal")
     public SunNativeProvider() {
         /* We are the Sun NativeGSS provider */
         super(NAME, PROVIDER_VER, INFO);

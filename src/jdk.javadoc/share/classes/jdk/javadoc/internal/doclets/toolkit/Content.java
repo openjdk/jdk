@@ -107,7 +107,8 @@ public abstract class Content {
     public abstract boolean isEmpty();
 
     /**
-     * Returns true if the content is valid.
+     * Returns true if the content is valid. This allows filtering during
+     * {@link #add(Content) addition}.
      *
      * @return true if the content is valid else return false
      */

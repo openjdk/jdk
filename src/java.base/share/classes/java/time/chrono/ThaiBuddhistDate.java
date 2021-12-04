@@ -90,12 +90,12 @@ import java.util.Objects;
  * This date operates using the {@linkplain ThaiBuddhistChronology Thai Buddhist calendar}.
  * This calendar system is primarily used in Thailand.
  * Dates are aligned such that {@code 2484-01-01 (Buddhist)} is {@code 1941-01-01 (ISO)}.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code ThaiBuddhistDate} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -103,6 +103,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class ThaiBuddhistDate
         extends ChronoLocalDateImpl<ThaiBuddhistDate>
         implements ChronoLocalDate, Serializable {
@@ -310,20 +311,19 @@ public final class ThaiBuddhistDate
     //-----------------------------------------------------------------------
     @Override
     public ThaiBuddhistDate with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            if (getLong(f) == newValue) {
+        if (field instanceof ChronoField chronoField) {
+            if (getLong(chronoField) == newValue) {
                 return this;
             }
-            switch (f) {
+            switch (chronoField) {
                 case PROLEPTIC_MONTH:
-                    getChronology().range(f).checkValidValue(newValue, f);
+                    getChronology().range(chronoField).checkValidValue(newValue, chronoField);
                     return plusMonths(newValue - getProlepticMonth());
                 case YEAR_OF_ERA:
                 case YEAR:
                 case ERA: {
-                    int nvalue = getChronology().range(f).checkValidIntValue(newValue, f);
-                    switch (f) {
+                    int nvalue = getChronology().range(chronoField).checkValidIntValue(newValue, chronoField);
+                    switch (chronoField) {
                         case YEAR_OF_ERA:
                             return with(isoDate.withYear((getProlepticYear() >= 1 ? nvalue : 1 - nvalue)  - YEARS_DIFFERENCE));
                         case YEAR:
@@ -458,11 +458,8 @@ public final class ThaiBuddhistDate
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ThaiBuddhistDate) {
-            ThaiBuddhistDate otherDate = (ThaiBuddhistDate) obj;
-            return this.isoDate.equals(otherDate.isoDate);
-        }
-        return false;
+        return (obj instanceof ThaiBuddhistDate otherDate)
+                && this.isoDate.equals(otherDate.isoDate);
     }
 
     /**

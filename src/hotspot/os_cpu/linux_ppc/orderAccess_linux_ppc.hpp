@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -77,7 +77,7 @@ inline void   OrderAccess::storeload()  { inlasm_sync();   }
 inline void   OrderAccess::acquire()    { inlasm_lwsync(); }
 inline void   OrderAccess::release()    { inlasm_lwsync(); }
 inline void   OrderAccess::fence()      { inlasm_sync();   }
-inline void   OrderAccess::cross_modify_fence()
+inline void   OrderAccess::cross_modify_fence_impl()
                                         { inlasm_isync();  }
 
 #undef inlasm_sync

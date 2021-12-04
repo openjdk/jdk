@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,6 @@ inline void OrderAccess::storestore() { dmb_st(); }
 inline void OrderAccess::storeload()  { dmb_sy(); }
 inline void OrderAccess::release()    { dmb_sy(); }
 inline void OrderAccess::fence()      { dmb_sy(); }
-inline void OrderAccess::cross_modify_fence()   { }
+inline void OrderAccess::cross_modify_fence_impl()   { }
 
 #endif // OS_CPU_LINUX_ARM_ORDERACCESS_LINUX_ARM_HPP

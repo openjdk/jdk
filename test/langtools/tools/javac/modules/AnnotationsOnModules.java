@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8159602 8170549 8171255 8171322
+ * @bug 8159602 8170549 8171255 8171322 8254023
  * @summary Test annotations on module declaration.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -51,6 +51,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 
+import com.sun.tools.classfile.Annotation;
 import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
@@ -269,11 +270,12 @@ public class AnnotationsOnModules extends ModuleTestBase {
         Path m1 = base.resolve("src1/A");
 
         tb.writeJavaFiles(m1,
-                "module A { " +
-                        "exports p1 to B; opens p1 to B;" +
-                        "exports p2 to C; opens p2 to C;" +
-                        "exports p3 to B,C; opens p3 to B,C;" +
-                        "}",
+                """
+                    module A {
+                        exports p1 to B; opens p1 to B;
+                        exports p2 to C; opens p2 to C;
+                        exports p3 to B,C; opens p3 to B,C;
+                    }""",
                 "package p1; public class A { }",
                 "package p2; public class A { }",
                 "package p3; public class A { }");
@@ -411,6 +413,42 @@ public class AnnotationsOnModules extends ModuleTestBase {
     }
 
     @Test
+    public void testAnnotationWithoutTarget(Path base) throws Exception {
+        Path moduleSrc = base.resolve("module-src");
+        Path m1 = moduleSrc.resolve("m1x");
+
+        tb.writeJavaFiles(m1,
+                          "@test.A module m1x { exports test; }",
+                          "package test; public @interface A { }");
+
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString())
+                .outdir(classes)
+                .files(findJavaFiles(m1))
+                .run()
+                .writeAll();
+
+        ClassFile cf = ClassFile.read(classes.resolve("m1x").resolve("module-info.class"));
+        var invisibleAnnotations = (RuntimeInvisibleAnnotations_attribute) cf.attributes.map.get(Attribute.RuntimeInvisibleAnnotations);
+
+        if (invisibleAnnotations == null) {
+            throw new AssertionError("Annotations not found!");
+        }
+        int length = invisibleAnnotations.annotations.length;
+        if (length != 1) {
+            throw new AssertionError("Incorrect number of annotations: " + length);
+        }
+        Annotation annotation = invisibleAnnotations.annotations[0];
+        String annotationName = cf.constant_pool.getUTF8Value(annotation.type_index).toString();
+        if (!"Ltest/A;".equals(annotationName)) {
+            throw new AssertionError("Incorrect annotation name: " + annotationName);
+        }
+    }
+
+    @Test
     public void testModuleInfoAnnotationsInAPI(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
         Path m1 = moduleSrc.resolve("m1x");
@@ -510,10 +548,11 @@ public class AnnotationsOnModules extends ModuleTestBase {
         String DEPRECATED_JAVADOC = "/** @deprecated */";
         for (String suppress : new String[] {"", DEPRECATED_JAVADOC, "@Deprecated ", "@SuppressWarnings(\"deprecation\") "}) {
             tb.writeJavaFiles(m3,
-                              suppress + "module m3x {\n" +
-                              "    requires m1x;\n" +
-                              "    exports api to m1x, m2x;\n" +
-                              "}",
+                              suppress + """
+                                  module m3x {
+                                      requires m1x;
+                                      exports api to m1x, m2x;
+                                  }""",
                               "package api; public class Api { }");
             System.err.println("compile m3x");
             actual = new JavacTask(tb)

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8048933
- * @summary TraceExceptions output should have the exception message - useful for ClassNotFoundExceptions especially
+ * @summary -Xlog:exceptions=info output should have the exception message - useful for ClassNotFoundExceptions especially
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

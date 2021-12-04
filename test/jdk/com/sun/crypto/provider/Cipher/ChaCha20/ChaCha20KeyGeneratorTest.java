@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,11 @@
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidParameterException;
+import java.util.HexFormat;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.ChaCha20ParameterSpec;
-
-import jdk.test.lib.Utils;
 
 public class ChaCha20KeyGeneratorTest {
 
@@ -44,7 +43,7 @@ public class ChaCha20KeyGeneratorTest {
 
         try {
             generator.init(new ChaCha20ParameterSpec(
-                    Utils.toByteArray("100000000000000000000000"), 0));
+                    HexFormat.of().parseHex("100000000000000000000000"), 0));
             throw new RuntimeException(
                     "ChaCha20 key generation should not consume AlgorithmParameterSpec");
         } catch (InvalidAlgorithmParameterException e) {
@@ -65,7 +64,7 @@ public class ChaCha20KeyGeneratorTest {
         generator.init(256);
         SecretKey key = generator.generateKey();
         byte[] keyValue = key.getEncoded();
-        System.out.println("Key: " + Utils.toHexString(keyValue));
+        System.out.println("Key: " + HexFormat.of().formatHex(keyValue));
         if (keyValue.length != 32) {
             throw new RuntimeException("The size of generated key must be 256");
         }

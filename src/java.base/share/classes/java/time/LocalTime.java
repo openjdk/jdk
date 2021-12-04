@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,12 +109,12 @@ import java.util.Objects;
  * The ISO-8601 calendar system is the modern civil calendar system used today
  * in most of the world. This API assumes that all calendar systems use the same
  * representation, this class, for time-of-day.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code LocalTime} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -122,6 +122,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class LocalTime
         implements Temporal, TemporalAdjuster, Comparable<LocalTime>, Serializable {
 
@@ -182,13 +183,21 @@ public final class LocalTime
      */
     static final int SECONDS_PER_DAY = SECONDS_PER_HOUR * HOURS_PER_DAY;
     /**
+     * Milliseconds per second.
+     */
+    static final long MILLIS_PER_SECOND = 1000L;
+    /**
      * Milliseconds per day.
      */
-    static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
+    static final long MILLIS_PER_DAY = MILLIS_PER_SECOND * SECONDS_PER_DAY;
+    /**
+     * Microseconds per second.
+     */
+    static final long MICROS_PER_SECOND = 1000_000L;
     /**
      * Microseconds per day.
      */
-    static final long MICROS_PER_DAY = SECONDS_PER_DAY * 1000_000L;
+    static final long MICROS_PER_DAY = MICROS_PER_SECOND * SECONDS_PER_DAY;
     /**
      * Nanos per millisecond.
      */
@@ -682,24 +691,24 @@ public final class LocalTime
     }
 
     private int get0(TemporalField field) {
-        switch ((ChronoField) field) {
-            case NANO_OF_SECOND: return nano;
-            case NANO_OF_DAY: throw new UnsupportedTemporalTypeException("Invalid field 'NanoOfDay' for get() method, use getLong() instead");
-            case MICRO_OF_SECOND: return nano / 1000;
-            case MICRO_OF_DAY: throw new UnsupportedTemporalTypeException("Invalid field 'MicroOfDay' for get() method, use getLong() instead");
-            case MILLI_OF_SECOND: return nano / 1000_000;
-            case MILLI_OF_DAY: return (int) (toNanoOfDay() / 1000_000);
-            case SECOND_OF_MINUTE: return second;
-            case SECOND_OF_DAY: return toSecondOfDay();
-            case MINUTE_OF_HOUR: return minute;
-            case MINUTE_OF_DAY: return hour * 60 + minute;
-            case HOUR_OF_AMPM: return hour % 12;
-            case CLOCK_HOUR_OF_AMPM: int ham = hour % 12; return (ham % 12 == 0 ? 12 : ham);
-            case HOUR_OF_DAY: return hour;
-            case CLOCK_HOUR_OF_DAY: return (hour == 0 ? 24 : hour);
-            case AMPM_OF_DAY: return hour / 12;
-        }
-        throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        return switch ((ChronoField) field) {
+            case NANO_OF_SECOND -> nano;
+            case NANO_OF_DAY -> throw new UnsupportedTemporalTypeException("Invalid field 'NanoOfDay' for get() method, use getLong() instead");
+            case MICRO_OF_SECOND -> nano / 1000;
+            case MICRO_OF_DAY -> throw new UnsupportedTemporalTypeException("Invalid field 'MicroOfDay' for get() method, use getLong() instead");
+            case MILLI_OF_SECOND -> nano / 1000_000;
+            case MILLI_OF_DAY -> (int) (toNanoOfDay() / 1000_000);
+            case SECOND_OF_MINUTE -> second;
+            case SECOND_OF_DAY -> toSecondOfDay();
+            case MINUTE_OF_HOUR -> minute;
+            case MINUTE_OF_DAY -> hour * 60 + minute;
+            case HOUR_OF_AMPM -> hour % 12;
+            case CLOCK_HOUR_OF_AMPM -> { int ham = hour % 12; yield ham % 12 == 0 ? 12 : ham; }
+            case HOUR_OF_DAY -> hour;
+            case CLOCK_HOUR_OF_DAY -> (hour == 0 ? 24 : hour);
+            case AMPM_OF_DAY -> hour / 12;
+            default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        };
     }
 
     //-----------------------------------------------------------------------
@@ -854,27 +863,26 @@ public final class LocalTime
      */
     @Override
     public LocalTime with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            f.checkValidValue(newValue);
-            switch (f) {
-                case NANO_OF_SECOND: return withNano((int) newValue);
-                case NANO_OF_DAY: return LocalTime.ofNanoOfDay(newValue);
-                case MICRO_OF_SECOND: return withNano((int) newValue * 1000);
-                case MICRO_OF_DAY: return LocalTime.ofNanoOfDay(newValue * 1000);
-                case MILLI_OF_SECOND: return withNano((int) newValue * 1000_000);
-                case MILLI_OF_DAY: return LocalTime.ofNanoOfDay(newValue * 1000_000);
-                case SECOND_OF_MINUTE: return withSecond((int) newValue);
-                case SECOND_OF_DAY: return plusSeconds(newValue - toSecondOfDay());
-                case MINUTE_OF_HOUR: return withMinute((int) newValue);
-                case MINUTE_OF_DAY: return plusMinutes(newValue - (hour * 60 + minute));
-                case HOUR_OF_AMPM: return plusHours(newValue - (hour % 12));
-                case CLOCK_HOUR_OF_AMPM: return plusHours((newValue == 12 ? 0 : newValue) - (hour % 12));
-                case HOUR_OF_DAY: return withHour((int) newValue);
-                case CLOCK_HOUR_OF_DAY: return withHour((int) (newValue == 24 ? 0 : newValue));
-                case AMPM_OF_DAY: return plusHours((newValue - (hour / 12)) * 12);
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        if (field instanceof ChronoField chronoField) {
+            chronoField.checkValidValue(newValue);
+            return switch (chronoField) {
+                case NANO_OF_SECOND     -> withNano((int) newValue);
+                case NANO_OF_DAY        -> LocalTime.ofNanoOfDay(newValue);
+                case MICRO_OF_SECOND    -> withNano((int) newValue * 1000);
+                case MICRO_OF_DAY       -> LocalTime.ofNanoOfDay(newValue * 1000);
+                case MILLI_OF_SECOND    -> withNano((int) newValue * 1000_000);
+                case MILLI_OF_DAY       -> LocalTime.ofNanoOfDay(newValue * 1000_000);
+                case SECOND_OF_MINUTE   -> withSecond((int) newValue);
+                case SECOND_OF_DAY      -> plusSeconds(newValue - toSecondOfDay());
+                case MINUTE_OF_HOUR     -> withMinute((int) newValue);
+                case MINUTE_OF_DAY      -> plusMinutes(newValue - (hour * 60 + minute));
+                case HOUR_OF_AMPM       -> plusHours(newValue - (hour % 12));
+                case CLOCK_HOUR_OF_AMPM -> plusHours((newValue == 12 ? 0 : newValue) - (hour % 12));
+                case HOUR_OF_DAY        -> withHour((int) newValue);
+                case CLOCK_HOUR_OF_DAY  -> withHour((int) (newValue == 24 ? 0 : newValue));
+                case AMPM_OF_DAY        -> plusHours((newValue - (hour / 12)) * 12);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return field.adjustInto(this, newValue);
     }
@@ -1065,17 +1073,17 @@ public final class LocalTime
      */
     @Override
     public LocalTime plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            switch ((ChronoUnit) unit) {
-                case NANOS: return plusNanos(amountToAdd);
-                case MICROS: return plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
-                case MILLIS: return plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000_000);
-                case SECONDS: return plusSeconds(amountToAdd);
-                case MINUTES: return plusMinutes(amountToAdd);
-                case HOURS: return plusHours(amountToAdd);
-                case HALF_DAYS: return plusHours((amountToAdd % 2) * 12);
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+        if (unit instanceof ChronoUnit chronoUnit) {
+            return switch (chronoUnit) {
+                case NANOS     -> plusNanos(amountToAdd);
+                case MICROS    -> plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
+                case MILLIS    -> plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000_000);
+                case SECONDS   -> plusSeconds(amountToAdd);
+                case MINUTES   -> plusMinutes(amountToAdd);
+                case HOURS     -> plusHours(amountToAdd);
+                case HALF_DAYS -> plusHours((amountToAdd % 2) * 12);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return unit.addTo(this, amountToAdd);
     }
@@ -1406,18 +1414,18 @@ public final class LocalTime
     @Override
     public long until(Temporal endExclusive, TemporalUnit unit) {
         LocalTime end = LocalTime.from(endExclusive);
-        if (unit instanceof ChronoUnit) {
+        if (unit instanceof ChronoUnit chronoUnit) {
             long nanosUntil = end.toNanoOfDay() - toNanoOfDay();  // no overflow
-            switch ((ChronoUnit) unit) {
-                case NANOS: return nanosUntil;
-                case MICROS: return nanosUntil / 1000;
-                case MILLIS: return nanosUntil / 1000_000;
-                case SECONDS: return nanosUntil / NANOS_PER_SECOND;
-                case MINUTES: return nanosUntil / NANOS_PER_MINUTE;
-                case HOURS: return nanosUntil / NANOS_PER_HOUR;
-                case HALF_DAYS: return nanosUntil / (12 * NANOS_PER_HOUR);
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            return switch (chronoUnit) {
+                case NANOS     -> nanosUntil;
+                case MICROS    -> nanosUntil / 1000;
+                case MILLIS    -> nanosUntil / 1000_000;
+                case SECONDS   -> nanosUntil / NANOS_PER_SECOND;
+                case MINUTES   -> nanosUntil / NANOS_PER_MINUTE;
+                case HOURS     -> nanosUntil / NANOS_PER_HOUR;
+                case HALF_DAYS -> nanosUntil / (12 * NANOS_PER_HOUR);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return unit.between(this, end);
     }
@@ -1582,12 +1590,11 @@ public final class LocalTime
         if (this == obj) {
             return true;
         }
-        if (obj instanceof LocalTime) {
-            LocalTime other = (LocalTime) obj;
-            return hour == other.hour && minute == other.minute &&
-                    second == other.second && nano == other.nano;
-        }
-        return false;
+        return (obj instanceof LocalTime other)
+                && hour == other.hour
+                && minute == other.minute
+                && second == other.second
+                && nano == other.nano;
     }
 
     /**
@@ -1597,8 +1604,7 @@ public final class LocalTime
      */
     @Override
     public int hashCode() {
-        long nod = toNanoOfDay();
-        return (int) (nod ^ (nod >>> 32));
+        return Long.hashCode(toNanoOfDay());
     }
 
     //-----------------------------------------------------------------------

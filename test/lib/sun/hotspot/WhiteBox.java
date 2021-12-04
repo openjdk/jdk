@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,9 @@ import java.util.function.Function;
 import java.security.BasicPermission;
 import java.util.Objects;
 
-import sun.hotspot.parser.DiagnosticCommand;
+import jdk.test.whitebox.parser.DiagnosticCommand;
 
+@Deprecated
 public class WhiteBox {
   @SuppressWarnings("serial")
   public static class WhiteBoxPermission extends BasicPermission {
@@ -55,9 +56,10 @@ public class WhiteBox {
    * untrusted code.
    */
   public synchronized static WhiteBox getWhiteBox() {
+    @SuppressWarnings("removal")
     SecurityManager sm = System.getSecurityManager();
     if (sm != null) {
-      sm.checkPermission(new WhiteBoxPermission("getInstance"));
+      throw new SecurityException("can't use old whitebox with SecurityManager, please switch to jdk.test.whitebox.WhiteBox");
     }
     return instance;
   }
@@ -163,6 +165,7 @@ public class WhiteBox {
 
   // G1
   public native boolean g1InConcurrentMark();
+  public native boolean g1HasRegionsToUncommit();
   private native boolean g1IsHumongous0(Object o);
   public         boolean g1IsHumongous(Object o) {
     Objects.requireNonNull(o);
@@ -230,7 +233,8 @@ public class WhiteBox {
   public native void NMTArenaMalloc(long arena, long size);
 
   // Compiler
-  public native boolean isC2OrJVMCIIncludedInVmBuild();
+  public native boolean isC2OrJVMCIIncluded();
+  public native boolean isJVMCISupportedByGC();
 
   public native int     matchesMethod(Executable method, String pattern);
   public native int     matchesInline(Executable method, String pattern);
@@ -248,7 +252,7 @@ public class WhiteBox {
     return isMethodCompiled0(method, isOsr);
   }
   public        boolean isMethodCompilable(Executable method) {
-    return isMethodCompilable(method, -2 /*any*/);
+    return isMethodCompilable(method, -1 /*any*/);
   }
   public        boolean isMethodCompilable(Executable method, int compLevel) {
     return isMethodCompilable(method, compLevel, false /*not osr*/);
@@ -296,7 +300,7 @@ public class WhiteBox {
     return deoptimizeMethod0(method, isOsr);
   }
   public        void    makeMethodNotCompilable(Executable method) {
-    makeMethodNotCompilable(method, -2 /*any*/);
+    makeMethodNotCompilable(method, -1 /*any*/);
   }
   public        void    makeMethodNotCompilable(Executable method, int compLevel) {
     makeMethodNotCompilable(method, compLevel, false /*not osr*/);
@@ -307,20 +311,50 @@ public class WhiteBox {
     makeMethodNotCompilable0(method, compLevel, isOsr);
   }
   public        int     getMethodCompilationLevel(Executable method) {
-    return getMethodCompilationLevel(method, false /*not ost*/);
+    return getMethodCompilationLevel(method, false /*not osr*/);
   }
   private native int     getMethodCompilationLevel0(Executable method, boolean isOsr);
   public         int     getMethodCompilationLevel(Executable method, boolean isOsr) {
     Objects.requireNonNull(method);
     return getMethodCompilationLevel0(method, isOsr);
   }
+  public         int     getMethodDecompileCount(Executable method) {
+    Objects.requireNonNull(method);
+    return getMethodDecompileCount0(method);
+  }
+  private native int     getMethodDecompileCount0(Executable method);
+  // Get the total trap count of a method. If the trap count for a specific reason
+  // did overflow, this includes the overflow trap count of the method.
+  public         int     getMethodTrapCount(Executable method) {
+    Objects.requireNonNull(method);
+    return getMethodTrapCount0(method, null);
+  }
+  // Get the trap count of a method for a specific reason. If the trap count for
+  // that reason did overflow, this includes the overflow trap count of the method.
+  public         int     getMethodTrapCount(Executable method, String reason) {
+    Objects.requireNonNull(method);
+    return getMethodTrapCount0(method, reason);
+  }
+  private native int     getMethodTrapCount0(Executable method, String reason);
+  // Get the total deopt count.
+  public         int     getDeoptCount() {
+    return getDeoptCount0(null, null);
+  }
+  // Get the deopt count for a specific reason and a specific action. If either
+  // one of 'reason' or 'action' is null, the method returns the sum of all
+  // deoptimizations with the specific 'action' or 'reason' respectively.
+  // If both arguments are null, the method returns the total deopt count.
+  public         int     getDeoptCount(String reason, String action) {
+    return getDeoptCount0(reason, action);
+  }
+  private native int     getDeoptCount0(String reason, String action);
   private native boolean testSetDontInlineMethod0(Executable method, boolean value);
   public         boolean testSetDontInlineMethod(Executable method, boolean value) {
     Objects.requireNonNull(method);
     return testSetDontInlineMethod0(method, value);
   }
   public        int     getCompileQueuesSize() {
-    return getCompileQueueSize(-2 /*any*/);
+    return getCompileQueueSize(-1 /*any*/);
   }
   public native int     getCompileQueueSize(int compLevel);
   private native boolean testSetForceInlineMethod0(Executable method, boolean value);
@@ -395,7 +429,7 @@ public class WhiteBox {
   public native long allocateMetaspace(ClassLoader classLoader, long size);
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
-  public native long metaspaceReserveAlignment();
+  public native long metaspaceSharedRegionAlignment();
 
   // Metaspace Arena Tests
   public native long createMetaspaceTestContext(long commit_limit, long reserve_limit);
@@ -414,6 +448,7 @@ public class WhiteBox {
   // Don't use these methods directly
   // Use sun.hotspot.gc.GC class instead.
   public native boolean isGCSupported(int name);
+  public native boolean isGCSupportedByJVMCICompiler(int name);
   public native boolean isGCSelected(int name);
   public native boolean isGCSelectedErgonomically();
 
@@ -448,6 +483,11 @@ public class WhiteBox {
   // to provide at least the following breakpoints.
   public final String AFTER_MARKING_STARTED = "AFTER MARKING STARTED";
   public final String BEFORE_MARKING_COMPLETED = "BEFORE MARKING COMPLETED";
+
+  // Collectors supporting concurrent GC breakpoints that do reference
+  // processing concurrently should provide the following breakpoint.
+  public final String AFTER_CONCURRENT_REFERENCE_PROCESSING_STARTED =
+    "AFTER CONCURRENT REFERENCE PROCESSING STARTED";
 
   public void concurrentGCAcquireControl() {
     checkConcurrentGCBreakpointsSupported();
@@ -501,7 +541,6 @@ public class WhiteBox {
 
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
-  public native void runMemoryUnitTests();
   public native void readFromNoaccessArea();
   public native long getThreadStackSize();
   public native long getThreadRemainingStackSize();
@@ -551,13 +590,21 @@ public class WhiteBox {
   public native void AddModuleExportsToAllUnnamed(Object module, String pkg);
   public native void AddModuleExportsToAll(Object module, String pkg);
 
-  public native int getOffsetForName0(String name);
-  public int getOffsetForName(String name) throws Exception {
-    int offset = getOffsetForName0(name);
+  public native int getCDSOffsetForName0(String name);
+  public int getCDSOffsetForName(String name) throws Exception {
+    int offset = getCDSOffsetForName0(name);
     if (offset == -1) {
       throw new RuntimeException(name + " not found");
     }
     return offset;
+  }
+  public native int getCDSConstantForName0(String name);
+  public int getCDSConstantForName(String name) throws Exception {
+    int constant = getCDSConstantForName0(name);
+    if (constant == -1) {
+      throw new RuntimeException(name + " not found");
+    }
+    return constant;
   }
   public native Boolean getMethodBooleanOption(Executable method, String name);
   public native Long    getMethodIntxOption(Executable method, String name);
@@ -583,10 +630,11 @@ public class WhiteBox {
   public native boolean isSharingEnabled();
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
-  public native boolean areSharedStringsIgnored();
-  public native boolean isCDSIncludedInVmBuild();
-  public native boolean isJFRIncludedInVmBuild();
-  public native boolean isJavaHeapArchiveSupported();
+  public native boolean areSharedStringsMapped();
+  public native boolean isSharedInternedString(String s);
+  public native boolean isCDSIncluded();
+  public native boolean isJFRIncluded();
+  public native boolean canWriteJavaHeapArchive();
   public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();
@@ -597,7 +645,10 @@ public class WhiteBox {
 
   // Handshakes
   public native int handshakeWalkStack(Thread t, boolean all_threads);
+  public native boolean handshakeReadMonitors(Thread t);
   public native void asyncHandshakeWalkStack(Thread t);
+
+  public native void lockAndBlock(boolean suspender);
 
   // Returns true on linux if library has the noexecstack flag set.
   public native boolean checkLibSpecifiesNoexecstack(String libfilename);
@@ -618,9 +669,6 @@ public class WhiteBox {
   // Protection Domain Table
   public native int protectionDomainRemovedCount();
 
-  // Number of loaded AOT libraries
-  public native int aotLibrariesCount();
-
   public native int getKlassMetadataSize(Class<?> c);
 
   // ThreadSMR GC safety check for threadObj
@@ -629,7 +677,14 @@ public class WhiteBox {
   // libc name
   public native String getLibcName();
 
+  // Walk stack frames of current thread
+  public native void verifyFrames(boolean log, boolean updateRegisterMap);
+
   public native boolean isJVMTIIncluded();
 
   public native void waitUnsafe(int time_ms);
+
+  public native void lockCritical();
+
+  public native void unlockCritical();
 }

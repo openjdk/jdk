@@ -107,6 +107,9 @@ class ChunkManager : public CHeapObj<mtMetaspace> {
   // See return_chunk().
   void return_chunk_locked(Metachunk* c);
 
+  // Calculates the total number of committed words over all chunks. Walks chunks.
+  size_t calc_committed_word_size_locked() const;
+
 public:
 
   // Creates a chunk manager with a given name (which is for debug purposes only)
@@ -167,8 +170,8 @@ public:
   // Returns number of words in all free chunks (regardless of commit state).
   size_t total_word_size() const            { return _chunks.word_size(); }
 
-  // Returns number of committed words in all free chunks.
-  size_t total_committed_word_size() const  { return _chunks.committed_word_size(); }
+  // Calculates the total number of committed words over all chunks. Walks chunks.
+  size_t calc_committed_word_size() const;
 
   // Update statistics.
   void add_to_statistics(ChunkManagerStats* out) const;

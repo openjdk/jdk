@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/macroAssembler.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -29,6 +30,7 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_aarch64.inline.hpp"
 

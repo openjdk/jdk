@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class Test extends MlvmTest {
             = Runtime.getRuntime().availableProcessors();
 
     Object finalTarget() {
-        return new Integer(0);
+        return Integer.valueOf(0);
     }
 
     static class A {
@@ -102,7 +102,7 @@ public class Test extends MlvmTest {
         Object m() throws Throwable {
             Env.traceNormal("Deoptimized m() in thread "
                     + Thread.currentThread().getName());
-            return new Integer(1);
+            return Integer.valueOf(1);
         }
     }
 
@@ -122,7 +122,7 @@ public class Test extends MlvmTest {
         final MethodHandle mhB = MethodHandles.lookup().findVirtual(Test.class,
                 "finalTarget", MethodType.methodType(Object.class));
 
-        final Argument finalRetVal = Argument.fromValue(new Integer(0));
+        final Argument finalRetVal = Argument.fromValue(Integer.valueOf(0));
         finalRetVal.setPreserved(true);
 
         this.intermediateTarget = new A(

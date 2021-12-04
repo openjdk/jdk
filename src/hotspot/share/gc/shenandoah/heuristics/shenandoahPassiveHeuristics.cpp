@@ -31,7 +31,7 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
-bool ShenandoahPassiveHeuristics::should_start_gc() const {
+bool ShenandoahPassiveHeuristics::should_start_gc() {
   // Never do concurrent GCs.
   return false;
 }

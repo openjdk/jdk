@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,8 +143,6 @@ public:
   // Does this instruction contain an index which refes into the CP cache?
   bool has_cache_index() const { return Bytecodes::uses_cp_cache(cur_bc_raw()); }
 
-  bool has_optional_appendix() { return Bytecodes::has_optional_appendix(cur_bc_raw()); }
-
   int get_index_u1() const {
     return bytecode().get_index_u1(cur_bc_raw());
   }
@@ -205,11 +203,13 @@ public:
   }
 
   // For a lookup or switch table, return target destination
-  int get_int_table( int index ) const {
-    return Bytes::get_Java_u4((address)&_table_base[index]); }
+  jint get_int_table( int index ) const {
+    return (jint)Bytes::get_Java_u4((address)&_table_base[index]);
+  }
 
   int get_dest_table( int index ) const {
-    return cur_bci() + get_int_table(index); }
+    return cur_bci() + get_int_table(index);
+  }
 
   // --- Constant pool access ---
   int get_constant_raw_index() const;
@@ -233,6 +233,11 @@ public:
   bool is_unresolved_klass() const {
     constantTag tag = get_constant_pool_tag(get_klass_index());
     return tag.is_unresolved_klass();
+  }
+
+  bool is_unresolved_klass_in_error() const {
+    constantTag tag = get_constant_pool_tag(get_klass_index());
+    return tag.is_unresolved_klass_in_error();
   }
 
   // If this bytecode is one of get_field, get_static, put_field,

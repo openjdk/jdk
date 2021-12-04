@@ -24,11 +24,10 @@
 
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ValueLayout;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -50,7 +49,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(3)
+@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign" })
 public class TestAdaptVarHandles {
 
     static class IntBox {
@@ -86,8 +85,8 @@ public class TestAdaptVarHandles {
 
     static final VarHandle VH_box_int = MemoryHandles.filterValue(VH_int, INTBOX_TO_INT, INT_TO_INTBOX);
 
-    static final VarHandle VH_addr_int = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT)
-            .varHandle(int.class, MemoryLayout.PathElement.sequenceElement());
+    static final VarHandle VH_addr_int = MemoryLayout.sequenceLayout(ValueLayout.JAVA_INT)
+            .varHandle(MemoryLayout.PathElement.sequenceElement());
 
     static final VarHandle VH_addr_box_int = MemoryHandles.filterValue(VH_addr_int, INTBOX_TO_INT, INT_TO_INTBOX);
 

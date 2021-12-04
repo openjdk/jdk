@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8206955
+ * @bug 8206955 8269351
  * @run testng/othervm -ea -esa test.java.lang.invoke.MethodHandlesProxiesTest
  */
 
@@ -98,5 +98,25 @@ public class MethodHandlesProxiesTest {
         assertEquals(proxy.a(), "OA");
         assertEquals(proxy.b(), "OB");
         assertEquals(proxy.c(), "OC");
+    }
+
+    public sealed interface Intf permits NonSealedInterface {
+        String m();
+    }
+
+    public non-sealed interface NonSealedInterface extends Intf {
+    }
+
+    @Test(expectedExceptions = { IllegalArgumentException.class })
+    public void testSealedInterface() {
+        MethodHandle target = MethodHandles.constant(String.class, "Sealed");
+        MethodHandleProxies.asInterfaceInstance(Intf.class, target);
+    }
+
+    @Test
+    public void testNonSealedInterface() {
+        MethodHandle target = MethodHandles.constant(String.class, "Non-Sealed");
+        NonSealedInterface proxy = MethodHandleProxies.asInterfaceInstance(NonSealedInterface.class, target);
+        assertEquals(proxy.m(), "Non-Sealed");
     }
 }

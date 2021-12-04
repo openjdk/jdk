@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "utilities/ticks.hpp"
 
 class ZPage;
+class ZPageAllocatorStats;
 class ZRelocationSetSelectorGroupStats;
 class ZRelocationSetSelectorStats;
 class ZStatSampler;
@@ -330,18 +331,18 @@ void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment = 1);
 class ZStatAllocRate : public AllStatic {
 private:
   static const ZStatUnsampledCounter _counter;
-  static TruncatedSeq                _rate;     // B/s
-  static TruncatedSeq                _rate_avg; // B/s
+  static TruncatedSeq                _samples;
+  static TruncatedSeq                _rate;
 
 public:
-  static const uint64_t sample_window_sec = 1; // seconds
-  static const uint64_t sample_hz         = 10;
+  static const uint64_t sample_hz = 10;
 
   static const ZStatUnsampledCounter& counter();
   static uint64_t sample_and_reset();
 
+  static double predict();
   static double avg();
-  static double avg_sd();
+  static double sd();
 };
 
 //
@@ -373,19 +374,39 @@ private:
   static uint64_t  _nwarmup_cycles;
   static Ticks     _start_of_last;
   static Ticks     _end_of_last;
-  static NumberSeq _normalized_duration;
+  static NumberSeq _serial_time;
+  static NumberSeq _parallelizable_time;
+  static uint      _last_active_workers;
 
 public:
   static void at_start();
-  static void at_end(GCCause::Cause cause, double boost_factor);
+  static void at_end(GCCause::Cause cause, uint active_workers);
 
   static bool is_warm();
   static uint64_t nwarmup_cycles();
 
-  static bool is_normalized_duration_trustable();
-  static const AbsSeq& normalized_duration();
+  static bool is_time_trustable();
+  static const AbsSeq& serial_time();
+  static const AbsSeq& parallelizable_time();
+
+  static uint last_active_workers();
 
   static double time_since_last();
+};
+
+//
+// Stat workers
+//
+class ZStatWorkers : public AllStatic {
+private:
+  static Ticks    _start_of_last;
+  static Tickspan _accumulated_duration;
+
+public:
+  static void at_start();
+  static void at_end();
+
+  static double get_and_reset_duration();
 };
 
 //
@@ -406,6 +427,7 @@ private:
   static size_t _nterminateflush;
   static size_t _ntrycomplete;
   static size_t _ncontinue;
+  static size_t _mark_stack_usage;
 
 public:
   static void set_at_mark_start(size_t nstripes);
@@ -413,6 +435,7 @@ public:
                               size_t nterminateflush,
                               size_t ntrycomplete,
                               size_t ncontinue);
+  static void set_at_mark_free(size_t mark_stack_usage);
 
   static void print();
 };
@@ -422,16 +445,19 @@ public:
 //
 class ZStatRelocation : public AllStatic {
 private:
-  static ZRelocationSetSelectorStats _stats;
+  static ZRelocationSetSelectorStats _selector_stats;
   static size_t                      _forwarding_usage;
-  static bool                        _success;
+  static size_t                      _small_in_place_count;
+  static size_t                      _medium_in_place_count;
 
-  static void print(const char* name, const ZRelocationSetSelectorGroupStats& group);
+  static void print(const char* name,
+                    const ZRelocationSetSelectorGroupStats& selector_group,
+                    size_t in_place_count);
 
 public:
-  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
+  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats);
   static void set_at_install_relocation_set(size_t forwarding_usage);
-  static void set_at_relocate_end(bool success);
+  static void set_at_relocate_end(size_t small_in_place_count, size_t medium_in_place_count);
 
   static void print();
 };
@@ -483,82 +509,61 @@ private:
   static struct ZAtInitialize {
     size_t min_capacity;
     size_t max_capacity;
-    size_t max_reserve;
   } _at_initialize;
 
   static struct ZAtMarkStart {
     size_t soft_max_capacity;
     size_t capacity;
-    size_t reserve;
-    size_t used;
     size_t free;
+    size_t used;
   } _at_mark_start;
 
   static struct ZAtMarkEnd {
     size_t capacity;
-    size_t reserve;
-    size_t allocated;
-    size_t used;
     size_t free;
+    size_t used;
     size_t live;
+    size_t allocated;
     size_t garbage;
   } _at_mark_end;
 
   static struct ZAtRelocateStart {
     size_t capacity;
-    size_t reserve;
-    size_t garbage;
-    size_t allocated;
-    size_t reclaimed;
-    size_t used;
     size_t free;
+    size_t used;
+    size_t allocated;
+    size_t garbage;
+    size_t reclaimed;
   } _at_relocate_start;
 
   static struct ZAtRelocateEnd {
     size_t capacity;
     size_t capacity_high;
     size_t capacity_low;
-    size_t reserve;
-    size_t reserve_high;
-    size_t reserve_low;
-    size_t garbage;
-    size_t allocated;
-    size_t reclaimed;
-    size_t used;
-    size_t used_high;
-    size_t used_low;
     size_t free;
     size_t free_high;
     size_t free_low;
+    size_t used;
+    size_t used_high;
+    size_t used_low;
+    size_t allocated;
+    size_t garbage;
+    size_t reclaimed;
   } _at_relocate_end;
 
   static size_t capacity_high();
   static size_t capacity_low();
-  static size_t available(size_t used);
-  static size_t reserve(size_t used);
   static size_t free(size_t used);
+  static size_t allocated(size_t used, size_t reclaimed);
+  static size_t garbage(size_t reclaimed);
 
 public:
-  static void set_at_initialize(size_t min_capacity,
-                                size_t max_capacity,
-                                size_t max_reserve);
-  static void set_at_mark_start(size_t soft_max_capacity,
-                                size_t capacity,
-                                size_t used);
-  static void set_at_mark_end(size_t capacity,
-                              size_t allocated,
-                              size_t used);
-  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats,
-                                           size_t reclaimed);
-  static void set_at_relocate_start(size_t capacity,
-                                    size_t allocated,
-                                    size_t used);
-  static void set_at_relocate_end(size_t capacity,
-                                  size_t allocated,
-                                  size_t reclaimed,
-                                  size_t used,
-                                  size_t used_high,
-                                  size_t used_low);
+  static void set_at_initialize(const ZPageAllocatorStats& stats);
+  static void set_at_mark_start(const ZPageAllocatorStats& stats);
+  static void set_at_mark_end(const ZPageAllocatorStats& stats);
+  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
+  static void set_at_relocate_start(const ZPageAllocatorStats& stats);
+  static void set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated);
 
   static size_t max_capacity();
   static size_t used_at_mark_start();

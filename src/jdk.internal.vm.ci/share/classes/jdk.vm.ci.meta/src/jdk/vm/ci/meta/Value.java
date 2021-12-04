@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public abstract class Value {
         @Override
         public boolean equals(Object other) {
             // Due to de-serialization this object may exist multiple times. So we compare classes
-            // instead of the individual objects. (This anonymous class has always the same meaning)
+            // instead of the individual objects.
             return other instanceof IllegalValue;
         }
     }

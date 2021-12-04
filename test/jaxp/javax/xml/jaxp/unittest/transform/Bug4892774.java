@@ -50,7 +50,7 @@ import transform.util.StreamUtil;
  * @test
  * @bug 4892774
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug4892774
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug4892774
  * @run testng/othervm transform.Bug4892774
  * @summary Test identity transformer with all possible types of Source and Result combinations for doucment version and encoding information.
  */

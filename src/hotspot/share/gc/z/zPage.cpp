@@ -40,7 +40,8 @@ ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pm
     _top(start()),
     _livemap(object_max_count()),
     _last_used(0),
-    _physical(pmem) {
+    _physical(pmem),
+    _node() {
   assert_initialized();
 }
 
@@ -61,6 +62,11 @@ void ZPage::reset() {
   _top = start();
   _livemap.reset();
   _last_used = 0;
+}
+
+void ZPage::reset_for_in_place_relocation() {
+  _seqnum = ZGlobalSeqNum;
+  _top = start();
 }
 
 ZPage* ZPage::retype(uint8_t type) {
@@ -121,4 +127,9 @@ void ZPage::print_on(outputStream* out) const {
 
 void ZPage::print() const {
   print_on(tty);
+}
+
+void ZPage::verify_live(uint32_t live_objects, size_t live_bytes) const {
+  guarantee(live_objects == _livemap.live_objects(), "Invalid number of live objects");
+  guarantee(live_bytes == _livemap.live_bytes(), "Invalid number of live bytes");
 }

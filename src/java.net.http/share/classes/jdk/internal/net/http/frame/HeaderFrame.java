@@ -49,13 +49,12 @@ public abstract class HeaderFrame extends Http2Frame {
 
     @Override
     public String flagAsString(int flag) {
-        switch (flag) {
-            case END_HEADERS:
-                return "END_HEADERS";
-            case END_STREAM:
-                return "END_STREAM";
-        }
-        return super.flagAsString(flag);
+        return switch (flag) {
+            case END_HEADERS -> "END_HEADERS";
+            case END_STREAM  -> "END_STREAM";
+
+            default -> super.flagAsString(flag);
+        };
     }
 
 

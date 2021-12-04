@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #ifndef SHARE_JVMCI_JVMCI_HPP
 #define SHARE_JVMCI_JVMCI_HPP
 
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
-#include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
 
 class BoolObjectClosure;
@@ -37,6 +37,11 @@ class Metadata;
 class MetadataHandleBlock;
 class OopClosure;
 class OopStorage;
+
+template <size_t>
+class FormatStringEventLog;
+
+typedef FormatStringEventLog<256> StringEventLog;
 
 struct _jmetadata;
 typedef struct _jmetadata *jmetadata;
@@ -53,6 +58,9 @@ class JVMCI : public AllStatic {
   // execution has completed successfully.
   static volatile bool _is_initialized;
 
+  // True once boxing cache classes are guaranteed to be initialized.
+  static bool _box_caches_initialized;
+
   // Handle created when loading the JVMCI shared library with os::dll_load.
   // Must hold JVMCI_lock when initializing.
   static void* _shared_library_handle;
@@ -65,6 +73,16 @@ class JVMCI : public AllStatic {
 
   // Access to the HotSpot heap based JVMCIRuntime
   static JVMCIRuntime* _java_runtime;
+
+  // The file descriptor to which fatal_log() writes. Initialized on
+  // first call to fatal_log().
+  static volatile int _fatal_log_fd;
+
+  // The path of the file underlying _fatal_log_fd if it is a normal file.
+  static const char* _fatal_log_filename;
+
+  // Native thread id of thread that will initialize _fatal_log_fd.
+  static volatile intx _fatal_log_init_thread;
 
   // JVMCI event log (shows up in hs_err crash logs).
   static StringEventLog* _events;
@@ -81,7 +99,9 @@ class JVMCI : public AllStatic {
      ok,
      dependencies_failed,
      cache_full,
-     code_too_large
+     nmethod_reclaimed, // code cache sweeper reclaimed nmethod in between its creation and being marked "in_use"
+     code_too_large,
+     first_permanent_bailout = code_too_large
   };
 
   // Gets the handle to the loaded JVMCI shared library, loading it
@@ -89,6 +109,13 @@ class JVMCI : public AllStatic {
   // which the library is loaded is returned in `path`. If
   // `load` is true then JVMCI_lock must be locked.
   static void* get_shared_library(char*& path, bool load);
+
+  // Logs the fatal crash data in `buf` to the appropriate stream.
+  static void fatal_log(const char* buf, size_t count);
+
+  // Gets the name of the opened JVMCI shared library crash data file or NULL
+  // if this file has not been created.
+  static const char* fatal_log_filename() { return _fatal_log_filename; }
 
   static void do_unloading(bool unloading_occurred);
 
@@ -109,6 +136,9 @@ class JVMCI : public AllStatic {
   static void initialize_globals();
 
   static void initialize_compiler(TRAPS);
+
+  // Ensures the boxing cache classes (e.g., java.lang.Integer.IntegerCache) are initialized.
+  static void ensure_box_caches_initialized(TRAPS);
 
   // Increments a value indicating some JVMCI compilation activity
   // happened on `thread` if it is a CompilerThread.

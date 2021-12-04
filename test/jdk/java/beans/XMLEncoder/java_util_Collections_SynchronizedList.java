@@ -25,6 +25,7 @@
  * @test
  * @bug 6505888
  * @summary Tests SynchronizedList encoding
+ * @run main/othervm -Djava.security.manager=allow java_util_Collections_SynchronizedList
  * @author Sergey Malenkov
  */
 

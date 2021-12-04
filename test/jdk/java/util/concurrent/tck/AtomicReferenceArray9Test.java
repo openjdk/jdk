@@ -73,14 +73,14 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * getPlain returns the last value set
      */
     public void testGetPlainSet() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.set(i, one);
             assertEquals(one, aa.getPlain(i));
             aa.set(i, two);
             assertEquals(two, aa.getPlain(i));
-            aa.set(i, m3);
-            assertEquals(m3, aa.getPlain(i));
+            aa.set(i, minusThree);
+            assertEquals(minusThree, aa.getPlain(i));
         }
     }
 
@@ -88,14 +88,14 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * getOpaque returns the last value set
      */
     public void testGetOpaqueSet() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.set(i, one);
             assertEquals(one, aa.getOpaque(i));
             aa.set(i, two);
             assertEquals(two, aa.getOpaque(i));
-            aa.set(i, m3);
-            assertEquals(m3, aa.getOpaque(i));
+            aa.set(i, minusThree);
+            assertEquals(minusThree, aa.getOpaque(i));
         }
     }
 
@@ -103,14 +103,14 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * getAcquire returns the last value set
      */
     public void testGetAcquireSet() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.set(i, one);
             assertEquals(one, aa.getAcquire(i));
             aa.set(i, two);
             assertEquals(two, aa.getAcquire(i));
-            aa.set(i, m3);
-            assertEquals(m3, aa.getAcquire(i));
+            aa.set(i, minusThree);
+            assertEquals(minusThree, aa.getAcquire(i));
         }
     }
 
@@ -118,14 +118,14 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * get returns the last value setPlain
      */
     public void testGetSetPlain() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.setPlain(i, one);
             assertEquals(one, aa.get(i));
             aa.setPlain(i, two);
             assertEquals(two, aa.get(i));
-            aa.setPlain(i, m3);
-            assertEquals(m3, aa.get(i));
+            aa.setPlain(i, minusThree);
+            assertEquals(minusThree, aa.get(i));
         }
     }
 
@@ -133,14 +133,14 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * get returns the last value setOpaque
      */
     public void testGetSetOpaque() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.setOpaque(i, one);
             assertEquals(one, aa.get(i));
             aa.setOpaque(i, two);
             assertEquals(two, aa.get(i));
-            aa.setOpaque(i, m3);
-            assertEquals(m3, aa.get(i));
+            aa.setOpaque(i, minusThree);
+            assertEquals(minusThree, aa.get(i));
         }
     }
 
@@ -148,14 +148,14 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * get returns the last value setRelease
      */
     public void testGetSetRelease() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.setRelease(i, one);
             assertEquals(one, aa.get(i));
             aa.setRelease(i, two);
             assertEquals(two, aa.get(i));
-            aa.setRelease(i, m3);
-            assertEquals(m3, aa.get(i));
+            aa.setRelease(i, minusThree);
+            assertEquals(minusThree, aa.get(i));
         }
     }
 
@@ -164,15 +164,15 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * expected else fails
      */
     public void testCompareAndExchange() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.set(i, one);
             assertEquals(one, aa.compareAndExchange(i, one, two));
-            assertEquals(two, aa.compareAndExchange(i, two, m4));
-            assertEquals(m4, aa.get(i));
-            assertEquals(m4, aa.compareAndExchange(i,m5, seven));
-            assertEquals(m4, aa.get(i));
-            assertEquals(m4, aa.compareAndExchange(i, m4, seven));
+            assertEquals(two, aa.compareAndExchange(i, two, minusFour));
+            assertEquals(minusFour, aa.get(i));
+            assertEquals(minusFour, aa.compareAndExchange(i,minusFive, seven));
+            assertEquals(minusFour, aa.get(i));
+            assertEquals(minusFour, aa.compareAndExchange(i, minusFour, seven));
             assertEquals(seven, aa.get(i));
         }
     }
@@ -182,15 +182,15 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * expected else fails
      */
     public void testCompareAndExchangeAcquire() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.set(i, one);
             assertEquals(one, aa.compareAndExchangeAcquire(i, one, two));
-            assertEquals(two, aa.compareAndExchangeAcquire(i, two, m4));
-            assertEquals(m4, aa.get(i));
-            assertEquals(m4, aa.compareAndExchangeAcquire(i,m5, seven));
-            assertEquals(m4, aa.get(i));
-            assertEquals(m4, aa.compareAndExchangeAcquire(i, m4, seven));
+            assertEquals(two, aa.compareAndExchangeAcquire(i, two, minusFour));
+            assertEquals(minusFour, aa.get(i));
+            assertEquals(minusFour, aa.compareAndExchangeAcquire(i,minusFive, seven));
+            assertEquals(minusFour, aa.get(i));
+            assertEquals(minusFour, aa.compareAndExchangeAcquire(i, minusFour, seven));
             assertEquals(seven, aa.get(i));
         }
     }
@@ -200,15 +200,15 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * expected else fails
      */
     public void testCompareAndExchangeRelease() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.set(i, one);
             assertEquals(one, aa.compareAndExchangeRelease(i, one, two));
-            assertEquals(two, aa.compareAndExchangeRelease(i, two, m4));
-            assertEquals(m4, aa.get(i));
-            assertEquals(m4, aa.compareAndExchangeRelease(i,m5, seven));
-            assertEquals(m4, aa.get(i));
-            assertEquals(m4, aa.compareAndExchangeRelease(i, m4, seven));
+            assertEquals(two, aa.compareAndExchangeRelease(i, two, minusFour));
+            assertEquals(minusFour, aa.get(i));
+            assertEquals(minusFour, aa.compareAndExchangeRelease(i,minusFive, seven));
+            assertEquals(minusFour, aa.get(i));
+            assertEquals(minusFour, aa.compareAndExchangeRelease(i, minusFour, seven));
             assertEquals(seven, aa.get(i));
         }
     }
@@ -218,13 +218,13 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * to expected
      */
     public void testWeakCompareAndSetPlain() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.set(i, one);
             do {} while (!aa.weakCompareAndSetPlain(i, one, two));
-            do {} while (!aa.weakCompareAndSetPlain(i, two, m4));
-            assertEquals(m4, aa.get(i));
-            do {} while (!aa.weakCompareAndSetPlain(i, m4, seven));
+            do {} while (!aa.weakCompareAndSetPlain(i, two, minusFour));
+            assertEquals(minusFour, aa.get(i));
+            do {} while (!aa.weakCompareAndSetPlain(i, minusFour, seven));
             assertEquals(seven, aa.get(i));
         }
     }
@@ -234,13 +234,13 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * to expected
      */
     public void testWeakCompareAndSetVolatile() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.set(i, one);
             do {} while (!aa.weakCompareAndSetVolatile(i, one, two));
-            do {} while (!aa.weakCompareAndSetVolatile(i, two, m4));
-            assertEquals(m4, aa.get(i));
-            do {} while (!aa.weakCompareAndSetVolatile(i, m4, seven));
+            do {} while (!aa.weakCompareAndSetVolatile(i, two, minusFour));
+            assertEquals(minusFour, aa.get(i));
+            do {} while (!aa.weakCompareAndSetVolatile(i, minusFour, seven));
             assertEquals(seven, aa.get(i));
         }
     }
@@ -250,13 +250,13 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * to expected
      */
     public void testWeakCompareAndSetAcquire() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.set(i, one);
             do {} while (!aa.weakCompareAndSetAcquire(i, one, two));
-            do {} while (!aa.weakCompareAndSetAcquire(i, two, m4));
-            assertEquals(m4, aa.get(i));
-            do {} while (!aa.weakCompareAndSetAcquire(i, m4, seven));
+            do {} while (!aa.weakCompareAndSetAcquire(i, two, minusFour));
+            assertEquals(minusFour, aa.get(i));
+            do {} while (!aa.weakCompareAndSetAcquire(i, minusFour, seven));
             assertEquals(seven, aa.get(i));
         }
     }
@@ -266,13 +266,13 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
      * to expected
      */
     public void testWeakCompareAndSetRelease() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        AtomicReferenceArray<Item> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             aa.set(i, one);
             do {} while (!aa.weakCompareAndSetRelease(i, one, two));
-            do {} while (!aa.weakCompareAndSetRelease(i, two, m4));
-            assertEquals(m4, aa.get(i));
-            do {} while (!aa.weakCompareAndSetRelease(i, m4, seven));
+            do {} while (!aa.weakCompareAndSetRelease(i, two, minusFour));
+            assertEquals(minusFour, aa.get(i));
+            do {} while (!aa.weakCompareAndSetRelease(i, minusFour, seven));
             assertEquals(seven, aa.get(i));
         }
     }

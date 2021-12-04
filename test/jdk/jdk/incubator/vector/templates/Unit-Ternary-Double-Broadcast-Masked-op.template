@@ -11,5 +11,5 @@
         final int INVOC_COUNT = count;
 #end[double]
 [[KERNEL]]
-        assertDoubleBroadcastArraysEquals(a, b, c, r, mask, $vectorteststype$::[[TEST]]);
+        assertDoubleBroadcastArraysEquals(r, a, b, c, mask, $vectorteststype$::[[TEST]]);
     }

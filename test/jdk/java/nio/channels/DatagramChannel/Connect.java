@@ -47,8 +47,8 @@ public class Connect {
 
     static void test() throws Exception {
         ExecutorService threadPool = Executors.newCachedThreadPool();
-        try (Reactor r = new Reactor();
-             Actor a = new Actor(r.getSocketAddress())
+        try (Responder r = new Responder();
+             Initiator a = new Initiator(r.getSocketAddress())
         ) {
             invoke(threadPool, a, r);
         } finally {
@@ -75,12 +75,25 @@ public class Connect {
         future.join();
     }
 
-    public static class Actor implements AutoCloseable, Runnable {
-        final SocketAddress socketAddress;
+    private static SocketAddress toConnectAddress(SocketAddress address) {
+        if (address instanceof InetSocketAddress) {
+            var inet = (InetSocketAddress) address;
+            if (inet.getAddress().isAnyLocalAddress()) {
+                // if the peer is bound to the wildcard address, use
+                // the loopback address to connect.
+                var loopback = InetAddress.getLoopbackAddress();
+                return new InetSocketAddress(loopback, inet.getPort());
+            }
+        }
+        return address;
+    }
+
+    public static class Initiator implements AutoCloseable, Runnable {
+        final SocketAddress connectSocketAddress;
         final DatagramChannel dc;
 
-        Actor(SocketAddress socketAddress) throws IOException {
-            this.socketAddress = socketAddress;
+        Initiator(SocketAddress peerSocketAddress) throws IOException {
+            this.connectSocketAddress = toConnectAddress(peerSocketAddress);
             dc = DatagramChannel.open();
         }
 
@@ -89,10 +102,11 @@ public class Connect {
                 ByteBuffer bb = ByteBuffer.allocateDirect(256);
                 bb.put("hello".getBytes());
                 bb.flip();
-                dc.connect(socketAddress);
+                log.println("Initiator connecting to " + connectSocketAddress);
+                dc.connect(connectSocketAddress);
 
                 // Send a message
-                log.println("Actor attempting to write to Reactor at " + socketAddress.toString());
+                log.println("Initiator attempting to write to Responder at " + connectSocketAddress.toString());
                 dc.write(bb);
 
                 // Try to send to some other address
@@ -100,26 +114,26 @@ public class Connect {
                     int port = dc.socket().getLocalPort();
                     InetAddress loopback = InetAddress.getLoopbackAddress();
                     InetSocketAddress otherAddress = new InetSocketAddress(loopback, (port == 3333 ? 3332 : 3333));
-                    log.println("Testing if Actor throws AlreadyConnectedException" + otherAddress.toString());
+                    log.println("Testing if Initiator throws AlreadyConnectedException" + otherAddress.toString());
                     dc.send(bb, otherAddress);
-                    throw new RuntimeException("Actor allowed send to other address while already connected");
+                    throw new RuntimeException("Initiator allowed send to other address while already connected");
                 } catch (AlreadyConnectedException ace) {
                     // Correct behavior
                 }
 
                 // Read a reply
                 bb.flip();
-                log.println("Actor waiting to read");
+                log.println("Initiator waiting to read");
                 dc.read(bb);
                 bb.flip();
                 CharBuffer cb = StandardCharsets.US_ASCII.
                         newDecoder().decode(bb);
-                log.println("Actor received from Reactor at " + socketAddress + ": " + cb);
+                log.println("Initiator received from Responder at " + connectSocketAddress + ": " + cb);
             } catch (Exception ex) {
-                log.println("Actor threw exception: " + ex);
+                log.println("Initiator threw exception: " + ex);
                 throw new RuntimeException(ex);
             } finally {
-                log.println("Actor finished");
+                log.println("Initiator finished");
             }
         }
 
@@ -129,11 +143,12 @@ public class Connect {
         }
     }
 
-    public static class Reactor implements AutoCloseable, Runnable {
+    public static class Responder implements AutoCloseable, Runnable {
         final DatagramChannel dc;
 
-        Reactor() throws IOException {
-            dc = DatagramChannel.open().bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        Responder() throws IOException {
+            var address = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+            dc = DatagramChannel.open().bind(address);
         }
 
         SocketAddress getSocketAddress() throws IOException {
@@ -144,23 +159,23 @@ public class Connect {
             try {
                 // Listen for a message
                 ByteBuffer bb = ByteBuffer.allocateDirect(100);
-                log.println("Reactor waiting to receive");
+                log.println("Responder waiting to receive");
                 SocketAddress sa = dc.receive(bb);
                 bb.flip();
                 CharBuffer cb = StandardCharsets.US_ASCII.
                         newDecoder().decode(bb);
-                log.println("Reactor received from Actor at" + sa +  ": " + cb);
+                log.println("Responder received from Initiator at" + sa +  ": " + cb);
 
                 // Reply to sender
                 dc.connect(sa);
                 bb.flip();
-                log.println("Reactor attempting to write: " + dc.getRemoteAddress().toString());
+                log.println("Responder attempting to write: " + dc.getRemoteAddress().toString());
                 dc.write(bb);
             } catch (Exception ex) {
-                log.println("Reactor threw exception: " + ex);
+                log.println("Responder threw exception: " + ex);
                 throw new RuntimeException(ex);
             } finally {
-                log.println("Reactor finished");
+                log.println("Responder finished");
             }
         }
 

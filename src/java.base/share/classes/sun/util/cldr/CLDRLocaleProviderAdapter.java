@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.util.cldr;
 
 import java.security.AccessController;
-import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -40,7 +39,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.ServiceConfigurationError;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,20 +77,18 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
         parentLocalesMap.put(Locale.US, Locale.US);
     }
 
+    @SuppressWarnings("removal")
     public CLDRLocaleProviderAdapter() {
-        LocaleDataMetaInfo nbmi = null;
+        LocaleDataMetaInfo nbmi;
 
         try {
-            nbmi = AccessController.doPrivileged(new PrivilegedExceptionAction<LocaleDataMetaInfo>() {
-                @Override
-                public LocaleDataMetaInfo run() {
-                    for (LocaleDataMetaInfo ldmi : ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
-                        if (ldmi.getType() == LocaleProviderAdapter.Type.CLDR) {
-                            return ldmi;
-                        }
+            nbmi = AccessController.doPrivileged((PrivilegedExceptionAction<LocaleDataMetaInfo>) () -> {
+                for (LocaleDataMetaInfo ldmi : ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
+                    if (ldmi.getType() == Type.CLDR) {
+                        return ldmi;
                     }
-                    return null;
                 }
+                return null;
             });
         } catch (PrivilegedActionException pae) {
             throw new InternalError(pae.getCause());
@@ -118,6 +114,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public CalendarDataProvider getCalendarDataProvider() {
         if (calendarDataProvider == null) {
+            @SuppressWarnings("removal")
             CalendarDataProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<CalendarDataProvider>) () ->
                     new CLDRCalendarDataProviderImpl(
@@ -136,6 +133,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public CalendarNameProvider getCalendarNameProvider() {
         if (calendarNameProvider == null) {
+            @SuppressWarnings("removal")
             CalendarNameProvider provider = AccessController.doPrivileged(
                     (PrivilegedAction<CalendarNameProvider>) ()
                     -> new CLDRCalendarNameProviderImpl(
@@ -159,6 +157,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public TimeZoneNameProvider getTimeZoneNameProvider() {
         if (timeZoneNameProvider == null) {
+            @SuppressWarnings("removal")
             TimeZoneNameProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<TimeZoneNameProvider>) () ->
                     new CLDRTimeZoneNameProviderImpl(
@@ -248,6 +247,10 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
                 if (p != null &&
                     !candidates.get(i+1).equals(p)) {
                     List<Locale> applied = candidates.subList(0, i+1);
+                    if (applied.contains(p)) {
+                        // avoid circular recursion (could happen with nb/no case)
+                        continue;
+                    }
                     applied.addAll(applyParentLocales(baseName, super.getCandidateLocales(baseName, p)));
                     return applied;
                 }
@@ -289,12 +292,10 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
      * it returns equivalent locale, e.g for zh_HK it returns zh_Hant-HK.
      */
     private static Locale getEquivalentLoc(Locale locale) {
-        switch (locale.toString()) {
-            case "no":
-            case "no_NO":
-                return Locale.forLanguageTag("nb");
-        }
-        return applyAliases(locale);
+        return switch (locale.toString()) {
+            case "no", "no_NO" -> Locale.forLanguageTag("nb");
+            default -> applyAliases(locale);
+        };
     }
 
     @Override

@@ -148,7 +148,8 @@ public class AccessControlTest {
                     || lookupModes == (PUBLIC|MODULE|PACKAGE|PRIVATE))
                 suffix = "/private";
             else if (lookupModes == (PUBLIC|PACKAGE|PRIVATE|PROTECTED)
-                     || lookupModes == (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED))
+                     || lookupModes == (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED)
+                     || lookupModes == (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED|ORIGINAL))
                 suffix = "";
             else
                 suffix = "/#"+Integer.toHexString(lookupModes);
@@ -160,9 +161,11 @@ public class AccessControlTest {
          * Creates a lookup on the specified new lookup class.
          * [A1] The resulting object will report the specified
          * class as its own {@link #lookupClass lookupClass}.
-         * [A2] However, the resulting {@code Lookup} object is guaranteed
+         * [A1-a] However, the resulting {@code Lookup} object is guaranteed
          * to have no more access capabilities than the original.
          * In particular, access capabilities can be lost as follows:<ul>
+         * [A2] If the new lookup class is not the same as the old lookup class,
+         * then {@link #ORIGINAL ORIGINAL} access is lost.
          * [A3] If the new lookup class is in a different module from the old one,
          * i.e. {@link #MODULE MODULE} access is lost.
          * [A4] If the new lookup class is in a different package
@@ -227,11 +230,14 @@ public class AccessControlTest {
             }
             if (!accessible) {
                 // no access to c2; lose all access.
-                changed |= (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED|UNCONDITIONAL);  // [A6]
+                changed |= (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED|UNCONDITIONAL);  // [A7]
+            }
+            if (!sameClass) {
+                changed |= ORIGINAL;  // [A2]
             }
             if (m2 != m1 && m0 != m1) {
                 // hop to a third module; lose all access
-                changed |= (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED);  // [A7]
+                changed |= (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED);  // [A8]
             }
             if (!sameModule) {
                 changed |= MODULE;  // [A3]
@@ -254,20 +260,21 @@ public class AccessControlTest {
             if ((modes1 & UNCONDITIONAL) != 0) plc = null;      // [A8]
             LookupCase l2 = new LookupCase(c2, plc, modes2);
             assert(l2.lookupClass() == c2);         // [A1]
-            assert((modes1 | modes2) == modes1);    // [A2] (no elevation of access)
+            assert((modes1 | modes2) == modes1);    // [A1-a] (no elevation of access)
             assert(l2.prevLookupClass() == null || (modes2 & MODULE) == 0);
             return l2;
         }
 
         LookupCase dropLookupMode(int modeToDrop) {
             int oldModes = lookupModes();
-            int newModes = oldModes & ~(modeToDrop | PROTECTED);
+            int newModes = oldModes & ~(modeToDrop | PROTECTED | ORIGINAL);
             switch (modeToDrop) {
                 case PUBLIC: newModes &= ~(MODULE|PACKAGE|PROTECTED|PRIVATE); break;
                 case MODULE: newModes &= ~(PACKAGE|PRIVATE); break;
                 case PACKAGE: newModes &= ~(PRIVATE); break;
                 case PROTECTED:
                 case PRIVATE:
+                case ORIGINAL:
                 case UNCONDITIONAL: break;
                 default: throw new IllegalArgumentException(modeToDrop + " is not a valid mode to drop");
             }

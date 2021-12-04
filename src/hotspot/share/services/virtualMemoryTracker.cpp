@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 #include "precompiled.hpp"
-
 #include "logging/log.hpp"
-#include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
+#include "memory/metaspaceStats.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/memTracker.hpp"
@@ -320,14 +320,9 @@ address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
 }
 
 bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
+  assert(_reserved_regions == NULL, "only call once");
   if (level >= NMT_summary) {
     VirtualMemorySummary::initialize();
-  }
-  return true;
-}
-
-bool VirtualMemoryTracker::late_initialize(NMT_TrackingLevel level) {
-  if (level >= NMT_summary) {
     _reserved_regions = new (std::nothrow, ResourceObj::C_HEAP, mtNMT)
       SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
     return (_reserved_regions != NULL);
@@ -444,7 +439,7 @@ bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
   bool result = reserved_rgn->add_committed_region(addr, size, stack);
   log_debug(nmt)("Add committed region \'%s\'(" INTPTR_FORMAT ", " SIZE_FORMAT ") %s",
-                rgn.flag_name(),  p2i(rgn.base()), rgn.size(), (result ? "Succeeded" : "Failed"));
+                reserved_rgn->flag_name(),  p2i(rgn.base()), rgn.size(), (result ? "Succeeded" : "Failed"));
   return result;
 }
 
@@ -506,12 +501,26 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
     return false;
   }
 
-  if (reserved_rgn->flag() == mtClassShared &&
-      reserved_rgn->contain_region(addr, size)) {
-    // This is an unmapped CDS region, which is part of the reserved shared
-    // memory region.
-    // See special handling in VirtualMemoryTracker::add_reserved_region also.
-    return true;
+  if (reserved_rgn->flag() == mtClassShared) {
+    if (reserved_rgn->contain_region(addr, size)) {
+      // This is an unmapped CDS region, which is part of the reserved shared
+      // memory region.
+      // See special handling in VirtualMemoryTracker::add_reserved_region also.
+      return true;
+    }
+
+    if (size > reserved_rgn->size()) {
+      // This is from release the whole region spanning from archive space to class space,
+      // so we release them altogether.
+      ReservedMemoryRegion class_rgn(addr + reserved_rgn->size(),
+                                     (size - reserved_rgn->size()));
+      ReservedMemoryRegion* cls_rgn = _reserved_regions->find(class_rgn);
+      assert(cls_rgn != NULL, "Class space region  not recorded?");
+      assert(cls_rgn->flag() == mtClass, "Must be class type");
+      remove_released_region(reserved_rgn);
+      remove_released_region(cls_rgn);
+      return true;
+    }
   }
 
   VirtualMemorySummary::record_released_memory(size, reserved_rgn->flag());
@@ -678,35 +687,4 @@ bool VirtualMemoryTracker::transition(NMT_TrackingLevel from, NMT_TrackingLevel 
   }
 
   return true;
-}
-
-// Metaspace Support
-MetaspaceSnapshot::MetaspaceSnapshot() {
-  for (int index = (int)Metaspace::ClassType; index < (int)Metaspace::MetadataTypeCount; index ++) {
-    Metaspace::MetadataType type = (Metaspace::MetadataType)index;
-    assert_valid_metadata_type(type);
-    _reserved_in_bytes[type]  = 0;
-    _committed_in_bytes[type] = 0;
-    _used_in_bytes[type]      = 0;
-    _free_in_bytes[type]      = 0;
-  }
-}
-
-void MetaspaceSnapshot::snapshot(Metaspace::MetadataType type, MetaspaceSnapshot& mss) {
-  assert_valid_metadata_type(type);
-
-  mss._reserved_in_bytes[type]   = MetaspaceUtils::reserved_bytes(type);
-  mss._committed_in_bytes[type]  = MetaspaceUtils::committed_bytes(type);
-  mss._used_in_bytes[type]       = MetaspaceUtils::used_bytes(type);
-
-  // The answer to "what is free" in metaspace is complex and cannot be answered with a single number.
-  // Free as in available to all loaders? Free, pinned to one loader? For now, keep it simple.
-  mss._free_in_bytes[type] = mss._committed_in_bytes[type] - mss._used_in_bytes[type];
-}
-
-void MetaspaceSnapshot::snapshot(MetaspaceSnapshot& mss) {
-  snapshot(Metaspace::NonClassType, mss);
-  if (Metaspace::using_class_space()) {
-    snapshot(Metaspace::ClassType, mss);
-  }
 }

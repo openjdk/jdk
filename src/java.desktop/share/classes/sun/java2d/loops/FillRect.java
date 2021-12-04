@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 
 package sun.java2d.loops;
 
-import sun.java2d.loops.GraphicsPrimitive;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 
@@ -79,9 +78,9 @@ public class FillRect extends GraphicsPrimitive
         GraphicsPrimitiveMgr.registerGeneral(new FillRect(null, null, null));
     }
 
-    public GraphicsPrimitive makePrimitive(SurfaceType srctype,
-                                           CompositeType comptype,
-                                           SurfaceType dsttype)
+    protected GraphicsPrimitive makePrimitive(SurfaceType srctype,
+                                              CompositeType comptype,
+                                              SurfaceType dsttype)
     {
         return new General(srctype, comptype, dsttype);
     }

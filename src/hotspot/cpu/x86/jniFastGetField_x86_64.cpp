@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "code/codeBlob.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "memory/resourceArea.hpp"

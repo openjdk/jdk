@@ -25,6 +25,7 @@
  * @test
  * @bug 5023559
  * @summary Tests encoding of the object with nested target
+ * @run main/othervm -Djava.security.manager=allow Test5023559
  * @author Sergey Malenkov
  */
 

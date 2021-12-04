@@ -1,5 +1,5 @@
 /*
- * @test /nodynamiccopyright
+ * @test /nodynamiccopyright/
  * @bug 4984022
  * @summary overriding with method of different arity is prohibited
  * @author gafter

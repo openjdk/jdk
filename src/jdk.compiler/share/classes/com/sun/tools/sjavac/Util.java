@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,13 +79,21 @@ public class Util {
         return extractStringOption(opName, s, null);
     }
 
-    public static String extractStringOption(String opName, String s, String deflt) {
+    private static String extractStringOptionWithDelimiter(String opName, String s, String deflt, char delimiter) {
         int p = s.indexOf(opName+"=");
         if (p == -1) return deflt;
         p+=opName.length()+1;
-        int pe = s.indexOf(',', p);
+        int pe = s.indexOf(delimiter, p);
         if (pe == -1) pe = s.length();
         return s.substring(p, pe);
+    }
+
+    public static String extractStringOption(String opName, String s, String deflt) {
+        return extractStringOptionWithDelimiter(opName, s, deflt, ',');
+    }
+
+    public static String extractStringOptionLine(String opName, String s, String deflt) {
+        return extractStringOptionWithDelimiter(opName, s, deflt, '\n').strip();
     }
 
     public static boolean extractBooleanOption(String opName, String s, boolean deflt) {

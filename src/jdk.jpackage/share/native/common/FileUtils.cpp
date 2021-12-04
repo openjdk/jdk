@@ -28,7 +28,6 @@
 
 #include "FileUtils.h"
 
-
 namespace FileUtils {
 
 #ifdef _WIN32
@@ -54,7 +53,15 @@ bool isDirSeparator(const tstring::value_type c) {
 
 
 tstring dirname(const tstring &path) {
-    tstring::size_type pos = path.find_last_of(_T("\\/"));
+    tstring::size_type pos;
+    if (tstrings::endsWith(path, _T("/.")) || tstrings::endsWith(path, _T("\\."))) {
+        // this method is really getparent dirname - if the path ends with "/.",
+        // we need to ignore that when looking for the last "/" to find parent
+        pos = (path.substr(0, path.length() - 2)).find_last_of(_T("\\/"));
+    } else {
+        pos = path.find_last_of(_T("\\/"));
+    }
+
     if (pos != tstring::npos) {
         pos = path.find_last_not_of(_T("\\/"), pos); // skip trailing slashes
     }

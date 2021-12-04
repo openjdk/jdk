@@ -390,32 +390,26 @@ private:
   u_char _saw_free_extra_data;
 
   // Support for interprocedural escape analysis
-  intx              _eflags;          // flags on escape information
-  intx              _arg_local;       // bit set of non-escaping arguments
-  intx              _arg_stack;       // bit set of stack-allocatable arguments
-  intx              _arg_returned;    // bit set of returned arguments
-
-  // Maturity of the oop when the snapshot is taken.
-  int _current_mileage;
+  intx _eflags;       // flags on escape information
+  intx _arg_local;    // bit set of non-escaping arguments
+  intx _arg_stack;    // bit set of stack-allocatable arguments
+  intx _arg_returned; // bit set of returned arguments
 
   // These counters hold the age of MDO in tiered. In tiered we can have the same method
   // running at different compilation levels concurrently. So, in order to precisely measure
   // its maturity we need separate counters.
   int _invocation_counter;
-  int _backedge_counter;
 
   // Coherent snapshot of original header.
-  MethodData _orig;
+  MethodData::CompilerCounters _orig;
 
-  // Area dedicated to parameters. NULL if no parameter profiling for
-  // this method.
+  // Area dedicated to parameters. NULL if no parameter profiling for this method.
   DataLayout* _parameters;
   int parameters_size() const {
     return _parameters == NULL ? 0 : parameters_type_data()->size_in_bytes();
   }
 
-  ciMethodData(MethodData* md);
-  ciMethodData();
+  ciMethodData(MethodData* md = NULL);
 
   // Accessors
   int data_size() const { return _data_size; }
@@ -477,11 +471,7 @@ public:
   bool is_empty()  { return _state == empty_state; }
   bool is_mature() { return _state == mature_state; }
 
-  int creation_mileage() { return _orig.creation_mileage(); }
-  int current_mileage()  { return _current_mileage; }
-
   int invocation_count() { return _invocation_counter; }
-  int backedge_count()   { return _backedge_counter;   }
 
 #if INCLUDE_RTM_OPT
   // return cached value
@@ -507,7 +497,7 @@ public:
   void set_parameter_type(int i, ciKlass* k);
   void set_return_type(int bci, ciKlass* k);
 
-  void load_data();
+  bool load_data();
 
   // Convert a dp (data pointer) to a di (data index).
   int dp_to_di(address dp) {
@@ -544,8 +534,8 @@ public:
   uint trap_count(int reason) const {
     return _orig.trap_count(reason);
   }
-  uint trap_reason_limit() const { return _orig.trap_reason_limit(); }
-  uint trap_count_limit()  const { return _orig.trap_count_limit(); }
+  uint trap_reason_limit() const { return MethodData::trap_reason_limit(); }
+  uint trap_count_limit()  const { return MethodData::trap_count_limit(); }
 
   // Helpful query functions that decode trap_state.
   int has_trap_at(ciProfileData* data, int reason);

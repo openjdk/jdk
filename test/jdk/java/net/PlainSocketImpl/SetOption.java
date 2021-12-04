@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4165948
- * @summary java.net.PlainSocketImpl {set,get}Option throws SocketException
+ * @summary java.net.SocketImpl {set,get}Option throws SocketException
  *          when socket is closed.
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary Objects.checkIndex/jdk.internal.util.Preconditions.checkIndex tests
+ * @summary Objects.checkIndex/jdk.internal.util.Preconditions.checkIndex tests for int values
  * @run testng CheckIndex
  * @bug 8135248 8142493 8155794
  * @modules java.base/jdk.internal.util
@@ -50,7 +50,7 @@ public class CheckIndex {
         }
     }
 
-    static BiFunction<String, List<Integer>, AssertingOutOfBoundsException> assertingOutOfBounds(
+    static BiFunction<String, List<Number>, AssertingOutOfBoundsException> assertingOutOfBounds(
             String message, String expCheckKind, Integer... expArgs) {
         return (checkKind, args) -> {
             assertEquals(checkKind, expCheckKind);
@@ -64,7 +64,7 @@ public class CheckIndex {
         };
     }
 
-    static BiFunction<String, List<Integer>, AssertingOutOfBoundsException> assertingOutOfBoundsReturnNull(
+    static BiFunction<String, List<Number>, AssertingOutOfBoundsException> assertingOutOfBoundsReturnNull(
             String expCheckKind, Integer... expArgs) {
         return (checkKind, args) -> {
             assertEquals(checkKind, expCheckKind);
@@ -86,11 +86,7 @@ public class CheckIndex {
                 l.add(new Object[]{index, length, withinBounds});
             }
         }
-        return l.toArray(new Object[0][0]);
-    }
-
-    interface X {
-        int apply(int a, int b, int c);
+        return l.toArray(Object[][]::new);
     }
 
     @Test(dataProvider = "checkIndexProvider")
@@ -152,7 +148,7 @@ public class CheckIndex {
                 }
             }
         }
-        return l.toArray(new Object[0][0]);
+        return l.toArray(Object[][]::new);
     }
 
     @Test(dataProvider = "checkFromToIndexProvider")
@@ -221,7 +217,7 @@ public class CheckIndex {
                 }
             }
         }
-        return l.toArray(new Object[0][0]);
+        return l.toArray(Object[][]::new);
     }
 
     @Test(dataProvider = "checkFromIndexSizeProvider")
@@ -269,7 +265,7 @@ public class CheckIndex {
 
     @Test
     public void uniqueMessagesForCheckKinds() {
-        BiFunction<String, List<Integer>, IndexOutOfBoundsException> f =
+        BiFunction<String, List<Number>, IndexOutOfBoundsException> f =
                 Preconditions.outOfBoundsExceptionFormatter(IndexOutOfBoundsException::new);
 
         List<String> messages = new ArrayList<>();

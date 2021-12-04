@@ -48,20 +48,6 @@ public:
   }
 };
 
-template <typename Iterator>
-class ZSerialWeakApply {
-private:
-  Iterator      _iter;
-  volatile bool _claimed;
-
-public:
-  ZSerialWeakApply() :
-      _iter(),
-      _claimed(false) {}
-
-  void apply(BoolObjectClosure* is_alive, OopClosure* cl);
-};
-
 class ZStrongOopStorageSetIterator {
   OopStorageSetStrongParState<true /* concurrent */, false /* is_const */> _iter;
 
@@ -97,7 +83,7 @@ public:
   void apply(NMethodClosure* cl);
 };
 
-class ZConcurrentRootsIterator {
+class ZRootsIterator {
 private:
   ZParallelApply<ZStrongOopStorageSetIterator> _oop_storage_set;
   ZParallelApply<ZStrongCLDsIterator>          _class_loader_data_graph;
@@ -105,7 +91,7 @@ private:
   ZParallelApply<ZNMethodsIterator>            _nmethods;
 
 public:
-  ZConcurrentRootsIterator(int cld_claim);
+  ZRootsIterator(int cld_claim);
 
   void apply(OopClosure* cl,
              CLDClosure* cld_cl,
@@ -125,22 +111,7 @@ public:
   void report_num_dead();
 };
 
-class ZJVMTITagMapIterator {
-public:
-  void apply(BoolObjectClosure* is_alive, OopClosure* cl);
-};
-
 class ZWeakRootsIterator {
-private:
-  ZSerialWeakApply<ZJVMTITagMapIterator> _jvmti_tag_map;
-
-public:
-  ZWeakRootsIterator();
-
-  void apply(BoolObjectClosure* is_alive, OopClosure* cl);
-};
-
-class ZConcurrentWeakRootsIterator {
 private:
   ZParallelApply<ZWeakOopStorageSetIterator> _oop_storage_set;
 

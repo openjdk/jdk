@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,13 @@ class GraphKit : public Phase {
   // Create or find a constant node
   Node* intcon(jint con)        const { return _gvn.intcon(con); }
   Node* longcon(jlong con)      const { return _gvn.longcon(con); }
+  Node* integercon(jlong con, BasicType bt)   const {
+    if (bt == T_INT) {
+      return intcon(checked_cast<jint>(con));
+    }
+    assert(bt == T_LONG, "basic type not an int or long");
+    return longcon(con);
+  }
   Node* makecon(const Type *t)  const { return _gvn.makecon(t); }
   Node* zerocon(BasicType bt)   const { return _gvn.zerocon(bt); }
   // (See also macro MakeConX in type.hpp, which uses intcon or longcon.)
@@ -336,6 +343,12 @@ class GraphKit : public Phase {
   Node* load_object_klass(Node* object);
   // Find out the length of an array.
   Node* load_array_length(Node* array);
+  // Cast array allocation's length as narrow as possible.
+  // If replace_length_in_map is true, replace length with CastIINode in map.
+  // This method is invoked after creating/moving ArrayAllocationNode or in load_array_length
+  Node* array_ideal_length(AllocateArrayNode* alloc,
+                           const TypeOopPtr* oop_type,
+                           bool replace_length_in_map);
 
 
   // Helper function to do a NULL pointer check or ZERO check based on type.
@@ -647,7 +660,7 @@ class GraphKit : public Phase {
                               Node* ctrl = NULL);
 
   // Return a load of array element at idx.
-  Node* load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAryPtr* arytype);
+  Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);
 
   //---------------- Dtrace support --------------------
   void make_dtrace_method_entry_exit(ciMethod* method, bool is_entry);
@@ -770,7 +783,6 @@ class GraphKit : public Phase {
   public:
   // Helper function to round double arguments before a call
   void round_double_arguments(ciMethod* dest_method);
-  void round_double_result(ciMethod* dest_method);
 
   // rounding for strict float precision conformance
   Node* precision_rounding(Node* n);
@@ -790,7 +802,14 @@ class GraphKit : public Phase {
                           Node* parm0 = NULL, Node* parm1 = NULL,
                           Node* parm2 = NULL, Node* parm3 = NULL,
                           Node* parm4 = NULL, Node* parm5 = NULL,
-                          Node* parm6 = NULL, Node* parm7 = NULL);
+                          Node* parm6 = NULL, Node* parm7 = NULL,
+                          Node* parm8 = NULL);
+
+  Node* sign_extend_byte(Node* in);
+  Node* sign_extend_short(Node* in);
+
+  Node* make_native_call(address call_addr, const TypeFunc* call_type, uint nargs, ciNativeEntryPoint* nep);
+
   enum {  // flag values for make_runtime_call
     RC_NO_FP = 1,               // CallLeafNoFPNode
     RC_NO_IO = 2,               // do not hook IO edges
@@ -798,6 +817,7 @@ class GraphKit : public Phase {
     RC_MUST_THROW = 8,          // flag passed to add_safepoint_edges
     RC_NARROW_MEM = 16,         // input memory is same as output
     RC_UNCOMMON = 32,           // freq. expected to be like uncommon trap
+    RC_VECTOR = 64,             // CallLeafVectorNode
     RC_LEAF = 0                 // null value:  no flags set
   };
 
@@ -882,6 +902,11 @@ class GraphKit : public Phase {
   void add_empty_predicate_impl(Deoptimization::DeoptReason reason, int nargs);
 
   Node* make_constant_from_field(ciField* field, Node* obj);
+
+  // Vector API support (implemented in vectorIntrinsics.cpp)
+  Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
+  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector = false);
+  Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 };
 
 // Helper class to support building of control flow branches. Upon

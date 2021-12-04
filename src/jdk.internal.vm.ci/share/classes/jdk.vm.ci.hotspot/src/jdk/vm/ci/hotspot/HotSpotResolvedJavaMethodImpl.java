@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public int hashCode() {
-        return (int) getMetaspaceMethod();
+        return Long.hashCode(getMetaspaceMethod());
     }
 
     /**
@@ -477,7 +477,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
                 if (methodDataFilter != null && this.format("%H.%n").contains(methodDataFilter)) {
                     String line = methodData.toString() + System.lineSeparator();
                     byte[] lineBytes = line.getBytes();
-                    CompilerToVM.compilerToVM().writeDebugOutput(lineBytes, 0, lineBytes.length, true, true);
+                    HotSpotJVMCIRuntime.runtime().writeDebugOutput(lineBytes, 0, lineBytes.length, true, true);
                 }
             }
         }
@@ -680,7 +680,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             return config().invalidVtableIndex;
         }
         if (holder.isInterface()) {
-            if (resolved.isInterface() || !resolved.isLinked()) {
+            if (resolved.isInterface() || !resolved.isLinked() || !getDeclaringClass().isAssignableFrom(resolved)) {
                 return config().invalidVtableIndex;
             }
             return getVtableIndexForInterfaceMethod(resolved);

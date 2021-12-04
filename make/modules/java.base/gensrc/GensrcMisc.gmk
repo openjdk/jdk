@@ -78,10 +78,10 @@ endif
 define generate-preproc-src
 	$(call MakeDir, $(@D))
 	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/gensrc/java.base/_$(@F), \
-	    ( $(NAWK) '/@@END_COPYRIGHT@@/{exit}1' $< && \
+	    ( $(AWK) '/@@END_COPYRIGHT@@/{exit}1' $< && \
 	      $(CPP) $(CPP_FLAGS) $(SYSROOT_CFLAGS) $(CFLAGS_JDKLIB) $(CPP_FILEPREFIX) $< \
 	          2> >($(GREP) -v '^$(<F)$$' >&2) \
-	          | $(NAWK) '/@@START_HERE@@/,0' \
+	          | $(AWK) '/@@START_HERE@@/,0' \
 	          |  $(SED) -e 's/@@START_HERE@@/\/\/ AUTOMATICALLY GENERATED FILE - DO NOT EDIT/' \
 	          -e 's/PREFIX_//' -e 's/^#.*//' \
 	    ) > $@ \

@@ -24,7 +24,7 @@
  */
 
 /**
- * Defines the experimental foreign memory access API.
+ * Defines an API for accessing foreign memory and calling foreign functions, directly from Java.
  *
  * {@Incubating}
  *

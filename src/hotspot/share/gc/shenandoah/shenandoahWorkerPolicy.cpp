@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "runtime/thread.hpp"

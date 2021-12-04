@@ -24,9 +24,10 @@
 #ifndef SHARE_GC_Z_ZPAGETABLE_INLINE_HPP
 #define SHARE_GC_Z_ZPAGETABLE_INLINE_HPP
 
+#include "gc/z/zPageTable.hpp"
+
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
-#include "gc/z/zPageTable.hpp"
 
 inline ZPage* ZPageTable::get(uintptr_t addr) const {
   assert(!ZAddress::is_null(addr), "Invalid address");

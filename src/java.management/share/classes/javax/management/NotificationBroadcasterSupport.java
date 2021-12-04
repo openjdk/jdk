@@ -331,7 +331,7 @@ public class NotificationBroadcasterSupport implements NotificationEmitter {
     private final Executor executor;
     private final MBeanNotificationInfo[] notifInfo;
 
-    private final static Executor defaultExecutor = new Executor() {
+    private static final Executor defaultExecutor = new Executor() {
             // DirectExecutor using caller thread
             public void execute(Runnable r) {
                 r.run();

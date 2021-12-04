@@ -46,7 +46,7 @@ public class JcmdStateBuilder implements StateBuilder<JcmdCommand> {
     private final Map<MethodDescriptor, List<CompileCommand>> matchBlocks
             = new LinkedHashMap<>();
     private final List<CompileCommand> inlines = new ArrayList<>();
-    private boolean isFileValid = true;
+    public boolean isFileValid = true;
 
     public JcmdStateBuilder(String fileName) {
         directiveBuilder = new DirectiveBuilder(fileName);

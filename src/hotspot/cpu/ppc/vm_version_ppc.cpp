@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -136,8 +136,13 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseCharacterCompareIntrinsics)) {
       FLAG_SET_ERGO(UseCharacterCompareIntrinsics, true);
     }
-    if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
-      FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
+    if (SuperwordUseVSX) {
+      if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
+        FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
+      }
+    } else if (UseVectorByteReverseInstructionsPPC64) {
+      warning("UseVectorByteReverseInstructionsPPC64 specified, but needs SuperwordUseVSX.");
+      FLAG_SET_DEFAULT(UseVectorByteReverseInstructionsPPC64, false);
     }
     if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
       FLAG_SET_ERGO(UseBASE64Intrinsics, true);
@@ -373,11 +378,7 @@ void VM_Version::initialize() {
 
   // Adjust RTM (Restricted Transactional Memory) flags.
   if (UseRTMLocking) {
-    // If CPU or OS do not support TM:
-    // Can't continue because UseRTMLocking affects UseBiasedLocking flag
-    // setting during arguments processing. See use_biased_locking().
-    // VM_Version_init() is executed after UseBiasedLocking is used
-    // in Thread::allocate().
+    // If CPU or OS do not support RTM:
     if (PowerArchitecturePPC64 < 8) {
       vm_exit_during_initialization("RTM instructions are not available on this CPU.");
     }
@@ -394,8 +395,6 @@ void VM_Version::initialize() {
     }
 #else
     // Only C2 does RTM locking optimization.
-    // Can't continue because UseRTMLocking affects UseBiasedLocking flag
-    // setting during arguments processing. See use_biased_locking().
     vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
 #endif
   } else { // !UseRTMLocking
@@ -537,27 +536,6 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
     st->print_cr("  <%s Not Available>", info_file);
   }
 #endif
-}
-
-bool VM_Version::use_biased_locking() {
-#if INCLUDE_RTM_OPT
-  // RTM locking is most useful when there is high lock contention and
-  // low data contention. With high lock contention the lock is usually
-  // inflated and biased locking is not suitable for that case.
-  // RTM locking code requires that biased locking is off.
-  // Note: we can't switch off UseBiasedLocking in get_processor_features()
-  // because it is used by Thread::allocate() which is called before
-  // VM_Version::initialize().
-  if (UseRTMLocking && UseBiasedLocking) {
-    if (FLAG_IS_DEFAULT(UseBiasedLocking)) {
-      FLAG_SET_DEFAULT(UseBiasedLocking, false);
-    } else {
-      warning("Biased locking is not supported with RTM locking; ignoring UseBiasedLocking flag." );
-      UseBiasedLocking = false;
-    }
-  }
-#endif
-  return UseBiasedLocking;
 }
 
 void VM_Version::print_features() {

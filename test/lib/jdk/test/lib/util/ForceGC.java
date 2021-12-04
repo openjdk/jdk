@@ -34,15 +34,18 @@ import java.util.function.BooleanSupplier;
 public class ForceGC {
     private final CountDownLatch cleanerInvoked = new CountDownLatch(1);
     private final Cleaner cleaner = Cleaner.create();
+    private Object o;
+
     public ForceGC() {
-        cleaner.register(new Object(), () -> cleanerInvoked.countDown());
+        this.o = new Object();
+        cleaner.register(o, () -> cleanerInvoked.countDown());
     }
 
-    private void doit() {
+    private void doit(int iter) {
         try {
             for (int i = 0; i < 10; i++) {
                 System.gc();
-                System.out.println("gc " + i);
+                System.out.println("doit() iter: " + iter + ", gc " + i);
                 if (cleanerInvoked.await(1L, TimeUnit.SECONDS)) {
                     return;
                 }
@@ -62,9 +65,14 @@ public class ForceGC {
      * @throws InterruptedException if the current thread is interrupted while waiting
      */
     public boolean await(BooleanSupplier s) {
+        o = null; // Keep reference to Object until now, to ensure the Cleaner
+                  // doesn't count down the latch before await() is called.
         for (int i = 0; i < 10; i++) {
             if (s.getAsBoolean()) return true;
-            doit();
+            doit(i);
+            try { Thread.sleep(1000); } catch (InterruptedException e) {
+                throw new AssertionError("unexpected interrupted sleep", e);
+            }
         }
         return false;
     }

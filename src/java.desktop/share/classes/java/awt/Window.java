@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
@@ -387,9 +388,10 @@ public class Window extends Container implements Accessible {
     private static final String base = "win";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 4497834738069338734L;
 
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.Window");
@@ -402,8 +404,8 @@ public class Window extends Container implements Accessible {
      * These fields are initialized in the native peer code
      * or via AWTAccessor's WindowAccessor.
      */
-    private transient volatile int securityWarningWidth = 0;
-    private transient volatile int securityWarningHeight = 0;
+    private transient volatile int securityWarningWidth;
+    private transient volatile int securityWarningHeight;
 
     static {
         /* ensure that the necessary native libraries are loaded */
@@ -412,12 +414,14 @@ public class Window extends Container implements Accessible {
             initIDs();
         }
 
+        @SuppressWarnings("removal")
         String s = java.security.AccessController.doPrivileged(
             new GetPropertyAction("java.awt.syncLWRequests"));
-        systemSyncLWRequests = (s != null && s.equals("true"));
-        s = java.security.AccessController.doPrivileged(
+        systemSyncLWRequests = "true".equals(s);
+        @SuppressWarnings("removal")
+        String s2 = java.security.AccessController.doPrivileged(
             new GetPropertyAction("java.awt.Window.locationByPlatform"));
-        locationByPlatformProp = (s != null && s.equals("true"));
+        locationByPlatformProp = "true".equals(s2);
     }
 
     /**
@@ -1395,6 +1399,7 @@ public class Window extends Container implements Accessible {
         return warningString;
     }
 
+    @SuppressWarnings("removal")
     private void setWarningString() {
         warningString = null;
         SecurityManager sm = System.getSecurityManager();
@@ -1699,6 +1704,7 @@ public class Window extends Container implements Accessible {
             return;
         }
         if (exclusionType == Dialog.ModalExclusionType.TOOLKIT_EXCLUDE) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(AWTPermissions.TOOLKIT_MODALITY_PERMISSION);
@@ -1743,7 +1749,7 @@ public class Window extends Container implements Accessible {
     }
 
     void updateChildrenBlocking() {
-        Vector<Window> childHierarchy = new Vector<Window>();
+        ArrayList<Window> childHierarchy = new ArrayList<>();
         Window[] ownedWindows = getOwnedWindows();
         for (int i = 0; i < ownedWindows.length; i++) {
             childHierarchy.add(ownedWindows[i]);
@@ -2249,6 +2255,7 @@ public class Window extends Container implements Accessible {
      * @since 1.5
      */
     public final void setAlwaysOnTop(boolean alwaysOnTop) throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
@@ -2959,6 +2966,7 @@ public class Window extends Container implements Accessible {
      * @see Component#ownedWindowK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         synchronized (this) {
             // Update old focusMgr fields so that our object stream can be read
@@ -3105,6 +3113,7 @@ public class Window extends Container implements Accessible {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -3165,9 +3174,10 @@ public class Window extends Container implements Accessible {
      */
     protected class AccessibleAWTWindow extends AccessibleAWTContainer
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 4215068635060671780L;
 
         /**
@@ -4126,8 +4136,9 @@ class FocusManager implements java.io.Serializable {
     Container focusRoot;
     Component focusOwner;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
-    static final long serialVersionUID = 2491878825643557906L;
+    @Serial
+    private static final long serialVersionUID = 2491878825643557906L;
 }

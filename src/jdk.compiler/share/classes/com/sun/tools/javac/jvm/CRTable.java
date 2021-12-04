@@ -322,9 +322,14 @@ implements CRTFlags {
 
         public void visitCase(JCCase tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
-            sr.mergeWith(csp(tree.pats));
+            sr.mergeWith(csp(tree.labels));
             sr.mergeWith(csp(tree.stats));
             result = sr;
+        }
+
+        @Override
+        public void visitDefaultCaseLabel(JCTree.JCDefaultCaseLabel that) {
+            result = null;
         }
 
         public void visitSynchronized(JCSynchronized tree) {
@@ -379,6 +384,7 @@ implements CRTFlags {
 
         public void visitYield(JCYield tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
+            sr.mergeWith(csp(tree.value));
             result = sr;
         }
 

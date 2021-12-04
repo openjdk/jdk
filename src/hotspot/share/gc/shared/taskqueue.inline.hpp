@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_TASKQUEUE_INLINE_HPP
 
 #include "gc/shared/taskqueue.hpp"
+
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -48,9 +49,10 @@ inline GenericTaskQueueSet<T, F>::~GenericTaskQueueSet() {
 }
 
 template<class E, MEMFLAGS F, unsigned int N>
-inline void GenericTaskQueue<E, F, N>::initialize() {
-  _elems = ArrayAllocator<E>::allocate(N, F);
-}
+inline GenericTaskQueue<E, F, N>::GenericTaskQueue() :
+  _elems(ArrayAllocator<E>::allocate(N, F)),
+  _last_stolen_queue_id(InvalidQueueId),
+  _seed(17 /* random number */) {}
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline GenericTaskQueue<E, F, N>::~GenericTaskQueue() {
@@ -318,6 +320,7 @@ GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num, E& t) {
 
 template<class T, MEMFLAGS F> bool
 GenericTaskQueueSet<T, F>::steal(uint queue_num, E& t) {
+  assert(queue_num < _n, "index out of range.");
   for (uint i = 0; i < 2 * _n; i++) {
     TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt());
     if (steal_best_of_2(queue_num, t)) {

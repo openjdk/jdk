@@ -153,7 +153,7 @@ public class TestShrinkAuxiliaryData {
 
     static class ShrinkAuxiliaryDataTest {
 
-        public static void main(String[] args) throws IOException {
+        public static void main(String[] args) throws Exception {
 
             ShrinkAuxiliaryDataTest testCase = new ShrinkAuxiliaryDataTest();
 
@@ -220,7 +220,7 @@ public class TestShrinkAuxiliaryData {
 
         private final List<GarbageObject> garbage = new ArrayList<>();
 
-        public void test() throws IOException {
+        public void test() throws Exception {
 
             MemoryUsage muFull, muFree, muAuxDataFull, muAuxDataFree;
             float auxFull, auxFree;
@@ -241,6 +241,14 @@ public class TestShrinkAuxiliaryData {
 
             deallocate();
             System.gc();
+
+            if (WhiteBox.getWhiteBox().g1HasRegionsToUncommit()) {
+                System.out.println("Waiting for concurrent uncommit to complete");
+                do {
+                    Thread.sleep(1000);
+                } while(WhiteBox.getWhiteBox().g1HasRegionsToUncommit());
+                System.out.println("Concurrent uncommit done");
+            }
 
             muFree = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
             muAuxDataFree = WhiteBox.getWhiteBox().g1AuxiliaryMemoryUsage();

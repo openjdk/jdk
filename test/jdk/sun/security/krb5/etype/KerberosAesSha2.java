@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 import javax.crypto.Cipher;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HexFormat;
 
 import sun.security.krb5.internal.crypto.dk.AesSha2DkCrypto;
 import jdk.test.lib.hexdump.HexPrinter;
@@ -190,11 +191,7 @@ public class KerberosAesSha2 {
 
     private static byte[] hex(String var) {
         var = var.replaceAll("\\s", "");
-        byte[] data = new byte[var.length()/2];
-        for (int i=0; i<data.length; i++) {
-            data[i] = Integer.valueOf(var.substring(2*i,2*i+2), 16).byteValue();
-        }
-        return data;
+        return HexFormat.of().parseHex(var);
     }
 
     private static void check(byte[] b1, byte[] b2) throws Exception {

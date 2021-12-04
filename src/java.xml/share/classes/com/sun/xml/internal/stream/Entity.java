@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -461,13 +461,10 @@ public abstract class Entity {
 
         /** Returns a string representation of this object. */
         public String toString() {
-
-            StringBuffer str = new StringBuffer();
-            str.append("name=\""+name+'"');
-            str.append(",ch="+ new String(ch));
-            str.append(",position="+position);
-            str.append(",count="+count);
-            return str.toString();
+            return "name=\"" + name + '"' +
+                    ",ch=" + new String(ch) +
+                    ",position=" + position +
+                    ",count=" + count;
 
         } // toString():String
 

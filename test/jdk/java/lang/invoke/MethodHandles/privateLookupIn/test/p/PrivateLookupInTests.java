@@ -39,7 +39,6 @@ import static org.testng.Assert.*;
 
 @Test
 public class PrivateLookupInTests {
-
     /**
      * A public and non-public types in the test module but in a different
      * package to the test class.
@@ -75,6 +74,7 @@ public class PrivateLookupInTests {
         Lookup lookup = MethodHandles.privateLookupIn(nonPublicType, MethodHandles.lookup());
         assertTrue(lookup.lookupClass() == nonPublicType);
         assertTrue(lookup.hasFullPrivilegeAccess());
+        assertTrue((lookup.lookupModes() & ORIGINAL) == 0);
 
         // get obj field
         MethodHandle mh = lookup.findStaticGetter(nonPublicType, "obj", Object.class);
@@ -88,6 +88,7 @@ public class PrivateLookupInTests {
         assertTrue((caller.lookupModes() & PRIVATE) == 0);
         assertTrue((caller.lookupModes() & PACKAGE) == 0);
         assertTrue((caller.lookupModes() & MODULE) != 0);
+        assertTrue((caller.lookupModes() & ORIGINAL) == 0);
 
         Lookup lookup = MethodHandles.privateLookupIn(nonPublicType, caller);
     }
@@ -113,8 +114,8 @@ public class PrivateLookupInTests {
 
         Lookup lookup = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
         assertTrue(lookup.lookupClass() == clazz);
-        assertTrue((lookup.lookupModes() & PRIVATE) != 0);
-        assertFalse(lookup.hasFullPrivilegeAccess());
+        assertTrue((lookup.lookupModes() & PRIVATE) == PRIVATE);
+        assertTrue((lookup.lookupModes() & MODULE) == 0);
 
         // get obj field
         MethodHandle mh = lookup.findStaticGetter(clazz, "obj", Object.class);
@@ -138,7 +139,8 @@ public class PrivateLookupInTests {
         thisModule.addReads(clazz.getModule());
         Lookup lookup = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
         assertTrue(lookup.lookupClass() == clazz);
-        assertTrue((lookup.lookupModes() & PRIVATE) != 0);
+        assertTrue((lookup.lookupModes() & PRIVATE) == PRIVATE);
+        assertTrue((lookup.lookupModes() & MODULE) == 0);
     }
 
     // test does not read m2, m2 opens p2 to test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/quickSort.hpp"
@@ -69,7 +69,7 @@ static int order_regions(HeapRegion* hr1, HeapRegion* hr2) {
 // put them into some work area unsorted. At the end the array is sorted and
 // copied into the G1CollectionSetCandidates instance; the caller will be the new
 // owner of this object.
-class G1BuildCandidateRegionsTask : public AbstractGangTask {
+class G1BuildCandidateRegionsTask : public WorkerTask {
 
   // Work area for building the set of collection set candidates. Contains references
   // to heap regions with their GC efficiencies calculated. To reduce contention
@@ -223,7 +223,7 @@ class G1BuildCandidateRegionsTask : public AbstractGangTask {
 
 public:
   G1BuildCandidateRegionsTask(uint max_num_regions, uint chunk_size, uint num_workers) :
-    AbstractGangTask("G1 Build Candidate Regions"),
+    WorkerTask("G1 Build Candidate Regions"),
     _g1h(G1CollectedHeap::heap()),
     _hrclaimer(num_workers),
     _num_regions_added(0),
@@ -257,7 +257,61 @@ bool G1CollectionSetChooser::should_add(HeapRegion* hr) {
          hr->rem_set()->is_complete();
 }
 
-G1CollectionSetCandidates* G1CollectionSetChooser::build(WorkGang* workers, uint max_num_regions) {
+// Closure implementing early pruning (removal) of regions meeting the
+// G1HeapWastePercent criteria. That is, either until _max_pruned regions were
+// removed (for forward progress in evacuation) or the waste accumulated by the
+// removed regions is above max_wasted.
+class G1PruneRegionClosure : public HeapRegionClosure {
+  uint _num_pruned;
+  size_t _cur_wasted;
+
+  uint const _max_pruned;
+  size_t const _max_wasted;
+
+public:
+  G1PruneRegionClosure(uint max_pruned, size_t max_wasted) :
+    _num_pruned(0), _cur_wasted(0), _max_pruned(max_pruned), _max_wasted(max_wasted) { }
+
+  virtual bool do_heap_region(HeapRegion* r) {
+    size_t const reclaimable = r->reclaimable_bytes();
+    if (_num_pruned > _max_pruned ||
+        _cur_wasted + reclaimable > _max_wasted) {
+      return true;
+    }
+    r->rem_set()->clear(true /* cardset_only */);
+    _cur_wasted += reclaimable;
+    _num_pruned++;
+    return false;
+  }
+
+  uint num_pruned() const { return _num_pruned; }
+  size_t wasted() const { return _cur_wasted; }
+};
+
+void G1CollectionSetChooser::prune(G1CollectionSetCandidates* candidates) {
+  G1Policy* p = G1CollectedHeap::heap()->policy();
+
+  uint min_old_cset_length = p->calc_min_old_cset_length(candidates);
+  uint num_candidates = candidates->num_regions();
+
+  if (min_old_cset_length < num_candidates) {
+    size_t allowed_waste = p->allowed_waste_in_collection_set();
+
+    G1PruneRegionClosure prune_cl(num_candidates - min_old_cset_length,
+                                  allowed_waste);
+    candidates->iterate_backwards(&prune_cl);
+
+    log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (allowed " SIZE_FORMAT ")",
+                              prune_cl.num_pruned(),
+                              candidates->num_regions(),
+                              prune_cl.wasted(),
+                              allowed_waste);
+
+    candidates->remove_from_end(prune_cl.num_pruned(), prune_cl.wasted());
+  }
+}
+
+G1CollectionSetCandidates* G1CollectionSetChooser::build(WorkerThreads* workers, uint max_num_regions) {
   uint num_workers = workers->active_workers();
   uint chunk_size = calculate_work_chunk_size(num_workers, max_num_regions);
 
@@ -265,6 +319,7 @@ G1CollectionSetCandidates* G1CollectionSetChooser::build(WorkGang* workers, uint
   workers->run_task(&cl, num_workers);
 
   G1CollectionSetCandidates* result = cl.get_sorted_candidates();
+  prune(result);
   result->verify();
   return result;
 }

@@ -87,7 +87,7 @@ import jdk.internal.util.ArraysSupport;
  * <pre> {@code
  * class FIFOEntry<E extends Comparable<? super E>>
  *     implements Comparable<FIFOEntry<E>> {
- *   static final AtomicLong seq = new AtomicLong(0);
+ *   static final AtomicLong seq = new AtomicLong();
  *   final long seqNum;
  *   final E entry;
  *   public FIFOEntry(E entry) {
@@ -226,7 +226,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     /**
      * Creates a {@code PriorityBlockingQueue} containing the elements
      * in the specified collection.  If the specified collection is a
-     * {@link SortedSet} or a {@link PriorityQueue}, this
+     * {@link SortedSet} or a {@link PriorityBlockingQueue}, this
      * priority queue will be ordered according to the same ordering.
      * Otherwise, this priority queue will be ordered according to the
      * {@linkplain Comparable natural ordering} of its elements.
@@ -290,7 +290,9 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         if (allocationSpinLock == 0 &&
             ALLOCATIONSPINLOCK.compareAndSet(this, 0, 1)) {
             try {
-                int growth = oldCap < 64 ? oldCap + 2 : oldCap >> 1;
+                int growth = (oldCap < 64)
+                    ? (oldCap + 2) // grow faster if small
+                    : (oldCap >> 1);
                 int newCap = ArraysSupport.newLength(oldCap, 1, growth);
                 if (queue == array)
                     newArray = new Object[newCap];

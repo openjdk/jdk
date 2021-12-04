@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "ci/ciEnv.hpp"
 #include "ci/ciType.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -100,20 +99,6 @@ ciInstance* ciType::java_mirror() {
   VM_ENTRY_MARK;
   return CURRENT_THREAD_ENV->get_instance(Universe::java_mirror(basic_type()));
 }
-
-// ------------------------------------------------------------------
-// ciType::box_klass
-//
-ciKlass* ciType::box_klass() {
-  if (!is_primitive_type())  return this->as_klass();  // reference types are "self boxing"
-
-  // Void is "boxed" with a null.
-  if (basic_type() == T_VOID)  return NULL;
-
-  VM_ENTRY_MARK;
-  return CURRENT_THREAD_ENV->get_instance_klass(SystemDictionary::box_klass(basic_type()));
-}
-
 
 // ------------------------------------------------------------------
 // ciType::make

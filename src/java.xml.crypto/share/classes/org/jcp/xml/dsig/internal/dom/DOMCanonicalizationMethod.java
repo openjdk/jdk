@@ -21,10 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id: DOMCanonicalizationMethod.java 1788465 2017-03-24 15:10:51Z coheigea $
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -32,6 +29,9 @@ import java.io.OutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.w3c.dom.Element;
 
@@ -44,6 +44,19 @@ import javax.xml.crypto.dsig.*;
  */
 public class DOMCanonicalizationMethod extends DOMTransform
     implements CanonicalizationMethod {
+
+    private static final Set<String> C14N_ALGORITHMS;
+
+    static {
+        Set<String> algorithms = new HashSet<>();
+        algorithms.add(CanonicalizationMethod.INCLUSIVE);
+        algorithms.add(CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS);
+        algorithms.add(CanonicalizationMethod.EXCLUSIVE);
+        algorithms.add(CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS);
+        algorithms.add(DOMCanonicalXMLC14N11Method.C14N_11);
+        algorithms.add(DOMCanonicalXMLC14N11Method.C14N_11_WITH_COMMENTS);
+        C14N_ALGORITHMS = Collections.unmodifiableSet(algorithms);
+    }
 
     /**
      * Creates a {@code DOMCanonicalizationMethod}.
@@ -128,21 +141,8 @@ public class DOMCanonicalizationMethod extends DOMTransform
     }
 
     private static boolean isC14Nalg(String alg) {
-        return isInclusiveC14Nalg(alg) || isExclusiveC14Nalg(alg) || isC14N11alg(alg);
+        return alg != null && C14N_ALGORITHMS.contains(alg);
     }
 
-    private static boolean isInclusiveC14Nalg(String alg) {
-        return alg.equals(CanonicalizationMethod.INCLUSIVE)
-            || alg.equals(CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS);
-    }
 
-    private static boolean isExclusiveC14Nalg(String alg) {
-        return alg.equals(CanonicalizationMethod.EXCLUSIVE)
-            || alg.equals(CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS);
-    }
-
-    private static boolean isC14N11alg(String alg) {
-        return alg.equals(DOMCanonicalXMLC14N11Method.C14N_11)
-            || alg.equals(DOMCanonicalXMLC14N11Method.C14N_11_WITH_COMMENTS);
-    }
 }

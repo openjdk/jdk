@@ -31,7 +31,6 @@ import java.io.OutputStream;
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -40,7 +39,6 @@ import javax.xml.transform.stream.StreamSource;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-import com.sun.org.apache.xml.internal.security.transforms.Transform;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
@@ -56,10 +54,6 @@ import org.w3c.dom.Element;
  */
 public class TransformXSLT extends TransformSpi {
 
-    /** Field implementedTransformURI */
-    public static final String implementedTransformURI =
-        Transforms.TRANSFORM_XSLT;
-
     static final String XSLTSpecNS = "http://www.w3.org/1999/XSL/Transform";
     static final String defaultXSLTSpecNSprefix = "xslt";
     static final String XSLTSTYLESHEET = "stylesheet";
@@ -68,20 +62,22 @@ public class TransformXSLT extends TransformSpi {
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(TransformXSLT.class);
 
     /**
-     * Method engineGetURI
-     *
      * {@inheritDoc}
      */
+    @Override
     protected String engineGetURI() {
-        return implementedTransformURI;
+        return Transforms.TRANSFORM_XSLT;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     protected XMLSignatureInput enginePerformTransform(
-        XMLSignatureInput input, OutputStream baos, Transform transformObject
+        XMLSignatureInput input, OutputStream baos, Element transformElement,
+        String baseURI, boolean secureValidation
     ) throws IOException, TransformationException {
         try {
-            Element transformElement = transformObject.getElement();
-
             Element xsltElement =
                 XMLUtils.selectNode(transformElement.getFirstChild(), XSLTSpecNS, "stylesheet", 0);
             if (xsltElement == null) {
@@ -89,7 +85,7 @@ public class TransformXSLT extends TransformSpi {
                     XMLUtils.selectNode(transformElement.getFirstChild(), XSLTSpecNS, "transform", 0);
             }
             if (xsltElement == null) {
-                Object exArgs[] = { "xslt:stylesheet", "Transform" };
+                Object[] exArgs = { "xslt:stylesheet", "Transform" };
 
                 throw new TransformationException("xml.WrongContent", exArgs);
             }
@@ -97,6 +93,14 @@ public class TransformXSLT extends TransformSpi {
             TransformerFactory tFactory = TransformerFactory.newInstance();
             // Process XSLT stylesheets in a secure manner
             tFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
+            if (secureValidation) {
+                try {
+                    tFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+                    tFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+                } catch (IllegalArgumentException ex) {
+                    // ignore
+                }
+            }
 
             /*
              * This transform requires an octet stream as input. If the actual
@@ -159,11 +163,7 @@ public class TransformXSLT extends TransformSpi {
             output.setSecureValidation(secureValidation);
             output.setOutputStream(baos);
             return output;
-        } catch (XMLSecurityException ex) {
-            throw new TransformationException(ex);
-        } catch (TransformerConfigurationException ex) {
-            throw new TransformationException(ex);
-        } catch (TransformerException ex) {
+        } catch (XMLSecurityException | TransformerException ex) {
             throw new TransformationException(ex);
         }
     }

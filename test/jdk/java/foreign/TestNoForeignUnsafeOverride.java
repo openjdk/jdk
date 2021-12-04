@@ -21,25 +21,14 @@
  * questions.
  */
 
-/*
- * @test
- * @modules java.base/jdk.internal.misc
- *          jdk.incubator.foreign/jdk.internal.foreign
- * @run testng TestNoForeignUnsafeOverride
- */
+package org.openjdk.foreigntest;
 
-import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.*;
 
-import jdk.incubator.foreign.MemorySegment;
-import org.testng.annotations.Test;
-
-public class TestNoForeignUnsafeOverride {
-    static {
-        System.setProperty("foreign.restricted", "permit");
-    }
-
-    @Test(expectedExceptions = IllegalAccessError.class)
-    public void testUnsafeAccess() {
-        MemorySegment.ofNativeRestricted();
-    }
+public class PanamaMain {
+   public static void main(String[] args) {
+       System.out.println("Trying to get CLinker");
+       CLinker.systemCLinker();
+       System.out.println("Got CLinker");
+   }
 }

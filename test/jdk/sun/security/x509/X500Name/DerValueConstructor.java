@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,23 @@
 
 /* @test
  * @bug 4228833
+ * @library /test/lib
  * @summary Make sure constructor that takes DerValue argument works
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
  */
 
+import jdk.test.lib.hexdump.ASN1Formatter;
+import jdk.test.lib.hexdump.HexPrinter;
 import sun.security.util.*;
 import sun.security.x509.*;
 
+import java.util.HexFormat;
+
 public class DerValueConstructor {
+    // Hex formatter to upper case with ":" delimiter
+    private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
+
 
     public static void main(String[] args) throws Exception {
         String name = "CN=anne test";
@@ -50,7 +58,10 @@ public class DerValueConstructor {
         dn.encode(debugDER);
         ba = debugDER.toByteArray();
         System.err.print("DEBUG: encoded X500Name bytes: ");
-        System.out.println(toHexString(ba));
+        System.out.println(HEX.formatHex(ba));
+        System.out.println(HexPrinter.simple()
+                .formatter(ASN1Formatter.formatter())
+                .toString(ba));
         System.err.println();
 
         // decode
@@ -76,7 +87,10 @@ public class DerValueConstructor {
         gn.encode(debugDER);
         ba = debugDER.toByteArray();
         System.err.print("DEBUG: encoded GeneralName bytes: ");
-        System.out.println(toHexString(ba));
+        System.out.println(HEX.formatHex(ba));
+        System.out.println(HexPrinter.simple()
+                .formatter(ASN1Formatter.formatter())
+                .toString(ba));
         System.err.println();
 
         // decode
@@ -96,39 +110,13 @@ public class DerValueConstructor {
         subTree.encode(debugDER);
         ba = debugDER.toByteArray();
         System.err.print("DEBUG: encoded GeneralSubtree bytes: ");
-        System.out.println(toHexString(ba));
+        System.out.println(HEX.formatHex(ba));
+        System.out.println(HexPrinter.simple()
+                .formatter(ASN1Formatter.formatter())
+                .toString(ba));
         System.err.println();
 
         // decode
         GeneralSubtree debugSubtree = new GeneralSubtree(new DerValue(ba));
-    }
-
-    /*
-     * Converts a byte to hex digit and writes to the supplied buffer
-     */
-    private static void byte2hex(byte b, StringBuffer buf) {
-        char[] hexChars = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
-                            '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-        int high = ((b & 0xf0) >> 4);
-        int low = (b & 0x0f);
-        buf.append(hexChars[high]);
-        buf.append(hexChars[low]);
-    }
-
-    /*
-     * Converts a byte array to hex string
-     */
-    private static String toHexString(byte[] block) {
-        StringBuffer buf = new StringBuffer();
-
-        int len = block.length;
-
-        for (int i = 0; i < len; i++) {
-            byte2hex(block[i], buf);
-            if (i < len-1) {
-                buf.append(":");
-            }
-        }
-        return buf.toString();
     }
 }

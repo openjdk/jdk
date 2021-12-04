@@ -27,14 +27,13 @@ package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
 
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import jdk.internal.access.SharedSecrets;
-
+import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.FileChannelImpl;
 
 public class VM {
@@ -91,7 +90,19 @@ public class VM {
      * @see java.lang.System#initPhase2
      */
     public static boolean isModuleSystemInited() {
-        return VM.initLevel() >= MODULE_SYSTEM_INITED;
+        return initLevel >= MODULE_SYSTEM_INITED;
+    }
+
+    private static @Stable boolean javaLangInvokeInited;
+    public static void setJavaLangInvokeInited() {
+        if (javaLangInvokeInited) {
+            throw new InternalError("java.lang.invoke already inited");
+        }
+        javaLangInvokeInited = true;
+    }
+
+    public static boolean isJavaLangInvokeInited() {
+        return javaLangInvokeInited;
     }
 
     /**
@@ -150,6 +161,14 @@ public class VM {
     private static int classFileMajorVersion;
     private static int classFileMinorVersion;
     private static final int PREVIEW_MINOR_VERSION = 65535;
+
+    /**
+     * Returns the class file version of the current release.
+     * @jvms 4.1 Table 4.1-A. class file format major versions
+     */
+    public static int classFileVersion() {
+        return classFileMajorVersion;
+    }
 
     /**
      * Tests if the given version is a supported {@code class}
@@ -264,8 +283,8 @@ public class VM {
         s = props.get("java.class.version");
         int index = s.indexOf('.');
         try {
-            classFileMajorVersion = Integer.valueOf(s.substring(0, index));
-            classFileMinorVersion = Integer.valueOf(s.substring(index+1, s.length()));
+            classFileMajorVersion = Integer.parseInt(s.substring(0, index));
+            classFileMinorVersion = Integer.parseInt(s.substring(index + 1));
         } catch (NumberFormatException e) {
             throw new InternalError(e);
         }

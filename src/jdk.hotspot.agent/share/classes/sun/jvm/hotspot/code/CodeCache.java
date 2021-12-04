@@ -64,6 +64,7 @@ public class CodeCache {
     virtualConstructor.addMapping("RuntimeStub", RuntimeStub.class);
     virtualConstructor.addMapping("AdapterBlob", AdapterBlob.class);
     virtualConstructor.addMapping("MethodHandlesAdapterBlob", MethodHandlesAdapterBlob.class);
+    virtualConstructor.addMapping("VtableBlob", VtableBlob.class);
     virtualConstructor.addMapping("SafepointBlob", SafepointBlob.class);
     virtualConstructor.addMapping("DeoptimizationBlob", DeoptimizationBlob.class);
     if (VM.getVM().isServerCompiler()) {
@@ -167,7 +168,7 @@ public class CodeCache {
     }
     catch (Exception e) {
       String message = "Unable to deduce type of CodeBlob from address " + codeBlobAddr +
-                       " (expected type nmethod, RuntimeStub, ";
+                       " (expected type nmethod, RuntimeStub, VtableBlob, ";
       if (VM.getVM().isClientCompiler()) {
         message = message + " or ";
       }

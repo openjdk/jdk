@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ import javax.lang.model.util.Types;
 public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
 
     /**
-     * Returns the {@code kind} of this type.
+     * {@return the {@code kind} of this type}
      *
      * <ul>
      *
@@ -109,8 +109,6 @@ public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
      * type} is {@link TypeKind#INTERSECTION INTERSECTION}.
      *
      * </ul>
-     *
-     * @return the kind of this type
      */
     TypeKind getKind();
 
@@ -151,7 +149,7 @@ public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
      * <p>Note that any annotations returned by this method are type
      * annotations.
      *
-     * @since 8
+     * @since 1.8
      */
     @Override
     List<? extends AnnotationMirror> getAnnotationMirrors();
@@ -162,7 +160,7 @@ public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
      * <p>Note that any annotation returned by this method is a type
      * annotation.
      *
-     * @since 8
+     * @since 1.8
      */
     @Override
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
@@ -173,7 +171,7 @@ public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
      * <p>Note that any annotations returned by this method are type
      * annotations.
      *
-     * @since 8
+     * @since 1.8
      */
     @Override
     <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType);

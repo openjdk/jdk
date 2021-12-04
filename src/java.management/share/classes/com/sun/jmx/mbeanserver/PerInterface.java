@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,7 @@ final class PerInterface<M> {
      * implementation could potentially break code that sets and unsets
      * the property at different times.
      */
+    @SuppressWarnings("removal")
     private Object noSuchMethod(String msg, Object resource, String operation,
                                 Object[] params, String[] signature,
                                 Object cookie)

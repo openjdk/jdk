@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,11 @@ abstract class OutputRecord
     // SSLEngine and SSLSocket
     abstract void encodeChangeCipherSpec() throws IOException;
 
+    // SSLEngine and SSLSocket
+    void disposeWriteCipher() {
+        throw new UnsupportedOperationException();
+    }
+
     // apply to SSLEngine only
     Ciphertext encode(
         ByteBuffer[] srcs, int srcsOffset, int srcsLength,
@@ -190,7 +195,7 @@ abstract class OutputRecord
              * Since MAC's doFinal() is called for every SSL/TLS packet, it's
              * not necessary to do the same with MAC's.
              */
-            writeCipher.dispose();
+            disposeWriteCipher();
 
             this.writeCipher = writeCipher;
             this.isFirstAppOutputRecord = true;
@@ -219,7 +224,7 @@ abstract class OutputRecord
             flush();
 
             // Dispose of any intermediate state in the underlying cipher.
-            writeCipher.dispose();
+            disposeWriteCipher();
 
             this.writeCipher = writeCipher;
             this.isFirstAppOutputRecord = true;
@@ -474,8 +479,7 @@ abstract class OutputRecord
         }
 
         byte[] sequenceNumber = encCipher.authenticator.sequenceNumber();
-        int position = headerSize;
-        int contentLen = count - position;
+        int contentLen = count - headerSize;
 
         // ensure the capacity
         int requiredPacketSize =
@@ -487,7 +491,7 @@ abstract class OutputRecord
         }
 
         // use the right TLSCiphertext.opaque_type and legacy_record_version
-        ProtocolVersion pv = protocolVersion;
+        ProtocolVersion pv;
         if (!encCipher.isNullCipher()) {
             pv = ProtocolVersion.TLS12;
             contentType = ContentType.APPLICATION_DATA.id;
@@ -495,7 +499,7 @@ abstract class OutputRecord
             pv = ProtocolVersion.TLS12;
         }
 
-        ByteBuffer destination = ByteBuffer.wrap(buf, position, contentLen);
+        ByteBuffer destination = ByteBuffer.wrap(buf, headerSize, contentLen);
         count = headerSize + encCipher.encrypt(contentType, destination);
 
         // Fill out the header, write it and the message.

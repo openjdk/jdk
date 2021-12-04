@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,11 +163,11 @@ public:
   bool is_scalable() {
 #ifdef ASSERT
     if (_is_scalable) {
-      // Should only be a vector for now, but it could also be a RegVMask in future.
-      assert(_is_vector && (_num_regs == RegMask::SlotsPerVecA), "unexpected scalable reg");
+      assert(_is_vector && (_num_regs == RegMask::SlotsPerVecA) ||
+             _is_predicate && (_num_regs == RegMask::SlotsPerRegVectMask), "unexpected scalable reg");
     }
 #endif
-    return _is_scalable;
+    return Matcher::implements_scalable_vector && _is_scalable;
   }
 
 private:
@@ -195,6 +195,7 @@ public:
   uint   _is_oop:1,             // Live-range holds an oop
          _is_float:1,           // True if in float registers
          _is_vector:1,          // True if in vector registers
+         _is_predicate:1,       // True if in mask/predicate registers
          _is_scalable:1,        // True if register size is scalable
                                 //      e.g. Arm SVE vector/predicate registers.
          _was_spilled1:1,       // True if prior spilling on def
@@ -443,7 +444,7 @@ class PhaseChaitin : public PhaseRegAlloc {
 
   // Helper functions for Split()
   uint split_DEF(Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits, int slidx );
-  uint split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
+  int split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
 
   //------------------------------clone_projs------------------------------------
   // After cloning some rematerialized instruction, clone any MachProj's that

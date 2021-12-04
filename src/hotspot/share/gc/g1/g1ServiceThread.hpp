@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/mutex.hpp"
 
-class G1PeriodicGCTask;
-class G1RemSetSamplingTask;
 class G1ServiceTaskQueue;
 class G1ServiceThread;
 
@@ -61,8 +59,9 @@ public:
   virtual void execute() = 0;
 
 protected:
-  // Schedule the task on the associated service thread
-  // using the provided delay in milliseconds.
+  // Schedule the task on the associated service thread using
+  // the provided delay in milliseconds. Can only be used when
+  // currently running on the service thread.
   void schedule(jlong delay_ms);
 
   // These setters are protected for use by testing and the
@@ -88,8 +87,11 @@ class G1ServiceTaskQueue {
   void verify_task_queue() NOT_DEBUG_RETURN;
 public:
   G1ServiceTaskQueue();
-  G1ServiceTask* pop();
-  G1ServiceTask* peek();
+
+  // precondition: !is_empty().
+  G1ServiceTask* front();
+  // precondition: !is_empty().
+  void remove_front();
   void add_ordered(G1ServiceTask* task);
   bool is_empty();
 };
@@ -105,34 +107,30 @@ class G1ServiceThread: public ConcurrentGCThread {
   Monitor _monitor;
   G1ServiceTaskQueue _task_queue;
 
-  G1RemSetSamplingTask* _remset_task;
-  G1PeriodicGCTask* _periodic_gc_task;
-
-  double _vtime_accum;  // Accumulated virtual time.
-
   void run_service();
   void stop_service();
 
-  // Returns the time in milliseconds until the next task is due.
-  // Used both to determine if there are tasks ready to run and
-  // how long to sleep when nothing is ready.
-  int64_t time_to_next_task_ms();
-  void sleep_before_next_cycle();
+  // Return the next ready task, waiting until a task is ready.
+  // Instead returns nullptr if termination requested.
+  G1ServiceTask* wait_for_task();
 
-  G1ServiceTask* pop_due_task();
   void run_task(G1ServiceTask* task);
 
-  // Schedule a registered task to run after the given delay.
-  void schedule_task(G1ServiceTask* task, jlong delay);
+  // Helper used by both schedule_task() and G1ServiceTask::schedule()
+  // to schedule a registered task to run after the given delay.
+  void schedule(G1ServiceTask* task, jlong delay, bool notify);
 
 public:
   G1ServiceThread();
-  ~G1ServiceThread();
 
-  double vtime_accum() { return _vtime_accum; }
-  // Register a task with the service thread and schedule it. If
-  // no delay is specified the task is scheduled to run directly.
-  void register_task(G1ServiceTask* task, jlong delay = 0);
+  // Register a task with the service thread. The task is guaranteed not to run
+  // until at least `delay_ms` has passed. If no delay is specified or the
+  // delay is 0, the task will run in the earliest time possible.
+  void register_task(G1ServiceTask* task, jlong delay_ms = 0);
+
+  // Schedule an already-registered task to run in at least `delay_ms` time,
+  // and notify the service thread.
+  void schedule_task(G1ServiceTask* task, jlong delay_ms);
 };
 
 #endif // SHARE_GC_G1_G1SERVICETHREAD_HPP

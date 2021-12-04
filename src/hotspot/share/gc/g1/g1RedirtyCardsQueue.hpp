@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,58 +27,34 @@
 
 #include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/shared/ptrQueue.hpp"
-#include "memory/allocation.hpp"
 #include "memory/padded.hpp"
+#include "utilities/macros.hpp"
 
-class G1CardTableEntryClosure;
-class G1RedirtyCardsQueue;
 class G1RedirtyCardsQueueSet;
 
-// Provide G1RedirtyCardsQueue with a thread-local qset.  It provides an
-// uncontended staging area for completed buffers, to be flushed to the
-// shared qset en masse.  Using the "base from member" idiom so the local
-// qset is constructed before being passed to the PtrQueue constructor.
-class G1RedirtyCardsQueueBase {
-  friend class G1RedirtyCardsQueue;
-  friend class G1RedirtyCardsQueueSet;
-
-  class LocalQSet : public PtrQueueSet {
-    G1RedirtyCardsQueueSet* _shared_qset;
-    G1BufferNodeList _buffers;
-
+// A thread-local qset and queue.  It provides an uncontended staging
+// area for completed buffers, to be flushed to the shared qset en masse.
+class G1RedirtyCardsLocalQueueSet : private PtrQueueSet {
+  class Queue : public PtrQueue {
   public:
-    LocalQSet(G1RedirtyCardsQueueSet* shared_qset);
-    ~LocalQSet();
-
-    // Add the buffer to the local list.
-    virtual void enqueue_completed_buffer(BufferNode* node);
-
-    // Transfer all completed buffers to the shared qset.
-    void flush();
-
-    G1BufferNodeList take_all_completed_buffers();
+    Queue(G1RedirtyCardsLocalQueueSet* qset);
+    ~Queue() NOT_DEBUG(= default);
   };
 
-  G1RedirtyCardsQueueBase(G1RedirtyCardsQueueSet* shared_qset) :
-    _local_qset(shared_qset) {}
+  G1RedirtyCardsQueueSet* _shared_qset;
+  G1BufferNodeList _buffers;
+  Queue _queue;
 
-  ~G1RedirtyCardsQueueBase() {}
-
-  LocalQSet _local_qset;
-};
-
-// Worker-local queues of card table entries.
-class G1RedirtyCardsQueue : private G1RedirtyCardsQueueBase, public PtrQueue {
-protected:
-  virtual void handle_completed_buffer();
+  // Add the buffer to the local list.
+  virtual void enqueue_completed_buffer(BufferNode* node);
 
 public:
-  G1RedirtyCardsQueue(G1RedirtyCardsQueueSet* qset);
+  G1RedirtyCardsLocalQueueSet(G1RedirtyCardsQueueSet* shared_qset);
+  ~G1RedirtyCardsLocalQueueSet() NOT_DEBUG(= default);
 
-  // Flushes the queue.
-  ~G1RedirtyCardsQueue();
+  void enqueue(void* value);
 
-  // Flushes all enqueued cards to qset.
+  // Transfer all completed buffers to the shared qset.
   void flush();
 };
 
@@ -97,8 +73,6 @@ class G1RedirtyCardsQueueSet : public PtrQueueSet {
   BufferNode* _tail;
   DEBUG_ONLY(mutable bool _collecting;)
 
-  typedef G1RedirtyCardsQueueBase::LocalQSet LocalQSet;
-
   void update_tail(BufferNode* node);
 
 public:
@@ -110,7 +84,7 @@ public:
   // Collect buffers.  These functions are thread-safe.
   // precondition: Must not be concurrent with buffer processing.
   virtual void enqueue_completed_buffer(BufferNode* node);
-  void merge_bufferlist(LocalQSet* src);
+  void add_bufferlist(const G1BufferNodeList& buffers);
 
   // Processing phase operations.
   // precondition: Must not be concurrent with buffer collection.

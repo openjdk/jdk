@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,7 @@
 
 #include <new>
 
-PtrQueue::PtrQueue(PtrQueueSet* qset, bool active) :
-  _qset(qset),
-  _active(active),
+PtrQueue::PtrQueue(PtrQueueSet* qset) :
   _index(0),
   _capacity_in_bytes(index_to_byte_index(qset->buffer_size())),
   _buf(NULL)
@@ -45,54 +43,6 @@ PtrQueue::PtrQueue(PtrQueueSet* qset, bool active) :
 
 PtrQueue::~PtrQueue() {
   assert(_buf == NULL, "queue must be flushed before delete");
-}
-
-void PtrQueue::flush_impl() {
-  if (_buf != NULL) {
-    BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
-    if (is_empty()) {
-      // No work to do.
-      qset()->deallocate_buffer(node);
-    } else {
-      qset()->enqueue_completed_buffer(node);
-    }
-    _buf = NULL;
-    set_index(0);
-  }
-}
-
-void PtrQueue::enqueue_known_active(void* ptr) {
-  while (_index == 0) {
-    handle_zero_index();
-  }
-
-  assert(_buf != NULL, "postcondition");
-  assert(index() > 0, "postcondition");
-  assert(index() <= capacity(), "invariant");
-  _index -= _element_size;
-  _buf[index()] = ptr;
-}
-
-void PtrQueue::handle_zero_index() {
-  assert(index() == 0, "precondition");
-
-  if (_buf != NULL) {
-    handle_completed_buffer();
-  } else {
-    allocate_buffer();
-  }
-}
-
-void PtrQueue::allocate_buffer() {
-  _buf = qset()->allocate_buffer();
-  reset();
-}
-
-void PtrQueue::enqueue_completed_buffer() {
-  assert(_buf != NULL, "precondition");
-  BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
-  qset()->enqueue_completed_buffer(node);
-  allocate_buffer();
 }
 
 BufferNode* BufferNode::allocate(size_t size) {
@@ -243,11 +193,64 @@ size_t BufferNode::Allocator::reduce_free_list(size_t remove_goal) {
 }
 
 PtrQueueSet::PtrQueueSet(BufferNode::Allocator* allocator) :
-  _allocator(allocator),
-  _all_active(false)
+  _allocator(allocator)
 {}
 
 PtrQueueSet::~PtrQueueSet() {}
+
+void PtrQueueSet::reset_queue(PtrQueue& queue) {
+  if (queue.buffer() != nullptr) {
+    queue.set_index(buffer_size());
+  }
+}
+
+void PtrQueueSet::flush_queue(PtrQueue& queue) {
+  void** buffer = queue.buffer();
+  if (buffer != nullptr) {
+    size_t index = queue.index();
+    queue.set_buffer(nullptr);
+    queue.set_index(0);
+    BufferNode* node = BufferNode::make_node_from_buffer(buffer, index);
+    if (index == buffer_size()) {
+      deallocate_buffer(node);
+    } else {
+      enqueue_completed_buffer(node);
+    }
+  }
+}
+
+bool PtrQueueSet::try_enqueue(PtrQueue& queue, void* value) {
+  size_t index = queue.index();
+  if (index == 0) return false;
+  void** buffer = queue.buffer();
+  assert(buffer != nullptr, "no buffer but non-zero index");
+  buffer[--index] = value;
+  queue.set_index(index);
+  return true;
+}
+
+void PtrQueueSet::retry_enqueue(PtrQueue& queue, void* value) {
+  assert(queue.index() != 0, "precondition");
+  assert(queue.buffer() != nullptr, "precondition");
+  size_t index = queue.index();
+  queue.buffer()[--index] = value;
+  queue.set_index(index);
+}
+
+BufferNode* PtrQueueSet::exchange_buffer_with_new(PtrQueue& queue) {
+  BufferNode* node = nullptr;
+  void** buffer = queue.buffer();
+  if (buffer != nullptr) {
+    node = BufferNode::make_node_from_buffer(buffer, queue.index());
+  }
+  install_new_buffer(queue);
+  return node;
+}
+
+void PtrQueueSet::install_new_buffer(PtrQueue& queue) {
+  queue.set_buffer(allocate_buffer());
+  queue.set_index(buffer_size());
+}
 
 void** PtrQueueSet::allocate_buffer() {
   BufferNode* node = _allocator->allocate();

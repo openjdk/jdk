@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package jdk.incubator.vector;
+
+import java.util.Objects;
 
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -62,24 +64,15 @@ abstract class AbstractMask<E> extends VectorMask<E> {
     }
 
     @Override
+    @ForceInline
     public boolean laneIsSet(int i) {
-        return getBits()[i];
-    }
-
-    @Override
-    public long toLong() {
-        // FIXME: This should be an intrinsic.
-        if (length() > Long.SIZE) {
-            throw new UnsupportedOperationException("too many lanes for one long");
+        int length = length();
+        Objects.checkIndex(i, length);
+        if (length <= Long.SIZE) {
+            return ((toLong() >>> i) & 1L) == 1;
+        } else {
+            return getBits()[i];
         }
-        long res = 0;
-        long set = 1;
-        boolean[] bits = getBits();
-        for (int i = 0; i < bits.length; i++) {
-            res = bits[i] ? res | set : res;
-            set = set << 1;
-        }
-        return res;
     }
 
     @Override
@@ -115,45 +108,25 @@ abstract class AbstractMask<E> extends VectorMask<E> {
     }
 
     @Override
-    public int trueCount() {
-        //FIXME: use a population count intrinsic here
-        int c = 0;
-        for (boolean i : getBits()) {
-            if (i) c++;
+    @ForceInline
+    @SuppressWarnings("unchecked")
+    <F> VectorMask<F> check(Class<? extends VectorMask<F>> maskClass, Vector<F> vector) {
+        if (!sameSpecies(maskClass, vector)) {
+            throw AbstractSpecies.checkFailed(this, vector);
         }
-        return c;
+        return (VectorMask<F>) this;
     }
 
-    @Override
-    public int firstTrue() {
-        //FIXME: use a count trailing zeros intrinsic here
-        boolean[] bits = getBits();
-        for (int i = 0; i < bits.length; i++) {
-            if (bits[i])  return i;
-        }
-        return bits.length;
-    }
-
-    @Override
-    public int lastTrue() {
-        //FIXME: use a count leading zeros intrinsic here
-        boolean[] bits = getBits();
-        for (int i = bits.length-1; i >= 0; i--) {
-            if (bits[i])  return i;
-        }
-        return -1;
-    }
-
-    @Override
-    public VectorMask<E> eq(VectorMask<E> m) {
-        // FIXME: Generate good code here.
-        return bOp(m, (i, a, b) -> a == b);
+    @ForceInline
+    private <F> boolean sameSpecies(Class<? extends VectorMask<F>> maskClass, Vector<F> vector) {
+        boolean same = getClass() == maskClass;
+        assert (same == (vectorSpecies() == vector.species())) : same;
+        return same;
     }
 
     @Override
     public VectorMask<E> andNot(VectorMask<E> m) {
-        // FIXME: Generate good code here.
-        return bOp(m, (i, a, b) -> a && !b);
+        return and(m.not());
     }
 
     /*package-private*/
@@ -172,6 +145,42 @@ abstract class AbstractMask<E> extends VectorMask<E> {
             if (!i) return false;
         }
         return true;
+    }
+
+    /*package-private*/
+    static int trueCountHelper(boolean[] bits) {
+        int c = 0;
+        for (boolean i : bits) {
+            if (i) c++;
+        }
+        return c;
+    }
+
+    /*package-private*/
+    static int firstTrueHelper(boolean[] bits) {
+        for (int i = 0; i < bits.length; i++) {
+            if (bits[i])  return i;
+        }
+        return bits.length;
+    }
+
+    /*package-private*/
+    static int lastTrueHelper(boolean[] bits) {
+        for (int i = bits.length-1; i >= 0; i--) {
+            if (bits[i])  return i;
+        }
+        return -1;
+    }
+
+    /*package-private*/
+    static long toLongHelper(boolean[] bits) {
+        long res = 0;
+        long set = 1;
+        for (int i = 0; i < bits.length; i++) {
+            res = bits[i] ? res | set : res;
+            set = set << 1;
+        }
+        return res;
     }
 
     @Override
@@ -227,14 +236,10 @@ abstract class AbstractMask<E> extends VectorMask<E> {
             int elemCount = Math.min(vlength, (alength - offset) / esize);
             badMask = checkIndex0(0, elemCount, iota, vlength);
         } else {
-            // This requires a split test.
             int clipOffset = Math.max(offset, -(vlength * esize));
-            int elemCount = Math.min(vlength, (alength - clipOffset) / esize);
-            badMask = checkIndex0(0, elemCount, iota, vlength);
-            clipOffset &= (esize - 1);  // power of two, so OK
-            VectorMask<E> badMask2 = checkIndex0(clipOffset / esize, vlength,
-                                                 iota, vlength);
-            badMask = badMask.or(badMask2);
+            badMask = checkIndex0(clipOffset, alength,
+                                  iota.lanewise(VectorOperators.MUL, esize),
+                                  vlength * esize);
         }
         badMask = badMask.and(this);
         if (badMask.anyTrue()) {

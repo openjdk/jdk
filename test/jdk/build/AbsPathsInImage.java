@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -145,17 +144,21 @@ public class AbsPathsInImage {
     private void scanFiles(Path root, List<byte[]> searchPatterns) throws IOException {
         Files.walkFileTree(root, new SimpleFileVisitor<>() {
             @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                String dirName = dir.toString();
+                if (dirName.endsWith(".dSYM")) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+                return super.preVisitDirectory(dir, attrs);
+            }
+
+            @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 String fileName = file.toString();
                 if (Files.isSymbolicLink(file)) {
                     return super.visitFile(file, attrs);
                 } else if (fileName.endsWith(".debuginfo") || fileName.endsWith(".pdb")) {
                     // Do nothing
-                } else if (fileName.endsWith(".dll")) {
-                    // On Windows, the Microsoft toolchain does not provide a way
-                    // to reliably remove all absolute paths from __FILE__ usage.
-                    // Until that is fixed, we simply exclude *.dll from this
-                    // test.
                 } else if (fileName.endsWith(".zip")) {
                     scanZipFile(file, searchPatterns);
                 } else {
@@ -168,14 +171,6 @@ public class AbsPathsInImage {
 
     private void scanFile(Path file, List<byte[]> searchPatterns) throws IOException {
         List<String> matches = scanBytes(Files.readAllBytes(file), searchPatterns);
-        // For the same reason as the *.dll above, the jdk.jpackage module
-        // contains some unavoidable header references in the launcher which is
-        // stored as a java resource inside the modules file.
-        if (IS_WINDOWS && file.toString().endsWith("modules")) {
-            matches = matches.stream()
-                .filter(f -> !f.matches(".*jdk\\.jpackage.*\\.h.*"))
-                .collect(Collectors.toList());
-        }
         if (matches.size() > 0) {
             matchFound = true;
             System.out.println(file + ":");

@@ -39,7 +39,7 @@ import jdk.jfr.SettingDescriptor;
  */
 public final class PlatformEventType extends Type {
     private final boolean isJVM;
-    private final boolean  isJDK;
+    private final boolean isJDK;
     private final boolean isMethodSampling;
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
@@ -59,6 +59,7 @@ public final class PlatformEventType extends Type {
     private boolean hasDuration = true;
     private boolean hasPeriod = true;
     private boolean hasCutoff = false;
+    private boolean hasThrottle = false;
     private boolean isInstrumented;
     private boolean markForInstrumentation;
     private boolean registered = true;
@@ -142,10 +143,20 @@ public final class PlatformEventType extends Type {
        this.hasCutoff = hasCutoff;
     }
 
+    public void setHasThrottle(boolean hasThrottle) {
+        this.hasThrottle = hasThrottle;
+    }
+
     public void setCutoff(long cutoffNanos) {
         if (isJVM) {
             long cutoffTicks = Utils.nanosToTicks(cutoffNanos);
             JVM.getJVM().setCutoff(getId(), cutoffTicks);
+        }
+    }
+
+    public void setThrottle(long eventSampleSize, long period_ms) {
+        if (isJVM) {
+            JVM.getJVM().setThrottle(getId(), eventSampleSize, period_ms);
         }
     }
 
@@ -169,8 +180,16 @@ public final class PlatformEventType extends Type {
         return this.hasCutoff;
     }
 
+    public boolean hasThrottle() {
+        return this.hasThrottle;
+    }
+
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public boolean isSystem() {
+        return isJVM || isJDK;
     }
 
     public boolean isJVM() {
@@ -270,7 +289,7 @@ public final class PlatformEventType extends Type {
         if (this.registered != registered) {
             this.registered = registered;
             updateCommittable();
-            LogTag logTag = isJVM() || isJDK() ? LogTag.JFR_SYSTEM_EVENT : LogTag.JFR_EVENT;
+            LogTag logTag = isSystem() ? LogTag.JFR_SYSTEM_METADATA : LogTag.JFR_METADATA;
             if (registered) {
                 Logger.log(logTag, LogLevel.INFO, "Registered " + getLogName());
             } else {

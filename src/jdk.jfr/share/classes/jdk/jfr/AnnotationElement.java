@@ -100,7 +100,7 @@ public final class AnnotationElement {
             }
             checkType(Utils.unboxType(valueType));
         }
-        this.annotationValues = Utils.smallUnmodifiable(objects);
+        this.annotationValues = List.copyOf(objects);
         this.inBootClassLoader = boot;
     }
 
@@ -203,7 +203,7 @@ public final class AnnotationElement {
             }
             v.add(object);
         }
-        this.annotationValues = Utils.smallUnmodifiable(v);
+        this.annotationValues = List.copyOf(v);
         this.inBootClassLoader = annotationType.getClassLoader() == null;
     }
 
@@ -375,7 +375,7 @@ public final class AnnotationElement {
         throw new IllegalArgumentException("Only primitives types or java.lang.String are allowed");
     }
 
-    // Whitelist of annotation classes that are allowed, even though
+    // List of annotation classes that are allowed, even though
     // they don't have @MetadataDefinition.
     private static boolean isKnownJFRAnnotation(Class<? extends Annotation> annotationType) {
         if (annotationType == Registered.class) {

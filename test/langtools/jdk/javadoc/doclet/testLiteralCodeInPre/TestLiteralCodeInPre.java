@@ -103,8 +103,8 @@ public class TestLiteralCodeInPre extends JavadocTester {
                      </PRE></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">void</span>&nbsp;<span class="member-name">htmlAttrInPre1</sp\
-                    an>()</div>
+                    lass="return-type">void</span>&nbsp;<span class="element-name">htmlAttrInPre1</span>()</\
+                    div>
                     <div class="block">More html tag outliers.
                      <pre>
                      @Override

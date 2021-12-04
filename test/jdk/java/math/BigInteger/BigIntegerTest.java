@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run main BigIntegerTest
- * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465 8074460 8078672 8032027
+ * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465 8074460 8078672 8032027 8229845
  * @summary tests methods in BigInteger (use -Dseed=X to set PRNG seed)
  * @run main/timeout=400 BigIntegerTest
  * @author madbot
@@ -795,7 +795,7 @@ public class BigIntegerTest {
 
         // Generic string conversion.
         for (int i=0; i<100; i++) {
-            byte xBytes[] = new byte[Math.abs(random.nextInt())%100+1];
+            byte xBytes[] = new byte[Math.abs(random.nextInt())%200+1];
             random.nextBytes(xBytes);
             BigInteger x = new BigInteger(xBytes);
 
@@ -834,6 +834,16 @@ public class BigIntegerTest {
                     }
                 }
             }
+        }
+
+        // Check value with many trailing zeros.
+        String val = "123456789" + "0".repeat(200);
+        BigInteger b = new BigInteger(val);
+        String s = b.toString();
+        if (!val.equals(s)) {
+            System.err.format("Expected length %d but got %d%n",
+                val.length(), s.length());
+            failCount++;
         }
 
         report("String Conversion", failCount);

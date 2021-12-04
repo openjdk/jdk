@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 package jdk.test.lib;
 
 import java.security.SecureClassLoader;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * {@code ByteCodeLoader} can be used for easy loading of byte code already
@@ -35,9 +37,14 @@ import java.security.SecureClassLoader;
  * @see InMemoryCompiler
  */
 public class ByteCodeLoader extends SecureClassLoader {
-    private final String className;
-    private final byte[] byteCode;
-    private volatile Class<?> holder;
+    private final Map<String,byte[]> classBytesMap;
+    private final Map<String,Class<?>> cache;
+
+    public ByteCodeLoader(Map<String,byte[]> classBytesMap, ClassLoader parent) {
+        super(parent);
+        this.classBytesMap = classBytesMap;
+        cache = new ConcurrentHashMap<>();
+    }
 
     /**
      * Creates a new {@code ByteCodeLoader} ready to load a class with the
@@ -48,8 +55,9 @@ public class ByteCodeLoader extends SecureClassLoader {
      * @param byteCode The byte code of the class
      */
     public ByteCodeLoader(String className, byte[] byteCode) {
-        this.className = className;
-        this.byteCode = byteCode;
+        super();
+        classBytesMap = Map.of(className, byteCode);
+        cache = new ConcurrentHashMap<>();
     }
 
     /**
@@ -59,34 +67,39 @@ public class ByteCodeLoader extends SecureClassLoader {
      *
      * @param className The name of the class
      * @param byteCode The byte code of the class
+     * @param parent The parent class loader for delegation
      */
     public ByteCodeLoader(String className, byte[] byteCode, ClassLoader parent) {
-        super(parent);
-        this.className = className;
-        this.byteCode = byteCode;
+        this(Map.of(className, byteCode), parent);
     }
+
+    private static final Object lock = new Object();
 
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
-        if (!name.equals(className)) {
+        if (classBytesMap.get(name) == null) {
             return super.loadClass(name);
         }
-        if (holder == null) {
-            synchronized(this) {
-                if (holder == null) {
-                    holder = findClass(name);
-                }
+        Class<?> cls = cache.get(name);
+        if (cls != null) {
+            return cls;
+        }
+        synchronized (lock) {
+            cls = cache.get(name);
+            if (cls == null) {
+                cls = findClass(name);
+                cache.put(name, cls);
             }
         }
-        return holder;
+        return cls;
     }
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        if (!name.equals(className)) {
+        byte[] byteCode = classBytesMap.get(name);
+        if (byteCode == null) {
             throw new ClassNotFoundException(name);
         }
-
         return defineClass(name, byteCode, 0, byteCode.length);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
@@ -181,8 +182,9 @@ public class Container extends Component {
     transient Color preserveBackgroundColor = null;
 
     /**
-     * JDK 1.1 serialVersionUID
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 4613797578919906343L;
 
     /**
@@ -240,6 +242,7 @@ public class Container extends Component {
      * @serialField focusTraversalPolicyProvider    boolean
      *       Stores the value of focusTraversalPolicyProvider property.
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("ncomponents", Integer.TYPE),
         new ObjectStreamField("component", Component[].class),
@@ -1572,12 +1575,11 @@ public class Container extends Component {
         return false;
     }
 
-    private static final boolean isJavaAwtSmartInvalidate;
-    static {
-        // Don't lazy-read because every app uses invalidate()
-        isJavaAwtSmartInvalidate = AccessController.doPrivileged(
+    // Don't lazy-read because every app uses invalidate()
+    @SuppressWarnings("removal")
+    private static final boolean isJavaAwtSmartInvalidate
+            = AccessController.doPrivileged(
                 new GetBooleanAction("java.awt.smartInvalidate"));
-    }
 
     /**
      * Invalidates the parent of the container unless the container
@@ -2630,6 +2632,7 @@ public class Container extends Component {
         if (GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
+        @SuppressWarnings("removal")
         PointerInfo pi = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<PointerInfo>() {
                 public PointerInfo run() {
@@ -3682,6 +3685,7 @@ public class Container extends Component {
      * @see Container#containerListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         ObjectOutputStream.PutField f = s.putFields();
         f.put("ncomponents", component.size());
@@ -3723,6 +3727,7 @@ public class Container extends Component {
      * @see #addContainerListener
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {
@@ -3807,8 +3812,9 @@ public class Container extends Component {
     protected class AccessibleAWTContainer extends AccessibleAWTComponent {
 
         /**
-         * JDK1.3 serialVersionUID
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 5081320404842566097L;
 
         /**
@@ -3855,7 +3861,7 @@ public class Container extends Component {
          * Number of PropertyChangeListener objects registered. It's used
          * to add/remove ContainerListener to track target Container's state.
          */
-        private transient volatile int propertyListenersCount = 0;
+        private transient volatile int propertyListenersCount;
 
         /**
          * The handler to fire {@code PropertyChange}
@@ -3871,6 +3877,11 @@ public class Container extends Component {
          */
         protected class AccessibleContainerHandler
             implements ContainerListener, Serializable {
+
+            /**
+             * Use serialVersionUID from JDK 1.3 for interoperability.
+             */
+            @Serial
             private static final long serialVersionUID = -480855353991814677L;
 
             /**
@@ -3880,18 +3891,18 @@ public class Container extends Component {
 
             public void componentAdded(ContainerEvent e) {
                 Component c = e.getChild();
-                if (c != null && c instanceof Accessible) {
+                if (c instanceof Accessible accessible) {
                     AccessibleAWTContainer.this.firePropertyChange(
                         AccessibleContext.ACCESSIBLE_CHILD_PROPERTY,
-                        null, ((Accessible) c).getAccessibleContext());
+                        null, accessible.getAccessibleContext());
                 }
             }
             public void componentRemoved(ContainerEvent e) {
                 Component c = e.getChild();
-                if (c != null && c instanceof Accessible) {
+                if (c instanceof Accessible accessible) {
                     AccessibleAWTContainer.this.firePropertyChange(
                         AccessibleContext.ACCESSIBLE_CHILD_PROPERTY,
-                        ((Accessible) c).getAccessibleContext(), null);
+                        accessible.getAccessibleContext(), null);
                 }
             }
         }
@@ -4427,9 +4438,10 @@ public class Container extends Component {
  */
 class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 5184291520170872969L;
     /*
      * Our own mouse event for when we're dragged over from another hw
@@ -4726,6 +4738,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
      * from other heavyweight containers will generate enter/exit
      * events in this container
      */
+    @SuppressWarnings("removal")
     private void startListeningForOtherDrags() {
         //System.out.println("Adding AWTEventListener");
         java.security.AccessController.doPrivileged(
@@ -4741,6 +4754,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
         );
     }
 
+    @SuppressWarnings("removal")
     private void stopListeningForOtherDrags() {
         //System.out.println("Removing AWTEventListener");
         java.security.AccessController.doPrivileged(

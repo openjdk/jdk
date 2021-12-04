@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,9 +227,7 @@ public class ServiceRegistry {
      */
     private Iterator<SubRegistry> getSubRegistries(Object provider) {
         List<SubRegistry> l = new ArrayList<>();
-        Iterator<Class<?>> iter = categoryMap.keySet().iterator();
-        while (iter.hasNext()) {
-            Class<?> c = iter.next();
+        for (Class<?> c : categoryMap.keySet()) {
             if (c.isAssignableFrom(provider.getClass())) {
                 l.add(categoryMap.get(c));
             }
@@ -540,9 +538,7 @@ public class ServiceRegistry {
         if (providerClass == null) {
             throw new IllegalArgumentException("providerClass == null!");
         }
-        Iterator<Class<?>> iter = categoryMap.keySet().iterator();
-        while (iter.hasNext()) {
-            Class<?> c = iter.next();
+        for (Class<?> c : categoryMap.keySet()) {
             if (c.isAssignableFrom(providerClass)) {
                 SubRegistry reg = categoryMap.get(c);
                 T provider = reg.getServiceProviderByClass(providerClass);
@@ -670,9 +666,7 @@ public class ServiceRegistry {
      * categories.
      */
     public void deregisterAll() {
-        Iterator<SubRegistry> iter = categoryMap.values().iterator();
-        while (iter.hasNext()) {
-            SubRegistry reg = iter.next();
+        for (SubRegistry reg : categoryMap.values()) {
             reg.clear();
         }
     }
@@ -742,6 +736,7 @@ class SubRegistry {
     // No way to express heterogeneous map, we want
     // Map<Class<T>, T>, where T is ?
     final Map<Class<?>, Object> map = new HashMap<>();
+    @SuppressWarnings("removal")
     final Map<Class<?>, AccessControlContext> accMap = new HashMap<>();
 
     public SubRegistry(ServiceRegistry registry, Class<?> category) {
@@ -749,6 +744,7 @@ class SubRegistry {
         this.category = category;
     }
 
+    @SuppressWarnings("removal")
     public synchronized boolean registerServiceProvider(Object provider) {
         Object oprovider = map.get(provider.getClass());
         boolean present =  oprovider != null;
@@ -824,6 +820,7 @@ class SubRegistry {
         return (T)map.get(providerClass);
     }
 
+    @SuppressWarnings("removal")
     public synchronized void clear() {
         Iterator<Object> iter = map.values().iterator();
         while (iter.hasNext()) {

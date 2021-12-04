@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,6 +46,11 @@ protected:
 public:
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment() = 0;
+
+  // Used by heap size heuristics to determine max
+  // amount of address space to use for the heap.
+  virtual size_t heap_virtual_to_physical_ratio();
+
   virtual CollectedHeap* create_heap() = 0;
 
   // Allows GCs to tell external code if it's supported or not in the current setup.

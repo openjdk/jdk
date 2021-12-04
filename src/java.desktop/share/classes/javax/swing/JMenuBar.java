@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Toolkit;
-import java.awt.event.*;
-import java.beans.JavaBean;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.beans.BeanProperty;
+import java.beans.JavaBean;
 import java.beans.Transient;
-import java.util.Vector;
-
-import java.io.Serializable;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.ArrayList;
 
-import javax.swing.plaf.*;
-import javax.accessibility.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleSelection;
+import javax.accessibility.AccessibleStateSet;
+import javax.swing.plaf.MenuBarUI;
 
 import sun.awt.SunToolkit;
 
@@ -421,7 +427,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
     @BeanProperty(bound = false)
     public MenuElement[] getSubElements() {
         MenuElement[] result;
-        Vector<MenuElement> tmp = new Vector<MenuElement>();
+        ArrayList<MenuElement> tmp = new ArrayList<MenuElement>();
         int c = getComponentCount();
         int i;
         Component m;
@@ -429,12 +435,12 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
         for(i=0 ; i < c ; i++) {
             m = getComponent(i);
             if(m instanceof MenuElement)
-                tmp.addElement((MenuElement) m);
+                tmp.add((MenuElement) m);
         }
 
         result = new MenuElement[tmp.size()];
         for(i=0,c=tmp.size() ; i < c ; i++)
-            result[i] = tmp.elementAt(i);
+            result[i] = tmp.get(i);
         return result;
     }
 
@@ -700,9 +706,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
             return false;
         }
 
-        if (c != null && c instanceof JComponent &&
-            ((JComponent)c).processKeyBinding(ks, e, condition, pressed)) {
-
+        if (c instanceof JComponent jc && jc.processKeyBinding(ks, e, condition, pressed)) {
             return true;
         }
 
@@ -735,6 +739,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
     }
 
 
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
@@ -761,6 +766,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      * See JComponent.readObject() for information about serialization
      * in Swing.
      */
+    @Serial
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException
     {
         s.defaultReadObject();

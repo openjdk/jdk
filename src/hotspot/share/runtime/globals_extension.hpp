@@ -25,9 +25,9 @@
 #ifndef SHARE_RUNTIME_GLOBALS_EXTENSION_HPP
 #define SHARE_RUNTIME_GLOBALS_EXTENSION_HPP
 
+#include "runtime/flags/allFlags.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
-#include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 
 // Construct enum of Flag_<cmdline-arg> constants.

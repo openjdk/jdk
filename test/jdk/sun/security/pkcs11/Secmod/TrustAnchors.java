@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TrustAnchors
- * @run main/othervm TrustAnchors sm policy
+ * @run main/othervm -Djava.security.manager=allow TrustAnchors sm policy
  */
 
 import java.io.File;

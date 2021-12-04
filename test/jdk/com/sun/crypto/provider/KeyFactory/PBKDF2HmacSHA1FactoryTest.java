@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.util.*;
 
 public class PBKDF2HmacSHA1FactoryTest {
 
+    // Hex formatter to upper case with "" delimiter
+    private static final HexFormat HEX_FORMATTER = HexFormat.of();
     private static final String ALGO = "PBKDF2WithHmacSHA1";
     static final int[] KEY_SIZES = { 128, 256 }; // in bits
 
@@ -51,7 +53,7 @@ public class PBKDF2HmacSHA1FactoryTest {
         "01dbee7f4a9e243e988b62c73cda935da05378b93244ec8f48a99e61ad799d86"),
         new TestVector(1200, "password", "ATHENA.MIT.EDUraeburn",
         "5c08eb61fdf71e4e4ec3cf6ba1f5512ba7e52ddbc5e5142f708a31e2e62b1e13"),
-        new TestVector(5, "password", fromHexString("1234567878563412"),
+        new TestVector(5, "password", HEX_FORMATTER.parseHex("1234567878563412"),
         "d1daa78615f287e6a1c8b120d7062a493f98d203e6be49a6adf4fa574b6e64ee"),
         new TestVector(1200,
         "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
@@ -61,7 +63,7 @@ public class PBKDF2HmacSHA1FactoryTest {
         "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
         "pass phrase exceeds block size",
         "9ccad6d468770cd51b10e6a68721be611a8b4d282601db3b36be9246915ec82a"),
-        new TestVector(50, fromHexString("f09d849e"),
+        new TestVector(50, HEX_FORMATTER.parseHex("f09d849e"),
         "EXAMPLE.COMpianist",
         "6b9cf26d45455a43a5b8bb276a403b39e7fe37a0c41e02c281ff3069e1e94f52"),
     };
@@ -83,8 +85,8 @@ public class PBKDF2HmacSHA1FactoryTest {
                     throw new Exception("Wrong length for derived key");
                 }
                 // Test generateSecret(...) using test vectors
-                if (!tv.expectedVals[j].equals(toHexString(derivedKey))) {
-                    System.out.println("got:      " + toHexString(derivedKey));
+                if (!tv.expectedVals[j].equals(HEX_FORMATTER.formatHex(derivedKey))) {
+                    System.out.println("got:      " + HEX_FORMATTER.formatHex(derivedKey));
                     System.out.println("expected: " + tv.expectedVals[j]);
                     throw new Exception("Wrong value for derived key");
                 }
@@ -109,31 +111,6 @@ public class PBKDF2HmacSHA1FactoryTest {
         return false;
     }
 
-   private static String toHexString(byte[] bytes) {
-        String mapping = "0123456789abcdef";
-        StringBuilder sb = new StringBuilder(bytes.length*2);
-        for (int i = 0; i < bytes.length; i++) {
-            int low = bytes[i] & 0x0f;
-            int high = ((bytes[i] >> 4) & 0x0f);
-            char[] res = new char[2];
-            res[0] = mapping.charAt(high);
-            res[1] = mapping.charAt(low);
-            sb.append(res);
-        }
-        return sb.toString();
-    }
-    private static byte[] fromHexString(String value) {
-        byte[] bytes = new byte[value.length()/2];
-        String mapping = "0123456789abcdef";
-        StringBuilder sb = new StringBuilder(bytes.length*2);
-        for (int i = 0; i < bytes.length; i++) {
-            String high = value.substring(2*i, 2*i+1);
-            String low = value.substring(2*i+1, 2*i+2);
-            bytes[i] = (byte) ((mapping.indexOf(high) << 4) +
-                               mapping.indexOf(low));
-        }
-        return bytes;
-    }
     public static void main (String[] args) throws Exception {
         test();
         System.out.println("Test Passed!");

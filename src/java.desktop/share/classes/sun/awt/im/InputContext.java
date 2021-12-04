@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ import java.lang.Character.Subset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -695,10 +695,10 @@ public class InputContext extends java.awt.im.InputContext
         }
         inputMethodLocator = null;
         if (usedInputMethods != null && !usedInputMethods.isEmpty()) {
-            Iterator<InputMethod> iterator = usedInputMethods.values().iterator();
+            Collection<InputMethod> methods = usedInputMethods.values();
             usedInputMethods = null;
-            while (iterator.hasNext()) {
-                iterator.next().dispose();
+            for (InputMethod method : methods) {
+                method.dispose();
             }
         }
 
@@ -790,8 +790,8 @@ public class InputContext extends java.awt.im.InputContext
      */
     public void disableNativeIM() {
         InputMethod inputMethod = getInputMethod();
-        if (inputMethod != null && inputMethod instanceof InputMethodAdapter) {
-            ((InputMethodAdapter)inputMethod).stopListening();
+        if (inputMethod instanceof InputMethodAdapter adapter) {
+            adapter.stopListening();
         }
     }
 
@@ -1036,6 +1036,7 @@ public class InputContext extends java.awt.im.InputContext
     /**
      * Initializes the input method selection key definition in preference trees
      */
+    @SuppressWarnings("removal")
     private void initializeInputMethodSelectionKey() {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {

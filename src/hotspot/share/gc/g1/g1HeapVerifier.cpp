@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
-#include "gc/g1/g1StringDedup.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
@@ -426,7 +426,7 @@ public:
 
 // This is the task used for parallel verification of the heap regions
 
-class G1ParVerifyTask: public AbstractGangTask {
+class G1ParVerifyTask: public WorkerTask {
 private:
   G1CollectedHeap*  _g1h;
   VerifyOption      _vo;
@@ -438,7 +438,7 @@ public:
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   G1ParVerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
-      AbstractGangTask("Parallel verify task"),
+      WorkerTask("Parallel verify task"),
       _g1h(g1h),
       _vo(vo),
       _failures(false),
@@ -467,16 +467,12 @@ void G1HeapVerifier::enable_verification_type(G1VerifyType type) {
 }
 
 bool G1HeapVerifier::should_verify(G1VerifyType type) {
-  return (_enabled_verification_types & type) == type;
+  return (_enabled_verification_types & type) != 0;
 }
 
 void G1HeapVerifier::verify(VerifyOption vo) {
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    log_info(gc, verify)("Skipping verification. Not at safepoint.");
-  }
-
-  assert(Thread::current()->is_VM_thread(),
-         "Expected to be executed serially by the VM thread at this point");
+  assert_at_safepoint_on_vm_thread();
+  assert(Heap_lock->is_locked(), "heap must be locked");
 
   log_debug(gc, verify)("Roots");
   VerifyRootsClosure rootsCl(vo);
@@ -519,11 +515,6 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     if (blk.failures()) {
       failures = true;
     }
-  }
-
-  if (G1StringDedup::is_enabled()) {
-    log_debug(gc, verify)("StrDedup");
-    G1StringDedup::verify();
   }
 
   if (failures) {
@@ -613,31 +604,19 @@ void G1HeapVerifier::prepare_for_verify() {
   }
 }
 
-double G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg) {
-  double verify_time_ms = 0.0;
-
+void G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg) {
   if (should_verify(type) && _g1h->total_collections() >= VerifyGCStartAt) {
-    double verify_start = os::elapsedTime();
     prepare_for_verify();
     Universe::verify(vo, msg);
-    verify_time_ms = (os::elapsedTime() - verify_start) * 1000;
   }
-
-  return verify_time_ms;
 }
 
 void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
-  if (VerifyBeforeGC) {
-    double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
-    _g1h->phase_times()->record_verify_before_time_ms(verify_time_ms);
-  }
+  verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
 }
 
 void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
-  if (VerifyAfterGC) {
-    double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "After GC");
-    _g1h->phase_times()->record_verify_after_time_ms(verify_time_ms);
-  }
+  verify(type, VerifyOption_G1UsePrevMarking, "After GC");
 }
 
 

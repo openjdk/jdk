@@ -39,8 +39,8 @@
 
 class BitMap;
 class CardTableBarrierSet;
-class G1BlockOffsetTable;
 class CodeBlobClosure;
+class G1AbstractSubTask;
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1HotCardCache;
@@ -48,13 +48,18 @@ class G1RemSetScanState;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
 class G1Policy;
+class G1RemSetSamplingTask;
 class G1ScanCardClosure;
+class G1ServiceThread;
 class HeapRegionClaimer;
 
 // A G1RemSet in which each heap region has a rem set that records the
 // external heap references into it.  Uses a mod ref bs to track updates,
 // so that they can be used to update the individual region remsets.
 class G1RemSet: public CHeapObj<mtGC> {
+public:
+  typedef CardTable::CardValue CardValue;
+
 private:
   G1RemSetScanState* _scan_state;
 
@@ -65,14 +70,15 @@ private:
   G1CardTable*           _ct;
   G1Policy*              _g1p;
   G1HotCardCache*        _hot_card_cache;
+  G1RemSetSamplingTask*  _sampling_task;
 
   void print_merge_heap_roots_stats();
 
   void assert_scan_top_is_null(uint hrm_index) NOT_DEBUG_RETURN;
+
+  void enqueue_for_reprocessing(CardValue* card_ptr);
+
 public:
-
-  typedef CardTable::CardValue CardValue;
-
   // Initialize data that depends on the heap size being known.
   void initialize(uint max_reserved_regions);
 
@@ -80,6 +86,12 @@ public:
            G1CardTable* ct,
            G1HotCardCache* hot_card_cache);
   ~G1RemSet();
+
+  // Initialize and schedule young remembered set sampling task.
+  void initialize_sampling_task(G1ServiceThread* thread);
+
+  // Accumulated vtime used by the sampling task.
+  double sampling_task_vtime();
 
   // Scan all cards in the non-collection set regions that potentially contain
   // references into the current whole collection set.
@@ -98,8 +110,12 @@ public:
   // Prepare for and cleanup after scanning the heap roots. Must be called
   // once before and after in sequential code.
   void prepare_for_scan_heap_roots();
-  // Cleans the card table from temporary duplicate detection information.
-  void cleanup_after_scan_heap_roots();
+
+  // Print coarsening stats.
+  void print_coarsen_stats();
+  // Creates a task for cleaining up temporary data structures and the
+  // card table, removing temporary duplicate detection information.
+  G1AbstractSubTask* create_cleanup_after_scan_heap_roots_task();
   // Excludes the given region from heap root scanning.
   void exclude_region_from_scan(uint region_idx);
   // Creates a snapshot of the current _top values at the start of collection to
@@ -133,8 +149,8 @@ public:
   void print_periodic_summary_info(const char* header, uint period_count);
 
   // Rebuilds the remembered set by scanning from bottom to TARS for all regions
-  // using the given work gang.
-  void rebuild_rem_set(G1ConcurrentMark* cm, WorkGang* workers, uint worker_id_offset);
+  // using the given workers.
+  void rebuild_rem_set(G1ConcurrentMark* cm, WorkerThreads* workers, uint worker_id_offset);
 };
 
 #endif // SHARE_GC_G1_G1REMSET_HPP

@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 4987574
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4987574
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4987574
  * @run testng/othervm validation.Bug4987574
  * @summary Test schemaFactory.newSchema doesn't throw NullPointerExceptio for empty schema.
  */

@@ -49,18 +49,21 @@ import java.util.function.Consumer;
  */
 public final class Scenario {
     private final boolean isValid;
+    private final boolean isJcmdValid;
     private final Map<Executable, State> states;
     private final List<Consumer<OutputAnalyzer>> processors;
     private final Executor executor;
     private final Consumer<List<OutputAnalyzer>> jcmdProcessor;
 
     private Scenario(boolean isValid,
+                     boolean isJcmdValid,
                      List<String> vmopts,
                      Map<Executable, State> states,
                      List<CompileCommand> compileCommands,
                      List<JcmdCommand> jcmdCommands,
                      List<CompileCommand> directives) {
         this.isValid = isValid;
+        this.isJcmdValid = isJcmdValid;
         this.states = states;
         processors = new ArrayList<>();
         processors.add(new LogProcessor(states));
@@ -110,18 +113,34 @@ public final class Scenario {
     public void execute() {
         List<OutputAnalyzer> outputList = executor.execute();
         // The first one contains output from the test VM
-        OutputAnalyzer mainOuput = outputList.get(0);
+        OutputAnalyzer mainOutput = outputList.get(0);
         if (isValid) {
-            mainOuput.shouldHaveExitValue(0);
-            processors.forEach(processor -> processor.accept(mainOuput));
+            mainOutput.shouldHaveExitValue(0);
+            processors.forEach(processor -> processor.accept(mainOutput));
             // only the last output contains directives got from print command
             List<OutputAnalyzer> last = new ArrayList<>();
             last.add(outputList.get(outputList.size() - 1));
             jcmdProcessor.accept(last);
         } else {
-            Asserts.assertNE(mainOuput.getExitValue(), 0, "VM should exit with "
-                    + "error for incorrect directives");
-            mainOuput.shouldContain("Parsing of compiler directives failed");
+            // two cases for invalid inputs.
+            if (mainOutput.getExitValue() == 0) {
+                if (!isJcmdValid) {
+                    boolean parse_error_found = false;
+                    for(OutputAnalyzer out : outputList) {
+                        if (out.getOutput().contains("Parsing of compiler directives failed")) {
+                            parse_error_found = true;
+                            break;
+                        }
+                    }
+                    Asserts.assertTrue(parse_error_found, "'Parsing of compiler directives failed' missing from output");
+                } else {
+                    mainOutput.shouldContain("CompileCommand: An error occurred during parsing");
+                }
+            } else {
+                Asserts.assertNE(mainOutput.getExitValue(), 0, "VM should exit with "
+                        + "error for incorrect directives");
+                mainOutput.shouldContain("Parsing of compiler directives failed");
+            }
         }
     }
 
@@ -164,8 +183,8 @@ public final class Scenario {
      * Type of the compile command
      */
     public static enum Type {
-        OPTION(""),
-        FILE("command_file"),
+        OPTION(""),               // CompilerOracle: -XX:CompileCommand=
+        FILE("command_file"),     // CompilerOracle: -XX:CompileCommandFile=
         DIRECTIVE("directives.json"),
         JCMD("jcmd_directives.json") {
             @Override
@@ -174,6 +193,13 @@ public final class Scenario {
                 return new JcmdCommand(command, md, compiler, this,
                         JcmdType.ADD);
             }
+
+            @Override
+            public CompileCommand createCompileCommand(Command command,
+                    MethodDescriptor md, Compiler compiler, String argument) {
+                return new JcmdCommand(command, md, compiler, this,
+                        JcmdType.ADD, argument);
+            }
         };
 
         public final String fileName;
@@ -181,6 +207,11 @@ public final class Scenario {
         public CompileCommand createCompileCommand(Command command,
                 MethodDescriptor md, Compiler compiler) {
             return new CompileCommand(command, md, compiler, this);
+        }
+
+        public CompileCommand createCompileCommand(Command command,
+                MethodDescriptor md, Compiler compiler, String argument) {
+            return new CompileCommand(command, md, compiler, this, argument);
         }
 
         private Type(String fileName) {
@@ -236,6 +267,7 @@ public final class Scenario {
 
         public Scenario build() {
             boolean isValid = true;
+            boolean isJcmdValid = true;
 
             // Get states from each of the state builders
             Map<Executable, State> commandFileStates
@@ -298,6 +330,7 @@ public final class Scenario {
                 options.addAll(builder.getOptions());
                 isValid &= builder.isValid();
             }
+            isJcmdValid = jcmdStateBuilder.isFileValid;
             options.addAll(jcmdStateBuilder.getOptions());
 
             /*
@@ -311,7 +344,7 @@ public final class Scenario {
                         .forEach(entry -> entry.getValue().setLog(true));
             }
 
-            return new Scenario(isValid, options, finalStates, ccList,
+            return new Scenario(isValid, isJcmdValid, options, finalStates, ccList,
                     jcmdCommands, directives);
         }
 

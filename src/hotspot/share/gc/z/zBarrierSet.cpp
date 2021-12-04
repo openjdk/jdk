@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ ZBarrierSetAssembler* ZBarrierSet::assembler() {
 
 bool ZBarrierSet::barrier_needed(DecoratorSet decorators, BasicType type) {
   assert((decorators & AS_RAW) == 0, "Unexpected decorator");
-  assert((decorators & AS_NO_KEEPALIVE) == 0, "Unexpected decorator");
   //assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Unexpected decorator");
 
   if (is_reference_type(type)) {
@@ -82,7 +81,7 @@ void ZBarrierSet::on_thread_attach(Thread* thread) {
   // Set thread local address bad mask
   ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
   if (thread->is_Java_thread()) {
-    JavaThread* const jt = thread->as_Java_thread();
+    JavaThread* const jt = JavaThread::cast(thread);
     StackWatermark* const watermark = new ZStackWatermark(jt);
     StackWatermarkSet::add_watermark(jt, watermark);
   }

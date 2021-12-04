@@ -33,6 +33,18 @@
 #include "runtime/java.hpp"
 #include "services/memTracker.hpp"
 
+uint BOTConstants::LogN = 0;
+uint BOTConstants::LogN_words = 0;
+uint BOTConstants::N_bytes = 0;
+uint BOTConstants::N_words = 0;
+
+void BOTConstants::initialize_bot_size(uint card_shift) {
+  LogN =  card_shift;
+  LogN_words = LogN - LogHeapWordSize;
+  N_bytes = 1 << LogN;
+  N_words = 1 << LogN_words;
+}
+
 //////////////////////////////////////////////////////////////////////
 // BlockOffsetSharedArray
 //////////////////////////////////////////////////////////////////////
@@ -340,7 +352,7 @@ void BlockOffsetArray::verify() const {
     HeapWord* start = block_start(p);
     // First check if the start is an allocated block and only
     // then if it is a valid object.
-    oop o = oop(start);
+    oop o = cast_to_oop(start);
     assert(!Universe::is_fully_initialized() ||
            _sp->is_free_block(start) ||
            oopDesc::is_oop_or_null(o), "Bad object was found");
@@ -474,12 +486,11 @@ void BlockOffsetArrayContigSpace::alloc_block_work(HeapWord* blk_start,
 #endif
 }
 
-HeapWord* BlockOffsetArrayContigSpace::initialize_threshold() {
+void BlockOffsetArrayContigSpace::initialize_threshold() {
   _next_offset_index = _array->index_for(_bottom);
   _next_offset_index++;
   _next_offset_threshold =
     _array->address_for_index(_next_offset_index);
-  return _next_offset_threshold;
 }
 
 void BlockOffsetArrayContigSpace::zero_bottom_entry() {

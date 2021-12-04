@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,15 +303,13 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         Component temp = target.getParent();
         final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
         ComponentPeer peer = acc.getPeer(temp);
-        while (!(peer instanceof XWindow))
+        while (!(peer instanceof XWindow window))
         {
             temp = temp.getParent();
             peer = acc.getPeer(temp);
         }
 
-        if (peer != null && peer instanceof XWindow)
-            return ((XWindow)peer).getContentWindow();
-        else return 0;
+        return window.getContentWindow();
     }
 
 
@@ -327,8 +325,8 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
             temp = temp.getParent();
             peer = acc.getPeer(temp);
         }
-        if (peer != null && peer instanceof XWindow)
-            return (XWindow) peer;
+        if (peer instanceof XWindow xWindow)
+            return xWindow;
         else return null;
     }
 
@@ -682,7 +680,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
         int type = xev.get_type();
         when = xbe.get_time();
-        long jWhen = XToolkit.nowMillisUTC_offset(when);
+        long jWhen = System.currentTimeMillis();
 
         int x = scaleDown(xbe.get_x());
         int y = scaleDown(xbe.get_y());
@@ -830,7 +828,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
           lastY = 0;
         }
 
-        long jWhen = XToolkit.nowMillisUTC_offset(xme.get_time());
+        long jWhen = System.currentTimeMillis();
         int modifiers = getModifiers(xme.get_state(), 0, 0);
         boolean popupTrigger = false;
 
@@ -927,9 +925,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         long childWnd = xce.get_subwindow();
         if (childWnd != XConstants.None) {
             XBaseWindow child = XToolkit.windowToXWindow(childWnd);
-            if (child != null && child instanceof XWindow &&
-                !child.isEventDisabled(xev))
-            {
+            if (child instanceof XWindow && !child.isEventDisabled(xev)) {
                 return;
             }
         }
@@ -957,7 +953,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
             return;
         }
 
-        long jWhen = XToolkit.nowMillisUTC_offset(xce.get_time());
+        long jWhen = System.currentTimeMillis();
         int modifiers = getModifiers(xce.get_state(),0,0);
         int clickCount = 0;
         boolean popupTrigger = false;
@@ -1172,7 +1168,6 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
                            primaryUnicode2JavaKeycode( unicodeFromPrimaryKeysym ) :
                              jkc.getJavaKeycode();
         postKeyEvent( java.awt.event.KeyEvent.KEY_PRESSED,
-                          ev.get_time(),
                           isDeadKey ? jkeyExtended : jkeyToReturn,
                           (unicodeKey == 0 ? java.awt.event.KeyEvent.CHAR_UNDEFINED : unicodeKey),
                           jkc.getKeyLocation(),
@@ -1186,7 +1181,6 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
                     keyEventLog.fine("fire _TYPED on "+unicodeKey);
                 }
                 postKeyEvent( java.awt.event.KeyEvent.KEY_TYPED,
-                              ev.get_time(),
                               java.awt.event.KeyEvent.VK_UNDEFINED,
                               unicodeKey,
                               java.awt.event.KeyEvent.KEY_LOCATION_UNKNOWN,
@@ -1256,7 +1250,6 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
                            primaryUnicode2JavaKeycode( unicodeFromPrimaryKeysym ) :
                              jkc.getJavaKeycode();
         postKeyEvent(  java.awt.event.KeyEvent.KEY_RELEASED,
-                          ev.get_time(),
                           isDeadKey ? jkeyExtended : jkeyToReturn,
                           (unicodeKey == 0 ? java.awt.event.KeyEvent.CHAR_UNDEFINED : unicodeKey),
                           jkc.getKeyLocation(),
@@ -1441,20 +1434,19 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
             XToolkit.awtLock();
             try {
                 Object wpeer = XToolkit.targetToPeer(comp);
-                if (wpeer == null
-                    || !(wpeer instanceof XDecoratedPeer)
-                    || ((XDecoratedPeer)wpeer).configure_seen)
+                if (!(wpeer instanceof XDecoratedPeer xDecoratedPeer)
+                        || xDecoratedPeer.configure_seen)
                 {
                     return toGlobal(0, 0);
                 }
 
                 // wpeer is an XDecoratedPeer not yet fully adopted by WM
                 Point pt = toOtherWindow(getContentWindow(),
-                                         ((XDecoratedPeer)wpeer).getContentWindow(),
+                                         xDecoratedPeer.getContentWindow(),
                                          0, 0);
 
                 if (pt == null) {
-                    pt = new Point(((XBaseWindow)wpeer).getAbsoluteX(), ((XBaseWindow)wpeer).getAbsoluteY());
+                    pt = new Point(xDecoratedPeer.getAbsoluteX(), xDecoratedPeer.getAbsoluteY());
                 }
                 pt.x += comp.getX();
                 pt.y += comp.getY();
@@ -1470,12 +1462,12 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         AWTAccessor.getAWTEventAccessor().setBData(e, data);
     }
 
-    public void postKeyEvent(int id, long when, int keyCode, int keyChar,
+    public void postKeyEvent(int id, int keyCode, int keyChar,
         int keyLocation, int state, long event, int eventSize, long rawCode,
         int unicodeFromPrimaryKeysym, int extendedKeyCode)
 
     {
-        long jWhen = XToolkit.nowMillisUTC_offset(when);
+        long jWhen = System.currentTimeMillis();
         int modifiers = getModifiers(state, 0, keyCode);
 
         KeyEvent ke = new KeyEvent(getEventSource(), id, jWhen,

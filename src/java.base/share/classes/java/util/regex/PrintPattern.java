@@ -76,23 +76,23 @@ class PrintPattern {
     }
 
     private static String toStringCtype(int type) {
-        switch(type) {
-        case UPPER:  return "ASCII.UPPER";
-        case LOWER:  return "ASCII.LOWER";
-        case DIGIT:  return "ASCII.DIGIT";
-        case SPACE:  return "ASCII.SPACE";
-        case PUNCT:  return "ASCII.PUNCT";
-        case CNTRL:  return "ASCII.CNTRL";
-        case BLANK:  return "ASCII.BLANK";
-        case UNDER:  return "ASCII.UNDER";
-        case ASCII:  return "ASCII.ASCII";
-        case ALPHA:  return "ASCII.ALPHA";
-        case ALNUM:  return "ASCII.ALNUM";
-        case GRAPH:  return "ASCII.GRAPH";
-        case WORD:   return "ASCII.WORD";
-        case XDIGIT: return "ASCII.XDIGIT";
-        default: return "ASCII ?";
-        }
+        return switch (type) {
+            case UPPER  -> "ASCII.UPPER";
+            case LOWER  -> "ASCII.LOWER";
+            case DIGIT  -> "ASCII.DIGIT";
+            case SPACE  -> "ASCII.SPACE";
+            case PUNCT  -> "ASCII.PUNCT";
+            case CNTRL  -> "ASCII.CNTRL";
+            case BLANK  -> "ASCII.BLANK";
+            case UNDER  -> "ASCII.UNDER";
+            case ASCII  -> "ASCII.ASCII";
+            case ALPHA  -> "ASCII.ALPHA";
+            case ALNUM  -> "ASCII.ALNUM";
+            case GRAPH  -> "ASCII.GRAPH";
+            case WORD   -> "ASCII.WORD";
+            case XDIGIT -> "ASCII.XDIGIT";
+            default     -> "ASCII ?";
+        };
     }
 
     private static String toString(Pattern.Node node) {
@@ -131,21 +131,18 @@ class PrintPattern {
                 node = loop;
             } else if (node instanceof Pattern.Loop) {
                 return;  // stop here, body.next -> loop
-            } else if (node instanceof Pattern.Curly) {
-                Pattern.Curly c = (Pattern.Curly)node;
+            } else if (node instanceof Pattern.Curly c) {
                 str = "Curly " + c.type + " " + toStringRange(c.cmin, c.cmax);
                 print(node, str, depth);
                 walk(c.atom, depth);
                 print("/Curly", depth);
-            } else if (node instanceof Pattern.GroupCurly) {
-                Pattern.GroupCurly gc = (Pattern.GroupCurly)node;
+            } else if (node instanceof Pattern.GroupCurly gc) {
                 str = "GroupCurly " + gc.groupIndex / 2 +
                       ", " + gc.type + " " + toStringRange(gc.cmin, gc.cmax);
                 print(node, str, depth);
                 walk(gc.atom, depth);
                 print("/GroupCurly", depth);
-            } else if (node instanceof Pattern.GroupHead) {
-                Pattern.GroupHead head = (Pattern.GroupHead)node;
+            } else if (node instanceof Pattern.GroupHead head) {
                 Pattern.GroupTail tail = head.tail;
                 print(head, "Group.head " + (tail.groupIndex / 2), depth);
                 walk(head.next, depth);
@@ -157,8 +154,7 @@ class PrintPattern {
                 print(node, "Ques " + ((Pattern.Ques)node).type, depth);
                 walk(((Pattern.Ques)node).atom, depth);
                 print("/Ques", depth);
-            } else if (node instanceof Pattern.Branch) {
-                Pattern.Branch b = (Pattern.Branch)node;
+            } else if (node instanceof Pattern.Branch b) {
                 print(b, name, depth);
                 int i = 0;
                 while (true) {
@@ -186,8 +182,7 @@ class PrintPattern {
                 str = name + "  \"" +
                       toStringCPS(((Pattern.SliceNode)node).buffer) + "\"";
                 print(node, str, depth);
-            } else if (node instanceof Pattern.CharPropertyGreedy) {
-                Pattern.CharPropertyGreedy gcp = (Pattern.CharPropertyGreedy)node;
+            } else if (node instanceof Pattern.CharPropertyGreedy gcp) {
                 String pstr = pmap.get(gcp.predicate);
                 if (pstr == null)
                     pstr = gcp.predicate.toString();

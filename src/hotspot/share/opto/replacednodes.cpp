@@ -120,7 +120,7 @@ static void enqueue_use(Node* n, Node* use, Unique_Node_List& work) {
   }
 }
 
-// Perfom node replacement following late inlining
+// Perform node replacement following late inlining.
 void ReplacedNodes::apply(Compile* C, Node* ctl) {
   // ctl is the control on exit of the method that was late inlined
   if (is_empty()) {
@@ -144,20 +144,22 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
       work.clear();
       enqueue_use(initial, use, work);
       bool replace = true;
-      // Check that this use is dominated by ctl. Go ahead with the
-      // replacement if it is.
+      // Check that this use is dominated by ctl. Go ahead with the replacement if it is.
       while (work.size() != 0 && replace) {
         Node* n = work.pop();
         if (use->outcnt() == 0) {
           continue;
         }
         if (n->is_CFG() || (n->in(0) != NULL && !n->in(0)->is_top())) {
-          int depth = 0;
-          Node *m = n;
+          // Skip projections, since some of the multi nodes aren't CFG (e.g., LoadStore and SCMemProj).
+          if (n->is_Proj()) {
+            n = n->in(0);
+          }
           if (!n->is_CFG()) {
             n = n->in(0);
           }
           assert(n->is_CFG(), "should be CFG now");
+          int depth = 0;
           while(n != ctl) {
             n = IfNode::up_one_dom(n);
             depth++;

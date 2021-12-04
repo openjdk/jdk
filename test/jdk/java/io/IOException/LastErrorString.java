@@ -23,7 +23,7 @@
 
 /* @test
    @bug 4167937
-   @ignore Test truncates system files when run as root, see 7042603
+   @ignore 7042603 - Test truncates system files when run as root
    @summary Test code paths that use the JVM_LastErrorString procedure
  */
 

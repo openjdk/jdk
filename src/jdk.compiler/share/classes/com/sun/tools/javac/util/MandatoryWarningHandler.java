@@ -31,6 +31,7 @@ import java.util.Set;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Note;
 import com.sun.tools.javac.util.JCDiagnostic.Warning;
@@ -111,10 +112,11 @@ public class MandatoryWarningHandler {
      *                the messages that may be generated.
      * @param lc      An associated lint category for the warnings, or null if none.
      */
-    public MandatoryWarningHandler(Log log, boolean verbose,
+    public MandatoryWarningHandler(Log log, Source source, boolean verbose,
                                    boolean enforceMandatory, String prefix,
                                    LintCategory lc) {
         this.log = log;
+        this.source = source;
         this.verbose = verbose;
         this.prefix = prefix;
         this.enforceMandatory = enforceMandatory;
@@ -173,10 +175,19 @@ public class MandatoryWarningHandler {
      */
     public void reportDeferredDiagnostic() {
         if (deferredDiagnosticKind != null) {
-            if (deferredDiagnosticArg == null)
-                logMandatoryNote(deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix));
-            else
-                logMandatoryNote(deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix), deferredDiagnosticArg);
+            if (deferredDiagnosticArg == null) {
+                if (source != null) {
+                    logMandatoryNote(deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix), source);
+                } else {
+                    logMandatoryNote(deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix));
+                }
+            } else {
+                if (source != null) {
+                    logMandatoryNote(deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix), deferredDiagnosticArg, source);
+                } else {
+                    logMandatoryNote(deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix), deferredDiagnosticArg);
+                }
+            }
 
             if (!verbose)
                 logMandatoryNote(deferredDiagnosticSource, prefix + ".recompile");
@@ -187,6 +198,7 @@ public class MandatoryWarningHandler {
      * The log to which to report warnings.
      */
     private final Log log;
+    private final Source source;
 
     /**
      * Whether or not to report individual warnings, or simply to report a

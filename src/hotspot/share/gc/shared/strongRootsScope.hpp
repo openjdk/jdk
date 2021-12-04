@@ -33,10 +33,10 @@ class MarkScope : public StackObj {
   ~MarkScope();
 };
 
-// Sets up and tears down the required state for parallel root processing.
-
+// Sets up and tears down the required state for sequential/parallel root processing.
 class StrongRootsScope : public MarkScope {
   // Number of threads participating in the roots processing.
+  // 0 means statically-known sequential root processing; used only by Serial GC
   const uint _n_threads;
 
  public:

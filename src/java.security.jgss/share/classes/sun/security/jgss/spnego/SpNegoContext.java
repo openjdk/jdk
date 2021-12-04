@@ -79,7 +79,7 @@ public class SpNegoContext implements GSSContextSpi {
     private Oid internal_mech = null;
 
     // the SpNegoMechFactory that creates this context
-    final private SpNegoMechFactory factory;
+    private final SpNegoMechFactory factory;
 
     // debug property
     static final boolean DEBUG = GetBooleanAction

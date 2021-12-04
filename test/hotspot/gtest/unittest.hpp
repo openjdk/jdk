@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,15 @@
   static void child_ ## category ## _ ## name ## _() {              \
     ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
     test_ ## category ## _ ## name ## _();                          \
+    JavaVM* jvm[1];                                                 \
+    jsize nVMs = 0;                                                 \
+    JNI_GetCreatedJavaVMs(&jvm[0], 1, &nVMs);                       \
+    if (nVMs == 1) {                                                \
+      int ret = jvm[0]->DestroyJavaVM();                            \
+      if (ret != 0) {                                               \
+        fprintf(stderr, "Warning: DestroyJavaVM error %d\n", ret);  \
+      }                                                             \
+    }                                                               \
     fprintf(stderr, "OKIDOKI");                                     \
     exit(0);                                                        \
   }                                                                 \
@@ -131,7 +140,7 @@
   TEST(category, CONCAT(name, _vm_assert)) {                        \
     ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
                 ::testing::ExitedWithCode(1),                       \
-                "^assert failed: " msg);                            \
+                "assert failed: " msg);                             \
   }                                                                 \
                                                                     \
   void test_ ## category ## _ ## name ## _()
@@ -139,5 +148,22 @@
 #define TEST_VM_ASSERT_MSG(...)                                     \
     TEST_VM_ASSERT_MSG is only available in debug builds
 #endif
+
+#define TEST_VM_FATAL_ERROR_MSG(category, name, msg)                \
+  static void test_  ## category ## _ ## name ## _();               \
+                                                                    \
+  static void child_ ## category ## _ ## name ## _() {              \
+    ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
+    test_ ## category ## _ ## name ## _();                          \
+    exit(0);                                                        \
+  }                                                                 \
+                                                                    \
+  TEST(category, CONCAT(name, _vm_assert)) {                        \
+    ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
+                ::testing::ExitedWithCode(1),                       \
+                msg);                            \
+  }                                                                 \
+                                                                    \
+  void test_ ## category ## _ ## name ## _()
 
 #endif // UNITTEST_HPP

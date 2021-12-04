@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012, Red Hat, Inc.
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @bug 7170638
  * @summary Test SDT probes available on GNU/Linux when DTRACE_ENABLED
  * @requires os.family == "linux"
+ * @requires vm.flagless
  *
  * @library /test/lib
  * @run driver SDTProbesGNULinuxTest

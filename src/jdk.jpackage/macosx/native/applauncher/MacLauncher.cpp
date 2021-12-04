@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #include "AppLauncher.h"
+#include "app.h"
 #include "FileUtils.h"
 #include "UnixSysInfo.h"
 #include "JvmLauncher.h"
@@ -55,6 +56,7 @@ void initJvmLauncher() {
         // add backup - older version such as JDK11 have it in jli sub-dir
         .addJvmLibName(_T("Contents/Home/lib/jli/libjli.dylib"))
         .setAppDir(FileUtils::mkpath() << appImageRoot << _T("Contents/app"))
+        .setLibEnvVariableName(_T("DYLD_LIBRARY_PATH"))
         .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
                 << _T("Contents/runtime"))
         .createJvmLauncher();
@@ -74,10 +76,10 @@ int main(int argc, char *argv[]) {
         // Besides we should ignore main() arguments because these are the
         // arguments passed into JLI_Launch() call and not the arguments with
         // which the launcher was started.
-        return AppLauncher::launch(std::nothrow, launchJvm);
+        return app::launch(std::nothrow, launchJvm);
     }
 
     SysInfo::argc = argc;
     SysInfo::argv = argv;
-    return AppLauncher::launch(std::nothrow, initJvmLauncher);
+    return app::launch(std::nothrow, initJvmLauncher);
 }

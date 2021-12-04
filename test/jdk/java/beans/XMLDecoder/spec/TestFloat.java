@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Tests <float> element
+ * @run main/othervm -Djava.security.manager=allow TestFloat
  * @author Sergey Malenkov
  */
 

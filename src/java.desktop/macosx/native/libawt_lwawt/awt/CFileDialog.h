@@ -24,7 +24,6 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 @interface CFileDialog : NSObject <NSOpenSavePanelDelegate> {
     // Should we query back to Java for a file filter?

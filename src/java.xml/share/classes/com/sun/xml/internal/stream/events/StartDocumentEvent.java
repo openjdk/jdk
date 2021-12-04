@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,9 +102,9 @@ implements StartDocument {
         return fVersion;
     }
 
-    public void setStandalone(boolean flag) {
-        fStandaloneSet = true;
-        fStandalone = flag;
+    public void setStandalone(boolean isStandalone, boolean standaloneSet) {
+        fStandaloneSet = standaloneSet;
+        fStandalone = isStandalone;
     }
 
     public void setStandalone(String s) {

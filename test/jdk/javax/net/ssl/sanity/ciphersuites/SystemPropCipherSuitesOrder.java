@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,14 @@ import java.util.Arrays;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
+import jdk.test.lib.security.SecurityUtils;
+
 /*
  * @test
  * @bug 8234728
  * @library /javax/net/ssl/templates
  *          /javax/net/ssl/TLSCommon
+ *          /test/lib
  * @summary Test TLS ciphersuites order set through System properties
  * @run main/othervm
  *      -Djdk.tls.client.cipherSuites=TLS_CHACHA20_POLY1305_SHA256,TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384
@@ -95,6 +98,10 @@ public class SystemPropCipherSuitesOrder extends SSLSocketTemplate {
 
     private SystemPropCipherSuitesOrder(String protocol) {
         this.protocol = protocol;
+        // Re-enable protocol if disabled.
+        if (protocol.equals("TLSv1") || protocol.equals("TLSv1.1")) {
+            SecurityUtils.removeFromDisabledTlsAlgs(protocol);
+        }
     }
 
     // Servers are configured before clients, increment test case after.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  *
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  *        sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Xbatch -XX:CompileThresholdScaling=1.0
  *     compiler.jvmci.compilerToVM.IsMatureVsReprofileTest
@@ -83,7 +83,7 @@ public class IsMatureVsReprofileTest {
         isMature = CompilerToVMHelper.isMature(metaspaceMethodData);
         /* a method is not mature for -Xcomp and -Tiered,
            see NonTieredCompPolicy::is_mature */
-        Asserts.assertEQ(!IS_XCOMP || TIERED, isMature,
+        Asserts.assertEQ(!IS_XCOMP, isMature,
                 "Unexpected isMature state for compiled method");
         HotSpotResolvedJavaMethod resolvedMethod
                 = CTVMUtilities.getResolvedMethod(method);
@@ -94,7 +94,7 @@ public class IsMatureVsReprofileTest {
         isMature = CompilerToVMHelper.isMature(metaspaceMethodData);
         Asserts.assertNE(metaspaceMethodData, 0L,
                 "Got null MDO after reprofile");
-        Asserts.assertEQ(TIERED && IS_XCOMP, isMature,
+        Asserts.assertFalse(isMature,
                 "Got unexpected isMature state after reprofiling");
     }
 }

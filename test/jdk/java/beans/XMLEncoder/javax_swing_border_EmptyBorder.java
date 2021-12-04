@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062 6487891
  * @summary Tests EmptyBorder encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_border_EmptyBorder
  * @author Sergey Malenkov
  */
 

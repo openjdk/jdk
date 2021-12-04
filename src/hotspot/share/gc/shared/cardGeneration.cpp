@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,11 @@ CardGeneration::CardGeneration(ReservedSpace rs,
                                size_t initial_byte_size,
                                CardTableRS* remset) :
   Generation(rs, initial_byte_size), _rs(remset),
-  _shrink_factor(0), _min_heap_delta_bytes(), _capacity_at_prologue(),
+  _min_heap_delta_bytes(), _capacity_at_prologue(),
   _used_at_prologue()
 {
+  // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
+  _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   HeapWord* start = (HeapWord*)rs.base();
   size_t reserved_byte_size = rs.size();
   assert((uintptr_t(start) & 3) == 0, "bad alignment");
@@ -186,7 +188,12 @@ void CardGeneration::invalidate_remembered_set() {
 void CardGeneration::compute_new_size() {
   assert(_shrink_factor <= 100, "invalid shrink factor");
   size_t current_shrink_factor = _shrink_factor;
-  _shrink_factor = 0;
+  if (ShrinkHeapInSteps) {
+    // Always reset '_shrink_factor' if the heap is shrunk in steps.
+    // If we shrink the heap in this iteration, '_shrink_factor' will
+    // be recomputed based on the old value further down in this fuction.
+    _shrink_factor = 0;
+  }
 
   // We don't have floating point command-line arguments
   // Note:  argument processing ensures that MinHeapFreeRatio < 100.
@@ -307,13 +314,13 @@ void CardGeneration::space_iterate(SpaceClosure* blk,
   blk->do_space(space());
 }
 
-void CardGeneration::younger_refs_iterate(OopIterateClosure* blk, uint n_threads) {
+void CardGeneration::younger_refs_iterate(OopIterateClosure* blk) {
   // Apply "cl->do_oop" to (the address of) (exactly) all the ref fields in
-  // "sp" that point into younger generations.
+  // "sp" that point into the young generation.
   // The iteration is only over objects allocated at the start of the
   // iterations; objects allocated as a result of applying the closure are
   // not included.
 
   HeapWord* gen_boundary = reserved().start();
-  _rs->younger_refs_in_space_iterate(space(), gen_boundary, blk, n_threads);
+  _rs->younger_refs_in_space_iterate(space(), gen_boundary, blk);
 }

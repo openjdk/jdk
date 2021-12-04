@@ -45,8 +45,6 @@ protected:
 
   ciInstance(ciKlass* klass) : ciObject(klass) {}
 
-  instanceOop get_instanceOop() { return (instanceOop)get_oop(); }
-
   const char* type_string() { return "ciInstance"; }
 
   void print_impl(outputStream* st);
@@ -61,7 +59,6 @@ public:
 
   // What kind of ciObject is this?
   bool is_instance()     { return true; }
-  bool is_java_object()  { return true; }
 
   // Constant value of a field.
   ciConstant field_value(ciField* field);

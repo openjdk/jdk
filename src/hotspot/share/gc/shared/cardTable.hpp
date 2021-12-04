@@ -43,7 +43,6 @@ public:
 protected:
   // The declaration order of these const fields is important; see the
   // constructor before changing.
-  const bool      _scanned_concurrently;
   const MemRegion _whole_heap;       // the region covered by the card table
   size_t          _guard_index;      // index of very last element in the card
                                      // table; it is set to a guard value
@@ -113,7 +112,7 @@ protected:
   static const intptr_t clean_card_row = (intptr_t)(-1);
 
 public:
-  CardTable(MemRegion whole_heap, bool conc_scan);
+  CardTable(MemRegion whole_heap);
   virtual ~CardTable();
   virtual void initialize();
 
@@ -229,23 +228,23 @@ public:
   MemRegion dirty_card_range_after_reset(MemRegion mr, bool reset,
                                          int reset_val);
 
-  // Constants
-  enum SomePublicConstants {
-    card_shift                  = 9,
-    card_size                   = 1 << card_shift,
-    card_size_in_words          = card_size / sizeof(HeapWord)
-  };
+  // CardTable entry size
+  static uint card_shift;
+  static uint card_size;
+  static uint card_size_in_words;
 
-  static CardValue clean_card_val()          { return clean_card; }
-  static CardValue dirty_card_val()          { return dirty_card; }
+  static constexpr CardValue clean_card_val()          { return clean_card; }
+  static constexpr CardValue dirty_card_val()          { return dirty_card; }
   static intptr_t clean_card_row_val()   { return clean_card_row; }
+
+  // Initialize card size
+  static void initialize_card_size();
 
   // Card marking array base (adjusted for heap low boundary)
   // This would be the 0th element of _byte_map, if the heap started at 0x0.
   // But since the heap starts at some higher address, this points to somewhere
   // before the beginning of the actual _byte_map.
   CardValue* byte_map_base() const { return _byte_map_base; }
-  bool scanned_concurrently() const { return _scanned_concurrently; }
 
   virtual bool is_in_young(oop obj) const = 0;
 

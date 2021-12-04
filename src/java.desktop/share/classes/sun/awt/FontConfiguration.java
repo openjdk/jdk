@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +157,7 @@ public abstract class FontConfiguration {
         short fontNameID = compFontNameIDs[0][0][0];
         short fileNameID = getComponentFileID(fontNameID);
         final String fileName = mapFileName(getComponentFileName(fileNameID));
+        @SuppressWarnings("removal")
         Boolean exists = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Boolean>() {
                  public Boolean run() {
@@ -965,6 +966,7 @@ public abstract class FontConfiguration {
         if (!charsetName.startsWith("sun.awt.") && !charsetName.equals("default")) {
             fc = Charset.forName(charsetName);
         } else {
+            @SuppressWarnings("removal")
             Class<?> fcc = AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
                     public Class<?> run() {
                         try {
@@ -1373,6 +1375,7 @@ public abstract class FontConfiguration {
 
         //This method will only be called during build time, do we
         //need do PrivilegedAction?
+        @SuppressWarnings("removal")
         String osName = java.security.AccessController.doPrivileged(
                             new java.security.PrivilegedAction<String>() {
             public String run() {

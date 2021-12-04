@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
@@ -57,7 +56,7 @@ template <typename Delegate>
 void RootSetClosure<Delegate>::do_oop(narrowOop* ref) {
   assert(ref != NULL, "invariant");
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
-  if (CompressedOops::is_null(*ref)) {
+  if (!CompressedOops::is_null(*ref)) {
     _delegate->do_root(UnifiedOopRef::encode_in_native(ref));
   }
 }
@@ -72,7 +71,6 @@ void RootSetClosure<Delegate>::process() {
   // We don't follow code blob oops, because they have misaligned oops.
   Threads::oops_do(this, NULL);
   OopStorageSet::strong_oops_do(this);
-  AOTLoader::oops_do(this);
 }
 
 template class RootSetClosure<BFSClosure>;

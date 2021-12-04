@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.jgss.krb5;
 
-import java.io.IOException;
 import org.ietf.jgss.*;
 import sun.security.jgss.GSSCaller;
 import sun.security.jgss.spi.*;
@@ -33,7 +32,6 @@ import sun.security.krb5.*;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.AccessController;
-import java.security.AccessControlContext;
 import javax.security.auth.DestroyFailedException;
 
 /**
@@ -59,21 +57,21 @@ public class Krb5AcceptCredential
         this.screds = creds;
     }
 
+    @SuppressWarnings("removal")
     static Krb5AcceptCredential getInstance(final GSSCaller caller, Krb5NameElement name)
         throws GSSException {
 
         final String serverPrinc = (name == null? null:
             name.getKrb5PrincipalName().getName());
-        final AccessControlContext acc = AccessController.getContext();
 
         ServiceCreds creds = null;
         try {
-            creds = AccessController.doPrivileged(
+            creds = AccessController.doPrivilegedWithCombiner(
                         new PrivilegedExceptionAction<ServiceCreds>() {
                 public ServiceCreds run() throws Exception {
                     return Krb5Util.getServiceCreds(
                         caller == GSSCaller.CALLER_UNKNOWN ? GSSCaller.CALLER_ACCEPT: caller,
-                        serverPrinc, acc);
+                        serverPrinc);
                 }});
         } catch (PrivilegedActionException e) {
             GSSException ge =

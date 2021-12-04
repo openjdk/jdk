@@ -27,32 +27,30 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ProcessHandle;
 
+import jdk.test.lib.util.FileUtils;
+
 /*
  * @test
  * @bug 8239893
  * @summary Verify that handles for processes that terminate do not accumulate
  * @requires ((os.family == "windows") & (vm.compMode != "Xcomp"))
+ * @library /test/lib
  * @run main/othervm/native -Xint CheckHandles
  */
 public class CheckHandles {
 
-    // Return the current process handle count
-    private static native long getProcessHandleCount();
-
     public static void main(String[] args) throws Exception {
-        System.loadLibrary("CheckHandles");
-
         System.out.println("mypid: " + ProcessHandle.current().pid());
 
         // Warmup the process launch mechanism and vm to stabilize the number of handles in use
         int MAX_WARMUP = 20;
-        long prevCount = getProcessHandleCount();
+        long prevCount = FileUtils.getProcessHandleCount();
         for (int i = 0; i < MAX_WARMUP; i++) {
             oneProcess();
             System.gc();        // an opportunity to close unreferenced handles
             sleep(10);
 
-            long count = getProcessHandleCount();
+            long count = FileUtils.getProcessHandleCount();
             if (count < 0)
                 throw new AssertionError("getProcessHandleCount failed");
             System.out.println("warmup handle delta: " + (count - prevCount));
@@ -61,7 +59,7 @@ public class CheckHandles {
         System.out.println("Warmup done");
         System.out.println();
 
-        prevCount = getProcessHandleCount();
+        prevCount = FileUtils.getProcessHandleCount();
         long startHandles = prevCount;
         long maxHandles = startHandles;
         int MAX_SPAWN = 50;
@@ -70,7 +68,7 @@ public class CheckHandles {
             System.gc();        // an opportunity to close unreferenced handles
             sleep(10);
 
-            long count = getProcessHandleCount();
+            long count = FileUtils.getProcessHandleCount();
             if (count < 0)
                 throw new AssertionError("getProcessHandleCount failed");
             System.out.println("handle delta: " + (count - prevCount));

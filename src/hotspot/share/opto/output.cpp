@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
 #include "opto/c2compiler.hpp"
@@ -439,7 +440,7 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
   // unexpected stack overflow (compiled method stack banging should
   // guarantee it doesn't happen) so we always need the stack bang in
   // a debug VM.
-  return (UseStackBanging && C->stub_function() == NULL &&
+  return (C->stub_function() == NULL &&
           (C->has_java_calls() || frame_size_in_bytes > os::vm_page_size()>>3
            DEBUG_ONLY(|| true)));
 }
@@ -500,6 +501,9 @@ void PhaseOutput::compute_loop_first_inst_sizes() {
 // The architecture description provides short branch variants for some long
 // branch instructions. Replace eligible long branches with short branches.
 void PhaseOutput::shorten_branches(uint* blk_starts) {
+
+  Compile::TracePhase tp("shorten branches", &timers[_t_shortenBranches]);
+
   // Compute size of each block, method size, and relocation information size
   uint nblocks  = C->cfg()->number_of_blocks();
 
@@ -571,10 +575,6 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           if (mcall->is_MachCallJava() && mcall->as_MachCallJava()->_method) {
             stub_size  += CompiledStaticCall::to_interp_stub_size();
             reloc_size += CompiledStaticCall::reloc_to_interp_stub();
-#if INCLUDE_AOT
-            stub_size  += CompiledStaticCall::to_aot_stub_size();
-            reloc_size += CompiledStaticCall::reloc_to_aot_stub();
-#endif
           }
         } else if (mach->is_MachSafePoint()) {
           // If call/safepoint are adjacent, account for possible
@@ -825,8 +825,9 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       ciKlass* cik = t->is_oopptr()->klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
-      sv = new ObjectValue(spobj->_idx,
-                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+      ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
+      sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
+                                    : new ObjectValue(spobj->_idx, klass_sv);
       set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index(sfpt->jvms());
@@ -1002,6 +1003,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
+  bool is_opt_native = false;
   bool return_oop = false;
   bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
   bool arg_escape = false;
@@ -1020,6 +1022,8 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         is_method_handle_invoke = true;
       }
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
+    } else if (mcall->is_MachCallNative()) {
+      is_opt_native = true;
     }
 
     // Check if a call returns an object.
@@ -1095,8 +1099,9 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           ciKlass* cik = t->is_oopptr()->klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
-          ObjectValue* sv = new ObjectValue(spobj->_idx,
-                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+          ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
+          ObjectValue* sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
+                                        : new ObjectValue(spobj->_idx, klass_sv);
           PhaseOutput::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index(youngest_jvms);
@@ -1140,10 +1145,22 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
     // Now we can describe the scope.
     methodHandle null_mh;
     bool rethrow_exception = false;
-    C->debug_info()->describe_scope(safepoint_pc_offset, null_mh, scope_method, jvms->bci(),
-                                    jvms->should_reexecute(), rethrow_exception, is_method_handle_invoke,
-                                    return_oop, has_ea_local_in_scope, arg_escape,
-                                    locvals, expvals, monvals);
+    C->debug_info()->describe_scope(
+      safepoint_pc_offset,
+      null_mh,
+      scope_method,
+      jvms->bci(),
+      jvms->should_reexecute(),
+      rethrow_exception,
+      is_method_handle_invoke,
+      is_opt_native,
+      return_oop,
+      has_ea_local_in_scope,
+      arg_escape,
+      locvals,
+      expvals,
+      monvals
+    );
   } // End jvms loop
 
   // Mark the end of the scope set.
@@ -1252,21 +1269,6 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
   // Compute prolog code size
   _method_size = 0;
   _frame_slots = OptoReg::reg2stack(C->matcher()->_old_SP) + C->regalloc()->_framesize;
-#if defined(IA64) && !defined(AIX)
-  if (save_argument_registers()) {
-    // 4815101: this is a stub with implicit and unknown precision fp args.
-    // The usual spill mechanism can only generate stfd's in this case, which
-    // doesn't work if the fp reg to spill contains a single-precision denorm.
-    // Instead, we hack around the normal spill mechanism using stfspill's and
-    // ldffill's in the MachProlog and MachEpilog emit methods.  We allocate
-    // space here for the fp arg regs (f8-f15) we're going to thusly spill.
-    //
-    // If we ever implement 16-byte 'registers' == stack slots, we can
-    // get rid of this hack and have SpillCopy generate stfspill/ldffill
-    // instead of stfd/stfs/ldfd/ldfs.
-    _frame_slots += 8*(16/BytesPerInt);
-  }
-#endif
   assert(_frame_slots >= 0 && _frame_slots < 1000000, "sanity check");
 
   if (C->has_mach_constant_base_node()) {
@@ -1361,6 +1363,8 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
   // Compute the size of first NumberOfLoopInstrToAlign instructions at head
   // of a loop. It is used to determine the padding for loop alignment.
+  Compile::TracePhase tp("fill buffer", &timers[_t_fillBuffer]);
+
   compute_loop_first_inst_sizes();
 
   // Create oopmap set.
@@ -1409,7 +1413,10 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
   // Emit the constant table.
   if (C->has_mach_constant_base_node()) {
-    constant_table().emit(*cb);
+    if (!constant_table().emit(*cb)) {
+      C->record_failure("consts section overflow");
+      return;
+    }
   }
 
   // Create an array of labels, one for each basic block
@@ -1519,6 +1526,7 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
           current_offset = cb->insts_size();
         }
 
+        bool observe_safepoint = is_sfn;
         // Remember the start of the last call in a basic block
         if (is_mcall) {
           MachCallNode *mcall = mach->as_MachCall();
@@ -1529,15 +1537,11 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
           // Save the return address
           call_returns[block->_pre_order] = current_offset + mcall->ret_addr_offset();
 
-          if (mcall->is_MachCallLeaf()) {
-            is_mcall = false;
-            is_sfn = false;
-          }
+          observe_safepoint = mcall->guaranteed_safepoint();
         }
 
         // sfn will be valid whenever mcall is valid now because of inheritance
-        if (is_sfn || is_mcall) {
-
+        if (observe_safepoint) {
           // Handle special safepoint nodes for synchronization
           if (!is_mcall) {
             MachSafePointNode *sfn = mach->as_MachSafePoint();
@@ -1689,6 +1693,9 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       if (C->failing()) {
         return;
       }
+
+      assert(!is_mcall || (call_returns[block->_pre_order] <= (uint)current_offset),
+             "ret_addr_offset() not within emitted code");
 
 #ifdef ASSERT
       uint n_size = n->size(C->regalloc());
@@ -2101,8 +2108,12 @@ void PhaseOutput::ScheduleAndBundle() {
     return;
 
   // Scheduling code works only with pairs (8 bytes) maximum.
-  if (C->max_vector_size() > 8)
+  // And when the scalable vector register is used, we may spill/unspill
+  // the whole reg regardless of the max vector size.
+  if (C->max_vector_size() > 8 ||
+      (C->max_vector_size() > 0 && Matcher::supports_scalable_vector())) {
     return;
+  }
 
   Compile::TracePhase tp("isched", &timers[_t_instrSched]);
 
@@ -2855,11 +2866,10 @@ void Scheduling::verify_good_schedule( Block *b, const char *msg ) {
     int n_op = n->Opcode();
     if( n_op == Op_MachProj && n->ideal_reg() == MachProjNode::fat_proj ) {
       // Fat-proj kills a slew of registers
-      RegMask rm = n->out_RegMask();// Make local copy
-      while( rm.is_NotEmpty() ) {
-        OptoReg::Name kill = rm.find_first_elem();
-        rm.Remove(kill);
-        verify_do_def( n, kill, msg );
+      RegMaskIterator rmi(n->out_RegMask());
+      while (rmi.has_next()) {
+        OptoReg::Name kill = rmi.next();
+        verify_do_def(n, kill, msg);
       }
     } else if( n_op != Op_Node ) { // Avoid brand new antidependence nodes
       // Get DEF'd registers the normal way
@@ -2904,6 +2914,16 @@ static void add_prec_edge_from_to( Node *from, Node *to ) {
 void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is_def ) {
   if( !OptoReg::is_valid(def_reg) ) // Ignore stores & control flow
     return;
+
+  if (OptoReg::is_reg(def_reg)) {
+    VMReg vmreg = OptoReg::as_VMReg(def_reg);
+    if (vmreg->is_reg() && !vmreg->is_concrete() && !vmreg->prev()->is_concrete()) {
+      // This is one of the high slots of a vector register.
+      // ScheduleAndBundle already checked there are no live wide
+      // vectors in this method so it can be safely ignored.
+      return;
+    }
+  }
 
   Node *pinch = _reg_node[def_reg]; // Get pinch point
   if ((pinch == NULL) || _cfg->get_block_for_node(pinch) != b || // No pinch-point yet?
@@ -3046,11 +3066,10 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
       // This can add edges to 'n' and obscure whether or not it was a def,
       // hence the is_def flag.
       fat_proj_seen = true;
-      RegMask rm = n->out_RegMask();// Make local copy
-      while( rm.is_NotEmpty() ) {
-        OptoReg::Name kill = rm.find_first_elem();
-        rm.Remove(kill);
-        anti_do_def( b, n, kill, is_def );
+      RegMaskIterator rmi(n->out_RegMask());
+      while (rmi.has_next()) {
+        OptoReg::Name kill = rmi.next();
+        anti_do_def(b, n, kill, is_def);
       }
     } else {
       // Get DEF'd registers the normal way
@@ -3065,11 +3084,10 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (use->is_Proj()) {
-          RegMask rm = use->out_RegMask();// Make local copy
-          while( rm.is_NotEmpty() ) {
-            OptoReg::Name kill = rm.find_first_elem();
-            rm.Remove(kill);
-            anti_do_def( b, n, kill, false );
+          RegMaskIterator rmi(use->out_RegMask());
+          while (rmi.has_next()) {
+            OptoReg::Name kill = rmi.next();
+            anti_do_def(b, n, kill, false);
           }
         }
       }
@@ -3342,8 +3360,7 @@ void PhaseOutput::install() {
   if (!C->should_install_code()) {
     return;
   } else if (C->stub_function() != NULL) {
-    install_stub(C->stub_name(),
-                 C->save_argument_registers());
+    install_stub(C->stub_name());
   } else {
     install_code(C->method(),
                  C->entry_bci(),
@@ -3390,15 +3407,15 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      compiler,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
-                                     C->rtm_state());
+                                     C->rtm_state(),
+                                     C->native_invokers());
 
     if (C->log() != NULL) { // Print code cache state into compiler log
       C->log()->code_cache_state();
     }
   }
 }
-void PhaseOutput::install_stub(const char* stub_name,
-                               bool        caller_must_gc_arguments) {
+void PhaseOutput::install_stub(const char* stub_name) {
   // Entry point will be accessed using stub_entry_point();
   if (code_buffer() == NULL) {
     Matcher::soft_match_failure();
@@ -3417,7 +3434,7 @@ void PhaseOutput::install_stub(const char* stub_name,
                                                       // _code_offsets.value(CodeOffsets::Frame_Complete),
                                                       frame_size_in_words(),
                                                       oop_map_set(),
-                                                      caller_must_gc_arguments);
+                                                      false);
       assert(rs != NULL && rs->is_runtime_stub(), "sanity check");
 
       C->set_stub_entry_point(rs->entry_point());

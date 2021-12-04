@@ -80,7 +80,7 @@ static void reverse_bytes(juint &w) {
 #endif
 
 // Constants to fold n words as needed by macroAssembler.
-address StubRoutines::generate_crc_constants(juint reverse_poly) {
+address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
   // Layout of constant table:
   // <= Power7 Little Endian: 4 tables for byte folding
   // <= Power7 Big Endian: 1 table for single byte folding + 4 tables for multi-byte folding
@@ -209,4 +209,9 @@ address StubRoutines::generate_crc_constants(juint reverse_poly) {
   //printf("inv poly: 0x%016llx\n", (long long unsigned int)inverse_long_poly);
 
   return consts;
+}
+
+address StubRoutines::ppc::_nmethod_entry_barrier = nullptr;
+address StubRoutines::ppc::nmethod_entry_barrier() {
+  return _nmethod_entry_barrier;
 }

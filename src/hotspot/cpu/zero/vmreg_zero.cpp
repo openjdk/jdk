@@ -61,3 +61,8 @@ FloatRegister VMRegImpl::as_FloatRegister() {
   assert(is_FloatRegister(), "must be" );
   return ::as_FloatRegister(value() - ConcreteRegisterImpl::max_gpr);
 }
+
+VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
+  ShouldNotCallThis();
+  return VMRegImpl::Bad();
+}

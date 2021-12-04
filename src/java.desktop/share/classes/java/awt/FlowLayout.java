@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.awt;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 
 /**
  * A flow layout arranges components in a directional flow, much
@@ -191,9 +192,10 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
      */
     private boolean alignOnBaseline;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = -7262534875583282631L;
 
     /**
@@ -669,6 +671,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void readObject(ObjectInputStream stream)
          throws IOException, ClassNotFoundException
     {

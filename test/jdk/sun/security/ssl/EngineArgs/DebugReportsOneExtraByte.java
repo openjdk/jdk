@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,13 @@
  */
 
 /*
- * test
+ * @test
  * @bug 7126889
  * @summary Incorrect SSLEngine debug output
- *
+ * @library /test/lib
+ * @run main DebugReportsOneExtraByte
+ */
+/*
  * Debug output was reporting n+1 bytes of data was written when it was
  * really was n.
  *
@@ -75,23 +78,16 @@ import java.io.*;
 import java.security.*;
 import java.nio.*;
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.security.SecurityUtils;
+
 public class DebugReportsOneExtraByte {
 
     /*
      * Enables logging of the SSLEngine operations.
      */
     private static boolean logging = true;
-
-    /*
-     * Enables the JSSE system debugging system property:
-     *
-     *     -Djavax.net.debug=all
-     *
-     * This gives a lot of low-level information about operations underway,
-     * including specific handshake messages, and might be best examined
-     * after gaining some familiarity with this application.
-     */
-    private static boolean debug = false;
 
     private SSLContext sslc;
 
@@ -130,14 +126,21 @@ public class DebugReportsOneExtraByte {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
-        if (debug) {
-            System.setProperty("javax.net.debug", "all");
+
+        if (args.length == 0) {
+            OutputAnalyzer output = ProcessTools.executeTestJvm(
+                "-Dtest.src=" + System.getProperty("test.src"),
+                "-Djavax.net.debug=all", "DebugReportsOneExtraByte", "p");
+            output.shouldContain("WRITE: TLSv1 application_data, length = 8");
+
+            System.out.println("Test Passed.");
+        } else {
+            // Re-enable TLSv1 since test depends on it
+            SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
+
+            DebugReportsOneExtraByte test = new DebugReportsOneExtraByte();
+            test.runTest();
         }
-
-        DebugReportsOneExtraByte test = new DebugReportsOneExtraByte();
-        test.runTest();
-
-        System.out.println("Test Passed.");
     }
 
     /*

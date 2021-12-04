@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 #include "precompiled.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/stubRoutines.hpp"
+
+#ifndef PRODUCT
 #include "runtime/thread.hpp"
+#endif
 
 void OrderAccess::StubRoutines_fence() {
   // Use a stub if it exists.  It may not exist during bootstrap so do
@@ -38,3 +41,11 @@ void OrderAccess::StubRoutines_fence() {
   }
   assert(Threads::number_of_threads() == 0, "for bootstrap only");
 }
+
+#ifndef PRODUCT
+void OrderAccess::cross_modify_fence_verify() {
+    if (VerifyCrossModifyFence) {
+      JavaThread::current()->set_requires_cross_modify_fence(false);
+    }
+}
+#endif

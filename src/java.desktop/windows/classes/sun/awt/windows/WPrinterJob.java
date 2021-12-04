@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,6 +361,9 @@ public final class WPrinterJob extends RasterPrinterJob
     private PrinterJob pjob;
 
     private java.awt.peer.ComponentPeer dialogOwnerPeer = null;
+
+    private int graphicsMode;
+    private double[] worldTransform = new double[6];
 
  /* Static Initializations */
 
@@ -728,8 +731,7 @@ public final class WPrinterJob extends RasterPrinterJob
                      */
                     if (attr.getCategory() == SunAlternateMedia.class) {
                         Media media = (Media)attributes.get(Media.class);
-                        if (media == null ||
-                            !(media instanceof MediaTray)) {
+                        if (!(media instanceof MediaTray)) {
                             attr = ((SunAlternateMedia)attr).getMedia();
                         }
                     }
@@ -960,6 +962,17 @@ public final class WPrinterJob extends RasterPrinterJob
         endPath(getPrintDC());
     }
 
+    protected void scaleTransform(float scale) {
+        graphicsMode = setAdvancedGraphicsMode();
+        getWorldTransform(worldTransform);
+        scale(scale, scale);
+    }
+
+    protected void restoreTransform() {
+        setWorldTransform(worldTransform);
+        setGraphicsMode(graphicsMode);
+    }
+
     protected void closeFigure() {
         closeFigure(getPrintDC());
     }
@@ -980,7 +993,7 @@ public final class WPrinterJob extends RasterPrinterJob
                                 float control2x, float control2y,
                                 float endX, float endY) {
 
-        polyBezierTo(getPrintDC(), control1x, control1y,
+        polyBezierTo(getPrintDC(),  control1x, control1y,
                                control2x, control2y,
                                endX, endY);
     }
@@ -993,6 +1006,44 @@ public final class WPrinterJob extends RasterPrinterJob
      */
     protected void setPolyFillMode(int fillRule) {
         setPolyFillMode(getPrintDC(), fillRule);
+    }
+
+    /**
+     * Set the GDI graphics mode to {@code GM_ADVANCED}.
+     */
+    private int setAdvancedGraphicsMode() {
+        return setAdvancedGraphicsMode(getPrintDC());
+    }
+
+    /**
+     * Set the GDI graphics mode.
+     * The {@code mode} should
+     * be one of the following Windows constants:
+     * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
+     */
+    private void setGraphicsMode(int mode) {
+        setGraphicsMode(getPrintDC(), mode);
+    }
+
+    /**
+     * Scale the GDI World Transform.
+     */
+    private void scale(double scaleX, double scaleY) {
+        scale(getPrintDC(), scaleX, scaleY);
+    }
+
+    /**
+     * Get the GDI World Transform.
+     */
+    private void getWorldTransform(double[] transform) {
+        getWorldTransform(getPrintDC(), transform);
+    }
+
+    /**
+     * Set the GDI World Transform.
+     */
+    private void setWorldTransform(double[] transform) {
+        setWorldTransform(getPrintDC(), transform);
     }
 
     /*
@@ -1104,6 +1155,10 @@ public final class WPrinterJob extends RasterPrinterJob
      */
     protected boolean setFont(String family, float size, int style,
                               int rotation, float awScale) {
+
+        if (family.isEmpty()) {
+            return false;
+        }
 
         boolean didSetFont = true;
 
@@ -1471,6 +1526,39 @@ public final class WPrinterJob extends RasterPrinterJob
     protected native void setPolyFillMode(long printDC, int fillRule);
 
     /**
+     * Set the GDI graphics mode to {@code GM_ADVANCED}
+     * into the device context {@code printDC}.
+     */
+    protected native int setAdvancedGraphicsMode(long printDC);
+
+    /**
+     * Set the GDI graphics {@code mode}
+     * into the device context {@code printDC}.
+     * The {@code mode} should
+     * be one of the following Windows constants:
+     * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
+     */
+    protected native void setGraphicsMode(long printDC, int mode);
+
+    /**
+     * Scale the GDI World Transform
+     * of the device context {@code printDC}.
+     */
+    protected native void scale(long printDC, double scaleX, double scaleY);
+
+    /**
+     * Get the GDI World Transform
+     * from the device context {@code printDC}.
+     */
+    protected native void getWorldTransform(long printDC, double[] transform);
+
+    /**
+     * Set the GDI World Transform
+     * into the device context {@code printDC}.
+     */
+    protected native void setWorldTransform(long printDC, double[] transform);
+
+    /**
      * Create a Window's solid brush for the color specified
      * by {@code (red, green, blue)}. Once the brush
      * is created, select it in the device
@@ -1821,6 +1909,7 @@ public final class WPrinterJob extends RasterPrinterJob
 
 
     private boolean getPrintToFileEnabled() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             FilePermission printToFilePermission =
@@ -2207,7 +2296,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
 @SuppressWarnings("serial") // JDK-implementation class
-class PrintToFileErrorDialog extends Dialog implements ActionListener{
+static class PrintToFileErrorDialog extends Dialog implements ActionListener {
     public PrintToFileErrorDialog(Frame parent, String title, String message,
                            String buttonText) {
         super(parent, title, true);

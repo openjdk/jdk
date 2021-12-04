@@ -124,18 +124,18 @@ public class WinScriptTest {
         }
 
         void assertJPackageOutput(List<String> output) {
-            TKit.assertTextStream(String.format("jp: %s", echoText))
+            TKit.assertTextStream(String.format("    jp: %s", echoText))
                     .predicate(String::equals)
                     .apply(output.stream());
 
-            String cwdPattern = String.format("jp: CWD(%s)=", envVarName);
+            String cwdPattern = String.format("    jp: CWD(%s)=", envVarName);
             TKit.assertTextStream(cwdPattern)
                     .predicate(String::startsWith)
                     .apply(output.stream());
             String cwd = output.stream().filter(line -> line.startsWith(
                     cwdPattern)).findFirst().get().substring(cwdPattern.length());
 
-            String envVarPattern = String.format("jp: %s=", envVarName);
+            String envVarPattern = String.format("    jp: %s=", envVarName);
             TKit.assertTextStream(envVarPattern)
                     .predicate(String::startsWith)
                     .apply(output.stream());

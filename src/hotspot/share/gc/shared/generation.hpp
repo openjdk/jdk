@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,18 +118,13 @@ class Generation: public CHeapObj<mtGC> {
   };
 
   // allocate and initialize ("weak") refs processing support
-  virtual void ref_processor_init();
+  void ref_processor_init();
   void set_ref_processor(ReferenceProcessor* rp) {
     assert(_ref_processor == NULL, "clobbering existing _ref_processor");
     _ref_processor = rp;
   }
 
   virtual Generation::Name kind() { return Generation::Other; }
-
-  // This properly belongs in the collector, but for now this
-  // will do.
-  virtual bool refs_discovery_is_atomic() const { return true;  }
-  virtual bool refs_discovery_is_mt()     const { return false; }
 
   // Space inquiries (results in bytes)
   size_t initial_size();
@@ -333,9 +328,7 @@ class Generation: public CHeapObj<mtGC> {
   // successful, perform the allocation and return the resulting
   // "oop" (initializing the allocated block). If the allocation is
   // still unsuccessful, return "NULL".
-  virtual HeapWord* expand_and_allocate(size_t word_size,
-                                        bool is_tlab,
-                                        bool parallel = false) = 0;
+  virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
 
   // Some generations may require some cleanup or preparation actions before
   // allowing a collection.  The default is to do nothing.

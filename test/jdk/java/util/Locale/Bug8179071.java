@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8179071 8202537 8231273
+ * @bug 8179071 8202537 8231273 8251317
  * @summary Test that language aliases of CLDR supplemental metadata are handled correctly.
  * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=CLDR Bug8179071
@@ -44,17 +44,16 @@ import java.util.Set;
 public class Bug8179071 {
 
     // Deprecated and Legacy tags.
-    private static final Set<String> LegacyAliases = Set.of("pa-PK", "ug-Arab-CN", "kk-Cyrl-KZ",
-            "bs-BA", "ks-Arab-IN", "mn-Cyrl-MN", "ha-Latn-NE",
-            "shi-MA", "ha-Latn-NG", "ms-Latn-BN","ms-Latn-SG",
-            "ky-Cyrl-KG", "az-AZ", "zh-guoyu", "zh-min-nan", "i-klingon", "i-tsu",
-            "sr-XK", "sgn-CH-DE", "mo", "i-tay", "scc", "uz-UZ", "uz-AF", "sr-RS",
-            "i-hak", "sgn-BE-FR", "i-lux", "vai-LR", "tl", "zh-hakka", "i-ami", "aa-SAAHO", "ha-Latn-GH",
-            "zh-xiang", "i-pwn", "sgn-BE-NL", "jw", "sh", "tzm-Latn-MA", "i-bnn");
+    // As of CLDR 38, language aliases for some of the legacy tags have been removed.
+    private static final Set<String> LegacyAliases = Set.of(
+            "zh-guoyu", "zh-min-nan", "i-klingon", "i-tsu",
+            "sgn-CH-DE", "mo", "i-tay", "scc",
+            "i-hak", "sgn-BE-FR", "i-lux", "tl", "zh-hakka", "i-ami", "aa-SAAHO",
+            "zh-xiang", "i-pwn", "sgn-BE-NL", "jw", "sh", "i-bnn");
     // expected month format data for  locales after language aliases replacement.
-    private static Map<String, String> shortJanuaryNames = Map.of( "pa-PK", "\u062c\u0646\u0648\u0631\u06cc",
-                                                          "uz-AF" , "\u062c\u0646\u0648",
-                                                          "sr-ME", "jan",
+    private static final Map<String, String> shortJanuaryNames = Map.of( "pa-PK", "\u0a1c\u0a28",
+                                                          "uz-AF" , "yan",
+                                                          "sr-ME", "\u0458\u0430\u043d",
                                                           "scc", "\u0458\u0430\u043d",
                                                           "sh", "jan",
                                                           "ha-Latn-NE", "Jan",
@@ -85,7 +84,7 @@ public class Bug8179071 {
     }
 
     public static void main(String[] args) {
-        shortJanuaryNames.forEach((key, value) -> test(key, value));
+        shortJanuaryNames.forEach(Bug8179071::test);
         checkInvalidTags();
     }
 }

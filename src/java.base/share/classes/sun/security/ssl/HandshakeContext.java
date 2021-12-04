@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,13 +297,13 @@ abstract class HandshakeContext implements ConnectionContext {
                 } else if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
                     SSLLogger.fine(
                         "Ignore unsupported cipher suite: " + suite +
-                             " for " + protocol);
+                             " for " + protocol.name);
                 }
             }
 
             if (!found && (SSLLogger.isOn) && SSLLogger.isOn("handshake")) {
                 SSLLogger.fine(
-                    "No available cipher suite for " + protocol);
+                    "No available cipher suite for " + protocol.name);
             }
         }
 
@@ -534,15 +534,6 @@ abstract class HandshakeContext implements ConnectionContext {
         return activeProtocols.contains(protocolVersion);
     }
 
-    /**
-     * Set the active protocol version and propagate it to the SSLSocket
-     * and our handshake streams. Called from ClientHandshaker
-     * and ServerHandshaker with the negotiated protocol version.
-     */
-    void setVersion(ProtocolVersion protocolVersion) {
-        this.conContext.protocolVersion = protocolVersion;
-    }
-
     private static boolean isActivatable(CipherSuite suite,
             AlgorithmConstraints algorithmConstraints,
             Map<NamedGroupSpec, Boolean> cachedStatus) {
@@ -576,7 +567,7 @@ abstract class HandshakeContext implements ConnectionContext {
 
                     retval |= groupAvailable;
                 } else {
-                    retval |= true;
+                    retval = true;
                 }
             }
 

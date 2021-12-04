@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
@@ -37,10 +38,11 @@ G1SATBMarkQueueSet::G1SATBMarkQueueSet(BufferNode::Allocator* allocator) :
 {}
 
 void G1SATBMarkQueueSet::handle_zero_index_for_thread(Thread* t) {
-  G1ThreadLocalData::satb_mark_queue(t).handle_zero_index();
+  G1SATBMarkQueueSet& qset = G1BarrierSet::satb_mark_queue_set();
+  qset.handle_zero_index(qset.satb_queue_for_thread(t));
 }
 
-SATBMarkQueue& G1SATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const{
+SATBMarkQueue& G1SATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const {
   return G1ThreadLocalData::satb_mark_queue(t);
 }
 
@@ -89,14 +91,14 @@ static inline bool requires_marking(const void* entry, G1CollectedHeap* g1h) {
     return false;
   }
 
-  assert(oopDesc::is_oop(oop(entry), true /* ignore mark word */),
+  assert(oopDesc::is_oop(cast_to_oop(entry), true /* ignore mark word */),
          "Invalid oop in SATB buffer: " PTR_FORMAT, p2i(entry));
 
   return true;
 }
 
 static inline bool discard_entry(const void* entry, G1CollectedHeap* g1h) {
-  return !requires_marking(entry, g1h) || g1h->is_marked_next((oop)entry);
+  return !requires_marking(entry, g1h) || g1h->is_marked_next(cast_to_oop(entry));
 }
 
 // Workaround for not yet having std::bind.
@@ -113,6 +115,6 @@ public:
   }
 };
 
-void G1SATBMarkQueueSet::filter(SATBMarkQueue* queue) {
+void G1SATBMarkQueueSet::filter(SATBMarkQueue& queue) {
   apply_filter(G1SATBMarkQueueFilterFn(), queue);
 }

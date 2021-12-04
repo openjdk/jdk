@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * A DER input stream, used for parsing ASN.1 DER-encoded data such as
@@ -53,7 +55,6 @@ import java.util.Date;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-
 public class DerInputStream {
 
     // The static part
@@ -305,4 +306,105 @@ public class DerInputStream {
      * empty.
      */
     public int available() { return end - pos; }
+
+    /**
+     * Ensures there is no more data. This can be called when the last
+     * expected field is parsed, and we need to make sure no unread is left.
+     *
+     * @throws IOException if the end is NOT reached yet
+     */
+    public void atEnd() throws IOException {
+        if (available() != 0) {
+            throw new IOException("Extra unused bytes");
+        }
+    }
+
+    /**
+     * Checks if the tag of the next DerValue matches the rule.
+     *
+     * @param rule the rule to check for the tag.
+     * @return true if matches, false if not or stream is at end.
+     * @throws IOException if an I/O error happens while peeking the byte
+     */
+    private boolean checkNextTag(Predicate<Byte> rule) {
+        return available() > 0 && rule.test(data[pos]);
+    }
+
+    /**
+     * Detect if the tag of the next DerValue is the specified one.
+     *
+     * @param tag the expected tag
+     * @return true if matches, false if not or stream is at end.
+     * @throws IOException if an I/O error happens while peeking the byte
+     */
+    private boolean checkNextTag(byte tag) {
+        return checkNextTag(t -> t == tag);
+    }
+
+    /**
+     * Returns the next DerValue if its tag is the given one.
+     *
+     * @param tag the expected tag
+     * @return the next DerValue, or empty if not found or stream at end
+     * @throws IOException if an I/O error happens
+     */
+    public Optional<DerValue> getOptional(byte tag) throws IOException {
+        if (checkNextTag(tag)) {
+            return Optional.of(getDerValue());
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Detect if the next DerValue is a context-specific value
+     * tagged by {@code n}.
+     *
+     * @param n the expected tag
+     * @return true if matches, false if not or stream is at end.
+     * @throws IOException if an I/O error happens while peeking the byte
+     */
+    public boolean seeOptionalContextSpecific(int n) throws IOException {
+        return checkNextTag(t -> (t & 0x0c0) == 0x080 && (t & 0x01f) == n);
+    }
+
+    /**
+     * Returns the inner DerValue if the next DerValue is
+     * an EXPLICIT context-specific value tagged by {@code n}.
+     *
+     * @param n the expected tag
+     * @return the inner DerValue, or empty if not found or stream at end
+     * @throws IOException if an I/O error happens
+     */
+    public Optional<DerValue> getOptionalExplicitContextSpecific(int n)
+            throws IOException {
+        if (seeOptionalContextSpecific(n)) {
+            DerInputStream sub = getDerValue().data(); // stream inside [n]
+            DerValue inner = sub.getDerValue(); // inside [n]
+            sub.atEnd(); // make sure there is only one inner value
+            return Optional.of(inner);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Returns the restored DerValue if the next DerValue is
+     * an IMPLICIT context-specific value tagged by {@code n}.
+     *
+     * @param n the expected tag
+     * @param tag the real tag for the IMPLICIT type
+     * @return the restored DerValue, or empty if not found or stream at end
+     * @throws IOException if an I/O error happens
+     */
+    public Optional<DerValue> getOptionalImplicitContextSpecific(int n, byte tag)
+            throws IOException {
+        if (seeOptionalContextSpecific(n)) {
+            DerValue v = getDerValue(); // [n]
+            // restore tag because IMPLICIT has overwritten it
+            return Optional.of(v.withTag(tag));
+        } else {
+            return Optional.empty();
+        }
+    }
 }

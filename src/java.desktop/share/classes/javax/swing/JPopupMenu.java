@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,48 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTEvent;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.beans.BeanProperty;
+import java.beans.JavaBean;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
-import java.beans.JavaBean;
-import java.beans.BeanProperty;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
+import java.util.ArrayList;
 import java.util.Vector;
-import javax.accessibility.*;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleSelection;
+import javax.accessibility.AccessibleState;
+import javax.swing.event.EventListenerList;
+import javax.swing.event.MenuKeyEvent;
+import javax.swing.event.MenuKeyListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.plaf.PopupMenuUI;
 import javax.swing.plaf.basic.BasicComboPopup;
-import javax.swing.event.*;
 
 import sun.awt.SunToolkit;
 
@@ -94,14 +118,11 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         new StringBuffer("JPopupMenu.defaultLWPopupEnabledKey");
 
     /** Bug#4425878-Property javax.swing.adjustPopupLocationToFit introduced */
-    static boolean popupPostionFixDisabled = false;
-
-    static {
-        popupPostionFixDisabled = java.security.AccessController.doPrivileged(
+    @SuppressWarnings("removal")
+    static boolean popupPostionFixDisabled =
+            java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(
-                "javax.swing.adjustPopupLocationToFit","")).equals("false");
-
-    }
+                    "javax.swing.adjustPopupLocationToFit","")).equals("false");
 
     transient  Component invoker;
     transient  Popup popup;
@@ -577,14 +598,14 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
         int nitems = getComponentCount();
         // PENDING(ges): Why not use an array?
-        Vector<Component> tempItems = new Vector<Component>();
+        ArrayList<Component> tempItems = new ArrayList<Component>();
 
         /* Remove the item at index, nitems-index times
            storing them in a temporary vector in the
            order they appear on the menu.
            */
         for (int i = index ; i < nitems; i++) {
-            tempItems.addElement(getComponent(index));
+            tempItems.add(getComponent(index));
             remove(index);
         }
 
@@ -967,10 +988,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         JPopupMenu mp = this;
         while((mp!=null) && (mp.isPopupMenu()!=true) &&
               (mp.getInvoker() != null) &&
-              (mp.getInvoker().getParent() != null) &&
-              (mp.getInvoker().getParent() instanceof JPopupMenu)
+              (mp.getInvoker().getParent() instanceof JPopupMenu popupMenu)
               ) {
-            mp = (JPopupMenu) mp.getInvoker().getParent();
+            mp = popupMenu;
         }
         return mp;
     }
@@ -1304,17 +1324,18 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 ////////////
 // Serialization support.
 ////////////
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Vector<Object> values = new Vector<Object>();
 
         s.defaultWriteObject();
-        // Save the invoker, if its Serializable.
-        if(invoker != null && invoker instanceof Serializable) {
+        // Save the invoker if != null, (Component implements Serializable)
+        if (invoker != null) {
             values.addElement("invoker");
             values.addElement(invoker);
         }
-        // Save the popup, if its Serializable.
-        if(popup != null && popup instanceof Serializable) {
+        // Save the popup, if it's Serializable.
+        if (popup instanceof Serializable) {
             values.addElement("popup");
             values.addElement(popup);
         }
@@ -1330,6 +1351,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     }
 
     // implements javax.swing.MenuElement
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();
@@ -1503,7 +1525,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     @BeanProperty(bound = false)
     public MenuElement[] getSubElements() {
         MenuElement[] result;
-        Vector<MenuElement> tmp = new Vector<MenuElement>();
+        ArrayList<MenuElement> tmp = new ArrayList<MenuElement>();
         int c = getComponentCount();
         int i;
         Component m;
@@ -1511,12 +1533,12 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         for(i=0 ; i < c ; i++) {
             m = getComponent(i);
             if(m instanceof MenuElement)
-                tmp.addElement((MenuElement) m);
+                tmp.add((MenuElement) m);
         }
 
         result = new MenuElement[tmp.size()];
         for(i=0,c=tmp.size() ; i < c ; i++)
-            result[i] = tmp.elementAt(i);
+            result[i] = tmp.get(i);
         return result;
     }
 

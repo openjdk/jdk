@@ -25,8 +25,6 @@
 
 package com.sun.org.apache.xerces.internal.impl;
 
-import javax.xml.XMLConstants;
-import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.StreamFilter;
 import javax.xml.stream.XMLStreamException;
@@ -56,22 +54,30 @@ public class XMLStreamFilterImpl implements javax.xml.stream.XMLStreamReader {
      * hasNext() to advance the underlining stream in order to find the next acceptable event
      */
     private boolean fStreamAdvancedByHasNext = false;
-    /** Creates a new instance of XMLStreamFilterImpl */
 
-    public XMLStreamFilterImpl(XMLStreamReader reader,StreamFilter filter){
+    /**
+     * Creates a new instance of XMLStreamFilterImpl, advancing the reader to
+     * the next event accepted by the filter, if not already positioned on an
+     * accepted event.
+     *
+     * @param reader
+     *            the reader to filter
+     * @param filter
+     *            the filter to apply to the reader
+     * @throws XMLStreamException
+     *             when an {@code XMLStreamException} is thrown when
+     *             advancing the reader to an accepted event.
+     **/
+    public XMLStreamFilterImpl(XMLStreamReader reader,StreamFilter filter) throws XMLStreamException {
         fStreamReader = reader;
         this.fStreamFilter = filter;
 
         //this is debatable to initiate at an acceptable event,
         //but it's neccessary in order to pass the TCK and yet avoid skipping element
-        try {
-            if (fStreamFilter.accept(fStreamReader)) {
-                fEventAccepted = true;
-            } else {
-                findNextEvent();
-            }
-        }catch(XMLStreamException xs){
-            System.err.println("Error while creating a stream Filter"+xs);
+        if (fStreamFilter.accept(fStreamReader)) {
+            fEventAccepted = true;
+        } else {
+            findNextEvent();
         }
     }
 

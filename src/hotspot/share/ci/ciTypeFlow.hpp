@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,8 @@ class ciTypeFlow : public ResourceObj {
 private:
   ciEnv*    _env;
   ciMethod* _method;
-  ciMethodBlocks* _methodBlocks;
   int       _osr_bci;
 
-  // information cached from the method:
-  int _max_locals;
-  int _max_stack;
-  int _code_size;
   bool      _has_irreducible_entry;
 
   const char* _failure_reason;
@@ -62,10 +57,10 @@ public:
   Arena*    arena()            { return _env->arena(); }
   bool      is_osr_flow() const{ return _osr_bci != InvocationEntryBci; }
   int       start_bci() const  { return is_osr_flow()? _osr_bci: 0; }
-  int       max_locals() const { return _max_locals; }
-  int       max_stack() const  { return _max_stack; }
-  int       max_cells() const  { return _max_locals + _max_stack; }
-  int       code_size() const  { return _code_size; }
+  int       max_locals() const { return method()->max_locals(); }
+  int       max_stack() const  { return method()->max_stack(); }
+  int       max_cells() const  { return max_locals() + max_stack(); }
+  int       code_size() const  { return method()->code_size(); }
   bool      has_irreducible_entry() const { return _has_irreducible_entry; }
 
   // Represents information about an "active" jsr call.  This
@@ -104,10 +99,10 @@ public:
   // if paths are compatible.  <DISCUSSION>
   class JsrSet : public ResourceObj {
   private:
-    GrowableArray<JsrRecord*>* _set;
+    GrowableArray<JsrRecord*> _set;
 
     JsrRecord* record_at(int i) {
-      return _set->at(i);
+      return _set.at(i);
     }
 
     // Insert the given JsrRecord into the JsrSet, maintaining the order
@@ -119,6 +114,7 @@ public:
 
   public:
     JsrSet(Arena* arena, int default_len = 4);
+    JsrSet(int default_len = 4);
 
     // Copy this JsrSet.
     void copy_into(JsrSet* jsrs);
@@ -132,7 +128,7 @@ public:
                        StateVector* state);
 
     // What is the cardinality of this set?
-    int size() const { return _set->length(); }
+    int size() const { return _set.length(); }
 
     void print_on(outputStream* st) const PRODUCT_RETURN;
   };
@@ -523,7 +519,7 @@ public:
     GrowableArray<Block*>*           _exceptions;
     GrowableArray<ciInstanceKlass*>* _exc_klasses;
     GrowableArray<Block*>*           _successors;
-    GrowableArray<Block*>*           _predecessors;
+    GrowableArray<Block*>            _predecessors;
     StateVector*                     _state;
     JsrSet*                          _jsrs;
 
@@ -614,8 +610,7 @@ public:
 
     // Predecessors of this block (including exception edges)
     GrowableArray<Block*>* predecessors() {
-      assert(_predecessors != NULL, "must be filled in");
-      return _predecessors;
+      return &_predecessors;
     }
 
     // Get the exceptional successors for this Block.
@@ -795,8 +790,6 @@ private:
 
   // For each ciBlock index, a list of Blocks which share this ciBlock.
   GrowableArray<Block*>** _idx_to_blocklist;
-  // count of ciBlocks
-  int _ciblock_count;
 
   // Tells if a given instruction is able to generate an exception edge.
   bool can_trap(ciBytecodeStream& str);
@@ -872,7 +865,6 @@ private:
   Loop* _loop_tree_root;
 
   // State used for make_jsr_record
-  int _jsr_count;
   GrowableArray<JsrRecord*>* _jsr_records;
 
 public:

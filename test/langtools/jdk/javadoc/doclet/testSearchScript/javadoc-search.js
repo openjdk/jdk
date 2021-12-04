@@ -47,6 +47,16 @@ function tryLoad(docsPath, file) {
     }
 }
 
+var updateSearchResults = function() {};
+
+function indexFilesLoaded() {
+    return moduleSearchIndex
+        && packageSearchIndex
+        && typeSearchIndex
+        && memberSearchIndex
+        && tagSearchIndex;
+}
+
 var $ = function(f) {
     if (typeof f === "function") {
         f();

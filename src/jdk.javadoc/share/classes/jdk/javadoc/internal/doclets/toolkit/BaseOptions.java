@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,11 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -165,6 +167,20 @@ public abstract class BaseOptions {
     private final List<Utils.Pair<String, String>> linkOfflineList = new ArrayList<>();
 
     /**
+     * An enum of policies for handling modularity mismatches in external documentation.
+     */
+    public enum ModularityMismatchPolicy {
+        INFO,
+        WARN
+    }
+
+    /**
+     * Argument for command-line option {@code --link-modularity-mismatch}.
+     * Describes how to handle external documentation with non-matching modularity.
+     */
+    private ModularityMismatchPolicy linkModularityMismatch = ModularityMismatchPolicy.WARN;
+
+    /**
      * Location of alternative platform link properties file.
      */
     private String linkPlatformProperties;
@@ -249,6 +265,18 @@ public abstract class BaseOptions {
     private boolean showVersion = false;
 
     /**
+     * Argument for command line option {@code --since}.
+     * Specifies a list of release names for which to document API changes.
+     */
+    private List<String> since = List.of();
+
+    /**
+     * Argument for command line option {@code --since-label}.
+     * Specifies custom text to use as heading of New API page.
+     */
+    private String sinceLabel;
+
+    /**
      * Argument for command-line option {@code -sourcetab}.
      * The specified amount of space between tab stops.
      */
@@ -268,6 +296,12 @@ public abstract class BaseOptions {
      * The path to Taglets
      */
     private String tagletPath = null;
+
+    /**
+     * Argument for command-line option {@code --snippet-path}.
+     * The path for external snippets.
+     */
+    private String snippetPath = null;
 
     //</editor-fold>
 
@@ -384,6 +418,23 @@ public abstract class BaseOptions {
                     }
                 },
 
+                new Option(resources, "--link-modularity-mismatch", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        String s = args.get(0);
+                        switch (s) {
+                            case "warn", "info" ->
+                                    linkModularityMismatch = ModularityMismatchPolicy.valueOf(s.toUpperCase(Locale.ROOT));
+                            default -> {
+                                reporter.print(ERROR, resources.getText(
+                                        "doclet.Option_invalid", s, "--link-modularity-mismatch"));
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                },
+
                 new Option(resources, "--link-platform-properties", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -445,16 +496,13 @@ public abstract class BaseOptions {
                     public boolean process(String opt,  List<String> args) {
                         String o = args.get(0);
                         switch (o) {
-                            case "summary":
-                                summarizeOverriddenMethods = true;
-                                break;
-                            case "detail":
-                                summarizeOverriddenMethods = false;
-                                break;
-                            default:
+                            case "summary" -> summarizeOverriddenMethods = true;
+                            case "detail"  -> summarizeOverriddenMethods = false;
+                            default -> {
                                 reporter.print(ERROR,
                                         resources.getText("doclet.Option_invalid",o, "--override-methods"));
                                 return false;
+                            }
                         }
                         return true;
                     }
@@ -472,6 +520,22 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         serialWarn = true;
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--since", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        since = Arrays.stream(args.get(0).split(",")).map(String::trim).toList();
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--since-label", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        sinceLabel = args.get(0);
                         return true;
                     }
                 },
@@ -521,6 +585,14 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         tagletPath = args.get(0);
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--snippet-path", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        snippetPath = args.get(0);
                         return true;
                     }
                 },
@@ -785,6 +857,14 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --link-modularity-mismatch}.
+     * Describes how to handle external documentation with non-matching modularity.
+     */
+    public ModularityMismatchPolicy linkModularityMismatch() {
+        return linkModularityMismatch;
+    }
+
+    /**
      * Argument for command-line option {@code --link-platform-properties}.
      */
     String linkPlatformProperties() {
@@ -893,6 +973,20 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Arguments for command line option {@code --since}.
+     */
+    public List<String> since() {
+        return Collections.unmodifiableList(since);
+    }
+
+    /**
+     * Arguments for command line option {@code --since-label}.
+     */
+    public String sinceLabel() {
+        return sinceLabel;
+    }
+
+    /**
      * Argument for command-line option {@code -sourcetab}.
      * The specified amount of space between tab stops.
      */
@@ -919,6 +1013,14 @@ public abstract class BaseOptions {
         return tagletPath;
     }
 
+    /**
+     * Argument for command-line option {@code --snippet-path}.
+     * The path for external snippets.
+     */
+    public String snippetPath() {
+        return snippetPath;
+    }
+
     protected abstract static class Option implements Doclet.Option, Comparable<Option> {
         private final String[] names;
         private final String parameters;
@@ -932,7 +1034,7 @@ public abstract class BaseOptions {
         protected Option(Resources resources, String keyBase, String name, int argCount) {
             this.names = name.trim().split("\\s+");
             if (keyBase == null) {
-                keyBase = "doclet.usage." + names[0].toLowerCase().replaceAll("^-+", "");
+                keyBase = "doclet.usage." + Utils.toLowerCase(names[0]).replaceAll("^-+", "");
             }
             String desc = getOptionsMessage(resources, keyBase + ".description");
             if (desc.isEmpty()) {
@@ -995,7 +1097,7 @@ public abstract class BaseOptions {
                 } else if (matchCase) {
                     return name.equals(option);
                 }
-                return name.toLowerCase().equals(option.toLowerCase());
+                return name.equalsIgnoreCase(option);
             }
             return false;
         }
