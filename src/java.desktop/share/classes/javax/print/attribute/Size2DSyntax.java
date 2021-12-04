@@ -264,10 +264,9 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      *         two-dimensional size attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
-        return(object != null &&
-               object instanceof Size2DSyntax &&
-               this.x == ((Size2DSyntax) object).x &&
-               this.y == ((Size2DSyntax) object).y);
+        return object instanceof Size2DSyntax size2DSyntax &&
+                this.x == size2DSyntax.x &&
+                this.y == size2DSyntax.y;
     }
 
     /**

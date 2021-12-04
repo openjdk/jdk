@@ -4944,8 +4944,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
             // the active/passive/peered clients loose focus.
             if (id == FocusEvent.FOCUS_GAINED) {
                 InputContext inputContext = getInputContext();
-                if (inputContext != null && inputContext instanceof sun.awt.im.InputContext) {
-                    ((sun.awt.im.InputContext)inputContext).disableNativeIM();
+                if (inputContext instanceof sun.awt.im.InputContext ctx) {
+                    ctx.disableNativeIM();
                 }
             }
         }

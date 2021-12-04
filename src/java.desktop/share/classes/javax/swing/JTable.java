@@ -6758,11 +6758,11 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 // re-set tableModel listeners
             if (name.equals("model")) {
 
-                if (oldValue != null && oldValue instanceof TableModel) {
-                    ((TableModel) oldValue).removeTableModelListener(this);
+                if (oldValue instanceof TableModel oldModel) {
+                    oldModel.removeTableModelListener(this);
                 }
-                if (newValue != null && newValue instanceof TableModel) {
-                    ((TableModel) newValue).addTableModelListener(this);
+                if (newValue instanceof TableModel newModel) {
+                    newModel.addTableModelListener(this);
                 }
 
                 // re-set selectionModel listeners
@@ -6771,24 +6771,20 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 Object source = e.getSource();
                 if (source == JTable.this) {    // row selection model
 
-                    if (oldValue != null &&
-                        oldValue instanceof ListSelectionModel) {
-                        ((ListSelectionModel) oldValue).removeListSelectionListener(this);
+                    if (oldValue instanceof ListSelectionModel oldModel) {
+                        oldModel.removeListSelectionListener(this);
                     }
-                    if (newValue != null &&
-                        newValue instanceof ListSelectionModel) {
-                        ((ListSelectionModel) newValue).addListSelectionListener(this);
+                    if (newValue instanceof ListSelectionModel newModel) {
+                        newModel.addListSelectionListener(this);
                     }
 
                 } else if (source == JTable.this.getColumnModel()) {
 
-                    if (oldValue != null &&
-                        oldValue instanceof ListSelectionModel) {
-                        ((ListSelectionModel) oldValue).removeListSelectionListener(this);
+                    if (oldValue instanceof ListSelectionModel oldModel) {
+                        oldModel.removeListSelectionListener(this);
                     }
-                    if (newValue != null &&
-                        newValue instanceof ListSelectionModel) {
-                        ((ListSelectionModel) newValue).addListSelectionListener(this);
+                    if (newValue instanceof ListSelectionModel newModel) {
+                        newModel.addListSelectionListener(this);
                     }
 
                 } else {
@@ -6799,13 +6795,11 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 // and column's selection property listener as well
             } else if (name.equals("columnModel")) {
 
-                if (oldValue != null && oldValue instanceof TableColumnModel) {
-                    TableColumnModel tcm = (TableColumnModel) oldValue;
+                if (oldValue instanceof TableColumnModel tcm) {
                     tcm.removeColumnModelListener(this);
                     tcm.getSelectionModel().removeListSelectionListener(this);
                 }
-                if (newValue != null && newValue instanceof TableColumnModel) {
-                    TableColumnModel tcm = (TableColumnModel) newValue;
+                if (newValue instanceof TableColumnModel tcm) {
                     tcm.addColumnModelListener(this);
                     tcm.getSelectionModel().addListSelectionListener(this);
                 }
@@ -6813,11 +6807,11 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 // re-se cellEditor listeners
             } else if (name.equals("tableCellEditor")) {
 
-                if (oldValue != null && oldValue instanceof TableCellEditor) {
-                    ((TableCellEditor) oldValue).removeCellEditorListener(this);
+                if (oldValue instanceof TableCellEditor oldEditor) {
+                    oldEditor.removeCellEditorListener(this);
                 }
-                if (newValue != null && newValue instanceof TableCellEditor) {
-                    ((TableCellEditor) newValue).addCellEditorListener(this);
+                if (newValue instanceof TableCellEditor newEditor) {
+                    newEditor.addCellEditorListener(this);
                 }
             }
         }

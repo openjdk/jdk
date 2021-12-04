@@ -164,14 +164,15 @@ public final class SimpleFileServer {
     }
 
     /**
-     * Creates a <i>file server</i> the serves files from a given path.
+     * Creates a <i>file server</i> that serves files from a given path.
      *
      * <p> The server is configured with an initial context that maps the
      * URI {@code path} to a <i>file handler</i>. The <i>file handler</i> is
      * created as if by an invocation of
      * {@link #createFileHandler(Path) createFileHandler(rootDirectory)}, and is
      * associated to a context created as if by an invocation of
-     * {@link HttpServer#createContext(String) createContext("/")}.
+     * {@link HttpServer#createContext(String) createContext("/")}. The returned
+     * server is not started.
      *
      * <p> An output level can be given to print log messages relating to the
      * exchanges handled by the server. The log messages, if any, are printed to
