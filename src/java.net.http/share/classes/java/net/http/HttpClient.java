@@ -27,7 +27,7 @@ package java.net.http;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -368,7 +368,7 @@ public abstract class HttpClient {
          * @return this builder
          * @since 19
          */
-        public Builder localAddress(InetAddress localAddr);
+        public Builder localAddress(SocketAddress localAddr);
 
         /**
          * Returns a new {@link HttpClient} built from the current state of this

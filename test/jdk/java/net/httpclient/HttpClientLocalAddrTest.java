@@ -118,16 +118,16 @@ public class HttpClientLocalAddrTest {
             clients.add(new Object[]{builder.localAddress(null).build(), null});
             // localAddr set to loopback address
             var loopbackAddr = InetAddress.getLoopbackAddress();
-            clients.add(new Object[]{builder.localAddress(loopbackAddr).build(), loopbackAddr});
+            clients.add(new Object[]{builder.localAddress(new InetSocketAddress(loopbackAddr, 0)).build(), loopbackAddr});
             // anyAddress
             if (Boolean.getBoolean("java.net.preferIPv6Addresses")) {
                 // ipv6 wildcard
                 var localAddr = InetAddress.getByName("::1");
-                clients.add(new Object[]{builder.localAddress(localAddr).build(), localAddr});
+                clients.add(new Object[]{builder.localAddress(new InetSocketAddress(localAddr,0)).build(), localAddr});
             } else {
                 // ipv4 wildcard
                 var localAddr = InetAddress.getByName("0.0.0.0");
-                clients.add(new Object[]{builder.localAddress(localAddr).build(), localAddr});
+                clients.add(new Object[]{builder.localAddress(new InetSocketAddress(localAddr, 0)).build(), localAddr});
             }
         }
         return clients.stream().toArray(Object[][]::new);
