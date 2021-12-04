@@ -123,13 +123,15 @@ abstract class P11Key implements Key, Length {
         boolean tokenObject = false;
         boolean sensitive = false;
         boolean extractable = true;
-        for (CK_ATTRIBUTE attr : attrs) {
-            if (attr.type == CKA_TOKEN) {
-                tokenObject = attr.getBoolean();
-            } else if (attr.type == CKA_SENSITIVE) {
-                sensitive = attr.getBoolean();
-            } else if (attr.type == CKA_EXTRACTABLE) {
-                extractable = attr.getBoolean();
+        if (attrs != null) {
+            for (CK_ATTRIBUTE attr : attrs) {
+                if (attr.type == CKA_TOKEN) {
+                    tokenObject = attr.getBoolean();
+                } else if (attr.type == CKA_SENSITIVE) {
+                    sensitive = attr.getBoolean();
+                } else if (attr.type == CKA_EXTRACTABLE) {
+                    extractable = attr.getBoolean();
+                }
             }
         }
         this.tokenObject = tokenObject;
