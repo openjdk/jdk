@@ -729,10 +729,19 @@ javax/swing/JRootPane/4670486/bug4670486.java 8042381 macosx-all
 javax/swing/JButton/8151303/PressedIconTest.java 8266246 macosx-aarch64
 javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8273573 macosx-all
 
-# Several tests which fail on some hidpi systems
+# Several tests which fail on some hidpi systems/macosx12-aarch64 system
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
+javax/swing/text/html/StyleSheet/bug4936917.java 8277816 macosx-aarch64
+javax/swing/plaf/metal/MetalGradient/8163193/ButtonGradientTest.java  8277816 macosx-aarch64
+javax/swing/JInternalFrame/8160248/JInternalFrameDraggingTest.java  8277816 macosx-aarch64
+javax/swing/JInternalFrame/8069348/bug8069348.java 8277816 macosx-aarch64
+java/awt/Robot/HiDPIScreenCapture/ScreenCaptureTest.java  8277816 macosx-aarch64
+java/awt/Robot/CheckCommonColors/CheckCommonColors.java 8277816 macosx-aarch64
+java/awt/ColorClass/AlphaColorTest.java 8277816 macosx-aarch64
+java/awt/AlphaComposite/WindowAlphaCompositeTest.java 8277816 macosx-aarch64
+	
 # macos12 failure
 javax/swing/JMenu/4515762/bug4515762.java 8276074 macosx-all
 

@@ -93,15 +93,9 @@ class MacOSXPreferencesFile {
             });
     }
 
-    private class FlushTask extends TimerTask {
+    private static class FlushTask extends TimerTask {
         public void run() {
             MacOSXPreferencesFile.flushWorld();
-        }
-    }
-
-    private class SyncTask extends TimerTask {
-        public void run() {
-            MacOSXPreferencesFile.syncWorld();
         }
     }
 
