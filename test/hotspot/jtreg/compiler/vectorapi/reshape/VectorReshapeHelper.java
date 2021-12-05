@@ -1,0 +1,199 @@
+/*
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package compiler.vectorapi.reshape;
+
+import compiler.lib.ir_framework.ForceInline;
+
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
+import java.util.random.RandomGenerator;
+
+import jdk.incubator.vector.*;
+import jdk.test.lib.Asserts;
+
+public class VectorReshapeHelper {
+    public static final int INVOCATIONS = 100_000;
+
+    public static final VectorSpecies<Byte>    BSPEC64  =   ByteVector.SPECIES_64;
+    public static final VectorSpecies<Short>   SSPEC64  =  ShortVector.SPECIES_64;
+    public static final VectorSpecies<Integer> ISPEC64  =    IntVector.SPECIES_64;
+    public static final VectorSpecies<Long>    LSPEC64  =   LongVector.SPECIES_64;
+    public static final VectorSpecies<Float>   FSPEC64  =  FloatVector.SPECIES_64;
+    public static final VectorSpecies<Double>  DSPEC64  = DoubleVector.SPECIES_64;
+
+    public static final VectorSpecies<Byte>    BSPEC128 =   ByteVector.SPECIES_128;
+    public static final VectorSpecies<Short>   SSPEC128 =  ShortVector.SPECIES_128;
+    public static final VectorSpecies<Integer> ISPEC128 =    IntVector.SPECIES_128;
+    public static final VectorSpecies<Long>    LSPEC128 =   LongVector.SPECIES_128;
+    public static final VectorSpecies<Float>   FSPEC128 =  FloatVector.SPECIES_128;
+    public static final VectorSpecies<Double>  DSPEC128 = DoubleVector.SPECIES_128;
+
+    public static final VectorSpecies<Byte>    BSPEC256 =   ByteVector.SPECIES_256;
+    public static final VectorSpecies<Short>   SSPEC256 =  ShortVector.SPECIES_256;
+    public static final VectorSpecies<Integer> ISPEC256 =    IntVector.SPECIES_256;
+    public static final VectorSpecies<Long>    LSPEC256 =   LongVector.SPECIES_256;
+    public static final VectorSpecies<Float>   FSPEC256 =  FloatVector.SPECIES_256;
+    public static final VectorSpecies<Double>  DSPEC256 = DoubleVector.SPECIES_256;
+
+    public static final VectorSpecies<Byte>    BSPEC512 =   ByteVector.SPECIES_512;
+    public static final VectorSpecies<Short>   SSPEC512 =  ShortVector.SPECIES_512;
+    public static final VectorSpecies<Integer> ISPEC512 =    IntVector.SPECIES_512;
+    public static final VectorSpecies<Long>    LSPEC512 =   LongVector.SPECIES_512;
+    public static final VectorSpecies<Float>   FSPEC512 =  FloatVector.SPECIES_512;
+    public static final VectorSpecies<Double>  DSPEC512 = DoubleVector.SPECIES_512;
+
+    private static final String PREFIX = "(\\d+(\\s){2}(";
+    private static final String SUFFIX = ".*)+(\\s){2}===.*)";
+
+    public static final String B2X_NODE  = PREFIX + "VectorCastB2X" + SUFFIX;
+    public static final String S2X_NODE  = PREFIX + "VectorCastS2X" + SUFFIX;
+    public static final String I2X_NODE  = PREFIX + "VectorCastI2X" + SUFFIX;
+    public static final String L2X_NODE  = PREFIX + "VectorCastL2X" + SUFFIX;
+    public static final String F2X_NODE  = PREFIX + "VectorCastF2X" + SUFFIX;
+    public static final String D2X_NODE  = PREFIX + "VectorCastD2X" + SUFFIX;
+
+    @ForceInline
+    static <T, U> void vectorConvert(VectorOperators.Conversion<T, U> cop,
+                                     VectorSpecies<T> isp, VectorSpecies<U> osp, byte[] input, byte[] output) {
+        isp.fromByteArray(input, 0, ByteOrder.nativeOrder())
+                .convertShape(cop, osp, 0)
+                .intoByteArray(output, 0, ByteOrder.nativeOrder());
+    }
+
+    static <T, U> void runCastHelper(VectorOperators.Conversion<T, U> castOp,
+                                     VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
+        var random = RandomGenerator.getDefault();
+        boolean isUnsignedCast = castOp.name().startsWith("ZERO");
+        String testMethodName = String.format("test%s%c%dto%c%d",
+                isUnsignedCast ? "U" : "",
+                Character.toUpperCase(isp.elementType().getName().charAt(0)),
+                isp.vectorBitSize(),
+                Character.toUpperCase(osp.elementType().getName().charAt(0)),
+                osp.vectorBitSize());
+        var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
+        var testMethod = MethodHandles.lookup().findStatic(caller,
+                testMethodName,
+                MethodType.methodType(void.class, byte.class.arrayType(), byte.class.arrayType()));
+        byte[] input = new byte[isp.vectorByteSize()];
+        byte[] output = new byte[osp.vectorByteSize()];
+        for (int iter = 0; iter < INVOCATIONS; iter++) {
+            random.nextBytes(input);
+            testMethod.invokeExact(input, output);
+            for (int i = 0; i < osp.length(); i++) {
+                Number expected, actual;
+                if (i < isp.length()) {
+                    Number initial = switch (isp.elementType().getName()) {
+                        case "byte"   -> getByte(input, i);
+                        case "short"  -> getShort(input, i);
+                        case "int"    -> getInt(input, i);
+                        case "long"   -> getLong(input, i);
+                        case "float"  -> getFloat(input, i);
+                        case "double" -> getDouble(input, i);
+                        default -> throw new AssertionError();
+                    };
+                    expected = switch (osp.elementType().getName()) {
+                        case "byte" -> initial.byteValue();
+                        case "short" -> {
+                            if (isUnsignedCast) {
+                                yield (short) (initial.longValue() & ((1L << isp.elementSize()) - 1));
+                            } else {
+                                yield initial.shortValue();
+                            }
+                        }
+                        case "int" -> {
+                            if (isUnsignedCast) {
+                                yield (int) (initial.longValue() & ((1L << isp.elementSize()) - 1));
+                            } else {
+                                yield initial.intValue();
+                            }
+                        }
+                        case "long" -> {
+                            if (isUnsignedCast) {
+                                yield (long) (initial.longValue() & ((1L << isp.elementSize()) - 1));
+                            } else {
+                                yield initial.longValue();
+                            }
+                        }
+                        case "float" -> initial.floatValue();
+                        case "double" -> initial.doubleValue();
+                        default -> throw new AssertionError();
+                    };
+                } else {
+                    expected = switch (osp.elementType().getName()) {
+                        case "byte"   -> (byte)0;
+                        case "short"  -> (short)0;
+                        case "int"    -> (int)0;
+                        case "long"   -> (long)0;
+                        case "float"  -> (float)0;
+                        case "double" -> (double)0;
+                        default -> throw new AssertionError();
+                    };
+                }
+                actual = switch (osp.elementType().getName()) {
+                    case "byte"   -> getByte(output, i);
+                    case "short"  -> getShort(output, i);
+                    case "int"    -> getInt(output, i);
+                    case "long"   -> getLong(output, i);
+                    case "float"  -> getFloat(output, i);
+                    case "double" -> getDouble(output, i);
+                    default -> throw new AssertionError();
+                };
+                Asserts.assertEquals(expected, actual);
+            }
+        }
+    }
+
+    public static byte getByte(byte[] array, int index) {
+        return (byte)BYTE_ACCESS.get(array, index * Byte.BYTES);
+    }
+
+    public static short getShort(byte[] array, int index) {
+        return (short)SHORT_ACCESS.get(array, index * Short.BYTES);
+    }
+
+    public static int getInt(byte[] array, int index) {
+        return (int)INT_ACCESS.get(array, index * Integer.BYTES);
+    }
+
+    public static long getLong(byte[] array, int index) {
+        return (long)LONG_ACCESS.get(array, index * Long.BYTES);
+    }
+
+    public static float getFloat(byte[] array, int index) {
+        return (float)FLOAT_ACCESS.get(array, index * Float.BYTES);
+    }
+
+    public static double getDouble(byte[] array, int index) {
+        return (double)DOUBLE_ACCESS.get(array, index * Double.BYTES);
+    }
+
+    private static final VarHandle BYTE_ACCESS   = MethodHandles.arrayElementVarHandle(byte.class.arrayType());
+    private static final VarHandle SHORT_ACCESS  = MethodHandles.byteArrayViewVarHandle(short.class.arrayType(),  ByteOrder.nativeOrder());
+    private static final VarHandle INT_ACCESS    = MethodHandles.byteArrayViewVarHandle(int.class.arrayType(),    ByteOrder.nativeOrder());
+    private static final VarHandle LONG_ACCESS   = MethodHandles.byteArrayViewVarHandle(long.class.arrayType(),   ByteOrder.nativeOrder());
+    private static final VarHandle FLOAT_ACCESS  = MethodHandles.byteArrayViewVarHandle(float.class.arrayType(),  ByteOrder.nativeOrder());
+    private static final VarHandle DOUBLE_ACCESS = MethodHandles.byteArrayViewVarHandle(double.class.arrayType(), ByteOrder.nativeOrder());
+}
