@@ -378,7 +378,7 @@ public class ServerSocket implements java.io.Closeable {
             throw new SocketException("Unresolved address");
         if (backlog < 1)
             backlog = 50;
-        
+
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null)
