@@ -156,8 +156,9 @@ public class TransferTo {
      */
     @Test
     public void testMoreThanTwoGB() throws IOException {
-        Path sourceFile = CWD.resolve(Path.of(String.format("test3GBSource%s.tmp",
-            String.valueOf(RND.nextInt(Integer.MAX_VALUE)))));
+        String fileName = String.format("test3GBSource%s.tmp",
+            String.valueOf(RND.nextInt(Integer.MAX_VALUE)));
+        Path sourceFile = CWD.resolve(fileName);
         try {
             // preparing two temporary files which will be compared at the end of the test
             Path targetFile = Files.createTempFile(CWD, "test2GBtarget", null);
@@ -166,8 +167,7 @@ public class TransferTo {
                 final long initPos = 2047*BYTES_PER_WRITE;
 
                 // create the file with a hint to be sparse
-                try (FileChannel fc = FileChannel.open(sourceFile, CREATE_NEW,
-                    SPARSE, WRITE, APPEND);) {
+                try (FileChannel fc = FileChannel.open(sourceFile, CREATE_NEW, SPARSE, WRITE, APPEND);) {
                     // set initial position to avoid writing nearly 2GB
                     fc.position(initPos);
 
