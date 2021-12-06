@@ -21,18 +21,13 @@
  * questions.
  */
 
-import javax.swing.JScrollBar;
-import javax.swing.JPanel;
-import javax.swing.JFrame;
-import javax.swing.BoxLayout;
-import javax.swing.JLabel;
-import javax.swing.Box;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+
+import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 
 /*
  * @test
@@ -56,62 +51,73 @@ public class ScrollBarBorderTest {
     private static JScrollBar scrollBar;
     private static JPanel panel;
     private static JFrame frame;
-    private static Robot robot;
 
-    public void createAndShowGUI() {
-        // create scroll bar
-        scrollBar = new JScrollBar(Scrollbar.HORIZONTAL);
-        scrollBar.setBorder(new CustomBorder());
+    public void createImage(int scrollbarValue, final BufferedImage image) throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                // create scroll bar
+                scrollBar = new JScrollBar(Scrollbar.HORIZONTAL);
+                scrollBar.setBorder(new CustomBorder());
+                scrollBar.setValue(scrollbarValue);
 
-        // create panel
-        panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        panel.add(new JLabel(UIManager.getLookAndFeel().toString()));
-        panel.add(Box.createVerticalStrut(20));
-        panel.add(scrollBar);
+                // create panel
+                panel = new JPanel() {
+                    @Override
+                    protected void paintComponent(final Graphics g) {
+                        Graphics2D graphics2D = image.createGraphics();
+                        super.paintComponent(graphics2D);
+                        graphics2D.dispose();
+                    }
+                };
 
-        // create frame
-        frame = new JFrame("ScrollBarBorderTest");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.getContentPane().add(panel);
-        frame.pack();
-        frame.setVisible(true);
+                panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+                panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+                panel.setSize(200,90);
+                panel.add(new JLabel(UIManager.getLookAndFeel().toString()));
+                panel.add(Box.createVerticalStrut(20));
+                panel.add(scrollBar);
+
+                // create frame
+                frame = new JFrame("ScrollBarBorderTest");
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//                frame.getContentPane().add(panel);
+                frame.getContentPane().add(new JLabel(new ImageIcon(image)));
+                frame.pack();
+            }
+        });
+
+        SwingUtilities.invokeAndWait(() -> frame.setVisible(true));
+        SwingUtilities.invokeAndWait(frame::dispose);
     }
 
+    public void test() throws Exception {
+        final BufferedImage bi1 = new BufferedImage(550,90,TYPE_INT_ARGB);
+        final BufferedImage bi2 = new BufferedImage(550,90,TYPE_INT_ARGB);
 
-    private static void cleanUp() {
-        frame.dispose();
+        createImage(0,bi1);
+        createImage(Integer.MAX_VALUE,bi2);
+
+        for (int i = 0; i < bi1.getWidth(); i++) {
+            for (int j = 0; j < bi1.getHeight(); j++) {
+                int c1 = bi1.getRGB(i,j);
+                int c2 = bi2.getRGB(i,j);
+                if (c1 != c2) {
+                    // need to find location of border but colors are always 0
+                    System.out.println(i + " " + j + " " + "Color before " + c1);
+                    System.out.println(i + " " + j + " " + "Color after " + c2);
+                }
+            }
+        }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ScrollBarBorderTest borderTest = new ScrollBarBorderTest();
-        borderTest.createAndShowGUI();
+        borderTest.test();
 
-        try {
-            robot = new Robot();
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to create Robot.");
-        }
-
-        robot.setAutoDelay(50);
-        robot.waitForIdle();
-
-        Point p = frame.getLocationOnScreen();
-
-        Color c1 = robot.getPixelColor(p.x + 480, p.y + 95);
-        scrollBar.setValue(Integer.MAX_VALUE);
-        Color c2 = robot.getPixelColor(p.x + 480, p.y + 95);
-
-        if (c1.getRGB() != c2.getRGB()) {
-            System.out.println("Color before " + c1.getRed());
-            System.out.println("Color after " + c2.getRGB());
-            throw new RuntimeException("Thumb was able to move into border.");
-        }
-
-        cleanUp();
+//        Thread.sleep(10000);
+//        throw new RuntimeException();
     }
-
 
     // custom border
     private static class CustomBorder implements Border {
@@ -128,5 +134,4 @@ public class ScrollBarBorderTest {
             return true;
         }
     }
-
 }
