@@ -382,7 +382,8 @@ public class ObjectInputStream
      * has written and flushed the header.
      *
      * <p>The constructor initializes the deserialization filter to the filter returned
-     * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
+     * by invoking the serial filter factory returned from {@link Config#getSerialFilterFactory()}
+     * with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
      * When the filter factory {@code apply} method is invoked it may throw a runtime exception
      * preventing the {@code ObjectInputStream} from being constructed.
@@ -421,7 +422,8 @@ public class ObjectInputStream
      * implementation of ObjectInputStream.
      *
      * <p>The constructor initializes the deserialization filter to the filter returned
-     * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
+     * by invoking the serial filter factory returned from {@link Config#getSerialFilterFactory()}
+     * with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
      * When the filter factory {@code apply} method is invoked it may throw a runtime exception
      * preventing the {@code ObjectInputStream} from being constructed.
