@@ -107,8 +107,12 @@ void HeapRegion::handle_evacuation_failure() {
   _next_marked_bytes = 0;
 }
 
-void HeapRegion::process_and_drop_evac_failure_objs(ObjectClosure* closure) {
-  _evac_failure_objs.process_and_drop(closure);
+void HeapRegion::process_and_drop_evac_failure_objs(ObjectClosure* closure, G1GCPhaseTimes* phase_times, uint worker_id) {
+  _evac_failure_objs.process_and_drop(closure, phase_times, worker_id);
+}
+
+uint HeapRegion::num_evac_failure_objs() {
+  return _evac_failure_objs.num_evac_failure_objects();
 }
 
 void HeapRegion::unlink_from_list() {

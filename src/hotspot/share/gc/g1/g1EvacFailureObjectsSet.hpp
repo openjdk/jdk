@@ -30,6 +30,7 @@
 #include "oops/oop.hpp"
 
 class G1EvacFailureObjectsIterationHelper;
+class G1GCPhaseTimes;
 
 // This class collects addresses of objects that failed evacuation in a specific
 // heap region.
@@ -75,7 +76,9 @@ public:
   // Apply the given ObjectClosure to all objects that failed evacuation and
   // empties the list after processing.
   // Objects are passed in increasing address order.
-  void process_and_drop(ObjectClosure* closure);
+  void process_and_drop(ObjectClosure* closure, G1GCPhaseTimes* pahse_times, uint worker_id);
+
+  uint num_evac_failure_objects();
 };
 
 

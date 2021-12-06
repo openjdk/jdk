@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1EvacFailureObjectsSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "utilities/quickSort.hpp"
@@ -70,6 +71,7 @@ class G1EvacFailureObjectsIterationHelper {
   const G1SegmentedArray<OffsetInRegion, mtGC>* _segments;
   OffsetInRegion* _offset_array;
   uint _array_length;
+  G1GCPhaseTimes* _phase_times;
 
   static int order_oop(OffsetInRegion a, OffsetInRegion b) {
     return static_cast<int>(a-b);
@@ -89,21 +91,34 @@ class G1EvacFailureObjectsIterationHelper {
   }
 
 public:
-  G1EvacFailureObjectsIterationHelper(G1EvacFailureObjectsSet* collector) :
+  G1EvacFailureObjectsIterationHelper(G1EvacFailureObjectsSet* collector, G1GCPhaseTimes* phase_times) :
     _objects_set(collector),
     _segments(&_objects_set->_offsets),
     _offset_array(nullptr),
-    _array_length(0) { }
+    _array_length(0),
+    _phase_times(phase_times) { }
 
-  void process_and_drop(ObjectClosure* closure) {
-    uint num = _segments->num_allocated_slots();
-    _offset_array = NEW_C_HEAP_ARRAY(OffsetInRegion, num, mtGC);
+  void process_and_drop(ObjectClosure* closure, uint worker_id) {
+    {
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrPrepare, worker_id, false);
 
-    join_and_sort();
-    assert(_array_length == num, "must be %u, %u", _array_length, num);
-    iterate(closure);
+      uint num = _segments->num_allocated_slots();
+      _offset_array = NEW_C_HEAP_ARRAY(OffsetInRegion, num, mtGC);
 
-    FREE_C_HEAP_ARRAY(OffsetInRegion, _offset_array);
+      join_and_sort();
+      assert(_array_length == num, "must be %u, %u", _array_length, num);
+    }
+    {
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrProcess, worker_id, false);
+
+      iterate(closure);
+    }
+
+    {
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrCleanup, worker_id, false);
+
+      FREE_C_HEAP_ARRAY(OffsetInRegion, _offset_array);
+    }
   }
 
   // Callback of G1SegmentedArray::iterate_segments
@@ -113,11 +128,19 @@ public:
   }
 };
 
-void G1EvacFailureObjectsSet::process_and_drop(ObjectClosure* closure) {
+void G1EvacFailureObjectsSet::process_and_drop(ObjectClosure* closure, G1GCPhaseTimes* phase_times, uint worker_id) {
   assert_at_safepoint();
 
-  G1EvacFailureObjectsIterationHelper helper(this);
-  helper.process_and_drop(closure);
+  G1EvacFailureObjectsIterationHelper helper(this, phase_times);
+  helper.process_and_drop(closure, worker_id);
 
-  _offsets.drop_all();
+  {
+    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrCleanup, worker_id, false);
+
+    _offsets.drop_all();
+  }
+}
+
+uint G1EvacFailureObjectsSet::num_evac_failure_objects() {
+  return _offsets.num_allocated_slots();
 }

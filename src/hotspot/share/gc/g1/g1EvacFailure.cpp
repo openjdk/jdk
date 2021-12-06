@@ -148,25 +148,40 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
 
   G1EvacFailureRegions* _evac_failure_regions;
 
+  G1GCPhaseTimes* _phase_times;
+
 public:
   RemoveSelfForwardPtrHRClosure(uint worker_id,
-                                G1EvacFailureRegions* evac_failure_regions) :
+                                G1EvacFailureRegions* evac_failure_regions,
+                                G1GCPhaseTimes* phase_times) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _evac_failure_regions(evac_failure_regions) {
+    _evac_failure_regions(evac_failure_regions),
+    _phase_times(phase_times) {
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
                                                bool during_concurrent_start) {
+    uint num_objs = hr->num_evac_failure_objs();
+    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardingPtr,
+                                                 _worker_id,
+                                                 num_objs,
+                                                 G1GCPhaseTimes::RemoveSelfForwardingPtrObjects);
+
     RemoveSelfForwardPtrObjClosure rspc(hr,
                                         during_concurrent_start,
                                         _worker_id);
     // Iterates evac failure objs which are recorded during evacuation.
-    hr->process_and_drop_evac_failure_objs(&rspc);
+    hr->process_and_drop_evac_failure_objs(&rspc, _phase_times, _worker_id);
     // Need to zap the remainder area of the processed region.
     rspc.zap_remainder();
 
-    return rspc.marked_bytes();
+    size_t marked_bytes = rspc.marked_bytes();
+    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardingPtr,
+                                                 _worker_id,
+                                                 marked_bytes,
+                                                 G1GCPhaseTimes::RemoveSelfForwardingPtrBytes);
+    return marked_bytes;
   }
 
   bool do_heap_region(HeapRegion *hr) {
@@ -200,10 +215,16 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegi
   WorkerTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
   _hrclaimer(_g1h->workers()->active_workers()),
-  _evac_failure_regions(evac_failure_regions) { }
+  _evac_failure_regions(evac_failure_regions),
+  _phase_times(G1CollectedHeap::heap()->phase_times()) {
+  _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardingPtr,
+                                               0,
+                                               _evac_failure_regions->num_regions_failed_evacuation(),
+                                               G1GCPhaseTimes::RemoveSelfForwardingPtrRegions);
+}
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, _evac_failure_regions);
+  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, _evac_failure_regions, _phase_times);
 
   // Iterate through all regions that failed evacuation during the entire collection.
   _evac_failure_regions->par_iterate(&rsfp_cl, &_hrclaimer, worker_id);

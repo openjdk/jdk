@@ -40,6 +40,7 @@
 class G1CardSetConfiguration;
 class G1CollectedHeap;
 class G1CMBitMap;
+class G1GCPhaseTimes;
 class G1Predictions;
 class HeapRegionRemSet;
 class HeapRegion;
@@ -570,7 +571,8 @@ public:
   void record_evac_failure_obj(oop obj);
   // Applies the given closure to all previously recorded objects
   // that failed evacuation in ascending address order.
-  void process_and_drop_evac_failure_objs(ObjectClosure* closure);
+  void process_and_drop_evac_failure_objs(ObjectClosure* closure, G1GCPhaseTimes* pahse_times, uint worker_id);
+  uint num_evac_failure_objs();
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for

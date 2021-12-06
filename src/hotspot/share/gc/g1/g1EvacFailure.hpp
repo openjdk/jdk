@@ -32,6 +32,7 @@
 
 class G1CollectedHeap;
 class G1EvacFailureRegions;
+class G1GCPhaseTimes;
 
 // Task to fixup self-forwarding pointers
 // installed as a result of an evacuation failure.
@@ -42,6 +43,8 @@ protected:
 
   G1EvacFailureRegions* _evac_failure_regions;
   uint volatile _num_failed_regions;
+
+  G1GCPhaseTimes* _phase_times;
 
 public:
   G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions);
