@@ -54,6 +54,24 @@ public class KeepAliveCache
     @java.io.Serial
     private static final long serialVersionUID = -2937172892064557949L;
 
+    // The default time to keep connections alive, if not specified
+    // by the server/proxy. Propname has ".server" or ".proxy" appended
+    private static final String keepAliveProp = "http.KeepAlive.defSeconds.";
+
+    private static final int defKeepAliveServer;
+    private static final int defKeepAliveProxy;
+
+    @SuppressWarnings("removal")
+    static int getDefaultKeepAliveSeconds(String type, int defVal) {
+        return AccessController.doPrivileged(
+	    new GetIntegerAction(keepAliveProp+type, defVal)).intValue();
+    }
+
+    static {
+        defKeepAliveServer = getDefaultKeepAliveSeconds("server", 5);
+        defKeepAliveProxy = getDefaultKeepAliveSeconds("proxy", 60);
+    }
+
     /* maximum # keep-alive connections to maintain at once
      * This should be 2 by the HTTP spec, but because we don't support pipe-lining
      * a larger value is more appropriate. So we now set a default of 5, and the value
