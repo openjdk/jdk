@@ -1312,9 +1312,7 @@ public class Resolve {
 
                 @Override
                 public void visitReference(JCMemberReference tree) {
-                    if (sRet.hasTag(VOID)) {
-                        result = true;
-                    } else if (tRet.hasTag(VOID)) {
+                    if (tRet.hasTag(VOID)) {
                         result = false;
                     } else if (tRet.isPrimitive() != sRet.isPrimitive()) {
                         boolean retValIsPrimitive =
@@ -1334,9 +1332,7 @@ public class Resolve {
 
                 @Override
                 public void visitLambda(JCLambda tree) {
-                    if (sRet.hasTag(VOID)) {
-                        result = true;
-                    } else if (tRet.hasTag(VOID)) {
+                    if (tRet.hasTag(VOID)) {
                         result = false;
                     } else {
                         List<JCExpression> lambdaResults = lambdaResults(tree);
