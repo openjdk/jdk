@@ -1255,7 +1255,7 @@ public:
   void mark_reductions( IdealLoopTree *loop );
 
   // Return true if exp is a constant times an induction var
-  bool is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType bt, bool* converted);
+  bool is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType bt);
 
   bool is_iv(Node* exp, Node* iv, BasicType bt);
 
@@ -1647,6 +1647,9 @@ public:
 
   void strip_mined_nest_back_to_counted_loop(IdealLoopTree* loop, const BaseCountedLoopNode* head, Node* back_control,
                                              IfNode*&exit_test, SafePointNode*&safepoint);
+
+  bool is_scaled_iv_plus_extra_offset(Node* exp1, Node* exp2, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt,
+                                      bool& converted, int depth);
 };
 
 
