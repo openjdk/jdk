@@ -40,12 +40,12 @@ import jdk.test.lib.util.ForceGC;
  * @library /test/lib/
  * @build jdk.test.lib.util.ForceGC
  * @summary ObjectStreamClass caches keep ClassLoaders alive
- * @run testng TestOSCClassLoaderLeak
+ * @run testng/othervm -Xmx10m -XX:SoftRefLRUPolicyMSPerMB=1 TestOSCClassLoaderLeak
  */
 public class TestOSCClassLoaderLeak {
 
     @Test
-    public void run() throws Exception {
+    public void testClassLoaderLeak() throws Exception {
         TestClassLoader myOwnClassLoader = new TestClassLoader();
         Class<?> loadClass = myOwnClassLoader.loadClass("ObjectStreamClass_MemoryLeakExample");
         Constructor con = loadClass.getConstructor();
@@ -63,6 +63,24 @@ public class TestOSCClassLoaderLeak {
 
         ForceGC gc = new ForceGC();
         assertTrue(gc.await(() -> myOwnClassLoaderWeakReference.get() == null));
+    }
+
+    @Test
+    public void testMemoryPressure() throws Exception {
+        TestClassLoader myOwnClassLoader = new TestClassLoader();
+        Class<?> loadClass = myOwnClassLoader.loadClass("ObjectStreamClass_MemoryLeakExample");
+        Constructor con = loadClass.getConstructor();
+        con.setAccessible(true);
+        Object objectStreamClass_MemoryLeakExample = con.newInstance();
+        objectStreamClass_MemoryLeakExample.toString();
+
+        int[] x;
+        for (int i = 0; i < 2000; i++) {
+            ObjectStreamClass.lookup(TestClass.class).getFields();
+            x = new int[1000000];
+        }
+
+        assertNotNull(ObjectStreamClass.lookup(TestClass.class).getFields());
     }
 }
 

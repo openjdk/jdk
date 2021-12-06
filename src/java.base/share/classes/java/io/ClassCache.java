@@ -37,7 +37,7 @@ import java.lang.ref.SoftReference;
 abstract class ClassCache<T> {
 
     private static class CacheRef<T> extends SoftReference<T> {
-        private Class<?> type;
+        private final Class<?> type;
 
         CacheRef(T referent, ReferenceQueue<T> queue, Class<?> type) {
             super(referent, queue);
@@ -59,7 +59,7 @@ abstract class ClassCache<T> {
         map = new ClassValue<>() {
             @Override
             protected SoftReference<T> computeValue(Class<?> type) {
-                return new SoftReference<>(ClassCache.this.computeValue(type), queue);
+                return new CacheRef<>(ClassCache.this.computeValue(type), queue, type);
             }
         };
     }
