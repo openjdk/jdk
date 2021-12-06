@@ -225,11 +225,6 @@ tier3_compiler = \
 tier1_compiler_not_xcomp = \
   compiler/profiling
 
-tier2_compiler =
-
-tier3_compiler = \
-  :hotspot_compiler_arraycopy
-
 ctw_1 = \
   applications/ctw/modules/ \
   -:ctw_2 \
