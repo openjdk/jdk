@@ -529,7 +529,7 @@ void JfrThreadSampler::post_run() {
 
 const JfrBuffer* JfrThreadSampler::get_enqueue_buffer() {
   const JfrBuffer* buffer = JfrTraceIdLoadBarrier::get_enqueue_buffer(this);
-  return buffer != nullptr ? buffer : JfrTraceIdLoadBarrier::renew_enqueue_buffer(this);
+  return buffer != nullptr ? renew_if_full(buffer) : JfrTraceIdLoadBarrier::renew_enqueue_buffer(this);
 }
 
 const JfrBuffer* JfrThreadSampler::renew_if_full(const JfrBuffer* enqueue_buffer) {
@@ -547,6 +547,13 @@ void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thr
   uint num_samples = 0;
   JavaThread* start = NULL;
 
+  // Explicitly monitor the available space of the thread-local buffer used for enqueuing klasses as part of tagging methods.
+  // We do this because if space becomes sparse, we cannot rely on the implicit allocation of a new buffer as part of the
+  // regular tag mechanism. If the free list is empty, a malloc could result, and the problem with that is that the thread
+  // we have suspended could be the holder of the malloc lock. Instead, the buffer is pre-emptively renewed before thread suspension.
+  const JfrBuffer* enqueue_buffer = get_enqueue_buffer();
+  assert(enqueue_buffer != nullptr, "invariant");
+
   {
     elapsedTimer sample_time;
     sample_time.start();
@@ -557,15 +564,6 @@ void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thr
       // In cases where the last sampled thread is NULL or not-NULL but stale, find_index() returns -1.
       _cur_index = tlh.list()->find_index_of_JavaThread(*last_thread);
       JavaThread* current = _cur_index != -1 ? *last_thread : NULL;
-
-      // Explicitly monitor the available space of the thread-local buffer used for enqueuing klasses as part of tagging methods.
-      // We do this because if space becomes sparse, we cannot rely on the implicit allocation of a new buffer as part of the
-      // regular tag mechanism. If the free list is empty, a malloc could result, and the problem with that is that the thread
-      // we have suspended could be the holder of the malloc lock. Instead, the buffer is pre-emptively renewed before thread suspension.
-      const JfrBuffer* enqueue_buffer = get_enqueue_buffer();
-      assert(enqueue_buffer != nullptr, "invariant");
-      enqueue_buffer = renew_if_full(enqueue_buffer);
-
       while (num_samples < sample_limit) {
         current = next_thread(tlh.list(), start, current);
         if (current == NULL) {
