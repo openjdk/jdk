@@ -3127,23 +3127,23 @@ public class JTree extends JComponent implements Scrollable, Accessible
         Vector<Object> values = new Vector<Object>();
 
         s.defaultWriteObject();
-        // Save the cellRenderer, if its Serializable.
-        if(cellRenderer != null && cellRenderer instanceof Serializable) {
+        // Save the cellRenderer, if it's Serializable.
+        if (cellRenderer instanceof Serializable) {
             values.addElement("cellRenderer");
             values.addElement(cellRenderer);
         }
-        // Save the cellEditor, if its Serializable.
-        if(cellEditor != null && cellEditor instanceof Serializable) {
+        // Save the cellEditor, if it's Serializable.
+        if (cellEditor instanceof Serializable) {
             values.addElement("cellEditor");
             values.addElement(cellEditor);
         }
-        // Save the treeModel, if its Serializable.
-        if(treeModel != null && treeModel instanceof Serializable) {
+        // Save the treeModel, if it's Serializable.
+        if (treeModel instanceof Serializable) {
             values.addElement("treeModel");
             values.addElement(treeModel);
         }
-        // Save the selectionModel, if its Serializable.
-        if(selectionModel != null && selectionModel instanceof Serializable) {
+        // Save the selectionModel, if it's Serializable.
+        if (selectionModel instanceof Serializable) {
             values.addElement("selectionModel");
             values.addElement(selectionModel);
         }
@@ -5414,14 +5414,12 @@ public class JTree extends JComponent implements Scrollable, Accessible
             public Rectangle getBounds() {
                 Rectangle r = tree.getPathBounds(path);
                 Accessible parent = getAccessibleParent();
-                if (parent != null) {
-                    if (parent instanceof AccessibleJTreeNode) {
-                        Point parentLoc = ((AccessibleJTreeNode) parent).getLocationInJTree();
-                        if (parentLoc != null && r != null) {
-                            r.translate(-parentLoc.x, -parentLoc.y);
-                        } else {
-                            return null;        // not visible!
-                        }
+                if (parent instanceof AccessibleJTreeNode treeNode) {
+                    Point parentLoc = treeNode.getLocationInJTree();
+                    if (parentLoc != null && r != null) {
+                        r.translate(-parentLoc.x, -parentLoc.y);
+                    } else {
+                        return null;        // not visible!
                     }
                 }
                 return r;

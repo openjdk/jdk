@@ -71,6 +71,7 @@
 bool HeapShared::_closed_regions_mapped = false;
 bool HeapShared::_open_regions_mapped = false;
 bool HeapShared::_is_loaded = false;
+bool HeapShared::_disable_writing = false;
 address   HeapShared::_narrow_oop_base;
 int       HeapShared::_narrow_oop_shift;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = NULL;
