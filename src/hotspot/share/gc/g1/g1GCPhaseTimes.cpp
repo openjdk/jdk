@@ -578,8 +578,8 @@ void G1EvacPhaseWithTrimTimeTracker::stop() {
   _stopped = true;
 }
 
-G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool must_record) :
-  _start_time(), _phase(phase), _phase_times(phase_times), _worker_id(worker_id), _event(), _must_record(must_record) {
+G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool initial_record) :
+  _start_time(), _phase(phase), _phase_times(phase_times), _worker_id(worker_id), _event(), _initial_record(initial_record) {
   if (_phase_times != NULL) {
     _start_time = Ticks::now();
   }
@@ -587,7 +587,7 @@ G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, 
 
 G1GCParPhaseTimesTracker::~G1GCParPhaseTimesTracker() {
   if (_phase_times != NULL) {
-    if (_must_record) {
+    if (_initial_record) {
       _phase_times->record_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
     } else {
       _phase_times->record_or_add_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
