@@ -135,6 +135,8 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   // Build the resultant type of the load
   const Type *type;
 
+  bool must_assert_null = false;
+
   DecoratorSet decorators = IN_HEAP;
   decorators |= is_vol ? MO_SEQ_CST : MO_UNORDERED;
 
@@ -143,6 +145,7 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   if (is_obj) {
     if (!field->type()->is_loaded()) {
       type = TypeInstPtr::BOTTOM;
+      must_assert_null = true;
     } else if (field->is_static_constant()) {
       // This can happen if the constant oop is non-perm.
       ciObject* con = field->constant_value().as_object();
@@ -168,6 +171,30 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
     push(ld);
   else
     push_pair(ld);
+
+  if (must_assert_null) {
+    // Do not take a trap here.  It's possible that the program
+    // will never load the field's class, and will happily see
+    // null values in this field forever.  Don't stumble into a
+    // trap for such a program, or we might get a long series
+    // of useless recompilations.  (Or, we might load a class
+    // which should not be loaded.)  If we ever see a non-null
+    // value, we will then trap and recompile.  (The trap will
+    // not need to mention the class index, since the class will
+    // already have been loaded if we ever see a non-null value.)
+    // uncommon_trap(iter().get_field_signature_index());
+    if (PrintOpto && (Verbose || WizardMode)) {
+      method()->print_name(); tty->print_cr(" asserting nullness of field at bci: %d", bci());
+    }
+    if (C->log() != NULL) {
+      C->log()->elem("assert_null reason='field' klass='%d'",
+                     C->log()->identify(field->type()));
+    }
+    // If there is going to be a trap, put it at the next bytecode:
+    set_bci(iter().next_bci());
+    null_assert(peek());
+    set_bci(iter().cur_bci()); // put it back
+  }
 }
 
 void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
