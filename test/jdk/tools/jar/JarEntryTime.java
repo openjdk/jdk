@@ -266,7 +266,7 @@ public class JarEntryTime {
                                    "1980-01-01T00:00:01+00:00",
                                    "2100-01-01T00:00:00+00:00",
                                    "2138-02-18T00:00:00-11:00",
-                                   "2006-04-06T12:36:00",
+                                   "2006-04-06T12:38:00",
                                    "2012-08-24T16"};
         for (String sourceDate : badSourceDates) {
             createOuterInnerDirs(dirOuter, dirInner);
