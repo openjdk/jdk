@@ -21,19 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @key stress randomness
- * @library /test/lib
- * @build TestStressObjectArrayCopy
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=7200
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      StressArrayCopyDriver TestStressObjectArrayCopy
- */
-
 import java.util.Arrays;
 import java.util.Random;
 import jdk.test.lib.Utils;

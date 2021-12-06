@@ -22,9 +22,7 @@
  */
 
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
 import java.util.Random;
 
@@ -35,7 +33,23 @@ import jdk.test.lib.process.ProcessTools;
 
 import jdk.test.whitebox.cpuinfo.CPUInfo;
 
-public abstract class StressArrayCopyDriver {
+/**
+ * @test
+ * @key stress randomness
+ * @library /test/lib
+ * @build TestStressBooleanArrayCopy TestStressByteArrayCopy
+ *        TestStressCharArrayCopy TestStressShortArrayCopy
+ *        TestStressIntArrayCopy TestStressFloatArrayCopy
+ *        TestStressLongArrayCopy TestStressDoubleArrayCopy
+ *        TestStressObjectArrayCopy
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm/timeout=3600
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      StressArrayCopyDriver
+ */
+public class StressArrayCopyDriver {
 
     // These tests are remarkably memory bandwidth hungry. Running multiple
     // configs in parallel makes sense only when running a single test in
@@ -43,8 +57,9 @@ public abstract class StressArrayCopyDriver {
     // testing, or even running all arraycopy stress tests at once, overloading
     // the system with many configs become counter-productive very quickly.
     //
-    // The sweet-spot seems to be 2. Default to it, and allow users to override.
-    static final int MAX_PARALLELISM = Integer.getInteger("maxParallelism", 2);
+    // Default to 1/4 of the CPUs, and allow users to override.
+    static final int MAX_PARALLELISM = Integer.getInteger("maxParallelism",
+        Runtime.getRuntime().availableProcessors() / 4);
 
     private static List<String> mix(List<String> o, String... mix) {
         List<String> n = new ArrayList<>(o);
@@ -76,12 +91,6 @@ public abstract class StressArrayCopyDriver {
     }
 
     public static void main(String... args) throws Exception {
-        if (args.length < 1) {
-            throw new IllegalArgumentException("Should provide at least 1 argument");
-        }
-
-        String className = args[0];
-
         List<List<String>> configs = new ArrayList<>();
         List<String> cpuFeatures = CPUInfo.getFeatures();
 
@@ -139,26 +148,64 @@ public abstract class StressArrayCopyDriver {
             configs.add(new ArrayList());
         }
 
-        Deque<OutputAnalyzer> oas = new ArrayDeque<>();
+        String[] classNames = {
+            "TestStressBooleanArrayCopy",
+            "TestStressByteArrayCopy",
+            "TestStressCharArrayCopy",
+            "TestStressShortArrayCopy",
+            "TestStressIntArrayCopy",
+            "TestStressFloatArrayCopy",
+            "TestStressLongArrayCopy",
+            "TestStressDoubleArrayCopy",
+            "TestStressObjectArrayCopy",
+        };
+
+        ArrayList<Fork> forks = new ArrayList<>();
         int jobs = 0;
 
         for (List<String> c : configs) {
-            ProcessBuilder pb = ProcessTools.createTestJvm(mix(c, "-Xmx256m", className));
-            OutputAnalyzer oa = new OutputAnalyzer(pb.start());
-            oas.addLast(oa);
-            if (++jobs >= MAX_PARALLELISM) {
-                // Pop and block wait
-                oa = oas.pollFirst();
-                oa.shouldHaveExitValue(0);
-                jobs--;
+            for (String className : classNames) {
+                // Start a new job
+                {
+                    ProcessBuilder pb = ProcessTools.createTestJvm(mix(c, "-Xmx256m", className));
+                    Process p = pb.start();
+                    OutputAnalyzer oa = new OutputAnalyzer(p);
+                    forks.add(new Fork(p, oa));
+                    jobs++;
+                }
+
+                // Wait for the completion of other jobs
+                while (jobs >= MAX_PARALLELISM) {
+                    Fork f = findDone(forks);
+                    if (f != null) {
+                        OutputAnalyzer oa = f.oa();
+                        oa.shouldHaveExitValue(0);
+                        forks.remove(f);
+                        jobs--;
+                    } else {
+                        // Nothing is done, wait a little.
+                        Thread.sleep(200);
+                    }
+                }
             }
         }
 
         // Drain the rest
-        while (!oas.isEmpty()) {
-            OutputAnalyzer oa = oas.pollFirst();
+        for (Fork f : forks) {
+            OutputAnalyzer oa = f.oa();
             oa.shouldHaveExitValue(0);
         }
     }
+
+    private static Fork findDone(List<Fork> forks) {
+        for (Fork f : forks) {
+            if (!f.p().isAlive()) {
+                return f;
+            }
+        }
+        return null;
+    }
+
+    private static record Fork(Process p, OutputAnalyzer oa) {};
 
 }
