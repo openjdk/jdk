@@ -174,8 +174,8 @@ public class TransferTo {
                     // fill the remainder of the file with random bytes
                     int nw = (int)(NUM_WRITES - initPos/BYTES_PER_WRITE);
                     for (int i = 0; i < nw; i++) {
-                        ByteBuffer src =
-                            ByteBuffer.wrap(createRandomBytes(BYTES_PER_WRITE, 0));
+                        byte[] rndBytes = createRandomBytes(BYTES_PER_WRITE, 0);
+                        ByteBuffer src = ByteBuffer.wrap(rndBytes);
                         fc.write(src);
                     }
                 }
