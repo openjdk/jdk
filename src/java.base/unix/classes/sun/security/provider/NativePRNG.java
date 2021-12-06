@@ -540,7 +540,7 @@ public final class NativePRNG extends SecureRandomSpi {
                     int len;
                     int buf_pos;
                     int localofs;
-                    byte[] localBuffer;
+                    byte[] localBuffer = new byte[data_len];
 
                     while (data_len > 0) {
                         synchronized (LOCK_GET_BYTES) {
@@ -553,8 +553,9 @@ public final class NativePRNG extends SecureRandomSpi {
                                 len = data_len;
                                 buffered -= len;
                             }
-                            localBuffer = Arrays.copyOfRange(nextBuffer, buf_pos,
-                                    buf_pos + len);
+                            System.arraycopy(nextBuffer, buf_pos, 
+                                    localBuffer, 0,
+                                    len);
                         }
                         localofs = 0;
                         while (len > localofs) {
@@ -562,11 +563,11 @@ public final class NativePRNG extends SecureRandomSpi {
                             ofs++;
                             localofs++;
                         }
-                    data_len -= len;
+                        data_len -= len;
                     }
                 } catch (IOException e){
                     throw new ProviderException("nextBytes() failed", e);
                 }
-        }
+            }
         }
 }
