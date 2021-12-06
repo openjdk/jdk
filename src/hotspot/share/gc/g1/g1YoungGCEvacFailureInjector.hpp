@@ -56,11 +56,17 @@ class G1YoungGCEvacFailureInjector {
   // Used to determine whether evacuation failure injection should be in effect
   // for the current GC.
   size_t _last_collection_with_evacuation_failure;
+
+  // Records the regions that will fail evacuation.
+  CHeapBitMap _evac_failure_regions;
 #endif
 
   bool arm_if_needed_for_gc_type(bool for_young_gc,
                                  bool during_concurrent_start,
                                  bool mark_or_rebuild_in_progress) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
+
+  // Selects the regions that will fail evacuation by G1EvacuationFailureALotCSetPercent.
+  void select_evac_failure_regions() EVAC_FAILURE_INJECTOR_RETURN;
 public:
 
   // Arm the evacuation failure injector if needed for the current
@@ -69,7 +75,7 @@ public:
 
   // Return true if it's time to cause an evacuation failure; the caller
   // provides the (preferably thread-local) counter to minimize performance impact.
-  bool evacuation_should_fail(size_t& counter) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
+  bool evacuation_should_fail(size_t& counter, uint region_idx) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
 
   // Reset the evacuation failure injection counters. Should be called at
   // the end of an evacuation pause in which an evacuation failure occurred.

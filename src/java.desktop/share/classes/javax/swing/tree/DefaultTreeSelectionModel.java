@@ -1217,7 +1217,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
 
         s.defaultWriteObject();
         // Save the rowMapper, if it implements Serializable
-        if(rowMapper != null && rowMapper instanceof Serializable) {
+        if (rowMapper instanceof Serializable) {
             tValues = new Object[2];
             tValues[0] = "rowMapper";
             tValues[1] = rowMapper;

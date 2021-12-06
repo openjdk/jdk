@@ -32,6 +32,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -718,10 +719,7 @@ public class ObjectOutputStream
         if (buf == null) {
             throw new NullPointerException();
         }
-        int endoff = off + len;
-        if (off < 0 || len < 0 || endoff > buf.length || endoff < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, buf.length);
         bout.write(buf, off, len, false);
     }
 

@@ -2279,28 +2279,11 @@ public class Lower extends TreeTranslator {
         // Enclosing instance field is used
         return true;
       }
-      if (rs.isSerializable(sym.type) && !hasSerialVersionUID(sym)) {
-        // Class is serializable and does not have a stable serialVersionUID
+      if (rs.isSerializable(sym.type)) {
+        // Class is serializable
         return true;
       }
       return false;
-    }
-
-    private boolean hasSerialVersionUID(ClassSymbol sym) {
-      VarSymbol svuid = (VarSymbol) sym.members().findFirst(names.serialVersionUID, f -> f.kind == VAR);
-      if (svuid == null) {
-        return false;
-      }
-      if ((svuid.flags() & (STATIC | FINAL)) != (STATIC | FINAL)) {
-        return false;
-      }
-      if (!svuid.type.hasTag(LONG)) {
-        return false;
-      }
-      if (svuid.getConstValue() == null) {
-        return false;
-      }
-      return true;
     }
 
     List<JCTree> generateMandatedAccessors(JCClassDecl tree) {

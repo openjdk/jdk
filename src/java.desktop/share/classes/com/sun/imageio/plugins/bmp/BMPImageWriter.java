@@ -210,10 +210,8 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
 
         IIOMetadata imageMetadata = image.getMetadata();
         BMPMetadata bmpImageMetadata = null;
-        if (imageMetadata != null
-            && imageMetadata instanceof BMPMetadata)
-        {
-            bmpImageMetadata = (BMPMetadata)imageMetadata;
+        if (imageMetadata instanceof BMPMetadata bmp) {
+            bmpImageMetadata = bmp;
         } else {
             ImageTypeSpecifier imageType =
                 new ImageTypeSpecifier(colorModel, sampleModel);
@@ -327,8 +325,7 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
 
         if (!canEncodeImage(compressionType, colorModel, sampleModel)) {
             throw new IOException("Image can not be encoded with compression type "
-                                  + BMPCompressionTypes.getName(compressionType)
-                                  + " and " + colorModel.getPixelSize() + " bits per pixel");
+                                  + BMPCompressionTypes.getName(compressionType));
         }
 
         byte[] r = null, g = null, b = null, a = null;
@@ -1457,9 +1454,6 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
         }
         int biType = imgType.getBufferedImageType();
         int bpp = imgType.getColorModel().getPixelSize();
-        if (bpp != 0 && bpp != 1 && bpp != 4 && bpp != 8 && bpp != 16 && bpp != 24 && bpp != 32) {
-            return false;
-        }
         if (compressionType == BI_RLE4 && bpp != 4) {
             // only 4bpp images can be encoded as BI_RLE4
             return false;
