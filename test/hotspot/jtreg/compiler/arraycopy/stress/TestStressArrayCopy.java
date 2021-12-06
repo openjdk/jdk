@@ -21,6 +21,7 @@
  * questions.
  */
 
+package compiler.arraycopy.stress;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,17 +38,22 @@ import jdk.test.whitebox.cpuinfo.CPUInfo;
  * @test
  * @key stress randomness
  * @library /test/lib
- * @build StressBooleanArrayCopy StressByteArrayCopy
- *        StressCharArrayCopy    StressShortArrayCopy
- *        StressIntArrayCopy     StressFloatArrayCopy
- *        StressLongArrayCopy    StressDoubleArrayCopy
- *        StressObjectArrayCopy
- * @build jdk.test.whitebox.WhiteBox
+ * @build compiler.arraycopy.stress.AbstractStressArrayCopy
+ *        compiler.arraycopy.stress.StressBooleanArrayCopy
+ *        compiler.arraycopy.stress.StressByteArrayCopy
+ *        compiler.arraycopy.stress.StressCharArrayCopy
+ *        compiler.arraycopy.stress.StressShortArrayCopy
+ *        compiler.arraycopy.stress.StressIntArrayCopy
+ *        compiler.arraycopy.stress.StressFloatArrayCopy
+ *        compiler.arraycopy.stress.StressLongArrayCopy
+ *        compiler.arraycopy.stress.StressDoubleArrayCopy
+ *        compiler.arraycopy.stress.StressObjectArrayCopy
+ *        jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm/timeout=3600
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      TestStressArrayCopy
+ *      compiler.arraycopy.stress.TestStressArrayCopy
  */
 public class TestStressArrayCopy {
 
@@ -149,15 +155,15 @@ public class TestStressArrayCopy {
         }
 
         String[] classNames = {
-            "StressBooleanArrayCopy",
-            "StressByteArrayCopy",
-            "StressCharArrayCopy",
-            "StressShortArrayCopy",
-            "StressIntArrayCopy",
-            "StressFloatArrayCopy",
-            "StressLongArrayCopy",
-            "StressDoubleArrayCopy",
-            "StressObjectArrayCopy",
+            "compiler.arraycopy.stress.StressBooleanArrayCopy",
+            "compiler.arraycopy.stress.StressByteArrayCopy",
+            "compiler.arraycopy.stress.StressCharArrayCopy",
+            "compiler.arraycopy.stress.StressShortArrayCopy",
+            "compiler.arraycopy.stress.StressIntArrayCopy",
+            "compiler.arraycopy.stress.StressFloatArrayCopy",
+            "compiler.arraycopy.stress.StressLongArrayCopy",
+            "compiler.arraycopy.stress.StressDoubleArrayCopy",
+            "compiler.arraycopy.stress.StressObjectArrayCopy",
         };
 
         ArrayList<Fork> forks = new ArrayList<>();

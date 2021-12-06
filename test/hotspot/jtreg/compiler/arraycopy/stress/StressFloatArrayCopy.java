@@ -21,6 +21,8 @@
  * questions.
  */
 
+package compiler.arraycopy.stress;
+
 import java.util.Arrays;
 import java.util.Random;
 import jdk.test.lib.Utils;
