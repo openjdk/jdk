@@ -31,7 +31,7 @@
 #include "runtime/thread.inline.hpp"
 
 template <template <typename> class ElementPolicy>
-JfrEpochQueue<ElementPolicy>::JfrEpochQueue() : _policy(), _storage(NULL) {}
+JfrEpochQueue<ElementPolicy>::JfrEpochQueue() : _storage(NULL) {}
 
 template <template <typename> class ElementPolicy>
 JfrEpochQueue<ElementPolicy>::~JfrEpochQueue() {
@@ -47,59 +47,56 @@ bool JfrEpochQueue<ElementPolicy>::initialize(size_t min_buffer_size, size_t fre
 
 template <template <typename> class ElementPolicy>
 inline typename JfrEpochQueue<ElementPolicy>::BufferPtr
-JfrEpochQueue<ElementPolicy>::renew_enqueue_buffer(Thread* thread) {
+JfrEpochQueue<ElementPolicy>::renew(Thread* thread) {
   assert(thread != nullptr, "invariant");
-  BufferPtr buffer = _policy.thread_local_storage(thread);
-  if (buffer == nullptr) {
-    buffer = _storage->acquire(0, thread);
-    _policy.set_thread_local_storage(buffer, thread);
-    return buffer;
+  BufferPtr buffer = this->thread_local_storage(thread);
+  if (buffer != nullptr) {
+    _storage->release(buffer);
   }
-  _storage->release(buffer);
   buffer = _storage->acquire(0, thread);
-  _policy.set_thread_local_storage(buffer, thread);
+  this->set_thread_local_storage(buffer, thread);
   return buffer;
 }
 
 template <template <typename> class ElementPolicy>
 inline typename JfrEpochQueue<ElementPolicy>::BufferPtr
 JfrEpochQueue<ElementPolicy>::storage_for_element(JfrEpochQueue<ElementPolicy>::TypePtr t, size_t element_size) {
-  assert(_policy.element_size(t) == element_size, "invariant");
+  assert(this->element_size(t) == element_size, "invariant");
   Thread* const thread = Thread::current();
-  BufferPtr buffer = _policy.thread_local_storage(thread);
+  BufferPtr buffer = this->thread_local_storage(thread);
   if (buffer == nullptr) {
     buffer = _storage->acquire(element_size, thread);
-    _policy.set_thread_local_storage(buffer, thread);
+    this->set_thread_local_storage(buffer, thread);
   } else if (buffer->free_size() < element_size) {
     _storage->release(buffer);
     buffer = _storage->acquire(element_size, thread);
-    _policy.set_thread_local_storage(buffer, thread);
+    this->set_thread_local_storage(buffer, thread);
   }
   assert(buffer->free_size() >= element_size, "invariant");
-  assert(_policy.thread_local_storage(thread) == buffer, "invariant");
+  assert(this->thread_local_storage(thread) == buffer, "invariant");
   return buffer;
 }
 
 template <template <typename> class ElementPolicy>
 void JfrEpochQueue<ElementPolicy>::enqueue(JfrEpochQueue<ElementPolicy>::TypePtr t) {
   assert(t != nullptr, "invariant");
-  size_t element_size = _policy.element_size(t);
+  size_t element_size = this->element_size(t);
   BufferPtr buffer = storage_for_element(t, element_size);
   assert(buffer != nullptr, "invariant");
-  _policy.store_element(t, buffer);
+  this->store_element(t, buffer);
   buffer->set_pos(element_size);
 }
 
 template <template <typename> class ElementPolicy>
 template <typename Callback>
-JfrEpochQueue<ElementPolicy>::ElementDispatch<Callback>::ElementDispatch(Callback& callback, JfrEpochQueue<ElementPolicy>::Policy& policy) :
-  _callback(callback),_policy(policy) {}
+JfrEpochQueue<ElementPolicy>::ElementDispatch<Callback>::ElementDispatch(Callback& callback, JfrEpochQueue<ElementPolicy>& queue) :
+  _callback(callback), _queue(queue) {}
 
 template <template <typename> class ElementPolicy>
 template <typename Callback>
 size_t JfrEpochQueue<ElementPolicy>::ElementDispatch<Callback>::operator()(const u1* element, bool previous_epoch) {
   assert(element != nullptr, "invariant");
-  return _policy(element, _callback, previous_epoch);
+  return _queue(element, _callback, previous_epoch);
 }
 
 template <template <typename> class ElementPolicy>
@@ -107,7 +104,7 @@ template <typename Callback>
 void JfrEpochQueue<ElementPolicy>::iterate(Callback& callback, bool previous_epoch) {
   typedef ElementDispatch<Callback> ElementDispatcher;
   typedef EpochDispatchOp<ElementDispatcher> QueueDispatcher;
-  ElementDispatcher element_dispatcher(callback, _policy);
+  ElementDispatcher element_dispatcher(callback, *this);
   QueueDispatcher dispatch(element_dispatcher, previous_epoch);
   _storage->iterate(dispatch, previous_epoch);
   DEBUG_ONLY(_storage->verify_previous_empty();)

@@ -252,7 +252,7 @@ JfrBuffer* JfrTraceIdKlassQueue::get_enqueue_buffer(Thread* thread) {
 }
 
 JfrBuffer* JfrTraceIdKlassQueue::renew_enqueue_buffer(Thread* thread) {
-  return _queue->renew_enqueue_buffer(thread);
+  return _queue->renew(thread);
 }
 
 void JfrTraceIdKlassQueue::iterate(klass_callback callback, bool previous_epoch) {
