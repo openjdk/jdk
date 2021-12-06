@@ -26,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -157,20 +156,23 @@ public class TransferTo {
      */
     @Test
     public void testMoreThanTwoGB() throws IOException {
-        Path sourceFile = Files.createTempFile(CWD, "test2GBSource", null);
+        Path sourceFile = CWD.resolve(Path.of(String.format("test3GBSource%s.tmp",
+            String.valueOf(RND.nextInt(Integer.MAX_VALUE)))));
         try {
             // preparing two temporary files which will be compared at the end of the test
             Path targetFile = Files.createTempFile(CWD, "test2GBtarget", null);
             try {
-                // create (hopefully sparse) file less than 2GB in size
-                final long initLen = (2*1024 - 1)*BYTES_PER_WRITE;
-                try (RandomAccessFile raf =
-                    new RandomAccessFile(sourceFile.toFile(), "rw")) {
-                    raf.setLength(initLen);
-                }
-                // fill the remainder of the file with random bytes
-                try (FileChannel fc = FileChannel.open(sourceFile, WRITE, APPEND);) {
-                    int nw = (int)(NUM_WRITES - initLen/BYTES_PER_WRITE);
+                // calculate initial position to be just short of 2GB
+                final long initPos = 2047*BYTES_PER_WRITE;
+
+                // create the file with a hint to be sparse
+                try (FileChannel fc = FileChannel.open(sourceFile, CREATE_NEW,
+                    SPARSE, WRITE, APPEND);) {
+                    // set initial position to avoid writing nearly 2GB
+                    fc.position(initPos);
+
+                    // fill the remainder of the file with random bytes
+                    int nw = (int)(NUM_WRITES - initPos/BYTES_PER_WRITE);
                     for (int i = 0; i < nw; i++) {
                         ByteBuffer src =
                             ByteBuffer.wrap(createRandomBytes(BYTES_PER_WRITE, 0));
@@ -187,7 +189,8 @@ public class TransferTo {
                 }
 
                 // comparing reported transferred bytes, must be 3 GB
-                assertEquals(count, BYTES_WRITTEN);
+                // less the value of the initial position
+                assertEquals(count, BYTES_WRITTEN - initPos);
 
                 // comparing content of both files, failing in case of any difference
                 assertEquals(Files.mismatch(sourceFile, targetFile), -1);
