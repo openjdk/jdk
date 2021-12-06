@@ -196,7 +196,7 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
 
 
   ciInstanceKlass* ik = inst_src->instance_klass();
-  
+
   if (!inst_src->klass_is_exact()) {
     assert(!ik->is_interface(), "inconsistent klass hierarchy");
     if (ik->has_subklass()) {

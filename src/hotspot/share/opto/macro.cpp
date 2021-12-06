@@ -735,7 +735,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
         offset = field->offset();
         ciType* elem_type = field->type();
         basic_elem_type = field->layout_type();
-        
+
         // The next code is taken from Parse::do_get_xxx().
         if (is_reference_type(basic_elem_type)) {
           if (!elem_type->is_loaded()) {

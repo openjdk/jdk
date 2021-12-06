@@ -1088,7 +1088,7 @@ protected:
 
   virtual ciKlass* exact_klass_helper() const { return NULL; }
   virtual ciKlass* klass() const { return _klass;     }
-  
+
 public:
 
   bool is_java_subtype_of(const TypeOopPtr* other) const {
@@ -1100,8 +1100,8 @@ public:
   }
   virtual bool is_java_subtype_of_helper(const TypeOopPtr* other, bool this_exact, bool other_exact) const { ShouldNotReachHere(); return false; }
   virtual bool maybe_java_subtype_of_helper(const TypeOopPtr* other, bool this_exact, bool other_exact) const { ShouldNotReachHere(); return false; }
-  
-  
+
+
   // Creates a type given a klass. Correctly handles multi-dimensional arrays
   // Respects UseUniqueSubclasses.
   // If the klass is final, the resulting type will be exact.
@@ -1313,7 +1313,7 @@ class TypeAryPtr : public TypeOopPtr {
 
   ciKlass* exact_klass_helper() const;
   ciKlass* klass() const;
-  
+
 public:
 
   bool is_same_java_type_as(const TypeOopPtr* other) const;
@@ -1325,7 +1325,7 @@ public:
 
   // Accessors
   bool  is_loaded() const { return (_ary->_elem->make_oopptr() ? _ary->_elem->make_oopptr()->is_loaded() : true); }
-  
+
   const TypeAry* ary() const  { return _ary; }
   const Type*    elem() const { return _ary->_elem; }
   const TypeInt* size() const { return _ary->_size; }
@@ -1479,7 +1479,7 @@ public:
 
   // Exact klass, possibly an interface or an array of interface
   ciKlass* exact_klass(bool maybe_null = false) const { assert(klass_is_exact(), ""); ciKlass* k = exact_klass_helper(); assert(k != NULL || maybe_null, ""); return k;  }
-  
+
   bool klass_is_exact()    const { return _ptr == Constant; }
 
   static const TypeKlassPtr* make(ciKlass* klass);
@@ -1602,7 +1602,7 @@ public:
   virtual const Type    *xdual() const;      // Compute dual right now.
 
   virtual const TypeAryKlassPtr* with_offset(intptr_t offset) const;
-  
+
   virtual bool empty(void) const {
     return TypeKlassPtr::empty() || _elem->empty();
   }

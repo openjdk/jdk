@@ -5313,7 +5313,7 @@ intptr_t TypeKlassPtr::get_con() const {
   }
 
   ciKlass* k = exact_klass();
-  
+
   return (intptr_t)k->constant_encoding();
 }
 
@@ -5788,7 +5788,7 @@ ciKlass* TypeAryPtr::exact_klass_helper() const {
     k = ciObjArrayKlass::make(k);
     return k;
   }
-  
+
   return klass();
 }
 
@@ -6066,7 +6066,7 @@ ciKlass* TypeAryKlassPtr::exact_klass_helper() const {
     k = ciObjArrayKlass::make(k);
     return k;
   }
-  
+
   return klass();
 }
 

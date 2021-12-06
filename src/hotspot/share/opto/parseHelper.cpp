@@ -196,7 +196,7 @@ void Parse::array_store_check() {
 
     // Make a constant out of the inexact array klass
     const TypeKlassPtr *extak = tak->cast_to_exactness(true);
-    
+
     if (extak->exact_klass(true) != NULL) {
       Node* con = makecon(extak);
       Node* cmp = _gvn.transform(new CmpPNode( array_klass, con ));
@@ -302,4 +302,3 @@ void Parse::dump_map_adr_mem() const {
 }
 
 #endif
-
