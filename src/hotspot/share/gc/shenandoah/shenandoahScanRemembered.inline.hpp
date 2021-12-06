@@ -438,18 +438,20 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
     // should represent this object.  Otherwise, last_offset is a don't care.
     ShenandoahHeapRegion* region = heap->heap_region_containing(base_addr + offset);
     HeapWord* tams = ctx->top_at_mark_start(region);
+    oop last_obj = nullptr;
     do {
-      prev_offset = offset;
       oop obj = cast_to_oop(base_addr + offset);
       if (ctx->is_marked(obj)) {
+        prev_offset = offset;
         offset += obj->size();
+        last_obj = obj;
       } else {
         offset = ctx->get_next_marked_addr(base_addr + offset, tams) - base_addr;
         // offset will be zero if no objects are marked in this card.
       }
     } while (offset > 0 && offset < max_offset);
-    oop last_obj = cast_to_oop(base_addr + prev_offset);
-    if (prev_offset + last_obj->size() >= max_offset) {
+    if (last_obj != nullptr && prev_offset + last_obj->size() >= max_offset) {
+      // last marked object extends beyond end of card
       if (_scc->get_last_start(index) != prev_offset) {
         return false;
       }
