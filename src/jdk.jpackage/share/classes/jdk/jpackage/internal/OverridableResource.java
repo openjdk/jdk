@@ -36,6 +36,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +76,22 @@ final class OverridableResource {
         setSourceOrder(Source.values());
     }
 
+    Path getResourceDir() {
+        return resourceDir;
+    }
+
+    String getDefaultName() {
+        return defaultName;
+    }
+
+    Path getPublicName() {
+        return publicName;
+    }
+
+    Path getExternalPath() {
+        return externalPath;
+    }
+
     OverridableResource setSubstitutionData(Map<String, String> v) {
         if (v != null) {
             // Disconnect `v`
@@ -81,6 +99,13 @@ final class OverridableResource {
         } else {
             substitutionData = null;
         }
+        return this;
+    }
+
+    OverridableResource addSubstitutionDataEntry(String key, String value) {
+        var entry = Map.of(key, value);
+        Optional.ofNullable(substitutionData).ifPresentOrElse(v -> v.putAll(
+                entry), () -> setSubstitutionData(entry));
         return this;
     }
 
@@ -279,11 +304,35 @@ final class OverridableResource {
 
     private static Stream<String> substitute(Stream<String> lines,
             Map<String, String> substitutionData) {
+        // Order substitution data by the length of keys.
+        // Longer keys go first.
+        // This is needed to properly handle cases when one key is
+        // a subtring of another and try the later first.
+        var orderedEntries = substitutionData.entrySet().stream()
+                .sorted(Map.Entry.<String, String>comparingByKey(
+                        Comparator.comparingInt(String::length)).reversed())
+                .toList();
         return lines.map(line -> {
             String result = line;
-            for (var entry : substitutionData.entrySet()) {
-                result = result.replace(entry.getKey(), Optional.ofNullable(
-                        entry.getValue()).orElse(""));
+            var workEntries = orderedEntries;
+            var it = workEntries.listIterator();
+            while (it.hasNext()) {
+                var entry = it.next();
+                String newResult = result.replace(entry.getKey(),
+                        Optional.ofNullable(entry.getValue()).orElse(""));
+                if (!newResult.equals(result)) {
+                    // Substitution occured.
+                    // Remove the matching substitution key from the list and
+                    // go over the list of substitution entries again.
+                    if (workEntries == orderedEntries) {
+                        workEntries = new ArrayList<>(orderedEntries);
+                        it = workEntries.listIterator(it.nextIndex() - 1);
+                        it.next();
+                    }
+                    it.remove();
+                    it = workEntries.listIterator();
+                    result = newResult;
+                }
             }
             return result;
         });
