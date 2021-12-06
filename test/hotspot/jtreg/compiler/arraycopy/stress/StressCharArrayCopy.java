@@ -25,10 +25,10 @@ import java.util.Arrays;
 import java.util.Random;
 import jdk.test.lib.Utils;
 
-public class TestStressIntArrayCopy extends AbstractStressArrayCopy {
+public class StressCharArrayCopy extends AbstractStressArrayCopy {
 
-    private static final int[] orig = new int[MAX_SIZE];
-    private static final int[] test = new int[MAX_SIZE];
+    private static final char[] orig = new char[MAX_SIZE];
+    private static final char[] test = new char[MAX_SIZE];
 
     protected void testWith(int size, int l, int r, int len) {
         // Seed the test from the original
@@ -75,9 +75,9 @@ public class TestStressIntArrayCopy extends AbstractStressArrayCopy {
     public static void main(String... args) {
         Random rand = Utils.getRandomInstance();
         for (int c = 0; c < orig.length; c++) {
-            orig[c] = rand.nextInt();
+            orig[c] = (char)rand.nextInt();
         }
-        new TestStressIntArrayCopy().run(rand);
+        new StressCharArrayCopy().run(rand);
     }
 
 }

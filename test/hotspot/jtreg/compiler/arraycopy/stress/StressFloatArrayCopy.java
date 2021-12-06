@@ -25,10 +25,10 @@ import java.util.Arrays;
 import java.util.Random;
 import jdk.test.lib.Utils;
 
-public class TestStressDoubleArrayCopy extends AbstractStressArrayCopy {
+public class StressFloatArrayCopy extends AbstractStressArrayCopy {
 
-    private static final double[] orig = new double[MAX_SIZE];
-    private static final double[] test = new double[MAX_SIZE];
+    private static final float[] orig = new float[MAX_SIZE];
+    private static final float[] test = new float[MAX_SIZE];
 
     protected void testWith(int size, int l, int r, int len) {
         // Seed the test from the original
@@ -75,9 +75,9 @@ public class TestStressDoubleArrayCopy extends AbstractStressArrayCopy {
     public static void main(String... args) {
         Random rand = Utils.getRandomInstance();
         for (int c = 0; c < orig.length; c++) {
-            orig[c] = rand.nextDouble();
+            orig[c] = rand.nextFloat();
         }
-        new TestStressDoubleArrayCopy().run(rand);
+        new StressFloatArrayCopy().run(rand);
     }
 
 }

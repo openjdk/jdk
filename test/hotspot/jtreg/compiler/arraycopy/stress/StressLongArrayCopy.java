@@ -25,7 +25,7 @@ import java.util.Arrays;
 import java.util.Random;
 import jdk.test.lib.Utils;
 
-public class TestStressLongArrayCopy extends AbstractStressArrayCopy {
+public class StressLongArrayCopy extends AbstractStressArrayCopy {
 
     private static final long[] orig = new long[MAX_SIZE];
     private static final long[] test = new long[MAX_SIZE];
@@ -77,7 +77,7 @@ public class TestStressLongArrayCopy extends AbstractStressArrayCopy {
         for (int c = 0; c < orig.length; c++) {
             orig[c] = rand.nextLong();
         }
-        new TestStressLongArrayCopy().run(rand);
+        new StressLongArrayCopy().run(rand);
     }
 
 }

@@ -37,19 +37,19 @@ import jdk.test.whitebox.cpuinfo.CPUInfo;
  * @test
  * @key stress randomness
  * @library /test/lib
- * @build TestStressBooleanArrayCopy TestStressByteArrayCopy
- *        TestStressCharArrayCopy TestStressShortArrayCopy
- *        TestStressIntArrayCopy TestStressFloatArrayCopy
- *        TestStressLongArrayCopy TestStressDoubleArrayCopy
- *        TestStressObjectArrayCopy
+ * @build StressBooleanArrayCopy StressByteArrayCopy
+ *        StressCharArrayCopy    StressShortArrayCopy
+ *        StressIntArrayCopy     StressFloatArrayCopy
+ *        StressLongArrayCopy    StressDoubleArrayCopy
+ *        StressObjectArrayCopy
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm/timeout=3600
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      StressArrayCopyDriver
+ *      TestStressArrayCopy
  */
-public class StressArrayCopyDriver {
+public class TestStressArrayCopy {
 
     // These tests are remarkably memory bandwidth hungry. Running multiple
     // configs in parallel makes sense only when running a single test in
@@ -149,15 +149,15 @@ public class StressArrayCopyDriver {
         }
 
         String[] classNames = {
-            "TestStressBooleanArrayCopy",
-            "TestStressByteArrayCopy",
-            "TestStressCharArrayCopy",
-            "TestStressShortArrayCopy",
-            "TestStressIntArrayCopy",
-            "TestStressFloatArrayCopy",
-            "TestStressLongArrayCopy",
-            "TestStressDoubleArrayCopy",
-            "TestStressObjectArrayCopy",
+            "StressBooleanArrayCopy",
+            "StressByteArrayCopy",
+            "StressCharArrayCopy",
+            "StressShortArrayCopy",
+            "StressIntArrayCopy",
+            "StressFloatArrayCopy",
+            "StressLongArrayCopy",
+            "StressDoubleArrayCopy",
+            "StressObjectArrayCopy",
         };
 
         ArrayList<Fork> forks = new ArrayList<>();
