@@ -23,7 +23,6 @@
 
 
 import java.util.Random;
-import jdk.test.lib.Utils;
 
 public abstract class AbstractStressArrayCopy {
     /**
