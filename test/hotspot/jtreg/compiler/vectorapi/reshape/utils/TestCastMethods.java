@@ -30,8 +30,8 @@ import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
 import static compiler.vectorapi.reshape.utils.VectorSpeciesPair.makePair;
 
 /**
- * The cast intrinsics implemented on each platform, commented out tests are the ones that
- * suppose to work but currently don't.
+ * The cast intrinsics implemented on each platform, commented out tests are the ones that are
+ * supposed to work but currently don't.
  */
 public class TestCastMethods {
     public static final List<VectorSpeciesPair> AVX1_CAST_TESTS = List.of(
@@ -64,7 +64,7 @@ public class TestCastMethods {
             makePair(FSPEC64, DSPEC128),
             makePair(FSPEC128, DSPEC256),
             makePair(DSPEC128, FSPEC64)
-//            makePair(DSPEC256, FSPEC128)
+            // makePair(DSPEC256, FSPEC128)
     );
 
     public static final List<VectorSpeciesPair> AVX2_CAST_TESTS = Stream.concat(AVX1_CAST_TESTS.stream(), List.of(
