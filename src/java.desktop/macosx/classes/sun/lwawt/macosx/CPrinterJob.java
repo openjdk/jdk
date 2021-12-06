@@ -845,10 +845,10 @@ public final class CPrinterJob extends RasterPrinterJob {
     @Override
     protected MediaSize getMediaSize(Media media, PrintService service,
             PageFormat page) {
-        if (media == null || !(media instanceof MediaSizeName)) {
+        if (!(media instanceof MediaSizeName msn)) {
             return getDefaultMediaSize(page);
         }
-        MediaSize size = MediaSize.getMediaSizeForName((MediaSizeName) media);
+        MediaSize size = MediaSize.getMediaSizeForName(msn);
         return size != null ? size : getDefaultMediaSize(page);
     }
 

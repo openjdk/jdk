@@ -1272,9 +1272,9 @@ public class TransferHandler implements Serializable {
                 // If the Drop target is inactive the dragExit will not be dispatched to the dtListener,
                 // so make sure that we clean up the dtListener anyway.
                 DropTargetListener dtListener = getDropTargetListener();
-                    if (dtListener != null && dtListener instanceof DropHandler) {
-                        ((DropHandler)dtListener).cleanup(false);
-                    }
+                if (dtListener instanceof DropHandler dropHandler) {
+                    dropHandler.cleanup(false);
+                }
             }
         }
 

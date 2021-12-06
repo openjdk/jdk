@@ -450,8 +450,8 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
 
             Media media = (Media)attributes.get(Media.class);
             MediaSize mediaSize =  null;
-            if (media != null  && media instanceof MediaSizeName) {
-                mediaSize = MediaSize.getMediaSizeForName((MediaSizeName)media);
+            if (media instanceof MediaSizeName msn) {
+                mediaSize = MediaSize.getMediaSizeForName(msn);
             }
 
             Paper p = pageFormat.getPaper();
@@ -590,9 +590,9 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
             pageAttributes.setPrintQuality(PrintQualityType.NORMAL);
         }
 
-        Media msn = (Media)attributes.get(Media.class);
-        if (msn != null && msn instanceof MediaSizeName) {
-            MediaType mType = unMapMedia((MediaSizeName)msn);
+        Media media = (Media)attributes.get(Media.class);
+        if (media instanceof MediaSizeName msn) {
+            MediaType mType = unMapMedia(msn);
 
             if (mType != null) {
                 pageAttributes.setMedia(mType);

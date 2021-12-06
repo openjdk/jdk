@@ -928,7 +928,7 @@ public class RepaintManager
         for (int i = roots.size() - 1; i >= index; i--) {
             Component c = roots.get(i);
             for(;;) {
-                if (c == root || c == null || !(c instanceof JComponent)) {
+                if (c == root || !(c instanceof JComponent)) {
                     break;
                 }
                 c = c.getParent();

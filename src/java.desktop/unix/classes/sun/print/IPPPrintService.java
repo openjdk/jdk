@@ -671,8 +671,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
             int match = -1;
             Media media = (Media)attributes.get(Media.class);
-            if (media != null && media instanceof MediaSizeName) {
-                MediaSizeName msn = (MediaSizeName)media;
+            if (media instanceof MediaSizeName msn) {
 
                 // case when no supported mediasizenames are reported
                 // check given media against the default
