@@ -106,6 +106,8 @@ runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 
 applications/jcstress/copy.java 8229852 linux-all
 
+containers/docker/TestJcmd.java 8278102 linux-aarch64
+
 #############################################################################
 
 # :hotspot_serviceability

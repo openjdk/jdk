@@ -169,6 +169,23 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
   AC_SUBST(CACERTS_FILE)
 
+  # Choose cacerts source folder for user provided PEM files
+  AC_ARG_WITH(cacerts-src, [AS_HELP_STRING([--with-cacerts-src],
+      [specify alternative cacerts source folder containing certificates])])
+  CACERTS_SRC=""
+  AC_MSG_CHECKING([for cacerts source])
+  if test "x$with_cacerts_src" == x; then
+    AC_MSG_RESULT([default])
+  else
+    CACERTS_SRC=$with_cacerts_src
+    if test ! -d "$CACERTS_SRC"; then
+      AC_MSG_RESULT([fail])
+      AC_MSG_ERROR([Specified cacerts source folder "$CACERTS_SRC" does not exist])
+    fi
+    AC_MSG_RESULT([$CACERTS_SRC])
+  fi
+  AC_SUBST(CACERTS_SRC)
+
   # Enable or disable unlimited crypto
   UTIL_ARG_ENABLE(NAME: unlimited-crypto, DEFAULT: true, RESULT: UNLIMITED_CRYPTO,
       DESC: [enable unlimited crypto policy])

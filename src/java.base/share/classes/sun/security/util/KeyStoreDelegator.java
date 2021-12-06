@@ -130,6 +130,11 @@ public class KeyStoreDelegator extends KeyStoreSpi {
     }
 
     @Override
+    public Set<KeyStore.Entry.Attribute> engineGetAttributes(String alias) {
+        return keystore.engineGetAttributes(alias);
+    }
+
+    @Override
     public Enumeration<String> engineAliases() {
         return keystore.engineAliases();
     }

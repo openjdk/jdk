@@ -125,10 +125,10 @@ void G1CardSetConfiguration::init_card_set_alloc_options() {
 
 void G1CardSetConfiguration::log_configuration() {
   log_debug_p(gc, remset)("Card Set container configuration: "
-                          "InlinePtr #elems %u size %zu "
-                          "Array Of Cards #elems %u size %zu "
+                          "InlinePtr #cards %u size %zu "
+                          "Array Of Cards #cards %u size %zu "
                           "Howl #buckets %u coarsen threshold %u "
-                          "Howl Bitmap #elems %u size %zu coarsen threshold %u "
+                          "Howl Bitmap #cards %u size %zu coarsen threshold %u "
                           "Card regions per heap region %u cards per card region %u",
                           max_cards_in_inline_ptr(), sizeof(void*),
                           max_cards_in_array(), G1CardSetArray::size_in_bytes(max_cards_in_array()),
@@ -199,8 +199,8 @@ void G1CardSetCoarsenStats::print_on(outputStream* out) {
 class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   using CardSetPtr = G1CardSet::CardSetPtr;
 
-  // Did we insert at least one element in the table?
-  bool volatile _inserted_elem;
+  // Did we insert at least one card in the table?
+  bool volatile _inserted_card;
 
   G1CardSetMemoryManager* _mm;
   CardSetHash _table;
@@ -247,7 +247,7 @@ public:
 
   G1CardSetHashTable(G1CardSetMemoryManager* mm,
                      size_t initial_log_table_size = InitialLogTableSize) :
-    _inserted_elem(false),
+    _inserted_card(false),
     _mm(mm),
     _table(mm, initial_log_table_size) {
   }
@@ -267,10 +267,10 @@ public:
     G1CardSetHashTableValue value(region_idx, G1CardSetInlinePtr());
     bool inserted = _table.insert_get(Thread::current(), lookup, value, found, should_grow);
 
-    if (!_inserted_elem && inserted) {
+    if (!_inserted_card && inserted) {
       // It does not matter to us who is setting the flag so a regular atomic store
       // is sufficient.
-      Atomic::store(&_inserted_elem, true);
+      Atomic::store(&_inserted_card, true);
     }
 
     return found.value();
@@ -295,9 +295,9 @@ public:
   }
 
   void reset() {
-    if (Atomic::load(&_inserted_elem)) {
+    if (Atomic::load(&_inserted_card)) {
        _table.unsafe_reset(InitialLogTableSize);
-      Atomic::store(&_inserted_elem, false);
+      Atomic::store(&_inserted_card, false);
     }
   }
 
@@ -630,7 +630,7 @@ void G1CardSet::transfer_cards_in_howl(CardSetPtr parent_card_set,
 
     // Need to correct for that the Full remembered set occupies more cards than the
     // bitmap before.
-    // We add 1 element less because the values will be incremented
+    // We add 1 card less because the values will be incremented
     // in G1CardSet::add_card for the current addition or where already incremented in
     // G1CardSet::add_to_howl after coarsening.
     diff -= 1;

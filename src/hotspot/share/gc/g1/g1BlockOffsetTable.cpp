@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,14 +97,7 @@ void G1BlockOffsetTablePart::update() {
 // The arguments follow the normal convention of denoting
 // a right-open interval: [start, end)
 void G1BlockOffsetTablePart:: set_remainder_to_point_to_start(HeapWord* start, HeapWord* end) {
-
-  if (start >= end) {
-    // The start address is equal to the end address (or to
-    // the right of the end address) so there are not cards
-    // that need to be updated..
-    return;
-  }
-
+  assert(start < end, "precondition");
   // Write the backskip value for each region.
   //
   //    offset
@@ -149,9 +142,7 @@ void G1BlockOffsetTablePart:: set_remainder_to_point_to_start(HeapWord* start, H
 // a closed, inclusive interval: [start_card, end_card], cf set_remainder_to_point_to_start()
 // above.
 void G1BlockOffsetTablePart::set_remainder_to_point_to_start_incl(size_t start_card, size_t end_card) {
-  if (start_card > end_card) {
-    return;
-  }
+  assert(start_card <= end_card, "precondition");
   assert(start_card > _bot->index_for(_hr->bottom()), "Cannot be first card");
   assert(_bot->offset_array(start_card-1) <= BOTConstants::N_words,
          "Offset card has an unexpected value");
