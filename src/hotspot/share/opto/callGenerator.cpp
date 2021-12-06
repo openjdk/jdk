@@ -416,6 +416,7 @@ class LateInlineMHCallGenerator : public LateInlineCallGenerator {
 };
 
 bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms) {
+  assert(!jvms->method()->has_exception_handlers(), "");
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
   bool input_not_const = true;
