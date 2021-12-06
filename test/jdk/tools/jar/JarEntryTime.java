@@ -186,6 +186,10 @@ public class JarEntryTime {
                                 "1986-06-24T01:02:03+00:00",
                                 "2022-03-15T00:00:00+00:00",
                                 "2022-03-15T00:00:00+06:00",
+                                "2021-12-25T09:30:00-08:00[America/Los_Angeles]",
+                                "2021-12-31T23:59:59Z",
+                                "2024-06-08T14:24Z",
+                                "2026-09-24T16:26-05:00",
                                 "2038-11-26T06:06:06+00:00",
                                 "2098-02-18T00:00:00-08:00",
                                 "2099-12-31T23:59:59+00:00"};
@@ -257,11 +261,13 @@ public class JarEntryTime {
         }
         TimeZone.setDefault(tz0);
 
-        // Negative Tests --date out of range source date
+        // Negative Tests --date out of range or wrong format source date
         String[] badSourceDates = {"1976-06-24T01:02:03+00:00",
                                    "1980-01-01T00:00:01+00:00",
                                    "2100-01-01T00:00:00+00:00",
-                                   "2138-02-18T00:00:00-11:00"};
+                                   "2138-02-18T00:00:00-11:00",
+                                   "2006-04-06T12:36:00",
+                                   "2012-08-24T16"};
         for (String sourceDate : badSourceDates) {
             createOuterInnerDirs(dirOuter, dirInner);
             check(JAR_TOOL.run(System.out, System.err,
