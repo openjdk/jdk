@@ -524,12 +524,12 @@ public interface ObjectInputFilter {
      * {@code jdk.serialFilter} is defined then it is used to configure the filter.
      * The filter is created as if {@link #createFilter(String) createFilter} is called,
      * if the filter string is invalid the initialization fails and subsequent attempts to
-     * {@linkplain Config#getSerialFilter() get the filter}, {@link Config#setSerialFilter set a filter},
-     * or create an {@link ObjectInputStream#ObjectInputStream(InputStream) ObjectInputStream}
+     * {@linkplain Config#getSerialFilter() get the filter}, {@linkplain Config#setSerialFilter set a filter},
+     * or create an {@linkplain ObjectInputStream#ObjectInputStream(InputStream) ObjectInputStream}
      * throw {@link IllegalStateException}. Deserialization is not possible with an
      * invalid serial filter.
      * If the system property {@code jdk.serialFilter} or the {@link java.security.Security}
-     * property is not set the filter can be set with
+     * property {@code jdk.serialFilter} is not set the filter can be set with
      * {@link #setSerialFilter(ObjectInputFilter) Config.setSerialFilter}.
      * Setting the {@code jdk.serialFilter} with {@link System#setProperty(String, String)
      * System.setProperty} <em>does not set the filter</em>.
@@ -718,7 +718,7 @@ public interface ObjectInputFilter {
          *
          * @return the static JVM-wide deserialization filter or {@code null} if not configured
          * @throws IllegalStateException if the initialization of the filter from the
-         *      commandline property {@code jdk.serialFilter} or
+         *      system property {@code jdk.serialFilter} or
          *      the security property {@code jdk.serialFilter} fails.
          */
         public static ObjectInputFilter getSerialFilter() {
@@ -735,7 +735,7 @@ public interface ObjectInputFilter {
          * @throws SecurityException if there is security manager and the
          *       {@code SerializablePermission("serialFilter")} is not granted
          * @throws IllegalStateException if the filter has already been set or the initialization
-         *       of the filter from the commandline property {@code jdk.serialFilter} or
+         *       of the filter from the system property {@code jdk.serialFilter} or
          *       the security property {@code jdk.serialFilter} fails.
          */
         public static void setSerialFilter(ObjectInputFilter filter) {
@@ -745,11 +745,12 @@ public interface ObjectInputFilter {
             if (sm != null) {
                 sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
             }
+            if (invalidFilterMessage != null) {
+                throw new IllegalStateException(invalidFilterMessage);
+            }
             synchronized (serialFilterLock) {
                 if (serialFilter != null) {
                     throw new IllegalStateException("Serial filter can only be set once");
-                } else if (invalidFilterMessage != null) {
-                    throw new IllegalStateException(invalidFilterMessage);
                 }
                 serialFilter = filter;
             }

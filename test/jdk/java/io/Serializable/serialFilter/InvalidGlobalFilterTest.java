@@ -26,16 +26,14 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.util.Map;
 
 /*
  * @test
- * @bug 8269336
+ * @bug 8278087
  * @summary Test that an invalid pattern value for the jdk.serialFilter system property causes an
  * exception to be thrown when an attempt is made to use the filter or deserialize.
  * A subset of invalid filter patterns is tested.
