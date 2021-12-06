@@ -172,12 +172,13 @@ MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* lo
 }
 
 void ZCollectedHeap::collect(GCCause::Cause cause) {
+  ZDriverRequest request(cause, 1, 1);
   // Handle external collection requests
   switch (cause) {
   case GCCause::_wb_young_gc:
   case GCCause::_scavenge_alot:
     // Start Minor GC
-    _driver_minor->collect(cause);
+    _driver_minor->collect(request);
     break;
 
   case GCCause::_wb_full_gc:
@@ -189,7 +190,7 @@ void ZCollectedHeap::collect(GCCause::Cause cause) {
   case GCCause::_metadata_GC_threshold:
   case GCCause::_metadata_GC_clear_soft_refs:
     // Start Major GC
-    _driver_major->collect(cause);
+    _driver_major->collect(request);
     break;
 
   default:

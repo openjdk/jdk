@@ -30,14 +30,12 @@
 #include "utilities/debug.hpp"
 
 ZDriverRequest::ZDriverRequest() :
-    ZDriverRequest(GCCause::_no_gc) {}
+    ZDriverRequest(GCCause::_no_gc, 0, 0) {}
 
-ZDriverRequest::ZDriverRequest(GCCause::Cause cause) :
-    ZDriverRequest(cause, ConcGCThreads) {}
-
-ZDriverRequest::ZDriverRequest(GCCause::Cause cause, uint nworkers) :
+ZDriverRequest::ZDriverRequest(GCCause::Cause cause, uint young_nworkers, uint old_nworkers) :
     _cause(cause),
-    _nworkers(nworkers) {}
+    _young_nworkers(young_nworkers),
+    _old_nworkers(old_nworkers) {}
 
 bool ZDriverRequest::operator==(const ZDriverRequest& other) const {
   return _cause == other._cause;
@@ -47,8 +45,12 @@ GCCause::Cause ZDriverRequest::cause() const {
   return _cause;
 }
 
-uint ZDriverRequest::nworkers() const {
-  return _nworkers;
+uint ZDriverRequest::young_nworkers() const {
+  return _young_nworkers;
+}
+
+uint ZDriverRequest::old_nworkers() const {
+  return _old_nworkers;
 }
 
 class ZDriverPortEntry {

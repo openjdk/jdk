@@ -456,7 +456,7 @@ public:
   ZStatWorkers();
 
   void at_start(uint active_workers);
-  void at_end(uint active_workers);
+  void at_end();
 
   double get_and_reset_duration();
   double get_and_reset_time();

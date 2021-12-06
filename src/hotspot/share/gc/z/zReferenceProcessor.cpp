@@ -285,11 +285,8 @@ zpointer* ZReferenceProcessor::keep(zaddress reference, ReferenceType type) {
   return reference_discovered_addr(reference);
 }
 
-void ZReferenceProcessor::work() {
-  SuspendibleThreadSetJoiner sts;
-
-  // Process discovered references
-  zpointer* const start = _discovered_list.addr();
+void ZReferenceProcessor::process_worker_discovered_list(zpointer discovered_list) {
+  zpointer* const start = &discovered_list;
 
   // The list is chained through the discovered field,
   // but the first entry is not in the heap.
@@ -343,11 +340,20 @@ void ZReferenceProcessor::work() {
       _pending_list_tail = end;
     }
   }
+}
 
-  assert(!ZHeap::heap()->is_in((uintptr_t)start), "Dangerous null store");
+void ZReferenceProcessor::work() {
+  SuspendibleThreadSetJoiner sts;
 
-  // Clear discovered list
-  *start = zpointer::null;
+  ZPerWorkerIterator<zpointer> iter(&_discovered_list);
+  for (zpointer* start; iter.next(&start);) {
+    zpointer discovered_list = Atomic::xchg(start, zpointer::null);
+
+    if (discovered_list != zpointer::null) {
+      // Process discovered references
+      process_worker_discovered_list(discovered_list);
+    }
+  }
 }
 
 void ZReferenceProcessor::verify_empty() const {

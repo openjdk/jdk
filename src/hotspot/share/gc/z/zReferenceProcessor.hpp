@@ -61,6 +61,7 @@ private:
 
   void verify_empty() const;
 
+  void process_worker_discovered_list(zpointer discovered_list);
   void work();
   void collect_statistics();
 

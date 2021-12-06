@@ -64,10 +64,6 @@
           "Uncommit memory if it has been unused for the specified "        \
           "amount of time (in seconds)")                                    \
                                                                             \
-  product(uint, ZConcOldGCThreads, 0,                                       \
-          "Temporary flag to control the number of GC threads used to "     \
-          "collect the old generation")                                     \
-                                                                            \
   product(uintx, ZIndexDistributorStrategy, 0,                              \
           "Strategy used to distribute indices to parallel workers "        \
           "0: Claim tree "                                                  \

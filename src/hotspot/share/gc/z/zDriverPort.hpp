@@ -33,17 +33,18 @@ class ZDriverPortEntry;
 class ZDriverRequest {
 private:
   GCCause::Cause _cause;
-  uint           _nworkers;
+  uint           _young_nworkers;
+  uint           _old_nworkers;
 
 public:
   ZDriverRequest();
-  ZDriverRequest(GCCause::Cause cause);
-  ZDriverRequest(GCCause::Cause cause, uint nworkers);
+  ZDriverRequest(GCCause::Cause cause, uint young_nworkers, uint old_nworkers);
 
   bool operator==(const ZDriverRequest& other) const;
 
   GCCause::Cause cause() const;
-  uint nworkers() const;
+  uint young_nworkers() const;
+  uint old_nworkers() const;
 };
 
 class ZDriverPort {

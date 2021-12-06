@@ -294,18 +294,17 @@ static uint select_active_worker_threads_static(GCCause::Cause cause, uint nwork
 
 static uint select_active_young_worker_threads(const ZDriverRequest& request) {
   if (UseDynamicNumberOfGCThreads) {
-    return select_active_worker_threads_dynamic(request.cause(), request.nworkers());
+    return select_active_worker_threads_dynamic(request.cause(), request.young_nworkers());
   } else {
-    return select_active_worker_threads_static(request.cause(), request.nworkers());
+    return select_active_worker_threads_static(request.cause(), request.young_nworkers());
   }
 }
 
 static uint select_active_old_worker_threads(const ZDriverRequest& request) {
-  uint nworkers = ZConcOldGCThreads != 0 ? ZConcOldGCThreads : ConcGCThreads;
   if (UseDynamicNumberOfGCThreads) {
-    return select_active_worker_threads_dynamic(request.cause(), nworkers);
+    return select_active_worker_threads_dynamic(request.cause(), request.old_nworkers());
   } else {
-    return select_active_worker_threads_static(request.cause(), nworkers);
+    return select_active_worker_threads_static(request.cause(), request.old_nworkers());
   }
 }
 
@@ -547,7 +546,8 @@ void ZDriverMinor::run_service() {
 }
 
 void ZDriverMinor::stop_service() {
-  _port.send_async(GCCause::_no_gc);
+  ZDriverRequest request(GCCause::_no_gc, 0, 0);
+  _port.send_async(request);
 }
 
 class VM_ZMarkEndOld : public VM_ZOperation {
@@ -968,5 +968,6 @@ void ZDriverMajor::run_service() {
 }
 
 void ZDriverMajor::stop_service() {
-  _port.send_async(GCCause::_no_gc);
+  ZDriverRequest request(GCCause::_no_gc, 0, 0);
+  _port.send_async(request);
 }

@@ -1237,11 +1237,11 @@ void ZStatWorkers::at_start(uint active_workers) {
   _active_workers = active_workers;
 }
 
-void ZStatWorkers::at_end(uint active_workers) {
+void ZStatWorkers::at_end() {
   const Ticks now = Ticks::now();
   const Tickspan duration = now - _start_of_last;
   Tickspan time = duration;
-  for (uint i = 1; i < active_workers; ++i) {
+  for (uint i = 1; i < _active_workers; ++i) {
     time += duration;
   }
   _accumulated_time += time;

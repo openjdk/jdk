@@ -68,9 +68,10 @@ void ZArguments::initialize() {
     FLAG_SET_DEFAULT(ConcGCThreads, ZHeuristics::nconcurrent_workers());
   }
 
-  if (ConcGCThreads == 0) {
-    vm_exit_during_initialization("The flag -XX:+UseZGC can not be combined with -XX:ConcGCThreads=0");
-  }
+  // TODO: Figure out who is setting this wrong
+  //if (ConcGCThreads < 2) {
+  //  vm_exit_during_initialization("The flag -XX:+UseZGC can not be combined with -XX:ConcGCThreads=N, where N <= 1");
+  //}
 
   // Large page size must match granule size
   if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != ZGranuleSize) {

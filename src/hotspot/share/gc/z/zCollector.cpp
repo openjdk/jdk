@@ -334,14 +334,13 @@ void ZCollector::at_collection_start(ConcurrentGCTimer* gc_timer) {
   set_gc_timer(gc_timer);
   stat_cycle()->at_start();
   stat_heap()->at_collection_start(_page_allocator->stats(this));
-
-  workers()->clear_pending_resize();
+  workers()->set_active();
 }
 
 void ZCollector::at_collection_end() {
+  workers()->set_inactive();
   stat_cycle()->at_end(stat_workers());
   // The heap at collection end data is gathered at relocate end
-
   clear_gc_timer();
 }
 
