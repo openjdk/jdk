@@ -4059,62 +4059,205 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
   }
 }
 
+/*
+ * Algorithm for vector D2L and F2I conversions:-
+ * a) Perform vector D2L/F2I cast.
+ * b) Choose fast path if none of the result vector lane contains 0x80000000 value.
+ *    It signifies that source value could be any of the special floating point
+ *    values(NaN,-Inf,Inf,Max,-Min).
+ * c) Set destination to zero if source is NaN value.
+ * d) Replace 0x80000000 with MaxInt if source lane contains a +ve value.
+ */
+
+void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                                            Register scratch, int vec_enc) {
+  Label done;
+  evcvttpd2qq(dst, src, vec_enc);
+  evmovdqul(xtmp1, k0, double_sign_flip, false, vec_enc, scratch);
+  evpcmpeqq(ktmp1, xtmp1, dst, vec_enc);
+  kortestwl(ktmp1, ktmp1);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  evcmppd(ktmp2, k0, src, src, Assembler::UNORD_Q, vec_enc);
+  evmovdquq(dst, ktmp2, xtmp2, true, vec_enc);
+
+  kxorwl(ktmp1, ktmp1, ktmp2);
+  evcmppd(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
+  vpternlogq(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
+  evmovdquq(dst, ktmp1, xtmp2, true, vec_enc);
+  bind(done);
+}
+
+void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
+                                           AddressLiteral float_sign_flip, Register scratch, int vec_enc) {
+  Label done;
+  vcvttps2dq(dst, src, vec_enc);
+  vmovdqu(xtmp1, float_sign_flip, scratch, vec_enc);
+  vpcmpeqd(xtmp2, dst, xtmp1, vec_enc);
+  vptest(xtmp2, xtmp2, vec_enc);
+  jccb(Assembler::equal, done);
+
+  vpcmpeqd(xtmp4, xtmp4, xtmp4, vec_enc);
+  vpxor(xtmp1, xtmp1, xtmp4, vec_enc);
+
+  vpxor(xtmp4, xtmp4, xtmp4, vec_enc);
+  vcmpps(xtmp3, src, src, Assembler::UNORD_Q, vec_enc);
+  vblendvps(dst, dst, xtmp4, xtmp3, vec_enc);
+
+  // Recompute the mask for remaining special value.
+  vpxor(xtmp2, xtmp2, xtmp3, vec_enc);
+  // Extract SRC values corresponding to TRUE mask lanes.
+  vpand(xtmp4, xtmp2, src, vec_enc);
+  // Flip mask bits so that MSB bit of MASK lanes corresponding to +ve special
+  // values are set.
+  vpxor(xtmp3, xtmp2, xtmp4, vec_enc);
+
+  vblendvps(dst, dst, xtmp1, xtmp3, vec_enc);
+  bind(done);
+}
+
+void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
+                                            Register scratch, int vec_enc) {
+  Label done;
+  vcvttps2dq(dst, src, vec_enc);
+  evmovdqul(xtmp1, k0, float_sign_flip, false, vec_enc, scratch);
+  Assembler::evpcmpeqd(ktmp1, k0, xtmp1, dst, vec_enc);
+  kortestwl(ktmp1, ktmp1);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  evcmpps(ktmp2, k0, src, src, Assembler::UNORD_Q, vec_enc);
+  evmovdqul(dst, ktmp2, xtmp2, true, vec_enc);
+
+  kxorwl(ktmp1, ktmp1, ktmp2);
+  evcmpps(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
+  vpternlogd(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
+  evmovdqul(dst, ktmp1, xtmp2, true, vec_enc);
+  bind(done);
+}
+
 #ifdef _LP64
-void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, KRegister mask,
-                                              Register tmp, int masklen, int masksize,
-                                              int vec_enc) {
+void C2_MacroAssembler::vector_mask_operation_helper(int opc, Register dst, Register tmp, int masklen) {
+  switch(opc) {
+    case Op_VectorMaskTrueCount:
+      popcntq(dst, tmp);
+      break;
+    case Op_VectorMaskLastTrue:
+      if (VM_Version::supports_lzcnt()) {
+        lzcntq(tmp, tmp);
+        movl(dst, 63);
+        subl(dst, tmp);
+      } else {
+        movl(dst, -1);
+        bsrq(tmp, tmp);
+        cmov32(Assembler::notZero, dst, tmp);
+      }
+      break;
+    case Op_VectorMaskFirstTrue:
+      if (VM_Version::supports_bmi1()) {
+        if (masklen < 32) {
+          orl(tmp, 1 << masklen);
+          tzcntl(dst, tmp);
+        } else if (masklen == 32) {
+          tzcntl(dst, tmp);
+        } else {
+          assert(masklen == 64, "");
+          tzcntq(dst, tmp);
+        }
+      } else {
+        if (masklen < 32) {
+          orl(tmp, 1 << masklen);
+          bsfl(dst, tmp);
+        } else {
+          assert(masklen == 32 || masklen == 64, "");
+          movl(dst, masklen);
+          if (masklen == 32)  {
+            bsfl(tmp, tmp);
+          } else {
+            bsfq(tmp, tmp);
+          }
+          cmov32(Assembler::notZero, dst, tmp);
+        }
+      }
+      break;
+    case Op_VectorMaskToLong:
+      assert(dst == tmp, "Dst and tmp should be the same for toLong operations");
+      break;
+    default: assert(false, "Unhandled mask operation");
+  }
+}
+
+void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, KRegister mask, Register tmp,
+                                              int masklen, int masksize, int vec_enc) {
+  assert(VM_Version::supports_popcnt(), "");
+
   if(VM_Version::supports_avx512bw()) {
     kmovql(tmp, mask);
   } else {
     assert(masklen <= 16, "");
     kmovwl(tmp, mask);
   }
-  if (masksize < 16) {
-    andq(tmp, (((jlong)1 << masklen) - 1));
+
+  // Mask generated out of partial vector comparisons/replicate/mask manipulation
+  // operations needs to be clipped.
+  if (masksize < 16 && opc != Op_VectorMaskFirstTrue) {
+    andq(tmp, (1 << masklen) - 1);
   }
-  switch(opc) {
-    case Op_VectorMaskTrueCount:
-      popcntq(dst, tmp);
-      break;
-    case Op_VectorMaskLastTrue:
-      mov64(dst, -1);
-      bsrq(tmp, tmp);
-      cmov(Assembler::notZero, dst, tmp);
-      break;
-    case Op_VectorMaskFirstTrue:
-      mov64(dst, masklen);
-      bsfq(tmp, tmp);
-      cmov(Assembler::notZero, dst, tmp);
-      break;
-    default: assert(false, "Unhandled mask operation");
-  }
+
+  vector_mask_operation_helper(opc, dst, tmp, masklen);
 }
 
 void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
-                                              XMMRegister xtmp1, Register tmp, int masklen, int masksize,
-                                              int vec_enc) {
-  assert(VM_Version::supports_avx(), "");
-  vpxor(xtmp, xtmp, xtmp, vec_enc);
-  vpsubb(xtmp, xtmp, mask, vec_enc);
-  vpmovmskb(tmp, xtmp, vec_enc);
-  if (masksize < 16) {
-    andq(tmp, (((jlong)1 << masklen) - 1));
+                                              Register tmp, int masklen, BasicType bt, int vec_enc) {
+  assert(vec_enc == AVX_128bit && VM_Version::supports_avx() ||
+         vec_enc == AVX_256bit && (VM_Version::supports_avx2() || type2aelembytes(bt) >= 4), "");
+  assert(VM_Version::supports_popcnt(), "");
+
+  bool need_clip = false;
+  switch(bt) {
+    case T_BOOLEAN:
+      // While masks of other types contain 0, -1; boolean masks contain lane values of 0, 1
+      vpxor(xtmp, xtmp, xtmp, vec_enc);
+      vpsubb(xtmp, xtmp, mask, vec_enc);
+      vpmovmskb(tmp, xtmp, vec_enc);
+      need_clip = masklen < 16;
+      break;
+    case T_BYTE:
+      vpmovmskb(tmp, mask, vec_enc);
+      need_clip = masklen < 16;
+      break;
+    case T_SHORT:
+      vpacksswb(xtmp, mask, mask, vec_enc);
+      if (masklen >= 16) {
+        vpermpd(xtmp, xtmp, 8, vec_enc);
+      }
+      vpmovmskb(tmp, xtmp, Assembler::AVX_128bit);
+      need_clip = masklen < 16;
+      break;
+    case T_INT:
+    case T_FLOAT:
+      vmovmskps(tmp, mask, vec_enc);
+      need_clip = masklen < 4;
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      vmovmskpd(tmp, mask, vec_enc);
+      need_clip = masklen < 2;
+      break;
+    default: assert(false, "Unhandled type, %s", type2name(bt));
   }
-  switch(opc) {
-    case Op_VectorMaskTrueCount:
-      popcntq(dst, tmp);
-      break;
-    case Op_VectorMaskLastTrue:
-      mov64(dst, -1);
-      bsrq(tmp, tmp);
-      cmov(Assembler::notZero, dst, tmp);
-      break;
-    case Op_VectorMaskFirstTrue:
-      mov64(dst, masklen);
-      bsfq(tmp, tmp);
-      cmov(Assembler::notZero, dst, tmp);
-      break;
-    default: assert(false, "Unhandled mask operation");
+
+  // Mask generated out of partial vector comparisons/replicate/mask manipulation
+  // operations needs to be clipped.
+  if (need_clip && opc != Op_VectorMaskFirstTrue) {
+    // need_clip implies masklen < 32
+    andq(tmp, (1 << masklen) - 1);
   }
+
+  vector_mask_operation_helper(opc, dst, tmp, masklen);
 }
 #endif

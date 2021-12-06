@@ -82,6 +82,8 @@ TOOL_GENERATECACERTS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_class
 TOOL_GENERATEEMOJIDATA = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generateemojidata.GenerateEmojiData
 
+TOOL_MAKEZIPREPRODUCIBLE = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    build.tools.makezipreproducible.MakeZipReproducible
 
 # TODO: There are references to the jdwpgen.jar in jdk/make/netbeans/jdwpgen/build.xml
 # and nbproject/project.properties in the same dir. Needs to be looked at.
