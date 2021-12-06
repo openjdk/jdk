@@ -24,12 +24,13 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import jdk.jpackage.test.LauncherAsServiceVerifier;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest;
 import jdk.jpackage.test.TKit;
 
 /**
@@ -40,6 +41,7 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Launcher as service packaging test
+ * @library /test/lib
  * @library ../helpers
  * @key jpackagePlatformPackage
  * @build jtreg.SkippedException
@@ -54,10 +56,24 @@ public class ServiceTest {
     public ServiceTest() {
         if (TKit.isWindows()) {
             final String propName = "jpackage.test.ServiceTest.service-installer";
-            winServiceInstaller = Optional.ofNullable(System.getProperty(
-                    propName)).map(Path::of).orElseThrow(
-                    () -> TKit.throwSkippedException(String.format(
-                            "%s system property not set", propName)));
+            String serviceInstallerExec = System.getProperty(propName);
+            if (serviceInstallerExec == null) {
+                if (Stream.of(RunnablePackageTest.Action.CREATE,
+                        RunnablePackageTest.Action.INSTALL).allMatch(
+                                RunnablePackageTest::hasAction)) {
+                    TKit.throwSkippedException(String.format(
+                            "%s system property not set", propName));
+                } else {
+                    // Use cmd.exe as a stub as the output packages will not be
+                    // created and installed in the test run
+                    serviceInstallerExec = System.getenv("COMSPEC");
+                    TKit.trace(
+                            String.format("Using [%s] as a service installer",
+                                    serviceInstallerExec));
+                }
+            }
+
+            winServiceInstaller = Path.of(serviceInstallerExec);
 
         } else {
             winServiceInstaller = null;
@@ -112,7 +128,7 @@ public class ServiceTest {
     private Consumer<PackageTest> configureWinServiceInstaller() throws
             IOException {
         if (winServiceInstaller == null) {
-            return null;
+            return test -> {};
         }
 
         var resourceDir = TKit.createTempDirectory("resource-dir");

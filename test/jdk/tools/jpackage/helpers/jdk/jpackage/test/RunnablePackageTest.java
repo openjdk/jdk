@@ -51,6 +51,10 @@ public abstract class RunnablePackageTest {
         runActions(actionGroups);
     }
 
+    public static boolean hasAction(Action a) {
+        return DEFAULT_ACTIONS.contains(a);
+    }
+
     protected void runActions(List<Action[]> actions) {
         actions.forEach(this::runAction);
     }
