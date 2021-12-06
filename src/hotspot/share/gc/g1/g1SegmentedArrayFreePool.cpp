@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 
-#include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1SegmentedArrayFreePool.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "logging/log.hpp"
@@ -33,19 +32,19 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/ostream.hpp"
 
-
-G1CardSetMemoryStats::G1CardSetMemoryStats() {
+G1SegmentedArrayMemoryStats::G1SegmentedArrayMemoryStats() {
   clear();
 }
 
-void G1CardSetMemoryStats::clear() {
+void G1SegmentedArrayMemoryStats::clear() {
   for (uint i = 0; i < num_pools(); i++) {
     _num_mem_sizes[i] = 0;
-    _num_buffers[i] = 0;
+    _num_segments[i] = 0;
   }
 }
 
-void G1CardSetFreePool::update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processor) {
+template<MEMFLAGS flag>
+void G1SegmentedArrayFreePool<flag>::update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processor) {
   uint num_free_lists = _freelist_pool.num_free_lists();
 
   for (uint i = 0; i < num_free_lists; i++) {
@@ -53,7 +52,8 @@ void G1CardSetFreePool::update_unlink_processors(G1ReturnMemoryProcessorSet* unl
   }
 }
 
-void G1CardSetFreePool::G1ReturnMemoryProcessor::visit_free_list(G1CardSetBufferList* source) {
+template<MEMFLAGS flag>
+void G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::visit_free_list(G1SegmentedArrayFreeList<flag>* source) {
   assert(_source == nullptr, "already visited");
   if (_return_to_vm_size > 0) {
     _source = source;
@@ -75,15 +75,16 @@ void G1CardSetFreePool::G1ReturnMemoryProcessor::visit_free_list(G1CardSetBuffer
   }
 }
 
-bool G1CardSetFreePool::G1ReturnMemoryProcessor::return_to_vm(jlong deadline) {
+template<MEMFLAGS flag>
+bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_vm(jlong deadline) {
   assert(!finished_return_to_vm(), "already returned everything to the VM");
-  assert(_first != nullptr, "must have element to return");
+  assert(_first != nullptr, "must have segment to return");
 
   size_t keep_size = 0;
   size_t keep_num = 0;
 
-  G1CardSetBuffer* cur = _first;
-  G1CardSetBuffer* last = nullptr;
+  G1SegmentedArraySegment<flag>* cur = _first;
+  G1SegmentedArraySegment<flag>* last = nullptr;
 
   while (cur != nullptr && _return_to_vm_size > 0) {
     size_t cur_size = cur->mem_size();
@@ -110,7 +111,7 @@ bool G1CardSetFreePool::G1ReturnMemoryProcessor::return_to_vm(jlong deadline) {
   _source->bulk_add(*_first, *last, keep_num, keep_size);
   _first = cur;
 
-  log_trace(gc, task)("Card Set Free Memory: Returned to VM %zu buffers size %zu", keep_num, keep_size);
+  log_trace(gc, task)("Segmented Array Free Memory: Returned to VM %zu segments size %zu", keep_num, keep_size);
 
   // _return_to_vm_size may be larger than what is available in the list at the
   // time we actually get the list. I.e. the list and _return_to_vm_size may be
@@ -124,7 +125,8 @@ bool G1CardSetFreePool::G1ReturnMemoryProcessor::return_to_vm(jlong deadline) {
   return _source != nullptr;
 }
 
-bool G1CardSetFreePool::G1ReturnMemoryProcessor::return_to_os(jlong deadline) {
+template<MEMFLAGS flag>
+bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_os(jlong deadline) {
   assert(finished_return_to_vm(), "not finished returning to VM");
   assert(!finished_return_to_os(), "already returned everything to the OS");
 
@@ -133,7 +135,7 @@ bool G1CardSetFreePool::G1ReturnMemoryProcessor::return_to_os(jlong deadline) {
   size_t mem_size_deleted = 0;
 
   while (_first != nullptr) {
-    G1CardSetBuffer* next = _first->next();
+    G1SegmentedArraySegment<flag>* next = _first->next();
     num_delete++;
     mem_size_deleted += _first->mem_size();
     delete _first;
@@ -145,45 +147,45 @@ bool G1CardSetFreePool::G1ReturnMemoryProcessor::return_to_os(jlong deadline) {
     }
   }
 
-  log_trace(gc, task)("Card Set Free Memory: Return to OS %zu buffers size %zu", num_delete, mem_size_deleted);
+  log_trace(gc, task)("Segmented Array Free Memory: Return to OS %zu segments size %zu", num_delete, mem_size_deleted);
 
   return _first != nullptr;
 }
 
-G1CardSetFreePool G1CardSetFreePool::_freelist_pool(G1CardSetConfiguration::num_mem_object_types());
+template<MEMFLAGS flag>
+G1SegmentedArrayFreePool<flag> G1SegmentedArrayFreePool<flag>::_freelist_pool(G1CardSetConfiguration::num_mem_object_types());
 
-G1CardSetFreePool::G1CardSetFreePool(uint num_free_lists) :
+template<MEMFLAGS flag>
+G1SegmentedArrayFreePool<flag>::G1SegmentedArrayFreePool(uint num_free_lists) :
   _num_free_lists(num_free_lists) {
 
-  _free_lists = NEW_C_HEAP_ARRAY(G1CardSetBufferList, _num_free_lists, mtGC);
+  _free_lists = NEW_C_HEAP_ARRAY(G1SegmentedArrayFreeList < flag >, _num_free_lists, mtGC);
   for (uint i = 0; i < _num_free_lists; i++) {
-    new (&_free_lists[i]) G1CardSetBufferList();
+    new (&_free_lists[i]) G1SegmentedArrayFreeList<flag>();
   }
 }
 
-G1CardSetFreePool::~G1CardSetFreePool() {
+template<MEMFLAGS flag>
+G1SegmentedArrayFreePool<flag>::~G1SegmentedArrayFreePool() {
   for (uint i = 0; i < _num_free_lists; i++) {
-    _free_lists[i].~G1CardSetBufferList();
+    _free_lists[i].~G1SegmentedArrayFreeList<flag>();
   }
   FREE_C_HEAP_ARRAY(mtGC, _free_lists);
 }
 
-G1CardSetBufferList* G1CardSetFreePool::free_list(uint i) {
-  assert(i < _num_free_lists, "must be");
-  return &_free_lists[i];
-}
-
-G1CardSetMemoryStats G1CardSetFreePool::memory_sizes() const {
-  G1CardSetMemoryStats free_list_stats;
+template<MEMFLAGS flag>
+G1SegmentedArrayMemoryStats G1SegmentedArrayFreePool<flag>::memory_sizes() const {
+  G1SegmentedArrayMemoryStats free_list_stats;
   assert(free_list_stats.num_pools() == num_free_lists(), "must be");
   for (uint i = 0; i < num_free_lists(); i++) {
     free_list_stats._num_mem_sizes[i] = _free_lists[i].mem_size();
-    free_list_stats._num_buffers[i] = _free_lists[i].num_buffers();
+    free_list_stats._num_segments[i] = _free_lists[i].num_segments();
   }
   return free_list_stats;
 }
 
-size_t G1CardSetFreePool::mem_size() const {
+template<MEMFLAGS flag>
+size_t G1SegmentedArrayFreePool<flag>::mem_size() const {
   size_t result = 0;
   for (uint i = 0; i < _num_free_lists; i++) {
     result += _free_lists[i].mem_size();
@@ -191,10 +193,13 @@ size_t G1CardSetFreePool::mem_size() const {
   return result;
 }
 
-void G1CardSetFreePool::print_on(outputStream* out) {
+template<MEMFLAGS flag>
+void G1SegmentedArrayFreePool<flag>::print_on(outputStream* out) {
   out->print_cr("  Free Pool: size %zu", free_list_pool()->mem_size());
   for (uint i = 0; i < _num_free_lists; i++) {
     FormatBuffer<> fmt("    %s", G1CardSetConfiguration::mem_object_type_name_str(i));
     _free_lists[i].print_on(out, fmt);
   }
 }
+
+template class G1SegmentedArrayFreePool<mtGCCardSet>;

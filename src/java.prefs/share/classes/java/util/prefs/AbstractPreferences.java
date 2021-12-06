@@ -29,11 +29,6 @@ import java.util.*;
 import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-// These imports needed only as a workaround for a JavaDoc bug
-import java.lang.Integer;
-import java.lang.Long;
-import java.lang.Float;
-import java.lang.Double;
 
 /**
  * This class provides a skeletal implementation of the {@link Preferences}
@@ -1498,13 +1493,13 @@ public abstract class AbstractPreferences extends Preferences {
      * eventQueue so the event dispatch thread knows whether to call
      * childAdded or childRemoved.
      */
-    private class NodeAddedEvent extends NodeChangeEvent {
+    private static class NodeAddedEvent extends NodeChangeEvent {
         private static final long serialVersionUID = -6743557530157328528L;
         NodeAddedEvent(Preferences parent, Preferences child) {
             super(parent, child);
         }
     }
-    private class NodeRemovedEvent extends NodeChangeEvent {
+    private static class NodeRemovedEvent extends NodeChangeEvent {
         private static final long serialVersionUID = 8735497392918824837L;
         NodeRemovedEvent(Preferences parent, Preferences child) {
             super(parent, child);

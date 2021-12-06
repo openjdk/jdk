@@ -2000,11 +2000,10 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
             // Get the popup
             Accessible a =
                 JComboBox.this.getUI().getAccessibleChild(JComboBox.this, 0);
-            if (a != null &&
-                a instanceof javax.swing.plaf.basic.ComboPopup) {
+            if (a instanceof javax.swing.plaf.basic.ComboPopup popup) {
 
                 // get the popup list
-                JList<?> list = ((javax.swing.plaf.basic.ComboPopup)a).getList();
+                JList<?> list = popup.getList();
 
                 // return the i-th selection in the popup list
                 AccessibleContext ac = list.getAccessibleContext();

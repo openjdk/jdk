@@ -384,8 +384,6 @@ class SharedRuntime: AllStatic {
                                        uint num_bits,
                                        uint total_args_passed);
 
-  static size_t trampoline_size();
-
   // Generate I2C and C2I adapters. These adapters are simple argument marshalling
   // blobs. Unlike adapters in the tiger and earlier releases the code in these
   // blobs does not create a new frame and are therefore virtually invisible

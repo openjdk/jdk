@@ -1280,7 +1280,7 @@ const intx ObjectAlignmentInBytes = 8;
           constraint(AllocatePrefetchInstrConstraintFunc, AfterMemoryInit)  \
                                                                             \
   /* deoptimization */                                                      \
-  develop(bool, TraceDeoptimization, false,                                 \
+  product(bool, TraceDeoptimization, false, DIAGNOSTIC,                     \
           "Trace deoptimization")                                           \
                                                                             \
   develop(bool, PrintDeoptimizationDetails, false,                          \

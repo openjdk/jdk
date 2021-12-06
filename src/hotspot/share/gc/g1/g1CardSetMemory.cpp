@@ -30,29 +30,28 @@
 #include "runtime/atomic.hpp"
 #include "utilities/ostream.hpp"
 
-
-template <class Elem>
-G1CardSetAllocator<Elem>::G1CardSetAllocator(const char* name,
-                                             const G1CardSetAllocOptions* buffer_options,
-                                             G1CardSetBufferList* free_buffer_list) :
-  _segmented_array(buffer_options, free_buffer_list),
+template <class Slot>
+G1CardSetAllocator<Slot>::G1CardSetAllocator(const char* name,
+                                             const G1CardSetAllocOptions* alloc_options,
+                                             G1CardSetFreeList* free_segment_list) :
+  _segmented_array(alloc_options, free_segment_list),
   _transfer_lock(false),
-  _free_nodes_list(),
-  _pending_nodes_list(),
-  _num_pending_nodes(0),
-  _num_free_nodes(0)
+  _free_slots_list(),
+  _pending_slots_list(),
+  _num_pending_slots(0),
+  _num_free_slots(0)
 {
-  uint elem_size = _segmented_array.elem_size();
-  assert(elem_size >= sizeof(G1CardSetContainer), "Element instance size %u for allocator %s too small", elem_size, name);
+  uint slot_size = _segmented_array.slot_size();
+  assert(slot_size >= sizeof(G1CardSetContainer), "Slot instance size %u for allocator %s too small", slot_size, name);
 }
 
-template <class Elem>
-G1CardSetAllocator<Elem>::~G1CardSetAllocator() {
+template <class Slot>
+G1CardSetAllocator<Slot>::~G1CardSetAllocator() {
   drop_all();
 }
 
-template <class Elem>
-bool G1CardSetAllocator<Elem>::try_transfer_pending() {
+template <class Slot>
+bool G1CardSetAllocator<Slot>::try_transfer_pending() {
   // Attempt to claim the lock.
   if (Atomic::load_acquire(&_transfer_lock) || // Skip CAS if likely to fail.
       Atomic::cmpxchg(&_transfer_lock, false, true)) {
@@ -60,13 +59,13 @@ bool G1CardSetAllocator<Elem>::try_transfer_pending() {
   }
   // Have the lock; perform the transfer.
 
-  // Claim all the pending nodes.
-  G1CardSetContainer* first = _pending_nodes_list.pop_all();
+  // Claim all the pending slots.
+  G1CardSetContainer* first = _pending_slots_list.pop_all();
 
   if (first != nullptr) {
-    // Prepare to add the claimed nodes, and update _num_pending_nodes.
+    // Prepare to add the claimed slots, and update _num_pending_slots.
     G1CardSetContainer* last = first;
-    Atomic::load_acquire(&_num_pending_nodes);
+    Atomic::load_acquire(&_num_pending_slots);
 
     uint count = 1;
     for (G1CardSetContainer* next = first->next(); next != nullptr; next = next->next()) {
@@ -74,70 +73,70 @@ bool G1CardSetAllocator<Elem>::try_transfer_pending() {
       ++count;
     }
 
-    Atomic::sub(&_num_pending_nodes, count);
+    Atomic::sub(&_num_pending_slots, count);
 
     // Wait for any in-progress pops to avoid ABA for them.
     GlobalCounter::write_synchronize();
-    // Add synchronized nodes to _free_node_list.
+    // Add synchronized slots to _free_slots_list.
     // Update count first so there can be no underflow in allocate().
-    Atomic::add(&_num_free_nodes, count);
-    _free_nodes_list.prepend(*first, *last);
+    Atomic::add(&_num_free_slots, count);
+    _free_slots_list.prepend(*first, *last);
   }
   Atomic::release_store(&_transfer_lock, false);
   return true;
 }
 
-template <class Elem>
-void G1CardSetAllocator<Elem>::free(Elem* elem) {
-  assert(elem != nullptr, "precondition");
+template <class Slot>
+void G1CardSetAllocator<Slot>::free(Slot* slot) {
+  assert(slot != nullptr, "precondition");
   // Desired minimum transfer batch size.  There is relatively little
   // importance to the specific number.  It shouldn't be too big, else
   // we're wasting space when the release rate is low.  If the release
   // rate is high, we might accumulate more than this before being
   // able to start a new transfer, but that's okay.  Also note that
   // the allocation rate and the release rate are going to be fairly
-  // similar, due to how the buffers are used. - kbarret
+  // similar, due to how the slots are used. - kbarret
   uint const trigger_transfer = 10;
 
-  uint pending_count = Atomic::add(&_num_pending_nodes, 1u, memory_order_relaxed);
+  uint pending_count = Atomic::add(&_num_pending_slots, 1u, memory_order_relaxed);
 
-  G1CardSetContainer* node =  reinterpret_cast<G1CardSetContainer*>(reinterpret_cast<char*>(elem));
+  G1CardSetContainer* container =  reinterpret_cast<G1CardSetContainer*>(reinterpret_cast<char*>(slot));
 
-  node->set_next(nullptr);
-  assert(node->next() == nullptr, "precondition");
+  container->set_next(nullptr);
+  assert(container->next() == nullptr, "precondition");
 
-  _pending_nodes_list.push(*node);
+  _pending_slots_list.push(*container);
 
   if (pending_count > trigger_transfer) {
     try_transfer_pending();
   }
 }
 
-template <class Elem>
-void G1CardSetAllocator<Elem>::drop_all() {
-  _free_nodes_list.pop_all();
-  _pending_nodes_list.pop_all();
-  _num_pending_nodes = 0;
-  _num_free_nodes = 0;
+template <class Slot>
+void G1CardSetAllocator<Slot>::drop_all() {
+  _free_slots_list.pop_all();
+  _pending_slots_list.pop_all();
+  _num_pending_slots = 0;
+  _num_free_slots = 0;
   _segmented_array.drop_all();
 }
 
-template <class Elem>
-void G1CardSetAllocator<Elem>::print(outputStream* os) {
-  uint num_allocated_nodes = _segmented_array.num_allocated_nodes();
-  uint num_available_nodes = _segmented_array.num_available_nodes();
-  uint highest = _segmented_array.first_array_buffer() != nullptr
-               ? _segmented_array.first_array_buffer()->num_elems()
+template <class Slot>
+void G1CardSetAllocator<Slot>::print(outputStream* os) {
+  uint num_allocated_slots = _segmented_array.num_allocated_slots();
+  uint num_available_slots = _segmented_array.num_available_slots();
+  uint highest = _segmented_array.first_array_segment() != nullptr
+               ? _segmented_array.first_array_segment()->num_slots()
                : 0;
-  uint num_buffers = _segmented_array.num_buffers();
-  os->print("MA " PTR_FORMAT ": %u elems pending (allocated %u available %u) used %.3f highest %u buffers %u size %zu ",
+  uint num_segments = _segmented_array.num_segments();
+  os->print("MA " PTR_FORMAT ": %u slots pending (allocated %u available %u) used %.3f highest %u segments %u size %zu ",
             p2i(this),
-            _num_pending_nodes,
-            num_allocated_nodes,
-            num_available_nodes,
-            percent_of(num_allocated_nodes - _num_pending_nodes, num_available_nodes),
+            _num_pending_slots,
+            num_allocated_slots,
+            num_available_slots,
+            percent_of(num_allocated_slots - _num_pending_slots, num_available_slots),
             highest,
-            num_buffers,
+            num_segments,
             mem_size());
 }
 
@@ -202,11 +201,11 @@ size_t G1CardSetMemoryManager::wasted_mem_size() const {
   return result;
 }
 
-G1CardSetMemoryStats G1CardSetMemoryManager::memory_stats() const {
-  G1CardSetMemoryStats result;
+G1SegmentedArrayMemoryStats G1CardSetMemoryManager::memory_stats() const {
+  G1SegmentedArrayMemoryStats result;
   for (uint i = 0; i < num_mem_object_types(); i++) {
     result._num_mem_sizes[i] += _allocators[i].mem_size();
-    result._num_buffers[i] += _allocators[i].num_buffers();
+    result._num_segments[i] += _allocators[i].num_segments();
   }
   return result;
 }

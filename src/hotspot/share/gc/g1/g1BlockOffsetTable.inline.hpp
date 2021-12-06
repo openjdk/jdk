@@ -119,20 +119,18 @@ inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr)
 
   size_t index = _bot->index_for(addr);
 
-  HeapWord* q = _bot->address_for_index(index);
-
   uint offset = _bot->offset_array(index);  // Extend u_char to uint.
   while (offset >= BOTConstants::N_words) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.
     size_t n_cards_back = BOTConstants::entry_to_cards_back(offset);
-    q -= (BOTConstants::N_words * n_cards_back);
     index -= n_cards_back;
     offset = _bot->offset_array(index);
   }
   assert(offset < BOTConstants::N_words, "offset too large");
-  q -= offset;
-  return q;
+
+  HeapWord* q = _bot->address_for_index(index);
+  return q - offset;
 }
 
 inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
