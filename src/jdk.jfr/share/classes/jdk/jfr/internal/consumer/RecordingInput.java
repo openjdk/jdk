@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -416,6 +416,15 @@ public final class RecordingInput implements DataInput, AutoCloseable {
 
     public String getFilename() {
         return filename;
+    }
+
+    // Purpose of this method is to prevent OOM by sanity check
+    // the minimum required number of bytes against what is available in
+    // segment/chunk/file
+    public void require(int minimumBytes, String errorMessage) throws IOException {
+        if (position + minimumBytes > size) {
+            throw new IOException(String.format(errorMessage, minimumBytes));
+        }
     }
 
     // Purpose of this method is to reuse block cache from a
