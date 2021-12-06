@@ -139,6 +139,7 @@ public final class Parser {
             String rawLine = next.line();
             boolean addLineTerminator = iterator.hasNext() || trailingNewline;
             String line;
+            boolean hasMarkup = false;
             markedUpLine.reset(rawLine);
             if (!markedUpLine.matches()) { // (1)
                 line = rawLine + (addLineTerminator ? "\n" : "");
@@ -168,6 +169,7 @@ public final class Parser {
                     // TODO: log this with NOTICE;
                     line = rawLine + (addLineTerminator ? "\n" : "");
                 } else { // (3)
+                    hasMarkup = true;
                     String payload = rawLine.substring(0, markedUpLine.end("payload"));
                     line = payload + (addLineTerminator ? "\n" : "");
                 }
@@ -185,7 +187,7 @@ public final class Parser {
 
             thisLineTags.clear();
 
-            append(text, Set.of(), line);
+            append(text, line.isBlank() && hasMarkup ? Set.of(new Style.Markup()) : Set.of(), line);
             // TODO: mark up trailing whitespace!
             lineStart += line.length();
         }

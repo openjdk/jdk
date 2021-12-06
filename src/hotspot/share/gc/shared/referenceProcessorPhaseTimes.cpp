@@ -101,10 +101,7 @@ RefProcWorkerTimeTracker::~RefProcWorkerTimeTracker() {
 RefProcSubPhasesWorkerTimeTracker::RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
                                                                      ReferenceProcessorPhaseTimes* phase_times,
                                                                      uint worker_id) :
-  RefProcWorkerTimeTracker(phase_times->sub_phase_worker_time_sec(phase), worker_id) {
-}
-
-RefProcSubPhasesWorkerTimeTracker::~RefProcSubPhasesWorkerTimeTracker() {
+  _tracker(phase_times->sub_phase_worker_time_sec(phase), worker_id) {
 }
 
 RefProcPhaseTimeBaseTracker::RefProcPhaseTimeBaseTracker(const char* title,
@@ -200,7 +197,6 @@ void ReferenceProcessorPhaseTimes::set_phase_time_ms(ReferenceProcessor::RefProc
 void ReferenceProcessorPhaseTimes::reset() {
   for (int i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
     _sub_phases_worker_time_sec[i]->reset();
-    _sub_phases_total_time_ms[i] = uninitialized();
   }
 
   for (int i = 0; i < ReferenceProcessor::RefPhaseMax; i++) {
@@ -227,17 +223,6 @@ ReferenceProcessorPhaseTimes::~ReferenceProcessorPhaseTimes() {
   delete _soft_weak_final_refs_phase_worker_time_sec;
 }
 
-double ReferenceProcessorPhaseTimes::sub_phase_total_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase) const {
-  ASSERT_SUB_PHASE(sub_phase);
-  return _sub_phases_total_time_ms[sub_phase];
-}
-
-void ReferenceProcessorPhaseTimes::set_sub_phase_total_phase_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase,
-                                                                     double time_ms) {
-  ASSERT_SUB_PHASE(sub_phase);
-  _sub_phases_total_time_ms[sub_phase] = time_ms;
-}
-
 void ReferenceProcessorPhaseTimes::add_ref_cleared(ReferenceType ref_type, size_t count) {
   ASSERT_REF_TYPE(ref_type);
   Atomic::add(&_ref_cleared[ref_type_2_index(ref_type)], count, memory_order_relaxed);
@@ -246,6 +231,11 @@ void ReferenceProcessorPhaseTimes::add_ref_cleared(ReferenceType ref_type, size_
 void ReferenceProcessorPhaseTimes::set_ref_discovered(ReferenceType ref_type, size_t count) {
   ASSERT_REF_TYPE(ref_type);
   _ref_discovered[ref_type_2_index(ref_type)] = count;
+}
+
+size_t ReferenceProcessorPhaseTimes::ref_discovered(ReferenceType ref_type) {
+  ASSERT_REF_TYPE(ref_type);
+  return _ref_discovered[ref_type_2_index(ref_type)];
 }
 
 double ReferenceProcessorPhaseTimes::balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase) const {

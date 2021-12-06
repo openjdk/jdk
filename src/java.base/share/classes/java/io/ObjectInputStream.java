@@ -1035,10 +1035,7 @@ public class ObjectInputStream
         if (buf == null) {
             throw new NullPointerException();
         }
-        int endoff = off + len;
-        if (off < 0 || len < 0 || endoff > buf.length || endoff < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, buf.length);
         return bin.read(buf, off, len, false);
     }
 
@@ -1207,10 +1204,7 @@ public class ObjectInputStream
      * @throws  IOException If other I/O error has occurred.
      */
     public void readFully(byte[] buf, int off, int len) throws IOException {
-        int endoff = off + len;
-        if (off < 0 || len < 0 || endoff > buf.length || endoff < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromToIndex(off, len, buf.length);
         bin.readFully(buf, off, len, false);
     }
 

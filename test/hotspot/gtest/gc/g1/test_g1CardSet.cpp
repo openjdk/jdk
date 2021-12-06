@@ -25,10 +25,12 @@
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
+#include "gc/g1/g1SegmentedArrayFreePool.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
 #include "unittest.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -343,17 +345,17 @@ void G1CardSetTest::cardset_basic_test() {
       ASSERT_TRUE(count == card_set.occupied());
     }
 
-    G1AddCardResult res = card_set.add_card(99, config.num_cards_in_howl_bitmap() - 1);
+    G1AddCardResult res = card_set.add_card(99, config.max_cards_in_howl_bitmap() - 1);
     // Adding above card should have coarsened Bitmap -> Full.
     ASSERT_TRUE(res == Added);
-    ASSERT_TRUE(config.num_cards_in_howl_bitmap() == card_set.occupied());
+    ASSERT_TRUE(config.max_cards_in_howl_bitmap() == card_set.occupied());
 
-    res = card_set.add_card(99, config.num_cards_in_howl_bitmap() - 2);
+    res = card_set.add_card(99, config.max_cards_in_howl_bitmap() - 2);
     ASSERT_TRUE(res == Found);
 
     uint threshold = config.cards_in_howl_threshold();
     uint adjusted_threshold = config.cards_in_howl_bitmap_threshold() * config.num_buckets_in_howl();
-    i = config.num_cards_in_howl_bitmap();
+    i = config.max_cards_in_howl_bitmap();
     count = i;
     for (; i <  threshold; i++) {
       G1AddCardResult res = card_set.add_card(99, i);

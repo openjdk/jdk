@@ -2389,12 +2389,14 @@ Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
   }
 
 Node* CountedLoopNode::skip_predicates() {
+  Node* ctrl = in(LoopNode::EntryControl);
   if (is_main_loop()) {
-    Node* ctrl = skip_strip_mined()->in(LoopNode::EntryControl);
-
+    ctrl = skip_strip_mined()->in(LoopNode::EntryControl);
+  }
+  if (is_main_loop() || is_post_loop()) {
     return skip_predicates_from_entry(ctrl);
   }
-  return in(LoopNode::EntryControl);
+  return ctrl;
 }
 
 

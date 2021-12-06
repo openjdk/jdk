@@ -911,6 +911,8 @@ public:
   static bool is_intel_skylake() { return is_intel_family_core() &&
                                           extended_cpu_model() == CPU_MODEL_SKYLAKE; }
 
+  static int avx3_threshold();
+
   static bool is_intel_tsc_synched_at_init()  {
     if (is_intel_family_core()) {
       uint32_t ext_model = extended_cpu_model();

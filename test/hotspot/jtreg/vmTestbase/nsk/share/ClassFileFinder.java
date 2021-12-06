@@ -36,7 +36,7 @@ public class ClassFileFinder {
      * classpath.
      *
      * @param name a classname
-     * @param classPath @{link File.pathSeparator} separated directories
+     * @param classPath {@link File.pathSeparator} separated directories
      * @return an absolute path to the found classfile, or null if it cannot be
      *         found
      */

@@ -790,8 +790,8 @@ public class InputContext extends java.awt.im.InputContext
      */
     public void disableNativeIM() {
         InputMethod inputMethod = getInputMethod();
-        if (inputMethod != null && inputMethod instanceof InputMethodAdapter) {
-            ((InputMethodAdapter)inputMethod).stopListening();
+        if (inputMethod instanceof InputMethodAdapter adapter) {
+            adapter.stopListening();
         }
     }
 
