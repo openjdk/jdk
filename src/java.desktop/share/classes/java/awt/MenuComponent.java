@@ -373,8 +373,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         Toolkit.getDefaultToolkit().notifyAWTEventListeners(e);
 
         if (newEventsOnly ||
-            (parent != null && parent instanceof MenuComponent &&
-             ((MenuComponent)parent).newEventsOnly)) {
+            (parent instanceof MenuComponent mc && mc.newEventsOnly)) {
             if (eventEnabled(e)) {
                 processEvent(e);
             } else if (e instanceof ActionEvent && parent != null) {

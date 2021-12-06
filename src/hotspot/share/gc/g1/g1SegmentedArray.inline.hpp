@@ -31,79 +31,79 @@
 #include "utilities/globalCounter.inline.hpp"
 
 template<MEMFLAGS flag>
-G1SegmentedArrayBuffer<flag>::G1SegmentedArrayBuffer(uint elem_size, uint num_instances, G1SegmentedArrayBuffer* next) :
-  _elem_size(elem_size), _num_elems(num_instances), _next(next), _next_allocate(0) {
+G1SegmentedArraySegment<flag>::G1SegmentedArraySegment(uint slot_size, uint num_slots, G1SegmentedArraySegment* next) :
+  _slot_size(slot_size), _num_slots(num_slots), _next(next), _next_allocate(0) {
 
-  _buffer = NEW_C_HEAP_ARRAY(char, (size_t)_num_elems * elem_size, mtGCCardSet);
+  _segment = NEW_C_HEAP_ARRAY(char, (size_t)_num_slots * slot_size, mtGCCardSet);
 }
 
 template<MEMFLAGS flag>
-G1SegmentedArrayBuffer<flag>::~G1SegmentedArrayBuffer() {
-  FREE_C_HEAP_ARRAY(mtGCCardSet, _buffer);
+G1SegmentedArraySegment<flag>::~G1SegmentedArraySegment() {
+  FREE_C_HEAP_ARRAY(mtGCCardSet, _segment);
 }
 
 template<MEMFLAGS flag>
-void* G1SegmentedArrayBuffer<flag>::get_new_buffer_elem() {
-  if (_next_allocate >= _num_elems) {
+void* G1SegmentedArraySegment<flag>::get_new_slot() {
+  if (_next_allocate >= _num_slots) {
     return nullptr;
   }
   uint result = Atomic::fetch_and_add(&_next_allocate, 1u, memory_order_relaxed);
-  if (result >= _num_elems) {
+  if (result >= _num_slots) {
     return nullptr;
   }
-  void* r = _buffer + (uint)result * _elem_size;
+  void* r = _segment + (uint)result * _slot_size;
   return r;
 }
 
 template<MEMFLAGS flag>
-void G1SegmentedArrayBufferList<flag>::bulk_add(G1SegmentedArrayBuffer<flag>& first,
-                                                G1SegmentedArrayBuffer<flag>& last,
-                                                size_t num,
-                                                size_t mem_size) {
+void G1SegmentedArrayFreeList<flag>::bulk_add(G1SegmentedArraySegment<flag>& first,
+                                              G1SegmentedArraySegment<flag>& last,
+                                              size_t num,
+                                              size_t mem_size) {
   _list.prepend(first, last);
-  Atomic::add(&_num_buffers, num, memory_order_relaxed);
+  Atomic::add(&_num_segments, num, memory_order_relaxed);
   Atomic::add(&_mem_size, mem_size, memory_order_relaxed);
 }
 
 template<MEMFLAGS flag>
-void G1SegmentedArrayBufferList<flag>::print_on(outputStream* out, const char* prefix) {
-  out->print_cr("%s: buffers %zu size %zu",
-                prefix, Atomic::load(&_num_buffers), Atomic::load(&_mem_size));
+void G1SegmentedArrayFreeList<flag>::print_on(outputStream* out, const char* prefix) {
+  out->print_cr("%s: segments %zu size %zu",
+                prefix, Atomic::load(&_num_segments), Atomic::load(&_mem_size));
 }
 
 template<MEMFLAGS flag>
-G1SegmentedArrayBuffer<flag>* G1SegmentedArrayBufferList<flag>::get() {
+G1SegmentedArraySegment<flag>* G1SegmentedArrayFreeList<flag>::get() {
   GlobalCounter::CriticalSection cs(Thread::current());
 
-  G1SegmentedArrayBuffer<flag>* result = _list.pop();
+  G1SegmentedArraySegment<flag>* result = _list.pop();
   if (result != nullptr) {
-    Atomic::dec(&_num_buffers, memory_order_relaxed);
+    Atomic::dec(&_num_segments, memory_order_relaxed);
     Atomic::sub(&_mem_size, result->mem_size(), memory_order_relaxed);
   }
   return result;
 }
 
 template<MEMFLAGS flag>
-G1SegmentedArrayBuffer<flag>* G1SegmentedArrayBufferList<flag>::get_all(size_t& num_buffers,
-                                                                        size_t& mem_size) {
+G1SegmentedArraySegment<flag>* G1SegmentedArrayFreeList<flag>::get_all(size_t& num_segments,
+                                                                       size_t& mem_size) {
   GlobalCounter::CriticalSection cs(Thread::current());
 
-  G1SegmentedArrayBuffer<flag>* result = _list.pop_all();
-  num_buffers = Atomic::load(&_num_buffers);
+  G1SegmentedArraySegment<flag>* result = _list.pop_all();
+  num_segments = Atomic::load(&_num_segments);
   mem_size = Atomic::load(&_mem_size);
 
   if (result != nullptr) {
-    Atomic::sub(&_num_buffers, num_buffers, memory_order_relaxed);
+    Atomic::sub(&_num_segments, num_segments, memory_order_relaxed);
     Atomic::sub(&_mem_size, mem_size, memory_order_relaxed);
   }
   return result;
 }
 
 template<MEMFLAGS flag>
-void G1SegmentedArrayBufferList<flag>::free_all() {
+void G1SegmentedArrayFreeList<flag>::free_all() {
   size_t num_freed = 0;
   size_t mem_size_freed = 0;
-  G1SegmentedArrayBuffer<flag>* cur;
+  G1SegmentedArraySegment<flag>* cur;
 
   while ((cur = _list.pop()) != nullptr) {
     mem_size_freed += cur->mem_size();
@@ -111,130 +111,130 @@ void G1SegmentedArrayBufferList<flag>::free_all() {
     delete cur;
   }
 
-  Atomic::sub(&_num_buffers, num_freed, memory_order_relaxed);
+  Atomic::sub(&_num_segments, num_freed, memory_order_relaxed);
   Atomic::sub(&_mem_size, mem_size_freed, memory_order_relaxed);
 }
 
-template <class Elem, MEMFLAGS flag>
-G1SegmentedArrayBuffer<flag>* G1SegmentedArray<Elem, flag>::create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev) {
-  // Take an existing buffer if available.
-  G1SegmentedArrayBuffer<flag>* next = _free_buffer_list->get();
+template <class Slot, MEMFLAGS flag>
+G1SegmentedArraySegment<flag>* G1SegmentedArray<Slot, flag>::create_new_segment(G1SegmentedArraySegment<flag>* const prev) {
+  // Take an existing segment if available.
+  G1SegmentedArraySegment<flag>* next = _free_segment_list->get();
   if (next == nullptr) {
-    uint prev_num_elems = (prev != nullptr) ? prev->num_elems() : 0;
-    uint num_elems = _alloc_options->next_num_elems(prev_num_elems);
-    next = new G1SegmentedArrayBuffer<flag>(elem_size(), num_elems, prev);
+    uint prev_num_slots = (prev != nullptr) ? prev->num_slots() : 0;
+    uint num_slots = _alloc_options->next_num_slots(prev_num_slots);
+    next = new G1SegmentedArraySegment<flag>(slot_size(), num_slots, prev);
   } else {
-    assert(elem_size() == next->elem_size() ,
-           "Mismatch %d != %d Elem %zu", elem_size(), next->elem_size(), sizeof(Elem));
+    assert(slot_size() == next->slot_size() ,
+           "Mismatch %d != %d Slot %zu", slot_size(), next->slot_size(), sizeof(Slot));
     next->reset(prev);
   }
 
-  // Install it as current allocation buffer.
-  G1SegmentedArrayBuffer<flag>* old = Atomic::cmpxchg(&_first, prev, next);
+  // Install it as current allocation segment.
+  G1SegmentedArraySegment<flag>* old = Atomic::cmpxchg(&_first, prev, next);
   if (old != prev) {
-    // Somebody else installed the buffer, use that one.
+    // Somebody else installed the segment, use that one.
     delete next;
     return old;
   } else {
-    // Did we install the first element in the list? If so, this is also the last.
+    // Did we install the first segment in the list? If so, this is also the last.
     if (prev == nullptr) {
       _last = next;
     }
-    // Successfully installed the buffer into the list.
-    Atomic::inc(&_num_buffers, memory_order_relaxed);
+    // Successfully installed the segment into the list.
+    Atomic::inc(&_num_segments, memory_order_relaxed);
     Atomic::add(&_mem_size, next->mem_size(), memory_order_relaxed);
-    Atomic::add(&_num_available_nodes, next->num_elems(), memory_order_relaxed);
+    Atomic::add(&_num_available_slots, next->num_slots(), memory_order_relaxed);
     return next;
   }
 }
 
-template <class Elem, MEMFLAGS flag>
-uint G1SegmentedArray<Elem, flag>::elem_size() const {
-  return _alloc_options->elem_size();
+template <class Slot, MEMFLAGS flag>
+uint G1SegmentedArray<Slot, flag>::slot_size() const {
+  return _alloc_options->slot_size();
 }
 
-template <class Elem, MEMFLAGS flag>
-G1SegmentedArray<Elem, flag>::G1SegmentedArray(const G1SegmentedArrayAllocOptions* buffer_options,
-                                               G1SegmentedArrayBufferList<flag>* free_buffer_list) :
-     _alloc_options(buffer_options),
+template <class Slot, MEMFLAGS flag>
+G1SegmentedArray<Slot, flag>::G1SegmentedArray(const G1SegmentedArrayAllocOptions* alloc_options,
+                                               G1SegmentedArrayFreeList<flag>* free_segment_list) :
+     _alloc_options(alloc_options),
      _first(nullptr),
      _last(nullptr),
-     _num_buffers(0),
+     _num_segments(0),
      _mem_size(0),
-     _free_buffer_list(free_buffer_list),
-     _num_available_nodes(0),
-     _num_allocated_nodes(0) {
-  assert(_free_buffer_list != nullptr, "precondition!");
+     _free_segment_list(free_segment_list),
+     _num_available_slots(0),
+     _num_allocated_slots(0) {
+  assert(_free_segment_list != nullptr, "precondition!");
 }
 
-template <class Elem, MEMFLAGS flag>
-G1SegmentedArray<Elem, flag>::~G1SegmentedArray() {
+template <class Slot, MEMFLAGS flag>
+G1SegmentedArray<Slot, flag>::~G1SegmentedArray() {
   drop_all();
 }
 
-template <class Elem, MEMFLAGS flag>
-void G1SegmentedArray<Elem, flag>::drop_all() {
-  G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
+template <class Slot, MEMFLAGS flag>
+void G1SegmentedArray<Slot, flag>::drop_all() {
+  G1SegmentedArraySegment<flag>* cur = Atomic::load_acquire(&_first);
 
   if (cur != nullptr) {
-    assert(_last != nullptr, "If there is at least one element, there must be a last one.");
+    assert(_last != nullptr, "If there is at least one segment, there must be a last one.");
 
-    G1SegmentedArrayBuffer<flag>* first = cur;
+    G1SegmentedArraySegment<flag>* first = cur;
 #ifdef ASSERT
     // Check list consistency.
-    G1SegmentedArrayBuffer<flag>* last = cur;
-    uint num_buffers = 0;
+    G1SegmentedArraySegment<flag>* last = cur;
+    uint num_segments = 0;
     size_t mem_size = 0;
     while (cur != nullptr) {
       mem_size += cur->mem_size();
-      num_buffers++;
+      num_segments++;
 
-      G1SegmentedArrayBuffer<flag>* next = cur->next();
+      G1SegmentedArraySegment<flag>* next = cur->next();
       last = cur;
       cur = next;
     }
 #endif
-    assert(num_buffers == _num_buffers, "Buffer count inconsistent %u %u", num_buffers, _num_buffers);
+    assert(num_segments == _num_segments, "Segment count inconsistent %u %u", num_segments, _num_segments);
     assert(mem_size == _mem_size, "Memory size inconsistent");
-    assert(last == _last, "Inconsistent last element");
+    assert(last == _last, "Inconsistent last segment");
 
-    _free_buffer_list->bulk_add(*first, *_last, _num_buffers, _mem_size);
+    _free_segment_list->bulk_add(*first, *_last, _num_segments, _mem_size);
   }
 
   _first = nullptr;
   _last = nullptr;
-  _num_buffers = 0;
+  _num_segments = 0;
   _mem_size = 0;
-  _num_available_nodes = 0;
-  _num_allocated_nodes = 0;
+  _num_available_slots = 0;
+  _num_allocated_slots = 0;
 }
 
-template <class Elem, MEMFLAGS flag>
-Elem* G1SegmentedArray<Elem, flag>::allocate() {
-  assert(elem_size() > 0, "instance size not set.");
+template <class Slot, MEMFLAGS flag>
+Slot* G1SegmentedArray<Slot, flag>::allocate() {
+  assert(slot_size() > 0, "instance size not set.");
 
-  G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
+  G1SegmentedArraySegment<flag>* cur = Atomic::load_acquire(&_first);
   if (cur == nullptr) {
-    cur = create_new_buffer(cur);
+    cur = create_new_segment(cur);
   }
 
   while (true) {
-    Elem* elem = (Elem*)cur->get_new_buffer_elem();
-    if (elem != nullptr) {
-      Atomic::inc(&_num_allocated_nodes, memory_order_relaxed);
-      guarantee(is_aligned(elem, _alloc_options->alignment()),
-                "result " PTR_FORMAT " not aligned at %u", p2i(elem), _alloc_options->alignment());
-      return elem;
+    Slot* slot = (Slot*)cur->get_new_slot();
+    if (slot != nullptr) {
+      Atomic::inc(&_num_allocated_slots, memory_order_relaxed);
+      guarantee(is_aligned(slot, _alloc_options->slot_alignment()),
+                "result " PTR_FORMAT " not aligned at %u", p2i(slot), _alloc_options->slot_alignment());
+      return slot;
     }
-    // The buffer is full. Next round.
+    // The segment is full. Next round.
     assert(cur->is_full(), "must be");
-    cur = create_new_buffer(cur);
+    cur = create_new_segment(cur);
   }
 }
 
-template <class Elem, MEMFLAGS flag>
-inline uint G1SegmentedArray<Elem, flag>::num_buffers() const {
-  return Atomic::load(&_num_buffers);
+template <class Slot, MEMFLAGS flag>
+inline uint G1SegmentedArray<Slot, flag>::num_segments() const {
+  return Atomic::load(&_num_segments);
 }
 
 #ifdef ASSERT
@@ -243,7 +243,7 @@ class LengthClosure {
   uint _total;
 public:
   LengthClosure() : _total(0) {}
-  void do_buffer(G1SegmentedArrayBuffer<flag>* node, uint limit) {
+  void do_segment(G1SegmentedArraySegment<flag>* segment, uint limit) {
     _total += limit;
   }
   uint length() const {
@@ -251,24 +251,24 @@ public:
   }
 };
 
-template <class Elem, MEMFLAGS flag>
-uint G1SegmentedArray<Elem, flag>::calculate_length() const {
+template <class Slot, MEMFLAGS flag>
+uint G1SegmentedArray<Slot, flag>::calculate_length() const {
   LengthClosure<flag> closure;
-  iterate_nodes(closure);
+  iterate_segments(closure);
   return closure.length();
 }
 #endif
 
-template <class Elem, MEMFLAGS flag>
-template <typename BufferClosure>
-void G1SegmentedArray<Elem, flag>::iterate_nodes(BufferClosure& closure) const {
-  G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
+template <class Slot, MEMFLAGS flag>
+template <typename SegmentClosure>
+void G1SegmentedArray<Slot, flag>::iterate_segments(SegmentClosure& closure) const {
+  G1SegmentedArraySegment<flag>* cur = Atomic::load_acquire(&_first);
 
   assert((cur != nullptr) == (_last != nullptr),
-         "If there is at least one element, there must be a last one");
+         "If there is at least one segment, there must be a last one");
 
   while (cur != nullptr) {
-    closure.do_buffer(cur, cur->length());
+    closure.do_segment(cur, cur->length());
     cur = cur->next();
   }
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -94,11 +94,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/make/autoconf
-
-  # Setup username (for use in adhoc version strings etc)
-  # Outer [ ] to quote m4.
-  [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
-  AC_SUBST(USERNAME)
 ])
 
 ###############################################################################

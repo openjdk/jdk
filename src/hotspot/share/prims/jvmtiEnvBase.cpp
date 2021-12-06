@@ -829,7 +829,7 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
          "call by myself / at safepoint / at handshake");
   int count = 0;
   if (java_thread->has_last_Java_frame()) {
-    RegisterMap reg_map(java_thread);
+    RegisterMap reg_map(java_thread, false /* update_map */, false /* process_frames */);
     ResourceMark rm(current_thread);
     javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);
     HandleMark hm(current_thread);

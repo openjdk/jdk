@@ -131,12 +131,12 @@ void G1ConcurrentRefineThread::run_service() {
     }
 
     total_stats += *_refinement_stats - start_stats;
-    log_debug(gc, refine)("Deactivated worker %d, off threshold: " SIZE_FORMAT
-                          ", current: " SIZE_FORMAT
-                          ", refined cards: " SIZE_FORMAT,
+    log_debug(gc, refine)("Deactivated worker %d, off threshold: %zu, "
+                          "cards: %zu, refined %zu, rate %1.2fc/ms",
                           _worker_id, _cr->deactivation_threshold(_worker_id),
                           G1BarrierSet::dirty_card_queue_set().num_cards(),
-                          total_stats.refined_cards());
+                          total_stats.refined_cards(),
+                          total_stats.refinement_rate_ms());
 
     if (os::supports_vtime()) {
       _vtime_accum = (os::elapsedVTime() - _vtime_start);
