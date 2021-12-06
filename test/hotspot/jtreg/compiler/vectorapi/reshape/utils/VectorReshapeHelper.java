@@ -21,16 +21,15 @@
  * questions.
  */
 
-package compiler.vectorapi.reshape;
+package compiler.vectorapi.reshape.utils;
 
 import compiler.lib.ir_framework.ForceInline;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Array;
 import java.nio.ByteOrder;
 import java.util.random.RandomGenerator;
-
 import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 
@@ -74,25 +73,21 @@ public class VectorReshapeHelper {
     public static final String L2X_NODE  = PREFIX + "VectorCastL2X" + SUFFIX;
     public static final String F2X_NODE  = PREFIX + "VectorCastF2X" + SUFFIX;
     public static final String D2X_NODE  = PREFIX + "VectorCastD2X" + SUFFIX;
+    public static final String REINTERPRET_NODE = PREFIX + "VectorReinterpret" + SUFFIX;
 
     @ForceInline
-    static <T, U> void vectorConvert(VectorOperators.Conversion<T, U> cop,
-                                     VectorSpecies<T> isp, VectorSpecies<U> osp, byte[] input, byte[] output) {
+    public static <T, U> void vectorCast(VectorOperators.Conversion<T, U> cop,
+                                         VectorSpecies<T> isp, VectorSpecies<U> osp, byte[] input, byte[] output) {
         isp.fromByteArray(input, 0, ByteOrder.nativeOrder())
                 .convertShape(cop, osp, 0)
                 .intoByteArray(output, 0, ByteOrder.nativeOrder());
     }
 
-    static <T, U> void runCastHelper(VectorOperators.Conversion<T, U> castOp,
-                                     VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
+    public static <T, U> void runCastHelper(VectorOperators.Conversion<T, U> castOp,
+                                            VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
         var random = RandomGenerator.getDefault();
         boolean isUnsignedCast = castOp.name().startsWith("ZERO");
-        String testMethodName = String.format("test%s%c%dto%c%d",
-                isUnsignedCast ? "U" : "",
-                Character.toUpperCase(isp.elementType().getName().charAt(0)),
-                isp.vectorBitSize(),
-                Character.toUpperCase(osp.elementType().getName().charAt(0)),
-                osp.vectorBitSize());
+        String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,
                 testMethodName,
@@ -161,6 +156,109 @@ public class VectorReshapeHelper {
                     case "double" -> getDouble(output, i);
                     default -> throw new AssertionError();
                 };
+                Asserts.assertEquals(expected, actual);
+            }
+        }
+    }
+
+    @ForceInline
+    public static <T, U> void vectorExpandShrink(VectorSpecies<T> isp, VectorSpecies<U> osp, byte[] input, byte[] output) {
+        isp.fromByteArray(input, 0, ByteOrder.nativeOrder())
+                .reinterpretShape(osp, 0)
+                .intoByteArray(output, 0, ByteOrder.nativeOrder());
+    }
+
+    public static <T, U> void runExpandShrinkHelper(VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
+        var random = RandomGenerator.getDefault();
+        String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
+        var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
+        var testMethod = MethodHandles.lookup().findStatic(caller,
+                testMethodName,
+                MethodType.methodType(void.class, byte.class.arrayType(), byte.class.arrayType()));
+        byte[] input = new byte[isp.vectorByteSize()];
+        byte[] output = new byte[osp.vectorByteSize()];
+        for (int iter = 0; iter < INVOCATIONS; iter++) {
+            random.nextBytes(input);
+            testMethod.invokeExact(input, output);
+            for (int i = 0; i < osp.vectorByteSize(); i++) {
+                int expected = i < isp.vectorByteSize() ? input[i] : 0;
+                int actual = output[i];
+                Asserts.assertEquals(expected, actual);
+            }
+        }
+    }
+
+    @ForceInline
+    public static <T, U> void vectorDoubleExpandShrink(VectorSpecies<T> isp, VectorSpecies<U> osp, byte[] input, byte[] output) {
+        isp.fromByteArray(input, 0, ByteOrder.nativeOrder())
+                .reinterpretShape(osp, 0)
+                .reinterpretShape(isp, 0)
+                .intoByteArray(output, 0, ByteOrder.nativeOrder());
+    }
+
+    public static <T, U> void runDoubleExpandShrinkHelper(VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
+        var random = RandomGenerator.getDefault();
+        String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
+        var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
+        var testMethod = MethodHandles.lookup().findStatic(caller,
+                testMethodName,
+                MethodType.methodType(void.class, byte.class.arrayType(), byte.class.arrayType()));
+        byte[] input = new byte[isp.vectorByteSize()];
+        byte[] output = new byte[isp.vectorByteSize()];
+        for (int iter = 0; iter < INVOCATIONS; iter++) {
+            random.nextBytes(input);
+            testMethod.invokeExact(input, output);
+            for (int i = 0; i < isp.vectorByteSize(); i++) {
+                int expected = i < osp.vectorByteSize() ? input[i] : 0;
+                int actual = output[i];
+                Asserts.assertEquals(expected, actual);
+            }
+        }
+    }
+
+    // All this complication is due to the fact vector load and store with respect to byte array introduce
+    // addition ReinterpretNodes, several ReinterpretNodes back to back being optimized make the number of
+    // nodes remaining in the IR becomes unpredictable.
+    @ForceInline
+    public static <T, U> void vectorRebracket(VectorSpecies<T> isp, VectorSpecies<U> osp, Object input, Object output) {
+        var outputVector = isp.fromArray(input, 0).reinterpretShape(osp, 0);
+        var otype = osp.elementType();
+        if (otype == byte.class) {
+            ((ByteVector)outputVector).intoArray((byte[])output, 0);
+        } else if (otype == short.class) {
+            ((ShortVector)outputVector).intoArray((short[])output, 0);
+        } else if (otype == int.class) {
+            ((IntVector)outputVector).intoArray((int[])output, 0);
+        } else if (otype == long.class) {
+            ((LongVector)outputVector).intoArray((long[])output, 0);
+        } else if (otype == float.class) {
+            ((FloatVector)outputVector).intoArray((float[])output, 0);
+        } else if (otype == double.class) {
+            ((DoubleVector)outputVector).intoArray((double[])output, 0);
+        } else {
+            throw new AssertionError();
+        }
+    }
+
+    public static <T, U> void runRebracketHelper(VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
+        var random = RandomGenerator.getDefault();
+        String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
+        var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
+        var testMethod = MethodHandles.lookup().findStatic(caller,
+                testMethodName,
+                MethodType.methodType(void.class, Object.class, Object.class));
+        Object input = Array.newInstance(isp.elementType(), isp.length());
+        Object output = Array.newInstance(osp.elementType(), osp.length());
+        long ibase = UnsafeUtils.arrayBase(isp.elementType());
+        long obase = UnsafeUtils.arrayBase(osp.elementType());
+        for (int iter = 0; iter < INVOCATIONS; iter++) {
+            for (int i = 0; i < isp.vectorByteSize(); i++) {
+                UnsafeUtils.putByte(input, ibase, i, random.nextInt());
+            }
+            testMethod.invokeExact(input, output);
+            for (int i = 0; i < osp.vectorByteSize(); i++) {
+                int expected = i < isp.vectorByteSize() ? UnsafeUtils.getByte(input, ibase, i) : 0;
+                int actual = UnsafeUtils.getByte(output, obase, i);
                 Asserts.assertEquals(expected, actual);
             }
         }
