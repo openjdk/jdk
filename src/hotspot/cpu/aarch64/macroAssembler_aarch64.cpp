@@ -4945,61 +4945,50 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
   prfm(Address(src), PLDL1STRM);
   movw(cnt, len);
 
-  Label LOOP_16, BREAK_LOOP_16;
+  Label LOOP_16, BREAK_LOOP_16, FAIL_16;
 
   BIND(LOOP_16);
   {
     cmpw(cnt, 16);
     br(LT, BREAK_LOOP_16);
-    if (SoftwarePrefetchHintDistance >= 0) {
-      prfm(Address(dst), PSTL1KEEP);
-    }
-    FloatRegister vc0 = vtmp0;
-    FloatRegister vc1 = vtmp1;
-    ld1(vc0, vc1, T16B, src);
+    // NOTE: Attempts to use 'ld2' degrades performance considerably (running
+    //       on Ampere Altra, Neoverse N1).
+    ld1(vtmp0, vtmp1, T16B, Address(post(src, 32)));
 
     FloatRegister vhi = vtmp2;
     FloatRegister vlo = vtmp3;
-    uzp2(vhi, T16B, vc0, vc1);
-    uzp1(vlo, T16B, vc0, vc1);
+    uzp2(vhi, T16B, vtmp0, vtmp1);
+    uzp1(vlo, T16B, vtmp0, vtmp1);
 
-    // ISO-check on hi-parts (all zero).
+#define ASCII(insn) if (ascii) { insn; }
+
     Register max = rscratch1;
-    umaxv(vhi, T16B, vhi);
-    umov(max, vhi, B, 0);
-    cbnzw(max, BREAK_LOOP_16);
+    // ISO-check on hi-parts (all zero).
+    //                          Ascii-check on lo-parts (no sign).
+    umaxv(vhi, T16B, vhi);      ASCII(cmlt(vtmp0, T16B, vlo));
+    umov(max, vhi, B, 0);       ASCII(umaxv(vtmp0, T16B, vtmp0));
+    cbnzw(max, FAIL_16);        ASCII(umov(max, vtmp0, B, 0));
+                                ASCII(cbnzw(max, FAIL_16));
+#undef ASCII
 
-    if (ascii) {
-      // Ascii-check (separate "pass") on lo-parts (no sign).
-      FloatRegister vt0 = vtmp2;
-      cmlt(vt0, T16B, vlo);
-      umaxv(vt0, T16B, vt0);
-      umov(max, vt0, B, 0);
-      cbnzw(max, BREAK_LOOP_16);
-    }
-    if (SoftwarePrefetchHintDistance >= 0) {
-      prfm(Address(src, 32), PLDL1STRM);
-    }
     subw(cnt, cnt, 16);
-
-    st1(vlo, T16B, dst);
-    add(src, src, 32);
-    add(dst, dst, 16);
+    st1(vlo, T16B, Address(post(dst, 16)));
     b(LOOP_16);
   }
+  BIND(FAIL_16);
+  sub(src, src, 32);
   BIND(BREAK_LOOP_16);
 
-  Label DONE;
-  Label LOOP;
+  Label DONE, LOOP;
 
   cbz(cnt, DONE);
   BIND(LOOP);
   {
-    Register tmp = rscratch1;
-    ldrh(tmp, Address(post(src, 2)));
-    tst(tmp, ascii ? 0xff80 : 0xff00);
+    Register chr = rscratch1;
+    ldrh(chr, Address(post(src, 2)));
+    tst(chr, ascii ? 0xff80 : 0xff00);
     br(NE, DONE);
-    strb(tmp, Address(post(dst, 1)));
+    strb(chr, Address(post(dst, 1)));
     subs(cnt, cnt, 1);
     br(GT, LOOP);
   }
