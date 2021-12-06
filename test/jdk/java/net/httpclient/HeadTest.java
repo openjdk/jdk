@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8203433
+ * @bug 8203433 8276559
  * @summary (httpclient) Add tests for HEAD and 304 responses.
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
@@ -48,43 +48,20 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Writer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.lang.System.out;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.net.HttpURLConnection.HTTP_OK;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 public class HeadTest implements HttpServerAdapters {
 
@@ -98,8 +75,6 @@ public class HeadTest implements HttpServerAdapters {
     String http2URI;
     String https2URI;
 
-    static final String MESSAGE = "Basic HeadTest message body";
-    static final int ITERATIONS = 3;
     static final String CONTENT_LEN = "300";
 
     /*
@@ -133,27 +108,38 @@ public class HeadTest implements HttpServerAdapters {
         };
     }
 
-    static final AtomicLong requestCounter = new AtomicLong();
-
     @Test(dataProvider = "positive")
     void test(String uriString, String method,
                         int expResp, HttpClient.Version version) throws Exception {
         out.printf("%n---- starting (%s) ----%n", uriString);
+        URI uri = URI.create(uriString);
+        HttpRequest.Builder requestBuilder = HttpRequest
+                .newBuilder(uri)
+                .method(method, HttpRequest.BodyPublishers.noBody());
+        if (version != null) {
+            requestBuilder.version(version);
+        }
+        doTest(requestBuilder.build(), expResp);
+        // repeat the test this time by building the request using convenience
+        // GET and HEAD methods
+        requestBuilder = HttpRequest.newBuilder(uri);
+        if (version != null) {
+            requestBuilder.version(version);
+        }
+        switch (method) {
+            case "GET" -> requestBuilder.GET();
+            case "HEAD" -> requestBuilder.HEAD();
+            default -> throw new IllegalArgumentException("Unexpected method " + method);
+        }
+        doTest(requestBuilder.build(), expResp);
+    }
+
+    // issue a request with no body and verify the response code is the expected response code
+    private void doTest(HttpRequest request, int expResp) throws Exception {
         HttpClient client = HttpClient.newBuilder()
                 .followRedirects(Redirect.ALWAYS)
                 .sslContext(sslContext)
                 .build();
-
-        URI uri = URI.create(uriString);
-
-        HttpRequest.Builder requestBuilder = HttpRequest
-                .newBuilder(uri)
-                .method(method, HttpRequest.BodyPublishers.noBody());
-
-        if (version != null) {
-            requestBuilder.version(version);
-        }
-        HttpRequest request = requestBuilder.build();
         out.println("Initial request: " + request.uri());
 
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());

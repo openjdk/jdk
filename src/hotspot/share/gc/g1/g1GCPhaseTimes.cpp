@@ -116,10 +116,12 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
   _gc_par_phases[ScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
+  _gc_par_phases[ScanHR]->create_thread_work_items("Found Roots:", ScanHRFoundRoots);
 
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
+  _gc_par_phases[OptScanHR]->create_thread_work_items("Found Roots:", ScanHRFoundRoots);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Refs:", ScanHRScannedOptRefs);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Used Memory:", ScanHRUsedMemory);
 

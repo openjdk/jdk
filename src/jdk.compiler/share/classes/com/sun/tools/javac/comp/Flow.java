@@ -749,7 +749,7 @@ public class Flow {
             }
         }
 
-        private void transitiveCovers(DiagnosticPosition pos, Set<Symbol> covered) {
+        private void transitiveCovers(DiagnosticPosition pos, Type seltype, Set<Symbol> covered) {
             List<Symbol> todo = List.from(covered);
             while (todo.nonEmpty()) {
                 Symbol sym = todo.head;
@@ -771,7 +771,7 @@ public class Flow {
                     case TYP -> {
                         for (Type sup : types.directSupertypes(sym.type)) {
                             if (sup.tsym.kind == TYP) {
-                                if (isTransitivelyCovered(pos, sup.tsym, covered) &&
+                                if (isTransitivelyCovered(pos, seltype, sup.tsym, covered) &&
                                     covered.add(sup.tsym)) {
                                     todo = todo.prepend(sup.tsym);
                                 }
@@ -782,15 +782,18 @@ public class Flow {
             }
         }
 
-        private boolean isTransitivelyCovered(DiagnosticPosition pos, Symbol sealed,
-                                              Set<Symbol> covered) {
+        private boolean isTransitivelyCovered(DiagnosticPosition pos, Type seltype,
+                                              Symbol sealed, Set<Symbol> covered) {
             try {
                 if (covered.stream().anyMatch(c -> sealed.isSubClass(c, types)))
                     return true;
                 if (sealed.kind == TYP && sealed.isAbstract() && sealed.isSealed()) {
                     return ((ClassSymbol) sealed).permitted
                                                  .stream()
-                                                 .allMatch(s -> isTransitivelyCovered(pos, s, covered));
+                                                 .filter(s -> {
+                                                     return types.isCastable(seltype, s.type/*, types.noWarnings*/);
+                                                 })
+                                                 .allMatch(s -> isTransitivelyCovered(pos, seltype, s, covered));
                 }
                 return false;
             } catch (CompletionFailure cf) {
@@ -800,7 +803,7 @@ public class Flow {
         }
 
         private boolean isExhaustive(DiagnosticPosition pos, Type seltype, Set<Symbol> covered) {
-            transitiveCovers(pos, covered);
+            transitiveCovers(pos, seltype, covered);
             return switch (seltype.getTag()) {
                 case CLASS -> {
                     if (seltype.isCompound()) {
