@@ -1242,8 +1242,7 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = BoolNode::make_predicate(initial_slow_test, &_igvn);
   }
 
-  if (C->env()->dtrace_alloc_probes() ||
-      (!UseTLAB && !Universe::heap()->supports_inline_contig_alloc())) {
+  if (!UseTLAB && !Universe::heap()->supports_inline_contig_alloc()) {
     // Force slow-path allocation
     expand_fast_path = false;
     initial_slow_test = NULL;
@@ -1631,7 +1630,7 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
 
 void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
                                                 Node*& ctrl, Node*& rawmem) {
-  if (C->env()->dtrace_extended_probes()) {
+  if (C->env()->dtrace_alloc_probes()) {
     // Slow-path call
     int size = TypeFunc::Parms + 2;
     CallLeafNode *call = new CallLeafNode(OptoRuntime::dtrace_object_alloc_Type(),
@@ -1648,7 +1647,7 @@ void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
     call->init_req(TypeFunc::Parms + 1, oop);
     call->init_req(TypeFunc::Control, ctrl);
     call->init_req(TypeFunc::I_O    , top()); // does no i/o
-    call->init_req(TypeFunc::Memory , ctrl);
+    call->init_req(TypeFunc::Memory , rawmem);
     call->init_req(TypeFunc::ReturnAdr, alloc->in(TypeFunc::ReturnAdr));
     call->init_req(TypeFunc::FramePtr, alloc->in(TypeFunc::FramePtr));
     transform_later(call);

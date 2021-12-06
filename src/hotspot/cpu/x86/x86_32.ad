@@ -13180,6 +13180,16 @@ instruct cmovPP_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, eRegP dst, eRegP s
   ins_pipe( pipe_cmov_reg );
 %}
 
+// Compare 2 unsigned longs and CMOVE ptrs.
+instruct cmovPP_reg_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, eRegP dst, eRegP src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovPP_reg_LTGE(cmp,flags,dst,src);
+  %}
+%}
+
 // Compare 2 longs and CMOVE doubles
 instruct cmovDDPR_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regDPR dst, regDPR src) %{
   predicate( UseSSE<=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
@@ -13359,6 +13369,16 @@ instruct cmovPP_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, eRegP dst, eRegP s
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cmp), RegReg( dst, src ) );
   ins_pipe( pipe_cmov_reg );
+%}
+
+// Compare 2 unsigned longs and CMOVE ptrs.
+instruct cmovPP_reg_EQNE_U(cmpOpU cmp, flagsReg_ulong_EQNE flags, eRegP dst, eRegP src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
+  match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovPP_reg_EQNE(cmp,flags,dst,src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE doubles
@@ -13568,6 +13588,16 @@ instruct cmovPP_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, eRegP dst,
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cmp), RegReg( dst, src ) );
   ins_pipe( pipe_cmov_reg );
+%}
+
+// Compare 2 unsigned longs and CMOVE ptrs.
+instruct cmovPP_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegP dst, eRegP src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovPP_reg_LEGT(cmp,flags,dst,src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE doubles

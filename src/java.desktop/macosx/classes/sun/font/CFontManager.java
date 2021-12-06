@@ -283,9 +283,9 @@ public final class CFontManager extends SunFontManager {
         if (realFamily == null) return false;
 
         Font2D realFont = realFamily.getFontWithExactStyleMatch(style);
-        if (realFont == null || !(realFont instanceof CFont)) return false;
+        if (!(realFont instanceof CFont cFont)) return false;
 
-        CFont newFont = new CFont((CFont)realFont, logicalFamilyName);
+        CFont newFont = new CFont(cFont, logicalFamilyName);
         registerGenericFont(newFont, true);
 
         return true;
