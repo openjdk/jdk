@@ -59,7 +59,7 @@ public class TestStressArrayCopy {
     //
     // Default to 1/4 of the CPUs, and allow users to override.
     static final int MAX_PARALLELISM = Integer.getInteger("maxParallelism",
-        Runtime.getRuntime().availableProcessors() / 4);
+        Math.max(1, Runtime.getRuntime().availableProcessors() / 4));
 
     private static List<String> mix(List<String> o, String... mix) {
         List<String> n = new ArrayList<>(o);
