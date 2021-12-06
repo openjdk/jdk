@@ -91,7 +91,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   GrainWords = GrainBytes >> LogHeapWordSize;
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
-  CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
+  CardsPerRegion = GrainBytes >> G1CardTable::card_shift();
 
   LogCardsPerRegion = log2i(CardsPerRegion);
 
