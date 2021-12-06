@@ -560,6 +560,11 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     }
   }
 
+  // java.lang.Class may not be loaded by AppClassLoader
+  if (found_klass == NULL && sym == vmSymbols::java_lang_Class()) {
+    return Class_klass();
+  }
+
   if (found_klass != NULL) {
     // Found it.  Build a CI handle.
     return get_klass(found_klass);
