@@ -89,7 +89,7 @@ public:
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   int max_opcode() const { return Op_MaxI; }
   int min_opcode() const { return Op_MinI; }
-  virtual Node*  Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -106,7 +106,7 @@ public:
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   int max_opcode() const { return Op_MaxL; }
   int min_opcode() const { return Op_MinL; }
-  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual uint ideal_reg() const { return Op_RegL; }

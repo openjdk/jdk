@@ -277,8 +277,8 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     op2 = in2->Opcode();
   }
   if (op1 == Op_Sub(bt)) {
-    const Type *t_sub1 = phase->type(in1->in(1));
-    const Type *t_2    = phase->type(in2       );
+    const Type* t_sub1 = phase->type(in1->in(1));
+    const Type* t_2    = phase->type(in2       );
     if (t_sub1->singleton() && t_2->singleton() && t_sub1 != Type::TOP && t_2 != Type::TOP) {
       return SubNode::make(phase->makecon(add_ring(t_sub1, t_2)), in1->in(2), bt);
     }
@@ -287,7 +287,7 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
       // Check for dead cycle: d = (a-b)+(c-d)
       assert( in1->in(2) != this && in2->in(2) != this,
               "dead loop in AddINode::Ideal" );
-      Node *sub  = SubNode::make(NULL, NULL, bt);
+      Node* sub = SubNode::make(NULL, NULL, bt);
       sub->init_req(1, phase->transform(AddNode::make(in1->in(1), in2->in(1), bt)));
       sub->init_req(2, phase->transform(AddNode::make(in1->in(2), in2->in(2), bt)));
       return sub;
@@ -388,7 +388,7 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
 }
 
 
-Node* AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
   int op1 = in1->Opcode();
@@ -411,9 +411,9 @@ Node* AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     jint y = phase->type(in2)->is_int()->get_con();
 
     if (z < 5 && -5 < y && y < 0) {
-      const Type *t_in11 = phase->type(in1->in(1));
+      const Type* t_in11 = phase->type(in1->in(1));
       if( t_in11 != Type::TOP && (t_in11->is_int()->_lo >= -(y << z))) {
-        Node *a = phase->transform(new AddINode( in1->in(1), phase->intcon(y<<z)));
+        Node* a = phase->transform(new AddINode( in1->in(1), phase->intcon(y<<z)));
         return new URShiftINode(a, in1->in(2));
       }
     }
@@ -466,7 +466,7 @@ const Type *AddINode::add_ring( const Type *t0, const Type *t1 ) const {
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
-Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* AddLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return AddNode::IdealIL(phase, can_reshape, T_LONG);
 }
 
