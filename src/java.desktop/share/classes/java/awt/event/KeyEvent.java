@@ -151,6 +151,7 @@ import sun.awt.AWTAccessor;
  *
  * @since 1.1
  */
+@SuppressWarnings("doclint:missing")
 public class KeyEvent extends InputEvent {
 
     /**

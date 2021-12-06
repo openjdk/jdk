@@ -53,6 +53,7 @@ class BlockListBuilder {
 
   BlockList    _blocks;                // internal list of all blocks
   BlockList*   _bci2block;             // mapping from bci to blocks for GraphBuilder
+  GrowableArray<BlockList> _bci2block_successors; // Mapping bcis to their blocks successors while we dont have a blockend
 
   // fields used by mark_loops
   ResourceBitMap _active;              // for iteration of control flow graph
@@ -89,6 +90,11 @@ class BlockListBuilder {
   void print();
 #endif
 
+  int number_of_successors(BlockBegin* block);
+  BlockBegin* successor_at(BlockBegin* block, int i);
+  void add_successor(BlockBegin* block, BlockBegin* sux);
+  bool is_successor(BlockBegin* block, BlockBegin* sux);
+
  public:
   // creation
   BlockListBuilder(Compilation* compilation, IRScope* scope, int osr_bci);
@@ -105,6 +111,7 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
  , _scope(scope)
  , _blocks(16)
  , _bci2block(new BlockList(scope->method()->code_size(), NULL))
+ , _bci2block_successors(scope->method()->code_size())
  , _active()         // size not known yet
  , _visited()        // size not known yet
  , _loop_map() // size not known yet
@@ -117,6 +124,8 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
 
   mark_loops();
   NOT_PRODUCT(if (PrintInitialBlockList) print());
+
+  // _bci2block still contains blocks with _end == null and > 0 sux in _bci2block_successors.
 
 #ifndef PRODUCT
   if (PrintCFGToFile) {
@@ -160,6 +169,7 @@ BlockBegin* BlockListBuilder::make_block_at(int cur_bci, BlockBegin* predecessor
     block = new BlockBegin(cur_bci);
     block->init_stores_to_locals(method()->max_locals());
     _bci2block->at_put(cur_bci, block);
+    _bci2block_successors.at_put_grow(cur_bci, BlockList());
     _blocks.append(block);
 
     assert(predecessor == NULL || predecessor->bci() < cur_bci, "targets for backward branches must already exist");
@@ -170,7 +180,7 @@ BlockBegin* BlockListBuilder::make_block_at(int cur_bci, BlockBegin* predecessor
       BAILOUT_("Exception handler can be reached by both normal and exceptional control flow", block);
     }
 
-    predecessor->add_successor(block);
+    add_successor(predecessor, block);
     block->increment_total_preds();
   }
 
@@ -201,8 +211,8 @@ void BlockListBuilder::handle_exceptions(BlockBegin* current, int cur_bci) {
       assert(entry->is_set(BlockBegin::exception_entry_flag), "flag must be set");
 
       // add each exception handler only once
-      if (!current->is_successor(entry)) {
-        current->add_successor(entry);
+      if(!is_successor(current, entry)) {
+        add_successor(current, entry);
         entry->increment_total_preds();
       }
 
@@ -418,9 +428,9 @@ int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   _active.set_bit(block_id);
 
   intptr_t loop_state = 0;
-  for (int i = block->number_of_sux() - 1; i >= 0; i--) {
+  for (int i = number_of_successors(block) - 1; i >= 0; i--) {
     // recursively process all successors
-    loop_state |= mark_loops(block->sux_at(i), in_subroutine);
+    loop_state |= mark_loops(successor_at(block, i), in_subroutine);
   }
 
   // clear active-bit after all successors are processed
@@ -452,6 +462,28 @@ int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   return loop_state;
 }
 
+inline int BlockListBuilder::number_of_successors(BlockBegin* block)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).length();
+}
+
+inline BlockBegin* BlockListBuilder::successor_at(BlockBegin* block, int i)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).at(i);
+}
+
+inline void BlockListBuilder::add_successor(BlockBegin* block, BlockBegin* sux)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  _bci2block_successors.at(block->bci()).append(sux);
+}
+
+inline bool BlockListBuilder::is_successor(BlockBegin* block, BlockBegin* sux) {
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).contains(sux);
+}
 
 #ifndef PRODUCT
 
@@ -477,10 +509,10 @@ void BlockListBuilder::print() {
     tty->print(cur->is_set(BlockBegin::subroutine_entry_flag)        ? " sr" : "   ");
     tty->print(cur->is_set(BlockBegin::parser_loop_header_flag)      ? " lh" : "   ");
 
-    if (cur->number_of_sux() > 0) {
+    if (number_of_successors(cur) > 0) {
       tty->print("    sux: ");
-      for (int j = 0; j < cur->number_of_sux(); j++) {
-        BlockBegin* sux = cur->sux_at(j);
+      for (int j = 0; j < number_of_successors(cur); j++) {
+        BlockBegin* sux = successor_at(cur, j);
         tty->print("B%d ", sux->block_id());
       }
     }
@@ -3230,6 +3262,8 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   _initial_state = state_at_entry();
   start_block->merge(_initial_state);
 
+  // End nulls still exist here
+
   // complete graph
   _vmap        = new ValueMap();
   switch (scope->method()->intrinsic_id()) {
@@ -3332,6 +3366,27 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
     break;
   }
   CHECK_BAILOUT();
+
+# ifdef ASSERT
+  //All blocks reachable from start_block have _end != NULL
+  {
+    BlockList processed;
+    BlockList to_go;
+    to_go.append(start_block);
+    while(to_go.length() > 0) {
+      BlockBegin* current = to_go.pop();
+      assert(current != NULL, "Should not happen.");
+      assert(current->end() != NULL, "All blocks reachable from start_block should have end() != NULL.");
+      processed.append(current);
+      for(int i = 0; i < current->number_of_sux(); i++) {
+        BlockBegin* s = current->sux_at(i);
+        if (!processed.contains(s)) {
+          to_go.append(s);
+        }
+      }
+    }
+  }
+#endif // ASSERT
 
   _start = setup_start_block(osr_bci, start_block, _osr_entry, _initial_state);
 

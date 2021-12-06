@@ -1384,8 +1384,8 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
-
-    bool use64byteVector = MaxVectorSize > 32 && AVX3Threshold == 0;
+    int avx3threshold = VM_Version::avx3_threshold();
+    bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
     Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
     Label L_repmovs, L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
     const Register from        = rdi;  // source array address
@@ -1448,7 +1448,7 @@ class StubGenerator: public StubCodeGenerator {
       // PRE-MAIN-POST loop for aligned copy.
       __ BIND(L_entry);
 
-      if (AVX3Threshold != 0) {
+      if (avx3threshold != 0) {
         __ cmpq(count, threshold[shift]);
         if (MaxVectorSize == 64) {
           // Copy using 64 byte vectors.
@@ -1460,7 +1460,7 @@ class StubGenerator: public StubCodeGenerator {
         }
       }
 
-      if (MaxVectorSize < 64  || AVX3Threshold != 0) {
+      if ((MaxVectorSize < 64)  || (avx3threshold != 0)) {
         // Partial copy to make dst address 32 byte aligned.
         __ movq(temp2, to);
         __ andq(temp2, 31);
@@ -1603,7 +1603,8 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
 
-    bool use64byteVector = MaxVectorSize > 32 && AVX3Threshold == 0;
+    int avx3threshold = VM_Version::avx3_threshold();
+    bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
 
     Label L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
     Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
@@ -1668,12 +1669,12 @@ class StubGenerator: public StubCodeGenerator {
       // PRE-MAIN-POST loop for aligned copy.
       __ BIND(L_entry);
 
-      if (MaxVectorSize > 32 && AVX3Threshold != 0) {
+      if ((MaxVectorSize > 32) && (avx3threshold != 0)) {
         __ cmpq(temp1, threshold[shift]);
         __ jcc(Assembler::greaterEqual, L_pre_main_post_64);
       }
 
-      if (MaxVectorSize < 64  || AVX3Threshold != 0) {
+      if ((MaxVectorSize < 64)  || (avx3threshold != 0)) {
         // Partial copy to make dst address 32 byte aligned.
         __ leaq(temp2, Address(to, temp1, (Address::ScaleFactor)(shift), 0));
         __ andq(temp2, 31);
