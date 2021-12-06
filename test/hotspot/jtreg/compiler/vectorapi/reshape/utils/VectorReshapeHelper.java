@@ -217,7 +217,7 @@ public class VectorReshapeHelper {
     }
 
     // All this complication is due to the fact vector load and store with respect to byte array introduce
-    // addition ReinterpretNodes, several ReinterpretNodes back to back being optimized make the number of
+    // additional ReinterpretNodes, several ReinterpretNodes back to back being optimized make the number of
     // nodes remaining in the IR becomes unpredictable.
     @ForceInline
     public static <T, U> void vectorRebracket(VectorSpecies<T> isp, VectorSpecies<U> osp, Object input, Object output) {

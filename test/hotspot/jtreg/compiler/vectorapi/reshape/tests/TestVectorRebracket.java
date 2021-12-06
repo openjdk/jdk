@@ -29,6 +29,14 @@ import compiler.lib.ir_framework.Test;
 
 import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
 
+/**
+ * This class contains methods to test for reinterpret operations that reinterpret a
+ * vector as a similar vector with another element type. It is complicated to verify
+ * the IR in this case since a load/store with respect to byte array will result in
+ * additional ReinterpretNodes if the vector element type is not byte. As a result,
+ * arguments need to be arrays of the correct type.
+ * In each test, the ReinterpretNode is expected to appear exactly once.
+ */
 public class TestVectorRebracket {
     @Test
     @IR(counts = {REINTERPRET_NODE, "1"})

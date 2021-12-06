@@ -25,6 +25,9 @@ package compiler.vectorapi.reshape.utils;
 
 import jdk.internal.misc.Unsafe;
 
+/**
+ * Unsafe to check for correctness of reinterpret operations. May be replaced with foreign API later.
+ */
 public class UnsafeUtils {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
@@ -32,7 +35,6 @@ public class UnsafeUtils {
         return UNSAFE.arrayBaseOffset(etype.arrayType());
     }
 
-    // These can be replaced with foreign API
     public static int getByte(Object o, long base, int i) {
         // This is technically an UB, what we need is UNSAFE.getByteUnaligned but they seem to be equivalent
         return UNSAFE.getByte(o, base + i);

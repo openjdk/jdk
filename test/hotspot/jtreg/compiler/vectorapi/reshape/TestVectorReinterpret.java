@@ -6,10 +6,9 @@ import compiler.vectorapi.reshape.tests.TestVectorExpandShrink;
 import compiler.vectorapi.reshape.tests.TestVectorRebracket;
 import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 import compiler.vectorapi.reshape.utils.VectorSpeciesPair;
+import java.util.List;
 import jdk.incubator.vector.VectorShape;
 import jdk.incubator.vector.VectorSpecies;
-
-import java.util.List;
 
 /*
  * @test

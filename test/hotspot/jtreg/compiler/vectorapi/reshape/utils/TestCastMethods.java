@@ -29,6 +29,10 @@ import java.util.stream.Stream;
 import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
 import static compiler.vectorapi.reshape.utils.VectorSpeciesPair.makePair;
 
+/**
+ * The cast intrinsics implemented on each platform, commented out tests are the ones that
+ * suppose to work but currently don't.
+ */
 public class TestCastMethods {
     public static final List<VectorSpeciesPair> AVX1_CAST_TESTS = List.of(
             makePair(BSPEC64, SSPEC64),

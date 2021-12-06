@@ -34,7 +34,7 @@ import compiler.vectorapi.reshape.utils.VectorSpeciesPair;
  * @bug 8259610
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
- * @summary Test that vector cast intrinsics work as intended on avx512.
+ * @summary Test that vector cast intrinsics work as intended on avx512dq.
  * @requires vm.cpu.features ~= ".*avx512dq.*"
  * @library /test/lib /
  * @run driver compiler.vectorapi.reshape.TestVectorCast512DQ

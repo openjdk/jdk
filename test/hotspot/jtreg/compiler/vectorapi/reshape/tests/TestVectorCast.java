@@ -30,6 +30,12 @@ import compiler.lib.ir_framework.Test;
 import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
 import static jdk.incubator.vector.VectorOperators.*;
 
+/**
+ * This class contains all possible cast operations between different vector species.
+ * The methods only take into consideration the actual cast in C2, as the vectors are
+ * ofter shrunk or expanded before/after casting if the element number mismatch.
+ * In each cast, the VectorCastNode is expected to appear exactly once.
+ */
 public class TestVectorCast {
     @Test
     @IR(counts = {B2X_NODE, "1"})

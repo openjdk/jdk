@@ -29,6 +29,10 @@ import compiler.lib.ir_framework.Test;
 
 import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
 
+/**
+ *  This class contains method to ensure a resize reinterpret operations work as intended.
+ *  In each test, it is expected to have exactly 1 ReinterpretNode.
+ */
 public class TestVectorExpandShrink {
     @Test
     @IR(counts = {REINTERPRET_NODE, "1"})
