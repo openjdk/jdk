@@ -396,8 +396,8 @@ public class ObjectMethods {
      *                     if invoked by a condy
      * @throws IllegalArgumentException if the bootstrap arguments are invalid
      *                                  or inconsistent
-     * @throws NullPointerException if any argument but {@code lookup} is {@code null},
-     *                              in the case of the {@code getters} argument, its
+     * @throws NullPointerException if any argument is {@code null}, in the case
+     *                              of the {@code getters} argument, its
      *                              contents cannot be {@code null} either
      * @throws Throwable if any exception is thrown during call site construction
      */
@@ -405,6 +405,7 @@ public class ObjectMethods {
                                    Class<?> recordClass,
                                    String names,
                                    MethodHandle... getters) throws Throwable {
+        requireNonNull(lookup);
         requireNonNull(methodName);
         requireNonNull(type);
         requireNonNull(recordClass);
