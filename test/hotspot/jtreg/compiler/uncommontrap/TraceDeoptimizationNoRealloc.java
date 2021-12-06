@@ -27,7 +27,7 @@
  * @summary -XX:+TraceDeoptimization tries to print realloc'ed objects even when there are none
  *
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+TraceDeoptimization
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+TraceDeoptimization
  *                   compiler.uncommontrap.TraceDeoptimizationNoRealloc
  */
 
