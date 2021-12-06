@@ -717,7 +717,7 @@ final class Double64Vector extends DoubleVector {
         /*package-private*/
         static Double64Mask maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(Double64Mask.class, long.class, VLENGTH,
-                                                 (bit ? -1 : 0), MODE_BITS_COERCED_BROADCAST, null,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Double64Mask  TRUE_MASK = new Double64Mask(true);

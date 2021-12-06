@@ -718,7 +718,7 @@ final class LongMaxVector extends LongVector {
         /*package-private*/
         static LongMaxMask maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(LongMaxMask.class, long.class, VLENGTH,
-                                                 (bit ? -1 : 0), MODE_BITS_COERCED_BROADCAST, null,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final LongMaxMask  TRUE_MASK = new LongMaxMask(true);

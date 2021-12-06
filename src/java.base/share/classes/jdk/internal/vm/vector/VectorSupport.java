@@ -116,8 +116,7 @@ public class VectorSupport {
 
     // Various broadcasting modes.
     public static final int MODE_BROADCAST = 0;
-    public static final int MODE_BITS_COERCED_BROADCAST = 1;
-    public static final int MODE_BITS_COERCED_LONG_TO_MASK = 2;
+    public static final int MODE_BITS_COERCED_LONG_TO_MASK = 1;
 
     // BasicType codes, for primitives only:
     public static final int

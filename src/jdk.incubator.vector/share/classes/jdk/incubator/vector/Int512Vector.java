@@ -758,7 +758,7 @@ final class Int512Vector extends IntVector {
         /*package-private*/
         static Int512Mask maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(Int512Mask.class, int.class, VLENGTH,
-                                                 (bit ? -1 : 0), MODE_BITS_COERCED_BROADCAST, null,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Int512Mask  TRUE_MASK = new Int512Mask(true);

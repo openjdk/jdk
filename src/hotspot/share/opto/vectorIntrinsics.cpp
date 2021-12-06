@@ -886,7 +886,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
       }
       default: fatal("%s", type2name(elem_bt));
     }
-    broadcast = VectorNode::scalar2vector(elem, num_elem, Type::get_const_basic_type(elem_bt), bcast_mode);
+    broadcast = VectorNode::scalar2vector(elem, num_elem, Type::get_const_basic_type(elem_bt), is_mask);
     broadcast = gvn().transform(broadcast);
   }
 

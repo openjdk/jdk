@@ -742,7 +742,7 @@ final class Int256Vector extends IntVector {
         /*package-private*/
         static Int256Mask maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(Int256Mask.class, int.class, VLENGTH,
-                                                 (bit ? -1 : 0), MODE_BITS_COERCED_BROADCAST, null,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Int256Mask  TRUE_MASK = new Int256Mask(true);

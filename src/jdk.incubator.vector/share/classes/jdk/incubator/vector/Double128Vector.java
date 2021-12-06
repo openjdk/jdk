@@ -719,7 +719,7 @@ final class Double128Vector extends DoubleVector {
         /*package-private*/
         static Double128Mask maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(Double128Mask.class, long.class, VLENGTH,
-                                                 (bit ? -1 : 0), MODE_BITS_COERCED_BROADCAST, null,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Double128Mask  TRUE_MASK = new Double128Mask(true);

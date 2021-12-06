@@ -123,8 +123,7 @@ class VectorSupport : AllStatic {
 
   enum {
     MODE_BROADCAST = 0,
-    MODE_BITS_COERCED_BROADCAST = 1,
-    MODE_BITS_COERCED_LONG_TO_MASK = 2
+    MODE_BITS_COERCED_LONG_TO_MASK = 1
   };
 
   static const char* svmlname[VectorSupport::NUM_SVML_OP];

@@ -594,10 +594,9 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, Node* n3, uint vlen, B
 }
 
 // Scalar promotion
-VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t, int mode) {
+VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t, bool is_mask) {
   BasicType bt = opd_t->array_element_basic_type();
-  if (mode == VectorSupport::MODE_BITS_COERCED_BROADCAST &&
-      Matcher::match_rule_supported_vector(Op_MaskAll, vlen, bt)) {
+  if (is_mask && Matcher::match_rule_supported_vector(Op_MaskAll, vlen, bt)) {
     const TypeVect* vt = TypeVect::make(opd_t, vlen, true);
     return new MaskAllNode(s, vt);
   }
