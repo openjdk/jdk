@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug JDK-8277850
+ * @bug 8277850
  * @summary C2: optimize mask checks in counted loops
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestShiftAndMask

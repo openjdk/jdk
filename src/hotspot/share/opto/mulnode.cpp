@@ -511,7 +511,7 @@ const Type* AndINode::Value(PhaseGVN* phase) const {
     return TypeInt::ZERO;
   }
 
-  return MulINode::Value(phase);
+  return MulNode::Value(phase);
 }
 
 //------------------------------Identity---------------------------------------
@@ -650,7 +650,7 @@ const Type* AndLNode::Value(PhaseGVN* phase) const {
     return TypeLong::ZERO;
   }
 
-  return MulLNode::Value(phase);
+  return MulNode::Value(phase);
 }
 
 //------------------------------Identity---------------------------------------
@@ -1714,7 +1714,11 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
   }
 }
 
-bool MulNode::AndIL_shift_and_mask(PhaseGVN* phase, Node* mask, Node* shift, BasicType bt) const {
+// Helper method to transform:
+// patterns similar to (v << 2) & 3 to 0
+// and
+// patterns similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
+bool MulNode::AndIL_shift_and_mask(PhaseGVN* phase, Node* mask, Node* shift, BasicType bt) {
   if (mask == NULL || shift == NULL) {
     return false;
   }
@@ -1750,6 +1754,8 @@ bool MulNode::AndIL_shift_and_mask(PhaseGVN* phase, Node* mask, Node* shift, Bas
   return false;
 }
 
+// Helper method to transform:
+// patterns similar to (v1 + (v2 << 2)) & 3 to v1 & 3
 Node* MulNode::AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt) {
   Node* in1 = in(1);
   Node* in2 = in(2);

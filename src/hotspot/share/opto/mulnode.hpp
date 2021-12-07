@@ -83,7 +83,7 @@ public:
 
   static MulNode* make(Node* in1, Node* in2, BasicType bt);
 
-  bool AndIL_shift_and_mask(PhaseGVN* phase, Node* mask, Node* shift, BasicType bt) const;
+  static bool AndIL_shift_and_mask(PhaseGVN* phase, Node* mask, Node* shift, BasicType bt);
   Node* AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt);
 };
 
