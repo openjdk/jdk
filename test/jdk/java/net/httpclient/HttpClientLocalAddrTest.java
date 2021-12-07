@@ -22,12 +22,16 @@
  */
 
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import javax.net.ssl.SSLContext;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -41,22 +45,20 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import static java.net.http.HttpClient.Version.HTTP_1_1;
-import static java.net.http.HttpClient.Version.HTTP_2;
+import java.util.function.Predicate;
 
 /*
  * @test
- * @summary Tests HttpClient usage when configured with a local address to bind to
- *          when sending requests
+ * @summary Tests HttpClient usage when configured with a local address to bind
+ *          to, when sending requests
  * @bug 8209137
  * @modules jdk.httpserver
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.base/sun.net.www.http
+ *          java.net.http/jdk.internal.net.http.hpack
  *
- * @run testng/othervm
- *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
- *      -Djdk.internal.httpclient.debug=true
- *      -Djava.net.preferIPv6Addresses=true
- *      HttpClientLocalAddrTest
+ * @library /test/lib http2/server
  *
  * @run testng/othervm
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
@@ -67,70 +69,172 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  */
 public class HttpClientLocalAddrTest {
 
-    private static HttpServer server;
-    private static URI rootURI;
+    private static SSLContext sslContext;
+    private static HttpServerAdapters.HttpTestServer http1_1_Server;
+    private static URI httpURI;
+    private static HttpServerAdapters.HttpTestServer https_1_1_Server;
+    private static URI httpsURI;
+    private static HttpServerAdapters.HttpTestServer http2_Server;
+    private static URI http2URI;
+    private static HttpServerAdapters.HttpTestServer https2_Server;
+    private static URI https2URI;
 
+    // start various HTTP/HTTPS servers that will be invoked against in the tests
     @BeforeClass
     public static void beforeClass() throws Exception {
-        // create the server
-        var serverAddr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        int backlog = 0;
-        server = HttpServer.create(serverAddr, backlog);
-        server.createContext("/", (exchange) -> {
+        sslContext = new SimpleSSLContext().get();
+        Assert.assertNotNull(sslContext, "Unexpected null sslContext");
+
+        HttpServerAdapters.HttpTestHandler handler = (exchange) -> {
             // the handler receives a request and sends back a 200 response with the
             // response body containing the hostname/ip of the client from whom
             // the request was received
             var clientAddr = exchange.getRemoteAddress();
             System.out.println("Received a request from client address " + clientAddr);
-            var responseContent = clientAddr.getHostString().getBytes(StandardCharsets.UTF_8);
+            var responseContent = clientAddr.getHostName().getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, responseContent.length);
             try (var os = exchange.getResponseBody()) {
                 // write out the client address as a response
                 os.write(responseContent);
             }
             exchange.close();
-        });
-        server.start();
-        System.out.println("Started server at " + server.getAddress());
-        var boundAddr = server.getAddress();
-        rootURI = new URI("http://" + boundAddr.getHostName() + ":" + boundAddr.getPort() + "/");
+        };
+
+        // HTTP/1.1 - create servers with http and https
+        final var sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+        final int backlog = 0;
+        http1_1_Server = HttpServerAdapters.HttpTestServer.of(HttpServer.create(sa, backlog));
+        http1_1_Server.addHandler(handler, "/");
+        http1_1_Server.start();
+        System.out.println("Started HTTP v1.1 server at " + http1_1_Server.serverAuthority());
+        httpURI = new URI("http://" + http1_1_Server.serverAuthority() + "/");
+
+        final HttpsServer httpsServer = HttpsServer.create(sa, 0);
+        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+        https_1_1_Server = HttpServerAdapters.HttpTestServer.of(httpsServer);
+        https_1_1_Server.addHandler(handler, "/");
+        https_1_1_Server.start();
+        System.out.println("Started HTTPS v1.1 server at " + https_1_1_Server.serverAuthority());
+        httpsURI = new URI("https://" + https_1_1_Server.serverAuthority() + "/");
+
+        // HTTP/2 - create servers with http and https
+        http2_Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer(sa.getHostString(), false, null));
+        http2_Server.addHandler(handler, "/");
+        http2_Server.start();
+        System.out.println("Started HTTP v2 server at " + http2_Server.serverAuthority());
+        http2URI = new URI("http://" + http2_Server.serverAuthority() + "/");
+
+        https2_Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer(sa.getHostString(), true, sslContext));
+        https2_Server.addHandler(handler, "/");
+        https2_Server.start();
+        System.out.println("Started HTTPS v2 server at " + https2_Server.serverAuthority());
+        https2URI = new URI("https://" + https2_Server.serverAuthority() + "/");
     }
 
+    // stop each of the started servers
     @AfterClass
     public static void afterClass() throws Exception {
-        int maxTimeToWait = 0;
-        if (server != null) {
-            server.stop(maxTimeToWait);
+        // stop each of the server and accumulate any exception
+        // that might happen during stop and finally throw
+        // the accumulated exception(s)
+        var e = safeStop(http1_1_Server, null);
+        e = safeStop(https_1_1_Server, e);
+        e = safeStop(http2_Server, e);
+        e = safeStop(https2_Server, e);
+        // throw any exception that happened during stop
+        if (e != null) {
+            throw e;
         }
     }
 
-    @DataProvider(name = "httpClients")
-    private Object[][] httpClients() throws Exception {
-        List<Object[]> clients = new ArrayList();
-        for (HttpClient.Version version : new HttpClient.Version[]{HTTP_1_1, HTTP_2}) {
-            var builder = HttpClient.newBuilder().version(version);
-            // don't let proxies interfere with the client addresses received on the
-            // HTTP request, by the server side handler used in this test.
-            builder.proxy(HttpClient.Builder.NO_PROXY);
+    /**
+     * Stops the server and returns (instead of throwing) any exception that might
+     * have occurred during stop. If {@code prevException} is not null then any
+     * exception during stop of the {@code server} will be added as a suppressed
+     * exception to the {@code prevException} and the {@code prevException} will be
+     * returned.
+     */
+    private static Exception safeStop(HttpServerAdapters.HttpTestServer server, Exception prevException) {
+        if (server == null) {
+            return null;
+        }
+        var serverAuthority = server.serverAuthority();
+        try {
+            server.stop();
+        } catch (Exception e) {
+            System.err.println("Failed to stop server " + serverAuthority);
+            if (prevException == null) {
+                return e;
+            }
+            prevException.addSuppressed(e);
+            return prevException;
+        }
+        return prevException;
+    }
+
+    @DataProvider(name = "params")
+    private Object[][] paramsProvider() throws Exception {
+        final List<Object[]> clients = new ArrayList();
+        final URI[] requestURIs = new URI[]{httpURI, httpsURI, http2URI, https2URI};
+        final Predicate<URI> requiresSSLContext = (uri) -> uri.getScheme().equals("https");
+        for (var requestURI : requestURIs) {
+            final var configureClientSSL = requiresSSLContext.test(requestURI);
             // no localAddr set
-            clients.add(new Object[]{builder.build(), null});
+            clients.add(new Object[]{
+                    newBuilder(configureClientSSL).build(),
+                    requestURI,
+                    null
+            });
             // null localAddr set
-            clients.add(new Object[]{builder.localAddress(null).build(), null});
+            clients.add(new Object[]{
+                    newBuilder(configureClientSSL).localAddress(null).build(),
+                    requestURI,
+                    null
+            });
             // localAddr set to loopback address
-            var loopbackAddr = InetAddress.getLoopbackAddress();
-            clients.add(new Object[]{builder.localAddress(new InetSocketAddress(loopbackAddr, 0)).build(), loopbackAddr});
+            final var loopbackAddr = InetAddress.getLoopbackAddress();
+            clients.add(new Object[]{
+                    newBuilder(configureClientSSL)
+                            .localAddress(new InetSocketAddress(loopbackAddr, 0))
+                            .build(),
+                    requestURI,
+                    loopbackAddr
+            });
             // anyAddress
             if (Boolean.getBoolean("java.net.preferIPv6Addresses")) {
                 // ipv6 wildcard
-                var localAddr = InetAddress.getByName("::1");
-                clients.add(new Object[]{builder.localAddress(new InetSocketAddress(localAddr,0)).build(), localAddr});
+                final var localAddr = InetAddress.getByName("::1");
+                clients.add(new Object[]{
+                        newBuilder(configureClientSSL)
+                                .localAddress(new InetSocketAddress(localAddr, 0))
+                                .build(),
+                        requestURI,
+                        localAddr
+                });
             } else {
                 // ipv4 wildcard
-                var localAddr = InetAddress.getByName("0.0.0.0");
-                clients.add(new Object[]{builder.localAddress(new InetSocketAddress(localAddr, 0)).build(), localAddr});
+                final var localAddr = InetAddress.getByName("0.0.0.0");
+                clients.add(new Object[]{
+                        newBuilder(configureClientSSL)
+                                .localAddress(new InetSocketAddress(localAddr, 0))
+                                .build(),
+                        requestURI,
+                        localAddr
+                });
             }
         }
         return clients.stream().toArray(Object[][]::new);
+    }
+
+    private static HttpClient.Builder newBuilder(boolean configureClientSSL) {
+        var builder = HttpClient.newBuilder();
+        // don't let proxies interfere with the client addresses received on the
+        // HTTP request, by the server side handler used in this test.
+        builder.proxy(HttpClient.Builder.NO_PROXY);
+        if (configureClientSSL) {
+            builder.sslContext(sslContext);
+        }
+        return builder;
     }
 
     /**
@@ -139,16 +243,17 @@ public class HttpClientLocalAddrTest {
      * seen by the server side handler is the same one as that is set on the
      * {@code client}
      */
-    @Test(dataProvider = "httpClients")
-    public void testSend(HttpClient client, InetAddress localAddress) throws Exception {
-        System.out.println("Testing using a HTTP client with local address " + localAddress);
+    @Test(dataProvider = "params")
+    public void testSend(HttpClient client, URI requestURI, InetAddress localAddress) throws Exception {
+        System.out.println("Testing using a HTTP client " + client.version() + " with local address " + localAddress
+                + " against request URI " + requestURI);
         // GET request
-        var req = HttpRequest.newBuilder(rootURI).build();
+        var req = HttpRequest.newBuilder(requestURI).build();
         var resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
         // verify the address only if a specific one was set on the client
         if (localAddress != null && !localAddress.isAnyLocalAddress()) {
-            Assert.assertEquals(resp.body(), localAddress.getHostAddress(),
+            Assert.assertEquals(resp.body(), localAddress.getHostName(),
                     "Unexpected client address seen by the server handler");
         }
     }
@@ -159,18 +264,19 @@ public class HttpClientLocalAddrTest {
      * seen by the server side handler is the same one as that is set on the
      * {@code client}
      */
-    @Test(dataProvider = "httpClients")
-    public void testSendAsync(HttpClient client, InetAddress localAddress) throws Exception {
-        System.out.println("Testing using a HTTP client with local address " + localAddress);
+    @Test(dataProvider = "params")
+    public void testSendAsync(HttpClient client, URI requestURI, InetAddress localAddress) throws Exception {
+        System.out.println("Testing using a HTTP client " + client.version() + " with local address " + localAddress
+                + " against request URI " + requestURI);
         // GET request
-        var req = HttpRequest.newBuilder(rootURI).build();
+        var req = HttpRequest.newBuilder(requestURI).build();
         var cf = client.sendAsync(req,
                 HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         var resp = cf.get();
         Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
         // verify the address only if a specific one was set on the client
         if (localAddress != null && !localAddress.isAnyLocalAddress()) {
-            Assert.assertEquals(resp.body(), localAddress.getHostAddress(),
+            Assert.assertEquals(resp.body(), localAddress.getHostName(),
                     "Unexpected client address seen by the server handler");
         }
     }
@@ -181,9 +287,9 @@ public class HttpClientLocalAddrTest {
      * is used when multiple concurrent threads are involved in sending requests from
      * the {@code client}
      */
-    @Test(dataProvider = "httpClients")
-    public void testMultiSendRequests(HttpClient client, InetAddress localAddress) throws Exception {
-        int numThreads = 10;
+    @Test(dataProvider = "params")
+    public void testMultiSendRequests(HttpClient client, URI requestURI, InetAddress localAddress) throws Exception {
+        int numThreads = 4;
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
         List<Future<Void>> taskResults = new ArrayList<>();
         try {
@@ -194,9 +300,9 @@ public class HttpClientLocalAddrTest {
                     public Void call() throws Exception {
                         // test some for send and some for sendAsync
                         if (currentIdx % 2 == 0) {
-                            testSend(client, localAddress);
+                            testSend(client, requestURI, localAddress);
                         } else {
-                            testSendAsync(client, localAddress);
+                            testSendAsync(client, requestURI, localAddress);
                         }
                         return null;
                     }
