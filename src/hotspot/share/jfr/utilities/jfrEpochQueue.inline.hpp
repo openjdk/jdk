@@ -55,6 +55,7 @@ JfrEpochQueue<ElementPolicy>::renew(Thread* thread) {
   }
   buffer = _storage->acquire(0, thread);
   this->set_thread_local_storage(buffer, thread);
+  assert(this->thread_local_storage(thread) == buffer, "invariant");
   return buffer;
 }
 
