@@ -138,7 +138,7 @@ class MemTracker : AllStatic {
   }
 
   static inline bool enabled() {
-    return _tracking_level >= NMT_summary;
+    return _tracking_level > NMT_off;
   }
 
   static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,

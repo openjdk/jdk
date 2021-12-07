@@ -260,7 +260,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   assert(((size_t)memblock & (sizeof(size_t) * 2 - 1)) == 0, "Alignment check");
 
 #ifdef ASSERT
-  if (level >= NMT_summary) {
+  if (level > NMT_off) {
     // Read back
     assert(get_size(memblock) == size,   "Wrong size");
     assert(get_flags(memblock) == flags, "Wrong flags");
