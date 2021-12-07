@@ -3906,37 +3906,40 @@ encode %{
     // Check for existing monitor
     __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
-    // Set tmp to be (markWord of object | UNLOCK_VALUE).
-    __ orr(tmp, disp_hdr, markWord::unlocked_value);
+    if (!UseHeavyMonitors) {
+      // Set tmp to be (markWord of object | UNLOCK_VALUE).
+      __ orr(tmp, disp_hdr, markWord::unlocked_value);
 
-    // Initialize the box. (Must happen before we update the object mark!)
-    __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+      // Initialize the box. (Must happen before we update the object mark!)
+      __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-    // Compare object markWord with an unlocked value (tmp) and if
-    // equal exchange the stack address of our box with object markWord.
-    // On failure disp_hdr contains the possibly locked markWord.
-    __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
-               /*release*/ true, /*weak*/ false, disp_hdr);
-    __ br(Assembler::EQ, cont);
+      // Compare object markWord with an unlocked value (tmp) and if
+      // equal exchange the stack address of our box with object markWord.
+      // On failure disp_hdr contains the possibly locked markWord.
+      __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
+                 /*release*/ true, /*weak*/ false, disp_hdr);
+      __ br(Assembler::EQ, cont);
 
-    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
-    // If the compare-and-exchange succeeded, then we found an unlocked
-    // object, will have now locked it will continue at label cont
+      // If the compare-and-exchange succeeded, then we found an unlocked
+      // object, will have now locked it will continue at label cont
 
-    __ bind(cas_failed);
-    // We did not see an unlocked object so try the fast recursive case.
+      __ bind(cas_failed);
+      // We did not see an unlocked object so try the fast recursive case.
 
-    // Check if the owner is self by comparing the value in the
-    // markWord of object (disp_hdr) with the stack pointer.
-    __ mov(rscratch1, sp);
-    __ sub(disp_hdr, disp_hdr, rscratch1);
-    __ mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
-    // If condition is true we are cont and hence we can store 0 as the
-    // displaced header in the box, which indicates that it is a recursive lock.
-    __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
-    __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
+      // Check if the owner is self by comparing the value in the
+      // markWord of object (disp_hdr) with the stack pointer.
+      __ mov(rscratch1, sp);
+      __ sub(disp_hdr, disp_hdr, rscratch1);
+      __ mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
+      // If condition is true we are cont and hence we can store 0 as the
+      // displaced header in the box, which indicates that it is a recursive lock.
+      __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
+      __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    } else {
+      __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
+    }
     __ b(cont);
 
     // Handle existing monitor.
@@ -3982,23 +3985,29 @@ encode %{
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
-    // Find the lock address and load the displaced header from the stack.
-    __ ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    if (!UseHeavyMonitors) {
+      // Find the lock address and load the displaced header from the stack.
+      __ ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-    // If the displaced header is 0, we have a recursive unlock.
-    __ cmp(disp_hdr, zr);
-    __ br(Assembler::EQ, cont);
+      // If the displaced header is 0, we have a recursive unlock.
+      __ cmp(disp_hdr, zr);
+      __ br(Assembler::EQ, cont);
+    }
 
     // Handle existing monitor.
     __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
     __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
-    // Check if it is still a light weight lock, this is is true if we
-    // see the stack address of the basicLock in the markWord of the
-    // object.
+    if (!UseHeavyMonitors) {
+      // Check if it is still a light weight lock, this is is true if we
+      // see the stack address of the basicLock in the markWord of the
+      // object.
 
-    __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
-               /*release*/ true, /*weak*/ false, tmp);
+      __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
+                 /*release*/ true, /*weak*/ false, tmp);
+    } else {
+      __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
+    }
     __ b(cont);
 
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
