@@ -171,13 +171,13 @@ public class TestGenericTypeLink extends JavadocTester {
                     <summary>invalid @link</summary>
                     <pre><code>java.util.Foo&lt;String&gt;</code></pre>
                     </details>
-                                        
+
                     \s
                     <details class="invalid-tag">
                     <summary>invalid @linkplain</summary>
                     <pre>Baz&lt;Object&gt;</pre>
                     </details>
-                                        
+
                     \s
                     <details class="invalid-tag">
                     <summary>invalid @link</summary>
