@@ -88,13 +88,20 @@ public class ScrollBarBorderTest {
         Graphics2D graphics2D = image.createGraphics();
         panel.paint(graphics2D);
         graphics2D.dispose();
+        scrollBar.setValue(Integer.MAX_VALUE);
+        BufferedImage image2 = new BufferedImage(panel.getWidth(),panel.getHeight(),TYPE_INT_ARGB);
+        Graphics2D graphics2D2 = image2.createGraphics();
+        panel.paint(graphics2D2);
+        graphics2D2.dispose();
 
         for (int i = 0; i < image.getWidth(); i++) {
             for (int j = 0; j < image.getHeight(); j++) {
                 int c1 = image.getRGB(i,j);
+                int c2 = image2.getRGB(i,j);
                 // need to find location of border but colors are always 0
-                if(c1 != 0 && c1 != -1118482) {
-                    System.out.println(i + " " + j + " " + "Color: " + c1);
+                if(c1 != c2) {
+                    System.out.println(i + " " + j + " " + "Color1: " + c1);
+                    System.out.println(i + " " + j + " " + "Color2: " + c2);
                 }
             }
         }
