@@ -153,6 +153,6 @@
   }
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
-  static const bool supports_encode_ascii_array = false;
+  static const bool supports_encode_ascii_array = true;
 
 #endif // CPU_S390_MATCHER_S390_HPP

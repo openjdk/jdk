@@ -55,11 +55,20 @@
 // - Different number of characters may have been written to dead array (if precise is false).
 // - Returns a number <cnt instead of 0. (Result gets compared with cnt.)
 unsigned int C2_MacroAssembler::string_compress(Register result, Register src, Register dst, Register cnt,
-                                                Register tmp,    bool precise) {
+                                                Register tmp,    bool precise, bool toASCII) {
   assert_different_registers(Z_R0, Z_R1, result, src, dst, cnt, tmp);
 
+  unsigned short char_mask = 0xff00;  // all selected bits must be '0' for a char to be valid
+  unsigned int   mask_ix_l = 0;       // leftmost one bit pos in mask
+  unsigned int   mask_ix_r = 7;       // rightmost one bit pos in mask
   if (precise) {
-    BLOCK_COMMENT("encode_iso_array {");
+    if (toASCII) {
+      BLOCK_COMMENT("encode_ascii_array {");
+      char_mask = 0xff80;
+      int   mask_ix_r = 8;   // rightmost one bit pos in mask. ASCII only uses codes 0..127
+    } else {
+      BLOCK_COMMENT("encode_iso_array {");
+    }
   } else {
     BLOCK_COMMENT("string_compress {");
   }
@@ -72,13 +81,13 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
   Register       Rmask = result;  // holds incompatibility check mask until result value is stored.
   Label          ScalarShortcut, AllDone;
 
-  z_iilf(Rmask, 0xFF00FF00);
-  z_iihf(Rmask, 0xFF00FF00);
+  z_iilf(Rmask, (unsigned int)char_mask<<16 | (unsigned int)char_mask);
+  z_iihf(Rmask, (unsigned int)char_mask<<16 | (unsigned int)char_mask);
 
 #if 0  // Sacrifice shortcuts for code compactness
   {
     //---<  shortcuts for short strings (very frequent)   >---
-    //   Strings with 4 and 8 characters were fond to occur very frequently.
+    //   Strings with 4 and 8 characters were found to occur very frequently.
     //   Therefore, we handle them right away with minimal overhead.
     Label     skipShortcut, skip4Shortcut, skip8Shortcut;
     Register  Rout = Z_R0;
@@ -150,7 +159,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
     z_brz(VectorDone);                     // not enough data for vector loop
 
     z_vzero(Vzero);                        // all zeroes
-    z_vgmh(Vmask, 0, 7);                   // generate 0xff00 mask for all 2-byte elements
+    z_vgmh(Vmask, mask_ix_l, mask_ix_r);   // generate 0xff00/0xff80 mask for all 2-byte elements
     z_sllg(Z_R0, Rix, log_min_vcnt);       // remember #chars that will be processed by vector loop
 
     bind(VectorLoop);
@@ -162,7 +171,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
       z_vo(Vtmp2, Z_V22, Z_V23);
       z_vo(Vtmp1, Vtmp1, Vtmp2);
       z_vn(Vtmp1, Vtmp1, Vmask);
-      z_vceqhs(Vtmp1, Vtmp1, Vzero);       // high half of all chars must be zero for successful compress.
+      z_vceqhs(Vtmp1, Vtmp1, Vzero);       // all bits selected by mask must be zero for successful compress.
       z_bvnt(VectorBreak);                 // break vector loop if not all vector elements compare eq -> incompatible character found.
                                            // re-process data from current iteration in break handler.
 
@@ -197,7 +206,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
       z_lr(Rix, Rcnt);
       z_sr(Rix, Z_R0);
     }
-    z_sra(Rix, log_min_cnt);             // unrolled loop count
+    z_sra(Rix, log_min_cnt);               // unrolled loop count
     z_brz(UnrolledDone);
 
     bind(UnrolledLoop);
@@ -274,7 +283,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
       z_brh(ScalarDoit);
       z_llh(Z_R1,  0, Z_R0, Rsrc);
       z_bre(Scalar2Char);
-      z_tmll(Z_R1, 0xff00);
+      z_tmll(Z_R1, char_mask);
       z_lghi(result, 0);                   // cnt == 1, first char invalid, no chars successfully processed
       z_brnaz(AllDone);
       z_stc(Z_R1,  0, Z_R0, Rdst);
@@ -283,11 +292,11 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
 
       bind(Scalar2Char);
       z_llh(Z_R0,  2, Z_R0, Rsrc);
-      z_tmll(Z_R1, 0xff00);
+      z_tmll(Z_R1, char_mask);
       z_lghi(result, 0);                   // cnt == 2, first char invalid, no chars successfully processed
       z_brnaz(AllDone);
       z_stc(Z_R1,  0, Z_R0, Rdst);
-      z_tmll(Z_R0, 0xff00);
+      z_tmll(Z_R0, char_mask);
       z_lghi(result, 1);                   // cnt == 2, second char invalid, one char successfully processed
       z_brnaz(AllDone);
       z_stc(Z_R0,  1, Z_R0, Rdst);
@@ -309,7 +318,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
 
     bind(ScalarLoop);
       z_llh(Z_R1, 0, Z_R0, Rsrc);
-      z_tmll(Z_R1, 0xff00);
+      z_tmll(Z_R1, char_mask);
       z_brnaz(ScalarBreak);
       z_stc(Z_R1, 0, Z_R0, Rdst);
       add2reg(Rsrc, 2);
@@ -329,7 +338,11 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
   bind(AllDone);
 
   if (precise) {
-    BLOCK_COMMENT("} encode_iso_array");
+    if (toASCII) {
+      BLOCK_COMMENT("} encode_ascii_array");
+    } else {
+      BLOCK_COMMENT("} encode_iso_array");
+    }
   } else {
     BLOCK_COMMENT("} string_compress");
   }
