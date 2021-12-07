@@ -132,17 +132,15 @@ void LIR_Opr::validate_type() const {
              size_field() == double_size, "must match");
       break;
     case T_FLOAT:
-      // FP return values can be also in CPU registers on ARM and PPC32 (softfp ABI)
+      // FP return values can be also in CPU registers on ARM (softfp ABI)
       assert((kindfield == fpu_register || kindfield == stack_value
-             ARM_ONLY(|| kindfield == cpu_register)
-             PPC32_ONLY(|| kindfield == cpu_register) ) &&
+             ARM_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == single_size, "must match");
       break;
     case T_DOUBLE:
-      // FP return values can be also in CPU registers on ARM and PPC32 (softfp ABI)
+      // FP return values can be also in CPU registers on ARM (softfp ABI)
       assert((kindfield == fpu_register || kindfield == stack_value
-             ARM_ONLY(|| kindfield == cpu_register)
-             PPC32_ONLY(|| kindfield == cpu_register) ) &&
+             ARM_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == double_size, "must match");
       break;
     case T_BOOLEAN:
@@ -497,10 +495,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(opConvert->_info == NULL, "must be");
       if (opConvert->_opr->is_valid())       do_input(opConvert->_opr);
       if (opConvert->_result->is_valid())    do_output(opConvert->_result);
-#ifdef PPC32
-      if (opConvert->_tmp1->is_valid())      do_temp(opConvert->_tmp1);
-      if (opConvert->_tmp2->is_valid())      do_temp(opConvert->_tmp2);
-#endif
       do_stub(opConvert->_stub);
 
       break;
@@ -880,6 +874,19 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       break;
     }
 
+// LIR_OpLoadKlass
+    case lir_load_klass:
+    {
+      LIR_OpLoadKlass* opLoadKlass = op->as_OpLoadKlass();
+      assert(opLoadKlass != NULL, "must be");
+
+      do_input(opLoadKlass->_obj);
+      do_output(opLoadKlass->_result);
+      if (opLoadKlass->_info) do_info(opLoadKlass->_info);
+      break;
+    }
+
+
 // LIR_OpProfileCall:
     case lir_profile_call: {
       assert(op->as_OpProfileCall() != NULL, "must be");
@@ -1047,6 +1054,10 @@ void LIR_OpLock::emit_code(LIR_Assembler* masm) {
   if (stub()) {
     masm->append_code_stub(stub());
   }
+}
+
+void LIR_OpLoadKlass::emit_code(LIR_Assembler* masm) {
+  masm->emit_load_klass(this);
 }
 
 #ifdef ASSERT
@@ -1569,7 +1580,7 @@ static void print_block(BlockBegin* x) {
     }
   }
 
-  if (x->number_of_sux() > 0) {
+  if (end != NULL && x->number_of_sux() > 0) {
     tty->print("sux: ");
     for (int i = 0; i < x->number_of_sux(); i ++) {
       tty->print("B%d ", x->sux_at(i)->block_id());
@@ -1857,12 +1868,6 @@ void LIR_OpConvert::print_instr(outputStream* out) const {
   print_bytecode(out, bytecode());
   in_opr()->print(out);                  out->print(" ");
   result_opr()->print(out);              out->print(" ");
-#ifdef PPC32
-  if(tmp1()->is_valid()) {
-    tmp1()->print(out); out->print(" ");
-    tmp2()->print(out); out->print(" ");
-  }
-#endif
 }
 
 void LIR_OpConvert::print_bytecode(outputStream* out, Bytecodes::Code code) {
@@ -1968,6 +1973,11 @@ void LIR_OpLock::print_instr(outputStream* out) const {
     _scratch->print(out);  out->print(" ");
   }
   out->print("[lbl:" INTPTR_FORMAT "]", p2i(stub()->entry()));
+}
+
+void LIR_OpLoadKlass::print_instr(outputStream* out) const {
+  obj()->print(out);        out->print(" ");
+  result_opr()->print(out); out->print(" ");
 }
 
 #ifdef ASSERT

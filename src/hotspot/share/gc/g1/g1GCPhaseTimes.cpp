@@ -116,10 +116,12 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
   _gc_par_phases[ScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
+  _gc_par_phases[ScanHR]->create_thread_work_items("Found Roots:", ScanHRFoundRoots);
 
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
+  _gc_par_phases[OptScanHR]->create_thread_work_items("Found Roots:", ScanHRFoundRoots);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Refs:", ScanHRScannedOptRefs);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Used Memory:", ScanHRUsedMemory);
 
@@ -264,11 +266,7 @@ void G1GCPhaseTimes::add_time_secs(GCParPhases phase, uint worker_id, double sec
 }
 
 void G1GCPhaseTimes::record_or_add_time_secs(GCParPhases phase, uint worker_id, double secs) {
-  if (_gc_par_phases[phase]->get(worker_id) == _gc_par_phases[phase]->uninitialized()) {
-    record_time_secs(phase, worker_id, secs);
-  } else {
-    add_time_secs(phase, worker_id, secs);
-  }
+  _gc_par_phases[phase]->set_or_add(worker_id, secs);
 }
 
 double G1GCPhaseTimes::get_time_secs(GCParPhases phase, uint worker_id) {

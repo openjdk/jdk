@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
+#include "jfr/recorder/repository/jfrEmergencyDump.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
@@ -314,6 +315,20 @@ JVM_END
 JVM_ENTRY_NO_ENV(void, jfr_set_repository_location(JNIEnv* env, jobject repo, jstring location))
   return JfrRepository::set_path(location, thread);
 JVM_END
+
+NO_TRANSITION(void, jfr_set_dump_path(JNIEnv* env, jobject jvm, jstring dumppath))
+  if (dumppath == NULL) {
+    JfrEmergencyDump::set_dump_path(NULL);
+  } else {
+    const char* dump_path = env->GetStringUTFChars(dumppath, NULL);
+    JfrEmergencyDump::set_dump_path(dump_path);
+    env->ReleaseStringUTFChars(dumppath, dump_path);
+  }
+NO_TRANSITION_END
+
+NO_TRANSITION(jstring, jfr_get_dump_path(JNIEnv* env, jobject jvm))
+  return env->NewStringUTF(JfrEmergencyDump::get_dump_path());
+NO_TRANSITION_END
 
 JVM_ENTRY_NO_ENV(void, jfr_uncaught_exception(JNIEnv* env, jobject jvm, jobject t, jthrowable throwable))
   JfrJavaSupport::uncaught_exception(throwable, thread);

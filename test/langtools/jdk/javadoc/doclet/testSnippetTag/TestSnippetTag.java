@@ -2470,11 +2470,12 @@ public class TestSnippetTag extends SnippetTester {
                 /* ---------------------- */
                 new TestCase("""
                         {@snippet :
-                            hello // @highlight substring="
+                            hello
+                            there // @highlight substring="
                         }""",
                              """
                         error: snippet markup: unterminated attribute value
-                            hello // @highlight substring="
+                            there // @highlight substring="
                                                           ^
                              """),
                 new TestCase("""

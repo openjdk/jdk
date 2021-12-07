@@ -301,9 +301,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseFMA, true);
   }
 
-  if (UseMD5Intrinsics) {
-    warning("MD5 intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+    UseMD5Intrinsics = true;
   }
 
   if (_features & (CPU_SHA1 | CPU_SHA2 | CPU_SHA3 | CPU_SHA512)) {

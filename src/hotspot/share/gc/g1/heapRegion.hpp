@@ -38,7 +38,6 @@
 #include "utilities/macros.hpp"
 
 class G1CardSetConfiguration;
-class G1CardSetMemoryManager;
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1Predictions;
