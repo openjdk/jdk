@@ -675,6 +675,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   if (osthread == NULL) {
     return false;
   }
+
+  // Initial state is ALLOCATED but not INITIALIZED
   osthread->set_state(ALLOCATED);
 
   // Initialize the JDK library's interrupt event.
