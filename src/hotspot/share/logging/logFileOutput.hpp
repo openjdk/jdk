@@ -59,9 +59,6 @@ class LogFileOutput : public LogFileStreamOutput {
   size_t  _rotate_size;
   size_t  _current_size;
 
-  // Semaphore used for synchronizing file rotations and writes
-  Semaphore _rotation_semaphore;
-
   void archive();
   void rotate();
   char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string);
