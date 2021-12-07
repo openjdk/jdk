@@ -1295,7 +1295,7 @@ class XentryFlagValidator : public BlockClosure {
 // * code() contents == blocks content
 // * Each block's computed predecessors match sux lists (length)
 // * Each block's computed predecessors match sux lists (set content)
-class PredecessorValidator : public BlockClosure {
+class PredecessorAndCodeValidator : public BlockClosure {
  private:
   BlockListList* _predecessors; // Each index i will hold predecessors of block with id i
   BlockList*     _blocks;
@@ -1305,7 +1305,7 @@ class PredecessorValidator : public BlockClosure {
   }
 
  public:
-  PredecessorValidator(IR* hir) {
+  PredecessorAndCodeValidator(IR* hir) {
     ResourceMark rm;
     _predecessors = new BlockListList(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL);
     _blocks = new BlockList(BlockBegin::number_of_blocks());
@@ -1413,7 +1413,7 @@ void IR::verify() {
   XentryFlagValidator xe;
   this->iterate_postorder(&xe);
 
-  PredecessorValidator pv(this);
+  PredecessorAndCodeValidator pv(this);
 
   EndNotNullValidator ennv;
   this->iterate_postorder(&ennv);
