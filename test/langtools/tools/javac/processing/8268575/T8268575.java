@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,14 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8067144
- * @summary -XX:+TraceDeoptimization tries to print realloc'ed objects even when there are none
- *
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+TraceDeoptimization
- *                   compiler.uncommontrap.TraceDeoptimizationNoRealloc
+ * @bug     8268575
+ * @summary Annotations not visible on model elements before they are generated
+ * @build   Processor
+ * @compile -processor Processor T8268575.java
  */
 
-package compiler.uncommontrap;
-
-public class TraceDeoptimizationNoRealloc {
-
-    static void m(boolean some_condition) {
-        if (some_condition) {
-            return;
-        }
-    }
-
-
-    static public void main(String[] args) {
-        for (int i = 0; i < 20000; i++) {
-            m(false);
-        }
-        m(true);
-    }
+class T8268575 {
+  void f(@A int x) {}
 }

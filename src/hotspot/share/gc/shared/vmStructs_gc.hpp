@@ -261,10 +261,6 @@
   declare_constant(BarrierSet::ModRef)                                      \
   declare_constant(BarrierSet::CardTableBarrierSet)                         \
                                                                             \
-  declare_constant(BOTConstants::LogN)                                      \
-  declare_constant(BOTConstants::LogN_words)                                \
-  declare_constant(BOTConstants::N_bytes)                                   \
-  declare_constant(BOTConstants::N_words)                                   \
   declare_constant(BOTConstants::LogBase)                                   \
   declare_constant(BOTConstants::Base)                                      \
   declare_constant(BOTConstants::N_powers)                                  \
@@ -274,9 +270,6 @@
   declare_constant(CardTable::dirty_card)                                   \
   declare_constant(CardTable::Precise)                                      \
   declare_constant(CardTable::ObjHeadPreciseArray)                          \
-  declare_constant(CardTable::card_shift)                                   \
-  declare_constant(CardTable::card_size)                                    \
-  declare_constant(CardTable::card_size_in_words)                           \
                                                                             \
   declare_constant(CollectedHeap::Serial)                                   \
   declare_constant(CollectedHeap::Parallel)                                 \
