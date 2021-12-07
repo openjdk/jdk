@@ -627,17 +627,17 @@
       <setting name="stackTrace">true</setting>
     </event>
 
-    <event name="jdk.UnsafeAllocation">
+    <event name="jdk.JavaNativeAllocation">
       <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
     </event>
 
-    <event name="jdk.UnsafeReallocate">
+    <event name="jdk.JavaNativeReallocate">
       <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
     </event>
 
-    <event name="jdk.UnsafeFreeMemory">
+    <event name="jdk.JavaNativeFree">
       <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
     </event>

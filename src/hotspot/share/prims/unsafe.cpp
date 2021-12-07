@@ -341,13 +341,8 @@ UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong si
   assert(is_aligned(sz, HeapWordSize), "sz not aligned");
 
   void* x = os::malloc(sz, mtOther);
-  jlong addr = addr_to_java(x);
 
-  EventUnsafeAllocation event;
-  event.set_allocationSize(sz);
-  event.set_addr(addr);
-  event.commit();
-  return addr;
+  return addr_to_java(x);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jlong, Unsafe_ReallocateMemory0(JNIEnv *env, jobject unsafe, jlong addr, jlong size)) {
@@ -357,25 +352,14 @@ UNSAFE_ENTRY(jlong, Unsafe_ReallocateMemory0(JNIEnv *env, jobject unsafe, jlong 
   assert(is_aligned(sz, HeapWordSize), "sz not aligned");
 
   void* x = os::realloc(p, sz, mtOther);
-  jlong reallocAddr = addr_to_java(x);
 
-  EventUnsafeReallocate event;
-  event.set_allocationSize(sz);
-  event.set_freeAddr(addr);
-  event.set_allocAddr(reallocAddr);
-  event.commit();
-
-  return reallocAddr;
+  return addr_to_java(x);
 } UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_FreeMemory0(JNIEnv *env, jobject unsafe, jlong addr)) {
   void* p = addr_from_java(addr);
 
   os::free(p);
-
-  EventUnsafeFreeMemory event;
-  event.set_addr(addr);
-  event.commit();
 } UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong size, jbyte value)) {

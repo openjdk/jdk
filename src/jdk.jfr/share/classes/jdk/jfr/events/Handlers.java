@@ -24,6 +24,7 @@
  */
 
 package jdk.jfr.events;
+
 import jdk.jfr.internal.handlers.EventHandler;
 import jdk.jfr.internal.Utils;
 
@@ -35,4 +36,7 @@ public final class Handlers {
     public static final EventHandler FILE_FORCE = Utils.getHandler(FileForceEvent.class);
     public static final EventHandler ERROR_THROWN = Utils.getHandler(ErrorThrownEvent.class);
     public static final EventHandler EXCEPTION_THROWN = Utils.getHandler(ExceptionThrownEvent.class);
+    public static final EventHandler JAVA_NATIVE_ALLOCATION = Utils.getHandler(JavaNativeAllocationEvent.class);
+    public static final EventHandler JAVA_NATIVE_REALLOCATION = Utils.getHandler(JavaNativeReallocateEvent.class);
+    public static final EventHandler JAVA_NATIVE_FREE = Utils.getHandler(JavaNativeFreeEvent.class);
 }
