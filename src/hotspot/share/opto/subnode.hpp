@@ -143,6 +143,7 @@ public:
   virtual uint ideal_reg() const { return Op_RegFlags; }
 
   static CmpNode *make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp = false);
+  PhiNode* countedloop_phi(const Node* n) const;
 };
 
 //------------------------------CmpINode---------------------------------------
@@ -353,6 +354,8 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 
   bool is_counted_loop_exit_test();
+  const Type* filtered_int_type(const PhaseValues* phase, const Node* val, BasicType bt, bool taken) const;
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif

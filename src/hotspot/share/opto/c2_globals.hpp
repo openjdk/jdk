@@ -771,6 +771,13 @@
                                                                             \
   product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
           "Verify receiver types at runtime")                               \
+                                                                            \
+  develop(bool, PrintLoopConditionalPropagation, false,                     \
+          "Trace Loop Conditional Propagation pass")                        \
+                                                                            \
+  product(bool, UseLoopConditionalPropagation, true,                        \
+          "Perform Loop Conditional Propagation pass")                      \
+                                                                            \
 
 // end of C2_FLAGS
 

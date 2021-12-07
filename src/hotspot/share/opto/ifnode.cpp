@@ -608,63 +608,18 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
 
 //------------------------------filtered_int_type--------------------------------
 // Return a possibly more restrictive type for val based on condition control flow for an if
-const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj) {
+const Type* IfNode::filtered_int_type(PhaseValues* phase, Node* val, Node* if_proj, BasicType bt) {
   assert(if_proj &&
          (if_proj->Opcode() == Op_IfTrue || if_proj->Opcode() == Op_IfFalse), "expecting an if projection");
   if (if_proj->in(0) && if_proj->in(0)->is_If()) {
     IfNode* iff = if_proj->in(0)->as_If();
-    if (iff->in(1) && iff->in(1)->is_Bool()) {
-      BoolNode* bol = iff->in(1)->as_Bool();
-      if (bol->in(1) && bol->in(1)->is_Cmp()) {
-        const CmpNode* cmp  = bol->in(1)->as_Cmp();
-        if (cmp->in(1) == val) {
-          const TypeInt* cmp2_t = gvn->type(cmp->in(2))->isa_int();
-          if (cmp2_t != nullptr) {
-            jint lo = cmp2_t->_lo;
-            jint hi = cmp2_t->_hi;
-            BoolTest::mask msk = if_proj->Opcode() == Op_IfTrue ? bol->_test._test : bol->_test.negate();
-            switch (msk) {
-            case BoolTest::ne: {
-              // If val is compared to its lower or upper bound, we can narrow the type
-              const TypeInt* val_t = gvn->type(val)->isa_int();
-              if (val_t != nullptr && !val_t->singleton() && cmp2_t->is_con()) {
-                if (val_t->_lo == lo) {
-                  return TypeInt::make(val_t->_lo + 1, val_t->_hi, val_t->_widen);
-                } else if (val_t->_hi == hi) {
-                  return TypeInt::make(val_t->_lo, val_t->_hi - 1, val_t->_widen);
-                }
-              }
-              // Can't refine type
-              return nullptr;
-            }
-            case BoolTest::eq:
-              return cmp2_t;
-            case BoolTest::lt:
-              lo = TypeInt::INT->_lo;
-              if (hi != min_jint) {
-                hi = hi - 1;
-              }
-              break;
-            case BoolTest::le:
-              lo = TypeInt::INT->_lo;
-              break;
-            case BoolTest::gt:
-              if (lo != max_jint) {
-                lo = lo + 1;
-              }
-              hi = TypeInt::INT->_hi;
-              break;
-            case BoolTest::ge:
-              // lo unchanged
-              hi = TypeInt::INT->_hi;
-              break;
-            default:
-              break;
-            }
-            const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen);
-            return rtn_t;
-          }
-        }
+    if (iff->in(1)) {
+      Node* iff1 = iff->in(1);
+      if (iff1->Opcode() == Op_Opaque4) {
+        iff1 = iff1->in(1);
+      }
+      if (iff1->is_Bool()) {
+        return iff1->as_Bool()->filtered_int_type(phase, val, bt, if_proj->Opcode() == Op_IfTrue);
       }
     }
   }
@@ -856,13 +811,20 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
   BoolNode* this_bool = in(1)->as_Bool();
   IfNode* dom_iff = proj->in(0)->as_If();
   BoolNode* dom_bool = dom_iff->in(1)->as_Bool();
+  Node* dom_cmp = dom_bool->in(1);
   Node* lo = dom_iff->in(1)->in(1)->in(2);
   Node* hi = this_cmp->in(2);
   Node* n = this_cmp->in(1);
   ProjNode* otherproj = proj->other_if_proj();
 
-  const TypeInt* lo_type = IfNode::filtered_int_type(igvn, n, otherproj);
-  const TypeInt* hi_type = IfNode::filtered_int_type(igvn, n, success);
+  if (this_cmp->Value(igvn)->singleton() || dom_cmp->Value(igvn)->singleton()) {
+    return false;
+  }
+
+  const Type* t = IfNode::filtered_int_type(igvn, n, otherproj, T_INT);
+  const TypeInt* lo_type = t != nullptr && t->isa_int() ? t->is_int() : nullptr;
+  t = IfNode::filtered_int_type(igvn, n, success, T_INT);
+  const TypeInt* hi_type = t != nullptr && t->isa_int() ? t->is_int() : nullptr;
 
   BoolTest::mask lo_test = dom_bool->_test._test;
   BoolTest::mask hi_test = this_bool->_test._test;
@@ -997,16 +959,18 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     // this test was canonicalized
     assert(this_bool->_test.is_less() && !fail->_con, "incorrect test");
   } else {
-    const TypeInt* failtype = filtered_int_type(igvn, n, proj);
+    const Type* failtype = filtered_int_type(igvn, n, proj, T_INT);
     if (failtype != nullptr) {
-      const TypeInt* type2 = filtered_int_type(igvn, n, fail);
+      const Type* type2 = filtered_int_type(igvn, n, fail, T_INT);
       if (type2 != nullptr) {
-        failtype = failtype->join(type2)->is_int();
-        if (failtype->_lo > failtype->_hi) {
-          // previous if determines the result of this if so
-          // replace Bool with constant
-          igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
-          return true;
+        failtype = failtype->join(type2);
+        if (failtype->isa_int()) {
+          if (failtype->is_int()->_lo > failtype->is_int()->_hi) {
+            // previous if determines the result of this if so
+            // replace Bool with constant
+            igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
+            return true;
+          }
         }
       }
     }

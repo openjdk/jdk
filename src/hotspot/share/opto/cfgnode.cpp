@@ -38,6 +38,7 @@
 #include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -1198,6 +1199,13 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
       const Node* limit = l->limit();
       const Node* stride = l->stride();
       if (init != nullptr && limit != nullptr && stride != nullptr) {
+        if (limit->is_Opaque1() && limit->as_Opaque1()->original_loop_limit() != nullptr) {
+          limit = limit->as_Opaque1()->original_loop_limit();
+        }
+        const Type* init_t = phase->type(init, r->in(1));
+        if (init_t == Type::TOP) {
+          return Type::TOP;
+        }
         const TypeInteger* lo = phase->type(init)->isa_integer(l->bt());
         const TypeInteger* hi = phase->type(limit)->isa_integer(l->bt());
         const TypeInteger* stride_t = phase->type(stride)->isa_integer(l->bt());
@@ -1263,6 +1271,9 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
       // to run (that is as long as the type of the backedge's control
       // is top), we might end up with non monotonic types
       return phase->type(in(LoopNode::EntryControl))->filter_speculative(_type);
+    } else if (l->in(LoopNode::EntryControl) != nullptr &&
+               phase->type(l->in(LoopNode::EntryControl)) == Type::TOP) {
+      return Type::TOP;
     }
   }
 
@@ -1271,7 +1282,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   for (uint i = 1; i < req(); ++i) {// For all paths in
     // Reachable control path?
     if (r->in(i) && phase->type(r->in(i)) == Type::CONTROL) {
-      const Type* ti = phase->type(in(i));
+      const Type* ti = phase->type(in(i), r->in(i));
       t = t->meet_speculative(ti);
     }
   }

@@ -639,6 +639,27 @@ CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
   return nullptr;
 }
 
+// Return counted loop Phi if as a counted loop exit condition, cmp
+// compares the induction variable with n
+PhiNode* CmpNode::countedloop_phi(const Node* n) const {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* bol = fast_out(i);
+    for (DUIterator_Fast i2max, i2 = bol->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* iff = bol->fast_out(i2);
+      if (iff->is_BaseCountedLoopEnd()) {
+        BaseCountedLoopEndNode* cle = iff->as_BaseCountedLoopEnd();
+        if (cle->limit() == n) {
+          PhiNode* phi = cle->phi();
+          if (phi != nullptr) {
+            return phi;
+          }
+        }
+      }
+    }
+  }
+  return nullptr;
+}
+
 //=============================================================================
 //------------------------------cmp--------------------------------------------
 // Simplify a CmpI (compare 2 integers) node, based on local information.
@@ -838,6 +859,19 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
         const Type* t_cmp = cmp1->meet(cmp2);
         // Pick narrowest type, based on overflow computation and on immediate inputs
         return t_sub->filter(t_cmp);
+      } else if (underflow && overflow) {
+        bool lo_overflow = lo_long > (jlong)max_jint;
+        bool lo_underflow = lo_long < (jlong)min_jint;
+        bool hi_overflow = hi_long > (jlong)max_jint;
+        bool hi_underflow = hi_long < (jlong)min_jint;
+
+        if ((lo_overflow && hi_overflow) || (lo_underflow && hi_underflow)) {
+          assert(lo_tr2 <= hi_tr1, "");
+          int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
+          const TypeInt* tr = TypeInt::make(lo_tr2, hi_tr1, w);
+          const TypeInt* cmp2 = sub(tr, t2)->is_int();
+          return t_sub->filter(cmp2);
+        }
       }
     }
   }
@@ -1831,6 +1865,85 @@ bool BoolNode::is_counted_loop_exit_test() {
     }
   }
   return false;
+}
+
+const Type* BoolNode::filtered_int_type(const PhaseValues* phase, const Node* val, BasicType bt, bool taken) const {
+  if (in(1) && in(1)->is_Cmp()) {
+    const CmpNode* cmp = in(1)->as_Cmp();
+    if (cmp->in(1) == val || cmp->in(2) == val) {
+      const Type* other_t = phase->type(cmp->in(1) == val ? cmp->in(2) : cmp->in(1));
+      if (other_t == Type::TOP) {
+        return Type::TOP;
+      }
+      const TypeInteger* other_int_t = other_t->is_integer(bt);
+      jlong lo = other_int_t->lo_as_long();
+      jlong hi = other_int_t->hi_as_long();
+      assert(hi >= lo, "");
+      BoolTest test = _test;
+      if (cmp->in(2) == val) {
+        test = test.commute();
+      }
+      BoolTest::mask msk = taken ? test._test : test.negate();
+
+      if (cmp->Opcode() == Op_Cmp_unsigned(bt)) {
+        if (lo >= 0 && (msk == BoolTest::lt || msk == BoolTest::le)) {
+          lo = 0;
+          if (msk == BoolTest::lt) {
+            hi = hi - 1;
+          }
+          return TypeInteger::make(lo, hi, other_int_t->_widen, bt);
+        }
+      } else {
+        assert(cmp->Opcode() == Op_Cmp(bt), "");
+        switch (msk) {
+          case BoolTest::ne: {
+            // If val is compared to its lower or upper bound, we can narrow the type
+            const TypeInteger* val_t = phase->type(val)->isa_integer(bt);
+            if (val_t != nullptr && other_int_t->is_con()) {
+              if (val_t->singleton()) {
+                if (val_t->lo_as_long() == lo) {
+                  return Type::TOP;
+                }
+              } else {
+                if (val_t->lo_as_long() == lo) {
+                  return TypeInteger::make(val_t->lo_as_long() + 1, val_t->hi_as_long(), val_t->_widen, bt);
+                } else if (val_t->hi_as_long() == hi) {
+                  return TypeInteger::make(val_t->lo_as_long(), val_t->hi_as_long() - 1, val_t->_widen, bt);
+                }
+              }
+            }
+            // Can't refine type
+            return nullptr;
+          }
+          case BoolTest::eq:
+            return other_t;
+          case BoolTest::lt:
+            lo = TypeInteger::bottom(bt)->lo_as_long();
+            if (hi != min_signed_integer(bt)) {
+              hi = hi - 1;
+            }
+            break;
+          case BoolTest::le:
+            lo = TypeInteger::bottom(bt)->lo_as_long();
+            break;
+          case BoolTest::gt:
+            if (lo != max_signed_integer(bt)) {
+              lo = lo + 1;
+            }
+            hi = TypeInteger::bottom(bt)->hi_as_long();
+            break;
+          case BoolTest::ge:
+            // lo unchanged
+            hi = TypeInteger::bottom(bt)->hi_as_long();
+            break;
+          default:
+            break;
+        }
+        return TypeInteger::make(lo, hi, other_int_t->_widen, bt);
+      }
+    }
+  }
+  return nullptr;
 }
 
 //=============================================================================

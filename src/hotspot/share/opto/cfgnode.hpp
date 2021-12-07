@@ -431,7 +431,7 @@ public:
   // Takes the type of val and filters it through the test represented
   // by if_proj and returns a more refined type if one is produced.
   // Returns null is it couldn't improve the type.
-  static const TypeInt* filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj);
+  static const Type* filtered_int_type(PhaseValues* phase, Node* val, Node* if_proj, BasicType bt);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

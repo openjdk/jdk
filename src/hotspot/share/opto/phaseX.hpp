@@ -286,6 +286,10 @@ public:
     assert(t != nullptr, "must set before get");
     return t;
   }
+
+  virtual const Type* type(const Node* n, Node* c) const {
+    return type(n);
+  }
   // Get a previously recorded type for the node n,
   // or else return null if there is none.
   const Type* type_or_null(const Node* n) const {
@@ -406,7 +410,7 @@ public:
 #endif
 };
 
-
+class PhaseConditionalPropagation;
 //------------------------------PhaseGVN---------------------------------------
 // Phase for performing local, pessimistic GVN-style optimizations.
 class PhaseGVN : public PhaseValues {
@@ -432,6 +436,7 @@ public:
   // Check for a simple dead loop when a data node references itself.
   void dead_loop_check(Node *n);
 #endif
+  virtual PhaseConditionalPropagation* is_ConditionalPropagation() { return nullptr; }
 };
 
 //------------------------------PhaseIterGVN-----------------------------------
@@ -620,12 +625,13 @@ class PhaseCCP : public PhaseIterGVN {
   void push_phis(Unique_Node_List& worklist, const Node* use) const;
   static void push_catch(Unique_Node_List& worklist, const Node* use);
   void push_cmpu(Unique_Node_List& worklist, const Node* use) const;
-  static void push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, const Node* use);
+  static void push_counted_loop_phi(Unique_Node_List& worklist, const Node* parent, const Node* use);
   void push_loadp(Unique_Node_List& worklist, const Node* use) const;
   static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;
+  void push_opaque_orig_limit(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
 
  public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants

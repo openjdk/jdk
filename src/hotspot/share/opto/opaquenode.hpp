@@ -81,6 +81,7 @@ public:
   }
 
   DEBUG_ONLY(CountedLoopNode* guarded_loop() const);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int Opcode() const;
   virtual uint size_of() const {
     return sizeof(*this);
