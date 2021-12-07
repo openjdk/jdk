@@ -293,13 +293,13 @@ public abstract class BaseOptions {
 
     /**
      * Argument for command-line option {@code -tagletpath}.
-     * The path to Taglets
+     * The path to custom taglets.
      */
     private String tagletPath = null;
 
     /**
      * Argument for command-line option {@code --snippet-path}.
-     * The path for external snippets.
+     * The path to external snippets.
      */
     private String snippetPath = null;
 
@@ -1007,7 +1007,7 @@ public abstract class BaseOptions {
 
     /**
      * Argument for command-line option {@code -tagletpath}.
-     * The path to Taglets
+     * The path to custom taglets.
      */
     public String tagletPath() {
         return tagletPath;
@@ -1015,7 +1015,7 @@ public abstract class BaseOptions {
 
     /**
      * Argument for command-line option {@code --snippet-path}.
-     * The path for external snippets.
+     * The path to external snippets.
      */
     public String snippetPath() {
         return snippetPath;
