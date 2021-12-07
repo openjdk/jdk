@@ -103,9 +103,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[Other] = new WorkerDataArray<double>("Other", "GC Worker Other (ms):", max_gc_threads);
   _gc_par_phases[MergePSS] = new WorkerDataArray<double>("MergePSS", "Merge Per-Thread State (ms):", max_gc_threads);
   _gc_par_phases[RemoveSelfForwardingPtr] = new WorkerDataArray<double>("RemoveSelfForwardingPtr", "Remove Self Forwards Total (ms):", max_gc_threads);
-  _gc_par_phases[RemoveSelfForwardingPtrPrepare] = new WorkerDataArray<double>("RemoveSelfForwardingPtrPrepare", "Remove Self Forwards Prepare (ms):", max_gc_threads);
-  _gc_par_phases[RemoveSelfForwardingPtrProcess] = new WorkerDataArray<double>("RemoveSelfForwardingPtrPrepare", "Remove Self Forwards Process (ms):", max_gc_threads);
-  _gc_par_phases[RemoveSelfForwardingPtrCleanup] = new WorkerDataArray<double>("RemoveSelfForwardingPtrCleanup", "Remove Self Forwards Cleanup (ms):", max_gc_threads);
+  _gc_par_phases[RemoveSelfForwardingPtrSort] = new WorkerDataArray<double>("RemoveSelfForwardingPtrSort", "Sort Self Forward Refs (ms):", max_gc_threads);
+  _gc_par_phases[RemoveSelfForwardingPtrRemove] = new WorkerDataArray<double>("RemoveSelfForwardingPtrRemove", "Remove Self Forwards (ms):", max_gc_threads);
+  _gc_par_phases[RemoveSelfForwardingPtrReclaim] = new WorkerDataArray<double>("RemoveSelfForwardingPtrReclaim", "Reclaim Memory (ms):", max_gc_threads);
   _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RecalculateUsed] = new WorkerDataArray<double>("RecalculateUsed", "Recalculate Used Memory (ms):", max_gc_threads);
   _gc_par_phases[ResetHotCardCache] = new WorkerDataArray<double>("ResetHotCardCache", "Reset Hot Card Cache (ms):", max_gc_threads);
@@ -135,9 +135,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste", MergePSSLABWasteBytes);
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste", MergePSSLABUndoWasteBytes);
 
-  _gc_par_phases[RemoveSelfForwardingPtr]->create_thread_work_items("Evacuation Failure Regions:", RemoveSelfForwardingPtrRegions);
-  _gc_par_phases[RemoveSelfForwardingPtr]->create_thread_work_items("Evacuation Failure Objects:", RemoveSelfForwardingPtrObjects);
-  _gc_par_phases[RemoveSelfForwardingPtr]->create_thread_work_items("Evacuation Failure Bytes:", RemoveSelfForwardingPtrBytes);
+  _gc_par_phases[RemoveSelfForwardingPtr]->create_thread_work_items("In-Place Regions:", RemoveSelfForwardingPtrRegions);
+  _gc_par_phases[RemoveSelfForwardingPtr]->create_thread_work_items("Self Forwarded Objects:", RemoveSelfForwardingPtrObjects);
+  _gc_par_phases[RemoveSelfForwardingPtr]->create_thread_work_items("In-Place Live Bytes:", RemoveSelfForwardingPtrBytes);
 
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Total", EagerlyReclaimNumTotal);
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Candidates", EagerlyReclaimNumCandidates);
@@ -492,9 +492,9 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   debug_phase(_gc_par_phases[RecalculateUsed], 1);
   if (evacuation_failed) {
     debug_phase(_gc_par_phases[RemoveSelfForwardingPtr], 1);
-    debug_phase(_gc_par_phases[RemoveSelfForwardingPtrPrepare], 2);
-    debug_phase(_gc_par_phases[RemoveSelfForwardingPtrProcess], 2);
-    debug_phase(_gc_par_phases[RemoveSelfForwardingPtrCleanup], 2);
+    debug_phase(_gc_par_phases[RemoveSelfForwardingPtrSort], 2);
+    debug_phase(_gc_par_phases[RemoveSelfForwardingPtrRemove], 2);
+    debug_phase(_gc_par_phases[RemoveSelfForwardingPtrReclaim], 2);
   }
 
   trace_phase(_gc_par_phases[RedirtyCards]);

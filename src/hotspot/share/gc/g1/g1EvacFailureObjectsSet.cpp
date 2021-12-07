@@ -100,7 +100,7 @@ public:
 
   void process_and_drop(ObjectClosure* closure, uint worker_id) {
     {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrPrepare, worker_id, false);
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrSort, worker_id, false);
 
       uint num = _segments->num_allocated_slots();
       _offset_array = NEW_C_HEAP_ARRAY(OffsetInRegion, num, mtGC);
@@ -109,13 +109,13 @@ public:
       assert(_array_length == num, "must be %u, %u", _array_length, num);
     }
     {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrProcess, worker_id, false);
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrRemove, worker_id, false);
 
       iterate(closure);
     }
 
     {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrCleanup, worker_id, false);
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrReclaim, worker_id, false);
 
       FREE_C_HEAP_ARRAY(OffsetInRegion, _offset_array);
     }
@@ -135,7 +135,7 @@ void G1EvacFailureObjectsSet::process_and_drop(ObjectClosure* closure, G1GCPhase
   helper.process_and_drop(closure, worker_id);
 
   {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrCleanup, worker_id, false);
+    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrReclaim, worker_id, false);
 
     _offsets.drop_all();
   }
