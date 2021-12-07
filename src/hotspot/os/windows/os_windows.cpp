@@ -675,6 +675,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   if (osthread == NULL) {
     return false;
   }
+  osthread->set_state(ALLOCATED);
 
   // Initialize the JDK library's interrupt event.
   // This should really be done when OSThread is constructed,
