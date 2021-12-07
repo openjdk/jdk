@@ -1822,6 +1822,7 @@ BASE(BlockEnd, StateSplit)
   // successors
   int number_of_sux() const                      { return _sux != NULL ? _sux->length() : 0; }
   BlockBegin* sux_at(int i) const                { return _sux->at(i); }
+  bool is_sux(BlockBegin* sux) const             { return _sux == NULL ? false : _sux->contains(sux); }
   BlockBegin* default_sux() const                { return sux_at(number_of_sux() - 1); }
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);
 };
