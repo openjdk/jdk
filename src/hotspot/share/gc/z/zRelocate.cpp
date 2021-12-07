@@ -985,13 +985,13 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   }
 
   if (relocation_set->collector()->is_young()) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentYoungRelocateRemsetFlipPromotedPages);
+    ZStatTimer timer(ZSubPhaseConcurrentYoungRelocateRemsetFlipPromotedPages, relocation_set->collector()->gc_timer());
     ZRelocateAddRemsetForInPlacePromoted task(relocation_set->flip_promoted_pages());
     workers()->run(&task);
   }
 
   if (relocation_set->collector()->is_young() && ZRelocateRemsetStrategy == 2) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentYoungRelocateRemsetNormalPromoted);
+    ZStatTimer timer(ZSubPhaseConcurrentYoungRelocateRemsetNormalPromoted, relocation_set->collector()->gc_timer());
     ZRelocateAddRemsetForNormalPromoted task;
     workers()->run(&task);
   }

@@ -80,7 +80,7 @@ protected:
   ZStatMark             _stat_mark;
   ZStatRelocation       _stat_relocation;
 
-  ConcurrentGCTimer     _timer;
+  ConcurrentGCTimer*    _gc_timer;
 
   void free_empty_pages(ZRelocationSetSelector* selector, int bulk);
   void flip_age_pages(const ZRelocationSetSelector* selector);
@@ -118,7 +118,9 @@ public:
   void increase_compacted(size_t size);
   void update_used(size_t used);
 
-  ConcurrentGCTimer* timer();
+  ConcurrentGCTimer* gc_timer() const;
+  void set_gc_timer(ConcurrentGCTimer* gc_timer);
+  void clear_gc_timer();
 
   ZStatHeap* stat_heap();
   ZStatCycle* stat_cycle();
@@ -126,9 +128,9 @@ public:
   ZStatMark* stat_mark();
   ZStatRelocation* stat_relocation();
 
-  void set_at_collection_start();
-  void set_at_generation_collection_start();
-  void set_at_generation_collection_end();
+  void at_collection_start();
+  void at_generation_collection_start(ConcurrentGCTimer* gc_timer);
+  void at_generation_collection_end();
 
   // Workers
   ZWorkers* workers();
@@ -265,26 +267,6 @@ public:
   int total_collections_at_end() const;
 
   virtual GCTracer* tracer();
-};
-
-class ZMinorCollector {
-private:
-  ConcurrentGCTimer _timer;
-
-public:
-  ZMinorCollector();
-
-  ConcurrentGCTimer* timer();
-};
-
-class ZMajorCollector {
-private:
-  ConcurrentGCTimer _timer;
-
-public:
-  ZMajorCollector();
-
-  ConcurrentGCTimer* timer();
 };
 
 #endif // SHARE_GC_Z_ZCOLLECTOR_HPP

@@ -27,6 +27,7 @@
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "gc/z/zValue.hpp"
 
+class ConcurrentGCTimer;
 class ReferencePolicy;
 class ZWorkers;
 
@@ -72,8 +73,8 @@ public:
   void reset_statistics();
 
   virtual bool discover_reference(oop reference, ReferenceType type);
-  void process_references();
-  void enqueue_references();
+  void process_references(ConcurrentGCTimer* gc_timer);
+  void enqueue_references(ConcurrentGCTimer* gc_timer);
 
   void verify_pending_references();
 };

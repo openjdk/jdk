@@ -306,18 +306,19 @@ public:
 class ZStatTimer : public StackObj {
 private:
   const bool         _enabled;
-  ConcurrentGCTimer* _timer;
+  ConcurrentGCTimer* _gc_timer;
   const ZStatPhase&  _phase;
   const Ticks        _start;
 
 public:
-  ZStatTimer(const ZStatPhase& phase, ConcurrentGCTimer* timer) :
+  ZStatTimer(const ZStatPhase& phase, ConcurrentGCTimer* gc_timer) :
       _enabled(!ZStatTimerDisable::is_active()),
-      _timer(timer),
+      _gc_timer(gc_timer),
       _phase(phase),
       _start(Ticks::now()) {
+
     if (_enabled) {
-      _phase.register_start(_timer, _start);
+      _phase.register_start(_gc_timer, _start);
     }
   }
 
@@ -332,19 +333,9 @@ public:
   ~ZStatTimer() {
     if (_enabled) {
       const Ticks end = Ticks::now();
-      _phase.register_end(_timer, _start, end);
+      _phase.register_end(_gc_timer, _start, end);
     }
   }
-};
-
-class ZStatTimerYoung : public ZStatTimer {
-public:
-  ZStatTimerYoung(const ZStatPhase& phase);
-};
-
-class ZStatTimerOld : public ZStatTimer {
-public:
-  ZStatTimerOld(const ZStatPhase& phase);
 };
 
 class ZStatTimerMinor : public ZStatTimer {
@@ -355,6 +346,11 @@ public:
 class ZStatTimerMajor : public ZStatTimer {
 public:
   ZStatTimerMajor(const ZStatPhase& phase);
+};
+
+class ZStatTimerWorker : public ZStatTimer {
+public:
+  ZStatTimerWorker(const ZStatPhase& phase);
 };
 
 //

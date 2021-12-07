@@ -549,7 +549,7 @@ bool ZMark::try_terminate_flush() {
   Atomic::inc(&_work_nterminateflush);
   _terminate.set_resurrected(false);
 
-  ZStatTimer timer(ZSubPhaseConcurrentMarkTryFlush, _collector->timer());
+  ZStatTimer timer(ZSubPhaseConcurrentMarkTryFlush, _collector->gc_timer());
   return flush(true /* gc_threads */) ||
          _terminate.resurrected();
 }
@@ -567,13 +567,13 @@ bool ZMark::try_proactive_flush() {
 
   Atomic::inc(&_work_nproactiveflush);
 
-  ZStatTimer timer(ZSubPhaseConcurrentMarkTryFlush);
+  ZStatTimerWorker timer(ZSubPhaseConcurrentMarkTryFlush);
   SuspendibleThreadSetLeaver sts;
   return flush(false /* gc_threads */);
 }
 
 bool ZMark::try_terminate() {
-  ZStatTimer timer(ZSubPhaseConcurrentMarkTryTerminate);
+  ZStatTimerWorker timer(ZSubPhaseConcurrentMarkTryTerminate);
   return _terminate.try_terminate();
 }
 
@@ -582,7 +582,7 @@ void ZMark::leave() {
 }
 
 void ZMark::work() {
-  ZStatTimer timer(ZSubPhaseConcurrentMark);
+  ZStatTimerWorker timer(ZSubPhaseConcurrentMark);
   SuspendibleThreadSetJoiner sts;
   ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, ZThread::worker_id());
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _collector->id());
@@ -822,13 +822,13 @@ public:
 
   virtual void work() {
     {
-      ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootColored);
+      ZStatTimerWorker timer(ZSubPhaseConcurrentYoungMarkRootColored);
       _roots_colored.apply(&_cl_colored,
                            &_cld_cl);
     }
 
     {
-      ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootUncolored);
+      ZStatTimerWorker timer(ZSubPhaseConcurrentYoungMarkRootUncolored);
       _roots_uncolored.apply(&_thread_cl,
                              &_nm_cl);
     }

@@ -26,6 +26,7 @@
 
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/gcTimer.hpp"
 #include "gc/z/zDriverPort.hpp"
 #include "gc/z/zLock.hpp"
 
@@ -45,7 +46,8 @@ public:
 
 class ZDriverMinor : public ConcurrentGCThread {
 private:
-  ZDriverPort _port;
+  ZDriverPort       _port;
+  ConcurrentGCTimer _gc_timer;
 
   void gc(const ZDriverRequest& request);
   void handle_alloc_stalls() const;
@@ -66,6 +68,7 @@ class ZDriverMajor : public ConcurrentGCThread {
 private:
   ZDriverPort         _port;
   ZDriverMinor* const _minor;
+  ConcurrentGCTimer  _gc_timer;
 
   void gc(const ZDriverRequest& request);
   void handle_alloc_stalls() const;

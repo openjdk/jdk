@@ -75,14 +75,6 @@ inline ZOldCollector* ZHeap::old_collector() {
   return &_old_collector;
 }
 
-inline ZMinorCollector* ZHeap::minor_collector() {
-  return &_minor_collector;
-}
-
-inline ZMajorCollector* ZHeap::major_collector() {
-  return &_major_collector;
-}
-
 inline uint32_t ZHeap::hash_oop(zaddress addr) const {
   const zoffset offset = ZAddress::offset(addr);
   return ZHash::offset_to_uint32(offset);

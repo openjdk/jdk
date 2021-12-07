@@ -54,9 +54,6 @@ private:
   ZYoungCollector     _young_collector;
   ZOldCollector       _old_collector;
 
-  ZMinorCollector     _minor_collector;
-  ZMajorCollector     _major_collector;
-
   bool                _initialized;
 
 public:
@@ -77,9 +74,6 @@ public:
   ZCollector* collector(ZGenerationId id);
   ZYoungCollector* young_collector();
   ZOldCollector* old_collector();
-
-  ZMinorCollector* minor_collector();
-  ZMajorCollector* major_collector();
 
   // Heap metrics
   size_t initial_capacity() const;

@@ -444,8 +444,8 @@ public:
   }
 };
 
-void ZReferenceProcessor::process_references() {
-  ZStatTimerOld timer(ZSubPhaseConcurrentReferencesProcess);
+void ZReferenceProcessor::process_references(ConcurrentGCTimer* gc_timer) {
+  ZStatTimer timer(ZSubPhaseConcurrentReferencesProcess, gc_timer);
 
   // Process discovered lists
   ZReferenceProcessorTask task(this);
@@ -487,8 +487,8 @@ zpointer ZReferenceProcessor::swap_pending_list(zpointer pending_list) {
   return ZAddress::store_good(to_zaddress(prev));
 }
 
-void ZReferenceProcessor::enqueue_references() {
-  ZStatTimerOld timer(ZSubPhaseConcurrentReferencesEnqueue);
+void ZReferenceProcessor::enqueue_references(ConcurrentGCTimer* gc_timer) {
+  ZStatTimer timer(ZSubPhaseConcurrentReferencesEnqueue, gc_timer);
 
   if (is_null(_pending_list.get())) {
     // Nothing to enqueue

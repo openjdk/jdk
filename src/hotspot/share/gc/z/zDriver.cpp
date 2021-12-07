@@ -193,7 +193,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimerYoung timer(ZPhasePauseMarkStartYoung);
+    ZStatTimer timer(ZPhasePauseMarkStartYoung, young_collector()->gc_timer());
     ZServiceabilityPauseTracer tracer(ZGenerationId::young);
 
     collected_heap()->increment_total_collections(false /* full */);
@@ -213,7 +213,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimerYoung timer(ZPhasePauseMarkStartYoungAndOld);
+    ZStatTimer timer(ZPhasePauseMarkStartYoungAndOld, young_collector()->gc_timer());
     ZServiceabilityPauseTracer tracer(ZGenerationId::young);
 
     collected_heap()->increment_total_collections(true /* full */);
@@ -230,7 +230,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimerYoung timer(ZPhasePauseMarkEndYoung);
+    ZStatTimer timer(ZPhasePauseMarkEndYoung, young_collector()->gc_timer());
     ZServiceabilityPauseTracer tracer(ZGenerationId::young);
     return young_collector()->mark_end();
   }
@@ -247,7 +247,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimerYoung timer(ZPhasePauseRelocateStartYoung);
+    ZStatTimer timer(ZPhasePauseRelocateStartYoung, young_collector()->gc_timer());
     ZServiceabilityPauseTracer tracer(ZGenerationId::young);
     young_collector()->relocate_start();
     return true;
@@ -328,7 +328,7 @@ static void pause_mark_start_young() {
 }
 
 static void concurrent_mark_young() {
-  ZStatTimerYoung timer(ZPhaseConcurrentMarkYoung);
+  ZStatTimer timer(ZPhaseConcurrentMarkYoung, young_collector()->gc_timer());
   young_collector()->mark_roots();
   young_collector()->mark_follow();
 }
@@ -338,22 +338,22 @@ static bool pause_mark_end_young() {
 }
 
 static void concurrent_mark_continue_young() {
-  ZStatTimerYoung timer(ZPhaseConcurrentMarkContinueYoung);
+  ZStatTimer timer(ZPhaseConcurrentMarkContinueYoung, young_collector()->gc_timer());
   young_collector()->mark_follow();
 }
 
 static void concurrent_mark_free_young() {
-  ZStatTimerYoung timer(ZPhaseConcurrentMarkFreeYoung);
+  ZStatTimer timer(ZPhaseConcurrentMarkFreeYoung, young_collector()->gc_timer());
   young_collector()->mark_free();
 }
 
 static void concurrent_reset_relocation_set_young() {
-  ZStatTimerYoung timer(ZPhaseConcurrentResetRelocationSetYoung);
+  ZStatTimer timer(ZPhaseConcurrentResetRelocationSetYoung, young_collector()->gc_timer());
   young_collector()->reset_relocation_set();
 }
 
 static void concurrent_select_relocation_set_young() {
-  ZStatTimerYoung timer(ZPhaseConcurrentSelectRelocationSetYoung);
+  ZStatTimer timer(ZPhaseConcurrentSelectRelocationSetYoung, young_collector()->gc_timer());
   const bool promote_all = young_collector()->type() == ZYoungType::major_preclean;
   young_collector()->select_relocation_set(promote_all);
 }
@@ -363,7 +363,7 @@ static void pause_relocate_start_young() {
 }
 
 static void concurrent_relocate_young() {
-  ZStatTimerYoung timer(ZPhaseConcurrentRelocatedYoung);
+  ZStatTimer timer(ZPhaseConcurrentRelocatedYoung, young_collector()->gc_timer());
   young_collector()->relocate();
 }
 
@@ -374,26 +374,26 @@ static void handle_alloc_stalling_for_young() {
 class ZDriverScopeYoung : public StackObj {
 private:
   ZYoungTypeSetter           _type_setter;
-  ZStatTimerYoung            _timer;
+  ZStatTimer                 _stat_timer;
   ZServiceabilityCycleTracer _tracer;
 
 public:
-  ZDriverScopeYoung(ZYoungType type) :
+  ZDriverScopeYoung(ZYoungType type, ConcurrentGCTimer* gc_timer) :
       _type_setter(type),
-      _timer(ZPhaseGenerationYoung[(int)type]),
+      _stat_timer(ZPhaseGenerationYoung[(int)type], gc_timer),
       _tracer(ZGenerationId::young) {
-    // Update statistics
-    young_collector()->set_at_generation_collection_start();
+    // Update statistics and set the GC timer
+    young_collector()->at_generation_collection_start(gc_timer);
   }
 
   ~ZDriverScopeYoung() {
-    // Update statistics
-    young_collector()->set_at_generation_collection_end();
+    // Update statistics and clear the GC timer
+    young_collector()->at_generation_collection_end();
   }
 };
 
-static void collect_young(ZYoungType type) {
-  ZDriverScopeYoung scope(type);
+static void collect_young(ZYoungType type, ConcurrentGCTimer* timer) {
+  ZDriverScopeYoung scope(type, timer);
 
   // Phase 1: Pause Mark Start
   pause_mark_start_young();
@@ -434,7 +434,8 @@ static void collect_young(ZYoungType type) {
 }
 
 ZDriverMinor::ZDriverMinor() :
-    _port() {
+    _port(),
+    _gc_timer() {
   set_name("ZDriverMinor");
   create_and_start();
 }
@@ -464,19 +465,19 @@ void ZDriverMinor::collect(const ZDriverRequest& request) {
 
 class ZDriverScopeMinor : public StackObj {
 private:
-  GCIdMark        _gc_id;
-  GCCause::Cause  _gc_cause;
-  GCCauseSetter   _gc_cause_setter;
-  ZStatTimerMinor _timer;
+  GCIdMark          _gc_id;
+  GCCause::Cause    _gc_cause;
+  GCCauseSetter     _gc_cause_setter;
+  ZStatTimer        _stat_timer;
 
 public:
-  ZDriverScopeMinor(const ZDriverRequest& request) :
+  ZDriverScopeMinor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer) :
       _gc_id(),
       _gc_cause(request.cause()),
       _gc_cause_setter(collected_heap(), _gc_cause),
-      _timer(ZPhaseCollectionMinor) {
+      _stat_timer(ZPhaseCollectionMinor, gc_timer) {
     // Update statistics
-    young_collector()->set_at_collection_start();
+    young_collector()->at_collection_start();
 
     // Select number of young worker threads to use
     const uint young_nworkers = select_active_young_worker_threads(request);
@@ -485,8 +486,8 @@ public:
 };
 
 void ZDriverMinor::gc(const ZDriverRequest& request) {
-  ZDriverScopeMinor scope(request);
-  collect_young(ZYoungType::minor);
+  ZDriverScopeMinor scope(request, &_gc_timer);
+  collect_young(ZYoungType::minor, &_gc_timer);
 }
 
 void ZDriverMinor::handle_alloc_stalls() const {
@@ -527,7 +528,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimerOld timer(ZPhasePauseMarkEndOld);
+    ZStatTimer timer(ZPhasePauseMarkEndOld, old_collector()->gc_timer());
     ZServiceabilityPauseTracer tracer(ZGenerationId::old);
     return old_collector()->mark_end();
   }
@@ -544,7 +545,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimerOld timer(ZPhasePauseRelocateStartOld);
+    ZStatTimer timer(ZPhasePauseRelocateStartOld, old_collector()->gc_timer());
     ZServiceabilityPauseTracer tracer(ZGenerationId::old);
     old_collector()->relocate_start();
     return true;
@@ -567,7 +568,7 @@ public:
 };
 
 static void concurrent_mark_old() {
-  ZStatTimerOld timer(ZPhaseConcurrentMarkOld);
+  ZStatTimer timer(ZPhaseConcurrentMarkOld, old_collector()->gc_timer());
   ZBreakpoint::at_after_marking_started();
   old_collector()->mark_roots();
   old_collector()->mark_follow();
@@ -580,23 +581,23 @@ static bool pause_mark_end_old() {
 }
 
 static void concurrent_mark_continue_old() {
-  ZStatTimerOld timer(ZPhaseConcurrentMarkContinueOld);
+  ZStatTimer timer(ZPhaseConcurrentMarkContinueOld, old_collector()->gc_timer());
   old_collector()->mark_follow();
 }
 
 static void concurrent_mark_free_old() {
-  ZStatTimerOld timer(ZPhaseConcurrentMarkFreeOld);
+  ZStatTimer timer(ZPhaseConcurrentMarkFreeOld, old_collector()->gc_timer());
   old_collector()->mark_free();
 }
 
 static void concurrent_process_non_strong_references_old() {
-  ZStatTimerOld timer(ZPhaseConcurrentProcessNonStrongReferencesOld);
+  ZStatTimer timer(ZPhaseConcurrentProcessNonStrongReferencesOld, old_collector()->gc_timer());
   ZBreakpoint::at_after_reference_processing_started();
   old_collector()->process_non_strong_references();
 }
 
 static void concurrent_reset_relocation_set_old() {
-  ZStatTimerOld timer(ZPhaseConcurrentResetRelocationSetOld);
+  ZStatTimer timer(ZPhaseConcurrentResetRelocationSetOld, old_collector()->gc_timer());
   old_collector()->reset_relocation_set();
 }
 
@@ -622,7 +623,7 @@ static void pause_verify_old() {
 }
 
 static void concurrent_select_relocation_set_old() {
-  ZStatTimerOld timer(ZPhaseConcurrentSelectRelocationSetOld);
+  ZStatTimer timer(ZPhaseConcurrentSelectRelocationSetOld, old_collector()->gc_timer());
   old_collector()->select_relocation_set(false /* promote_all */);
 }
 
@@ -631,12 +632,12 @@ static void pause_relocate_start_old() {
 }
 
 static void concurrent_relocate_old() {
-  ZStatTimerOld timer(ZPhaseConcurrentRelocatedOld);
+  ZStatTimer timer(ZPhaseConcurrentRelocatedOld, old_collector()->gc_timer());
   old_collector()->relocate();
 }
 
 static void concurrent_roots_remap_old() {
-  ZStatTimerOld timer(ZPhaseConcurrentRootsRemapOld);
+  ZStatTimer timer(ZPhaseConcurrentRootsRemapOld, old_collector()->gc_timer());
   old_collector()->roots_remap();
 }
 
@@ -712,27 +713,27 @@ static bool should_preclean_young(GCCause::Cause cause) {
 
 class ZDriverScopeOld : public StackObj {
 private:
-  ZStatTimerOld              _timer;
+  ZStatTimer                 _stat_timer;
   ZServiceabilityCycleTracer _tracer;
   ZDriverUnlocker            _unlocker;
 
 public:
-  ZDriverScopeOld() :
-      _timer(ZPhaseGenerationOld),
+  ZDriverScopeOld(ConcurrentGCTimer* gc_timer) :
+      _stat_timer(ZPhaseGenerationOld, gc_timer),
       _tracer(ZGenerationId::old),
       _unlocker() {
-    // Update statistics
-    old_collector()->set_at_generation_collection_start();
+    // Update statistics and set the GC timer
+    old_collector()->at_generation_collection_start(gc_timer);
   }
 
   ~ZDriverScopeOld() {
-    // Update statistics
-    old_collector()->set_at_generation_collection_end();
+    // Update statistics and clear the GC timer
+    old_collector()->at_generation_collection_end();
   }
 };
 
-static void collect_old() {
-  ZDriverScopeOld scope;
+static void collect_old(ConcurrentGCTimer* timer) {
+  ZDriverScopeOld scope(timer);
 
   // Phase 1: Concurrent Mark
   concurrent_mark_old();
@@ -788,7 +789,8 @@ static void collect_old() {
 
 ZDriverMajor::ZDriverMajor(ZDriverMinor* minor) :
     _port(),
-    _minor(minor) {
+    _minor(minor),
+    _gc_timer() {
   set_name("ZDriverMajor");
   create_and_start();
 }
@@ -833,19 +835,19 @@ void ZDriverMajor::collect(const ZDriverRequest& request) {
 
 class ZDriverScopeMajor : public StackObj {
 private:
-  GCIdMark        _gc_id;
-  GCCause::Cause  _gc_cause;
-  GCCauseSetter   _gc_cause_setter;
-  ZStatTimerMajor _timer;
+  GCIdMark       _gc_id;
+  GCCause::Cause _gc_cause;
+  GCCauseSetter  _gc_cause_setter;
+  ZStatTimer     _stat_timer;
 
 public:
-  ZDriverScopeMajor(const ZDriverRequest& request) :
+  ZDriverScopeMajor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer) :
       _gc_id(),
       _gc_cause(request.cause()),
       _gc_cause_setter(collected_heap(), _gc_cause),
-      _timer(ZPhaseCollectionMajor) {
+      _stat_timer(ZPhaseCollectionMajor, gc_timer) {
     // Update statistics
-    old_collector()->set_at_collection_start();
+    old_collector()->at_collection_start();
 
     // Set up soft reference policy
     const bool clear = should_clear_soft_references(request.cause());
@@ -870,17 +872,17 @@ public:
 };
 
 void ZDriverMajor::gc(const ZDriverRequest& request) {
-  ZDriverScopeMajor scope(request);
+  ZDriverScopeMajor scope(request, &_gc_timer);
 
   if (should_preclean_young(request.cause())) {
     // Collect young generation and promote everything to old generation
-    collect_young(ZYoungType::major_preclean);
+    collect_young(ZYoungType::major_preclean, &_gc_timer);
   }
 
   abortpoint();
 
   // Collect young generation and gather roots pointing into old generation
-  collect_young(ZYoungType::major_roots);
+  collect_young(ZYoungType::major_roots, &_gc_timer);
 
   abortpoint();
 
@@ -890,7 +892,7 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
   abortpoint();
 
   // Collect old generation
-  collect_old();
+  collect_old(&_gc_timer);
 }
 
 void ZDriverMajor::handle_alloc_stalls() const {

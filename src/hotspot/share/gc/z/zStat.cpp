@@ -763,6 +763,8 @@ ZStatSubPhase::ZStatSubPhase(const char* name) :
     ZStatPhase("Subphase", name) {}
 
 void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  assert(timer != NULL || ZThread::is_worker(), "Incorrect timer value");
+
   if (timer != NULL && !ZThread::is_worker()) {
     timer->register_gc_phase_start(name(), start);
   }
@@ -827,17 +829,10 @@ void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& sta
   }
 }
 
-ZStatTimerYoung::ZStatTimerYoung(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->young_collector()->timer()) {}
-
-ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->old_collector()->timer()) {}
-
-ZStatTimerMinor::ZStatTimerMinor(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->minor_collector()->timer()) {}
-
-ZStatTimerMajor::ZStatTimerMajor(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->major_collector()->timer()) {}
+ZStatTimerWorker::ZStatTimerWorker(const ZStatPhase& phase) :
+    ZStatTimer(phase, NULL /* gc_timer */) {
+  assert(ZThread::is_worker(), "Should only be called by worker thread");
+}
 
 //
 // Stat timer

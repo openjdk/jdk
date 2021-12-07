@@ -77,7 +77,9 @@ ZCollector::ZCollector(ZGenerationId id, ZPageTable* page_table, ZPageAllocator*
     _stat_heap(),
     _stat_cycle(),
     _stat_workers(),
-    _stat_mark() {
+    _stat_mark(),
+    _stat_relocation(),
+    _gc_timer(NULL) {
 }
 
 bool ZCollector::is_initialized() const {
@@ -265,8 +267,18 @@ void ZCollector::update_used(size_t used) {
   }
 }
 
-ConcurrentGCTimer* ZCollector::timer() {
-  return &_timer;
+ConcurrentGCTimer* ZCollector::gc_timer() const {
+  return _gc_timer;
+}
+
+void ZCollector::set_gc_timer(ConcurrentGCTimer* gc_timer) {
+  assert(_gc_timer == NULL, "Incorrect scoping");
+  _gc_timer = gc_timer;
+}
+
+void ZCollector::clear_gc_timer() {
+  assert(_gc_timer != NULL, "Incorrect scoping");
+  _gc_timer = NULL;
 }
 
 void ZCollector::log_phase_switch(Phase from, Phase to) {
@@ -318,20 +330,22 @@ void ZCollector::set_phase(Phase new_phase) {
   _phase = new_phase;
 }
 
-void ZCollector::set_at_collection_start() {
+void ZCollector::at_collection_start() {
   stat_heap()->set_at_collection_start(_page_allocator->stats(this));
 }
 
-void ZCollector::set_at_generation_collection_start() {
+void ZCollector::at_generation_collection_start(ConcurrentGCTimer* gc_timer) {
+  set_gc_timer(gc_timer);
   stat_cycle()->at_start();
   stat_heap()->set_at_generation_collection_start(_page_allocator->stats(this));
 
   workers()->clear_pending_resize();
 }
 
-void ZCollector::set_at_generation_collection_end() {
+void ZCollector::at_generation_collection_end() {
   stat_cycle()->at_end(stat_workers());
   // The heap at generation collection end data is gathered at relocate end
+  clear_gc_timer();
 }
 
 const char* ZCollector::phase_to_string() const {
@@ -394,12 +408,12 @@ void ZYoungCollector::mark_start() {
 }
 
 void ZYoungCollector::mark_roots() {
-  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRoots);
+  ZStatTimer timer(ZSubPhaseConcurrentYoungMarkRoots, gc_timer());
   _mark.mark_roots();
 }
 
 void ZYoungCollector::mark_follow() {
-  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkFollow);
+  ZStatTimer timer(ZSubPhaseConcurrentYoungMarkFollow, gc_timer());
   _mark.mark_follow();
 }
 
@@ -485,7 +499,7 @@ void ZYoungCollector::register_in_place_relocate_promoted(ZPage* page) {
 }
 
 void ZYoungCollector::scan_remembered_sets() {
-  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootRemset);
+  ZStatTimer timer(ZSubPhaseConcurrentYoungMarkRootRemset, gc_timer());
   _remembered.scan();
 }
 
@@ -533,12 +547,12 @@ void ZOldCollector::mark_start() {
 }
 
 void ZOldCollector::mark_roots() {
-  ZStatTimerOld timer(ZSubPhaseConcurrentOldMarkRoots);
+  ZStatTimer timer(ZSubPhaseConcurrentOldMarkRoots, gc_timer());
   _mark.mark_roots();
 }
 
 void ZOldCollector::mark_follow() {
-  ZStatTimerOld timer(ZSubPhaseConcurrentOldMarkFollow);
+  ZStatTimer timer(ZSubPhaseConcurrentOldMarkFollow, gc_timer());
   _mark.mark_follow();
 }
 
@@ -587,13 +601,13 @@ public:
 
 void ZOldCollector::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences
-  _reference_processor.process_references();
+  _reference_processor.process_references(gc_timer());
 
   // Process weak roots
   _weak_roots_processor.process_weak_roots();
 
   // Unlink stale metadata and nmethods
-  _unload.unlink();
+  _unload.unlink(gc_timer());
 
   // Perform a handshake. This is needed 1) to make sure that stale
   // metadata and nmethods are no longer observable. And 2), to
@@ -613,7 +627,7 @@ void ZOldCollector::process_non_strong_references() {
   ZResurrection::unblock();
 
   // Purge stale metadata and nmethods that were unlinked
-  _unload.purge();
+  _unload.purge(gc_timer());
 
   // Enqueue Soft/Weak/Final/PhantomReferences. Note that this
   // must be done after unblocking resurrection. Otherwise the
@@ -621,7 +635,7 @@ void ZOldCollector::process_non_strong_references() {
   // that were just enqueued, which would incorrectly return null
   // during the resurrection block window, since such referents
   // are only Finalizable marked.
-  _reference_processor.enqueue_references();
+  _reference_processor.enqueue_references(gc_timer());
 
   // Clear old markings claim bits.
   // Note: Clearing _claim_strong also clears _claim_finalizable.
@@ -739,13 +753,13 @@ public:
 
   virtual void work() {
     {
-      ZStatTimerOld timer(ZSubPhaseConcurrentOldRemapRootUncolored);
+      ZStatTimerWorker timer(ZSubPhaseConcurrentOldRemapRootUncolored);
       _roots_colored.apply(&_cl_colored,
                            &_cld_cl);
     }
 
     {
-      ZStatTimerOld timer(ZSubPhaseConcurrentOldRemapRootUncolored);
+      ZStatTimerWorker timer(ZSubPhaseConcurrentOldRemapRootUncolored);
       _roots_uncolored.apply(&_thread_cl,
                              &_nm_cl);
     }
@@ -775,19 +789,4 @@ int ZOldCollector::total_collections_at_end() const {
 
 GCTracer* ZOldCollector::tracer() {
   return &_tracer;
-}
-
-ZMinorCollector::ZMinorCollector() :
-    _timer() {}
-
-ConcurrentGCTimer* ZMinorCollector::timer() {
-  return &_timer;
-}
-
-
-ZMajorCollector::ZMajorCollector() :
-    _timer() {}
-
-ConcurrentGCTimer* ZMajorCollector::timer() {
-  return &_timer;
 }
