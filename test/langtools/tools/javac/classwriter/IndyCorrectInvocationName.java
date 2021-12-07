@@ -162,7 +162,7 @@ public class IndyCorrectInvocationName implements Plugin {
               .invoke(null, (Object) null);
             ps.flush();
 
-            String actual = new String(out.toByteArray());
+            String actual = new String(out.toByteArray()).replace("\\R", "\n");
             String expected = "a\nb\na\nb\n";
             if (!Objects.equals(actual, expected)) {
                 throw new AssertionError("expected: " + expected + "; but got: " + actual);
