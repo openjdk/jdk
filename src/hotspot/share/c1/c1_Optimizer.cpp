@@ -248,7 +248,16 @@ void CE_Eliminator::block_do(BlockBegin* block) {
     tty->print_cr("%d. IfOp in B%d", ifop_count(), block->block_id());
   }
 
-  _hir->verify();
+#ifdef ASSERT
+  {
+    BlockList b;
+    b.append(block);
+    b.append(t_block);
+    b.append(f_block);
+    b.append(sux);
+    _hir->verify_local(b);
+  }
+#endif // ASSERT
 }
 
 Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval) {
@@ -312,6 +321,7 @@ void Optimizer::eliminate_conditional_expressions() {
   CE_Eliminator ce(ir());
 }
 
+// This removes others' relation to block, but doesnt empty block's lists
 void disconnect_from_graph(BlockBegin* block) {
   for (int p = 0; p < block->number_of_preds(); p++) {
     BlockBegin* pred = block->pred_at(p);
@@ -387,6 +397,15 @@ class BlockMerger: public BlockClosure {
     assert(sux_state->caller_state() == end_state->caller_state(), "caller not equal");
 #endif
 
+#ifdef ASSERT
+    {
+      BlockList b;
+      b.append(block);
+      b.append(sux);
+      _hir->verify_local(b);
+    }
+#endif // ASSERT
+
     // find instruction before end & append first instruction of sux block
     Instruction* prev = end->prev();
     Instruction* next = sux->next();
@@ -404,6 +423,7 @@ class BlockMerger: public BlockClosure {
       BlockBegin* xhandler = sux->exception_handler_at(k);
       block->add_exception_handler(xhandler);
 
+      // TODO This should be in disconnect from graph...
       // also substitute predecessor of exception handler
       assert(xhandler->is_predecessor(sux), "missing predecessor");
       xhandler->remove_predecessor(sux);
@@ -419,7 +439,13 @@ class BlockMerger: public BlockClosure {
                     _merge_count, block->block_id(), sux->block_id(), sux->state()->stack_size());
     }
 
-    _hir->verify();
+#ifdef ASSERT
+    {
+      BlockList b;
+      b.append(block);
+      _hir->verify_local(b);
+    }
+#endif // ASSERT
 
     If* if_ = block->end()->as_If();
     if (if_) {
@@ -469,7 +495,15 @@ class BlockMerger: public BlockClosure {
                 tty->print_cr("%d. replaced If and IfOp at end of B%d with single If", _merge_count, block->block_id());
               }
 
-              _hir->verify();
+#ifdef ASSERT
+              {
+                BlockList b;
+                b.append(block);
+                b.append(tblock);
+                b.append(fblock);
+                _hir->verify_local(b);
+              }
+#endif // ASSERT
             }
           }
         }
