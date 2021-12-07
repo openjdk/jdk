@@ -48,9 +48,8 @@ static jint state[] = {
     JVMTI_THREAD_STATE_IN_OBJECT_WAIT
 };
 
-#define DBG 1
 
-#ifdef DBG // support for debug tracing
+#if 1 // support for debug tracing
 
 #define LOG(...) \
   { \
@@ -96,6 +95,7 @@ get_method_class_name(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method) {
 
   strncpy(result, cname + 1, len); // skip leading 'L'
   result[len] = '\0';
+  deallocate(jvmti, jni, (void*)cname);
   return result;
 }
 
@@ -113,6 +113,9 @@ print_method(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method, jint depth) {
 
   LOG("%2d: %s: %s%s\n", depth, cname, mname, msign);
   fflush(0);
+  deallocate(jvmti, jni, (void*)cname);
+  deallocate(jvmti, jni, (void*)mname);
+  deallocate(jvmti, jni, (void*)msign);
 }
 
 static char*
@@ -144,7 +147,7 @@ print_stack_trace(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   deallocate(jvmti, jni, (void*)tname);
   LOG("\n");
 }
-#endif // DBG: support for debug tracing
+#endif // support for debug tracing
 
 void printStateFlags(jint flags) {
     if (flags & JVMTI_THREAD_STATE_SUSPENDED)
