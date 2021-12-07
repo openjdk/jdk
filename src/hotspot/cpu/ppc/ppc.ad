@@ -5967,7 +5967,7 @@ instruct loadConN_lo(iRegNdst dst, iRegNsrc src1, immN src2) %{
   size(4);
   ins_encode %{
     AddressLiteral addrlit = __ constant_oop_address((jobject)$src2$$constant);
-    __ relocate(addrlit.rspec(), 1);
+    __ relocate(addrlit.rspec(), /*compressed format*/ 1);
     __ ori($dst$$Register, $src1$$Register, 0); // Will get patched.
   %}
   ins_pipe(pipe_class_default);
