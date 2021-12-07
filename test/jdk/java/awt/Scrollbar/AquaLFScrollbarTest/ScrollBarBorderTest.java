@@ -94,25 +94,33 @@ public class ScrollBarBorderTest {
         panel.paint(graphics2D2);
         graphics2D2.dispose();
 
-        for (int i = 0; i < image.getWidth(); i++) {
-            for (int j = 0; j < image.getHeight(); j++) {
+        for (int i = 450; i < image.getWidth(); i++) {
+            for (int j = 50; j < image.getHeight(); j++) {
                 int c1 = image.getRGB(i,j);
                 int c2 = image2.getRGB(i,j);
                 // need to find location of border but colors are always 0
                 if(c1 != c2) {
                     System.out.println(i + " " + j + " " + "Color1: " + c1);
                     System.out.println(i + " " + j + " " + "Color2: " + c2);
+                    throw new RuntimeException();
                 }
             }
         }
     }
 
+    public void done() throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                frame.dispose();
+            }
+        });
+    }
+
     public static void main(String[] args) throws Exception {
         ScrollBarBorderTest borderTest = new ScrollBarBorderTest();
         borderTest.test();
-
-        Thread.sleep(10000);
-        throw new RuntimeException();
+        borderTest.done();
     }
 
     // custom border
