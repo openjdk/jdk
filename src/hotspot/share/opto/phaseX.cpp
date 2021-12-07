@@ -810,6 +810,11 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_t
 {
   _iterGVN = true;
   assert(&_worklist == &igvn->_worklist, "sanity");
+#ifndef PRODUCT
+  memcpy(_verify_window, igvn->_verify_window, sizeof(_verify_window));
+  _verify_counter = igvn->_verify_counter;
+  _verify_full_passes = igvn->_verify_full_passes;
+#endif
 }
 
 //------------------------------PhaseIterGVN-----------------------------------

@@ -838,6 +838,19 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
         const Type* t_cmp = cmp1->meet(cmp2);
         // Pick narrowest type, based on overflow computation and on immediate inputs
         return t_sub->filter(t_cmp);
+      } else if (underflow && overflow) {
+        bool lo_overflow = lo_long > (jlong)max_jint;
+        bool lo_underflow = lo_long < (jlong)min_jint;
+        bool hi_overflow = hi_long > (jlong)max_jint;
+        bool hi_underflow = hi_long < (jlong)min_jint;
+
+        if ((lo_overflow && hi_overflow) || (lo_underflow && hi_underflow)) {
+          assert(lo_tr2 <= hi_tr1, "");
+          int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
+          const TypeInt* tr = TypeInt::make(lo_tr2, hi_tr1, w);
+          const TypeInt* cmp2 = sub(tr, t2)->is_int();
+          return t_sub->filter(cmp2);
+        }
       }
     }
   }
