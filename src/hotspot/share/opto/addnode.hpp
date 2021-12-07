@@ -51,7 +51,7 @@ public:
 
   // We also canonicalize the Node, moving constants to the right input,
   // and flatten expressions (so that 1+x+2 becomes x+3).
-  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   Node* IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt);
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
