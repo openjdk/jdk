@@ -131,6 +131,7 @@ void Address::lea(MacroAssembler *as, Register r) const {
 
   switch(_mode) {
   case base_plus_offset: {
+    assert(_ext.shift() == 0, "expected, was %d", _ext.shift());
     if (_offset == 0 && _base == r) // it's a nop
       break;
     if (_offset > 0)

@@ -812,7 +812,11 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
     // Adjust recv_klass by scaled itable_index, so we can free itable_index.
     assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
     // lea(recv_klass, Address(recv_klass, itable_index, Address::times_ptr, itentry_off));
-    lea(recv_klass, Address(recv_klass, itable_index, Address::lsl(3)));
+    if (itable_index.is_constant()) {
+        lea(recv_klass, Address(recv_klass, itable_index.as_constant() * 8));
+    } else {
+        lea(recv_klass, Address(recv_klass, itable_index, Address::lsl(3)));
+    }
     if (itentry_off)
       add(recv_klass, recv_klass, itentry_off);
   }
