@@ -281,19 +281,8 @@ final class P11Signature extends SignatureSpi {
     private void cancelOperation() {
         token.ensureValid();
 
-        if (token.p11.getVersion().major == 3) {
-            long flags = (mode == M_SIGN? CKF_SIGN : CKF_VERIFY);
-            try {
-                token.p11.C_SessionCancel(session.id(), flags);
-            } catch (PKCS11Exception e) {
-                // try only if CKR_OPERATION_CANCEL_FAILED?
-                if (e.match(CKR_OPERATION_CANCEL_FAILED)) {
-                    tryFinishingOff();
-                } else {
-                    throw new ProviderException("cancel failed", e);
-                }
-            }
-        } else {
+        if (!P11Util.trySessionCancel(token, session,
+                (mode == M_SIGN ? CKF_SIGN : CKF_VERIFY))) {
             tryFinishingOff();
         }
     }

@@ -126,7 +126,7 @@ final class P11KeyWrapCipher extends CipherSpi {
         String[] algoParts = algorithm.split("/");
         if (algoParts[0].startsWith("AES")) {
             int index = algoParts[0].indexOf('_');
-            fixedKeySize = (index == -1? -1 :
+            fixedKeySize = (index == -1 ? -1 :
                 // should be well-formed since we specify what we support
                 Integer.parseInt(algoParts[0].substring(index+1)) >> 3);
             try {
@@ -180,7 +180,7 @@ final class P11KeyWrapCipher extends CipherSpi {
     protected AlgorithmParameters engineGetParameters() {
         // KW and KWP uses but not require parameters, return the default
         // IV when no IV is supplied by caller
-        byte[] iv = (this.iv == null? type.defIv : this.iv);
+        byte[] iv = (this.iv == null ? type.defIv : this.iv);
 
         AlgorithmParameterSpec spec = new IvParameterSpec(iv);
         try {
@@ -213,7 +213,7 @@ final class P11KeyWrapCipher extends CipherSpi {
                     ("Only IvParameterSpec is supported");
         }
 
-        byte[] ivValue = (params == null? null :
+        byte[] ivValue = (params == null ? null :
                 ((IvParameterSpec)params).getIV());
 
         implInit(opmode, key, ivValue, sr);
@@ -287,20 +287,8 @@ final class P11KeyWrapCipher extends CipherSpi {
     private void cancelOperation() {
         token.ensureValid();
 
-        if (token.p11.getVersion().major == 3) {
-            long flags = (opmode == Cipher.ENCRYPT_MODE? CKF_ENCRYPT :
-                    CKF_DECRYPT);
-            try {
-                token.p11.C_SessionCancel(session.id(), flags);
-            } catch (PKCS11Exception e) {
-                // try only if CKR_OPERATION_CANCEL_FAILED?
-                if (e.match(CKR_OPERATION_CANCEL_FAILED)) {
-                    tryFinishingOff();
-                } else {
-                    throw new ProviderException("cancel failed", e);
-                }
-            }
-        } else {
+        if (!P11Util.trySessionCancel(token, session,
+                (opmode == Cipher.ENCRYPT_MODE ? CKF_ENCRYPT : CKF_DECRYPT))) {
             tryFinishingOff();
         }
     }
@@ -400,7 +388,7 @@ final class P11KeyWrapCipher extends CipherSpi {
         } else {
             result -= BLK_SIZE; // minus the leading block including the ICV
         }
-        return (result > 0? result : 0);
+        return (result > 0 ? result : 0);
     }
 
     // reset the states to the pre-initialized values
@@ -675,7 +663,7 @@ final class P11KeyWrapCipher extends CipherSpi {
         P11Key tbwP11Key = null;
         if (!(tbwKey instanceof P11Key)) {
             try {
-                tbwP11Key = (tbwKey instanceof SecretKey?
+                tbwP11Key = (tbwKey instanceof SecretKey ?
                         P11SecretKeyFactory.convertKey(token, tbwKey,
                                 tbwKey.getAlgorithm()) :
                         P11KeyFactory.convertKey(token, tbwKey,

@@ -170,7 +170,7 @@ final class P11PSSSignature extends SignatureSpi {
         this.mechanism = new CK_MECHANISM(mechId);
         int idx = algorithm.indexOf("with");
         // convert to stdName
-        this.mdAlg = (idx == -1?
+        this.mdAlg = (idx == -1 ?
                 null : toStdName(algorithm.substring(0, idx)));
 
         switch ((int)mechId) {
@@ -193,7 +193,7 @@ final class P11PSSSignature extends SignatureSpi {
                 throw new NoSuchAlgorithmException("Unsupported algorithm: " +
                         algorithm);
             }
-            this.md = (this.mdAlg == null? null :
+            this.md = (this.mdAlg == null ? null :
                     MessageDigest.getInstance(this.mdAlg));
             type = T_DIGEST;
             break;
@@ -269,23 +269,14 @@ final class P11PSSSignature extends SignatureSpi {
 
     private void cancelOperation() {
         token.ensureValid();
+
         if (DEBUG) System.out.print("Cancelling operation");
 
-        if (token.p11.getVersion().major == 3) {
-            long flags = (mode == M_SIGN? CKF_SIGN : CKF_VERIFY);
-            try {
-                token.p11.C_SessionCancel(session.id(), flags);
-                if (DEBUG) System.out.println(" by C_SessionCancel");
-            } catch (PKCS11Exception e) {
-                // try only if CKR_OPERATION_CANCEL_FAILED?
-                if (e.match(CKR_OPERATION_CANCEL_FAILED)) {
-                    tryFinishingOff();
-                } else {
-                    throw new ProviderException("cancel failed", e);
-                }
-            }
-        } else {
+        if (!P11Util.trySessionCancel(token, session,
+                (mode == M_SIGN ? CKF_SIGN : CKF_VERIFY))) {
             tryFinishingOff();
+        } else {
+            if (DEBUG) System.out.println(" by C_SessionCancel");
         }
     }
 
@@ -299,7 +290,7 @@ final class P11PSSSignature extends SignatureSpi {
                     token.p11.C_SignFinal(session.id(), 0);
                 } else {
                     byte[] digest =
-                        (md == null? new byte[0] : md.digest());
+                        (md == null ? new byte[0] : md.digest());
                     if (DEBUG) System.out.println(" by C_Sign");
                     token.p11.C_Sign(session.id(), digest);
                 }
@@ -311,7 +302,7 @@ final class P11PSSSignature extends SignatureSpi {
                     token.p11.C_VerifyFinal(session.id(), signature);
                 } else {
                     byte[] digest =
-                        (md == null? new byte[0] : md.digest());
+                        (md == null ? new byte[0] : md.digest());
                     if (DEBUG) System.out.println(" by C_Verify");
                     token.p11.C_Verify(session.id(), digest, signature);
                 }

@@ -268,27 +268,16 @@ final class P11RSACipher extends CipherSpi {
     private void cancelOperation() {
         token.ensureValid();
 
-        if (token.p11.getVersion().major == 3) {
-            long flags = switch(mode) {
-                case MODE_ENCRYPT -> CKF_ENCRYPT;
-                case MODE_DECRYPT -> CKF_DECRYPT;
-                case MODE_SIGN -> CKF_SIGN;
-                case MODE_VERIFY -> CKF_VERIFY;
-                default -> {
-                    throw new AssertionError("Unexpected value: " + mode);
-                }
-            };
-            try {
-                token.p11.C_SessionCancel(session.id(), flags);
-            } catch (PKCS11Exception e) {
-                // try only if CKR_OPERATION_CANCEL_FAILED?
-                if (e.match(CKR_OPERATION_CANCEL_FAILED)) {
-                    tryFinishingOff();
-                } else {
-                    throw new ProviderException("cancel failed", e);
-                }
+        long flags = switch(mode) {
+            case MODE_ENCRYPT -> CKF_ENCRYPT;
+            case MODE_DECRYPT -> CKF_DECRYPT;
+            case MODE_SIGN -> CKF_SIGN;
+            case MODE_VERIFY -> CKF_VERIFY;
+            default -> {
+                throw new AssertionError("Unexpected value: " + mode);
             }
-        } else {
+        };
+        if (!P11Util.trySessionCancel(token, session, flags)) {
             tryFinishingOff();
         }
     }

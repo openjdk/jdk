@@ -445,19 +445,9 @@ final class P11Cipher extends CipherSpi {
 
     private void cancelOperation() {
         token.ensureValid();
-        if (token.p11.getVersion().major == 3) {
-            long flags = (encrypt? CKF_ENCRYPT : CKF_DECRYPT);
-            try {
-                token.p11.C_SessionCancel(session.id(), flags);
-            } catch (PKCS11Exception e) {
-                // try only if CKR_OPERATION_CANCEL_FAILED?
-                if (e.match(CKR_OPERATION_CANCEL_FAILED)) {
-                    tryFinishingOff();
-                } else {
-                    throw new ProviderException("cancel failed", e);
-                }
-            }
-        } else {
+
+        if (!P11Util.trySessionCancel(token, session,
+                (encrypt ? CKF_ENCRYPT : CKF_DECRYPT))) {
             tryFinishingOff();
         }
     }
@@ -506,7 +496,7 @@ final class P11Cipher extends CipherSpi {
             if (session == null) {
                 session = token.getOpSession();
             }
-            CK_MECHANISM mechParams = (blockMode == MODE_CTR?
+            CK_MECHANISM mechParams = (blockMode == MODE_CTR ?
                     new CK_MECHANISM(mechanism, new CK_AES_CTR_PARAMS(iv)) :
                     new CK_MECHANISM(mechanism, iv));
             if (encrypt) {

@@ -416,88 +416,71 @@ final class Config {
             }
             String word = st.sval;
             switch (word) {
-            case "name":
+            case "name"->
                 name = parseStringEntry(word);
-                break;
-            case "library":
+            case "library"->
                 library = parseLibrary(word);
-                break;
-            case "description":
+            case "description"->
                 parseDescription(word);
-                break;
-            case "slot":
+            case "slot"->
                 parseSlotID(word);
-                break;
-            case "slotListIndex":
+            case "slotListIndex"->
                 parseSlotListIndex(word);
-                break;
-            case "enabledMechanisms":
+            case "enabledMechanisms"->
                 parseEnabledMechanisms(word);
-                break;
-            case "disabledMechanisms":
+            case "disabledMechanisms"->
                 parseDisabledMechanisms(word);
-                break;
-            case "attributes":
+            case "attributes"->
                 parseAttributes(word);
-                break;
-            case "handleStartupErrors":
+            case "handleStartupErrors"->
                 parseHandleStartupErrors(word);
-                break;
-            case "insertionCheckInterval":
+            case "insertionCheckInterval"-> {
                 insertionCheckInterval = parseIntegerEntry(word);
                 if (insertionCheckInterval < 100) {
                     throw excLine(word + " must be at least 100 ms");
                 }
-                break;
-            case "cleaner.shortInterval":
+            }
+            case "cleaner.shortInterval"-> {
                 resourceCleanerShortInterval = parseIntegerEntry(word);
                 if (resourceCleanerShortInterval < 1_000) {
                     throw excLine(word + " must be at least 1000 ms");
                 }
-                break;
-            case "cleaner.longInterval":
+            }
+            case "cleaner.longInterval"-> {
                 resourceCleanerLongInterval = parseIntegerEntry(word);
                 if (resourceCleanerLongInterval < 1_000) {
                     throw excLine(word + " must be at least 1000 ms");
                 }
-                break;
-            case "destroyTokenAfterLogout":
+            }
+            case "destroyTokenAfterLogout"->
                 destroyTokenAfterLogout = parseBooleanEntry(word);
-                break;
-            case "showInfo":
+            case "showInfo"->
                 showInfo = parseBooleanEntry(word);
-                break;
-            case "keyStoreCompatibilityMode":
+            case "keyStoreCompatibilityMode"->
                 keyStoreCompatibilityMode = parseBooleanEntry(word);
-                break;
-            case "explicitCancel":
+            case "explicitCancel"->
                 explicitCancel = parseBooleanEntry(word);
-                break;
-            case "omitInitialize":
+            case "omitInitialize"->
                 omitInitialize = parseBooleanEntry(word);
-                break;
-            case "allowSingleThreadedModules":
+            case "allowSingleThreadedModules"->
                 allowSingleThreadedModules = parseBooleanEntry(word);
-                break;
-            case "functionList":
+            case "functionList"->
                 functionList = parseStringEntry(word);
-                break;
-            case "nssUseSecmod":
+            case "nssUseSecmod"->
                 nssUseSecmod = parseBooleanEntry(word);
-                break;
-            case "nssLibraryDirectory":
+            case "nssLibraryDirectory"-> {
                 nssLibraryDirectory = parseLibrary(word);
                 nssUseSecmod = true;
-                break;
-            case "nssSecmodDirectory":
+            }
+            case "nssSecmodDirectory"-> {
                 nssSecmodDirectory = expand(parseStringEntry(word));
                 nssUseSecmod = true;
-                break;
-            case "nssModule":
+            }
+            case "nssModule"-> {
                 nssModule = parseStringEntry(word);
                 nssUseSecmod = true;
-                break;
-            case "nssDbMode":
+            }
+            case "nssDbMode"-> {
                 String mode = parseStringEntry(word);
                 if (mode.equals("readWrite")) {
                     nssDbMode = Secmod.DbMode.READ_WRITE;
@@ -509,24 +492,20 @@ final class Config {
                     throw excToken("nssDbMode must be one of readWrite, readOnly, and noDb:");
                 }
                 nssUseSecmod = true;
-                break;
-            case "nssNetscapeDbWorkaround":
+            }
+            case "nssNetscapeDbWorkaround"-> {
                 nssNetscapeDbWorkaround = parseBooleanEntry(word);
                 nssUseSecmod = true;
-                break;
-            case "nssArgs":
+            }
+            case "nssArgs"->
                 parseNSSArgs(word);
-                break;
-            case "nssUseSecmodTrust":
+            case "nssUseSecmodTrust"->
                 nssUseSecmodTrust = parseBooleanEntry(word);
-                break;
-            case "useEcX963Encoding":
+            case "useEcX963Encoding"->
                 useEcX963Encoding = parseBooleanEntry(word);
-                break;
-            case "nssOptimizeSpace":
+            case "nssOptimizeSpace"->
                 nssOptimizeSpace = parseBooleanEntry(word);
-                break;
-            default:
+            default->
                 throw new ConfigurationException
                         ("Unknown keyword '" + word + "', line " + st.lineno());
             }
