@@ -1372,6 +1372,31 @@ public:
   }
 };
 
+void validate_edge_mutuality(BlockBegin* block) {
+  for (int i = 0; i < block->end()->number_of_sux(); i++) {
+    assert(block->end()->sux_at(i)->is_predecessor(block), "Block's successor should have it as predecessor");
+  }
+
+  for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+    assert(block->exception_handler_at(i)->is_predecessor(block), "Block's exception handler should have it as predecessor");
+  }
+
+  for (int i = 0; i < block->number_of_preds(); i++) {
+    assert(block->pred_at(i) != NULL, "Predecessor must exist");
+    assert(block->pred_at(i)->end() != NULL, "Predecessor end must exist");
+    bool is_sux      = block->pred_at(i)->end()->is_sux(block);
+    bool is_xhandler = block->pred_at(i)->is_exception_handler(block);
+    assert(is_sux || is_xhandler, "Block's predecessor should have it as successor or xhandler");
+  }
+}
+
+class ValidateEdgeMutuality : public BlockClosure {
+ public:
+  virtual void block_do(BlockBegin* block) {
+    validate_edge_mutuality(block);
+  }
+};
+
 void IR::verify() {
 #ifdef ASSERT
   PredecessorValidator pv(this);
