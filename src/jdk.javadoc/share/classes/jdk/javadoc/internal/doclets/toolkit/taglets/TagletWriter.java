@@ -241,7 +241,9 @@ public abstract class TagletWriter {
         String constantVal, boolean includeLink);
 
     /**
-     * Returns the output that acts as a notification for an invalid tag.
+     * Returns the output for an invalid tag. The returned content uses special styling to
+     * highlight the problem. Depending on the presence of the {@code detail} string the method
+     * returns a plain text span or an expandable component.
      *
      * @param summary the single-line summary message
      * @param detail the optional detail message which may contain preformatted text

@@ -1083,7 +1083,7 @@ public class TestSnippetTag extends SnippetTester {
                     A.java:4: error: File not found: %s""".formatted(fileName));
         checkOutput("pkg/A.html", true, """
                         <details class="invalid-tag">
-                        <summary>Invalid snippet</summary>
+                        <summary>invalid @snippet</summary>
                         <pre>File not found: text.txt</pre>
                         </details>
                         """);
@@ -1164,7 +1164,7 @@ public class TestSnippetTag extends SnippetTester {
                     A.java:3: error: @snippet does not specify contents""");
         checkOutput("pkg/A.html", true, """
                         <details class="invalid-tag">
-                        <summary>Invalid snippet</summary>
+                        <summary>invalid @snippet</summary>
                         <pre>@snippet does not specify contents</pre>
                         </details>
                         """);
@@ -1226,7 +1226,7 @@ public class TestSnippetTag extends SnippetTester {
                     A.java:3: error: @snippet specifies multiple external contents, which is ambiguous""");
         checkOutput("pkg/A.html", true, """
                         <details class="invalid-tag">
-                        <summary>Invalid snippet</summary>
+                        <summary>invalid @snippet</summary>
                         <pre>@snippet specifies multiple external contents, which is ambiguous</pre>
                         </details>
                         """);
@@ -2039,7 +2039,7 @@ public class TestSnippetTag extends SnippetTester {
                     A.java:4: error: contents mismatch""");
         checkOutput("pkg/A.html", true, """
                         <details class="invalid-tag">
-                        <summary>Invalid snippet</summary>
+                        <summary>invalid @snippet</summary>
                         <pre>contents mismatch:
                         ----------------- inline -------------------
                         Hello, Snippet!
@@ -2090,7 +2090,7 @@ public class TestSnippetTag extends SnippetTester {
                     A.java:4: error: contents mismatch""");
         checkOutput("pkg/A.html", true, """
                         <details class="invalid-tag">
-                        <summary>Invalid snippet</summary>
+                        <summary>invalid @snippet</summary>
                         <pre>contents mismatch:
                         ----------------- inline -------------------
                         Hello, Snippet! ...more
@@ -2390,7 +2390,7 @@ public class TestSnippetTag extends SnippetTester {
         checkOrder(Output.OUT, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
         checkOutput("A.html", true, """
                         <details class="invalid-tag">
-                        <summary>Invalid snippet</summary>
+                        <summary>invalid @snippet</summary>
                         <pre>invalid regex</pre>
                         </details>
                         """);
@@ -2546,7 +2546,7 @@ public class TestSnippetTag extends SnippetTester {
         checkOutput(Output.OUT, true, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
         checkOutput("A.html", true, """
                         <details class="invalid-tag">
-                        <summary>Invalid snippet</summary>
+                        <summary>invalid @snippet</summary>
                         <pre>missing attribute "target"</pre>
                         </details>
                         """);

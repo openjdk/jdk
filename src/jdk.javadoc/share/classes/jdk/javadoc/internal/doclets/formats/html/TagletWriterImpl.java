@@ -534,12 +534,10 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     protected Content invalidTagOutput(String summary, Optional<String> detail) {
-        if (detail.isEmpty() || detail.get().isBlank()) {
-            return HtmlTree.SPAN(HtmlStyle.invalidTag, Text.of(summary));
-        }
-        return new HtmlTree(TagName.DETAILS).addStyle(HtmlStyle.invalidTag)
-                .add(new HtmlTree(TagName.SUMMARY).add(Text.of(summary)))
-                .add(new HtmlTree(TagName.PRE).add(Text.of(utils.normalizeNewlines(detail.get()))));
+        return htmlWriter.invalidTagOutput(summary,
+                detail.isEmpty() || detail.get().isEmpty()
+                        ? Optional.empty()
+                        : Optional.of(Text.of(utils.normalizeNewlines(detail.get()))));
     }
 
     @Override

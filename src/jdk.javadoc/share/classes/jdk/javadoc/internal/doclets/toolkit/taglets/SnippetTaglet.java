@@ -399,7 +399,7 @@ public class SnippetTaglet extends BaseTaglet {
 
     private Content badSnippet(TagletWriter writer, Optional<String> details) {
         Resources resources = writer.configuration().getDocResources();
-        return writer.invalidTagOutput(resources.getText("doclet.snippet.error"), details);
+        return writer.invalidTagOutput(resources.getText("doclet.tag.invalid", "snippet"), details);
     }
 
     private String packageName(PackageElement pkg, Utils utils) {
