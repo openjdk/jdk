@@ -317,9 +317,7 @@ public class Spans {
          */
         @Override
         public int compareTo(Span otherSpan) {
-            float otherStart = otherSpan.getStart();
-
-            return Float.compare(mStart, otherStart);
+            return Float.compare(mStart, otherSpan.getStart());
         }
 
         public String toString() {
