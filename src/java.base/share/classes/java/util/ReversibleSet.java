@@ -26,7 +26,7 @@
 package java.util;
 
 /**
- * A set that is also has a well-defined order and that is reversible.
+ * A set that has a well-defined iteration order and that is reversible.
  *
  * @param <E> the type of elements in this collection
  * @since XXX

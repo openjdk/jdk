@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.io.IOException;
+import java.util.function.Function;
 
 /**
  * <p>Hash table and linked list implementation of the {@code Map} interface,
@@ -162,7 +163,7 @@ import java.io.IOException;
  */
 public class LinkedHashMap<K,V>
     extends HashMap<K,V>
-    implements Map<K,V>
+    implements ReversibleMap<K,V>
 {
 
     /*
@@ -369,7 +370,7 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Inserts this mapping into the map if not already present.
+     * Inserts this mapping into the map if not already present (optional operation).
      * Moves the mapping to be the first in iteration order.
      * @param k the key
      * @param v the value
@@ -385,7 +386,7 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Inserts this mapping into the map if not already present.
+     * Inserts this mapping into the map if not already present (optional operation).
      * Moves the mapping to be the last in iteration order.
      * @param k the key
      * @param v the value
@@ -980,5 +981,179 @@ public class LinkedHashMap<K,V>
         public final Map.Entry<K,V> next() { return nextNode(); }
     }
 
+    // Reversed View
 
+    public ReversibleMap<K, V> reversed() {
+        return new ReversedLinkedHashMapView<>(this);
+    }
+
+    static class ReversedLinkedHashMapView<K, V> extends AbstractMap<K, V>
+                                                 implements ReversibleMap<K, V> {
+        final LinkedHashMap<K, V> base;
+
+        ReversedLinkedHashMapView(LinkedHashMap<K, V> lhm) {
+            base = lhm;
+        }
+
+        // Object
+        // inherit toString() from AbstractMap; it depends on entrySet()
+
+        public boolean equals(Object o) {
+            return base.equals(o);
+        }
+
+        public int hashCode() {
+            return base.hashCode();
+        }
+
+        // Map
+
+        public int size() {
+            return base.size();
+        }
+
+        public boolean isEmpty() {
+            return base.isEmpty();
+        }
+
+        public boolean containsKey(Object key) {
+            return base.containsKey(key);
+        }
+
+        public boolean containsValue(Object value) {
+            return base.containsValue(value);
+        }
+
+        public V get(Object key) {
+            return base.get(key);
+        }
+
+        public V put(K key, V value) {
+            return base.put(key, value);
+        }
+
+        public V remove(Object key) {
+            return base.remove(key);
+        }
+
+        public void putAll(Map<? extends K, ? extends V> m) {
+            for (var e : m.entrySet()) {
+                if (base.containsKey(e.getKey())) {
+                    base.put(e.getKey(), e.getValue());
+                } else {
+                    base.putFirst(e.getKey(), e.getValue());
+                }
+            }
+        }
+
+        public void clear() {
+            base.clear();
+        }
+
+        public Set<K> keySet() {
+            return base.keySet().reversed();
+        }
+
+        public Collection<V> values() {
+            return base.values().reversed();
+        }
+
+        public Set<Entry<K, V>> entrySet() {
+            return base.entrySet().reversed();
+        }
+
+        public V getOrDefault(Object key, V defaultValue) {
+            return base.getOrDefault(key, defaultValue);
+        }
+
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            if (action == null)
+                throw new NullPointerException();
+            int mc = base.modCount;
+            for (LinkedHashMap.Entry<K,V> e = base.tail; e != null; e = e.before)
+                action.accept(e.key, e.value);
+            if (base.modCount != mc)
+                throw new ConcurrentModificationException();
+        }
+
+        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+            if (function == null)
+                throw new NullPointerException();
+            int mc = base.modCount;
+            for (LinkedHashMap.Entry<K,V> e = base.tail; e != null; e = e.before)
+                e.value = function.apply(e.key, e.value);
+            if (base.modCount != mc)
+                throw new ConcurrentModificationException();
+        }
+
+        public V putIfAbsent(K key, V value) {
+            return base.putIfAbsent(key, value);
+        }
+
+        public boolean remove(Object key, Object value) {
+            return base.remove(key, value);
+        }
+
+        public boolean replace(K key, V oldValue, V newValue) {
+            return base.replace(key, oldValue, newValue);
+        }
+
+        public V replace(K key, V value) {
+            return base.replace(key, value);
+        }
+
+        public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+            return base.computeIfAbsent(key, mappingFunction);
+        }
+
+        public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            return base.computeIfPresent(key, remappingFunction);
+        }
+
+        public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            return base.compute(key, remappingFunction);
+        }
+
+        public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+            return base.merge(key, value, remappingFunction);
+        }
+
+        // ReversibleMap
+
+        public ReversibleMap<K, V> reversed() {
+            return base;
+        }
+
+        public K firstKey() {
+            return base.lastKey();
+        }
+
+        public K lastKey() {
+            return base.firstKey();
+        }
+
+        public Entry<K, V> firstEntry() {
+            return base.lastEntry();
+        }
+
+        public Entry<K, V> lastEntry() {
+            return base.firstEntry();
+        }
+
+        public Entry<K, V> pollFirstEntry() {
+            return base.pollLastEntry();
+        }
+
+        public Entry<K, V> pollLastEntry() {
+            return base.pollFirstEntry();
+        }
+
+        public V putFirst(K k, V v) {
+            return base.putLast(k, v);
+        }
+
+        public V putLast(K k, V v) {
+            return base.putFirst(k, v);
+        }
+    }
 }
