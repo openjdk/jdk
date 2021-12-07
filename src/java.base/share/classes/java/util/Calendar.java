@@ -3416,8 +3416,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     private int compareTo(long t) {
-        long thisTime = getMillisOf(this);
-        return Long.compare(thisTime, t);
+        return Long.compare(getMillisOf(this), t);
     }
 
     private static long getMillisOf(Calendar calendar) {

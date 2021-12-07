@@ -972,9 +972,7 @@ public class Date
      */
     @Override
     public int compareTo(Date anotherDate) {
-        long thisTime = getMillisOf(this);
-        long anotherTime = getMillisOf(anotherDate);
-        return Long.compare(thisTime, anotherTime);
+        return Long.compare(getMillisOf(this), getMillisOf(anotherDate));
     }
 
     /**
