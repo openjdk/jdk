@@ -1159,7 +1159,7 @@ public:
     unsigned int header_size = _header->_header_size;
 
     if (name_offset + name_size < name_offset) {
-      FileMapInfo::fail_continue("base_archive_name/size overflow: " UINT32_FORMAT "/" UINT32_FORMAT,
+      FileMapInfo::fail_continue("base_archive_name offset/size overflow: " UINT32_FORMAT "/" UINT32_FORMAT,
                                  name_offset, name_size);
       return false;
     }
@@ -1177,13 +1177,13 @@ public:
       if ((name_size == 0 && name_offset != 0) ||
           (name_size != 0 && name_offset == 0)) {
         // If either is zero, both must be zero. This indicates that we are using the default base archive.
-        FileMapInfo::fail_continue("Invalid base_archive_name/size: " UINT32_FORMAT "/" UINT32_FORMAT,
+        FileMapInfo::fail_continue("Invalid base_archive_name offset/size: " UINT32_FORMAT "/" UINT32_FORMAT,
                                    name_offset, name_size);
         return false;
       }
       if (name_size > 0) {
         if (name_offset + name_size > header_size) {
-          FileMapInfo::fail_continue("Invalid base_archive_name/size (out of range): "
+          FileMapInfo::fail_continue("Invalid base_archive_name offset/size (out of range): "
                                      UINT32_FORMAT " + " UINT32_FORMAT " > " UINT32_FORMAT ,
                                      name_offset, name_size, header_size);
           return false;

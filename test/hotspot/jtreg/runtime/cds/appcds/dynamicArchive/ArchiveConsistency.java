@@ -137,7 +137,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetBaseArchiveNameOffset(), baseArchiveNameOffset + 1024);
         runTwo(baseArchiveName, wrongBaseArchiveNameOffset,
                appJar, mainClass, isAuto ? 0 : 1,
-               "Invalid base_archive_name/size (out of range)");
+               "Invalid base_archive_name offset/size (out of range)");
 
         startTest("4. Make base archive name offset points to middle of the base archive name");
         String wrongBaseNameOffset = getNewArchiveName("wrongBaseNameOffset");
