@@ -665,6 +665,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   void* inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack, level);
 
+  DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
   DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
 
   return inner_ptr;
