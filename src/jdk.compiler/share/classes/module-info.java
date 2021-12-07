@@ -28,6 +28,10 @@
  * {@linkplain javax.tools.ToolProvider#getSystemJavaCompiler system Java compiler}
  * and its command line equivalent, <em>{@index javac javac tool}</em>.
  *
+ * <p>The {@code com.sun.source.*} packages provide the {@index "Compiler Tree API"}:
+ * an API for accessing the abstract trees (ASTs) representing Java source code
+ * and documentation comments, used by <em>javac</em>, <em>javadoc</em> and related tools.
+ *
  * <h2 style="font-family:'DejaVu Sans Mono', monospace; font-style:italic">javac</h2>
  *
  * <p>
