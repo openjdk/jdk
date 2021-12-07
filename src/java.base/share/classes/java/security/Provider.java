@@ -192,8 +192,7 @@ public abstract class Provider extends Properties {
         this.info = info;
         this.serviceMap = new ConcurrentHashMap<>();
         this.legacyMap = new ConcurrentHashMap<>();
-        this.prngAlgos =
-                Collections.synchronizedSet(new LinkedHashSet<String>(6));
+        this.prngAlgos = new LinkedHashSet<String>(6);
         putId();
         initialized = true;
     }
@@ -360,7 +359,7 @@ public abstract class Provider extends Properties {
      * @since 1.2
      */
     @Override
-    public void clear() {
+    public synchronized void clear() {
         check("clearProviderProperties."+name);
         if (debug != null) {
             debug.println("Remove " + name + " provider properties");
@@ -377,7 +376,7 @@ public abstract class Provider extends Properties {
      * @see java.util.Properties#load
      */
     @Override
-    public void load(InputStream inStream) throws IOException {
+    public synchronized void load(InputStream inStream) throws IOException {
         check("putProviderProperty."+name);
         if (debug != null) {
             debug.println("Load " + name + " provider properties");
@@ -395,7 +394,7 @@ public abstract class Provider extends Properties {
      * @since 1.2
      */
     @Override
-    public void putAll(Map<?,?> t) {
+    public synchronized void putAll(Map<?,?> t) {
         check("putProviderProperty."+name);
         if (debug != null) {
             debug.println("Put all " + name + " provider properties");
@@ -411,7 +410,7 @@ public abstract class Provider extends Properties {
      * @since 1.2
      */
     @Override
-    public Set<Map.Entry<Object,Object>> entrySet() {
+    public synchronized Set<Map.Entry<Object,Object>> entrySet() {
         checkInitialized();
         if (entrySet == null) {
             if (entrySetCallCount++ == 0)  // Initial call
@@ -472,7 +471,7 @@ public abstract class Provider extends Properties {
      * @since 1.2
      */
     @Override
-    public Object put(Object key, Object value) {
+    public synchronized Object put(Object key, Object value) {
         check("putProviderProperty."+name);
         if (debug != null) {
             debug.println("Set " + name + " provider property [" +
@@ -499,7 +498,7 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public Object putIfAbsent(Object key, Object value) {
+    public synchronized Object putIfAbsent(Object key, Object value) {
         check("putProviderProperty."+name);
         if (debug != null) {
             debug.println("Set " + name + " provider property [" +
@@ -525,7 +524,7 @@ public abstract class Provider extends Properties {
      * @since 1.2
      */
     @Override
-    public Object remove(Object key) {
+    public synchronized Object remove(Object key) {
         check("removeProviderProperty."+name);
         if (debug != null) {
             debug.println("Remove " + name + " provider property " + key);
@@ -550,7 +549,7 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public boolean remove(Object key, Object value) {
+    public synchronized boolean remove(Object key, Object value) {
         check("removeProviderProperty."+name);
         if (debug != null) {
             debug.println("Remove " + name + " provider property " + key);
@@ -575,7 +574,8 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public boolean replace(Object key, Object oldValue, Object newValue) {
+    public synchronized boolean replace(Object key, Object oldValue,
+            Object newValue) {
         check("putProviderProperty." + name);
         if (debug != null) {
             debug.println("Replace " + name + " provider property " + key);
@@ -600,7 +600,7 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public Object replace(Object key, Object value) {
+    public synchronized Object replace(Object key, Object value) {
         check("putProviderProperty." + name);
         if (debug != null) {
             debug.println("Replace " + name + " provider property " + key);
@@ -627,8 +627,8 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public void replaceAll(BiFunction<? super Object, ? super Object,
-            ? extends Object> function) {
+    public synchronized void replaceAll(BiFunction<? super Object,
+            ? super Object, ? extends Object> function) {
         check("putProviderProperty." + name);
         if (debug != null) {
             debug.println("ReplaceAll " + name + " provider property ");
@@ -655,7 +655,7 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public Object compute(Object key, BiFunction<? super Object,
+    public synchronized Object compute(Object key, BiFunction<? super Object,
             ? super Object, ? extends Object> remappingFunction) {
         check("putProviderProperty." + name);
         check("removeProviderProperty." + name);
@@ -685,8 +685,8 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public Object computeIfAbsent(Object key, Function<? super Object,
-            ? extends Object> mappingFunction) {
+    public synchronized Object computeIfAbsent(Object key,
+            Function<? super Object, ? extends Object> mappingFunction) {
         check("putProviderProperty." + name);
         check("removeProviderProperty." + name);
         if (debug != null) {
@@ -714,8 +714,9 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public Object computeIfPresent(Object key, BiFunction<? super Object,
-            ? super Object, ? extends Object> remappingFunction) {
+    public synchronized Object computeIfPresent(Object key,
+            BiFunction<? super Object, ? super Object, ? extends Object>
+            remappingFunction) {
         check("putProviderProperty." + name);
         check("removeProviderProperty." + name);
         if (debug != null) {
@@ -746,8 +747,9 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public Object merge(Object key, Object value,  BiFunction<? super Object,
-            ? super Object, ? extends Object>  remappingFunction) {
+    public synchronized Object merge(Object key, Object value,
+            BiFunction<? super Object, ? super Object, ? extends Object>
+            remappingFunction) {
         check("putProviderProperty." + name);
         check("removeProviderProperty." + name);
         if (debug != null) {
@@ -766,7 +768,7 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public Object getOrDefault(Object key, Object defaultValue) {
+    public synchronized Object getOrDefault(Object key, Object defaultValue) {
         checkInitialized();
         return super.getOrDefault(key, defaultValue);
     }
@@ -775,7 +777,8 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public void forEach(BiConsumer<? super Object, ? super Object> action) {
+    public synchronized void forEach(BiConsumer<? super Object, ? super Object>
+            action) {
         checkInitialized();
         super.forEach(action);
     }
@@ -1385,9 +1388,10 @@ public abstract class Provider extends Properties {
             serviceMap.put(new ServiceKey(type, alias, true), s);
         }
         servicesChanged = true;
-        putPropertyStrings(s);
-
-        checkAndUpdateSecureRandom(type, algorithm, true);
+        synchronized (this) {
+            putPropertyStrings(s);
+            checkAndUpdateSecureRandom(type, algorithm, true);
+        }
     }
 
     private void checkAndUpdateSecureRandom(String type, String algo,
