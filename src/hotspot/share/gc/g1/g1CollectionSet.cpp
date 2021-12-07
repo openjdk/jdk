@@ -138,6 +138,10 @@ void G1CollectionSet::add_old_region(HeapRegion* hr) {
   _old_region_length++;
 
   _g1h->old_set_remove(hr);
+
+  // Clear prev bitmap to enable use of it for evacuation failures.
+  MemRegion mr(hr->bottom(), hr->end());
+  _g1h->concurrent_mark()->clear_range_in_prev_bitmap(mr);
 }
 
 void G1CollectionSet::add_optional_region(HeapRegion* hr) {

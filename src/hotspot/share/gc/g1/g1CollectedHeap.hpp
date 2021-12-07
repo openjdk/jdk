@@ -1252,6 +1252,9 @@ public:
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;
   inline bool is_obj_dead_full(const oop obj) const;
 
+  // Mark the live object that failed evacuation in the correct bitmap(s).
+  inline void mark_evac_failure_object(const oop obj, uint worker_id) const;
+
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 
   // Refinement
