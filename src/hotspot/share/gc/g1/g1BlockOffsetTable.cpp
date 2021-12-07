@@ -75,7 +75,6 @@ void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
 
 G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr) :
   _next_offset_threshold(NULL),
-  DEBUG_ONLY(_object_can_span(false) COMMA)
   _bot(array),
   _hr(hr)
 {
@@ -330,12 +329,6 @@ void G1BlockOffsetTablePart::verify() const {
     }
   }
 }
-
-#ifdef ASSERT
-void G1BlockOffsetTablePart::set_object_can_span(bool can_span) {
-  _object_can_span = can_span;
-}
-#endif
 
 #ifndef PRODUCT
 void G1BlockOffsetTablePart::print_on(outputStream* out) {

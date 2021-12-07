@@ -1066,7 +1066,12 @@ const intx ObjectAlignmentInBytes = 8;
           "If true, error data is printed to stdout instead of a file")     \
                                                                             \
   product(bool, UseHeavyMonitors, false,                                    \
-          "use heavyweight instead of lightweight Java monitors")           \
+          "(Deprecated) Use heavyweight instead of lightweight Java "       \
+          "monitors")                                                       \
+                                                                            \
+  develop(bool, VerifyHeavyMonitors, false,                                 \
+          "Checks that no stack locking happens when using "                \
+          "+UseHeavyMonitors")                                              \
                                                                             \
   product(bool, PrintStringTableStatistics, false,                          \
           "print statistics about the StringTable and SymbolTable")         \
