@@ -193,11 +193,10 @@ public final class P11Util {
     // returns true if successfully cancelled
     static boolean trySessionCancel(Token token, Session session, long flags)
             throws ProviderException {
-        boolean status = false;
         if (token.p11.getVersion().major == 3) {
             try {
                 token.p11.C_SessionCancel(session.id(), flags);
-                status = true;
+                return true;
             } catch (PKCS11Exception e) {
                 // return false for CKR_OPERATION_CANCEL_FAILED, so callers
                 // can cancel in the pre v3.0 way, i.e. by finishing off the
@@ -207,6 +206,6 @@ public final class P11Util {
                 }
             }
         }
-        return status;
+        return false;
     }
 }

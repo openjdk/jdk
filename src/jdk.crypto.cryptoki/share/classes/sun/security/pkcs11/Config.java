@@ -414,74 +414,73 @@ final class Config {
             if (token != TT_WORD) {
                 throw excToken("Unexpected token:");
             }
-            String word = st.sval;
-            switch (word) {
+            switch (st.sval) {
             case "name"->
-                name = parseStringEntry(word);
+                name = parseStringEntry(st.sval);
             case "library"->
-                library = parseLibrary(word);
+                library = parseLibrary(st.sval);
             case "description"->
-                parseDescription(word);
+                parseDescription(st.sval);
             case "slot"->
-                parseSlotID(word);
+                parseSlotID(st.sval);
             case "slotListIndex"->
-                parseSlotListIndex(word);
+                parseSlotListIndex(st.sval);
             case "enabledMechanisms"->
-                parseEnabledMechanisms(word);
+                parseEnabledMechanisms(st.sval);
             case "disabledMechanisms"->
-                parseDisabledMechanisms(word);
+                parseDisabledMechanisms(st.sval);
             case "attributes"->
-                parseAttributes(word);
+                parseAttributes(st.sval);
             case "handleStartupErrors"->
-                parseHandleStartupErrors(word);
+                parseHandleStartupErrors(st.sval);
             case "insertionCheckInterval"-> {
-                insertionCheckInterval = parseIntegerEntry(word);
+                insertionCheckInterval = parseIntegerEntry(st.sval);
                 if (insertionCheckInterval < 100) {
-                    throw excLine(word + " must be at least 100 ms");
+                    throw excLine(st.sval + " must be at least 100 ms");
                 }
             }
             case "cleaner.shortInterval"-> {
-                resourceCleanerShortInterval = parseIntegerEntry(word);
+                resourceCleanerShortInterval = parseIntegerEntry(st.sval);
                 if (resourceCleanerShortInterval < 1_000) {
-                    throw excLine(word + " must be at least 1000 ms");
+                    throw excLine(st.sval + " must be at least 1000 ms");
                 }
             }
             case "cleaner.longInterval"-> {
-                resourceCleanerLongInterval = parseIntegerEntry(word);
+                resourceCleanerLongInterval = parseIntegerEntry(st.sval);
                 if (resourceCleanerLongInterval < 1_000) {
-                    throw excLine(word + " must be at least 1000 ms");
+                    throw excLine(st.sval + " must be at least 1000 ms");
                 }
             }
             case "destroyTokenAfterLogout"->
-                destroyTokenAfterLogout = parseBooleanEntry(word);
+                destroyTokenAfterLogout = parseBooleanEntry(st.sval);
             case "showInfo"->
-                showInfo = parseBooleanEntry(word);
+                showInfo = parseBooleanEntry(st.sval);
             case "keyStoreCompatibilityMode"->
-                keyStoreCompatibilityMode = parseBooleanEntry(word);
+                keyStoreCompatibilityMode = parseBooleanEntry(st.sval);
             case "explicitCancel"->
-                explicitCancel = parseBooleanEntry(word);
+                explicitCancel = parseBooleanEntry(st.sval);
             case "omitInitialize"->
-                omitInitialize = parseBooleanEntry(word);
+                omitInitialize = parseBooleanEntry(st.sval);
             case "allowSingleThreadedModules"->
-                allowSingleThreadedModules = parseBooleanEntry(word);
+                allowSingleThreadedModules = parseBooleanEntry(st.sval);
             case "functionList"->
-                functionList = parseStringEntry(word);
+                functionList = parseStringEntry(st.sval);
             case "nssUseSecmod"->
-                nssUseSecmod = parseBooleanEntry(word);
+                nssUseSecmod = parseBooleanEntry(st.sval);
             case "nssLibraryDirectory"-> {
-                nssLibraryDirectory = parseLibrary(word);
+                nssLibraryDirectory = parseLibrary(st.sval);
                 nssUseSecmod = true;
             }
             case "nssSecmodDirectory"-> {
-                nssSecmodDirectory = expand(parseStringEntry(word));
+                nssSecmodDirectory = expand(parseStringEntry(st.sval));
                 nssUseSecmod = true;
             }
             case "nssModule"-> {
-                nssModule = parseStringEntry(word);
+                nssModule = parseStringEntry(st.sval);
                 nssUseSecmod = true;
             }
             case "nssDbMode"-> {
-                String mode = parseStringEntry(word);
+                String mode = parseStringEntry(st.sval);
                 if (mode.equals("readWrite")) {
                     nssDbMode = Secmod.DbMode.READ_WRITE;
                 } else if (mode.equals("readOnly")) {
@@ -494,22 +493,23 @@ final class Config {
                 nssUseSecmod = true;
             }
             case "nssNetscapeDbWorkaround"-> {
-                nssNetscapeDbWorkaround = parseBooleanEntry(word);
+                nssNetscapeDbWorkaround = parseBooleanEntry(st.sval);
                 nssUseSecmod = true;
             }
             case "nssArgs"->
-                parseNSSArgs(word);
+                parseNSSArgs(st.sval);
             case "nssUseSecmodTrust"->
-                nssUseSecmodTrust = parseBooleanEntry(word);
+                nssUseSecmodTrust = parseBooleanEntry(st.sval);
             case "useEcX963Encoding"->
-                useEcX963Encoding = parseBooleanEntry(word);
+                useEcX963Encoding = parseBooleanEntry(st.sval);
             case "nssOptimizeSpace"->
-                nssOptimizeSpace = parseBooleanEntry(word);
+                nssOptimizeSpace = parseBooleanEntry(st.sval);
             default->
                 throw new ConfigurationException
-                        ("Unknown keyword '" + word + "', line " + st.lineno());
+                        ("Unknown keyword '" + st.sval + "', line " +
+                        st.lineno());
             }
-            parsedKeywords.add(word);
+            parsedKeywords.add(st.sval);
         }
         reader.close();
         reader = null;
