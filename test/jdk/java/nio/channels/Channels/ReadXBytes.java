@@ -88,7 +88,7 @@ public class ReadXBytes {
     static Path createFile(long length) throws IOException {
         Path path = createFilePath();
         path.toFile().deleteOnExit();
-        try (FileChannel fc = FileChannel.open(path, CREATE_NEW, SPARSE, WRITE);) {
+        try (FileChannel fc = FileChannel.open(path, CREATE_NEW, SPARSE, WRITE)) {
             if (length > 0) {
                 fc.position(length - 1);
                 fc.write(ByteBuffer.wrap(new byte[] {27}));
@@ -102,6 +102,7 @@ public class ReadXBytes {
         Path file = createFile(length);
         try (FileChannel fc = FileChannel.open(file, WRITE);) {
             long pos = 0L;
+            // if the length exceeds 2 GB, skip the first 2 GB - 1 MB bytes
             if (length >= 2L*1024*1024*1024) {
                 // write the last (length - 2GB - 1MB) bytes
                 pos = 2047L*1024*1024;
