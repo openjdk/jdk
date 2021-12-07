@@ -1359,14 +1359,16 @@ class PredecessorValidator : public BlockClosure {
   }
 };
 
+inline void verify_block_begin_field(BlockBegin* block) {
+  for ( Instruction *cur = block; cur != NULL; cur = cur->next()) {
+    assert(cur->block() == block, "Block begin is not correct");
+  }
+}
+
 class VerifyBlockBeginField : public BlockClosure {
-
 public:
-
-  virtual void block_do(BlockBegin *block) {
-    for ( Instruction *cur = block; cur != NULL; cur = cur->next()) {
-      assert(cur->block() == block, "Block begin is not correct");
-    }
+  virtual void block_do(BlockBegin* block) {
+    verify_block_begin_field(block);
   }
 };
 
