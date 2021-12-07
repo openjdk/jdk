@@ -112,7 +112,7 @@ public abstract class Line2D implements Shape, Cloneable {
          * @since 1.2
          */
         public double getX1() {
-            return x1;
+            return (double) x1;
         }
 
         /**
@@ -120,7 +120,7 @@ public abstract class Line2D implements Shape, Cloneable {
          * @since 1.2
          */
         public double getY1() {
-            return y1;
+            return (double) y1;
         }
 
         /**
@@ -136,7 +136,7 @@ public abstract class Line2D implements Shape, Cloneable {
          * @since 1.2
          */
         public double getX2() {
-            return x2;
+            return (double) x2;
         }
 
         /**
@@ -144,7 +144,7 @@ public abstract class Line2D implements Shape, Cloneable {
          * @since 1.2
          */
         public double getY2() {
-            return y2;
+            return (double) y2;
         }
 
         /**
