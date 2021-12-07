@@ -228,6 +228,10 @@ public:
     assert(t != nullptr, "must set before get");
     return t;
   }
+
+  virtual const Type* type(const Node* n, const Node* c) const {
+    return type(n);
+  }
   // Get a previously recorded type for the node n,
   // or else return null if there is none.
   const Type* type_or_null(const Node* n) const {
@@ -409,7 +413,7 @@ public:
 #endif
 };
 
-
+class PhaseConditionalPropagation;
 //------------------------------PhaseGVN---------------------------------------
 // Phase for performing local, pessimistic GVN-style optimizations.
 class PhaseGVN : public PhaseValues {
@@ -443,6 +447,7 @@ public:
   // Check for a simple dead loop when a data node references itself.
   void dead_loop_check(Node *n);
 #endif
+  virtual PhaseConditionalPropagation* is_ConditionalPropagation() { return NULL; }
 };
 
 //------------------------------PhaseIterGVN-----------------------------------

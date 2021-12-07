@@ -788,6 +788,11 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 
   BaseCountedLoopNode* head = x->as_BaseCountedLoop();
+
+  if (head->phi() == nullptr) {
+    return false;
+  }
+
   BasicType bt = x->as_BaseCountedLoop()->bt();
 
   check_counted_loop_shape(loop, x, bt);
@@ -915,9 +920,9 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
   Node* inner_iters_max = nullptr;
   if (stride_con > 0) {
-    inner_iters_max = MaxNode::max_diff_with_zero(limit, outer_phi, TypeInteger::bottom(bt), _igvn);
+    inner_iters_max = MaxNode::max_diff_with_zero(limit, outer_phi, TypeInteger::make(0, max_signed_integer(bt), Type::WidenMin, bt), _igvn);
   } else {
-    inner_iters_max = MaxNode::max_diff_with_zero(outer_phi, limit, TypeInteger::bottom(bt), _igvn);
+    inner_iters_max = MaxNode::max_diff_with_zero(outer_phi, limit, TypeInteger::make(0, max_signed_integer(bt), Type::WidenMin, bt), _igvn);
   }
 
   Node* inner_iters_limit = _igvn.integercon(iters_limit, bt);
@@ -2293,6 +2298,10 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
     int final_int = (int)final_con;
     // The final value should be in integer range since the loop
     // is counted and the limit was checked for overflow.
+    if (final_con != (jlong) final_int) {
+      assert(phase->is_ConditionalPropagation(), "");
+      return bottom_type();
+    }
     assert(final_con == (jlong)final_int, "final value should be integer");
     return TypeInt::make(final_int);
   }
@@ -3071,10 +3080,10 @@ const TypeInt* PhaseIdealLoop::filtered_type_from_dominators( Node* val, Node *u
     while (if_cnt < if_limit) {
       if ((pred->Opcode() == Op_IfTrue || pred->Opcode() == Op_IfFalse)) {
         if_cnt++;
-        const TypeInt* if_t = IfNode::filtered_int_type(&_igvn, val, pred);
-        if (if_t != nullptr) {
+        const Type* if_t = IfNode::filtered_int_type(&_igvn, val, pred, T_INT);
+        if (if_t != nullptr && if_t->isa_int()) {
           if (rtn_t == nullptr) {
-            rtn_t = if_t;
+            rtn_t = if_t->is_int();
           } else {
             rtn_t = rtn_t->join(if_t)->is_int();
           }
@@ -3982,9 +3991,11 @@ void IdealLoopTree::dump_head() {
       tty->print("%d),", cl->limit()->get_int());
     else
       tty->print("int),");
-    int stride_con  = cl->stride_con();
-    if (stride_con > 0) tty->print("+");
-    tty->print("%d", stride_con);
+    if (cl->stride() != NULL) {
+      int stride_con  = cl->stride_con();
+      if (stride_con > 0) tty->print("+");
+      tty->print("%d", stride_con);
+    }
 
     tty->print(" (%0.f iters) ", cl->profile_trip_cnt());
 
@@ -4523,6 +4534,11 @@ void PhaseIdealLoop::build_and_optimize() {
 
   if (!C->major_progress() && do_expensive_nodes && process_expensive_nodes()) {
     C->set_major_progress();
+  }
+
+  if (!C->major_progress()) {
+    visited.clear();
+    conditional_elimination(visited, nstack, worklist);
   }
 
   // Perform loop predication before iteration splitting

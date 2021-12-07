@@ -415,7 +415,7 @@ void PhaseIdealLoop::get_skeleton_predicates(Node* predicate, Unique_Node_List& 
 ProjNode* PhaseIdealLoop::clone_skeleton_predicate_for_unswitched_loops(Node* iff, ProjNode* predicate,
                                                                         Deoptimization::DeoptReason reason,
                                                                         ProjNode* output_proj) {
-  Node* bol = clone_skeleton_predicate_bool(iff, nullptr, nullptr, output_proj);
+  Node* bol = clone_skeleton_predicate_bool(iff, nullptr, nullptr, output_proj->in(0)->in(0));
   ProjNode* proj = create_new_if_for_predicate(output_proj, nullptr, reason, iff->Opcode(),
                                                false, predicate->is_IfTrue());
   _igvn.replace_input_of(proj->in(0), 1, bol);
@@ -1268,7 +1268,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
     return false;
   }
   BoolNode* bol = test->as_Bool();
-  if (invar.is_invariant(bol)) {
+  if (invar.is_invariant(bol) && is_dominator(get_ctrl(bol), predicate_proj)) {
     // Invariant test
     new_predicate_proj = create_new_if_for_predicate(predicate_proj, nullptr,
                                                      reason,
@@ -1416,8 +1416,8 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
   max_value = new AddINode(opaque_init, max_value);
   register_new_node(max_value, new_proj);
   // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
-  max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
-  register_new_node(max_value, predicate_proj);
+  max_value = new CastIINode(new_proj, max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
+  register_new_node(max_value, new_proj);
 
   bol = rc_predicate(loop, new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0), overflow, negate);
   opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));

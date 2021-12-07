@@ -47,7 +47,8 @@
 //------------------------------split_thru_phi---------------------------------
 // Split Node 'n' through merge point if there is enough win.
 Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
-  if (n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::LONG) {
+  if ((n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::LONG) ||
+      (n->Opcode() == Op_ConvL2I && n->bottom_type() != TypeInt::INT)){
     // ConvI2L may have type information on it which is unsafe to push up
     // so disable this for now
     return nullptr;
@@ -1588,14 +1589,17 @@ bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
 // like various versions of induction variable+offset.  Clone the
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
+  bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
+                            n->in(1)->bottom_type()->isa_rawptr() &&
+                            !n->bottom_type()->isa_rawptr();
   if (has_ctrl(n) &&
       !n->is_Phi() &&
       !n->is_Bool() &&
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
-      n->Opcode() != Op_Opaque4 &&
-      !n->is_Type()) {
+      !is_raw_to_oop_cast && // don't extend live ranges of raw oops
+      n->Opcode() != Op_Opaque4) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
 
@@ -2329,7 +2333,11 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
     assert(get_loop(new_ctrl) != outer_loop, "must be out of the loop nest");
     for (uint i = 0; i < wq.size(); i++) {
       Node* n = wq.at(i);
-      set_ctrl(n, new_ctrl);
+      if (is_member(outer_loop, get_ctrl(n))) {
+        set_ctrl(n, new_ctrl);
+      } else {
+        assert(n->in(0) == inner_out, "");
+      }
       if (n->in(0) != nullptr) {
         _igvn.replace_input_of(n, 0, new_ctrl);
       }

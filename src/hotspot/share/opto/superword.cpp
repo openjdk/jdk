@@ -3037,8 +3037,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       if (t != nullptr && t->is_con()) {
         juint shift = t->get_con();
         if (shift > mask) { // Unsigned cmp
-          cnt = ConNode::make(TypeInt::make(shift & mask));
-          _igvn.register_new_node_with_optimizer(cnt);
+          cnt = _igvn.makecon(TypeInt::make(shift & mask));
         }
       } else {
         if (t == nullptr || t->_lo < 0 || t->_hi > (int)mask) {

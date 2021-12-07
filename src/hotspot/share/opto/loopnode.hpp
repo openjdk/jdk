@@ -934,7 +934,7 @@ private:
     return ctrl;
   }
 
-  Node* cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop);
+  Node* cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNode* loop);
 
 #ifdef ASSERT
   void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
@@ -1191,6 +1191,7 @@ public:
 
     Compile* C = Compile::current();
     if (!C->failing()) {
+      C->print_method(PHASE_DEBUG, 2);
       // Cleanup any modified bits
       igvn.optimize();
 
@@ -1419,9 +1420,9 @@ public:
                                               Node* init, Node* limit, jint stride,
                                               Node* rng, bool& overflow,
                                               Deoptimization::DeoptReason reason);
-  Node* add_range_check_predicate(IdealLoopTree* loop, CountedLoopNode* cl,
-                                  Node* predicate_proj, int scale_con, Node* offset,
-                                  Node* limit, jint stride_con, Node* value);
+  Node*
+  add_range_check_predicate(IdealLoopTree* loop, CountedLoopNode* cl, Node* predicate_proj, Node* scale,
+                            Node* offset, Node* low_limit, Node* upper_limit, Node* value);
 
   // Helper function to collect predicate for eliminating the useless ones
   void collect_potentially_useful_predicates(IdealLoopTree *loop, Unique_Node_List &predicate_opaque1);
@@ -1479,7 +1480,10 @@ public:
   // always holds true.  That is, either increase the number of iterations in
   // the pre-loop or the post-loop until the condition holds true in the main
   // loop.  Scale_con, offset and limit are all loop invariant.
-  void add_constraint(jlong stride_con, jlong scale_con, Node* offset, Node* low_limit, Node* upper_limit, Node* pre_ctrl, Node** pre_limit, Node** main_limit);
+  void
+  add_constraint(IdealLoopTree* loop, jlong stride_con, jlong scale_con, Node* offset, Node* low_limit,
+                 Node* upper_limit,
+                 Node* pre_ctrl, Node** pre_limit, Node** main_limit, Node*& predicate_proj);
   // Helper function for add_constraint().
   Node* adjust_limit(bool reduce, Node* scale, Node* offset, Node* rc_limit, Node* old_limit, Node* pre_ctrl, bool round);
 
@@ -1765,6 +1769,7 @@ public:
   bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
 
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
+  void conditional_elimination(VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list);
 };
 
 

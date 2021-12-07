@@ -977,6 +977,11 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : PhaseGVN(igvn),
                                                  _worklist(igvn->_worklist)
 {
   _iterGVN = true;
+#ifndef PRODUCT
+  memcpy(_verify_window, igvn->_verify_window, sizeof(_verify_window));
+  _verify_counter = igvn->_verify_counter;
+  _verify_full_passes = igvn->_verify_full_passes;
+#endif
 }
 
 //------------------------------PhaseIterGVN-----------------------------------
