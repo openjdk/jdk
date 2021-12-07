@@ -69,9 +69,9 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Op
   if (TwoOperandLIRForm) {
     LIR_Opr addr_opr = LIR_OprFact::address(new LIR_Address(addr, addr->type()));
     __ leal(addr_opr, tmp);
-    __ unsigned_shift_right(tmp, CardTable::card_shift, tmp);
+    __ unsigned_shift_right(tmp, CardTable::card_shift(), tmp);
   } else {
-    __ unsigned_shift_right(addr, CardTable::card_shift, tmp);
+    __ unsigned_shift_right(addr, CardTable::card_shift(), tmp);
   }
 
   LIR_Address* card_addr;
