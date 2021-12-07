@@ -1055,7 +1055,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
     /**
      * An enumeration of the keys in a SmallAttributeSet.
      */
-    class KeyEnumeration implements Enumeration<Object> {
+    static class KeyEnumeration implements Enumeration<Object> {
 
         KeyEnumeration(Object[] attr) {
             this.attr = attr;
@@ -1097,7 +1097,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * Sorts the key strings so that they can be very quickly compared
      * in the attribute set searches.
      */
-    class KeyBuilder {
+    static class KeyBuilder {
 
         public void initialize(AttributeSet a) {
             if (a instanceof SmallAttributeSet) {

@@ -27,23 +27,21 @@
  * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M TestSegments
  */
 
-import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
-import java.util.function.LongFunction;
 import java.util.function.Supplier;
 
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
 public class TestSegments {
@@ -51,11 +49,6 @@ public class TestSegments {
     @Test(dataProvider = "badSizeAndAlignments", expectedExceptions = IllegalArgumentException.class)
     public void testBadAllocateAlign(long size, long align) {
         MemorySegment.allocateNative(size, align, ResourceScope.newImplicitScope());
-    }
-
-    @Test(dataProvider = "badLayouts", expectedExceptions = UnsupportedOperationException.class)
-    public void testBadAllocateLayout(MemoryLayout layout) {
-        MemorySegment.allocateNative(layout, ResourceScope.newImplicitScope());
     }
 
     @Test(expectedExceptions = { OutOfMemoryError.class,
@@ -71,8 +64,8 @@ public class TestSegments {
 
     @Test
     public void testNativeSegmentIsZeroed() {
-        VarHandle byteHandle = MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_BYTE)
-                .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
+        VarHandle byteHandle = MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE)
+                .varHandle(MemoryLayout.PathElement.sequenceElement());
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
             MemorySegment segment = MemorySegment.allocateNative(1000, 1, scope);
             for (long i = 0 ; i < segment.byteSize() ; i++) {
@@ -83,8 +76,8 @@ public class TestSegments {
 
     @Test
     public void testSlices() {
-        VarHandle byteHandle = MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_BYTE)
-                .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
+        VarHandle byteHandle = MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE)
+                .varHandle(MemoryLayout.PathElement.sequenceElement());
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
             MemorySegment segment = MemorySegment.allocateNative(10, 1, scope);
             //init
@@ -107,14 +100,14 @@ public class TestSegments {
     public void testSmallSegmentMax() {
         long offset = (long)Integer.MAX_VALUE + (long)Integer.MAX_VALUE + 2L + 6L; // overflows to 6 when casted to int
         MemorySegment memorySegment = MemorySegment.allocateNative(10, ResourceScope.newImplicitScope());
-        MemoryAccess.getIntAtOffset(memorySegment, offset);
+        memorySegment.get(JAVA_INT, offset);
     }
 
     @Test(expectedExceptions = IndexOutOfBoundsException.class)
     public void testSmallSegmentMin() {
         long offset = ((long)Integer.MIN_VALUE * 2L) + 6L; // underflows to 6 when casted to int
         MemorySegment memorySegment = MemorySegment.allocateNative(10, ResourceScope.newImplicitScope());
-        MemoryAccess.getIntAtOffset(memorySegment, offset);
+        memorySegment.get(JAVA_INT, offset);
     }
 
     @Test(dataProvider = "segmentFactories")
@@ -125,7 +118,7 @@ public class TestSegments {
     }
 
     static void tryClose(MemorySegment segment) {
-        if (!segment.scope().isImplicit()) {
+        if (segment.scope() != ResourceScope.globalScope()) {
             segment.scope().close();
         }
     }
@@ -142,10 +135,10 @@ public class TestSegments {
                 () -> MemorySegment.ofArray(new short[] { 1, 2, 3, 4 } ),
                 () -> MemorySegment.allocateNative(4, ResourceScope.newImplicitScope()),
                 () -> MemorySegment.allocateNative(4, 8, ResourceScope.newImplicitScope()),
-                () -> MemorySegment.allocateNative(MemoryLayout.valueLayout(32, ByteOrder.nativeOrder()), ResourceScope.newImplicitScope()),
-                () -> MemorySegment.allocateNative(4, ResourceScope.newConfinedScope()),
-                () -> MemorySegment.allocateNative(4, 8, ResourceScope.newConfinedScope()),
-                () -> MemorySegment.allocateNative(MemoryLayout.valueLayout(32, ByteOrder.nativeOrder()), ResourceScope.newConfinedScope())
+                () -> MemorySegment.allocateNative(JAVA_INT, ResourceScope.newImplicitScope()),
+                () -> MemorySegment.allocateNative(4, ResourceScope.newImplicitScope()),
+                () -> MemorySegment.allocateNative(4, 8, ResourceScope.newImplicitScope()),
+                () -> MemorySegment.allocateNative(JAVA_INT, ResourceScope.newImplicitScope())
 
         );
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
@@ -153,8 +146,8 @@ public class TestSegments {
 
     @Test(dataProvider = "segmentFactories")
     public void testFill(Supplier<MemorySegment> memorySegmentSupplier) {
-        VarHandle byteHandle = MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_BYTE)
-                .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
+        VarHandle byteHandle = MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE)
+                .varHandle(MemoryLayout.PathElement.sequenceElement());
 
         for (byte value : new byte[] {(byte) 0xFF, (byte) 0x00, (byte) 0x45}) {
             MemorySegment segment = memorySegmentSupplier.get();
@@ -193,15 +186,13 @@ public class TestSegments {
     }
 
     @Test(dataProvider = "segmentFactories")
-    public void testNativeSegments(Supplier<MemorySegment> memorySegmentSupplier) throws Exception {
+    public void testNativeSegments(Supplier<MemorySegment> memorySegmentSupplier) {
         MemorySegment segment = memorySegmentSupplier.get();
         try {
-            segment.address().toRawLongValue();
+            segment.address();
             assertTrue(segment.isNative());
-            assertTrue(segment.address().isNative());
         } catch (UnsupportedOperationException exception) {
             assertFalse(segment.isNative());
-            assertFalse(segment.address().isNative());
         }
         tryClose(segment);
     }
@@ -260,33 +251,6 @@ public class TestSegments {
                 { 1, 15 },
                 { 1, -15 }
         };
-    }
-
-    @DataProvider(name = "badLayouts")
-    public Object[][] layouts() {
-        SizedLayoutFactory[] layoutFactories = SizedLayoutFactory.values();
-        Object[][] values = new Object[layoutFactories.length * 2][2];
-        for (int i = 0; i < layoutFactories.length ; i++) {
-            values[i * 2] = new Object[] { MemoryLayout.structLayout(layoutFactories[i].make(7), MemoryLayout.paddingLayout(9)) }; // good size, bad align
-            values[(i * 2) + 1] = new Object[] { layoutFactories[i].make(15).withBitAlignment(16) }; // bad size, good align
-        }
-        return values;
-    }
-
-    enum SizedLayoutFactory {
-        VALUE_BE(size -> MemoryLayout.valueLayout(size, ByteOrder.BIG_ENDIAN)),
-        VALUE_LE(size -> MemoryLayout.valueLayout(size, ByteOrder.LITTLE_ENDIAN)),
-        PADDING(MemoryLayout::paddingLayout);
-
-        private final LongFunction<MemoryLayout> factory;
-
-        SizedLayoutFactory(LongFunction<MemoryLayout> factory) {
-            this.factory = factory;
-        }
-
-        MemoryLayout make(long size) {
-            return factory.apply(size);
-        }
     }
 
     @DataProvider(name = "heapFactories")

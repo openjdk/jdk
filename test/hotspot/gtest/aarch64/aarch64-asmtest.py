@@ -7,6 +7,55 @@ AARCH64_AS = "as"
 AARCH64_OBJDUMP = "objdump"
 AARCH64_OBJCOPY = "objcopy"
 
+# These tables are legal immediate logical operands
+immediates8 \
+     = [0x1, 0x0c, 0x3e, 0x60, 0x7c, 0x80, 0x83,
+        0xe1, 0xbf, 0xef, 0xf3, 0xfe]
+
+immediates16 \
+     = [0x1, 0x38, 0x7e, 0xff, 0x1fc, 0x1ff, 0x3f0,
+        0x7e0, 0xfc0, 0x1f80, 0x3ff0, 0x7e00, 0x7e00,
+        0x8000, 0x81ff, 0xc1ff, 0xc003, 0xc7ff, 0xdfff,
+        0xe03f, 0xe10f, 0xe1ff, 0xf801, 0xfc00, 0xfc07,
+        0xff03, 0xfffe]
+
+immediates32 \
+     = [0x1, 0x3f, 0x1f0, 0x7e0,
+        0x1c00, 0x3ff0, 0x8000, 0x1e000,
+        0x3e000, 0x78000, 0xe0000, 0x100000,
+        0x1fffe0, 0x3fe000, 0x780000, 0x7ffff8,
+        0xff8000, 0x1800180, 0x1fffc00, 0x3c003c0,
+        0x3ffff00, 0x7c00000, 0x7fffe00, 0xf000f00,
+        0xfffe000, 0x18181818, 0x1ffc0000, 0x1ffffffe,
+        0x3f003f00, 0x3fffe000, 0x60006000, 0x7f807f80,
+        0x7ffffc00, 0x800001ff, 0x803fffff, 0x9f9f9f9f,
+        0xc0000fff, 0xc0c0c0c0, 0xe0000000, 0xe003e003,
+        0xe3ffffff, 0xf0000fff, 0xf0f0f0f0, 0xf80000ff,
+        0xf83ff83f, 0xfc00007f, 0xfc1fffff, 0xfe0001ff,
+        0xfe3fffff, 0xff003fff, 0xff800003, 0xff87ff87,
+        0xffc00fff, 0xffe0000f, 0xffefffef, 0xfff1fff1,
+        0xfff83fff, 0xfffc0fff, 0xfffe0fff, 0xffff3fff,
+        0xffffc007, 0xffffe1ff, 0xfffff80f, 0xfffffe07,
+        0xffffffbf, 0xfffffffd]
+
+immediates64 \
+     = [0x1, 0x1f80, 0x3fff0, 0x3ffffc,
+        0x3fe0000, 0x1ffc0000, 0xf8000000, 0x3ffffc000,
+        0xffffffe00, 0x3ffffff800, 0xffffc00000, 0x3f000000000,
+        0x7fffffff800, 0x1fe000001fe0, 0x3ffffff80000, 0xc00000000000,
+        0x1ffc000000000, 0x3ffff0003ffff, 0x7ffffffe00000, 0xfffffffffc000,
+        0x1ffffffffffc00, 0x3fffffffffff00, 0x7ffffffffffc00, 0xffffffffff8000,
+        0x1ffffffff800000, 0x3fffffc03fffffc, 0x7fffc0000000000, 0xff80ff80ff80ff8,
+        0x1c00000000000000, 0x1fffffffffff0000, 0x3fffff803fffff80, 0x7fc000007fc00000,
+        0x8000000000000000, 0x803fffff803fffff, 0xc000007fc000007f, 0xe00000000000ffff,
+        0xe3ffffffffffffff, 0xf007f007f007f007, 0xf80003ffffffffff, 0xfc000003fc000003,
+        0xfe000000007fffff, 0xff00000000007fff, 0xff800000000003ff, 0xffc00000000000ff,
+        0xffe00000000003ff, 0xfff0000000003fff, 0xfff80000001fffff, 0xfffc0000fffc0000,
+        0xfffe003fffffffff, 0xffff3fffffffffff, 0xffffc0000007ffff, 0xffffe01fffffe01f,
+        0xfffff800000007ff, 0xfffffc0fffffffff, 0xffffff00003fffff, 0xffffffc0000007ff,
+        0xfffffff0000001ff, 0xfffffffc00003fff, 0xffffffff07ffffff, 0xffffffffe003ffff,
+        0xfffffffffc01ffff, 0xffffffffffc00003, 0xfffffffffffc000f, 0xffffffffffffe07f]
+
 class Operand(object):
 
      def generate(self):
@@ -351,51 +400,12 @@ class AddSubImmOp(TwoRegImmedInstruction):
          return super(AddSubImmOp, self).cstr() + ");"
 
 class LogicalImmOp(AddSubImmOp):
-
-     # These tables are legal immediate logical operands
-     immediates32 \
-         = [0x1, 0x3f, 0x1f0, 0x7e0,
-            0x1c00, 0x3ff0, 0x8000, 0x1e000,
-            0x3e000, 0x78000, 0xe0000, 0x100000,
-            0x1fffe0, 0x3fe000, 0x780000, 0x7ffff8,
-            0xff8000, 0x1800180, 0x1fffc00, 0x3c003c0,
-            0x3ffff00, 0x7c00000, 0x7fffe00, 0xf000f00,
-            0xfffe000, 0x18181818, 0x1ffc0000, 0x1ffffffe,
-            0x3f003f00, 0x3fffe000, 0x60006000, 0x7f807f80,
-            0x7ffffc00, 0x800001ff, 0x803fffff, 0x9f9f9f9f,
-            0xc0000fff, 0xc0c0c0c0, 0xe0000000, 0xe003e003,
-            0xe3ffffff, 0xf0000fff, 0xf0f0f0f0, 0xf80000ff,
-            0xf83ff83f, 0xfc00007f, 0xfc1fffff, 0xfe0001ff,
-            0xfe3fffff, 0xff003fff, 0xff800003, 0xff87ff87,
-            0xffc00fff, 0xffe0000f, 0xffefffef, 0xfff1fff1,
-            0xfff83fff, 0xfffc0fff, 0xfffe0fff, 0xffff3fff,
-            0xffffc007, 0xffffe1ff, 0xfffff80f, 0xfffffe07,
-            0xffffffbf, 0xfffffffd]
-
-     immediates \
-         = [0x1, 0x1f80, 0x3fff0, 0x3ffffc,
-            0x3fe0000, 0x1ffc0000, 0xf8000000, 0x3ffffc000,
-            0xffffffe00, 0x3ffffff800, 0xffffc00000, 0x3f000000000,
-            0x7fffffff800, 0x1fe000001fe0, 0x3ffffff80000, 0xc00000000000,
-            0x1ffc000000000, 0x3ffff0003ffff, 0x7ffffffe00000, 0xfffffffffc000,
-            0x1ffffffffffc00, 0x3fffffffffff00, 0x7ffffffffffc00, 0xffffffffff8000,
-            0x1ffffffff800000, 0x3fffffc03fffffc, 0x7fffc0000000000, 0xff80ff80ff80ff8,
-            0x1c00000000000000, 0x1fffffffffff0000, 0x3fffff803fffff80, 0x7fc000007fc00000,
-            0x8000000000000000, 0x803fffff803fffff, 0xc000007fc000007f, 0xe00000000000ffff,
-            0xe3ffffffffffffff, 0xf007f007f007f007, 0xf80003ffffffffff, 0xfc000003fc000003,
-            0xfe000000007fffff, 0xff00000000007fff, 0xff800000000003ff, 0xffc00000000000ff,
-            0xffe00000000003ff, 0xfff0000000003fff, 0xfff80000001fffff, 0xfffc0000fffc0000,
-            0xfffe003fffffffff, 0xffff3fffffffffff, 0xffffc0000007ffff, 0xffffe01fffffe01f,
-            0xfffff800000007ff, 0xfffffc0fffffffff, 0xffffff00003fffff, 0xffffffc0000007ff,
-            0xfffffff0000001ff, 0xfffffffc00003fff, 0xffffffff07ffffff, 0xffffffffe003ffff,
-            0xfffffffffc01ffff, 0xffffffffffc00003, 0xfffffffffffc000f, 0xffffffffffffe07f]
-
      def generate(self):
           AddSubImmOp.generate(self)
           self.immed = \
-              self.immediates32[random.randint(0, len(self.immediates32)-1)] \
+              immediates32[random.randint(0, len(immediates32)-1)] \
               if self.isWord else \
-              self.immediates[random.randint(0, len(self.immediates)-1)]
+              immediates64[random.randint(0, len(immediates64)-1)]
 
           return self
 
@@ -405,6 +415,44 @@ class LogicalImmOp(AddSubImmOp):
 
      def cstr(self):
           return super(AddSubImmOp, self).cstr() + "ll);"
+
+class SVEBinaryImmOp(Instruction):
+    def __init__(self, name):
+        reg = SVEVectorRegister().generate()
+        self.reg = [reg, reg]
+        self.numRegs = len(self.reg)
+        self._width = RegVariant(0, 3)
+        self._isLogical = False
+        if name in ["and", "eor", "orr"]:
+            self._isLogical = True
+        Instruction.__init__(self, name)
+
+    def generate(self):
+        Instruction.generate(self)
+        self.immed = random.randint(0, (1<<8)-1)
+        if self._isLogical:
+            vectype = self._width.cstr()
+            if vectype == "__ B":
+                self.immed = immediates8[random.randint(0, len(immediates8)-1)]
+            elif vectype == "__ H":
+                self.immed = immediates16[random.randint(0, len(immediates16)-1)]
+            elif vectype == "__ S":
+                self.immed = immediates32[random.randint(0, len(immediates32)-1)]
+            elif vectype == "__ D":
+                self.immed = immediates64[random.randint(0, len(immediates64)-1)]
+        return self
+
+    def cstr(self):
+        formatStr = "%s%s, %s, %su);"
+        return (formatStr
+                % tuple(["__ sve_" + self._name + "("] +
+                        [str(self.reg[0]), self._width.cstr(), self.immed]))
+
+    def astr(self):
+        formatStr = "%s%s, %s, #0x%x"
+        Regs = [str(self.reg[i]) + self._width.astr() for i in range(0, self.numRegs)]
+        return (formatStr
+                % tuple([Instruction.astr(self)] + Regs + [self.immed]))
 
 class MultiOp():
 
@@ -1718,6 +1766,9 @@ for size in ("x", "w"):
 generate(SHA3SIMDOp, ["bcax", "eor3", "rax1", "xar"])
 
 generate(SHA512SIMDOp, ["sha512h", "sha512h2", "sha512su0", "sha512su1"])
+
+for i in range(6):
+    generate(SVEBinaryImmOp, ["add", "sub", "and", "eor", "orr"])
 
 generate(SVEVectorOp, [["add", "ZZZ"],
                        ["sub", "ZZZ"],
