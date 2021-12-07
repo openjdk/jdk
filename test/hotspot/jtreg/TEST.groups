@@ -71,6 +71,13 @@ hotspot_native_sanity = \
 hotspot_containers = \
   containers
 
+# Test sets for running inside container environment
+hotspot_containers_extended = \
+  runtime \
+  serviceability \
+  vmTestbase/nsk/jvmti \
+  vmTestbase/nsk/monitoring
+
 hotspot_vector_1 = \
   compiler/c2/cr6340864 \
   compiler/codegen \
