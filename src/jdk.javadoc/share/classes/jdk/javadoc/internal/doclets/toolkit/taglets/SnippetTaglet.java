@@ -269,7 +269,7 @@ public class SnippetTaglet extends BaseTaglet {
         StyledText externalSnippet = null;
 
         try {
-            Diag d = (text, pos) -> {
+            Diags d = (text, pos) -> {
                 var path = writer.configuration().utils.getCommentHelper(holder)
                         .getDocTreePath(snippetTag.getBody());
                 writer.configuration().getReporter().print(Diagnostic.Kind.WARNING,
@@ -291,7 +291,7 @@ public class SnippetTaglet extends BaseTaglet {
 
         try {
             var finalFileObject = fileObject;
-            Diag d = (text, pos) -> writer.configuration().getMessages().warning(finalFileObject, pos, pos, pos, text);
+            Diags d = (text, pos) -> writer.configuration().getMessages().warning(finalFileObject, pos, pos, pos, text);
             if (externalContent != null) {
                 externalSnippet = parse(writer.configuration().getDocResources(), d, language, externalContent);
             }
@@ -371,13 +371,13 @@ public class SnippetTaglet extends BaseTaglet {
                """.formatted(inline, external);
     }
 
-    private StyledText parse(Resources resources, Diag diag, Optional<Language> language, String content) throws ParseException {
-        Parser.Result result = new Parser(resources).parse(diag, language, content);
+    private StyledText parse(Resources resources, Diags diags, Optional<Language> language, String content) throws ParseException {
+        Parser.Result result = new Parser(resources).parse(diags, language, content);
         result.actions().forEach(Action::perform);
         return result.text();
     }
 
-    public interface Diag {
+    public interface Diags {
         void warn(String text, int pos);
     }
 

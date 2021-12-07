@@ -94,19 +94,19 @@ public final class Parser {
         this.markupParser = new MarkupParser(resources);
     }
 
-    public Result parse(SnippetTaglet.Diag d, Optional<SnippetTaglet.Language> language, String source) throws ParseException {
+    public Result parse(SnippetTaglet.Diags diags, Optional<SnippetTaglet.Language> language, String source) throws ParseException {
         SnippetTaglet.Language lang = language.orElse(SnippetTaglet.Language.JAVA);
         var p = switch (lang) {
             case JAVA -> JAVA_COMMENT;
             case PROPERTIES -> PROPERTIES_COMMENT;
         };
-        return parse(d, p, source);
+        return parse(diags, p, source);
     }
 
     /*
      * Newline characters in the returned text are of the \n form.
      */
-    private Result parse(SnippetTaglet.Diag d, Pattern commentPattern, String source) throws ParseException {
+    private Result parse(SnippetTaglet.Diags diags, Pattern commentPattern, String source) throws ParseException {
         Objects.requireNonNull(commentPattern);
         Objects.requireNonNull(source);
 
@@ -166,7 +166,7 @@ public final class Parser {
                     }
                 }
                 if (parsedTags.isEmpty()) { // (2)
-                    d.warn(resources.getText("doclet.snippet.markup.spurious"), next.offset() + markedUpLine.start("markup"));
+                    diags.warn(resources.getText("doclet.snippet.markup.spurious"), next.offset() + markedUpLine.start("markup"));
                     line = rawLine + (addLineTerminator ? "\n" : "");
                 } else { // (3)
                     hasMarkup = true;
