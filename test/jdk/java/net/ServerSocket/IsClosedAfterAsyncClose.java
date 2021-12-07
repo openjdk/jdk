@@ -69,7 +69,7 @@ public class IsClosedAfterAsyncClose {
                     }
                 } catch (IOException ioe) {
                     if (!listener.isClosed()) {
-                        throw new RuntimeException("isClosed returned true!!");
+                        throw new RuntimeException("isClosed returned false!!");
                     }
                 } finally {
                     closer.join();
