@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: May 2019
+ * @LastModified: Nov 2021
  */
 public class XPATHErrorResources extends ListResourceBundle
 {
@@ -322,6 +322,10 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   public static final String ER_SECUREPROCESSING_FEATURE = "ER_SECUREPROCESSING_FEATURE";
   public static final String ER_NULL_XPATH_FUNCTION_RESOLVER = "ER_NULL_XPATH_FUNCTION_RESOLVER";
   public static final String ER_NULL_XPATH_VARIABLE_RESOLVER = "ER_NULL_XPATH_VARIABLE_RESOLVER";
+  public static final String ER_PROPERTY_NAME_NULL = "ER_PROPERTY_NAME_NULL";
+  public static final String ER_PROPERTY_UNKNOWN = "ER_PROPERTY_UNKNOWN";
+  public static final String ER_GETTING_NULL_PROPERTY = "ER_GETTING_NULL_PROPERTY";
+  public static final String ER_GETTING_UNKNOWN_PROPERTY = "ER_GETTING_UNKNOWN_PROPERTY";
   //END: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
 
   public static final String WG_LOCALE_NAME_NOT_HANDLED =
@@ -835,6 +839,26 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_NULL_XPATH_VARIABLE_RESOLVER,
        "Attempting to set a null XPathVariableResolver:{0}#setXPathVariableResolver(null)"},
+
+  /** Field ER_PROPERTY_NAME_NULL                       */
+
+  { ER_PROPERTY_NAME_NULL,
+       "Trying to set a property with a null name: {0}#setProperty( null, {1})"},
+
+  /** Field ER_PROPERTY_UNKNOWN                       */
+
+  { ER_PROPERTY_UNKNOWN,
+       "Trying to set the unknown property \"{0}\":{1}#setProperty({0},{2})"},
+
+  /** Field ER_GETTING_NULL_PROPERTY                       */
+
+  { ER_GETTING_NULL_PROPERTY,
+       "Trying to get a property with a null name: {0}#getProperty(null)"},
+
+  /** Field ER_GETTING_NULL_PROPERTY                       */
+
+  { ER_GETTING_UNKNOWN_PROPERTY,
+       "Trying to get the unknown property \"{0}\":{1}#getProperty({0})"},
 
   //END:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 

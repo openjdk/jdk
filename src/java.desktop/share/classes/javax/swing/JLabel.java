@@ -1075,6 +1075,10 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
          * @see AccessibleContext#setAccessibleName
          */
         public String getAccessibleName() {
+            return getAccessibleNameCheckIcon(getAccessibleNameImpl());
+        }
+
+        private String getAccessibleNameImpl() {
             String name = accessibleName;
 
             if (name == null) {
@@ -1089,6 +1093,19 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
             return name;
         }
 
+        private String getAccessibleNameCheckIcon(String name) {
+            if (((name == null) || name.isEmpty()) &&
+                    (JLabel.this.getIcon() != null)) {
+                if (JLabel.this.getIcon() instanceof Accessible) {
+                    AccessibleContext ac = ((Accessible) JLabel.this.getIcon()).getAccessibleContext();
+                    if (ac != null) {
+                        name = ac.getAccessibleName();
+                    }
+                }
+            }
+            return name;
+        }
+
         /**
          * Get the role of this object.
          *
@@ -1097,6 +1114,11 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
          * @see AccessibleRole
          */
         public AccessibleRole getAccessibleRole() {
+            String name = getAccessibleNameImpl();
+            if (((name == null) || name.isEmpty()) &&
+                    (JLabel.this.getIcon() != null)) {
+                return AccessibleRole.ICON;
+            }
             return AccessibleRole.LABEL;
         }
 
@@ -1110,8 +1132,8 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
             if (icon instanceof Accessible) {
                 AccessibleContext ac =
                 ((Accessible)icon).getAccessibleContext();
-                if (ac != null && ac instanceof AccessibleIcon) {
-                    return new AccessibleIcon[] { (AccessibleIcon)ac };
+                if (ac instanceof AccessibleIcon ai) {
+                    return new AccessibleIcon[] { ai };
                 }
             }
             return null;

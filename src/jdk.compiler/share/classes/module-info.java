@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@
  * Defines the implementation of the
  * {@linkplain javax.tools.ToolProvider#getSystemJavaCompiler system Java compiler}
  * and its command line equivalent, <em>{@index javac javac tool}</em>.
+ *
+ * <p>The {@code com.sun.source.*} packages provide the {@index "Compiler Tree API"}:
+ * an API for accessing the abstract trees (ASTs) representing Java source code
+ * and documentation comments, used by <em>javac</em>, <em>javadoc</em> and related tools.
  *
  * <h2 style="font-family:'DejaVu Sans Mono', monospace; font-style:italic">javac</h2>
  *

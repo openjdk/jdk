@@ -233,6 +233,11 @@ void ReferenceProcessorPhaseTimes::set_ref_discovered(ReferenceType ref_type, si
   _ref_discovered[ref_type_2_index(ref_type)] = count;
 }
 
+size_t ReferenceProcessorPhaseTimes::ref_discovered(ReferenceType ref_type) {
+  ASSERT_REF_TYPE(ref_type);
+  return _ref_discovered[ref_type_2_index(ref_type)];
+}
+
 double ReferenceProcessorPhaseTimes::balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase) const {
   ASSERT_PHASE(phase);
   return _balance_queues_time_ms[phase];
