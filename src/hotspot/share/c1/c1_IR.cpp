@@ -1283,6 +1283,12 @@ void verify_successor_xentry_flag(const BlockBegin* block) {
   }
 }
 
+// Validation goals:
+// * Verify successor xentry flags
+// * code() length == blocks length
+// * code() contents == blocks content
+// * Each block's computed predecessors match sux lists (length)
+// * Each block's computed predecessors match sux lists (set content)
 class PredecessorValidator : public BlockClosure {
  private:
   BlockListList* _predecessors; // Each index i will hold predecessors of block with id i
