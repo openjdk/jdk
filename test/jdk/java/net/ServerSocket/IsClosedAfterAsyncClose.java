@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8278339
- * @summary Test that ServerSocket::isClosed returns false after async close
+ * @summary Test that ServerSocket::isClosed returns true after async close
  */
 
 import java.io.IOException;
