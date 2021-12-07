@@ -1376,7 +1376,7 @@ void IR::verify() {
   EndNotNullValidator(this);
   VerifyBlockBeginField verifier;
   this->iterate_postorder(&verifier);
-#endif
+#endif // ASSERT
 }
 
 #endif // PRODUCT
