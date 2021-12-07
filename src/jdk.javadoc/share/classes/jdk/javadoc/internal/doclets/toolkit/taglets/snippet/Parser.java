@@ -94,19 +94,19 @@ public final class Parser {
         this.markupParser = new MarkupParser(resources);
     }
 
-    public Result parse(Optional<SnippetTaglet.Language> language, String source) throws ParseException {
+    public Result parse(SnippetTaglet.Diags diags, Optional<SnippetTaglet.Language> language, String source) throws ParseException {
         SnippetTaglet.Language lang = language.orElse(SnippetTaglet.Language.JAVA);
         var p = switch (lang) {
             case JAVA -> JAVA_COMMENT;
             case PROPERTIES -> PROPERTIES_COMMENT;
         };
-        return parse(p, source);
+        return parse(diags, p, source);
     }
 
     /*
      * Newline characters in the returned text are of the \n form.
      */
-    private Result parse(Pattern commentPattern, String source) throws ParseException {
+    private Result parse(SnippetTaglet.Diags diags, Pattern commentPattern, String source) throws ParseException {
         Objects.requireNonNull(commentPattern);
         Objects.requireNonNull(source);
 
@@ -150,7 +150,7 @@ public final class Parser {
                     parsedTags = markupParser.parse(maybeMarkup);
                 } catch (ParseException e) {
                     // translate error position from markup to file line
-                    throw new ParseException(e::getMessage, markedUpLine.start("markup") + e.getPosition());
+                    throw new ParseException(e::getMessage, next.offset() + markedUpLine.start("markup") + e.getPosition());
                 }
                 for (Tag t : parsedTags) {
                     t.lineSourceOffset = next.offset();
@@ -166,7 +166,7 @@ public final class Parser {
                     }
                 }
                 if (parsedTags.isEmpty()) { // (2)
-                    // TODO: log this with NOTICE;
+                    diags.warn(resources.getText("doclet.snippet.markup.spurious"), next.offset() + markedUpLine.start("markup"));
                     line = rawLine + (addLineTerminator ? "\n" : "");
                 } else { // (3)
                     hasMarkup = true;
