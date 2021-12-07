@@ -1563,12 +1563,6 @@ public class CreateSymbols {
                         modified |= include(includedClasses, currentVersionClasses, i);
                     }
 
-                    if (header.permittedSubclasses != null) {
-                        for (String p : header.permittedSubclasses) {
-                            modified |= include(includedClasses, currentVersionClasses, p);
-                        }
-                    }
-
                     modified |= includeOutputType(Collections.singleton(header),
                                                   h -> "",
                                                   includedClasses,
@@ -2089,14 +2083,6 @@ public class CreateSymbols {
                 for (int i = 0; i < cf.interfaces.length; i++) {
                     additionalClasses.add(cf.getInterfaceName(i));
                 }
-                PermittedSubclasses_attribute permittedSubclasses =
-                        (PermittedSubclasses_attribute) cf.getAttribute(Attribute.PermittedSubclasses);
-
-                if (permittedSubclasses != null) {
-                    for (int subtype : permittedSubclasses.subtypes) {
-                        additionalClasses.add(getClassName(cf, subtype));
-                    }
-                }
 
                 for (String additional : additionalClasses) {
                     int dollar;
@@ -2408,9 +2394,6 @@ public class CreateSymbols {
                 assert feature instanceof ClassHeaderDescription;
                 PermittedSubclasses_attribute permittedSubclasses = (PermittedSubclasses_attribute) attr;
                 ClassHeaderDescription chd = (ClassHeaderDescription) feature;
-                if ((chd.flags & AccessFlags.ACC_ENUM) != 0) {
-                    break;
-                }
                 chd.permittedSubclasses = Arrays.stream(permittedSubclasses.subtypes)
                         .mapToObj(i -> getClassName(cf, i))
                         .collect(Collectors.toList());
@@ -3450,7 +3433,6 @@ public class CreateSymbols {
             }
             if (isSealed) {
                 output.append(" sealed true");
-                output.append(" permittedSubclasses " + serializeList(permittedSubclasses));
             }
             writeAttributes(output);
             output.append("\n");
@@ -3472,12 +3454,6 @@ public class CreateSymbols {
             nestMembers = deserializeList(nestMembersList);
             isRecord = reader.attributes.containsKey("record");
 
-            isSealed = reader.attributes.containsKey("sealed");
-            if (isSealed) {
-                String subclassesList = reader.attributes.get("permittedSubclasses");
-                permittedSubclasses = deserializeList(subclassesList);
-            }
-
             readAttributes(reader);
             reader.moveNext();
             if (isRecord) {
@@ -3485,6 +3461,11 @@ public class CreateSymbols {
             }
             readInnerClasses(reader);
 
+            isSealed = reader.attributes.containsKey("permittedSubclasses");
+            if (isSealed) {
+                String subclassesList = reader.attributes.get("permittedSubclasses");
+                permittedSubclasses = deserializeList(subclassesList);
+            }
             return true;
         }
 

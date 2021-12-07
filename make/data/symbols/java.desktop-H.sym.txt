@@ -288,6 +288,10 @@ class name java/awt/font/ImageGraphicAttribute
 header extends java/awt/font/GraphicAttribute flags 31
 innerclass innerClass java/awt/geom/Rectangle2D$Float outerClass java/awt/geom/Rectangle2D innerClassName Float flags 9
 
+class name java/awt/font/NumericShaper$Range
+header extends java/lang/Enum nestHost java/awt/font/NumericShaper sealed true flags 4021 signature Ljava/lang/Enum<Ljava/awt/font/NumericShaper$Range;>;
+innerclass innerClass java/awt/font/NumericShaper$Range outerClass java/awt/font/NumericShaper innerClassName Range flags 4009
+
 class name java/awt/font/ShapeGraphicAttribute
 header extends java/awt/font/GraphicAttribute flags 31
 innerclass innerClass java/awt/geom/Rectangle2D$Float outerClass java/awt/geom/Rectangle2D innerClassName Float flags 9
