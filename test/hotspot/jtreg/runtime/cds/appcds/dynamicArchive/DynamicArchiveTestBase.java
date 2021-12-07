@@ -36,6 +36,7 @@ import sun.hotspot.WhiteBox;
  */
 class DynamicArchiveTestBase {
     private static boolean executedIn_run = false;
+    private static boolean autoMode = false;  // -Xshare:auto
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
@@ -47,6 +48,7 @@ class DynamicArchiveTestBase {
         public void run(String args[]) throws Exception;
     }
 
+    public static void setAutoMode(boolean val) { autoMode = val; }
 
     /*
      * Tests for dynamic archives should be written using this pattern:
@@ -183,7 +185,7 @@ class DynamicArchiveTestBase {
             (topArchiveName == null) ? baseArchiveName :
             baseArchiveName + File.pathSeparator + topArchiveName;
         String[] cmdLine = TestCommon.concat(
-            "-Xshare:on",
+            autoMode ? "-Xshare:auto" : "-Xshare:on",
             "-XX:SharedArchiveFile=" + archiveFiles);
         cmdLine = TestCommon.concat(cmdLine, cmdLineSuffix);
         return execProcess("exec", null, cmdLine);
@@ -202,7 +204,7 @@ class DynamicArchiveTestBase {
             (topArchiveName == null) ? baseArchiveName :
             baseArchiveName + File.pathSeparator + topArchiveName;
         String[] cmdLine = TestCommon.concat(
-            "-Xshare:on",
+            autoMode ? "-Xshare:auto" : "-Xshare:on",
             "-XX:SharedArchiveFile=" + archiveFiles);
         cmdLine = TestCommon.concat(cmdLine, cmdLineSuffix);
         return execProcess("exec", jarDir, cmdLine);
