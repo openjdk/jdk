@@ -36,10 +36,10 @@ protected:
   G1GCPhaseTimes* _phase_times;
   uint _worker_id;
   EventGCPhaseParallel _event;
-  bool _initial_record;
+  bool _allow_multiple_record;
 
 public:
-  G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool initial_record = true);
+  G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool allow_multiple_record = false);
   virtual ~G1GCParPhaseTimesTracker();
 };
 
