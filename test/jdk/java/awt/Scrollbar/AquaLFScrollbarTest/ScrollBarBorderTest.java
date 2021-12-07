@@ -26,8 +26,10 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.nio.Buffer;
 
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 /*
  * @test
@@ -52,25 +54,16 @@ public class ScrollBarBorderTest {
     private static JPanel panel;
     private static JFrame frame;
 
-    public void createImage(int scrollbarValue, final BufferedImage image) throws Exception {
+    public void createAndShowGUI() throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 // create scroll bar
                 scrollBar = new JScrollBar(Scrollbar.HORIZONTAL);
                 scrollBar.setBorder(new CustomBorder());
-                scrollBar.setValue(scrollbarValue);
 
                 // create panel
-                panel = new JPanel() {
-                    @Override
-                    protected void paintComponent(final Graphics g) {
-                        Graphics2D graphics2D = image.createGraphics();
-                        super.paintComponent(graphics2D);
-                        graphics2D.dispose();
-                    }
-                };
-
+                panel = new JPanel();
                 panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
                 panel.setBorder(new EmptyBorder(20, 20, 20, 20));
                 panel.setSize(200,90);
@@ -81,31 +74,27 @@ public class ScrollBarBorderTest {
                 // create frame
                 frame = new JFrame("ScrollBarBorderTest");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//                frame.getContentPane().add(panel);
-                frame.getContentPane().add(new JLabel(new ImageIcon(image)));
+                frame.getContentPane().add(panel);
                 frame.pack();
+
+                frame.setVisible(true);
             }
         });
-
-        SwingUtilities.invokeAndWait(() -> frame.setVisible(true));
-        SwingUtilities.invokeAndWait(frame::dispose);
     }
 
     public void test() throws Exception {
-        final BufferedImage bi1 = new BufferedImage(550,90,TYPE_INT_ARGB);
-        final BufferedImage bi2 = new BufferedImage(550,90,TYPE_INT_ARGB);
+        createAndShowGUI();
+        BufferedImage image = new BufferedImage(panel.getWidth(),panel.getHeight(),TYPE_INT_ARGB);
+        Graphics2D graphics2D = image.createGraphics();
+        panel.paint(graphics2D);
+        graphics2D.dispose();
 
-        createImage(0,bi1);
-        createImage(Integer.MAX_VALUE,bi2);
-
-        for (int i = 0; i < bi1.getWidth(); i++) {
-            for (int j = 0; j < bi1.getHeight(); j++) {
-                int c1 = bi1.getRGB(i,j);
-                int c2 = bi2.getRGB(i,j);
-                if (c1 != c2) {
-                    // need to find location of border but colors are always 0
-                    System.out.println(i + " " + j + " " + "Color before " + c1);
-                    System.out.println(i + " " + j + " " + "Color after " + c2);
+        for (int i = 0; i < image.getWidth(); i++) {
+            for (int j = 0; j < image.getHeight(); j++) {
+                int c1 = image.getRGB(i,j);
+                // need to find location of border but colors are always 0
+                if(c1 != 0 && c1 != -1118482) {
+                    System.out.println(i + " " + j + " " + "Color: " + c1);
                 }
             }
         }
@@ -115,8 +104,8 @@ public class ScrollBarBorderTest {
         ScrollBarBorderTest borderTest = new ScrollBarBorderTest();
         borderTest.test();
 
-//        Thread.sleep(10000);
-//        throw new RuntimeException();
+        Thread.sleep(10000);
+        throw new RuntimeException();
     }
 
     // custom border
