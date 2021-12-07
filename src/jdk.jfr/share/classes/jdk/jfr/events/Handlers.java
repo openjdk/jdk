@@ -24,7 +24,6 @@
  */
 
 package jdk.jfr.events;
-
 import jdk.jfr.internal.handlers.EventHandler;
 import jdk.jfr.internal.Utils;
 

@@ -92,7 +92,7 @@ public final class JDKEvents {
         jdk.internal.event.TLSHandshakeEvent.class,
         jdk.internal.event.X509CertificateEvent.class,
         jdk.internal.event.X509ValidationEvent.class,
-        
+
         DirectBufferStatisticsEvent.class,
         JavaNativeAllocationEvent.class,
         JavaNativeFreeEvent.class,
