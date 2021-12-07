@@ -341,15 +341,12 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     switch(value->type()) {
       case T_INT:
         *addr = value->get_int();
-#ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print_cr("Reconstructed expression %d (INT): %d", i, (int)(*addr));
         }
-#endif
         break;
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
-#ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print("Reconstructed expression %d (OBJECT): ", i);
           oop o = cast_to_oop((address)(*addr));
@@ -360,7 +357,6 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
             tty->print_raw_cr(o->klass()->name()->as_C_string());
           }
         }
-#endif
         break;
       case T_CONFLICT:
         // A dead stack slot.  Initialize to null in case it is an oop.
@@ -380,15 +376,12 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     switch(value->type()) {
       case T_INT:
         *addr = value->get_int();
-#ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print_cr("Reconstructed local %d (INT): %d", i, (int)(*addr));
         }
-#endif
         break;
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
-#ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print("Reconstructed local %d (OBJECT): ", i);
           oop o = cast_to_oop((address)(*addr));
@@ -399,7 +392,6 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
             tty->print_raw_cr(o->klass()->name()->as_C_string());
           }
         }
-#endif
         break;
       case T_CONFLICT:
         // A dead location. If it is an oop then we need a NULL to prevent GC from following it
@@ -440,7 +432,6 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     }
   }
 
-#ifndef PRODUCT
   if (PrintDeoptimizationDetails) {
     ttyLocker ttyl;
     tty->print_cr("[%d Interpreted Frame]", ++unpack_counter);
@@ -464,7 +455,6 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     tty->print(" @ bci %d ", bci);
     tty->print_cr("sp = " PTR_FORMAT, p2i(iframe()->sp()));
   }
-#endif // PRODUCT
 
   // The expression stack and locals are in the resource area don't leave
   // a dangling pointer in the vframeArray we leave around for debug

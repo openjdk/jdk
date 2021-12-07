@@ -181,7 +181,6 @@ JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(
 JRT_END
 
 #if COMPILER2_OR_JVMCI
-#ifndef PRODUCT
 // print information about reallocated objects
 static void print_objects(JavaThread* deoptee_thread,
                           GrowableArray<ScopeValue*>* objects, bool realloc_failures) {
@@ -211,7 +210,6 @@ static void print_objects(JavaThread* deoptee_thread,
   }
   tty->print_raw(st.as_string());
 }
-#endif
 
 static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMethod* compiled_method,
                                   frame& deoptee, RegisterMap& map, GrowableArray<compiledVFrame*>* chunk,
@@ -262,11 +260,9 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMet
     }
     bool skip_internal = (compiled_method != NULL) && !compiled_method->is_compiled_by_jvmci();
     Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal);
-#ifndef PRODUCT
     if (TraceDeoptimization) {
       print_objects(deoptee_thread, objects, realloc_failures);
     }
-#endif
   }
   if (save_oop_result) {
     // Restore result.
@@ -281,9 +277,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
   assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, deoptee.id()), "must relock just once");
   assert(thread == Thread::current(), "should be");
   HandleMark hm(thread);
-#ifndef PRODUCT
   bool first = true;
-#endif
   for (int i = 0; i < chunk->length(); i++) {
     compiledVFrame* cvf = chunk->at(i);
     assert (cvf->scope() != NULL,"expect only compiled java frames");
@@ -292,7 +286,6 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
       bool relocked = Deoptimization::relock_objects(thread, monitors, deoptee_thread, deoptee,
                                                      exec_mode, realloc_failures);
       deoptimized_objects = deoptimized_objects || relocked;
-#ifndef PRODUCT
       if (PrintDeoptimizationDetails) {
         ResourceMark rm;
         stringStream st;
@@ -320,7 +313,6 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
         }
         tty->print_raw(st.as_string());
       }
-#endif // !PRODUCT
     }
   }
 }
@@ -728,12 +720,10 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   // must point to the vframeArray for the unpack frame.
   vframeArray* array = thread->vframe_array_head();
 
-#ifndef PRODUCT
   if (TraceDeoptimization) {
     tty->print_cr("DEOPT UNPACKING thread " INTPTR_FORMAT " vframeArray " INTPTR_FORMAT " mode %d",
                   p2i(thread), p2i(array), exec_mode);
   }
-#endif
   Events::log_deopt_message(thread, "DEOPT UNPACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT " mode %d",
               p2i(stub_frame.pc()), p2i(stub_frame.sp()), exec_mode);
 
@@ -1495,7 +1485,6 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
 vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures) {
   Events::log_deopt_message(thread, "DEOPT PACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT, p2i(fr.pc()), p2i(fr.sp()));
 
-#ifndef PRODUCT
   if (PrintDeoptimizationDetails) {
     ResourceMark rm;
     stringStream st;
@@ -1505,7 +1494,7 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
     for (int index = 0; index < chunk->length(); index++) {
       compiledVFrame* vf = chunk->at(index);
       st.print("       %2d - ", index);
-      vf->print_value_on(&st);
+      st.print("AllocatedObj(" INTPTR_FORMAT ")", p2i(vf));
       int bci = chunk->at(index)->raw_bci();
       const char* code_name;
       if (bci == SynchronizationEntryBCI) {
@@ -1517,13 +1506,12 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
       st.print(" - %s", code_name);
       st.print_cr(" @ bci %d ", bci);
       if (Verbose) {
-        vf->print_on(&st);
+        st.print_cr("AllocatedObj(" INTPTR_FORMAT ")", p2i(vf));
         st.cr();
       }
     }
     tty->print_raw(st.as_string());
   }
-#endif
 
   // Register map for next frame (used for stack crawl).  We capture
   // the state of the deopt'ing frame's caller.  Thus if we need to
@@ -1542,11 +1530,9 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
   // Compare the vframeArray to the collected vframes
   assert(array->structural_compare(thread, chunk), "just checking");
 
-#ifndef PRODUCT
   if (PrintDeoptimizationDetails) {
     tty->print_cr("     Created vframeArray " INTPTR_FORMAT, p2i(array));
   }
-#endif // PRODUCT
 
   return array;
 }
