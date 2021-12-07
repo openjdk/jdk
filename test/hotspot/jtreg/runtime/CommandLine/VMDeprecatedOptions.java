@@ -60,9 +60,6 @@ public class VMDeprecatedOptions {
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
-        if (!Platform.isDebugBuild()) {
-            deprecated.add(new String[]{"UseHeavyMonitors", "false"});
-        }
         DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
     };
 
