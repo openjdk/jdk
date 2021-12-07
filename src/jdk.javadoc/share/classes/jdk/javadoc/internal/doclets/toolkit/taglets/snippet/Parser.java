@@ -150,7 +150,7 @@ public final class Parser {
                     parsedTags = markupParser.parse(maybeMarkup);
                 } catch (ParseException e) {
                     // translate error position from markup to file line
-                    throw new ParseException(e::getMessage, markedUpLine.start("markup") + e.getPosition());
+                    throw new ParseException(e::getMessage, next.offset() + markedUpLine.start("markup") + e.getPosition());
                 }
                 for (Tag t : parsedTags) {
                     t.lineSourceOffset = next.offset();
