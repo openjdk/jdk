@@ -833,6 +833,8 @@ jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-
 
 # jdk_jpackage
 
+tools/jpackage/share/MultiNameTwoPhaseTest.java 8278233 macosx-x64
+
 ############################################################################
 
 # Client manual tests
