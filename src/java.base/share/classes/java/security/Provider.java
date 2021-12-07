@@ -232,8 +232,7 @@ public abstract class Provider extends Properties {
         this.info = info;
         this.serviceMap = new ConcurrentHashMap<>();
         this.legacyMap = new ConcurrentHashMap<>();
-        this.prngAlgos =
-                Collections.synchronizedSet(new LinkedHashSet<String>(6));
+        this.prngAlgos = new LinkedHashSet<String>(6);
         putId();
         initialized = true;
     }
@@ -885,8 +884,7 @@ public abstract class Provider extends Properties {
         }
         this.serviceMap = new ConcurrentHashMap<>();
         this.legacyMap = new ConcurrentHashMap<>();
-        this.prngAlgos =
-                Collections.synchronizedSet(new LinkedHashSet<String>(6));
+        this.prngAlgos = new LinkedHashSet<String>(6);
         implClear();
         initialized = true;
         putAll(copy);
