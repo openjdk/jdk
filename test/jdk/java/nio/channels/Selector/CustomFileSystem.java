@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,16 +24,14 @@
 
 /**
  * @test
- * @summary Verifies that an attempt to call SelectorProvider.provider().openSelector()
- *          on a non-default file system succeeds.
- * @library /test/lib
- * @build TestProvider UnixSocketInNonDefaultFS
- * @run main/othervm -Djava.nio.file.spi.DefaultFileSystemProvider=TestProvider UnixSocketInNonDefaultFS
+ * @summary Verifies that an attempt to call Selector.open() on a non-default
+ *          file system succeeds.
+ * @build CustomFileSystem CustomFileSystemProvider
+ * @run main/othervm -Djava.nio.file.spi.DefaultFileSystemProvider=CustomFileSystemProvider CustomFileSystem
  */
-import java.nio.channels.spi.SelectorProvider;
 
-public class UnixSocketInNonDefaultFS {
+public class CustomFileSystem {
     public static void main(String args[]) throws java.io.IOException {
-        SelectorProvider.provider().openSelector();
+        java.nio.channels.Selector.open();
     }
 }
