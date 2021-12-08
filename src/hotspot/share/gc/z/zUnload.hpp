@@ -24,7 +24,6 @@
 #ifndef SHARE_GC_Z_ZUNLOAD_HPP
 #define SHARE_GC_Z_ZUNLOAD_HPP
 
-class ConcurrentGCTimer;
 class ZWorkers;
 
 class ZUnload {
@@ -35,8 +34,8 @@ public:
   ZUnload(ZWorkers* workers);
 
   void prepare();
-  void unlink(ConcurrentGCTimer* gc_timer);
-  void purge(ConcurrentGCTimer* gc_timer);
+  void unlink();
+  void purge();
   void finish();
 };
 

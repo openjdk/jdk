@@ -407,12 +407,12 @@ void ZYoungCollector::mark_start() {
 }
 
 void ZYoungCollector::mark_roots() {
-  ZStatTimer timer(ZSubPhaseConcurrentYoungMarkRoots, gc_timer());
+  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRoots);
   _mark.mark_roots();
 }
 
 void ZYoungCollector::mark_follow() {
-  ZStatTimer timer(ZSubPhaseConcurrentYoungMarkFollow, gc_timer());
+  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkFollow);
   _mark.mark_follow();
 }
 
@@ -498,7 +498,7 @@ void ZYoungCollector::register_in_place_relocate_promoted(ZPage* page) {
 }
 
 void ZYoungCollector::scan_remembered_sets() {
-  ZStatTimer timer(ZSubPhaseConcurrentYoungMarkRootRemset, gc_timer());
+  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootRemset);
   _remembered.scan();
 }
 
@@ -542,12 +542,12 @@ void ZOldCollector::mark_start() {
 }
 
 void ZOldCollector::mark_roots() {
-  ZStatTimer timer(ZSubPhaseConcurrentOldMarkRoots, gc_timer());
+  ZStatTimerOld timer(ZSubPhaseConcurrentOldMarkRoots);
   _mark.mark_roots();
 }
 
 void ZOldCollector::mark_follow() {
-  ZStatTimer timer(ZSubPhaseConcurrentOldMarkFollow, gc_timer());
+  ZStatTimerOld timer(ZSubPhaseConcurrentOldMarkFollow);
   _mark.mark_follow();
 }
 
@@ -596,13 +596,13 @@ public:
 
 void ZOldCollector::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences
-  _reference_processor.process_references(gc_timer());
+  _reference_processor.process_references();
 
   // Process weak roots
   _weak_roots_processor.process_weak_roots();
 
   // Unlink stale metadata and nmethods
-  _unload.unlink(gc_timer());
+  _unload.unlink();
 
   // Perform a handshake. This is needed 1) to make sure that stale
   // metadata and nmethods are no longer observable. And 2), to
@@ -622,7 +622,7 @@ void ZOldCollector::process_non_strong_references() {
   ZResurrection::unblock();
 
   // Purge stale metadata and nmethods that were unlinked
-  _unload.purge(gc_timer());
+  _unload.purge();
 
   // Enqueue Soft/Weak/Final/PhantomReferences. Note that this
   // must be done after unblocking resurrection. Otherwise the
@@ -630,7 +630,7 @@ void ZOldCollector::process_non_strong_references() {
   // that were just enqueued, which would incorrectly return null
   // during the resurrection block window, since such referents
   // are only Finalizable marked.
-  _reference_processor.enqueue_references(gc_timer());
+  _reference_processor.enqueue_references();
 
   // Clear old markings claim bits.
   // Note: Clearing _claim_strong also clears _claim_finalizable.

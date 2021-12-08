@@ -136,18 +136,18 @@ void ZUnload::prepare() {
   DependencyContext::cleaning_start();
 }
 
-void ZUnload::unlink(ConcurrentGCTimer* gc_timer) {
+void ZUnload::unlink() {
   if (!ClassUnloading) {
     return;
   }
 
-  ZStatTimer timer(ZSubPhaseConcurrentClassesUnlink, gc_timer);
+  ZStatTimerOld timer(ZSubPhaseConcurrentClassesUnlink);
   SuspendibleThreadSetJoiner sts;
   bool unloading_occurred;
 
   {
     MutexLocker ml(ClassLoaderDataGraph_lock);
-    unloading_occurred = SystemDictionary::do_unloading(gc_timer);
+    unloading_occurred = SystemDictionary::do_unloading(ZHeap::heap()->old_collector()->gc_timer());
   }
 
   Klass::clean_weak_klass_links(unloading_occurred);
@@ -155,12 +155,12 @@ void ZUnload::unlink(ConcurrentGCTimer* gc_timer) {
   DependencyContext::cleaning_end();
 }
 
-void ZUnload::purge(ConcurrentGCTimer* gc_timer) {
+void ZUnload::purge() {
   if (!ClassUnloading) {
     return;
   }
 
-  ZStatTimer timer(ZSubPhaseConcurrentClassesPurge, gc_timer);
+  ZStatTimerOld timer(ZSubPhaseConcurrentClassesPurge);
 
   {
     SuspendibleThreadSetJoiner sts;

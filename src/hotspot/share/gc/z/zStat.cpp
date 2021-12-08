@@ -831,6 +831,12 @@ void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& sta
   }
 }
 
+ZStatTimerYoung::ZStatTimerYoung(const ZStatPhase& phase) :
+    ZStatTimer(phase, ZHeap::heap()->young_collector()->gc_timer()) {}
+
+ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase) :
+    ZStatTimer(phase, ZHeap::heap()->old_collector()->gc_timer()) {}
+
 ZStatTimerWorker::ZStatTimerWorker(const ZStatPhase& phase) :
     ZStatTimer(phase, NULL /* gc_timer */) {
   assert(ZThread::is_worker(), "Should only be called by worker thread");

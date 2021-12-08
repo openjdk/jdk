@@ -343,14 +343,14 @@ public:
   }
 };
 
-class ZStatTimerMinor : public ZStatTimer {
+class ZStatTimerYoung : public ZStatTimer {
 public:
-  ZStatTimerMinor(const ZStatPhase& phase);
+  ZStatTimerYoung(const ZStatPhase& phase);
 };
 
-class ZStatTimerMajor : public ZStatTimer {
+class ZStatTimerOld : public ZStatTimer {
 public:
-  ZStatTimerMajor(const ZStatPhase& phase);
+  ZStatTimerOld(const ZStatPhase& phase);
 };
 
 class ZStatTimerWorker : public ZStatTimer {

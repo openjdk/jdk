@@ -192,10 +192,6 @@ public:
   }
 };
 
-static ZYoungCollector* young_collector() {
-  return ZHeap::heap()->young_collector();
-}
-
 class ZRememberedScanPageTask : public ZRestartableTask {
 private:
   ZGenerationPagesParallelIterator _iterator;
@@ -215,25 +211,25 @@ public:
         // ... and as a side-effect clear the previous entries
         page->clear_previous_remembered();
       }
-      return !young_collector()->should_worker_stop();
+      return !ZHeap::heap()->young_collector()->should_worker_stop();
     });
   }
 };
 
 void ZRemembered::scan() const {
   if (ZHeap::heap()->old_collector()->is_phase_relocate()) {
-    ZStatTimer timer(ZSubPhaseConcurrentYoungMarkRootRemsetForwarding, young_collector()->gc_timer());
+    ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootRemsetForwarding);
     ZRememberedScanForwardingTask task(*this);
-    young_collector()->workers()->run(&task);
+    ZHeap::heap()->young_collector()->workers()->run(&task);
   }
 
-  ZStatTimer timer(ZSubPhaseConcurrentYoungMarkRootRemsetPage, young_collector()->gc_timer());
+  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootRemsetPage);
   ZRememberedScanPageTask task(*this);
-  young_collector()->workers()->run(&task);
+  ZHeap::heap()->young_collector()->workers()->run(&task);
 }
 
 void ZRemembered::scan_field(volatile zpointer* p) const {
-  assert(young_collector()->is_phase_mark(), "Wrong phase");
+  assert(ZHeap::heap()->young_collector()->is_phase_mark(), "Wrong phase");
 
   zaddress addr = ZBarrier::mark_young_good_barrier_on_oop_field(p);
 

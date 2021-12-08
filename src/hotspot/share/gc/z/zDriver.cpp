@@ -193,7 +193,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimer timer(ZPhasePauseMarkStartYoung, young_collector()->gc_timer());
+    ZStatTimerYoung timer(ZPhasePauseMarkStartYoung);
     ZServiceabilityPauseTracer tracer(ZGenerationId::young);
 
     collected_heap()->increment_total_collections(false /* full */);
@@ -213,7 +213,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimer timer(ZPhasePauseMarkStartYoungAndOld, young_collector()->gc_timer());
+    ZStatTimerYoung timer(ZPhasePauseMarkStartYoungAndOld);
     ZServiceabilityPauseTracer tracer(ZGenerationId::young);
 
     collected_heap()->increment_total_collections(true /* full */);
@@ -230,7 +230,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimer timer(ZPhasePauseMarkEndYoung, young_collector()->gc_timer());
+    ZStatTimerYoung timer(ZPhasePauseMarkEndYoung);
     ZServiceabilityPauseTracer tracer(ZGenerationId::young);
     return young_collector()->mark_end();
   }
@@ -247,7 +247,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimer timer(ZPhasePauseRelocateStartYoung, young_collector()->gc_timer());
+    ZStatTimerYoung timer(ZPhasePauseRelocateStartYoung);
     ZServiceabilityPauseTracer tracer(ZGenerationId::young);
     young_collector()->relocate_start();
     return true;
@@ -328,7 +328,7 @@ static void pause_mark_start_young() {
 }
 
 static void concurrent_mark_young() {
-  ZStatTimer timer(ZPhaseConcurrentMarkYoung, young_collector()->gc_timer());
+  ZStatTimerYoung timer(ZPhaseConcurrentMarkYoung);
   young_collector()->mark_roots();
   young_collector()->mark_follow();
 }
@@ -338,22 +338,22 @@ static bool pause_mark_end_young() {
 }
 
 static void concurrent_mark_continue_young() {
-  ZStatTimer timer(ZPhaseConcurrentMarkContinueYoung, young_collector()->gc_timer());
+  ZStatTimerYoung timer(ZPhaseConcurrentMarkContinueYoung);
   young_collector()->mark_follow();
 }
 
 static void concurrent_mark_free_young() {
-  ZStatTimer timer(ZPhaseConcurrentMarkFreeYoung, young_collector()->gc_timer());
+  ZStatTimerYoung timer(ZPhaseConcurrentMarkFreeYoung);
   young_collector()->mark_free();
 }
 
 static void concurrent_reset_relocation_set_young() {
-  ZStatTimer timer(ZPhaseConcurrentResetRelocationSetYoung, young_collector()->gc_timer());
+  ZStatTimerYoung timer(ZPhaseConcurrentResetRelocationSetYoung);
   young_collector()->reset_relocation_set();
 }
 
 static void concurrent_select_relocation_set_young() {
-  ZStatTimer timer(ZPhaseConcurrentSelectRelocationSetYoung, young_collector()->gc_timer());
+  ZStatTimerYoung timer(ZPhaseConcurrentSelectRelocationSetYoung);
   const bool promote_all = young_collector()->type() == ZYoungType::major_preclean;
   young_collector()->select_relocation_set(promote_all);
 }
@@ -363,7 +363,7 @@ static void pause_relocate_start_young() {
 }
 
 static void concurrent_relocate_young() {
-  ZStatTimer timer(ZPhaseConcurrentRelocatedYoung, young_collector()->gc_timer());
+  ZStatTimerYoung timer(ZPhaseConcurrentRelocatedYoung);
   young_collector()->relocate();
 }
 
@@ -533,7 +533,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimer timer(ZPhasePauseMarkEndOld, old_collector()->gc_timer());
+    ZStatTimerOld timer(ZPhasePauseMarkEndOld);
     ZServiceabilityPauseTracer tracer(ZGenerationId::old);
     return old_collector()->mark_end();
   }
@@ -550,7 +550,7 @@ public:
   }
 
   virtual bool do_operation() {
-    ZStatTimer timer(ZPhasePauseRelocateStartOld, old_collector()->gc_timer());
+    ZStatTimerOld timer(ZPhasePauseRelocateStartOld);
     ZServiceabilityPauseTracer tracer(ZGenerationId::old);
     old_collector()->relocate_start();
     return true;
@@ -573,7 +573,7 @@ public:
 };
 
 static void concurrent_mark_old() {
-  ZStatTimer timer(ZPhaseConcurrentMarkOld, old_collector()->gc_timer());
+  ZStatTimerOld timer(ZPhaseConcurrentMarkOld);
   ZBreakpoint::at_after_marking_started();
   old_collector()->mark_roots();
   old_collector()->mark_follow();
@@ -586,23 +586,23 @@ static bool pause_mark_end_old() {
 }
 
 static void concurrent_mark_continue_old() {
-  ZStatTimer timer(ZPhaseConcurrentMarkContinueOld, old_collector()->gc_timer());
+  ZStatTimerOld timer(ZPhaseConcurrentMarkContinueOld);
   old_collector()->mark_follow();
 }
 
 static void concurrent_mark_free_old() {
-  ZStatTimer timer(ZPhaseConcurrentMarkFreeOld, old_collector()->gc_timer());
+  ZStatTimerOld timer(ZPhaseConcurrentMarkFreeOld);
   old_collector()->mark_free();
 }
 
 static void concurrent_process_non_strong_references_old() {
-  ZStatTimer timer(ZPhaseConcurrentProcessNonStrongReferencesOld, old_collector()->gc_timer());
+  ZStatTimerOld timer(ZPhaseConcurrentProcessNonStrongReferencesOld);
   ZBreakpoint::at_after_reference_processing_started();
   old_collector()->process_non_strong_references();
 }
 
 static void concurrent_reset_relocation_set_old() {
-  ZStatTimer timer(ZPhaseConcurrentResetRelocationSetOld, old_collector()->gc_timer());
+  ZStatTimerOld timer(ZPhaseConcurrentResetRelocationSetOld);
   old_collector()->reset_relocation_set();
 }
 
@@ -628,7 +628,7 @@ static void pause_verify_old() {
 }
 
 static void concurrent_select_relocation_set_old() {
-  ZStatTimer timer(ZPhaseConcurrentSelectRelocationSetOld, old_collector()->gc_timer());
+  ZStatTimerOld timer(ZPhaseConcurrentSelectRelocationSetOld);
   old_collector()->select_relocation_set(false /* promote_all */);
 }
 
@@ -637,12 +637,12 @@ static void pause_relocate_start_old() {
 }
 
 static void concurrent_relocate_old() {
-  ZStatTimer timer(ZPhaseConcurrentRelocatedOld, old_collector()->gc_timer());
+  ZStatTimerOld timer(ZPhaseConcurrentRelocatedOld);
   old_collector()->relocate();
 }
 
 static void concurrent_roots_remap_old() {
-  ZStatTimer timer(ZPhaseConcurrentRootsRemapOld, old_collector()->gc_timer());
+  ZStatTimerOld timer(ZPhaseConcurrentRootsRemapOld);
   old_collector()->roots_remap();
 }
 
