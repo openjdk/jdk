@@ -287,15 +287,13 @@ final class P11KeyWrapCipher extends CipherSpi {
     private void cancelOperation() {
         token.ensureValid();
 
-        if (!P11Util.trySessionCancel(token, session,
+        if (P11Util.trySessionCancel(token, session,
                 (opmode == Cipher.ENCRYPT_MODE ? CKF_ENCRYPT : CKF_DECRYPT))) {
-            tryFinishingOff();
+            return;
         }
-    }
 
-    // only used by cancelOperation(); cancel by finishing operations
-    // avoid killSession as some hardware vendors may require re-login
-    private void tryFinishingOff() {
+        // cancel by finishing operations; avoid killSession as some
+        // hardware vendors may require re-login
         byte[] in = dataBuffer.toByteArray();
         int inLen = in.length;
         int bufLen = doFinalLength(0);

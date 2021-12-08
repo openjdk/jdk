@@ -281,15 +281,13 @@ final class P11Signature extends SignatureSpi {
     private void cancelOperation() {
         token.ensureValid();
 
-        if (!P11Util.trySessionCancel(token, session,
+        if (P11Util.trySessionCancel(token, session,
                 (mode == M_SIGN ? CKF_SIGN : CKF_VERIFY))) {
-            tryFinishingOff();
+            return;
         }
-    }
 
-    // only used by cancelOperation; cancel by finishing operations
-    // avoid killSession call as some hardware vendors may require re-login
-    private void tryFinishingOff() {
+        // cancel by finishing operations; avoid killSession call as some
+        // hardware vendors may require re-login
         try {
             if (mode == M_SIGN) {
                 if (type == T_UPDATE) {

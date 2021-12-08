@@ -446,15 +446,13 @@ final class P11Cipher extends CipherSpi {
     private void cancelOperation() {
         token.ensureValid();
 
-        if (!P11Util.trySessionCancel(token, session,
+        if (P11Util.trySessionCancel(token, session,
                 (encrypt ? CKF_ENCRYPT : CKF_DECRYPT))) {
-            tryFinishingOff();
+            return;
         }
-    }
 
-    // only used by cancelOperation(); cancel by finishing operations
-    // avoid killSession as some hardware vendors may require re-login
-    private void tryFinishingOff() {
+        // cancel by finishing operations; avoid killSession as
+        // some hardware vendors may require re-login
         try {
             int bufLen = doFinalLength(0);
             byte[] buffer = new byte[bufLen];

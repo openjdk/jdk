@@ -277,14 +277,12 @@ final class P11RSACipher extends CipherSpi {
                 throw new AssertionError("Unexpected value: " + mode);
             }
         };
-        if (!P11Util.trySessionCancel(token, session, flags)) {
-            tryFinishingOff();
+        if (P11Util.trySessionCancel(token, session, flags)) {
+            return;
         }
-    }
 
-    // only used by cancelOperation(); cancel by finishing operations
-    // avoid killSession as some hardware vendors may require re-login
-    private void tryFinishingOff() {
+        // cancel by finishing operations; avoid killSession as some
+        // hardware vendors may require re-login
         try {
             PKCS11 p11 = token.p11;
             int inLen = maxInputSize;
