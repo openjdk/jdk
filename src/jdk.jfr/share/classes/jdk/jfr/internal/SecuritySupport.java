@@ -41,6 +41,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
@@ -77,7 +78,6 @@ public final class SecuritySupport {
     private static final Module JFR_MODULE = Event.class.getModule();
     public  static final SafePath JFC_DIRECTORY = getPathInProperty("java.home", "lib/jfr");
     public static final FileAccess PRIVILEGED = new Privileged();
-    static final SafePath USER_HOME = getPathInProperty("user.home", null);
     static final SafePath JAVA_IO_TMPDIR = getPathInProperty("java.io.tmpdir", null);
 
     static {
@@ -365,8 +365,8 @@ public final class SecuritySupport {
         doPriviligedIO(() -> Files.walkFileTree(safePath.toPath(), new DirectoryCleaner()));
     }
 
-    static SafePath toRealPath(SafePath safePath) throws IOException {
-        return new SafePath(doPrivilegedIOWithReturn(() -> safePath.toPath().toRealPath()));
+    static SafePath toRealPath(SafePath safePath, LinkOption... options) throws IOException {
+        return new SafePath(doPrivilegedIOWithReturn(() -> safePath.toPath().toRealPath(options)));
     }
 
     static boolean existDirectory(SafePath directory) throws IOException {

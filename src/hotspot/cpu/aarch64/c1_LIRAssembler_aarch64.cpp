@@ -187,14 +187,13 @@ Address LIR_Assembler::as_Address(LIR_Address* addr, Register tmp) {
       default:
         ShouldNotReachHere();
       }
-  } else  {
-    intptr_t addr_offset = intptr_t(addr->disp());
-    if (Address::offset_ok_for_immed(addr_offset, addr->scale()))
-      return Address(base, addr_offset, Address::lsl(addr->scale()));
-    else {
-      __ mov(tmp, addr_offset);
-      return Address(base, tmp, Address::lsl(addr->scale()));
-    }
+  } else {
+    assert(addr->scale() == 0,
+           "expected for immediate operand, was: %d", addr->scale());
+    ptrdiff_t offset = ptrdiff_t(addr->disp());
+    // NOTE: Does not handle any 16 byte vector access.
+    const uint type_size = type2aelembytes(addr->type(), true);
+    return __ legitimize_address(Address(base, offset), type_size, tmp);
   }
   return Address();
 }
@@ -439,7 +438,11 @@ int LIR_Assembler::emit_unwind_handler() {
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::r0_opr);
     stub = new MonitorExitStub(FrameMap::r0_opr, true, 0);
-    __ unlock_object(r5, r4, r0, *stub->entry());
+    if (UseHeavyMonitors) {
+      __ b(*stub->entry());
+    } else {
+      __ unlock_object(r5, r4, r0, *stub->entry());
+    }
     __ bind(*stub->continuation());
   }
 
@@ -2563,7 +2566,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // may not be an oop
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
-  if (!UseFastLocking) {
+  if (UseHeavyMonitors) {
     __ b(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");

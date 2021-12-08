@@ -192,7 +192,7 @@ public class RequiredModelMBean
      *
      * @exception MBeanException Wraps a distributed communication Exception.
      * @exception RuntimeOperationsException Wraps an
-     *    {link java.lang.IllegalArgumentException}:
+     *    {@link java.lang.IllegalArgumentException}:
      *          The MBeanInfo passed in parameter is null.
      *
      **/

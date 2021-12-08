@@ -616,12 +616,9 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   int reg_save_area_size = compute_reg_save_area_size(abi);
   int arg_save_area_size = compute_arg_save_area_size(conv);
   int res_save_area_size = compute_res_save_area_size(conv);
-  // To spill receiver during deopt
-  int deopt_spill_size = 1 * BytesPerWord;
 
   int shuffle_area_offset    = 0;
-  int deopt_spill_offset     = shuffle_area_offset    + out_arg_area;
-  int res_save_area_offset   = deopt_spill_offset     + deopt_spill_size;
+  int res_save_area_offset   = shuffle_area_offset    + out_arg_area;
   int arg_save_area_offset   = res_save_area_offset   + res_save_area_size;
   int reg_save_area_offset   = arg_save_area_offset   + arg_save_area_size;
   int frame_data_offset      = reg_save_area_offset   + reg_save_area_size;
@@ -647,9 +644,6 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   //      |                     |
   //      | res_save_area       |
   //      |---------------------| = res_save_are_offset
-  //      |                     |
-  //      | deopt_spill         |
-  //      |---------------------| = deopt_spill_offset
   //      |                     |
   // SP-> | out_arg_area        |   needs to be at end for shadow space
   //

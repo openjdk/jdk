@@ -114,7 +114,7 @@ public final class Utils {
     }
 
     private static boolean getBoolean(XMLCryptoContext xc, String name) {
-        Boolean value = (Boolean)xc.getProperty(name);
+        Boolean value = (Boolean) xc.getProperty(name);
         return value != null && value;
     }
 }

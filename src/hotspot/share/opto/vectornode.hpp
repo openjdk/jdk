@@ -919,23 +919,19 @@ class VectorCmpMaskedNode : public TypeNode {
   virtual int Opcode() const;
 };
 
+//------------------------------VectorMaskGenNode----------------------------------
 class VectorMaskGenNode : public TypeNode {
  public:
-  VectorMaskGenNode(Node* length, const Type* ty, BasicType ety): TypeNode(ty, 2), _elemType(ety) {
+  VectorMaskGenNode(Node* length, const Type* ty): TypeNode(ty, 2) {
     init_req(1, length);
   }
 
   virtual int Opcode() const;
-  BasicType get_elem_type()  { return _elemType;}
-  virtual  uint  size_of() const { return sizeof(VectorMaskGenNode); }
-  virtual uint  ideal_reg() const {
-    return Op_RegVectMask;
-  }
-
-  private:
-   BasicType _elemType;
+  virtual uint ideal_reg() const { return Op_RegVectMask; }
+  static Node* make(Node* length, BasicType vmask_bt);
 };
 
+//------------------------------VectorMaskOpNode-----------------------------------
 class VectorMaskOpNode : public TypeNode {
  public:
   VectorMaskOpNode(Node* mask, const Type* ty, int mopc):
