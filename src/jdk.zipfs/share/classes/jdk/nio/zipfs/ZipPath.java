@@ -200,7 +200,7 @@ final class ZipPath implements Path {
             return new URI("jar",
                            decodeUri(zfs.getZipFile().toUri().toString()) +
                            "!" +
-                           zfs.getString(toAbsolutePath().path),
+                           zfs.lookupStringForUri(getResolvedPath()),
                            null);
         } catch (Exception ex) {
             throw new AssertionError(ex);
