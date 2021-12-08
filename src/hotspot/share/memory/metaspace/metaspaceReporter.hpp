@@ -44,7 +44,9 @@ public:
     // Print details about the underlying virtual spaces.
     ShowVSList                  = (1 << 3),
     // If show_loaders: show loaded classes for each loader.
-    ShowClasses                 = (1 << 4)
+    ShowClasses                 = (1 << 4),
+    // Print details about the underlying virtual spaces.
+    ShowChunkFreeList           = (1 << 5)
   };
 
   // This will print out a basic metaspace usage report but

@@ -270,7 +270,7 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
      * the penalty of prematurly killing SSL sessions.
      */
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected final void finalize() throws Throwable {
         try {
             close();

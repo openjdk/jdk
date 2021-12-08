@@ -43,6 +43,7 @@ import javax.swing.text.StyleContext;
  * @author  Sunita Mani
  *
  */
+@SuppressWarnings("doclint:missing")
 public class HTML {
 
     /**

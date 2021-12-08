@@ -2272,13 +2272,13 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Phi(...MergeMem(m0, m1:AT1, m2:AT2)...) into
         //     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
         PhaseIterGVN* igvn = phase->is_IterGVN();
+        assert(igvn != NULL, "sanity check");
         Node* hook = new Node(1);
         PhiNode* new_base = (PhiNode*) clone();
         // Must eagerly register phis, since they participate in loops.
-        if (igvn) {
-          igvn->register_new_node_with_optimizer(new_base);
-          hook->add_req(new_base);
-        }
+        igvn->register_new_node_with_optimizer(new_base);
+        hook->add_req(new_base);
+
         MergeMemNode* result = MergeMemNode::make(new_base);
         for (uint i = 1; i < req(); ++i) {
           Node *ii = in(i);
@@ -2290,10 +2290,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               if (mms.is_empty()) {
                 Node* new_phi = new_base->slice_memory(mms.adr_type(phase->C));
                 made_new_phi = true;
-                if (igvn) {
-                  igvn->register_new_node_with_optimizer(new_phi);
-                  hook->add_req(new_phi);
-                }
+                igvn->register_new_node_with_optimizer(new_phi);
+                hook->add_req(new_phi);
                 mms.set_memory(new_phi);
               }
               Node* phi = mms.memory();
@@ -2311,6 +2309,13 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             }
           }
         }
+        // Already replace this phi node to cut it off from the graph to not interfere in dead loop checks during the
+        // transformations of the new phi nodes below. Otherwise, we could wrongly conclude that there is no dead loop
+        // because we are finding this phi node again. Also set the type of the new MergeMem node in case we are also
+        // visiting it in the transformations below.
+        igvn->replace_node(this, result);
+        igvn->set_type(result, result->bottom_type());
+
         // now transform the new nodes, and return the mergemem
         for (MergeMemStream mms(result); mms.next_non_empty(); ) {
           Node* phi = mms.memory();
@@ -2516,7 +2521,7 @@ bool PhiNode::is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase) {
 //------------------------------is_tripcount-----------------------------------
 bool PhiNode::is_tripcount(BasicType bt) const {
   return (in(0) != NULL && in(0)->is_BaseCountedLoop() &&
-          in(0)->as_BaseCountedLoop()->operates_on(bt, true) &&
+          in(0)->as_BaseCountedLoop()->bt() == bt &&
           in(0)->as_BaseCountedLoop()->phi() == this);
 }
 

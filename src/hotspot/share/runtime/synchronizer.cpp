@@ -417,6 +417,14 @@ void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread
   }
 }
 
+static bool useHeavyMonitors() {
+#if defined(X86) || defined(AARCH64) || defined(PPC64)
+  return UseHeavyMonitors;
+#else
+  return false;
+#endif
+}
+
 // -----------------------------------------------------------------------------
 // Monitor Enter/Exit
 // The interpreter and compiler assembly code tries to lock using the fast path
@@ -428,28 +436,33 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
     handle_sync_on_value_based_class(obj, current);
   }
 
-  markWord mark = obj->mark();
-  if (mark.is_neutral()) {
-    // Anticipate successful CAS -- the ST of the displaced mark must
-    // be visible <= the ST performed by the CAS.
-    lock->set_displaced_header(mark);
-    if (mark == obj()->cas_set_mark(markWord::from_pointer(lock), mark)) {
+  if (!useHeavyMonitors()) {
+    markWord mark = obj->mark();
+    if (mark.is_neutral()) {
+      // Anticipate successful CAS -- the ST of the displaced mark must
+      // be visible <= the ST performed by the CAS.
+      lock->set_displaced_header(mark);
+      if (mark == obj()->cas_set_mark(markWord::from_pointer(lock), mark)) {
+        return;
+      }
+      // Fall through to inflate() ...
+    } else if (mark.has_locker() &&
+               current->is_lock_owned((address)mark.locker())) {
+      assert(lock != mark.locker(), "must not re-lock the same lock");
+      assert(lock != (BasicLock*)obj->mark().value(), "don't relock with same BasicLock");
+      lock->set_displaced_header(markWord::from_pointer(NULL));
       return;
     }
-    // Fall through to inflate() ...
-  } else if (mark.has_locker() &&
-             current->is_lock_owned((address)mark.locker())) {
-    assert(lock != mark.locker(), "must not re-lock the same lock");
-    assert(lock != (BasicLock*)obj->mark().value(), "don't relock with same BasicLock");
-    lock->set_displaced_header(markWord::from_pointer(NULL));
-    return;
+
+    // The object header will never be displaced to this lock,
+    // so it does not matter what the value is, except that it
+    // must be non-zero to avoid looking like a re-entrant lock,
+    // and must not look locked either.
+    lock->set_displaced_header(markWord::unused_mark());
+  } else if (VerifyHeavyMonitors) {
+    guarantee(!obj->mark().has_locker(), "must not be stack-locked");
   }
 
-  // The object header will never be displaced to this lock,
-  // so it does not matter what the value is, except that it
-  // must be non-zero to avoid looking like a re-entrant lock,
-  // and must not look locked either.
-  lock->set_displaced_header(markWord::unused_mark());
   // An async deflation can race after the inflate() call and before
   // enter() can make the ObjectMonitor busy. enter() returns false if
   // we have lost the race to async deflation and we simply try again.
@@ -462,45 +475,49 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
 }
 
 void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) {
-  markWord mark = object->mark();
+  if (!useHeavyMonitors()) {
+    markWord mark = object->mark();
 
-  markWord dhw = lock->displaced_header();
-  if (dhw.value() == 0) {
-    // If the displaced header is NULL, then this exit matches up with
-    // a recursive enter. No real work to do here except for diagnostics.
+    markWord dhw = lock->displaced_header();
+    if (dhw.value() == 0) {
+      // If the displaced header is NULL, then this exit matches up with
+      // a recursive enter. No real work to do here except for diagnostics.
 #ifndef PRODUCT
-    if (mark != markWord::INFLATING()) {
-      // Only do diagnostics if we are not racing an inflation. Simply
-      // exiting a recursive enter of a Java Monitor that is being
-      // inflated is safe; see the has_monitor() comment below.
-      assert(!mark.is_neutral(), "invariant");
-      assert(!mark.has_locker() ||
-             current->is_lock_owned((address)mark.locker()), "invariant");
-      if (mark.has_monitor()) {
-        // The BasicLock's displaced_header is marked as a recursive
-        // enter and we have an inflated Java Monitor (ObjectMonitor).
-        // This is a special case where the Java Monitor was inflated
-        // after this thread entered the stack-lock recursively. When a
-        // Java Monitor is inflated, we cannot safely walk the Java
-        // Monitor owner's stack and update the BasicLocks because a
-        // Java Monitor can be asynchronously inflated by a thread that
-        // does not own the Java Monitor.
-        ObjectMonitor* m = mark.monitor();
-        assert(m->object()->mark() == mark, "invariant");
-        assert(m->is_entered(current), "invariant");
+      if (mark != markWord::INFLATING()) {
+        // Only do diagnostics if we are not racing an inflation. Simply
+        // exiting a recursive enter of a Java Monitor that is being
+        // inflated is safe; see the has_monitor() comment below.
+        assert(!mark.is_neutral(), "invariant");
+        assert(!mark.has_locker() ||
+        current->is_lock_owned((address)mark.locker()), "invariant");
+        if (mark.has_monitor()) {
+          // The BasicLock's displaced_header is marked as a recursive
+          // enter and we have an inflated Java Monitor (ObjectMonitor).
+          // This is a special case where the Java Monitor was inflated
+          // after this thread entered the stack-lock recursively. When a
+          // Java Monitor is inflated, we cannot safely walk the Java
+          // Monitor owner's stack and update the BasicLocks because a
+          // Java Monitor can be asynchronously inflated by a thread that
+          // does not own the Java Monitor.
+          ObjectMonitor* m = mark.monitor();
+          assert(m->object()->mark() == mark, "invariant");
+          assert(m->is_entered(current), "invariant");
+        }
       }
-    }
 #endif
-    return;
-  }
-
-  if (mark == markWord::from_pointer(lock)) {
-    // If the object is stack-locked by the current thread, try to
-    // swing the displaced header from the BasicLock back to the mark.
-    assert(dhw.is_neutral(), "invariant");
-    if (object->cas_set_mark(dhw, mark) == mark) {
       return;
     }
+
+    if (mark == markWord::from_pointer(lock)) {
+      // If the object is stack-locked by the current thread, try to
+      // swing the displaced header from the BasicLock back to the mark.
+      assert(dhw.is_neutral(), "invariant");
+      if (object->cas_set_mark(dhw, mark) == mark) {
+        return;
+      }
+    }
+  } else if (VerifyHeavyMonitors) {
+    guarantee(!object->mark().has_locker(), "must not be stack-locked");
   }
 
   // We have to take the slow-path of possible inflation and then exit.
@@ -804,7 +821,10 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     markWord temp, test;
     intptr_t hash;
     markWord mark = read_stable_mark(obj);
-
+    if (VerifyHeavyMonitors) {
+      assert(UseHeavyMonitors, "+VerifyHeavyMonitors requires +UseHeavyMonitors");
+      guarantee(!mark.has_locker(), "must not be stack locked");
+    }
     if (mark.is_neutral()) {               // if this is a normal header
       hash = mark.hash();
       if (hash != 0) {                     // if it has a hash, just return it
