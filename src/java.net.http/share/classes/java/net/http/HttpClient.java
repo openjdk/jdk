@@ -373,6 +373,10 @@ public abstract class HttpClient {
          * @return this builder
          * @throws UnsupportedOperationException if this builder doesn't support
          *         configuring a local address
+         * @throws SecurityException If a security manager has been installed and
+         *         the {@code localAddr} is an <i>Internet Protocol</i> socket address
+         *         and the security manager's {@link SecurityManager#checkListen checkListen}
+         *         method disallows binding to the given socket address.
          * @since 19
          */
         default Builder localAddress(SocketAddress localAddr) {
