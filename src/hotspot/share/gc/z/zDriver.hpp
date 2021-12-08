@@ -50,6 +50,7 @@ private:
   ZDriverPort       _port;
   ConcurrentGCTimer _gc_timer;
   ZMinorTracer      _jfr_tracer;
+  size_t            _used_at_start;
 
   void gc(const ZDriverRequest& request);
   void handle_alloc_stalls() const;
@@ -66,6 +67,9 @@ public:
   void collect(const ZDriverRequest& request);
 
   GCTracer* jfr_tracer();
+
+  void set_used_at_start(size_t used);
+  size_t used_at_start() const;
 };
 
 class ZDriverMajor : public ConcurrentGCThread {
@@ -74,6 +78,7 @@ private:
   ZDriverMinor* const _minor;
   ConcurrentGCTimer   _gc_timer;
   ZMajorTracer        _jfr_tracer;
+  size_t              _used_at_start;
 
   void gc(const ZDriverRequest& request);
   void handle_alloc_stalls() const;
@@ -90,6 +95,9 @@ public:
   void collect(const ZDriverRequest& request);
 
   GCTracer* jfr_tracer();
+
+  void set_used_at_start(size_t used);
+  size_t used_at_start() const;
 };
 
 #endif // SHARE_GC_Z_ZDRIVER_HPP

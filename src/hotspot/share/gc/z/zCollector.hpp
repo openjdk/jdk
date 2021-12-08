@@ -128,7 +128,6 @@ public:
   ZStatMark* stat_mark();
   ZStatRelocation* stat_relocation();
 
-  void at_collection_start();
   void at_generation_collection_start(ConcurrentGCTimer* gc_timer);
   void at_generation_collection_end();
 

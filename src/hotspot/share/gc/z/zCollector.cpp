@@ -330,10 +330,6 @@ void ZCollector::set_phase(Phase new_phase) {
   _phase = new_phase;
 }
 
-void ZCollector::at_collection_start() {
-  stat_heap()->at_collection_start(_page_allocator->stats(this));
-}
-
 void ZCollector::at_generation_collection_start(ConcurrentGCTimer* gc_timer) {
   set_gc_timer(gc_timer);
   stat_cycle()->at_start();

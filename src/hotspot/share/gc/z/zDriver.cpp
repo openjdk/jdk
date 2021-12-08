@@ -434,7 +434,8 @@ static void collect_young(ZYoungType type, ConcurrentGCTimer* timer) {
 ZDriverMinor::ZDriverMinor() :
     _port(),
     _gc_timer(),
-    _jfr_tracer() {
+    _jfr_tracer(),
+    _used_at_start() {
   set_name("ZDriverMinor");
   create_and_start();
 }
@@ -466,6 +467,14 @@ GCTracer* ZDriverMinor::jfr_tracer() {
   return &_jfr_tracer;
 }
 
+void ZDriverMinor::set_used_at_start(size_t used) {
+  _used_at_start = used;
+}
+
+size_t ZDriverMinor::used_at_start() const {
+  return _used_at_start;
+}
+
 class ZDriverScopeMinor : public StackObj {
 private:
   GCIdMark                   _gc_id;
@@ -481,9 +490,6 @@ public:
       _gc_cause_setter(collected_heap(), _gc_cause),
       _stat_timer(ZPhaseCollectionMinor, gc_timer),
       _tracer(true /* minor */) {
-    // Update statistics
-    young_collector()->at_collection_start();
-
     // Select number of young worker threads to use
     const uint young_nworkers = select_active_young_worker_threads(request);
     young_collector()->set_active_workers(young_nworkers);
@@ -794,7 +800,8 @@ ZDriverMajor::ZDriverMajor(ZDriverMinor* minor) :
     _port(),
     _minor(minor),
     _gc_timer(),
-    _jfr_tracer() {
+    _jfr_tracer(),
+    _used_at_start() {
   set_name("ZDriverMajor");
   create_and_start();
 }
@@ -841,6 +848,14 @@ GCTracer* ZDriverMajor::jfr_tracer() {
   return &_jfr_tracer;
 }
 
+void ZDriverMajor::set_used_at_start(size_t used) {
+  _used_at_start = used;
+}
+
+size_t ZDriverMajor::used_at_start() const {
+  return _used_at_start;
+}
+
 class ZDriverScopeMajor : public StackObj {
 private:
   GCIdMark                   _gc_id;
@@ -856,9 +871,6 @@ public:
       _gc_cause_setter(collected_heap(), _gc_cause),
       _stat_timer(ZPhaseCollectionMajor, gc_timer),
       _tracer(false /* minor */) {
-    // Update statistics
-    old_collector()->at_collection_start();
-
     // Set up soft reference policy
     const bool clear = should_clear_soft_references(request.cause());
     old_collector()->set_soft_reference_policy(clear);

@@ -632,11 +632,25 @@ GCTracer* ZStatPhaseCollection::jfr_tracer() const {
       : ZCollectedHeap::heap()->major_jfr_tracer();
 }
 
+void ZStatPhaseCollection::set_used_at_start(size_t used) const {
+  return _minor
+    ? ZCollectedHeap::heap()->minor_set_used_at_start(used)
+    : ZCollectedHeap::heap()->major_set_used_at_start(used);
+}
+
+size_t ZStatPhaseCollection::used_at_start() const {
+  return _minor
+    ? ZCollectedHeap::heap()->minor_used_at_start()
+    : ZCollectedHeap::heap()->major_used_at_start();
+}
+
 void ZStatPhaseCollection::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   timer->register_gc_start(start);
 
   jfr_tracer()->report_gc_start(ZCollectedHeap::heap()->gc_cause(), start);
   ZCollectedHeap::heap()->trace_heap_before_gc(jfr_tracer());
+
+  set_used_at_start(ZHeap::heap()->used());
 
   log_info(gc, start)("%s (%s)", name(), GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
 }
@@ -655,12 +669,13 @@ void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& s
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  const ZStatHeap* const stat = ZHeap::heap()->old_collector()->stat_heap();
+  const size_t used_at_end = ZHeap::heap()->used();
+
   log_info(gc)("%s (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
                name(),
                GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
-               ZSIZE_ARGS(stat->used_at_collection_start()),
-               ZSIZE_ARGS(stat->used_at_collection_end()));
+               ZSIZE_ARGS(used_at_start()),
+               ZSIZE_ARGS(used_at_end));
 }
 
 ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id) :
@@ -1491,14 +1506,6 @@ void ZStatHeap::at_initialize(size_t min_capacity, size_t max_capacity) {
   _at_initialize.max_capacity = max_capacity;
 }
 
-void ZStatHeap::at_collection_start(const ZPageAllocatorStats& stats) {
-  _at_collection_start.soft_max_capacity = stats.soft_max_capacity();
-  _at_collection_start.capacity = stats.capacity();
-  _at_collection_start.free = free(stats.used());
-  _at_collection_start.used = stats.used();
-  _at_collection_start.used_generation = stats.used_generation();
-}
-
 void ZStatHeap::at_generation_collection_start(const ZPageAllocatorStats& stats) {
   _at_generation_collection_start.soft_max_capacity = stats.soft_max_capacity();
   _at_generation_collection_start.capacity = stats.capacity();
@@ -1567,10 +1574,6 @@ size_t ZStatHeap::max_capacity() {
   return _at_initialize.max_capacity;
 }
 
-size_t ZStatHeap::used_at_collection_start() const {
-  return _at_collection_start.used;
-}
-
 size_t ZStatHeap::used_at_generation_collection_start() const {
   return _at_generation_collection_start.used;
 }
@@ -1585,10 +1588,6 @@ size_t ZStatHeap::live_at_mark_end() const {
 
 size_t ZStatHeap::used_at_relocate_end() const {
   return _at_relocate_end.used;
-}
-
-size_t ZStatHeap::used_at_collection_end() const {
-  return used_at_relocate_end();
 }
 
 size_t ZStatHeap::used_at_generation_collection_end() const {
@@ -1703,4 +1702,3 @@ void ZStatHeap::print(const ZCollector* collector) const {
                      .left(ZTABLE_ARGS(_at_relocate_end.compacted))
                      .end());
 }
-

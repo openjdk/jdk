@@ -229,6 +229,9 @@ private:
 
   GCTracer* jfr_tracer() const;
 
+  void set_used_at_start(size_t used) const;
+  size_t used_at_start() const;
+
 public:
   ZStatPhaseCollection(const char* name, bool minor);
 
@@ -568,14 +571,6 @@ private:
     size_t max_capacity;
   } _at_initialize;
 
-  struct ZAtCollectionStart {
-    size_t soft_max_capacity;
-    size_t capacity;
-    size_t free;
-    size_t used;
-    size_t used_generation;
-  } _at_collection_start;
-
   struct ZAtGenerationCollectionStart {
     size_t soft_max_capacity;
     size_t capacity;
@@ -643,7 +638,6 @@ private:
 
 public:
   void at_initialize(size_t min_capacity, size_t max_capacity);
-  void at_collection_start(const ZPageAllocatorStats& stats);
   void at_generation_collection_start(const ZPageAllocatorStats& stats);
   void at_mark_start(const ZPageAllocatorStats& stats);
   void at_mark_end(const ZPageAllocatorStats& stats);
@@ -652,12 +646,10 @@ public:
   void at_relocate_end(const ZPageAllocatorStats& stats);
 
   static size_t max_capacity();
-  size_t used_at_collection_start() const;
   size_t used_at_generation_collection_start() const;
   size_t used_at_mark_start() const;
   size_t live_at_mark_end() const;
   size_t used_at_relocate_end() const;
-  size_t used_at_collection_end() const;
   size_t used_at_generation_collection_end() const;
 
   void print(const ZCollector* collector) const;

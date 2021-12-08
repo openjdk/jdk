@@ -370,6 +370,22 @@ GCTracer* ZCollectedHeap::major_jfr_tracer() {
   return _driver_major->jfr_tracer();
 }
 
+size_t ZCollectedHeap::minor_used_at_start() const {
+  return _driver_minor->used_at_start();
+}
+
+size_t ZCollectedHeap::major_used_at_start() const {
+  return _driver_major->used_at_start();
+}
+
+void ZCollectedHeap::minor_set_used_at_start(size_t used) {
+  return _driver_minor->set_used_at_start(used);
+}
+
+void ZCollectedHeap::major_set_used_at_start(size_t used) {
+  return _driver_major->set_used_at_start(used);
+}
+
 void ZCollectedHeap::verify(VerifyOption option /* ignored */) {
   _heap.verify();
 }
