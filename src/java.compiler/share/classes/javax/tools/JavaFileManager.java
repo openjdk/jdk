@@ -28,6 +28,7 @@ package javax.tools;
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -80,8 +81,10 @@ import static javax.tools.JavaFileObject.Kind;
  * href="http://www.ietf.org/rfc/rfc3986.txt">RFC&nbsp;3986</a>,
  * section&nbsp;3.3.  Informally, this should be true:
  *
- * <!-- URI.create(relativeName).normalize().getPath().equals(relativeName) -->
- * <pre>  URI.{@linkplain java.net.URI#create create}(relativeName).{@linkplain java.net.URI#normalize() normalize}().{@linkplain java.net.URI#getPath getPath}().equals(relativeName)</pre>
+ * {@snippet id="valid-relative-name" lang=java :
+ *     // @link substring="create" target="URI#create" : @link substring=normalize target="URI#normalize" : @link substring=getPath target="URI#getPath" :
+ *     URI.create(relativeName).normalize().getPath().equals(relativeName)
+ *     }
  *
  * <p>All methods in this interface might throw a SecurityException.
  *
@@ -403,7 +406,9 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * StandardLocation#SOURCE_PATH SOURCE_PATH} location, this method
      * might be called like so:
      *
-     * <pre>getFileForInput(SOURCE_PATH, "com.sun.tools.javac", "resources/compiler.properties");</pre>
+     * {@snippet id="call-getFileForInput" lang=java :
+     * getFileForInput(SOURCE_PATH, "com.sun.tools.javac", "resources/compiler.properties");
+     * }
      *
      * <p>If the call was executed on Windows, with SOURCE_PATH set to
      * <code>"C:\Documents&nbsp;and&nbsp;Settings\UncleBob\src\share\classes"</code>,
@@ -666,16 +671,17 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * <p>For a package-oriented location, a file object is contained in the location if there exist
      * values for <i>packageName</i> and <i>relativeName</i> such that either of the following
      * calls would return the {@link #isSameFile same} file object:
-     * <pre>
-     *     getFileForInput(location, <i>packageName</i>, <i>relativeName</i>)
-     *     getFileForOutput(location, <i>packageName</i>, <i>relativeName</i>, null)
-     * </pre>
+     * {@snippet :
+     *     // @highlight region substring=packageName type=italic @highlight region substring=relativeName type=italic :
+     *     getFileForInput(location, packageName, relativeName)
+     *     getFileForOutput(location, packageName, relativeName, null) // @end @end
+     *     }
      *
      * <p>For a module-oriented location, a file object is contained in the location if there exists
      * a module that may be obtained by the call:
-     * <pre>
-     *     getLocationForModule(location, <i>moduleName</i>)
-     * </pre>
+     * {@snippet id="call-getLocationForModule" lang=java :
+     *     getLocationForModule(location, moduleName) // @highlight substring=moduleName type=italic
+     *     }
      * such that the file object is contained in the (package-oriented) location for that module.
      *
      * @implSpec This implementation throws {@code UnsupportedOperationException}.

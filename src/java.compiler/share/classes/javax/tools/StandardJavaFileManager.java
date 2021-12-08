@@ -75,9 +75,10 @@ import java.util.List;
  *         <code>{@linkplain FileObject#openReader(boolean)}</code>
  *         must succeed if the following would succeed (ignoring
  *         encoding issues):
- *         <blockquote>
- *           <pre>new {@linkplain java.io.FileInputStream#FileInputStream(File) FileInputStream}(new {@linkplain File#File(java.net.URI) File}({@linkplain FileObject fileObject}.{@linkplain FileObject#toUri() toUri}()))</pre>
- *         </blockquote>
+ *         {@snippet id="equiv-input" lang=java :
+ *             // @link substring=FileInputStream target="java.io.FileInputStream#FileInputStream(File)" : @link regex="File\W" target="File#File(java.net.URI)" : @link substring=fileObject target=FileObject :  @link substring=toURI target="FileObject#toUri()" :
+ *             new FileInputStream(new File(fileObject.toURI()))
+ *             }
  *       </li>
  *       <li>
  *         and the methods
@@ -85,9 +86,10 @@ import java.util.List;
  *         <code>{@linkplain FileObject#openWriter()}</code> must
  *         succeed if the following would succeed (ignoring encoding
  *         issues):
- *         <blockquote>
- *           <pre>new {@linkplain java.io.FileOutputStream#FileOutputStream(File) FileOutputStream}(new {@linkplain File#File(java.net.URI) File}({@linkplain FileObject fileObject}.{@linkplain FileObject#toUri() toUri}()))</pre>
- *         </blockquote>
+ *         {@snippet id="equiv-output" lang=java :
+ *             // @link substring=FileOutputStream target="java.io.FileOutputStream#FileOutputStream(File)" : @link regex="File\W" target="File#File(java.net.URI)" : @link substring=fileObject target=FileObject :  @link substring=toURI target="FileObject#toUri()" :
+ *             new FileOutputStream(new File(fileObject.toURI()))
+ *             }
  *       </li>
  *     </ul>
  *   </li>
@@ -241,9 +243,9 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given files.
      * Convenience method equivalent to:
      *
-     * <pre>
-     *     getJavaFileObjectsFromFiles({@linkplain java.util.Arrays#asList Arrays.asList}(files))
-     * </pre>
+     * {@snippet id="equiv-getJavaFileObjects" lang=java :
+     *     getJavaFileObjectsFromFiles(Arrays.asList(files)) // @link substring="Arrays.asList" target="Arrays#asList"
+     *     }
      *
      * @param files an array of files
      * @return a list of file objects
@@ -259,9 +261,9 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given paths.
      * Convenience method equivalent to:
      *
-     * <pre>
-     *     getJavaFileObjectsFromPaths({@linkplain java.util.Arrays#asList Arrays.asList}(paths))
-     * </pre>
+     * {@snippet id="equiv-getJavaFileObjectsFromPaths" lang=java :
+     *     getJavaFileObjectsFromPaths(Arrays.asList(paths)) // @link substring="Arrays.asList" target="Arrays#asList"
+     *     }
      *
      * @implSpec
      * The default implementation will only throw {@code NullPointerException}
@@ -296,9 +298,9 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given file names.
      * Convenience method equivalent to:
      *
-     * <pre>
-     *     getJavaFileObjectsFromStrings({@linkplain java.util.Arrays#asList Arrays.asList}(names))
-     * </pre>
+     * {@snippet id="equiv-getJavaFileObjectsFromStrings" lang=java :
+     *     getJavaFileObjectsFromStrings(Arrays.asList(names)) // @link substring="Arrays.asList" target="Arrays#asList"
+     *     }
      *
      * @param names a list of file names
      * @return a list of file objects

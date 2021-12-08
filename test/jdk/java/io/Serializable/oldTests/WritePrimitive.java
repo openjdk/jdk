@@ -32,28 +32,27 @@
  */
 
 import java.io.*;
+import java.util.Arrays;
 
 public class WritePrimitive {
     public static void main (String argv[]) throws IOException {
         System.err.println("\nRegression test for testing of " +
             "serialization/deserialization of primitives \n");
+        int i = 123456;
+        byte b = 12;
+        short s = 45;
+        char c = 'A';
+        long l = 1234567890000L;
+        float f = 3.14159f;
+        double d = f * 2;
+        boolean z = true;
+        String string = "The String";
+        PrimitivesTest prim = new PrimitivesTest();
+        byte[] ba = {1, 2, 3, 4, 5, 6, 7};  // byte array to write
 
-        FileInputStream istream = null;
-        FileOutputStream ostream = null;
-        try {
-            int i = 123456;
-            byte b = 12;
-            short s = 45;
-            char c = 'A';
-            long l = 1234567890000L;
-            float f = 3.14159f;
-            double d = f*2;
-            boolean z = true;
-            String string = "The String";
-            PrimitivesTest prim = new PrimitivesTest();
-
-            ostream = new FileOutputStream("piotest1.tmp");
-            ObjectOutputStream p = new ObjectOutputStream(ostream);
+        byte[] bytes;
+        try (ByteArrayOutputStream ostream = new ByteArrayOutputStream();
+             ObjectOutputStream p = new ObjectOutputStream(ostream)) {
 
             p.writeInt(i);
             p.writeByte(b);
@@ -63,14 +62,20 @@ public class WritePrimitive {
             p.writeFloat(f);
             p.writeDouble(d);
             p.writeBoolean(z);
+            p.write(ba); // for simple read(byte[])
+            p.write(ba); // for readFully(byte[])
+            p.write(ba, 0, ba.length - 2); // for readFully(byte[], 0, 7)
             p.writeUTF(string);
             p.writeObject(string);
 
             p.writeObject(prim);
             p.flush();
+            bytes = ostream.toByteArray();
 
-            istream = new FileInputStream("piotest1.tmp");
-            ObjectInputStream q = new ObjectInputStream(istream);
+        }
+
+        ByteArrayInputStream istream = new ByteArrayInputStream(bytes);
+        try (ObjectInputStream q = new ObjectInputStream(istream);) {
 
             int i_u = q.readInt();
             byte b_u = q.readByte();
@@ -80,6 +85,12 @@ public class WritePrimitive {
             float f_u = q.readFloat();
             double d_u = q.readDouble();
             boolean z_u = q.readBoolean();
+            byte[] ba_readBuf = new byte[ba.length];
+            int ba_readLen = q.read(ba_readBuf);
+            byte[] ba_readFullyBuf = new byte[ba.length];
+            int ba_readFullyLen = q.read(ba_readFullyBuf);
+            byte[] ba_readFullySizedBuf = new byte[ba.length];
+            int ba_readFullySizedLen = q.read(ba_readFullySizedBuf, 0, ba.length - 1);
             String string_utf = q.readUTF();
             String string_u = (String)q.readObject();
             if (i != i_u) {
@@ -120,6 +131,10 @@ public class WritePrimitive {
                                    z_u);
                 throw new Error();
             }
+            checkArray("read(byte[])", ba, ba.length, ba_readBuf, ba_readLen);
+            checkArray("readFully(byte[])", ba, ba.length, ba_readFullyBuf, ba_readFullyLen);
+            checkArray("readFully(byte[], off, len)", ba, ba.length - 2, ba_readFullySizedBuf, ba_readFullySizedLen);
+
             if (!string.equals(string_utf)) {
                 System.err.println("\nString:  expected " + string +
                                    " actual " + string_utf);
@@ -144,20 +159,26 @@ public class WritePrimitive {
             System.err.print("TEST FAILED: ");
             e.printStackTrace();
 
-            System.err.println("\nInput remaining");
+            System.err.println("\nBytes read: " + (bytes.length - istream.available()) +
+                    ", Input remaining: " + istream.available());
             int ch;
             try {
                 while ((ch = istream.read()) != -1) {
                     System.err.print("\n " + Integer.toString(ch, 16)+ " ");
                 }
                 System.out.println("\n ");
-            } catch (Exception f) {
+            } catch (Exception fex) {
                 throw new Error();
             }
             throw new Error();
-        } finally {
-            if (istream != null) istream.close();
-            if (ostream != null) ostream.close();
+        }
+    }
+
+    static void checkArray(String label, byte[] expected, int expectedLen, byte[] actual, int actualLen) {
+        int mismatch = Arrays.mismatch(expected, 0, expectedLen, actual, 0, actualLen);
+        if (actualLen != expectedLen || mismatch >= 0) {
+            System.err.println("\n" + label + ":  expected " + expectedLen + " actual " + actualLen + ", mismatch: " + mismatch);
+            throw new Error();
         }
     }
 }
