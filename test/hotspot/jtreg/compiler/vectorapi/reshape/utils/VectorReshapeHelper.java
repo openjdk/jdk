@@ -29,12 +29,13 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Array;
 import java.nio.ByteOrder;
+import java.util.List;
 import java.util.random.RandomGenerator;
 import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 
 public class VectorReshapeHelper {
-    public static final int INVOCATIONS = 100_000;
+    public static final int INVOCATIONS = 10_000;
 
     public static final VectorSpecies<Byte>    BSPEC64  =   ByteVector.SPECIES_64;
     public static final VectorSpecies<Short>   SSPEC64  =  ShortVector.SPECIES_64;
@@ -95,8 +96,35 @@ public class VectorReshapeHelper {
         byte[] input = new byte[isp.vectorByteSize()];
         byte[] output = new byte[osp.vectorByteSize()];
         for (int iter = 0; iter < INVOCATIONS; iter++) {
-            random.nextBytes(input);
+            // We need to generate arrays with NaN or very large values occasionally
+            boolean normalArray = random.nextBoolean();
+            var abnormalValue = List.of(Double.NaN, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, -1e30, 1e30);
+            for (int i = 0; i < isp.length(); i++) {
+                switch (isp.elementType().getName()) {
+                    case "byte"   -> setByte(input, i, (byte)random.nextInt());
+                    case "short"  -> setShort(input, i, (short)random.nextInt());
+                    case "int"    -> setInt(input, i, random.nextInt());
+                    case "long"   -> setLong(input, i, random.nextLong());
+                    case "float"  -> {
+                        if (normalArray || random.nextBoolean()) {
+                            setFloat(input, i, random.nextFloat(Byte.MIN_VALUE, Byte.MAX_VALUE));
+                        } else {
+                            setFloat(input, i, abnormalValue.get(random.nextInt(abnormalValue.size())).floatValue());
+                        }
+                    }
+                    case "double" -> {
+                        if (normalArray || random.nextBoolean()) {
+                            setDouble(input, i, random.nextDouble(Byte.MIN_VALUE, Byte.MAX_VALUE));
+                        } else {
+                            setDouble(input, i, abnormalValue.get(random.nextInt(abnormalValue.size())));
+                        }
+                    }
+                    default -> throw new AssertionError();
+                }
+            }
+
             testMethod.invokeExact(input, output);
+
             for (int i = 0; i < osp.length(); i++) {
                 Number expected, actual;
                 if (i < isp.length()) {
@@ -179,7 +207,9 @@ public class VectorReshapeHelper {
         byte[] output = new byte[osp.vectorByteSize()];
         for (int iter = 0; iter < INVOCATIONS; iter++) {
             random.nextBytes(input);
+
             testMethod.invokeExact(input, output);
+
             for (int i = 0; i < osp.vectorByteSize(); i++) {
                 int expected = i < isp.vectorByteSize() ? input[i] : 0;
                 int actual = output[i];
@@ -207,7 +237,9 @@ public class VectorReshapeHelper {
         byte[] output = new byte[isp.vectorByteSize()];
         for (int iter = 0; iter < INVOCATIONS; iter++) {
             random.nextBytes(input);
+
             testMethod.invokeExact(input, output);
+
             for (int i = 0; i < isp.vectorByteSize(); i++) {
                 int expected = i < osp.vectorByteSize() ? input[i] : 0;
                 int actual = output[i];
@@ -216,7 +248,7 @@ public class VectorReshapeHelper {
         }
     }
 
-    // All this complication is due to the fact vector load and store with respect to byte array introduce
+    // All this complication is due to the fact that vector load and store with respect to byte array introduce
     // additional ReinterpretNodes, several ReinterpretNodes back to back being optimized make the number of
     // nodes remaining in the IR becomes unpredictable.
     @ForceInline
@@ -255,7 +287,9 @@ public class VectorReshapeHelper {
             for (int i = 0; i < isp.vectorByteSize(); i++) {
                 UnsafeUtils.putByte(input, ibase, i, random.nextInt());
             }
+
             testMethod.invokeExact(input, output);
+
             for (int i = 0; i < osp.vectorByteSize(); i++) {
                 int expected = i < isp.vectorByteSize() ? UnsafeUtils.getByte(input, ibase, i) : 0;
                 int actual = UnsafeUtils.getByte(output, obase, i);
@@ -286,6 +320,30 @@ public class VectorReshapeHelper {
 
     public static double getDouble(byte[] array, int index) {
         return (double)DOUBLE_ACCESS.get(array, index * Double.BYTES);
+    }
+
+    public static void setByte(byte[] array, int index, byte value) {
+        BYTE_ACCESS.set(array, index * Byte.BYTES, value);
+    }
+
+    public static void setShort(byte[] array, int index, short value) {
+        SHORT_ACCESS.set(array, index * Short.BYTES, value);
+    }
+
+    public static void setInt(byte[] array, int index, int value) {
+        INT_ACCESS.set(array, index * Integer.BYTES, value);
+    }
+
+    public static void setLong(byte[] array, int index, long value) {
+        LONG_ACCESS.set(array, index * Long.BYTES, value);
+    }
+
+    public static void setFloat(byte[] array, int index, float value) {
+        FLOAT_ACCESS.set(array, index * Float.BYTES, value);
+    }
+
+    public static void setDouble(byte[] array, int index, double value) {
+        DOUBLE_ACCESS.set(array, index * Double.BYTES, value);
     }
 
     private static final VarHandle BYTE_ACCESS   = MethodHandles.arrayElementVarHandle(byte.class.arrayType());

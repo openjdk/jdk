@@ -30,8 +30,8 @@ import compiler.lib.ir_framework.Test;
 import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
 
 /**
- * As spot in 8259353. We need to do a shrink and an expand together to not accidentally zero out
- * elements in the physical registers that may not be zero in general cases.
+ * As spot in 8259353. We need to do a shrink and an expand together to not accidentally
+ * zero out elements in the physical registers that may not be zero in general cases.
  * In some methods, 2 consecutive ReinterpretNodes may be optimized out.
  */
 public class TestVectorDoubleExpandShrink {

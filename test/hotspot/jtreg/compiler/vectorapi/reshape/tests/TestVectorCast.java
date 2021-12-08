@@ -33,7 +33,7 @@ import static jdk.incubator.vector.VectorOperators.*;
 /**
  * This class contains all possible cast operations between different vector species.
  * The methods only take into consideration the actual cast in C2, as the vectors are
- * ofter shrunk or expanded before/after casting if the element number mismatch.
+ * ofter shrunk or expanded before/after casting if the element numbers mismatch.
  * In each cast, the VectorCastNode is expected to appear exactly once.
  */
 public class TestVectorCast {
