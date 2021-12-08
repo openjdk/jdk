@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
@@ -534,6 +535,14 @@ public class TagletWriterImpl extends TagletWriter {
         return includeLink
                 ? htmlWriter.getDocLink(HtmlLinkInfo.Kind.VALUE_TAG, field, constantVal)
                 : Text.of(constantVal);
+    }
+
+    @Override
+    protected Content invalidTagOutput(String summary, Optional<String> detail) {
+        return htmlWriter.invalidTagOutput(summary,
+                detail.isEmpty() || detail.get().isEmpty()
+                        ? Optional.empty()
+                        : Optional.of(Text.of(utils.normalizeNewlines(detail.get()))));
     }
 
     @Override

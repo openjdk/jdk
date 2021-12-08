@@ -40,6 +40,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -532,6 +533,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
+#ifdef PRODUCT
+  { "UseHeavyMonitors",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+#endif
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -2018,6 +2022,20 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
+#if !defined(X86) && !defined(AARCH64) && !defined(PPC64)
+  if (UseHeavyMonitors) {
+    warning("UseHeavyMonitors is not fully implemented on this architecture");
+  }
+#endif
+#if (defined(X86) || defined(PPC64)) && !defined(ZERO)
+  if (UseHeavyMonitors && UseRTMForStackLocks) {
+    fatal("-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+  }
+#endif
+  if (VerifyHeavyMonitors && !UseHeavyMonitors) {
+    fatal("-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+  }
+
   return status;
 }
 
@@ -2868,6 +2886,17 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_EINVAL;
       }
       if (FLAG_SET_CMDLINE(ErrorFileToStdout, true) != JVMFlag::SUCCESS) {
+        return JNI_EINVAL;
+      }
+    } else if (match_option(option, "--finalization=", &tail)) {
+      if (strcmp(tail, "enabled") == 0) {
+        InstanceKlass::set_finalization_enabled(true);
+      } else if (strcmp(tail, "disabled") == 0) {
+        InstanceKlass::set_finalization_enabled(false);
+      } else {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid finalization value '%s', must be 'disabled' or 'enabled'.\n",
+                    tail);
         return JNI_EINVAL;
       }
     } else if (match_option(option, "-XX:+ExtendedDTraceProbes")) {

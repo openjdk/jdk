@@ -138,7 +138,7 @@ public final class DOMURIDereferencer implements URIDereferencer {
         }
 
         try {
-            ResourceResolverContext resContext = new ResourceResolverContext(uriAttr, baseURI, false);
+            ResourceResolverContext resContext = new ResourceResolverContext(uriAttr, baseURI, secVal);
             XMLSignatureInput in = ResourceResolver.resolve(resContext);
             if (in.isOctetStream()) {
                 return new ApacheOctetStreamData(in);
