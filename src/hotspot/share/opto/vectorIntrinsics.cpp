@@ -796,6 +796,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+  Node* bits                      = argument(3);
   // Mode argument determines the mode of operation it can take following values:-
   // MODE_BROADCAST for vector Vector.boradcast and VectorMask.maskAll operations.
   // MODE_BITS_COERCED_LONG_TO_MASK for VectorMask.fromLong operation.
@@ -848,7 +849,6 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   }
 
   Node* broadcast = NULL;
-  Node* bits = argument(3); // long
   Node* elem = bits;
 
   if (opc == Op_VectorLongToMask) {

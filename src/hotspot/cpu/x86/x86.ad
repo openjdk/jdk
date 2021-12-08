@@ -1601,14 +1601,6 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-    case Op_VectorLongToMask:
-      if (UseAVX < 1) {
-        return false;
-      }
-      if (UseAVX < 3 && !VM_Version::supports_bmi2()) {
-        return false;
-      }
-      break;
   }
   return true;  // Match rules are supported by default.
 }
@@ -1847,6 +1839,14 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_VectorMaskCmp:
       if (vlen < 2 || size_in_bits < 32) {
+        return false;
+      }
+      break;
+    case Op_VectorLongToMask:
+      if (UseAVX < 1 || !is_LP64) {
+        return false;
+      }
+      if (UseAVX < 3 && !VM_Version::supports_bmi2()) {
         return false;
       }
       break;
