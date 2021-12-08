@@ -82,6 +82,9 @@ public:
   virtual int min_opcode() const = 0;
 
   static MulNode* make(Node* in1, Node* in2, BasicType bt);
+
+  static bool AndIL_shift_and_mask(PhaseGVN* phase, Node* mask, Node* shift, BasicType bt);
+  Node* AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt);
 };
 
 //------------------------------MulINode---------------------------------------
@@ -189,6 +192,7 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *mul_ring( const Type *, const Type * ) const;
   const Type *mul_id() const { return TypeInt::MINUS_1; }
   const Type *add_id() const { return TypeInt::ZERO; }
@@ -208,6 +212,7 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *mul_ring( const Type *, const Type * ) const;
   const Type *mul_id() const { return TypeLong::MINUS_1; }
   const Type *add_id() const { return TypeLong::ZERO; }

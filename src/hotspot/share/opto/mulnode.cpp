@@ -505,6 +505,15 @@ const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
   return TypeInt::INT;          // No constants to be had
 }
 
+const Type* AndINode::Value(PhaseGVN* phase) const {
+  // patterns similar to (v << 2) & 3
+  if (AndIL_shift_and_mask(phase, in(2), in(1), T_INT)) {
+    return TypeInt::ZERO;
+  }
+
+  return MulNode::Value(phase);
+}
+
 //------------------------------Identity---------------------------------------
 // Masking off the high bits of an unsigned load is not required
 Node* AndINode::Identity(PhaseGVN* phase) {
@@ -598,6 +607,12 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(load->in(1)) == TypeInt::ZERO )
     return new AndINode( load->in(2), in(2) );
 
+  // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
+  Node* progress = AndIL_add_shift_and_mask(phase, T_INT);
+  if (progress != NULL) {
+    return progress;
+  }
+
   return MulNode::Ideal(phase, can_reshape);
 }
 
@@ -627,6 +642,15 @@ const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
     return TypeLong::make(CONST64(0), r1->get_con(), widen);
 
   return TypeLong::LONG;        // No constants to be had
+}
+
+const Type* AndLNode::Value(PhaseGVN* phase) const {
+  // patterns similar to (v << 2) & 3
+  if (AndIL_shift_and_mask(phase, in(2), in(1), T_LONG)) {
+    return TypeLong::ZERO;
+  }
+
+  return MulNode::Value(phase);
 }
 
 //------------------------------Identity---------------------------------------
@@ -675,7 +699,7 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const jlong mask = t2->get_con();
 
   Node* in1 = in(1);
-  uint op = in1->Opcode();
+  int op = in1->Opcode();
 
   // Are we masking a long that was converted from an int with a mask
   // that fits in 32-bits?  Commute them and use an AndINode.  Don't
@@ -703,6 +727,12 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         return new AndLNode(zshift, in(2));
       }
     }
+  }
+
+  // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
+  Node* progress = AndIL_add_shift_and_mask(phase, T_LONG);
+  if (progress != NULL) {
+    return progress;
   }
 
   return MulNode::Ideal(phase, can_reshape);
@@ -1682,4 +1712,65 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
     }
     return TypeLong::LONG;
   }
+}
+
+// Helper method to transform:
+// patterns similar to (v << 2) & 3 to 0
+// and
+// patterns similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
+bool MulNode::AndIL_shift_and_mask(PhaseGVN* phase, Node* mask, Node* shift, BasicType bt) {
+  if (mask == NULL || shift == NULL) {
+    return false;
+  }
+  const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
+  const TypeInteger* shift_t = phase->type(shift)->isa_integer(bt);
+  if (mask_t == NULL || shift_t == NULL) {
+    return false;
+  }
+  if (bt == T_LONG && shift != NULL && shift->Opcode() == Op_ConvI2L) {
+    bt = T_INT;
+    shift = shift->in(1);
+    if (shift == NULL) {
+      return false;
+    }
+  }
+  if (shift->Opcode() != Op_LShift(bt)) {
+    return false;
+  }
+  Node* shift2 = shift->in(2);
+  if (shift2 == NULL) {
+    return false;
+  }
+  const Type* shift2_t = phase->type(shift2);
+  if (!shift2_t->isa_int() || !shift2_t->is_int()->is_con()) {
+    return false;
+  }
+
+  jint shift_con = shift2_t->is_int()->get_con() & ((bt == T_INT ? BitsPerJavaInteger : BitsPerJavaLong) - 1);
+  if ((((jlong)1) << shift_con) > mask_t->hi_as_long() && mask_t->lo_as_long() >= 0) {
+    return true;
+  }
+
+  return false;
+}
+
+// Helper method to transform:
+// patterns similar to (v1 + (v2 << 2)) & 3 to v1 & 3
+Node* MulNode::AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  if (in1 != NULL && in2 != NULL && in1->Opcode() == Op_Add(bt)) {
+    Node* add1 = in1->in(1);
+    Node* add2 = in1->in(2);
+    if (add1 != NULL && add2 != NULL) {
+      if (AndIL_shift_and_mask(phase, in2, add1, bt)) {
+        set_req_X(1, add2, phase);
+        return this;
+      } else if (AndIL_shift_and_mask(phase, in2, add2, bt)) {
+        set_req_X(1, add1, phase);
+        return this;
+      }
+    }
+  }
+  return NULL;
 }
