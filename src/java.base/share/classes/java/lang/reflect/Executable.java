@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 import jdk.internal.access.SharedSecrets;
@@ -311,11 +310,11 @@ public abstract sealed class Executable extends AccessibleObject
         // this case, we just return the result of
         // getParameterTypes().
         if (!genericInfo) {
-            return getParameterTypes();
+            return getSharedParameterTypes();
         } else {
             final boolean realParamData = hasRealParameterData();
             final Type[] genericParamTypes = getGenericParameterTypes();
-            final Type[] nonGenericParamTypes = getParameterTypes();
+            final Type[] nonGenericParamTypes = getSharedParameterTypes();
             // If we have real parameter data, then we use the
             // synthetic and mandate flags to our advantage.
             if (realParamData) {
@@ -326,7 +325,7 @@ public abstract sealed class Executable extends AccessibleObject
                     final Parameter param = params[i];
                     if (param.isSynthetic() || param.isImplicit()) {
                         // If we hit a synthetic or mandated parameter,
-                        // use the non generic parameter info.
+                        // use the non-generic parameter info.
                         out[i] = nonGenericParamTypes[i];
                     } else {
                         // Otherwise, use the generic parameter info.
