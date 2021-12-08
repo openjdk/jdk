@@ -53,8 +53,8 @@ class GCNameHelper {
       case G1New: return "G1New";
       case G1Old: return "G1Old";
       case G1Full: return "G1Full";
-      case ZMinor: return "ZMinor";
-      case ZMajor: return "ZMajor";
+      case ZMinor: return "ZGC Minor";
+      case ZMajor: return "ZGC Major";
       case Shenandoah: return "Shenandoah";
       case NA: return "N/A";
       default: ShouldNotReachHere(); return NULL;

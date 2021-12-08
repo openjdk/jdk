@@ -113,12 +113,12 @@ ZServiceabilityCounters::ZServiceabilityCounters(size_t initial_capacity, size_t
         0            /* init_capacity */),
     // gc.collector.0
     _minor_collection_counters(
-        "Z minor collection pauses" /* name */,
-        0                           /* ordinal */),
+        "ZGC minor collection pauses" /* name */,
+        0                             /* ordinal */),
     // gc.collector.2
     _major_collection_counters(
-        "Z major collection pauses" /* name */,
-        2                         /* ordinal */) {}
+        "ZGC major collection pauses" /* name */,
+        2                             /* ordinal */) {}
 
 CollectorCounters* ZServiceabilityCounters::collector_counters(bool minor) {
   return minor
@@ -178,8 +178,8 @@ ZServiceability::ZServiceability(size_t initial_capacity,
     _initial_capacity(initial_capacity),
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
-    _young_memory_pool("ZYoungGeneration", young_generation, _min_capacity, _max_capacity),
-    _old_memory_pool("ZOldGeneration", old_generation, 0, _max_capacity),
+    _young_memory_pool("ZGC Young Generation", young_generation, _min_capacity, _max_capacity),
+    _old_memory_pool("ZGC Old Generation", old_generation, 0, _max_capacity),
     _minor_cycle_memory_manager("ZGC Minor Cycles", "end of GC cycle", &_young_memory_pool, &_old_memory_pool),
     _major_cycle_memory_manager("ZGC Major Cycles", "end of GC cycle", &_young_memory_pool, &_old_memory_pool),
     _minor_pause_memory_manager("ZGC Minor Pauses", "end of GC pause", &_young_memory_pool, &_old_memory_pool),
