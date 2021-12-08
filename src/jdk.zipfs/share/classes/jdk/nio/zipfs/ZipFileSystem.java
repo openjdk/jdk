@@ -1475,7 +1475,8 @@ class ZipFileSystem extends FileSystem {
      * Package-private accessor to entry alias map used by ZipPath.
      */
     String lookupStringForUri(byte[] path) {
-        return getString(entryLookup.apply(path));
+        byte[] entry = entryLookup.apply(path);
+        return getString(entry != null ? entry : path);
     }
 
     /**
