@@ -35,4 +35,3 @@ public class CodeDependenciesSimple {
         clzTwo = clzOne;
     }
 }
-
