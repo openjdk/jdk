@@ -277,8 +277,9 @@ public class VectorReshapeHelper {
         String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,
-                testMethodName,
-                MethodType.methodType(void.class, Object.class, Object.class));
+                    testMethodName,
+                    MethodType.methodType(void.class, isp.elementType().arrayType(), osp.elementType().arrayType()))
+                .asType(MethodType.methodType(void.class, Object.class, Object.class));
         Object input = Array.newInstance(isp.elementType(), isp.length());
         Object output = Array.newInstance(osp.elementType(), osp.length());
         long ibase = UnsafeUtils.arrayBase(isp.elementType());
