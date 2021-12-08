@@ -788,7 +788,7 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
 AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
 [
   AC_ARG_WITH([hsdis], [AS_HELP_STRING([--with-hsdis],
-      [what hsdis backend to use ('none', 'binutils') @<:@none@:>@])])
+      [what hsdis backend to use ('none', 'binutils', 'llvm') @<:@none@:>@])])
 
   AC_ARG_WITH([binutils], [AS_HELP_STRING([--with-binutils],
       [where to find the binutils files needed for hsdis/binutils])])
@@ -824,6 +824,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
           test -e $BINUTILS_DIR/libiberty/libiberty.a; then
         AC_MSG_RESULT([$BINUTILS_DIR])
         HSDIS_CFLAGS="-I$BINUTILS_DIR/include -I$BINUTILS_DIR/bfd -DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+        HSDIS_LDFLAGS=""
         HSDIS_LIBS="$BINUTILS_DIR/bfd/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a"
       else
         AC_MSG_RESULT([invalid])
@@ -837,6 +838,20 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
       AC_MSG_NOTICE([--with-binutils to point to a pre-built binutils installation.])
       AC_MSG_ERROR([Cannot continue])
     fi
+  elif test "x$with_hsdis" = xllvm; then
+    HSDIS_BACKEND=llvm
+    AC_MSG_RESULT(['llvm'])
+    # Macs with homebrew has llvm in /usr/local/opt
+    UTIL_LOOKUP_PROGS(LLVM_CONFIG, llvm-config, [$PATH:/usr/local/opt/llvm/bin])
+    if test "x$LLVM_CONFIG" = x; then
+      AC_MSG_NOTICE([Cannot locate llvm-config which is needed for hsdis/llvm. Try using LLVM_CONFIG=<path>.])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+
+    # We need the LLVM flags and libs, and llvm-config provides them for us.
+    HSDIS_CFLAGS=`$LLVM_CONFIG --cflags`
+    HSDIS_LDFLAGS=`$LLVM_CONFIG --ldflags`
+    HSDIS_LIBS=`$LLVM_CONFIG --libs $OPENJDK_TARGET_CPU_ARCH ${OPENJDK_TARGET_CPU_ARCH}disassembler`
   else
     AC_MSG_RESULT([invalid])
     AC_MSG_ERROR([Incorrect hsdis backend "$with_hsdis"])
@@ -844,5 +859,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
 
   AC_SUBST(HSDIS_BACKEND)
   AC_SUBST(HSDIS_CFLAGS)
+  AC_SUBST(HSDIS_LDFLAGS)
   AC_SUBST(HSDIS_LIBS)
 ])
