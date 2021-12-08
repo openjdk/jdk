@@ -56,7 +56,8 @@ public:
       bool is_empty = (_collector->live_words(r->hrm_index()) == 0);
       assert(!is_empty, "should contain at least one live obj");
     } else if (r->is_closed_archive()) {
-      // nothing to assert
+      // should early-return above
+      ShouldNotReachHere();
     } else {
       assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold(),
              "should be quite full");
