@@ -162,12 +162,6 @@ public:
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
                                                bool during_concurrent_start) {
-    uint num_objs = hr->num_evac_failure_objs();
-    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegionsReformat,
-                                                 _worker_id,
-                                                 num_objs,
-                                                 G1GCPhaseTimes::RestoreRetainedRegionsObjects);
-
     RemoveSelfForwardPtrObjClosure rspc(hr,
                                         during_concurrent_start,
                                         _worker_id);
@@ -176,12 +170,7 @@ public:
     // Need to zap the remainder area of the processed region.
     rspc.zap_remainder();
 
-    size_t marked_bytes = rspc.marked_bytes();
-    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegionsReformat,
-                                                 _worker_id,
-                                                 marked_bytes,
-                                                 G1GCPhaseTimes::RestoreRetainedRegionsBytes);
-    return marked_bytes;
+    return rspc.marked_bytes();
   }
 
   bool do_heap_region(HeapRegion *hr) {
@@ -189,11 +178,6 @@ public:
     assert(hr->in_collection_set(), "bad CS");
 
     if (_evac_failure_regions->contains(hr->hrm_index())) {
-      _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
-                                                   _worker_id,
-                                                   1,
-                                                   G1GCPhaseTimes::RestoreRetainedRegionsNum);
-
       hr->clear_index_in_opt_cset();
 
       bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
@@ -205,7 +189,23 @@ public:
 
       hr->reset_bot();
 
+      _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+                                                   _worker_id,
+                                                   1,
+                                                   G1GCPhaseTimes::RestoreRetainedRegionsNum);
+
+      uint num_objs = hr->num_evac_failure_objs();
+      _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegionsReformat,
+                                                   _worker_id,
+                                                   num_objs,
+                                                   G1GCPhaseTimes::RestoreRetainedRegionsObjects);
+
       size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_concurrent_start);
+
+      _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegionsReformat,
+                                                   _worker_id,
+                                                   live_bytes,
+                                                   G1GCPhaseTimes::RestoreRetainedRegionsBytes);
 
       hr->rem_set()->clean_strong_code_roots(hr);
       hr->rem_set()->clear_locked(true);

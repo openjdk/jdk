@@ -71,7 +71,6 @@ class G1EvacFailureObjectsIterationHelper {
   const G1SegmentedArray<OffsetInRegion, mtGC>* _segments;
   OffsetInRegion* _offset_array;
   uint _array_length;
-  G1GCPhaseTimes* _phase_times;
 
   static int order_oop(OffsetInRegion a, OffsetInRegion b) {
     return static_cast<int>(a-b);
@@ -91,17 +90,16 @@ class G1EvacFailureObjectsIterationHelper {
   }
 
 public:
-  G1EvacFailureObjectsIterationHelper(G1EvacFailureObjectsSet* collector, G1GCPhaseTimes* phase_times) :
+  G1EvacFailureObjectsIterationHelper(G1EvacFailureObjectsSet* collector) :
     _objects_set(collector),
     _segments(&_objects_set->_offsets),
     _offset_array(nullptr),
-    _array_length(0),
-    _phase_times(phase_times) { }
+    _array_length(0) { }
 
-  void process_and_drop(ObjectClosure* closure, uint worker_id) {
+  void process_and_drop(ObjectClosure* closure, G1GCPhaseTimes* phase_times, uint worker_id) {
     uint num = _segments->num_allocated_slots();
     {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RestoreRetainedRegionsSort, worker_id, false);
+      G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RestoreRetainedRegionsPrepare, worker_id, false);
 
       _offset_array = NEW_C_HEAP_ARRAY(OffsetInRegion, num, mtGC);
 
@@ -109,13 +107,13 @@ public:
       assert(_array_length == num, "must be %u, %u", _array_length, num);
     }
     {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RestoreRetainedRegionsReformat, worker_id, false);
+      G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RestoreRetainedRegionsReformat, worker_id, false);
 
       iterate(closure);
     }
     {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RestoreRetainedRegionsReclaim, worker_id, false);
-      _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegionsReclaim,
+      G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RestoreRetainedRegionsReclaim, worker_id, false);
+      phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegionsReclaim,
                                                    worker_id,
                                                    sizeof(OffsetInRegion) * num,
                                                    G1GCPhaseTimes::RestoreRetainedRegionsReclaimUsedMemory);
@@ -134,8 +132,8 @@ public:
 void G1EvacFailureObjectsSet::process_and_drop(ObjectClosure* closure, G1GCPhaseTimes* phase_times, uint worker_id) {
   assert_at_safepoint();
 
-  G1EvacFailureObjectsIterationHelper helper(this, phase_times);
-  helper.process_and_drop(closure, worker_id);
+  G1EvacFailureObjectsIterationHelper helper(this);
+  helper.process_and_drop(closure, phase_times, worker_id);
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RestoreRetainedRegionsReclaim, worker_id, false);

@@ -205,8 +205,7 @@ private:
 public:
   const G1SegmentedArraySegment<flag>* first_array_segment() const { return Atomic::load(&_first); }
 
-  // This is not the exact size used by allocated slots, i.e. != num_allocated_slots() * slot_size(),
-  // it's the size of available slots, i.e. == num_available_slots() * slot_size().
+  // Return the size of available slots, i.e. == num_available_slots() * slot_size().
   size_t mem_size() {
     return Atomic::load(&_mem_size);
   }

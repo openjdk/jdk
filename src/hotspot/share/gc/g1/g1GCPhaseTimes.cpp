@@ -103,7 +103,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[Other] = new WorkerDataArray<double>("Other", "GC Worker Other (ms):", max_gc_threads);
   _gc_par_phases[MergePSS] = new WorkerDataArray<double>("MergePSS", "Merge Per-Thread State (ms):", max_gc_threads);
   _gc_par_phases[RestoreRetainedRegions] = new WorkerDataArray<double>("RestoreRetainedRegions", "Restore Retained Regions (ms):", max_gc_threads);
-  _gc_par_phases[RestoreRetainedRegionsSort] = new WorkerDataArray<double>("RestoreRetainedRegionsSort", "Sort Retained Object Refs (ms):", max_gc_threads);
+  _gc_par_phases[RestoreRetainedRegionsPrepare] = new WorkerDataArray<double>("RestoreRetainedRegionsPrepare", "Prepare Retained Object Refs (ms):", max_gc_threads);
   _gc_par_phases[RestoreRetainedRegionsReformat] = new WorkerDataArray<double>("RestoreRetainedRegionsReformat", "Reformat Retained Regions (ms):", max_gc_threads);
   _gc_par_phases[RestoreRetainedRegionsReclaim] = new WorkerDataArray<double>("RestoreRetainedRegionsReclaim", "Reclaim Memory (ms):", max_gc_threads);
   _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
@@ -138,7 +138,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Retained Regions:", RestoreRetainedRegionsNum);
   _gc_par_phases[RestoreRetainedRegionsReformat]->create_thread_work_items("Retained Objects:", RestoreRetainedRegionsObjects);
   _gc_par_phases[RestoreRetainedRegionsReformat]->create_thread_work_items("Retained Bytes:", RestoreRetainedRegionsBytes);
-  _gc_par_phases[RestoreRetainedRegionsReclaim]->create_thread_work_items("Used Memory:", RestoreRetainedRegionsReclaimUsedMemory);
+  _gc_par_phases[RestoreRetainedRegionsReclaim]->create_thread_work_items("Used [Native] Memory:", RestoreRetainedRegionsReclaimUsedMemory);
 
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Total", EagerlyReclaimNumTotal);
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Candidates", EagerlyReclaimNumCandidates);
@@ -493,7 +493,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   debug_phase(_gc_par_phases[RecalculateUsed], 1);
   if (evacuation_failed) {
     debug_phase(_gc_par_phases[RestoreRetainedRegions], 1);
-    trace_phase(_gc_par_phases[RestoreRetainedRegionsSort], true, 1);
+    trace_phase(_gc_par_phases[RestoreRetainedRegionsPrepare], true, 1);
     trace_phase(_gc_par_phases[RestoreRetainedRegionsReformat], true, 1);
     trace_phase(_gc_par_phases[RestoreRetainedRegionsReclaim], true, 1);
   }

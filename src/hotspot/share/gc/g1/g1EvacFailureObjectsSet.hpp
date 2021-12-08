@@ -76,7 +76,7 @@ public:
   // Apply the given ObjectClosure to all objects that failed evacuation and
   // empties the list after processing.
   // Objects are passed in increasing address order.
-  void process_and_drop(ObjectClosure* closure, G1GCPhaseTimes* pahse_times, uint worker_id);
+  void process_and_drop(ObjectClosure* closure, G1GCPhaseTimes* phase_times, uint worker_id);
 
   uint num_evac_failure_objects();
 };
