@@ -40,6 +40,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -2885,6 +2886,17 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_EINVAL;
       }
       if (FLAG_SET_CMDLINE(ErrorFileToStdout, true) != JVMFlag::SUCCESS) {
+        return JNI_EINVAL;
+      }
+    } else if (match_option(option, "--finalization=", &tail)) {
+      if (strcmp(tail, "enabled") == 0) {
+        InstanceKlass::set_finalization_enabled(true);
+      } else if (strcmp(tail, "disabled") == 0) {
+        InstanceKlass::set_finalization_enabled(false);
+      } else {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid finalization value '%s', must be 'disabled' or 'enabled'.\n",
+                    tail);
         return JNI_EINVAL;
       }
     } else if (match_option(option, "-XX:+ExtendedDTraceProbes")) {
