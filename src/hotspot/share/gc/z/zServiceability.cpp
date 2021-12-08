@@ -162,11 +162,8 @@ MemoryUsage ZServiceabilityMemoryPool::get_memory_usage() {
 }
 
 ZServiceabilityMemoryManager::ZServiceabilityMemoryManager(const char* name,
-                                                           const char* end_message,
-                                                           ZServiceabilityMemoryPool* pool) :
-    GCMemoryManager(name, end_message) {
-  add_pool(pool);
-}
+                                                           const char* end_message) :
+    GCMemoryManager(name, end_message) {}
 
 ZServiceability::ZServiceability(size_t initial_capacity,
                                  size_t min_capacity,
@@ -178,11 +175,18 @@ ZServiceability::ZServiceability(size_t initial_capacity,
     _max_capacity(max_capacity),
     _young_memory_pool("ZYoungGeneration", young_generation, _min_capacity, _max_capacity),
     _old_memory_pool("ZOldGeneration", old_generation, 0, _max_capacity),
-    _young_cycle_memory_manager("ZGC Young Cycles", "end of GC cycle", &_young_memory_pool),
-    _old_cycle_memory_manager("ZGC Old Cycles", "end of GC cycle", &_old_memory_pool),
-    _young_pause_memory_manager("ZGC Young Pauses", "end of GC pause", &_young_memory_pool),
-    _old_pause_memory_manager("ZGC Old Pauses", "end of GC pause", &_old_memory_pool),
-    _counters(NULL) {}
+    _minor_cycle_memory_manager("ZGC Minor Cycles", "end of GC cycle"),
+    _major_cycle_memory_manager("ZGC Major Cycles", "end of GC cycle"),
+    _minor_pause_memory_manager("ZGC Minor Pauses", "end of GC pause"),
+    _major_pause_memory_manager("ZGC Major Pauses", "end of GC pause"),
+    _counters(NULL) {
+  _minor_cycle_memory_manager.add_pool(&_young_memory_pool);
+  _major_cycle_memory_manager.add_pool(&_young_memory_pool);
+  _major_cycle_memory_manager.add_pool(&_old_memory_pool);
+  _minor_pause_memory_manager.add_pool(&_young_memory_pool);
+  _major_pause_memory_manager.add_pool(&_young_memory_pool);
+  _major_pause_memory_manager.add_pool(&_old_memory_pool);
+}
 
 void ZServiceability::initialize() {
   _counters = new ZServiceabilityCounters(_initial_capacity, _min_capacity, _max_capacity);
@@ -195,15 +199,16 @@ MemoryPool* ZServiceability::memory_pool(ZGenerationId id) {
 }
 
 GCMemoryManager* ZServiceability::cycle_memory_manager(ZGenerationId id) {
+  // FIXME: Don't use ZGenerationId to decide minor/major cycle
   return id == ZGenerationId::young
-      ? &_young_cycle_memory_manager
-      : &_old_cycle_memory_manager;
+      ? &_minor_cycle_memory_manager
+      : &_major_cycle_memory_manager;
 }
 
 GCMemoryManager* ZServiceability::pause_memory_manager(ZGenerationId id) {
   return id == ZGenerationId::young
-      ? &_young_pause_memory_manager
-      : &_old_pause_memory_manager;
+      ? &_minor_pause_memory_manager
+      : &_major_pause_memory_manager;
 }
 
 ZServiceabilityCounters* ZServiceability::counters() {

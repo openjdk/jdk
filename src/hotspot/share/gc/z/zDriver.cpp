@@ -375,13 +375,11 @@ class ZDriverScopeYoung : public StackObj {
 private:
   ZYoungTypeSetter           _type_setter;
   ZStatTimer                 _stat_timer;
-  ZServiceabilityCycleTracer _tracer;
 
 public:
   ZDriverScopeYoung(ZYoungType type, ConcurrentGCTimer* gc_timer) :
       _type_setter(type),
-      _stat_timer(ZPhaseGenerationYoung[(int)type], gc_timer),
-      _tracer(ZGenerationId::young) {
+      _stat_timer(ZPhaseGenerationYoung[(int)type], gc_timer) {
     // Update statistics and set the GC timer
     young_collector()->at_generation_collection_start(gc_timer);
   }
@@ -465,17 +463,19 @@ void ZDriverMinor::collect(const ZDriverRequest& request) {
 
 class ZDriverScopeMinor : public StackObj {
 private:
-  GCIdMark          _gc_id;
-  GCCause::Cause    _gc_cause;
-  GCCauseSetter     _gc_cause_setter;
-  ZStatTimer        _stat_timer;
+  GCIdMark                   _gc_id;
+  GCCause::Cause             _gc_cause;
+  GCCauseSetter              _gc_cause_setter;
+  ZStatTimer                 _stat_timer;
+  ZServiceabilityCycleTracer _tracer;
 
 public:
   ZDriverScopeMinor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer) :
       _gc_id(),
       _gc_cause(request.cause()),
       _gc_cause_setter(collected_heap(), _gc_cause),
-      _stat_timer(ZPhaseCollectionMinor, gc_timer) {
+      _stat_timer(ZPhaseCollectionMinor, gc_timer),
+      _tracer(ZGenerationId::young) {
     // Update statistics
     young_collector()->at_collection_start();
 
@@ -714,13 +714,11 @@ static bool should_preclean_young(GCCause::Cause cause) {
 class ZDriverScopeOld : public StackObj {
 private:
   ZStatTimer                 _stat_timer;
-  ZServiceabilityCycleTracer _tracer;
   ZDriverUnlocker            _unlocker;
 
 public:
   ZDriverScopeOld(ConcurrentGCTimer* gc_timer) :
       _stat_timer(ZPhaseGenerationOld, gc_timer),
-      _tracer(ZGenerationId::old),
       _unlocker() {
     // Update statistics and set the GC timer
     old_collector()->at_generation_collection_start(gc_timer);
@@ -835,17 +833,19 @@ void ZDriverMajor::collect(const ZDriverRequest& request) {
 
 class ZDriverScopeMajor : public StackObj {
 private:
-  GCIdMark       _gc_id;
-  GCCause::Cause _gc_cause;
-  GCCauseSetter  _gc_cause_setter;
-  ZStatTimer     _stat_timer;
+  GCIdMark                   _gc_id;
+  GCCause::Cause             _gc_cause;
+  GCCauseSetter              _gc_cause_setter;
+  ZStatTimer                 _stat_timer;
+  ZServiceabilityCycleTracer _tracer;
 
 public:
   ZDriverScopeMajor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer) :
       _gc_id(),
       _gc_cause(request.cause()),
       _gc_cause_setter(collected_heap(), _gc_cause),
-      _stat_timer(ZPhaseCollectionMajor, gc_timer) {
+      _stat_timer(ZPhaseCollectionMajor, gc_timer),
+      _tracer(ZGenerationId::old) {
     // Update statistics
     old_collector()->at_collection_start();
 
