@@ -39,10 +39,11 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/klass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -50,6 +51,7 @@
 
 GrowableArrayCHeap<char*, mtClassShared>* LambdaFormInvokers::_lambdaform_lines = nullptr;
 Array<Array<char>*>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
+GrowableArrayCHeap<OopHandle, mtClassShared>* LambdaFormInvokers::_regenerated_mirrors = nullptr;
 
 #define NUM_FILTER 4
 static const char* filter[NUM_FILTER] = {"java.lang.invoke.Invokers$Holder",
@@ -79,6 +81,25 @@ void LambdaFormInvokers::append(char* line) {
     _lambdaform_lines = new GrowableArrayCHeap<char*, mtClassShared>(150);
   }
   _lambdaform_lines->append(line);
+}
+
+// The regenerated Klass is not added to any class loader, so we need
+// to keep its java_mirror alive to avoid class unloading.
+void LambdaFormInvokers::add_regenerated_class(oop regenerated_class) {
+  if (_regenerated_mirrors == nullptr) {
+    _regenerated_mirrors = new GrowableArrayCHeap<OopHandle, mtClassShared>(150);
+  }
+  _regenerated_mirrors->append(OopHandle(Universe::vm_global(), regenerated_class));
+}
+
+void LambdaFormInvokers::cleanup_regenerated_classes() {
+  if (_regenerated_mirrors == nullptr) return;
+
+  for (int i = 0; i < _regenerated_mirrors->length(); i++) {
+    _regenerated_mirrors->at(i).release(Universe::vm_global());
+  }
+  delete _regenerated_mirrors;
+  _regenerated_mirrors = nullptr;
 }
 
 // convenient output
@@ -155,12 +176,11 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     char *buf = NEW_RESOURCE_ARRAY(char, len);
     memcpy(buf, (char*)h_bytes->byte_at_addr(0), len);
     ClassFileStream st((u1*)buf, len, NULL, ClassFileStream::verify);
-    reload_class(class_name, st, CHECK);
+    regenerate_class(class_name, st, CHECK);
   }
 }
 
-// class_handle - the class name, bytes_handle - the class bytes
-void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
+void LambdaFormInvokers::regenerate_class(char* name, ClassFileStream& st, TRAPS) {
   Symbol* class_name = SymbolTable::new_symbol((const char*)name);
   // the class must exist
   Klass* klass = SystemDictionary::resolve_or_null(class_name, THREAD);
@@ -180,6 +200,9 @@ void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
                                                    cl_info,
                                                    CHECK);
 
+  assert(result->java_mirror() != nullptr, "must be");
+  add_regenerated_class(result->java_mirror());
+
   {
     MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
     SystemDictionary::add_to_hierarchy(result);
@@ -191,7 +214,7 @@ void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
   // exclude the existing class from dump
   SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass));
   SystemDictionaryShared::init_dumptime_info(result);
-  log_info(cds, lambda)("Replaced class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
+  log_info(cds, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
                  name, p2i(klass), p2i(result));
 }
 
