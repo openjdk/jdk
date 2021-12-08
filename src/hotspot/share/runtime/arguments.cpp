@@ -2027,7 +2027,7 @@ bool Arguments::check_vm_args_consistency() {
     warning("UseHeavyMonitors is not fully implemented on this architecture");
   }
 #endif
-#if defined(X86) || defined(PPC64)
+#if (defined(X86) || defined(PPC64)) && !defined(ZERO)
   if (UseHeavyMonitors && UseRTMForStackLocks) {
     fatal("-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
   }
