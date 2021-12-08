@@ -110,9 +110,8 @@ public class Basic {
                             + " cannot be determined");
                     failures++;
                 } else if (!expectedTypes.contains(type)) {
-                    System.err.printf("For extension " + extension
-                            + " we got content type: %s; expected: %s%n",
-                            type, expectedTypes);
+                    System.err.printf("For extension %s we got content type: %s; expected: %s%n",
+                            extension, type, expectedTypes);
                     failures++;
                 }
             } finally {
