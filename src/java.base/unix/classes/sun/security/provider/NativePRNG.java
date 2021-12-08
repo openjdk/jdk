@@ -553,7 +553,7 @@ public final class NativePRNG extends SecureRandomSpi {
                                 len = data_len;
                                 buffered -= len;
                             }
-                            System.arraycopy(nextBuffer, buf_pos, 
+                            System.arraycopy(nextBuffer, buf_pos,
                                     localBuffer, 0,
                                     len);
                         }
