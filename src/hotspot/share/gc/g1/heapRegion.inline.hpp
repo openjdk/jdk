@@ -104,12 +104,8 @@ inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* c
 }
 
 inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-  if (!this->is_in(p)) {
-    assert(is_continues_humongous(), "This case can only happen for humongous regions");
-    return (p == humongous_start_region()->bottom());
-  }
+  assert(p >= bottom() && p < top(), "precondition");
+  assert(!is_continues_humongous(), "p must point to block-start");
   // When class unloading is enabled it is not safe to only consider top() to conclude if the
   // given pointer is a valid object. The situation can occur both for class unloading in a
   // Full GC and during a concurrent cycle.
@@ -118,9 +114,9 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
   // During a concurrent cycle class unloading is done after marking is complete and objects
   // for the unloaded classes will be stale until the regions are collected.
   if (ClassUnloading) {
-    return !g1h->is_obj_dead(cast_to_oop(p), this);
+    return !G1CollectedHeap::heap()->is_obj_dead(cast_to_oop(p), this);
   }
-  return p < top();
+  return true;
 }
 
 inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1CMBitMap* const prev_bitmap) const {
