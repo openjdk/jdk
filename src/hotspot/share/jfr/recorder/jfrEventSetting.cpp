@@ -26,6 +26,7 @@
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 
 JfrNativeSettings JfrEventSetting::_jvm_event_settings;
+bool JfrEventSetting::_internal_events = false;
 
 bool JfrEventSetting::set_threshold(jlong id, jlong threshold_ticks) {
   JfrEventId event_id = (JfrEventId)id;
@@ -57,6 +58,16 @@ void JfrEventSetting::set_large(JfrEventId event_id) {
   assert(bounds_check_event(event_id), "invariant");
   setting(event_id).large = true;
 }
+
+void JfrEventSetting::unhide_internal_events() {
+ printf("internal_events = true\n");
+  _internal_events = true;
+}
+
+bool JfrEventSetting::is_internal_events_visible() {
+  return _internal_events;
+}
+
 
 #ifdef ASSERT
 bool JfrEventSetting::bounds_check_event(jlong id) {

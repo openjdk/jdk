@@ -36,6 +36,7 @@ class JfrEventSetting : AllStatic {
  private:
   static JfrNativeSettings _jvm_event_settings;
   static jfrNativeEventSetting& setting(JfrEventId event_id);
+  static bool _internal_events;
 
  public:
   static void set_enabled(jlong event_id, bool enabled);
@@ -48,6 +49,8 @@ class JfrEventSetting : AllStatic {
   static jlong cutoff(JfrEventId event_id);
   static bool is_large(JfrEventId event_id);
   static void set_large(JfrEventId event_id);
+  static void unhide_internal_events();
+  static bool is_internal_events_visible();
 
   DEBUG_ONLY(static bool bounds_check_event(jlong id);)
 };

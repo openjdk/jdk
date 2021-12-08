@@ -24,17 +24,30 @@
 
 #include "precompiled.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
+#include "jfr/jni/jfrUpcalls.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
+#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/exceptions.hpp"
 
 static jbyteArray metadata_blob = NULL;
 static u8 metadata_id = 0;
 static u8 last_metadata_id = 0;
+
+static void check_internal_events(JavaThread* jt) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
+  static bool visible = false;
+  if (!visible) {
+    if (JfrEventSetting::is_internal_events_visible()) {
+      visible = JfrUpcalls::unhide_internal_types(jt);
+    }
+  }
+}
 
 static void write_metadata_blob(JfrChunkWriter& chunkwriter, JavaThread* thread) {
   assert(chunkwriter.is_valid(), "invariant");
@@ -60,6 +73,7 @@ void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   // can safepoint here
   ThreadInVMfromNative transition(jt);
+  check_internal_events(jt);
   // header
   const int64_t metadata_offset = chunkwriter.reserve(sizeof(u4));
   chunkwriter.write<u8>(EVENT_METADATA); // ID 0
