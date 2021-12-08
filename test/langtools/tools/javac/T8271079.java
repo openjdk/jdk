@@ -59,7 +59,7 @@ public class T8271079 {
     Path mr = Path.of("mr.jar");
     java.util.spi.ToolProvider.findFirst("jar").orElseThrow()
         .run(System.out, System.err, "--create", "--file", mr.toString(), "--release", "9", "-C", "classes", ".");
-    System.out.println("Created: " + mr.toUri() + " // " + Files.exists(mr));
+    System.out.println("Created: " + mr.toUri());
     System.out.println(" Exists: " + Files.exists(mr));
     return mr;
   }
@@ -81,14 +81,17 @@ public class T8271079 {
       System.out.println("JavaFileObject#toUri: " + f.toUri());
       openUsingUri(f.toUri());
     }
+    System.gc(); // JDK-8224794
   }
 
   private static void openUsingUri(URI uri) throws IOException {
     URLConnection connection = uri.toURL().openConnection();
     if (connection instanceof JarURLConnection) {
+      connection.setUseCaches(false); // JDK-8224794
       try {
         JarEntry entry = ((JarURLConnection) connection).getJarEntry();
         System.out.println("JarEntry: " + entry.getName());
+        connection.getInputStream().close(); // JDK-8224794
       } catch (FileNotFoundException e) {
         e.printStackTrace();
         throw e;
