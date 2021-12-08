@@ -381,12 +381,12 @@ public:
       _type_setter(type),
       _stat_timer(ZPhaseGenerationYoung[(int)type], gc_timer) {
     // Update statistics and set the GC timer
-    young_collector()->at_generation_collection_start(gc_timer);
+    young_collector()->at_collection_start(gc_timer);
   }
 
   ~ZDriverScopeYoung() {
     // Update statistics and clear the GC timer
-    young_collector()->at_generation_collection_end();
+    young_collector()->at_collection_end();
   }
 };
 
@@ -732,12 +732,12 @@ public:
       _stat_timer(ZPhaseGenerationOld, gc_timer),
       _unlocker() {
     // Update statistics and set the GC timer
-    old_collector()->at_generation_collection_start(gc_timer);
+    old_collector()->at_collection_start(gc_timer);
   }
 
   ~ZDriverScopeOld() {
     // Update statistics and clear the GC timer
-    old_collector()->at_generation_collection_end();
+    old_collector()->at_collection_end();
   }
 };
 

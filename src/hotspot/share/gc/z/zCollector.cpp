@@ -330,17 +330,18 @@ void ZCollector::set_phase(Phase new_phase) {
   _phase = new_phase;
 }
 
-void ZCollector::at_generation_collection_start(ConcurrentGCTimer* gc_timer) {
+void ZCollector::at_collection_start(ConcurrentGCTimer* gc_timer) {
   set_gc_timer(gc_timer);
   stat_cycle()->at_start();
-  stat_heap()->at_generation_collection_start(_page_allocator->stats(this));
+  stat_heap()->at_collection_start(_page_allocator->stats(this));
 
   workers()->clear_pending_resize();
 }
 
-void ZCollector::at_generation_collection_end() {
+void ZCollector::at_collection_end() {
   stat_cycle()->at_end(stat_workers());
-  // The heap at generation collection end data is gathered at relocate end
+  // The heap at collection end data is gathered at relocate end
+
   clear_gc_timer();
 }
 

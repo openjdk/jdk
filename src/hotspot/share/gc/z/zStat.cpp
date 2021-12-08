@@ -714,8 +714,8 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
 
   log_info(gc, phases)("%s " ZSIZE_FMT "->" ZSIZE_FMT,
                name(),
-               ZSIZE_ARGS(collector->stat_heap()->used_at_generation_collection_start()),
-               ZSIZE_ARGS(collector->stat_heap()->used_at_generation_collection_end()));
+               ZSIZE_ARGS(collector->stat_heap()->used_at_collection_start()),
+               ZSIZE_ARGS(collector->stat_heap()->used_at_collection_end()));
 }
 
 Tickspan ZStatPhasePause::_max;
@@ -1506,12 +1506,12 @@ void ZStatHeap::at_initialize(size_t min_capacity, size_t max_capacity) {
   _at_initialize.max_capacity = max_capacity;
 }
 
-void ZStatHeap::at_generation_collection_start(const ZPageAllocatorStats& stats) {
-  _at_generation_collection_start.soft_max_capacity = stats.soft_max_capacity();
-  _at_generation_collection_start.capacity = stats.capacity();
-  _at_generation_collection_start.free = free(stats.used());
-  _at_generation_collection_start.used = stats.used();
-  _at_generation_collection_start.used_generation = stats.used_generation();
+void ZStatHeap::at_collection_start(const ZPageAllocatorStats& stats) {
+  _at_collection_start.soft_max_capacity = stats.soft_max_capacity();
+  _at_collection_start.capacity = stats.capacity();
+  _at_collection_start.free = free(stats.used());
+  _at_collection_start.used = stats.used();
+  _at_collection_start.used_generation = stats.used_generation();
 }
 
 void ZStatHeap::at_mark_start(const ZPageAllocatorStats& stats) {
@@ -1574,8 +1574,8 @@ size_t ZStatHeap::max_capacity() {
   return _at_initialize.max_capacity;
 }
 
-size_t ZStatHeap::used_at_generation_collection_start() const {
-  return _at_generation_collection_start.used;
+size_t ZStatHeap::used_at_collection_start() const {
+  return _at_collection_start.used;
 }
 
 size_t ZStatHeap::used_at_mark_start() const {
@@ -1590,7 +1590,7 @@ size_t ZStatHeap::used_at_relocate_end() const {
   return _at_relocate_end.used;
 }
 
-size_t ZStatHeap::used_at_generation_collection_end() const {
+size_t ZStatHeap::used_at_collection_end() const {
   return used_at_relocate_end();
 }
 
