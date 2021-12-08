@@ -55,9 +55,9 @@ private:
   volatile u_char* _offset_array;  // byte array keeping backwards offsets
 
   void check_offset(size_t offset, const char* msg) const {
-    assert(offset <= BOTConstants::N_words,
+    assert(offset <= BOTConstants::card_size_in_words(),
            "%s - offset: " SIZE_FORMAT ", N_words: %u",
-           msg, offset, BOTConstants::N_words);
+           msg, offset, BOTConstants::card_size_in_words());
   }
 
   // Bounds checking accessors:
@@ -80,13 +80,13 @@ public:
   // Return the number of slots needed for an offset array
   // that covers mem_region_words words.
   static size_t compute_size(size_t mem_region_words) {
-    size_t number_of_slots = (mem_region_words / BOTConstants::N_words);
+    size_t number_of_slots = (mem_region_words / BOTConstants::card_size_in_words());
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
   // Returns how many bytes of the heap a single byte of the BOT corresponds to.
   static size_t heap_map_factor() {
-    return BOTConstants::N_bytes;
+    return BOTConstants::card_size();
   }
 
   // Initialize the Block Offset Table to cover the memory region passed
@@ -102,7 +102,7 @@ public:
   inline HeapWord* address_for_index(size_t index) const;
   // Variant of address_for_index that does not check the index for validity.
   inline HeapWord* address_for_index_raw(size_t index) const {
-    return _reserved.start() + (index << BOTConstants::LogN_words);
+    return _reserved.start() + (index << BOTConstants::log_card_size_in_words());
   }
 };
 
@@ -113,9 +113,6 @@ class G1BlockOffsetTablePart {
 private:
   // allocation boundary at which offset array must be updated
   HeapWord* _next_offset_threshold;
-
-  // Indicates if an object can span into this G1BlockOffsetTablePart.
-  debug_only(bool _object_can_span;)
 
   // This is the global BlockOffsetTable.
   G1BlockOffsetTable* _bot;
@@ -141,26 +138,11 @@ private:
   // Returns the address of a block whose start is at most "addr".
   inline HeapWord* block_at_or_preceding(const void* addr) const;
 
+  // Return the address of the beginning of the block that contains "addr".
   // "q" is a block boundary that is <= "addr"; "n" is the address of the
-  // next block (or the end of the space.)  Return the address of the
-  // beginning of the block that contains "addr".  Does so without side
-  // effects (see, e.g., spec of  block_start.)
-  inline HeapWord* forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
-                                                          const void* addr) const;
-
-  // "q" is a block boundary that is <= "addr"; return the address of the
-  // beginning of the block that contains "addr".  May have side effects
-  // on "this", by updating imprecise entries.
-  inline HeapWord* forward_to_block_containing_addr(HeapWord* q,
-                                                    const void* addr);
-
-  // "q" is a block boundary that is <= "addr"; "n" is the address of the
-  // next block (or the end of the space.)  Return the address of the
-  // beginning of the block that contains "addr".  May have side effects
-  // on "this", by updating imprecise entries.
-  HeapWord* forward_to_block_containing_addr_slow(HeapWord* q,
-                                                  HeapWord* n,
-                                                  const void* addr);
+  // next block (or the end of the space.)
+  inline HeapWord* forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
+                                                    const void* addr) const;
 
   // Requires that "*threshold_" be the first array entry boundary at or
   // above "blk_start".  If the block starts at or crosses "*threshold_", records
@@ -227,7 +209,6 @@ public:
   }
 
   void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);
-  void set_object_can_span(bool can_span) NOT_DEBUG_RETURN;
 
   void print_on(outputStream* out) PRODUCT_RETURN;
 };

@@ -84,10 +84,6 @@ inline HeapWord* HeapRegion::block_start(const void* p) {
   return _bot_part.block_start(p);
 }
 
-inline HeapWord* HeapRegion::block_start_const(const void* p) const {
-  return _bot_part.block_start_const(p);
-}
-
 inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const {
   HeapWord* addr = cast_from_oop<HeapWord*>(obj);
 
@@ -356,8 +352,6 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   HeapWord* const end = mr.end();
 
   // Find the obj that extends onto mr.start().
-  // Update BOT as needed while finding start of (possibly dead)
-  // object containing the start of the region.
   HeapWord* cur = block_start(start);
 
 #ifdef ASSERT

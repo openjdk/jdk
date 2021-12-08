@@ -101,7 +101,10 @@ class RegisterSaver {
   int reg_offset_in_bytes(Register r);
   int r0_offset_in_bytes()    { return reg_offset_in_bytes(r0); }
   int rscratch1_offset_in_bytes()    { return reg_offset_in_bytes(rscratch1); }
-  int v0_offset_in_bytes(void)   { return 0; }
+  int v0_offset_in_bytes();
+
+  // Total stack size in bytes for saving sve predicate registers.
+  int total_sve_predicate_in_bytes();
 
   // Capture info about frame layout
   // Note this is only correct when not saving full vectors.
@@ -139,24 +142,49 @@ int RegisterSaver::reg_offset_in_bytes(Register r) {
   }
 #endif
 
-  int r0_offset = (slots_per_vect * FloatRegisterImpl::number_of_registers) * BytesPerInt;
+  int r0_offset = v0_offset_in_bytes() + (slots_per_vect * FloatRegisterImpl::number_of_registers) * BytesPerInt;
   return r0_offset + r->encoding() * wordSize;
+}
+
+int RegisterSaver::v0_offset_in_bytes() {
+  // The floating point registers are located above the predicate registers if
+  // they are present in the stack frame pushed by save_live_registers(). So the
+  // offset depends on the saved total predicate vectors in the stack frame.
+  return (total_sve_predicate_in_bytes() / VMRegImpl::stack_slot_size) * BytesPerInt;
+}
+
+int RegisterSaver::total_sve_predicate_in_bytes() {
+#ifdef COMPILER2
+  if (_save_vectors && Matcher::supports_scalable_vector()) {
+    // The number of total predicate bytes is unlikely to be a multiple
+    // of 16 bytes so we manually align it up.
+    return align_up(Matcher::scalable_predicate_reg_slots() *
+                    VMRegImpl::stack_slot_size *
+                    PRegisterImpl::number_of_saved_registers, 16);
+  }
+#endif
+  return 0;
 }
 
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words) {
   bool use_sve = false;
   int sve_vector_size_in_bytes = 0;
   int sve_vector_size_in_slots = 0;
+  int sve_predicate_size_in_slots = 0;
+  int total_predicate_in_bytes = total_sve_predicate_in_bytes();
+  int total_predicate_in_slots = total_predicate_in_bytes / VMRegImpl::stack_slot_size;
 
 #ifdef COMPILER2
   use_sve = Matcher::supports_scalable_vector();
-  sve_vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
-  sve_vector_size_in_slots = Matcher::scalable_vector_reg_size(T_FLOAT);
+  if (use_sve) {
+    sve_vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
+    sve_vector_size_in_slots = Matcher::scalable_vector_reg_size(T_FLOAT);
+    sve_predicate_size_in_slots = Matcher::scalable_predicate_reg_slots();
+  }
 #endif
 
 #if COMPILER2_OR_JVMCI
   if (_save_vectors) {
-    int vect_words = 0;
     int extra_save_slots_per_register = 0;
     // Save upper half of vector registers
     if (use_sve) {
@@ -164,9 +192,10 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     } else {
       extra_save_slots_per_register = FloatRegisterImpl::extra_save_slots_per_neon_register;
     }
-    vect_words = FloatRegisterImpl::number_of_registers * extra_save_slots_per_register /
-                 VMRegImpl::slots_per_word;
-    additional_frame_words += vect_words;
+    int extra_vector_bytes = extra_save_slots_per_register *
+                             VMRegImpl::stack_slot_size *
+                             FloatRegisterImpl::number_of_registers;
+    additional_frame_words += ((extra_vector_bytes + total_predicate_in_bytes) / wordSize);
   }
 #else
   assert(!_save_vectors, "vectors are generated only by C2 and JVMCI");
@@ -184,7 +213,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 
   // Save Integer and Float registers.
   __ enter();
-  __ push_CPU_state(_save_vectors, use_sve, sve_vector_size_in_bytes);
+  __ push_CPU_state(_save_vectors, use_sve, sve_vector_size_in_bytes, total_predicate_in_bytes);
 
   // Set an oopmap for the call site.  This oopmap will map all
   // oop-registers and debug-info registers as callee-saved.  This
@@ -201,8 +230,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       // Register slots are 8 bytes wide, 32 floating-point registers.
       int sp_offset = RegisterImpl::max_slots_per_register * i +
                       FloatRegisterImpl::save_slots_per_register * FloatRegisterImpl::number_of_registers;
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset + additional_frame_slots),
-                                r->as_VMReg());
+      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset + additional_frame_slots), r->as_VMReg());
     }
   }
 
@@ -210,13 +238,20 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     FloatRegister r = as_FloatRegister(i);
     int sp_offset = 0;
     if (_save_vectors) {
-      sp_offset = use_sve ? (sve_vector_size_in_slots * i) :
+      sp_offset = use_sve ? (total_predicate_in_slots + sve_vector_size_in_slots * i) :
                             (FloatRegisterImpl::slots_per_neon_register * i);
     } else {
       sp_offset = FloatRegisterImpl::save_slots_per_register * i;
     }
-    oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
-                              r->as_VMReg());
+    oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset), r->as_VMReg());
+  }
+
+  if (_save_vectors && use_sve) {
+    for (int i = 0; i < PRegisterImpl::number_of_saved_registers; i++) {
+      PRegister r = as_PRegister(i);
+      int sp_offset = sve_predicate_size_in_slots * i;
+      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset), r->as_VMReg());
+    }
   }
 
   return oop_map;
@@ -225,7 +260,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 #ifdef COMPILER2
   __ pop_CPU_state(_save_vectors, Matcher::supports_scalable_vector(),
-                   Matcher::scalable_vector_reg_size(T_BYTE));
+                   Matcher::scalable_vector_reg_size(T_BYTE), total_sve_predicate_in_bytes());
 #else
 #if !INCLUDE_JVMCI
   assert(!_save_vectors, "vectors are generated only by C2 and JVMCI");
@@ -238,8 +273,10 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 
 // Is vector's size (in bytes) bigger than a size saved by default?
 // 8 bytes vector registers are saved by default on AArch64.
+// The SVE supported min vector size is 8 bytes and we need to save
+// predicate registers when the vector size is 8 bytes as well.
 bool SharedRuntime::is_wide_vector(int size) {
-  return size > 8;
+  return size > 8 || (UseSVE > 0 && size >= 8);
 }
 
 // The java_calling_convention describes stack locations as ideal slots on
@@ -1605,39 +1642,42 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
-    // Load (object->mark() | 1) into swap_reg %r0
-    __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-    __ orr(swap_reg, rscratch1, 1);
+    if (!UseHeavyMonitors) {
+      // Load (object->mark() | 1) into swap_reg %r0
+      __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ orr(swap_reg, rscratch1, 1);
 
-    // Save (object->mark() | 1) into BasicLock's displaced header
-    __ str(swap_reg, Address(lock_reg, mark_word_offset));
+      // Save (object->mark() | 1) into BasicLock's displaced header
+      __ str(swap_reg, Address(lock_reg, mark_word_offset));
 
-    // src -> dest iff dest == r0 else r0 <- dest
-    { Label here;
-      __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, lock_done, /*fallthrough*/NULL);
+      // src -> dest iff dest == r0 else r0 <- dest
+      { Label here;
+        __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, lock_done, /*fallthrough*/NULL);
+      }
+
+      // Hmm should this move to the slow path code area???
+
+      // Test if the oopMark is an obvious stack pointer, i.e.,
+      //  1) (mark & 3) == 0, and
+      //  2) sp <= mark < mark + os::pagesize()
+      // These 3 tests can be done by evaluating the following
+      // expression: ((mark - sp) & (3 - os::vm_page_size())),
+      // assuming both stack pointer and pagesize have their
+      // least significant 2 bits clear.
+      // NOTE: the oopMark is in swap_reg %r0 as the result of cmpxchg
+
+      __ sub(swap_reg, sp, swap_reg);
+      __ neg(swap_reg, swap_reg);
+      __ ands(swap_reg, swap_reg, 3 - os::vm_page_size());
+
+      // Save the test result, for recursive case, the result is zero
+      __ str(swap_reg, Address(lock_reg, mark_word_offset));
+      __ br(Assembler::NE, slow_path_lock);
+    } else {
+      __ b(slow_path_lock);
     }
 
-    // Hmm should this move to the slow path code area???
-
-    // Test if the oopMark is an obvious stack pointer, i.e.,
-    //  1) (mark & 3) == 0, and
-    //  2) sp <= mark < mark + os::pagesize()
-    // These 3 tests can be done by evaluating the following
-    // expression: ((mark - sp) & (3 - os::vm_page_size())),
-    // assuming both stack pointer and pagesize have their
-    // least significant 2 bits clear.
-    // NOTE: the oopMark is in swap_reg %r0 as the result of cmpxchg
-
-    __ sub(swap_reg, sp, swap_reg);
-    __ neg(swap_reg, swap_reg);
-    __ ands(swap_reg, swap_reg, 3 - os::vm_page_size());
-
-    // Save the test result, for recursive case, the result is zero
-    __ str(swap_reg, Address(lock_reg, mark_word_offset));
-    __ br(Assembler::NE, slow_path_lock);
-
     // Slow path will re-enter here
-
     __ bind(lock_done);
   }
 
@@ -1738,26 +1778,30 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
     Label done;
-    // Simple recursive lock?
 
-    __ ldr(rscratch1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-    __ cbz(rscratch1, done);
+    if (!UseHeavyMonitors) {
+      // Simple recursive lock?
+      __ ldr(rscratch1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
+      __ cbz(rscratch1, done);
 
-    // Must save r0 if if it is live now because cmpxchg must use it
-    if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
-      save_native_result(masm, ret_type, stack_slots);
+      // Must save r0 if if it is live now because cmpxchg must use it
+      if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
+        save_native_result(masm, ret_type, stack_slots);
+      }
+
+
+      // get address of the stack lock
+      __ lea(r0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
+      //  get old displaced header
+      __ ldr(old_hdr, Address(r0, 0));
+
+      // Atomic swap old header if oop still contains the stack lock
+      Label succeed;
+      __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, succeed, &slow_path_unlock);
+      __ bind(succeed);
+    } else {
+      __ b(slow_path_unlock);
     }
-
-
-    // get address of the stack lock
-    __ lea(r0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-    //  get old displaced header
-    __ ldr(old_hdr, Address(r0, 0));
-
-    // Atomic swap old header if oop still contains the stack lock
-    Label succeed;
-    __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, succeed, &slow_path_unlock);
-    __ bind(succeed);
 
     // slow path re-enters here
     __ bind(unlock_done);

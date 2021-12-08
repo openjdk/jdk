@@ -186,9 +186,17 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
 
     // Call the interpreter
     if (JvmtiExport::can_post_interpreter_events()) {
-      BytecodeInterpreter::run<true>(istate);
+      if (RewriteBytecodes) {
+        BytecodeInterpreter::run<true, true>(istate);
+      } else {
+        BytecodeInterpreter::run<true, false>(istate);
+      }
     } else {
-      BytecodeInterpreter::run<false>(istate);
+      if (RewriteBytecodes) {
+        BytecodeInterpreter::run<false, true>(istate);
+      } else {
+        BytecodeInterpreter::run<false, false>(istate);
+      }
     }
     fixup_after_potential_safepoint();
 

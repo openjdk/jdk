@@ -25,14 +25,12 @@
 
 package jdk.internal.foreign;
 
-import jdk.incubator.foreign.ResourceScope;
 import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
-import java.lang.ref.Reference;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A shared scope, which can be shared across multiple threads. Closing a shared scope has to ensure that
@@ -50,7 +48,6 @@ class SharedScope extends ResourceScopeImpl {
     private static final int ALIVE = 0;
     private static final int CLOSING = -1;
     private static final int CLOSED = -2;
-    private static final int MAX_FORKS = Integer.MAX_VALUE;
 
     private int state = ALIVE;
 
@@ -65,7 +62,7 @@ class SharedScope extends ResourceScopeImpl {
     }
 
     SharedScope(Cleaner cleaner) {
-        super(cleaner, new SharedResourceList());
+        super(new SharedResourceList(), cleaner);
     }
 
     @Override
@@ -81,7 +78,8 @@ class SharedScope extends ResourceScopeImpl {
     }
 
     @Override
-    public HandleImpl acquire() {
+    @ForceInline
+    public void acquire0() {
         int value;
         do {
             value = (int) STATE.getVolatile(this);
@@ -90,10 +88,22 @@ class SharedScope extends ResourceScopeImpl {
                 throw new IllegalStateException("Already closed");
             } else if (value == MAX_FORKS) {
                 //overflow
-                throw new IllegalStateException("Segment acquire limit exceeded");
+                throw new IllegalStateException("Scope keep alive limit exceeded");
             }
         } while (!STATE.compareAndSet(this, value, value + 1));
-        return new SharedHandle();
+    }
+
+    @Override
+    @ForceInline
+    public void release0() {
+        int value;
+        do {
+            value = (int) STATE.getVolatile(this);
+            if (value <= ALIVE) {
+                //cannot get here - we can't close segment twice
+                throw new IllegalStateException("Already closed");
+            }
+        } while (!STATE.compareAndSet(this, value, value - 1));
     }
 
     void justClose() {
@@ -101,7 +111,7 @@ class SharedScope extends ResourceScopeImpl {
         if (prevState < 0) {
             throw new IllegalStateException("Already closed");
         } else if (prevState != ALIVE) {
-            throw new IllegalStateException("Scope is acquired by " + prevState + " locks");
+            throw new IllegalStateException("Scope is kept alive by " + prevState + " scopes");
         }
         boolean success = SCOPED_MEMORY_ACCESS.closeScope(this);
         STATE.setVolatile(this, success ? CLOSED : ALIVE);
@@ -133,13 +143,13 @@ class SharedScope extends ResourceScopeImpl {
         @Override
         void add(ResourceCleanup cleanup) {
             while (true) {
-                ResourceCleanup prev = (ResourceCleanup) FST.getAcquire(this);
-                cleanup.next = prev;
-                ResourceCleanup newSegment = (ResourceCleanup) FST.compareAndExchangeRelease(this, prev, cleanup);
-                if (newSegment == ResourceCleanup.CLOSED_LIST) {
+                ResourceCleanup prev = (ResourceCleanup) FST.getVolatile(this);
+                if (prev == ResourceCleanup.CLOSED_LIST) {
                     // too late
                     throw new IllegalStateException("Already closed");
-                } else if (newSegment == prev) {
+                }
+                cleanup.next = prev;
+                if (FST.compareAndSet(this, prev, cleanup)) {
                     return; //victory
                 }
                 // keep trying
@@ -155,41 +165,15 @@ class SharedScope extends ResourceScopeImpl {
                 //ok now we're really closing down
                 ResourceCleanup prev = null;
                 while (true) {
-                    prev = (ResourceCleanup) FST.getAcquire(this);
+                    prev = (ResourceCleanup) FST.getVolatile(this);
                     // no need to check for DUMMY, since only one thread can get here!
-                    if (FST.weakCompareAndSetRelease(this, prev, ResourceCleanup.CLOSED_LIST)) {
+                    if (FST.compareAndSet(this, prev, ResourceCleanup.CLOSED_LIST)) {
                         break;
                     }
                 }
                 cleanup(prev);
             } else {
                 throw new IllegalStateException("Attempt to cleanup an already closed resource list");
-            }
-        }
-    }
-
-    /**
-     * A shared resource scope handle; this implementation has to handle close vs. close races.
-     */
-    class SharedHandle implements HandleImpl {
-        final AtomicBoolean released = new AtomicBoolean(false);
-
-        @Override
-        public ResourceScopeImpl scope() {
-            return SharedScope.this;
-        }
-
-        @Override
-        public void release() {
-            if (released.compareAndSet(false, true)) {
-                int value;
-                do {
-                    value = (int) STATE.getVolatile(jdk.internal.foreign.SharedScope.this);
-                    if (value <= ALIVE) {
-                        //cannot get here - we can't close segment twice
-                        throw new IllegalStateException("Already closed");
-                    }
-                } while (!STATE.compareAndSet(jdk.internal.foreign.SharedScope.this, value, value - 1));
             }
         }
     }

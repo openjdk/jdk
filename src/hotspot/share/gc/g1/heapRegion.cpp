@@ -65,8 +65,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   size_t region_size = G1HeapRegionSize;
   // G1HeapRegionSize = 0 means decide ergonomically.
   if (region_size == 0) {
-    region_size = MAX2(max_heap_size / HeapRegionBounds::target_number(),
-                       HeapRegionBounds::min_size());
+    region_size = clamp(max_heap_size / HeapRegionBounds::target_number(),
+                        HeapRegionBounds::min_size(),
+                        HeapRegionBounds::max_ergonomics_size());
   }
 
   // Make sure region size is a power of 2. Rounding up since this
@@ -90,7 +91,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   GrainWords = GrainBytes >> LogHeapWordSize;
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
-  CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
+  CardsPerRegion = GrainBytes >> G1CardTable::card_shift();
 
   LogCardsPerRegion = log2i(CardsPerRegion);
 
@@ -213,8 +214,6 @@ void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
   report_region_type_change(G1HeapRegionTraceType::ContinuesHumongous);
   _type.set_continues_humongous();
   _humongous_start_region = first_hr;
-
-  _bot_part.set_object_can_span(true);
 }
 
 void HeapRegion::clear_humongous() {
@@ -222,8 +221,6 @@ void HeapRegion::clear_humongous() {
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_start_region = NULL;
-
-  _bot_part.set_object_can_span(false);
 }
 
 HeapRegion::HeapRegion(uint hrm_index,

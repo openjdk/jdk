@@ -42,18 +42,18 @@ inline G1CardSet::CardSetPtr G1CardSet::make_card_set_ptr(void* value, uintptr_t
 }
 
 template <class CardOrRangeVisitor>
-inline void G1CardSet::iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& found) {
+inline void G1CardSet::iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& cl) {
   switch (card_set_type(card_set)) {
     case CardSetInlinePtr: {
-      if (found.start_iterate(G1GCPhaseTimes::MergeRSMergedInline)) {
+      if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedInline)) {
         G1CardSetInlinePtr ptr(card_set);
-        ptr.iterate(found, _config->inline_ptr_bits_per_card());
+        ptr.iterate(cl, _config->inline_ptr_bits_per_card());
       }
       return;
     }
     case CardSetArrayOfCards : {
-      if (found.start_iterate(G1GCPhaseTimes::MergeRSMergedArrayOfCards)) {
-        card_set_ptr<G1CardSetArray>(card_set)->iterate(found);
+      if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedArrayOfCards)) {
+        card_set_ptr<G1CardSetArray>(card_set)->iterate(cl);
       }
       return;
     }
@@ -65,61 +65,19 @@ inline void G1CardSet::iterate_cards_or_ranges_in_container(CardSetPtr const car
     case CardSetHowl: {
       assert(card_set_type(FullCardSet) == CardSetHowl, "Must be");
       if (card_set == FullCardSet) {
-        if (found.start_iterate(G1GCPhaseTimes::MergeRSMergedFull)) {
-          found(0, _config->max_cards_in_region());
+        if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedFull)) {
+          cl(0, _config->max_cards_in_region());
         }
         return;
       }
-      if (found.start_iterate(G1GCPhaseTimes::MergeRSMergedHowl)) {
-        card_set_ptr<G1CardSetHowl>(card_set)->iterate(found, _config);
+      if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedHowl)) {
+        card_set_ptr<G1CardSetHowl>(card_set)->iterate(cl, _config);
       }
       return;
     }
   }
   log_error(gc)("Unkown card set type %u", card_set_type(card_set));
   ShouldNotReachHere();
-}
-
-template <typename Closure>
-class G1ContainerCardsOrRanges {
-  Closure& _iter;
-  uint _region_idx;
-
-public:
-  G1ContainerCardsOrRanges(Closure& iter, uint region_idx) : _iter(iter), _region_idx(region_idx) { }
-
-  bool start_iterate(uint tag) {
-    return _iter.start_iterate(tag, _region_idx);
-  }
-
-  void operator()(uint card_idx) {
-    _iter.do_card(card_idx);
-  }
-
-  void operator()(uint card_idx, uint length) {
-    _iter.do_card_range(card_idx, length);
-  }
-};
-
-template <typename Closure, template <typename> class CardOrRanges>
-class G1CardSetMergeCardIterator : public G1CardSet::G1CardSetPtrIterator {
-  G1CardSet* _card_set;
-  Closure& _iter;
-
-public:
-
-  G1CardSetMergeCardIterator(G1CardSet* card_set, Closure& iter) : _card_set(card_set), _iter(iter) { }
-
-  void do_cardsetptr(uint region_idx, size_t num_occupied, G1CardSet::CardSetPtr card_set) override {
-    CardOrRanges<Closure> cl(_iter, region_idx);
-    _card_set->iterate_cards_or_ranges_in_container(card_set, cl);
-  }
-};
-
-template <class CardOrRangeVisitor>
-inline void G1CardSet::iterate_for_merge(CardOrRangeVisitor& cl) {
-  G1CardSetMergeCardIterator<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(this, cl);
-  iterate_containers(&cl2, true /* at_safepoint */);
 }
 
 #endif // SHARE_GC_G1_G1CARDSET_INLINE_HPP

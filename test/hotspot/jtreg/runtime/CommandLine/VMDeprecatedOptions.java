@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,10 @@
  * questions.
  */
 
+import java.util.Arrays;
+import java.util.ArrayList;
+
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.*;
@@ -39,18 +43,31 @@ public class VMDeprecatedOptions {
      * each entry is {[0]: option name, [1]: value to set
      * (true/false/n/string)}.
      */
-    public static final String[][] DEPRECATED_OPTIONS = {
-        // deprecated non-alias flags:
-        {"MaxGCMinorPauseMillis",     "1032"},
-        {"MaxRAMFraction",            "8"},
-        {"MinRAMFraction",            "2"},
-        {"InitialRAMFraction",        "64"},
-        {"TLABStats",                 "false"},
-        {"AllowRedefinitionToAddDeleteMethods", "true"},
+    public static final String[][] DEPRECATED_OPTIONS;
+    static {
+        ArrayList<String[]> deprecated = new ArrayList(
+          Arrays.asList(new String[][] {
+            // deprecated non-alias flags:
+            {"MaxGCMinorPauseMillis",     "1032"},
+            {"MaxRAMFraction",            "8"},
+            {"MinRAMFraction",            "2"},
+            {"InitialRAMFraction",        "64"},
+            {"TLABStats",                 "false"},
+            {"AllowRedefinitionToAddDeleteMethods", "true"},
+            {"UseSharedSpaces",           "false"},
+            {"RequireSharedSpaces",       "false"},
+            {"DumpSharedSpaces",          "false"},
+            {"DynamicDumpSharedSpaces",   "false"},
 
-        // deprecated alias flags (see also aliased_jvm_flags):
-        {"DefaultMaxRAMFraction", "4"},
-        {"CreateMinidumpOnCrash", "false"}
+            // deprecated alias flags (see also aliased_jvm_flags):
+            {"DefaultMaxRAMFraction", "4"},
+            {"CreateMinidumpOnCrash", "false"}
+          }
+        ));
+        if (!Platform.isDebugBuild()) {
+            deprecated.add(new String[]{"UseHeavyMonitors", "false"});
+        }
+        DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
     };
 
     static String getDeprecationString(String optionName) {
