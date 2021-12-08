@@ -2521,7 +2521,7 @@ bool PhiNode::is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase) {
 //------------------------------is_tripcount-----------------------------------
 bool PhiNode::is_tripcount(BasicType bt) const {
   return (in(0) != NULL && in(0)->is_BaseCountedLoop() &&
-          in(0)->as_BaseCountedLoop()->operates_on(bt, true) &&
+          in(0)->as_BaseCountedLoop()->bt() == bt &&
           in(0)->as_BaseCountedLoop()->phi() == this);
 }
 
