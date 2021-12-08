@@ -938,7 +938,7 @@ public abstract class Provider extends Properties {
         boolean result = super.replace(key, oldValue, newValue);
         if (result && key instanceof String sk) {
             if (newValue instanceof String sv) {
-                parseLegacy(sk, sv, OPType.REPLACE);
+                parseLegacy(sk, sv, OPType.ADD);
             } else if (oldValue instanceof String sv) {
                 parseLegacy(sk, sv, OPType.REMOVE);
             }
@@ -953,7 +953,7 @@ public abstract class Provider extends Properties {
         if (key instanceof String sk) {
             if (o instanceof String so) {
                 if (value instanceof String sv) {
-                    parseLegacy(sk, sv, OPType.REPLACE);
+                    parseLegacy(sk, sv, OPType.ADD);
                 } else {
                     parseLegacy(sk, so, OPType.REMOVE);
                 }
@@ -993,7 +993,7 @@ public abstract class Provider extends Properties {
             if (o == null) {
                 parseLegacy(sk, null, OPType.REMOVE);
             } else if (o instanceof String so) {
-                parseLegacy(sk, so, OPType.REPLACE);
+                parseLegacy(sk, so, OPType.ADD);
             }
         }
         return o;
@@ -1010,7 +1010,7 @@ public abstract class Provider extends Properties {
             if (o == null) {
                 parseLegacy(sk, null, OPType.REMOVE);
             } else if (o instanceof String so) {
-                parseLegacy(sk, so, OPType.REPLACE);
+                parseLegacy(sk, so, OPType.ADD);
             }
         }
         return o;
@@ -1023,7 +1023,7 @@ public abstract class Provider extends Properties {
 
         Object o = super.computeIfAbsent(key, mappingFunction);
         if (o instanceof String so && key instanceof String sk) {
-            parseLegacy(sk, so, OPType.REPLACE);
+            parseLegacy(sk, so, OPType.ADD);
         }
         return o;
     }
@@ -1035,7 +1035,7 @@ public abstract class Provider extends Properties {
 
         Object o = super.computeIfPresent(key, remappingFunction);
         if (o instanceof String so && key instanceof String sk) {
-            parseLegacy(sk, so, OPType.REPLACE);
+            parseLegacy(sk, so, OPType.ADD);
         }
         return o;
     }
@@ -1045,7 +1045,7 @@ public abstract class Provider extends Properties {
 
         Object o = super.put(key, value);
         if (key instanceof String sk && value instanceof String sv) {
-            parseLegacy(sk, sv, OPType.REPLACE);
+            parseLegacy(sk, sv, OPType.ADD);
         }
         return o;
     }
@@ -1126,7 +1126,7 @@ public abstract class Provider extends Properties {
     private static final int ALIAS_LENGTH = ALIAS_PREFIX.length();
 
     private static enum OPType {
-        ADD, REMOVE, REPLACE;
+        ADD, REMOVE;
     }
 
     private void parseLegacy(String name, String value, OPType opType) {
@@ -1148,12 +1148,10 @@ public abstract class Provider extends Properties {
             ServiceKey aliasKey = new ServiceKey(type, aliasAlg, true);
             switch (opType) {
                 case ADD:
-                case REPLACE:
-                    if (opType == OPType.REPLACE) {
-                        Service prevAliasService = legacyMap.get(aliasAlg);
-                        if (prevAliasService != null) {
-                            prevAliasService.removeAlias(aliasAlg);
-                        }
+                    // clean up old alias if present
+                    Service prevAliasService = legacyMap.get(aliasAlg);
+                    if (prevAliasService != null) {
+                        prevAliasService.removeAlias(aliasAlg);
                     }
                     if (stdService == null) {
                         // add standard mapping in order to add alias
@@ -1188,16 +1186,11 @@ public abstract class Provider extends Properties {
                 Service stdService = legacyMap.get(stdKey);
                 switch (opType) {
                     case ADD:
-                    case REPLACE:
                         Objects.requireNonNull(value,
                                 "className can't be null");
                         if (stdService == null) {
                             stdService = new Service(this, type, stdAlg);
                             legacyMap.put(stdKey, stdService);
-                        } else if ((opType == OPType.ADD) &&
-                                (stdService.className != null)) {
-                            // ignore subsequent registration for ADD
-                            return;
                         }
                         stdService.className = value;
                         break;
@@ -1236,7 +1229,6 @@ public abstract class Provider extends Properties {
                 Service stdService = legacyMap.get(stdKey);
                 switch (opType) {
                     case ADD:
-                    case REPLACE:
                         Objects.requireNonNull(value,
                                 "attribute value should not be null");
 
@@ -1332,6 +1324,7 @@ public abstract class Provider extends Properties {
             }
             serviceSet = Collections.unmodifiableSet(set);
             servicesChanged = false;
+            legacyChanged = false;
         }
         return serviceSet;
     }
