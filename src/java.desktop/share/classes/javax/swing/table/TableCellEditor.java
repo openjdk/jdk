@@ -27,7 +27,7 @@ package javax.swing.table;
 
 import java.awt.Component;
 import javax.swing.CellEditor;
-import javax.swing.*;
+import javax.swing.JTable;
 
 /**
  * This interface defines the method any object that would like to be
