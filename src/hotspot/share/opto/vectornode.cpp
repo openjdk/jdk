@@ -1501,7 +1501,10 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       // Different src/dst mask length represents a re-interpretation operation,
       // we can however generate a mask casting operation if length matches.
      Node* src = in(1)->in(1)->in(1);
-     if (src->Opcode() == Op_VectorStoreMask) {
+     if (dst_type->isa_vectmask() == NULL) {
+       if (src->Opcode() != Op_VectorStoreMask) {
+         return NULL;
+       }
        src = src->in(1);
      }
      const TypeVect* src_type = src->bottom_type()->is_vect();
