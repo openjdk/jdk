@@ -31,8 +31,7 @@ import javax.swing.*;
 
 /**
  * This interface defines the method any object that would like to be
- * an editor of values for the component <code>JTable</code> that
- * needs to implement.
+ * an editor of values for the {@code JTable} component needs to implement.
  *
  * @author Alan Chung
  */
