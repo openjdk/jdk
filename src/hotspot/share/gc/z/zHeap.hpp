@@ -139,8 +139,8 @@ public:
 
   // Serviceability
   void serviceability_initialize();
-  GCMemoryManager* serviceability_cycle_memory_manager(ZGenerationId id);
-  GCMemoryManager* serviceability_pause_memory_manager(ZGenerationId id);
+  GCMemoryManager* serviceability_cycle_memory_manager(bool minor);
+  GCMemoryManager* serviceability_pause_memory_manager(bool minor);
   MemoryPool* serviceability_memory_pool(ZGenerationId id);
   ZServiceabilityCounters* serviceability_counters();
 

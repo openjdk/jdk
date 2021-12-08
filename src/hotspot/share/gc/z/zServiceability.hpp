@@ -74,28 +74,34 @@ public:
   void initialize();
 
   MemoryPool* memory_pool(ZGenerationId id);
-  GCMemoryManager* cycle_memory_manager(ZGenerationId id);
-  GCMemoryManager* pause_memory_manager(ZGenerationId id);
+  GCMemoryManager* cycle_memory_manager(bool minor);
+  GCMemoryManager* pause_memory_manager(bool minor);
   ZServiceabilityCounters* counters();
 };
 
 class ZServiceabilityCycleTracer : public StackObj {
 private:
+  static bool _minor_is_active;
+
   TraceMemoryManagerStats _memory_manager_stats;
 
 public:
-  ZServiceabilityCycleTracer(ZGenerationId id);
+  ZServiceabilityCycleTracer(bool minor);
+  ~ZServiceabilityCycleTracer();
+
+  static bool minor_is_active();
 };
 
 class ZServiceabilityPauseTracer : public StackObj {
 private:
-  const ZGenerationId     _generation_id;
   SvcGCMarker             _svc_gc_marker;
   TraceCollectorStats     _counters_stats;
   TraceMemoryManagerStats _memory_manager_stats;
 
+  bool minor_is_active() const;
+
 public:
-  ZServiceabilityPauseTracer(ZGenerationId id);
+  ZServiceabilityPauseTracer();
   ~ZServiceabilityPauseTracer();
 };
 

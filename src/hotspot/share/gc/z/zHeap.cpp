@@ -279,12 +279,12 @@ void ZHeap::serviceability_initialize() {
   _serviceability.initialize();
 }
 
-GCMemoryManager* ZHeap::serviceability_cycle_memory_manager(ZGenerationId id) {
-  return _serviceability.cycle_memory_manager(id);
+GCMemoryManager* ZHeap::serviceability_cycle_memory_manager(bool minor) {
+  return _serviceability.cycle_memory_manager(minor);
 }
 
-GCMemoryManager* ZHeap::serviceability_pause_memory_manager(ZGenerationId id) {
-  return _serviceability.pause_memory_manager(id);
+GCMemoryManager* ZHeap::serviceability_pause_memory_manager(bool minor) {
+  return _serviceability.pause_memory_manager(minor);
 }
 
 MemoryPool* ZHeap::serviceability_memory_pool(ZGenerationId id) {

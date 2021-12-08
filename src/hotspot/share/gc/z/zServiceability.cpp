@@ -69,15 +69,15 @@ private:
   ZGenerationCounters _old_generation_counters;
   HSpaceCounters      _young_space_counters;
   HSpaceCounters      _old_space_counters;
-  CollectorCounters   _young_collector_counters;
-  CollectorCounters   _old_collector_counters;
+  CollectorCounters   _minor_collection_counters;
+  CollectorCounters   _major_collection_counters;
 
 public:
   ZServiceabilityCounters(size_t initial_capacity, size_t min_capacity, size_t max_capacity);
 
-  CollectorCounters* collector_counters(ZGenerationId id);
+  CollectorCounters* collector_counters(bool minor);
 
-  void update_sizes(ZGenerationId id);
+  void update_sizes();
 };
 
 ZServiceabilityCounters::ZServiceabilityCounters(size_t initial_capacity, size_t min_capacity, size_t max_capacity) :
@@ -112,21 +112,21 @@ ZServiceabilityCounters::ZServiceabilityCounters(size_t initial_capacity, size_t
         max_capacity /* max_capacity */,
         0            /* init_capacity */),
     // gc.collector.0
-    _young_collector_counters(
-        "Z young collection pauses" /* name */,
+    _minor_collection_counters(
+        "Z minor collection pauses" /* name */,
         0                           /* ordinal */),
     // gc.collector.2
-    _old_collector_counters(
-        "Z old collection pauses" /* name */,
+    _major_collection_counters(
+        "Z major collection pauses" /* name */,
         2                         /* ordinal */) {}
 
-CollectorCounters* ZServiceabilityCounters::collector_counters(ZGenerationId id) {
-  return id == ZGenerationId::young
-      ? &_young_collector_counters
-      : &_old_collector_counters;
+CollectorCounters* ZServiceabilityCounters::collector_counters(bool minor) {
+  return minor
+      ? &_minor_collection_counters
+      : &_major_collection_counters;
 }
 
-void ZServiceabilityCounters::update_sizes(ZGenerationId id) {
+void ZServiceabilityCounters::update_sizes() {
   if (UsePerfData) {
     ZMemoryUsageInfo info = compute_memory_usage_info();
     _young_generation_counters.update_capacity(info._young_capacity);
@@ -198,15 +198,14 @@ MemoryPool* ZServiceability::memory_pool(ZGenerationId id) {
       : &_old_memory_pool;
 }
 
-GCMemoryManager* ZServiceability::cycle_memory_manager(ZGenerationId id) {
-  // FIXME: Don't use ZGenerationId to decide minor/major cycle
-  return id == ZGenerationId::young
+GCMemoryManager* ZServiceability::cycle_memory_manager(bool minor) {
+  return minor
       ? &_minor_cycle_memory_manager
       : &_major_cycle_memory_manager;
 }
 
-GCMemoryManager* ZServiceability::pause_memory_manager(ZGenerationId id) {
-  return id == ZGenerationId::young
+GCMemoryManager* ZServiceability::pause_memory_manager(bool minor) {
+  return minor
       ? &_minor_pause_memory_manager
       : &_major_pause_memory_manager;
 }
@@ -215,8 +214,10 @@ ZServiceabilityCounters* ZServiceability::counters() {
   return _counters;
 }
 
-ZServiceabilityCycleTracer::ZServiceabilityCycleTracer(ZGenerationId id) :
-    _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(id),
+bool ZServiceabilityCycleTracer::_minor_is_active;
+
+ZServiceabilityCycleTracer::ZServiceabilityCycleTracer(bool minor) :
+    _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(minor),
                           ZCollectedHeap::heap()->gc_cause(),
                           true /* allMemoryPoolsAffected */,
                           true /* recordGCBeginTime */,
@@ -225,13 +226,30 @@ ZServiceabilityCycleTracer::ZServiceabilityCycleTracer(ZGenerationId id) :
                           true /* recordPostGCUsage */,
                           true /* recordAccumulatedGCTime */,
                           true /* recordGCEndTime */,
-                          true /* countCollection */) {}
+                          true /* countCollection */) {
+  _minor_is_active = minor;
+}
 
-ZServiceabilityPauseTracer::ZServiceabilityPauseTracer(ZGenerationId id) :
-    _generation_id(id),
+ZServiceabilityCycleTracer::~ZServiceabilityCycleTracer() {
+  _minor_is_active = false;
+}
+
+bool ZServiceabilityCycleTracer::minor_is_active() {
+  return _minor_is_active;
+}
+
+bool ZServiceabilityPauseTracer::minor_is_active() const {
+  // We report pauses at the minor/major collection level instead
+  // of the young/old level. At the call-site where ZServiceabilityPauseTracer
+  // is used, we don't have that information readily available, so
+  // we let ZServiceabilityCycleTracer keep track of that.
+  return ZServiceabilityCycleTracer::minor_is_active();
+}
+
+ZServiceabilityPauseTracer::ZServiceabilityPauseTracer() :
     _svc_gc_marker(SvcGCMarker::CONCURRENT),
-    _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters(id)),
-    _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(id),
+    _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters(minor_is_active())),
+    _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(minor_is_active()),
                           ZCollectedHeap::heap()->gc_cause(),
                           true  /* allMemoryPoolsAffected */,
                           true  /* recordGCBeginTime */,
@@ -243,6 +261,6 @@ ZServiceabilityPauseTracer::ZServiceabilityPauseTracer(ZGenerationId id) :
                           true  /* countCollection */) {}
 
 ZServiceabilityPauseTracer::~ZServiceabilityPauseTracer()  {
-  ZHeap::heap()->serviceability_counters()->update_sizes(_generation_id);
+  ZHeap::heap()->serviceability_counters()->update_sizes();
   MemoryService::track_memory_usage();
 }

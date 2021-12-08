@@ -194,7 +194,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseMarkStartYoung);
-    ZServiceabilityPauseTracer tracer(ZGenerationId::young);
+    ZServiceabilityPauseTracer tracer;
 
     collected_heap()->increment_total_collections(false /* full */);
     young_collector()->mark_start();
@@ -214,7 +214,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseMarkStartYoungAndOld);
-    ZServiceabilityPauseTracer tracer(ZGenerationId::young);
+    ZServiceabilityPauseTracer tracer;
 
     collected_heap()->increment_total_collections(true /* full */);
     young_collector()->mark_start();
@@ -231,7 +231,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseMarkEndYoung);
-    ZServiceabilityPauseTracer tracer(ZGenerationId::young);
+    ZServiceabilityPauseTracer tracer;
     return young_collector()->mark_end();
   }
 };
@@ -248,7 +248,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseRelocateStartYoung);
-    ZServiceabilityPauseTracer tracer(ZGenerationId::young);
+    ZServiceabilityPauseTracer tracer;
     young_collector()->relocate_start();
     return true;
   }
@@ -480,7 +480,7 @@ public:
       _gc_cause(request.cause()),
       _gc_cause_setter(collected_heap(), _gc_cause),
       _stat_timer(ZPhaseCollectionMinor, gc_timer),
-      _tracer(ZGenerationId::young) {
+      _tracer(true /* minor */) {
     // Update statistics
     young_collector()->at_collection_start();
 
@@ -534,7 +534,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerOld timer(ZPhasePauseMarkEndOld);
-    ZServiceabilityPauseTracer tracer(ZGenerationId::old);
+    ZServiceabilityPauseTracer tracer;
     return old_collector()->mark_end();
   }
 };
@@ -551,7 +551,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerOld timer(ZPhasePauseRelocateStartOld);
-    ZServiceabilityPauseTracer tracer(ZGenerationId::old);
+    ZServiceabilityPauseTracer tracer;
     old_collector()->relocate_start();
     return true;
   }
@@ -855,7 +855,7 @@ public:
       _gc_cause(request.cause()),
       _gc_cause_setter(collected_heap(), _gc_cause),
       _stat_timer(ZPhaseCollectionMajor, gc_timer),
-      _tracer(ZGenerationId::old) {
+      _tracer(false /* minor */) {
     // Update statistics
     old_collector()->at_collection_start();
 
