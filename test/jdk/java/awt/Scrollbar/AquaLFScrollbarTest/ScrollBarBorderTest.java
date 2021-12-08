@@ -98,7 +98,6 @@ public class ScrollBarBorderTest {
             for (int j = 50; j < image.getHeight(); j++) {
                 int c1 = image.getRGB(i,j);
                 int c2 = image2.getRGB(i,j);
-                // need to find location of border but colors are always 0
                 if(c1 != c2) {
                     System.out.println(i + " " + j + " " + "Color1: " + c1);
                     System.out.println(i + " " + j + " " + "Color2: " + c2);
