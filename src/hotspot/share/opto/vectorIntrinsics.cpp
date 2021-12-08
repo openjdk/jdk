@@ -796,14 +796,14 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
-  Node* bits                      = argument(3);
+  const TypeLong*    bits_type    = gvn().type(argument(3))->isa_long();
   // Mode argument determines the mode of operation it can take following values:-
   // MODE_BROADCAST for vector Vector.boradcast and VectorMask.maskAll operations.
   // MODE_BITS_COERCED_LONG_TO_MASK for VectorMask.fromLong operation.
   const TypeInt*     mode         = gvn().type(argument(5))->isa_int();
 
   if (vector_klass == NULL || elem_klass == NULL || vlen == NULL || mode == NULL ||
-      vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL ||
+      bits_type == NULL || vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL ||
       !vlen->is_con() || !mode->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s bitwise=%s",
@@ -849,6 +849,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   }
 
   Node* broadcast = NULL;
+  Node* bits = argument(3);
   Node* elem = bits;
 
   if (opc == Op_VectorLongToMask) {
