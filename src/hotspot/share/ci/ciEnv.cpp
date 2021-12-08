@@ -560,7 +560,8 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     }
   }
 
-  // java.lang.Class may not be loaded by AppClassLoader
+  // Check if it's java.lang.Class, because java.lang.Class may not be loaded by
+  // current classloader. And this helps to avoid deoptimizations (see JDK-8278135)
   if (found_klass == NULL && sym == vmSymbols::java_lang_Class()) {
     return Class_klass();
   }
