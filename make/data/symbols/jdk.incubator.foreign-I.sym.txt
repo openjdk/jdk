@@ -30,12 +30,12 @@ class name jdk/incubator/foreign/AbstractLayout
 header extends java/lang/Object implements jdk/incubator/foreign/MemoryLayout flags 420
 innerclass innerClass java/lang/constant/DirectMethodHandleDesc$Kind outerClass java/lang/constant/DirectMethodHandleDesc innerClassName Kind flags 4019
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-method name <init> descriptor (Ljava/util/OptionalLong;JLjava/util/Optional;)V flags 1 signature (Ljava/util/OptionalLong;JLjava/util/Optional<Ljava/lang/String;>;)V
 -method name <init> descriptor (Ljava/util/OptionalLong;JLjava/util/Map;)V
 -method name attribute descriptor (Ljava/lang/String;)Ljava/util/Optional;
 -method name attributes descriptor ()Ljava/util/stream/Stream;
 -method name withAttribute descriptor (Ljava/lang/String;Ljava/lang/constant/Constable;)Ljdk/incubator/foreign/AbstractLayout;
 -method name withAttribute descriptor (Ljava/lang/String;Ljava/lang/constant/Constable;)Ljdk/incubator/foreign/MemoryLayout;
+method name <init> descriptor (Ljava/util/OptionalLong;JLjava/util/Optional;)V flags 1 signature (Ljava/util/OptionalLong;JLjava/util/Optional<Ljava/lang/String;>;)V
 method name byteSize descriptor ()J flags 1
 
 class name jdk/incubator/foreign/Addressable
@@ -56,6 +56,7 @@ header extends java/lang/Object implements jdk/incubator/foreign/SymbolLookup se
 -method name asVarArg descriptor (Ljdk/incubator/foreign/MemoryLayout;)Ljdk/incubator/foreign/MemoryLayout;
 -method name toJavaString descriptor (Ljdk/incubator/foreign/MemorySegment;)Ljava/lang/String;
 -method name getInstance descriptor ()Ljdk/incubator/foreign/CLinker;
+-method name systemLookup descriptor ()Ljdk/incubator/foreign/SymbolLookup;
 -method name downcallHandle descriptor (Ljdk/incubator/foreign/Addressable;Ljdk/incubator/foreign/SegmentAllocator;Ljava/lang/invoke/MethodType;Ljdk/incubator/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle;
 -method name downcallHandle descriptor (Ljava/lang/invoke/MethodType;Ljdk/incubator/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle;
 -method name upcallStub descriptor (Ljava/lang/invoke/MethodHandle;Ljdk/incubator/foreign/FunctionDescriptor;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/MemoryAddress;
@@ -64,7 +65,6 @@ header extends java/lang/Object implements jdk/incubator/foreign/SymbolLookup se
 -method name toJavaString descriptor (Ljdk/incubator/foreign/MemoryAddress;)Ljava/lang/String;
 -method name allocateMemory descriptor (J)Ljdk/incubator/foreign/MemoryAddress;
 -method name freeMemory descriptor (Ljdk/incubator/foreign/MemoryAddress;)V
--method name systemLookup descriptor ()Ljdk/incubator/foreign/SymbolLookup;
 method name systemCLinker descriptor ()Ljdk/incubator/foreign/CLinker; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name lookup descriptor (Ljava/lang/String;)Ljava/util/Optional; flags 1 signature (Ljava/lang/String;)Ljava/util/Optional<Ljdk/incubator/foreign/NativeSymbol;>;
 method name downcallHandle descriptor (Ljdk/incubator/foreign/NativeSymbol;Ljdk/incubator/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle; flags 1
@@ -394,6 +394,11 @@ innerclass innerClass jdk/incubator/foreign/ValueLayout$OfLong outerClass jdk/in
 innerclass innerClass jdk/incubator/foreign/ValueLayout$OfFloat outerClass jdk/incubator/foreign/ValueLayout innerClassName OfFloat flags 19
 innerclass innerClass jdk/incubator/foreign/ValueLayout$OfDouble outerClass jdk/incubator/foreign/ValueLayout innerClassName OfDouble flags 19
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name withAttribute descriptor (Ljava/lang/String;Ljava/lang/constant/Constable;)Ljdk/incubator/foreign/ValueLayout;
+-method name withAttribute descriptor (Ljava/lang/String;Ljava/lang/constant/Constable;)Ljdk/incubator/foreign/AbstractLayout;
+-method name attributes descriptor ()Ljava/util/stream/Stream;
+-method name attribute descriptor (Ljava/lang/String;)Ljava/util/Optional;
+-method name withAttribute descriptor (Ljava/lang/String;Ljava/lang/constant/Constable;)Ljdk/incubator/foreign/MemoryLayout;
 field name ADDRESS descriptor Ljdk/incubator/foreign/ValueLayout$OfAddress; flags 19
 field name JAVA_BYTE descriptor Ljdk/incubator/foreign/ValueLayout$OfByte; flags 19
 field name JAVA_BOOLEAN descriptor Ljdk/incubator/foreign/ValueLayout$OfBoolean; flags 19
@@ -403,11 +408,6 @@ field name JAVA_INT descriptor Ljdk/incubator/foreign/ValueLayout$OfInt; flags 1
 field name JAVA_LONG descriptor Ljdk/incubator/foreign/ValueLayout$OfLong; flags 19
 field name JAVA_FLOAT descriptor Ljdk/incubator/foreign/ValueLayout$OfFloat; flags 19
 field name JAVA_DOUBLE descriptor Ljdk/incubator/foreign/ValueLayout$OfDouble; flags 19
--method name withAttribute descriptor (Ljava/lang/String;Ljava/lang/constant/Constable;)Ljdk/incubator/foreign/ValueLayout;
--method name withAttribute descriptor (Ljava/lang/String;Ljava/lang/constant/Constable;)Ljdk/incubator/foreign/AbstractLayout;
--method name attributes descriptor ()Ljava/util/stream/Stream;
--method name attribute descriptor (Ljava/lang/String;)Ljava/util/Optional;
--method name withAttribute descriptor (Ljava/lang/String;Ljava/lang/constant/Constable;)Ljdk/incubator/foreign/MemoryLayout;
 method name carrier descriptor ()Ljava/lang/Class; flags 1 signature ()Ljava/lang/Class<*>;
 method name byteSize descriptor ()J flags 1041
 
