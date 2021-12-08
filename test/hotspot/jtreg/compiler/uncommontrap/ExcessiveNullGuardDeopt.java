@@ -32,10 +32,10 @@
  * @requires vm.debug == true
  * @compile CodeDependenciesSimple.java
  *
- * @run driver compiler.exceptions.ExcessiveNullGuardDeopt
+ * @run driver compiler.uncommontrap.ExcessiveNullGuardDeopt
  */
 
-package compiler.exceptions;
+package compiler.uncommontrap;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -45,8 +45,8 @@ public class ExcessiveNullGuardDeopt {
         String[] procArgs = new String[] {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+TraceDeoptimization",
-            "-XX:CompileOnly=compiler/exceptions/CodeDependenciesSimple.foo",
-            "compiler.exceptions.CodeDependenciesSimple",
+            "-XX:CompileOnly=compiler/uncommontrap/CodeDependenciesSimple.foo",
+            "compiler.uncommontrap.CodeDependenciesSimple",
         };
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

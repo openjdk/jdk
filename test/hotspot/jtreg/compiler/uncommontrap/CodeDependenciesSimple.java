@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package compiler.exceptions;
+package compiler.uncommontrap;
 
 public class CodeDependenciesSimple {
     private static Class clzOne;
