@@ -71,7 +71,7 @@ void LoopNode::dump_spec(outputStream *st) const {
 
 //------------------------------is_valid_counted_loop-------------------------
 bool LoopNode::is_valid_counted_loop(BasicType bt) const {
-  if (is_BaseCountedLoop() && operates_on(bt, false)) {
+  if (is_BaseCountedLoop() && as_BaseCountedLoop()->bt() == bt) {
     BaseCountedLoopNode*    l  = as_BaseCountedLoop();
     BaseCountedLoopEndNode* le = l->loopexit_or_null();
     if (le != NULL &&
@@ -1433,12 +1433,12 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   Node* incr = NULL;
   Node* limit = NULL;
   Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
-  if (cmp == NULL || !(cmp->is_Cmp() && cmp->operates_on(iv_bt, true))) {
+  if (cmp == NULL || cmp->Opcode() != Op_Cmp(iv_bt)) {
     return false; // Avoid pointer & float & 64-bit compares
   }
 
   // Trip-counter increment must be commutative & associative.
-  if (incr->is_ConstraintCast() && incr->operates_on(iv_bt, false)) {
+  if (incr->Opcode() == Op_Cast(iv_bt)) {
     incr = incr->in(1);
   }
 
@@ -1455,7 +1455,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   if (!(incr = CountedLoopNode::match_incr_with_optional_truncation(incr, &trunc1, &trunc2, &iv_trunc_t, iv_bt))) {
     return false; // Funny increment opcode
   }
-  assert(incr->is_Add() && incr->operates_on(iv_bt, false), "wrong increment code");
+  assert(incr->Opcode() == Op_Add(iv_bt), "wrong increment code");
 
   Node* xphi = NULL;
   Node* stride = loop_iv_stride(incr, loop, xphi);
@@ -1464,7 +1464,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     return false;
   }
 
-  if (xphi->is_ConstraintCast() && xphi->operates_on(iv_bt, false)) {
+  if (xphi->Opcode() == Op_Cast(iv_bt)) {
     xphi = xphi->in(1);
   }
 
@@ -2272,7 +2272,7 @@ Node* CountedLoopNode::match_incr_with_optional_truncation(Node* expr, Node** tr
   }
 
   // If (maybe after stripping) it is an AddI, we won:
-  if (n1->is_Add() && n1->operates_on(bt, true)) {
+  if (n1op == Op_Add(bt)) {
     *trunc1 = t1;
     *trunc2 = t2;
     *trunc_type = trunc_t;
