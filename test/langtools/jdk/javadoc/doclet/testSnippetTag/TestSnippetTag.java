@@ -2418,11 +2418,12 @@ error: snippet markup: invalid attribute value
                 /* ---------------------- */
                 new TestCase("""
 {@snippet :
-    hello // @highlight substring="
+    hello
+    there // @highlight substring="
 }""",
                              """
 error: snippet markup: unterminated attribute value
-    hello // @highlight substring="
+    there // @highlight substring="
                                   ^
                              """),
                 new TestCase("""

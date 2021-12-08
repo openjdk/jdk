@@ -31,11 +31,8 @@ import java.util.List;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 
 //
-// markup-comment = { markup-tag } ;
-//     markup-tag = "@" , tag-name , {attribute} [":"] ;
-//
-// If optional trailing ":" is present, the tag refers to the next line
-// rather than to this line.
+// markup-comment = { markup-tag } [":"] ;
+//     markup-tag = "@" , tag-name , {attribute} ;
 //
 
 /**
@@ -76,15 +73,28 @@ public final class MarkupParser {
     }
 
     protected List<Parser.Tag> parse() throws ParseException {
+        List<Parser.Tag> tags = readTags();
+        if (ch == ':') {
+            tags.forEach(t -> t.appliesToNextLine = true);
+            nextChar();
+        }
+        skipWhitespace();
+        if (ch != EOI) {
+            return List.of();
+        }
+        return tags;
+    }
+
+    protected List<Parser.Tag> readTags() throws ParseException {
         List<Parser.Tag> tags = new ArrayList<>();
-        // TODO: what to do with leading and trailing unrecognized markup?
+        skipWhitespace();
         while (bp < buflen) {
-            switch (ch) {
-                case '@' -> tags.add(readTag());
-                default -> nextChar();
+            if (ch == '@') {
+                tags.add(readTag());
+            } else {
+                break;
             }
         }
-
         return tags;
     }
 
@@ -94,26 +104,13 @@ public final class MarkupParser {
         String name = readIdentifier();
         skipWhitespace();
 
-        boolean appliesToNextLine = false;
-        List<Attribute> attributes = List.of();
-
-        if (ch == ':') {
-            appliesToNextLine = true;
-            nextChar();
-        } else {
-            attributes = attrs();
-            skipWhitespace();
-            if (ch == ':') {
-                appliesToNextLine = true;
-                nextChar();
-            }
-        }
+        List<Attribute> attributes = attrs();
+        skipWhitespace();
 
         Parser.Tag i = new Parser.Tag();
         i.nameLineOffset = nameBp;
         i.name = name;
         i.attributes = attributes;
-        i.appliesToNextLine = appliesToNextLine;
 
         return i;
     }

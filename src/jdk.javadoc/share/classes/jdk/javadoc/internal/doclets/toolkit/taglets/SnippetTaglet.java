@@ -269,8 +269,14 @@ public class SnippetTaglet extends BaseTaglet {
         StyledText externalSnippet = null;
 
         try {
+            Diags d = (text, pos) -> {
+                var path = writer.configuration().utils.getCommentHelper(holder)
+                        .getDocTreePath(snippetTag.getBody());
+                writer.configuration().getReporter().print(Diagnostic.Kind.WARNING,
+                        path, pos, pos, pos, text);
+            };
             if (inlineContent != null) {
-                inlineSnippet = parse(writer.configuration().getDocResources(), language, inlineContent);
+                inlineSnippet = parse(writer.configuration().getDocResources(), d, language, inlineContent);
             }
         } catch (ParseException e) {
             var path = writer.configuration().utils.getCommentHelper(holder)
@@ -284,8 +290,10 @@ public class SnippetTaglet extends BaseTaglet {
         }
 
         try {
+            var finalFileObject = fileObject;
+            Diags d = (text, pos) -> writer.configuration().getMessages().warning(finalFileObject, pos, pos, pos, text);
             if (externalContent != null) {
-                externalSnippet = parse(writer.configuration().getDocResources(), language, externalContent);
+                externalSnippet = parse(writer.configuration().getDocResources(), d, language, externalContent);
             }
         } catch (ParseException e) {
             assert fileObject != null;
@@ -363,10 +371,14 @@ public class SnippetTaglet extends BaseTaglet {
                """.formatted(inline, external);
     }
 
-    private StyledText parse(Resources resources, Optional<Language> language, String content) throws ParseException {
-        Parser.Result result = new Parser(resources).parse(language, content);
+    private StyledText parse(Resources resources, Diags diags, Optional<Language> language, String content) throws ParseException {
+        Parser.Result result = new Parser(resources).parse(diags, language, content);
         result.actions().forEach(Action::perform);
         return result.text();
+    }
+
+    public interface Diags {
+        void warn(String text, int pos);
     }
 
     private static String stringValueOf(AttributeTree at) throws BadSnippetException {
