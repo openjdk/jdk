@@ -85,6 +85,7 @@ public:
 
   void add_ref_cleared(ReferenceType ref_type, size_t count);
   void set_ref_discovered(ReferenceType ref_type, size_t count);
+  size_t ref_discovered(ReferenceType ref_type);
 
   void set_balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase, double time_ms);
 
@@ -98,23 +99,23 @@ public:
   void print_all_references(uint base_indent = 0, bool print_total = true) const;
 };
 
-class RefProcWorkerTimeTracker : public CHeapObj<mtGC> {
+class RefProcWorkerTimeTracker : public StackObj {
 protected:
   WorkerDataArray<double>* _worker_time;
   double                   _start_time;
   uint                     _worker_id;
 public:
   RefProcWorkerTimeTracker(WorkerDataArray<double>* worker_time, uint worker_id);
-  virtual ~RefProcWorkerTimeTracker();
+  ~RefProcWorkerTimeTracker();
 };
 
 // Updates working time of each worker thread for a given sub phase.
-class RefProcSubPhasesWorkerTimeTracker : public RefProcWorkerTimeTracker {
+class RefProcSubPhasesWorkerTimeTracker : public StackObj {
+  RefProcWorkerTimeTracker _tracker;
 public:
   RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
                                     ReferenceProcessorPhaseTimes* phase_times,
                                     uint worker_id);
-  ~RefProcSubPhasesWorkerTimeTracker();
 };
 
 class RefProcPhaseTimeBaseTracker : public StackObj {

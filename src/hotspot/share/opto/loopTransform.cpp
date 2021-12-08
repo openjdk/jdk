@@ -2521,7 +2521,7 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType
   }
   int opc = exp->Opcode();
   // Can't use is_Mul() here as it's true for AndI and AndL
-  if ((opc == Op_MulI || opc == Op_MulL) && exp->operates_on(bt, true)) {
+  if (opc == Op_Mul(bt)) {
     if (exp->in(1)->uncast() == iv && exp->in(2)->is_Con()) {
       if (p_scale != NULL) {
         *p_scale = exp->in(2)->get_integer_as_long(bt);
@@ -2534,7 +2534,7 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType
       }
       return true;
     }
-  } else if (exp->is_LShift() && exp->operates_on(bt, true)) {
+  } else if (opc == Op_LShift(bt)) {
     if (exp->in(1)->uncast() == iv && exp->in(2)->is_Con()) {
       if (p_scale != NULL) {
         jint shift_amount = exp->in(2)->get_int();
@@ -2563,7 +2563,8 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scal
     return true;
   }
   exp = exp->uncast();
-  if (exp->is_Add() && exp->operates_on(bt, true)) {
+  int opc = exp->Opcode();
+  if (opc == Op_Add(bt)) {
     if (is_scaled_iv(exp->in(1), iv, p_scale, bt)) {
       if (p_offset != NULL) {
         *p_offset = exp->in(2);
@@ -2590,7 +2591,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scal
         return true;
       }
     }
-  } else if (exp->is_Sub() && exp->operates_on(bt, true)) {
+  } else if (opc == Op_Sub(bt)) {
     if (is_scaled_iv(exp->in(1), iv, p_scale, bt)) {
       if (p_offset != NULL) {
         Node *zero = _igvn.integercon(0, bt);

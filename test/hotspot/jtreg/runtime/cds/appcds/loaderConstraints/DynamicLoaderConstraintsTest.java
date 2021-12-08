@@ -139,7 +139,7 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
                 "java.base,jdk.httpserver",
                 "--add-exports",
                 "java.base/jdk.internal.misc=ALL-UNNAMED",
-                "-Xlog:class+load,class+loader+constraints",
+                "-Xlog:cds=debug,class+load,class+loader+constraints",
             };
 
             if (useCustomLoader) {

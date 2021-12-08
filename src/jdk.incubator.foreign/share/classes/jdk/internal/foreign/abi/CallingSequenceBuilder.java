@@ -59,7 +59,7 @@ public class CallingSequenceBuilder {
         verifyBindings(true, carrier, bindings);
         inputBindings.add(bindings);
         mt = mt.appendParameterTypes(carrier);
-        desc = desc.withAppendedArgumentLayouts(layout);
+        desc = desc.appendArgumentLayouts(layout);
         return this;
     }
 
@@ -68,7 +68,7 @@ public class CallingSequenceBuilder {
         verifyBindings(false, carrier, bindings);
         this.outputBindings = bindings;
         mt = mt.changeReturnType(carrier);
-        desc = desc.withReturnLayout(layout);
+        desc = desc.changeReturnLayout(layout);
         return this;
     }
 

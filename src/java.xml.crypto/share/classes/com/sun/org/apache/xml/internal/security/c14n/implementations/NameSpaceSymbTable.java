@@ -348,7 +348,7 @@ class SymbMap implements Cloneable {
     List<NameSpaceSymbEntry> entrySet() {
         List<NameSpaceSymbEntry> a = new ArrayList<>();
         for (int i = 0;i < entries.length;i++) {
-            if (entries[i] != null && !"".equals(entries[i].uri)) {
+            if (entries[i] != null && entries[i].uri.length() != 0) {
                 a.add(entries[i]);
             }
         }

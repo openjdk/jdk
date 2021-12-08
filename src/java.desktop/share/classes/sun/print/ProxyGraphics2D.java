@@ -1264,7 +1264,7 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
     /**
      * Empty finalizer as no clean up needed here.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public void finalize() {
     }
 
