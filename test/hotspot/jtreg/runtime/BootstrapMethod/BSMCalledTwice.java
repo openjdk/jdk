@@ -24,10 +24,12 @@
 /*
  * @test
  * @bug 8174954
+ * @bug 8262134
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile -XDignore.symbol.file BSMCalledTwice.java
  * @run main BSMCalledTwice
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,TestC::* -XX:+DeoptimizeALot -XX:+VerifyStack BSMCalledTwice
  */
 
 import java.io.File;
