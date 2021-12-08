@@ -3449,7 +3449,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
   return vm_args->set_args(&options);
 }
 
-jint Arguments::set_shared_spaces_flags_and_archive_paths() {
+void Arguments::set_shared_spaces_flags_and_archive_paths() {
   if (DumpSharedSpaces) {
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");
@@ -3459,9 +3459,12 @@ jint Arguments::set_shared_spaces_flags_and_archive_paths() {
 #if INCLUDE_CDS
   // Initialize shared archive paths which could include both base and dynamic archive paths
   // This must be after set_ergonomics_flags() called so flag UseCompressedOops is set properly.
-  init_shared_archive_paths();
+  //
+  // UseSharedSpaces may be disabled if -XX:SharedArchiveFile is invalid.
+  if (DumpSharedSpaces || UseSharedSpaces) {
+    init_shared_archive_paths();
+  }
 #endif  // INCLUDE_CDS
-  return JNI_OK;
 }
 
 #if INCLUDE_CDS
@@ -3510,7 +3513,9 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   char* cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len);
   cur_path[len] = '\0';
-  FileMapInfo::check_archive((const char*)cur_path, true /*is_static*/);
+  if (!FileMapInfo::check_archive((const char*)cur_path, true /*is_static*/)) {
+    return;
+  }
   *base_archive_path = cur_path;
 
   begin_ptr = ++end_ptr;
@@ -3522,7 +3527,9 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   len = end_ptr - begin_ptr;
   cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len + 1);
-  FileMapInfo::check_archive((const char*)cur_path, false /*is_static*/);
+  if (!FileMapInfo::check_archive((const char*)cur_path, false /*is_static*/)) {
+    return;
+  }
   *top_archive_path = cur_path;
 }
 
@@ -3566,17 +3573,26 @@ void Arguments::init_shared_archive_paths() {
           "Cannot have more than 2 archive files specified in the -XX:SharedArchiveFile option");
       }
       if (archives == 1) {
-        char* temp_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+        char* base_archive_path = NULL;
         bool success =
-          FileMapInfo::get_base_archive_name_from_header(temp_archive_path, &SharedArchivePath);
+          FileMapInfo::get_base_archive_name_from_header(SharedArchiveFile, &base_archive_path);
         if (!success) {
-          SharedArchivePath = temp_archive_path;
+          no_shared_spaces("invalid archive");
+        } else if (base_archive_path == NULL) {
+          // User has specified a single archive, which is a static archive.
+          SharedArchivePath = const_cast<char *>(SharedArchiveFile);
         } else {
-          SharedDynamicArchivePath = temp_archive_path;
+          // User has specified a single archive, which is a dynamic archive.
+          SharedDynamicArchivePath = const_cast<char *>(SharedArchiveFile);
+          SharedArchivePath = base_archive_path; // has been c-heap allocated.
         }
       } else {
         extract_shared_archive_paths((const char*)SharedArchiveFile,
                                       &SharedArchivePath, &SharedDynamicArchivePath);
+        if (SharedArchivePath == NULL) {
+          assert(SharedDynamicArchivePath == NULL, "must be");
+          no_shared_spaces("invalid archive");
+        }
       }
 
       if (SharedDynamicArchivePath != nullptr) {
@@ -4049,8 +4065,7 @@ jint Arguments::apply_ergo() {
 
   GCConfig::arguments()->initialize();
 
-  result = set_shared_spaces_flags_and_archive_paths();
-  if (result != JNI_OK) return result;
+  set_shared_spaces_flags_and_archive_paths();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();
