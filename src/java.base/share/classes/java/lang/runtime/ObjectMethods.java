@@ -396,9 +396,8 @@ public class ObjectMethods {
      *                     if invoked by a condy
      * @throws IllegalArgumentException if the bootstrap arguments are invalid
      *                                  or inconsistent
-     * @throws NullPointerException if any argument is {@code null}, in the case
-     *                              of the {@code getters} argument, its
-     *                              contents cannot be {@code null} either
+     * @throws NullPointerException if any argument is {@code null} or if any element
+     *                              in the {@code getters} array is {@code null}
      * @throws Throwable if any exception is thrown during call site construction
      */
     public static Object bootstrap(MethodHandles.Lookup lookup, String methodName, TypeDescriptor type,
