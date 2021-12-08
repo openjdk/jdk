@@ -379,8 +379,7 @@ ZYoungTypeSetter::~ZYoungTypeSetter() {
 ZYoungCollector::ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     ZCollector(ZGenerationId::young, page_table, page_allocator),
     _active_type(ZYoungType::none),
-    _remembered(page_table, page_allocator),
-    _tracer() {}
+    _remembered(page_table, page_allocator) {}
 
 void ZYoungCollector::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
@@ -505,10 +504,6 @@ void ZYoungCollector::scan_remembered_sets() {
 
 void ZYoungCollector::flip_remembered_sets() {
   _remembered.flip();
-}
-
-GCTracer* ZYoungCollector::tracer() {
-  return &_tracer;
 }
 
 ZOldCollector::ZOldCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
@@ -785,8 +780,4 @@ void ZOldCollector::roots_remap() {
 
 int ZOldCollector::total_collections_at_end() const {
   return _total_collections_at_end;
-}
-
-GCTracer* ZOldCollector::tracer() {
-  return &_tracer;
 }

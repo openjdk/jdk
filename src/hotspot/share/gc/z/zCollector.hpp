@@ -162,9 +162,6 @@ public:
   zaddress relocate_or_remap_object(zaddress_unsafe addr);
   zaddress remap_object(zaddress_unsafe addr);
 
-  // Tracing
-  virtual GCTracer* tracer() = 0;
-
   // Threads
   void threads_do(ThreadClosure* tc) const;
 };
@@ -188,8 +185,6 @@ class ZYoungCollector : public ZCollector {
 private:
   ZYoungType   _active_type;
   ZRemembered  _remembered;
-  ZYoungTracer _tracer;
-
 
 public:
   ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
@@ -231,10 +226,6 @@ public:
 
   // Verification
   bool is_remembered(volatile zpointer* p) const;
-
-  // Tracing
-
-  virtual GCTracer* tracer();
 };
 
 class ZOldCollector : public ZCollector {
@@ -243,7 +234,6 @@ private:
   ZWeakRootsProcessor _weak_roots_processor;
   ZUnload             _unload;
   int                 _total_collections_at_end;
-  ZOldTracer          _tracer;
 
 public:
   ZOldCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
@@ -265,8 +255,6 @@ public:
   void roots_remap();
 
   int total_collections_at_end() const;
-
-  virtual GCTracer* tracer();
 };
 
 #endif // SHARE_GC_Z_ZCOLLECTOR_HPP

@@ -26,6 +26,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zReferenceProcessor.hpp"
 #include "gc/z/zStat.hpp"
@@ -427,7 +428,7 @@ void ZReferenceProcessor::collect_statistics() {
                                       discovered[REF_WEAK],
                                       discovered[REF_FINAL],
                                       discovered[REF_PHANTOM]);
-  ZHeap::heap()->old_collector()->tracer()->report_gc_reference_stats(stats);
+  ZCollectedHeap::heap()->major_jfr_tracer()->report_gc_reference_stats(stats);
 }
 
 class ZReferenceProcessorTask : public ZTask {

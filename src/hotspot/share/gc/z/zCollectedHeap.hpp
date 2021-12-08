@@ -128,6 +128,9 @@ public:
   virtual void print_tracing_info() const;
   virtual bool print_location(outputStream* st, void* addr) const;
 
+  GCTracer* major_jfr_tracer();
+  GCTracer* minor_jfr_tracer();
+
   virtual void prepare_for_verify();
   virtual void verify(VerifyOption option /* ignored */);
   virtual bool is_oop(oop object) const;

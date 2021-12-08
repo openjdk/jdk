@@ -43,8 +43,8 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 
-static const ZStatPhaseCollection ZPhaseCollectionMinor("Minor Garbage Collection");
-static const ZStatPhaseCollection ZPhaseCollectionMajor("Major Garbage Collection");
+static const ZStatPhaseCollection ZPhaseCollectionMinor("Minor Garbage Collection", true /* minor */);
+static const ZStatPhaseCollection ZPhaseCollectionMajor("Major Garbage Collection", false /* minor */);
 
 static const ZStatPhaseGeneration ZPhaseGenerationYoung[] {
   ZStatPhaseGeneration("Young Generation (Minor)", ZGenerationId::young),
@@ -433,7 +433,8 @@ static void collect_young(ZYoungType type, ConcurrentGCTimer* timer) {
 
 ZDriverMinor::ZDriverMinor() :
     _port(),
-    _gc_timer() {
+    _gc_timer(),
+    _jfr_tracer() {
   set_name("ZDriverMinor");
   create_and_start();
 }
@@ -459,6 +460,10 @@ void ZDriverMinor::collect(const ZDriverRequest& request) {
     fatal("Unsupported GC cause (%s)", GCCause::to_string(request.cause()));
     break;
   }
+}
+
+GCTracer* ZDriverMinor::jfr_tracer() {
+  return &_jfr_tracer;
 }
 
 class ZDriverScopeMinor : public StackObj {
@@ -788,7 +793,8 @@ static void collect_old(ConcurrentGCTimer* timer) {
 ZDriverMajor::ZDriverMajor(ZDriverMinor* minor) :
     _port(),
     _minor(minor),
-    _gc_timer() {
+    _gc_timer(),
+    _jfr_tracer() {
   set_name("ZDriverMajor");
   create_and_start();
 }
@@ -829,6 +835,10 @@ void ZDriverMajor::collect(const ZDriverRequest& request) {
     _minor->collect(request);
     break;
   }
+}
+
+GCTracer* ZDriverMajor::jfr_tracer() {
+  return &_jfr_tracer;
 }
 
 class ZDriverScopeMajor : public StackObj {

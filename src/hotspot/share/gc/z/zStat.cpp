@@ -622,11 +622,21 @@ const char* ZStatPhase::name() const {
   return _sampler.name();
 }
 
-ZStatPhaseCollection::ZStatPhaseCollection(const char* name) :
-    ZStatPhase("Collection", name) {}
+ZStatPhaseCollection::ZStatPhaseCollection(const char* name, bool minor) :
+    ZStatPhase("Collection", name),
+    _minor(minor) {}
+
+GCTracer* ZStatPhaseCollection::jfr_tracer() const {
+  return _minor
+      ? ZCollectedHeap::heap()->minor_jfr_tracer()
+      : ZCollectedHeap::heap()->major_jfr_tracer();
+}
 
 void ZStatPhaseCollection::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   timer->register_gc_start(start);
+
+  jfr_tracer()->report_gc_start(ZCollectedHeap::heap()->gc_cause(), start);
+  ZCollectedHeap::heap()->trace_heap_before_gc(jfr_tracer());
 
   log_info(gc, start)("%s (%s)", name(), GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
 }
@@ -638,6 +648,9 @@ void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& s
   }
 
   timer->register_gc_end(end);
+
+  jfr_tracer()->report_gc_end(end, timer->time_partitions());
+  ZCollectedHeap::heap()->trace_heap_after_gc(jfr_tracer());
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -655,13 +668,7 @@ ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id) :
     _id(id) {}
 
 void ZStatPhaseGeneration::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
-  timer->register_gc_start(start);
-
-  GCTracer* const tracer = ZHeap::heap()->collector(_id)->tracer();
-  tracer->report_gc_start(ZCollectedHeap::heap()->gc_cause(), start);
-
   ZCollectedHeap::heap()->print_heap_before_gc();
-  ZCollectedHeap::heap()->trace_heap_before_gc(tracer);
 
   log_info(gc, phases, start)("%s", name());
 }
@@ -672,17 +679,12 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
     return;
   }
 
-  timer->register_gc_end(end);
-
-  ZCollector* const collector = ZHeap::heap()->collector(_id);
-  GCTracer* const tracer = collector->tracer();
-  tracer->report_gc_end(end, timer->time_partitions());
-
   ZCollectedHeap::heap()->print_heap_after_gc();
-  ZCollectedHeap::heap()->trace_heap_after_gc(tracer);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
+
+  ZCollector* const collector = ZHeap::heap()->collector(_id);
 
   ZStatLoad::print();
   ZStatMMU::print();

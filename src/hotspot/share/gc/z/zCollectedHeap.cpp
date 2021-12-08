@@ -362,6 +362,14 @@ bool ZCollectedHeap::print_location(outputStream* st, void* addr) const {
   return _heap.print_location(st, (uintptr_t)addr);
 }
 
+GCTracer* ZCollectedHeap::minor_jfr_tracer() {
+  return _driver_minor->jfr_tracer();
+}
+
+GCTracer* ZCollectedHeap::major_jfr_tracer() {
+  return _driver_major->jfr_tracer();
+}
+
 void ZCollectedHeap::verify(VerifyOption option /* ignored */) {
   _heap.verify();
 }

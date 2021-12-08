@@ -36,6 +36,7 @@
 #include "utilities/numberSeq.hpp"
 #include "utilities/ticks.hpp"
 
+class GCTracer;
 class ZCollector;
 class ZPage;
 class ZPageAllocatorStats;
@@ -223,8 +224,13 @@ public:
 };
 
 class ZStatPhaseCollection : public ZStatPhase {
+private:
+  const bool _minor;
+
+  GCTracer* jfr_tracer() const;
+
 public:
-  ZStatPhaseCollection(const char* name);
+  ZStatPhaseCollection(const char* name, bool minor);
 
   virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
   virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;

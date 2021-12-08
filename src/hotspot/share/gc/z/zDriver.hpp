@@ -29,6 +29,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/z/zDriverPort.hpp"
 #include "gc/z/zLock.hpp"
+#include "gc/z/zTracer.hpp"
 
 class ZDriverLock : public AllStatic {
   friend class ZDriverLocker;
@@ -48,6 +49,7 @@ class ZDriverMinor : public ConcurrentGCThread {
 private:
   ZDriverPort       _port;
   ConcurrentGCTimer _gc_timer;
+  ZMinorTracer      _jfr_tracer;
 
   void gc(const ZDriverRequest& request);
   void handle_alloc_stalls() const;
@@ -62,13 +64,16 @@ public:
   bool is_busy() const;
 
   void collect(const ZDriverRequest& request);
+
+  GCTracer* jfr_tracer();
 };
 
 class ZDriverMajor : public ConcurrentGCThread {
 private:
   ZDriverPort         _port;
   ZDriverMinor* const _minor;
-  ConcurrentGCTimer  _gc_timer;
+  ConcurrentGCTimer   _gc_timer;
+  ZMajorTracer        _jfr_tracer;
 
   void gc(const ZDriverRequest& request);
   void handle_alloc_stalls() const;
@@ -83,6 +88,8 @@ public:
   bool is_busy() const;
 
   void collect(const ZDriverRequest& request);
+
+  GCTracer* jfr_tracer();
 };
 
 #endif // SHARE_GC_Z_ZDRIVER_HPP
