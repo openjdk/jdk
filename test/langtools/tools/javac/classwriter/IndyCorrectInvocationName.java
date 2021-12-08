@@ -40,8 +40,6 @@
  * @run main IndyCorrectInvocationName
  */
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.DirectoryStream;
@@ -119,15 +117,21 @@ public class IndyCorrectInvocationName implements Plugin {
                     import java.lang.invoke.MethodHandles.Lookup;
                     import java.lang.invoke.MethodType;
                     public class Test{
-                        public static void main(String... args) {
+                        private static final String NL = "\\n";
+                        private static StringBuilder output = new StringBuilder();
+                        public static void doRun() {
                             method("a");
                             method("b");
                             method("a");
                             method("b");
                         }
+                        public static String run() {
+                            doRun();
+                            return output.toString();
+                        }
                         public static void method(String name) {}
                         public static void actualMethod(String name) {
-                            System.out.println(name);
+                            output.append(name).append(NL);
                         }
                         public static CallSite bootstrap(Lookup lookup, String name, MethodType type) throws Exception {
                             return new ConstantCallSite(MethodHandles.lookup()
@@ -149,66 +153,53 @@ public class IndyCorrectInvocationName implements Plugin {
                 .run()
                 .writeAll();
 
-        PrintStream prevOut = System.out;
+        URLClassLoader cl = new URLClassLoader(new URL[] {classes.toUri().toURL()});
 
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
-             PrintStream ps = new PrintStream(out)) {
-            System.setOut(ps);
+        String actual = (String) cl.loadClass("Test")
+                                   .getMethod("run")
+                                   .invoke(null);
+        String expected = "a\nb\na\nb\n";
+        if (!Objects.equals(actual, expected)) {
+            throw new AssertionError("expected: " + expected + "; but got: " + actual);
+        }
 
-            URLClassLoader cl = new URLClassLoader(new URL[] {classes.toUri().toURL()});
-
-            cl.loadClass("Test")
-              .getMethod("main", String[].class)
-              .invoke(null, (Object) null);
-            ps.flush();
-
-            String actual = new String(out.toByteArray()).replace("\\R", "\n");
-            String expected = "a\nb\na\nb\n";
-            if (!Objects.equals(actual, expected)) {
-                throw new AssertionError("expected: " + expected + "; but got: " + actual);
-            }
-
-            Path testClass = classes.resolve("Test.class");
-            ClassFile cf = ClassFile.read(testClass);
-            BootstrapMethods_attribute bootAttr =
-                    (BootstrapMethods_attribute) cf.attributes.get(Attribute.BootstrapMethods);
-            if (bootAttr.bootstrap_method_specifiers.length != 1) {
-                throw new AssertionError("Incorrect number of bootstrap methods: " +
-                                         bootAttr.bootstrap_method_specifiers.length);
-            }
-            Code_attribute codeAttr =
-                    (Code_attribute) cf.methods[1].attributes.get(Attribute.Code);
-            Set<Integer> seenBootstraps = new HashSet<>();
-            Set<Integer> seenNameAndTypes = new HashSet<>();
-            Set<String> seenNames = new HashSet<>();
-            for (Instruction i : codeAttr.getInstructions()) {
-                switch (i.getOpcode()) {
-                    case INVOKEDYNAMIC -> {
-                        int idx = i.getUnsignedShort(1);
-                        CONSTANT_InvokeDynamic_info dynamicInfo =
-                                (CONSTANT_InvokeDynamic_info) cf.constant_pool.get(idx);
-                        seenBootstraps.add(dynamicInfo.bootstrap_method_attr_index);
-                        seenNameAndTypes.add(dynamicInfo.name_and_type_index);
-                        CONSTANT_NameAndType_info nameAndTypeInfo =
-                                cf.constant_pool.getNameAndTypeInfo(dynamicInfo.name_and_type_index);
-                        seenNames.add(nameAndTypeInfo.getName());
-                    }
-                    case RETURN -> {}
-                    default -> throw new AssertionError("Unexpected instruction: " + i.getOpcode());
+        Path testClass = classes.resolve("Test.class");
+        ClassFile cf = ClassFile.read(testClass);
+        BootstrapMethods_attribute bootAttr =
+                (BootstrapMethods_attribute) cf.attributes.get(Attribute.BootstrapMethods);
+        if (bootAttr.bootstrap_method_specifiers.length != 1) {
+            throw new AssertionError("Incorrect number of bootstrap methods: " +
+                                     bootAttr.bootstrap_method_specifiers.length);
+        }
+        Code_attribute codeAttr =
+                (Code_attribute) cf.methods[1].attributes.get(Attribute.Code);
+        Set<Integer> seenBootstraps = new HashSet<>();
+        Set<Integer> seenNameAndTypes = new HashSet<>();
+        Set<String> seenNames = new HashSet<>();
+        for (Instruction i : codeAttr.getInstructions()) {
+            switch (i.getOpcode()) {
+                case INVOKEDYNAMIC -> {
+                    int idx = i.getUnsignedShort(1);
+                    CONSTANT_InvokeDynamic_info dynamicInfo =
+                            (CONSTANT_InvokeDynamic_info) cf.constant_pool.get(idx);
+                    seenBootstraps.add(dynamicInfo.bootstrap_method_attr_index);
+                    seenNameAndTypes.add(dynamicInfo.name_and_type_index);
+                    CONSTANT_NameAndType_info nameAndTypeInfo =
+                            cf.constant_pool.getNameAndTypeInfo(dynamicInfo.name_and_type_index);
+                    seenNames.add(nameAndTypeInfo.getName());
                 }
-                }
-            if (seenBootstraps.size() != 1) {
-                throw new AssertionError("Unexpected bootstraps: " + seenBootstraps);
+                case RETURN -> {}
+                default -> throw new AssertionError("Unexpected instruction: " + i.getOpcode());
             }
-            if (seenNameAndTypes.size() != 2) {
-                throw new AssertionError("Unexpected names and types: " + seenNameAndTypes);
             }
-            if (!seenNames.equals(Set.of("a", "b"))) {
-                throw new AssertionError("Unexpected names and types: " + seenNames);
-            }
-
-        } finally {
-            System.setOut(prevOut);
+        if (seenBootstraps.size() != 1) {
+            throw new AssertionError("Unexpected bootstraps: " + seenBootstraps);
+        }
+        if (seenNameAndTypes.size() != 2) {
+            throw new AssertionError("Unexpected names and types: " + seenNameAndTypes);
+        }
+        if (!seenNames.equals(Set.of("a", "b"))) {
+            throw new AssertionError("Unexpected names and types: " + seenNames);
         }
     }
 
