@@ -216,12 +216,12 @@ public:
   }
 
   int enum_klass_static_field_root_index_at(int i) const {
-    assert(0 <= i && i <= enum_klass_static_fields_addr()->_num, "must be");
+    assert(0 <= i && i < enum_klass_static_fields_addr()->_num, "must be");
     return enum_klass_static_fields_addr()->_root_indices[i];
   }
 
   void set_enum_klass_static_field_root_index_at(int i, int root_index) {
-    assert(0 <= i && i <= enum_klass_static_fields_addr()->_num, "must be");
+    assert(0 <= i && i < enum_klass_static_fields_addr()->_num, "must be");
     enum_klass_static_fields_addr()->_root_indices[i] = root_index;
   }
 private:

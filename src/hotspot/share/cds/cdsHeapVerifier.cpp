@@ -85,58 +85,48 @@
 CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 {
 # define ADD_EXCL(...) { static const char* e[] = {__VA_ARGS__, NULL}; add(e); }
-# define A
-# define B
-# define C
-# define D
-# define E
 
   // Unfortunately this needs to be manually maintained. If
   // test/hotspot/jtreg/runtime/cds/appcds/cacheObject/ArchivedEnumTest.java fails,
   // you might need to fix the core library code, or fix the ADD_EXCL entries below.
   //
-  //        class                                     type field
-  ADD_EXCL("java/lang/ClassLoader",                      A "scl");
-  ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator",  B "DONTINLINE_SIG",
-                                                         B "FORCEINLINE_SIG",
-                                                         B "HIDDEN_SIG",
-                                                         B "INJECTEDPROFILE_SIG",
-                                                         B "LF_COMPILED_SIG");
-  ADD_EXCL("java/lang/Module",                           A "ALL_UNNAMED_MODULE",
-                                                         A "ALL_UNNAMED_MODULE_SET",
-                                                         A "EVERYONE_MODULE",
-                                                         A "EVERYONE_SET");
-  ADD_EXCL("java/lang/System",                           A "bootLayer");
-  ADD_EXCL("java/lang/VersionProps",                     C "VENDOR_URL_BUG",
-                                                         C "VENDOR_URL_VM_BUG",
-                                                         C "VENDOR_VERSION");
-  ADD_EXCL("java/net/URL$DefaultFactory",                B "PREFIX");  // FIXME: JDK-8276561
+  //       class                                         field                     type
+  ADD_EXCL("java/lang/ClassLoader",                      "scl");                   // A 
+  ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator",  "DONTINLINE_SIG",         // B
+                                                         "FORCEINLINE_SIG",        // B
+                                                         "HIDDEN_SIG",             // B
+                                                         "INJECTEDPROFILE_SIG",    // B
+                                                         "LF_COMPILED_SIG");       // B
+  ADD_EXCL("java/lang/Module",                           "ALL_UNNAMED_MODULE",     // A
+                                                         "ALL_UNNAMED_MODULE_SET", // A
+                                                         "EVERYONE_MODULE",        // A
+                                                         "EVERYONE_SET");          // A
+  ADD_EXCL("java/lang/System",                           "bootLayer");             // A
+  ADD_EXCL("java/lang/VersionProps",                     "VENDOR_URL_BUG",         // C
+                                                         "VENDOR_URL_VM_BUG",      // C
+                                                         "VENDOR_VERSION");        // C
+  ADD_EXCL("java/net/URL$DefaultFactory",                "PREFIX");                // B FIXME: JDK-8276561
 
   // A dummy object used by HashSet. The value doesn't matter and it's never
   // tested for equality.
-  ADD_EXCL("java/util/HashSet",                          E "PRESENT");
-  ADD_EXCL("jdk/internal/loader/BuiltinClassLoader",     A "packageToModule");
-  ADD_EXCL("jdk/internal/loader/ClassLoaders",           A "BOOT_LOADER",
-                                                         A "APP_LOADER",
-                                                         A "PLATFORM_LOADER");
-  ADD_EXCL("jdk/internal/loader/URLClassPath",           B "JAVA_VERSION");
-  ADD_EXCL("jdk/internal/module/Builder",                D "cachedVersion");
-  ADD_EXCL("jdk/internal/module/ModuleLoaderMap$Mapper", A "APP_CLASSLOADER",
-                                                         A "APP_LOADER_INDEX",
-                                                         A "PLATFORM_CLASSLOADER",
-                                                         A "PLATFORM_LOADER_INDEX");
-  ADD_EXCL("jdk/internal/module/ServicesCatalog",        A "CLV");
+  ADD_EXCL("java/util/HashSet",                          "PRESENT");               // E
+  ADD_EXCL("jdk/internal/loader/BuiltinClassLoader",     "packageToModule");       // A
+  ADD_EXCL("jdk/internal/loader/ClassLoaders",           "BOOT_LOADER",            // A
+                                                         "APP_LOADER",             // A
+                                                         "PLATFORM_LOADER");       // A
+  ADD_EXCL("jdk/internal/loader/URLClassPath",           "JAVA_VERSION");          // B
+  ADD_EXCL("jdk/internal/module/Builder",                "cachedVersion");         // D
+  ADD_EXCL("jdk/internal/module/ModuleLoaderMap$Mapper", "APP_CLASSLOADER",        // A
+                                                         "APP_LOADER_INDEX",       // A
+                                                         "PLATFORM_CLASSLOADER",   // A
+                                                         "PLATFORM_LOADER_INDEX"); // A
+  ADD_EXCL("jdk/internal/module/ServicesCatalog",        "CLV");                   // A
 
   // This just points to an empty Map
-  ADD_EXCL("jdk/internal/reflect/Reflection",            E "methodFilterMap");
-  ADD_EXCL("jdk/internal/util/StaticProperty",           C "FILE_ENCODING");
+  ADD_EXCL("jdk/internal/reflect/Reflection",            "methodFilterMap");       // E
+  ADD_EXCL("jdk/internal/util/StaticProperty",           "FILE_ENCODING");         // C
 
 # undef ADD_EXCL
-# undef A
-# undef B
-# undef C
-# undef D
-# undef E
 
   ClassLoaderDataGraph::classes_do(this);
 }
@@ -223,7 +213,7 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
     ResourceMark rm;
     LogStream ls(Log(cds, heap)::warning());
     ls.print_cr("Archive heap points to a static field that may be reinitialized at runtime:");
-    ls.print_cr("Field: %s::%s", info->_holder->external_name(), info->_name->as_C_string());
+    ls.print_cr("Field: %s::%s", info->_holder->internal_name(), info->_name->as_C_string());
     ls.print("Value: ");
     orig_obj->print_on(&ls);
     ls.cr();
