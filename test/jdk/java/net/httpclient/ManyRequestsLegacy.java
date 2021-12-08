@@ -257,6 +257,14 @@ public class ManyRequestsLegacy {
         server.createContext("/foo", new TestEchoHandler());
         server.start();
 
+        // This loop implements a retry mechanism to work around an issue
+        // on some systems (observed on Windows 10) that seem to be trying to
+        // throttle the number of connections that can be made concurrently by
+        // rejecting connection attempts.
+        // On the first iteration of this loop, we will attempt 20 concurrent
+        // requests. If this fails with ConnectException, we will retry the
+        // 20 requests, but limiting the concurrency to 10 (LIMIT <- 10).
+        // If this fails again, the test will fail.
         boolean done = false;
         LOOP: do {
             RequestLimiter limiter = new RequestLimiter(LIMIT.get());
