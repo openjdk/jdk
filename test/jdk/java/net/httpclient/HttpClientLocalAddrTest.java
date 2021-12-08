@@ -203,7 +203,7 @@ public class HttpClientLocalAddrTest {
             // anyAddress
             if (Boolean.getBoolean("java.net.preferIPv6Addresses")) {
                 // ipv6 wildcard
-                final var localAddr = InetAddress.getByName("::1");
+                final var localAddr = InetAddress.getByName("::");
                 clients.add(new Object[]{
                         newBuilder(configureClientSSL)
                                 .localAddress(new InetSocketAddress(localAddr, 0))
