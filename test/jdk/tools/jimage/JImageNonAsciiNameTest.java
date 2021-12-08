@@ -41,10 +41,10 @@ import tests.Result;
  *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.*
- * @run main/othervm JImageStringsTest
+ * @run main/othervm JImageNonAsciiNameTest
  */
 
-public class JImageStringsTest {
+public class JImageNonAsciiNameTest {
     private final static String moduleName = "A_module";
     private final static String packageName = "test.\u3042"; //non-ASCII
     private final static String className = "A";
