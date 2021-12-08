@@ -24,6 +24,7 @@
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.test.lib.net.IPSupport;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -63,7 +64,6 @@ import java.util.function.Predicate;
  * @run testng/othervm
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
- *      -Djava.net.preferIPv4Stack=true
  *      HttpClientLocalAddrTest
  *
  */
@@ -201,7 +201,7 @@ public class HttpClientLocalAddrTest {
                     loopbackAddr
             });
             // anyAddress
-            if (Boolean.getBoolean("java.net.preferIPv6Addresses")) {
+            if (IPSupport.hasIPv6()) {
                 // ipv6 wildcard
                 final var localAddr = InetAddress.getByName("::");
                 clients.add(new Object[]{
@@ -211,7 +211,8 @@ public class HttpClientLocalAddrTest {
                         requestURI,
                         localAddr
                 });
-            } else {
+            }
+            if (IPSupport.hasIPv4()) {
                 // ipv4 wildcard
                 final var localAddr = InetAddress.getByName("0.0.0.0");
                 clients.add(new Object[]{
