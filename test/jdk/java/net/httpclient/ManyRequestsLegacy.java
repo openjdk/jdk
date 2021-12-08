@@ -327,8 +327,8 @@ public class ManyRequestsLegacy {
             } catch (CompletionException e) {
                 if (!Platform.isWindows()) throw e;
                 if (LIMIT.get() < REQUESTS) throw e;
-                Throwable cause;
-                while ((cause = e.getCause()) != null) {
+                Throwable cause = e;
+                while ((cause = cause.getCause()) != null) {
                     if (cause instanceof ConnectException) {
                         // try again, limit concurrency by half
                         COUNT.set(0);
