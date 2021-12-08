@@ -320,7 +320,7 @@ public final class MetadataLoader {
             if (t.isEvent) {
                 if (t.internal) {
                     aes.add(ENABLED);
-                } else  {
+                } else {
                     aes.add(DISABLED);
                 }
                 type = new PlatformEventType(t.name, t.id, false, true);
@@ -336,7 +336,7 @@ public final class MetadataLoader {
                 }
             }
             if (t.internal) {
-                type.setInternal(true); 
+                type.setInternal(true);
                 // Internal types are hidden by default
                 type.setVisible(false);
                 // Internal events are enabled by default
