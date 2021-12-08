@@ -62,7 +62,7 @@ public:
 
   // Create a GC worker.
   // We need to initialize gclab for dynamic allocated workers
-  WorkerThread* create_worker(uint id);
+  WorkerThread* create_worker(uint which);
 
   void set_initialize_gclab() { assert(!_initialize_gclab, "Can only enable once"); _initialize_gclab = true; }
 };
