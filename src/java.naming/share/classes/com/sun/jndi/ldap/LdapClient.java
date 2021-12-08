@@ -477,7 +477,7 @@ public final class LdapClient implements PooledConnection {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() {
         if (debug > 0) System.err.println("LdapClient: finalize " + this);
         forceClose(pooled);
