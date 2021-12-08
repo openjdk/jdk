@@ -1261,6 +1261,16 @@ void IR::print(bool cfg_only, bool live_only) {
   }
 }
 
+class EndNotNullValidator : public BlockClosure {
+ public:
+  EndNotNullValidator(IR* hir) {
+    hir->start()->iterate_postorder(this);
+  }
+
+  void block_do(BlockBegin* block) {
+    assert(block->end() != NULL, "Expect block end to exist.");
+  }
+};
 
 typedef GrowableArray<BlockList*> BlockListList;
 
@@ -1363,6 +1373,7 @@ public:
 void IR::verify() {
 #ifdef ASSERT
   PredecessorValidator pv(this);
+  EndNotNullValidator(this);
   VerifyBlockBeginField verifier;
   this->iterate_postorder(&verifier);
 #endif
