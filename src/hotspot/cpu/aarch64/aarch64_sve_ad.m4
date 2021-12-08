@@ -3192,3 +3192,18 @@ instruct vmask_tolong(iRegLNoSp dst, pReg src, vReg vtmp1, vReg vtmp2, pRegGov p
   %}
   ins_pipe(pipe_slow);
 %}dnl
+
+// ---------------------------- Vector mask generation ---------------------------
+instruct vmask_gen(pRegGov pg, iRegL len, rFlagsReg cr) %{
+  predicate(UseSVE > 0);
+  match(Set pg (VectorMaskGen len));
+  effect(KILL cr);
+  ins_cost(SVE_COST);
+  format %{ "sve_whilelo $pg, zr, $len\t # sve" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
+    __ sve_whilelo(as_PRegister($pg$$reg), size, zr, as_Register($len$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}

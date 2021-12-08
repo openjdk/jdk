@@ -41,8 +41,6 @@ class ReferenceProcessorPhaseTimes : public CHeapObj<mtGC> {
 
   // Records per thread time information of each sub phase.
   WorkerDataArray<double>* _sub_phases_worker_time_sec[ReferenceProcessor::RefSubPhaseMax];
-  // Total time of each sub phase.
-  double                   _sub_phases_total_time_ms[ReferenceProcessor::RefSubPhaseMax];
 
   // Records total elapsed time for each phase.
   double                   _phases_time_ms[ReferenceProcessor::RefPhaseMax];
@@ -62,7 +60,6 @@ class ReferenceProcessorPhaseTimes : public CHeapObj<mtGC> {
   GCTimer*                 _gc_timer;
 
   double phase_time_ms(ReferenceProcessor::RefProcPhases phase) const;
-  double sub_phase_total_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase) const;
 
   double total_time_ms() const { return _total_time_ms; }
 
@@ -84,12 +81,11 @@ public:
   WorkerDataArray<double>* sub_phase_worker_time_sec(ReferenceProcessor::RefProcSubPhases phase) const;
   void set_phase_time_ms(ReferenceProcessor::RefProcPhases phase, double par_phase_time_ms);
 
-  void set_sub_phase_total_phase_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase, double ref_proc_time_ms);
-
   void set_total_time_ms(double total_time_ms) { _total_time_ms = total_time_ms; }
 
   void add_ref_cleared(ReferenceType ref_type, size_t count);
   void set_ref_discovered(ReferenceType ref_type, size_t count);
+  size_t ref_discovered(ReferenceType ref_type);
 
   void set_balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase, double time_ms);
 
@@ -103,23 +99,23 @@ public:
   void print_all_references(uint base_indent = 0, bool print_total = true) const;
 };
 
-class RefProcWorkerTimeTracker : public CHeapObj<mtGC> {
+class RefProcWorkerTimeTracker : public StackObj {
 protected:
   WorkerDataArray<double>* _worker_time;
   double                   _start_time;
   uint                     _worker_id;
 public:
   RefProcWorkerTimeTracker(WorkerDataArray<double>* worker_time, uint worker_id);
-  virtual ~RefProcWorkerTimeTracker();
+  ~RefProcWorkerTimeTracker();
 };
 
 // Updates working time of each worker thread for a given sub phase.
-class RefProcSubPhasesWorkerTimeTracker : public RefProcWorkerTimeTracker {
+class RefProcSubPhasesWorkerTimeTracker : public StackObj {
+  RefProcWorkerTimeTracker _tracker;
 public:
   RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
                                     ReferenceProcessorPhaseTimes* phase_times,
                                     uint worker_id);
-  ~RefProcSubPhasesWorkerTimeTracker();
 };
 
 class RefProcPhaseTimeBaseTracker : public StackObj {

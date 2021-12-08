@@ -596,13 +596,13 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, Node* n3, uint vlen, B
 // Scalar promotion
 VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t, bool is_mask) {
   BasicType bt = opd_t->array_element_basic_type();
-  const TypeVect* vt = opd_t->singleton() ? TypeVect::make(opd_t, vlen, is_mask)
-                                          : TypeVect::make(bt, vlen, is_mask);
-
   if (is_mask && Matcher::match_rule_supported_vector(Op_MaskAll, vlen, bt)) {
+    const TypeVect* vt = TypeVect::make(opd_t, vlen, true);
     return new MaskAllNode(s, vt);
   }
 
+  const TypeVect* vt = opd_t->singleton() ? TypeVect::make(opd_t, vlen)
+                                          : TypeVect::make(bt, vlen);
   switch (bt) {
   case T_BOOLEAN:
   case T_BYTE:
@@ -801,10 +801,10 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* mask_len = in(3)->in(1);
     const TypeLong* ty = phase->type(mask_len)->isa_long();
     if (ty && ty->is_con()) {
-      BasicType mask_bt = ((VectorMaskGenNode*)in(3))->get_elem_type();
-      uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
-      if ( load_sz == 32 || load_sz == 64) {
-        assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected load size");
+      BasicType mask_bt = Matcher::vector_element_basic_type(in(3));
+      int load_sz = type2aelembytes(mask_bt) * ty->get_con();
+      assert(load_sz <= MaxVectorSize, "Unexpected load size");
+      if (load_sz == MaxVectorSize) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
         Node* adr = in(MemNode::Address);
@@ -820,10 +820,10 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* mask_len = in(4)->in(1);
     const TypeLong* ty = phase->type(mask_len)->isa_long();
     if (ty && ty->is_con()) {
-      BasicType mask_bt = ((VectorMaskGenNode*)in(4))->get_elem_type();
-      uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
-      if ( load_sz == 32 || load_sz == 64) {
-        assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected store size");
+      BasicType mask_bt = Matcher::vector_element_basic_type(in(4));
+      int load_sz = type2aelembytes(mask_bt) * ty->get_con();
+      assert(load_sz <= MaxVectorSize, "Unexpected store size");
+      if (load_sz == MaxVectorSize) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
         Node* adr = in(MemNode::Address);
@@ -1423,6 +1423,12 @@ Node* ShiftVNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
   return this;
+}
+
+Node* VectorMaskGenNode::make(Node* length, BasicType mask_bt) {
+  int max_vector = Matcher::max_vector_size(mask_bt);
+  const TypeVectMask* t_vmask = TypeVectMask::make(mask_bt, max_vector);
+  return new VectorMaskGenNode(length, t_vmask);
 }
 
 Node* VectorMaskOpNode::make(Node* mask, const Type* ty, int mopc) {

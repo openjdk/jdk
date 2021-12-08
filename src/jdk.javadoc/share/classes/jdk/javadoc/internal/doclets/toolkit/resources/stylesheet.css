@@ -555,6 +555,18 @@ div.block {
 div.block div.deprecation-comment {
     font-style:normal;
 }
+details.invalid-tag, span.invalid-tag {
+    font-size:14px;
+    font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
+    background: #ffe6e6;
+    border: thin solid #000000;
+    border-radius:2px;
+    padding: 2px 4px;
+    display:inline-block;
+}
+details.invalid-tag summary {
+    cursor: pointer;
+}
 /*
  * Styles specific to HTML5 elements.
  */
@@ -991,11 +1003,9 @@ button.snippet-copy:active {
 pre.snippet .italic {
     font-style: italic;
 }
-
 pre.snippet .bold {
     font-weight: bold;
 }
-
 pre.snippet .highlighted {
     background-color: #f7c590;
     border-radius: 10%;

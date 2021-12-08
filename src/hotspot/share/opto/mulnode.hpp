@@ -75,16 +75,13 @@ public:
   // Supplied function to return the multiplicative opcode
   virtual int mul_opcode() const = 0;
 
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
-
   // Supplied function to return the additive opcode
   virtual int max_opcode() const = 0;
 
   // Supplied function to return the multiplicative opcode
   virtual int min_opcode() const = 0;
+
+  static MulNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
 //------------------------------MulINode---------------------------------------
@@ -103,10 +100,6 @@ public:
   int min_opcode() const { return Op_MinI; }
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
-  }
 };
 
 //------------------------------MulLNode---------------------------------------
@@ -125,10 +118,6 @@ public:
   int min_opcode() const { return Op_MinL; }
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
 };
 
 
@@ -234,10 +223,6 @@ public:
   LShiftNode(Node *in1, Node *in2) : Node(NULL,in1,in2) {
     init_class_id(Class_LShift);
   }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
 };
 
 //------------------------------LShiftINode------------------------------------
@@ -251,10 +236,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
-  }
 };
 
 //------------------------------LShiftLNode------------------------------------
@@ -268,10 +249,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
 };
 
 

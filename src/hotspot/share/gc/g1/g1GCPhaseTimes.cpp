@@ -116,10 +116,12 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
   _gc_par_phases[ScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
+  _gc_par_phases[ScanHR]->create_thread_work_items("Found Roots:", ScanHRFoundRoots);
 
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
+  _gc_par_phases[OptScanHR]->create_thread_work_items("Found Roots:", ScanHRFoundRoots);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Refs:", ScanHRScannedOptRefs);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Used Memory:", ScanHRUsedMemory);
 
@@ -264,11 +266,7 @@ void G1GCPhaseTimes::add_time_secs(GCParPhases phase, uint worker_id, double sec
 }
 
 void G1GCPhaseTimes::record_or_add_time_secs(GCParPhases phase, uint worker_id, double secs) {
-  if (_gc_par_phases[phase]->get(worker_id) == _gc_par_phases[phase]->uninitialized()) {
-    record_time_secs(phase, worker_id, secs);
-  } else {
-    add_time_secs(phase, worker_id, secs);
-  }
+  _gc_par_phases[phase]->set_or_add(worker_id, secs);
 }
 
 double G1GCPhaseTimes::get_time_secs(GCParPhases phase, uint worker_id) {
@@ -576,8 +574,8 @@ void G1EvacPhaseWithTrimTimeTracker::stop() {
   _stopped = true;
 }
 
-G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool must_record) :
-  _start_time(), _phase(phase), _phase_times(phase_times), _worker_id(worker_id), _event(), _must_record(must_record) {
+G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool allow_multiple_record) :
+  _start_time(), _phase(phase), _phase_times(phase_times), _worker_id(worker_id), _event(), _allow_multiple_record(allow_multiple_record) {
   if (_phase_times != NULL) {
     _start_time = Ticks::now();
   }
@@ -585,10 +583,10 @@ G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, 
 
 G1GCParPhaseTimesTracker::~G1GCParPhaseTimesTracker() {
   if (_phase_times != NULL) {
-    if (_must_record) {
-      _phase_times->record_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
-    } else {
+    if (_allow_multiple_record) {
       _phase_times->record_or_add_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
+    } else {
+      _phase_times->record_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
     }
     _event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_phase));
   }
