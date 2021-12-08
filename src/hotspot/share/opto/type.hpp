@@ -870,6 +870,8 @@ public:
   TypeVectMask(const Type* elem, uint length) : TypeVect(VectorMask, elem, length) {}
   virtual bool eq(const Type *t) const;
   virtual const Type *xdual() const;
+  static const TypeVectMask* make(const BasicType elem_bt, uint length);
+  static const TypeVectMask* make(const Type* elem, uint length);
 };
 
 //------------------------------TypePtr----------------------------------------
