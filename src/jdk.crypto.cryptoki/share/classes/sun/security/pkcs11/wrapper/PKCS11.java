@@ -142,7 +142,7 @@ public class PKCS11 {
      *
      * @param pkcs11ModulePath the PKCS#11 library path
      * @param functionList the method name for retrieving the PKCS#11
-     *         function list; maybe null if not set in config file
+     *         function list; may be null if not set in config file
      * @preconditions (pkcs11ModulePath <> null)
      * @postconditions
      */
@@ -204,7 +204,7 @@ public class PKCS11 {
      *
      * @param pkcs11ModulePath The PKCS#11 library path.
      * @param functionList the method name for retrieving the PKCS#11
-     *         function list; maybe null if not set in config file
+     *         function list; may be null if not set in config file
      * @return the actual PKCS11 interface version
      * @preconditions (pkcs11ModulePath <> null)
      * @postconditions

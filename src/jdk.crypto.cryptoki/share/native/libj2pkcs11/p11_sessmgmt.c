@@ -295,7 +295,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SessionCancel
     rv = (*ckpFunctions30->C_SessionCancel)(ckSessionHandle,
             jLongToCKULong(jFlags));
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    ckAssertReturnValueOK(env, rv);
 }
 #endif
 
@@ -419,7 +419,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Login
             ckPinLength);
     free(ckpPinArray);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    ckAssertReturnValueOK(env, rv);
 }
 #endif
 
@@ -468,7 +468,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1LoginUser
     free(ckpPinArray);
     free(ckpUsername);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    ckAssertReturnValueOK(env, rv);
 }
 
 #endif
@@ -493,7 +493,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Logout
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     rv = (*ckpFunctions->C_Logout)(ckSessionHandle);
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    ckAssertReturnValueOK(env, rv);
 }
 #endif
 
