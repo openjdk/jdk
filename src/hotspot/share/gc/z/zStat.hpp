@@ -485,12 +485,12 @@ private:
 public:
   ZStatMark();
 
-  void set_at_mark_start(size_t nstripes);
-  void set_at_mark_end(size_t nproactiveflush,
-                       size_t nterminateflush,
-                       size_t ntrycomplete,
-                       size_t ncontinue);
-  void set_at_mark_free(size_t mark_stack_usage);
+  void at_mark_start(size_t nstripes);
+  void at_mark_end(size_t nproactiveflush,
+                   size_t nterminateflush,
+                   size_t ntrycomplete,
+                   size_t ncontinue);
+  void at_mark_free(size_t mark_stack_usage);
 
   void print();
 };
@@ -512,9 +512,9 @@ private:
 public:
   ZStatRelocation();
 
-  void set_at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats);
-  void set_at_install_relocation_set(size_t forwarding_usage);
-  void set_at_relocate_end(size_t small_in_place_count, size_t medium_in_place_count);
+  void at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats);
+  void at_install_relocation_set(size_t forwarding_usage);
+  void at_relocate_end(size_t small_in_place_count, size_t medium_in_place_count);
 
   void print();
 };
@@ -642,14 +642,14 @@ private:
   size_t reclaimed(size_t freed, size_t relocated, size_t promoted) const;
 
 public:
-  void set_at_initialize(size_t min_capacity, size_t max_capacity);
-  void set_at_collection_start(const ZPageAllocatorStats& stats);
-  void set_at_generation_collection_start(const ZPageAllocatorStats& stats);
-  void set_at_mark_start(const ZPageAllocatorStats& stats);
-  void set_at_mark_end(const ZPageAllocatorStats& stats);
-  void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
-  void set_at_relocate_start(const ZPageAllocatorStats& stats);
-  void set_at_relocate_end(const ZPageAllocatorStats& stats);
+  void at_initialize(size_t min_capacity, size_t max_capacity);
+  void at_collection_start(const ZPageAllocatorStats& stats);
+  void at_generation_collection_start(const ZPageAllocatorStats& stats);
+  void at_mark_start(const ZPageAllocatorStats& stats);
+  void at_mark_end(const ZPageAllocatorStats& stats);
+  void at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
+  void at_relocate_start(const ZPageAllocatorStats& stats);
+  void at_relocate_end(const ZPageAllocatorStats& stats);
 
   static size_t max_capacity();
   size_t used_at_collection_start() const;

@@ -77,8 +77,8 @@ ZHeap::ZHeap() :
   }
 
   // Update statistics
-  _young_collector.stat_heap()->set_at_initialize(_page_allocator.min_capacity(), _page_allocator.max_capacity());
-  _old_collector.stat_heap()->set_at_initialize(_page_allocator.min_capacity(), _page_allocator.max_capacity());
+  _young_collector.stat_heap()->at_initialize(_page_allocator.min_capacity(), _page_allocator.max_capacity());
+  _old_collector.stat_heap()->at_initialize(_page_allocator.min_capacity(), _page_allocator.max_capacity());
 
   // Successfully initialized
   _initialized = true;

@@ -123,7 +123,7 @@ void ZMark::start() {
   _stripes.set_nstripes(nstripes);
 
   // Update statistics
-  _collector->stat_mark()->set_at_mark_start(nstripes);
+  _collector->stat_mark()->at_mark_start(nstripes);
 
   // Print worker/stripe distribution
   LogTarget(Debug, gc, marking) log;
@@ -926,7 +926,7 @@ bool ZMark::end() {
   }
 
   // Update statistics
-  _collector->stat_mark()->set_at_mark_end(_nproactiveflush, _nterminateflush, _ntrycomplete, _ncontinue);
+  _collector->stat_mark()->at_mark_end(_nproactiveflush, _nterminateflush, _ntrycomplete, _ncontinue);
 
   // Mark completed
   return true;
@@ -937,7 +937,7 @@ void ZMark::free() {
   _allocator.free();
 
   // Update statistics
-  _collector->stat_mark()->set_at_mark_free(_allocator.size());
+  _collector->stat_mark()->at_mark_free(_allocator.size());
 }
 
 void ZMark::flush_and_free() {

@@ -1295,21 +1295,21 @@ ZStatMark::ZStatMark() :
     _mark_stack_usage() {
 }
 
-void ZStatMark::set_at_mark_start(size_t nstripes) {
+void ZStatMark::at_mark_start(size_t nstripes) {
   _nstripes = nstripes;
 }
 
-void ZStatMark::set_at_mark_end(size_t nproactiveflush,
-                                size_t nterminateflush,
-                                size_t ntrycomplete,
-                                size_t ncontinue) {
+void ZStatMark::at_mark_end(size_t nproactiveflush,
+                            size_t nterminateflush,
+                            size_t ntrycomplete,
+                            size_t ncontinue) {
   _nproactiveflush = nproactiveflush;
   _nterminateflush = nterminateflush;
   _ntrycomplete = ntrycomplete;
   _ncontinue = ncontinue;
 }
 
-void ZStatMark::set_at_mark_free(size_t mark_stack_usage) {
+void ZStatMark::at_mark_free(size_t mark_stack_usage) {
   _mark_stack_usage = mark_stack_usage;
 }
 
@@ -1339,15 +1339,15 @@ ZStatRelocation::ZStatRelocation() :
     _medium_in_place_count() {
 }
 
-void ZStatRelocation::set_at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats) {
+void ZStatRelocation::at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats) {
   _selector_stats = selector_stats;
 }
 
-void ZStatRelocation::set_at_install_relocation_set(size_t forwarding_usage) {
+void ZStatRelocation::at_install_relocation_set(size_t forwarding_usage) {
   _forwarding_usage = forwarding_usage;
 }
 
-void ZStatRelocation::set_at_relocate_end(size_t small_in_place_count, size_t medium_in_place_count) {
+void ZStatRelocation::at_relocate_end(size_t small_in_place_count, size_t medium_in_place_count) {
   _small_in_place_count = small_in_place_count;
   _medium_in_place_count = medium_in_place_count;
 }
@@ -1486,12 +1486,12 @@ size_t ZStatHeap::reclaimed(size_t freed, size_t relocated, size_t promoted) con
   return freed - relocated - promoted;
 }
 
-void ZStatHeap::set_at_initialize(size_t min_capacity, size_t max_capacity) {
+void ZStatHeap::at_initialize(size_t min_capacity, size_t max_capacity) {
   _at_initialize.min_capacity = min_capacity;
   _at_initialize.max_capacity = max_capacity;
 }
 
-void ZStatHeap::set_at_collection_start(const ZPageAllocatorStats& stats) {
+void ZStatHeap::at_collection_start(const ZPageAllocatorStats& stats) {
   _at_collection_start.soft_max_capacity = stats.soft_max_capacity();
   _at_collection_start.capacity = stats.capacity();
   _at_collection_start.free = free(stats.used());
@@ -1499,7 +1499,7 @@ void ZStatHeap::set_at_collection_start(const ZPageAllocatorStats& stats) {
   _at_collection_start.used_generation = stats.used_generation();
 }
 
-void ZStatHeap::set_at_generation_collection_start(const ZPageAllocatorStats& stats) {
+void ZStatHeap::at_generation_collection_start(const ZPageAllocatorStats& stats) {
   _at_generation_collection_start.soft_max_capacity = stats.soft_max_capacity();
   _at_generation_collection_start.capacity = stats.capacity();
   _at_generation_collection_start.free = free(stats.used());
@@ -1507,7 +1507,7 @@ void ZStatHeap::set_at_generation_collection_start(const ZPageAllocatorStats& st
   _at_generation_collection_start.used_generation = stats.used_generation();
 }
 
-void ZStatHeap::set_at_mark_start(const ZPageAllocatorStats& stats) {
+void ZStatHeap::at_mark_start(const ZPageAllocatorStats& stats) {
   _at_mark_start.soft_max_capacity = stats.soft_max_capacity();
   _at_mark_start.capacity = stats.capacity();
   _at_mark_start.free = free(stats.used());
@@ -1515,7 +1515,7 @@ void ZStatHeap::set_at_mark_start(const ZPageAllocatorStats& stats) {
   _at_mark_start.used_generation = stats.used_generation();
 }
 
-void ZStatHeap::set_at_mark_end(const ZPageAllocatorStats& stats) {
+void ZStatHeap::at_mark_end(const ZPageAllocatorStats& stats) {
   _at_mark_end.capacity = stats.capacity();
   _at_mark_end.free = free(stats.used());
   _at_mark_end.used = stats.used();
@@ -1523,13 +1523,13 @@ void ZStatHeap::set_at_mark_end(const ZPageAllocatorStats& stats) {
   _at_mark_end.mutator_allocated = mutator_allocated(stats.used_generation(), 0 /* reclaimed */, 0 /* relocated */);
 }
 
-void ZStatHeap::set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
+void ZStatHeap::at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
   const size_t live = stats.small().live() + stats.medium().live() + stats.large().live();
   _at_mark_end.live = live;
   _at_mark_end.garbage = _at_mark_start.used_generation - live;
 }
 
-void ZStatHeap::set_at_relocate_start(const ZPageAllocatorStats& stats) {
+void ZStatHeap::at_relocate_start(const ZPageAllocatorStats& stats) {
   assert(stats.compacted() == 0, "Nothing should have been compacted");
 
   _at_relocate_start.capacity = stats.capacity();
@@ -1544,7 +1544,7 @@ void ZStatHeap::set_at_relocate_start(const ZPageAllocatorStats& stats) {
   _at_relocate_start.compacted = stats.compacted();
 }
 
-void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats) {
+void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats) {
   _at_relocate_end.capacity = stats.capacity();
   _at_relocate_end.capacity_high = capacity_high();
   _at_relocate_end.capacity_low = capacity_low();

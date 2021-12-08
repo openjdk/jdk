@@ -845,8 +845,8 @@ public:
       _old_medium_allocator(ZGenerationId::old, ZPageAge::old, _collector) {}
 
   ~ZRelocateTask() {
-    _collector->stat_relocation()->set_at_relocate_end(_survivor_small_allocator.in_place_count() + _old_small_allocator.in_place_count(),
-                                                       _survivor_medium_allocator.in_place_count() + _old_medium_allocator.in_place_count());
+    _collector->stat_relocation()->at_relocate_end(_survivor_small_allocator.in_place_count() + _old_small_allocator.in_place_count(),
+                                                   _survivor_medium_allocator.in_place_count() + _old_medium_allocator.in_place_count());
   }
 
   virtual void work() {

@@ -195,8 +195,8 @@ void ZCollector::select_relocation_set(bool promote_all) {
   }
 
   // Update statistics
-  stat_relocation()->set_at_select_relocation_set(selector.stats());
-  stat_heap()->set_at_select_relocation_set(selector.stats());
+  stat_relocation()->at_select_relocation_set(selector.stats());
+  stat_heap()->at_select_relocation_set(selector.stats());
 }
 
 void ZCollector::reset_relocation_set() {
@@ -331,13 +331,13 @@ void ZCollector::set_phase(Phase new_phase) {
 }
 
 void ZCollector::at_collection_start() {
-  stat_heap()->set_at_collection_start(_page_allocator->stats(this));
+  stat_heap()->at_collection_start(_page_allocator->stats(this));
 }
 
 void ZCollector::at_generation_collection_start(ConcurrentGCTimer* gc_timer) {
   set_gc_timer(gc_timer);
   stat_cycle()->at_start();
-  stat_heap()->set_at_generation_collection_start(_page_allocator->stats(this));
+  stat_heap()->at_generation_collection_start(_page_allocator->stats(this));
 
   workers()->clear_pending_resize();
 }
@@ -403,7 +403,7 @@ void ZYoungCollector::mark_start() {
   flip_remembered_sets();
 
   // Update statistics
-  stat_heap()->set_at_mark_start(_page_allocator->stats(this));
+  stat_heap()->at_mark_start(_page_allocator->stats(this));
 }
 
 void ZYoungCollector::mark_roots() {
@@ -437,7 +437,7 @@ bool ZYoungCollector::mark_end() {
   }
 
   // Update statistics
-  stat_heap()->set_at_mark_end(_page_allocator->stats(this));
+  stat_heap()->at_mark_end(_page_allocator->stats(this));
 
   // Notify JVMTI that some tagmap entry objects may have died.
   JvmtiTagMap::set_needs_cleaning();
@@ -456,7 +456,7 @@ void ZYoungCollector::relocate_start() {
 
 
   // Update statistics
-  stat_heap()->set_at_relocate_start(_page_allocator->stats(this));
+  stat_heap()->at_relocate_start(_page_allocator->stats(this));
 
   // Notify JVMTI
   JvmtiTagMap::set_needs_rehashing();
@@ -469,7 +469,7 @@ void ZYoungCollector::relocate() {
   _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  stat_heap()->set_at_relocate_end(_page_allocator->stats(this));
+  stat_heap()->at_relocate_end(_page_allocator->stats(this));
 }
 
 void ZYoungCollector::flip_promote(ZPage* from_page, ZPage* to_page) {
@@ -538,7 +538,7 @@ void ZOldCollector::mark_start() {
   _mark.start();
 
   // Update statistics
-  stat_heap()->set_at_mark_start(_page_allocator->stats(this));
+  stat_heap()->at_mark_start(_page_allocator->stats(this));
 }
 
 void ZOldCollector::mark_roots() {
@@ -567,7 +567,7 @@ bool ZOldCollector::mark_end() {
   ZVerify::after_mark();
 
   // Update statistics
-  stat_heap()->set_at_mark_end(_page_allocator->stats(this));
+  stat_heap()->at_mark_end(_page_allocator->stats(this));
 
   // Block resurrection of weak/phantom references
   ZResurrection::block();
@@ -650,7 +650,7 @@ void ZOldCollector::relocate_start() {
   set_phase(Phase::Relocate);
 
   // Update statistics
-  stat_heap()->set_at_relocate_start(_page_allocator->stats(this));
+  stat_heap()->at_relocate_start(_page_allocator->stats(this));
 
   // Notify JVMTI
   JvmtiTagMap::set_needs_rehashing();
@@ -663,7 +663,7 @@ void ZOldCollector::relocate() {
   _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  stat_heap()->set_at_relocate_end(_page_allocator->stats(this));
+  stat_heap()->at_relocate_end(_page_allocator->stats(this));
   _total_collections_at_end = ZCollectedHeap::heap()->total_collections();
 }
 
