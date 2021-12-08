@@ -2496,9 +2496,8 @@ instruct vmask_tolong8B(iRegLNoSp dst, vecD src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmask_tolong16B(iRegLNoSp dst, vecX src, iRegL tmp) %{
+instruct vmask_tolong16B(iRegLNoSp dst, vecX src) %{
   match(Set dst (VectorMaskToLong src));
-  effect(TEMP_DEF dst, TEMP tmp);
   ins_cost(11 * INSN_COST);
   format %{ "vmask_tolong $dst, $src\t# convert mask to long (16B)" %}
   ins_encode %{
@@ -2506,11 +2505,11 @@ instruct vmask_tolong16B(iRegLNoSp dst, vecX src, iRegL tmp) %{
     // bytes with 0x00/0x01 as element values.
 
     __ umov(as_Register($dst$$reg), as_FloatRegister($src$$reg), __ D, 0);
-    __ umov(as_Register($tmp$$reg), as_FloatRegister($src$$reg), __ D, 1);
+    __ umov(rscratch1, as_FloatRegister($src$$reg), __ D, 1);
     __ bytemask_compress(as_Register($dst$$reg));
-    __ bytemask_compress(as_Register($tmp$$reg));
+    __ bytemask_compress(rscratch1);
     __ orr(as_Register($dst$$reg), as_Register($dst$$reg),
-           as_Register($tmp$$reg), Assembler::LSL, 8);
+           rscratch1, Assembler::LSL, 8);
   %}
   ins_pipe(pipe_slow);
 %}

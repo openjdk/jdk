@@ -62,7 +62,7 @@
   // Pack the lowest-numbered bit of each mask element in src into a long value
   // in dst, at most the first 64 lane elements.
   void sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
-                        FloatRegister vtmp1, FloatRegister vtmp2, Register tmp, PRegister pgtmp);
+                        FloatRegister vtmp1, FloatRegister vtmp2, PRegister pgtmp);
 
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,

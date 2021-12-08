@@ -959,12 +959,12 @@ void C2_MacroAssembler::bytemask_compress(Register dst) {
 
 // Pack the lowest-numbered bit of each mask element in src into a long value
 // in dst, at most the first 64 lane elements.
+// Clobbers: rscratch1
 void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
-                                         FloatRegister vtmp1, FloatRegister vtmp2, Register tmp,
-                                         PRegister pgtmp) {
+                                         FloatRegister vtmp1, FloatRegister vtmp2, PRegister pgtmp) {
   assert(pgtmp->is_governing(), "This register has to be a governing predicate register.");
-  assert(lane_cnt <=64 && lane_cnt % 8 == 0, "Unsupported lane count");
-  assert_different_registers(dst, tmp);
+  assert(lane_cnt <= 64 && is_power_of_2(lane_cnt), "Unsupported lane count");
+  assert_different_registers(dst, rscratch1);
 
   Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
 
@@ -982,9 +982,9 @@ void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType 
   // Repeat on higher bytes and join the results.
   // Compress 8 bytes in each iteration.
   for (int idx = 1; idx < (lane_cnt / 8); idx++) {
-    idx == 1 ? fmovhid(tmp, vtmp1) : sve_extract(tmp, D, pgtmp, vtmp1, idx);
-    bytemask_compress(tmp);
-    orr(dst, dst, tmp, Assembler::LSL, idx << 3);
+    idx == 1 ? fmovhid(rscratch1, vtmp1) : sve_extract(rscratch1, D, pgtmp, vtmp1, idx);
+    bytemask_compress(rscratch1);
+    orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
   }
 }
 
