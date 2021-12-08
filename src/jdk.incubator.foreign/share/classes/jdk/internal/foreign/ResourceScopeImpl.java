@@ -30,7 +30,7 @@ import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SegmentAllocator;
 import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.internal.ref.CleanerFactory;
+import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
@@ -49,19 +49,17 @@ import java.util.Objects;
  * shared scopes use a more sophisticated synchronization mechanism, which guarantees that no concurrent
  * access is possible when a scope is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
-public abstract non-sealed class ResourceScopeImpl implements ResourceScope, ScopedMemoryAccess.Scope, SegmentAllocator {
+public abstract non-sealed class ResourceScopeImpl implements ResourceScope, SegmentAllocator, ScopedMemoryAccess.Scope {
 
     final ResourceList resourceList;
+    final Cleaner.Cleanable cleanable;
+
+    static final int MAX_FORKS = Integer.MAX_VALUE;
 
     @Override
     public void addCloseAction(Runnable runnable) {
         Objects.requireNonNull(runnable);
         addInternal(ResourceList.ResourceCleanup.ofRunnable(runnable));
-    }
-
-    @Override
-    public boolean isImplicit() {
-        return false;
     }
 
     /**
@@ -91,72 +89,38 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Sco
         }
     }
 
-    protected ResourceScopeImpl(Cleaner cleaner, ResourceList resourceList) {
+    protected ResourceScopeImpl(ResourceList resourceList, Cleaner cleaner) {
         this.resourceList = resourceList;
-        if (cleaner != null) {
-            cleaner.register(this, resourceList);
-        }
-    }
-
-    public static ResourceScopeImpl createImplicitScope() {
-        return new ImplicitScopeImpl(CleanerFactory.cleaner());
+        cleanable = (cleaner != null) ?
+            cleaner.register(this, resourceList) : null;
     }
 
     public static ResourceScopeImpl createConfined(Thread thread, Cleaner cleaner) {
         return new ConfinedScope(thread, cleaner);
     }
 
-    /**
-     * Creates a confined memory scope with given attachment and cleanup action. The returned scope
-     * is assumed to be confined on the current thread.
-     * @return a confined memory scope
-     */
-    public static ResourceScopeImpl createConfined(Cleaner cleaner) {
-        return new ConfinedScope(Thread.currentThread(), cleaner);
-    }
-
-    /**
-     * Creates a shared memory scope with given attachment and cleanup action.
-     * @return a shared memory scope
-     */
     public static ResourceScopeImpl createShared(Cleaner cleaner) {
         return new SharedScope(cleaner);
     }
 
-    private final void release0(HandleImpl handle) {
-        try {
-            Objects.requireNonNull(handle);
-            if (handle.scope() != this) {
-                throw new IllegalArgumentException("Cannot release an handle acquired from another scope");
-            }
-            handle.release();
-        } finally {
-            Reference.reachabilityFence(this);
+    @Override
+    public MemorySegment allocate(long bytesSize, long bytesAlignment) {
+        return MemorySegment.allocateNative(bytesSize, bytesAlignment, this);
+    }
+
+    public abstract void release0();
+
+    public abstract void acquire0();
+
+    @Override
+    public void keepAlive(ResourceScope target) {
+        Objects.requireNonNull(target);
+        if (target == this) {
+            throw new IllegalArgumentException("Invalid target scope.");
         }
-    }
-
-    @Override
-    public final void release(ResourceScope.Handle handle) {
-        release0((HandleImpl)handle);
-    }
-
-    @Override
-    public final void release(ScopedMemoryAccess.Scope.Handle handle) {
-        release0((HandleImpl)handle);
-    }
-
-    @Override
-    public abstract HandleImpl acquire();
-
-    /**
-     * Internal interface used to implement resource scope handles.
-     */
-    public non-sealed interface HandleImpl extends ResourceScope.Handle, ScopedMemoryAccess.Scope.Handle {
-
-        @Override
-        ResourceScopeImpl scope();
-
-        void release();
+        ResourceScopeImpl targetImpl = (ResourceScopeImpl)target;
+        targetImpl.acquire0();
+        addCloseAction(targetImpl::release0);
     }
 
     /**
@@ -167,7 +131,11 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Sco
     public void close() {
         try {
             justClose();
-            resourceList.cleanup();
+            if (cleanable != null) {
+                cleanable.clean();
+            } else {
+                resourceList.cleanup();
+            }
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -215,32 +183,17 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Sco
     }
 
     /**
-     * Allocates a segment using this scope. Used by {@link SegmentAllocator#ofScope(ResourceScope)}.
+     * The global, always alive, non-closeable, shared scope. Similar to a shared scope, but its {@link #close()} method throws unconditionally.
+     * Adding new resources to the global scope, does nothing: as the scope can never become not-alive, there is nothing to track.
+     * Acquiring and or releasing a resource scope similarly does nothing.
      */
-    @Override
-    public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        return MemorySegment.allocateNative(bytesSize, bytesAlignment, this);
-    }
+    static class GlobalScopeImpl extends SharedScope {
 
-    /**
-     * A non-closeable, shared scope. Similar to a shared scope, but its {@link #close()} method throws unconditionally.
-     * In addition, non-closeable scopes feature a much simpler scheme for generating resource scope handles, where
-     * the scope itself also acts as a resource scope handle and is returned by {@link #acquire()}.
-     */
-    static class ImplicitScopeImpl extends SharedScope implements HandleImpl {
+        final Object ref;
 
-        public ImplicitScopeImpl(Cleaner cleaner) {
-            super(cleaner);
-        }
-
-        @Override
-        public HandleImpl acquire() {
-            return this;
-        }
-
-        @Override
-        public boolean isImplicit() {
-            return true;
+        public GlobalScopeImpl(Object ref) {
+            super(null);
+            this.ref = ref;
         }
 
         @Override
@@ -249,27 +202,33 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Sco
         }
 
         @Override
-        public void release() {
+        @ForceInline
+        public void release0() {
             // do nothing
         }
 
         @Override
-        public ResourceScopeImpl scope() {
-            return this;
+        @ForceInline
+        public void acquire0() {
+            // do nothing
         }
-    }
 
-    /**
-     * The global, always alive, non-closeable, shared scope. This is like a {@link ImplicitScopeImpl non-closeable scope},
-     * except that the operation which adds new resources to the global scope does nothing: as the scope can never
-     * become not-alive, there is nothing to track.
-     */
-    public static final ResourceScopeImpl GLOBAL = new ImplicitScopeImpl( null) {
         @Override
         void addInternal(ResourceList.ResourceCleanup resource) {
             // do nothing
         }
-    };
+
+        @Override
+        public boolean isAlive() {
+            return true;
+        }
+    }
+
+    public static final ResourceScopeImpl GLOBAL = new GlobalScopeImpl(null);
+
+    public static ResourceScopeImpl heapScope(Object ref) {
+        return new GlobalScopeImpl(ref);
+    }
 
     /**
      * A list of all cleanup actions associated with a resource scope. Cleanup actions are modelled as instances
@@ -296,7 +255,7 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Sco
             }
         }
 
-        public static abstract class ResourceCleanup {
+        public abstract static class ResourceCleanup {
             ResourceCleanup next;
 
             public abstract void cleanup();

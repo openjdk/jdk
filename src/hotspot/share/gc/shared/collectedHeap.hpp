@@ -62,10 +62,23 @@ class VirtualSpaceSummary;
 class WorkerThreads;
 class nmethod;
 
-class ParallelObjectIterator : public CHeapObj<mtGC> {
+class ParallelObjectIteratorImpl : public CHeapObj<mtGC> {
 public:
+  virtual ~ParallelObjectIteratorImpl() {}
   virtual void object_iterate(ObjectClosure* cl, uint worker_id) = 0;
-  virtual ~ParallelObjectIterator() {}
+};
+
+// User facing parallel object iterator. This is a StackObj, which ensures that
+// the _impl is allocated and deleted in the scope of this object. This ensures
+// the life cycle of the implementation is as required by ThreadsListHandle,
+// which is sometimes used by the root iterators.
+class ParallelObjectIterator : public StackObj {
+  ParallelObjectIteratorImpl* _impl;
+
+public:
+  ParallelObjectIterator(uint thread_num);
+  ~ParallelObjectIterator();
+  void object_iterate(ObjectClosure* cl, uint worker_id);
 };
 
 //
@@ -82,6 +95,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   friend class JVMCIVMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
   friend class MemAllocator;
+  friend class ParallelObjectIterator;
 
  private:
   GCHeapLog* _gc_heap_log;
@@ -384,10 +398,12 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;
 
-  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num) {
+ protected:
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) {
     return NULL;
   }
 
+ public:
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj) {}
 
@@ -461,14 +477,15 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // this collector.  The default implementation returns false.
   virtual bool supports_concurrent_gc_breakpoints() const;
 
-  // Provides a thread pool to SafepointSynchronize to use
-  // for parallel safepoint cleanup.
-  // GCs that use a GC worker thread pool may want to share
-  // it for use during safepoint cleanup. This is only possible
-  // if the GC can pause and resume concurrent work (e.g. G1
-  // concurrent marking) for an intermittent non-GC safepoint.
-  // If this method returns NULL, SafepointSynchronize will
-  // perform cleanup tasks serially in the VMThread.
+  // Workers used in non-GC safepoints for parallel safepoint cleanup. If this
+  // method returns NULL, cleanup tasks are done serially in the VMThread. See
+  // `SafepointSynchronize::do_cleanup_tasks` for details.
+  // GCs using a GC worker thread pool inside GC safepoints may opt to share
+  // that pool with non-GC safepoints, avoiding creating extraneous threads.
+  // Such sharing is safe, because GC safepoints and non-GC safepoints never
+  // overlap. For example, `G1CollectedHeap::workers()` (for GC safepoints) and
+  // `G1CollectedHeap::safepoint_workers()` (for non-GC safepoints) return the
+  // same thread-pool.
   virtual WorkerThreads* safepoint_workers() { return NULL; }
 
   // Support for object pinning. This is used by JNI Get*Critical()

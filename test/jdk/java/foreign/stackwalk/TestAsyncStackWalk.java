@@ -25,6 +25,7 @@
  * @test id=default_gc
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @library /test/lib
+ * @library ../
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
@@ -52,6 +53,7 @@
  * @requires (((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64")
  * @requires vm.gc.Z
  * @library /test/lib
+ * @library ../
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
@@ -80,6 +82,7 @@
  * @requires (((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64")
  * @requires vm.gc.Shenandoah
  * @library /test/lib
+ * @library ../
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
@@ -106,6 +109,7 @@
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
 
@@ -116,13 +120,12 @@ import jdk.incubator.foreign.ResourceScope;
 import sun.hotspot.WhiteBox;
 
 import static java.lang.invoke.MethodHandles.lookup;
-import static jdk.incubator.foreign.CLinker.C_POINTER;
 import static jdk.test.lib.Asserts.assertTrue;
 
-public class TestAsyncStackWalk {
+public class TestAsyncStackWalk extends NativeTestHelper {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-    static final CLinker linker = CLinker.getInstance();
+    static final CLinker linker = CLinker.systemCLinker();
 
     static final MethodHandle MH_asyncStackWalk;
     static final MethodHandle MH_m;
@@ -133,7 +136,6 @@ public class TestAsyncStackWalk {
             SymbolLookup lookup = SymbolLookup.loaderLookup();
             MH_asyncStackWalk = linker.downcallHandle(
                     lookup.lookup("asyncStackWalk").get(),
-                    MethodType.methodType(void.class, MemoryAddress.class),
                     FunctionDescriptor.ofVoid(C_POINTER));
             MH_m = lookup().findStatic(TestAsyncStackWalk.class, "m", MethodType.methodType(void.class));
         } catch (ReflectiveOperationException e) {
@@ -146,7 +148,7 @@ public class TestAsyncStackWalk {
 
     public static void main(String[] args) throws Throwable {
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemoryAddress stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), scope);
+            NativeSymbol stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), scope);
             MemoryAddress stubAddress = stub.address();
             invocations = 0;
             didStackWalk = false;
@@ -156,7 +158,7 @@ public class TestAsyncStackWalk {
     }
 
     static void payload(MemoryAddress cb) throws Throwable {
-        MH_asyncStackWalk.invokeExact(cb);
+        MH_asyncStackWalk.invoke(cb);
     }
 
     static void m() {

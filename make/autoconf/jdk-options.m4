@@ -169,6 +169,23 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
   AC_SUBST(CACERTS_FILE)
 
+  # Choose cacerts source folder for user provided PEM files
+  AC_ARG_WITH(cacerts-src, [AS_HELP_STRING([--with-cacerts-src],
+      [specify alternative cacerts source folder containing certificates])])
+  CACERTS_SRC=""
+  AC_MSG_CHECKING([for cacerts source])
+  if test "x$with_cacerts_src" == x; then
+    AC_MSG_RESULT([default])
+  else
+    CACERTS_SRC=$with_cacerts_src
+    if test ! -d "$CACERTS_SRC"; then
+      AC_MSG_RESULT([fail])
+      AC_MSG_ERROR([Specified cacerts source folder "$CACERTS_SRC" does not exist])
+    fi
+    AC_MSG_RESULT([$CACERTS_SRC])
+  fi
+  AC_SUBST(CACERTS_SRC)
+
   # Enable or disable unlimited crypto
   UTIL_ARG_ENABLE(NAME: unlimited-crypto, DEFAULT: true, RESULT: UNLIMITED_CRYPTO,
       DESC: [enable unlimited crypto policy])
@@ -199,6 +216,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
     AC_MSG_ERROR([Copyright year must have a value])
   elif test "x$with_copyright_year" != x; then
     COPYRIGHT_YEAR="$with_copyright_year"
+  elif test "x$SOURCE_DATE_EPOCH" != x; then
+    if test "x$IS_GNU_DATE" = xyes; then
+      COPYRIGHT_YEAR=`date --date=@$SOURCE_DATE_EPOCH +%Y`
+    else
+      COPYRIGHT_YEAR=`date -j -f %s $SOURCE_DATE_EPOCH +%Y`
+    fi
   else
     COPYRIGHT_YEAR=`$DATE +'%Y'`
   fi
@@ -696,7 +719,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
   if test "x$OPENJDK_BUILD_OS" = xwindows && \
       test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse && \
       test "x$ENABLE_REPRODUCIBLE_BUILD" = xfalse; then
-    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-builds])
+    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-build])
     AC_MSG_NOTICE([with --disable-absolute-paths-in-output.])
     AC_MSG_ERROR([Cannot continue])
   fi

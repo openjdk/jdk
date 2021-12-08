@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1365,8 +1365,8 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         if (graphicsConfig != null) {
             oldVisual = graphicsConfig.getVisual();
         }
-        if (gc != null && gc instanceof X11GraphicsConfig) {
-            newVisual = ((X11GraphicsConfig)gc).getVisual();
+        if (gc instanceof X11GraphicsConfig x11Config) {
+            newVisual = x11Config.getVisual();
         }
 
         // If the new visual differs from the old one, the peer must be

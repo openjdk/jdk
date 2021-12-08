@@ -91,7 +91,14 @@ static volatile bool   _has_items_to_clean = false;
 
 
 static volatile bool _alt_hash = false;
+
+#ifdef USE_LIBRARY_BASED_TLS_ONLY
 static volatile bool _lookup_shared_first = false;
+#else
+// "_lookup_shared_first" can get highly contended with many cores if multiple threads
+// are updating "lookup success history" in a global shared variable. If built-in TLS is available, use it.
+static THREAD_LOCAL bool _lookup_shared_first = false;
+#endif
 
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = NULL;

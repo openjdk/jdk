@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.IOException;
 
 import sun.security.krb5.Credentials;
 import sun.security.krb5.KrbException;
-import sun.security.krb5.internal.Ticket;
 
 import javax.security.auth.kerberos.KerberosTicket;
 
@@ -50,23 +49,23 @@ public class Krb5ProxyCredential
     implements Krb5CredElement {
 
     public final Krb5InitCredential self;   // the middle server
-    private final Krb5NameElement client;     // the client
+    private final Krb5NameElement user;     // the user
 
-    // The ticket with cname=client and sname=self. This can be a normal
-    // service ticket or an S4U2self ticket.
-    public final Ticket tkt;
+    // The creds with cname=user and sname=self. The ticket inside can
+    // be either a normal service ticket or an S4U2self ticket.
+    public final Credentials userCreds;
 
-    Krb5ProxyCredential(Krb5InitCredential self, Krb5NameElement client,
-            Ticket tkt) {
+    Krb5ProxyCredential(Krb5InitCredential self, Krb5NameElement user,
+            Credentials userCreds) {
         this.self = self;
-        this.tkt = tkt;
-        this.client = client;
+        this.userCreds = userCreds;
+        this.user = user;
     }
 
-    // The client name behind the proxy
+    // The user name behind the proxy
     @Override
     public final Krb5NameElement getName() throws GSSException {
-        return client;
+        return user;
     }
 
     @Override
@@ -130,7 +129,7 @@ public class Krb5ProxyCredential
                 Credentials proxyCreds = Krb5Util.ticketToCreds(proxy);
                 return new Krb5ProxyCredential(initiator,
                         Krb5NameElement.getInstance(proxyCreds.getClient()),
-                        proxyCreds.getTicket());
+                        proxyCreds);
             } else {
                 return initiator;
             }

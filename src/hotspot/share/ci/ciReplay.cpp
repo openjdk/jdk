@@ -103,6 +103,7 @@ typedef struct _ciInlineRecord {
 
   int _inline_depth;
   int _inline_bci;
+  bool _inline_late;
 } ciInlineRecord;
 
 class  CompileReplay;
@@ -436,7 +437,7 @@ class CompileReplay : public StackObj {
       } else if (strcmp(dyno_ref, "<bsm>") == 0) {
         int pool_index = cp_cache_entry->constant_pool_index();
         BootstrapInfo bootstrap_specifier(cp, pool_index, index);
-        obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
+        obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), CHECK_NULL);
       } else {
         report_error("unrecognized token");
         return NULL;
@@ -465,58 +466,57 @@ class CompileReplay : public StackObj {
         report_error("no method handle found at cpi");
         return NULL;
       }
-      {
-        bool found_it;
-        ik->link_class(CHECK_NULL);
-        obj = cp->find_cached_constant_at(cpi, found_it, thread);
-      }
+      ik->link_class(CHECK_NULL);
+      obj = cp->resolve_possibly_cached_constant_at(cpi, CHECK_NULL);
+    }
+    if (obj == NULL) {
+      report_error("null cp object found");
+      return NULL;
     }
     Klass* k = NULL;
-    if (obj != NULL) {
-      skip_ws();
-      // loop: read fields
-      char* field = NULL;
-      do {
-        field = parse_string();
-        if (field == NULL) {
-          report_error("no field found");
-          return NULL;
-        }
-        if (strcmp(field, ";") == 0) {
-          break;
-        }
-        // raw Method*
-        if (strcmp(field, "<vmtarget>") == 0) {
-          Method* vmtarget = java_lang_invoke_MemberName::vmtarget(obj);
-          k = (vmtarget == NULL) ? NULL : vmtarget->method_holder();
-          if (k == NULL) {
-            report_error("null vmtarget found");
-            return NULL;
-          }
-          if (!parse_terminator()) {
-            report_error("missing terminator");
-            return NULL;
-          }
-          return k;
-        }
-        obj = ciReplay::obj_field(obj, field);
-        // array
-        if (obj != NULL && obj->is_objArray()) {
-          objArrayOop arr = (objArrayOop)obj;
-          int index = parse_int("index");
-          if (index >= arr->length()) {
-            report_error("bad array index");
-            return NULL;
-          }
-          obj = arr->obj_at(index);
-        }
-      } while (obj != NULL);
-      if (obj == NULL) {
-        report_error("null field found");
+    skip_ws();
+    // loop: read fields
+    char* field = NULL;
+    do {
+      field = parse_string();
+      if (field == NULL) {
+        report_error("no field found");
         return NULL;
       }
-      k = obj->klass();
+      if (strcmp(field, ";") == 0) {
+        break;
+      }
+      // raw Method*
+      if (strcmp(field, "<vmtarget>") == 0) {
+        Method* vmtarget = java_lang_invoke_MemberName::vmtarget(obj);
+        k = (vmtarget == NULL) ? NULL : vmtarget->method_holder();
+        if (k == NULL) {
+          report_error("null vmtarget found");
+          return NULL;
+        }
+        if (!parse_terminator()) {
+          report_error("missing terminator");
+          return NULL;
+        }
+        return k;
+      }
+      obj = ciReplay::obj_field(obj, field);
+      // array
+      if (obj != NULL && obj->is_objArray()) {
+        objArrayOop arr = (objArrayOop)obj;
+        int index = parse_int("index");
+        if (index >= arr->length()) {
+          report_error("bad array index");
+          return NULL;
+        }
+        obj = arr->obj_at(index);
+      }
+    } while (obj != NULL);
+    if (obj == NULL) {
+      report_error("null field found");
+      return NULL;
     }
+    k = obj->klass();
     return k;
   }
 
@@ -721,7 +721,7 @@ class CompileReplay : public StackObj {
     return NULL;
   }
 
-  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <klass> <name> <signature>)*
+  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <inline_late> <klass> <name> <signature>)*
   void process_compile(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -763,11 +763,19 @@ class CompileReplay : public StackObj {
         if (had_error()) {
           break;
         }
+        int inline_late = 0;
+        if (_version >= 2) {
+          inline_late = parse_int("inline_late");
+          if (had_error()) {
+              break;
+          }
+        }
+
         Method* inl_method = parse_method(CHECK);
         if (had_error()) {
           break;
         }
-        new_ciInlineRecord(inl_method, bci, depth);
+        new_ciInlineRecord(inl_method, bci, depth, inline_late);
       }
     }
     if (_imethod != NULL) {
@@ -1228,13 +1236,14 @@ class CompileReplay : public StackObj {
   }
 
   // Create and initialize a record for a ciInlineRecord
-  ciInlineRecord* new_ciInlineRecord(Method* method, int bci, int depth) {
+  ciInlineRecord* new_ciInlineRecord(Method* method, int bci, int depth, int inline_late) {
     ciInlineRecord* rec = NEW_RESOURCE_OBJ(ciInlineRecord);
     rec->_klass_name =  method->method_holder()->name()->as_utf8();
     rec->_method_name = method->name()->as_utf8();
     rec->_signature = method->signature()->as_utf8();
     rec->_inline_bci = bci;
     rec->_inline_depth = depth;
+    rec->_inline_late = inline_late;
     _ci_inline_records->append(rec);
     return rec;
   }
@@ -1471,23 +1480,33 @@ bool ciReplay::should_not_inline(ciMethod* method) {
   return replay_state->find_ciMethodRecord(method->get_Method()) == NULL;
 }
 
-bool ciReplay::should_inline(void* data, ciMethod* method, int bci, int inline_depth) {
+bool ciReplay::should_inline(void* data, ciMethod* method, int bci, int inline_depth, bool& should_delay) {
   if (data != NULL) {
-    GrowableArray<ciInlineRecord*>*  records = (GrowableArray<ciInlineRecord*>*)data;
+    GrowableArray<ciInlineRecord*>* records = (GrowableArray<ciInlineRecord*>*)data;
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
-    return CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth) != NULL;
+    ciInlineRecord* record = CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth);
+    if (record == NULL) {
+      return false;
+    }
+    should_delay = record->_inline_late;
+    return true;
   } else if (replay_state != NULL) {
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
-    return replay_state->find_ciInlineRecord(method->get_Method(), bci, inline_depth) != NULL;
+    ciInlineRecord* record = replay_state->find_ciInlineRecord(method->get_Method(), bci, inline_depth);
+    if (record == NULL) {
+      return false;
+    }
+    should_delay = record->_inline_late;
+    return true;
   }
   return false;
 }
 
 bool ciReplay::should_not_inline(void* data, ciMethod* method, int bci, int inline_depth) {
   if (data != NULL) {
-    GrowableArray<ciInlineRecord*>*  records = (GrowableArray<ciInlineRecord*>*)data;
+    GrowableArray<ciInlineRecord*>* records = (GrowableArray<ciInlineRecord*>*)data;
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
     return CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth) == NULL;

@@ -2949,21 +2949,21 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                 // re-set listData listeners
             if (name.equals("model")) {
 
-                if (oldValue != null && oldValue instanceof ListModel) {
-                    ((ListModel) oldValue).removeListDataListener(this);
+                if (oldValue instanceof ListModel<?> oldModel) {
+                    oldModel.removeListDataListener(this);
                 }
-                if (newValue != null && newValue instanceof ListModel) {
-                    ((ListModel) newValue).addListDataListener(this);
+                if (newValue instanceof ListModel<?> newModel) {
+                    newModel.addListDataListener(this);
                 }
 
                 // re-set listSelectionModel listeners
             } else if (name.equals("selectionModel")) {
 
-                if (oldValue != null && oldValue instanceof ListSelectionModel) {
-                    ((ListSelectionModel) oldValue).removeListSelectionListener(this);
+                if (oldValue instanceof ListSelectionModel oldModel) {
+                    oldModel.removeListSelectionListener(this);
                 }
-                if (newValue != null && newValue instanceof ListSelectionModel) {
-                    ((ListSelectionModel) newValue).addListSelectionListener(this);
+                if (newValue instanceof ListSelectionModel newModel) {
+                    newModel.addListSelectionListener(this);
                 }
 
                 firePropertyChange(

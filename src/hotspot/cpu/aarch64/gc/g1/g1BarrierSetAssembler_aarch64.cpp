@@ -222,7 +222,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   const Register card_addr = tmp;
 
-  __ lsr(card_addr, store_addr, CardTable::card_shift);
+  __ lsr(card_addr, store_addr, CardTable::card_shift());
 
   // get the address of the card
   __ load_byte_map_base(tmp2);
@@ -444,7 +444,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   assert_different_registers(card_offset, byte_map_base, rscratch1);
 
   __ load_parameter(0, card_offset);
-  __ lsr(card_offset, card_offset, CardTable::card_shift);
+  __ lsr(card_offset, card_offset, CardTable::card_shift());
   __ load_byte_map_base(byte_map_base);
   __ ldrb(rscratch1, Address(byte_map_base, card_offset));
   __ cmpw(rscratch1, (int)G1CardTable::g1_young_card_val());
