@@ -519,14 +519,14 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     void setPackageIsTraversable(final Object o) {
         int newProp = -1;
-        if (o != null && o instanceof String) newProp = parseTraversableProperty((String)o);
+        if (o instanceof String s) newProp = parseTraversableProperty(s);
         if (newProp != -1) fPackageIsTraversable = newProp;
         else fPackageIsTraversable = sGlobalPackageIsTraversable;
     }
 
     void setApplicationIsTraversable(final Object o) {
         int newProp = -1;
-        if (o != null && o instanceof String) newProp = parseTraversableProperty((String)o);
+        if (o instanceof String s) newProp = parseTraversableProperty(s);
         if (newProp != -1) fApplicationIsTraversable = newProp;
         else fApplicationIsTraversable = sGlobalApplicationIsTraversable;
     }
@@ -1985,11 +1985,11 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     static {
         Object o = UIManager.get(PACKAGE_TRAVERSABLE_PROPERTY);
-        if (o != null && o instanceof String) sGlobalPackageIsTraversable = parseTraversableProperty((String)o);
+        if (o instanceof String s) sGlobalPackageIsTraversable = parseTraversableProperty(s);
         else sGlobalPackageIsTraversable = kOpenConditional;
 
         o = UIManager.get(APPLICATION_TRAVERSABLE_PROPERTY);
-        if (o != null && o instanceof String) sGlobalApplicationIsTraversable = parseTraversableProperty((String)o);
+        if (o instanceof String s) sGlobalApplicationIsTraversable = parseTraversableProperty(s);
         else sGlobalApplicationIsTraversable = kOpenConditional;
     }
     static final String sDataPrefix = "FileChooser.";

@@ -261,6 +261,7 @@ public final class String
         this.value = original.value;
         this.coder = original.coder;
         this.hash = original.hash;
+        this.hashIsZero = original.hashIsZero;
     }
 
     /**

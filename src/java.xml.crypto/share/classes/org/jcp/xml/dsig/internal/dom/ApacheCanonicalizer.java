@@ -239,9 +239,6 @@ public abstract class ApacheCanonicalizer extends TransformService {
 
         try {
             in = apacheTransform.performTransform(in, os, secVal);
-            if (!in.isNodeSet() && !in.isElement()) {
-                return null;
-            }
             if (in.isOctetStream()) {
                 return new ApacheOctetStreamData(in);
             } else {

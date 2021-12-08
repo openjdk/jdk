@@ -222,6 +222,19 @@ const Type* MulNode::Value(PhaseGVN* phase) const {
   return mul_ring(t1,t2);            // Local flavor of type multiplication
 }
 
+MulNode* MulNode::make(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new MulINode(in1, in2);
+    case T_LONG:
+      return new MulLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return NULL;
+}
+
+
 //=============================================================================
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal

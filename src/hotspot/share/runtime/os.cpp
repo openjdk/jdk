@@ -1786,7 +1786,7 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
 
 bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   bool res;
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     Tracker tkr(Tracker::uncommit);
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
@@ -1800,7 +1800,7 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
 
 bool os::release_memory(char* addr, size_t bytes) {
   bool res;
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     // Note: Tracker contains a ThreadCritical.
     Tracker tkr(Tracker::release);
     res = pd_release_memory(addr, bytes);
@@ -1869,7 +1869,7 @@ char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
 
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     Tracker tkr(Tracker::release);
     result = pd_unmap_memory(addr, bytes);
     if (result) {
@@ -1905,7 +1905,7 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 
 bool os::release_memory_special(char* addr, size_t bytes) {
   bool res;
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     // Note: Tracker contains a ThreadCritical.
     Tracker tkr(Tracker::release);
     res = pd_release_memory_special(addr, bytes);
