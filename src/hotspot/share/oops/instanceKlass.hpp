@@ -329,7 +329,17 @@ class InstanceKlass: public Klass {
 
   static bool _disable_method_binary_search;
 
+  // Controls finalizer registration
+  static bool _finalization_enabled;
+
  public:
+
+  // Queries finalization state
+  static bool is_finalization_enabled() { return _finalization_enabled; }
+
+  // Sets finalization state
+  static void set_finalization_enabled(bool val) { _finalization_enabled = val; }
+
   // The three BUILTIN class loader types
   bool is_shared_boot_class() const {
     return (_misc_flags & _misc_is_shared_boot_class) != 0;
