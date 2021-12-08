@@ -27,7 +27,6 @@ package jdk.internal.net.http;
 
 import java.net.Authenticator;
 import java.net.CookieHandler;
-import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.time.Duration;
@@ -135,11 +134,6 @@ public class HttpClientBuilderImpl implements HttpClient.Builder {
 
     @Override
     public HttpClient.Builder localAddress(final SocketAddress localAddr) {
-        @SuppressWarnings("removal")
-        var sm = System.getSecurityManager();
-        if (sm != null && localAddr instanceof InetSocketAddress isa) {
-            sm.checkListen(isa.getPort());
-        }
         this.localAddr = localAddr;
         return this;
     }

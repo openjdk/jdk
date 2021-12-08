@@ -36,6 +36,7 @@ import java.lang.ref.WeakReference;
 import java.net.Authenticator;
 import java.net.ConnectException;
 import java.net.CookieHandler;
+import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.http.HttpConnectTimeoutException;
@@ -278,6 +279,14 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                            SingleFacadeFactory facadeFactory) {
         id = CLIENT_IDS.incrementAndGet();
         dbgTag = "HttpClientImpl(" + id +")";
+        if (builder.localAddr instanceof InetSocketAddress isa) {
+            @SuppressWarnings("removal")
+            var sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkListen(isa.getPort());
+            }
+        }
+        localAddr = builder.localAddr;
         if (builder.sslContext == null) {
             try {
                 sslContext = SSLContext.getDefault();
@@ -299,7 +308,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         client2 = new Http2ClientImpl(this);
         cookieHandler = builder.cookieHandler;
         connectTimeout = builder.connectTimeout;
-        localAddr = builder.localAddr;
         followRedirects = builder.followRedirects == null ?
                 Redirect.NEVER : builder.followRedirects;
         this.userProxySelector = builder.proxy;

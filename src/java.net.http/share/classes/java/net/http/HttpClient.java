@@ -373,10 +373,6 @@ public abstract class HttpClient {
          * @return this builder
          * @throws UnsupportedOperationException if this builder doesn't support
          *         configuring a local address
-         * @throws SecurityException If a security manager has been installed and
-         *         the {@code localAddr} is an <i>Internet Protocol</i> socket address
-         *         and the security manager's {@link SecurityManager#checkListen checkListen}
-         *         method disallows binding to the given socket address.
          * @since 19
          */
         default Builder localAddress(SocketAddress localAddr) {
@@ -387,12 +383,22 @@ public abstract class HttpClient {
          * Returns a new {@link HttpClient} built from the current state of this
          * builder.
          *
+         * @implSpec If the {@link #localAddress(SocketAddress) local address} is a non-null
+         * <i>Internet Protocol</i> socket address and a security manager is installed, then
+         * this method calls {@link SecurityManager#checkListen checkListen} to check that
+         * the caller has necessary permission to bind to that local address.
+         *
          * @return a new {@code HttpClient}
          *
          * @throws UncheckedIOException may be thrown if underlying IO resources required
          * by the implementation cannot be allocated. For instance,
          * if the implementation requires a {@link Selector}, and opening
          * one fails due to {@linkplain Selector#open() lack of necessary resources}.
+         * @throws SecurityException If a security manager has been installed and
+         *         the {@link #localAddress(SocketAddress) local address} is an
+         *         <i>Internet Protocol</i> socket address
+         *         and the security manager's {@link SecurityManager#checkListen checkListen}
+         *         method disallows binding to the given socket address.
          */
         public HttpClient build();
     }
