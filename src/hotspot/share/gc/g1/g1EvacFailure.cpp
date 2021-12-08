@@ -163,10 +163,10 @@ public:
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
                                                bool during_concurrent_start) {
     uint num_objs = hr->num_evac_failure_objs();
-    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardingPtr,
+    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegionsReformat,
                                                  _worker_id,
                                                  num_objs,
-                                                 G1GCPhaseTimes::RemoveSelfForwardingPtrObjects);
+                                                 G1GCPhaseTimes::RestoreRetainedRegionsObjects);
 
     RemoveSelfForwardPtrObjClosure rspc(hr,
                                         during_concurrent_start,
@@ -177,10 +177,10 @@ public:
     rspc.zap_remainder();
 
     size_t marked_bytes = rspc.marked_bytes();
-    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardingPtr,
+    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegionsReformat,
                                                  _worker_id,
                                                  marked_bytes,
-                                                 G1GCPhaseTimes::RemoveSelfForwardingPtrBytes);
+                                                 G1GCPhaseTimes::RestoreRetainedRegionsBytes);
     return marked_bytes;
   }
 
@@ -189,6 +189,11 @@ public:
     assert(hr->in_collection_set(), "bad CS");
 
     if (_evac_failure_regions->contains(hr->hrm_index())) {
+      _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+                                                   _worker_id,
+                                                   1,
+                                                   G1GCPhaseTimes::RestoreRetainedRegionsNum);
+
       hr->clear_index_in_opt_cset();
 
       bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
@@ -217,10 +222,6 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegi
   _hrclaimer(_g1h->workers()->active_workers()),
   _evac_failure_regions(evac_failure_regions),
   _phase_times(G1CollectedHeap::heap()->phase_times()) {
-  _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardingPtr,
-                                               0,
-                                               _evac_failure_regions->num_regions_failed_evacuation(),
-                                               G1GCPhaseTimes::RemoveSelfForwardingPtrRegions);
 }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {

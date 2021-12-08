@@ -102,10 +102,10 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>("GCWorkerEnd", "GC Worker End (ms):", max_gc_threads);
   _gc_par_phases[Other] = new WorkerDataArray<double>("Other", "GC Worker Other (ms):", max_gc_threads);
   _gc_par_phases[MergePSS] = new WorkerDataArray<double>("MergePSS", "Merge Per-Thread State (ms):", max_gc_threads);
-  _gc_par_phases[RemoveSelfForwardingPtr] = new WorkerDataArray<double>("RemoveSelfForwardingPtr", "Remove Self Forwards Total (ms):", max_gc_threads);
-  _gc_par_phases[RemoveSelfForwardingPtrSort] = new WorkerDataArray<double>("RemoveSelfForwardingPtrSort", "Sort Self Forward Refs (ms):", max_gc_threads);
-  _gc_par_phases[RemoveSelfForwardingPtrRemove] = new WorkerDataArray<double>("RemoveSelfForwardingPtrRemove", "Remove Self Forwards (ms):", max_gc_threads);
-  _gc_par_phases[RemoveSelfForwardingPtrReclaim] = new WorkerDataArray<double>("RemoveSelfForwardingPtrReclaim", "Reclaim Memory (ms):", max_gc_threads);
+  _gc_par_phases[RestoreRetainedRegions] = new WorkerDataArray<double>("RestoreRetainedRegions", "Restore Retained Regions (ms):", max_gc_threads);
+  _gc_par_phases[RestoreRetainedRegionsSort] = new WorkerDataArray<double>("RestoreRetainedRegionsSort", "Sort Retained Object Refs (ms):", max_gc_threads);
+  _gc_par_phases[RestoreRetainedRegionsReformat] = new WorkerDataArray<double>("RestoreRetainedRegionsReformat", "Reformat Retained Regions (ms):", max_gc_threads);
+  _gc_par_phases[RestoreRetainedRegionsReclaim] = new WorkerDataArray<double>("RestoreRetainedRegionsReclaim", "Reclaim Memory (ms):", max_gc_threads);
   _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RecalculateUsed] = new WorkerDataArray<double>("RecalculateUsed", "Recalculate Used Memory (ms):", max_gc_threads);
   _gc_par_phases[ResetHotCardCache] = new WorkerDataArray<double>("ResetHotCardCache", "Reset Hot Card Cache (ms):", max_gc_threads);
@@ -135,9 +135,10 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste", MergePSSLABWasteBytes);
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste", MergePSSLABUndoWasteBytes);
 
-  _gc_par_phases[RemoveSelfForwardingPtr]->create_thread_work_items("In-Place Regions:", RemoveSelfForwardingPtrRegions);
-  _gc_par_phases[RemoveSelfForwardingPtr]->create_thread_work_items("Self Forwarded Objects:", RemoveSelfForwardingPtrObjects);
-  _gc_par_phases[RemoveSelfForwardingPtr]->create_thread_work_items("In-Place Live Bytes:", RemoveSelfForwardingPtrBytes);
+  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Retained Regions:", RestoreRetainedRegionsNum);
+  _gc_par_phases[RestoreRetainedRegionsReformat]->create_thread_work_items("Retained Objects:", RestoreRetainedRegionsObjects);
+  _gc_par_phases[RestoreRetainedRegionsReformat]->create_thread_work_items("Retained Bytes:", RestoreRetainedRegionsBytes);
+  _gc_par_phases[RestoreRetainedRegionsReclaim]->create_thread_work_items("Used Memory:", RestoreRetainedRegionsReclaimUsedMemory);
 
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Total", EagerlyReclaimNumTotal);
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Candidates", EagerlyReclaimNumCandidates);
@@ -491,10 +492,10 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   debug_phase(_gc_par_phases[ClearCardTable], 1);
   debug_phase(_gc_par_phases[RecalculateUsed], 1);
   if (evacuation_failed) {
-    debug_phase(_gc_par_phases[RemoveSelfForwardingPtr], 1);
-    debug_phase(_gc_par_phases[RemoveSelfForwardingPtrSort], 2);
-    debug_phase(_gc_par_phases[RemoveSelfForwardingPtrRemove], 2);
-    debug_phase(_gc_par_phases[RemoveSelfForwardingPtrReclaim], 2);
+    debug_phase(_gc_par_phases[RestoreRetainedRegions], 1);
+    trace_phase(_gc_par_phases[RestoreRetainedRegionsSort], true, 1);
+    trace_phase(_gc_par_phases[RestoreRetainedRegionsReformat], true, 1);
+    trace_phase(_gc_par_phases[RestoreRetainedRegionsReclaim], true, 1);
   }
 
   trace_phase(_gc_par_phases[RedirtyCards]);

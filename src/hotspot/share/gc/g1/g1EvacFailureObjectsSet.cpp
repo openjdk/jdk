@@ -99,23 +99,26 @@ public:
     _phase_times(phase_times) { }
 
   void process_and_drop(ObjectClosure* closure, uint worker_id) {
+    uint num = _segments->num_allocated_slots();
     {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrSort, worker_id, false);
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RestoreRetainedRegionsSort, worker_id, false);
 
-      uint num = _segments->num_allocated_slots();
       _offset_array = NEW_C_HEAP_ARRAY(OffsetInRegion, num, mtGC);
 
       join_and_sort();
       assert(_array_length == num, "must be %u, %u", _array_length, num);
     }
     {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrRemove, worker_id, false);
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RestoreRetainedRegionsReformat, worker_id, false);
 
       iterate(closure);
     }
-
     {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrReclaim, worker_id, false);
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::RestoreRetainedRegionsReclaim, worker_id, false);
+      _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegionsReclaim,
+                                                   worker_id,
+                                                   sizeof(OffsetInRegion) * num,
+                                                   G1GCPhaseTimes::RestoreRetainedRegionsReclaimUsedMemory);
 
       FREE_C_HEAP_ARRAY(OffsetInRegion, _offset_array);
     }
@@ -135,7 +138,11 @@ void G1EvacFailureObjectsSet::process_and_drop(ObjectClosure* closure, G1GCPhase
   helper.process_and_drop(closure, worker_id);
 
   {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RemoveSelfForwardingPtrReclaim, worker_id, false);
+    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RestoreRetainedRegionsReclaim, worker_id, false);
+    phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegionsReclaim,
+                                                 worker_id,
+                                                 _offsets.mem_size(),
+                                                 G1GCPhaseTimes::RestoreRetainedRegionsReclaimUsedMemory);
 
     _offsets.drop_all();
   }
