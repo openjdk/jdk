@@ -1747,7 +1747,7 @@ bool MulNode::AndIL_shift_and_mask(PhaseGVN* phase, Node* mask, Node* shift, Bas
   }
 
   jint shift_con = shift2_t->is_int()->get_con() & ((bt == T_INT ? BitsPerJavaInteger : BitsPerJavaLong) - 1);
-  if ((((long)1) << shift_con) > mask_t->hi_as_long() && mask_t->lo_as_long() >= 0) {
+  if ((((jlong)1) << shift_con) > mask_t->hi_as_long() && mask_t->lo_as_long() >= 0) {
     return true;
   }
 
