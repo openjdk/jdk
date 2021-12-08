@@ -322,7 +322,6 @@ public:
       _gc_timer(gc_timer),
       _phase(phase),
       _start(Ticks::now()) {
-
     if (_enabled) {
       _phase.register_start(_gc_timer, _start);
     }

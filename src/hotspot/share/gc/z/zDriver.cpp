@@ -373,8 +373,8 @@ static void handle_alloc_stalling_for_young() {
 
 class ZDriverScopeYoung : public StackObj {
 private:
-  ZYoungTypeSetter           _type_setter;
-  ZStatTimer                 _stat_timer;
+  ZYoungTypeSetter _type_setter;
+  ZStatTimer       _stat_timer;
 
 public:
   ZDriverScopeYoung(ZYoungType type, ConcurrentGCTimer* gc_timer) :
@@ -718,8 +718,8 @@ static bool should_preclean_young(GCCause::Cause cause) {
 
 class ZDriverScopeOld : public StackObj {
 private:
-  ZStatTimer                 _stat_timer;
-  ZDriverUnlocker            _unlocker;
+  ZStatTimer      _stat_timer;
+  ZDriverUnlocker _unlocker;
 
 public:
   ZDriverScopeOld(ConcurrentGCTimer* gc_timer) :
