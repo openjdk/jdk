@@ -242,7 +242,7 @@ public class MeteredStream extends FilterInputStream {
         return readLock.isHeldByCurrentThread();
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         try {
             close();

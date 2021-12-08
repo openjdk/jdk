@@ -940,7 +940,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
      * Ends this print job once it is no longer referenced.
      * @see #end
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public void finalize() {
         end();
     }

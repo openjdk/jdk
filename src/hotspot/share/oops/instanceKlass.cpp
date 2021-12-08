@@ -141,6 +141,7 @@
 
 #endif //  ndef DTRACE_ENABLED
 
+bool InstanceKlass::_finalization_enabled = true;
 
 static inline bool is_class_loader(const Symbol* class_name,
                                    const ClassFileParser& parser) {

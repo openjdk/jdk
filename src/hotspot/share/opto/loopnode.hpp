@@ -215,10 +215,6 @@ public:
   BaseCountedLoopEndNode* loopexit() const;
 
   virtual BasicType bt() const = 0;
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
 
   static BaseCountedLoopNode* make(Node* entry, Node* backedge, BasicType bt);
 };
@@ -342,10 +338,6 @@ public:
   static Node* skip_predicates_from_entry(Node* ctrl);
   Node* skip_predicates();
 
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
-  }
   virtual BasicType bt() const {
     return T_INT;
   }
@@ -365,11 +357,6 @@ public:
   }
 
   virtual int Opcode() const;
-
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
 
   virtual BasicType bt() const {
     return T_LONG;
@@ -423,17 +410,13 @@ public:
     if (!ln->is_BaseCountedLoop() || ln->as_BaseCountedLoop()->loopexit_or_null() != this) {
       return NULL;
     }
-    if (!ln->operates_on(bt(), true)) {
+    if (ln->as_BaseCountedLoop()->bt() != bt()) {
       return NULL;
     }
     return ln->as_BaseCountedLoop();
   }
 
   BoolTest::mask test_trip() const  { return in(TestValue)->as_Bool()->_test._test; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
 
   jlong stride_con() const;
   virtual BasicType bt() const = 0;
@@ -452,10 +435,6 @@ public:
 
   CountedLoopNode* loopnode() const {
     return (CountedLoopNode*) BaseCountedLoopEndNode::loopnode();
-  }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
   }
 
   virtual BasicType bt() const {
@@ -477,10 +456,7 @@ public:
   LongCountedLoopNode* loopnode() const {
     return (LongCountedLoopNode*) BaseCountedLoopEndNode::loopnode();
   }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
+
   virtual int Opcode() const;
 
   virtual BasicType bt() const {
@@ -498,7 +474,7 @@ inline BaseCountedLoopEndNode* BaseCountedLoopNode::loopexit_or_null() const {
     return NULL;
   }
   BaseCountedLoopEndNode* result = lexit->as_BaseCountedLoopEnd();
-  if (!result->operates_on(bt(), true)) {
+  if (result->bt() != bt()) {
     return NULL;
   }
   return result;
