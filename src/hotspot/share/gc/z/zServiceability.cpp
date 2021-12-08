@@ -162,8 +162,13 @@ MemoryUsage ZServiceabilityMemoryPool::get_memory_usage() {
 }
 
 ZServiceabilityMemoryManager::ZServiceabilityMemoryManager(const char* name,
-                                                           const char* end_message) :
-    GCMemoryManager(name, end_message) {}
+                                                           const char* end_message,
+                                                           MemoryPool* young_memory_pool,
+                                                           MemoryPool* old_memory_pool) :
+    GCMemoryManager(name, end_message) {
+  add_pool(young_memory_pool);
+  add_pool(old_memory_pool);
+}
 
 ZServiceability::ZServiceability(size_t initial_capacity,
                                  size_t min_capacity,
@@ -175,17 +180,11 @@ ZServiceability::ZServiceability(size_t initial_capacity,
     _max_capacity(max_capacity),
     _young_memory_pool("ZYoungGeneration", young_generation, _min_capacity, _max_capacity),
     _old_memory_pool("ZOldGeneration", old_generation, 0, _max_capacity),
-    _minor_cycle_memory_manager("ZGC Minor Cycles", "end of GC cycle"),
-    _major_cycle_memory_manager("ZGC Major Cycles", "end of GC cycle"),
-    _minor_pause_memory_manager("ZGC Minor Pauses", "end of GC pause"),
-    _major_pause_memory_manager("ZGC Major Pauses", "end of GC pause"),
+    _minor_cycle_memory_manager("ZGC Minor Cycles", "end of GC cycle", &_young_memory_pool, &_old_memory_pool),
+    _major_cycle_memory_manager("ZGC Major Cycles", "end of GC cycle", &_young_memory_pool, &_old_memory_pool),
+    _minor_pause_memory_manager("ZGC Minor Pauses", "end of GC pause", &_young_memory_pool, &_old_memory_pool),
+    _major_pause_memory_manager("ZGC Major Pauses", "end of GC pause", &_young_memory_pool, &_old_memory_pool),
     _counters(NULL) {
-  _minor_cycle_memory_manager.add_pool(&_young_memory_pool);
-  _major_cycle_memory_manager.add_pool(&_young_memory_pool);
-  _major_cycle_memory_manager.add_pool(&_old_memory_pool);
-  _minor_pause_memory_manager.add_pool(&_young_memory_pool);
-  _major_pause_memory_manager.add_pool(&_young_memory_pool);
-  _major_pause_memory_manager.add_pool(&_old_memory_pool);
 }
 
 void ZServiceability::initialize() {

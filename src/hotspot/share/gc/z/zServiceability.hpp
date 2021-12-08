@@ -48,7 +48,9 @@ public:
 class ZServiceabilityMemoryManager : public GCMemoryManager {
 public:
   ZServiceabilityMemoryManager(const char* name,
-                               const char* end_message);
+                               const char* end_message,
+                               MemoryPool* young_memory_pool,
+                               MemoryPool* old_memory_pool);
 };
 
 class ZServiceability {
