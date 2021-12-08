@@ -343,7 +343,7 @@ public class Type implements Comparable<Type> {
     public void setVisible(boolean visible) {
         this.visible = visible;
     }
-    
+
     public boolean isVisible() {
         return visible;
     }
@@ -351,7 +351,7 @@ public class Type implements Comparable<Type> {
     public void setInternal(boolean internal) {
         this.internal = internal;
     }
-    
+
     public boolean isInternal() {
         return internal;
     }

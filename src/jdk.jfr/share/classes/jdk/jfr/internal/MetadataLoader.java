@@ -107,7 +107,7 @@ public final class MetadataLoader {
             id = dis.readLong();
             isEvent = dis.readBoolean();
             isRelation = dis.readBoolean();
-       }
+        }
     }
 
     // <Field>
