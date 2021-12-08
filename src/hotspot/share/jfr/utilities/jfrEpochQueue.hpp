@@ -55,7 +55,7 @@ class JfrEpochQueue : public ElementPolicy<typename JfrEpochStorage::Buffer> {
   ~JfrEpochQueue();
   bool initialize(size_t min_buffer_size, size_t free_list_cache_count_limit, size_t cache_prealloc_count);
   void enqueue(TypePtr t);
-  BufferPtr renew(Thread* thread);
+  BufferPtr renew(size_t size, Thread* thread);
   template <typename Callback>
   void iterate(Callback& callback, bool previous_epoch = false);
  private:

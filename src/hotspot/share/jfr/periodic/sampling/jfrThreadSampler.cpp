@@ -529,12 +529,18 @@ void JfrThreadSampler::post_run() {
 
 const JfrBuffer* JfrThreadSampler::get_enqueue_buffer() {
   const JfrBuffer* buffer = JfrTraceIdLoadBarrier::get_enqueue_buffer(this);
-  return buffer != nullptr ? renew_if_full(buffer) : JfrTraceIdLoadBarrier::renew_enqueue_buffer(this);
+  if (buffer != nullptr) {
+    return renew_if_full(buffer);
+  }
+  const size_t min_free_size_bytes = JfrOptionSet::stackdepth() * sizeof(intptr_t);
+  return JfrTraceIdLoadBarrier::renew_enqueue_buffer(2*min_free_size_bytes, this);
 }
 
 const JfrBuffer* JfrThreadSampler::renew_if_full(const JfrBuffer* enqueue_buffer) {
   assert(enqueue_buffer != nullptr, "invariant");
-  return enqueue_buffer->free_size() < _min_valid_free_size_bytes ? JfrTraceIdLoadBarrier::renew_enqueue_buffer(this) : enqueue_buffer;
+  const size_t min_free_size_bytes = JfrOptionSet::stackdepth() * sizeof(intptr_t);
+
+  return enqueue_buffer->free_size() < _min_valid_free_size_bytes ? JfrTraceIdLoadBarrier::renew_enqueue_buffer(2*_min_valid_free_size_bytes, this) : enqueue_buffer;
 }
 
 void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thread) {

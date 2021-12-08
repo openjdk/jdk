@@ -73,6 +73,6 @@ JfrBuffer* JfrTraceIdLoadBarrier::get_enqueue_buffer(Thread* thread) {
   return klass_queue().get_enqueue_buffer(thread);
 }
 
-JfrBuffer* JfrTraceIdLoadBarrier::renew_enqueue_buffer(Thread* thread) {
-  return klass_queue().renew_enqueue_buffer(thread);
+JfrBuffer* JfrTraceIdLoadBarrier::renew_enqueue_buffer(size_t size, Thread* thread) {
+  return klass_queue().renew_enqueue_buffer(size, thread);
 }

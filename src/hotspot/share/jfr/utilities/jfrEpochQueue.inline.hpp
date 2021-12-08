@@ -47,13 +47,15 @@ bool JfrEpochQueue<ElementPolicy>::initialize(size_t min_buffer_size, size_t fre
 
 template <template <typename> class ElementPolicy>
 inline typename JfrEpochQueue<ElementPolicy>::BufferPtr
-JfrEpochQueue<ElementPolicy>::renew(Thread* thread) {
+JfrEpochQueue<ElementPolicy>::renew(size_t size, Thread* thread) {
   assert(thread != nullptr, "invariant");
   BufferPtr buffer = this->thread_local_storage(thread);
   if (buffer != nullptr) {
     _storage->release(buffer);
   }
-  buffer = _storage->acquire(0, thread);
+  buffer = _storage->acquire(size, thread);
+  assert(buffer != nullptr, "invariant");
+  assert(buffer->free_size() >= size, "invariant");
   this->set_thread_local_storage(buffer, thread);
   assert(this->thread_local_storage(thread) == buffer, "invariant");
   return buffer;
