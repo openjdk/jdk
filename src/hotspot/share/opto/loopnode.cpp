@@ -1425,11 +1425,11 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
   Node* limit = NULL;
 
   Node* cmp = loop_exit_test(back_control, loop, incr, limit, mask, cl_prob);
-  assert(cmp != NULL && cmp->is_Cmp() && cmp->operates_on(bt, true), "no exit test");
+  assert(cmp != NULL && cmp->Opcode() == Op_Cmp(bt), "no exit test");
 
   Node* phi_incr = NULL;
   incr = loop_iv_incr(incr, x, loop, phi_incr);
-  assert(incr != NULL && incr->is_Add() && incr->operates_on(bt, true), "no incr");
+  assert(incr != NULL && incr->Opcode() == Op_Add(bt), "no incr");
 
   Node* xphi = NULL;
   Node* stride = loop_iv_stride(incr, loop, xphi);
