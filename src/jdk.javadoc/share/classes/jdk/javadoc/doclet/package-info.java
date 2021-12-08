@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
  * The invocation is defined by the interface {@link jdk.javadoc.doclet.Doclet}
  * -- the {@link jdk.javadoc.doclet.Doclet#run(DocletEnvironment) run} interface
  * method, defines the entry point.
- * {@snippet id="entry-point" type=java :
+ * {@snippet id="entry-point" lang=java :
  *    public boolean run(DocletEnvironment environment) // @highlight substring="run"
  * }
  * The {@link jdk.javadoc.doclet.DocletEnvironment} instance holds the
