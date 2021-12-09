@@ -78,39 +78,57 @@ static const ZStatPhaseConcurrent ZPhaseConcurrentRootsRemapOld("Concurrent Root
 
 static const ZStatSampler         ZSamplerJavaThreads("System", "Java Threads", ZStatUnitThreads);
 
-ZLock* ZDriverLock::_lock;
+ZLock*        ZDriver::_lock;
+ZDriverMinor* ZDriver::_minor;
+ZDriverMajor* ZDriver::_major;
 
-void ZDriverLock::initialize() {
+void ZDriver::initialize() {
   _lock = new ZLock();
 }
 
-void ZDriverLock::lock() {
+void ZDriver::lock() {
   _lock->lock();
 }
 
-void ZDriverLock::unlock() {
+void ZDriver::unlock() {
   _lock->unlock();
+}
+
+void ZDriver::set_minor(ZDriverMinor* minor) {
+  _minor = minor;
+}
+
+void ZDriver::set_major(ZDriverMajor* major) {
+  _major = major;
+}
+
+ZDriverMinor* ZDriver::minor() {
+  return _minor;
+}
+
+ZDriverMajor* ZDriver::major() {
+  return _major;
 }
 
 class ZDriverLocker : public StackObj {
 public:
   ZDriverLocker() {
-    ZDriverLock::lock();
+    ZDriver::lock();
   }
 
   ~ZDriverLocker() {
-    ZDriverLock::unlock();
+    ZDriver::unlock();
   }
 };
 
 class ZDriverUnlocker : public StackObj {
 public:
   ZDriverUnlocker() {
-    ZDriverLock::unlock();
+    ZDriver::unlock();
   }
 
   ~ZDriverUnlocker() {
-    ZDriverLock::lock();
+    ZDriver::lock();
   }
 };
 
@@ -436,7 +454,7 @@ ZDriverMinor::ZDriverMinor() :
     _gc_timer(),
     _jfr_tracer(),
     _used_at_start() {
-  ZDriver::register_minor(this);
+  ZDriver::set_minor(this);
   set_name("ZDriverMinor");
   create_and_start();
 }
@@ -803,7 +821,7 @@ ZDriverMajor::ZDriverMajor() :
     _gc_timer(),
     _jfr_tracer(),
     _used_at_start() {
-  ZDriver::register_major(this);
+  ZDriver::set_major(this);
   set_name("ZDriverMajor");
   create_and_start();
 }
@@ -951,23 +969,4 @@ void ZDriverMajor::run_service() {
 
 void ZDriverMajor::stop_service() {
   _port.send_async(GCCause::_no_gc);
-}
-
-ZDriverMinor* ZDriver::_minor;
-ZDriverMajor* ZDriver::_major;
-
-void ZDriver::register_minor(ZDriverMinor* minor) {
-  _minor = minor;
-}
-
-void ZDriver::register_major(ZDriverMajor* major) {
-  _major = major;
-}
-
-ZDriverMinor* ZDriver::minor() {
-  return _minor;
-}
-
-ZDriverMajor* ZDriver::major() {
-  return _major;
 }

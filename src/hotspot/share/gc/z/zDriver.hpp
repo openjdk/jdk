@@ -31,18 +31,29 @@
 #include "gc/z/zLock.hpp"
 #include "gc/z/zTracer.hpp"
 
-class ZDriverLock : public AllStatic {
+class ZDriverMinor;
+class ZDriverMajor;
+
+class ZDriver : public AllStatic {
   friend class ZDriverLocker;
   friend class ZDriverUnlocker;
 
 private:
-  static ZLock* _lock;
+  static ZLock*        _lock;
+  static ZDriverMinor* _minor;
+  static ZDriverMajor* _major;
 
   static void lock();
   static void unlock();
 
 public:
   static void initialize();
+
+  static void set_minor(ZDriverMinor* minor);
+  static void set_major(ZDriverMajor* major);
+
+  static ZDriverMinor* minor();
+  static ZDriverMajor* major();
 };
 
 class ZDriverMinor : public ConcurrentGCThread {
@@ -97,19 +108,6 @@ public:
 
   void set_used_at_start(size_t used);
   size_t used_at_start() const;
-};
-
-class ZDriver : AllStatic {
-private:
-  static ZDriverMinor* _minor;
-  static ZDriverMajor* _major;
-
-public:
-  static void register_minor(ZDriverMinor* minor);
-  static void register_major(ZDriverMajor* major);
-
-  static ZDriverMinor* minor();
-  static ZDriverMajor* major();
 };
 
 #endif // SHARE_GC_Z_ZDRIVER_HPP

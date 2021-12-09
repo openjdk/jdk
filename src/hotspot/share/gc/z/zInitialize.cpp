@@ -56,7 +56,7 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   ZHeuristics::set_medium_page_size();
   ZBarrierSet::set_barrier_set(barrier_set);
   ZJNICritical::initialize();
-  ZDriverLock::initialize();
+  ZDriver::initialize();
 
   pd_initialize();
 }
