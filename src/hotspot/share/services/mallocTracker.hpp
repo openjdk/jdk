@@ -330,12 +330,7 @@ class MallocHeader {
  public:
 
   MallocHeader(size_t size, MEMFLAGS flags, const NativeCallStack& stack, NMT_TrackingLevel level) {
-
     assert(size < max_reasonable_malloc_size, "Too large allocation size?");
-
-    if (level == NMT_minimal) {
-      return;
-    }
 
     _flags = NMTUtil::flag_to_index(flags);
     set_size(size);
@@ -385,8 +380,6 @@ class MallocTracker : AllStatic {
  public:
   // Initialize malloc tracker for specific tracking level
   static bool initialize(NMT_TrackingLevel level);
-
-  static bool transition(NMT_TrackingLevel from, NMT_TrackingLevel to);
 
   // malloc tracking header size for specific tracking level
   static inline size_t malloc_header_size(NMT_TrackingLevel level) {
