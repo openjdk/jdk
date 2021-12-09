@@ -71,7 +71,7 @@ static GCCause::Cause rule_minor_timer() {
     return GCCause::_no_gc;
   }
 
-  return GCCause::_z_minor_timer;
+  return GCCause::_z_timer;
 }
 
 static double estimated_gc_workers(double serial_gc_time, double parallelizable_gc_time, double time_until_deadline) {
@@ -197,7 +197,7 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
     return ZDriverRequest(GCCause::_no_gc, actual_gc_workers);
   }
 
-  return ZDriverRequest(GCCause::_z_minor_allocation_rate, actual_gc_workers);
+  return ZDriverRequest(GCCause::_z_allocation_rate, actual_gc_workers);
 }
 
 static GCCause::Cause rule_minor_allocation_rate_static() {
@@ -251,7 +251,7 @@ static GCCause::Cause rule_minor_allocation_rate_static() {
     return GCCause::_no_gc;
   }
 
-  return GCCause::_z_minor_allocation_rate;
+  return GCCause::_z_allocation_rate;
 }
 
 static GCCause::Cause rule_minor_allocation_rate() {
@@ -293,7 +293,7 @@ static GCCause::Cause rule_minor_high_usage() {
     return GCCause::_no_gc;
   }
 
-  return GCCause::_z_minor_high_usage;
+  return GCCause::_z_high_usage;
 }
 
 // Major GC rules
@@ -315,7 +315,7 @@ static GCCause::Cause rule_major_timer() {
     return GCCause::_no_gc;
   }
 
-  return GCCause::_z_major_timer;
+  return GCCause::_z_timer;
 }
 
 static GCCause::Cause rule_major_warmup() {
@@ -339,7 +339,7 @@ static GCCause::Cause rule_major_warmup() {
     return GCCause::_no_gc;
   }
 
-  return GCCause::_z_major_warmup;
+  return GCCause::_z_warmup;
 }
 
 static GCCause::Cause rule_major_allocation_rate() {
@@ -429,7 +429,7 @@ static GCCause::Cause rule_major_allocation_rate() {
     // In other words, the cost for minor collections of not doing a major collection
     // will seemingly be greater than the cost of doing a major collection and getting
     // cheaper minor collections for a time to come.
-    return GCCause::_z_major_allocation_rate;
+    return GCCause::_z_allocation_rate;
   }
 
   return GCCause::_no_gc;
@@ -479,7 +479,7 @@ static GCCause::Cause rule_major_proactive() {
     return GCCause::_no_gc;
   }
 
-  return GCCause::_z_major_proactive;
+  return GCCause::_z_proactive;
 }
 
 static GCCause::Cause make_minor_gc_decision() {
@@ -494,7 +494,7 @@ static GCCause::Cause make_minor_gc_decision() {
   // Execute rules
   for (size_t i = 0; i < ARRAY_SIZE(rules); i++) {
     const GCCause::Cause cause = rules[i]();
-    if (ZCollectionIntervalOnly && cause != GCCause::_z_minor_timer) {
+    if (ZCollectionIntervalOnly && cause != GCCause::_z_timer) {
       continue;
     }
     if (cause != GCCause::_no_gc) {
@@ -517,7 +517,7 @@ static GCCause::Cause make_major_gc_decision() {
   // Execute rules
   for (size_t i = 0; i < ARRAY_SIZE(rules); i++) {
     const GCCause::Cause cause = rules[i]();
-    if (ZCollectionIntervalOnly && cause != GCCause::_z_minor_timer) {
+    if (ZCollectionIntervalOnly && cause != GCCause::_z_timer) {
       continue;
     }
     if (cause != GCCause::_no_gc) {
@@ -552,7 +552,7 @@ static void make_gc_decision() {
     const GCCause::Cause major_cause = rule_major_allocation_rate();
     if (minor_cause != GCCause::_no_gc) {
       if (!ZDriver::major()->is_busy() &&
-          major_cause == GCCause::_z_major_allocation_rate) {
+          major_cause == GCCause::_z_allocation_rate) {
         // Try merging major allocation rate GCs with another minor GC.
         const ZDriverRequest request(major_cause, initial_young_workers());
         ZDriver::major()->collect(request);

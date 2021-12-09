@@ -264,7 +264,7 @@ static uint select_active_worker_threads_static(GCCause::Cause cause, uint nwork
   if (cause == GCCause::_wb_full_gc ||
       cause == GCCause::_java_lang_system_gc ||
       cause == GCCause::_metadata_GC_clear_soft_refs ||
-      cause == GCCause::_z_major_allocation_stall) {
+      cause == GCCause::_z_allocation_stall) {
     // Boost
     const uint boosted_nworkers = MAX2(nworkers, ParallelGCThreads);
     return boosted_nworkers;
@@ -449,16 +449,15 @@ void ZDriverMinor::collect(const ZDriverRequest& request) {
   switch (request.cause()) {
   case GCCause::_wb_young_gc:
   case GCCause::_scavenge_alot:
-  case GCCause::_z_minor_timer:
-  case GCCause::_z_minor_allocation_rate:
-  case GCCause::_z_minor_allocation_stall:
-  case GCCause::_z_minor_high_usage:
+  case GCCause::_z_timer:
+  case GCCause::_z_allocation_rate:
+  case GCCause::_z_allocation_stall:
+  case GCCause::_z_high_usage:
     // Start asynchronous GC
     _port.send_async(request);
     break;
 
   default:
-    // Other causes not supported
     fatal("Unsupported GC cause (%s)", GCCause::to_string(request.cause()));
     break;
   }
@@ -662,7 +661,7 @@ static bool should_clear_soft_references(GCCause::Cause cause) {
   switch (cause) {
   case GCCause::_wb_full_gc:
   case GCCause::_metadata_GC_clear_soft_refs:
-  case GCCause::_z_major_allocation_stall:
+  case GCCause::_z_allocation_stall:
     return true;
 
   case GCCause::_wb_breakpoint:
@@ -670,15 +669,16 @@ static bool should_clear_soft_references(GCCause::Cause cause) {
   case GCCause::_java_lang_system_gc:
   case GCCause::_full_gc_alot:
   case GCCause::_jvmti_force_gc:
-  case GCCause::_z_major_timer:
-  case GCCause::_z_major_warmup:
-  case GCCause::_z_major_allocation_rate:
-  case GCCause::_z_major_proactive:
+  case GCCause::_z_timer:
+  case GCCause::_z_warmup:
+  case GCCause::_z_allocation_rate:
+  case GCCause::_z_proactive:
   case GCCause::_metadata_GC_threshold:
     break;
 
   default:
     fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
+    break;
   }
 
   // Clear soft references if threads are stalled waiting for an old collection
@@ -700,18 +700,19 @@ static bool should_preclean_young(GCCause::Cause cause) {
   case GCCause::_full_gc_alot:
   case GCCause::_jvmti_force_gc:
   case GCCause::_metadata_GC_clear_soft_refs:
-  case GCCause::_z_major_allocation_stall:
+  case GCCause::_z_allocation_stall:
     return true;
 
-  case GCCause::_z_major_timer:
-  case GCCause::_z_major_warmup:
-  case GCCause::_z_major_allocation_rate:
-  case GCCause::_z_major_proactive:
+  case GCCause::_z_timer:
+  case GCCause::_z_warmup:
+  case GCCause::_z_allocation_rate:
+  case GCCause::_z_proactive:
   case GCCause::_metadata_GC_threshold:
     break;
 
   default:
     fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
+    break;
   }
 
   // Preclean young if threads are stalled waiting for an old collection
@@ -797,9 +798,8 @@ static void collect_old(ConcurrentGCTimer* timer) {
   concurrent_relocate_old();
 }
 
-ZDriverMajor::ZDriverMajor(ZDriverMinor* minor) :
+ZDriverMajor::ZDriverMajor() :
     _port(),
-    _minor(minor),
     _gc_timer(),
     _jfr_tracer(),
     _used_at_start() {
@@ -824,11 +824,11 @@ void ZDriverMajor::collect(const ZDriverRequest& request) {
     _port.send_sync(request);
     break;
 
-  case GCCause::_z_major_timer:
-  case GCCause::_z_major_warmup:
-  case GCCause::_z_major_allocation_rate:
-  case GCCause::_z_major_allocation_stall:
-  case GCCause::_z_major_proactive:
+  case GCCause::_z_timer:
+  case GCCause::_z_warmup:
+  case GCCause::_z_allocation_rate:
+  case GCCause::_z_allocation_stall:
+  case GCCause::_z_proactive:
   case GCCause::_metadata_GC_threshold:
     // Start asynchronous GC
     _port.send_async(request);
@@ -840,8 +840,7 @@ void ZDriverMajor::collect(const ZDriverRequest& request) {
     break;
 
   default:
-    // Delegate other causes to minor driver
-    _minor->collect(request);
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(request.cause()));
     break;
   }
 }

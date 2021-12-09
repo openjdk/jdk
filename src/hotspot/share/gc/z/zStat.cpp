@@ -1154,7 +1154,7 @@ void ZStatCycle::at_start() {
 void ZStatCycle::at_end(ZStatWorkers* stat_workers) {
   _end_of_last = Ticks::now();
 
-  if (ZCollectedHeap::heap()->gc_cause() == GCCause::_z_major_warmup && _nwarmup_cycles < 3) {
+  if (ZCollectedHeap::heap()->gc_cause() == GCCause::_z_warmup && _nwarmup_cycles < 3) {
     _nwarmup_cycles++;
   }
 

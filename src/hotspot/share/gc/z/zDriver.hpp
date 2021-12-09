@@ -74,11 +74,10 @@ public:
 
 class ZDriverMajor : public ConcurrentGCThread {
 private:
-  ZDriverPort         _port;
-  ZDriverMinor* const _minor;
-  ConcurrentGCTimer   _gc_timer;
-  ZMajorTracer        _jfr_tracer;
-  size_t              _used_at_start;
+  ZDriverPort       _port;
+  ConcurrentGCTimer _gc_timer;
+  ZMajorTracer      _jfr_tracer;
+  size_t            _used_at_start;
 
   void gc(const ZDriverRequest& request);
   void handle_alloc_stalls() const;
@@ -88,7 +87,7 @@ protected:
   virtual void stop_service();
 
 public:
-  ZDriverMajor(ZDriverMinor* minor);
+  ZDriverMajor();
 
   bool is_busy() const;
 

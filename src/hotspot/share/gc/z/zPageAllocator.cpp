@@ -25,8 +25,8 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zArray.inline.hpp"
-#include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zCollector.inline.hpp"
+#include "gc/z/zDriver.hpp"
 #include "gc/z/zFuture.inline.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -498,7 +498,7 @@ bool ZPageAllocator::alloc_page_stall(ZPageAllocation* allocation) {
   check_out_of_memory_during_initialization();
 
   // Start asynchronous minor GC
-  ZCollectedHeap::heap()->collect(GCCause::_z_minor_allocation_stall);
+  ZDriver::minor()->collect(GCCause::_z_allocation_stall);
 
   // Wait for allocation to complete or fail
   const bool result = allocation->wait();
@@ -928,11 +928,11 @@ void ZPageAllocator::restart_gc() const {
   }
 
   if (!has_alloc_seen_young(allocation)) {
-    // Start a minor GC, keep allocation requests enqueued
-    ZCollectedHeap::heap()->collect(GCCause::_z_minor_allocation_stall);
+    // Start asynchronous minor GC, keep allocation requests enqueued
+    ZDriver::minor()->collect(GCCause::_z_allocation_stall);
   } else {
-    // Start a major GC, keep allocation requests enqueued
-    ZCollectedHeap::heap()->collect(GCCause::_z_major_allocation_stall);
+    // Start asynchronous major GC, keep allocation requests enqueued
+    ZDriver::major()->collect(GCCause::_z_allocation_stall);
   }
 }
 

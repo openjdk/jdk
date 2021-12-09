@@ -57,7 +57,7 @@ ZCollectedHeap::ZCollectedHeap() :
     _initialize(&_barrier_set),
     _heap(),
     _driver_minor(new ZDriverMinor()),
-    _driver_major(new ZDriverMajor(_driver_minor)),
+    _driver_major(new ZDriverMajor()),
     _director(new ZDirector()),
     _stat(new ZStat()),
     _runtime_workers() {}
@@ -172,7 +172,30 @@ MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* lo
 }
 
 void ZCollectedHeap::collect(GCCause::Cause cause) {
-  _driver_major->collect(cause);
+  // Handle external collection requests
+  switch (cause) {
+  case GCCause::_wb_young_gc:
+  case GCCause::_scavenge_alot:
+    // Start Minor GC
+    _driver_minor->collect(cause);
+    break;
+
+  case GCCause::_wb_full_gc:
+  case GCCause::_wb_breakpoint:
+  case GCCause::_dcmd_gc_run:
+  case GCCause::_java_lang_system_gc:
+  case GCCause::_full_gc_alot:
+  case GCCause::_jvmti_force_gc:
+  case GCCause::_metadata_GC_threshold:
+  case GCCause::_metadata_GC_clear_soft_refs:
+    // Start Major GC
+    _driver_major->collect(cause);
+    break;
+
+  default:
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
+    break;
+  }
 }
 
 void ZCollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
