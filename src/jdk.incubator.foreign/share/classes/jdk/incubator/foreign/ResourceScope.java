@@ -103,15 +103,15 @@ import java.util.Spliterator;
  * segment and allow multiple threads to work in parallel on disjoint segment slices. The following code can be used to sum
  * all int values in a memory segment in parallel:
  *
- * <blockquote><pre>{@code
-try (ResourceScope scope = ResourceScope.newSharedScope()) {
-    SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
-    MemorySegment segment = MemorySegment.allocateNative(SEQUENCE_LAYOUT, scope);
-    int sum = segment.elements(ValueLayout.JAVA_INT).parallel()
-                        .mapToInt(s -> s.get(ValueLayout.JAVA_INT, 0))
-                        .sum();
-}
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * try (ResourceScope scope = ResourceScope.newSharedScope()) {
+ *     SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
+ *     MemorySegment segment = MemorySegment.allocateNative(SEQUENCE_LAYOUT, scope);
+ *     int sum = segment.elements(ValueLayout.JAVA_INT).parallel()
+ *                      .mapToInt(s -> s.get(ValueLayout.JAVA_INT, 0))
+ *                      .sum();
+ * }
+ * }
  *
  * <p>
  * Shared resource scopes, while powerful, must be used with caution: if one or more threads accesses
@@ -131,13 +131,13 @@ try (ResourceScope scope = ResourceScope.newSharedScope()) {
  * This can be useful when clients need to perform a critical operation on a memory segment, during which they have
  * to ensure that the scope associated with that segment will not be closed; this can be done as follows:
  *
- * <blockquote><pre>{@code
-MemorySegment segment = ...
-try (ResourceScope criticalScope = ResourceScope.newConfinedScope()) {
-    criticalScope.keepAlive(segment.scope());
-    <critical operation on segment>
-}
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemorySegment segment = ...
+ * try (ResourceScope criticalScope = ResourceScope.newConfinedScope()) {
+ *     criticalScope.keepAlive(segment.scope());
+ *     <critical operation on segment>
+ * }
+ * }
  *
  * Note that a resource scope does not become <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>
  * until all the scopes it depends on have been closed.
@@ -239,9 +239,9 @@ public sealed interface ResourceScope extends AutoCloseable permits ResourceScop
     /**
      * Creates a new shared scope, managed by a private {@link Cleaner} instance. Equivalent to (but likely more efficient than)
      * the following code:
-     * <pre>{@code
-    newSharedScope(Cleaner.create());
-     * }</pre>
+     * {@snippet lang=java :
+     * newSharedScope(Cleaner.create());
+     * }
      * @return a shared scope, managed by a private {@link Cleaner} instance.
      */
     static ResourceScope newImplicitScope() {

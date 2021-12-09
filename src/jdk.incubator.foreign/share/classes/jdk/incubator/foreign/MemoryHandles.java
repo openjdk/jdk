@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -47,17 +47,17 @@ import java.util.Objects;
  * to the segment, at which dereference should occur.
  * <p>
  * As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
- * <blockquote><pre>{@code
-GroupLayout seq = MemoryLayout.structLayout(
-        MemoryLayout.paddingLayout(32),
-        ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
-);
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * GroupLayout seq = MemoryLayout.structLayout(
+ *         MemoryLayout.paddingLayout(32),
+ *         ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
+ * );
+ * }
  * To access the member layout named {@code value}, we can construct a memory access var handle as follows:
- * <blockquote><pre>{@code
-VarHandle handle = MemoryHandles.varHandle(ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN)); //(MemorySegment, long) -> int
-handle = MemoryHandles.insertCoordinates(handle, 1, 4); //(MemorySegment) -> int
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * VarHandle handle = MemoryHandles.varHandle(ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN)); //(MemorySegment, long) -> int
+ * handle = MemoryHandles.insertCoordinates(handle, 1, 4); //(MemorySegment) -> int
+ * }
  *
  * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
  * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
@@ -177,13 +177,13 @@ public final class MemoryHandles {
      * example, it is often convenient to model an <i>unsigned short</i> as a
      * Java {@code int} to avoid dealing with negative values, which would be
      * the case if modeled as a Java {@code short}. This is illustrated in the following example:
-     * <blockquote><pre>{@code
-    MemorySegment segment = MemorySegment.allocateNative(2, ResourceScope.newImplicitScope());
-    VarHandle SHORT_VH = ValueLayout.JAVA_SHORT.varHandle();
-    VarHandle INT_VH = MemoryHandles.asUnsigned(SHORT_VH, int.class);
-    SHORT_VH.set(segment, (short)-1);
-    INT_VH.get(segment); // returns 65535
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * MemorySegment segment = MemorySegment.allocateNative(2, ResourceScope.newImplicitScope());
+     * VarHandle SHORT_VH = ValueLayout.JAVA_SHORT.varHandle();
+     * VarHandle INT_VH = MemoryHandles.asUnsigned(SHORT_VH, int.class);
+     * SHORT_VH.set(segment, (short)-1);
+     * INT_VH.get(segment); // returns 65535
+     * }
      * <p>
      * When calling e.g. {@link VarHandle#set(Object...)} on the resulting var
      * handle, the incoming value (of type {@code adaptedType}) is converted by a
