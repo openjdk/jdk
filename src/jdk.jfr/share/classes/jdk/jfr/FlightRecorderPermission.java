@@ -203,6 +203,11 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
         public EventSettings newEventSettings(EventSettingsModifier esm) {
             return new EventSettings.DelegatedEventSettings(esm);
         }
+
+        @Override
+        public boolean isVisible(EventType t) {
+            return t.isVisible();
+        }
     }
 
     /**

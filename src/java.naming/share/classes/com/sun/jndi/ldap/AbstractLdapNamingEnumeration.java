@@ -383,7 +383,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         listArg = ne.listArg;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected final void finalize() {
         cleanup();
     }

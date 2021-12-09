@@ -101,7 +101,10 @@ class RegisterSaver {
   int reg_offset_in_bytes(Register r);
   int r0_offset_in_bytes()    { return reg_offset_in_bytes(r0); }
   int rscratch1_offset_in_bytes()    { return reg_offset_in_bytes(rscratch1); }
-  int v0_offset_in_bytes(void)   { return 0; }
+  int v0_offset_in_bytes();
+
+  // Total stack size in bytes for saving sve predicate registers.
+  int total_sve_predicate_in_bytes();
 
   // Capture info about frame layout
   // Note this is only correct when not saving full vectors.
@@ -139,24 +142,49 @@ int RegisterSaver::reg_offset_in_bytes(Register r) {
   }
 #endif
 
-  int r0_offset = (slots_per_vect * FloatRegisterImpl::number_of_registers) * BytesPerInt;
+  int r0_offset = v0_offset_in_bytes() + (slots_per_vect * FloatRegisterImpl::number_of_registers) * BytesPerInt;
   return r0_offset + r->encoding() * wordSize;
+}
+
+int RegisterSaver::v0_offset_in_bytes() {
+  // The floating point registers are located above the predicate registers if
+  // they are present in the stack frame pushed by save_live_registers(). So the
+  // offset depends on the saved total predicate vectors in the stack frame.
+  return (total_sve_predicate_in_bytes() / VMRegImpl::stack_slot_size) * BytesPerInt;
+}
+
+int RegisterSaver::total_sve_predicate_in_bytes() {
+#ifdef COMPILER2
+  if (_save_vectors && Matcher::supports_scalable_vector()) {
+    // The number of total predicate bytes is unlikely to be a multiple
+    // of 16 bytes so we manually align it up.
+    return align_up(Matcher::scalable_predicate_reg_slots() *
+                    VMRegImpl::stack_slot_size *
+                    PRegisterImpl::number_of_saved_registers, 16);
+  }
+#endif
+  return 0;
 }
 
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words) {
   bool use_sve = false;
   int sve_vector_size_in_bytes = 0;
   int sve_vector_size_in_slots = 0;
+  int sve_predicate_size_in_slots = 0;
+  int total_predicate_in_bytes = total_sve_predicate_in_bytes();
+  int total_predicate_in_slots = total_predicate_in_bytes / VMRegImpl::stack_slot_size;
 
 #ifdef COMPILER2
   use_sve = Matcher::supports_scalable_vector();
-  sve_vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
-  sve_vector_size_in_slots = Matcher::scalable_vector_reg_size(T_FLOAT);
+  if (use_sve) {
+    sve_vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
+    sve_vector_size_in_slots = Matcher::scalable_vector_reg_size(T_FLOAT);
+    sve_predicate_size_in_slots = Matcher::scalable_predicate_reg_slots();
+  }
 #endif
 
 #if COMPILER2_OR_JVMCI
   if (_save_vectors) {
-    int vect_words = 0;
     int extra_save_slots_per_register = 0;
     // Save upper half of vector registers
     if (use_sve) {
@@ -164,9 +192,10 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     } else {
       extra_save_slots_per_register = FloatRegisterImpl::extra_save_slots_per_neon_register;
     }
-    vect_words = FloatRegisterImpl::number_of_registers * extra_save_slots_per_register /
-                 VMRegImpl::slots_per_word;
-    additional_frame_words += vect_words;
+    int extra_vector_bytes = extra_save_slots_per_register *
+                             VMRegImpl::stack_slot_size *
+                             FloatRegisterImpl::number_of_registers;
+    additional_frame_words += ((extra_vector_bytes + total_predicate_in_bytes) / wordSize);
   }
 #else
   assert(!_save_vectors, "vectors are generated only by C2 and JVMCI");
@@ -184,7 +213,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 
   // Save Integer and Float registers.
   __ enter();
-  __ push_CPU_state(_save_vectors, use_sve, sve_vector_size_in_bytes);
+  __ push_CPU_state(_save_vectors, use_sve, sve_vector_size_in_bytes, total_predicate_in_bytes);
 
   // Set an oopmap for the call site.  This oopmap will map all
   // oop-registers and debug-info registers as callee-saved.  This
@@ -201,8 +230,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       // Register slots are 8 bytes wide, 32 floating-point registers.
       int sp_offset = RegisterImpl::max_slots_per_register * i +
                       FloatRegisterImpl::save_slots_per_register * FloatRegisterImpl::number_of_registers;
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset + additional_frame_slots),
-                                r->as_VMReg());
+      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset + additional_frame_slots), r->as_VMReg());
     }
   }
 
@@ -210,13 +238,20 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     FloatRegister r = as_FloatRegister(i);
     int sp_offset = 0;
     if (_save_vectors) {
-      sp_offset = use_sve ? (sve_vector_size_in_slots * i) :
+      sp_offset = use_sve ? (total_predicate_in_slots + sve_vector_size_in_slots * i) :
                             (FloatRegisterImpl::slots_per_neon_register * i);
     } else {
       sp_offset = FloatRegisterImpl::save_slots_per_register * i;
     }
-    oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
-                              r->as_VMReg());
+    oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset), r->as_VMReg());
+  }
+
+  if (_save_vectors && use_sve) {
+    for (int i = 0; i < PRegisterImpl::number_of_saved_registers; i++) {
+      PRegister r = as_PRegister(i);
+      int sp_offset = sve_predicate_size_in_slots * i;
+      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset), r->as_VMReg());
+    }
   }
 
   return oop_map;
@@ -225,7 +260,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 #ifdef COMPILER2
   __ pop_CPU_state(_save_vectors, Matcher::supports_scalable_vector(),
-                   Matcher::scalable_vector_reg_size(T_BYTE));
+                   Matcher::scalable_vector_reg_size(T_BYTE), total_sve_predicate_in_bytes());
 #else
 #if !INCLUDE_JVMCI
   assert(!_save_vectors, "vectors are generated only by C2 and JVMCI");
@@ -238,8 +273,10 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 
 // Is vector's size (in bytes) bigger than a size saved by default?
 // 8 bytes vector registers are saved by default on AArch64.
+// The SVE supported min vector size is 8 bytes and we need to save
+// predicate registers when the vector size is 8 bytes as well.
 bool SharedRuntime::is_wide_vector(int size) {
-  return size > 8;
+  return size > 8 || (UseSVE > 0 && size >= 8);
 }
 
 // The java_calling_convention describes stack locations as ideal slots on
@@ -1112,69 +1149,6 @@ static void restore_args(MacroAssembler *masm, int arg_count, int first_arg, VMR
   }
 }
 
-// Unpack an array argument into a pointer to the body and the length
-// if the array is non-null, otherwise pass 0 for both.
-static void unpack_array_argument(MacroAssembler* masm, VMRegPair reg, BasicType in_elem_type, VMRegPair body_arg, VMRegPair length_arg) { Unimplemented(); }
-
-
-class ComputeMoveOrder: public StackObj {
-  class MoveOperation: public ResourceObj {
-    friend class ComputeMoveOrder;
-   private:
-    VMRegPair        _src;
-    VMRegPair        _dst;
-    int              _src_index;
-    int              _dst_index;
-    bool             _processed;
-    MoveOperation*  _next;
-    MoveOperation*  _prev;
-
-    static int get_id(VMRegPair r) { Unimplemented(); return 0; }
-
-   public:
-    MoveOperation(int src_index, VMRegPair src, int dst_index, VMRegPair dst):
-      _src(src)
-    , _dst(dst)
-    , _src_index(src_index)
-    , _dst_index(dst_index)
-    , _processed(false)
-    , _next(NULL)
-    , _prev(NULL) { Unimplemented(); }
-
-    VMRegPair src() const              { Unimplemented(); return _src; }
-    int src_id() const                 { Unimplemented(); return 0; }
-    int src_index() const              { Unimplemented(); return 0; }
-    VMRegPair dst() const              { Unimplemented(); return _src; }
-    void set_dst(int i, VMRegPair dst) { Unimplemented(); }
-    int dst_index() const              { Unimplemented(); return 0; }
-    int dst_id() const                 { Unimplemented(); return 0; }
-    MoveOperation* next() const        { Unimplemented(); return 0; }
-    MoveOperation* prev() const        { Unimplemented(); return 0; }
-    void set_processed()               { Unimplemented(); }
-    bool is_processed() const          { Unimplemented(); return 0; }
-
-    // insert
-    void break_cycle(VMRegPair temp_register) { Unimplemented(); }
-
-    void link(GrowableArray<MoveOperation*>& killer) { Unimplemented(); }
-  };
-
- private:
-  GrowableArray<MoveOperation*> edges;
-
- public:
-  ComputeMoveOrder(int total_in_args, VMRegPair* in_regs, int total_c_args, VMRegPair* out_regs,
-                    BasicType* in_sig_bt, GrowableArray<int>& arg_order, VMRegPair tmp_vmreg) { Unimplemented(); }
-
-  // Collected all the move operations
-  void add_edge(int src_index, VMRegPair src, int dst_index, VMRegPair dst) { Unimplemented(); }
-
-  // Walk the edges breaking cycles between moves.  The result list
-  // can be walked in order to produce the proper set of loads
-  GrowableArray<MoveOperation*>* get_store_order(VMRegPair temp_register) { Unimplemented(); return 0; }
-};
-
-
 static void rt_call(MacroAssembler* masm, address dest) {
   CodeBlob *cb = CodeCache::find_blob(dest);
   if (cb) {
@@ -1287,8 +1261,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 int compile_id,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,
-                                                BasicType ret_type,
-                                                address critical_entry) {
+                                                BasicType ret_type) {
   if (method->is_method_handle_intrinsic()) {
     vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t)__ pc();
@@ -1313,12 +1286,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                        in_ByteSize(-1),
                                        (OopMapSet*)NULL);
   }
-  bool is_critical_native = true;
-  address native_func = critical_entry;
-  if (native_func == NULL) {
-    native_func = method->native_function();
-    is_critical_native = false;
-  }
+  address native_func = method->native_function();
   assert(native_func != NULL, "must have function");
 
   // An OopMap for lock (and class if static)
@@ -1332,55 +1300,20 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // the hidden arguments as arg[0] and possibly arg[1] (static method)
 
   const int total_in_args = method->size_of_parameters();
-  int total_c_args = total_in_args;
-  if (!is_critical_native) {
-    total_c_args += 1;
-    if (method->is_static()) {
-      total_c_args++;
-    }
-  } else {
-    for (int i = 0; i < total_in_args; i++) {
-      if (in_sig_bt[i] == T_ARRAY) {
-        total_c_args++;
-      }
-    }
-  }
+  int total_c_args = total_in_args + (method->is_static() ? 2 : 1);
 
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair* out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
   BasicType* in_elem_bt = NULL;
 
   int argc = 0;
-  if (!is_critical_native) {
-    out_sig_bt[argc++] = T_ADDRESS;
-    if (method->is_static()) {
-      out_sig_bt[argc++] = T_OBJECT;
-    }
+  out_sig_bt[argc++] = T_ADDRESS;
+  if (method->is_static()) {
+    out_sig_bt[argc++] = T_OBJECT;
+  }
 
-    for (int i = 0; i < total_in_args ; i++ ) {
-      out_sig_bt[argc++] = in_sig_bt[i];
-    }
-  } else {
-    in_elem_bt = NEW_RESOURCE_ARRAY(BasicType, total_in_args);
-    SignatureStream ss(method->signature());
-    for (int i = 0; i < total_in_args ; i++ ) {
-      if (in_sig_bt[i] == T_ARRAY) {
-        // Arrays are passed as int, elem* pair
-        out_sig_bt[argc++] = T_INT;
-        out_sig_bt[argc++] = T_ADDRESS;
-        ss.skip_array_prefix(1);  // skip one '['
-        assert(ss.is_primitive(), "primitive type expected");
-        in_elem_bt[i] = ss.type();
-      } else {
-        out_sig_bt[argc++] = in_sig_bt[i];
-        in_elem_bt[i] = T_VOID;
-      }
-      if (in_sig_bt[i] != T_VOID) {
-        assert(in_sig_bt[i] == ss.type() ||
-               in_sig_bt[i] == T_ARRAY, "must match");
-        ss.next();
-      }
-    }
+  for (int i = 0; i < total_in_args ; i++ ) {
+    out_sig_bt[argc++] = in_sig_bt[i];
   }
 
   // Now figure out where the args must be stored and how much stack space
@@ -1402,34 +1335,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Now the space for the inbound oop handle area
   int total_save_slots = 8 * VMRegImpl::slots_per_word;  // 8 arguments passed in registers
-  if (is_critical_native) {
-    // Critical natives may have to call out so they need a save area
-    // for register arguments.
-    int double_slots = 0;
-    int single_slots = 0;
-    for ( int i = 0; i < total_in_args; i++) {
-      if (in_regs[i].first()->is_Register()) {
-        const Register reg = in_regs[i].first()->as_Register();
-        switch (in_sig_bt[i]) {
-          case T_BOOLEAN:
-          case T_BYTE:
-          case T_SHORT:
-          case T_CHAR:
-          case T_INT:  single_slots++; break;
-          case T_ARRAY:  // specific to LP64 (7145024)
-          case T_LONG: double_slots++; break;
-          default:  ShouldNotReachHere();
-        }
-      } else if (in_regs[i].first()->is_FloatRegister()) {
-        ShouldNotReachHere();
-      }
-    }
-    total_save_slots = double_slots * 2 + single_slots;
-    // align the save area
-    if (double_slots != 0) {
-      stack_slots = align_up(stack_slots, 2);
-    }
-  }
 
   int oop_handle_offset = stack_slots;
   stack_slots += total_save_slots;
@@ -1596,22 +1501,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
 #endif /* ASSERT */
 
-  // This may iterate in two different directions depending on the
-  // kind of native it is.  The reason is that for regular JNI natives
-  // the incoming and outgoing registers are offset upwards and for
-  // critical natives they are offset down.
+  // For JNI natives the incoming and outgoing registers are offset upwards.
   GrowableArray<int> arg_order(2 * total_in_args);
   VMRegPair tmp_vmreg;
   tmp_vmreg.set2(r19->as_VMReg());
 
-  if (!is_critical_native) {
-    for (int i = total_in_args - 1, c_arg = total_c_args - 1; i >= 0; i--, c_arg--) {
-      arg_order.push(i);
-      arg_order.push(c_arg);
-    }
-  } else {
-    // Compute a valid move order, using tmp_vmreg to break any cycles
-    ComputeMoveOrder cmo(total_in_args, in_regs, total_c_args, out_regs, in_sig_bt, arg_order, tmp_vmreg);
+  for (int i = total_in_args - 1, c_arg = total_c_args - 1; i >= 0; i--, c_arg--) {
+    arg_order.push(i);
+    arg_order.push(c_arg);
   }
 
   int temploc = -1;
@@ -1619,20 +1516,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int i = arg_order.at(ai);
     int c_arg = arg_order.at(ai + 1);
     __ block_comment(err_msg("move %d -> %d", i, c_arg));
-    if (c_arg == -1) {
-      assert(is_critical_native, "should only be required for critical natives");
-      // This arg needs to be moved to a temporary
-      __ mov(tmp_vmreg.first()->as_Register(), in_regs[i].first()->as_Register());
-      in_regs[i] = tmp_vmreg;
-      temploc = i;
-      continue;
-    } else if (i == -1) {
-      assert(is_critical_native, "should only be required for critical natives");
-      // Read from the temporary location
-      assert(temploc != -1, "must be valid");
-      i = temploc;
-      temploc = -1;
-    }
+    assert(c_arg != -1 && i != -1, "wrong order");
 #ifdef ASSERT
     if (in_regs[i].first()->is_Register()) {
       assert(!reg_destroyed[in_regs[i].first()->as_Register()->encoding()], "destroyed reg!");
@@ -1647,21 +1531,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #endif /* ASSERT */
     switch (in_sig_bt[i]) {
       case T_ARRAY:
-        if (is_critical_native) {
-          unpack_array_argument(masm, in_regs[i], in_elem_bt[i], out_regs[c_arg + 1], out_regs[c_arg]);
-          c_arg++;
-#ifdef ASSERT
-          if (out_regs[c_arg].first()->is_Register()) {
-            reg_destroyed[out_regs[c_arg].first()->as_Register()->encoding()] = true;
-          } else if (out_regs[c_arg].first()->is_FloatRegister()) {
-            freg_destroyed[out_regs[c_arg].first()->as_FloatRegister()->encoding()] = true;
-          }
-#endif
-          int_args++;
-          break;
-        }
       case T_OBJECT:
-        assert(!is_critical_native, "no oop arguments");
         object_move(masm, map, oop_handle_offset, stack_slots, in_regs[i], out_regs[c_arg],
                     ((i == 0) && (!is_static)),
                     &receiver_offset);
@@ -1701,7 +1571,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   int c_arg = total_c_args - total_in_args;
 
   // Pre-load a static method's oop into c_rarg1.
-  if (method->is_static() && !is_critical_native) {
+  if (method->is_static()) {
 
     //  load oop into a register
     __ movoop(c_rarg1,
@@ -1759,7 +1629,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label lock_done;
 
   if (method->is_synchronized()) {
-    assert(!is_critical_native, "unhandled");
 
     const int mark_word_offset = BasicLock::displaced_header_offset_in_bytes();
 
@@ -1773,39 +1642,42 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
-    // Load (object->mark() | 1) into swap_reg %r0
-    __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-    __ orr(swap_reg, rscratch1, 1);
+    if (!UseHeavyMonitors) {
+      // Load (object->mark() | 1) into swap_reg %r0
+      __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ orr(swap_reg, rscratch1, 1);
 
-    // Save (object->mark() | 1) into BasicLock's displaced header
-    __ str(swap_reg, Address(lock_reg, mark_word_offset));
+      // Save (object->mark() | 1) into BasicLock's displaced header
+      __ str(swap_reg, Address(lock_reg, mark_word_offset));
 
-    // src -> dest iff dest == r0 else r0 <- dest
-    { Label here;
-      __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, lock_done, /*fallthrough*/NULL);
+      // src -> dest iff dest == r0 else r0 <- dest
+      { Label here;
+        __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, lock_done, /*fallthrough*/NULL);
+      }
+
+      // Hmm should this move to the slow path code area???
+
+      // Test if the oopMark is an obvious stack pointer, i.e.,
+      //  1) (mark & 3) == 0, and
+      //  2) sp <= mark < mark + os::pagesize()
+      // These 3 tests can be done by evaluating the following
+      // expression: ((mark - sp) & (3 - os::vm_page_size())),
+      // assuming both stack pointer and pagesize have their
+      // least significant 2 bits clear.
+      // NOTE: the oopMark is in swap_reg %r0 as the result of cmpxchg
+
+      __ sub(swap_reg, sp, swap_reg);
+      __ neg(swap_reg, swap_reg);
+      __ ands(swap_reg, swap_reg, 3 - os::vm_page_size());
+
+      // Save the test result, for recursive case, the result is zero
+      __ str(swap_reg, Address(lock_reg, mark_word_offset));
+      __ br(Assembler::NE, slow_path_lock);
+    } else {
+      __ b(slow_path_lock);
     }
 
-    // Hmm should this move to the slow path code area???
-
-    // Test if the oopMark is an obvious stack pointer, i.e.,
-    //  1) (mark & 3) == 0, and
-    //  2) sp <= mark < mark + os::pagesize()
-    // These 3 tests can be done by evaluating the following
-    // expression: ((mark - sp) & (3 - os::vm_page_size())),
-    // assuming both stack pointer and pagesize have their
-    // least significant 2 bits clear.
-    // NOTE: the oopMark is in swap_reg %r0 as the result of cmpxchg
-
-    __ sub(swap_reg, sp, swap_reg);
-    __ neg(swap_reg, swap_reg);
-    __ ands(swap_reg, swap_reg, 3 - os::vm_page_size());
-
-    // Save the test result, for recursive case, the result is zero
-    __ str(swap_reg, Address(lock_reg, mark_word_offset));
-    __ br(Assembler::NE, slow_path_lock);
-
     // Slow path will re-enter here
-
     __ bind(lock_done);
   }
 
@@ -1813,14 +1685,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Finally just about ready to make the JNI call
 
   // get JNIEnv* which is first argument to native
-  if (!is_critical_native) {
-    __ lea(c_rarg0, Address(rthread, in_bytes(JavaThread::jni_environment_offset())));
+  __ lea(c_rarg0, Address(rthread, in_bytes(JavaThread::jni_environment_offset())));
 
-    // Now set thread in native
-    __ mov(rscratch1, _thread_in_native);
-    __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
-    __ stlrw(rscratch1, rscratch2);
-  }
+  // Now set thread in native
+  __ mov(rscratch1, _thread_in_native);
+  __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
+  __ stlrw(rscratch1, rscratch2);
 
   rt_call(masm, native_func);
 
@@ -1850,18 +1720,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label safepoint_in_progress, safepoint_in_progress_done;
   Label after_transition;
-
-  // If this is a critical native, check for a safepoint or suspend request after the call.
-  // If a safepoint is needed, transition to native, then to native_trans to handle
-  // safepoints like the native methods that are not critical natives.
-  if (is_critical_native) {
-    Label needs_safepoint;
-    __ safepoint_poll(needs_safepoint, false /* at_return */, true /* acquire */, false /* in_nmethod */);
-    __ ldrw(rscratch1, Address(rthread, JavaThread::suspend_flags_offset()));
-    __ cbnzw(rscratch1, needs_safepoint);
-    __ b(after_transition);
-    __ bind(needs_safepoint);
-  }
 
   // Switch thread to "native transition" state before reading the synchronization state.
   // This additional state is necessary because reading and testing the synchronization
@@ -1920,26 +1778,30 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
     Label done;
-    // Simple recursive lock?
 
-    __ ldr(rscratch1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-    __ cbz(rscratch1, done);
+    if (!UseHeavyMonitors) {
+      // Simple recursive lock?
+      __ ldr(rscratch1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
+      __ cbz(rscratch1, done);
 
-    // Must save r0 if if it is live now because cmpxchg must use it
-    if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
-      save_native_result(masm, ret_type, stack_slots);
+      // Must save r0 if if it is live now because cmpxchg must use it
+      if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
+        save_native_result(masm, ret_type, stack_slots);
+      }
+
+
+      // get address of the stack lock
+      __ lea(r0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
+      //  get old displaced header
+      __ ldr(old_hdr, Address(r0, 0));
+
+      // Atomic swap old header if oop still contains the stack lock
+      Label succeed;
+      __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, succeed, &slow_path_unlock);
+      __ bind(succeed);
+    } else {
+      __ b(slow_path_unlock);
     }
-
-
-    // get address of the stack lock
-    __ lea(r0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-    //  get old displaced header
-    __ ldr(old_hdr, Address(r0, 0));
-
-    // Atomic swap old header if oop still contains the stack lock
-    Label succeed;
-    __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, succeed, &slow_path_unlock);
-    __ bind(succeed);
 
     // slow path re-enters here
     __ bind(unlock_done);
@@ -1971,32 +1833,26 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ str(zr, Address(rthread, JavaThread::pending_jni_exception_check_fn_offset()));
   }
 
-  if (!is_critical_native) {
-    // reset handle block
-    __ ldr(r2, Address(rthread, JavaThread::active_handles_offset()));
-    __ str(zr, Address(r2, JNIHandleBlock::top_offset_in_bytes()));
-  }
+  // reset handle block
+  __ ldr(r2, Address(rthread, JavaThread::active_handles_offset()));
+  __ str(zr, Address(r2, JNIHandleBlock::top_offset_in_bytes()));
 
   __ leave();
 
-  if (!is_critical_native) {
-    // Any exception pending?
-    __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
-    __ cbnz(rscratch1, exception_pending);
-  }
+  // Any exception pending?
+  __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+  __ cbnz(rscratch1, exception_pending);
 
   // We're done
   __ ret(lr);
 
   // Unexpected paths are out of line and go here
 
-  if (!is_critical_native) {
-    // forward the exception
-    __ bind(exception_pending);
+  // forward the exception
+  __ bind(exception_pending);
 
-    // and forward the exception
-    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
-  }
+  // and forward the exception
+  __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
   // Slow path locking & unlocking
   if (method->is_synchronized()) {

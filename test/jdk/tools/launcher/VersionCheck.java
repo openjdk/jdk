@@ -61,7 +61,8 @@ public class VersionCheck extends TestHelper {
         "jmc.ini",
         "jweblauncher",
         "jpackage",
-        "ssvagent"
+        "ssvagent",
+        "jwebserver"
     };
 
     // tools that do not accept -version

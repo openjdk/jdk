@@ -426,8 +426,8 @@ extern volatile jint vm_created;
 JVM_ENTRY_NO_ENV(void, JVM_BeforeHalt())
 #if INCLUDE_CDS
   // Link all classes for dynamic CDS dumping before vm exit.
-  if (DynamicDumpSharedSpaces) {
-    DynamicArchive::prepare_for_dynamic_dumping();
+  if (DynamicArchive::should_dump_at_vm_exit()) {
+    DynamicArchive::prepare_for_dump_at_exit();
   }
 #endif
   EventShutdown event;
@@ -688,6 +688,10 @@ JVM_END
 
 JVM_ENTRY(void, JVM_ReportFinalizationComplete(JNIEnv * env, jobject finalizee))
   MANAGEMENT_ONLY(FinalizerService::on_complete(JNIHandles::resolve_non_null(finalizee), THREAD);)
+JVM_END
+
+JVM_ENTRY(jboolean, JVM_IsFinalizationEnabled(JNIEnv * env))
+  return InstanceKlass::is_finalization_enabled();
 JVM_END
 
 // java.io.File ///////////////////////////////////////////////////////////////
@@ -3706,7 +3710,7 @@ JVM_ENTRY(void, JVM_DumpDynamicArchive(JNIEnv *env, jstring archiveName))
   ResourceMark rm(THREAD);
   Handle file_handle(THREAD, JNIHandles::resolve_non_null(archiveName));
   char* archive_name  = java_lang_String::as_utf8_string(file_handle());
-  DynamicArchive::dump(archive_name, CHECK);
+  DynamicArchive::dump_for_jcmd(archive_name, CHECK);
 #endif // INCLUDE_CDS
 JVM_END
 

@@ -26,6 +26,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
@@ -59,7 +60,7 @@ void HeapRegionRemSet::initialize(MemRegion reserved) {
     vm_exit_during_initialization("Can not represent all cards in a card region within uint.");
   }
 
-  _split_card_shift = CardBitsWithinCardRegion + CardTable::card_shift;
+  _split_card_shift = CardBitsWithinCardRegion + CardTable::card_shift();
   _split_card_mask = ((size_t)1 << _split_card_shift) - 1;
 
   // Check if the card region/region within cards combination can cover the heap.
@@ -80,7 +81,7 @@ HeapRegionRemSet::HeapRegionRemSet(HeapRegion* hr,
                                    G1CardSetConfiguration* config) :
   _m(Mutex::service - 1, FormatBuffer<128>("HeapRegionRemSet#%u_lock", hr->hrm_index())),
   _code_roots(),
-  _card_set_mm(config, G1CardSetFreePool::free_list_pool()),
+  _card_set_mm(config, G1SegmentedArrayFreePool<mtGCCardSet>::free_list_pool()),
   _card_set(config, &_card_set_mm),
   _hr(hr),
   _state(Untracked) { }
@@ -102,6 +103,10 @@ void HeapRegionRemSet::clear_locked(bool only_cardset) {
   _card_set.clear();
   set_state_empty();
   assert(occupied() == 0, "Should be clear.");
+}
+
+G1SegmentedArrayMemoryStats HeapRegionRemSet::card_set_memory_stats() const {
+  return _card_set_mm.memory_stats();
 }
 
 void HeapRegionRemSet::print_static_mem_size(outputStream* out) {

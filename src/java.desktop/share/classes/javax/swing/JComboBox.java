@@ -1555,7 +1555,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
         int selectionForKey(char aKey,ComboBoxModel<?> aModel);
     }
 
-    class DefaultKeySelectionManager implements KeySelectionManager, Serializable {
+    static class DefaultKeySelectionManager implements KeySelectionManager, Serializable {
         public int selectionForKey(char aKey,ComboBoxModel<?> aModel) {
             int i,c;
             int currentSelection = -1;
@@ -2000,11 +2000,10 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
             // Get the popup
             Accessible a =
                 JComboBox.this.getUI().getAccessibleChild(JComboBox.this, 0);
-            if (a != null &&
-                a instanceof javax.swing.plaf.basic.ComboPopup) {
+            if (a instanceof javax.swing.plaf.basic.ComboPopup popup) {
 
                 // get the popup list
-                JList<?> list = ((javax.swing.plaf.basic.ComboPopup)a).getList();
+                JList<?> list = popup.getList();
 
                 // return the i-th selection in the popup list
                 AccessibleContext ac = list.getAccessibleContext();

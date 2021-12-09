@@ -125,7 +125,7 @@ public final class CStrike extends PhysicalStrike {
         return nativeStrikePtr;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected synchronized void finalize() throws Throwable {
         if (nativeStrikePtr != 0) {
             disposeNativeStrikePtr(nativeStrikePtr);

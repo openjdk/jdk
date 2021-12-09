@@ -347,8 +347,9 @@ public class TransPatterns extends TreeTranslator {
                 }
             }
             selector = translate(selector);
-            statements.append(make.at(tree.pos).VarDef(temp, !hasNullCase ? attr.makeNullCheck(selector)
-                                                                          : selector));
+            boolean needsNullCheck = !hasNullCase && !seltype.isPrimitive();
+            statements.append(make.at(tree.pos).VarDef(temp, needsNullCheck ? attr.makeNullCheck(selector)
+                                                                            : selector));
             VarSymbol index = new VarSymbol(Flags.SYNTHETIC,
                     names.fromString(tree.pos + target.syntheticNameChar() + "index"),
                     syms.intType,
@@ -371,7 +372,7 @@ public class TransPatterns extends TreeTranslator {
 
             boolean enumSelector = seltype.tsym.isEnum();
             Name bootstrapName = enumSelector ? names.enumSwitch : names.typeSwitch;
-            Symbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
+            MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
                     bootstrapName, staticArgTypes, List.nil());
 
             MethodType indyType = new MethodType(
@@ -382,7 +383,7 @@ public class TransPatterns extends TreeTranslator {
             );
             DynamicMethodSymbol dynSym = new DynamicMethodSymbol(bootstrapName,
                     syms.noSymbol,
-                    ((MethodSymbol)bsm).asHandle(),
+                    bsm.asHandle(),
                     indyType,
                     staticArgValues);
 

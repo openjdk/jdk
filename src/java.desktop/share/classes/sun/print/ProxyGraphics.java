@@ -1099,7 +1099,7 @@ public class ProxyGraphics extends Graphics {
     /**
      * Empty finalizer as no clean up needed here.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public void finalize() {
     }
 
