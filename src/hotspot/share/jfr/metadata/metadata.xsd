@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <!--
  Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
@@ -65,6 +65,7 @@
               <xs:attribute name="label" type="xs:string" use="required" />
               <xs:attribute name="description" type="xs:string" use="optional" />
               <xs:attribute name="experimental" type="xs:boolean" use="optional" />
+              <xs:attribute name="internal" type="xs:boolean" use="optional" />
               <xs:attribute name="thread" type="xs:boolean" use="optional" />
               <xs:attribute name="startTime" type="xs:boolean" use="optional" />
               <xs:attribute name="stackTrace" type="xs:boolean" use="optional" />
@@ -87,6 +88,7 @@
                     <xs:attribute name="label" type="xs:string" use="required" />
                     <xs:attribute name="description" type="xs:string" use="optional" />
                     <xs:attribute name="experimental" type="xs:boolean" use="optional" />
+                    <xs:attribute name="internal" type="xs:boolean" use="optional" />
                     <xs:attribute name="relation" type="xs:string" use="optional" />
                   </xs:complexType>
                 </xs:element>

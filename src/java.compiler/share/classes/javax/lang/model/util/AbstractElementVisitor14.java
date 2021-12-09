@@ -49,7 +49,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractElementVisitor9
  * @since 16
  */
-@SupportedSourceVersion(RELEASE_18)
+@SupportedSourceVersion(RELEASE_19)
 public abstract class AbstractElementVisitor14<R, P> extends AbstractElementVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses to call.

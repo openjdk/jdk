@@ -139,6 +139,8 @@
 
 #define JAVA_18_VERSION                   62
 
+#define JAVA_19_VERSION                   63
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -2835,7 +2837,8 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                           annotation_default_length,
                           CHECK_NULL);
 
-  if (name == vmSymbols::finalize_method_name() &&
+  if (InstanceKlass::is_finalization_enabled() &&
+      name == vmSymbols::finalize_method_name() &&
       signature == vmSymbols::void_method_signature()) {
     if (m->is_empty_method()) {
       _has_empty_finalizer = true;
@@ -4171,7 +4174,8 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   bool f = false;
   const Method* const m = ik->lookup_method(vmSymbols::finalize_method_name(),
                                            vmSymbols::void_method_signature());
-  if (m != NULL && !m->is_empty_method()) {
+  if (InstanceKlass::is_finalization_enabled() &&
+      (m != NULL) && !m->is_empty_method()) {
       f = true;
   }
 

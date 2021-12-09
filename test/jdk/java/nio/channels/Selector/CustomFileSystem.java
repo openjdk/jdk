@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +22,16 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8059100
- * @summary Test that you can decrease NMT tracking level but not increase it.
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail ChangeTrackingLevel
+ * @summary Verifies that an attempt to call Selector.open() on a non-default
+ *          file system succeeds.
+ * @build CustomFileSystem CustomFileSystemProvider
+ * @run main/othervm -Djava.nio.file.spi.DefaultFileSystemProvider=CustomFileSystemProvider CustomFileSystem
  */
 
-import sun.hotspot.WhiteBox;
-
-public class ChangeTrackingLevel {
-
-    public static WhiteBox wb = WhiteBox.getWhiteBox();
-    public static void main(String args[]) throws Exception {
-        boolean testChangeLevel = wb.NMTChangeTrackingLevel();
-        if (testChangeLevel) {
-            System.out.println("NMT level change test passed.");
-        } else {
-            // it also fails if the VM asserts.
-            throw new RuntimeException("NMT level change test failed");
-        }
+public class CustomFileSystem {
+    public static void main(String args[]) throws java.io.IOException {
+        java.nio.channels.Selector.open();
     }
-};
+}
