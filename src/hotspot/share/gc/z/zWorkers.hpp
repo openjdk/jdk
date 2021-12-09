@@ -30,6 +30,7 @@
 
 class ThreadClosure;
 class ZRestartableTask;
+class ZStatCycle;
 class ZStatWorkers;
 class ZTask;
 
@@ -61,7 +62,7 @@ public:
   void threads_do(ThreadClosure* tc) const;
 
   // Worker resizing
-  ZWorkerResizeStats resize_stats(double duration_since_start);
+  ZWorkerResizeStats resize_stats(ZStatCycle* stat_cycle);
   void request_resize_workers(uint nworkers);
   void clear_pending_resize();
 

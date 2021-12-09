@@ -567,9 +567,7 @@ static void make_gc_decision() {
 static void change_young_nworkers() {
   ZYoungCollector* collector = ZHeap::heap()->young_collector();
 
-  // TODO: OK to read outside lock?
-  const double duration_since_start = collector->stat_cycle()->duration_since_start();
-  ZWorkerResizeStats stats = collector->workers()->resize_stats(duration_since_start);
+  ZWorkerResizeStats stats = collector->workers()->resize_stats(collector->stat_cycle());
 
   if (!stats._gc_active) {
     // No parallel task is running

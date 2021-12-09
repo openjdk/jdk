@@ -135,11 +135,12 @@ void ZWorkers::threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
 }
 
-ZWorkerResizeStats ZWorkers::resize_stats(double duration_since_start) {
+ZWorkerResizeStats ZWorkers::resize_stats(ZStatCycle* stat_cycle) {
   ZLocker<ZConditionLock> locker(&_thread_resize_lock);
 
   double parallel_gc_duration_passed = _stats->accumulated_duration();
   double parallel_gc_time_passed = _stats->accumulated_time();
+  double duration_since_start = stat_cycle->duration_since_start();
   double gc_duration_passed = duration_since_start;
 
   double serial_gc_time_passed = gc_duration_passed - parallel_gc_duration_passed;
@@ -175,10 +176,7 @@ bool ZWorkers::try_resize_workers(ZRestartableTask* task, ZWorkers* workers) {
     _stats->at_end(active_workers());
     // The task has gotten a request to restart with a different thread count
     set_active_workers(result);
-    // FIXME: set_active_workers is not guaranteed to succeed, or do we rely
-    // on pre-initialization
-    assert(result == active_workers(), "set_active_workers failed");
-    task->resize_workers(result);
+    task->resize_workers(active_workers());
     _stats->at_start(active_workers());
     return true;
   }
