@@ -350,7 +350,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
             return rec.offset;
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         protected void finalize() throws Throwable {
             // schedule the record to be removed later
             // on another thread.

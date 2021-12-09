@@ -112,7 +112,8 @@ public class SharedArchiveConsistency {
         // test, should pass
         System.out.println("1. Normal, should pass but may fail\n");
 
-        String[] execArgs = {"-Xlog:cds=debug", "-cp", jarFile, "Hello"};
+        // disable VerifySharedSpaces, it may be turned on by jtreg args
+        String[] execArgs = {"-Xlog:cds=debug", "-XX:-VerifySharedSpaces", "-cp", jarFile, "Hello"};
         // tests that corrupt contents of the archive need to run with
         // VerifySharedSpaces enabled to detect inconsistencies
         String[] verifyExecArgs = {"-Xlog:cds", "-XX:+VerifySharedSpaces", "-cp", jarFile, "Hello"};
@@ -172,9 +173,20 @@ public class SharedArchiveConsistency {
         System.out.println("\n2d. Corrupt _version, should fail\n");
         String modVersion = startNewArchive("modify-version");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion);
-        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0x00000000);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0x3FFFFFFF);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has the wrong version");
+        output.shouldNotContain("Checksum verification failed");
+        if (shareAuto) {
+            output.shouldContain(HELLO_WORLD);
+        }
+
+        System.out.println("\n2e. Corrupt _version, should fail\n");
+        String modVersion2 = startNewArchive("modify-version2");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion2);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0x00000000);
+        output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
+        output.shouldContain("Cannot handle shared archive file version 0. Must be at least 12");
         output.shouldNotContain("Checksum verification failed");
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);

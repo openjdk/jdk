@@ -165,7 +165,7 @@ final class Config {
     // name of the C function that returns the PKCS#11 functionlist
     // This option primarily exists for the deprecated
     // Secmod.Module.getProvider() method.
-    private String functionList = "C_GetFunctionList";
+    private String functionList = null;
 
     // whether to use NSS secmod mode. Implicitly set if nssLibraryDirectory,
     // nssSecmodDirectory, or nssModule is specified.
@@ -311,6 +311,12 @@ final class Config {
     }
 
     String getFunctionList() {
+        if (functionList == null) {
+            // defaults to "C_GetFunctionList" for NSS secmod
+            if (nssUseSecmod || nssUseSecmodTrust) {
+                return "C_GetFunctionList";
+            }
+        }
         return functionList;
     }
 
@@ -408,67 +414,73 @@ final class Config {
             if (token != TT_WORD) {
                 throw excToken("Unexpected token:");
             }
-            String word = st.sval;
-            if (word.equals("name")) {
-                name = parseStringEntry(word);
-            } else if (word.equals("library")) {
-                library = parseLibrary(word);
-            } else if (word.equals("description")) {
-                parseDescription(word);
-            } else if (word.equals("slot")) {
-                parseSlotID(word);
-            } else if (word.equals("slotListIndex")) {
-                parseSlotListIndex(word);
-            } else if (word.equals("enabledMechanisms")) {
-                parseEnabledMechanisms(word);
-            } else if (word.equals("disabledMechanisms")) {
-                parseDisabledMechanisms(word);
-            } else if (word.equals("attributes")) {
-                parseAttributes(word);
-            } else if (word.equals("handleStartupErrors")) {
-                parseHandleStartupErrors(word);
-            } else if (word.endsWith("insertionCheckInterval")) {
-                insertionCheckInterval = parseIntegerEntry(word);
+            switch (st.sval) {
+            case "name"->
+                name = parseStringEntry(st.sval);
+            case "library"->
+                library = parseLibrary(st.sval);
+            case "description"->
+                parseDescription(st.sval);
+            case "slot"->
+                parseSlotID(st.sval);
+            case "slotListIndex"->
+                parseSlotListIndex(st.sval);
+            case "enabledMechanisms"->
+                parseEnabledMechanisms(st.sval);
+            case "disabledMechanisms"->
+                parseDisabledMechanisms(st.sval);
+            case "attributes"->
+                parseAttributes(st.sval);
+            case "handleStartupErrors"->
+                parseHandleStartupErrors(st.sval);
+            case "insertionCheckInterval"-> {
+                insertionCheckInterval = parseIntegerEntry(st.sval);
                 if (insertionCheckInterval < 100) {
-                    throw excLine(word + " must be at least 100 ms");
+                    throw excLine(st.sval + " must be at least 100 ms");
                 }
-            } else if (word.equals("cleaner.shortInterval")) {
-                resourceCleanerShortInterval = parseIntegerEntry(word);
+            }
+            case "cleaner.shortInterval"-> {
+                resourceCleanerShortInterval = parseIntegerEntry(st.sval);
                 if (resourceCleanerShortInterval < 1_000) {
-                    throw excLine(word + " must be at least 1000 ms");
+                    throw excLine(st.sval + " must be at least 1000 ms");
                 }
-            } else if (word.equals("cleaner.longInterval")) {
-                resourceCleanerLongInterval = parseIntegerEntry(word);
+            }
+            case "cleaner.longInterval"-> {
+                resourceCleanerLongInterval = parseIntegerEntry(st.sval);
                 if (resourceCleanerLongInterval < 1_000) {
-                    throw excLine(word + " must be at least 1000 ms");
+                    throw excLine(st.sval + " must be at least 1000 ms");
                 }
-            } else if (word.equals("destroyTokenAfterLogout")) {
-                destroyTokenAfterLogout = parseBooleanEntry(word);
-            } else if (word.equals("showInfo")) {
-                showInfo = parseBooleanEntry(word);
-            } else if (word.equals("keyStoreCompatibilityMode")) {
-                keyStoreCompatibilityMode = parseBooleanEntry(word);
-            } else if (word.equals("explicitCancel")) {
-                explicitCancel = parseBooleanEntry(word);
-            } else if (word.equals("omitInitialize")) {
-                omitInitialize = parseBooleanEntry(word);
-            } else if (word.equals("allowSingleThreadedModules")) {
-                allowSingleThreadedModules = parseBooleanEntry(word);
-            } else if (word.equals("functionList")) {
-                functionList = parseStringEntry(word);
-            } else if (word.equals("nssUseSecmod")) {
-                nssUseSecmod = parseBooleanEntry(word);
-            } else if (word.equals("nssLibraryDirectory")) {
-                nssLibraryDirectory = parseLibrary(word);
+            }
+            case "destroyTokenAfterLogout"->
+                destroyTokenAfterLogout = parseBooleanEntry(st.sval);
+            case "showInfo"->
+                showInfo = parseBooleanEntry(st.sval);
+            case "keyStoreCompatibilityMode"->
+                keyStoreCompatibilityMode = parseBooleanEntry(st.sval);
+            case "explicitCancel"->
+                explicitCancel = parseBooleanEntry(st.sval);
+            case "omitInitialize"->
+                omitInitialize = parseBooleanEntry(st.sval);
+            case "allowSingleThreadedModules"->
+                allowSingleThreadedModules = parseBooleanEntry(st.sval);
+            case "functionList"->
+                functionList = parseStringEntry(st.sval);
+            case "nssUseSecmod"->
+                nssUseSecmod = parseBooleanEntry(st.sval);
+            case "nssLibraryDirectory"-> {
+                nssLibraryDirectory = parseLibrary(st.sval);
                 nssUseSecmod = true;
-            } else if (word.equals("nssSecmodDirectory")) {
-                nssSecmodDirectory = expand(parseStringEntry(word));
+            }
+            case "nssSecmodDirectory"-> {
+                nssSecmodDirectory = expand(parseStringEntry(st.sval));
                 nssUseSecmod = true;
-            } else if (word.equals("nssModule")) {
-                nssModule = parseStringEntry(word);
+            }
+            case "nssModule"-> {
+                nssModule = parseStringEntry(st.sval);
                 nssUseSecmod = true;
-            } else if (word.equals("nssDbMode")) {
-                String mode = parseStringEntry(word);
+            }
+            case "nssDbMode"-> {
+                String mode = parseStringEntry(st.sval);
                 if (mode.equals("readWrite")) {
                     nssDbMode = Secmod.DbMode.READ_WRITE;
                 } else if (mode.equals("readOnly")) {
@@ -479,22 +491,25 @@ final class Config {
                     throw excToken("nssDbMode must be one of readWrite, readOnly, and noDb:");
                 }
                 nssUseSecmod = true;
-            } else if (word.equals("nssNetscapeDbWorkaround")) {
-                nssNetscapeDbWorkaround = parseBooleanEntry(word);
-                nssUseSecmod = true;
-            } else if (word.equals("nssArgs")) {
-                parseNSSArgs(word);
-            } else if (word.equals("nssUseSecmodTrust")) {
-                nssUseSecmodTrust = parseBooleanEntry(word);
-            } else if (word.equals("useEcX963Encoding")) {
-                useEcX963Encoding = parseBooleanEntry(word);
-            } else if (word.equals("nssOptimizeSpace")) {
-                nssOptimizeSpace = parseBooleanEntry(word);
-            } else {
-                throw new ConfigurationException
-                        ("Unknown keyword '" + word + "', line " + st.lineno());
             }
-            parsedKeywords.add(word);
+            case "nssNetscapeDbWorkaround"-> {
+                nssNetscapeDbWorkaround = parseBooleanEntry(st.sval);
+                nssUseSecmod = true;
+            }
+            case "nssArgs"->
+                parseNSSArgs(st.sval);
+            case "nssUseSecmodTrust"->
+                nssUseSecmodTrust = parseBooleanEntry(st.sval);
+            case "useEcX963Encoding"->
+                useEcX963Encoding = parseBooleanEntry(st.sval);
+            case "nssOptimizeSpace"->
+                nssOptimizeSpace = parseBooleanEntry(st.sval);
+            default->
+                throw new ConfigurationException
+                        ("Unknown keyword '" + st.sval + "', line " +
+                        st.lineno());
+            }
+            parsedKeywords.add(st.sval);
         }
         reader.close();
         reader = null;

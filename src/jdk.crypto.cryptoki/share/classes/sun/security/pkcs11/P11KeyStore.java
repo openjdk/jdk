@@ -243,7 +243,7 @@ final class P11KeyStore extends KeyStoreSpi {
             pc.setPassword(password);  // this clones the password if not null
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         protected void finalize() throws Throwable {
             if (password != null) {
                 Arrays.fill(password, ' ');

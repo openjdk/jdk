@@ -442,7 +442,7 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
   Node* cast =  __ CastPX(__ ctrl(), adr);
 
   // Divide pointer by card size
-  Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift) );
+  Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift()) );
 
   // Combine card table base and card offset
   Node* card_adr = __ AddP(no_base, byte_map_base_node(kit), card_offset );
