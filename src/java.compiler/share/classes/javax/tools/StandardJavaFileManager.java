@@ -76,7 +76,7 @@ import java.util.List;
  *         must succeed if the following would succeed (ignoring
  *         encoding issues):
  *         {@snippet id="equiv-input" lang=java :
- *             // @link substring=FileInputStream target="java.io.FileInputStream#FileInputStream(File)" : @link regex="File\W" target="File#File(java.net.URI)" : @link substring=fileObject target=FileObject :  @link substring=toURI target="FileObject#toUri()" :
+ *             // @link substring=FileInputStream target="java.io.FileInputStream#FileInputStream(File)" @link regex="File\b" target="File#File(java.net.URI)" @link substring=fileObject target=FileObject @link substring=toURI target="FileObject#toUri()" :
  *             new FileInputStream(new File(fileObject.toURI()))
  *             }
  *       </li>
@@ -87,7 +87,7 @@ import java.util.List;
  *         succeed if the following would succeed (ignoring encoding
  *         issues):
  *         {@snippet id="equiv-output" lang=java :
- *             // @link substring=FileOutputStream target="java.io.FileOutputStream#FileOutputStream(File)" : @link regex="File\W" target="File#File(java.net.URI)" : @link substring=fileObject target=FileObject :  @link substring=toURI target="FileObject#toUri()" :
+ *             // @link substring=FileOutputStream target="java.io.FileOutputStream#FileOutputStream(File)" @link regex="File\b" target="File#File(java.net.URI)" @link substring=fileObject target=FileObject @link substring=toURI target="FileObject#toUri()" :
  *             new FileOutputStream(new File(fileObject.toURI()))
  *             }
  *       </li>
