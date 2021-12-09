@@ -61,7 +61,7 @@ void WorkerTaskDispatcher::worker_run_task() {
 
   // Get and set worker id.
   const uint worker_id = Atomic::fetch_and_add(&_started, 1u);
-  WorkerThread::set_id(worker_id);
+  WorkerThread::set_worker_id(worker_id);
 
   // Run task.
   GCIdMark gc_id_mark(_task->gc_id());
@@ -147,7 +147,7 @@ void WorkerThreads::run_task(WorkerTask* task, uint num_workers) {
   run_task(task);
 }
 
-THREAD_LOCAL uint WorkerThread::_id = UINT_MAX;
+THREAD_LOCAL uint WorkerThread::_worker_id = UINT_MAX;
 
 WorkerThread::WorkerThread(const char* name_prefix, uint which, WorkerTaskDispatcher* dispatcher) :
     _dispatcher(dispatcher) {

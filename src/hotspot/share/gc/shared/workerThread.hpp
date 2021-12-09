@@ -120,16 +120,16 @@ class WorkerThread : public NamedThread {
   friend class WorkerTaskDispatcher;
 
 private:
-  static THREAD_LOCAL uint _id;
+  static THREAD_LOCAL uint _worker_id;
 
   WorkerTaskDispatcher* const _dispatcher;
 
-  static void set_id(uint id) { _id = id; }
+  static void set_worker_id(uint worker_id) { _worker_id = worker_id; }
 
 public:
-  static uint id() { return _id; }
+  static uint worker_id() { return _worker_id; }
 
-  WorkerThread(const char* name_prefix, uint id, WorkerTaskDispatcher* dispatcher);
+  WorkerThread(const char* name_prefix, uint which, WorkerTaskDispatcher* dispatcher);
 
   bool is_Worker_thread() const override { return true; }
   const char* type_name() const override { return "WorkerThread"; }
