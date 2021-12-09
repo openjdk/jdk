@@ -72,10 +72,10 @@ public class TestGarbageCollectorMXBean {
             final var startTime = info.getGcInfo().getStartTime();
             final var endTime = info.getGcInfo().getEndTime();
             final var duration = info.getGcInfo().getDuration();
-            final var youngMemoryUsageBeforeGC = info.getGcInfo().getMemoryUsageBeforeGc().get("ZYoungGeneration");
-            final var youngMemoryUsageAfterGC = info.getGcInfo().getMemoryUsageAfterGc().get("ZYoungGeneration");
-            final var oldMemoryUsageBeforeGC = info.getGcInfo().getMemoryUsageBeforeGc().get("ZOldGeneration");
-            final var oldMemoryUsageAfterGC = info.getGcInfo().getMemoryUsageAfterGc().get("ZOldGeneration");
+            final var youngMemoryUsageBeforeGC = info.getGcInfo().getMemoryUsageBeforeGc().get("ZGC Young Generation");
+            final var youngMemoryUsageAfterGC = info.getGcInfo().getMemoryUsageAfterGc().get("ZGC Young Generation");
+            final var oldMemoryUsageBeforeGC = info.getGcInfo().getMemoryUsageBeforeGc().get("ZGC Old Generation");
+            final var oldMemoryUsageAfterGC = info.getGcInfo().getMemoryUsageAfterGc().get("ZGC Old Generation");
 
             log(name + " (" + type + ")");
             log("                        Id: " + id);
@@ -90,7 +90,7 @@ public class TestGarbageCollectorMXBean {
             log("    Old MemoryUsageAfterGC: " + oldMemoryUsageAfterGC);
             log("");
 
-            if (name.equals("ZGC Old Cycles")) {
+            if (name.equals("ZGC Major Cycles")) {
                 cycles.incrementAndGet();
 
                 if (!action.equals("end of GC cycle")) {
@@ -117,7 +117,7 @@ public class TestGarbageCollectorMXBean {
                     log("ERROR: Old MemoryUsageBeforeGC.max");
                     errors.incrementAndGet();
                 }
-            } else if (name.equals("ZGC Old Pauses")) {
+            } else if (name.equals("ZGC Major Pauses")) {
                 pauses.incrementAndGet();
 
                 if (!action.equals("end of GC pause")) {
@@ -144,7 +144,7 @@ public class TestGarbageCollectorMXBean {
                     log("ERROR: Old MemoryUsageBeforeGC.max");
                     errors.incrementAndGet();
                 }
-	    } else if (name.equals("ZGC Young Cycles")) {
+	    } else if (name.equals("ZGC Minor Cycles")) {
                 cycles.incrementAndGet();
 
                 if (!action.equals("end of GC cycle")) {
@@ -171,7 +171,7 @@ public class TestGarbageCollectorMXBean {
                     log("ERROR: Young MemoryUsageBeforeGC.max");
                     errors.incrementAndGet();
                 }
-            } else if (name.equals("ZGC Young Pauses")) {
+            } else if (name.equals("ZGC Minor Pauses")) {
                 pauses.incrementAndGet();
 
                 if (!action.equals("end of GC pause")) {

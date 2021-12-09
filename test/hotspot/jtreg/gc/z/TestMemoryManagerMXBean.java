@@ -50,9 +50,9 @@ public class TestMemoryManagerMXBean {
 
             System.out.println("MemoryManager: " + memoryManagerName);
 
-            if (memoryManagerName.equals("ZGC Young Cycles") || memoryManagerName.equals("ZGC Old Cycles")) {
+            if (memoryManagerName.equals("ZGC Minor Cycles") || memoryManagerName.equals("ZGC Major Cycles")) {
                 zgcCyclesMemoryManagers++;
-            } else if (memoryManagerName.equals("ZGC Young Pauses") || memoryManagerName.equals("ZGC Old Pauses")) {
+            } else if (memoryManagerName.equals("ZGC Minor Pauses") || memoryManagerName.equals("ZGC Major Pauses")) {
                 zgcPausesMemoryManagers++;
             }
 
@@ -61,10 +61,10 @@ public class TestMemoryManagerMXBean {
 
                 System.out.println("   MemoryPool:   " + memoryPoolName);
 
-                if (memoryPoolName.equals("ZYoungGeneration") || memoryPoolName.equals("ZOldGeneration")) {
-                    if (memoryManagerName.equals("ZGC Young Cycles") || memoryManagerName.equals("ZGC Old Cycles")) {
+                if (memoryPoolName.equals("ZGC Young Generation") || memoryPoolName.equals("ZGC Old Generation")) {
+                    if (memoryManagerName.equals("ZGC Minor Cycles") || memoryManagerName.equals("ZGC Major Cycles")) {
                         zgcCyclesMemoryPools++;
-                    } else if (memoryManagerName.equals("ZGC Young Pauses") || memoryManagerName.equals("ZGC Old Pauses")) {
+                    } else if (memoryManagerName.equals("ZGC Minor Pauses") || memoryManagerName.equals("ZGC Major Pauses")) {
                         zgcPausesMemoryPools++;
                     }
                 }
@@ -79,11 +79,11 @@ public class TestMemoryManagerMXBean {
             throw new Exception("Unexpected number of pause MemoryManagers");
         }
 
-        if (zgcCyclesMemoryPools != 2) {
+        if (zgcCyclesMemoryPools != 4) {
             throw new Exception("Unexpected number of cycle MemoryPools");
         }
 
-        if (zgcPausesMemoryPools != 2) {
+        if (zgcPausesMemoryPools != 4) {
             throw new Exception("Unexpected number of pause MemoryPools");
         }
     }
