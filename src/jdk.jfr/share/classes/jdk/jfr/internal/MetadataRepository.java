@@ -254,7 +254,7 @@ public final class MetadataRepository {
         DataOutputStream daos = new DataOutputStream(baos);
         try {
             List<Type> types = typeLibrary.getVisibleTypes();
-            if (Logger.shouldLog(LogTag.JFR_METADATA, LogLevel.INFO)) {
+            if (Logger.shouldLog(LogTag.JFR_METADATA, LogLevel.DEBUG)) {
                 Collections.sort(types,Comparator.comparing(Type::getName));
                 for (Type t: types) {
                     Logger.log(LogTag.JFR_METADATA, LogLevel.INFO, "Serialized type: " + t.getName() + " id=" + t.getId());
@@ -369,14 +369,13 @@ public final class MetadataRepository {
         for (Type t : TypeLibrary.getInstance().getTypes()) {
             if (t.isInternal()) {
                 t.setVisible(true);
-                Logger.log(LogTag.JFR_METADATA, LogLevel.INFO, "Unhiding internal type " + t.getName());
+                Logger.log(LogTag.JFR_METADATA, LogLevel.DEBUG, "Unhiding internal type " + t.getName());
             }
         }
         // Singleton should have been initialized here.
         // It's not possible to call MetadataRepository().getInstance(),
         // because it will deadlock with Java thread calling flush() or setOutput();
         instance.storeDescriptorInJVM();
-        Logger.log(LogTag.JFR_METADATA, LogLevel.INFO, "Internal types unhidden");
     }
 
     public synchronized List<Type> getVisibleTypes() {
