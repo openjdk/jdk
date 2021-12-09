@@ -47,8 +47,8 @@ import java.nio.ByteOrder;
  * alignment constraints, byte order as well as the Java type associated with the dereference operation, and an offset.
  * For instance, to read an int from a segment, using {@link ByteOrder#nativeOrder() default endianness}, the following code can be used:
  * {@snippet lang=java :
- *  MemoryAddress address = ...
- *  int value = address.get(ValueLayout.JAVA_INT, 0);
+ * MemoryAddress address = ...
+ * int value = address.get(ValueLayout.JAVA_INT, 0);
  * }
  *
  * If the value to be read is stored in memory using {@link ByteOrder#BIG_ENDIAN big-endian} encoding, the dereference operation
