@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 8276806 8278463
  * @summary it is a new version of an old test which was
  *          /src/share/test/serialization/piotest.java
  *          Test of serialization/deserialization of
@@ -90,7 +91,7 @@ public class WritePrimitive {
             byte[] ba_readFullyBuf = new byte[ba.length];
             int ba_readFullyLen = q.read(ba_readFullyBuf);
             byte[] ba_readFullySizedBuf = new byte[ba.length];
-            int ba_readFullySizedLen = q.read(ba_readFullySizedBuf, 0, ba.length - 1);
+            int ba_readFullySizedLen = q.read(ba_readFullySizedBuf, 0, ba.length - 2);
             String string_utf = q.readUTF();
             String string_u = (String)q.readObject();
             if (i != i_u) {

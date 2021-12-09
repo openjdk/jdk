@@ -1065,7 +1065,7 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
 // When TRUE, the estimated node budget is also requested.
 //
 // We will actually perform iteration-splitting, a more powerful form of RCE.
-bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional) const {
+bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, BasicType bt) const {
   if (!provisional && !RangeCheckElimination) return false;
 
   // If nodes are depleted, some transform has miscalculated its needs.
@@ -1087,7 +1087,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional) 
 
   BaseCountedLoopNode* cl = _head->as_BaseCountedLoop();
   Node *trip_counter = cl->phi();
-  BasicType bt = cl->bt();
+  assert(!cl->is_LongCountedLoop() || bt == T_LONG, "only long range checks in long counted loops");
 
   // Check loop body for tests of trip-counter plus loop-invariant vs
   // loop-invariant.
@@ -1135,7 +1135,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional) 
           }
         }
 
-        if (!phase->is_scaled_iv_plus_offset(rc_exp, trip_counter, NULL, NULL)) {
+        if (!phase->is_scaled_iv_plus_offset(rc_exp, trip_counter, NULL, NULL, bt)) {
           continue;
         }
       }
@@ -1145,7 +1145,9 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional) 
       if (is_loop_exit(iff)) {
         // Found valid reason to split iterations (if there is room).
         // NOTE: Usually a gross overestimate.
-        return provisional || phase->may_require_nodes(est_loop_clone_sz(2));
+        // Long range checks cause the loop to be transformed in a loop nest which only causes a fixed number of nodes
+        // to be added
+        return provisional || bt == T_LONG || phase->may_require_nodes(est_loop_clone_sz(2));
       }
     } // End of is IF
   }
@@ -2508,34 +2510,52 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
   }
 }
 
+bool PhaseIdealLoop::is_iv(Node* exp, Node* iv, BasicType bt) {
+  if (exp == iv) {
+    return true;
+  }
+
+  if (bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L && exp->in(1) == iv) {
+    return true;
+  }
+  return false;
+}
+
 //------------------------------is_scaled_iv---------------------------------
 // Return true if exp is a constant times an induction var
-bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType bt) {
+bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType bt, bool* converted) {
   exp = exp->uncast();
   assert(bt == T_INT || bt == T_LONG, "unexpected int type");
-  if (exp == iv) {
+  if (is_iv(exp, iv, bt)) {
     if (p_scale != NULL) {
       *p_scale = 1;
     }
     return true;
   }
+  if (bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L) {
+    exp = exp->in(1);
+    bt = T_INT;
+    if (converted != NULL) {
+      *converted = true;
+    }
+  }
   int opc = exp->Opcode();
   // Can't use is_Mul() here as it's true for AndI and AndL
   if (opc == Op_Mul(bt)) {
-    if (exp->in(1)->uncast() == iv && exp->in(2)->is_Con()) {
+    if (is_iv(exp->in(1)->uncast(), iv, bt) && exp->in(2)->is_Con()) {
       if (p_scale != NULL) {
         *p_scale = exp->in(2)->get_integer_as_long(bt);
       }
       return true;
     }
-    if (exp->in(2)->uncast() == iv && exp->in(1)->is_Con()) {
+    if (is_iv(exp->in(2)->uncast(), iv, bt) && exp->in(1)->is_Con()) {
       if (p_scale != NULL) {
         *p_scale = exp->in(1)->get_integer_as_long(bt);
       }
       return true;
     }
   } else if (opc == Op_LShift(bt)) {
-    if (exp->in(1)->uncast() == iv && exp->in(2)->is_Con()) {
+    if (is_iv(exp->in(1)->uncast(), iv, bt) && exp->in(2)->is_Con()) {
       if (p_scale != NULL) {
         jint shift_amount = exp->in(2)->get_int();
         if (bt == T_INT) {
@@ -2552,9 +2572,9 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType
 
 //-----------------------------is_scaled_iv_plus_offset------------------------------
 // Return true if exp is a simple induction variable expression: k1*iv + (invar + k2)
-bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt, int depth) {
+bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt, bool* converted, int depth) {
   assert(bt == T_INT || bt == T_LONG, "unexpected int type");
-  if (is_scaled_iv(exp, iv, p_scale, bt)) {
+  if (is_scaled_iv(exp, iv, p_scale, bt, converted)) {
     if (p_offset != NULL) {
       Node *zero = _igvn.integercon(0, bt);
       set_ctrl(zero, C->root());
@@ -2565,13 +2585,13 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scal
   exp = exp->uncast();
   int opc = exp->Opcode();
   if (opc == Op_Add(bt)) {
-    if (is_scaled_iv(exp->in(1), iv, p_scale, bt)) {
+    if (is_scaled_iv(exp->in(1), iv, p_scale, bt, converted)) {
       if (p_offset != NULL) {
         *p_offset = exp->in(2);
       }
       return true;
     }
-    if (is_scaled_iv(exp->in(2), iv, p_scale, bt)) {
+    if (is_scaled_iv(exp->in(2), iv, p_scale, bt, converted)) {
       if (p_offset != NULL) {
         *p_offset = exp->in(1);
       }
@@ -2581,7 +2601,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scal
       Node* offset2 = NULL;
       if (depth < 2 &&
           is_scaled_iv_plus_offset(exp->in(1), iv, p_scale,
-                                   p_offset != NULL ? &offset2 : NULL, bt, depth+1)) {
+                                   p_offset != NULL ? &offset2 : NULL, bt, converted, depth+1)) {
         if (p_offset != NULL) {
           Node *ctrl_off2 = get_ctrl(offset2);
           Node* offset = AddNode::make(offset2, exp->in(2), bt);
@@ -2592,7 +2612,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scal
       }
     }
   } else if (opc == Op_Sub(bt)) {
-    if (is_scaled_iv(exp->in(1), iv, p_scale, bt)) {
+    if (is_scaled_iv(exp->in(1), iv, p_scale, bt, converted)) {
       if (p_offset != NULL) {
         Node *zero = _igvn.integercon(0, bt);
         set_ctrl(zero, C->root());
@@ -2603,7 +2623,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scal
       }
       return true;
     }
-    if (is_scaled_iv(exp->in(2), iv, p_scale, bt)) {
+    if (is_scaled_iv(exp->in(2), iv, p_scale, bt, converted)) {
       if (p_offset != NULL) {
         // We can't handle a scale of min_jint (or min_jlong) here as -1 * min_jint = min_jint
         if (*p_scale == min_signed_integer(bt)) {
@@ -3432,6 +3452,8 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     } else if (policy_unswitching(phase)) {
       phase->do_unswitching(this, old_new);
       return false; // need to recalculate idom data
+    } else if (_head->is_LongCountedLoop()) {
+      phase->create_loop_nest(this, old_new);
     }
     return true;
   }
@@ -3475,7 +3497,8 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // unrolling), plus any needed for RCE purposes.
 
   bool should_unroll = policy_unroll(phase);
-  bool should_rce    = policy_range_check(phase, false);
+  bool should_rce    = policy_range_check(phase, false, T_INT);
+  bool should_rce_long = policy_range_check(phase, false, T_LONG);
 
   // If not RCE'ing (iteration splitting), then we do not need a pre-loop.
   // We may still need to peel an initial iteration but we will not
@@ -3490,6 +3513,9 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // peeling.
   if (should_rce || should_unroll) {
     if (cl->is_normal_loop()) { // Convert to 'pre/main/post' loops
+      if (should_rce_long && phase->create_loop_nest(this, old_new)) {
+        return true;
+      }
       uint estimate = est_loop_clone_sz(3);
       if (!phase->may_require_nodes(estimate)) {
         return false;
@@ -3530,6 +3556,9 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       if (phase->may_require_nodes(est_peeling)) {
         phase->do_peeling(this, old_new);
       }
+    }
+    if (should_rce_long) {
+      phase->create_loop_nest(this, old_new);
     }
   }
   return true;
