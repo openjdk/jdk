@@ -28,6 +28,7 @@ package java.util.zip;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.HashSet;
 import static java.util.zip.ZipConstants64.*;
@@ -259,58 +260,64 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     public void closeEntry() throws IOException {
         ensureOpen();
         if (current != null) {
-            ZipEntry e = current.entry;
-            switch (e.method) {
-            case DEFLATED -> {
-                def.finish();
-                while (!def.finished()) {
-                    deflate();
-                }
-                if ((e.flag & 8) == 0) {
-                    // verify size, compressed size, and crc-32 settings
-                    if (e.size != def.getBytesRead()) {
-                        throw new ZipException(
-                            "invalid entry size (expected " + e.size +
-                            " but got " + def.getBytesRead() + " bytes)");
+            try {
+                ZipEntry e = current.entry;
+                switch (e.method) {
+                    case DEFLATED -> {
+                        def.finish();
+                        while (!def.finished()) {
+                            deflate();
+                        }
+                        if ((e.flag & 8) == 0) {
+                            // verify size, compressed size, and crc-32 settings
+                            if (e.size != def.getBytesRead()) {
+                                throw new ZipException(
+                                    "invalid entry size (expected " + e.size +
+                                    " but got " + def.getBytesRead() + " bytes)");
+                            }
+                            if (e.csize != def.getBytesWritten()) {
+                                throw new ZipException(
+                                    "invalid entry compressed size (expected " +
+                                    e.csize + " but got " + def.getBytesWritten() + " bytes)");
+                            }
+                            if (e.crc != crc.getValue()) {
+                                throw new ZipException(
+                                    "invalid entry CRC-32 (expected 0x" +
+                                    Long.toHexString(e.crc) + " but got 0x" +
+                                    Long.toHexString(crc.getValue()) + ")");
+                            }
+                        } else {
+                            e.size = def.getBytesRead();
+                            e.csize = def.getBytesWritten();
+                            e.crc = crc.getValue();
+                            writeEXT(e);
+                        }
+                        def.reset();
+                        written += e.csize;
                     }
-                    if (e.csize != def.getBytesWritten()) {
-                        throw new ZipException(
-                            "invalid entry compressed size (expected " +
-                            e.csize + " but got " + def.getBytesWritten() + " bytes)");
+                    case STORED -> {
+                        // we already know that both e.size and e.csize are the same
+                        if (e.size != written - locoff) {
+                            throw new ZipException(
+                                "invalid entry size (expected " + e.size +
+                                " but got " + (written - locoff) + " bytes)");
+                        }
+                        if (e.crc != crc.getValue()) {
+                            throw new ZipException(
+                                "invalid entry crc-32 (expected 0x" +
+                                Long.toHexString(e.crc) + " but got 0x" +
+                                Long.toHexString(crc.getValue()) + ")");
+                        }
                     }
-                    if (e.crc != crc.getValue()) {
-                        throw new ZipException(
-                            "invalid entry CRC-32 (expected 0x" +
-                            Long.toHexString(e.crc) + " but got 0x" +
-                            Long.toHexString(crc.getValue()) + ")");
-                    }
-                } else {
-                    e.size = def.getBytesRead();
-                    e.csize = def.getBytesWritten();
-                    e.crc = crc.getValue();
-                    writeEXT(e);
+                    default -> throw new ZipException("invalid compression method");
                 }
-                def.reset();
-                written += e.csize;
+                crc.reset();
+                current = null;
+            } catch (IOException e) {
+                if (usesDefaultDeflater && !(e instanceof ZipException))
+                    def.end();
+                throw e;
             }
-            case STORED -> {
-                // we already know that both e.size and e.csize are the same
-                if (e.size != written - locoff) {
-                    throw new ZipException(
-                        "invalid entry size (expected " + e.size +
-                        " but got " + (written - locoff) + " bytes)");
-                }
-                if (e.crc != crc.getValue()) {
-                    throw new ZipException(
-                        "invalid entry crc-32 (expected 0x" +
-                        Long.toHexString(e.crc) + " but got 0x" +
-                        Long.toHexString(crc.getValue()) + ")");
-                }
-            }
-            default -> throw new ZipException("invalid compression method");
-            }
-            crc.reset();
-            current = null;
         }
     }
 
@@ -327,9 +334,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         throws IOException
     {
         ensureOpen();
-        if (off < 0 || len < 0 || off > b.length - len) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0) {
             return;
         }
 

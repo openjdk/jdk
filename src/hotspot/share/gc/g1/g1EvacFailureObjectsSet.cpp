@@ -31,9 +31,9 @@
 
 
 const G1SegmentedArrayAllocOptions G1EvacFailureObjectsSet::_alloc_options =
-  G1SegmentedArrayAllocOptions((uint)sizeof(OffsetInRegion), BufferLength, UINT_MAX, Alignment);
+  G1SegmentedArrayAllocOptions((uint)sizeof(OffsetInRegion), SegmentLength, UINT_MAX, Alignment);
 
-G1SegmentedArrayBufferList<mtGC> G1EvacFailureObjectsSet::_free_buffer_list;
+G1SegmentedArrayFreeList<mtGC> G1EvacFailureObjectsSet::_free_segment_list;
 
 #ifdef ASSERT
 void G1EvacFailureObjectsSet::assert_is_valid_offset(size_t offset) const {
@@ -57,7 +57,7 @@ G1EvacFailureObjectsSet::OffsetInRegion G1EvacFailureObjectsSet::to_offset(oop o
 G1EvacFailureObjectsSet::G1EvacFailureObjectsSet(uint region_idx, HeapWord* bottom) :
   DEBUG_ONLY(_region_idx(region_idx) COMMA)
   _bottom(bottom),
-  _offsets(&_alloc_options, &_free_buffer_list)  {
+  _offsets(&_alloc_options, &_free_segment_list)  {
   assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
 }
 
@@ -76,7 +76,7 @@ class G1EvacFailureObjectsIterationHelper {
   }
 
   void join_and_sort() {
-    _segments->iterate_nodes(*this);
+    _segments->iterate_segments(*this);
 
     QuickSort::sort(_offset_array, _array_length, order_oop, true);
   }
@@ -96,7 +96,7 @@ public:
     _array_length(0) { }
 
   void process_and_drop(ObjectClosure* closure) {
-    uint num = _segments->num_allocated_nodes();
+    uint num = _segments->num_allocated_slots();
     _offset_array = NEW_C_HEAP_ARRAY(OffsetInRegion, num, mtGC);
 
     join_and_sort();
@@ -106,9 +106,9 @@ public:
     FREE_C_HEAP_ARRAY(OffsetInRegion, _offset_array);
   }
 
-  // Callback of G1SegmentedArray::iterate_nodes
-  void do_buffer(G1SegmentedArrayBuffer<mtGC>* node, uint length) {
-    node->copy_to(&_offset_array[_array_length]);
+  // Callback of G1SegmentedArray::iterate_segments
+  void do_segment(G1SegmentedArraySegment<mtGC>* segment, uint length) {
+    segment->copy_to(&_offset_array[_array_length]);
     _array_length += length;
   }
 };

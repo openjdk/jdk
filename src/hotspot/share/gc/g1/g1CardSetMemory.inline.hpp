@@ -33,32 +33,32 @@
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
-template <class Elem>
-G1CardSetContainer* volatile* G1CardSetAllocator<Elem>::next_ptr(G1CardSetContainer& node) {
-  return node.next_addr();
+template <class Slot>
+G1CardSetContainer* volatile* G1CardSetAllocator<Slot>::next_ptr(G1CardSetContainer& slot) {
+  return slot.next_addr();
 }
 
-template <class Elem>
-Elem* G1CardSetAllocator<Elem>::allocate() {
-  assert(_segmented_array.elem_size() > 0, "instance size not set.");
+template <class Slot>
+Slot* G1CardSetAllocator<Slot>::allocate() {
+  assert(_segmented_array.slot_size() > 0, "instance size not set.");
 
-  if (num_free_elems() > 0) {
+  if (num_free_slots() > 0) {
     // Pop under critical section to deal with ABA problem
     // Other solutions to the same problem are more complicated (ref counting, HP)
     GlobalCounter::CriticalSection cs(Thread::current());
 
-    G1CardSetContainer* node = _free_nodes_list.pop();
-    if (node != nullptr) {
-      Elem* elem = reinterpret_cast<Elem*>(reinterpret_cast<char*>(node));
-      Atomic::sub(&_num_free_nodes, 1u);
-      guarantee(is_aligned(elem, 8), "result " PTR_FORMAT " not aligned", p2i(elem));
-      return elem;
+    G1CardSetContainer* container = _free_slots_list.pop();
+    if (container != nullptr) {
+      Slot* slot = reinterpret_cast<Slot*>(reinterpret_cast<char*>(container));
+      Atomic::sub(&_num_free_slots, 1u);
+      guarantee(is_aligned(slot, 8), "result " PTR_FORMAT " not aligned", p2i(slot));
+      return slot;
     }
   }
 
-  Elem* elem = _segmented_array.allocate();
-  assert(elem != nullptr, "must be");
-  return elem;
+  Slot* slot = _segmented_array.allocate();
+  assert(slot != nullptr, "must be");
+  return slot;
 }
 
 inline uint8_t* G1CardSetMemoryManager::allocate(uint type) {
@@ -74,9 +74,9 @@ inline void G1CardSetMemoryManager::free_node(void* value) {
   free(0, value);
 }
 
-template <class Elem>
-inline uint G1CardSetAllocator<Elem>::num_free_elems() const {
-  return Atomic::load(&_num_free_nodes);
+template <class Slot>
+inline uint G1CardSetAllocator<Slot>::num_free_slots() const {
+  return Atomic::load(&_num_free_slots);
 }
 
 #endif // SHARE_GC_G1_G1CARDSETMEMORY_INLINE_HPP

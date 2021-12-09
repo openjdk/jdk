@@ -74,8 +74,8 @@ public class StyledText {
     }
 
     /*
-     * For each character of this text adds the provided objects to a set of
-     * objects associated with that character.
+     * For each character of this text adds the provided styles to a set of
+     * styles associated with that character.
      */
     public void addStyle(Set<? extends Style> additionalStyles) {
         styles.add(0, length(), additionalStyles);
@@ -87,7 +87,7 @@ public class StyledText {
 
     /*
      * Replaces all characters of this text with the provided sequence of
-     * characters, each of which is associated with all the provided objects.
+     * characters, each of which is associated with all the provided styles.
      */
     public void replace(Set<? extends Style> styles, CharSequence plaintext) {
         replace(0, length(), styles, plaintext);

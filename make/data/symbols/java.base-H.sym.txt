@@ -27,7 +27,7 @@
 # ##########################################################
 #
 module name java.base
-header exports java/io,java/lang,java/lang/annotation,java/lang/constant,java/lang/invoke,java/lang/module,java/lang/ref,java/lang/reflect,java/lang/runtime,java/math,java/net,java/net/spi,java/nio,java/nio/channels,java/nio/channels/spi,java/nio/charset,java/nio/charset/spi,java/nio/file,java/nio/file/attribute,java/nio/file/spi,java/security,java/security/cert,java/security/interfaces,java/security/spec,java/text,java/text/spi,java/time,java/time/chrono,java/time/format,java/time/temporal,java/time/zone,java/util,java/util/concurrent,java/util/concurrent/atomic,java/util/concurrent/locks,java/util/function,java/util/jar,java/util/random,java/util/regex,java/util/spi,java/util/stream,java/util/zip,javax/crypto,javax/crypto/interfaces,javax/crypto/spec,javax/net,javax/net/ssl,javax/security/auth,javax/security/auth/callback,javax/security/auth/login,javax/security/auth/spi,javax/security/auth/x500,javax/security/cert uses java/lang/System$LoggerFinder,java/net/ContentHandlerFactory,java/net/spi/URLStreamHandlerProvider,java/nio/channels/spi/AsynchronousChannelProvider,java/nio/channels/spi/SelectorProvider,java/nio/charset/spi/CharsetProvider,java/nio/file/spi/FileSystemProvider,java/nio/file/spi/FileTypeDetector,java/security/Provider,java/text/spi/BreakIteratorProvider,java/text/spi/CollatorProvider,java/text/spi/DateFormatProvider,java/text/spi/DateFormatSymbolsProvider,java/text/spi/DecimalFormatSymbolsProvider,java/text/spi/NumberFormatProvider,java/time/chrono/AbstractChronology,java/time/chrono/Chronology,java/time/zone/ZoneRulesProvider,java/util/random/RandomGenerator,java/util/spi/CalendarDataProvider,java/util/spi/CalendarNameProvider,java/util/spi/CurrencyNameProvider,java/util/spi/LocaleNameProvider,java/util/spi/ResourceBundleControlProvider,java/util/spi/ResourceBundleProvider,java/util/spi/TimeZoneNameProvider,java/util/spi/ToolProvider,javax/security/auth/spi/LoginModule,jdk/internal/logger/DefaultLoggerFinder,sun/text/spi/JavaTimeDateTimePatternProvider,sun/util/locale/provider/LocaleDataMetaInfo,sun/util/resources/LocaleData$CommonResourceBundleProvider,sun/util/resources/LocaleData$SupplementaryResourceBundleProvider,sun/util/spi/CalendarProvider provides interface\u0020;java/nio/file/spi/FileSystemProvider\u0020;impls\u0020;jdk/internal/jrtfs/JrtFileSystemProvider,interface\u0020;java/util/random/RandomGenerator\u0020;impls\u0020;java/security/SecureRandom\u005C;u002C;java/util/Random\u005C;u002C;java/util/SplittableRandom target linux-amd64 flags 8000
+header exports java/io,java/lang,java/lang/annotation,java/lang/constant,java/lang/invoke,java/lang/module,java/lang/ref,java/lang/reflect,java/lang/runtime,java/math,java/net,java/net/spi,java/nio,java/nio/channels,java/nio/channels/spi,java/nio/charset,java/nio/charset/spi,java/nio/file,java/nio/file/attribute,java/nio/file/spi,java/security,java/security/cert,java/security/interfaces,java/security/spec,java/text,java/text/spi,java/time,java/time/chrono,java/time/format,java/time/temporal,java/time/zone,java/util,java/util/concurrent,java/util/concurrent/atomic,java/util/concurrent/locks,java/util/function,java/util/jar,java/util/random,java/util/regex,java/util/spi,java/util/stream,java/util/zip,javax/crypto,javax/crypto/interfaces,javax/crypto/spec,javax/net,javax/net/ssl,javax/security/auth,javax/security/auth/callback,javax/security/auth/login,javax/security/auth/spi,javax/security/auth/x500,javax/security/cert,jdk/internal/event[jdk.jfr],jdk/internal/vm/vector[jdk.incubator.vector] uses java/lang/System$LoggerFinder,java/net/ContentHandlerFactory,java/net/spi/URLStreamHandlerProvider,java/nio/channels/spi/AsynchronousChannelProvider,java/nio/channels/spi/SelectorProvider,java/nio/charset/spi/CharsetProvider,java/nio/file/spi/FileSystemProvider,java/nio/file/spi/FileTypeDetector,java/security/Provider,java/text/spi/BreakIteratorProvider,java/text/spi/CollatorProvider,java/text/spi/DateFormatProvider,java/text/spi/DateFormatSymbolsProvider,java/text/spi/DecimalFormatSymbolsProvider,java/text/spi/NumberFormatProvider,java/time/chrono/AbstractChronology,java/time/chrono/Chronology,java/time/zone/ZoneRulesProvider,java/util/random/RandomGenerator,java/util/spi/CalendarDataProvider,java/util/spi/CalendarNameProvider,java/util/spi/CurrencyNameProvider,java/util/spi/LocaleNameProvider,java/util/spi/ResourceBundleControlProvider,java/util/spi/ResourceBundleProvider,java/util/spi/TimeZoneNameProvider,java/util/spi/ToolProvider,javax/security/auth/spi/LoginModule,jdk/internal/logger/DefaultLoggerFinder,sun/text/spi/JavaTimeDateTimePatternProvider,sun/util/locale/provider/LocaleDataMetaInfo,sun/util/resources/LocaleData$CommonResourceBundleProvider,sun/util/resources/LocaleData$SupplementaryResourceBundleProvider,sun/util/spi/CalendarProvider provides interface\u0020;java/nio/file/spi/FileSystemProvider\u0020;impls\u0020;jdk/internal/jrtfs/JrtFileSystemProvider,interface\u0020;java/util/random/RandomGenerator\u0020;impls\u0020;java/security/SecureRandom\u005C;u002C;java/util/Random\u005C;u002C;java/util/SplittableRandom target linux-amd64 flags 8000
 
 class name java/io/CharArrayReader
 method name read descriptor (Ljava/nio/CharBuffer;)I thrownTypes java/io/IOException flags 1
@@ -114,8 +114,8 @@ header extends java/lang/Object implements java/lang/annotation/Annotation flags
 class name java/lang/System
 -method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V
 -method name getSecurityManager descriptor ()Ljava/lang/SecurityManager;
-method name getSecurityManager descriptor ()Ljava/lang/SecurityManager; flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
 method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")@Ljdk/internal/reflect/CallerSensitive;
+method name getSecurityManager descriptor ()Ljava/lang/SecurityManager; flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
 
 class name java/lang/Thread
 -method name checkAccess descriptor ()V
@@ -313,8 +313,8 @@ field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 
 class name java/security/spec/PSSParameterSpec
 -field name TRAILER_FIELD_BC descriptor I
-field name TRAILER_FIELD_BC descriptor I constantValue 1 flags 19
 -method name toString descriptor ()Ljava/lang/String;
+field name TRAILER_FIELD_BC descriptor I constantValue 1 flags 19
 method name toString descriptor ()Ljava/lang/String; flags 1
 
 class name java/security/spec/RSAKeyGenParameterSpec
@@ -470,8 +470,8 @@ method name splits descriptor ()Ljava/util/stream/Stream; flags 1 signature ()Lj
 method name splits descriptor (J)Ljava/util/stream/Stream; flags 1 signature (J)Ljava/util/stream/Stream<Ljava/util/random/RandomGenerator$SplittableGenerator;>;
 method name splits descriptor (Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/stream/Stream; flags 1 signature (Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/stream/Stream<Ljava/util/random/RandomGenerator$SplittableGenerator;>;
 method name splits descriptor (JLjava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/stream/Stream; flags 1 signature (JLjava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/stream/Stream<Ljava/util/random/RandomGenerator$SplittableGenerator;>;
-method name split descriptor ()Ljava/util/random/RandomGenerator$SplittableGenerator; flags 1041
 method name split descriptor (Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator; flags 1041
+method name split descriptor ()Ljava/util/random/RandomGenerator$SplittableGenerator; flags 1041
 
 class name java/util/TimeZone
 header extends java/lang/Object implements java/io/Serializable,java/lang/Cloneable flags 421
@@ -927,4 +927,33 @@ method name doAsPrivileged descriptor (Ljavax/security/auth/Subject;Ljava/securi
 
 class name javax/security/auth/SubjectDomainCombiner
 header extends java/lang/Object implements java/security/DomainCombiner flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
+class name jdk/internal/vm/vector/VectorSupport
+field name VECTOR_OP_MASK_TRUECOUNT descriptor I constantValue 19 flags 19
+field name VECTOR_OP_MASK_FIRSTTRUE descriptor I constantValue 20 flags 19
+field name VECTOR_OP_MASK_LASTTRUE descriptor I constantValue 21 flags 19
+field name VECTOR_OP_TAN descriptor I constantValue 101 flags 19
+field name VECTOR_OP_TANH descriptor I constantValue 102 flags 19
+field name VECTOR_OP_SIN descriptor I constantValue 103 flags 19
+field name VECTOR_OP_SINH descriptor I constantValue 104 flags 19
+field name VECTOR_OP_COS descriptor I constantValue 105 flags 19
+field name VECTOR_OP_COSH descriptor I constantValue 106 flags 19
+field name VECTOR_OP_ASIN descriptor I constantValue 107 flags 19
+field name VECTOR_OP_ACOS descriptor I constantValue 108 flags 19
+field name VECTOR_OP_ATAN descriptor I constantValue 109 flags 19
+field name VECTOR_OP_ATAN2 descriptor I constantValue 110 flags 19
+field name VECTOR_OP_CBRT descriptor I constantValue 111 flags 19
+field name VECTOR_OP_LOG descriptor I constantValue 112 flags 19
+field name VECTOR_OP_LOG10 descriptor I constantValue 113 flags 19
+field name VECTOR_OP_LOG1P descriptor I constantValue 114 flags 19
+field name VECTOR_OP_POW descriptor I constantValue 115 flags 19
+field name VECTOR_OP_EXP descriptor I constantValue 116 flags 19
+field name VECTOR_OP_EXPM1 descriptor I constantValue 117 flags 19
+field name VECTOR_OP_HYPOT descriptor I constantValue 118 flags 19
+field name BT_unsigned_compare descriptor I constantValue 16 flags 19
+field name BT_ule descriptor I constantValue 21 flags 19
+field name BT_uge descriptor I constantValue 23 flags 19
+field name BT_ult descriptor I constantValue 19 flags 19
+field name BT_ugt descriptor I constantValue 17 flags 19
+method name maskReductionCoerced descriptor (ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljdk/internal/vm/vector/VectorSupport$VectorMaskOp;)I flags 9 signature <E:Ljava/lang/Object;M:Ljava/lang/Object;>(ILjava/lang/Class<+TM;>;Ljava/lang/Class<*>;ITM;Ljdk/internal/vm/vector/VectorSupport$VectorMaskOp<TM;>;)I runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 
