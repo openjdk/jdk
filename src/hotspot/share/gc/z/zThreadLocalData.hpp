@@ -94,10 +94,6 @@ public:
     data(thread)->_store_good_mask = mask;
   }
 
-  static void set_uncolor_mask(Thread* thread, uintptr_t mask) {
-    data(thread)->_uncolor_mask = mask;
-  }
-
   static void set_nmethod_disarmed(Thread* thread, uintptr_t value) {
     data(thread)->_nmethod_disarmed = value;
   }
@@ -136,16 +132,8 @@ public:
     return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _store_bad_mask);
   }
 
-  static ByteSize load_good_mask_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _load_good_mask);
-  }
-
   static ByteSize store_good_mask_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _store_good_mask);
-  }
-
-  static ByteSize uncolor_mask_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _uncolor_mask);
   }
 
   static ByteSize nmethod_disarmed_offset() {
