@@ -117,7 +117,7 @@ public class IndyCorrectInvocationName implements Plugin {
                     import java.lang.invoke.MethodHandles.Lookup;
                     import java.lang.invoke.MethodType;
                     public class Test{
-                        private static final String NL = "\\n";
+                        private static final String NL = System.lineSeparator();
                         private static StringBuilder output = new StringBuilder();
                         public static void doRun() {
                             method("a");
