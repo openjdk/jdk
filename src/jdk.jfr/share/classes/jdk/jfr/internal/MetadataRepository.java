@@ -33,7 +33,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -72,7 +71,6 @@ public final class MetadataRepository {
     }
 
     private void initializeJVMEventTypes() {
-        try {
         List<RequestHook> requestHooks = new ArrayList<>();
         for (Type type : new ArrayList<>(typeLibrary.getTypes())) {
             if (type instanceof PlatformEventType pEventType) {
@@ -94,10 +92,7 @@ public final class MetadataRepository {
                 nativeEventTypes.add(eventType);
             }
         }
-        RequestEngine.addHooks(requestHooks); } catch (Throwable t) {
-            t.printStackTrace();
-            throw t;
-        }
+        RequestEngine.addHooks(requestHooks);
     }
 
     public static MetadataRepository getInstance() {
