@@ -121,6 +121,14 @@ header extends javax/lang/model/util/TypeKindVisitor9 flags 21 signature <R:Ljav
 class name javax/tools/DocumentationTool$Location
 field name SNIPPET_PATH descriptor Ljavax/tools/DocumentationTool$Location; flags 4019
 
+class name javax/tools/ForwardingJavaFileManager
+method name getJavaFileForOutputForOriginatingFiles descriptor (Ljavax/tools/JavaFileManager$Location;Ljava/lang/String;Ljavax/tools/JavaFileObject$Kind;[Ljavax/tools/FileObject;)Ljavax/tools/JavaFileObject; thrownTypes java/io/IOException flags 81
+method name getFileForOutputForOriginatingFiles descriptor (Ljavax/tools/JavaFileManager$Location;Ljava/lang/String;Ljava/lang/String;[Ljavax/tools/FileObject;)Ljavax/tools/FileObject; thrownTypes java/io/IOException flags 81
+
+class name javax/tools/JavaFileManager
+method name getJavaFileForOutputForOriginatingFiles descriptor (Ljavax/tools/JavaFileManager$Location;Ljava/lang/String;Ljavax/tools/JavaFileObject$Kind;[Ljavax/tools/FileObject;)Ljavax/tools/JavaFileObject; thrownTypes java/io/IOException flags 81
+method name getFileForOutputForOriginatingFiles descriptor (Ljavax/tools/JavaFileManager$Location;Ljava/lang/String;Ljava/lang/String;[Ljavax/tools/FileObject;)Ljavax/tools/FileObject; thrownTypes java/io/IOException flags 81
+
 class name javax/tools/SimpleJavaFileObject
 header extends java/lang/Object implements javax/tools/JavaFileObject flags 21
 innerclass innerClass javax/tools/JavaFileObject$Kind outerClass javax/tools/JavaFileObject innerClassName Kind flags 4019

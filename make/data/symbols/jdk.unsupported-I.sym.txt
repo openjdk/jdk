@@ -43,6 +43,14 @@ innerclass innerClass java/nio/file/WatchEvent$Modifier outerClass java/nio/file
 class name sun/misc/SignalHandler
 header extends java/lang/Object flags 601 classAnnotations @Lsun/Proprietary+Annotation;
 
+class name sun/misc/Unsafe
+-method name objectFieldOffset descriptor (Ljava/lang/reflect/Field;)J
+-method name staticFieldOffset descriptor (Ljava/lang/reflect/Field;)J
+-method name staticFieldBase descriptor (Ljava/lang/reflect/Field;)Ljava/lang/Object;
+method name objectFieldOffset descriptor (Ljava/lang/reflect/Field;)J flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="18")@Ljdk/internal/vm/annotation/ForceInline;
+method name staticFieldOffset descriptor (Ljava/lang/reflect/Field;)J flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="18")@Ljdk/internal/vm/annotation/ForceInline;
+method name staticFieldBase descriptor (Ljava/lang/reflect/Field;)Ljava/lang/Object; flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="18")@Ljdk/internal/vm/annotation/ForceInline;
+
 class name sun/reflect/ReflectionFactory
 header extends java/lang/Object flags 21 classAnnotations @Lsun/Proprietary+Annotation;
 

@@ -34,6 +34,10 @@ class name java/lang/management/ManagementPermission
 header extends java/security/BasicPermission flags 31
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name java/lang/management/MemoryMXBean
+-method name getObjectPendingFinalizationCount descriptor ()I
+method name getObjectPendingFinalizationCount descriptor ()I flags 401 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="18")
+
 class name java/lang/management/MemoryUsage
 header extends java/lang/Object flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19

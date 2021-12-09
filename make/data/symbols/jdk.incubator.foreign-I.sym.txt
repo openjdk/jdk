@@ -86,8 +86,15 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 -method name attribute descriptor (Ljava/lang/String;)Ljava/util/Optional;
 -method name attributes descriptor ()Ljava/util/stream/Stream;
 -method name withAttribute descriptor (Ljava/lang/String;Ljava/lang/constant/Constable;)Ljdk/incubator/foreign/FunctionDescriptor;
+-method name withAppendedArgumentLayouts descriptor ([Ljdk/incubator/foreign/MemoryLayout;)Ljdk/incubator/foreign/FunctionDescriptor;
+-method name withReturnLayout descriptor (Ljdk/incubator/foreign/MemoryLayout;)Ljdk/incubator/foreign/FunctionDescriptor;
+-method name withVoidReturnLayout descriptor ()Ljdk/incubator/foreign/FunctionDescriptor;
 method name asVariadic descriptor ([Ljdk/incubator/foreign/MemoryLayout;)Ljdk/incubator/foreign/FunctionDescriptor; flags 81
 method name firstVariadicArgumentIndex descriptor ()I flags 1
+method name appendArgumentLayouts descriptor ([Ljdk/incubator/foreign/MemoryLayout;)Ljdk/incubator/foreign/FunctionDescriptor; flags 81
+method name insertArgumentLayouts descriptor (I[Ljdk/incubator/foreign/MemoryLayout;)Ljdk/incubator/foreign/FunctionDescriptor; flags 81
+method name changeReturnLayout descriptor (Ljdk/incubator/foreign/MemoryLayout;)Ljdk/incubator/foreign/FunctionDescriptor; flags 1
+method name dropReturnLayout descriptor ()Ljdk/incubator/foreign/FunctionDescriptor; flags 1
 
 class name jdk/incubator/foreign/GroupLayout
 -method name withAttribute descriptor (Ljava/lang/String;Ljava/lang/constant/Constable;)Ljdk/incubator/foreign/GroupLayout;

@@ -52,6 +52,10 @@ header extends java/lang/Object flags 31 deprecated true runtimeAnnotations @Lja
 class name java/lang/Deprecated
 header extends java/lang/Object implements java/lang/annotation/Annotation flags 2601 runtimeAnnotations @Ljava/lang/annotation/Documented;@Ljava/lang/annotation/Retention;(value=eLjava/lang/annotation/RetentionPolicy;RUNTIME;)@Ljava/lang/annotation/Target;(value={eLjava/lang/annotation/ElementType;CONSTRUCTOR;eLjava/lang/annotation/ElementType;FIELD;eLjava/lang/annotation/ElementType;LOCAL_VARIABLE;eLjava/lang/annotation/ElementType;METHOD;eLjava/lang/annotation/ElementType;PACKAGE;eLjava/lang/annotation/ElementType;MODULE;eLjava/lang/annotation/ElementType;PARAMETER;eLjava/lang/annotation/ElementType;TYPE;})
 
+class name java/lang/Enum
+-method name finalize descriptor ()V
+method name finalize descriptor ()V flags 14 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="18")
+
 class name java/lang/IllegalCallerException
 header extends java/lang/RuntimeException flags 21
 
@@ -76,13 +80,19 @@ method name ceilMod descriptor (JJ)J flags 9
 class name java/lang/NamedPackage
 header extends java/lang/Object flags 20
 
+class name java/lang/Object
+-method name finalize descriptor ()V
+method name finalize descriptor ()V thrownTypes java/lang/Throwable flags 4 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="9")
+
 class name java/lang/Runtime
 -method name exec descriptor (Ljava/lang/String;)Ljava/lang/Process;
 -method name exec descriptor (Ljava/lang/String;[Ljava/lang/String;)Ljava/lang/Process;
 -method name exec descriptor (Ljava/lang/String;[Ljava/lang/String;Ljava/io/File;)Ljava/lang/Process;
+-method name runFinalization descriptor ()V
 method name exec descriptor (Ljava/lang/String;)Ljava/lang/Process; thrownTypes java/io/IOException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="18")
 method name exec descriptor (Ljava/lang/String;[Ljava/lang/String;)Ljava/lang/Process; thrownTypes java/io/IOException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="18")
 method name exec descriptor (Ljava/lang/String;[Ljava/lang/String;Ljava/io/File;)Ljava/lang/Process; thrownTypes java/io/IOException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="18")
+method name runFinalization descriptor ()V flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="18")
 
 class name java/lang/StrictMath
 method name divideExact descriptor (II)I flags 9
@@ -101,6 +111,10 @@ method name ceilMod descriptor (JJ)J flags 9
 
 class name java/lang/SuppressWarnings
 header extends java/lang/Object implements java/lang/annotation/Annotation flags 2601 runtimeAnnotations @Ljava/lang/annotation/Target;(value={eLjava/lang/annotation/ElementType;TYPE;eLjava/lang/annotation/ElementType;FIELD;eLjava/lang/annotation/ElementType;METHOD;eLjava/lang/annotation/ElementType;PARAMETER;eLjava/lang/annotation/ElementType;CONSTRUCTOR;eLjava/lang/annotation/ElementType;LOCAL_VARIABLE;eLjava/lang/annotation/ElementType;MODULE;})@Ljava/lang/annotation/Retention;(value=eLjava/lang/annotation/RetentionPolicy;SOURCE;)
+
+class name java/lang/System
+-method name runFinalization descriptor ()V
+method name runFinalization descriptor ()V flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="18")
 
 class name java/lang/Thread
 -method name stop descriptor ()V
@@ -195,6 +209,16 @@ innerclass innerClass java/io/ObjectOutputStream$PutField outerClass java/io/Obj
 innerclass innerClass java/net/spi/InetAddressResolverProvider$Configuration outerClass java/net/spi/InetAddressResolverProvider innerClassName Configuration flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name java/net/ServerSocket
+-method name setSoTimeout descriptor (I)V
+-method name getSoTimeout descriptor ()I
+-method name setReceiveBufferSize descriptor (I)V
+-method name getReceiveBufferSize descriptor ()I
+method name setSoTimeout descriptor (I)V thrownTypes java/net/SocketException flags 1
+method name getSoTimeout descriptor ()I thrownTypes java/io/IOException flags 1
+method name setReceiveBufferSize descriptor (I)V thrownTypes java/net/SocketException flags 1
+method name getReceiveBufferSize descriptor ()I thrownTypes java/net/SocketException flags 1
+
 class name java/net/SocketImpl
 header extends java/lang/Object implements java/net/SocketOptions flags 421
 
@@ -243,6 +267,22 @@ header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Lj
 
 class name java/security/Identity
 header extends java/lang/Object implements java/security/Principal,java/io/Serializable flags 421 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
+
+class name java/security/KeyStore
+method name getAttributes descriptor (Ljava/lang/String;)Ljava/util/Set; thrownTypes java/security/KeyStoreException flags 11 signature (Ljava/lang/String;)Ljava/util/Set<Ljava/security/KeyStore$Entry$Attribute;>;
+
+class name java/security/KeyStoreSpi
+header extends java/lang/Object flags 421
+innerclass innerClass java/security/KeyStore$LoadStoreParameter outerClass java/security/KeyStore innerClassName LoadStoreParameter flags 609
+innerclass innerClass java/security/KeyStore$ProtectionParameter outerClass java/security/KeyStore innerClassName ProtectionParameter flags 609
+innerclass innerClass java/security/KeyStore$PasswordProtection outerClass java/security/KeyStore innerClassName PasswordProtection flags 9
+innerclass innerClass java/security/KeyStore$CallbackHandlerProtection outerClass java/security/KeyStore innerClassName CallbackHandlerProtection flags 9
+innerclass innerClass java/security/KeyStore$TrustedCertificateEntry outerClass java/security/KeyStore innerClassName TrustedCertificateEntry flags 19
+innerclass innerClass java/security/KeyStore$PrivateKeyEntry outerClass java/security/KeyStore innerClassName PrivateKeyEntry flags 19
+innerclass innerClass java/security/KeyStore$SecretKeyEntry outerClass java/security/KeyStore innerClassName SecretKeyEntry flags 19
+innerclass innerClass java/security/KeyStore$Entry outerClass java/security/KeyStore innerClassName Entry flags 609
+innerclass innerClass java/security/KeyStore$Entry$Attribute outerClass java/security/KeyStore$Entry innerClassName Attribute flags 609
+method name engineGetAttributes descriptor (Ljava/lang/String;)Ljava/util/Set; flags 1 signature (Ljava/lang/String;)Ljava/util/Set<Ljava/security/KeyStore$Entry$Attribute;>;
 
 class name java/security/SecureRandomParameters
 header extends java/lang/Object flags 601
@@ -381,6 +421,10 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 class name java/util/concurrent/CountedCompleter
 header extends java/util/concurrent/ForkJoinTask flags 421 signature <T:Ljava/lang/Object;>Ljava/util/concurrent/ForkJoinTask<TT;>;
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name java/util/concurrent/ThreadPoolExecutor
+-method name finalize descriptor ()V
+method name finalize descriptor ()V flags 4 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="9")
 
 class name java/util/concurrent/atomic/AtomicBoolean
 header extends java/lang/Object implements java/io/Serializable flags 21

@@ -113,6 +113,8 @@ innerclass innerClass javax/xml/xpath/XPathEvaluationResult$XPathResultType oute
 class name javax/xml/xpath/XPathFactory
 header extends java/lang/Object flags 421
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name setProperty descriptor (Ljava/lang/String;Ljava/lang/String;)V flags 1
+method name getProperty descriptor (Ljava/lang/String;)Ljava/lang/String; flags 1
 
 class name javax/xml/xpath/XPathNodes
 header extends java/lang/Object implements java/lang/Iterable flags 601 signature Ljava/lang/Object;Ljava/lang/Iterable<Lorg/w3c/dom/Node;>;
