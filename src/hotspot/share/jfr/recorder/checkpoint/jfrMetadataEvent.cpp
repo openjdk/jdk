@@ -39,13 +39,14 @@ static jbyteArray metadata_blob = NULL;
 static u8 metadata_id = 0;
 static u8 last_metadata_id = 0;
 
-static void check_internal_types(JavaThread* jt) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
+static void check_internal_types() {
   static bool visible = false;
-  if (!visible) {
-    if (JfrEventSetting::is_internal_types_visible()) {
-      visible = JfrUpcalls::unhide_internal_types(jt);
-    }
+  if (!visible && JfrEventSetting::is_internal_types_visible()) {
+    JavaThread* const jt = JavaThread::current();
+    DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+    // can safepoint here
+    ThreadInVMfromNative transition(jt);
+    visible = JfrUpcalls::unhide_internal_types(jt);
   }
 }
 
@@ -66,6 +67,7 @@ static void write_metadata_blob(JfrChunkWriter& chunkwriter, JavaThread* thread)
 
 void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   assert(chunkwriter.is_valid(), "invariant");
+  check_internal_types();
   if (last_metadata_id == metadata_id && chunkwriter.has_metadata()) {
     return;
   }
@@ -73,7 +75,7 @@ void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   // can safepoint here
   ThreadInVMfromNative transition(jt);
-  check_internal_types(jt);
+  check_internal_types();
   // header
   const int64_t metadata_offset = chunkwriter.reserve(sizeof(u4));
   chunkwriter.write<u8>(EVENT_METADATA); // ID 0
