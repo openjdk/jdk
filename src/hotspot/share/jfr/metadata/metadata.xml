@@ -26,8 +26,8 @@
 
 <Metadata>
 
-  <!-- Internal event are meant for Hotspot engineers during developement, i.e. temporary time measurements,
-       without the need to modify .jfc files. Code that commits an internal event should NEVER be checked in.
+  <!-- Internal events are only to be used during development, i.e. temporary time measurements, without the need 
+       to modify .jfc files etc. Code that commits an internal event should NEVER be checked in.
 
        Example usage:
 
@@ -36,7 +36,7 @@
        void foo() {
          EventDuration event;
          bar();
-	 baz();
+         baz();
          event.commit();
        }
 
@@ -44,10 +44,10 @@
        $ java -XX:StartFlightRecording:settings=none,filename=dump.jfr ...  
        ...
        $ jfr print dump.jfr
-       ...
+
        Programmatic access:
        try (var rf = new RecordingFile(Path.of("dump.jfr)) {
-           while (rf.hasMoreEvent()) {
+           while (rf.hasMoreEvents()) {
                RecordedEvent e = rf.readEvent();
                System.out.println(e.getName() + " " + e.getDuration()));
            }
@@ -61,7 +61,7 @@
   </Event>
 
   <Event name="Value" category="Java Virtual Machine, Internal" label="Value" startTime="false" thread="true" stackTrace="false" internal="true">
-    <Field type="uint" name="value" label="Value"/>
+    <Field type="ulong" name="value" label="Value"/>
   </Event>
 
   <Event name="Text" category="Java Virtual Machine, Internal" label="Text" startTime="false" thread="true" stackTrace="false" internal="true">

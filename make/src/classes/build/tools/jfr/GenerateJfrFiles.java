@@ -867,7 +867,7 @@ public class GenerateJfrFiles {
         out.write("  template <typename Writer>");
         out.write("  void writeData(Writer& w) {");
         if (type.isEvent && type.internal) {
-            out.write("    JfrEventSetting::unhide_internal_events();");
+            out.write("    JfrEventSetting::unhide_internal_types();");
         }
         if (("_thread_in_native").equals(type.commitState)) {
             out.write("    // explicit epoch synchronization check");
