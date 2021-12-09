@@ -24,8 +24,18 @@
 /**
  * @test
  * @bug 8278312
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient /test/jdk/java/net/httpclient/http2/server
+ * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters Http2Handler
+ *          Http2TestExchange
+ *
+ * @modules java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
+ *          java.logging
+ *          java.base/sun.net.www.http
+ *          java.base/sun.net.www
+ *          java.base/sun.net
+ *
  * @run main/othervm SANTest
  * @summary Update SimpleSSLContext keystore to use SANs for localhost IP addresses
  */
@@ -35,64 +45,92 @@ import com.sun.net.httpserver.*;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
+import java.net.http.*;
+import java.nio.charset.StandardCharsets;
 import javax.net.ssl.*;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
 /*
  * Will fail if the testkeys file belonging to SimpleSSLContext
- * does not have SAN entries for 127.0.0.1
+ * does not have SAN entries for 127.0.0.1 or ::1
  */
-
-public class SANTest {
+public class SANTest implements HttpServerAdapters {
 
     static SSLContext ctx;
 
+    static HttpServer getHttpsServer(InetSocketAddress addr, Executor exec, SSLContext ctx) throws Exception {
+        HttpsServer server = HttpsServer.create(addr, 0);
+        server.setExecutor(exec);
+        server.setHttpsConfigurator(new HttpsConfigurator (ctx));
+        return server;
+    }
+
     public static void main (String[] args) throws Exception {
-        HttpsServer s1 = null;
-        HttpsServer s2 = null;
+        // Http/1.1 servers
+        HttpTestServer h1s1 = null;
+        HttpTestServer h1s2 = null;
+
+        // Http/2 servers
+        HttpTestServer h2s1 = null;
+        HttpTestServer h2s2 = null;
+
         ExecutorService executor=null;
         try {
-            String root = System.getProperty ("test.src")+ "/docs";
             System.out.print ("SANTest: ");
+            ctx = new SimpleSSLContext().get();
+            executor = Executors.newCachedThreadPool();
+
             InetAddress l1 = InetAddress.getByName("::1");
             InetAddress l2 = InetAddress.getByName("127.0.0.1");
             InetSocketAddress addr1 = new InetSocketAddress (l1, 0);
             InetSocketAddress addr2 = new InetSocketAddress (l2, 0);
-            s1 = HttpsServer.create (addr1, 0);
-            s2 = HttpsServer.create (addr2, 0);
-            HttpHandler h = new FileServerHandler (root);
-            HttpContext c1 = s1.createContext ("/test1", h);
-            HttpContext c2 = s2.createContext ("/test1", h);
-            executor = Executors.newCachedThreadPool();
-            s1.setExecutor (executor);
-            s2.setExecutor (executor);
-            ctx = new SimpleSSLContext().get();
-            s1.setHttpsConfigurator(new HttpsConfigurator (ctx));
-            s2.setHttpsConfigurator(new HttpsConfigurator (ctx));
-            s1.start();
-            s2.start();
-            int port1 = s1.getAddress().getPort();
-            int port2 = s2.getAddress().getPort();
-            test ("127.0.0.1", root+"/test1", port2, "smallfile.txt", 23);
-            test ("::1", root+"/test1", port1, "smallfile.txt", 23);
+            h1s1 = HttpTestServer.of(getHttpsServer(addr1, executor, ctx));
+            h1s2 = HttpTestServer.of(getHttpsServer(addr2, executor, ctx));
+            h2s1 = HttpTestServer.of(new Http2TestServer(l1, "::1", true, 0, executor,
+                        10, null, ctx, false));
+            h2s2 = HttpTestServer.of(new Http2TestServer(l2, "127.0.0.1", true, 0, executor,
+                        10, null, ctx, false));
+
+            HttpTestHandler h = new HttpTestEchoHandler();
+            h1s1.addHandler(h, "/test1");
+            h1s2.addHandler(h, "/test1");
+            h2s1.addHandler(h, "/test1");
+            h2s2.addHandler(h, "/test1");
+            h1s1.start();
+            h1s2.start();
+            h2s1.start();
+            h2s2.start();
+            int h1port1 = h1s1.getAddress().getPort();
+            int h1port2 = h1s2.getAddress().getPort();
+            int h2port1 = h2s1.getAddress().getPort();
+            int h2port2 = h2s2.getAddress().getPort();
+            test("127.0.0.1", h1port2);
+            test("::1", h1port1);
+            testNew("127.0.0.1", h2port2, executor);
+            testNew("::1", h2port1, executor);
             System.out.println ("OK");
         } finally {
-            if (s1 != null)
-                s1.stop(2);
-            if (s2 != null)
-                s2.stop(2);
+            if (h1s1 != null)
+                h1s1.stop();
+            if (h1s2 != null)
+                h1s2.stop();
+            if (h2s1 != null)
+                h2s1.stop();
+            if (h2s2 != null)
+                h2s2.stop();
             if (executor != null)
                 executor.shutdown ();
         }
     }
 
-    static void test (String host, String root, int port, String f, int size) throws Exception {
+    static void test (String host, int port) throws Exception {
+        String body = "Yellow world";
         URL url = URIBuilder.newBuilder()
                  .scheme("https")
                  .host(host)
                  .port(port)
-                 .path("/test1/"+f)
+                 .path("/test1/foo.txt")
                  .toURL();
         System.out.println("URL = " + url);
         HttpURLConnection urlc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
@@ -102,8 +140,42 @@ public class SANTest {
             urlcs.setSSLSocketFactory (ctx.getSocketFactory());
         }
 
+        urlc.setRequestMethod("POST");
+        urlc.setDoOutput(true);
+
+        OutputStream os = urlc.getOutputStream();
+        os.write(body.getBytes(StandardCharsets.ISO_8859_1));
+        os.close();
         InputStream is = urlc.getInputStream();
-        is.readAllBytes();
+        byte[] vv = is.readAllBytes();
+        String ff = new String(vv, StandardCharsets.ISO_8859_1);
+        System.out.println("resp = " + ff);
+        if (!ff.equals(body))
+            throw new RuntimeException();
         is.close();
+    }
+
+    static void testNew (String host, int port, Executor exec) throws Exception {
+        String body = "Red and Yellow world";
+        URI uri = URIBuilder.newBuilder()
+                 .scheme("https")
+                 .host(host)
+                 .port(port)
+                 .path("/test1/foo.txt")
+                 .build();
+
+        HttpClient client = HttpClient.newBuilder()
+                .sslContext(ctx)
+                .executor(exec)
+                .build();
+        HttpRequest req = HttpRequest.newBuilder(uri)
+                .version(HttpClient.Version.HTTP_2)
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+
+        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+        System.out.println("resp = " + resp.body());
+        if (!resp.body().equals(body))
+            throw new RuntimeException();
     }
 }
