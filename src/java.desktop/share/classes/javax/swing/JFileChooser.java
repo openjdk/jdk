@@ -1412,7 +1412,8 @@ public class JFileChooser extends JComponent implements Accessible {
 
     /**
      * Returns true if hidden files are not shown in the file chooser;
-     * otherwise, returns false.
+     * otherwise, returns false. The default value of this property is derived from native platform,
+     * unless set explicitly by the developer.
      *
      * @return the status of the file hiding property
      * @see #setFileHidingEnabled
