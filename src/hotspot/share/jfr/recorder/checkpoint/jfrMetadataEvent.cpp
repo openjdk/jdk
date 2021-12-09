@@ -75,7 +75,6 @@ void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   // can safepoint here
   ThreadInVMfromNative transition(jt);
-  check_internal_types();
   // header
   const int64_t metadata_offset = chunkwriter.reserve(sizeof(u4));
   chunkwriter.write<u8>(EVENT_METADATA); // ID 0
