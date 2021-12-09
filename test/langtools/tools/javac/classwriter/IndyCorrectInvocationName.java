@@ -84,6 +84,8 @@ import toolbox.ToolBox;
 
 
 public class IndyCorrectInvocationName implements Plugin {
+    private static final String NL = System.lineSeparator();
+
     public static void main(String... args) throws Exception {
         new IndyCorrectInvocationName().run();
     }
@@ -92,7 +94,7 @@ public class IndyCorrectInvocationName implements Plugin {
         ToolBox tb = new ToolBox();
         Path pluginClasses = Path.of("plugin-classes");
         tb.writeFile(pluginClasses.resolve("META-INF").resolve("services").resolve(Plugin.class.getName()),
-                IndyCorrectInvocationName.class.getName() + "\n");
+                IndyCorrectInvocationName.class.getName() + System.lineSeparator());
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(Path.of(ToolBox.testClasses))) {
             for (Path p : ds) {
                 if (p.getFileName().toString().startsWith("IndyCorrectInvocationName") ||
@@ -158,7 +160,7 @@ public class IndyCorrectInvocationName implements Plugin {
         String actual = (String) cl.loadClass("Test")
                                    .getMethod("run")
                                    .invoke(null);
-        String expected = "a\nb\na\nb\n";
+        String expected = "a" + NL + "b" + NL + "a" + NL +"b" + NL;
         if (!Objects.equals(actual, expected)) {
             throw new AssertionError("expected: " + expected + "; but got: " + actual);
         }
