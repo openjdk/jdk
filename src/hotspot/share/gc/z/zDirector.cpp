@@ -268,7 +268,7 @@ static GCCause::Cause rule_minor_allocation_rate() {
 }
 
 static GCCause::Cause rule_minor_high_usage() {
-  if (ZCollectedHeap::heap()->driver_minor()->is_busy()) {
+  if (ZDriver::minor()->is_busy()) {
     // If there is already an ongoing GC, then let's leave it
     return GCCause::_no_gc;
   }
@@ -538,27 +538,27 @@ static uint initial_young_workers() {
 
 static void make_gc_decision() {
   // Check for major collections first as they include a minor collection
-  if (!ZCollectedHeap::heap()->driver_major()->is_busy()) {
+  if (!ZDriver::major()->is_busy()) {
     const GCCause::Cause cause = make_major_gc_decision();
     if (cause != GCCause::_no_gc) {
       ZDriverRequest request(cause, initial_young_workers());
-      ZCollectedHeap::heap()->driver_major()->collect(request);
+      ZDriver::major()->collect(request);
       return;
     }
   }
 
-  if (!ZCollectedHeap::heap()->driver_minor()->is_busy()) {
+  if (!ZDriver::minor()->is_busy()) {
     const GCCause::Cause minor_cause = make_minor_gc_decision();
     const GCCause::Cause major_cause = rule_major_allocation_rate();
     if (minor_cause != GCCause::_no_gc) {
-      if (!ZCollectedHeap::heap()->driver_major()->is_busy() &&
+      if (!ZDriver::major()->is_busy() &&
           major_cause == GCCause::_z_major_allocation_rate) {
         // Try merging major allocation rate GCs with another minor GC.
         const ZDriverRequest request(major_cause, initial_young_workers());
-        ZCollectedHeap::heap()->driver_major()->collect(request);
+        ZDriver::major()->collect(request);
       } else {
         const ZDriverRequest request(minor_cause, initial_young_workers());
-        ZCollectedHeap::heap()->driver_minor()->collect(request);
+        ZDriver::minor()->collect(request);
       }
     }
   }

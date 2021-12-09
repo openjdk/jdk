@@ -276,14 +276,6 @@ WorkerThreads* ZCollectedHeap::safepoint_workers() {
   return _runtime_workers.workers();
 }
 
-ZDriverMinor* ZCollectedHeap::driver_minor() const {
-  return _driver_minor;
-}
-
-ZDriverMajor* ZCollectedHeap::driver_major() const {
-  return _driver_major;
-}
-
 void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   tc->do_thread(_director);
   tc->do_thread(_driver_major);
@@ -360,30 +352,6 @@ void ZCollectedHeap::print_tracing_info() const {
 
 bool ZCollectedHeap::print_location(outputStream* st, void* addr) const {
   return _heap.print_location(st, (uintptr_t)addr);
-}
-
-GCTracer* ZCollectedHeap::minor_jfr_tracer() {
-  return _driver_minor->jfr_tracer();
-}
-
-GCTracer* ZCollectedHeap::major_jfr_tracer() {
-  return _driver_major->jfr_tracer();
-}
-
-size_t ZCollectedHeap::minor_used_at_start() const {
-  return _driver_minor->used_at_start();
-}
-
-size_t ZCollectedHeap::major_used_at_start() const {
-  return _driver_major->used_at_start();
-}
-
-void ZCollectedHeap::minor_set_used_at_start(size_t used) {
-  return _driver_minor->set_used_at_start(used);
-}
-
-void ZCollectedHeap::major_set_used_at_start(size_t used) {
-  return _driver_major->set_used_at_start(used);
 }
 
 void ZCollectedHeap::verify(VerifyOption option /* ignored */) {

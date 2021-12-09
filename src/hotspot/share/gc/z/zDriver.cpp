@@ -436,6 +436,7 @@ ZDriverMinor::ZDriverMinor() :
     _gc_timer(),
     _jfr_tracer(),
     _used_at_start() {
+  ZDriver::register_minor(this);
   set_name("ZDriverMinor");
   create_and_start();
 }
@@ -802,6 +803,7 @@ ZDriverMajor::ZDriverMajor(ZDriverMinor* minor) :
     _gc_timer(),
     _jfr_tracer(),
     _used_at_start() {
+  ZDriver::register_major(this);
   set_name("ZDriverMajor");
   create_and_start();
 }
@@ -950,4 +952,23 @@ void ZDriverMajor::run_service() {
 
 void ZDriverMajor::stop_service() {
   _port.send_async(GCCause::_no_gc);
+}
+
+ZDriverMinor* ZDriver::_minor;
+ZDriverMajor* ZDriver::_major;
+
+void ZDriver::register_minor(ZDriverMinor* minor) {
+  _minor = minor;
+}
+
+void ZDriver::register_major(ZDriverMajor* major) {
+  _major = major;
+}
+
+ZDriverMinor* ZDriver::minor() {
+  return _minor;
+}
+
+ZDriverMajor* ZDriver::major() {
+  return _major;
 }

@@ -25,6 +25,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zDriver.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMethodTable.hpp"
@@ -628,20 +629,20 @@ ZStatPhaseCollection::ZStatPhaseCollection(const char* name, bool minor) :
 
 GCTracer* ZStatPhaseCollection::jfr_tracer() const {
   return _minor
-      ? ZCollectedHeap::heap()->minor_jfr_tracer()
-      : ZCollectedHeap::heap()->major_jfr_tracer();
+      ? ZDriver::minor()->jfr_tracer()
+      : ZDriver::major()->jfr_tracer();
 }
 
 void ZStatPhaseCollection::set_used_at_start(size_t used) const {
   return _minor
-    ? ZCollectedHeap::heap()->minor_set_used_at_start(used)
-    : ZCollectedHeap::heap()->major_set_used_at_start(used);
+      ? ZDriver::minor()->set_used_at_start(used)
+      : ZDriver::major()->set_used_at_start(used);
 }
 
 size_t ZStatPhaseCollection::used_at_start() const {
   return _minor
-    ? ZCollectedHeap::heap()->minor_used_at_start()
-    : ZCollectedHeap::heap()->major_used_at_start();
+      ? ZDriver::minor()->used_at_start()
+      : ZDriver::major()->used_at_start();
 }
 
 void ZStatPhaseCollection::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {

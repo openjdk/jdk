@@ -113,8 +113,6 @@ public:
 
   virtual WorkerThreads* safepoint_workers();
 
-  ZDriverMinor* driver_minor() const;
-  ZDriverMajor* driver_major() const;
   virtual void gc_threads_do(ThreadClosure* tc) const;
 
   virtual VirtualSpaceSummary create_heap_space_summary();
@@ -127,15 +125,6 @@ public:
   virtual void print_extended_on(outputStream* st) const;
   virtual void print_tracing_info() const;
   virtual bool print_location(outputStream* st, void* addr) const;
-
-  GCTracer* minor_jfr_tracer();
-  GCTracer* major_jfr_tracer();
-
-  size_t minor_used_at_start() const;
-  size_t major_used_at_start() const;
-
-  void minor_set_used_at_start(size_t used);
-  void major_set_used_at_start(size_t used);
 
   virtual void prepare_for_verify();
   virtual void verify(VerifyOption option /* ignored */);

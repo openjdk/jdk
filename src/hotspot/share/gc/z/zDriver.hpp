@@ -100,4 +100,17 @@ public:
   size_t used_at_start() const;
 };
 
+class ZDriver : AllStatic {
+private:
+  static ZDriverMinor* _minor;
+  static ZDriverMajor* _major;
+
+public:
+  static void register_minor(ZDriverMinor* minor);
+  static void register_major(ZDriverMajor* major);
+
+  static ZDriverMinor* minor();
+  static ZDriverMajor* major();
+};
+
 #endif // SHARE_GC_Z_ZDRIVER_HPP
