@@ -757,6 +757,12 @@ public class JavacElements implements Elements {
      */
     private Pair<JCTree, JCCompilationUnit> getTreeAndTopLevel(Element e) {
         Symbol sym = cast(Symbol.class, e);
+        if (sym.kind == PCK) {
+            TypeSymbol pkgInfo = ((PackageSymbol) sym).package_info;
+            if (pkgInfo != null) {
+                pkgInfo.complete();
+            }
+        }
         Env<AttrContext> enterEnv = getEnterEnv(sym);
         if (enterEnv == null)
             return null;

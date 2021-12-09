@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,22 +21,21 @@
  * questions.
  */
 
-#ifndef __RENDEROPTIONS_H
-#define __RENDEROPTIONS_H
+/*
+ * @test
+ * @bug 8277106
+ * @summary Verify no error is when compiling a class whose supertype is not exported.
+ * @modules jdk.compiler
+ *          jdk.jfr
+ * @compile --release 17 NonExportedSuperTypes.java
+ */
 
-#include <jni.h>
-#include "MTLSurfaceDataBase.h"
+import jdk.jfr.Event;
 
-// Utility struct to transfer rendering paramenters
-typedef struct {
-    jboolean isTexture;
-    jboolean isAA;
-    int interpolation;
-    SurfaceRasterFlags srcFlags;
-    jboolean isText;
-    jboolean isLCD;
-    jboolean isAAShader;
-} RenderOptions;
+public class NonExportedSuperTypes {
 
+    public void evt(Event evt) {
+        evt.toString();
+    }
 
-#endif //__RENDEROPTIONS_H
+}

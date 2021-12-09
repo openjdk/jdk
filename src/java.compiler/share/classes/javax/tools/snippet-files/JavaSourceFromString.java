@@ -1,5 +1,6 @@
+// @replace region replacement=""
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +24,31 @@
  * questions.
  */
 
-#ifndef __RENDEROPTIONS_H
-#define __RENDEROPTIONS_H
+import javax.tools.SimpleJavaFileObject;
+import java.net.URI;
+// @end
+/**
+ * A file object used to represent source coming from a string.
+ */
+public class JavaSourceFromString extends SimpleJavaFileObject {
+    /**
+     * The source code of this "file".
+     */
+    final String code;
 
-#include <jni.h>
-#include "MTLSurfaceDataBase.h"
+    /**
+     * Constructs a new JavaSourceFromString.
+     * @param name the name of the compilation unit represented by this file object
+     * @param code the source code for the compilation unit represented by this file object
+     */
+    JavaSourceFromString(String name, String code) {
+        super(URI.create("string:///" + name.replace('.','/') + Kind.SOURCE.extension), // @link substring="URI.create" target="URI#create(String)"
+              Kind.SOURCE);
+        this.code = code;
+    }
 
-// Utility struct to transfer rendering paramenters
-typedef struct {
-    jboolean isTexture;
-    jboolean isAA;
-    int interpolation;
-    SurfaceRasterFlags srcFlags;
-    jboolean isText;
-    jboolean isLCD;
-    jboolean isAAShader;
-} RenderOptions;
-
-
-#endif //__RENDEROPTIONS_H
+    @Override
+    public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+        return code;
+    }
+}
