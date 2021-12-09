@@ -868,12 +868,12 @@ public class Main {
                     output(getMsg("out.added.manifest"));
                 }
                 ZipEntry e = new ZipEntry(MANIFEST_DIR);
-                setDate(e);
+                setZipEntryTime(e);
                 e.setSize(0);
                 e.setCrc(0);
                 zos.putNextEntry(e);
                 e = new ZipEntry(MANIFEST_NAME);
-                setDate(e);
+                setZipEntryTime(e);
                 if (flag0) {
                     crc32Manifest(e, manifest);
                 }
@@ -973,7 +973,7 @@ public class Main {
                     // do our own compression
                     ZipEntry e2 = new ZipEntry(name);
                     e2.setMethod(e.getMethod());
-                    setDate(e2, e.getTime());
+                    setZipEntryTime(e2, e.getTime());
                     e2.setComment(e.getComment());
                     e2.setExtra(e.getExtra());
                     if (e.getMethod() == ZipEntry.STORED) {
@@ -1039,7 +1039,7 @@ public class Main {
         throws IOException
     {
         ZipEntry e = new ZipEntry(INDEX_NAME);
-        setDate(e);
+        setZipEntryTime(e);
         if (flag0) {
             CRC32OutputStream os = new CRC32OutputStream();
             index.write(os);
@@ -1061,9 +1061,9 @@ public class Main {
             ZipEntry e = new ZipEntry(name);
             FileTime lastModified = mie.getLastModifiedTime();
             if (lastModified != null) {
-                setDate(e, lastModified.toMillis());
+                setZipEntryTime(e, lastModified.toMillis());
             } else {
-                setDate(e);
+                setZipEntryTime(e);
             }
             if (flag0) {
                 crc32ModuleInfo(e, bytes);
@@ -1089,7 +1089,7 @@ public class Main {
             addMultiRelease(m);
         }
         ZipEntry e = new ZipEntry(MANIFEST_NAME);
-        setDate(e);
+        setZipEntryTime(e);
         if (flag0) {
             crc32Manifest(e, m);
         }
@@ -1210,7 +1210,7 @@ public class Main {
             out.print(formatMsg("out.adding", name));
         }
         ZipEntry e = new ZipEntry(name);
-        setDate(e, file.lastModified());
+        setZipEntryTime(e, file.lastModified());
         if (size == 0) {
             e.setMethod(ZipEntry.STORED);
             e.setSize(0);
@@ -2325,17 +2325,17 @@ public class Main {
         Comparator.comparing(ZipEntry::getName, ENTRYNAME_COMPARATOR);
 
     // Set the ZipEntry dostime using date if specified otherwise the current time
-    private void setDate(ZipEntry e) {
-        setDate(e, System.currentTimeMillis());
+    private void setZipEntryTime(ZipEntry e) {
+        setZipEntryTime(e, System.currentTimeMillis());
     }
 
     // Set the ZipEntry dostime using the date if specified
     // otherwise the original time
-    private void setDate(ZipEntry e, long origTime) {
+    private void setZipEntryTime(ZipEntry e, long origTime) {
         if (date != null) {
-          e.setTimeLocal(date);
+            e.setTimeLocal(date);
         } else {
-          e.setTime(origTime);
+            e.setTime(origTime);
         }
     }
 }
