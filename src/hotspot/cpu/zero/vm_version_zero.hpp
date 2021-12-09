@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,6 +34,14 @@ class VM_Version : public Abstract_VM_Version {
   static void initialize();
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
+
+  static int number_of_threads(void);
+  static int number_of_cores(void);
+  static int number_of_sockets(void);
+
+  static const char* cpu_name(void);
+  static const char* cpu_description(void);
+  static void initialize_cpu_information(void);
 };
 
 #endif // CPU_ZERO_VM_VERSION_ZERO_HPP
