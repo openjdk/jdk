@@ -504,8 +504,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @param  val
      *         {@code UUID} to which this {@code UUID} is to be compared
      *
-     * @return a negative integer, zero, or a positive integer as this {@code UUID}
-     *         is less than, equal to, or greater than {@code val}.
+     * @return  -1, 0 or 1 as this {@code UUID} is less than, equal to, or
+     *          greater than {@code val}
      *
      */
     @Override
