@@ -26,6 +26,7 @@
  * @bug 8278312
  * @library /test/lib /test/jdk/java/net/httpclient /test/jdk/java/net/httpclient/http2/server
  * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters Http2Handler
+ *          jdk.test.lib.net.IPSupport
  *          Http2TestExchange
  *
  * @modules java.net.http/jdk.internal.net.http.common
@@ -50,6 +51,7 @@ import java.nio.charset.StandardCharsets;
 import javax.net.ssl.*;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
+import jdk.test.lib.net.IPSupport;
 
 /*
  * Will fail if the testkeys file belonging to SimpleSSLContext
@@ -64,6 +66,34 @@ public class SANTest implements HttpServerAdapters {
         server.setExecutor(exec);
         server.setHttpsConfigurator(new HttpsConfigurator (ctx));
         return server;
+    }
+
+    static final boolean hasIPv4 = IPSupport.hasIPv4();
+    static final boolean hasIPv6 = IPSupport.hasIPv6();
+
+    static HttpTestServer initServer(boolean h2, InetAddress addr, SSLContext ctx,
+                String sni, ExecutorService e) throws Exception {
+        HttpTestServer s = null;
+        InetSocketAddress ia = new InetSocketAddress (addr, 0);
+        if ((addr instanceof Inet4Address) && !hasIPv4)
+                return null;
+        if ((addr instanceof Inet6Address) && !hasIPv6)
+                return null;
+
+        if (!h2) {
+            s = HttpTestServer.of(getHttpsServer(ia, e, ctx));
+            HttpTestHandler h = new HttpTestEchoHandler();
+            s.addHandler(h, "/test1");
+            s.start();
+            return s;
+        } else {
+            s = HttpTestServer.of(new Http2TestServer(addr, sni, true, 0, e,
+                        10, null, ctx, false));
+            HttpTestHandler h = new HttpTestEchoHandler();
+            s.addHandler(h, "/test1");
+            s.start();
+            return s;
+        }
     }
 
     public static void main (String[] args) throws Exception {
@@ -83,32 +113,17 @@ public class SANTest implements HttpServerAdapters {
 
             InetAddress l1 = InetAddress.getByName("::1");
             InetAddress l2 = InetAddress.getByName("127.0.0.1");
-            InetSocketAddress addr1 = new InetSocketAddress (l1, 0);
-            InetSocketAddress addr2 = new InetSocketAddress (l2, 0);
-            h1s1 = HttpTestServer.of(getHttpsServer(addr1, executor, ctx));
-            h1s2 = HttpTestServer.of(getHttpsServer(addr2, executor, ctx));
-            h2s1 = HttpTestServer.of(new Http2TestServer(l1, "::1", true, 0, executor,
-                        10, null, ctx, false));
-            h2s2 = HttpTestServer.of(new Http2TestServer(l2, "127.0.0.1", true, 0, executor,
-                        10, null, ctx, false));
 
-            HttpTestHandler h = new HttpTestEchoHandler();
-            h1s1.addHandler(h, "/test1");
-            h1s2.addHandler(h, "/test1");
-            h2s1.addHandler(h, "/test1");
-            h2s2.addHandler(h, "/test1");
-            h1s1.start();
-            h1s2.start();
-            h2s1.start();
-            h2s2.start();
-            int h1port1 = h1s1.getAddress().getPort();
-            int h1port2 = h1s2.getAddress().getPort();
-            int h2port1 = h2s1.getAddress().getPort();
-            int h2port2 = h2s2.getAddress().getPort();
-            test("127.0.0.1", h1port2);
-            test("::1", h1port1);
-            testNew("127.0.0.1", h2port2, executor);
-            testNew("::1", h2port1, executor);
+            h1s1 = initServer(false, l1, ctx, "::1", executor);
+            h1s2 = initServer(false, l2, ctx, "127.0.0.1", executor);
+
+            h2s1 = initServer(true, l1, ctx, "::1", executor);
+            h2s2 = initServer(true, l2, ctx, "127.0.0.1", executor);
+
+            test("127.0.0.1", h1s2);
+            test("::1", h1s1);
+            testNew("127.0.0.1", h2s2, executor);
+            testNew("::1", h2s1, executor);
             System.out.println ("OK");
         } finally {
             if (h1s1 != null)
@@ -124,7 +139,10 @@ public class SANTest implements HttpServerAdapters {
         }
     }
 
-    static void test (String host, int port) throws Exception {
+    static void test (String host, HttpTestServer server) throws Exception {
+        if (server == null)
+            return;
+        int port = server.getAddress().getPort();
         String body = "Yellow world";
         URL url = URIBuilder.newBuilder()
                  .scheme("https")
@@ -155,7 +173,10 @@ public class SANTest implements HttpServerAdapters {
         is.close();
     }
 
-    static void testNew (String host, int port, Executor exec) throws Exception {
+    static void testNew (String host, HttpTestServer server, Executor exec) throws Exception {
+        if (server == null)
+            return;
+        int port = server.getAddress().getPort();
         String body = "Red and Yellow world";
         URI uri = URIBuilder.newBuilder()
                  .scheme("https")
