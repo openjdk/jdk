@@ -32,6 +32,7 @@
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
