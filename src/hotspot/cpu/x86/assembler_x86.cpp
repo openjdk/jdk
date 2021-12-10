@@ -186,7 +186,7 @@ Address::Address(address loc, RelocationHolder spec) {
 // Address.  An index of 4 (rsp) corresponds to having no index, so convert
 // that to noreg for the Address constructor.
 Address Address::make_raw(int base, int index, int scale, int disp, relocInfo::relocType disp_reloc) {
-  RelocationHolder rspec;
+  RelocationHolder rspec = RelocationHolder::none;
   if (disp_reloc != relocInfo::none) {
     rspec = Relocation::spec_simple(disp_reloc);
   }
