@@ -126,6 +126,12 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   ADD_EXCL("jdk/internal/reflect/Reflection",            "methodFilterMap");       // E
   ADD_EXCL("jdk/internal/util/StaticProperty",           "FILE_ENCODING");         // C
 
+  // Integer for 0 and 1 are in java/lang/Integer$IntegerCache and are archived
+  ADD_EXCL("sun/invoke/util/ValueConversions",           "ONE_INT",                // E
+                                                         "ZERO_INT");              // E
+  ADD_EXCL("sun/security/util/SecurityConstants",        "PROVIDER_VER");          // C
+
+
 # undef ADD_EXCL
 
   ClassLoaderDataGraph::classes_do(this);
@@ -213,13 +219,13 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
     ResourceMark rm;
     LogStream ls(Log(cds, heap)::warning());
     ls.print_cr("Archive heap points to a static field that may be reinitialized at runtime:");
-    ls.print_cr("Field: %s::%s", info->_holder->internal_name(), info->_name->as_C_string());
+    ls.print_cr("Field: %s::%s", info->_holder->name()->as_C_string(), info->_name->as_C_string());
     ls.print("Value: ");
     orig_obj->print_on(&ls);
-    ls.cr();
     ls.print_cr("--- trace begin ---");
     trace_to_root(orig_obj, NULL, &value);
     ls.print_cr("--- trace end ---");
+    ls.cr();
     _problems ++;
   }
 
