@@ -166,6 +166,7 @@ public class ObjectMethodsTest {
             assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), null,    "x;y", C.ACCESSORS));
             assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), null,     C.class, "x;y", C.ACCESSORS));
             assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, null,     npt.mt(), C.class, "x;y", C.ACCESSORS));
+            assertThrows(NPE, () -> ObjectMethods.bootstrap(null, npt.mn(),     npt.mt(), C.class, "x;y", C.ACCESSORS));
         }
     }
 

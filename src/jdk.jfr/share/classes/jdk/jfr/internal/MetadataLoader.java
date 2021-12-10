@@ -53,7 +53,8 @@ public final class MetadataLoader {
 
     // Caching to reduce allocation pressure and heap usage
     private final AnnotationElement RELATIONAL = new AnnotationElement(Relational.class);
-    private final AnnotationElement ENABLED = new AnnotationElement(Enabled.class, false);
+    private final AnnotationElement ENABLED = new AnnotationElement(Enabled.class, true);
+    private final AnnotationElement DISABLED = new AnnotationElement(Enabled.class, false);
     private final AnnotationElement THRESHOLD = new AnnotationElement(Threshold.class, "0 ns");
     private final AnnotationElement STACK_TRACE = new AnnotationElement(StackTrace.class, true);
     private final AnnotationElement TRANSITION_TO = new AnnotationElement(TransitionTo.class);
@@ -82,6 +83,7 @@ public final class MetadataLoader {
         private final boolean isEvent;
         private final boolean isRelation;
         private final boolean experimental;
+        private final boolean internal;
         private final long id;
 
         public TypeElement(DataInputStream dis) throws IOException {
@@ -101,6 +103,7 @@ public final class MetadataLoader {
             cutoff = dis.readBoolean();
             throttle = dis.readBoolean();
             experimental = dis.readBoolean();
+            internal = dis.readBoolean();
             id = dis.readLong();
             isEvent = dis.readBoolean();
             isRelation = dis.readBoolean();
@@ -315,7 +318,11 @@ public final class MetadataLoader {
             }
             Type type;
             if (t.isEvent) {
-                aes.add(ENABLED);
+                if (t.internal) {
+                    aes.add(ENABLED);
+                } else {
+                    aes.add(DISABLED);
+                }
                 type = new PlatformEventType(t.name, t.id, false, true);
             } else {
                 type = knownTypeMap.get(t.name);
@@ -326,6 +333,15 @@ public final class MetadataLoader {
                     } else {
                         type = new Type(t.name, null, t.id);
                     }
+                }
+            }
+            if (t.internal) {
+                type.setInternal(true);
+                // Internal types are hidden by default
+                type.setVisible(false);
+                // Internal events are enabled by default
+                if (type instanceof PlatformEventType pe) {
+                    pe.setEnabled(true);
                 }
             }
             type.setAnnotations(aes);

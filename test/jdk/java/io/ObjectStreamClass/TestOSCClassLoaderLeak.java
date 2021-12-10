@@ -45,7 +45,7 @@ import jdk.test.lib.util.ForceGC;
 public class TestOSCClassLoaderLeak {
 
     @Test
-    public void run() throws Exception {
+    public void testClassLoaderLeak() throws Exception {
         TestClassLoader myOwnClassLoader = new TestClassLoader();
         Class<?> loadClass = myOwnClassLoader.loadClass("ObjectStreamClass_MemoryLeakExample");
         Constructor con = loadClass.getConstructor();

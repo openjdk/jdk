@@ -2481,3 +2481,35 @@ instruct vmask_lasttrue16B(iRegINoSp dst, vecX src) %{
   %}
   ins_pipe(pipe_slow);
 %}
+
+instruct vmask_tolong8B(iRegLNoSp dst, vecD src) %{
+  match(Set dst (VectorMaskToLong src));
+  ins_cost(5 * INSN_COST);
+  format %{ "vmask_tolong $dst, $src\t# convert mask to long (8B)" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+
+    __ fmovd(as_Register($dst$$reg), as_FloatRegister($src$$reg));
+    __ bytemask_compress(as_Register($dst$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_tolong16B(iRegLNoSp dst, vecX src) %{
+  match(Set dst (VectorMaskToLong src));
+  ins_cost(11 * INSN_COST);
+  format %{ "vmask_tolong $dst, $src\t# convert mask to long (16B)" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+
+    __ umov(as_Register($dst$$reg), as_FloatRegister($src$$reg), __ D, 0);
+    __ umov(rscratch1, as_FloatRegister($src$$reg), __ D, 1);
+    __ bytemask_compress(as_Register($dst$$reg));
+    __ bytemask_compress(rscratch1);
+    __ orr(as_Register($dst$$reg), as_Register($dst$$reg),
+           rscratch1, Assembler::LSL, 8);
+  %}
+  ins_pipe(pipe_slow);
+%}

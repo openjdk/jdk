@@ -165,9 +165,14 @@ public class LambdaToMethod extends TreeTranslator {
         dumpLambdaToMethodStats = options.isSet("debug.dumpLambdaToMethodStats");
         attr = Attr.instance(context);
         forceSerializable = options.isSet("forceSerializable");
-        debugLinesOrVars = options.isSet(Option.G)
-                || options.isSet(Option.G_CUSTOM, "lines")
-                || options.isSet(Option.G_CUSTOM, "vars");
+        boolean lineDebugInfo =
+            options.isUnset(Option.G_CUSTOM) ||
+            options.isSet(Option.G_CUSTOM, "lines");
+        boolean varDebugInfo =
+            options.isUnset(Option.G_CUSTOM)
+            ? options.isSet(Option.G)
+            : options.isSet(Option.G_CUSTOM, "vars");
+        debugLinesOrVars = lineDebugInfo || varDebugInfo;
         verboseDeduplication = options.isSet("debug.dumpLambdaToMethodDeduplication");
         deduplicateLambdas = options.getBoolean("deduplicateLambdas", true);
         nestmateLambdas = Target.instance(context).runtimeUseNestAccess();

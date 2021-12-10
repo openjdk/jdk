@@ -100,7 +100,12 @@ public class TestSeeTag extends JavadocTester {
                     <dd>
                     <ul class="see-list">
                     <li><code>Object</code></li>
-                    <li><code>Foo&lt;String&gt;</code></li>
+                    <li>
+                    <details class="invalid-tag">
+                    <summary>invalid @see</summary>
+                    <pre><code>Foo&lt;String&gt;</code></pre>
+                    </details>
+                    </li>
                     </ul>
                     </dd>
                     </dl>""");

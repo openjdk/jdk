@@ -991,7 +991,7 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
 
-const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
 
@@ -8385,7 +8385,7 @@ instruct cmpL3_reg_reg(iRegI dst, iRegL src1, iRegL src2, flagsReg ccr ) %{
 // Conditional move
 instruct cmovLL_reg_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegL dst, iRegL src) %{
   match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
 
   ins_cost(150);
   size(8);
@@ -8398,9 +8398,9 @@ instruct cmovLL_reg_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegL dst, iRegL src) %
   ins_pipe(ialu_reg);
 %}
 
-instruct cmovLL_reg_LTGE_U(cmpOpL cmp, flagsRegUL_LTGE xcc, iRegL dst, iRegL src) %{
+instruct cmovLL_reg_LTGE_U(cmpOpUL cmp, flagsRegUL_LTGE xcc, iRegL dst, iRegL src) %{
   match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
 
   ins_cost(150);
   size(8);
@@ -8415,7 +8415,7 @@ instruct cmovLL_reg_LTGE_U(cmpOpL cmp, flagsRegUL_LTGE xcc, iRegL dst, iRegL src
 
 instruct cmovLL_reg_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegL dst, iRegL src) %{
   match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
 
   ins_cost(150);
   size(8);
@@ -8430,7 +8430,7 @@ instruct cmovLL_reg_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegL dst, iRegL src) %
 
 instruct cmovLL_reg_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegL dst, iRegL src) %{
   match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
 
   ins_cost(150);
   size(8);
@@ -8443,9 +8443,9 @@ instruct cmovLL_reg_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegL dst, iReg
   ins_pipe(ialu_reg);
 %}
 
-instruct cmovLL_reg_LEGT_U(cmpOpL_commute cmp, flagsRegUL_LEGT xcc, iRegL dst, iRegL src) %{
+instruct cmovLL_reg_LEGT_U(cmpOpUL_commute cmp, flagsRegUL_LEGT xcc, iRegL dst, iRegL src) %{
   match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
 
   ins_cost(150);
   size(8);
@@ -8460,7 +8460,7 @@ instruct cmovLL_reg_LEGT_U(cmpOpL_commute cmp, flagsRegUL_LEGT xcc, iRegL dst, i
 
 instruct cmovLL_imm_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegL dst, immL0 src) %{
   match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
   ins_cost(140);
   size(8);
   format %{ "MOV$cmp  $dst.lo,0\t! long\n\t"
@@ -8472,9 +8472,9 @@ instruct cmovLL_imm_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegL dst, immL0 src) %
   ins_pipe(ialu_imm);
 %}
 
-instruct cmovLL_imm_LTGE_U(cmpOpL cmp, flagsRegUL_LTGE xcc, iRegL dst, immL0 src) %{
+instruct cmovLL_imm_LTGE_U(cmpOpUL cmp, flagsRegUL_LTGE xcc, iRegL dst, immL0 src) %{
   match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
   ins_cost(140);
   size(8);
   format %{ "MOV$cmp  $dst.lo,0\t! long\n\t"
@@ -8488,7 +8488,7 @@ instruct cmovLL_imm_LTGE_U(cmpOpL cmp, flagsRegUL_LTGE xcc, iRegL dst, immL0 src
 
 instruct cmovLL_imm_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegL dst, immL0 src) %{
   match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
   ins_cost(140);
   size(8);
   format %{ "MOV$cmp  $dst.lo,0\t! long\n\t"
@@ -8502,7 +8502,7 @@ instruct cmovLL_imm_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegL dst, immL0 src) %
 
 instruct cmovLL_imm_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegL dst, immL0 src) %{
   match(Set dst (CMoveL (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
   ins_cost(140);
   size(8);
   format %{ "MOV$cmp  $dst.lo,0\t! long\n\t"
@@ -8516,7 +8516,20 @@ instruct cmovLL_imm_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegL dst, immL
 
 instruct cmovIL_reg_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegI dst, iRegI src) %{
   match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
+
+  ins_cost(150);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$Register, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct cmovIL_reg_LTGE_U(cmpOpUL cmp, flagsRegUL_LTGE xcc, iRegI dst, iRegI src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
 
   ins_cost(150);
   size(4);
@@ -8529,20 +8542,33 @@ instruct cmovIL_reg_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegI dst, iRegI src) %
 
 instruct cmovIL_reg_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegI dst, iRegI src) %{
   match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
 
   ins_cost(150);
   size(4);
   format %{ "MOV$cmp  $dst,$src" %}
   ins_encode %{
     __ mov($dst$$Register, $src$$Register, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct cmovIL_reg_EQNE_U(cmpOpUL cmp, flagsRegUL_EQNE xcc, iRegI dst, iRegI src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
+
+  ins_cost(150);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+   __ mov($dst$$Register, $src$$Register, (AsmCondition)($cmp$$cmpcode));
   %}
   ins_pipe(ialu_reg);
 %}
 
 instruct cmovIL_reg_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegI dst, iRegI src) %{
   match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
 
   ins_cost(150);
   size(4);
@@ -8553,11 +8579,25 @@ instruct cmovIL_reg_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegI dst, iReg
   ins_pipe(ialu_reg);
 %}
 
-instruct cmovIL_imm_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegI dst, immI16 src) %{
+instruct cmovIL_reg_LEGT_U(cmpOpUL_commute cmp, flagsRegUL_LEGT xcc, iRegI dst, iRegI src) %{
   match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
+
+  ins_cost(150);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$Register, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct cmovIL_imm16_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegI dst, immI16 src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
 
   ins_cost(140);
+  size(4);
   format %{ "MOVW$cmp  $dst,$src" %}
   ins_encode %{
     __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
@@ -8565,11 +8605,12 @@ instruct cmovIL_imm_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegI dst, immI16 src) 
   ins_pipe(ialu_imm);
 %}
 
-instruct cmovIL_imm_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegI dst, immI16 src) %{
+instruct cmovIL_imm16_LTGE_U(cmpOpUL cmp, flagsRegUL_LTGE xcc, iRegI dst, immI16 src) %{
   match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
 
   ins_cost(140);
+  size(4);
   format %{ "MOVW$cmp  $dst,$src" %}
   ins_encode %{
     __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
@@ -8577,21 +8618,152 @@ instruct cmovIL_imm_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegI dst, immI16 src) 
   ins_pipe(ialu_imm);
 %}
 
-instruct cmovIL_imm_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegI dst, immI16 src) %{
+instruct cmovIL_imm16_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegI dst, immI16 src) %{
   match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
 
   ins_cost(140);
+  size(4);
   format %{ "MOVW$cmp  $dst,$src" %}
   ins_encode %{
     __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovIL_imm16_EQNE_U(cmpOpUL cmp, flagsRegUL_EQNE xcc, iRegI dst, immI16 src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
+
+  ins_cost(140);
+  size(4);
+  format %{ "MOVW$cmp  $dst,$src" %}
+  ins_encode %{
+    __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovIL_imm16_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegI dst, immI16 src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
+
+  ins_cost(140);
+  size(4);
+  format %{ "MOVW$cmp  $dst,$src" %}
+  ins_encode %{
+    __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovIL_imm16_LEGT_U(cmpOpUL_commute cmp, flagsRegUL_LEGT xcc, iRegI dst, immI16 src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
+
+  ins_cost(140);
+  size(4);
+  format %{ "MOVW$cmp  $dst,$src" %}
+  ins_encode %{
+    __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovIL_immMov_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegI dst, immIMov src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
+
+  ins_cost(140);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovIL_immMov_LTGE_U(cmpOpUL cmp, flagsRegUL_LTGE xcc, iRegI dst, immIMov src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
+
+  ins_cost(140);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovIL_immMov_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegI dst, immIMov src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
+
+  ins_cost(140);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovIL_immMov_EQNE_U(cmpOpUL cmp, flagsRegUL_EQNE xcc, iRegI dst, immIMov src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
+
+  ins_cost(140);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovIL_immMov_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegI dst, immIMov src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
+
+  ins_cost(140);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovIL_immMov_LEGT_U(cmpOpUL_commute cmp, flagsRegUL_LEGT xcc, iRegI dst, immIMov src) %{
+  match(Set dst (CMoveI (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
+
+  ins_cost(140);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
   %}
   ins_pipe(ialu_imm);
 %}
 
 instruct cmovPL_reg_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegP dst, iRegP src) %{
   match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
+
+  ins_cost(150);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$Register, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct cmovPL_reg_LTGE_U(cmpOpUL cmp, flagsRegUL_LTGE xcc, iRegP dst, iRegP src) %{
+  match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
 
   ins_cost(150);
   size(4);
@@ -8604,7 +8776,20 @@ instruct cmovPL_reg_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegP dst, iRegP src) %
 
 instruct cmovPL_reg_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegP dst, iRegP src) %{
   match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
+
+  ins_cost(150);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$Register, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct cmovPL_reg_EQNE_U(cmpOpUL cmp, flagsRegUL_EQNE xcc, iRegP dst, iRegP src) %{
+  match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
 
   ins_cost(150);
   size(4);
@@ -8617,7 +8802,20 @@ instruct cmovPL_reg_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegP dst, iRegP src) %
 
 instruct cmovPL_reg_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegP dst, iRegP src) %{
   match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
+
+  ins_cost(150);
+  size(4);
+  format %{ "MOV$cmp  $dst,$src" %}
+  ins_encode %{
+    __ mov($dst$$Register, $src$$Register, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct cmovPL_reg_LEGT_U(cmpOpUL_commute cmp, flagsRegUL_LEGT xcc, iRegP dst, iRegP src) %{
+  match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
 
   ins_cost(150);
   size(4);
@@ -8630,9 +8828,23 @@ instruct cmovPL_reg_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegP dst, iReg
 
 instruct cmovPL_imm_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegP dst, immP0 src) %{
   match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
 
   ins_cost(140);
+  size(4);
+  format %{ "MOVW$cmp  $dst,$src" %}
+  ins_encode %{
+    __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovPL_imm_LTGE_U(cmpOpUL cmp, flagsRegUL_LTGE xcc, iRegP dst, immP0 src) %{
+  match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
+
+  ins_cost(140);
+  size(4);
   format %{ "MOVW$cmp  $dst,$src" %}
   ins_encode %{
     __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
@@ -8642,9 +8854,23 @@ instruct cmovPL_imm_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, iRegP dst, immP0 src) %
 
 instruct cmovPL_imm_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegP dst, immP0 src) %{
   match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
 
   ins_cost(140);
+  size(4);
+  format %{ "MOVW$cmp  $dst,$src" %}
+  ins_encode %{
+    __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovPL_imm_EQNE_U(cmpOpUL cmp, flagsRegUL_EQNE xcc, iRegP dst, immP0 src) %{
+  match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
+
+  ins_cost(140);
+  size(4);
   format %{ "MOVW$cmp  $dst,$src" %}
   ins_encode %{
     __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
@@ -8654,9 +8880,23 @@ instruct cmovPL_imm_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, iRegP dst, immP0 src) %
 
 instruct cmovPL_imm_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegP dst, immP0 src) %{
   match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
 
   ins_cost(140);
+  size(4);
+  format %{ "MOVW$cmp  $dst,$src" %}
+  ins_encode %{
+    __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(ialu_imm);
+%}
+
+instruct cmovPL_imm_LEGT_U(cmpOpUL_commute cmp, flagsRegUL_LEGT xcc, iRegP dst, immP0 src) %{
+  match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
+
+  ins_cost(140);
+  size(4);
   format %{ "MOVW$cmp  $dst,$src" %}
   ins_encode %{
     __ movw($dst$$Register, $src$$constant, (AsmCondition)($cmp$$cmpcode));
@@ -8666,7 +8906,7 @@ instruct cmovPL_imm_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, iRegP dst, immP
 
 instruct cmovFL_reg_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, regF dst, regF src) %{
   match(Set dst (CMoveF (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
   ins_cost(150);
   size(4);
   format %{ "FCPYS$cmp $dst,$src" %}
@@ -8678,7 +8918,7 @@ instruct cmovFL_reg_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, regF dst, regF src) %{
 
 instruct cmovFL_reg_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, regF dst, regF src) %{
   match(Set dst (CMoveF (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
   ins_cost(150);
   size(4);
   format %{ "FCPYS$cmp $dst,$src" %}
@@ -8690,7 +8930,7 @@ instruct cmovFL_reg_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, regF dst, regF src) %{
 
 instruct cmovFL_reg_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, regF dst, regF src) %{
   match(Set dst (CMoveF (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
   ins_cost(150);
   size(4);
   format %{ "FCPYS$cmp $dst,$src" %}
@@ -8702,7 +8942,7 @@ instruct cmovFL_reg_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, regF dst, regF 
 
 instruct cmovDL_reg_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, regD dst, regD src) %{
   match(Set dst (CMoveD (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
 
   ins_cost(150);
   size(4);
@@ -8715,7 +8955,7 @@ instruct cmovDL_reg_LTGE(cmpOpL cmp, flagsRegL_LTGE xcc, regD dst, regD src) %{
 
 instruct cmovDL_reg_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, regD dst, regD src) %{
   match(Set dst (CMoveD (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
 
   ins_cost(150);
   size(4);
@@ -8728,7 +8968,7 @@ instruct cmovDL_reg_EQNE(cmpOpL cmp, flagsRegL_EQNE xcc, regD dst, regD src) %{
 
 instruct cmovDL_reg_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, regD dst, regD src) %{
   match(Set dst (CMoveD (Binary cmp xcc) (Binary dst src)));
-  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate(_kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt);
 
   ins_cost(150);
   size(4);

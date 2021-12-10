@@ -715,9 +715,9 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         /*package-private*/
         static FloatMaxMask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(FloatMaxMask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(FloatMaxMask.class, int.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final FloatMaxMask  TRUE_MASK = new FloatMaxMask(true);
         private static final FloatMaxMask FALSE_MASK = new FloatMaxMask(false);

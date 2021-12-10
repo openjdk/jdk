@@ -50,7 +50,6 @@ private:
 
   static bool verify_helper(Node* in, Node_Stack& phis, VectorSet& visited, verify_type t, bool trace, Unique_Node_List& barriers_used);
   static void report_verify_failure(const char* msg, Node* n1 = NULL, Node* n2 = NULL);
-  static void verify_raw_mem(RootNode* root);
 #endif
   static Node* dom_mem(Node* mem, Node* ctrl, int alias, Node*& mem_ctrl, PhaseIdealLoop* phase);
   static Node* no_branches(Node* c, Node* dom, bool allow_one_proj, PhaseIdealLoop* phase);
@@ -61,7 +60,7 @@ private:
   static void test_null(Node*& ctrl, Node* val, Node*& null_ctrl, PhaseIdealLoop* phase);
   static void test_gc_state(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
                             PhaseIdealLoop* phase, int flags);
-  static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem,
+  static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr,
                             DecoratorSet decorators, PhaseIdealLoop* phase);
   static void test_in_cset(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase);
   static void move_gc_state_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase);

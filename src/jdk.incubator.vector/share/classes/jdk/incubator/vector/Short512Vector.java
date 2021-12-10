@@ -789,9 +789,9 @@ final class Short512Vector extends ShortVector {
         @ForceInline
         /*package-private*/
         static Short512Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Short512Mask.class, short.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Short512Mask.class, short.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Short512Mask  TRUE_MASK = new Short512Mask(true);
         private static final Short512Mask FALSE_MASK = new Short512Mask(false);

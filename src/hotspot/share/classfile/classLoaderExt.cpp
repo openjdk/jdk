@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/filemap.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
@@ -227,7 +228,7 @@ void ClassLoaderExt::setup_search_paths(JavaThread* current) {
   ClassLoaderExt::setup_app_search_path(current);
 }
 
-void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result) {
+void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result, bool redefined) {
   Arguments::assert_is_dumping_archive();
 
   // We need to remember where the class comes from during dumping.
@@ -245,4 +246,21 @@ void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* resu
   }
   result->set_shared_classpath_index(classpath_index);
   result->set_shared_class_loader_type(classloader_type);
+#if INCLUDE_CDS_JAVA_HEAP
+  if (DumpSharedSpaces && AllowArchivingWithJavaAgent && classloader_type == ClassLoader::BOOT_LOADER &&
+      classpath_index < 0 && HeapShared::can_write() && redefined) {
+    // During static dump, classes for the built-in loaders are always loaded from
+    // known locations (jimage, classpath or modulepath), so classpath_index should
+    // always be >= 0.
+    // The only exception is when a java agent is used during dump time (for testing
+    // purposes only). If a class is transformed by the agent, the CodeSource of
+    // this class may point to an unknown location. This may break heap object archiving,
+    // which requires all the boot classes to be from known locations. This is an
+    // uncommon scenario (even in test cases). Let's simply disable heap object archiving.
+    ResourceMark rm;
+    log_warning(cds)("CDS heap objects cannot be written because class %s maybe modified by ClassFileLoadHook.",
+                     result->external_name());
+    HeapShared::disable_writing();
+  }
+#endif // INCLUDE_CDS_JAVA_HEAP
 }
