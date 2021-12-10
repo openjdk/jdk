@@ -200,16 +200,17 @@ final class ZipPath implements Path {
             return new URI("jar",
                            decodeUri(zfs.getZipFile().toUri().toString()) +
                            "!" +
-                           getRealPath(getResolvedPath()),
+                           getRealPath(),
                            null);
         } catch (Exception ex) {
             throw new AssertionError(ex);
         }
     }
 
-    private String getRealPath(byte[] resolvedPath) {
-        byte[] path = zfs.lookupPath(resolvedPath);
-        return zfs.getString(path != null ? path : resolvedPath);
+    private String getRealPath() {
+        byte[] resolvedPath = getResolvedPath();
+        byte[] realPath = zfs.lookupPath(resolvedPath);
+        return zfs.getString(realPath != null ? realPath : resolvedPath);
     }
 
     private boolean equalsNameAt(ZipPath other, int index) {
