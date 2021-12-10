@@ -636,8 +636,9 @@ public abstract class DateFormat extends Format {
      * The returned array represents the union of locales supported by the Java
      * runtime and by installed
      * {@link java.text.spi.DateFormatProvider DateFormatProvider} implementations.
-     * It must contain at least a {@code Locale} instance equal to
-     * {@link java.util.Locale#US Locale.US}.
+     * At a minimum, the returned array must contain a {@code Locale} instance equal to
+     * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
+     * {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
      *         {@code DateFormat} instances are available.

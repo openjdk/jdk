@@ -78,7 +78,7 @@ public class SwingUtilities implements SwingConstants
     @SuppressWarnings("removal")
     private static boolean getSuppressDropTarget() {
         if (!checkedSuppressDropSupport) {
-            suppressDropSupport = Boolean.valueOf(
+            suppressDropSupport = Boolean.parseBoolean(
                 AccessController.doPrivileged(
                     new GetPropertyAction("suppressSwingDropSupport")));
             checkedSuppressDropSupport = true;
@@ -106,12 +106,12 @@ public class SwingUtilities implements SwingConstants
     }
 
     /**
-     * Return {@code true} if @{code a} contains {@code b}
+     * Return {@code true} if {@code a} contains {@code b}
      *
      * @param a the first rectangle
      * @param b the second rectangle
      *
-     * @return {@code true} if @{code a} contains {@code b}
+     * @return {@code true} if {@code a} contains {@code b}
      */
     public static final boolean isRectangleContainingRectangle(Rectangle a,Rectangle b) {
         return b.x >= a.x && (b.x + b.width) <= (a.x + a.width) &&
@@ -2054,8 +2054,8 @@ public class SwingUtilities implements SwingConstants
      * ImageIcon, and the image it contains is the same as <code>image</code>.
      */
     static boolean doesIconReferenceImage(Icon icon, Image image) {
-        Image iconImage = (icon != null && (icon instanceof ImageIcon)) ?
-                           ((ImageIcon)icon).getImage() : null;
+        Image iconImage = (icon instanceof ImageIcon i) ?
+                           i.getImage() : null;
         return (iconImage == image);
     }
 

@@ -671,8 +671,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
             int match = -1;
             Media media = (Media)attributes.get(Media.class);
-            if (media != null && media instanceof MediaSizeName) {
-                MediaSizeName msn = (MediaSizeName)media;
+            if (media instanceof MediaSizeName msn) {
 
                 // case when no supported mediasizenames are reported
                 // check given media against the default
@@ -832,7 +831,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
     //This class is for getting all pre-defined Finishings
     @SuppressWarnings("serial") // JDK implementation class
-    private class ExtFinishing extends Finishings {
+    private static class ExtFinishing extends Finishings {
         ExtFinishing(int value) {
             super(100); // 100 to avoid any conflicts with predefined values.
         }
@@ -927,7 +926,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                                 gifImagesAdded = true;
                             } else if (mimeType.equals("image/jpeg")) {
                                 jpgImagesAdded = true;
-                            } else if (mimeType.indexOf("postscript") != -1) {
+                            } else if (mimeType.contains("postscript")) {
                                 psSupported = true;
                             }
                             break;
@@ -1555,7 +1554,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                     return mediaSizeNames[defaultMediaIndex];
                 } else {
                     for (int i=0; i< mediaSizeNames.length; i++) {
-                        if (mediaSizeNames[i].toString().indexOf(name) != -1) {
+                        if (mediaSizeNames[i].toString().contains(name)) {
                             defaultMediaIndex = i;
                             return mediaSizeNames[defaultMediaIndex];
                         }

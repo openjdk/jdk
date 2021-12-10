@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.Arrays;
  * This class encapsulates the KRB-AS-REQ message that the client
  * sends to the KDC.
  */
-public class KrbAsReq {
+public class KrbAsReq extends KrbKdcReq {
     private ASReq asReqMessg;
 
     private boolean DEBUG = Krb5.DEBUG;
@@ -165,10 +165,7 @@ public class KrbAsReq {
         asReqMessg = new ASReq(
                          paData,
                          kdc_req_body);
-    }
-
-    byte[] encoding() throws IOException, Asn1Exception {
-        return asReqMessg.asn1Encode();
+        obuf = asReqMessg.asn1Encode();
     }
 
     // Used by KrbAsRep to validate AS-REP

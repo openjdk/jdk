@@ -105,7 +105,7 @@ bool Klass::is_subclass_of(const Klass* k) const {
   return false;
 }
 
-void Klass::release_C_heap_structures() {
+void Klass::release_C_heap_structures(bool release_constant_pool) {
   if (_name != NULL) _name->decrement_refcount();
 }
 
@@ -604,7 +604,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(cds, mirror)("%s has raw archived mirror", external_name());
-    if (HeapShared::open_regions_mapped()) {
+    if (HeapShared::are_archived_mirrors_available()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);

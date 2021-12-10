@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.SourceVersion;
-import static javax.tools.Diagnostic.Kind.*;
 
 @SupportedAnnotationTypes("*")
 public class MyProcessor extends AbstractProcessor {
@@ -40,8 +39,7 @@ public class MyProcessor extends AbstractProcessor {
             for(TypeElement e : ElementFilter.typesIn(renv.getRootElements())) {
                 for (TypeParameterElement tp : e.getTypeParameters()) {
                     if (tp.getSimpleName().toString().length() > 1) {
-                        messager.printMessage(WARNING,
-                            "Type param names should be of length 1", tp);
+                        messager.printWarning("Type param names should be of length 1", tp);
                     }
                 }
             }

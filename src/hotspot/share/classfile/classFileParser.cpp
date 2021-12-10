@@ -161,7 +161,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
   const ClassFileStream cfs1 = *stream;
   const ClassFileStream* const cfs = &cfs1;
 
-  assert(cfs->allocated_on_stack(), "should be local");
+  assert(cfs->allocated_on_stack_or_embedded(), "should be local");
   debug_only(const u1* const old_current = stream->current();)
 
   // Used for batching symbol allocations.
@@ -2835,7 +2835,8 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                           annotation_default_length,
                           CHECK_NULL);
 
-  if (name == vmSymbols::finalize_method_name() &&
+  if (InstanceKlass::is_finalization_enabled() &&
+      name == vmSymbols::finalize_method_name() &&
       signature == vmSymbols::void_method_signature()) {
     if (m->is_empty_method()) {
       _has_empty_finalizer = true;
@@ -3141,6 +3142,13 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
         valid_klass_reference_at(outer_class_info_index),
       "outer_class_info_index %u has bad constant type in class file %s",
       outer_class_info_index, CHECK_0);
+
+    if (outer_class_info_index != 0) {
+      const Symbol* const outer_class_name = cp->klass_name_at(outer_class_info_index);
+      char* bytes = (char*)outer_class_name->bytes();
+      guarantee_property(bytes[0] != JVM_SIGNATURE_ARRAY,
+                         "Outer class is an array class in class file %s", CHECK_0);
+    }
     // Inner class name
     const u2 inner_name_index = cfs->get_u2_fast();
     check_property(
@@ -4164,7 +4172,8 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   bool f = false;
   const Method* const m = ik->lookup_method(vmSymbols::finalize_method_name(),
                                            vmSymbols::void_method_signature());
-  if (m != NULL && !m->is_empty_method()) {
+  if (InstanceKlass::is_finalization_enabled() &&
+      (m != NULL) && !m->is_empty_method()) {
       f = true;
   }
 

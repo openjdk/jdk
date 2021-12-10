@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -688,8 +688,8 @@ public final class DateTimeFormatterBuilder {
      * If the value is negative an exception will be thrown.
      * If the field does not have a fixed set of valid values then an
      * exception will be thrown.
-     * If the field value in the date-time to be printed is invalid it
-     * cannot be printed and an exception will be thrown.
+     * If the field value in the date-time to be printed is outside the
+     * range of valid values then an exception will be thrown.
      *
      * @param field  the field to append, not null
      * @param minWidth  the minimum width of the field excluding the decimal point, from 0 to 9
@@ -701,11 +701,20 @@ public final class DateTimeFormatterBuilder {
      */
     public DateTimeFormatterBuilder appendFraction(
             TemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
-        if (minWidth == maxWidth && decimalPoint == false) {
-            // adjacent parsing
-            appendValue(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
+        if (field == NANO_OF_SECOND) {
+            if (minWidth == maxWidth && decimalPoint == false) {
+                // adjacent parsing
+                appendValue(new NanosPrinterParser(minWidth, maxWidth, decimalPoint));
+            } else {
+                appendInternal(new NanosPrinterParser(minWidth, maxWidth, decimalPoint));
+            }
         } else {
-            appendInternal(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
+            if (minWidth == maxWidth && decimalPoint == false) {
+                // adjacent parsing
+                appendValue(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
+            } else {
+                appendInternal(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
+            }
         }
         return this;
     }
@@ -2758,6 +2767,24 @@ public final class DateTimeFormatterBuilder {
             return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, this.subsequentWidth + subsequentWidth);
         }
 
+        /*
+         * Copied from Long.stringSize
+         */
+        private static int stringSize(long x) {
+            int d = 1;
+            if (x >= 0) {
+                d = 0;
+                x = -x;
+            }
+            long p = -10;
+            for (int i = 1; i < 19; i++) {
+                if (x > p)
+                    return i + d;
+                p = 10 * p;
+            }
+            return 19 + d;
+        }
+
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long valueLong = context.getValue(field);
@@ -2766,18 +2793,21 @@ public final class DateTimeFormatterBuilder {
             }
             long value = getValue(context, valueLong);
             DecimalStyle decimalStyle = context.getDecimalStyle();
-            String str = (value == Long.MIN_VALUE ? "9223372036854775808" : Long.toString(Math.abs(value)));
-            if (str.length() > maxWidth) {
+            int size = stringSize(value);
+            if (value < 0) {
+                size--;
+            }
+
+            if (size > maxWidth) {
                 throw new DateTimeException("Field " + field +
                     " cannot be printed as the value " + value +
                     " exceeds the maximum print width of " + maxWidth);
             }
-            str = decimalStyle.convertNumberToI18N(str);
 
             if (value >= 0) {
                 switch (signStyle) {
                     case EXCEEDS_PAD:
-                        if (minWidth < 19 && value >= EXCEED_POINTS[minWidth]) {
+                        if (minWidth < 19 && size > minWidth) {
                             buf.append(decimalStyle.getPositiveSign());
                         }
                         break;
@@ -2793,10 +2823,16 @@ public final class DateTimeFormatterBuilder {
                                              " cannot be negative according to the SignStyle");
                 }
             }
-            for (int i = 0; i < minWidth - str.length(); i++) {
-                buf.append(decimalStyle.getZeroDigit());
+            char zeroDigit = decimalStyle.getZeroDigit();
+            for (int i = 0; i < minWidth - size; i++) {
+                buf.append(zeroDigit);
             }
-            buf.append(str);
+            if (zeroDigit == '0' && value != Long.MIN_VALUE) {
+                buf.append(Math.abs(value));
+            } else {
+                String str = value == Long.MIN_VALUE ? "9223372036854775808" : Long.toString(Math.abs(value));
+                buf.append(decimalStyle.convertNumberToI18N(str));
+            }
             return true;
         }
 
@@ -3113,10 +3149,214 @@ public final class DateTimeFormatterBuilder {
 
     //-----------------------------------------------------------------------
     /**
+     * Prints and parses a NANO_OF_SECOND field with optional padding.
+     */
+    static final class NanosPrinterParser extends NumberPrinterParser {
+        private final boolean decimalPoint;
+
+        /**
+         * Constructor.
+         *
+         * @param minWidth  the minimum width to output, from 0 to 9
+         * @param maxWidth  the maximum width to output, from 0 to 9
+         * @param decimalPoint  whether to output the localized decimal point symbol
+         */
+        NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint) {
+            this(minWidth, maxWidth, decimalPoint, 0);
+            if (minWidth < 0 || minWidth > 9) {
+                throw new IllegalArgumentException("Minimum width must be from 0 to 9 inclusive but was " + minWidth);
+            }
+            if (maxWidth < 1 || maxWidth > 9) {
+                throw new IllegalArgumentException("Maximum width must be from 1 to 9 inclusive but was " + maxWidth);
+            }
+            if (maxWidth < minWidth) {
+                throw new IllegalArgumentException("Maximum width must exceed or equal the minimum width but " +
+                        maxWidth + " < " + minWidth);
+            }
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param minWidth  the minimum width to output, from 0 to 9
+         * @param maxWidth  the maximum width to output, from 0 to 9
+         * @param decimalPoint  whether to output the localized decimal point symbol
+         * @param subsequentWidth the subsequentWidth for this instance
+         */
+        NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
+            super(NANO_OF_SECOND, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
+            this.decimalPoint = decimalPoint;
+        }
+
+        /**
+         * Returns a new instance with fixed width flag set.
+         *
+         * @return a new updated printer-parser, not null
+         */
+        @Override
+        NanosPrinterParser withFixedWidth() {
+            if (subsequentWidth == -1) {
+                return this;
+            }
+            return new NanosPrinterParser(minWidth, maxWidth, decimalPoint, -1);
+        }
+
+        /**
+         * Returns a new instance with an updated subsequent width.
+         *
+         * @param subsequentWidth  the width of subsequent non-negative numbers, 0 or greater
+         * @return a new updated printer-parser, not null
+         */
+        @Override
+        NanosPrinterParser withSubsequentWidth(int subsequentWidth) {
+            return new NanosPrinterParser(minWidth, maxWidth, decimalPoint, this.subsequentWidth + subsequentWidth);
+        }
+
+        /**
+         * For NanosPrinterParser, the width is fixed if context is strict,
+         * minWidth equal to maxWidth and decimalpoint is absent.
+         * @param context the context
+         * @return if the field is fixed width
+         * @see #appendFraction(java.time.temporal.TemporalField, int, int, boolean)
+         */
+        @Override
+        boolean isFixedWidth(DateTimeParseContext context) {
+            if (context.isStrict() && minWidth == maxWidth && decimalPoint == false) {
+                return true;
+            }
+            return false;
+        }
+
+        // Simplified variant of Integer.stringSize that assumes positive values
+        private static int stringSize(int x) {
+            int p = 10;
+            for (int i = 1; i < 10; i++) {
+                if (x < p)
+                    return i;
+                p = 10 * p;
+            }
+            return 10;
+        }
+
+        private static final int[] TENS = new int[] {
+            1,
+            10,
+            100,
+            1000,
+            10000,
+            100000,
+            1000000,
+            10000000,
+            100000000
+        };
+
+        @Override
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+            Long value = context.getValue(field);
+            if (value == null) {
+                return false;
+            }
+            int val = field.range().checkValidIntValue(value, field);
+            DecimalStyle decimalStyle = context.getDecimalStyle();
+            int stringSize = stringSize(val);
+            char zero = decimalStyle.getZeroDigit();
+            if (val == 0 || stringSize < 10 - maxWidth) {
+                // 0 or would round down to 0
+                // to get output identical to FractionPrinterParser use minWidth if the
+                // value is zero, maxWidth otherwise
+                int width = val == 0 ? minWidth : maxWidth;
+                if (width > 0) {
+                    if (decimalPoint) {
+                        buf.append(decimalStyle.getDecimalSeparator());
+                    }
+                    for (int i = 0; i < width; i++) {
+                        buf.append(zero);
+                    }
+                }
+            } else {
+                if (decimalPoint) {
+                    buf.append(decimalStyle.getDecimalSeparator());
+                }
+                // add leading zeros
+                for (int i = 9 - stringSize; i > 0; i--) {
+                    buf.append(zero);
+                }
+                // truncate unwanted digits
+                if (maxWidth < 9) {
+                    val /= TENS[9 - maxWidth];
+                }
+                // truncate zeros
+                for (int i = maxWidth; i > minWidth; i--) {
+                    if ((val % 10) != 0) {
+                        break;
+                    }
+                    val /= 10;
+                }
+                if (zero == '0') {
+                    buf.append(val);
+                } else {
+                    buf.append(decimalStyle.convertNumberToI18N(Integer.toString(val)));
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public int parse(DateTimeParseContext context, CharSequence text, int position) {
+            int effectiveMin = (context.isStrict() || isFixedWidth(context) ? minWidth : 0);
+            int effectiveMax = (context.isStrict() || isFixedWidth(context) ? maxWidth : 9);
+            int length = text.length();
+            if (position == length) {
+                // valid if whole field is optional, invalid if minimum width
+                return (effectiveMin > 0 ? ~position : position);
+            }
+            if (decimalPoint) {
+                if (text.charAt(position) != context.getDecimalStyle().getDecimalSeparator()) {
+                    // valid if whole field is optional, invalid if minimum width
+                    return (effectiveMin > 0 ? ~position : position);
+                }
+                position++;
+            }
+            int minEndPos = position + effectiveMin;
+            if (minEndPos > length) {
+                return ~position;  // need at least min width digits
+            }
+            int maxEndPos = Math.min(position + effectiveMax, length);
+            int total = 0;  // can use int because we are only parsing up to 9 digits
+            int pos = position;
+            while (pos < maxEndPos) {
+                char ch = text.charAt(pos);
+                int digit = context.getDecimalStyle().convertToDigit(ch);
+                if (digit < 0) {
+                    if (pos < minEndPos) {
+                        return ~position;  // need at least min width digits
+                    }
+                    break;
+                }
+                pos++;
+                total = total * 10 + digit;
+            }
+            for (int i = 9 - (pos - position); i > 0; i--) {
+                total *= 10;
+            }
+            return context.setParsedField(field, total, position, pos);
+        }
+
+        @Override
+        public String toString() {
+            String decimal = (decimalPoint ? ",DecimalPoint" : "");
+            return "Fraction(" + field + "," + minWidth + "," + maxWidth + decimal + ")";
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    /**
      * Prints and parses a numeric date-time field with optional padding.
      */
     static final class FractionPrinterParser extends NumberPrinterParser {
         private final boolean decimalPoint;
+        private final BigDecimal minBD;
+        private final BigDecimal rangeBD;
 
         /**
          * Constructor.
@@ -3156,6 +3396,9 @@ public final class DateTimeFormatterBuilder {
         FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
             super(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
             this.decimalPoint = decimalPoint;
+            ValueRange range = field.range();
+            this.minBD = BigDecimal.valueOf(range.getMinimum());
+            this.rangeBD = BigDecimal.valueOf(range.getMaximum()).subtract(minBD).add(BigDecimal.ONE);
         }
 
         /**
@@ -3217,12 +3460,12 @@ public final class DateTimeFormatterBuilder {
             } else {
                 int outputScale = Math.min(Math.max(fraction.scale(), minWidth), maxWidth);
                 fraction = fraction.setScale(outputScale, RoundingMode.FLOOR);
-                String str = fraction.toPlainString().substring(2);
-                str = decimalStyle.convertNumberToI18N(str);
                 if (decimalPoint) {
                     buf.append(decimalStyle.getDecimalSeparator());
                 }
-                buf.append(str);
+                String str = fraction.toPlainString();
+                str = decimalStyle.convertNumberToI18N(str);
+                buf.append(str, 2, str.length());
             }
             return true;
         }
@@ -3284,10 +3527,7 @@ public final class DateTimeFormatterBuilder {
          * @throws DateTimeException if the value cannot be converted to a fraction
          */
         private BigDecimal convertToFraction(long value) {
-            ValueRange range = field.range();
-            range.checkValidValue(value, field);
-            BigDecimal minBD = BigDecimal.valueOf(range.getMinimum());
-            BigDecimal rangeBD = BigDecimal.valueOf(range.getMaximum()).subtract(minBD).add(BigDecimal.ONE);
+            field.range().checkValidValue(value, field);
             BigDecimal valueBD = BigDecimal.valueOf(value).subtract(minBD);
             BigDecimal fraction = valueBD.divide(rangeBD, 9, RoundingMode.FLOOR);
             // stripTrailingZeros bug
@@ -3311,9 +3551,6 @@ public final class DateTimeFormatterBuilder {
          * @throws DateTimeException if the value cannot be converted
          */
         private long convertFromFraction(BigDecimal fraction) {
-            ValueRange range = field.range();
-            BigDecimal minBD = BigDecimal.valueOf(range.getMinimum());
-            BigDecimal rangeBD = BigDecimal.valueOf(range.getMaximum()).subtract(minBD).add(BigDecimal.ONE);
             BigDecimal valueBD = fraction.multiply(rangeBD).setScale(0, RoundingMode.FLOOR).add(minBD);
             return valueBD.longValueExact();
         }
@@ -4087,9 +4324,10 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
-        private static final int STD = 0;
-        private static final int DST = 1;
-        private static final int GENERIC = 2;
+        static final int UNDEFINED = -1;
+        static final int STD = 0;
+        static final int DST = 1;
+        static final int GENERIC = 2;
         private static final Map<String, SoftReference<Map<Locale, String[]>>> cache =
             new ConcurrentHashMap<>();
 
@@ -4196,11 +4434,11 @@ public final class DateTimeFormatterBuilder {
                         nonRegionIds.add(zid);
                         continue;
                     }
-                    tree.add(zid, zid);    // don't convert zid -> metazone
+                    tree.add(zid, zid, UNDEFINED);    // don't convert zid -> metazone
                     zid = ZoneName.toZid(zid, locale);
                     int i = textStyle == TextStyle.FULL ? 1 : 2;
                     for (; i < names.length; i += 2) {
-                        tree.add(names[i], zid);
+                        tree.add(names[i], zid, (i - 1) / 2);
                     }
                 }
 
@@ -4213,7 +4451,7 @@ public final class DateTimeFormatterBuilder {
                         int i = textStyle == TextStyle.FULL ? 1 : 2;
                         for (; i < cidNames.length; i += 2) {
                             if (cidNames[i] != null && !cidNames[i].isEmpty()) {
-                                t.add(cidNames[i], cid);
+                                t.add(cidNames[i], cid, (i - 1) / 2);
                             }
                         }
                     });
@@ -4228,7 +4466,7 @@ public final class DateTimeFormatterBuilder {
                         }
                         int i = textStyle == TextStyle.FULL ? 1 : 2;
                         for (; i < names.length; i += 2) {
-                            tree.add(names[i], zid);
+                            tree.add(names[i], zid, (i - 1) / 2);
                        }
                     }
                 }
@@ -4334,15 +4572,16 @@ public final class DateTimeFormatterBuilder {
             // parse
             PrefixTree tree = getTree(context);
             ParsePosition ppos = new ParsePosition(position);
-            String parsedZoneId = tree.match(text, ppos);
-            if (parsedZoneId == null) {
+            PrefixTree parsedZoneId = tree.match(text, ppos);
+            if (parsedZoneId.value == null) {
                 if (context.charEquals(nextChar, 'Z')) {
                     context.setParsed(ZoneOffset.UTC);
                     return position + 1;
                 }
                 return ~position;
             }
-            context.setParsed(ZoneId.of(parsedZoneId));
+            context.setParsed(ZoneId.of(parsedZoneId.value));
+            context.setParsedZoneNameType(parsedZoneId.type);
             return ppos.getIndex();
         }
 
@@ -4404,14 +4643,16 @@ public final class DateTimeFormatterBuilder {
     static class PrefixTree {
         protected String key;
         protected String value;
+        protected int type;
         protected char c0;    // performance optimization to avoid the
                               // boundary check cost of key.charat(0)
         protected PrefixTree child;
         protected PrefixTree sibling;
 
-        private PrefixTree(String k, String v, PrefixTree child) {
+        private PrefixTree(String k, String v, int type, PrefixTree child) {
             this.key = k;
             this.value = v;
+            this.type = type;
             this.child = child;
             if (k.isEmpty()) {
                 c0 = 0xffff;
@@ -4427,13 +4668,10 @@ public final class DateTimeFormatterBuilder {
          * @return the tree, not null
          */
         public static PrefixTree newTree(DateTimeParseContext context) {
-            //if (!context.isStrict()) {
-            //    return new LENIENT("", null, null);
-            //}
             if (context.isCaseSensitive()) {
-                return new PrefixTree("", null, null);
+                return new PrefixTree("", null, ZoneTextPrinterParser.UNDEFINED, null);
             }
-            return new CI("", null, null);
+            return new CI("", null, ZoneTextPrinterParser.UNDEFINED, null);
         }
 
         /**
@@ -4446,7 +4684,7 @@ public final class DateTimeFormatterBuilder {
         public static  PrefixTree newTree(Set<String> keys, DateTimeParseContext context) {
             PrefixTree tree = newTree(context);
             for (String k : keys) {
-                tree.add0(k, k);
+                tree.add0(k, k, ZoneTextPrinterParser.UNDEFINED);
             }
             return tree;
         }
@@ -4455,7 +4693,7 @@ public final class DateTimeFormatterBuilder {
          * Clone a copy of this tree
          */
         public PrefixTree copyTree() {
-            PrefixTree copy = new PrefixTree(key, value, null);
+            PrefixTree copy = new PrefixTree(key, value, type, null);
             if (child != null) {
                 copy.child = child.copyTree();
             }
@@ -4473,11 +4711,11 @@ public final class DateTimeFormatterBuilder {
          * @param v  the value, not null
          * @return  true if the pair is added successfully
          */
-        public boolean add(String k, String v) {
-            return add0(k, v);
+        public boolean add(String k, String v, int t) {
+            return add0(k, v, t);
         }
 
-        private boolean add0(String k, String v) {
+        private boolean add0(String k, String v, int t) {
             k = toKey(k);
             int prefixLen = prefixLength(k);
             if (prefixLen == key.length()) {
@@ -4486,12 +4724,12 @@ public final class DateTimeFormatterBuilder {
                     PrefixTree c = child;
                     while (c != null) {
                         if (isEqual(c.c0, subKey.charAt(0))) {
-                            return c.add0(subKey, v);
+                            return c.add0(subKey, v, t);
                         }
                         c = c.sibling;
                     }
                     // add the node as the child of the current node
-                    c = newNode(subKey, v, null);
+                    c = newNode(subKey, v, t, null);
                     c.sibling = child;
                     child = c;
                     return true;
@@ -4501,18 +4739,20 @@ public final class DateTimeFormatterBuilder {
                 //    return false;
                 //}
                 value = v;
+                type = t;
                 return true;
             }
             // split the existing node
-            PrefixTree n1 = newNode(key.substring(prefixLen), value, child);
+            PrefixTree n1 = newNode(key.substring(prefixLen), value, type, child);
             key = k.substring(0, prefixLen);
             child = n1;
             if (prefixLen < k.length()) {
-                PrefixTree n2 = newNode(k.substring(prefixLen), v, null);
+                PrefixTree n2 = newNode(k.substring(prefixLen), v, t, null);
                 child.sibling = n2;
                 value = null;
             } else {
                 value = v;
+                type = t;
             }
             return true;
         }
@@ -4523,9 +4763,9 @@ public final class DateTimeFormatterBuilder {
          * @param text  the input text to parse, not null
          * @param off  the offset position to start parsing at
          * @param end  the end position to stop parsing
-         * @return the resulting string, or null if no match found.
+         * @return the resulting tree, or null if no match found.
          */
-        public String match(CharSequence text, int off, int end) {
+        public PrefixTree match(CharSequence text, int off, int end) {
             if (!prefixOf(text, off, end)){
                 return null;
             }
@@ -4533,16 +4773,16 @@ public final class DateTimeFormatterBuilder {
                 PrefixTree c = child;
                 do {
                     if (isEqual(c.c0, text.charAt(off))) {
-                        String found = c.match(text, off, end);
+                        PrefixTree found = c.match(text, off, end);
                         if (found != null) {
                             return found;
                         }
-                        return value;
+                        return this;
                     }
                     c = c.sibling;
                 } while (c != null);
             }
-            return value;
+            return this;
         }
 
         /**
@@ -4552,9 +4792,9 @@ public final class DateTimeFormatterBuilder {
          * @param pos  the position to start parsing at, from 0 to the text
          *  length. Upon return, position will be updated to the new parse
          *  position, or unchanged, if no match found.
-         * @return the resulting string, or null if no match found.
+         * @return the resulting tree, or null if no match found.
          */
-        public String match(CharSequence text, ParsePosition pos) {
+        public PrefixTree match(CharSequence text, ParsePosition pos) {
             int off = pos.getIndex();
             int end = text.length();
             if (!prefixOf(text, off, end)){
@@ -4566,7 +4806,7 @@ public final class DateTimeFormatterBuilder {
                 do {
                     if (isEqual(c.c0, text.charAt(off))) {
                         pos.setIndex(off);
-                        String found = c.match(text, pos);
+                        PrefixTree found = c.match(text, pos);
                         if (found != null) {
                             return found;
                         }
@@ -4576,15 +4816,15 @@ public final class DateTimeFormatterBuilder {
                 } while (c != null);
             }
             pos.setIndex(off);
-            return value;
+            return this;
         }
 
         protected String toKey(String k) {
             return k;
         }
 
-        protected PrefixTree newNode(String k, String v, PrefixTree child) {
-            return new PrefixTree(k, v, child);
+        protected PrefixTree newNode(String k, String v, int t, PrefixTree child) {
+            return new PrefixTree(k, v, t, child);
         }
 
         protected boolean isEqual(char c1, char c2) {
@@ -4624,13 +4864,13 @@ public final class DateTimeFormatterBuilder {
          */
         private static class CI extends PrefixTree {
 
-            private CI(String k, String v, PrefixTree child) {
-                super(k, v, child);
+            private CI(String k, String v, int t, PrefixTree child) {
+                super(k, v, t, child);
             }
 
             @Override
-            protected CI newNode(String k, String v, PrefixTree child) {
-                return new CI(k, v, child);
+            protected CI newNode(String k, String v, int t, PrefixTree child) {
+                return new CI(k, v, t, child);
             }
 
             @Override
@@ -4651,86 +4891,6 @@ public final class DateTimeFormatterBuilder {
                     }
                 }
                 return true;
-            }
-        }
-
-        /**
-         * Lenient prefix tree. Case insensitive and ignores characters
-         * like space, underscore and slash.
-         */
-        private static class LENIENT extends CI {
-
-            private LENIENT(String k, String v, PrefixTree child) {
-                super(k, v, child);
-            }
-
-            @Override
-            protected CI newNode(String k, String v, PrefixTree child) {
-                return new LENIENT(k, v, child);
-            }
-
-            private boolean isLenientChar(char c) {
-                return c == ' ' || c == '_' || c == '/';
-            }
-
-            protected String toKey(String k) {
-                for (int i = 0; i < k.length(); i++) {
-                    if (isLenientChar(k.charAt(i))) {
-                        StringBuilder sb = new StringBuilder(k.length());
-                        sb.append(k, 0, i);
-                        i++;
-                        while (i < k.length()) {
-                            if (!isLenientChar(k.charAt(i))) {
-                                sb.append(k.charAt(i));
-                            }
-                            i++;
-                        }
-                        return sb.toString();
-                    }
-                }
-                return k;
-            }
-
-            @Override
-            public String match(CharSequence text, ParsePosition pos) {
-                int off = pos.getIndex();
-                int end = text.length();
-                int len = key.length();
-                int koff = 0;
-                while (koff < len && off < end) {
-                    if (isLenientChar(text.charAt(off))) {
-                        off++;
-                        continue;
-                    }
-                    if (!isEqual(key.charAt(koff++), text.charAt(off++))) {
-                        return null;
-                    }
-                }
-                if (koff != len) {
-                    return null;
-                }
-                if (child != null && off != end) {
-                    int off0 = off;
-                    while (off0 < end && isLenientChar(text.charAt(off0))) {
-                        off0++;
-                    }
-                    if (off0 < end) {
-                        PrefixTree c = child;
-                        do {
-                            if (isEqual(c.c0, text.charAt(off0))) {
-                                pos.setIndex(off0);
-                                String found = c.match(text, pos);
-                                if (found != null) {
-                                    return found;
-                                }
-                                break;
-                            }
-                            c = c.sibling;
-                        } while (c != null);
-                    }
-                }
-                pos.setIndex(off);
-                return value;
             }
         }
     }

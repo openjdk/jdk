@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,12 @@ public class OldSig {
 
         String ksArgs = "-keystore " + src.resolve("JarSigning.keystore")
                 + " -storepass bbbbbb";
+        String propArgs = " -J-Djava.security.properties="
+                + src.resolve("OldSig.props");
         SecurityTools.jarsigner(ksArgs + " -digestalg SHA1 B.jar c");
         SecurityTools.jarsigner("-verify B.jar").shouldHaveExitValue(0);
-        SecurityTools.jarsigner("-verify " + ksArgs + " -verbose B.jar c")
+        SecurityTools.jarsigner("-verify " + ksArgs + propArgs
+                + " -verbose B.jar c")
                 .stdoutShouldMatch("^smk .* B[.]class$").shouldHaveExitValue(0);
     }
 }

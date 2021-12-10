@@ -218,7 +218,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   const Register card_addr = tmp1;
 
   __ mov_address(tmp2, (address)ct->byte_map_base());
-  __ add(card_addr, tmp2, AsmOperand(store_addr, lsr, CardTable::card_shift));
+  __ add(card_addr, tmp2, AsmOperand(store_addr, lsr, CardTable::card_shift()));
 
   __ ldrb(tmp2, Address(card_addr));
   __ cmp(tmp2, (int)G1CardTable::g1_young_card_val());
@@ -452,7 +452,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   // explicitly specify that 'cardtable' has a relocInfo::none
   // type.
   __ lea(r_card_base_1, cardtable);
-  __ add(r_card_addr_0, r_card_base_1, AsmOperand(r_obj_0, lsr, CardTable::card_shift));
+  __ add(r_card_addr_0, r_card_base_1, AsmOperand(r_obj_0, lsr, CardTable::card_shift()));
 
   // first quick check without barrier
   __ ldrb(r_tmp2, Address(r_card_addr_0));

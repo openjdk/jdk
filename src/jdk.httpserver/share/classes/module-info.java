@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,21 @@
  */
 
 /**
- * Defines the JDK-specific HTTP server API.
+ * Defines the JDK-specific HTTP server API, and provides the jwebserver tool
+ * for running a minimal HTTP server.
+ *
+ * <p>The {@link com.sun.net.httpserver} package defines a high-level API for
+ * building servers that support HTTP and HTTPS. The SimpleFileServer class
+ * implements a simple HTTP-only file server intended for testing, development
+ * and debugging purposes. A default implementation is provided via the
+ * {@code jwebserver} tool and the main entry point of the module, which can
+ * also be invoked with {@code java -m jdk.httpserver}.
+ *
+ * <p>The {@link com.sun.net.httpserver.spi} package specifies a Service Provider
+ * Interface (SPI) for locating HTTP server implementations based on the
+ * {@code com.sun.net.httpserver} API.
+ *
+ * @toolGuide jwebserver
  *
  * @uses com.sun.net.httpserver.spi.HttpServerProvider
  *

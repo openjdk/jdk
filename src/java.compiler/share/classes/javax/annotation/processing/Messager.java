@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ import javax.lang.model.element.*;
  * javax.tools.Diagnostic.Kind#ERROR error kind} will {@linkplain
  * RoundEnvironment#errorRaised raise an error}.
  *
- * <p>Note that the messages &quot;printed&quot; by methods in this
+ * @apiNote
+ * The messages &quot;printed&quot; by methods in this
  * interface may or may not appear as textual output to a location
  * like {@link System#out} or {@link System#err}.  Implementations may
  * choose to present this information in a different fashion, such as
@@ -97,4 +98,90 @@ public interface Messager {
                       Element e,
                       AnnotationMirror a,
                       AnnotationValue v);
+    /**
+     * Prints an error.
+     *
+     * @implSpec
+     * The default implementation is equivalent to {@code
+     * printMessage(Diagnostic.Kind.ERROR, msg)}.
+     *
+     * @param msg  the message, or an empty string if none
+     * @since 18
+     */
+    default void printError(CharSequence msg) {
+        printMessage(Diagnostic.Kind.ERROR, msg);
+    }
+
+    /**
+     * Prints an error at the location of the element.
+     *
+     * @implSpec
+     * The default implementation is equivalent to {@code
+     * printMessage(Diagnostic.Kind.ERROR, msg, e)}.
+     *
+     * @param msg  the message, or an empty string if none
+     * @param e    the element to use as a position hint
+     * @since 18
+     */
+    default void printError(CharSequence msg, Element e) {
+        printMessage(Diagnostic.Kind.ERROR, msg, e);
+    }
+
+    /**
+     * Prints a warning.
+     *
+     * @implSpec
+     * The default implementation is equivalent to {@code
+     * printMessage(Diagnostic.Kind.WARNING, msg)}.
+     *
+     * @param msg  the message, or an empty string if none
+     * @since 18
+     */
+    default void printWarning(CharSequence msg) {
+        printMessage(Diagnostic.Kind.WARNING, msg);
+    }
+
+    /**
+     * Prints a warning at the location of the element.
+     *
+     * @implSpec
+     * The default implementation is equivalent to {@code
+     * printMessage(Diagnostic.Kind.WARNING, msg, e)}.
+     *
+     * @param msg  the message, or an empty string if none
+     * @param e    the element to use as a position hint
+     * @since 18
+     */
+    default void printWarning(CharSequence msg, Element e) {
+        printMessage(Diagnostic.Kind.WARNING, msg, e);
+    }
+
+    /**
+     * Prints a note.
+     *
+     * @implSpec
+     * The default implementation is equivalent to {@code
+     * printMessage(Diagnostic.Kind.NOTE, msg)}.
+     *
+     * @param msg  the message, or an empty string if none
+     * @since 18
+     */
+    default void printNote(CharSequence msg) {
+        printMessage(Diagnostic.Kind.NOTE, msg);
+    }
+
+    /**
+     * Prints a note at the location of the element.
+     *
+     * @implSpec
+     * The default implementation is equivalent to {@code
+     * printMessage(Diagnostic.Kind.NOTE, msg, e)}.
+     *
+     * @param msg  the message, or an empty string if none
+     * @param e    the element to use as a position hint
+     * @since 18
+     */
+    default void printNote(CharSequence msg, Element e) {
+        printMessage(Diagnostic.Kind.NOTE, msg, e);
+    }
 }

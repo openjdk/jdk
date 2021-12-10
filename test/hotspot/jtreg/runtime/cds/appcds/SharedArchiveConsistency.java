@@ -58,6 +58,8 @@ public class SharedArchiveConsistency {
 
     public static int num_regions = shared_region_name.length;
     public static String[] matchMessages = {
+        "UseSharedSpaces: Header checksum verification failed.",
+        "The shared archive file has an incorrect header size.",
         "Unable to use shared archive",
         "An error has occurred while processing the shared archive file.",
         "Checksum verification failed.",
@@ -110,7 +112,8 @@ public class SharedArchiveConsistency {
         // test, should pass
         System.out.println("1. Normal, should pass but may fail\n");
 
-        String[] execArgs = {"-Xlog:cds=debug", "-cp", jarFile, "Hello"};
+        // disable VerifySharedSpaces, it may be turned on by jtreg args
+        String[] execArgs = {"-Xlog:cds=debug", "-XX:-VerifySharedSpaces", "-cp", jarFile, "Hello"};
         // tests that corrupt contents of the archive need to run with
         // VerifySharedSpaces enabled to detect inconsistencies
         String[] verifyExecArgs = {"-Xlog:cds", "-XX:+VerifySharedSpaces", "-cp", jarFile, "Hello"};
@@ -158,7 +161,7 @@ public class SharedArchiveConsistency {
         System.out.println("\n2c. Corrupt _magic, should fail\n");
         String modMagic = startNewArchive("modify-magic");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modMagic);
-        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetMagic, -1);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetMagic(), -1);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has a bad magic number");
         output.shouldNotContain("Checksum verification failed");
@@ -170,9 +173,20 @@ public class SharedArchiveConsistency {
         System.out.println("\n2d. Corrupt _version, should fail\n");
         String modVersion = startNewArchive("modify-version");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion);
-        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion, 0x00000000);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0x3FFFFFFF);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has the wrong version");
+        output.shouldNotContain("Checksum verification failed");
+        if (shareAuto) {
+            output.shouldContain(HELLO_WORLD);
+        }
+
+        System.out.println("\n2e. Corrupt _version, should fail\n");
+        String modVersion2 = startNewArchive("modify-version2");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion2);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0x00000000);
+        output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
+        output.shouldContain("Cannot handle shared archive file version 0. Must be at least 12");
         output.shouldNotContain("Checksum verification failed");
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);
@@ -213,10 +227,22 @@ public class SharedArchiveConsistency {
         CDSArchiveUtils.deleteBytesAtRandomPositionAfterHeader(orgJsaFile, deleteBytes, 4096 /*bytes*/);
         testAndCheck(verifyExecArgs);
 
+        // modify contents in random area
         System.out.println("\n7. modify Content in random areas, should fail\n");
         String randomAreas = startNewArchive("random-areas");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, randomAreas);
         CDSArchiveUtils.modifyRegionContentRandomly(copiedJsa);
+        testAndCheck(verifyExecArgs);
+
+        // modify _base_archive_name_offet to non-zero
+        System.out.println("\n8. modify _base_archive_name_offset to non-zero\n");
+        String baseArchiveNameOffsetName = startNewArchive("base-arhive-path-offset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, baseArchiveNameOffsetName);
+        int baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
+        System.out.println("    baseArchiveNameOffset = " + baseArchiveNameOffset);
+        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetBaseArchiveNameOffset(), 1024);
+        baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
+        System.out.println("new baseArchiveNameOffset = " + baseArchiveNameOffset);
         testAndCheck(verifyExecArgs);
     }
 }

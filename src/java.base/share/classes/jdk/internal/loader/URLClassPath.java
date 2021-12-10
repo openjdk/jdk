@@ -60,6 +60,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.jar.JarFile;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.jar.JarEntry;
 import java.util.jar.Manifest;
@@ -90,6 +91,7 @@ public class URLClassPath {
     private static final boolean DISABLE_ACC_CHECKING;
     private static final boolean DISABLE_CP_URL_CHECK;
     private static final boolean DEBUG_CP_URL_CHECK;
+    private static final boolean ENABLE_JAR_INDEX;
 
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
@@ -109,6 +111,9 @@ public class URLClassPath {
         // the check is not disabled).
         p = props.getProperty("jdk.net.URLClassPath.showIgnoredClassPathEntries");
         DEBUG_CP_URL_CHECK = p != null ? p.equals("true") || p.isEmpty() : false;
+
+        p = props.getProperty("jdk.net.URLClassPath.enableJarIndex");
+        ENABLE_JAR_INDEX = p != null ? p.equals("true") || p.isEmpty() : false;
     }
 
     /* The original search path of URLs. */
@@ -556,11 +561,11 @@ public class URLClassPath {
                     // fallback to checkRead/checkConnect for pre 1.2
                     // security managers
                     if ((perm instanceof java.io.FilePermission) &&
-                        perm.getActions().indexOf("read") != -1) {
+                        perm.getActions().contains("read")) {
                         security.checkRead(perm.getName());
                     } else if ((perm instanceof
                         java.net.SocketPermission) &&
-                        perm.getActions().indexOf("connect") != -1) {
+                        perm.getActions().contains("connect")) {
                         URL locUrl = url;
                         if (urlConnection instanceof JarURLConnection) {
                             locUrl = ((JarURLConnection)urlConnection).getJarFileURL();
@@ -593,7 +598,7 @@ public class URLClassPath {
         /*
          * Returns the base URL for this Loader.
          */
-        URL getBaseURL() {
+        final URL getBaseURL() {
             return base;
         }
 
@@ -763,8 +768,10 @@ public class URLClassPath {
                                     System.err.println("Opening " + csu);
                                     Thread.dumpStack();
                                 }
-
                                 jar = getJarFile(csu);
+                                if (!ENABLE_JAR_INDEX) {
+                                    return null;
+                                }
                                 index = JarIndex.getJarIndex(jar);
                                 if (index != null) {
                                     String[] jarfiles = index.getJarFiles();
@@ -869,6 +876,7 @@ public class URLClassPath {
             }
 
             return new Resource() {
+                private Exception dataError = null;
                 public String getName() { return name; }
                 public URL getURL() { return url; }
                 public URL getCodeSourceURL() { return csu; }
@@ -884,6 +892,18 @@ public class URLClassPath {
                     { return entry.getCertificates(); };
                 public CodeSigner[] getCodeSigners()
                     { return entry.getCodeSigners(); };
+                public Exception getDataError()
+                    { return dataError; }
+                public byte[] getBytes() throws IOException {
+                    byte[] bytes = super.getBytes();
+                    CRC32 crc32 = new CRC32();
+                    crc32.update(bytes);
+                    if (crc32.getValue() != entry.getCrc()) {
+                        dataError = new IOException(
+                                "CRC error while extracting entry from JAR file");
+                    }
+                    return bytes;
+                }
             };
         }
 
@@ -1193,7 +1213,8 @@ public class URLClassPath {
      */
     private static class FileLoader extends Loader {
         /* Canonicalized File */
-        private File dir;
+        private final File dir;
+        private final URL normalizedBase;
 
         /*
          * Creates a new FileLoader for the specified URL with a file protocol.
@@ -1203,6 +1224,7 @@ public class URLClassPath {
             String path = url.getFile().replace('/', File.separatorChar);
             path = ParseUtil.decode(path);
             dir = (new File(path)).getCanonicalFile();
+            normalizedBase = new URL(getBaseURL(), ".");
         }
 
         /*
@@ -1221,7 +1243,6 @@ public class URLClassPath {
         Resource getResource(final String name, boolean check) {
             final URL url;
             try {
-                URL normalizedBase = new URL(getBaseURL(), ".");
                 url = new URL(getBaseURL(), ParseUtil.encodePath(name, false));
 
                 if (url.getFile().startsWith(normalizedBase.getFile()) == false) {
@@ -1233,7 +1254,7 @@ public class URLClassPath {
                     URLClassPath.check(url);
 
                 final File file;
-                if (name.indexOf("..") != -1) {
+                if (name.contains("..")) {
                     file = (new File(dir, name.replace('/', File.separatorChar)))
                           .getCanonicalFile();
                     if ( !((file.getPath()).startsWith(dir.getPath())) ) {

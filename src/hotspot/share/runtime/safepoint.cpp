@@ -37,7 +37,8 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
@@ -167,6 +168,14 @@ void SafepointSynchronize::decrement_waiting_to_block() {
 
 bool SafepointSynchronize::thread_not_running(ThreadSafepointState *cur_state) {
   if (!cur_state->is_running()) {
+    // Robustness: asserted in the caller, but handle/tolerate it for release bits.
+    LogTarget(Error, safepoint) lt;
+    if (lt.is_enabled()) {
+      ResourceMark rm;
+      LogStream ls(lt);
+      ls.print("Illegal initial state detected: ");
+      cur_state->print_on(&ls);
+    }
     return true;
   }
   cur_state->examine_state_of_thread(SafepointSynchronize::safepoint_counter());
@@ -515,7 +524,7 @@ public:
   }
 };
 
-class ParallelSPCleanupTask : public AbstractGangTask {
+class ParallelSPCleanupTask : public WorkerTask {
 private:
   SubTasksDone _subtasks;
   uint _num_workers;
@@ -539,7 +548,7 @@ private:
 
 public:
   ParallelSPCleanupTask(uint num_workers) :
-    AbstractGangTask("Parallel Safepoint Cleanup"),
+    WorkerTask("Parallel Safepoint Cleanup"),
     _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
     _num_workers(num_workers),
     _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&
@@ -602,7 +611,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
 
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "heap not initialized yet?");
-  WorkGang* cleanup_workers = heap->safepoint_workers();
+  WorkerThreads* cleanup_workers = heap->safepoint_workers();
   if (cleanup_workers != NULL) {
     // Parallel cleanup using GC provided thread pool.
     uint num_cleanup_workers = cleanup_workers->active_workers();
@@ -705,7 +714,6 @@ void SafepointSynchronize::block(JavaThread *thread) {
   }
 
   JavaThreadState state = thread->thread_state();
-  assert(is_a_block_safe_state(state), "Illegal threadstate encountered: %d", state);
   thread->frame_anchor()->make_walkable(thread);
 
   uint64_t safepoint_id = SafepointSynchronize::safepoint_counter();

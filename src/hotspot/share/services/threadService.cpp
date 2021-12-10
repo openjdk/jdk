@@ -618,18 +618,14 @@ void StackFrameInfo::print_on(outputStream* st) const {
 class InflatedMonitorsClosure: public MonitorClosure {
 private:
   ThreadStackTrace* _stack_trace;
-  Thread* _thread;
 public:
-  InflatedMonitorsClosure(Thread* t, ThreadStackTrace* st) {
-    _thread = t;
+  InflatedMonitorsClosure(ThreadStackTrace* st) {
     _stack_trace = st;
   }
   void do_monitor(ObjectMonitor* mid) {
-    if (mid->owner() == _thread) {
-      oop object = mid->object();
-      if (!_stack_trace->is_owned_monitor_on_stack(object)) {
-        _stack_trace->add_jni_locked_monitor(object);
-      }
+    oop object = mid->object();
+    if (!_stack_trace->is_owned_monitor_on_stack(object)) {
+      _stack_trace->add_jni_locked_monitor(object);
     }
   }
 };
@@ -688,8 +684,8 @@ void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth) {
   if (_with_locked_monitors) {
     // Iterate inflated monitors and find monitors locked by this thread
     // not found in the stack
-    InflatedMonitorsClosure imc(_thread, this);
-    ObjectSynchronizer::monitors_iterate(&imc);
+    InflatedMonitorsClosure imc(this);
+    ObjectSynchronizer::monitors_iterate(&imc, _thread);
   }
 }
 

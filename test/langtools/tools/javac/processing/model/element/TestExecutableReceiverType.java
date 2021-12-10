@@ -36,7 +36,6 @@ import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
-import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * Verify that proper type objects are returned from ExecutableElement.getReceiverType
@@ -50,7 +49,7 @@ public class TestExecutableReceiverType extends JavacTestingAbstractProcessor {
             count += testType(elements.getTypeElement("MethodHost.Nested"));
 
             if (count == 0) {
-                messager.printMessage(ERROR, "No executables visited.");
+                messager.printError("No executables visited.");
             }
         }
         return true;
@@ -75,10 +74,9 @@ public class TestExecutableReceiverType extends JavacTestingAbstractProcessor {
         TypeKind actualKind = executable.getReceiverType().getKind();
 
         if (actualKind != expectedKind) {
-            messager.printMessage(ERROR,
-                                  String.format("Unexpected TypeKind on receiver of %s:" +
-                                                " expected %s\t got %s%n",
-                                                executable, expectedKind, actualKind));
+            messager.printError(String.format("Unexpected TypeKind on receiver of %s:" +
+                                              " expected %s\t got %s%n",
+                                              executable, expectedKind, actualKind));
         }
 
         // Get kind from the type of the executable directly
@@ -90,10 +88,9 @@ public class TestExecutableReceiverType extends JavacTestingAbstractProcessor {
         }.visit(executable.asType());
 
         if (kindFromType != expectedKind) {
-            messager.printMessage(ERROR,
-                                  String.format("Unexpected TypeKind on executable's asType() of %s:" +
-                                                " expected %s\t got %s%n",
-                                                executable, expectedKind, kindFromType));
+            messager.printError(String.format("Unexpected TypeKind on executable's asType() of %s:" +
+                                              " expected %s\t got %s%n",
+                                              executable, expectedKind, kindFromType));
         }
         return 1;
     }

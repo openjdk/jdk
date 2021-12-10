@@ -77,16 +77,6 @@ class ThreadStateTransition : public StackObj {
  protected:
   JavaThread* _thread;
 
- private:
-  static inline void transition_and_process(JavaThread *thread, JavaThreadState to, bool check_asyncs) {
-    // Check NoSafepointVerifier. This also clears unhandled oops if CheckUnhandledOops is used.
-    thread->check_possible_safepoint();
-
-    thread->set_thread_state_fence(_thread_in_vm);
-    SafepointMechanism::process_if_requested_with_exit_check(thread, check_asyncs);
-    thread->set_thread_state(to);
-  }
-
  public:
   ThreadStateTransition(JavaThread *thread) : _thread(thread) {
     assert(thread != NULL, "must be active Java thread");
@@ -106,13 +96,17 @@ class ThreadStateTransition : public StackObj {
     assert(thread->thread_state() == _thread_in_native, "coming from wrong thread state");
     assert(to == _thread_in_vm || to == _thread_in_Java, "invalid transition");
     assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native transition");
-    transition_and_process(thread, to, to != _thread_in_Java ? false : check_asyncs);
+
+    thread->set_thread_state_fence(_thread_in_vm);
+    SafepointMechanism::process_if_requested_with_exit_check(thread, to != _thread_in_Java ? false : check_asyncs);
+    thread->set_thread_state(to);
   }
 
   static inline void transition_from_vm(JavaThread *thread, JavaThreadState to, bool check_asyncs = true) {
     assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
     if (to == _thread_in_Java) {
-      transition_and_process(thread, _thread_in_Java, check_asyncs);
+      SafepointMechanism::process_if_requested_with_exit_check(thread, check_asyncs);
+      thread->set_thread_state(to);
     } else {
       assert(to == _thread_in_native || to == _thread_blocked, "invalid transition");
       // Check NoSafepointVerifier. This also clears unhandled oops if CheckUnhandledOops is used.
@@ -234,15 +228,13 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
   }
   ~ThreadBlockInVMPreprocess() {
     assert(_thread->thread_state() == _thread_blocked, "coming from wrong thread state");
-    // Change to transition state and ensure it is seen by the VM thread.
-    _thread->set_thread_state_fence(_thread_blocked_trans);
+    // Change back to _thread_in_vm and ensure it is seen by the VM thread.
+    _thread->set_thread_state_fence(_thread_in_vm);
 
     if (SafepointMechanism::should_process(_thread, _allow_suspend)) {
       _pr(_thread);
       SafepointMechanism::process_if_requested(_thread, _allow_suspend);
     }
-
-    _thread->set_thread_state(_thread_in_vm);
   }
 
   static void emptyOp(JavaThread* current) {}
@@ -306,6 +298,7 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY(result_type, header)                               \
   result_type header {                                               \
+    assert(current == JavaThread::current(), "Must be");             \
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
     ThreadInVMfromJava __tiv(current);                               \
     VM_ENTRY_BASE(result_type, header, current)                      \
@@ -333,6 +326,7 @@ class VMNativeEntryWrapper {
 
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \
   result_type header {                                               \
+    assert(current == JavaThread::current(), "Must be");             \
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
     ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
     VM_ENTRY_BASE(result_type, header, current)                      \
@@ -342,17 +336,20 @@ class VMNativeEntryWrapper {
 // to get back into Java from the VM
 #define JRT_BLOCK_ENTRY(result_type, header)                         \
   result_type header {                                               \
+    assert(current == JavaThread::current(), "Must be");             \
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
     HandleMarkCleaner __hm(current);
 
 #define JRT_BLOCK                                                    \
     {                                                                \
+    assert(current == JavaThread::current(), "Must be");             \
     ThreadInVMfromJava __tiv(current);                               \
     JavaThread* THREAD = current; /* For exception macros. */        \
     debug_only(VMEntryWrapper __vew;)
 
 #define JRT_BLOCK_NO_ASYNC                                           \
     {                                                                \
+    assert(current == JavaThread::current(), "Must be");             \
     ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
     JavaThread* THREAD = current; /* For exception macros. */        \
     debug_only(VMEntryWrapper __vew;)

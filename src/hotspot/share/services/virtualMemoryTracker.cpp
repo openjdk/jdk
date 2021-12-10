@@ -671,20 +671,3 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
    }
   return true;
 }
-
-// Transition virtual memory tracking level.
-bool VirtualMemoryTracker::transition(NMT_TrackingLevel from, NMT_TrackingLevel to) {
-  assert (from != NMT_minimal, "cannot convert from the lowest tracking level to anything");
-  if (to == NMT_minimal) {
-    assert(from == NMT_summary || from == NMT_detail, "Just check");
-    // Clean up virtual memory tracking data structures.
-    ThreadCritical tc;
-    // Check for potential race with other thread calling transition
-    if (_reserved_regions != NULL) {
-      delete _reserved_regions;
-      _reserved_regions = NULL;
-    }
-  }
-
-  return true;
-}

@@ -237,7 +237,6 @@ void report_vm_error(const char* file, int line, const char* error_msg)
 
 
 static void print_error_for_unit_test(const char* message, const char* detail_fmt, va_list detail_args) {
-#ifdef ASSERT
   if (ExecutingUnitTests) {
     char detail_msg[256];
     if (detail_fmt != NULL) {
@@ -262,7 +261,6 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
       va_end(detail_args_copy);
     }
   }
-#endif // ASSERT
 }
 
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
@@ -366,7 +364,7 @@ void report_java_out_of_memory(const char* message) {
 
     if (ExitOnOutOfMemoryError) {
       tty->print_cr("Terminating due to java.lang.OutOfMemoryError: %s", message);
-      os::exit(3);
+      os::_exit(3); // quick exit with no cleanup hooks run
     }
   }
 }
@@ -511,7 +509,6 @@ extern "C" JNIEXPORT void ps() { // print stack
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
-    f.pd_ps();
 #endif
   }
 }

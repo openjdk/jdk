@@ -680,7 +680,7 @@ void DefNewGeneration::restore_preserved_marks() {
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
-  log_debug(gc, promotion)("Promotion failure size = %d) ", old->size());
+  log_debug(gc, promotion)("Promotion failure size = " SIZE_FORMAT ") ", old->size());
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
@@ -877,11 +877,6 @@ void DefNewGeneration::record_spaces_top() {
   to()->set_top_for_allocations();
   from()->set_top_for_allocations();
 }
-
-void DefNewGeneration::ref_processor_init() {
-  Generation::ref_processor_init();
-}
-
 
 void DefNewGeneration::update_counters() {
   if (UsePerfData) {

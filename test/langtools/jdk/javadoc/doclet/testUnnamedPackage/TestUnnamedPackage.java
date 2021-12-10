@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug      4904075 4774450 5015144 8043698 8196201 8203791 8184205 8260223
+ *           8256208
  * @summary  Reference unnamed package as "Unnamed", not empty string.
  *           Generate a package summary for the unnamed package.
  * @library  ../../lib
@@ -48,6 +49,12 @@ public class TestUnnamedPackage extends JavadocTester {
                 testSrc("src1/C.java"));
         checkExit(Exit.OK);
 
+        checkOutput("index.html", true,
+                """
+                    <script type="text/javascript">window.location.replace('package-summary.html')</script>
+                    <noscript>
+                    <meta http-equiv="Refresh" content="0;package-summary.html">
+                    </noscript>""");
         checkOutput("package-summary.html", true,
                 """
                     <h1 title="Unnamed Package" class="title">Unnamed Package</h1>""",
@@ -155,5 +162,26 @@ public class TestUnnamedPackage extends JavadocTester {
                     Constructors in <a href="../package-summary.html">Unnamed Package</a> with param\
                     eters of type <a href="../A.html" title="class in Unnamed Package">A</a>""");
 
+    }
+
+    @Test
+    public void testMixed() {
+        javadoc("-d", "out-mixed",
+                "-sourcepath", testSrc("src1"),
+                testSrc("src1/C.java"),
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("index.html", true,
+                """
+                    <div class="col-first even-row-color all-packages-table all-packages-table-tab1"\
+                    ><a href="package-summary.html">Unnamed Package</a></div>
+                    <div class="col-last even-row-color all-packages-table all-packages-table-tab1">
+                    <div class="block">This is a package comment for the unnamed package.</div>
+                    </div>
+                    <div class="col-first odd-row-color all-packages-table all-packages-table-tab1">\
+                    <a href="pkg/package-summary.html">pkg</a></div>
+                    <div class="col-last odd-row-color all-packages-table all-packages-table-tab1">
+                    <div class="block">This is a package comment for package pkg.</div>""");
     }
 }

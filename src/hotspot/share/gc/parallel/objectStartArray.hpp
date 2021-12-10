@@ -46,17 +46,34 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   jbyte*          _raw_base;
   jbyte*          _offset_base;
 
+  static uint _card_shift;
+  static uint _card_size;
+  static uint _card_size_in_words;
+
  public:
 
   enum BlockValueConstants {
     clean_block                  = -1
   };
 
-  enum BlockSizeConstants {
-    block_shift                  = 9,
-    block_size                   = 1 << block_shift,
-    block_size_in_words          = block_size / sizeof(HeapWord)
-  };
+  // Maximum size an offset table entry can cover. This maximum is derived from that
+  // we need an extra bit for possible offsets in the byte for backskip values, leaving 2^7 possible offsets.
+  // Minimum object alignment is 8 bytes (2^3), so we can at most represent 2^10 offsets within a BOT value.
+  static const uint MaxBlockSize = 1024;
+
+  // Initialize block size based on card size
+  static void initialize_block_size(uint card_shift);
+
+  static uint card_shift() {
+    return _card_shift;
+  }
+
+  static uint card_size() {
+    return _card_size;
+  }
+  static uint card_size_in_words() {
+    return _card_size_in_words;
+  }
 
  protected:
 
@@ -64,7 +81,7 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   jbyte* block_for_addr(void* p) const {
     assert(_covered_region.contains(p),
            "out of bounds access to object start array");
-    jbyte* result = &_offset_base[uintptr_t(p) >> block_shift];
+    jbyte* result = &_offset_base[uintptr_t(p) >> _card_shift];
     assert(_blocks_region.contains(result),
            "out of bounds result in byte_for");
     return result;
@@ -75,7 +92,7 @@ class ObjectStartArray : public CHeapObj<mtGC> {
     assert(_blocks_region.contains(p),
            "out of bounds access to object start array");
     size_t delta = pointer_delta(p, _offset_base, sizeof(jbyte));
-    HeapWord* result = (HeapWord*) (delta << block_shift);
+    HeapWord* result = (HeapWord*) (delta << _card_shift);
     assert(_covered_region.contains(result),
            "out of bounds accessor from card marking array");
     return result;
@@ -98,7 +115,7 @@ class ObjectStartArray : public CHeapObj<mtGC> {
     }
 
     size_t delta = pointer_delta(p, _offset_base, sizeof(jbyte));
-    HeapWord* result = (HeapWord*) (delta << block_shift);
+    HeapWord* result = (HeapWord*) (delta << _card_shift);
     result += *p;
 
     assert(_covered_region.contains(result),

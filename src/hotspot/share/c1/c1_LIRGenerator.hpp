@@ -239,6 +239,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void  move_to_phi(PhiResolver* resolver, Value cur_val, Value sux_val);
   void  move_to_phi(ValueStack* cur_state);
 
+  void load_klass(LIR_Opr obj, LIR_Opr klass, CodeEmitInfo* null_check_info);
+
   // platform dependent
   LIR_Opr getThreadPointer();
 
@@ -309,7 +311,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr atomic_add(BasicType type, LIR_Opr addr, LIRItem& new_value);
 
 #ifdef CARDTABLEBARRIERSET_POST_BARRIER_HELPER
-  virtual void CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base);
+  virtual void CardTableBarrierSet_post_barrier_helper(LIR_Opr addr, LIR_Const* card_table_base);
 #endif
 
   // specific implementations
@@ -502,7 +504,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIRGenerator(Compilation* compilation, ciMethod* method)
     : _compilation(compilation)
     , _method(method)
-    , _virtual_register_number(LIR_OprDesc::vreg_base)
+    , _virtual_register_number(LIR_Opr::vreg_base)
     , _vreg_flags(num_vreg_flags)
     , _barrier_set(BarrierSet::barrier_set()->barrier_set_c1()) {
   }

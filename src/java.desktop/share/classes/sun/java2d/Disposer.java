@@ -142,8 +142,8 @@ public class Disposer implements Runnable {
     public void run() {
         while (true) {
             try {
-                Object obj = queue.remove();
-                ((Reference)obj).clear();
+                Reference<?> obj = queue.remove();
+                obj.clear();
                 DisposerRecord rec = records.remove(obj);
                 rec.dispose();
                 obj = null;
@@ -184,7 +184,7 @@ public class Disposer implements Runnable {
     /*
      * Set to indicate the queue is presently being polled.
      */
-    public static volatile boolean pollingQueue = false;
+    public static volatile boolean pollingQueue;
 
     /*
      * The pollRemove() method is called back from a dispose method
@@ -200,7 +200,7 @@ public class Disposer implements Runnable {
         if (pollingQueue) {
             return;
         }
-        Object obj;
+        Reference<?> obj;
         pollingQueue = true;
         int freed = 0;
         int deferred = 0;
@@ -208,7 +208,7 @@ public class Disposer implements Runnable {
             while ( freed < 10000 && deferred < 100 &&
                     (obj = queue.poll()) != null ) {
                 freed++;
-                ((Reference)obj).clear();
+                obj.clear();
                 DisposerRecord rec = records.remove(obj);
                 if (rec instanceof PollDisposable) {
                     rec.dispose();

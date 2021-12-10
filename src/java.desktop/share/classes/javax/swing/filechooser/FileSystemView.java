@@ -65,7 +65,7 @@ import sun.awt.shell.ShellFolder;
 // PENDING(jeff) - need to provide a specification for
 // how Mac/OS2/BeOS/etc file systems can modify FileSystemView
 // to handle their particular type of file system.
-
+@SuppressWarnings("doclint:missing")
 public abstract class FileSystemView {
 
     static FileSystemView windowsFileSystemView = null;
@@ -824,7 +824,7 @@ class UnixFileSystemView extends FileSystemView {
     public boolean isComputerNode(File dir) {
         if (dir != null) {
             String parent = dir.getParent();
-            if (parent != null && parent.equals("/net")) {
+            if ("/net".equals(parent)) {
                 return true;
             }
         }

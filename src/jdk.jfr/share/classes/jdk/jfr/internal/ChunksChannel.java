@@ -137,7 +137,7 @@ final class ChunksChannel implements ReadableByteChannel {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         super.finalize();
         close();

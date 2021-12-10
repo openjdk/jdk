@@ -51,6 +51,11 @@ struct SpecialFlag {
   JDK_Version expired_in;    // When the option expires (or "undefined").
 };
 
+struct LegacyGCLogging {
+    const char* file;        // NULL -> stdout
+    int lastFlag;            // 0 not set; 1 -> -verbose:gc; 2 -> -Xloggc
+};
+
 // PathString is used as:
 //  - the underlying value for a SystemProperty
 //  - the path portion of an --patch-module module/path pair
@@ -317,8 +322,9 @@ class Arguments : AllStatic {
   // was this VM created via the -XXaltjvm=<path> option
   static bool   _sun_java_launcher_is_altjvm;
 
-  // Option flags
-  static const char*  _gc_log_filename;
+  // for legacy gc options (-verbose:gc and -Xloggc:)
+  static LegacyGCLogging _legacyGCLogging;
+
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
 
@@ -360,7 +366,7 @@ class Arguments : AllStatic {
   static void set_use_compressed_oops();
   static void set_use_compressed_klass_ptrs();
   static jint set_ergonomics_flags();
-  static jint set_shared_spaces_flags_and_archive_paths();
+  static void set_shared_spaces_flags_and_archive_paths();
   // Limits the given heap size by the maximum amount of virtual
   // memory this process is currently allowed to use. It also takes
   // the virtual-to-physical ratio of the current GC into account.
@@ -612,7 +618,7 @@ class Arguments : AllStatic {
   static void  fix_appclasspath();
 
   static char* get_default_shared_archive_path() NOT_CDS_RETURN_(NULL);
-  static bool  init_shared_archive_paths() NOT_CDS_RETURN_(false);
+  static void  init_shared_archive_paths() NOT_CDS_RETURN;
 
   // Operation modi
   static Mode mode()                { return _mode;           }

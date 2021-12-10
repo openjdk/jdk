@@ -36,6 +36,7 @@ import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -176,11 +177,6 @@ public class HtmlDocletWriter {
     protected final Comparators comparators;
 
     protected final HtmlIds htmlIds;
-
-    /**
-     * To check whether annotation heading is printed or not.
-     */
-    protected boolean printedAnnotationHeading = false;
 
     /**
      * To check whether the repeated annotations is documented or not.
@@ -464,6 +460,7 @@ public class HtmlDocletWriter {
                 .setCharset(options.charset())
                 .addKeywords(metakeywords)
                 .setStylesheets(configuration.getMainStylesheet(), additionalStylesheets)
+                .setAdditionalScripts(configuration.getAdditionalScripts())
                 .setIndex(options.createIndex(), mainBodyScript)
                 .addContent(extraHeadContent);
 
@@ -900,7 +897,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -916,7 +913,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -933,7 +930,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -949,7 +946,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -1067,7 +1064,8 @@ public class HtmlDocletWriter {
                             "doclet.see.class_or_package_not_found",
                             "@" + tagName,
                             seeText);
-                    return (labelContent.isEmpty() ? text: labelContent);
+                    return invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
+                            Optional.of(labelContent.isEmpty() ? text: labelContent));
                 }
             }
         } else if (refMemName == null) {
@@ -1138,6 +1136,133 @@ public class HtmlDocletWriter {
             return getDocLink(HtmlLinkInfo.Kind.SEE_TAG, containing,
                     refMem, (labelContent.isEmpty()
                             ? plainOrCode(isLinkPlain, Text.of(refMemName))
+                            : labelContent), null, false);
+        }
+    }
+
+    // TODO: this method and seeTagToContent share much of the code; consider factoring common pieces out
+    public Content linkToContent(Element referrer, Element target, String targetSignature, String text) {
+        CommentHelper ch = utils.getCommentHelper(referrer);
+
+        boolean isLinkPlain = false; // TODO: for now
+        Content labelContent = plainOrCode(isLinkPlain, Text.of(text));
+
+        TypeElement refClass = ch.getReferencedClass(target);
+        Element refMem =       ch.getReferencedMember(target);
+        String refMemName =    ch.getReferencedMemberName(targetSignature);
+
+        if (refMemName == null && refMem != null) {
+            refMemName = refMem.toString();
+        }
+        if (refClass == null) {
+            ModuleElement refModule = ch.getReferencedModule(target);
+            if (refModule != null && utils.isIncluded(refModule)) {
+                return getModuleLink(refModule, labelContent);
+            }
+            //@see is not referencing an included class
+            PackageElement refPackage = ch.getReferencedPackage(target);
+            if (refPackage != null && utils.isIncluded(refPackage)) {
+                //@see is referencing an included package
+                if (labelContent.isEmpty())
+                    labelContent = plainOrCode(isLinkPlain,
+                                               Text.of(refPackage.getQualifiedName()));
+                return getPackageLink(refPackage, labelContent);
+            } else {
+                // @see is not referencing an included class, module or package. Check for cross links.
+                String refModuleName =  ch.getReferencedModuleName(targetSignature);
+                DocLink elementCrossLink = (refPackage != null) ? getCrossPackageLink(refPackage) :
+                        (configuration.extern.isModule(refModuleName))
+                                ? getCrossModuleLink(utils.elementUtils.getModuleElement(refModuleName))
+                                : null;
+                if (elementCrossLink != null) {
+                    // Element cross link found
+                    return links.createExternalLink(elementCrossLink, labelContent);
+                } else {
+                    // No cross link found so print warning
+// TODO:
+//                    messages.warning(ch.getDocTreePath(see),
+//                                     "doclet.see.class_or_package_not_found",
+//                                     "@" + tagName,
+//                                     seeText);
+                    return labelContent;
+                }
+            }
+        } else if (refMemName == null) {
+            // Must be a class reference since refClass is not null and refMemName is null.
+            if (labelContent.isEmpty()) {
+                if (!refClass.getTypeParameters().isEmpty() && targetSignature.contains("<")) {
+                    // If this is a generic type link try to use the TypeMirror representation.
+
+// TODO:
+//                  TypeMirror refType = ch.getReferencedType(target);
+                    TypeMirror refType = target.asType();
+
+                    if (refType != null) {
+                        return plainOrCode(isLinkPlain, getLink(
+                                new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refType)));
+                    }
+                }
+                labelContent = plainOrCode(isLinkPlain, Text.of(utils.getSimpleName(refClass)));
+            }
+            return getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refClass)
+                                   .label(labelContent));
+        } else if (refMem == null) {
+            // Must be a member reference since refClass is not null and refMemName is not null.
+            // However, refMem is null, so this referenced member does not exist.
+            return labelContent;
+        } else {
+            // Must be a member reference since refClass is not null and refMemName is not null.
+            // refMem is not null, so this @see tag must be referencing a valid member.
+            TypeElement containing = utils.getEnclosingTypeElement(refMem);
+
+            // Find the enclosing type where the method is actually visible
+            // in the inheritance hierarchy.
+            ExecutableElement overriddenMethod = null;
+            if (refMem.getKind() == ElementKind.METHOD) {
+                VisibleMemberTable vmt = configuration.getVisibleMemberTable(containing);
+                overriddenMethod = vmt.getOverriddenMethod((ExecutableElement)refMem);
+
+                if (overriddenMethod != null)
+                    containing = utils.getEnclosingTypeElement(overriddenMethod);
+            }
+            if (targetSignature.trim().startsWith("#") &&
+                    ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
+                // Since the link is relative and the holder is not even being
+                // documented, this must be an inherited link.  Redirect it.
+                // The current class either overrides the referenced member or
+                // inherits it automatically.
+                if (this instanceof ClassWriterImpl writer) {
+                    containing = writer.getTypeElement();
+                } else if (!utils.isPublic(containing)) {
+// TODO:
+//                    messages.warning(
+//                            ch.getDocTreePath(see), "doclet.see.class_or_package_not_accessible",
+//                            tagName, utils.getFullyQualifiedName(containing));
+                } else {
+// TODO:
+//                    messages.warning(
+//                            ch.getDocTreePath(see), "doclet.see.class_or_package_not_found",
+//                            tagName, seeText);
+                }
+            }
+            if (configuration.currentTypeElement != containing) {
+                refMemName = (utils.isConstructor(refMem))
+                        ? refMemName
+                        : utils.getSimpleName(containing) + "." + refMemName;
+            }
+            if (utils.isExecutableElement(refMem)) {
+                if (refMemName.indexOf('(') < 0) {
+                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, true);
+                }
+                if (overriddenMethod != null) {
+                    // The method to actually link.
+                    refMem = overriddenMethod;
+                }
+            }
+
+            return getDocLink(HtmlLinkInfo.Kind.SEE_TAG, containing,
+                              refMem, (labelContent.isEmpty()
+                            ? plainOrCode(isLinkPlain, Text.of(text))
                             : labelContent), null, false);
         }
     }
@@ -1284,14 +1409,6 @@ public class HtmlDocletWriter {
         return false;
     }
 
-    boolean isAllWhiteSpace(String body) {
-        for (int i = 0 ; i < body.length(); i++) {
-            if (!Character.isWhitespace(body.charAt(i)))
-                return false;
-        }
-        return true;
-    }
-
     // Notify the next DocTree handler to take necessary action
     private boolean commentRemoved = false;
 
@@ -1382,7 +1499,7 @@ public class HtmlDocletWriter {
                 // Ignore any trailing whitespace OR whitespace after removed html comment
                 if ((isLastNode || commentRemoved)
                         && tag.getKind() == TEXT
-                        && isAllWhiteSpace(ch.getText(tag)))
+                        && ch.getText(tag).isBlank())
                     continue;
 
                 // Ignore any leading html comments
@@ -1499,13 +1616,18 @@ public class HtmlDocletWriter {
                     DocTreePath dtp = ch.getDocTreePath(node);
                     if (dtp != null) {
                         String body = node.getBody();
-                        if (body.matches("(?i)\\{@[a-z]+.*")) {
-                            messages.warning(dtp,"doclet.tag.invalid_usage", body);
-                        } else {
+                        Matcher m = Pattern.compile("(?i)\\{@([a-z]+).*").matcher(body);
+                        String tagName = m.matches() ? m.group(1) : null;
+                        if (tagName == null) {
                             messages.warning(dtp, "doclet.tag.invalid_input", body);
+                            result.add(invalidTagOutput(resources.getText("doclet.tag.invalid_input", body),
+                                    Optional.empty()));
+                        } else {
+                            messages.warning(dtp, "doclet.tag.invalid_usage", body);
+                            result.add(invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
+                                    Optional.of(Text.of(body))));
                         }
                     }
-                    result.add(Text.of(node.toString()));
                     return false;
                 }
 
@@ -1660,6 +1782,24 @@ public class HtmlDocletWriter {
     }
 
     /**
+     * Returns the output for an invalid tag. The returned content uses special styling to
+     * highlight the problem. Depending on the presence of the {@code detail} string the method
+     * returns a plain text span or an expandable component.
+     *
+     * @param summary the single-line summary message
+     * @param detail the optional detail message which may contain preformatted text
+     * @return the output
+     */
+    protected Content invalidTagOutput(String summary, Optional<Content> detail) {
+        if (detail.isEmpty() || detail.get().isEmpty()) {
+            return HtmlTree.SPAN(HtmlStyle.invalidTag, Text.of(summary));
+        }
+        return new HtmlTree(TagName.DETAILS).addStyle(HtmlStyle.invalidTag)
+                .add(new HtmlTree(TagName.SUMMARY).add(Text.of(summary)))
+                .add(new HtmlTree(TagName.PRE).add(detail.get()));
+    }
+
+    /**
      * Returns true if element lives in the same package as the type or package
      * element of this writer.
      */
@@ -1702,7 +1842,8 @@ public class HtmlDocletWriter {
         if (lower.startsWith("mailto:")
                 || lower.startsWith("http:")
                 || lower.startsWith("https:")
-                || lower.startsWith("file:")) {
+                || lower.startsWith("file:")
+                || lower.startsWith("ftp:")) {
             return text;
         }
         if (text.startsWith("#")) {

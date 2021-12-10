@@ -30,7 +30,6 @@
 
 G1FullGCCompactionPoint::G1FullGCCompactionPoint() :
     _current_region(NULL),
-    _threshold(NULL),
     _compaction_top(NULL) {
   _compaction_regions = new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(32, mtGC);
   _compaction_region_iterator = _compaction_regions->begin();
@@ -49,7 +48,7 @@ void G1FullGCCompactionPoint::update() {
 void G1FullGCCompactionPoint::initialize_values(bool init_threshold) {
   _compaction_top = _current_region->compaction_top();
   if (init_threshold) {
-    _threshold = _current_region->initialize_threshold();
+    _current_region->initialize_bot_threshold();
   }
 }
 
@@ -104,28 +103,14 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
   // Store a forwarding pointer if the object should be moved.
   if (cast_from_oop<HeapWord*>(object) != _compaction_top) {
     object->forward_to(cast_to_oop(_compaction_top));
+    assert(object->is_forwarded(), "must be forwarded");
   } else {
-    if (object->forwardee() != NULL) {
-      // Object should not move but mark-word is used so it looks like the
-      // object is forwarded. Need to clear the mark and it's no problem
-      // since it will be restored by preserved marks.
-      object->init_mark();
-    } else {
-      // Make sure object has the correct mark-word set or that it will be
-      // fixed when restoring the preserved marks.
-      assert(object->mark() == markWord::prototype() || // Correct mark
-             object->mark_must_be_preserved(), // Will be restored by PreservedMarksSet
-             "should have correct prototype obj: " PTR_FORMAT " mark: " PTR_FORMAT " prototype: " PTR_FORMAT,
-             p2i(object), object->mark().value(), markWord::prototype().value());
-    }
-    assert(object->forwardee() == NULL, "should be forwarded to NULL");
+    assert(!object->is_forwarded(), "must not be forwarded");
   }
 
   // Update compaction values.
   _compaction_top += size;
-  if (_compaction_top > _threshold) {
-    _threshold = _current_region->cross_threshold(_compaction_top - size, _compaction_top);
-  }
+  _current_region->alloc_block_in_bot(_compaction_top - size, _compaction_top);
 }
 
 void G1FullGCCompactionPoint::add(HeapRegion* hr) {

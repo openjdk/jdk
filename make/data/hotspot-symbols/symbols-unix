@@ -147,6 +147,7 @@ JVM_IsArrayClass
 JVM_IsCDSDumpingEnabled
 JVM_IsConstructorIx
 JVM_IsDumpingClassList
+JVM_IsFinalizationEnabled
 JVM_IsHiddenClass
 JVM_IsInterface
 JVM_IsPrimitiveClass
@@ -183,6 +184,7 @@ JVM_ReferenceRefersTo
 JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
+JVM_ReportFinalizationComplete
 JVM_ResumeThread
 JVM_SetArrayElement
 JVM_SetClassSigners

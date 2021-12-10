@@ -152,7 +152,7 @@ size_t PSOldGen::num_iterable_blocks() const {
 
 void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   size_t block_word_size = IterateBlockSize / HeapWordSize;
-  assert((block_word_size % (ObjectStartArray::block_size)) == 0,
+  assert((block_word_size % (ObjectStartArray::card_size())) == 0,
          "Block size not a multiple of start_array block");
 
   MutableSpace *space = object_space();
@@ -359,7 +359,7 @@ void PSOldGen::post_resize() {
   start_array()->set_covered_region(new_memregion);
   ParallelScavengeHeap::heap()->card_table()->resize_covered_region(new_memregion);
 
-  WorkGang* workers = Thread::current()->is_VM_thread() ?
+  WorkerThreads* workers = Thread::current()->is_VM_thread() ?
                       &ParallelScavengeHeap::heap()->workers() : NULL;
 
   // The update of the space's end is done by this call.  As that

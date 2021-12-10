@@ -47,6 +47,9 @@ class Address {
   Address(Register b, address d = 0)
     : _base(b), _index(noreg), _disp((intptr_t)d) {}
 
+  Address(Register b, ByteSize d)
+    : _base(b), _index(noreg), _disp((intptr_t)d) {}
+
   Address(Register b, intptr_t d)
     : _base(b), _index(noreg), _disp(d) {}
 

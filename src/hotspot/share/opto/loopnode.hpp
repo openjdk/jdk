@@ -77,8 +77,8 @@ protected:
          StripMined          = 1<<15,
          SubwordLoop         = 1<<16,
          ProfileTripFailed   = 1<<17,
-         TransformedLongInnerLoop = 1<<18,
-         TransformedLongOuterLoop = 1<<19};
+         LoopNestInnerLoop = 1 << 18,
+         LoopNestLongOuterLoop = 1 << 19};
   char _unswitch_count;
   enum { _unswitch_max=3 };
   char _postloop_flags;
@@ -103,8 +103,8 @@ public:
   bool is_strip_mined() const { return _loop_flags & StripMined; }
   bool is_profile_trip_failed() const { return _loop_flags & ProfileTripFailed; }
   bool is_subword_loop() const { return _loop_flags & SubwordLoop; }
-  bool is_transformed_long_inner_loop() const { return _loop_flags & TransformedLongInnerLoop; }
-  bool is_transformed_long_outer_loop() const { return _loop_flags & TransformedLongOuterLoop; }
+  bool is_loop_nest_inner_loop() const { return _loop_flags & LoopNestInnerLoop; }
+  bool is_loop_nest_outer_loop() const { return _loop_flags & LoopNestLongOuterLoop; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
@@ -119,8 +119,8 @@ public:
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
   void mark_subword_loop() { _loop_flags |= SubwordLoop; }
-  void mark_transformed_long_inner_loop() { _loop_flags |= TransformedLongInnerLoop; }
-  void mark_transformed_long_outer_loop() { _loop_flags |= TransformedLongOuterLoop; }
+  void mark_loop_nest_inner_loop() { _loop_flags |= LoopNestInnerLoop; }
+  void mark_loop_nest_outer_loop() { _loop_flags |= LoopNestLongOuterLoop; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -215,10 +215,8 @@ public:
   BaseCountedLoopEndNode* loopexit() const;
 
   virtual BasicType bt() const = 0;
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
+
+  jlong stride_con() const;
 
   static BaseCountedLoopNode* make(Node* entry, Node* backedge, BasicType bt);
 };
@@ -342,10 +340,6 @@ public:
   static Node* skip_predicates_from_entry(Node* ctrl);
   Node* skip_predicates();
 
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
-  }
   virtual BasicType bt() const {
     return T_INT;
   }
@@ -366,18 +360,12 @@ public:
 
   virtual int Opcode() const;
 
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
-
   virtual BasicType bt() const {
     return T_LONG;
   }
 
   LongCountedLoopEndNode* loopexit_or_null() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit_or_null(); }
   LongCountedLoopEndNode* loopexit() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit(); }
-  jlong   stride_con() const;
 };
 
 
@@ -423,17 +411,13 @@ public:
     if (!ln->is_BaseCountedLoop() || ln->as_BaseCountedLoop()->loopexit_or_null() != this) {
       return NULL;
     }
-    if (!ln->operates_on(bt(), true)) {
+    if (ln->as_BaseCountedLoop()->bt() != bt()) {
       return NULL;
     }
     return ln->as_BaseCountedLoop();
   }
 
   BoolTest::mask test_trip() const  { return in(TestValue)->as_Bool()->_test._test; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
 
   jlong stride_con() const;
   virtual BasicType bt() const = 0;
@@ -452,10 +436,6 @@ public:
 
   CountedLoopNode* loopnode() const {
     return (CountedLoopNode*) BaseCountedLoopEndNode::loopnode();
-  }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
   }
 
   virtual BasicType bt() const {
@@ -477,10 +457,7 @@ public:
   LongCountedLoopNode* loopnode() const {
     return (LongCountedLoopNode*) BaseCountedLoopEndNode::loopnode();
   }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
+
   virtual int Opcode() const;
 
   virtual BasicType bt() const {
@@ -498,7 +475,7 @@ inline BaseCountedLoopEndNode* BaseCountedLoopNode::loopexit_or_null() const {
     return NULL;
   }
   BaseCountedLoopEndNode* result = lexit->as_BaseCountedLoopEnd();
-  if (!result->operates_on(bt(), true)) {
+  if (result->bt() != bt()) {
     return NULL;
   }
   return result;
@@ -535,6 +512,12 @@ inline Node* BaseCountedLoopNode::phi() const {
   BaseCountedLoopEndNode* cle = loopexit_or_null();
   return cle != NULL ? cle->phi() : NULL;
 }
+
+inline jlong BaseCountedLoopNode::stride_con() const {
+  BaseCountedLoopEndNode* cle = loopexit_or_null();
+  return cle != NULL ? cle->stride_con() : 0;
+}
+
 
 //------------------------------LoopLimitNode-----------------------------
 // Counted Loop limit node which represents exact final iterator value:
@@ -734,10 +717,12 @@ public:
   // Return TRUE or FALSE if the loop should be range-check-eliminated.
   // Gather a list of IF tests that are dominated by iteration splitting;
   // also gather the end of the first split and the start of the 2nd split.
-  bool policy_range_check( PhaseIdealLoop *phase ) const;
+  bool policy_range_check(PhaseIdealLoop* phase, bool provisional, BasicType bt) const;
 
   // Return TRUE if "iff" is a range check.
-  bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar) const;
+  bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const;
+  bool is_range_check_if(IfNode* iff, PhaseIdealLoop* phase, BasicType bt, Node* iv, Node*& range, Node*& offset,
+                         jlong& scale) const;
 
   // Estimate the number of nodes required when cloning a loop (body).
   uint est_loop_clone_sz(uint factor) const;
@@ -915,13 +900,13 @@ private:
   void copy_skeleton_predicates_to_main_loop(CountedLoopNode* pre_head, Node* init, Node* stride, IdealLoopTree* outer_loop, LoopNode* outer_main_head,
                                              uint dd_main_head, const uint idx_before_pre_post, const uint idx_after_post_before_pre,
                                              Node* zero_trip_guard_proj_main, Node* zero_trip_guard_proj_post, const Node_List &old_new);
-  Node* clone_skeleton_predicate_for_main_loop(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
-                                               IdealLoopTree* outer_loop, Node* input_proj);
-  Node* clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
-                                      IdealLoopTree* outer_loop);
+  Node* clone_skeleton_predicate_for_main_or_post_loop(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
+                                                       IdealLoopTree* outer_loop, Node* input_proj);
+  Node* clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* control);
   static bool skeleton_predicate_has_opaque(IfNode* iff);
   static void get_skeleton_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
+  void copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init, Node* stride);
   void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
 #ifdef ASSERT
   bool only_has_infinite_loops();
@@ -1168,8 +1153,8 @@ public:
 
   bool is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt);
 
-  void long_loop_replace_long_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head);
-  bool transform_long_counted_loop(IdealLoopTree* loop, Node_List &old_new);
+  Node* loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head, BasicType bt);
+  bool create_loop_nest(IdealLoopTree* loop, Node_List &old_new);
 #ifdef ASSERT
   bool convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* loop);
 #endif
@@ -1244,9 +1229,9 @@ public:
   void insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_new, bool peel_only );
 
   // Add post loop after the given loop.
-  Node *insert_post_loop(IdealLoopTree *loop, Node_List &old_new,
-                         CountedLoopNode *main_head, CountedLoopEndNode *main_end,
-                         Node *incr, Node *limit, CountedLoopNode *&post_head);
+  Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
+                         CountedLoopNode* main_head, CountedLoopEndNode* main_end,
+                         Node*& incr, Node* limit, CountedLoopNode*& post_head);
 
   // Add an RCE'd post loop which we will multi-version adapt for run time test path usage
   void insert_scalar_rced_post_loop( IdealLoopTree *loop, Node_List &old_new );
@@ -1270,14 +1255,38 @@ public:
   void mark_reductions( IdealLoopTree *loop );
 
   // Return true if exp is a constant times an induction var
-  bool is_scaled_iv(Node* exp, Node* iv, int* p_scale);
+  bool is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType bt, bool* converted);
+
+  bool is_iv(Node* exp, Node* iv, BasicType bt);
 
   // Return true if exp is a scaled induction var plus (or minus) constant
-  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset, int depth = 0);
+  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt, bool* converted = NULL, int depth = 0);
+  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset) {
+    jlong long_scale;
+    if (is_scaled_iv_plus_offset(exp, iv, &long_scale, p_offset, T_INT)) {
+      int int_scale = checked_cast<int>(long_scale);
+      if (p_scale != NULL) {
+        *p_scale = int_scale;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  // Enum to determine the action to be performed in create_new_if_for_predicate() when processing phis of UCT regions.
+  enum class UnswitchingAction {
+    None,            // No special action.
+    FastLoopCloning, // Need to clone nodes for the fast loop.
+    SlowLoopRewiring // Need to rewire nodes for the slow loop.
+  };
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
   ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry, Deoptimization::DeoptReason reason,
-                                        int opcode, bool if_cont_is_true_proj = true);
+                                        int opcode, bool if_cont_is_true_proj = true, Node_List* old_new = NULL,
+                                        UnswitchingAction unswitching_action = UnswitchingAction::None);
+
+  // Clone data nodes for the fast loop while creating a new If with create_new_if_for_predicate.
+  Node* clone_data_nodes_for_fast_loop(Node* phi_input, ProjNode* uncommon_proj, Node* if_uct, Node_List* old_new);
 
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
@@ -1292,7 +1301,8 @@ public:
   BoolNode* rc_predicate(IdealLoopTree *loop, Node* ctrl,
                          int scale, Node* offset,
                          Node* init, Node* limit, jint stride,
-                         Node* range, bool upper, bool &overflow);
+                         Node* range, bool upper, bool &overflow,
+                         bool negate);
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
@@ -1563,13 +1573,15 @@ private:
   }
 
   // Clone loop predicates to slow and fast loop when unswitching a loop
-  void clone_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, ProjNode*& iffast_pred, ProjNode*& ifslow_pred);
-  ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason);
+  void clone_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new, ProjNode*& iffast_pred, ProjNode*& ifslow_pred);
+  ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason,
+                                               Node_List* old_new = NULL);
   void clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, Deoptimization::DeoptReason reason,
                                                     ProjNode* old_predicate_proj, ProjNode* iffast_pred, ProjNode* ifslow_pred);
-  ProjNode* clone_skeleton_predicate_for_unswitched_loops(Node* iff, ProjNode* predicate, Node* uncommon_proj, Deoptimization::DeoptReason reason,
-                                                          ProjNode* output_proj, IdealLoopTree* loop);
-  void check_created_predicate_for_unswitching(const Node* new_entry) const PRODUCT_RETURN;
+  ProjNode* clone_skeleton_predicate_for_unswitched_loops(Node* iff, ProjNode* predicate,
+                                                          Deoptimization::DeoptReason reason,
+                                                          ProjNode* output_proj);
+  static void check_created_predicate_for_unswitching(const Node* new_entry) PRODUCT_RETURN;
 
   bool _created_loop_node;
 #ifdef ASSERT
@@ -1607,9 +1619,17 @@ public:
 
   void rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const;
 
-  void check_long_counted_loop(IdealLoopTree* loop, Node* x) NOT_DEBUG_RETURN;
+  void check_counted_loop_shape(IdealLoopTree* loop, Node* x, BasicType bt) NOT_DEBUG_RETURN;
 
-  LoopNode* create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head, LongCountedLoopEndNode* exit_test);
+  LoopNode* create_inner_head(IdealLoopTree* loop, BaseCountedLoopNode* head, IfNode* exit_test);
+
+
+  int extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
+                                      Node_List &range_checks);
+
+  void transform_long_range_checks(int stride_con, const Node_List &range_checks, Node* outer_phi,
+                                   Node* inner_iters_actual_int, Node* inner_phi,
+                                   Node* iv_add, LoopNode* inner_head);
 
   Node* get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA);
 
@@ -1620,6 +1640,13 @@ public:
   Node* compute_early_ctrl(Node* n, Node* n_ctrl);
 
   void try_sink_out_of_loop(Node* n);
+
+  Node* clamp(Node* R, Node* L, Node* H);
+
+  bool safe_for_if_replacement(const Node* dom) const;
+
+  void strip_mined_nest_back_to_counted_loop(IdealLoopTree* loop, const BaseCountedLoopNode* head, Node* back_control,
+                                             IfNode*&exit_test, SafePointNode*&safepoint);
 };
 
 

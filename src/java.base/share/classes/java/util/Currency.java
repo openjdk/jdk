@@ -280,7 +280,7 @@ public final class Currency implements Serializable {
 
     /**
      * Constructs a {@code Currency} instance. The constructor is private
-     * so that we can insure that there's never more than one instance for a
+     * so that we can ensure that there's never more than one instance for a
      * given currency.
      */
     private Currency(String currencyCode, int defaultFractionDigits, int numericCode) {
