@@ -1,2 +1,3 @@
 Neg22.java:19:16: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg22.Box), (compiler.misc.diamond.invalid.arg: Neg22.Outer<java.lang.Object&java.io.Serializable&java.lang.Runnable>.Inner<java.lang.Object>, (compiler.misc.diamond: Neg22.Box))
-1 error
+Neg22.java:19:48: compiler.err.improperly.formed.type.inner.raw.param
+2 errors

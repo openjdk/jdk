@@ -25,12 +25,9 @@
 
 package com.sun.tools.javac.comp;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 import javax.tools.JavaFileObject;
 
@@ -1382,15 +1379,10 @@ public class TypeEnter implements Completer {
                 if (csym.params != null) {
                     for (VarSymbol param : csym.params) {
                         /* the compiler will issue an error if a type annotation is applied to, for example, `java.lang.String`
-                         * but it won't if the type annotation is applied to `String`, at this point all types will be represented
-                         * in its fully unfolded form so we need to go back to the short form if type annotations are present for a
-                         * given parameter
+                         * but it won't if the type annotation is applied to `String`
                          */
-                        if (!param.getRawTypeAttributes().isEmpty()) {
-                            params.append(make.VarDef(param, make.Ident(param.type.tsym), null));
-                        } else {
-                            params.append(make.VarDef(param,null));
-                        }
+                        JCExpression typeDec = reduceTypeDecl(make.Type(param.type));
+                        params.append(make.VarDef(param, typeDec, null));
                     }
                 }
                 return params.toList();
@@ -1398,16 +1390,32 @@ public class TypeEnter implements Completer {
 
             private List<JCTypeParameter> typeParams(List<Type> typarams) {
                 ListBuffer<JCTypeParameter> tparams = new ListBuffer<>();
-                final AtomicInteger paramIndex = new AtomicInteger(0);
+                int[] paramIndex = new int[]{0};
                 for (List<Type> l = typarams; l.nonEmpty(); l = l.tail) {
                     tparams.append(make.TypeParam(l.head.tsym.name, (TypeVar) l.head,
                             constr.getRawTypeAttributes().stream()
-                                    .filter(anno -> anno.position.type == TargetType.METHOD_TYPE_PARAMETER && anno.position.parameter_index == paramIndex.get())
+                                    .filter(anno -> anno.position.type == TargetType.METHOD_TYPE_PARAMETER && anno.position.parameter_index == paramIndex[0])
                                     .map(anno -> make.TypeAnnotation(anno))
                                     .collect(List.collector())));
-                    paramIndex.incrementAndGet();
+                    paramIndex[0]++;
                 }
                 return tparams.toList();
+            }
+
+            JCExpression reduceTypeDecl(JCExpression typeDecl) {
+                if (typeDecl.hasTag(SELECT)) {
+                    JCFieldAccess fa = (JCFieldAccess)typeDecl;
+                    JCIdent result = make.Ident(fa.name);
+                    result.type = fa.type;
+                    result.sym = fa.sym;
+                    result.pos = fa.pos;
+                    return result;
+                } else if (typeDecl.hasTag(TYPEAPPLY)) {
+                    ((JCTypeApply) typeDecl).clazz = reduceTypeDecl(((JCTypeApply) typeDecl).clazz);
+                } else if (typeDecl.hasTag(TYPEARRAY)) {
+                    ((JCArrayTypeTree) typeDecl).elemtype = reduceTypeDecl(((JCArrayTypeTree) typeDecl).elemtype);
+                }
+                return typeDecl;
             }
 
         @Override
