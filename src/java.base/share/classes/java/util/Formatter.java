@@ -2751,12 +2751,12 @@ public final class Formatter implements Closeable, Flushable {
             if (n < 0) {
                 // No more format specifiers, but since
                 // i < max there's some trailing text
-                ctx.printFixed(format, i, max);
+                ctx.formatFixed(format, i, max);
                 break;
             }
             if (i != n) {
                 // Previous characters were fixed text
-                ctx.printFixed(format, i, n);
+                ctx.formatFixed(format, i, n);
             }
             i = n + 1;
             if (i >= max) {
@@ -2765,7 +2765,7 @@ public final class Formatter implements Closeable, Flushable {
             }
             char c = format.charAt(i);
             if (Conversion.isValid(c)) {
-                ctx.printFormat(new FormatSpecifier(c));
+                ctx.format(c);
                 i++;
             } else {
                 if (m == null) {
@@ -2774,7 +2774,7 @@ public final class Formatter implements Closeable, Flushable {
                 // We have already parsed a '%' at n, so we either have a
                 // match or the specifier at n is invalid
                 if (m.find(n) && m.start() == n) {
-                    ctx.printFormat(new FormatSpecifier(format, m));
+                    ctx.format(format, m);
                     i = m.end();
                 } else {
                     throw new UnknownFormatConversionException(String.valueOf(c));
@@ -2783,59 +2783,6 @@ public final class Formatter implements Closeable, Flushable {
         }
         return this;
     }
-
-    private class FormatContext {
-        // index of last argument referenced
-        private int last = -1;
-        // last ordinary index
-        private int lasto = -1;
-        private final Object[] args;
-        private final Locale l;
-
-        public FormatContext(Locale l, Object[] args) {
-            this.l = l;
-            this.args = args;
-        }
-
-        private void printFixed(String s, int start, int end) {
-            try {
-                a.append(s, start, end);
-            } catch (IOException x) {
-                lastException = x;
-            }
-        }
-
-        private void printFormat(FormatSpecifier fs) {
-            int index = fs.index();
-            try {
-                switch (index) {
-                    case -2 ->  // fixed string, "%n", or "%%"
-                            fs.print((Object)null, l);
-                    case -1 -> {  // relative index
-                        if (last < 0 || (args != null && last > args.length - 1))
-                            throw new MissingFormatArgumentException(fs.toString());
-                        fs.print((args == null ? null : args[last]), l);
-                    }
-                    case 0 -> {  // ordinary index
-                        lasto++;
-                        last = lasto;
-                        if (args != null && lasto > args.length - 1)
-                            throw new MissingFormatArgumentException(fs.toString());
-                        fs.print((args == null ? null : args[lasto]), l);
-                    }
-                    default -> {  // explicit index
-                        last = index - 1;
-                        if (args != null && last > args.length - 1)
-                            throw new MissingFormatArgumentException(fs.toString());
-                        fs.print((args == null ? null : args[last]), l);
-                    }
-                }
-            } catch (IOException x) {
-                lastException = x;
-            }
-        }
-    }
-
 
     // %[argument_index$][flags][width][.precision][t]conversion
     private static final String formatSpecifier
@@ -2858,14 +2805,116 @@ public final class Formatter implements Closeable, Flushable {
         DECIMAL_FLOAT
     };
 
-    private class FormatSpecifier {
+    private class FormatContext {
 
+        private final Locale locale;
+        private final Object[] args;
         private int index = 0;
         private Flags f = Flags.NONE;
         private int width = -1;
         private int precision = -1;
         private boolean dt = false;
         private char c;
+        // index of last argument referenced
+        private int last = -1;
+        // last ordinary index
+        private int lasto = -1;
+
+        public FormatContext(Locale l, Object[] args) {
+            this.locale = l;
+            this.args = args;
+        }
+
+        private void formatFixed(String s, int start, int end) {
+            try {
+                a.append(s, start, end);
+            } catch (IOException x) {
+                lastException = x;
+            }
+        }
+
+        private void resetSpecifier() {
+            f = Flags.NONE;
+            width = -1;
+            precision = -1;
+            dt = false;
+        }
+
+        private void format(char conv) {
+            resetSpecifier();
+            c = conv;
+            if (Character.isUpperCase(conv)) {
+                f = Flags.UPPERCASE;
+                c = Character.toLowerCase(conv);
+            }
+            if (Conversion.isText(conv)) {
+                index = -2;
+            }
+            format();
+        }
+
+        private void format(String s, Matcher m) {
+            resetSpecifier();
+            index(s, m.start(1), m.end(1));
+            flags(s, m.start(2), m.end(2));
+            width(s, m.start(3), m.end(3));
+            precision(s, m.start(4), m.end(4));
+
+            int tTStart = m.start(5);
+            if (tTStart >= 0) {
+                dt = true;
+                if (s.charAt(tTStart) == 'T') {
+                    f.add(Flags.UPPERCASE);
+                }
+            }
+            conversion(s.charAt(m.start(6)));
+
+            if (dt)
+                checkDateTime();
+            else if (Conversion.isGeneral(c))
+                checkGeneral();
+            else if (Conversion.isCharacter(c))
+                checkCharacter();
+            else if (Conversion.isInteger(c))
+                checkInteger();
+            else if (Conversion.isFloat(c))
+                checkFloat();
+            else if (Conversion.isText(c))
+                checkText();
+            else
+                throw new UnknownFormatConversionException(String.valueOf(c));
+
+            format();
+        }
+
+        private void format() {
+            try {
+                switch (index) {
+                    case -2 ->  // fixed string, "%n", or "%%"
+                            print((Object) null, l);
+                    case -1 -> {  // relative index
+                        if (last < 0 || (args != null && last > args.length - 1))
+                            throw new MissingFormatArgumentException(toString());
+                        print((args == null ? null : args[last]), l);
+                    }
+                    case 0 -> {  // ordinary index
+                        lasto++;
+                        last = lasto;
+                        if (args != null && lasto > args.length - 1)
+                            throw new MissingFormatArgumentException(toString());
+                        print((args == null ? null : args[lasto]), l);
+                    }
+                    default -> {  // explicit index
+                        last = index - 1;
+                        if (args != null && last > args.length - 1)
+                            throw new MissingFormatArgumentException(toString());
+                        print((args == null ? null : args[last]), l);
+                    }
+                }
+            } catch (IOException x) {
+                lastException = x;
+            }
+        }
 
         private void index(String s, int start, int end) {
             if (start >= 0) {
@@ -2930,48 +2979,6 @@ public final class Formatter implements Closeable, Flushable {
                     index = -2;
                 }
             }
-        }
-
-        FormatSpecifier(char conv) {
-            c = conv;
-            if (Character.isUpperCase(conv)) {
-                f = Flags.UPPERCASE;
-                c = Character.toLowerCase(conv);
-            }
-            if (Conversion.isText(conv)) {
-                index = -2;
-            }
-        }
-
-        FormatSpecifier(String s, Matcher m) {
-            index(s, m.start(1), m.end(1));
-            flags(s, m.start(2), m.end(2));
-            width(s, m.start(3), m.end(3));
-            precision(s, m.start(4), m.end(4));
-
-            int tTStart = m.start(5);
-            if (tTStart >= 0) {
-                dt = true;
-                if (s.charAt(tTStart) == 'T') {
-                    f.add(Flags.UPPERCASE);
-                }
-            }
-            conversion(s.charAt(m.start(6)));
-
-            if (dt)
-                checkDateTime();
-            else if (Conversion.isGeneral(c))
-                checkGeneral();
-            else if (Conversion.isCharacter(c))
-                checkCharacter();
-            else if (Conversion.isInteger(c))
-                checkInteger();
-            else if (Conversion.isFloat(c))
-                checkFloat();
-            else if (Conversion.isText(c))
-                checkText();
-            else
-                throw new UnknownFormatConversionException(String.valueOf(c));
         }
 
         public void print(Object arg, Locale l) throws IOException {
