@@ -195,6 +195,7 @@ public abstract class LookAndFeel
      * @param c component to uninstall the properties from
      * @see #uninstallColorsAndFont
      * @throws NullPointerException if {@code c} is {@code null}
+     * @since 19
      */
     public static void uninstallColors(JComponent c) {
         if (c.getForeground() instanceof UIResource) {
@@ -243,6 +244,7 @@ public abstract class LookAndFeel
      *
      * @param c component to uninstall the properties from
      * @throws NullPointerException if {@code c} is {@code null}
+     * @since 19
      */
     public static void uninstallColorsAndFont(JComponent c) {
         if (c.getFont() instanceof UIResource) {
