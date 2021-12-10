@@ -2806,15 +2806,15 @@ public final class Formatter implements Closeable, Flushable {
     };
 
     private class FormatContext {
-
         private final Locale locale;
         private final Object[] args;
-        private int index = 0;
-        private Flags f = Flags.NONE;
-        private int width = -1;
-        private int precision = -1;
-        private boolean dt = false;
+
+        private Flags f;
+        private int index;
+        private int width;
+        private int precision;
         private char c;
+
         // index of last argument referenced
         private int last = -1;
         // last ordinary index
@@ -2833,15 +2833,11 @@ public final class Formatter implements Closeable, Flushable {
             }
         }
 
-        private void resetSpecifier() {
+        private void format(char conv) {
             f = Flags.NONE;
             width = -1;
             precision = -1;
-            dt = false;
-        }
-
-        private void format(char conv) {
-            resetSpecifier();
+            index = 0;
             c = conv;
             if (Character.isUpperCase(conv)) {
                 f = Flags.UPPERCASE;
@@ -2854,36 +2850,38 @@ public final class Formatter implements Closeable, Flushable {
         }
 
         private void format(String s, Matcher m) {
-            resetSpecifier();
-            index(s, m.start(1), m.end(1));
-            flags(s, m.start(2), m.end(2));
-            width(s, m.start(3), m.end(3));
-            precision(s, m.start(4), m.end(4));
+            f = Flags.parse(s,  m.start(2), m.end(2));
+            if (f.contains(Flags.PREVIOUS)) {
+                index = -1;
+            } else {
+                index = index(s, m.start(1), m.end(1));
+            }
+            width = width(s, m.start(3), m.end(3));
+            precision = precision(s, m.start(4), m.end(4));
 
             int tTStart = m.start(5);
             if (tTStart >= 0) {
-                dt = true;
+                f.add(Flags.DATE_TIME);
                 if (s.charAt(tTStart) == 'T') {
                     f.add(Flags.UPPERCASE);
                 }
-            }
-            conversion(s.charAt(m.start(6)));
-
-            if (dt)
+                c = s.charAt(m.start(6));
                 checkDateTime();
-            else if (Conversion.isGeneral(c))
-                checkGeneral();
-            else if (Conversion.isCharacter(c))
-                checkCharacter();
-            else if (Conversion.isInteger(c))
-                checkInteger();
-            else if (Conversion.isFloat(c))
-                checkFloat();
-            else if (Conversion.isText(c))
-                checkText();
-            else
-                throw new UnknownFormatConversionException(String.valueOf(c));
-
+            } else {
+                conversion(s.charAt(m.start(6)));
+                if (Conversion.isGeneral(c))
+                    checkGeneral();
+                else if (Conversion.isCharacter(c))
+                    checkCharacter();
+                else if (Conversion.isInteger(c))
+                    checkInteger();
+                else if (Conversion.isFloat(c))
+                    checkFloat();
+                else if (Conversion.isText(c))
+                    checkText();
+                else
+                    throw new UnknownFormatConversionException(String.valueOf(c));
+            }
             format();
         }
 
@@ -2902,13 +2900,13 @@ public final class Formatter implements Closeable, Flushable {
                         last = lasto;
                         if (args != null && lasto > args.length - 1)
                             throw new MissingFormatArgumentException(toString());
-                        print((args == null ? null : args[lasto]), l);
+                        print((args == null ? null : args[lasto]), locale);
                     }
                     default -> {  // explicit index
                         last = index - 1;
                         if (args != null && last > args.length - 1)
                             throw new MissingFormatArgumentException(toString());
-                        print((args == null ? null : args[last]), l);
+                        print((args == null ? null : args[last]), locale);
                     }
                 }
             } catch (IOException x) {
@@ -2916,7 +2914,8 @@ public final class Formatter implements Closeable, Flushable {
             }
         }
 
-        private void index(String s, int start, int end) {
+        private int index(String s, int start, int end) {
+            int index = 0;
             if (start >= 0) {
                 try {
                     // skip the trailing '$'
@@ -2928,19 +2927,11 @@ public final class Formatter implements Closeable, Flushable {
                     throw new IllegalFormatArgumentIndexException(Integer.MIN_VALUE);
                 }
             }
-        }
-
-        public int index() {
             return index;
         }
 
-        private void flags(String s, int start, int end) {
-            f = Flags.parse(s, start, end);
-            if (f.contains(Flags.PREVIOUS))
-                index = -1;
-        }
-
-        private void width(String s, int start, int end) {
+        private int width(String s, int start, int end) {
+            int width = -1;
             if (start >= 0) {
                 try {
                     width = Integer.parseInt(s, start, end, 10);
@@ -2950,9 +2941,11 @@ public final class Formatter implements Closeable, Flushable {
                     throw new IllegalFormatWidthException(Integer.MIN_VALUE);
                 }
             }
+            return width;
         }
 
-        private void precision(String s, int start, int end) {
+        private int precision(String s, int start, int end) {
+            int precision = -1;
             if (start >= 0) {
                 try {
                     // skip the leading '.'
@@ -2963,61 +2956,47 @@ public final class Formatter implements Closeable, Flushable {
                     throw new IllegalFormatPrecisionException(Integer.MIN_VALUE);
                 }
             }
+            return precision;
         }
 
         private void conversion(char conv) {
             c = conv;
-            if (!dt) {
-                if (!Conversion.isValid(c)) {
-                    throw new UnknownFormatConversionException(String.valueOf(c));
-                }
-                if (Character.isUpperCase(c)) {
-                    f.add(Flags.UPPERCASE);
-                    c = Character.toLowerCase(c);
-                }
-                if (Conversion.isText(c)) {
-                    index = -2;
-                }
+            if (!Conversion.isValid(c)) {
+                throw new UnknownFormatConversionException(String.valueOf(c));
+            }
+            if (Character.isUpperCase(c)) {
+                f.add(Flags.UPPERCASE);
+                c = Character.toLowerCase(c);
+            }
+            if (Conversion.isText(c)) {
+                index = -2;
             }
         }
 
         public void print(Object arg, Locale l) throws IOException {
-            if (dt) {
-                printDateTime(arg, l);
-                return;
-            }
-            switch(c) {
-            case Conversion.DECIMAL_INTEGER:
-            case Conversion.OCTAL_INTEGER:
-            case Conversion.HEXADECIMAL_INTEGER:
-                printInteger(arg, l);
-                break;
-            case Conversion.SCIENTIFIC:
-            case Conversion.GENERAL:
-            case Conversion.DECIMAL_FLOAT:
-            case Conversion.HEXADECIMAL_FLOAT:
-                printFloat(arg, l);
-                break;
-            case Conversion.CHARACTER:
-                printCharacter(arg, l);
-                break;
-            case Conversion.BOOLEAN:
-                printBoolean(arg, l);
-                break;
-            case Conversion.STRING:
-                printString(arg, l);
-                break;
-            case Conversion.HASHCODE:
-                printHashCode(arg, l);
-                break;
-            case Conversion.LINE_SEPARATOR:
-                a.append(System.lineSeparator());
-                break;
-            case Conversion.PERCENT_SIGN:
-                print("%", l);
-                break;
-            default:
-                assert false;
+            switch (c) {
+                case Conversion.DECIMAL_INTEGER,
+                        Conversion.OCTAL_INTEGER,
+                        Conversion.HEXADECIMAL_INTEGER
+                        -> printInteger(arg, l);
+                case Conversion.SCIENTIFIC,
+                        Conversion.GENERAL,
+                        Conversion.DECIMAL_FLOAT,
+                        Conversion.HEXADECIMAL_FLOAT
+                        -> printFloat(arg, l);
+                case Conversion.CHARACTER -> printCharacter(arg, l);
+                case Conversion.BOOLEAN -> printBoolean(arg, l);
+                case Conversion.STRING -> printString(arg, l);
+                case Conversion.HASHCODE -> printHashCode(arg, l);
+                case Conversion.LINE_SEPARATOR -> a.append(System.lineSeparator());
+                case Conversion.PERCENT_SIGN -> print("%", l);
+                default -> {
+                    if (f.contains(Flags.DATE_TIME)) {
+                        printDateTime(arg, l);
+                        return;
+                    }
+                    assert false;
+                }
             }
         }
 
@@ -3183,16 +3162,16 @@ public final class Formatter implements Closeable, Flushable {
 
         public String toString() {
             StringBuilder sb = new StringBuilder("%");
-            // Flags.UPPERCASE is set internally for legal conversions.
-            Flags dupf = f.dup().remove(Flags.UPPERCASE);
-            sb.append(dupf.toString());
+            // Flags.UPPERCASE and DATE_TIME are set internally for legal conversions.
+            Flags dupf = f.dup().remove(Flags.UPPERCASE).remove(Flags.DATE_TIME);
+            sb.append(dupf);
             if (index > 0)
                 sb.append(index).append('$');
             if (width != -1)
                 sb.append(width);
             if (precision != -1)
                 sb.append('.').append(precision);
-            if (dt)
+            if (f.contains(Flags.DATE_TIME))
                 sb.append(f.contains(Flags.UPPERCASE) ? 'T' : 't');
             sb.append(f.contains(Flags.UPPERCASE)
                       ? Character.toUpperCase(c) : c);
@@ -4660,6 +4639,9 @@ public final class Formatter implements Closeable, Flushable {
 
         // indexing
         static final Flags PREVIOUS      = new Flags(1<<8);   // '<'
+
+        // date or time field
+        static final Flags DATE_TIME      = new Flags(1<<9);   // 'tT'
 
         private Flags(int f) {
             flags = f;
