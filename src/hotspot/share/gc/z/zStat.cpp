@@ -691,7 +691,7 @@ void ZStatPhaseGeneration::register_start(ConcurrentGCTimer* timer, const Ticks&
 
 void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
   if (ZAbort::should_abort()) {
-    log_info(gc)("%s Aborted", name());
+    log_info(gc, phases)("%s Aborted", name());
     return;
   }
 
