@@ -23,11 +23,9 @@
 
 package compiler.vectorapi.reshape;
 
-import compiler.lib.ir_framework.TestFramework;
 import compiler.vectorapi.reshape.tests.TestVectorCast;
 import compiler.vectorapi.reshape.utils.TestCastMethods;
 import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
-import compiler.vectorapi.reshape.utils.VectorSpeciesPair;
 
 /*
  * @test

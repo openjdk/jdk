@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import compiler.vectorapi.reshape.tests.TestVectorCast;
 import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 

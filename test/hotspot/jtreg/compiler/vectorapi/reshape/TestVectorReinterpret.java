@@ -23,12 +23,9 @@
 
 package compiler.vectorapi.reshape;
 
-import compiler.lib.ir_framework.TestFramework;
-import compiler.vectorapi.reshape.tests.TestVectorCast;
 import compiler.vectorapi.reshape.tests.TestVectorDoubleExpandShrink;
 import compiler.vectorapi.reshape.tests.TestVectorExpandShrink;
 import compiler.vectorapi.reshape.tests.TestVectorRebracket;
-import compiler.vectorapi.reshape.utils.TestCastMethods;
 import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 import compiler.vectorapi.reshape.utils.VectorSpeciesPair;
 import java.util.List;
