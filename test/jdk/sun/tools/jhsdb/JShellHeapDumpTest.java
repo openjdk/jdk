@@ -98,7 +98,7 @@ public class JShellHeapDumpTest {
     }
 
     /* Returns false if the attempt should be retried. */
-    public static boolean printStackTraces(String file, boolean isRetry) throws IOException {
+    public static boolean printStackTraces(String file, boolean allowRetry) throws IOException {
         try {
             String output = HprofReader.getStack(file, 0);
             // We only require JShellToolProvider to be in the output if we did the
@@ -109,7 +109,7 @@ public class JShellHeapDumpTest {
                 // of the main thread do to it actively executing. See JDK-8269556. We retry once
                 // if that happens. This failure is so rare that this should be enough to make it
                 // extremely unlikely that we ever see this test fail again for this reason.
-                if (isRetry) {
+                if (allowRetry) {
                     throw new RuntimeException("'JShellToolProvider' missing from stdout/stderr");
                 } else {
                     System.out.println("'JShellToolProvider' missing. Allow one retry.");
@@ -123,7 +123,7 @@ public class JShellHeapDumpTest {
     }
 
     /* Returns false if the attempt should be retried. */
-    public static boolean testHeapDump(boolean isRetry) throws IOException {
+    public static boolean testHeapDump(boolean allowRetry) throws IOException {
         File hprofFile = new File("jhsdb.jmap.heap." +
                              System.currentTimeMillis() + ".hprof");
         if (hprofFile.exists()) {
@@ -136,7 +136,7 @@ public class JShellHeapDumpTest {
         assertTrue(hprofFile.exists() && hprofFile.isFile(),
                    "Could not create dump file " + hprofFile.getAbsolutePath());
 
-        boolean retry = printStackTraces(hprofFile.getAbsolutePath(), isRetry);
+        boolean retry = printStackTraces(hprofFile.getAbsolutePath(), allowRetry);
 
         System.out.println("hprof file size: " + hprofFile.length());
         hprofFile.delete();
@@ -181,10 +181,10 @@ public class JShellHeapDumpTest {
             throw new RuntimeException("Too many args: " + args.length);
         }
 
-        boolean retry = testHeapDump(false);
+        boolean retry = testHeapDump(true);
         // In case of rare failure to find 'JShellToolProvider' in the output, allow one retry.
         if (retry) {
-            testHeapDump(true);
+            testHeapDump(false);
         }
 
         // The test throws RuntimeException on error.
