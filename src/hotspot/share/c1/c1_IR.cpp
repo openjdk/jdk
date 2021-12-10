@@ -1283,8 +1283,14 @@ void verify_successor_xentry_flag(const BlockBegin* block) {
   }
 }
 
+class XentryFlagValidator : public BlockClosure {
+ public:
+  virtual void block_do(BlockBegin* block) {
+    verify_successor_xentry_flag(block);
+  }
+};
+
 // Validation goals:
-// * Verify successor xentry flags
 // * code() length == blocks length
 // * code() contents == blocks content
 // * Each block's computed predecessors match sux lists (length)
@@ -1320,7 +1326,6 @@ class PredecessorValidator : public BlockClosure {
 
   virtual void block_do(BlockBegin* block) {
     _blocks->append(block);
-    verify_successor_xentry_flag(block);
     collect_predecessors(block);
   }
 
@@ -1405,6 +1410,9 @@ class ValidateEdgeMutuality : public BlockClosure {
 
 void IR::verify() {
 #ifdef ASSERT
+  XentryFlagValidator xe;
+  this->iterate_postorder(&xe);
+
   PredecessorValidator pv(this);
 
   EndNotNullValidator ennv;
