@@ -109,7 +109,7 @@ public class JShellHeapDumpTest {
                 // of the main thread do to it actively executing. See JDK-8269556. We retry once
                 // if that happens. This failure is so rare that this should be enough to make it
                 // extremely unlikely that we ever see this test fail again for this reason.
-                if (allowRetry) {
+                if (!allowRetry) {
                     throw new RuntimeException("'JShellToolProvider' missing from stdout/stderr");
                 } else {
                     System.out.println("'JShellToolProvider' missing. Allow one retry.");
