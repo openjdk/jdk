@@ -202,7 +202,7 @@ static void prepare_for_resolution() {
 
 static bool stack_trace_precondition(const ObjectSample* sample) {
   assert(sample != NULL, "invariant");
-  return sample->has_stack_trace_id() && !sample->is_dead();
+  return sample->has_stack_trace_id() && !sample->is_dead() && !sample->stacktrace().valid();
 }
 
 class StackTraceBlobInstaller {
@@ -249,7 +249,7 @@ void StackTraceBlobInstaller::install(ObjectSample* sample) {
   writer.write_type(TYPE_STACKTRACE);
   writer.write_count(1);
   ObjectSampleCheckpoint::write_stacktrace(stack_trace, writer);
-  blob = writer.copy();
+  blob = writer.move();
   _cache.put(sample, blob);
   sample->set_stacktrace(blob);
 }
@@ -381,6 +381,12 @@ void ObjectSampleCheckpoint::write(const ObjectSampler* sampler, EdgeStore* edge
   assert(sampler != NULL, "invariant");
   assert(edge_store != NULL, "invariant");
   assert(thread != NULL, "invariant");
+  {
+    // First install stacktrace blobs for the most recently added candidates.
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
+    install_stack_traces(sampler);
+  }
   write_sample_blobs(sampler, emit_all, thread);
   // write reference chains
   if (!edge_store->is_empty()) {

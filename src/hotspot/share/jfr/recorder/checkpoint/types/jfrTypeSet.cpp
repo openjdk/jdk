@@ -200,6 +200,13 @@ static void set_serialized(const T* ptr) {
   CLEAR_THIS_EPOCH_CLEARED_BIT(ptr);
 }
 
+template <typename T>
+static void set_leakp_serialized(const T* ptr) {
+  assert(ptr != NULL, "invariant");
+  SET_LEAKP_SERIALIZED(ptr);
+  assert(IS_LEAKP_SERIALIZED(ptr), "invariant");
+}
+
 /*
  * In C++03, functions used as template parameters must have external linkage;
  * this restriction was removed in C++11. Change back to "static" and
@@ -232,6 +239,7 @@ int write__klass(JfrCheckpointWriter* writer, const void* k) {
 int write__klass__leakp(JfrCheckpointWriter* writer, const void* k) {
   assert(k != NULL, "invariant");
   KlassPtr klass = (KlassPtr)k;
+  set_leakp_serialized(klass);
   return write_klass(writer, klass, true);
 }
 
@@ -371,7 +379,7 @@ public:
   LeakPredicate(bool class_unload) {}
   bool operator()(const Klass* klass) {
     assert(klass != NULL, "invariant");
-    return IS_LEAKP(klass) || is_implied(klass);
+    return IS_LEAKP_NOT_SERIALIZED(klass) && (IS_LEAKP(klass) || is_implied(klass));
   }
 };
 
