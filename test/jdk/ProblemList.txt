@@ -785,6 +785,7 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 
 # jdk_util
 
+java/util/concurrent/tck/JSR166TestCase.java                    8278527 generic-all
 java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x64
 sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
 
