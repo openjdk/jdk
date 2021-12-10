@@ -383,7 +383,7 @@ void ObjectSampleCheckpoint::write(const ObjectSampler* sampler, EdgeStore* edge
   assert(thread != NULL, "invariant");
   {
     // First install stacktrace blobs for the most recently added candidates.
-    MutexLocker lock(ClassLoaderDataGraph_lock);
+    MutexLocker lock(SafepointSynchronize::is_at_safepoint() ? nullptr : ClassLoaderDataGraph_lock);
     // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
     install_stack_traces(sampler);
   }
