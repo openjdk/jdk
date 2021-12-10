@@ -131,17 +131,17 @@ void Address::lea(MacroAssembler *as, Register r) const {
 
   switch(_mode) {
   case base_plus_offset: {
-    assert(_ext.shift() == 0, "expected, was %d", _ext.shift());
-    if (_offset == 0 && _base == r) // it's a nop
+    assert(ext().shift() == 0, "expected, was %d", ext().shift());
+    if (offset() == 0 && base() == r) // it's a nop
       break;
-    if (_offset > 0)
-      __ add(r, _base, _offset);
+    if (offset() > 0)
+      __ add(r, base(), offset());
     else
-      __ sub(r, _base, -_offset);
-      break;
+      __ sub(r, base(), -offset());
+    break;
   }
   case base_plus_offset_reg: {
-    __ add(r, _base, _index, _ext.op(), MAX2(_ext.shift(), 0));
+    __ add(r, base(), index(), ext().op(), MAX2(ext().shift(), 0));
     break;
   }
   case addr_literal: {

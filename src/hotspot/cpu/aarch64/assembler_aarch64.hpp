@@ -440,27 +440,50 @@ class Address {
   }
 
   Register base() const {
-    guarantee((_mode == base_plus_offset || _mode == base_plus_offset_reg
-               || _mode == post || _mode == post_reg),
-              "wrong mode");
+    precond(_mode != no_mode && _mode != addr_literal);
     return _base;
   }
   int64_t offset() const {
+    precond(_mode == base_plus_offset || _mode == pre || _mode == post ||
+            (_mode == base_plus_offset_reg && _offset == 0));
     return _offset;
   }
   Register index() const {
+    precond(_mode == base_plus_offset_reg || _mode == post_reg ||
+            (_mode == base_plus_offset && _index == noreg));
     return _index;
+  }
+  extend const &ext() const {
+    precond(_mode != no_mode && _mode != addr_literal);
+    return _ext;
   }
   mode getMode() const {
     return _mode;
   }
-  bool uses(Register reg) const { return _base == reg || _index == reg; }
-  address target() const { return _target; }
+  bool uses(Register reg) const {
+    precond(_mode != no_mode && _mode != addr_literal);
+    switch (_mode) {
+      case base_plus_offset:
+      case post:
+      case pre:
+        return _base == reg;
+      case base_plus_offset_reg:
+      case post_reg:
+        return _base == reg || _index == reg;
+      default:
+        break;
+    }
+    return false;
+  }
+  address target() const {
+    precond(_mode == addr_literal);
+    return _target;
+  }
   const RelocationHolder& rspec() const { return _rspec; }
 
   void encode(Instruction_aarch64 *i) const {
     i->f(0b111, 29, 27);
-    i->srf(_base, 5);
+    i->srf(base(), 5);
 
     switch(_mode) {
     case base_plus_offset:
@@ -471,16 +494,16 @@ class Address {
           assert(size == 0, "bad size");
           size = 0b100;
         }
-        assert(offset_ok_for_immed(_offset, size),
-               "must be, was: " INT64_FORMAT ", %d", _offset, size);
+        assert(offset_ok_for_immed(offset(), size),
+               "must be, was: " INT64_FORMAT ", %d", offset(), size);
         unsigned mask = (1 << size) - 1;
-        if (_offset < 0 || _offset & mask) {
+        if (offset() < 0 || offset() & mask) {
           i->f(0b00, 25, 24);
           i->f(0, 21), i->f(0b00, 11, 10);
-          i->sf(_offset, 20, 12);
+          i->sf(offset(), 20, 12);
         } else {
           i->f(0b01, 25, 24);
-          i->f(_offset >> size, 21, 10);
+          i->f(offset() >> size, 21, 10);
         }
       }
       break;
@@ -489,8 +512,8 @@ class Address {
       {
         i->f(0b00, 25, 24);
         i->f(1, 21);
-        i->rf(_index, 16);
-        i->f(_ext.option(), 15, 13);
+        i->rf(index(), 16);
+        i->f(ext().option(), 15, 13);
         unsigned size = i->get(31, 30);
         if (i->get(26, 26) && i->get(23, 23)) {
           // SIMD Q Type - Size = 128 bits
@@ -498,10 +521,10 @@ class Address {
           size = 0b100;
         }
         if (size == 0) // It's a byte
-          i->f(_ext.shift() >= 0, 12);
+          i->f(ext().shift() >= 0, 12);
         else {
-          assert(_ext.shift() <= 0 || _ext.shift() == (int)size, "bad shift");
-          i->f(_ext.shift() > 0, 12);
+          assert(ext().shift() <= 0 || ext().shift() == (int)size, "bad shift");
+          i->f(ext().shift() > 0, 12);
         }
         i->f(0b10, 11, 10);
       }
@@ -510,13 +533,13 @@ class Address {
     case pre:
       i->f(0b00, 25, 24);
       i->f(0, 21), i->f(0b11, 11, 10);
-      i->sf(_offset, 20, 12);
+      i->sf(offset(), 20, 12);
       break;
 
     case post:
       i->f(0b00, 25, 24);
       i->f(0, 21), i->f(0b01, 11, 10);
-      i->sf(_offset, 20, 12);
+      i->sf(offset(), 20, 12);
       break;
 
     default:
@@ -558,9 +581,9 @@ class Address {
     }
 
     size = 4 << size;
-    guarantee(_offset % size == 0, "bad offset");
-    i->sf(_offset / size, 21, 15);
-    i->srf(_base, 5);
+    guarantee(offset() % size == 0, "bad offset");
+    i->sf(offset() / size, 21, 15);
+    i->srf(base(), 5);
   }
 
   void encode_nontemporal_pair(Instruction_aarch64 *i) const {
@@ -568,9 +591,9 @@ class Address {
     i->f(0b000, 25, 23);
     unsigned size = i->get(31, 31);
     size = 4 << size;
-    guarantee(_offset % size == 0, "bad offset");
-    i->sf(_offset / size, 21, 15);
-    i->srf(_base, 5);
+    guarantee(offset() % size == 0, "bad offset");
+    i->sf(offset() / size, 21, 15);
+    i->srf(base(), 5);
     guarantee(_mode == Address::base_plus_offset,
               "Bad addressing mode for non-temporal op");
   }
