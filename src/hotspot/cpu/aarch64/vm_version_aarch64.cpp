@@ -48,13 +48,13 @@ int VM_Version::_initial_sve_vector_length;
 
 SpinWait VM_Version::_spin_wait;
 
-static SpinWait get_spin_wait_desc() {
+SpinWait VM_Version::get_spin_wait_desc() {
   if (strcmp(OnSpinWaitInst, "nop") == 0) {
-    return SpinWait(SpinWait::NOP, OnSpinWaitInstCount);
+    return SpinWait(SpinWait::NOP, OnSpinWaitInstCount, SpinWait::run_nop);
   } else if (strcmp(OnSpinWaitInst, "isb") == 0) {
-    return SpinWait(SpinWait::ISB, OnSpinWaitInstCount);
+    return SpinWait(SpinWait::ISB, OnSpinWaitInstCount, SpinWait::run_isb);
   } else if (strcmp(OnSpinWaitInst, "yield") == 0) {
-    return SpinWait(SpinWait::YIELD, OnSpinWaitInstCount);
+    return SpinWait(SpinWait::YIELD, OnSpinWaitInstCount, SpinWait::run_yield);
   } else if (strcmp(OnSpinWaitInst, "none") != 0) {
     vm_exit_during_initialization("The options for OnSpinWaitInst are nop, isb, yield, and none", OnSpinWaitInst);
   }

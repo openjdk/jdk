@@ -382,7 +382,13 @@ int os::extra_bang_size_in_bytes() {
 
 extern "C" {
   int SpinPause() {
-    return 0;
+    const SpinWait& spin_wait = VM_Version::spin_wait_desc();
+    if (spin_wait.inst() == SpinWait::NONE) {
+      return 0;
+    }
+    SpinWait::InstRunner run_inst = spin_wait.inst_runner();
+    (*run_inst)(spin_wait.inst_count());
+    return 1;
   }
 
   void _Copy_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
