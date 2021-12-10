@@ -30,6 +30,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
@@ -63,6 +64,38 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  */
 public class SnippetTaglet extends BaseTaglet {
 
+    public enum Language {
+
+        JAVA("java"),
+        PROPERTIES("properties");
+
+        private static final Map<String, Language> languages;
+
+        static {
+            Map<String, Language> tmp = new HashMap<>();
+            for (var language : values()) {
+                String id = Objects.requireNonNull(language.identifier);
+                if (tmp.put(id, language) != null)
+                    throw new IllegalStateException(); // 1-1 correspondence
+            }
+            languages = Map.copyOf(tmp);
+        }
+
+        Language(String id) {
+            identifier = id;
+        }
+
+        private final String identifier;
+
+        public static Optional<Language> of(String identifier) {
+            if (identifier == null)
+                return Optional.empty();
+            return Optional.ofNullable(languages.get(identifier));
+        }
+
+        public String getIdentifier() {return identifier;}
+    }
+
     public SnippetTaglet() {
         super(DocTree.Kind.SNIPPET, true, EnumSet.allOf(Taglet.Location.class));
     }
@@ -87,7 +120,8 @@ public class SnippetTaglet extends BaseTaglet {
             return generateContent(holder, tag, writer);
         } catch (BadSnippetException e) {
             error(writer, holder, e.tag(), e.key(), e.args());
-            return badSnippet(writer);
+            String details = writer.configuration().getDocResources().getText(e.key(), e.args());
+            return badSnippet(writer, Optional.of(details));
         }
     }
 
@@ -217,14 +251,33 @@ public class SnippetTaglet extends BaseTaglet {
             }
         }
 
+        String lang = null;
+        AttributeTree langAttr = attributes.get("lang");
+        if (langAttr != null) {
+            lang = stringValueOf(langAttr);
+        } else if (containsClass) {
+            lang = "java";
+        } else if (containsFile) {
+            lang = languageFromFileName(fileObject.getName());
+        }
+
+        Optional<Language> language = Language.of(lang);
+
+
         // TODO cache parsed external snippet (WeakHashMap)
 
         StyledText inlineSnippet = null;
         StyledText externalSnippet = null;
 
         try {
+            Diags d = (text, pos) -> {
+                var path = writer.configuration().utils.getCommentHelper(holder)
+                        .getDocTreePath(snippetTag.getBody());
+                writer.configuration().getReporter().print(Diagnostic.Kind.WARNING,
+                        path, pos, pos, pos, text);
+            };
             if (inlineContent != null) {
-                inlineSnippet = parse(writer.configuration().getDocResources(), inlineContent);
+                inlineSnippet = parse(writer.configuration().getDocResources(), d, language, inlineContent);
             }
         } catch (ParseException e) {
             var path = writer.configuration().utils.getCommentHelper(holder)
@@ -234,18 +287,20 @@ public class SnippetTaglet extends BaseTaglet {
                     .getText("doclet.snippet.markup", e.getMessage());
             writer.configuration().getReporter().print(Diagnostic.Kind.ERROR,
                     path, e.getPosition(), e.getPosition(), e.getPosition(), msg);
-            return badSnippet(writer);
+            return badSnippet(writer, Optional.of(e.getMessage()));
         }
 
         try {
+            var finalFileObject = fileObject;
+            Diags d = (text, pos) -> writer.configuration().getMessages().warning(finalFileObject, pos, pos, pos, text);
             if (externalContent != null) {
-                externalSnippet = parse(writer.configuration().getDocResources(), externalContent);
+                externalSnippet = parse(writer.configuration().getDocResources(), d, language, externalContent);
             }
         } catch (ParseException e) {
             assert fileObject != null;
             writer.configuration().getMessages().error(fileObject, e.getPosition(),
                     e.getPosition(), e.getPosition(), "doclet.snippet.markup", e.getMessage());
-            return badSnippet(writer);
+            return badSnippet(writer, Optional.of(e.getMessage()));
         }
 
         // the region must be matched at least in one content: it can be matched
@@ -289,15 +344,6 @@ public class SnippetTaglet extends BaseTaglet {
         assert inlineSnippet != null || externalSnippet != null;
         StyledText text = inlineSnippet != null ? inlineSnippet : externalSnippet;
 
-        String lang = null;
-        AttributeTree langAttr = attributes.get("lang");
-        if (langAttr != null) {
-            lang = stringValueOf(langAttr);
-        } else if (containsClass) {
-            lang = "java";
-        } else if (containsFile) {
-            lang = languageFromFileName(fileObject.getName());
-        }
         AttributeTree idAttr = attributes.get("id");
         String id = idAttr == null
                 ? null
@@ -326,10 +372,14 @@ public class SnippetTaglet extends BaseTaglet {
                """.formatted(inline, external);
     }
 
-    private StyledText parse(Resources resources, String content) throws ParseException {
-        Parser.Result result = new Parser(resources).parse(content);
+    private StyledText parse(Resources resources, Diags diags, Optional<Language> language, String content) throws ParseException {
+        Parser.Result result = new Parser(resources).parse(diags, language, content);
         result.actions().forEach(Action::perform);
         return result.text();
+    }
+
+    public interface Diags {
+        void warn(String text, int pos);
     }
 
     private static String stringValueOf(AttributeTree at) throws BadSnippetException {
@@ -359,8 +409,9 @@ public class SnippetTaglet extends BaseTaglet {
             writer.configuration().utils.getCommentHelper(holder).getDocTreePath(tag), key, args);
     }
 
-    private Content badSnippet(TagletWriter writer) {
-        return writer.getOutputInstance().add("bad snippet");
+    private Content badSnippet(TagletWriter writer, Optional<String> details) {
+        Resources resources = writer.configuration().getDocResources();
+        return writer.invalidTagOutput(resources.getText("doclet.tag.invalid", "snippet"), details);
     }
 
     private String packageName(PackageElement pkg, Utils utils) {

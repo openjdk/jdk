@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,30 @@
  */
 package jdk.incubator.foreign;
 
-import java.lang.constant.Constable;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicConstantDesc;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 
 /**
  * A sequence layout. A sequence layout is used to denote a repetition of a given layout, also called the sequence layout's <em>element layout</em>.
- * The repetition count, where it exists (e.g. for <em>finite</em> sequence layouts) is said to be the the sequence layout's <em>element count</em>.
+ * The repetition count, where it exists (e.g. for <em>finite</em> sequence layouts) is said to be the sequence layout's <em>element count</em>.
  * A finite sequence layout can be thought of as a group layout where the sequence layout's element layout is repeated a number of times
  * that is equal to the sequence layout's element count. In other words this layout:
  *
- * <pre>{@code
-MemoryLayout.sequenceLayout(3, MemoryLayout.valueLayout(32, ByteOrder.BIG_ENDIAN));
- * }</pre>
+ * {@snippet lang=java :
+ * MemoryLayout.sequenceLayout(3, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN));
+ * }
  *
  * is equivalent to the following layout:
  *
- * <pre>{@code
-MemoryLayout.structLayout(
-    MemoryLayout.valueLayout(32, ByteOrder.BIG_ENDIAN),
-    MemoryLayout.valueLayout(32, ByteOrder.BIG_ENDIAN),
-    MemoryLayout.valueLayout(32, ByteOrder.BIG_ENDIAN));
- * }</pre>
+ * {@snippet lang=java :
+ * MemoryLayout.structLayout(
+ *     ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN),
+ *     ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN),
+ *     ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN));
+ * }
  *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
@@ -72,13 +70,13 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
     private final MemoryLayout elementLayout;
 
     SequenceLayout(OptionalLong elemCount, MemoryLayout elementLayout) {
-        this(elemCount, elementLayout, elementLayout.bitAlignment(), Map.of());
+        this(elemCount, elementLayout, elementLayout.bitAlignment(), Optional.empty());
     }
 
-    SequenceLayout(OptionalLong elemCount, MemoryLayout elementLayout, long alignment, Map<String, Constable> attributes) {
+    SequenceLayout(OptionalLong elemCount, MemoryLayout elementLayout, long alignment, Optional<String> name) {
         super(elemCount.isPresent() && AbstractLayout.optSize(elementLayout).isPresent() ?
                 OptionalLong.of(elemCount.getAsLong() * elementLayout.bitSize()) :
-                OptionalLong.empty(), alignment, attributes);
+                OptionalLong.empty(), alignment, name);
         this.elemCount = elemCount;
         this.elementLayout = elementLayout;
     }
@@ -110,7 +108,7 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
      */
     public SequenceLayout withElementCount(long elementCount) {
         AbstractLayout.checkSize(elementCount, true);
-        return new SequenceLayout(OptionalLong.of(elementCount), elementLayout, alignment, attributes);
+        return new SequenceLayout(OptionalLong.of(elementCount), elementLayout, alignment, name());
     }
 
     /**
@@ -121,22 +119,22 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
      * as the flattened projection of this sequence layout.
      * <p>
      * For instance, given a sequence layout of the kind:
-     * <pre>{@code
-    var seq = MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(3, MemoryLayouts.JAVA_INT));
-     * }</pre>
+     * {@snippet lang=java :
+     * var seq = MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(3, ValueLayout.JAVA_INT));
+     * }
      * calling {@code seq.reshape(2, 6)} will yield the following sequence layout:
-     * <pre>{@code
-    var reshapeSeq = MemoryLayout.sequenceLayout(2, MemoryLayout.sequenceLayout(6, MemoryLayouts.JAVA_INT));
-     * }</pre>
+     * {@snippet lang=java :
+     * var reshapeSeq = MemoryLayout.sequenceLayout(2, MemoryLayout.sequenceLayout(6, ValueLayout.JAVA_INT));
+     * }
      * <p>
      * If one of the provided element count is the special value {@code -1}, then the element
      * count in that position will be inferred from the remaining element counts and the
      * element count of the flattened projection of this layout. For instance, a layout equivalent to
      * the above {@code reshapeSeq} can also be computed in the following ways:
-     * <pre>{@code
-    var reshapeSeqImplicit1 = seq.reshape(-1, 6);
-    var reshapeSeqImplicit2 = seq.reshape(2, -1);
-     * }</pre>
+     * {@snippet lang=java :
+     * var reshapeSeqImplicit1 = seq.reshape(-1, 6);
+     * var reshapeSeqImplicit2 = seq.reshape(2, -1);
+     * }
      * @param elementCounts an array of element counts, of which at most one can be {@code -1}.
      * @return a new sequence layout where element layouts in the flattened projection of this
      * sequence layout (see {@link #flatten()}) are re-arranged into one or more nested sequence layouts.
@@ -151,7 +149,7 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
         if (elementCounts.length == 0) {
             throw new IllegalArgumentException();
         }
-        if (!elementCount().isPresent()) {
+        if (elementCount().isEmpty()) {
             throw new UnsupportedOperationException("Cannot reshape a sequence layout whose element count is unspecified");
         }
         SequenceLayout flat = flatten();
@@ -197,26 +195,25 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
      * This transformation preserves the layout size; nested sequence layout in this sequence layout will
      * be dropped and their element counts will be incorporated into that of the returned sequence layout.
      * For instance, given a sequence layout of the kind:
-     * <pre>{@code
-    var seq = MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(3, MemoryLayouts.JAVA_INT));
-     * }</pre>
+     * {@snippet lang=java :
+     * var seq = MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(3, ValueLayout.JAVA_INT));
+     * }
      * calling {@code seq.flatten()} will yield the following sequence layout:
-     * <pre>{@code
-    var flattenedSeq = MemoryLayout.sequenceLayout(12, MemoryLayouts.JAVA_INT);
-     * }</pre>
+     * {@snippet lang=java :
+     * var flattenedSeq = MemoryLayout.sequenceLayout(12, ValueLayout.JAVA_INT);
+     * }
      * @return a new sequence layout with the same size as this layout (but, possibly, with different
      * element count), whose element layout is not a sequence layout.
      * @throws UnsupportedOperationException if this sequence layout, or one of the nested sequence layouts being
      * flattened, does not have an element count.
      */
     public SequenceLayout flatten() {
-        if (!elementCount().isPresent()) {
+        if (elementCount().isEmpty()) {
             throw badUnboundSequenceLayout();
         }
         long count = elementCount().getAsLong();
         MemoryLayout elemLayout = elementLayout();
-        while (elemLayout instanceof SequenceLayout) {
-            SequenceLayout elemSeq = (SequenceLayout)elemLayout;
+        while (elemLayout instanceof SequenceLayout elemSeq) {
             count = count * elemSeq.elementCount().orElseThrow(this::badUnboundSequenceLayout);
             elemLayout = elemSeq.elementLayout();
         }
@@ -241,10 +238,9 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
         if (!super.equals(other)) {
             return false;
         }
-        if (!(other instanceof SequenceLayout)) {
+        if (!(other instanceof SequenceLayout s)) {
             return false;
         }
-        SequenceLayout s = (SequenceLayout)other;
         return elemCount.equals(s.elemCount) && elementLayout.equals(s.elementLayout);
     }
 
@@ -254,8 +250,8 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
     }
 
     @Override
-    SequenceLayout dup(long alignment, Map<String, Constable> attributes) {
-        return new SequenceLayout(elementCount(), elementLayout, alignment, attributes);
+    SequenceLayout dup(long alignment, Optional<String> name) {
+        return new SequenceLayout(elementCount(), elementLayout, alignment, name);
     }
 
     @Override
@@ -289,13 +285,5 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
     @Override
     public SequenceLayout withBitAlignment(long alignmentBits) {
         return (SequenceLayout)super.withBitAlignment(alignmentBits);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public SequenceLayout withAttribute(String name, Constable value) {
-        return (SequenceLayout)super.withAttribute(name, value);
     }
 }

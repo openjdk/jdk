@@ -558,10 +558,14 @@ public:
   virtual jlong hi_as_long() const = 0;
   virtual jlong lo_as_long() const = 0;
   jlong get_con_as_long(BasicType bt) const;
+  bool is_con() const { return lo_as_long() == hi_as_long(); }
 
   static const TypeInteger* make(jlong lo, jlong hi, int w, BasicType bt);
 
   static const TypeInteger* bottom(BasicType type);
+  static const TypeInteger* zero(BasicType type);
+  static const TypeInteger* one(BasicType type);
+  static const TypeInteger* minus_1(BasicType type);
 };
 
 
@@ -588,9 +592,9 @@ public:
   static const TypeInt *make(jint lo, jint hi, int w);
 
   // Check for single integer
-  int is_con() const { return _lo==_hi; }
+  bool is_con() const { return _lo==_hi; }
   bool is_con(int i) const { return is_con() && _lo == i; }
-  jint get_con() const { assert( is_con(), "" );  return _lo; }
+  jint get_con() const { assert(is_con(), "" );  return _lo; }
 
   virtual bool        is_finite() const;  // Has a finite value
 
@@ -656,9 +660,9 @@ public:
   static const TypeLong *make(jlong lo, jlong hi, int w);
 
   // Check for single integer
-  int is_con() const { return _lo==_hi; }
+  bool is_con() const { return _lo==_hi; }
   bool is_con(int i) const { return is_con() && _lo == i; }
-  jlong get_con() const { assert( is_con(), "" ); return _lo; }
+  jlong get_con() const { assert(is_con(), "" ); return _lo; }
 
   // Check for positive 32-bit value.
   int is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }
@@ -870,6 +874,8 @@ public:
   TypeVectMask(const Type* elem, uint length) : TypeVect(VectorMask, elem, length) {}
   virtual bool eq(const Type *t) const;
   virtual const Type *xdual() const;
+  static const TypeVectMask* make(const BasicType elem_bt, uint length);
+  static const TypeVectMask* make(const Type* elem, uint length);
 };
 
 //------------------------------TypePtr----------------------------------------

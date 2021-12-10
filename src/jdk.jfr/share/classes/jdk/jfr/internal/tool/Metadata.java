@@ -31,7 +31,6 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
@@ -43,7 +42,7 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.TypeLibrary;
+import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.consumer.JdkJfrConsumer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -206,7 +205,7 @@ final class Metadata extends Command {
             }
 
             List<Type> types = findTypes(file);
-            Collections.sort(types, new TypeComparator());
+            types.sort(new TypeComparator());
             for (Type type : types) {
                 if (filter != null) {
                     // If --events or --categories, only operate on events
@@ -231,7 +230,7 @@ final class Metadata extends Command {
         if (file == null) {
             // Force initialization
             FlightRecorder.getFlightRecorder().getEventTypes();
-            return TypeLibrary.getInstance().getTypes();
+            return MetadataRepository.getInstance().getVisibleTypes();
         }
         try (RecordingFile rf = new RecordingFile(file)) {
             return PRIVATE_ACCESS.readTypes(rf);

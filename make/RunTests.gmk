@@ -200,7 +200,7 @@ $(eval $(call SetTestOpt,FAILURE_HANDLER_TIMEOUT,JTREG))
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
         TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM RUN_PROBLEM_LISTS \
-        RETRY_COUNT MAX_OUTPUT $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
+        RETRY_COUNT REPEAT_COUNT MAX_OUTPUT $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
         $(CUSTOM_JTREG_STRING_KEYWORDS), \
@@ -745,6 +745,15 @@ define SetupRunJtregTestBody
   JTREG_RETAIN ?= fail,error
   JTREG_RUN_PROBLEM_LISTS ?= false
   JTREG_RETRY_COUNT ?= 0
+  JTREG_REPEAT_COUNT ?= 0
+
+  ifneq ($$(JTREG_RETRY_COUNT), 0)
+    ifneq ($$(JTREG_REPEAT_COUNT), 0)
+      $$(info Error: Cannot use both JTREG_RETRY_COUNT and JTREG_REPEAT_COUNT together.)
+      $$(info Please choose one or the other.)
+      $$(error Cannot continue)
+    endif
+  endif
 
   ifneq ($$(JTREG_LAUNCHER_OPTIONS), )
     $1_JTREG_LAUNCHER_OPTIONS += $$(JTREG_LAUNCHER_OPTIONS)
@@ -866,6 +875,18 @@ define SetupRunJtregTestBody
             break; \
           fi; \
           export JTREG_STATUS="-status:error,fail"; \
+        done
+  endif
+
+  ifneq ($$(JTREG_REPEAT_COUNT), 0)
+    $1_COMMAND_LINE := \
+        for i in {1..$$(JTREG_REPEAT_COUNT)}; do \
+          $$(PRINTF) "\nRepeating Jtreg run: $$$$i out of $$(JTREG_REPEAT_COUNT)\n"; \
+          $$($1_COMMAND_LINE); \
+          if [ "`$$(CAT) $$($1_EXITCODE)`" != "0" ]; then \
+            $$(PRINTF) "\nFailures detected, no more repeats.\n"; \
+            break; \
+          fi; \
         done
   endif
 

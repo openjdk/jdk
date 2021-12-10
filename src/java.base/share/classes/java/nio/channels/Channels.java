@@ -69,9 +69,12 @@ public final class Channels {
     /**
      * Constructs a stream that reads bytes from the given channel.
      *
-     * <p> The {@code read} methods of the resulting stream will throw an
-     * {@link IllegalBlockingModeException} if invoked while the underlying
-     * channel is in non-blocking mode.  The stream will not be buffered, and
+     * <p> The {@code read} and {@code transferTo} methods of the resulting stream
+     * will throw an {@link IllegalBlockingModeException} if invoked while the
+     * underlying channel is in non-blocking mode. The {@code transferTo} method
+     * will also throw an {@code IllegalBlockingModeException} if invoked to
+     * transfer bytes to an output stream that writes to an underlying channel in
+     * non-blocking mode.  The stream will not be buffered, and
      * it will not support the {@link InputStream#mark mark} or {@link
      * InputStream#reset reset} methods.  The stream will be safe for access by
      * multiple concurrent threads.  Closing the stream will in turn cause the

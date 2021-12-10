@@ -37,8 +37,10 @@
  *   TestUpcallStructScope
  */
 
+import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
@@ -52,14 +54,11 @@ import java.lang.invoke.MethodType;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static jdk.incubator.foreign.CLinker.C_DOUBLE;
-import static jdk.incubator.foreign.CLinker.C_INT;
-import static jdk.incubator.foreign.CLinker.C_POINTER;
 import static org.testng.Assert.assertFalse;
 
-public class TestUpcallStructScope {
+public class TestUpcallStructScope extends NativeTestHelper {
     static final MethodHandle MH_do_upcall;
-    static final CLinker LINKER = CLinker.getInstance();
+    static final CLinker LINKER = CLinker.systemCLinker();
     static final MethodHandle MH_Consumer_accept;
 
     // struct S_PDI { void* p0; double p1; int p2; };
@@ -74,8 +73,7 @@ public class TestUpcallStructScope {
         SymbolLookup lookup = SymbolLookup.loaderLookup();
         MH_do_upcall = LINKER.downcallHandle(
             lookup.lookup("do_upcall").get(),
-            MethodType.methodType(void.class, MemoryAddress.class, MemorySegment.class),
-            FunctionDescriptor.ofVoid(C_POINTER, S_PDI_LAYOUT)
+                FunctionDescriptor.ofVoid(C_POINTER, S_PDI_LAYOUT)
         );
 
         try {
@@ -96,9 +94,9 @@ public class TestUpcallStructScope {
         MethodHandle target = methodHandle(capturedSegment::set);
         FunctionDescriptor upcallDesc = FunctionDescriptor.ofVoid(S_PDI_LAYOUT);
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemoryAddress upcallStub = LINKER.upcallStub(target, upcallDesc, scope);
+            NativeSymbol upcallStub = LINKER.upcallStub(target, upcallDesc, scope);
             MemorySegment argSegment = MemorySegment.allocateNative(S_PDI_LAYOUT, scope);
-            MH_do_upcall.invokeExact(upcallStub.address(), argSegment);
+            MH_do_upcall.invoke(upcallStub, argSegment);
         }
 
         MemorySegment captured = capturedSegment.get();
