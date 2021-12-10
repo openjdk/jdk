@@ -45,25 +45,19 @@ public class JCmdTestStaticDump extends JCmdTestDumpBase {
                                                "LingeredApp source: shared objects file",
                                                "Hello source: shared objects file"};
 
-    // Those two flags will not create a successful LingeredApp.
+    // This flag will not create a successful LingeredApp.
     private static String[] noDumpFlags  =
-        {"-XX:+DumpSharedSpaces",
-         "-Xshare:dump"};
+        {"-Xshare:dump"};
     // Those flags will be excluded in static dumping,
     // See src/java.base/share/classes/jdk/internal/misc/CDS.java
     private static String[] excludeFlags = {
          "-XX:DumpLoadedClassList=AnyFileName.classlist",
-         // this flag just dump archive, won't run app normally.
-         // "-XX:+DumpSharedSpaces",
-         "-XX:+DynamicDumpSharedSpaces",
          "-XX:+RecordDynamicDumpInfo",
          "-Xshare:on",
          "-Xshare:auto",
          "-XX:SharedClassListFile=non-exist.classlist",
          "-XX:SharedArchiveFile=non-exist.jsa",
-         "-XX:ArchiveClassesAtExit=tmp.jsa",
-         "-XX:+UseSharedSpaces",
-         "-XX:+RequireSharedSpaces"};
+         "-XX:ArchiveClassesAtExit=tmp.jsa"};
 
     // Times to dump cds against same process.
     private static final int ITERATION_TIMES = 2;

@@ -66,7 +66,7 @@ public class CDS {
     }
 
     /**
-      * Is sharing enabled via the UseSharedSpaces flag.
+      * Is sharing enabled.
       */
     public static boolean isSharingEnabled() {
         return isSharingEnabled;
@@ -232,15 +232,11 @@ public class CDS {
 
     private static String[] excludeFlags = {
          "-XX:DumpLoadedClassList=",
-         "-XX:+DumpSharedSpaces",
-         "-XX:+DynamicDumpSharedSpaces",
          "-XX:+RecordDynamicDumpInfo",
          "-Xshare:",
          "-XX:SharedClassListFile=",
          "-XX:SharedArchiveFile=",
-         "-XX:ArchiveClassesAtExit=",
-         "-XX:+UseSharedSpaces",
-         "-XX:+RequireSharedSpaces"};
+         "-XX:ArchiveClassesAtExit="};
     private static boolean containsExcludedFlags(String testStr) {
        for (String e : excludeFlags) {
            if (testStr.contains(e)) {

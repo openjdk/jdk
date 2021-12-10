@@ -39,6 +39,14 @@ int LogBitsPerHeapOop  = 0;
 int BytesPerHeapOop    = 0;
 int BitsPerHeapOop     = 0;
 
+// Old CDS options
+bool DumpSharedSpaces;
+bool DynamicDumpSharedSpaces;
+bool RequireSharedSpaces;
+extern "C" {
+JNIEXPORT jboolean UseSharedSpaces = true;
+}
+
 // Object alignment, in units of HeapWords.
 // Defaults are -1 so things will break badly if incorrectly initialized.
 int MinObjAlignment            = -1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,7 +300,7 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       jvm_name = lib->name;
       useSharedSpacesAddr = lookup_symbol(ph, jvm_name, USE_SHARED_SPACES_SYM);
       if (useSharedSpacesAddr == 0) {
-        print_debug("can't lookup 'UseSharedSpaces' flag\n");
+        print_debug("can't lookup 'UseSharedSpaces' symbol\n");
         return false;
       }
 
