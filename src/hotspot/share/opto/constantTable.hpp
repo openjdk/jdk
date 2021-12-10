@@ -141,7 +141,7 @@ public:
   void     add(Constant& con);
   Constant add(MachConstantNode* n, BasicType type, jvalue value);
   Constant add(Metadata* metadata);
-  Constant add(BasicType bt, GrowableArray<jvalue>* array);
+  Constant add(MachConstantNode* n, BasicType bt, GrowableArray<jvalue>* array);
   Constant add(MachConstantNode* n, MachOper* oper);
   Constant add(MachConstantNode* n, jint i) {
     jvalue value; value.i = i;

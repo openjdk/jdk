@@ -32,10 +32,13 @@
 
 //=============================================================================
 // Two Constant's are equal when the type and the value are equal.
-bool ConstantTable::Constant::operator==(const Constant& other) {
+bool ConstantTable::Constant::operator==(const Constant& other) {  
   if (type()          != other.type()         )  return false;
   if (can_be_reused() != other.can_be_reused())  return false;
-  // For floating point values we compare the bit pattern.
+  if (is_array() || other.is_array()) {
+    return is_array() && other.is_array() && _v._array == other._v._array;
+  }
+  // For floating point values we compare the bit pattern
   switch (type()) {
   case T_INT:
   case T_FLOAT:   return (_v._value.i == other._v._value.i);
@@ -226,7 +229,7 @@ ConstantTable::Constant ConstantTable::add(Metadata* metadata) {
   return con;
 }
 
-ConstantTable::Constant ConstantTable::add(BasicType bt, GrowableArray<jvalue>* array) {
+ConstantTable::Constant ConstantTable::add(MachConstantNode* n, BasicType bt, GrowableArray<jvalue>* array) {
   Constant con(bt, array);
   add(con);
   return con;
