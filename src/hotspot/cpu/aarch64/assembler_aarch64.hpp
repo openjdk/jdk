@@ -349,9 +349,8 @@ namespace ext
 // Addressing modes
 class Address {
  public:
-
-  enum mode { no_mode, base_plus_offset, pre, post, post_reg, pcrel,
-              base_plus_offset_reg, addr_literal };
+  enum mode { no_mode, addr_literal, pre, post, post_reg,
+              base_plus_offset, base_plus_offset_reg };
 
   // Shift and extend for base reg + reg offset addressing
   class extend {
