@@ -11101,6 +11101,10 @@ void Assembler::evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, Address
   emit_int8((unsigned char)comparison);
 }
 
+// Register is a class, but it would be assigned numerical value.
+// "0" is assigned for xmm0. Thus we need to ignore -Wnonnull.
+PRAGMA_DIAG_PUSH
+PRAGMA_NONNULL_IGNORED
 void Assembler::evprord(XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vector_len) {
   assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
@@ -11124,6 +11128,7 @@ void Assembler::evprorq(XMMRegister dst, KRegister mask, XMMRegister src, int sh
   int encode = vex_prefix_and_encode(xmm0->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int24(0x72, (0xC0 | encode), shift & 0xFF);
 }
+PRAGMA_DIAG_POP
 
 void Assembler::evprorvd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len) {
   assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
