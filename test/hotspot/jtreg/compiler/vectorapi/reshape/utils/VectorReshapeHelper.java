@@ -24,6 +24,7 @@
 package compiler.vectorapi.reshape.utils;
 
 import compiler.lib.ir_framework.ForceInline;
+import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.TestFramework;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -68,16 +69,13 @@ public class VectorReshapeHelper {
     public static final VectorSpecies<Float>   FSPEC512 =  FloatVector.SPECIES_512;
     public static final VectorSpecies<Double>  DSPEC512 = DoubleVector.SPECIES_512;
 
-    private static final String PREFIX = "(\\d+(\\s){2}(";
-    private static final String SUFFIX = ".*)+(\\s){2}===.*)";
-
-    public static final String B2X_NODE  = PREFIX + "VectorCastB2X" + SUFFIX;
-    public static final String S2X_NODE  = PREFIX + "VectorCastS2X" + SUFFIX;
-    public static final String I2X_NODE  = PREFIX + "VectorCastI2X" + SUFFIX;
-    public static final String L2X_NODE  = PREFIX + "VectorCastL2X" + SUFFIX;
-    public static final String F2X_NODE  = PREFIX + "VectorCastF2X" + SUFFIX;
-    public static final String D2X_NODE  = PREFIX + "VectorCastD2X" + SUFFIX;
-    public static final String REINTERPRET_NODE = PREFIX + "VectorReinterpret" + SUFFIX;
+    public static final String B2X_NODE  = IRNode.VECTOR_CAST_B2X;
+    public static final String S2X_NODE  = IRNode.VECTOR_CAST_S2X;
+    public static final String I2X_NODE  = IRNode.VECTOR_CAST_I2X;
+    public static final String L2X_NODE  = IRNode.VECTOR_CAST_L2X;
+    public static final String F2X_NODE  = IRNode.VECTOR_CAST_F2X;
+    public static final String D2X_NODE  = IRNode.VECTOR_CAST_D2X;
+    public static final String REINTERPRET_NODE = IRNode.VECTOR_REINTERPRET;
 
     public static void runMainHelper(Class<?> testClass, Stream<VectorSpeciesPair> testMethods, String... flags) {
         var test = new TestFramework(testClass);

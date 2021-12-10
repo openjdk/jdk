@@ -36,7 +36,7 @@ import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
  */
 public class TestVectorDoubleExpandShrink {
     @Test
-    @IR(counts = {REINTERPRET_NODE, "0"})
+    @IR(failOn = REINTERPRET_NODE)
     public static void testB64toB128(byte[] input, byte[] output) {
         vectorDoubleExpandShrink(BSPEC64, BSPEC128, input, output);
     }
@@ -47,7 +47,7 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "0"})
+    @IR(failOn = REINTERPRET_NODE)
     public static void testB64toB256(byte[] input, byte[] output) {
         vectorDoubleExpandShrink(BSPEC64, BSPEC256, input, output);
     }
@@ -58,7 +58,7 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "0"})
+    @IR(failOn = REINTERPRET_NODE)
     public static void testB64toB512(byte[] input, byte[] output) {
         vectorDoubleExpandShrink(BSPEC64, BSPEC512, input, output);
     }
@@ -80,7 +80,7 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "0"})
+    @IR(failOn = REINTERPRET_NODE)
     public static void testB128toB256(byte[] input, byte[] output) {
         vectorDoubleExpandShrink(BSPEC128, BSPEC256, input, output);
     }
@@ -91,7 +91,7 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "0"})
+    @IR(failOn = REINTERPRET_NODE)
     public static void testB128toB512(byte[] input, byte[] output) {
         vectorDoubleExpandShrink(BSPEC128, BSPEC512, input, output);
     }
@@ -124,7 +124,7 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "0"})
+    @IR(failOn = REINTERPRET_NODE)
     public static void testB256toB512(byte[] input, byte[] output) {
         vectorDoubleExpandShrink(BSPEC256, BSPEC512, input, output);
     }
