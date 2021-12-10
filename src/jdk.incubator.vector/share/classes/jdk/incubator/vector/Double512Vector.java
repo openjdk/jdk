@@ -730,9 +730,9 @@ final class Double512Vector extends DoubleVector {
         @ForceInline
         /*package-private*/
         static Double512Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Double512Mask.class, long.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Double512Mask.class, long.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Double512Mask  TRUE_MASK = new Double512Mask(true);
         private static final Double512Mask FALSE_MASK = new Double512Mask(false);

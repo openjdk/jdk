@@ -741,9 +741,9 @@ final class Byte64Vector extends ByteVector {
         @ForceInline
         /*package-private*/
         static Byte64Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Byte64Mask.class, byte.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Byte64Mask.class, byte.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Byte64Mask  TRUE_MASK = new Byte64Mask(true);
         private static final Byte64Mask FALSE_MASK = new Byte64Mask(false);

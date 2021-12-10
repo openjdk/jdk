@@ -370,8 +370,8 @@ class AccessibleHTML implements Accessible {
          */
         public Accessible getAccessibleChild(int i) {
             ElementInfo childInfo = elementInfo.getChild(i);
-            if (childInfo != null && childInfo instanceof Accessible) {
-                return (Accessible)childInfo;
+            if (childInfo instanceof Accessible accessibleChild) {
+                return accessibleChild;
             } else {
                 return null;
             }
@@ -1212,9 +1212,8 @@ class AccessibleHTML implements Accessible {
             private String getText(int offset, int length)
                 throws BadLocationException {
 
-                if (model != null && model instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)model;
-                    return model.getText(offset, length);
+                if (model instanceof StyledDocument doc) {
+                    return doc.getText(offset, length);
                 } else {
                     return null;
                 }

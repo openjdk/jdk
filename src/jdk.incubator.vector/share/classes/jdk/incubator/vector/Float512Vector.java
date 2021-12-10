@@ -746,9 +746,9 @@ final class Float512Vector extends FloatVector {
         @ForceInline
         /*package-private*/
         static Float512Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Float512Mask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Float512Mask.class, int.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Float512Mask  TRUE_MASK = new Float512Mask(true);
         private static final Float512Mask FALSE_MASK = new Float512Mask(false);

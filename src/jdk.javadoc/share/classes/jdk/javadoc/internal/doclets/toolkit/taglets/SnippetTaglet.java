@@ -120,7 +120,8 @@ public class SnippetTaglet extends BaseTaglet {
             return generateContent(holder, tag, writer);
         } catch (BadSnippetException e) {
             error(writer, holder, e.tag(), e.key(), e.args());
-            return badSnippet(writer);
+            String details = writer.configuration().getDocResources().getText(e.key(), e.args());
+            return badSnippet(writer, Optional.of(details));
         }
     }
 
@@ -269,8 +270,14 @@ public class SnippetTaglet extends BaseTaglet {
         StyledText externalSnippet = null;
 
         try {
+            Diags d = (text, pos) -> {
+                var path = writer.configuration().utils.getCommentHelper(holder)
+                        .getDocTreePath(snippetTag.getBody());
+                writer.configuration().getReporter().print(Diagnostic.Kind.WARNING,
+                        path, pos, pos, pos, text);
+            };
             if (inlineContent != null) {
-                inlineSnippet = parse(writer.configuration().getDocResources(), language, inlineContent);
+                inlineSnippet = parse(writer.configuration().getDocResources(), d, language, inlineContent);
             }
         } catch (ParseException e) {
             var path = writer.configuration().utils.getCommentHelper(holder)
@@ -280,18 +287,20 @@ public class SnippetTaglet extends BaseTaglet {
                     .getText("doclet.snippet.markup", e.getMessage());
             writer.configuration().getReporter().print(Diagnostic.Kind.ERROR,
                     path, e.getPosition(), e.getPosition(), e.getPosition(), msg);
-            return badSnippet(writer);
+            return badSnippet(writer, Optional.of(e.getMessage()));
         }
 
         try {
+            var finalFileObject = fileObject;
+            Diags d = (text, pos) -> writer.configuration().getMessages().warning(finalFileObject, pos, pos, pos, text);
             if (externalContent != null) {
-                externalSnippet = parse(writer.configuration().getDocResources(), language, externalContent);
+                externalSnippet = parse(writer.configuration().getDocResources(), d, language, externalContent);
             }
         } catch (ParseException e) {
             assert fileObject != null;
             writer.configuration().getMessages().error(fileObject, e.getPosition(),
                     e.getPosition(), e.getPosition(), "doclet.snippet.markup", e.getMessage());
-            return badSnippet(writer);
+            return badSnippet(writer, Optional.of(e.getMessage()));
         }
 
         // the region must be matched at least in one content: it can be matched
@@ -363,10 +372,14 @@ public class SnippetTaglet extends BaseTaglet {
                """.formatted(inline, external);
     }
 
-    private StyledText parse(Resources resources, Optional<Language> language, String content) throws ParseException {
-        Parser.Result result = new Parser(resources).parse(language, content);
+    private StyledText parse(Resources resources, Diags diags, Optional<Language> language, String content) throws ParseException {
+        Parser.Result result = new Parser(resources).parse(diags, language, content);
         result.actions().forEach(Action::perform);
         return result.text();
+    }
+
+    public interface Diags {
+        void warn(String text, int pos);
     }
 
     private static String stringValueOf(AttributeTree at) throws BadSnippetException {
@@ -396,8 +409,9 @@ public class SnippetTaglet extends BaseTaglet {
             writer.configuration().utils.getCommentHelper(holder).getDocTreePath(tag), key, args);
     }
 
-    private Content badSnippet(TagletWriter writer) {
-        return writer.getOutputInstance().add("bad snippet");
+    private Content badSnippet(TagletWriter writer, Optional<String> details) {
+        Resources resources = writer.configuration().getDocResources();
+        return writer.invalidTagOutput(resources.getText("doclet.tag.invalid", "snippet"), details);
     }
 
     private String packageName(PackageElement pkg, Utils utils) {

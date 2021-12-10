@@ -42,7 +42,7 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.TypeLibrary;
+import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.consumer.JdkJfrConsumer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -230,7 +230,7 @@ final class Metadata extends Command {
         if (file == null) {
             // Force initialization
             FlightRecorder.getFlightRecorder().getEventTypes();
-            return TypeLibrary.getInstance().getTypes();
+            return MetadataRepository.getInstance().getVisibleTypes();
         }
         try (RecordingFile rf = new RecordingFile(file)) {
             return PRIVATE_ACCESS.readTypes(rf);

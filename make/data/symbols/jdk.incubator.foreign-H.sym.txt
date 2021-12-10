@@ -43,6 +43,7 @@ innerclass innerClass jdk/incubator/foreign/CLinker$VaList$Builder outerClass jd
 -method name allocateMemoryRestricted descriptor (J)Ljdk/incubator/foreign/MemoryAddress;
 -method name freeMemoryRestricted descriptor (Ljdk/incubator/foreign/MemoryAddress;)V
 method name getInstance descriptor ()Ljdk/incubator/foreign/CLinker; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name systemLookup descriptor ()Ljdk/incubator/foreign/SymbolLookup; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name downcallHandle descriptor (Ljdk/incubator/foreign/Addressable;Ljdk/incubator/foreign/SegmentAllocator;Ljava/lang/invoke/MethodType;Ljdk/incubator/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle; flags 401
 method name downcallHandle descriptor (Ljava/lang/invoke/MethodType;Ljdk/incubator/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle; flags 401
 method name upcallStub descriptor (Ljava/lang/invoke/MethodHandle;Ljdk/incubator/foreign/FunctionDescriptor;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/MemoryAddress; flags 401
@@ -51,7 +52,6 @@ method name toCString descriptor (Ljava/lang/String;Ljdk/incubator/foreign/Resou
 method name toJavaString descriptor (Ljdk/incubator/foreign/MemoryAddress;)Ljava/lang/String; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name allocateMemory descriptor (J)Ljdk/incubator/foreign/MemoryAddress; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name freeMemory descriptor (Ljdk/incubator/foreign/MemoryAddress;)V flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
-method name systemLookup descriptor ()Ljdk/incubator/foreign/SymbolLookup; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 
 class name jdk/incubator/foreign/CLinker$VaList
 header extends java/lang/Object implements jdk/incubator/foreign/Addressable nestHost jdk/incubator/foreign/CLinker sealed true flags 601

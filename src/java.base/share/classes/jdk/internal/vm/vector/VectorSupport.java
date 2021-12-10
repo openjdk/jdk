@@ -114,6 +114,10 @@ public class VectorSupport {
     public static final int BT_ult = BT_lt | BT_unsigned_compare;
     public static final int BT_ugt = BT_gt | BT_unsigned_compare;
 
+    // Various broadcasting modes.
+    public static final int MODE_BROADCAST = 0;
+    public static final int MODE_BITS_COERCED_LONG_TO_MASK = 1;
+
     // BasicType codes, for primitives only:
     public static final int
         T_FLOAT   = 6,
@@ -157,9 +161,9 @@ public class VectorSupport {
     }
 
     /* ============================================================================ */
-    public interface BroadcastOperation<VM extends VectorPayload,
-                                        S extends VectorSpecies<?>> {
-        VM broadcast(long l, S s);
+    public interface FromBitsCoercedOperation<VM extends VectorPayload,
+                                              S extends VectorSpecies<?>> {
+        VM fromBits(long l, S s);
     }
 
     @IntrinsicCandidate
@@ -167,12 +171,12 @@ public class VectorSupport {
     <VM extends VectorPayload,
      S extends VectorSpecies<E>,
      E>
-    VM broadcastCoerced(Class<? extends VM> vmClass, Class<E> eClass,
-                        int length,
-                        long bits, S s,
-                        BroadcastOperation<VM, S> defaultImpl) {
+    VM fromBitsCoerced(Class<? extends VM> vmClass, Class<E> eClass,
+                       int length,
+                       long bits, int mode, S s,
+                       FromBitsCoercedOperation<VM, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-        return defaultImpl.broadcast(bits, s);
+        return defaultImpl.fromBits(bits, s);
     }
 
     /* ============================================================================ */
