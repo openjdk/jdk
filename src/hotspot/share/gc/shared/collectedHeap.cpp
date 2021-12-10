@@ -493,7 +493,7 @@ void CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool 
   CollectedHeap::fill_with_object(start, end, zap);
 }
 
-size_t CollectedHeap::min_dummy_object_size() const {
+size_t CollectedHeap::min_dummy_object_size() {
   return oopDesc::header_size();
 }
 

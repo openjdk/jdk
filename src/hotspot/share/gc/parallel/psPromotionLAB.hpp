@@ -39,8 +39,6 @@ class ObjectStartArray;
 
 class PSPromotionLAB : public CHeapObj<mtGC> {
  protected:
-  static size_t filler_header_size;
-
   enum LabState {
     needs_flush,
     flushed,
