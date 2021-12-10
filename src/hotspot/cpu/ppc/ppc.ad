@@ -5953,7 +5953,7 @@ instruct loadConN_hi(iRegNdst dst, immN src) %{
   format %{ "LIS     $dst, $src \t// narrow oop hi" %}
   size(4);
   ins_encode %{
-    __ lis($dst$$Register, (int)(short)(($src$$constant >> 16) & 0xffff));
+    __ lis($dst$$Register, 0); // Will get patched.
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -5966,11 +5966,9 @@ instruct loadConN_lo(iRegNdst dst, iRegNsrc src1, immN src2) %{
   format %{ "ORI     $dst, $src1, $src2 \t// narrow oop lo" %}
   size(4);
   ins_encode %{
-    assert(__ oop_recorder() != NULL, "this assembler needs an OopRecorder");
-    int oop_index = __ oop_recorder()->find_index((jobject)$src2$$constant);
-    RelocationHolder rspec = oop_Relocation::spec(oop_index);
-    __ relocate(rspec, 1);
-    __ ori($dst$$Register, $src1$$Register, $src2$$constant & 0xffff);
+    AddressLiteral addrlit = __ constant_oop_address((jobject)$src2$$constant);
+    __ relocate(addrlit.rspec(), /*compressed format*/ 1);
+    __ ori($dst$$Register, $src1$$Register, 0); // Will get patched.
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6085,12 +6083,9 @@ instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
   format %{ "ORI     $dst, $src1, $src2 \t// narrow klass lo" %}
   size(4);
   ins_encode %{
-    intptr_t Csrc = CompressedKlassPointers::encode((Klass *)$src1$$constant);
-    assert(__ oop_recorder() != NULL, "this assembler needs an OopRecorder");
-    int klass_index = __ oop_recorder()->find_index((Klass *)$src1$$constant);
-    RelocationHolder rspec = metadata_Relocation::spec(klass_index);
-
-    __ relocate(rspec, 1);
+    // Notify OOP recorder (don't need the relocation)
+    AddressLiteral md = __ constant_metadata_address((Klass*)$src1$$constant);
+    intptr_t Csrc = CompressedKlassPointers::encode((Klass*)md.value());
     __ ori($dst$$Register, $src2$$Register, Csrc & 0xffff);
   %}
   ins_pipe(pipe_class_default);

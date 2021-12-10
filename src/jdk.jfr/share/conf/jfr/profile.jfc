@@ -775,11 +775,6 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
-    <event name="jdk.ZThreadDebug">
-      <setting name="enabled">true</setting>
-      <setting name="threshold">0 ms</setting>
-    </event>
-
     <event name="jdk.ZUncommit">
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ms</setting>

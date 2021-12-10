@@ -736,11 +736,6 @@ void HeapRegion::verify(VerifyOption vo,
   verify_strong_code_roots(vo, failures);
 }
 
-void HeapRegion::verify() const {
-  bool dummy = false;
-  verify(VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
-}
-
 void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   *failures = false;

@@ -388,12 +388,12 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("                     been initalized. (STRING, default determined by the value for");
   out->print_cr("                     memorysize)");
   out->print_cr("");
-  out->print_cr("   maxchunksize      (Optional) Maximum size of an individual data chunk in bytes if");
+  out->print_cr("  maxchunksize       (Optional) Maximum size of an individual data chunk in bytes if");
   out->print_cr("                     one of the following suffixes is not used: 'm' or 'M' for");
   out->print_cr("                     megabytes OR 'g' or 'G' for gigabytes. This value cannot be");
   out->print_cr("                     changed once JFR has been initialized. (STRING, 12M)");
   out->print_cr("");
-  out->print_cr("   memorysize        (Optional) Overall memory size, in bytes if one of the following");
+  out->print_cr("  memorysize         (Optional) Overall memory size, in bytes if one of the following");
   out->print_cr("                     suffixes is not used: 'm' or 'M' for megabytes OR 'g' or 'G' for");
   out->print_cr("                     gigabytes. This value cannot be changed once JFR has been");
   out->print_cr("                     initialized. (STRING, 10M)");
@@ -403,7 +403,11 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("                     location is the temporary directory for the operating system. On");
   out->print_cr("                     Linux operating systems, the temporary directory is /tmp. On");
   out->print_cr("                     Windows, the temporary directory is specified by the TMP");
-  out->print_cr("                     environment variable.)");
+  out->print_cr("                     environment variable)");
+  out->print_cr("");
+  out->print_cr("  dumppath           (Optional) Path to the location where a recording file is written");
+  out->print_cr("                     in case the VM runs into a critical error, such as a system");
+  out->print_cr("                     crash. (STRING, The default location is the current directory)");
   out->print_cr("");
   out->print_cr("  stackdepth         (Optional) Stack depth for stack traces. Setting this value");
   out->print_cr("                     greater than the default of 64 may cause a performance");
@@ -416,7 +420,8 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("                     performance and is not recommended. This value cannot be changed");
   out->print_cr("                     once JFR has been initialized. (STRING, 8k)");
   out->print_cr("");
-  out->print_cr("  samplethreads      (Optional) Flag for activating thread sampling. (BOOLEAN, true)");
+  out->print_cr("  samplethreads      (Optional) Flag for activating thread sampling. This value cannot");
+  out->print_cr("                     be changed once JFR has been initialized. (BOOLEAN, true)");
   out->print_cr("");
   out->print_cr("Options must be specified using the <key> or <key>=<value> syntax.");
   out->print_cr("");
@@ -467,38 +472,35 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   }
 
   jobject stack_depth = NULL;
-  if (_stack_depth.is_set()) {
-    stack_depth = JfrJavaSupport::new_java_lang_Integer((jint)_stack_depth.value(), CHECK);
-  }
-
   jobject global_buffer_count = NULL;
-  if (_global_buffer_count.is_set()) {
-    global_buffer_count = JfrJavaSupport::new_java_lang_Long(_global_buffer_count.value(), CHECK);
-  }
-
   jobject global_buffer_size = NULL;
-  if (_global_buffer_size.is_set()) {
-    global_buffer_size = JfrJavaSupport::new_java_lang_Long(_global_buffer_size.value()._size, CHECK);
-  }
-
   jobject thread_buffer_size = NULL;
-  if (_thread_buffer_size.is_set()) {
-    thread_buffer_size = JfrJavaSupport::new_java_lang_Long(_thread_buffer_size.value()._size, CHECK);
-  }
-
   jobject max_chunk_size = NULL;
-  if (_max_chunk_size.is_set()) {
-    max_chunk_size = JfrJavaSupport::new_java_lang_Long(_max_chunk_size.value()._size, CHECK);
-  }
-
   jobject memory_size = NULL;
-  if (_memory_size.is_set()) {
-    memory_size = JfrJavaSupport::new_java_lang_Long(_memory_size.value()._size, CHECK);
-  }
-
   jobject sample_threads = NULL;
-  if (_sample_threads.is_set()) {
-    sample_threads = JfrJavaSupport::new_java_lang_Boolean(_sample_threads.value(), CHECK);
+
+  if (!JfrRecorder::is_created()) {
+    if (_stack_depth.is_set()) {
+      stack_depth = JfrJavaSupport::new_java_lang_Integer((jint)_stack_depth.value(), CHECK);
+    }
+    if (_global_buffer_count.is_set()) {
+      global_buffer_count = JfrJavaSupport::new_java_lang_Long(_global_buffer_count.value(), CHECK);
+    }
+    if (_global_buffer_size.is_set()) {
+      global_buffer_size = JfrJavaSupport::new_java_lang_Long(_global_buffer_size.value()._size, CHECK);
+    }
+    if (_thread_buffer_size.is_set()) {
+      thread_buffer_size = JfrJavaSupport::new_java_lang_Long(_thread_buffer_size.value()._size, CHECK);
+    }
+    if (_max_chunk_size.is_set()) {
+      max_chunk_size = JfrJavaSupport::new_java_lang_Long(_max_chunk_size.value()._size, CHECK);
+    }
+    if (_memory_size.is_set()) {
+      memory_size = JfrJavaSupport::new_java_lang_Long(_memory_size.value()._size, CHECK);
+    }
+    if (_sample_threads.is_set()) {
+      sample_threads = JfrJavaSupport::new_java_lang_Boolean(_sample_threads.value(), CHECK);
+    }
   }
 
   static const char klass[] = "jdk/jfr/internal/dcmd/DCmdConfigure";

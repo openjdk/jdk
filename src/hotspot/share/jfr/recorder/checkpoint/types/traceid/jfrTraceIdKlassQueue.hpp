@@ -28,6 +28,7 @@
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrEpochQueue.hpp"
 
+class JfrBuffer;
 class Klass;
 class Thread;
 
@@ -47,7 +48,7 @@ class KlassFunctor {
 // It details how to store and process an enqueued Klass representation. See utilities/jfrEpochQueue.hpp.
 //
 template <typename Buffer>
-class JfrEpochQueueKlassPolicy {
+class JfrEpochQueueKlassPolicy : public JfrCHeapObj {
  public:
   typedef Buffer* BufferPtr;
   typedef Klass Type;
@@ -64,8 +65,11 @@ class JfrEpochQueueKlassPolicy {
 };
 
 class JfrTraceIdKlassQueue : public JfrCHeapObj {
+  friend class JfrTraceIdLoadBarrier;
  private:
   JfrEpochQueue<JfrEpochQueueKlassPolicy>* _queue;
+  JfrBuffer* get_enqueue_buffer(Thread* thread);
+  JfrBuffer* renew_enqueue_buffer(size_t size, Thread* thread);
  public:
   JfrTraceIdKlassQueue();
   ~JfrTraceIdKlassQueue();
