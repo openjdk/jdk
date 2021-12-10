@@ -278,7 +278,7 @@ void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler) {
 }
 
 static bool is_klass_unloaded(traceid klass_id) {
-  assert(ClassLoaderDataGraph_lock->owned_by_self(), "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   return JfrKlassUnloading::is_unloaded(klass_id);
 }
 
