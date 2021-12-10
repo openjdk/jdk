@@ -534,7 +534,7 @@ public final class String
                 byte[] dst = null;
                 if (COMPACT_STRINGS) {
                     dst = new byte[length];
-                    while (offset < sl) {
+                    while (offset >= 0 && offset < sl) {
                         int b1 = bytes[offset];
                         if (b1 >= 0) {
                             dst[dp++] = (byte)b1;
@@ -691,7 +691,7 @@ public final class String
             byte[] dst = null;
             if (COMPACT_STRINGS) {
                 dst = new byte[length];
-                while (offset < sl) {
+                while (offset >= 0 && offset < sl) {
                     int b1 = bytes[offset];
                     if (b1 >= 0) {
                         dst[dp++] = (byte) b1;
@@ -3950,7 +3950,7 @@ public final class String
         int length = chars.length;
         int from = 0;
         int to = 0;
-        while (from < length) {
+        while (from >= 0 && from < length) {
             char ch = chars[from++];
             if (ch == '\\') {
                 ch = from < length ? chars[from++] : '\0';
