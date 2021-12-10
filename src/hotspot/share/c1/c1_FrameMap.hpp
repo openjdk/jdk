@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ class CallingConvention;
 //--------------------------------------------------------
 
 //  This class is responsible of mapping items (locals, monitors, spill
-//  slots and registers to their frame location
+//  slots and registers) to their frame location
 //
 //  The monitors are specified by a consecutive index, although each monitor entry
 //  occupies two words. The monitor_index is 0.._num_monitors

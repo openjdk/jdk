@@ -1842,6 +1842,14 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_VectorLongToMask:
+      if (UseAVX < 1 || !is_LP64) {
+        return false;
+      }
+      if (UseAVX < 3 && !VM_Version::supports_bmi2()) {
+        return false;
+      }
+      break;
   }
   return true;  // Per default match rules are supported.
 }
@@ -9533,6 +9541,47 @@ instruct mask_not_imm(kReg dst, kReg src, immI_M1 cnt) %{
   %}
   ins_pipe( pipe_slow );
 %}
+
+instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec xtmp) %{
+  predicate(n->bottom_type()->isa_vectmask() == NULL && Matcher::vector_length(n) <= 8);
+  match(Set dst (VectorLongToMask src));
+  effect(TEMP dst, TEMP rtmp1, TEMP rtmp2, TEMP xtmp);
+  format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2, $xtmp as TEMP" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    int vec_enc  = vector_length_encoding(mask_len*8);
+    __ vector_long_to_maskvec($dst$$XMMRegister, $src$$Register, $rtmp1$$Register,
+                              $rtmp2$$Register, xnoreg, mask_len, vec_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+
+instruct long_to_maskGT8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec xtmp1, rFlagsReg cr) %{
+  predicate(n->bottom_type()->isa_vectmask() == NULL && Matcher::vector_length(n) > 8);
+  match(Set dst (VectorLongToMask src));
+  effect(TEMP dst, TEMP rtmp1, TEMP rtmp2, TEMP xtmp1, KILL cr);
+  format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2, $xtmp1, as TEMP" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    assert(mask_len <= 32, "invalid mask length");
+    int vec_enc  = vector_length_encoding(mask_len*8);
+    __ vector_long_to_maskvec($dst$$XMMRegister, $src$$Register, $rtmp1$$Register,
+                              $rtmp2$$Register, $xtmp1$$XMMRegister, mask_len, vec_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct long_to_mask_evex(kReg dst, rRegL src) %{
+  predicate(n->bottom_type()->isa_vectmask());
+  match(Set dst (VectorLongToMask src));
+  format %{ "long_to_mask_evex $dst, $src\t!" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ kmov($dst$$KRegister, $src$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
 #endif
 
 instruct mask_opers_evex(kReg dst, kReg src1, kReg src2, kReg kscratch) %{
@@ -9551,6 +9600,7 @@ instruct mask_opers_evex(kReg dst, kReg src1, kReg src2, kReg kscratch) %{
   %}
   ins_pipe( pipe_slow );
 %}
+
 
 instruct castMM(kReg dst)
 %{
