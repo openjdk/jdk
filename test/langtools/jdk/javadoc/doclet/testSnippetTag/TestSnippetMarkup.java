@@ -603,6 +603,115 @@ First line // @highlight :
         testPositive(base, testCases);
     }
 
+    @Test
+    public void testPositiveInlineTagMarkup_FalseMarkup(Path base) throws Exception {
+        var testCases = List.of(
+                new TestCase(
+                        """
+                        First line
+                        // @formatter:off
+                          Second Line
+                            Third line
+                            // @formatter:on
+                              Fourth line
+                        """,
+                        """
+                        First line
+                        // @formatter:off
+                          Second Line
+                            Third line
+                            // @formatter:on
+                              Fourth line
+                        """),
+                new TestCase("showThis",
+                        """
+                        First line
+                        // @formatter:off
+                          // @start region=showThis
+                          Second Line
+                            Third line
+                            // @end region
+                            // @formatter:on
+                              Fourth line
+                        """,
+                        """
+                        Second Line
+                          Third line
+                        """)
+        );
+        testPositive(base, testCases);
+    }
+
+    @Test
+    public void testPositiveInlineTagMarkup_NextLineTwoTags(Path base) throws Exception {
+        var firstTag = new String[]{
+                "@highlight string=firstWord",
+                "@replace string=secondWord replacement=replacedSecondWord",
+                "@link substring=firstWord target=java.lang.Object"};
+        var secondTag = new String[]{
+                "@highlight string=secondWord",
+                "@replace string=firstWord replacement=replacedFirstWord",
+                "@link substring=secondWord target=java.lang.Thread"};
+        List<TestCase> testCases = new ArrayList<>();
+        for (var f : firstTag) {
+            for (var s : secondTag)
+                for (var separator : List.of("", " ")) {
+                    var t = new TestCase(
+                            """
+                                first-line // %s %s%s:
+                                firstWord secondWord thirdWord
+                                """.formatted(f, s, separator),
+                            """
+                                first-line
+                                firstWord secondWord thirdWord // %s %s
+                                """.formatted(f, s));
+                    testCases.add(t);
+            }
+        }
+        testEquivalence(base, testCases);
+    }
+
+    record Snippet(String region, String snippet) { }
+
+    private void testEquivalence(Path base, List<TestCase> testCases) throws IOException {
+        // group all the testcases in just two runs
+        Path out1 = base.resolve("out1");
+        Path out2 = base.resolve("out2");
+        run(base.resolve("src1"), out1, testCases.stream().map(t -> new Snippet(t.region(), t.input())).toList());
+        run(base.resolve("src2"), out2, testCases.stream().map(t -> new Snippet(t.region(), t.expectedOutput())).toList());
+        match(out1, out2, (p, a) -> /* p.toString().endsWith(".html") */ true);
+    }
+
+    private void run(Path source, Path target, List<Snippet> snippets) throws IOException {
+        StringBuilder methods = new StringBuilder();
+        forEachNumbered(snippets, (i, n) -> {
+            String r = i.region.isBlank() ? "" : "region=" + i.region;
+            var methodDef = """
+
+                    /**
+                    {@snippet %s:
+                    %s}*/
+                    public void case%s() {}
+                    """.formatted(r, i.snippet(), n);
+            methods.append(methodDef);
+        });
+        var classDef = """
+                public class A {
+                %s
+                }
+                """.formatted(methods.toString());
+        Path src = Files.createDirectories(source);
+        tb.writeJavaFiles(src, classDef);
+        javadoc("-d", target.toString(),
+                "--limit-modules", "java.base",
+                "-quiet", "-nohelp", "-noindex", "-nonavbar", "-nosince",
+                "-notimestamp", "-notree", "-Xdoclint:none",
+                "-sourcepath", src.toString(),
+                src.resolve("A.java").toString());
+        checkExit(Exit.OK);
+        checkNoCrashes();
+    }
+
     private static String link(boolean linkPlain,
                                String targetReference,
                                String content)

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 # ##########################################################
 #
 module name jdk.jfr
-header exports jdk/jfr,jdk/jfr/consumer requires name\u0020;java.base\u0020;flags\u0020;8000 target linux-amd64 flags 8000
+header exports jdk/jfr,jdk/jfr/consumer extraModulePackages jdk/jfr/internal requires name\u0020;java.base\u0020;flags\u0020;8000 target linux-amd64 flags 8000
 
 class name jdk/jfr/AnnotationElement
 header extends java/lang/Object flags 31
@@ -389,4 +389,13 @@ method name hasMoreEvents descriptor ()Z flags 1
 method name readEventTypes descriptor ()Ljava/util/List; thrownTypes java/io/IOException flags 1 signature ()Ljava/util/List<Ljdk/jfr/EventType;>;
 method name close descriptor ()V thrownTypes java/io/IOException flags 1
 method name readAllEvents descriptor (Ljava/nio/file/Path;)Ljava/util/List; thrownTypes java/io/IOException flags 9 signature (Ljava/nio/file/Path;)Ljava/util/List<Ljdk/jfr/consumer/RecordedEvent;>;
+
+class name jdk/jfr/internal/Control
+header extends java/lang/Object flags 421
+method name <init> descriptor (Ljava/security/AccessControlContext;)V flags 1
+method name <init> descriptor (Ljava/lang/String;)V flags 1
+method name combine descriptor (Ljava/util/Set;)Ljava/lang/String; flags 401 signature (Ljava/util/Set<Ljava/lang/String;>;)Ljava/lang/String;
+method name setValue descriptor (Ljava/lang/String;)V flags 401
+method name getValue descriptor ()Ljava/lang/String; flags 401
+method name clone descriptor ()Ljava/lang/Object; thrownTypes java/lang/CloneNotSupportedException flags 11
 
