@@ -1274,6 +1274,15 @@ class EndNotNullValidator : public BlockClosure {
 
 typedef GrowableArray<BlockList*> BlockListList;
 
+void verify_successor_xentry_flag(const BlockBegin* block) {
+  for (int i = 0; i < block->end()->number_of_sux(); i++) {
+    assert(!block->end()->sux_at(i)->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
+  }
+  for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+    assert(block->exception_handler_at(i)->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
+  }
+}
+
 class PredecessorValidator : public BlockClosure {
  private:
   BlockListList* _predecessors; // Each index i will hold predecessors of block with id i
@@ -1310,15 +1319,6 @@ class PredecessorValidator : public BlockClosure {
   }
 
  private:
-  void verify_successor_xentry_flag(const BlockBegin* block) const {
-    for (int i = 0; i < block->end()->number_of_sux(); i++) {
-      assert(!block->end()->sux_at(i)->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
-    }
-    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
-      assert(block->exception_handler_at(i)->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
-    }
-  }
-
   void collect_predecessors(BlockBegin* block) {
     for (int i = 0; i < block->end()->number_of_sux(); i++) {
       collect_predecessor(block, block->end()->sux_at(i));
