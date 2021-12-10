@@ -324,6 +324,15 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     }
   }
 
+  if (TraceDeoptimization) {
+    method()->print_value();
+    Bytecodes::Code code = Bytecodes::java_code_at(method(), bcp);
+    int bci = method()->bci_from(bcp);
+    tty->print(" - %s", Bytecodes::name(code));
+    tty->print(" @ bci %d ", bci);
+    tty->print_cr("sp = " PTR_FORMAT, p2i(iframe()->sp()));
+  }
+
   if (PrintDeoptimizationDetails) {
     tty->print_cr("Expressions size: %d", expressions()->size());
   }
@@ -342,13 +351,13 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       case T_INT:
         *addr = value->get_int();
         if (PrintDeoptimizationDetails) {
-          tty->print_cr("Reconstructed expression %d (INT): %d", i, (int)(*addr));
+          tty->print_cr(" - Reconstructed expression %d (INT): %d", i, (int)(*addr));
         }
         break;
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
         if (PrintDeoptimizationDetails) {
-          tty->print("Reconstructed expression %d (OBJECT): ", i);
+          tty->print(" - Reconstructed expression %d (OBJECT): ", i);
           oop o = cast_to_oop((address)(*addr));
           if (o == NULL) {
             tty->print_cr("NULL");
@@ -367,6 +376,9 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     }
   }
 
+  if (PrintDeoptimizationDetails) {
+    tty->print_cr("Locals size: %d", locals()->size());
+  }
 
   // Unpack the locals
   for(i = 0; i < locals()->size(); i++) {
@@ -377,13 +389,13 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       case T_INT:
         *addr = value->get_int();
         if (PrintDeoptimizationDetails) {
-          tty->print_cr("Reconstructed local %d (INT): %d", i, (int)(*addr));
+          tty->print_cr(" - Reconstructed local %d (INT): %d", i, (int)(*addr));
         }
         break;
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
         if (PrintDeoptimizationDetails) {
-          tty->print("Reconstructed local %d (OBJECT): ", i);
+          tty->print(" - Reconstructed local %d (OBJECT): ", i);
           oop o = cast_to_oop((address)(*addr));
           if (o == NULL) {
             tty->print_cr("NULL");
@@ -434,27 +446,15 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 
   if (PrintDeoptimizationDetails) {
     ttyLocker ttyl;
-    tty->print_cr("[%d Interpreted Frame]", ++unpack_counter);
+    tty->print_cr("[%d. Interpreted Frame]", ++unpack_counter);
     iframe()->print_on(tty);
     RegisterMap map(thread);
     vframe* f = vframe::new_vframe(iframe(), &map, thread);
     f->print();
-
-    tty->print_cr("locals size     %d", locals()->size());
-    tty->print_cr("expression size %d", expressions()->size());
-
-    method()->print_value();
+    if (WizardMode && Verbose) method()->print_codes();
     tty->cr();
-    // method()->print_codes();
-  } else if (TraceDeoptimization) {
-    tty->print("     ");
-    method()->print_value();
-    Bytecodes::Code code = Bytecodes::java_code_at(method(), bcp);
-    int bci = method()->bci_from(bcp);
-    tty->print(" - %s", Bytecodes::name(code));
-    tty->print(" @ bci %d ", bci);
-    tty->print_cr("sp = " PTR_FORMAT, p2i(iframe()->sp()));
   }
+
 
   // The expression stack and locals are in the resource area don't leave
   // a dangling pointer in the vframeArray we leave around for debug

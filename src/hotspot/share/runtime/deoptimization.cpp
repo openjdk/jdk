@@ -243,6 +243,7 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMet
     assert(Universe::heap()->is_in_or_null(result), "must be heap pointer");
     if (TraceDeoptimization) {
       tty->print_cr("SAVED OOP RESULT " INTPTR_FORMAT " in thread " INTPTR_FORMAT, p2i(result), p2i(thread));
+      tty->cr();
     }
   }
   if (objects != NULL) {
@@ -723,6 +724,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   if (TraceDeoptimization) {
     tty->print_cr("DEOPT UNPACKING thread " INTPTR_FORMAT " vframeArray " INTPTR_FORMAT " mode %d",
                   p2i(thread), p2i(array), exec_mode);
+    tty->cr();
   }
   Events::log_deopt_message(thread, "DEOPT UNPACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT " mode %d",
               p2i(stub_frame.pc()), p2i(stub_frame.sp()), exec_mode);
@@ -1485,34 +1487,6 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
 vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures) {
   Events::log_deopt_message(thread, "DEOPT PACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT, p2i(fr.pc()), p2i(fr.sp()));
 
-  if (PrintDeoptimizationDetails) {
-    ResourceMark rm;
-    stringStream st;
-    st.print("DEOPT PACKING thread " INTPTR_FORMAT " ", p2i(thread));
-    fr.print_on(&st);
-    st.print_cr("     Virtual frames (innermost first):");
-    for (int index = 0; index < chunk->length(); index++) {
-      compiledVFrame* vf = chunk->at(index);
-      st.print("       %2d - ", index);
-      st.print("AllocatedObj(" INTPTR_FORMAT ")", p2i(vf));
-      int bci = chunk->at(index)->raw_bci();
-      const char* code_name;
-      if (bci == SynchronizationEntryBCI) {
-        code_name = "sync entry";
-      } else {
-        Bytecodes::Code code = vf->method()->code_at(bci);
-        code_name = Bytecodes::name(code);
-      }
-      st.print(" - %s", code_name);
-      st.print_cr(" @ bci %d ", bci);
-      if (Verbose) {
-        st.print_cr("AllocatedObj(" INTPTR_FORMAT ")", p2i(vf));
-        st.cr();
-      }
-    }
-    tty->print_raw(st.as_string());
-  }
-
   // Register map for next frame (used for stack crawl).  We capture
   // the state of the deopt'ing frame's caller.  Thus if we need to
   // stuff a C2I adapter we can properly fill in the callee-save
@@ -1530,8 +1504,30 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
   // Compare the vframeArray to the collected vframes
   assert(array->structural_compare(thread, chunk), "just checking");
 
-  if (PrintDeoptimizationDetails) {
+  if (TraceDeoptimization) {
+    ResourceMark rm;
+    stringStream st;
+    st.print("DEOPT PACKING thread " INTPTR_FORMAT " ", p2i(thread));
+    fr.print_on(&st);
+    st.print_cr("     Virtual frames (innermost first):");
+    for (int index = 0; index < chunk->length(); index++) {
+      compiledVFrame* vf = chunk->at(index);
+      st.print("       %2d - ", index);
+      st.print("(" INTPTR_FORMAT ")", p2i(vf));
+      int bci = chunk->at(index)->raw_bci();
+      const char* code_name;
+      if (bci == SynchronizationEntryBCI) {
+        code_name = "sync entry";
+      } else {
+        Bytecodes::Code code = vf->method()->code_at(bci);
+        code_name = Bytecodes::name(code);
+      }
+      st.print(" - %s", code_name);
+      st.print_cr(" @ bci %d ", bci);
+    }
+    tty->print_raw(st.as_string());
     tty->print_cr("     Created vframeArray " INTPTR_FORMAT, p2i(array));
+    tty->cr();
   }
 
   return array;
