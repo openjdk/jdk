@@ -730,9 +730,9 @@ final class Float256Vector extends FloatVector {
         @ForceInline
         /*package-private*/
         static Float256Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Float256Mask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Float256Mask.class, int.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Float256Mask  TRUE_MASK = new Float256Mask(true);
         private static final Float256Mask FALSE_MASK = new Float256Mask(false);

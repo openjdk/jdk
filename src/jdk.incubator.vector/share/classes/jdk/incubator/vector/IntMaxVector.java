@@ -727,9 +727,9 @@ final class IntMaxVector extends IntVector {
         @ForceInline
         /*package-private*/
         static IntMaxMask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(IntMaxMask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(IntMaxMask.class, int.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final IntMaxMask  TRUE_MASK = new IntMaxMask(true);
         private static final IntMaxMask FALSE_MASK = new IntMaxMask(false);

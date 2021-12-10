@@ -470,12 +470,12 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public static $abstractvectortype$ zero(VectorSpecies<$Boxtype$> species) {
         $Type$Species vsp = ($Type$Species) species;
 #if[FP]
-        return VectorSupport.broadcastCoerced(vsp.vectorType(), $type$.class, species.length(),
-                        toBits(0.0f), vsp,
+        return VectorSupport.fromBitsCoerced(vsp.vectorType(), $type$.class, species.length(),
+                        toBits(0.0f), MODE_BROADCAST, vsp,
                         ((bits_, s_) -> s_.rvOp(i -> bits_)));
 #else[FP]
-        return VectorSupport.broadcastCoerced(vsp.vectorType(), $type$.class, species.length(),
-                                0, vsp,
+        return VectorSupport.fromBitsCoerced(vsp.vectorType(), $type$.class, species.length(),
+                                0, MODE_BROADCAST, vsp,
                                 ((bits_, s_) -> s_.rvOp(i -> bits_)));
 #end[FP]
     }
@@ -5327,9 +5327,9 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         @ForceInline
         final $abstractvectortype$ broadcastBits(long bits) {
             return ($abstractvectortype$)
-                VectorSupport.broadcastCoerced(
+                VectorSupport.fromBitsCoerced(
                     vectorType, $type$.class, laneCount,
-                    bits, this,
+                    bits, MODE_BROADCAST, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
 

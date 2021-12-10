@@ -11292,6 +11292,20 @@ void Assembler::bzhiq(Register dst, Register src1, Register src2) {
   emit_int16((unsigned char)0xF5, (0xC0 | encode));
 }
 
+void Assembler::pext(Register dst, Register src1, Register src2) {
+  assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes);
+  emit_int16((unsigned char)0xF5, (0xC0 | encode));
+}
+
+void Assembler::pdep(Register dst, Register src1, Register src2) {
+  assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_38, &attributes);
+  emit_int16((unsigned char)0xF5, (0xC0 | encode));
+}
+
 void Assembler::shlxl(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ true);

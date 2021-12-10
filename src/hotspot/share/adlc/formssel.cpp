@@ -4234,8 +4234,8 @@ bool MatchRule::is_vector() const {
     "VectorRearrange","VectorLoadShuffle", "VectorLoadConst",
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
-    "VectorMaskWrapper", "VectorMaskCmp", "VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
-    "FmaVD", "FmaVF","PopCountVI",
+    "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
+    "FmaVD","FmaVF","PopCountVI","VectorLongToMask",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
     // Next are not supported currently.
