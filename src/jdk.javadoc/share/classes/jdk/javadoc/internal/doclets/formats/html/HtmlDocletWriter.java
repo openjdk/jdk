@@ -36,6 +36,7 @@ import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1063,7 +1064,8 @@ public class HtmlDocletWriter {
                             "doclet.see.class_or_package_not_found",
                             "@" + tagName,
                             seeText);
-                    return (labelContent.isEmpty() ? text: labelContent);
+                    return invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
+                            Optional.of(labelContent.isEmpty() ? text: labelContent));
                 }
             }
         } else if (refMemName == null) {
@@ -1614,13 +1616,18 @@ public class HtmlDocletWriter {
                     DocTreePath dtp = ch.getDocTreePath(node);
                     if (dtp != null) {
                         String body = node.getBody();
-                        if (body.matches("(?i)\\{@[a-z]+.*")) {
-                            messages.warning(dtp,"doclet.tag.invalid_usage", body);
-                        } else {
+                        Matcher m = Pattern.compile("(?i)\\{@([a-z]+).*").matcher(body);
+                        String tagName = m.matches() ? m.group(1) : null;
+                        if (tagName == null) {
                             messages.warning(dtp, "doclet.tag.invalid_input", body);
+                            result.add(invalidTagOutput(resources.getText("doclet.tag.invalid_input", body),
+                                    Optional.empty()));
+                        } else {
+                            messages.warning(dtp, "doclet.tag.invalid_usage", body);
+                            result.add(invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
+                                    Optional.of(Text.of(body))));
                         }
                     }
-                    result.add(Text.of(node.toString()));
                     return false;
                 }
 
@@ -1772,6 +1779,24 @@ public class HtmlDocletWriter {
         return currentPageElement == null
                 || (currentPageElement != element
                     &&  currentPageElement != utils.getEnclosingTypeElement(element));
+    }
+
+    /**
+     * Returns the output for an invalid tag. The returned content uses special styling to
+     * highlight the problem. Depending on the presence of the {@code detail} string the method
+     * returns a plain text span or an expandable component.
+     *
+     * @param summary the single-line summary message
+     * @param detail the optional detail message which may contain preformatted text
+     * @return the output
+     */
+    protected Content invalidTagOutput(String summary, Optional<Content> detail) {
+        if (detail.isEmpty() || detail.get().isEmpty()) {
+            return HtmlTree.SPAN(HtmlStyle.invalidTag, Text.of(summary));
+        }
+        return new HtmlTree(TagName.DETAILS).addStyle(HtmlStyle.invalidTag)
+                .add(new HtmlTree(TagName.SUMMARY).add(Text.of(summary)))
+                .add(new HtmlTree(TagName.PRE).add(detail.get()));
     }
 
     /**
