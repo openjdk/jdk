@@ -563,7 +563,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <h3> Flags </h3>
  *
- * <p> The following table summarizes the supported   <i>y</i> means the
+ * <p> The following table summarizes the supported flags.  <i>y</i> means the
  * flag is supported for the indicated argument types.
  *
  * <table class="striped">
