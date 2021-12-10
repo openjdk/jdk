@@ -23,9 +23,10 @@
 
 import org.testng.annotations.DataProvider;
 
-/** TestNG DataProvider for SourceDate values */
+/** TestNG DataProvider for SourceDate values for testing jar --date <timestamp> */
 public class SourceDateDataProvider {
 
+    // Valid --date values for jar
     private static final Object[][] validSourceDates = {
                                  {"1980-01-01T00:00:02+00:00"},
                                  {"1986-06-24T01:02:03+00:00"},
@@ -40,6 +41,7 @@ public class SourceDateDataProvider {
                                  {"2099-12-31T23:59:59+00:00"}
                                };
 
+    // Invalid --date values for jar
     private static final Object[][] invalidSourceDates = {
                                  {"1976-06-24T01:02:03+00:00"},
                                  {"1980-01-01T00:00:01+00:00"},
@@ -50,14 +52,13 @@ public class SourceDateDataProvider {
                                };
 
     @DataProvider(name = "SourceDateData.valid")
-    public static Object[][] makeValidSourceDataData() {
+    public static Object[][] makeValidSourceDateData() {
         return validSourceDates;
     }
 
     @DataProvider(name = "SourceDateData.invalid")
-    public static Object[][] makeInvalidSourceDataData() {
+    public static Object[][] makeInvalidSourceDateData() {
         return invalidSourceDates;
     }
-
 }
 
