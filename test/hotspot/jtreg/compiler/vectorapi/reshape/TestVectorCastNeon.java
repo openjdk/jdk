@@ -41,15 +41,10 @@ import compiler.vectorapi.reshape.utils.VectorSpeciesPair;
  */
 public class TestVectorCastNeon {
     public static void main(String[] args) {
-        var cast = new TestFramework(TestVectorCast.class);
-        cast.setDefaultWarmup(1);
-        cast.addHelperClasses(VectorReshapeHelper.class);
-        cast.addFlags("--add-modules=jdk.incubator.vector", "-XX:+UseNeon");
-        String testMethods = String.join(",", TestCastMethods.NEON_CAST_TESTS.stream()
-                .map(VectorSpeciesPair::format)
-                .toList());
-        cast.addFlags("-DTest=" + testMethods);
-        cast.start();
+        VectorReshapeHelper.runMainHelper(
+                TestVectorCast.class,
+                TestCastMethods.NEON_CAST_TESTS.stream(),
+                "-XX:+UseNeon");
     }
 }
 

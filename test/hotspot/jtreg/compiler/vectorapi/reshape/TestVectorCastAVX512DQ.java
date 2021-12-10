@@ -41,15 +41,10 @@ import compiler.vectorapi.reshape.utils.VectorSpeciesPair;
  */
 public class TestVectorCastAVX512DQ {
     public static void main(String[] args) {
-        var cast = new TestFramework(TestVectorCast.class);
-        cast.setDefaultWarmup(1);
-        cast.addHelperClasses(VectorReshapeHelper.class);
-        cast.addFlags("--add-modules=jdk.incubator.vector", "-XX:UseAVX=3");
-        String testMethods = String.join(",", TestCastMethods.AVX512DQ_CAST_TESTS.stream()
-                .map(VectorSpeciesPair::format)
-                .toList());
-        cast.addFlags("-DTest=" + testMethods);
-        cast.start();
+        VectorReshapeHelper.runMainHelper(
+                TestVectorCast.class,
+                TestCastMethods.AVX512DQ_CAST_TESTS.stream(),
+                "-XX:UseAVX=3");
     }
 }
 

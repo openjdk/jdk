@@ -42,16 +42,10 @@ import jdk.incubator.vector.VectorShape;
  */
 public class TestVectorCastSVE {
     public static void main(String[] args) {
-        var cast = new TestFramework(TestVectorCast.class);
-        cast.setDefaultWarmup(1);
-        cast.addHelperClasses(VectorReshapeHelper.class);
-        cast.addFlags("--add-modules=jdk.incubator.vector", "-XX:UseSVE=1");
-        String testMethods = String.join(",", TestCastMethods.SVE_CAST_TESTS.stream()
-                .filter(p -> Math.max(p.isp().vectorBitSize(), p.osp().vectorBitSize()) <= VectorShape.preferredShape().vectorBitSize())
-                .map(VectorSpeciesPair::format)
-                .toList());
-        cast.addFlags("-DTest=" + testMethods);
-        cast.start();
+        VectorReshapeHelper.runMainHelper(
+                TestVectorCast.class,
+                TestCastMethods.SVE_CAST_TESTS.stream(),
+                "-XX:UseSVE=1");
     }
 }
 

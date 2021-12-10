@@ -23,11 +23,9 @@
 
 package compiler.vectorapi.reshape;
 
-import compiler.lib.ir_framework.TestFramework;
 import compiler.vectorapi.reshape.tests.TestVectorCast;
 import compiler.vectorapi.reshape.utils.TestCastMethods;
 import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
-import compiler.vectorapi.reshape.utils.VectorSpeciesPair;
 
 /*
  * @test
@@ -41,14 +39,9 @@ import compiler.vectorapi.reshape.utils.VectorSpeciesPair;
  */
 public class TestVectorCastAVX1 {
     public static void main(String[] args) {
-        var cast = new TestFramework(TestVectorCast.class);
-        cast.setDefaultWarmup(1);
-        cast.addHelperClasses(VectorReshapeHelper.class);
-        cast.addFlags("--add-modules=jdk.incubator.vector", "-XX:UseAVX=1");
-        String testMethods = String.join(",", TestCastMethods.AVX1_CAST_TESTS.stream()
-                .map(VectorSpeciesPair::format)
-                .toList());
-        cast.addFlags("-DTest=" + testMethods);
-        cast.start();
+        VectorReshapeHelper.runMainHelper(
+                TestVectorCast.class,
+                TestCastMethods.AVX1_CAST_TESTS.stream(),
+                "-XX:UseAVX=1");
     }
 }

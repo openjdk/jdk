@@ -24,6 +24,7 @@
 package compiler.vectorapi.reshape.utils;
 
 import compiler.lib.ir_framework.ForceInline;
+import compiler.lib.ir_framework.TestFramework;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
@@ -31,6 +32,10 @@ import java.lang.reflect.Array;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.random.RandomGenerator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import compiler.vectorapi.reshape.tests.TestVectorCast;
 import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 
@@ -75,6 +80,21 @@ public class VectorReshapeHelper {
     public static final String F2X_NODE  = PREFIX + "VectorCastF2X" + SUFFIX;
     public static final String D2X_NODE  = PREFIX + "VectorCastD2X" + SUFFIX;
     public static final String REINTERPRET_NODE = PREFIX + "VectorReinterpret" + SUFFIX;
+
+    public static void runMainHelper(Class<?> testClass, Stream<VectorSpeciesPair> testMethods, String... flags) {
+        var test = new TestFramework(testClass);
+        test.setDefaultWarmup(1);
+        test.addHelperClasses(VectorReshapeHelper.class);
+        test.addFlags("--add-modules=jdk.incubator.vector");
+        test.addFlags(flags);
+        String testMethodNames = testMethods
+                .filter(p -> p.isp().length() <= VectorSpecies.ofLargestShape(p.isp().elementType()).length())
+                .filter(p -> p.osp().length() <= VectorSpecies.ofLargestShape(p.osp().elementType()).length())
+                .map(VectorSpeciesPair::format)
+                .collect(Collectors.joining(","));
+        test.addFlags("-DTest=" + testMethodNames);
+        test.start();
+    }
 
     @ForceInline
     public static <T, U> void vectorCast(VectorOperators.Conversion<T, U> cop,
