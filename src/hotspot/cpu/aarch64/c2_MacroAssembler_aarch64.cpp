@@ -284,17 +284,16 @@ void C2_MacroAssembler::string_indexof(Register str2, Register str1,
     cmp(cnt1, (u1)16); // small patterns still should be handled by simple algorithm
     br(LT, LINEAR_MEDIUM);
     mov(result, zr);
-    RuntimeAddress stub = NULL;
+    address entry = nullptr;
     if (isL) {
-      stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_ll());
-      assert(stub.target() != NULL, "string_indexof_linear_ll stub has not been generated");
+      entry = StubRoutines::aarch64::string_indexof_linear_ll();
     } else if (str1_isL) {
-      stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_ul());
-       assert(stub.target() != NULL, "string_indexof_linear_ul stub has not been generated");
+      entry = StubRoutines::aarch64::string_indexof_linear_ul();
     } else {
-      stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_uu());
-      assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
+      entry = StubRoutines::aarch64::string_indexof_linear_uu();
     }
+    assert(entry != nullptr, "string_indexof_linear stub has not been generated");
+    RuntimeAddress stub(entry);
     trampoline_call(stub);
     b(DONE);
   }
@@ -836,24 +835,25 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   }
 
   bind(STUB);
-    RuntimeAddress stub = NULL;
+    address entry = nullptr;
     switch(ae) {
       case StrIntrinsicNode::LL:
-        stub = RuntimeAddress(StubRoutines::aarch64::compare_long_string_LL());
+        entry = StubRoutines::aarch64::compare_long_string_LL();
         break;
       case StrIntrinsicNode::UU:
-        stub = RuntimeAddress(StubRoutines::aarch64::compare_long_string_UU());
+        entry = StubRoutines::aarch64::compare_long_string_UU();
         break;
       case StrIntrinsicNode::LU:
-        stub = RuntimeAddress(StubRoutines::aarch64::compare_long_string_LU());
+        entry = StubRoutines::aarch64::compare_long_string_LU();
         break;
       case StrIntrinsicNode::UL:
-        stub = RuntimeAddress(StubRoutines::aarch64::compare_long_string_UL());
+        entry = StubRoutines::aarch64::compare_long_string_UL();
         break;
       default:
         ShouldNotReachHere();
      }
-    assert(stub.target() != NULL, "compare_long_string stub has not been generated");
+    assert(entry != nullptr, "compare_long_string stub has not been generated");
+    RuntimeAddress stub(entry);
     trampoline_call(stub);
     b(DONE);
 
