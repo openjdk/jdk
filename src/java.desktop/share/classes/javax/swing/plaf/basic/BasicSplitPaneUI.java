@@ -457,6 +457,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
         }
 
         LookAndFeel.uninstallBorder(splitPane);
+        LookAndFeel.uninstallColors(splitPane);
 
         Border    b = divider.getBorder();
 

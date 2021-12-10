@@ -101,6 +101,7 @@ public class BasicSeparatorUI extends SeparatorUI
      */
     protected void uninstallDefaults( JSeparator s )
     {
+        LookAndFeel.uninstallColors(s);
     }
 
     /**

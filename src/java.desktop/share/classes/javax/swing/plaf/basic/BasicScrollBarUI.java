@@ -426,6 +426,7 @@ public class BasicScrollBarUI
      */
     protected void uninstallDefaults(){
         LookAndFeel.uninstallBorder(scrollbar);
+        LookAndFeel.uninstallColors(scrollbar);
         if (scrollbar.getLayout() == this) {
             scrollbar.setLayout(null);
         }
