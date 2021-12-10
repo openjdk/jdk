@@ -308,7 +308,7 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       // using equivalent type jboolean to read the value of
       // UseSharedSpaces which is same as hotspot type "bool".
       if (read_jboolean(ph, useSharedSpacesAddr, &useSharedSpaces) != true) {
-        print_debug("can't read the value of 'UseSharedSpaces' flag\n");
+        print_debug("can't read the value of 'UseSharedSpaces' symbol\n");
         return false;
       }
 
