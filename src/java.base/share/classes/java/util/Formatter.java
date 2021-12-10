@@ -2742,20 +2742,75 @@ public final class Formatter implements Closeable, Flushable {
      */
     public Formatter format(Locale l, String format, Object ... args) {
         ensureOpen();
+        FormatContext ctx = new FormatContext(l, args);
+        int i = 0;
+        int max = format.length();
+        Matcher m = null; // create only if needed
+        while (i < max) {
+            int n = format.indexOf('%', i);
+            if (n < 0) {
+                // No more format specifiers, but since
+                // i < max there's some trailing text
+                ctx.printFixed(format, i, max);
+                break;
+            }
+            if (i != n) {
+                // Previous characters were fixed text
+                ctx.printFixed(format, i, n);
+            }
+            i = n + 1;
+            if (i >= max) {
+                // Trailing %
+                throw new UnknownFormatConversionException("%");
+            }
+            char c = format.charAt(i);
+            if (Conversion.isValid(c)) {
+                ctx.printFormat(new FormatSpecifier(c));
+                i++;
+            } else {
+                if (m == null) {
+                    m = fsPattern.matcher(format);
+                }
+                // We have already parsed a '%' at n, so we either have a
+                // match or the specifier at n is invalid
+                if (m.find(n) && m.start() == n) {
+                    ctx.printFormat(new FormatSpecifier(format, m));
+                    i = m.end();
+                } else {
+                    throw new UnknownFormatConversionException(String.valueOf(c));
+                }
+            }
+        }
+        return this;
+    }
 
+    private class FormatContext {
         // index of last argument referenced
-        int last = -1;
+        private int last = -1;
         // last ordinary index
-        int lasto = -1;
+        private int lasto = -1;
+        private final Object[] args;
+        private final Locale l;
 
-        List<FormatString> fsa = parse(format);
-        for (int i = 0; i < fsa.size(); i++) {
-            var fs = fsa.get(i);
+        public FormatContext(Locale l, Object[] args) {
+            this.l = l;
+            this.args = args;
+        }
+
+        private void printFixed(String s, int start, int end) {
+            try {
+                a.append(s, start, end);
+            } catch (IOException x) {
+                lastException = x;
+            }
+        }
+
+        private void printFormat(FormatSpecifier fs) {
             int index = fs.index();
             try {
                 switch (index) {
                     case -2 ->  // fixed string, "%n", or "%%"
-                        fs.print(null, l);
+                            fs.print((Object)null, l);
                     case -1 -> {  // relative index
                         if (last < 0 || (args != null && last > args.length - 1))
                             throw new MissingFormatArgumentException(fs.toString());
@@ -2779,81 +2834,14 @@ public final class Formatter implements Closeable, Flushable {
                 lastException = x;
             }
         }
-        return this;
     }
+
 
     // %[argument_index$][flags][width][.precision][t]conversion
     private static final String formatSpecifier
         = "%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])";
 
     private static final Pattern fsPattern = Pattern.compile(formatSpecifier);
-
-    /**
-     * Finds format specifiers in the format string.
-     */
-    private List<FormatString> parse(String s) {
-        ArrayList<FormatString> al = new ArrayList<>();
-        int i = 0;
-        int max = s.length();
-        Matcher m = null; // create if needed
-        while (i < max) {
-            int n = s.indexOf('%', i);
-            if (n < 0) {
-                // No more format specifiers, but since
-                // i < max there's some trailing text
-                al.add(new FixedString(s, i, max));
-                break;
-            }
-            if (i != n) {
-                // Previous characters were fixed text
-                al.add(new FixedString(s, i, n));
-            }
-            i = n + 1;
-            if (i >= max) {
-                // Trailing %
-                throw new UnknownFormatConversionException("%");
-            }
-            char c = s.charAt(i);
-            if (Conversion.isValid(c)) {
-                al.add(new FormatSpecifier(c));
-                i++;
-            } else {
-                if (m == null) {
-                    m = fsPattern.matcher(s);
-                }
-                // We have already parsed a '%' at n, so we either have a
-                // match or the specifier at n is invalid
-                if (m.find(n) && m.start() == n) {
-                    al.add(new FormatSpecifier(s, m));
-                    i = m.end();
-                } else {
-                    throw new UnknownFormatConversionException(String.valueOf(c));
-                }
-            }
-        }
-        return al;
-    }
-
-    private interface FormatString {
-        int index();
-        void print(Object arg, Locale l) throws IOException;
-        String toString();
-    }
-
-    private class FixedString implements FormatString {
-        private final String s;
-        private final int start;
-        private final int end;
-        FixedString(String s, int start, int end) {
-            this.s = s;
-            this.start = start;
-            this.end = end;
-        }
-        public int index() { return -2; }
-        public void print(Object arg, Locale l)
-            throws IOException { a.append(s, start, end); }
-        public String toString() { return s.substring(start, end); }
-    }
 
     /**
      * Enum for {@code BigDecimal} formatting.
@@ -2870,7 +2858,7 @@ public final class Formatter implements Closeable, Flushable {
         DECIMAL_FLOAT
     };
 
-    private class FormatSpecifier implements FormatString {
+    private class FormatSpecifier {
 
         private int index = 0;
         private Flags f = Flags.NONE;
