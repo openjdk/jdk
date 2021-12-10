@@ -280,9 +280,6 @@ void ReferenceProcessorPhaseTimes::print_reference(ReferenceType ref_type, uint 
     LogStream ls(lt);
     ResourceMark rm;
 
-    ls.print_cr("%s%s:", Indents[base_indent], ref_type_2_string(ref_type));
-
-    uint const next_indent = base_indent + 1;
     int const ref_type_index = ref_type_2_index(ref_type);
 
     size_t discovered = _ref_discovered[ref_type_index];
@@ -290,9 +287,9 @@ void ReferenceProcessorPhaseTimes::print_reference(ReferenceType ref_type, uint 
     assert(discovered >= dropped, "invariant");
     size_t processed = discovered - dropped;
 
-    ls.print_cr("%sDiscovered: " SIZE_FORMAT, Indents[next_indent], discovered);
-    ls.print_cr("%sDropped: " SIZE_FORMAT, Indents[next_indent], dropped);
-    ls.print_cr("%sProcessed: " SIZE_FORMAT, Indents[next_indent], processed);
+    ls.print_cr("%s%s Discovered: %zu, Dropped: %zu, Processed: %zu",
+                Indents[base_indent], ref_type_2_string(ref_type),
+                discovered, dropped, processed);
   }
 }
 

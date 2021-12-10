@@ -80,10 +80,10 @@ public class TestPrintReferences {
 
     private static String refRegex(String reftype) {
         String countRegex = "[0-9]+";
-        return gcLogTimeRegex + indent(6) + reftype + ":\n" +
-               gcLogTimeRegex + indent(8) + "Discovered: " + countRegex + "\n" +
-               gcLogTimeRegex + indent(8) + "Dropped: "    + countRegex + "\n" +
-               gcLogTimeRegex + indent(8) + "Processed: "  + countRegex + "\n"
+        return gcLogTimeRegex + indent(6) + reftype + " " +
+               "Discovered: " + countRegex + ", " +
+               "Dropped: "    + countRegex + ", " +
+               "Processed: "  + countRegex + "\n"
                ;
     }
 
