@@ -27,7 +27,7 @@
  * @summary Test jar --date source date of entries and that jars are
  *          reproducible
  * @modules jdk.jartool
- * @run testng ReproducibleJar
+ * @run testng/othervm ReproducibleJar
  */
 
 import org.testng.Assert;
@@ -40,7 +40,6 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
-import java.time.ZoneId;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.spi.ToolProvider;
@@ -64,158 +63,133 @@ public class ReproducibleJar {
 
     private static final TimeZone TZ = TimeZone.getDefault();
     private static final boolean DST = TZ.inDaylightTime(new Date());
-    private static final String unix2038RolloverTime = "2038-01-19T03:14:07Z";
-    private static final Instant unix2038Rollover = Instant.parse(unix2038RolloverTime);
-    private static final File dirOuter = new File("outer");
-    private static final File dirInner = new File(dirOuter, "inner");
-    private static final File fileInner = new File(dirInner, "foo.txt");
-    private static final File jarFileSourceDate1 = new File("JarEntryTimeSourceDate1.jar");
-    private static final File jarFileSourceDate2 = new File("JarEntryTimeSourceDate2.jar");
-
-    private static final String[] sourceDates =
-                               {"1980-01-01T00:00:02+00:00",
-                                "1986-06-24T01:02:03+00:00",
-                                "2022-03-15T00:00:00+00:00",
-                                "2022-03-15T00:00:00+06:00",
-                                "2021-12-25T09:30:00-08:00[America/Los_Angeles]",
-                                "2021-12-31T23:59:59Z",
-                                "2024-06-08T14:24Z",
-                                "2026-09-24T16:26-05:00",
-                                "2038-11-26T06:06:06+00:00",
-                                "2098-02-18T00:00:00-08:00",
-                                "2099-12-31T23:59:59+00:00"};
-
-    private static final String[] badSourceDates =
-                                {"1976-06-24T01:02:03+00:00",
-                                 "1980-01-01T00:00:01+00:00",
-                                 "2100-01-01T00:00:00+00:00",
-                                 "2138-02-18T00:00:00-11:00",
-                                 "2006-04-06T12:38:00",
-                                 "2012-08-24T16"};
+    private static final String UNIX_2038_ROLLOVER_TIME = "2038-01-19T03:14:07Z";
+    private static final Instant UNIX_2038_ROLLOVER = Instant.parse(UNIX_2038_ROLLOVER_TIME);
+    private static final File DIR_OUTER = new File("outer");
+    private static final File DIR_INNER = new File(DIR_OUTER, "inner");
+    private static final File FILE_INNER = new File(DIR_INNER, "foo.txt");
+    private static final File JAR_FILE_SOURCE_DATE1 = new File("JarEntryTimeSourceDate1.jar");
+    private static final File JAR_FILE_SOURCE_DATE2 = new File("JarEntryTimeSourceDate2.jar");
 
     @BeforeMethod
     public void runBefore() throws Throwable {
-        cleanup(dirInner);
-        cleanup(dirOuter);
-        jarFileSourceDate1.delete();
-        jarFileSourceDate2.delete();
-        TimeZone.setDefault(TZ);
+        runAfter();
+        createOuterInnerDirs();
     }
 
     @AfterMethod
     public void runAfter() throws Throwable {
-        cleanup(dirInner);
-        cleanup(dirOuter);
-        jarFileSourceDate1.delete();
-        jarFileSourceDate2.delete();
+        cleanup(DIR_INNER);
+        cleanup(DIR_OUTER);
+        JAR_FILE_SOURCE_DATE1.delete();
+        JAR_FILE_SOURCE_DATE2.delete();
         TimeZone.setDefault(TZ);
     }
 
-    @Test
-    public void testSourceDate() throws Throwable {
+    /**
+      * Test jar tool with various valid --date <timestamps>
+      */
+    @Test(dataProvider = "SourceDateData.valid", dataProviderClass = SourceDateDataProvider.class)
+    public void testValidSourceDate(String sourceDate) throws Throwable {
         if (isInTransition()) return;
 
         // Test --date source date
-        for (String sourceDate : sourceDates) {
-            createOuterInnerDirs(dirOuter, dirInner);
-            Assert.assertEquals(JAR_TOOL.run(System.out, System.err,
+        Assert.assertEquals(JAR_TOOL.run(System.out, System.err,
                            "--create",
-                           "--file", jarFileSourceDate1.getName(),
+                           "--file", JAR_FILE_SOURCE_DATE1.getName(),
                            "--date", sourceDate,
-                           dirOuter.getName()), 0);
-            Assert.assertTrue(jarFileSourceDate1.exists());
+                           DIR_OUTER.getName()), 0);
+        Assert.assertTrue(JAR_FILE_SOURCE_DATE1.exists());
 
-            // Extract jarFileSourceDate1 and check last modified values
-            extractJar(jarFileSourceDate1);
-            Assert.assertTrue(dirOuter.exists());
-            Assert.assertTrue(dirInner.exists());
-            Assert.assertTrue(fileInner.exists());
-            LocalDateTime expectedLdt = ZonedDateTime.parse(sourceDate,
+        // Extract JAR_FILE_SOURCE_DATE1 and check last modified values
+        Assert.assertEquals(JAR_TOOL.run(System.out, System.err,
+                           "--extract",
+                           "--file", JAR_FILE_SOURCE_DATE1.getName()), 0);
+        Assert.assertTrue(DIR_OUTER.exists());
+        Assert.assertTrue(DIR_INNER.exists());
+        Assert.assertTrue(FILE_INNER.exists());
+        LocalDateTime expectedLdt = ZonedDateTime.parse(sourceDate,
                                              DateTimeFormatter.ISO_DATE_TIME)
                                              .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
-            System.out.format("Checking jar entries local date time for --date %s, is %s%n",
-                              sourceDate, expectedLdt);
-            long sourceDateEpochMillis = TimeUnit.MILLISECONDS.convert(
+        System.out.format("Checking jar entries local date time for --date %s, is %s%n",
+                          sourceDate, expectedLdt);
+        long sourceDateEpochMillis = TimeUnit.MILLISECONDS.convert(
                 expectedLdt.toEpochSecond(ZoneId.systemDefault().getRules().getOffset(expectedLdt)),
                 TimeUnit.SECONDS);
-            checkFileTime(dirOuter.lastModified(), sourceDateEpochMillis);
-            checkFileTime(dirInner.lastModified(), sourceDateEpochMillis);
-            checkFileTime(fileInner.lastModified(), sourceDateEpochMillis);
-
-            cleanup(dirInner);
-            cleanup(dirOuter);
-            jarFileSourceDate1.delete();
-        }
+        checkFileTime(DIR_OUTER.lastModified(), sourceDateEpochMillis);
+        checkFileTime(DIR_INNER.lastModified(), sourceDateEpochMillis);
+        checkFileTime(FILE_INNER.lastModified(), sourceDateEpochMillis);
     }
 
-    @Test
-    public void testInvalidSourceDate() throws Throwable {
+    /**
+      * Test jar tool with various invalid --date <timestamps>
+      */
+    @Test(dataProvider = "SourceDateData.invalid", dataProviderClass = SourceDateDataProvider.class)
+    public void testInvalidSourceDate(String sourceDate) throws Throwable {
         // Negative Tests --date out of range or wrong format source date
-        createOuterInnerDirs(dirOuter, dirInner);
-        for (String sourceDate : badSourceDates) {
-            Assert.assertNotEquals(JAR_TOOL.run(System.out, System.err,
+        Assert.assertNotEquals(JAR_TOOL.run(System.out, System.err,
                            "--create",
-                           "--file", jarFileSourceDate1.getName(),
+                           "--file", JAR_FILE_SOURCE_DATE1.getName(),
                            "--date", sourceDate,
-                           dirOuter.getName()), 0);
-        }
+                           DIR_OUTER.getName()), 0);
     }
 
-    @Test
-    public void testJarsReproducible() throws Throwable {
+    /**
+      * Test jar produces deterministic reproducible output
+      */
+    @Test(dataProvider = "SourceDateData.valid", dataProviderClass = SourceDateDataProvider.class)
+    public void testJarsReproducible(String sourceDate) throws Throwable {
         // Test jars are reproducible across timezones
         TimeZone tzAsia = TimeZone.getTimeZone("Asia/Shanghai");
         TimeZone tzLA   = TimeZone.getTimeZone("America/Los_Angeles");
-        for (String sourceDate : sourceDates) {
-            createOuterInnerDirs(dirOuter, dirInner);
-            TimeZone.setDefault(tzAsia);
-            Assert.assertEquals(JAR_TOOL.run(System.out, System.err,
+        TimeZone.setDefault(tzAsia);
+        Assert.assertEquals(JAR_TOOL.run(System.out, System.err,
                            "--create",
-                           "--file", jarFileSourceDate1.getName(),
+                           "--file", JAR_FILE_SOURCE_DATE1.getName(),
                            "--date", sourceDate,
-                           dirOuter.getName()), 0);
-            Assert.assertTrue(jarFileSourceDate1.exists());
+                           DIR_OUTER.getName()), 0);
+        Assert.assertTrue(JAR_FILE_SOURCE_DATE1.exists());
 
-            try {
-                // Sleep 5 seconds to ensure jar timestamps might be different if they could be
-                Thread.sleep(5000);
-            } catch(InterruptedException ex) {}
+        try {
+            // Sleep 5 seconds to ensure jar timestamps might be different if they could be
+            Thread.sleep(5000);
+        } catch(InterruptedException ex) {}
 
-            TimeZone.setDefault(tzLA);
-            Assert.assertEquals(JAR_TOOL.run(System.out, System.err,
+        TimeZone.setDefault(tzLA);
+        Assert.assertEquals(JAR_TOOL.run(System.out, System.err,
                            "--create",
-                           "--file", jarFileSourceDate2.getName(),
+                           "--file", JAR_FILE_SOURCE_DATE2.getName(),
                            "--date", sourceDate,
-                           dirOuter.getName()), 0);
-            Assert.assertTrue(jarFileSourceDate2.exists());
+                           DIR_OUTER.getName()), 0);
+        Assert.assertTrue(JAR_FILE_SOURCE_DATE2.exists());
 
-            // Check jars are identical
-            checkSameContent(jarFileSourceDate1, jarFileSourceDate2);
-
-            cleanup(dirInner);
-            cleanup(dirOuter);
-            jarFileSourceDate1.delete();
-            jarFileSourceDate2.delete();
-        }
+        // Check jars are identical
+        Assert.assertEquals(Files.readAllBytes(JAR_FILE_SOURCE_DATE1.toPath()),
+                            Files.readAllBytes(JAR_FILE_SOURCE_DATE2.toPath()));
     }
 
-    static void createOuterInnerDirs(File dirOuter, File dirInner) throws Throwable {
-        /* Create a directory structure
-         * outer/
-         *     inner/
-         *         foo.txt
-         */
-        Assert.assertTrue(dirOuter.mkdir());
-        Assert.assertTrue(dirInner.mkdir());
-        try (PrintWriter pw = new PrintWriter(fileInner)) {
+    /**
+      * Create the standard directory structure used by the test:
+      * outer/
+      *     inner/
+      *         foo.txt
+      */
+    static void createOuterInnerDirs() throws Throwable {
+        Assert.assertTrue(DIR_OUTER.mkdir());
+        Assert.assertTrue(DIR_INNER.mkdir());
+        try (PrintWriter pw = new PrintWriter(FILE_INNER)) {
             pw.println("hello, world");
         }
 
-        Assert.assertTrue(dirOuter.exists());
-        Assert.assertTrue(dirInner.exists());
-        Assert.assertTrue(fileInner.exists());
+        Assert.assertTrue(DIR_OUTER.exists());
+        Assert.assertTrue(DIR_INNER.exists());
+        Assert.assertTrue(FILE_INNER.exists());
     }
 
+    /**
+      * Check the extracted and original millis since Epoch file times are
+      * within the zip precision time period.
+      */
     static void checkFileTime(long now, long original) throws Throwable {
         if (isTimeSettingChanged()) {
             return;
@@ -225,10 +199,10 @@ public class ReproducibleJar {
             // If original time is after UNIX 2038 32bit rollover
             // and the now time is exactly the rollover time, then assume
             // running on a file system that only supports to 2038 (e.g.XFS) and pass test
-            if (FileTime.fromMillis(original).toInstant().isAfter(unix2038Rollover) &&
-                FileTime.fromMillis(now).toInstant().equals(unix2038Rollover)) {
+            if (FileTime.fromMillis(original).toInstant().isAfter(UNIX_2038_ROLLOVER) &&
+                FileTime.fromMillis(now).toInstant().equals(UNIX_2038_ROLLOVER)) {
                 System.out.println("Checking file time after Unix 2038 rollover," +
-                                   " and extracted file time is " + unix2038RolloverTime + ", " +
+                                   " and extracted file time is " + UNIX_2038_ROLLOVER_TIME + ", " +
                                    " Assuming restricted file system, pass file time check.");
             } else {
                 throw new AssertionError("checkFileTime failed," +
@@ -238,14 +212,9 @@ public class ReproducibleJar {
         }
     }
 
-    static void checkSameContent(File f1, File f2) throws Throwable {
-        byte[] ba1 = Files.readAllBytes(f1.toPath());
-        byte[] ba2 = Files.readAllBytes(f2.toPath());
-        if (!Arrays.equals(ba1, ba2)) {
-            throw new AssertionError("jar content differs:" + f1 + " != " + f2);
-        }
-    }
-
+    /**
+      * Has the timezone or DST changed during the test?
+      */
     private static boolean isTimeSettingChanged() {
         TimeZone currentTZ = TimeZone.getDefault();
         boolean currentDST = currentTZ.inDaylightTime(new Date());
@@ -257,6 +226,9 @@ public class ReproducibleJar {
         }
     }
 
+    /**
+      * Is the Zone currently within the transition change period?
+      */
     private static boolean isInTransition() {
         boolean inTransition = false;
 
@@ -271,26 +243,17 @@ public class ReproducibleJar {
         return inTransition;
     }
 
+    /**
+      * Remove the directory and its contents
+      */
     static boolean cleanup(File dir) throws Throwable {
         boolean rc = true;
         File[] x = dir.listFiles();
         if (x != null) {
-            for (int i = 0; i < x.length; i++) {
-                rc &= x[i].delete();
+            for (File f : x) {
+                rc &= f.delete();
             }
         }
         return rc & dir.delete();
-    }
-
-    static void extractJar(File jarFile) throws Throwable {
-        String javahome = System.getProperty("java.home");
-        String jarcmd = javahome + File.separator + "bin" + File.separator + "jar";
-        String[] args;
-        args = new String[] {
-                jarcmd,
-                "xf",
-                jarFile.getName() };
-        Process p = Runtime.getRuntime().exec(args);
-        Assert.assertTrue(p != null && (p.waitFor() == 0));
     }
 }
