@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import javax.swing.SwingConstants;
+import sun.awt.OSInfo;
 
 /**
  * @author Michael Martak
@@ -295,7 +296,7 @@ public abstract class ShellFolder extends File {
      */
     public static File getNormalizedFile(File f) throws IOException {
         File canonical = f.getCanonicalFile();
-        if (f.equals(canonical)) {
+        if (f.equals(canonical) || OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
             // path of f doesn't contain symbolic links
             return canonical;
         }
