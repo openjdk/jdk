@@ -351,7 +351,7 @@ class Address {
  public:
 
   enum mode { no_mode, base_plus_offset, pre, post, post_reg, pcrel,
-              base_plus_offset_reg, literal };
+              base_plus_offset_reg, addr_literal };
 
   // Shift and extend for base reg + reg offset addressing
   class extend {
@@ -421,7 +421,7 @@ class Address {
     : _base(p.reg()), _index(p.idx_reg()), _offset(p.offset()),
       _mode(p.is_postreg() ? post_reg : post), _ext(lsl(0)), _target(0) { }
   Address(address target, RelocationHolder const& rspec)
-    : _mode(literal),
+    : _mode(addr_literal),
       _rspec(rspec),
       _is_lval(false),
       _target(target)  { }
@@ -1425,7 +1425,7 @@ public:
     // down into Address::encode) because the encoding of this
     // instruction is too different from all of the other forms to
     // make it worth sharing.
-    if (adr.getMode() == Address::literal) {
+    if (adr.getMode() == Address::addr_literal) {
       assert(size == 0b10 || size == 0b11, "bad operand size in ldr");
       assert(op == 0b01, "literal form can only be used with loads");
       f(size & 0b01, 31, 30), f(0b011, 29, 27), f(0b00, 25, 24);

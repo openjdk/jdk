@@ -1790,7 +1790,7 @@ void MacroAssembler::decrement(Register reg, int value)
 void MacroAssembler::decrementw(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid dst for address decrement");
-  if (dst.getMode() == Address::literal) {
+  if (dst.getMode() == Address::addr_literal) {
     assert(abs(value) < (1 << 12), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
@@ -1803,7 +1803,7 @@ void MacroAssembler::decrementw(Address dst, int value)
 void MacroAssembler::decrement(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid address for decrement");
-  if (dst.getMode() == Address::literal) {
+  if (dst.getMode() == Address::addr_literal) {
     assert(abs(value) < (1 << 12), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
@@ -1840,7 +1840,7 @@ void MacroAssembler::increment(Register reg, int value)
 void MacroAssembler::incrementw(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid dst for address increment");
-  if (dst.getMode() == Address::literal) {
+  if (dst.getMode() == Address::addr_literal) {
     assert(abs(value) < (1 << 12), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
@@ -1853,7 +1853,7 @@ void MacroAssembler::incrementw(Address dst, int value)
 void MacroAssembler::increment(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid dst for address increment");
-  if (dst.getMode() == Address::literal) {
+  if (dst.getMode() == Address::addr_literal) {
     assert(abs(value) < (1 << 12), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
@@ -4269,7 +4269,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
   int64_t offset_high = dest_page - high_page;
 
   assert(is_valid_AArch64_address(dest.target()), "bad address");
-  assert(dest.getMode() == Address::literal, "ADRP must be applied to a literal address");
+  assert(dest.getMode() == Address::addr_literal, "ADRP must be applied to a literal address");
 
   InstructionMark im(this);
   code_section()->relocate(inst_mark(), dest.rspec());
