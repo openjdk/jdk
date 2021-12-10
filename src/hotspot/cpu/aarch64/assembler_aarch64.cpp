@@ -245,6 +245,8 @@ void Assembler::add_sub_immediate(Instruction_aarch64 &current_insn,
 Address::Address(address target, relocInfo::relocType rtype) :
   _mode(addr_literal), _is_lval(false), _target(target)
 {
+  precond(target != nullptr);
+
   switch (rtype) {
   case relocInfo::oop_type:
   case relocInfo::metadata_type:

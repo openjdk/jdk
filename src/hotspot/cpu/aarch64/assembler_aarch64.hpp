@@ -595,19 +595,17 @@ class Address {
 
 // Convience classes
 class RuntimeAddress: public Address {
-
-  public:
-
-  RuntimeAddress(address target) : Address(target, relocInfo::runtime_call_type) {}
-
+ public:
+  RuntimeAddress(address target) : Address(target, relocInfo::runtime_call_type) {
+    precond(target != nullptr);
+  }
 };
 
 class OopAddress: public Address {
-
-  public:
-
-  OopAddress(address target) : Address(target, relocInfo::oop_type){}
-
+ public:
+  OopAddress(address target) : Address(target, relocInfo::oop_type) {
+    precond(target != nullptr);
+  }
 };
 
 class ExternalAddress: public Address {
@@ -621,16 +619,16 @@ class ExternalAddress: public Address {
   }
 
  public:
-
-  ExternalAddress(address target) : Address(target, reloc_for_target(target)) {}
-
+  ExternalAddress(address target) : Address(target, reloc_for_target(target)) {
+    precond(target != nullptr);
+  }
 };
 
 class InternalAddress: public Address {
-
-  public:
-
-  InternalAddress(address target) : Address(target, relocInfo::internal_word_type) {}
+ public:
+  InternalAddress(address target) : Address(target, relocInfo::internal_word_type) {
+    precond(target != nullptr);
+  }
 };
 
 const int FPUStateSizeInWords = FloatRegisterImpl::number_of_registers *
