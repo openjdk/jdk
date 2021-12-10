@@ -3091,7 +3091,7 @@ BlockBegin* GraphBuilder::setup_start_block(int osr_bci, BlockBegin* std_entry, 
   // each method.  Previously, each method started with the
   // start-block created below, and this block was followed by the
   // header block that was always empty.  This header block is only
-  // necesary if std_entry is also a backward branch target because
+  // necessary if std_entry is also a backward branch target because
   // then phi functions may be necessary in the header block.  It's
   // also necessary when profiling so that there's a single block that
   // can increment the the counters.
