@@ -282,7 +282,7 @@ class DynamicArchiveTestBase {
     /**
      * Return true if sharing has been disabled.
      * By default, the VM will be started with -Xshare:auto.
-     * Sharng will be disabled by the VM if there's some problem
+     * Sharing will be disabled by the VM if there's some problem
      * in using the default CDS archive. It could happen under some
      * situations such as follows:
      * - the default CDS archive wasn't generated during build time because
