@@ -2803,7 +2803,7 @@ public final class Formatter implements Closeable, Flushable {
          * Format the {@code BigDecimal} as a decimal number.
          */
         DECIMAL_FLOAT
-    };
+    }
 
     private class FormatContext {
         private final Locale locale;
