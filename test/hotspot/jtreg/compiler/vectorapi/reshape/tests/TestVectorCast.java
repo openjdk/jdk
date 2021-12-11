@@ -291,7 +291,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {B2X_NODE, "1"})
+    @IR(counts = {S2X_NODE, "1"})
     public static void testS512toB256(byte[] input, byte[] output) {
         vectorCast(S2B, SSPEC512, BSPEC256, input, output);
     }
