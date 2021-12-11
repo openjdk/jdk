@@ -997,13 +997,6 @@ u4 DumperSupport::sig2size(Symbol* sig) {
   }
 }
 
-template<typename T, typename F> T bit_cast(F from) { // replace with the real thing when we can use c++20
-  T to;
-  static_assert(sizeof(to) == sizeof(from), "must be of the same size");
-  memcpy(&to, &from, sizeof(to));
-  return to;
-}
-
 // dump a jfloat
 void DumperSupport::dump_float(AbstractDumpWriter* writer, jfloat f) {
   if (g_isnan(f)) {

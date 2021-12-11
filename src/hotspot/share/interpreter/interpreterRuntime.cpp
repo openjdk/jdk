@@ -1209,7 +1209,7 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current,
   jint* newval = (jint*)value;
   u.words[0] = newval[0];
   u.words[1] = newval[Interpreter::stackElementWords]; // skip if tag
-  fvalue.j = u.long_value;
+  fvalue.j = u.long_value();
 #endif // _LP64
 
   Handle h_obj;

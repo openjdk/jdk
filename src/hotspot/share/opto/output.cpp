@@ -953,8 +953,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     // grow downwards in all implementations.
     // (If, on some machine, the interpreter's Java locals or stack
     // were to grow upwards, the embedded doubles would be word-swapped.)
-    jlong_accessor acc;
-    acc.long_value = jlong_cast(d);
+    jlong_accessor acc(jlong_cast(d));
     array->append(new ConstantIntValue(acc.words[1]));
     array->append(new ConstantIntValue(acc.words[0]));
 #endif
@@ -973,8 +972,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     // grow downwards in all implementations.
     // (If, on some machine, the interpreter's Java locals or stack
     // were to grow upwards, the embedded doubles would be word-swapped.)
-    jlong_accessor acc;
-    acc.long_value = d;
+    jlong_accessor acc(d);
     array->append(new ConstantIntValue(acc.words[1]));
     array->append(new ConstantIntValue(acc.words[0]));
 #endif
