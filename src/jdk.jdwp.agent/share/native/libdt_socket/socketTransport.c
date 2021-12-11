@@ -46,7 +46,7 @@
  * The Socket Transport Library.
  *
  * This module is an implementation of the Java Debug Wire Protocol Transport
- * Service Provider Interface - see src/share/javavm/export/jdwpTransport.h.
+ * Service Provider Interface - see src/jdk.jdwp.agent/share/native/include/jdwpTransport.h.
  */
 
 static int serverSocketFD = -1;
