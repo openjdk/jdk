@@ -636,7 +636,7 @@ struct jlong_accessor {
   jint words[2];
 
   jlong_accessor() = default;
-  jlong_accessor(jlong j) : words() {
+  jlong_accessor(jlong j) {
     static_assert(sizeof(this->words) == sizeof(jlong), "");
     memcpy(&(this->words), &j, sizeof(jlong));
   }
