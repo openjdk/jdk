@@ -1153,7 +1153,7 @@ public:
 
   void evmovdquq(XMMRegister dst, Address src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }
   void evmovdquq(Address dst, XMMRegister src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }
-  void evmovdquq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+  void evmovdquq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch);
   void evmovdquq(XMMRegister dst, XMMRegister src, int vector_len) {
     if (dst->encoding() == src->encoding()) return;
     Assembler::evmovdquq(dst, src, vector_len);
