@@ -2974,6 +2974,12 @@ public final class Formatter implements Closeable, Flushable {
         }
 
         public void print(Object arg, Locale l) throws IOException {
+            // There's overlap between valid conversion and date/time chars, so need
+            // to check this first
+            if (flagIsSet(DATE_TIME)) {
+                printDateTime(arg, l);
+                return;
+            }
             switch (c) {
                 case Conversion.DECIMAL_INTEGER,
                         Conversion.OCTAL_INTEGER,
@@ -2990,13 +2996,7 @@ public final class Formatter implements Closeable, Flushable {
                 case Conversion.HASHCODE -> printHashCode(arg, l);
                 case Conversion.LINE_SEPARATOR -> a.append(System.lineSeparator());
                 case Conversion.PERCENT_SIGN -> print("%", l);
-                default -> {
-                    if (flagIsSet(DATE_TIME)) {
-                        printDateTime(arg, l);
-                        return;
-                    }
-                    assert false;
-                }
+                default -> { assert false; }
             }
         }
 
