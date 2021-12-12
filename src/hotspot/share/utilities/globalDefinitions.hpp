@@ -601,6 +601,8 @@ T bit_cast(const F& from) noexcept { // replace with the real thing when we can 
   static_assert(sizeof(T) == sizeof(F), "must be of the same size");
   static_assert(std::is_trivially_copyable<T>(), "output type must be trivially copyable");
   static_assert(std::is_trivially_copyable<F>(), "input type must be trivially copyable");
+  static_assert(std::is_default_constructible<T>() &&
+                std::is_trivially_copy_assignable<T>(), "implementation limits");
   T to;
   memcpy(&to, &from, sizeof(T));
   return to;
