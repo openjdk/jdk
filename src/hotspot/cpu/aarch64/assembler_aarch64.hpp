@@ -381,44 +381,42 @@ class Address {
   };
 
  private:
-  Register _base;
-  Register _index;
-  int64_t _offset;
   enum mode _mode;
-  extend _ext;
+  Register  _base;
+  Register  _index;
+  int64_t   _offset;
+  extend    _extend;
 
   RelocationHolder _rspec;
-
   // Typically we use AddressLiterals we want to use their rval
   // However in some situations we want the lval (effect address) of
   // the item.  We provide a special factory for making those lvals.
-  bool _is_lval;
-
+  bool      _is_lval;
   // If the target is far we'll need to load the ea of this to a
   // register to reach it. Otherwise if near we can do PC-relative
   // addressing.
-  address          _target;
+  address   _target;
 
  public:
   Address()
     : _mode(no_mode) { }
   Address(Register r)
-    : _base(r), _index(noreg), _offset(0), _mode(base_plus_offset), _ext(lsl(0)), _target(0) { }
+    : _mode(base_plus_offset), _base(r), _index(noreg), _offset(0), _extend(lsl(0)), _target(nullptr) {}
 
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
   Address(Register r, T o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _ext(lsl(0)), _target(0) {}
+    : _mode(base_plus_offset), _base(r), _index(noreg), _offset(0), _extend(lsl(0)), _target(nullptr) {}
 
   Address(Register r, ByteSize disp)
     : Address(r, in_bytes(disp)) { }
   Address(Register r, Register r1, extend ext = lsl(0))
-    : _base(r), _index(r1), _offset(0), _mode(base_plus_offset_reg),
-      _ext(ext), _target(0) { }
+    : _mode(base_plus_offset_reg), _base(r), _index(r1), _offset(0),
+      _extend(ext), _target(nullptr) { }
   Address(Pre p)
-    : _base(p.reg()), _index(noreg), _offset(p.offset()), _mode(pre) { }
+    : _mode(pre), _base(p.reg()), _index(noreg), _offset(p.offset()) { }
   Address(Post p)
-    : _base(p.reg()), _index(p.idx_reg()), _offset(p.offset()),
-      _mode(p.is_postreg() ? post_reg : post), _ext(lsl(0)), _target(0) { }
+    : _mode(p.is_postreg() ? post_reg : post), _base(p.reg()), _index(p.idx_reg()), _offset(p.offset()),
+      _extend(lsl(0)), _target(nullptr) { }
   Address(address target, RelocationHolder const& rspec)
     : _mode(addr_literal),
       _rspec(rspec),
@@ -427,7 +425,7 @@ class Address {
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
   Address(Register base, RegisterOrConstant index, extend ext = lsl(0))
     : _base(base), _index(noreg),
-      _offset(0), _ext(ext), _target(0) {
+      _offset(0), _extend(ext), _target(nullptr) {
     if (index.is_register()) {
       _mode = base_plus_offset_reg;
       _index = index.as_register();
@@ -455,7 +453,7 @@ class Address {
   }
   extend const &ext() const {
     precond(_mode != no_mode && _mode != addr_literal);
-    return _ext;
+    return _extend;
   }
   mode getMode() const {
     return _mode;
