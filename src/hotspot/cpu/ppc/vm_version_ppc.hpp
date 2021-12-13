@@ -129,12 +129,6 @@ public:
   // POWER 8: DSCR current value.
   static uint64_t _dscr_val;
 
-  static int number_of_threads(void);
-  static int number_of_cores(void);
-  static int number_of_sockets(void);
-
-  static const char* cpu_name(void);
-  static const char* cpu_description(void);
   static void initialize_cpu_information(void);
 };
 

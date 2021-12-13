@@ -122,17 +122,6 @@ void VM_Version::initialize() {
 #endif
 }
 
-// VM_Version statics
-static const size_t      CPU_TYPE_DESC_BUF_SIZE = 256;
-static const size_t      CPU_DETAILED_DESC_BUF_SIZE = 4096;
-
-static int _no_of_threads = 0;
-static int _no_of_cores = 0;
-static int _no_of_sockets = 0;
-static bool _initialized = false;
-static char _cpu_name[CPU_TYPE_DESC_BUF_SIZE] = {0};
-static char _cpu_desc[CPU_DETAILED_DESC_BUF_SIZE] = {0};
-
 void VM_Version::initialize_cpu_information(void) {
   // do nothing if cpu info has been initialized
   if (_initialized) {
@@ -145,39 +134,4 @@ void VM_Version::initialize_cpu_information(void) {
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "Zero VM");
   snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "%s", _features_string);
   _initialized = true;
-}
-
-int VM_Version::number_of_threads(void) {
-  initialize_cpu_information();
-  return _no_of_threads;
-}
-
-int VM_Version::number_of_cores(void) {
-  initialize_cpu_information();
-  return _no_of_cores;
-}
-
-int VM_Version::number_of_sockets(void) {
-  initialize_cpu_information();
-  return _no_of_sockets;
-}
-
-const char* VM_Version::cpu_name(void) {
-  initialize_cpu_information();
-  char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_TYPE_DESC_BUF_SIZE, mtTracing);
-  if (NULL == tmp) {
-    return NULL;
-  }
-  strncpy(tmp, _cpu_name, CPU_TYPE_DESC_BUF_SIZE);
-  return tmp;
-}
-
-const char* VM_Version::cpu_description(void) {
-  initialize_cpu_information();
-  char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_DETAILED_DESC_BUF_SIZE, mtTracing);
-  if (NULL == tmp) {
-    return NULL;
-  }
-  strncpy(tmp, _cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
-  return tmp;
 }

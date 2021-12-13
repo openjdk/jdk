@@ -2132,14 +2132,11 @@ enum {
 
 const size_t VENDOR_LENGTH = 13;
 const size_t CPU_EBS_MAX_LENGTH = (3 * 4 * 4 + 1);
-const size_t CPU_TYPE_DESC_BUF_SIZE = 256;
-const size_t CPU_DETAILED_DESC_BUF_SIZE = 4096;
 static char* _cpu_brand_string = NULL;
 static int64_t _max_qualified_cpu_frequency = 0;
 
 static int _no_of_threads = 0;
 static int _no_of_cores = 0;
-static int _no_of_packages = 0;
 
 const char* const _family_id_intel[ExtendedFamilyIdLength_INTEL] = {
   "8086/8088",
@@ -2523,39 +2520,19 @@ void VM_Version::resolve_cpu_information_details(void) {
   int threads_per_package = threads_per_core() * cores_per_cpu();
 
   // use amount of threads visible to the process in order to guess number of sockets
-  _no_of_packages = _no_of_threads / threads_per_package;
+  _no_of_sockets = _no_of_threads / threads_per_package;
 
   // process might only see a subset of the total number of threads
   // from a single processor package. Virtualization/resource management for example.
   // If so then just write a hard 1 as num of pkgs.
-  if (0 == _no_of_packages) {
-    _no_of_packages = 1;
+  if (0 == _no_of_sockets) {
+    _no_of_sockets = 1;
   }
 
   // estimate the number of cores
-  _no_of_cores = cores_per_cpu() * _no_of_packages;
+  _no_of_cores = cores_per_cpu() * _no_of_sockets;
 }
 
-int VM_Version::number_of_threads(void) {
-  if (_no_of_threads == 0) {
-   resolve_cpu_information_details();
-  }
-  return _no_of_threads;
-}
-
-int VM_Version::number_of_cores(void) {
-  if (_no_of_cores == 0) {
-    resolve_cpu_information_details();
-  }
-  return _no_of_cores;
-}
-
-int VM_Version::number_of_sockets(void) {
-  if (_no_of_packages == 0) {
-    resolve_cpu_information_details();
-  }
-  return _no_of_packages;
-}
 
 const char* VM_Version::cpu_family_description(void) {
   int cpu_family_id = extended_cpu_family();
@@ -2771,33 +2748,16 @@ int VM_Version::cpu_detailed_description(char* const buf, size_t buf_len) {
   return OS_OK;
 }
 
-const char* VM_Version::cpu_name(void) {
-  char cpu_type_desc[CPU_TYPE_DESC_BUF_SIZE];
-  size_t cpu_desc_len = sizeof(cpu_type_desc);
 
-  cpu_type_description(cpu_type_desc, cpu_desc_len);
-  char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, cpu_desc_len, mtTracing);
-  if (NULL == tmp) {
-    return NULL;
-  }
-  strncpy(tmp, cpu_type_desc, cpu_desc_len);
-  return tmp;
-}
+// Fill in Abstract_VM_Version statics
+void VM_Version::initialize_cpu_information() {
+  assert(!_initialized, "shouldn't be initialized yet");
+  resolve_cpu_information_details();
 
-const char* VM_Version::cpu_description(void) {
-  char cpu_detailed_desc_buffer[CPU_DETAILED_DESC_BUF_SIZE];
-  size_t cpu_detailed_desc_len = sizeof(cpu_detailed_desc_buffer);
-
-  cpu_detailed_description(cpu_detailed_desc_buffer, cpu_detailed_desc_len);
-
-  char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, cpu_detailed_desc_len, mtTracing);
-
-  if (NULL == tmp) {
-    return NULL;
-  }
-
-  strncpy(tmp, cpu_detailed_desc_buffer, cpu_detailed_desc_len);
-  return tmp;
+  // initialize cpu_name and cpu_desc
+  cpu_type_description(_cpu_name, CPU_TYPE_DESC_BUF_SIZE);
+  cpu_detailed_description(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
+  _initialized = true;
 }
 
 /**

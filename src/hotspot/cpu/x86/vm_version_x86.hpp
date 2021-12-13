@@ -1086,18 +1086,12 @@ public:
   static ByteSize proc_name_10_offset() { return byte_offset_of(CpuidInfo, proc_name_10); }
   static ByteSize proc_name_11_offset() { return byte_offset_of(CpuidInfo, proc_name_11); }
 
-  static int number_of_threads(void);
-  static int number_of_cores(void);
-  static int number_of_sockets(void);
-
   static int64_t maximum_qualified_cpu_frequency(void);
 
   static bool supports_tscinv_ext(void);
 
-  static const char* cpu_name(void);
-  static const char* cpu_description(void);
-
   static void initialize_tsc();
+  static void initialize_cpu_information(void);
 };
 
 #endif // CPU_X86_VM_VERSION_X86_HPP

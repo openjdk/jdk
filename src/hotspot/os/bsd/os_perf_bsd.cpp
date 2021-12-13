@@ -371,6 +371,7 @@ CPUInformationInterface::CPUInformationInterface() {
 
 bool CPUInformationInterface::initialize() {
   _cpu_info = new CPUInformation();
+  VM_Version::initialize_cpu_information();
   _cpu_info->set_number_of_hardware_threads(VM_Version::number_of_threads());
   _cpu_info->set_number_of_cores(VM_Version::number_of_cores());
   _cpu_info->set_number_of_sockets(VM_Version::number_of_sockets());

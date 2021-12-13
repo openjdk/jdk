@@ -35,12 +35,6 @@ class VM_Version : public Abstract_VM_Version {
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
-  static int number_of_threads(void);
-  static int number_of_cores(void);
-  static int number_of_sockets(void);
-
-  static const char* cpu_name(void);
-  static const char* cpu_description(void);
   static void initialize_cpu_information(void);
 };
 

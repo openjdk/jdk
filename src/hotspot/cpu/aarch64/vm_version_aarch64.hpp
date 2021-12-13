@@ -154,14 +154,8 @@ public:
   static bool is_cpu_emulated();
 #endif
 
- public:
-  static int number_of_threads(void);
-  static int number_of_cores(void);
-  static int number_of_sockets(void);
-
-  static const char* cpu_name(void);
-  static const char* cpu_description(void);
   static void initialize_cpu_information(void);
+
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP
