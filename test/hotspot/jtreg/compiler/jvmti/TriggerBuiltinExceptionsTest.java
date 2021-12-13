@@ -55,8 +55,8 @@ import sun.hotspot.WhiteBox;
 
 public class TriggerBuiltinExceptionsTest {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final int ITERATIONS = 30;           //Arbitrary value, feel free to change
-    private static final long COMP_TIMEOUT = 2000L;     //Arbitrary value, feel free to change (millis)
+    private static final int ITERATIONS = 30;           // Arbitrary value, feel free to change
+    private static final long COMP_TIMEOUT = 2000L;     // Arbitrary value, feel free to change (millis)
     private static final int COMP_LEVEL = CompilerUtils.getMaxCompilationLevel();
 
     private static int caughtByJavaTest = 0;
@@ -98,7 +98,7 @@ public class TriggerBuiltinExceptionsTest {
         final Method method = TriggerBuiltinExceptionsTest.class.getMethod(
                 "methodToCompile", int.class, Object[].class, Object[].class);
         WB.deoptimizeMethod(method);
-        TriggerBuiltinExceptionsTest.compileMethodOrThrow(method);
+        compileMethodOrThrow(method);
 
         // Preparing source - badly formed, supposed-to-be-int array
         final Object[] src = new Object[] {
@@ -109,22 +109,22 @@ public class TriggerBuiltinExceptionsTest {
         // 1. Should cause deoptimization as array is null
         // 2. Make the throw hot to make the next compilation aware of it.
         for (int i = 0; i < ITERATIONS; i++) {
-            TriggerBuiltinExceptionsTest.methodToCompile(i, src, dst);
+            methodToCompile(i, src, dst);
         }
         Asserts.assertTrue(
                 Utils.waitForCondition(() -> !WB.isMethodCompiled(method), COMP_TIMEOUT),
                 String.format("Method hasn't been deoptimized in %d millis", COMP_TIMEOUT));
 
         // Compile method with throw being hot
-        TriggerBuiltinExceptionsTest.compileMethodOrThrow(method);
+        compileMethodOrThrow(method);
 
         // Gathering exceptions in compiled code
         for (int i = 0; i < ITERATIONS; i++) {
-            TriggerBuiltinExceptionsTest.methodToCompile(i, src, dst);
+            methodToCompile(i, src, dst);
         }
 
         Asserts.assertEQ(
-                TriggerBuiltinExceptionsTest.caughtByJVMTIAgent(), caughtByJavaTest,
+                caughtByJVMTIAgent(), caughtByJavaTest,
                 "Number of Exceptions caught by java code and JVMTI agent does not match");
     }
 
