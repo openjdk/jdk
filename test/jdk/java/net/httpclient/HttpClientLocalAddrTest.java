@@ -66,6 +66,11 @@ import java.util.function.Predicate;
  *      -Djdk.internal.httpclient.debug=true
  *      HttpClientLocalAddrTest
  *
+ * @run testng/othervm/java.security.policy=httpclient-localaddr-security.policy
+ *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
+ *      -Djdk.internal.httpclient.debug=true
+ *      HttpClientLocalAddrTest
+ *
  */
 public class HttpClientLocalAddrTest {
 
