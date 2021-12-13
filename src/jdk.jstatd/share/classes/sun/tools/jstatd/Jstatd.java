@@ -72,7 +72,6 @@ public class Jstatd {
         }
     }
 
-    @SuppressWarnings({"removal","deprecation"}) // Use of RMISecurityManager
     public static void main(String[] args) {
         String rminame = null;
         int rmiPort = 0;
@@ -130,10 +129,6 @@ public class Jstatd {
         if (argc < args.length) {
             printUsage();
             System.exit(1);
-        }
-
-        if (System.getSecurityManager() == null) {
-            System.setSecurityManager(new RMISecurityManager());
         }
 
         StringBuilder name = new StringBuilder();
