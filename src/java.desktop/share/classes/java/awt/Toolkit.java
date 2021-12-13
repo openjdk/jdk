@@ -2090,7 +2090,7 @@ public abstract class Toolkit {
         }
     }
 
-    private class SelectiveAWTEventListener implements AWTEventListener {
+    private static class SelectiveAWTEventListener implements AWTEventListener {
         AWTEventListener listener;
         private long eventMask;
         // This array contains the number of times to call the eventlistener

@@ -351,7 +351,7 @@ public class LinkChecker extends HtmlChecker {
 
         void addReference(String name, Path from, int line) {
             if (checked) {
-                if (name != null && !name.isEmpty()) {
+                if (name != null) {
                     ID id = map.get(name);
                     if (id == null || !id.declared) {
                         error(from, line, "id not found: " + this.name + "#" + name);
@@ -368,7 +368,7 @@ public class LinkChecker extends HtmlChecker {
 
         void check() {
             map.forEach((name, id) -> {
-                if (name != null && !name.isEmpty() && !id.declared) {
+                if (name != null && !id.declared) {
                     //log.error(currFile, 0, "id not declared: " + name);
                     for (Position ref : id.references) {
                         error(ref.path, ref.line, "id not found: " + this.name + "#" + name);

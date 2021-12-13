@@ -3656,7 +3656,7 @@ public final class SunGraphics2D
      * enough to know that if our override is empty then it should not
      * mark us as finalizeable.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public void finalize() {
         // DO NOT REMOVE THIS METHOD
     }

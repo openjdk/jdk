@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,7 +340,7 @@ final class WeakPairMap<K1, K2, V> {
     /**
      * Common abstract supertype of a pair of WeakReference peers.
      */
-    private static abstract class WeakRefPeer<K> extends WeakReference<K> {
+    private abstract static class WeakRefPeer<K> extends WeakReference<K> {
 
         WeakRefPeer(K k, ReferenceQueue<Object> queue) {
             super(Objects.requireNonNull(k), queue);

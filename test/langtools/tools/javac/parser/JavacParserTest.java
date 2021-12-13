@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -52,7 +52,6 @@ import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
-import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.TreeScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTaskImpl;
@@ -83,6 +82,7 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
 import com.sun.source.tree.CaseTree;
+import com.sun.source.tree.DefaultCaseLabelTree;
 import com.sun.source.util.TreePathScanner;
 import java.util.Objects;
 
@@ -1816,6 +1816,93 @@ public class JavacParserTest extends TestCase {
                     fail("Invalid source position for an ErroneousTree");
                 }
                 return scan(tree.getErrorTrees(), p);
+            }
+        }.scan(cut, null);
+    }
+
+    @Test //JDK-8275097
+    void testDefaultTagPosition() throws IOException {
+        String code = """
+                      package t;
+                      class Test {
+                          private void test1(int i) {
+                              switch (i) {
+                                  default:
+                              }
+                          }
+                          private void test2(int i) {
+                              switch (i) {
+                                  case default:
+                              }
+                          }
+                          private int test3(int i) {
+                              return switch (i) {
+                                  default: yield 0;
+                              }
+                          }
+                          private int test4(int i) {
+                              return switch (i) {
+                                  case default: yield 0;
+                              }
+                          }
+                          private void test5(int i) {
+                              switch (i) {
+                                  default -> {}
+                              }
+                          }
+                          private void test6(int i) {
+                              switch (i) {
+                                  case default -> {}
+                              }
+                          }
+                          private int test5(int i) {
+                              return switch (i) {
+                                  default -> { yield 0; }
+                              }
+                          }
+                          private int test6(int i) {
+                              return switch (i) {
+                                  case default -> { yield 0; }
+                              }
+                          }
+                          private int test7(int i) {
+                              return switch (i) {
+                                  default -> 0;
+                              }
+                          }
+                          private int test8(int i) {
+                              return switch (i) {
+                                  case default -> 0;
+                              }
+                          }
+                      }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        Trees t = Trees.instance(ct);
+        SourcePositions sp = t.getSourcePositions();
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitDefaultCaseLabel(DefaultCaseLabelTree tree, Void p) {
+                int start = (int) sp.getStartPosition(cut, tree);
+                int end   = (int) sp.getEndPosition(cut, tree);
+                String defaultName = code.substring(start, end);
+                if (!"default".equals(defaultName)) {
+                    throw new AssertionError("Incorrect span: " + defaultName);
+                }
+                return super.visitDefaultCaseLabel(tree, p);
+            }
+
+            @Override
+            public Void visitCase(CaseTree node, Void p) {
+                scan(node.getLabels(), p);
+                if (node.getCaseKind() == CaseTree.CaseKind.RULE)
+                    scan(node.getBody(), p);
+                else
+                    scan(node.getStatements(), p);
+                return null;
             }
         }.scan(cut, null);
     }

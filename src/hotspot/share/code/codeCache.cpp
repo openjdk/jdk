@@ -1226,7 +1226,9 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
   CodeHeap* heap = get_code_heap(code_blob_type);
   assert(heap != NULL, "heap is null");
 
-  if ((heap->full_count() == 0) || print) {
+  heap->report_full();
+
+  if ((heap->full_count() == 1) || print) {
     // Not yet reported for this heap, report
     if (SegmentedCodeCache) {
       ResourceMark rm;
@@ -1263,14 +1265,12 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
       tty->print("%s", s.as_string());
     }
 
-    if (heap->full_count() == 0) {
+    if (heap->full_count() == 1) {
       if (PrintCodeHeapAnalytics) {
         CompileBroker::print_heapinfo(tty, "all", 4096); // details, may be a lot!
       }
     }
   }
-
-  heap->report_full();
 
   EventCodeCacheFull event;
   if (event.should_commit()) {

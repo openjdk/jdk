@@ -67,6 +67,10 @@ you can replace it with "--with-binutils=<location>".
 If you have pre-built binutils binaries, you can point to them directly using
 "--with-binutils=<location>".
 
+If you want to build hsdis with binutils provided by system
+(e.g. binutils-devel from Fedora, binutils-dev from Ubuntu), you can pass
+"--with-binutils=system". "system" is available on Linux only.
+
 When you have created a proper configuration, you can then build the hsdis
 library using "make build-hsdis".
 

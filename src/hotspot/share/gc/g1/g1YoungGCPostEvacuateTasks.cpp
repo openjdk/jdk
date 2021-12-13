@@ -82,7 +82,7 @@ public:
 
     class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
     public:
-      G1CardSetMemoryStats _total;
+      G1SegmentedArrayMemoryStats _total;
 
       bool do_heap_region(HeapRegion* r) override {
         _total.add(r->rem_set()->card_set_memory_stats());
@@ -106,12 +106,6 @@ public:
     G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr),
     _task(evac_failure_regions),
     _evac_failure_regions(evac_failure_regions) { }
-
-  ~RemoveSelfForwardPtrsTask() {
-    assert(_task.num_failed_regions() == _evac_failure_regions->num_regions_failed_evacuation(),
-           "Removed regions %u inconsistent with expected %u",
-           _task.num_failed_regions(), _evac_failure_regions->num_regions_failed_evacuation());
-  }
 
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");

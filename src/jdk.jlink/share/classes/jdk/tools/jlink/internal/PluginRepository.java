@@ -90,7 +90,7 @@ public final class PluginRepository {
      * Explicit registration of a plugin in the repository. Used by unit tests
      * @param plugin The plugin to register.
      */
-    public synchronized static void registerPlugin(Plugin plugin) {
+    public static synchronized void registerPlugin(Plugin plugin) {
         Objects.requireNonNull(plugin);
         registeredPlugins.put(plugin.getName(), plugin);
     }
@@ -101,7 +101,7 @@ public final class PluginRepository {
      *
      * @param name Plugin name
      */
-    public synchronized static void unregisterPlugin(String name) {
+    public static synchronized void unregisterPlugin(String name) {
         Objects.requireNonNull(name);
         registeredPlugins.remove(name);
     }

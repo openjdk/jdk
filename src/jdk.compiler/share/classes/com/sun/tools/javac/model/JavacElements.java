@@ -727,12 +727,42 @@ public class JavacElements implements Elements {
         return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
     }
 
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public JavaFileObject getFileObjectOf(Element e) {
+        Symbol sym = (Symbol) e;
+        return switch(sym.kind) {
+            case PCK -> {
+                PackageSymbol psym = (PackageSymbol) sym;
+                if (psym.package_info == null) {
+                    yield null;
+                }
+                yield psym.package_info.classfile;
+            }
+
+            case MDL -> {
+                ModuleSymbol msym = (ModuleSymbol) sym;
+                if (msym.module_info == null) {
+                    yield null;
+                }
+                yield msym.module_info.classfile;
+            }
+            case TYP -> ((ClassSymbol) sym).classfile;
+            default -> sym.enclClass().classfile;
+        };
+    }
+
     /**
      * Returns the tree node and compilation unit corresponding to this
      * element, or null if they can't be found.
      */
     private Pair<JCTree, JCCompilationUnit> getTreeAndTopLevel(Element e) {
         Symbol sym = cast(Symbol.class, e);
+        if (sym.kind == PCK) {
+            TypeSymbol pkgInfo = ((PackageSymbol) sym).package_info;
+            if (pkgInfo != null) {
+                pkgInfo.complete();
+            }
+        }
         Env<AttrContext> enterEnv = getEnterEnv(sym);
         if (enterEnv == null)
             return null;

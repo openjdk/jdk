@@ -2211,10 +2211,9 @@ public class StyleSheet extends StyleContext {
                     retIndex--;
                 } else if (as.isDefined(HTML.Attribute.VALUE)) {
                     Object value = as.getAttribute(HTML.Attribute.VALUE);
-                    if (value != null &&
-                        (value instanceof String)) {
+                    if (value instanceof String s) {
                         try {
-                            int iValue = Integer.parseInt((String)value);
+                            int iValue = Integer.parseInt(s);
                             return retIndex - counter + iValue;
                         }
                         catch (NumberFormatException nfe) {}
@@ -2744,8 +2743,7 @@ public class StyleSheet extends StyleContext {
                                    kind of conditional behaviour in the
                                    stylesheet.
                                  **/
-                                    if (o != null && o instanceof AttributeSet) {
-                                        AttributeSet attr = (AttributeSet)o;
+                                    if (o instanceof AttributeSet attr) {
                                         if (attr.getAttribute(HTML.Attribute.HREF) == null) {
                                             continue;
                                         }

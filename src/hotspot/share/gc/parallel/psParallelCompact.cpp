@@ -852,7 +852,6 @@ public:
     BoolObjectClosure* is_alive_non_header) :
       ReferenceProcessor(is_subject_to_discovery,
       ParallelGCThreads,   // mt processing degree
-      true,                // mt discovery
       ParallelGCThreads,   // mt discovery degree
       true,                // atomic_discovery
       is_alive_non_header) {

@@ -46,7 +46,7 @@
 // Convert the raw encoding form into the form expected by the
 // constructor for Address.
 Address Address::make_raw(int base, int index, int scale, int disp, relocInfo::relocType disp_reloc) {
-  RelocationHolder rspec;
+  RelocationHolder rspec = RelocationHolder::none;
   if (disp_reloc != relocInfo::none) {
     rspec = Relocation::spec_simple(disp_reloc);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,14 +52,14 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
 bool G1BlockOffsetTable::is_card_boundary(HeapWord* p) const {
   assert(p >= _reserved.start(), "just checking");
   size_t delta = pointer_delta(p, _reserved.start());
-  return (delta & right_n_bits((int)BOTConstants::LogN_words)) == (size_t)NoBits;
+  return (delta & right_n_bits((int)BOTConstants::log_card_size_in_words())) == (size_t)NoBits;
 }
 
 #ifdef ASSERT
 void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
-  assert((index) < (_reserved.word_size() >> BOTConstants::LogN_words),
+  assert((index) < (_reserved.word_size() >> BOTConstants::log_card_size_in_words()),
          "%s - index: " SIZE_FORMAT ", _vs.committed_size: " SIZE_FORMAT,
-         msg, (index), (_reserved.word_size() >> BOTConstants::LogN_words));
+         msg, (index), (_reserved.word_size() >> BOTConstants::log_card_size_in_words()));
   assert(G1CollectedHeap::heap()->is_in(address_for_index_raw(index)),
          "Index " SIZE_FORMAT " corresponding to " PTR_FORMAT
          " (%u) is not in committed area.",
@@ -75,7 +75,6 @@ void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
 
 G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr) :
   _next_offset_threshold(NULL),
-  DEBUG_ONLY(_object_can_span(false) COMMA)
   _bot(array),
   _hr(hr)
 {
@@ -97,14 +96,7 @@ void G1BlockOffsetTablePart::update() {
 // The arguments follow the normal convention of denoting
 // a right-open interval: [start, end)
 void G1BlockOffsetTablePart:: set_remainder_to_point_to_start(HeapWord* start, HeapWord* end) {
-
-  if (start >= end) {
-    // The start address is equal to the end address (or to
-    // the right of the end address) so there are not cards
-    // that need to be updated..
-    return;
-  }
-
+  assert(start < end, "precondition");
   // Write the backskip value for each region.
   //
   //    offset
@@ -141,7 +133,7 @@ void G1BlockOffsetTablePart:: set_remainder_to_point_to_start(HeapWord* start, H
   size_t start_card = _bot->index_for(start);
   size_t end_card = _bot->index_for(end-1);
   assert(start ==_bot->address_for_index(start_card), "Precondition");
-  assert(end ==_bot->address_for_index(end_card)+BOTConstants::N_words, "Precondition");
+  assert(end ==_bot->address_for_index(end_card)+BOTConstants::card_size_in_words(), "Precondition");
   set_remainder_to_point_to_start_incl(start_card, end_card); // closed interval
 }
 
@@ -149,11 +141,9 @@ void G1BlockOffsetTablePart:: set_remainder_to_point_to_start(HeapWord* start, H
 // a closed, inclusive interval: [start_card, end_card], cf set_remainder_to_point_to_start()
 // above.
 void G1BlockOffsetTablePart::set_remainder_to_point_to_start_incl(size_t start_card, size_t end_card) {
-  if (start_card > end_card) {
-    return;
-  }
+  assert(start_card <= end_card, "precondition");
   assert(start_card > _bot->index_for(_hr->bottom()), "Cannot be first card");
-  assert(_bot->offset_array(start_card-1) <= BOTConstants::N_words,
+  assert(_bot->offset_array(start_card-1) <= BOTConstants::card_size_in_words(),
          "Offset card has an unexpected value");
   size_t start_card_for_region = start_card;
   u_char offset = max_jubyte;
@@ -162,7 +152,7 @@ void G1BlockOffsetTablePart::set_remainder_to_point_to_start_incl(size_t start_c
     // so that the reach ends in this region and not at the start
     // of the next.
     size_t reach = start_card - 1 + (BOTConstants::power_to_cards_back(i+1) - 1);
-    offset = BOTConstants::N_words + i;
+    offset = BOTConstants::card_size_in_words() + i;
     if (reach >= end_card) {
       _bot->set_offset_array(start_card_for_region, end_card, offset);
       start_card_for_region = reach + 1;
@@ -183,16 +173,16 @@ void G1BlockOffsetTablePart::check_all_cards(size_t start_card, size_t end_card)
   if (end_card < start_card) {
     return;
   }
-  guarantee(_bot->offset_array(start_card) == BOTConstants::N_words, "Wrong value in second card");
+  guarantee(_bot->offset_array(start_card) == BOTConstants::card_size_in_words(), "Wrong value in second card");
   for (size_t c = start_card + 1; c <= end_card; c++ /* yeah! */) {
     u_char entry = _bot->offset_array(c);
     if (c - start_card > BOTConstants::power_to_cards_back(1)) {
-      guarantee(entry > BOTConstants::N_words,
+      guarantee(entry > BOTConstants::card_size_in_words(),
                 "Should be in logarithmic region - "
                 "entry: %u, "
                 "_array->offset_array(c): %u, "
                 "N_words: %u",
-                (uint)entry, (uint)_bot->offset_array(c), BOTConstants::N_words);
+                (uint)entry, (uint)_bot->offset_array(c), BOTConstants::card_size_in_words());
     }
     size_t backskip = BOTConstants::entry_to_cards_back(entry);
     size_t landing_card = c - backskip;
@@ -205,48 +195,12 @@ void G1BlockOffsetTablePart::check_all_cards(size_t start_card, size_t end_card)
     } else {
       guarantee(landing_card == start_card - 1, "Tautology");
       // Note that N_words is the maximum offset value
-      guarantee(_bot->offset_array(landing_card) <= BOTConstants::N_words,
+      guarantee(_bot->offset_array(landing_card) <= BOTConstants::card_size_in_words(),
                 "landing card offset: %u, "
                 "N_words: %u",
-                (uint)_bot->offset_array(landing_card), (uint)BOTConstants::N_words);
+                (uint)_bot->offset_array(landing_card), (uint)BOTConstants::card_size_in_words());
     }
   }
-}
-
-HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord* q,
-                                                                        HeapWord* n,
-                                                                        const void* addr) {
-  // We're not in the normal case.  We need to handle an important subcase
-  // here: LAB allocation.  An allocation previously recorded in the
-  // offset table was actually a lab allocation, and was divided into
-  // several objects subsequently.  Fix this situation as we answer the
-  // query, by updating entries as we cross them.
-
-  // If the fist object's end q is at the card boundary. Start refining
-  // with the corresponding card (the value of the entry will be basically
-  // set to 0). If the object crosses the boundary -- start from the next card.
-  size_t n_index = _bot->index_for(n);
-  size_t next_index = _bot->index_for(n) + !_bot->is_card_boundary(n);
-  // Calculate a consistent next boundary.  If "n" is not at the boundary
-  // already, step to the boundary.
-  HeapWord* next_boundary = _bot->address_for_index(n_index) +
-                            (n_index == next_index ? 0 : BOTConstants::N_words);
-  assert(next_boundary <= _bot->_reserved.end(),
-         "next_boundary is beyond the end of the covered region "
-         " next_boundary " PTR_FORMAT " _array->_end " PTR_FORMAT,
-         p2i(next_boundary), p2i(_bot->_reserved.end()));
-  while (next_boundary < addr) {
-    while (n <= next_boundary) {
-      q = n;
-      oop obj = cast_to_oop(q);
-      if (obj->klass_or_null_acquire() == NULL) return q;
-      n += block_size(q);
-    }
-    assert(q <= next_boundary && n > next_boundary, "Consequence of loop");
-    // [q, n) is the block that crosses the boundary.
-    alloc_block_work(&next_boundary, q, n);
-  }
-  return forward_to_block_containing_addr_const(q, n, addr);
 }
 
 //
@@ -269,13 +223,13 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, HeapWord* b
          "phantom block");
   assert(blk_end > threshold, "should be past threshold");
   assert(blk_start <= threshold, "blk_start should be at or before threshold");
-  assert(pointer_delta(threshold, blk_start) <= BOTConstants::N_words,
+  assert(pointer_delta(threshold, blk_start) <= BOTConstants::card_size_in_words(),
          "offset should be <= BlockOffsetSharedArray::N");
   assert(G1CollectedHeap::heap()->is_in_reserved(blk_start),
          "reference must be into the heap");
   assert(G1CollectedHeap::heap()->is_in_reserved(blk_end-1),
          "limit must be within the heap");
-  assert(threshold == _bot->_reserved.start() + index*BOTConstants::N_words,
+  assert(threshold == _bot->_reserved.start() + index*BOTConstants::card_size_in_words(),
          "index must agree with threshold");
 
   DEBUG_ONLY(size_t orig_index = index;)
@@ -295,14 +249,14 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, HeapWord* b
     HeapWord* rem_st  = _bot->address_for_index(index + 1);
     // Calculate rem_end this way because end_index
     // may be the last valid index in the covered region.
-    HeapWord* rem_end = _bot->address_for_index(end_index) + BOTConstants::N_words;
+    HeapWord* rem_end = _bot->address_for_index(end_index) + BOTConstants::card_size_in_words();
     set_remainder_to_point_to_start(rem_st, rem_end);
   }
 
   index = end_index + 1;
   // Calculate threshold_ this way because end_index
   // may be the last valid index in the covered region.
-  threshold = _bot->address_for_index(end_index) + BOTConstants::N_words;
+  threshold = _bot->address_for_index(end_index) + BOTConstants::card_size_in_words();
   assert(threshold >= blk_end, "Incorrect offset threshold");
 
   *threshold_ = threshold;
@@ -313,7 +267,7 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, HeapWord* b
   size_t start_index = _bot->index_for(blk_start);
   HeapWord* boundary = _bot->address_for_index(start_index);
   assert((_bot->offset_array(orig_index) == 0 && blk_start == boundary) ||
-         (_bot->offset_array(orig_index) > 0 && _bot->offset_array(orig_index) <= BOTConstants::N_words),
+         (_bot->offset_array(orig_index) > 0 && _bot->offset_array(orig_index) <= BOTConstants::card_size_in_words()),
          "offset array should have been set - "
          "orig_index offset: %u, "
          "blk_start: " PTR_FORMAT ", "
@@ -323,12 +277,12 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, HeapWord* b
   for (size_t j = orig_index + 1; j <= end_index; j++) {
     assert(_bot->offset_array(j) > 0 &&
            _bot->offset_array(j) <=
-             (u_char) (BOTConstants::N_words+BOTConstants::N_powers-1),
+             (u_char) (BOTConstants::card_size_in_words()+BOTConstants::N_powers-1),
            "offset array should have been set - "
            "%u not > 0 OR %u not <= %u",
            (uint) _bot->offset_array(j),
            (uint) _bot->offset_array(j),
-           (uint) (BOTConstants::N_words+BOTConstants::N_powers-1));
+           (uint) (BOTConstants::card_size_in_words() + BOTConstants::N_powers - 1));
   }
 #endif
 }
@@ -342,7 +296,7 @@ void G1BlockOffsetTablePart::verify() const {
 
   for (size_t current_card = start_card; current_card < end_card; current_card++) {
     u_char entry = _bot->offset_array(current_card);
-    if (entry < BOTConstants::N_words) {
+    if (entry < BOTConstants::card_size_in_words()) {
       // The entry should point to an object before the current card. Verify that
       // it is possible to walk from that object in to the current card by just
       // iterating over the objects following it.
@@ -376,12 +330,6 @@ void G1BlockOffsetTablePart::verify() const {
   }
 }
 
-#ifdef ASSERT
-void G1BlockOffsetTablePart::set_object_can_span(bool can_span) {
-  _object_can_span = can_span;
-}
-#endif
-
 #ifndef PRODUCT
 void G1BlockOffsetTablePart::print_on(outputStream* out) {
   size_t from_index = _bot->index_for(_hr->bottom());
@@ -406,7 +354,7 @@ void G1BlockOffsetTablePart::zero_bottom_entry_raw() {
 }
 
 void G1BlockOffsetTablePart::initialize_threshold() {
-  _next_offset_threshold = _hr->bottom() + BOTConstants::N_words;
+  _next_offset_threshold = _hr->bottom() + BOTConstants::card_size_in_words();
 }
 
 void G1BlockOffsetTablePart::set_for_starts_humongous(HeapWord* obj_top, size_t fill_size) {

@@ -107,7 +107,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
     static interface XViewedArrayData extends Navigatable {
     }
 
-    static abstract class XOpenTypeData extends JTable {
+    abstract static class XOpenTypeData extends JTable {
         XOpenTypeData parent;
         protected int col1Width = -1;
         protected int col2Width = -1;

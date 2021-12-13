@@ -141,20 +141,11 @@ private:
   JavaThread *_thread;
   JNIEnv* _jni_env;
   JvmtiThreadState::ExceptionState _saved_exception_state;
-#if 0
-  JNIHandleBlock* _hblock;
-#endif
 
 public:
   JvmtiEventMark(JavaThread *thread) :  _thread(thread),
                                         _jni_env(thread->jni_environment()),
                                         _saved_exception_state(JvmtiThreadState::ES_CLEARED) {
-#if 0
-    _hblock = thread->active_handles();
-    _hblock->clear_thoroughly(); // so we can be safe
-#else
-    // we want to use the code above - but that needs the JNIHandle changes - later...
-    // for now, steal JNI push local frame code
     JvmtiThreadState *state = thread->jvmti_thread_state();
     // we are before an event.
     // Save current jvmti thread exception state.
@@ -162,31 +153,13 @@ public:
       _saved_exception_state = state->get_exception_state();
     }
 
-    JNIHandleBlock* old_handles = thread->active_handles();
-    JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(thread);
-    assert(new_handles != NULL, "should not be NULL");
-    new_handles->set_pop_frame_link(old_handles);
-    thread->set_active_handles(new_handles);
-#endif
+    thread->push_jni_handle_block();
     assert(thread == JavaThread::current(), "thread must be current!");
     thread->frame_anchor()->make_walkable(thread);
   };
 
   ~JvmtiEventMark() {
-#if 0
-    _hblock->clear(); // for consistency with future correct behavior
-#else
-    // we want to use the code above - but that needs the JNIHandle changes - later...
-    // for now, steal JNI pop local frame code
-    JNIHandleBlock* old_handles = _thread->active_handles();
-    JNIHandleBlock* new_handles = old_handles->pop_frame_link();
-    assert(new_handles != NULL, "should not be NULL");
-    _thread->set_active_handles(new_handles);
-    // Note that we set the pop_frame_link to NULL explicitly, otherwise
-    // the release_block call will release the blocks.
-    old_handles->set_pop_frame_link(NULL);
-    JNIHandleBlock::release_block(old_handles, _thread); // may block
-#endif
+    _thread->pop_jni_handle_block();
 
     JvmtiThreadState* state = _thread->jvmti_thread_state();
     // we are continuing after an event.
@@ -196,13 +169,7 @@ public:
     }
   }
 
-#if 0
-  jobject to_jobject(oop obj) { return obj == NULL? NULL : _hblock->allocate_handle_fast(obj); }
-#else
-  // we want to use the code above - but that needs the JNIHandle changes - later...
-  // for now, use regular make_local
   jobject to_jobject(oop obj) { return JNIHandles::make_local(_thread,obj); }
-#endif
 
   jclass to_jclass(Klass* klass) { return (klass == NULL ? NULL : (jclass)to_jobject(klass->java_mirror())); }
 

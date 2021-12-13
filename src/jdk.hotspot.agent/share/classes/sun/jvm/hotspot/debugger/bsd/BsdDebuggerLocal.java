@@ -92,7 +92,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
 
     // native methods
 
-    private native static void init0()
+    private static native void init0()
                                 throws DebuggerException;
     private native void attach0(int pid)
                                 throws DebuggerException;
@@ -108,7 +108,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
                                 throws DebuggerException;
     private native byte[] readBytesFromProcess0(long address, long numBytes)
                                 throws DebuggerException;
-    public native static int  getAddressSize() ;
+    public static native int  getAddressSize() ;
 
     // Note on Bsd threads are really processes. When target process is
     // attached by a serviceability agent thread, only that thread can do

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -624,7 +624,7 @@ public abstract class CodePointTrie extends CodePointMap {
     static final int NO_INDEX3_NULL_OFFSET = 0x7fff;
     static final int NO_DATA_NULL_OFFSET = 0xfffff;
 
-    private static abstract class Data {
+    private abstract static class Data {
         abstract ValueWidth getValueWidth();
         abstract int getDataLength();
         abstract int getFromIndex(int index);
@@ -768,7 +768,7 @@ public abstract class CodePointTrie extends CodePointMap {
      *
      * @stable ICU 63
      */
-    public static abstract class Fast extends CodePointTrie {
+    public abstract static class Fast extends CodePointTrie {
         private Fast(char[] index, Data data, int highStart,
                 int index3NullOffset, int dataNullOffset) {
             super(index, data, highStart, index3NullOffset, dataNullOffset);
@@ -906,7 +906,7 @@ public abstract class CodePointTrie extends CodePointMap {
      *
      * @stable ICU 63
      */
-    public static abstract class Small extends CodePointTrie {
+    public abstract static class Small extends CodePointTrie {
         private Small(char[] index, Data data, int highStart,
                 int index3NullOffset, int dataNullOffset) {
             super(index, data, highStart, index3NullOffset, dataNullOffset);

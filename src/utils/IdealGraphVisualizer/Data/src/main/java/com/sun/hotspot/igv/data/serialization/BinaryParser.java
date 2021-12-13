@@ -91,7 +91,7 @@ public class BinaryParser implements GraphParser {
         String toString(Length l);
     }
 
-    private static abstract class Member implements LengthToString {
+    private abstract static class Member implements LengthToString {
         public final Klass holder;
         public final int accessFlags;
         public final String name;

@@ -351,7 +351,6 @@
   /* Foreign API Support */                                                                                          \
   template(jdk_internal_invoke_NativeEntryPoint,                 "jdk/internal/invoke/NativeEntryPoint")           \
   template(jdk_internal_invoke_NativeEntryPoint_signature,       "Ljdk/internal/invoke/NativeEntryPoint;")         \
-  template(jdk_incubator_foreign_MemoryAccess,       "jdk/incubator/foreign/MemoryAccess")        \
                                                                                                   \
   /* Support for JVMCI */                                                                         \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \

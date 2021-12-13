@@ -327,7 +327,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = name.hashCode() * 43 + mods.hashCode();
+            int hash = name.hashCode() * 43 + modsHashCode(mods);
             if (compiledVersion != null)
                 hash = hash * 43 + compiledVersion.hashCode();
             if (rawCompiledVersion != null)
@@ -505,7 +505,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = mods.hashCode();
+            int hash = modsHashCode(mods);
             hash = hash * 43 + source.hashCode();
             return hash * 43 + targets.hashCode();
         }
@@ -708,7 +708,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = mods.hashCode();
+            int hash = modsHashCode(mods);
             hash = hash * 43 + source.hashCode();
             return hash * 43 + targets.hashCode();
         }
@@ -1033,13 +1033,6 @@ public class ModuleDescriptor
 
             while (i < n) {
                 c = v.charAt(i);
-                if (c >= '0' && c <= '9')
-                    i = takeNumber(v, i, pre);
-                else
-                    i = takeString(v, i, pre);
-                if (i >= n)
-                    break;
-                c = v.charAt(i);
                 if (c == '.' || c == '-') {
                     i++;
                     continue;
@@ -1048,6 +1041,10 @@ public class ModuleDescriptor
                     i++;
                     break;
                 }
+                if (c >= '0' && c <= '9')
+                    i = takeNumber(v, i, pre);
+                else
+                    i = takeString(v, i, pre);
             }
 
             if (c == '+' && i >= n)
@@ -1055,17 +1052,14 @@ public class ModuleDescriptor
 
             while (i < n) {
                 c = v.charAt(i);
-                if (c >= '0' && c <= '9')
-                    i = takeNumber(v, i, build);
-                else
-                    i = takeString(v, i, build);
-                if (i >= n)
-                    break;
-                c = v.charAt(i);
                 if (c == '.' || c == '-' || c == '+') {
                     i++;
                     continue;
                 }
+                if (c >= '0' && c <= '9')
+                    i = takeNumber(v, i, build);
+                else
+                    i = takeString(v, i, build);
             }
 
             this.version = v;
@@ -2261,7 +2255,7 @@ public class ModuleDescriptor
         int hc = hash;
         if (hc == 0) {
             hc = name.hashCode();
-            hc = hc * 43 + Objects.hashCode(modifiers);
+            hc = hc * 43 + modsHashCode(modifiers);
             hc = hc * 43 + requires.hashCode();
             hc = hc * 43 + Objects.hashCode(packages);
             hc = hc * 43 + exports.hashCode();
@@ -2544,6 +2538,18 @@ public class ModuleDescriptor
                                                       .toLowerCase(Locale.ROOT)),
                               Stream.of(what)))
                 .collect(Collectors.joining(" "));
+    }
+
+    /**
+     * Generates and returns a hashcode for the enum instances. The returned hashcode
+     * is a value based on the {@link Enum#name() name} of each enum instance.
+     */
+    private static int modsHashCode(Iterable<? extends Enum<?>> enums) {
+        int h = 0;
+        for (Enum<?> e : enums) {
+            h = h * 43 + Objects.hashCode(e.name());
+        }
+        return h;
     }
 
     private static <T extends Object & Comparable<? super T>>

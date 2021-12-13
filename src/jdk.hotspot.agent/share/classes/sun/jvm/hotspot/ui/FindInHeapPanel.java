@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package sun.jvm.hotspot.ui;
 
 import java.util.*;
-import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -193,9 +192,8 @@ public class FindInHeapPanel extends JPanel {
 
   private synchronized void updateResultWindow() {
     if (updates.size() > 0) {
-      Iterator i = updates.iterator();
-      while (i.hasNext()) {
-        textArea.append((String)i.next());
+      for (String update : updates) {
+        textArea.append(update);
       }
       updates = new ArrayList<>();;
     }

@@ -208,9 +208,8 @@ public abstract class XRSurfaceData extends XSurfaceData {
 
     protected MaskFill getMaskFill(SunGraphics2D sg2d) {
         AlphaComposite aComp = null;
-        if(sg2d.composite != null
-                && sg2d.composite instanceof AlphaComposite) {
-            aComp = (AlphaComposite) sg2d.composite;
+        if (sg2d.composite instanceof AlphaComposite alphaComposite) {
+            aComp = alphaComposite;
         }
 
         boolean supportedPaint = sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR

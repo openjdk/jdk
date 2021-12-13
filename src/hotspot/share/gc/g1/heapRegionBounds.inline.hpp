@@ -31,6 +31,10 @@ size_t HeapRegionBounds::min_size() {
   return MIN_REGION_SIZE;
 }
 
+size_t HeapRegionBounds::max_ergonomics_size() {
+  return MAX_ERGONOMICS_SIZE;
+}
+
 size_t HeapRegionBounds::max_size() {
   return MAX_REGION_SIZE;
 }

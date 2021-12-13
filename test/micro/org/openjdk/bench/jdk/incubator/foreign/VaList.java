@@ -22,8 +22,10 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.FunctionDescriptor;
+import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.CLinker;
+import jdk.incubator.foreign.FunctionDescriptor;
+import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.ResourceScope;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -36,14 +38,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 import java.util.concurrent.TimeUnit;
-
-import static jdk.incubator.foreign.CLinker.C_DOUBLE;
-import static jdk.incubator.foreign.CLinker.C_INT;
-import static jdk.incubator.foreign.CLinker.C_LONG_LONG;
-import static jdk.incubator.foreign.CLinker.C_VA_LIST;
-import static jdk.incubator.foreign.CLinker.asVarArg;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -51,9 +46,9 @@ import static jdk.incubator.foreign.CLinker.asVarArg;
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign", "--enable-native-access=ALL-UNNAMED" })
-public class VaList {
+public class VaList extends CLayouts {
 
-    static final CLinker linker = CLinker.getInstance();
+    static final CLinker linker = CLinker.systemCLinker();
     static {
         System.loadLibrary("VaList");
     }
@@ -64,11 +59,9 @@ public class VaList {
     static {
         SymbolLookup lookup = SymbolLookup.loaderLookup();
         MH_ellipsis = linker.downcallHandle(lookup.lookup("ellipsis").get(),
-                MethodType.methodType(void.class, int.class, int.class, double.class, long.class),
-                FunctionDescriptor.ofVoid(C_INT, asVarArg(C_INT), asVarArg(C_DOUBLE), asVarArg(C_LONG_LONG)));
+                FunctionDescriptor.ofVoid(C_INT).asVariadic(C_INT, C_DOUBLE, C_LONG_LONG));
         MH_vaList = linker.downcallHandle(lookup.lookup("vaList").get(),
-                MethodType.methodType(void.class, int.class, CLinker.VaList.class),
-                FunctionDescriptor.ofVoid(C_INT, C_VA_LIST));
+                FunctionDescriptor.ofVoid(C_INT, C_POINTER));
     }
 
     @Benchmark
@@ -80,12 +73,12 @@ public class VaList {
     @Benchmark
     public void vaList() throws Throwable {
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            CLinker.VaList vaList = CLinker.VaList.make(b ->
-                    b.vargFromInt(C_INT, 1)
-                            .vargFromDouble(C_DOUBLE, 2D)
-                            .vargFromLong(C_LONG_LONG, 3L), scope);
+            jdk.incubator.foreign.VaList vaList = jdk.incubator.foreign.VaList.make(b ->
+                    b.addVarg(C_INT, 1)
+                            .addVarg(C_DOUBLE, 2D)
+                            .addVarg(C_LONG_LONG, 3L), scope);
             MH_vaList.invokeExact(3,
-                    vaList);
+                    (Addressable)vaList);
         }
     }
 }

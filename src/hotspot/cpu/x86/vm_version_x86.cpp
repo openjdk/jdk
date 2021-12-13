@@ -1878,6 +1878,17 @@ void VM_Version::check_virtualizations() {
   }
 }
 
+// avx3_threshold() sets the threshold at which 64-byte instructions are used
+// for implementing the array copy and clear operations.
+// The Intel platforms that supports the serialize instruction
+// has improved implementation of 64-byte load/stores and so the default
+// threshold is set to 0 for these platforms.
+int VM_Version::avx3_threshold() {
+  return (is_intel_family_core() &&
+          supports_serialize() &&
+          FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
+}
+
 void VM_Version::initialize() {
   ResourceMark rm;
   // Making this stub must be FIRST use of assembler

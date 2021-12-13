@@ -35,7 +35,7 @@
 #include "utilities/defaultStream.hpp"
 
 void ShenandoahArguments::initialize() {
-#if !(defined AARCH64 || defined AMD64 || defined IA32)
+#if !(defined AARCH64 || defined AMD64 || defined IA32 || defined PPC64)
   vm_exit_during_initialization("Shenandoah GC is not supported on this platform.");
 #endif
 
