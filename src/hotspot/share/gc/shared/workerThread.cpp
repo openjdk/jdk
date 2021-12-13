@@ -92,12 +92,12 @@ void WorkerThreads::initialize_workers() {
   }
 }
 
-WorkerThread* WorkerThreads::create_worker(uint which) {
+WorkerThread* WorkerThreads::create_worker(uint name_suffix) {
   if (is_init_completed() && InjectGCWorkerCreationFailure) {
     return NULL;
   }
 
-  WorkerThread* const worker = new WorkerThread(_name, which, &_dispatcher);
+  WorkerThread* const worker = new WorkerThread(_name, name_suffix, &_dispatcher);
 
   if (!os::create_thread(worker, os::gc_thread)) {
     delete worker;
@@ -151,9 +151,9 @@ void WorkerThreads::run_task(WorkerTask* task, uint num_workers) {
 
 THREAD_LOCAL uint WorkerThread::_worker_id = UINT_MAX;
 
-WorkerThread::WorkerThread(const char* name_prefix, uint which, WorkerTaskDispatcher* dispatcher) :
+WorkerThread::WorkerThread(const char* name_prefix, uint name_suffix, WorkerTaskDispatcher* dispatcher) :
     _dispatcher(dispatcher) {
-  set_name("%s#%d", name_prefix, which);
+  set_name("%s#%u", name_prefix, name_suffix);
 }
 
 void WorkerThread::run() {
