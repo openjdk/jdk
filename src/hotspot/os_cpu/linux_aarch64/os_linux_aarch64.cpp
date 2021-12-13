@@ -382,12 +382,11 @@ int os::extra_bang_size_in_bytes() {
 
 extern "C" {
   int SpinPause() {
-    if (VM_Version::spin_wait_desc().inst() == SpinWait::NONE) {
-      return 0;
-    }
-
     using spin_wait_func_ptr_t = void (*)();
     spin_wait_func_ptr_t func = CAST_TO_FN_PTR(spin_wait_func_ptr_t, StubRoutines::aarch64::spin_wait());
+    if (func == nullptr) {
+      return 0;
+    }
     (*func)();
     return 1;
   }
