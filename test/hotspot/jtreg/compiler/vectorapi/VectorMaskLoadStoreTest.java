@@ -40,163 +40,173 @@ import org.testng.annotations.Test;
 
 /**
  * @test
- * @bug 8274569 8278584
+ * @bug 8274569
  * @key randomness
  * @library /test/lib
  * @summary Tests X86 backend related incorrectness issues in legacy storemask patterns
  * @modules jdk.incubator.vector
  *
- * @run testng/othervm -XX:-TieredCompilation -XX:CompileThreshold=100 -DcheckResult=true compiler.vectorapi.VectorMaskLoadStoreTest
+ * @run testng/othervm -XX:-TieredCompilation -XX:CompileThreshold=100 compiler.vectorapi.VectorMaskLoadStoreTest
+ */
+
+/**
+ * @test
+ * @bug 8278584
+ * @library /test/lib
+ * @summary Test the codegen for C2's VectorLongToMaskNode
+ * @modules jdk.incubator.vector
+ *
+ * @run testng/othervm -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+UnlockDiagnosticVMOptions
+ *                     -XX:DisableIntrinsic=_VectorMaskOp compiler.vectorapi.VectorMaskLoadStoreTest
  */
 
 public class VectorMaskLoadStoreTest{
 
     private static final int NUM_ITER = 5000;
     private static final Random rd = Utils.getRandomInstance();
-    private static boolean checkResult = Boolean.parseBoolean(System.getProperty("checkResult"));
 
     public static void testByte64(long val) {
         VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_64;
         VectorMask<Byte> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFL);
     }
 
     public static void testByte128(long val) {
         VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_128;
         VectorMask<Byte> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFFFL);
     }
 
     public static void testByte256(long val) {
         VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_256;
         VectorMask<Byte> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFFFFFFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFFFFFFFL);
     }
 
     public static void testByte512(long val) {
         VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_512;
         VectorMask<Byte> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & -1L);
+        Assert.assertEquals(mask.toLong(), val & -1L);
     }
 
     public static void testShort64(long val) {
         VectorSpecies<Short> SPECIES = ShortVector.SPECIES_64;
         VectorMask<Short> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFL);
     }
 
     public static void testShort128(long val) {
         VectorSpecies<Short> SPECIES = ShortVector.SPECIES_128;
         VectorMask<Short> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFL);
     }
 
     public static void testShort256(long val) {
         VectorSpecies<Short> SPECIES = ShortVector.SPECIES_256;
         VectorMask<Short> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFFFL);
     }
 
     public static void testShort512(long val) {
         VectorSpecies<Short> SPECIES = ShortVector.SPECIES_512;
         VectorMask<Short> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFFFFFFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFFFFFFFL);
     }
 
     public static void testInteger64(long val) {
         VectorSpecies<Integer> SPECIES = IntVector.SPECIES_64;
         VectorMask<Integer> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0x3L);
+        Assert.assertEquals(mask.toLong(), val & 0x3L);
     }
 
     public static void testInteger128(long val) {
         VectorSpecies<Integer> SPECIES = IntVector.SPECIES_128;
         VectorMask<Integer> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFL);
     }
 
     public static void testInteger256(long val) {
         VectorSpecies<Integer> SPECIES = IntVector.SPECIES_256;
         VectorMask<Integer> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFL);
     }
 
     public static void testInteger512(long val) {
         VectorSpecies<Integer> SPECIES = IntVector.SPECIES_512;
         VectorMask<Integer> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFFFL);
     }
 
     public static void testLong64(long val) {
         VectorSpecies<Long> SPECIES = LongVector.SPECIES_64;
         VectorMask<Long> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0x1L);
+        Assert.assertEquals(mask.toLong(), val & 0x1L);
     }
 
     public static void testLong128(long val) {
         VectorSpecies<Long> SPECIES = LongVector.SPECIES_128;
         VectorMask<Long> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0x3L);
+        Assert.assertEquals(mask.toLong(), val & 0x3L);
     }
 
     public static void testLong256(long val) {
         VectorSpecies<Long> SPECIES = LongVector.SPECIES_256;
         VectorMask<Long> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFL);
     }
 
     public static void testLong512(long val) {
         VectorSpecies<Long> SPECIES = LongVector.SPECIES_512;
         VectorMask<Long> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFL);
     }
 
     public static void testFloat64(long val) {
         VectorSpecies<Float> SPECIES = FloatVector.SPECIES_64;
         VectorMask<Float> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0x3L);
+        Assert.assertEquals(mask.toLong(), val & 0x3L);
     }
 
     public static void testFloat128(long val) {
         VectorSpecies<Float> SPECIES = FloatVector.SPECIES_128;
         VectorMask<Float> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFL);
     }
 
     public static void testFloat256(long val) {
         VectorSpecies<Float> SPECIES = FloatVector.SPECIES_256;
         VectorMask<Float> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFL);
     }
 
     public static void testFloat512(long val) {
         VectorSpecies<Float> SPECIES = FloatVector.SPECIES_512;
         VectorMask<Float> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFFFL);
     }
 
     public static void testDouble64(long val) {
         VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_64;
         VectorMask<Double> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0x1L);
+        Assert.assertEquals(mask.toLong(), val & 0x1L);
     }
 
     public static void testDouble128(long val) {
         VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_128;
         VectorMask<Double> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0x3L);
+        Assert.assertEquals(mask.toLong(), val & 0x3L);
     }
 
     public static void testDouble256(long val) {
         VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_256;
         VectorMask<Double> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFL);
     }
 
     public static void testDouble512(long val) {
         VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_512;
         VectorMask<Double> mask = VectorMask.fromLong(SPECIES, val);
-        if (checkResult) Assert.assertEquals(mask.toLong(), val & 0xFFL);
+        Assert.assertEquals(mask.toLong(), val & 0xFFL);
     }
 
     @Test
