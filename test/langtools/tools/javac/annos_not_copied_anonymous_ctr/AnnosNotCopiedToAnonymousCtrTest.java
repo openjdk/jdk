@@ -32,9 +32,12 @@
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
-import java.io.BufferedInputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+
+import java.util.*;
+import java.util.function.*;
+import java.io.BufferedInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,25 +47,24 @@ import com.sun.tools.javac.util.Assert;
 
 public class AnnosNotCopiedToAnonymousCtrTest {
 
-    String[] typeAnnosInfo = new String[] {
-        "@AnnosNotCopiedToAnonymousCtrTest$TypeAnnoForTypeParams; pos: [METHOD_TYPE_PARAMETER, param_index = 0, pos = -1]",
-        "@AnnosNotCopiedToAnonymousCtrTest$TypeAnnoForTypeParams2; pos: [METHOD_TYPE_PARAMETER, param_index = 1, pos = -1]",
-        "@AnnosNotCopiedToAnonymousCtrTest$TypeAnno; pos: [METHOD_RETURN, location = ([INNER_TYPE, INNER_TYPE]), pos = -1]",
-        "@AnnosNotCopiedToAnonymousCtrTest$TypeAnno; pos: [METHOD_FORMAL_PARAMETER, param_index = 1, pos = -1]"
-    };
-
     public static void main(String[] args) throws Throwable {
         new AnnosNotCopiedToAnonymousCtrTest().run();
     }
 
     void run() throws Throwable {
         checkClassFile(Paths.get(System.getProperty("test.classes"),
-                this.getClass().getSimpleName() + "$Test$1.class"));
+                this.getClass().getSimpleName() + "$Test1$1.class"), 2, typeAnnosInfoTest1);
+
+        checkClassFile(Paths.get(System.getProperty("test.classes"),
+                this.getClass().getSimpleName() + "$Test2$1.class"), 0, typeAnnosInfoTest2);
+
+        checkClassFile(Paths.get(System.getProperty("test.classes"),
+                this.getClass().getSimpleName() + "$Test3$1.class"), 0, typeAnnosInfoTest3);
     }
 
     record DeclAnnoData(String attributeName, String annoName, int positionOfAnnotatedParam) {}
 
-    void checkClassFile(final Path cfilePath) throws Throwable {
+    void checkClassFile(final Path cfilePath, int paramAnnoPos, String... expectedTypeAnnosInfo) throws Throwable {
         ClassFile classFile = ClassFile.read(
                 new BufferedInputStream(Files.newInputStream(cfilePath)));
         for (Method method : classFile.methods) {
@@ -71,9 +73,9 @@ public class AnnosNotCopiedToAnonymousCtrTest {
                         method.attributes,
                         "Annotations hasn't been propagated",
                         new DeclAnnoData(Attribute.RuntimeInvisibleAnnotations, "LAnnosNotCopiedToAnonymousCtrTest$CtrAnnotation;", -1),
-                        new DeclAnnoData(Attribute.RuntimeInvisibleParameterAnnotations, "LAnnosNotCopiedToAnonymousCtrTest$ParamAnnotation;", 2) );
+                        new DeclAnnoData(Attribute.RuntimeInvisibleParameterAnnotations, "LAnnosNotCopiedToAnonymousCtrTest$ParamAnnotation;", paramAnnoPos) );
 
-                checkForTypeAnnos(method.attributes, typeAnnosInfo);
+                checkForTypeAnnos(method.attributes, expectedTypeAnnosInfo);
             }
         }
     }
@@ -114,6 +116,25 @@ public class AnnosNotCopiedToAnonymousCtrTest {
         }
     }
 
+    String[] typeAnnosInfoTest1 = new String[] {
+            "@AnnosNotCopiedToAnonymousCtrTest$TypeAnnoForTypeParams; pos: [METHOD_TYPE_PARAMETER, param_index = 0, pos = -1]",
+            "@AnnosNotCopiedToAnonymousCtrTest$TypeAnnoForTypeParams2; pos: [METHOD_TYPE_PARAMETER, param_index = 1, pos = -1]",
+            "@AnnosNotCopiedToAnonymousCtrTest$TypeAnno; pos: [METHOD_RETURN, location = ([INNER_TYPE, INNER_TYPE]), pos = -1]",
+            "@AnnosNotCopiedToAnonymousCtrTest$TypeAnno; pos: [METHOD_FORMAL_PARAMETER, param_index = 1, pos = -1]"
+    };
+
+    String[] typeAnnosInfoTest2 = new String[] {
+            "@AnnosNotCopiedToAnonymousCtrTest$TypeAnnoForTypeParams; pos: [METHOD_TYPE_PARAMETER, param_index = 0, pos = -1]",
+            "@AnnosNotCopiedToAnonymousCtrTest$TypeAnno; pos: [METHOD_RETURN, location = ([INNER_TYPE, INNER_TYPE]), pos = -1]",
+            "@AnnosNotCopiedToAnonymousCtrTest$TypeAnno; pos: [METHOD_FORMAL_PARAMETER, param_index = 1, pos = -1]"
+    };
+
+    String[] typeAnnosInfoTest3 = new String[] {
+            "@AnnosNotCopiedToAnonymousCtrTest$TypeAnnoForTypeParams; pos: [METHOD_TYPE_PARAMETER, param_index = 0, pos = -1]",
+            "@AnnosNotCopiedToAnonymousCtrTest$TypeAnno; pos: [METHOD_RETURN, location = ([INNER_TYPE, INNER_TYPE]), pos = -1]",
+            "@AnnosNotCopiedToAnonymousCtrTest$TypeAnno; pos: [METHOD_FORMAL_PARAMETER, param_index = 1, pos = -1]"
+    };
+
     @Target(value = {ElementType.PARAMETER})
     @interface ParamAnnotation {}
 
@@ -129,14 +150,37 @@ public class AnnosNotCopiedToAnonymousCtrTest {
     @Target({ElementType.TYPE_PARAMETER})
     @interface TypeAnnoForTypeParams2 {}
 
-    class Test {
+    class Test1 {
         @CtrAnnotation
         @TypeAnno
-        <@TypeAnnoForTypeParams T, @TypeAnnoForTypeParams2 X> Test(String firstParam, @TypeAnno String secondParam, @ParamAnnotation String thirdParam) {}
+        <@TypeAnnoForTypeParams T, @TypeAnnoForTypeParams2 X> Test1(String firstParam, @TypeAnno String secondParam, @ParamAnnotation String thirdParam) {}
 
         public void m() {
             // let's create an anonymous inner class
-            new Test("", "", "") {};
+            new Test1("", "", "") {};
+        }
+    }
+
+    // ----
+    class Test2 {
+        @TypeAnno
+        @CtrAnnotation
+        <@TypeAnnoForTypeParams T>
+        Test2(@ParamAnnotation Collection<? extends T> collection, @TypeAnno int characteristics) {}
+
+        void m() {
+            new Test2(null, 1) {};
+        }
+    }
+
+    class Test3 {
+        @TypeAnno
+        @CtrAnnotation
+        <@TypeAnnoForTypeParams T>
+        Test3(@ParamAnnotation Collection<? extends T>[] collection, @TypeAnno int characteristics) {}
+
+        void m() {
+            new Test3(null, 1) {};
         }
     }
 }
