@@ -76,5 +76,4 @@ void ShenandoahWorkerThreads::on_create_worker(WorkerThread* worker) {
   if (_initialize_gclab) {
     ShenandoahThreadLocalData::initialize_gclab(worker);
   }
-  return worker;
 }
