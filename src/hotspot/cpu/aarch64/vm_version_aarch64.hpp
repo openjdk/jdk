@@ -45,6 +45,7 @@ protected:
   static int _dcache_line_size;
   static int _icache_line_size;
   static int _initial_sve_vector_length;
+  static bool _rop_protection;
 
   static SpinWait _spin_wait;
 
@@ -154,6 +155,8 @@ public:
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)
   static bool is_cpu_emulated();
 #endif
+
+  static bool use_rop_protection() { return _rop_protection; }
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

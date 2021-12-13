@@ -5286,14 +5286,14 @@ void MacroAssembler::leave()
 // ROP Protection
 // Use the AArch64 PAC feature to add ROP protection for generated code. Use whenever creating/
 // destroying stack frames or whenever directly loading/storing the LR to memory.
-// If UseROPProtection is not set then these functions are no-ops.
+// If ROP protection is not set then these functions are no-ops.
 // For more details on PAC see pauth_aarch64.hpp.
 
 // Sign the LR. Use during construction of a stack frame, before storing the LR to memory.
 // Uses the FP as the modifier.
 //
 void MacroAssembler::protect_return_address() {
-  if (UseROPProtection) {
+  if (VM_Version::use_rop_protection()) {
     check_return_address();
     // The standard convention for C code is to use paciasp, which uses SP as the modifier. This
     // works because in C code, FP and SP match on function entry. In the JDK, SP and FP may not
@@ -5308,7 +5308,7 @@ void MacroAssembler::protect_return_address() {
 // the current FP.
 //
 void MacroAssembler::protect_return_address(Register return_reg, Register temp_reg) {
-  if (UseROPProtection) {
+  if (VM_Version::use_rop_protection()) {
     check_return_address(return_reg);
     ldr(temp_reg, Address(rfp));
     pacia(return_reg, temp_reg);
@@ -5318,7 +5318,7 @@ void MacroAssembler::protect_return_address(Register return_reg, Register temp_r
 // Authenticate the LR. Use before function return, after restoring FP and loading LR from memory.
 //
 void MacroAssembler::authenticate_return_address() {
-  if (UseROPProtection) {
+  if (VM_Version::use_rop_protection()) {
     autia(lr, rfp);
     check_return_address();
   }
@@ -5330,7 +5330,7 @@ void MacroAssembler::authenticate_return_address() {
 // the current FP.
 //
 void MacroAssembler::authenticate_return_address(Register return_reg, Register temp_reg) {
-  if (UseROPProtection) {
+  if (VM_Version::use_rop_protection()) {
     ldr(temp_reg, Address(rfp));
     autia(return_reg, temp_reg);
     check_return_address(return_reg);
@@ -5341,7 +5341,7 @@ void MacroAssembler::authenticate_return_address(Register return_reg, Register t
 // there is no guaranteed way of authenticating the LR.
 //
 void MacroAssembler::strip_return_address() {
-  if (UseROPProtection) {
+  if (VM_Version::use_rop_protection()) {
     xpaclri();
   }
 }
@@ -5355,7 +5355,7 @@ void MacroAssembler::strip_return_address() {
 // Also use before signing to check that the pointer is valid and hasn't already been signed.
 //
 void MacroAssembler::check_return_address(Register return_reg) {
-  if (UseROPProtection) {
+  if (VM_Version::use_rop_protection()) {
     ldr(zr, Address(return_reg));
   }
 }

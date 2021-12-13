@@ -74,7 +74,7 @@ inline bool pauth_ptr_is_raw(address ptr) {
 // instead.
 //
 inline address pauth_strip_verifiable(address ret_addr, address modifier) {
-  if (UseROPProtection) {
+  if (VM_Version::use_rop_protection()) {
     DEBUG_ONLY(ret_addr = pauth_authenticate_return_address(ret_addr, modifier);)
     NOT_DEBUG(ret_addr = pauth_strip_pointer(ret_addr));
   }

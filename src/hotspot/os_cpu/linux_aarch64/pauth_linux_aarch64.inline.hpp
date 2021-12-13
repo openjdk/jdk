@@ -49,7 +49,7 @@ inline address pauth_strip_pointer(address ptr) {
 // Sign a return value, using the given modifier.
 //
 inline address pauth_sign_return_address(address ret_addr, address sp) {
-  if (UseROPProtection) {
+  if (VM_Version::use_rop_protection()) {
     // A pointer cannot be double signed.
     guarantee(pauth_ptr_is_raw(ret_addr), "Return address is already signed");
     register address r17 __asm("r17") = ret_addr;
@@ -63,7 +63,7 @@ inline address pauth_sign_return_address(address ret_addr, address sp) {
 // Authenticate a return value, using the given modifier.
 //
 inline address pauth_authenticate_return_address(address ret_addr, address sp) {
-  if (UseROPProtection) {
+  if (VM_Version::use_rop_protection()) {
     register address r17 __asm("r17") = ret_addr;
     register address r16 __asm("r16") = sp;
     asm volatile (AUTIA1716 : "+r"(r17) : "r"(r16));

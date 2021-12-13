@@ -119,8 +119,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "The number of OnSpinWaitInst instructions to generate."      \
           "It cannot be used with OnSpinWaitInst=none.")                \
           range(1, 99)                                                  \
-  product(bool, UseROPProtection, false,                                \
-          "Protect branches against ROP attacks.")                      \
+  product(ccstr, UseBranchProtection, "none",                           \
+          "Branch Protection to use: none,standard,pac-ret")            \
 
 // end of ARCH_FLAGS
 
