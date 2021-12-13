@@ -382,12 +382,13 @@ int os::extra_bang_size_in_bytes() {
 
 extern "C" {
   int SpinPause() {
-    const SpinWait& spin_wait = VM_Version::spin_wait_desc();
-    if (spin_wait.inst() == SpinWait::NONE) {
+    if (VM_Version::spin_wait_desc().inst() == SpinWait::NONE) {
       return 0;
     }
-    SpinWait::InstRunner run_inst = spin_wait.inst_runner();
-    (*run_inst)(spin_wait.inst_count());
+
+    using spin_wait_func_ptr_t = void (*)();
+    spin_wait_func_ptr_t func = CAST_TO_FN_PTR(spin_wait_func_ptr_t, StubRoutines::aarch64::spin_wait());
+    (*func)();
     return 1;
   }
 

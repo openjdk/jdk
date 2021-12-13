@@ -57,10 +57,6 @@ protected:
   static int set_and_get_current_sve_vector_length(int len);
   static int get_current_sve_vector_length();
 
-  // Get SpinWait based on values of OnSpinWaitInst/OnSpinWaitInstCount options
-  // describing it.
-  static SpinWait get_spin_wait_desc();
-
 public:
   // Initialization
   static void initialize();

@@ -64,7 +64,7 @@ public class TestSpinPause {
     }
 
     private void getSet() {
-        final int iterCount = 1000;
+        final int iterCount = 100;
         for (int i = 0; i < iterCount; ++i) {
            synchronized (valueHolder) {
                Integer v = valueHolder[0];
