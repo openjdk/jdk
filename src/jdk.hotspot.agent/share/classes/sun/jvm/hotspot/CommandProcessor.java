@@ -52,7 +52,6 @@ import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.classfile.ClassLoaderDataGraph;
 import sun.jvm.hotspot.memory.FileMapInfo;
-import sun.jvm.hotspot.memory.SystemDictionary;
 import sun.jvm.hotspot.memory.Universe;
 import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
@@ -94,11 +93,9 @@ import sun.jvm.hotspot.ui.tree.OopTreeNodeAdapter;
 import sun.jvm.hotspot.ui.tree.SimpleTreeNode;
 import sun.jvm.hotspot.utilities.AddressOps;
 import sun.jvm.hotspot.utilities.Assert;
-import sun.jvm.hotspot.utilities.CompactHashTable;
 import sun.jvm.hotspot.utilities.HeapProgressThunk;
 import sun.jvm.hotspot.utilities.LivenessPathElement;
 import sun.jvm.hotspot.utilities.MethodArray;
-import sun.jvm.hotspot.utilities.ObjectReader;
 import sun.jvm.hotspot.utilities.PointerFinder;
 import sun.jvm.hotspot.utilities.PointerLocation;
 import sun.jvm.hotspot.utilities.ReversePtrs;
@@ -132,7 +129,7 @@ public class CommandProcessor {
             if (kls.getClassLoader() == null) return false;
             if (emitted.get(kls.getName()) != null) {
                 // Since multiple class loaders are being shoved
-                // together duplicate classes are a possibilty.  For
+                // together duplicate classes are a possibility.  For
                 // now just ignore them.
                 return false;
             }
@@ -436,7 +433,6 @@ public class CommandProcessor {
                     Matcher m2 = args2.matcher(arg);
                     Address start = null;
                     Address end   = null;
-                    String format = "";
                     int formatSize = (int)VM.getVM().getAddressSize();
 
                     if (m1.matches()) {

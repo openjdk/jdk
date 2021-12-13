@@ -133,6 +133,14 @@ public class IRNode {
     public static final String SCOPE_OBJECT = "(.*# ScObj.*" + END;
     public static final String MEMBAR = START + "MemBar" + MID + END;
 
+    public static final String AND_I = START + "AndI" + MID + END;
+    public static final String AND_L = START + "AndL" + MID + END;
+    public static final String LSHIFT_I = START + "LShiftI" + MID + END;
+    public static final String LSHIFT_L = START + "LShiftL" + MID + END;
+    public static final String ADD_I = START + "AddI" + MID + END;
+    public static final String ADD_L = START + "AddL" + MID + END;
+    public static final String CONV_I2L = START + "ConvI2L" + MID + END;
+
     /**
      * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.
      */

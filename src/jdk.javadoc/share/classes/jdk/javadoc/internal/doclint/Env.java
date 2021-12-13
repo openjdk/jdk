@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,31 @@
 package jdk.javadoc.internal.doclint;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.tools.Diagnostic.Kind;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -106,6 +116,7 @@ public class Env {
     // Types used when analysing doc comments.
     TypeMirror java_lang_Error;
     TypeMirror java_lang_RuntimeException;
+    TypeMirror java_lang_SuppressWarnings;
     TypeMirror java_lang_Throwable;
     TypeMirror java_lang_Void;
 
@@ -124,6 +135,9 @@ public class Env {
     AccessKind currAccess;
     /** The set of methods, if any, that the current declaration overrides. */
     Set<? extends ExecutableElement> currOverriddenMethods;
+
+    /** A map containing the info derived from {@code @SuppressWarnings} for an element. */
+    Map<Element, Set<Messages.Group>> suppressWarnings = new HashMap<>();
 
     Env() {
         messages = new Messages(this);
@@ -145,6 +159,7 @@ public class Env {
 
         java_lang_Error = elements.getTypeElement("java.lang.Error").asType();
         java_lang_RuntimeException = elements.getTypeElement("java.lang.RuntimeException").asType();
+        java_lang_SuppressWarnings = elements.getTypeElement("java.lang.SuppressWarnings").asType();
         java_lang_Throwable = elements.getTypeElement("java.lang.Throwable").asType();
         java_lang_Void = elements.getTypeElement("java.lang.Void").asType();
     }
@@ -246,6 +261,96 @@ public class Env {
 
         return true;
     }
+
+    /**
+     * {@return whether or not warnings in a group are suppressed for the current element}
+     * @param g the group
+     */
+    boolean suppressWarnings(Messages.Group g) {
+        return suppressWarnings(currElement, g);
+    }
+
+    /**
+     * {@return whether or not warnings in a group are suppressed for a given element}
+     * @param e the element
+     * @param g the group
+     */
+    boolean suppressWarnings(Element e, Messages.Group g) {
+        // check if warnings are suppressed in any enclosing classes
+        Element encl = e.getEnclosingElement();
+        if (encl != null && encl.asType().getKind() == TypeKind.DECLARED) {
+            if (suppressWarnings(encl, g)) {
+                return true;
+            }
+        }
+
+        // check the local @SuppressWarnings annotation, caching the results
+        return suppressWarnings.computeIfAbsent(e, this::getSuppressedGroups).contains(g);
+    }
+
+    /**
+     * Returns the set of groups for an element for which messages should be suppressed.
+     * The set is determined by examining the arguments for any {@code @SuppressWarnings}
+     * annotation that may be present on the element.
+     * The supported strings are: "doclint" and "doclint:GROUP,..." for each GROUP
+     *
+     * @param e the element
+     * @return  the set
+     */
+    private Set<Messages.Group> getSuppressedGroups(Element e) {
+        var gMap = Arrays.stream(Messages.Group.values())
+                .collect(Collectors.toMap(Messages.Group::optName, Function.identity()));
+        var set = EnumSet.noneOf(Messages.Group.class);
+        for (String arg : getSuppressWarningsValue(e)) {
+            if (arg.equals("doclint")) {
+                set = EnumSet.allOf(Messages.Group.class);
+                break;
+            } else if (arg.startsWith("doclint:")) {
+                final int len = "doclint:".length();
+                for (String a : arg.substring(len).split(",")) {
+                    Messages.Group argGroup = gMap.get(a);
+                    if (argGroup != null) {
+                        set.add(argGroup);
+                    }
+                }
+            }
+        }
+        return set;
+    }
+
+    /**
+     * Returns the list of values given to an instance of {@code @SuppressWarnings} for an element,
+     * or an empty list if there is no annotation.
+     *
+     * @param e the element
+     * @return the list
+     */
+    private List<String> getSuppressWarningsValue(Element e) {
+        for (AnnotationMirror am : e.getAnnotationMirrors()) {
+            DeclaredType dt = am.getAnnotationType();
+            if (types.isSameType(dt, java_lang_SuppressWarnings)) {
+                var values = am.getElementValues();
+                for (var entry : values.entrySet()) {
+                    if (entry.getKey().getSimpleName().contentEquals("value")) {
+                        AnnotationValue av = entry.getValue();
+                        if (av.getValue() instanceof List<?> list) {
+                            List<String> result = new ArrayList<>();
+                            for (var item : list) {
+                                if (item instanceof AnnotationValue avItem
+                                        && avItem.getValue() instanceof String s) {
+                                    result.add(s);
+                                }
+                            }
+                            return result;
+                        }
+                    }
+                }
+
+            }
+        }
+        return Collections.emptyList();
+    }
+
 
     private <T extends Comparable<T>> T min(T item1, T item2) {
         return (item1 == null) ? item2

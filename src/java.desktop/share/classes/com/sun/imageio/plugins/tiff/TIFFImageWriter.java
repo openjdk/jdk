@@ -2895,7 +2895,7 @@ public class TIFFImageWriter extends ImageWriter {
             int numThumbs = thumbnails.size();
             for(int i = 0; i < numThumbs; i++) {
                 Object thumb = thumbnails.get(i);
-                if(thumb == null || !(thumb instanceof BufferedImage)) {
+                if (!(thumb instanceof BufferedImage)) {
                     throw new IllegalArgumentException
                         ("thumbnails contains null references or objects other than BufferedImages!");
                 }

@@ -105,7 +105,7 @@ public final class DLSSoundbank implements Soundbank {
 
         @Override
         public int hashCode() {
-            return (int)i1;
+            return Long.hashCode(i1);
         }
 
         @Override

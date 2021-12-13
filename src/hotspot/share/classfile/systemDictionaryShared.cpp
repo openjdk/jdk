@@ -245,6 +245,14 @@ bool SystemDictionaryShared::is_registered_lambda_proxy_class(InstanceKlass* ik)
   return (info != NULL) ? info->_is_archived_lambda_proxy : false;
 }
 
+void SystemDictionaryShared::reset_registered_lambda_proxy_class(InstanceKlass* ik) {
+  DumpTimeClassInfo* info = _dumptime_table->get(ik);
+  if (info != NULL) {
+    info->_is_archived_lambda_proxy = false;
+    info->set_excluded();
+  }
+}
+
 bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
   DumpTimeClassInfo* info = _dumptime_table->get(ik);
   return (info != NULL) ? info->is_early_klass() : false;
@@ -325,6 +333,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   for (int i = 0; i < len; i++) {
     InstanceKlass* intf = interfaces->at(i);
     if (check_for_exclusion(intf, NULL)) {
+      ResourceMark rm;
       log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
@@ -663,6 +672,8 @@ void SystemDictionaryShared::check_excluded_classes() {
   ExcludeDumpTimeSharedClasses excl;
   _dumptime_table->iterate(&excl);
   _dumptime_table->update_counts();
+
+  cleanup_lambda_proxy_class_dictionary();
 }
 
 bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
@@ -1596,6 +1607,38 @@ void SystemDictionaryShared::restore_dumptime_tables() {
   delete _dumptime_lambda_proxy_class_dictionary;
   _dumptime_lambda_proxy_class_dictionary = _cloned_dumptime_lambda_proxy_class_dictionary;
   _cloned_dumptime_lambda_proxy_class_dictionary = NULL;
+}
+
+class CleanupDumpTimeLambdaProxyClassTable: StackObj {
+ public:
+  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+    assert_lock_strong(DumpTimeTable_lock);
+    InstanceKlass* caller_ik = key.caller_ik();
+    if (SystemDictionaryShared::check_for_exclusion(caller_ik, NULL)) {
+      // If the caller class is excluded, unregister all the associated lambda proxy classes
+      // so that they will not be included in the CDS archive.
+      for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
+        SystemDictionaryShared::reset_registered_lambda_proxy_class(info._proxy_klasses->at(i));
+        info._proxy_klasses->remove_at(i);
+      }
+    }
+    for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
+      InstanceKlass* ik = info._proxy_klasses->at(i);
+      if (SystemDictionaryShared::check_for_exclusion(ik, NULL)) {
+        SystemDictionaryShared::reset_registered_lambda_proxy_class(ik);
+        info._proxy_klasses->remove_at(i);
+      }
+    }
+    return info._proxy_klasses->length() == 0 ? true /* delete the node*/ : false;
+  }
+};
+
+void SystemDictionaryShared::cleanup_lambda_proxy_class_dictionary() {
+  assert_lock_strong(DumpTimeTable_lock);
+  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
+    CleanupDumpTimeLambdaProxyClassTable cleanup_proxy_classes;
+    _dumptime_lambda_proxy_class_dictionary->unlink(&cleanup_proxy_classes);
+  }
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

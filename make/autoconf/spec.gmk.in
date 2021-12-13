@@ -359,6 +359,10 @@ ENABLE_COMPATIBLE_CDS_ALIGNMENT := @ENABLE_COMPATIBLE_CDS_ALIGNMENT@
 
 ALLOW_ABSOLUTE_PATHS_IN_OUTPUT := @ALLOW_ABSOLUTE_PATHS_IN_OUTPUT@
 
+HSDIS_BACKEND := @HSDIS_BACKEND@
+HSDIS_CFLAGS := @HSDIS_CFLAGS@
+HSDIS_LIBS := @HSDIS_LIBS@
+
 # The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
 # it in sync.
 BOOT_JDK:=@BOOT_JDK@
@@ -412,6 +416,8 @@ GTEST_FRAMEWORK_SRC := @GTEST_FRAMEWORK_SRC@
 
 # Source file for cacerts
 CACERTS_FILE=@CACERTS_FILE@
+# Source folder for user provided cacerts PEM files 
+CACERTS_SRC=@CACERTS_SRC@
 
 # Enable unlimited crypto policy
 UNLIMITED_CRYPTO=@UNLIMITED_CRYPTO@

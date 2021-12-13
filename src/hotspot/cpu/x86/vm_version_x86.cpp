@@ -1469,6 +1469,14 @@ void VM_Version::get_processor_features() {
 #endif
   }
 
+#ifdef COMPILER2
+  if (FLAG_IS_DEFAULT(OptimizeFill)) {
+    if (MaxVectorSize < 32 || !VM_Version::supports_avx512vlbw()) {
+      OptimizeFill = false;
+    }
+  }
+#endif
+
 #ifdef _LP64
   if (UseSSE42Intrinsics) {
     if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
@@ -1584,12 +1592,6 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(AlignVector)) {
     // Modern processors allow misaligned memory operations for vectors.
     AlignVector = !UseUnalignedLoadStores;
-  }
-  if (FLAG_IS_DEFAULT(OptimizeFill)) {
-    // 8247307: On x86, the auto-vectorized loop array fill code shows
-    // better performance than the array fill stubs. We should reenable
-    // this after the x86 stubs get improved.
-    OptimizeFill = false;
   }
 #endif // COMPILER2
 
@@ -1874,6 +1876,17 @@ void VM_Version::check_virtualizations() {
       Abstract_VM_Version::_detected_virtualization = XenHVM;
     }
   }
+}
+
+// avx3_threshold() sets the threshold at which 64-byte instructions are used
+// for implementing the array copy and clear operations.
+// The Intel platforms that supports the serialize instruction
+// has improved implementation of 64-byte load/stores and so the default
+// threshold is set to 0 for these platforms.
+int VM_Version::avx3_threshold() {
+  return (is_intel_family_core() &&
+          supports_serialize() &&
+          FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
 void VM_Version::initialize() {

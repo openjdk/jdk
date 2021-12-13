@@ -22,7 +22,7 @@
  * questions.
  */
 
-#import "CommonComponentAccessibility.h"
+#import "ComponentWrapperAccessibility.h"
 
-@interface CellAccessibility : CommonComponentAccessibility
+@interface CellAccessibility : ComponentWrapperAccessibility
 @end

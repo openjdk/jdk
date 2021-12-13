@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public class TestByteVect {
   static int test() {
     byte[] a1 = new byte[ARRLEN];
     byte[] a2 = new byte[ARRLEN];
+    byte[] a3 = new byte[ARRLEN];
     System.out.println("Warmup");
     for (int i=0; i<ITERS; i++) {
       test_ci(a1);
@@ -94,6 +95,16 @@ public class TestByteVect {
       test_cp_unalnsrc(a1, a2);
       test_2ci_unaln(a1, a2);
       test_2vi_unaln(a1, a2, (byte)123, (byte)103);
+      test_addImm127(a1, a2);
+      test_addImm(a1, a2, a3);
+      test_addImm256(a1, a2);
+      test_addImmNeg128(a1, a2);
+      test_addImmNeg129(a1, a2);
+      test_subImm(a1, a2, a3);
+      test_andImm21(a1, a2);
+      test_andImm7(a1, a2);
+      test_orImm(a1, a2);
+      test_xorImm(a1, a2, a3);
     }
     // Initialize
     for (int i=0; i<ARRLEN; i++) {
@@ -487,6 +498,77 @@ public class TestByteVect {
       for (int i=ARRLEN-UNALIGN_OFF; i<ARRLEN; i++) {
         errn += verify("test_2vi_unaln_overlap: a1", i, a1[i], (byte)103);
       }
+      byte base = (byte) 10;
+      for (int i = 0; i < ARRLEN; i++) {
+        a1[i] = (byte) 10;
+      }
+      byte golden = (byte)(base + 127);
+      test_addImm127(a1, a2);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_addImm127: a2", i, a2[i], golden);
+      }
+      test_addImm(a1, a2, a3);
+      golden = (byte)(base + 8);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_addImm: a2", i, a2[i], golden);
+      }
+      golden = (byte) (base + 255);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_addImm: a3", i, a3[i], golden);
+      }
+      test_addImm256(a1, a2);
+      golden = (byte)(base + 256);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_addImm256: a3", i, a2[i], golden);
+      }
+      test_addImmNeg128(a1, a2);
+      golden = (byte)(base + (-128));
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_addImmNeg128: a2", i, a2[i], golden);
+      }
+      test_addImmNeg129(a1, a2);
+      golden = (byte)(base + (-129));
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_addImmNeg129: a2", i, a2[i], golden);
+      }
+      // Reset for sub test
+      base = (byte) 120;
+      for (int i = 0; i < ARRLEN; i++) {
+        a1[i] = (byte) 120;
+      }
+      test_subImm(a1, a2, a3);
+      golden = (byte) (base - 56);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_subImm: a2", i, a2[i], golden);
+      }
+      golden = (byte) (base - 256);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_subImm: a3", i, a3[i], golden);
+      }
+      test_andImm21(a1, a2);
+      golden = (byte) (base & 21);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_andImm21: a2", i, a2[i], golden);
+      }
+      test_andImm7(a1, a2);
+      golden = (byte) (base & 7);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_andImm7: a2", i, a2[i], golden);
+      }
+      test_orImm(a1, a2);
+      golden = (byte) (base | 3);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_orImm: a2", i, a2[i], golden);
+      }
+      test_xorImm(a1, a2, a3);
+      golden = (byte) (base ^ 127);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_xorImm: a2", i, a2[i], golden);
+      }
+      golden = (byte) (base ^ 255);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_xorImm: a3", i, a3[i], golden);
+      }
 
     }
 
@@ -730,6 +812,59 @@ public class TestByteVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_2vi_unaln: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_addImm127(a1, a2);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_addImm127: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_addImm(a1, a2, a3);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_addImm: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_addImm256(a1, a2);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_addImm256: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_addImmNeg128(a1, a2);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_addImmNeg128: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_addImmNeg129(a1, a2);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_addImmNeg129: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_subImm(a1, a2, a3);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_subImm: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_andImm7(a1, a2);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_andImm7: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_orImm(a1, a2);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_orImm: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_xorImm(a1, a2, a3);
+    }
+    end = System.currentTimeMillis();
 
     return errn;
   }
@@ -943,6 +1078,59 @@ public class TestByteVect {
     for (int i = 0; i < a.length-UNALIGN_OFF; i+=1) {
       a[i] = c;
       b[i+UNALIGN_OFF] = d;
+    }
+  }
+  static void test_addImm127(byte[] a, byte[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = (byte) (a[i] + 127);
+    }
+  }
+  static void test_addImm(byte[] a, byte[] b, byte[] c) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = (byte) (a[i] + 8);
+      c[i] = (byte) (a[i] + 255);
+    }
+  }
+  static void test_addImm256(byte[] a, byte[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = (byte) (a[i] + 256);
+    }
+  }
+  static void test_addImmNeg128(byte[] a, byte[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = (byte) (a[i] + (-128));
+    }
+  }
+  static void test_addImmNeg129(byte[] a, byte[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = (byte) (a[i] + (-129));
+    }
+  }
+  static void test_subImm(byte[] a, byte[] b, byte[] c) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = (byte) (a[i] - 56);
+      c[i] = (byte) (a[i] - 256);
+    }
+  }
+  static void test_andImm21(byte[] a, byte[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = (byte) (a[i] & 21);
+    }
+  }
+  static void test_andImm7(byte[] a, byte[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = (byte) (a[i] & 7);
+    }
+  }
+  static void test_orImm(byte[] a, byte[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = (byte) (a[i] | 3);
+    }
+  }
+  static void test_xorImm(byte[] a, byte[] b, byte[] c) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = (byte) (a[i] ^ 127);
+      c[i] = (byte) (a[i] ^ 255);
     }
   }
 

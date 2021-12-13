@@ -450,7 +450,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-aarch64": {
             target_os: "macosx",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest"],
+            dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=11.00.00"),
         },
@@ -559,7 +559,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             "ANT_HOME": input.get("ant", "home_path")
         }
     };
-    [ "linux-x64", "macosx-x64", "windows-x64"]
+    [ "linux-x64", "macosx-x64", "windows-x64", "linux-aarch64"]
         .forEach(function (name) {
             var maketestName = name + "-testmake";
             profiles[maketestName] = concatObjects(profiles[name], testmakeBase);
@@ -580,6 +580,17 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64-zero": {
             target_os: "linux",
             target_cpu: "x64",
+            dependencies: ["devkit", "gtest"],
+            configure_args: concat(common.configure_args_64bit, [
+                "--with-zlib=system",
+                "--with-jvm-variants=zero",
+                "--enable-libffi-bundling"
+            ])
+        },
+
+        "linux-aarch64-zero": {
+            target_os: "linux",
+            target_cpu: "aarch64",
             dependencies: ["devkit", "gtest"],
             configure_args: concat(common.configure_args_64bit, [
                 "--with-zlib=system",
@@ -1089,6 +1100,17 @@ var getJibProfilesDependencies = function (input, common) {
         environment_path: common.boot_jdk_home + "/bin"
     }
 
+    var pandoc_version;
+    if (input.build_cpu == "aarch64") {
+        if (input.build_os == "macosx") {
+            pandoc_version = "2.14.0.2+1.0";
+        } else {
+            pandoc_version = "2.5+1.0";
+        }
+    } else {
+        pandoc_version = "2.3.1+1.0";
+    }
+
     var makeBinDir = (input.build_os == "windows"
         ? input.get("gnumake", "install_path") + "/cygwin/bin"
         : input.get("gnumake", "install_path") + "/bin");
@@ -1132,9 +1154,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "6",
+            version: "6.1",
             build_number: "1",
-            file: "bundles/jtreg-6+1.zip",
+            file: "bundles/jtreg-6.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1143,7 +1165,7 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.28+1.0"
+            revision: "1.33+1.0"
         },
 
         jcov: {
@@ -1201,7 +1223,7 @@ var getJibProfilesDependencies = function (input, common) {
         pandoc: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: (input.build_cpu == 'aarch64' ? "2.5+1.0" : "2.3.1+1.0"),
+            revision: pandoc_version,
             module: "pandoc-" + input.build_platform,
             configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc",
             environment_path: input.get("pandoc", "install_path") + "/pandoc"

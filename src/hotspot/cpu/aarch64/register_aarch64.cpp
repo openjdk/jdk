@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@ const int ConcreteRegisterImpl::max_fpr
     FloatRegisterImpl::number_of_registers * FloatRegisterImpl::max_slots_per_register;
 
 const int ConcreteRegisterImpl::max_pr
-  = ConcreteRegisterImpl::max_fpr + PRegisterImpl::number_of_registers;
+  = ConcreteRegisterImpl::max_fpr +
+    PRegisterImpl::number_of_registers * PRegisterImpl::max_slots_per_register;
 
 const char* RegisterImpl::name() const {
   const char* names[number_of_registers] = {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,10 @@ protected:
   G1GCPhaseTimes* _phase_times;
   uint _worker_id;
   EventGCPhaseParallel _event;
-  bool _must_record;
+  bool _allow_multiple_record;
 
 public:
-  G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool must_record = true);
+  G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool allow_multiple_record = false);
   virtual ~G1GCParPhaseTimesTracker();
 };
 

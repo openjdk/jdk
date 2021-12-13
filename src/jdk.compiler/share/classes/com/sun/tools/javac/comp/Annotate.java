@@ -345,7 +345,7 @@ public class Annotate {
 
             Assert.checkNonNull(c, "Failed to create annotation");
 
-            if (a.type.tsym.isAnnotationType()) {
+            if (a.type.isErroneous() || a.type.tsym.isAnnotationType()) {
                 if (annotated.containsKey(a.type.tsym)) {
                     if (!allowRepeatedAnnos) {
                         log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), Feature.REPEATED_ANNOTATIONS.error(sourceName));
@@ -672,6 +672,12 @@ public class Annotate {
             log.error(tree.pos(), Errors.AttributeValueMustBeConstant);
             return new Attribute.Error(expectedElementType);
         }
+
+        // Scan the annotation element value and then attribute nested annotations if present
+        if (tree.type != null && tree.type.tsym != null) {
+            queueScanTreeAndTypeAnnotate(tree, env, tree.type.tsym, tree.pos());
+        }
+
         result = cfolder.coerce(result, expectedElementType);
         return new Attribute.Constant(expectedElementType, result.constValue());
     }

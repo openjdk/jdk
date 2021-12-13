@@ -73,7 +73,7 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
     _special(false) {
   }
   PSVirtualSpace();
-  bool initialize(ReservedSpace rs, size_t commit_size);
+  void initialize(ReservedSpace rs);
 
   bool contains(void* p)      const;
 
@@ -95,7 +95,6 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
   inline  void   set_committed(char* low_addr, char* high_addr);
   virtual bool   expand_by(size_t bytes);
   virtual bool   shrink_by(size_t bytes);
-  virtual size_t expand_into(PSVirtualSpace* space, size_t bytes);
   void           release();
 
 #ifndef PRODUCT

@@ -73,6 +73,7 @@ import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.module.Resources;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
@@ -372,9 +373,15 @@ public final class Class<T> implements java.io.Serializable,
     public static Class<?> forName(String className)
                 throws ClassNotFoundException {
         Class<?> caller = Reflection.getCallerClass();
-        return forName0(className, true, ClassLoader.getClassLoader(caller), caller);
+        return forName(className, caller);
     }
 
+    // Caller-sensitive adapter method for reflective invocation
+    @CallerSensitiveAdapter
+    private static Class<?> forName(String className, Class<?> caller)
+            throws ClassNotFoundException {
+        return forName0(className, true, ClassLoader.getClassLoader(caller), caller);
+    }
 
     /**
      * Returns the {@code Class} object associated with the class or
@@ -456,11 +463,25 @@ public final class Class<T> implements java.io.Serializable,
             // Reflective call to get caller class is only needed if a security manager
             // is present.  Avoid the overhead of making this call otherwise.
             caller = Reflection.getCallerClass();
+        }
+        return forName(name, initialize, loader, caller);
+    }
+
+    // Caller-sensitive adapter method for reflective invocation
+    @CallerSensitiveAdapter
+    private static Class<?> forName(String name, boolean initialize, ClassLoader loader, Class<?> caller)
+            throws ClassNotFoundException
+    {
+        @SuppressWarnings("removal")
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            // Reflective call to get caller class is only needed if a security manager
+            // is present.  Avoid the overhead of making this call otherwise.
             if (loader == null) {
                 ClassLoader ccl = ClassLoader.getClassLoader(caller);
                 if (ccl != null) {
                     sm.checkPermission(
-                        SecurityConstants.GET_CLASSLOADER_PERMISSION);
+                            SecurityConstants.GET_CLASSLOADER_PERMISSION);
                 }
             }
         }
@@ -523,13 +544,24 @@ public final class Class<T> implements java.io.Serializable,
     @SuppressWarnings("removal")
     @CallerSensitive
     public static Class<?> forName(Module module, String name) {
+        Class<?> caller = null;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            caller = Reflection.getCallerClass();
+        }
+        return forName(module, name, caller);
+    }
+
+    // Caller-sensitive adapter method for reflective invocation
+    @SuppressWarnings("removal")
+    @CallerSensitiveAdapter
+    private static Class<?> forName(Module module, String name, Class<?> caller) {
         Objects.requireNonNull(module);
         Objects.requireNonNull(name);
 
         ClassLoader cl;
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            Class<?> caller = Reflection.getCallerClass();
             if (caller != null && caller.getModule() != module) {
                 // if caller is null, Class.forName is the last java frame on the stack.
                 // java.base has all permissions

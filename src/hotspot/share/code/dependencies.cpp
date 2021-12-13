@@ -1842,6 +1842,26 @@ Klass* Dependencies::find_witness_AME(InstanceKlass* ctxk, Method* m, KlassDepCh
   return NULL;
 }
 
+// This function is used by find_unique_concrete_method(non vtable based)
+// to check whether subtype method overrides the base method.
+static bool overrides(Method* sub_m, Method* base_m) {
+  assert(base_m != NULL, "base method should be non null");
+  if (sub_m == NULL) {
+    return false;
+  }
+  /**
+   *  If base_m is public or protected then sub_m always overrides.
+   *  If base_m is !public, !protected and !private (i.e. base_m is package private)
+   *  then sub_m should be in the same package as that of base_m.
+   *  For package private base_m this is conservative approach as it allows only subset of all allowed cases in
+   *  the jvm specification.
+   **/
+  if (base_m->is_public() || base_m->is_protected() ||
+      base_m->method_holder()->is_same_class_package(sub_m->method_holder())) {
+    return true;
+  }
+  return false;
+}
 
 // Find the set of all non-abstract methods under ctxk that match m.
 // (The method m must be defined or inherited in ctxk.)
@@ -1878,6 +1898,9 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
     }
   } else if (Dependencies::find_witness_AME(ctxk, fm) != NULL) {
     // Found a concrete subtype which does not override abstract root method.
+    return NULL;
+  } else if (!overrides(fm, m)) {
+    // Found method doesn't override abstract root method.
     return NULL;
   }
   assert(Dependencies::is_concrete_root_method(fm, ctxk) == Dependencies::is_concrete_method(m, ctxk), "mismatch");

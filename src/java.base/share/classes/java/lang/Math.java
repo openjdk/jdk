@@ -1390,6 +1390,7 @@ public final class Math {
      * @see #multiplyHigh
      * @since 18
      */
+    @IntrinsicCandidate
     public static long unsignedMultiplyHigh(long x, long y) {
         // Compute via multiplyHigh() to leverage the intrinsic
         long result = Math.multiplyHigh(x, y);

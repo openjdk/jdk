@@ -182,24 +182,6 @@ char* NativeLookup::pure_jni_name(const methodHandle& method) {
   return st.as_string();
 }
 
-
-char* NativeLookup::critical_jni_name(const methodHandle& method) {
-  stringStream st;
-  // Prefix
-  st.print("JavaCritical_");
-  // Klass name
-  if (!map_escaped_name_on(&st, method->klass_name())) {
-    return NULL;
-  }
-  st.print("_");
-  // Method name
-  if (!map_escaped_name_on(&st, method->name())) {
-    return NULL;
-  }
-  return st.as_string();
-}
-
-
 char* NativeLookup::long_jni_name(const methodHandle& method) {
   // Signatures ignore the wrapping parentheses and the trailing return type
   stringStream st;
@@ -332,12 +314,6 @@ const char* NativeLookup::compute_complete_jni_name(const char* pure_name, const
   return st.as_string();
 }
 
-address NativeLookup::lookup_critical_style(void* dll, const char* pure_name, const char* long_name, int args_size, bool os_style) {
-  const char* jni_name = compute_complete_jni_name(pure_name, long_name, args_size, os_style);
-  assert(dll != NULL, "dll must be loaded");
-  return (address)os::dll_lookup(dll, jni_name);
-}
-
 // Check all the formats of native implementation name to see if there is one
 // for the specified method.
 address NativeLookup::lookup_entry(const methodHandle& method, TRAPS) {
@@ -381,53 +357,6 @@ address NativeLookup::lookup_entry(const methodHandle& method, TRAPS) {
   return entry; // NULL indicates not found
 }
 
-// Check all the formats of native implementation name to see if there is one
-// for the specified method.
-address NativeLookup::lookup_critical_entry(const methodHandle& method) {
-  assert(CriticalJNINatives, "or should not be here");
-
-  if (method->is_synchronized() ||
-      !method->is_static()) {
-    // Only static non-synchronized methods are allowed
-    return NULL;
-  }
-
-  ResourceMark rm;
-
-  Symbol* signature = method->signature();
-  for (int end = 0; end < signature->utf8_length(); end++) {
-    if (signature->char_at(end) == 'L') {
-      // Don't allow object types
-      return NULL;
-    }
-  }
-
-  // Compute argument size
-  int args_size = method->size_of_parameters();
-  for (SignatureStream ss(signature); !ss.at_return_type(); ss.next()) {
-    if (ss.is_array()) {
-      args_size += T_INT_size; // array length parameter
-    }
-  }
-
-  // dll handling requires I/O. Don't do that while in _thread_in_vm (safepoint may get requested).
-  ThreadToNativeFromVM thread_in_native(JavaThread::current());
-
-  void* dll = dll_load(method);
-  address entry = NULL;
-
-  if (dll != NULL) {
-    entry = lookup_critical_style(dll, method, args_size);
-    // Close the handle to avoid keeping the library alive if the native method holder is unloaded.
-    // This is fine because the library is still kept alive by JNI (see JVM_LoadLibrary). As soon
-    // as the holder class and the library are unloaded (see JVM_UnloadLibrary), the native wrapper
-    // that calls 'critical_entry' becomes unreachable and is unloaded as well.
-    os::dll_unload(dll);
-  }
-
-  return entry; // NULL indicates not found
-}
-
 void* NativeLookup::dll_load(const methodHandle& method) {
   if (method->has_native_function()) {
 
@@ -444,44 +373,6 @@ void* NativeLookup::dll_load(const methodHandle& method) {
   }
 
   return NULL;
-}
-
-address NativeLookup::lookup_critical_style(void* dll, const methodHandle& method, int args_size) {
-  address entry = NULL;
-  const char* critical_name = critical_jni_name(method);
-  if (critical_name == NULL) {
-    // JNI name mapping rejected this method so return
-    // NULL to indicate UnsatisfiedLinkError should be thrown.
-    return NULL;
-  }
-
-  // 1) Try JNI short style
-  entry = lookup_critical_style(dll, critical_name, "",        args_size, true);
-  if (entry != NULL) {
-    return entry;
-  }
-
-  const char* long_name = long_jni_name(method);
-  if (long_name == NULL) {
-    // JNI name mapping rejected this method so return
-    // NULL to indicate UnsatisfiedLinkError should be thrown.
-    return NULL;
-  }
-
-  // 2) Try JNI long style
-  entry = lookup_critical_style(dll, critical_name, long_name, args_size, true);
-  if (entry != NULL) {
-    return entry;
-  }
-
-  // 3) Try JNI short style without os prefix/suffix
-  entry = lookup_critical_style(dll, critical_name, "",        args_size, false);
-  if (entry != NULL) {
-    return entry;
-  }
-
-  // 4) Try JNI long style without os prefix/suffix
-  return lookup_critical_style(dll, critical_name, long_name, args_size, false);
 }
 
 // Check if there are any JVM TI prefixes which have been applied to the native method name.

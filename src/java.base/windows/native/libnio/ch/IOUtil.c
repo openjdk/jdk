@@ -31,6 +31,7 @@
 #include "jvm.h"
 #include "jlong.h"
 
+#include "java_lang_Long.h"
 #include "nio.h"
 #include "nio_util.h"
 #include "net_util.h"
@@ -77,6 +78,11 @@ Java_sun_nio_ch_IOUtil_iovMax(JNIEnv *env, jclass this)
     return 16;
 }
 
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_IOUtil_writevMax(JNIEnv *env, jclass this)
+{
+    return java_lang_Long_MAX_VALUE;
+}
 
 jint
 convertReturnVal(JNIEnv *env, jint n, jboolean reading)

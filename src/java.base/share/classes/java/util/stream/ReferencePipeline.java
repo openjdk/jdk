@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -612,7 +612,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // Runtime checking will be performed when an element is stored in A[], thus if A is not a
         // super type of U an ArrayStoreException will be thrown.
         @SuppressWarnings("rawtypes")
-        IntFunction rawGenerator = (IntFunction) generator;
+        IntFunction rawGenerator = generator;
         return (A[]) Nodes.flatten(evaluateToArrayNode(rawGenerator), rawGenerator)
                               .asArray(rawGenerator);
     }

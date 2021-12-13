@@ -366,8 +366,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                  }
              }
 
-             if (customTray != null &&
-                 customTray instanceof CustomMediaTray) {
+             if (customTray != null) {
                  String choice = customTray.getChoiceName();
                  if (choice != null) {
                      mOptions += " InputSlot="+choice;

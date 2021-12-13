@@ -523,6 +523,8 @@ public interface ObjectInputFilter {
      * {@systemProperty jdk.serialFilter}, its value is used to configure the filter.
      * If the system property is not defined, and the {@link java.security.Security} property
      * {@code jdk.serialFilter} is defined then it is used to configure the filter.
+     * The filter is created as if {@link #createFilter(String) createFilter} is called;
+     * if the filter string is invalid, an {@link ExceptionInInitializerError} is thrown.
      * Otherwise, the filter is not configured during initialization and
      * can be set with {@link #setSerialFilter(ObjectInputFilter) Config.setSerialFilter}.
      * Setting the {@code jdk.serialFilter} with {@link System#setProperty(String, String)
@@ -561,7 +563,7 @@ public interface ObjectInputFilter {
         /**
          * Lock object for filter and filter factory.
          */
-        private final static Object serialFilterLock = new Object();
+        private static final Object serialFilterLock = new Object();
 
         /**
          * The property name for the filter.
@@ -636,7 +638,9 @@ public interface ObjectInputFilter {
                     filter = createFilter(filterString);
                 } catch (RuntimeException re) {
                     configLog.log(ERROR,
-                            "Error configuring filter: {0}", re);
+                            "Error configuring filter: {0}", (Object) re);
+                    // Do not continue if configuration not initialized
+                    throw re;
                 }
             }
             serialFilter = filter;
@@ -904,7 +908,7 @@ public interface ObjectInputFilter {
          * used for all ObjectInputStreams that do not set their own filters.
          *
          */
-        final static class Global implements ObjectInputFilter {
+        static final class Global implements ObjectInputFilter {
             /**
              * The pattern used to create the filter.
              */

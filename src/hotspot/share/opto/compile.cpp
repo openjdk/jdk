@@ -487,25 +487,25 @@ CompileWrapper::~CompileWrapper() {
 void Compile::print_compile_messages() {
 #ifndef PRODUCT
   // Check if recompiling
-  if (_subsume_loads == false && PrintOpto) {
+  if (!subsume_loads() && PrintOpto) {
     // Recompiling without allowing machine instructions to subsume loads
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without subsuming loads          **");
     tty->print_cr("*********************************************************");
   }
-  if (_do_escape_analysis != DoEscapeAnalysis && PrintOpto) {
+  if ((do_escape_analysis() != DoEscapeAnalysis) && PrintOpto) {
     // Recompiling without escape analysis
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without escape analysis          **");
     tty->print_cr("*********************************************************");
   }
-  if (_eliminate_boxing != EliminateAutoBox && PrintOpto) {
+  if ((eliminate_boxing() != EliminateAutoBox) && PrintOpto) {
     // Recompiling without boxing elimination
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without boxing elimination       **");
     tty->print_cr("*********************************************************");
   }
-  if ((_do_locks_coarsening != EliminateLocks) && PrintOpto) {
+  if ((do_locks_coarsening() != EliminateLocks) && PrintOpto) {
     // Recompiling without locks coarsening
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without locks coarsening         **");
@@ -538,15 +538,10 @@ debug_only( int Compile::_debug_idx = 100000; )
 
 
 Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
-                  bool subsume_loads, bool do_escape_analysis, bool eliminate_boxing,
-                  bool do_locks_coarsening, bool install_code, DirectiveSet* directive)
+                  Options options, DirectiveSet* directive)
                 : Phase(Compiler),
                   _compile_id(ci_env->compile_id()),
-                  _subsume_loads(subsume_loads),
-                  _do_escape_analysis(do_escape_analysis),
-                  _install_code(install_code),
-                  _eliminate_boxing(eliminate_boxing),
-                  _do_locks_coarsening(do_locks_coarsening),
+                  _options(options),
                   _method(target),
                   _entry_bci(osr_bci),
                   _ilt(NULL),
@@ -846,11 +841,7 @@ Compile::Compile( ciEnv* ci_env,
                   DirectiveSet* directive)
   : Phase(Compiler),
     _compile_id(0),
-    _subsume_loads(true),
-    _do_escape_analysis(false),
-    _install_code(true),
-    _eliminate_boxing(false),
-    _do_locks_coarsening(false),
+    _options(Options::for_runtime_stub()),
     _method(NULL),
     _entry_bci(InvocationEntryBci),
     _stub_function(stub_function),
@@ -1034,8 +1025,9 @@ void Compile::Init(int aliaslevel) {
   //   Type::update_loaded_types(_method, _method->constants());
 
   // Init alias_type map.
-  if (!_do_escape_analysis && aliaslevel == 3)
+  if (!do_escape_analysis() && aliaslevel == 3) {
     aliaslevel = 2;  // No unique types without escape analysis
+  }
   _AliasLevel = aliaslevel;
   const int grow_ats = 16;
   _max_alias_types = grow_ats;
@@ -2142,7 +2134,8 @@ void Compile::Optimize() {
   if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp("", &timers[_t_renumberLive]);
     initial_gvn()->replace_with(&igvn);
-    for_igvn()->clear();
+    Unique_Node_List* old_worklist = for_igvn();
+    old_worklist->clear();
     Unique_Node_List new_worklist(C->comp_arena());
     {
       ResourceMark rm;
@@ -2152,7 +2145,7 @@ void Compile::Optimize() {
     set_for_igvn(&new_worklist);
     igvn = PhaseIterGVN(initial_gvn());
     igvn.optimize();
-    set_for_igvn(save_for_igvn);
+    set_for_igvn(old_worklist); // new_worklist is dead beyond this point
   }
 
   // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
@@ -2160,7 +2153,7 @@ void Compile::Optimize() {
   remove_root_to_sfpts_edges(igvn);
 
   // Perform escape analysis
-  if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
+  if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
@@ -2366,6 +2359,7 @@ bool Compile::has_vbox_nodes() {
 
 static bool is_vector_unary_bitwise_op(Node* n) {
   return n->Opcode() == Op_XorV &&
+         n->req() == 2 &&
          VectorNode::is_vector_bitwise_not_pattern(n);
 }
 
@@ -2373,7 +2367,7 @@ static bool is_vector_binary_bitwise_op(Node* n) {
   switch (n->Opcode()) {
     case Op_AndV:
     case Op_OrV:
-      return true;
+      return n->req() == 2;
 
     case Op_XorV:
       return !is_vector_unary_bitwise_op(n);
@@ -3432,6 +3426,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_StoreVector:
   case Op_LoadVectorGather:
   case Op_StoreVectorScatter:
+  case Op_LoadVectorGatherMasked:
+  case Op_StoreVectorScatterMasked:
   case Op_VectorCmpMasked:
   case Op_VectorMaskGen:
   case Op_LoadVectorMasked:
@@ -3467,7 +3463,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   case Op_Loop:
-    assert(!n->as_Loop()->is_transformed_long_inner_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
+    assert(!n->as_Loop()->is_loop_nest_inner_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
   case Op_CountedLoop:
   case Op_LongCountedLoop:
   case Op_OuterStripMinedLoop:

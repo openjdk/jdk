@@ -296,12 +296,6 @@ public class HtmlConfiguration extends BaseConfiguration {
         } else {
             if (showModules) {
                 topFile = DocPath.empty.resolve(docPaths.moduleSummary(modules.first()));
-            } else if (packages.size() == 1 && packages.first().isUnnamed()) {
-                List<TypeElement> classes = new ArrayList<>(getIncludedTypeElements());
-                if (!classes.isEmpty()) {
-                    TypeElement te = getValidClass(classes);
-                    topFile = docPaths.forClass(te);
-                }
             } else if (!packages.isEmpty()) {
                 topFile = docPaths.forPackage(packages.first()).resolve(DocPaths.PACKAGE_SUMMARY);
             }
@@ -381,6 +375,13 @@ public class HtmlConfiguration extends BaseConfiguration {
     public List<DocPath> getAdditionalStylesheets() {
         return options.additionalStylesheets().stream()
                 .map(ssf -> DocFile.createFileForInput(this, ssf))
+                .map(file -> DocPath.create(file.getName()))
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public List<DocPath> getAdditionalScripts() {
+        return options.additionalScripts().stream()
+                .map(sf -> DocFile.createFileForInput(this, sf))
                 .map(file -> DocPath.create(file.getName()))
                 .collect(Collectors.toCollection(ArrayList::new));
     }

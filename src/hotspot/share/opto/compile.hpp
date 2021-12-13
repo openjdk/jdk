@@ -162,6 +162,37 @@ class CloneMap {
   bool same_gen(node_idx_t k1, node_idx_t k2)  const { return gen(k1) == gen(k2); }
 };
 
+class Options {
+  friend class Compile;
+  friend class VMStructs;
+ private:
+  const bool _subsume_loads;         // Load can be matched as part of a larger op.
+  const bool _do_escape_analysis;    // Do escape analysis.
+  const bool _eliminate_boxing;      // Do boxing elimination.
+  const bool _do_locks_coarsening;   // Do locks coarsening
+  const bool _install_code;          // Install the code that was compiled
+ public:
+  Options(bool subsume_loads, bool do_escape_analysis,
+          bool eliminate_boxing, bool do_locks_coarsening,
+          bool install_code) :
+          _subsume_loads(subsume_loads),
+          _do_escape_analysis(do_escape_analysis),
+          _eliminate_boxing(eliminate_boxing),
+          _do_locks_coarsening(do_locks_coarsening),
+          _install_code(install_code) {
+  }
+
+  static Options for_runtime_stub() {
+    return Options(
+       /* subsume_loads = */ true,
+       /* do_escape_analysis = */ false,
+       /* eliminate_boxing = */ false,
+       /* do_lock_coarsening = */ false,
+       /* install_code = */ true
+    );
+  }
+};
+
 //------------------------------Compile----------------------------------------
 // This class defines a top-level Compiler invocation.
 
@@ -246,11 +277,7 @@ class Compile : public Phase {
  private:
   // Fixed parameters to this compilation.
   const int             _compile_id;
-  const bool            _subsume_loads;         // Load can be matched as part of a larger op.
-  const bool            _do_escape_analysis;    // Do escape analysis.
-  const bool            _install_code;          // Install the code that was compiled
-  const bool            _eliminate_boxing;      // Do boxing elimination.
-  const bool            _do_locks_coarsening;   // Do locks coarsening
+  const Options         _options;               // Compilation options
   ciMethod*             _method;                // The method being compiled.
   int                   _entry_bci;             // entry bci for osr methods.
   const TypeFunc*       _tf;                    // My kind of signature
@@ -504,16 +531,16 @@ class Compile : public Phase {
   // Does this compilation allow instructions to subsume loads?  User
   // instructions that subsume a load may result in an unschedulable
   // instruction sequence.
-  bool              subsume_loads() const       { return _subsume_loads; }
+  bool              subsume_loads() const       { return _options._subsume_loads; }
   /** Do escape analysis. */
-  bool              do_escape_analysis() const  { return _do_escape_analysis; }
+  bool              do_escape_analysis() const  { return _options._do_escape_analysis; }
   /** Do boxing elimination. */
-  bool              eliminate_boxing() const    { return _eliminate_boxing; }
+  bool              eliminate_boxing() const    { return _options._eliminate_boxing; }
   /** Do aggressive boxing elimination. */
-  bool              aggressive_unboxing() const { return _eliminate_boxing && AggressiveUnboxing; }
-  bool              should_install_code() const { return _install_code; }
+  bool              aggressive_unboxing() const { return _options._eliminate_boxing && AggressiveUnboxing; }
+  bool              should_install_code() const { return _options._install_code; }
   /** Do locks coarsening. */
-  bool              do_locks_coarsening() const { return _do_locks_coarsening; }
+  bool              do_locks_coarsening() const { return _options._do_locks_coarsening; }
 
   // Other fixed compilation parameters.
   ciMethod*         method() const              { return _method; }
@@ -1034,9 +1061,7 @@ class Compile : public Phase {
   // replacement, entry_bci indicates the bytecode for which to compile a
   // continuation.
   Compile(ciEnv* ci_env, ciMethod* target,
-          int entry_bci, bool subsume_loads, bool do_escape_analysis,
-          bool eliminate_boxing, bool do_locks_coarsening,
-          bool install_code, DirectiveSet* directive);
+          int entry_bci, Options options, DirectiveSet* directive);
 
   // Second major entry point.  From the TypeFunc signature, generate code
   // to pass arguments from the Java calling convention to the C calling

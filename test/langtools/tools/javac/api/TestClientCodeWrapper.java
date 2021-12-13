@@ -62,7 +62,8 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
             defaultFileManager = fm;
 
             for (Method m: getMethodsExcept(JavaFileManager.class,
-                        "close", "getJavaFileForInput", "getLocationForModule", "getServiceLoader", "contains")) {
+                        "close", "getJavaFileForInput", "getLocationForModule", "getServiceLoader",
+                        "contains", "getFileForOutput", "siblingFrom")) {
                 test(m);
             }
 
@@ -371,6 +372,12 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
         }
 
         @Override
+        public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location, String className, Kind kind, FileObject... originatingFiles) throws IOException {
+            throwUserExceptionIfNeeded(fileManagerMethod, "getJavaFileForOutputForOriginatingFiles");
+            return wrap(super.getJavaFileForOutputForOriginatingFiles(location, className, kind, originatingFiles));
+        }
+
+        @Override
         public FileObject getFileForInput(Location location, String packageName, String relativeName) throws IOException {
             throwUserExceptionIfNeeded(fileManagerMethod, "getFileForInput");
             return wrap(super.getFileForInput(location, packageName, relativeName));
@@ -380,6 +387,12 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
         public FileObject getFileForOutput(Location location, String packageName, String relativeName, FileObject sibling) throws IOException {
             throwUserExceptionIfNeeded(fileManagerMethod, "getFileForOutput");
             return wrap(super.getFileForOutput(location, packageName, relativeName, sibling));
+        }
+
+        @Override
+        public FileObject getFileForOutputForOriginatingFiles(Location location, String packageName, String relativeName, FileObject... originatingFiles) throws IOException {
+            throwUserExceptionIfNeeded(fileManagerMethod, "getFileForOutputForOriginatingFiles");
+            return wrap(super.getFileForOutputForOriginatingFiles(location, packageName, relativeName, originatingFiles));
         }
 
         @Override

@@ -141,8 +141,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
     }
 
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof ReferenceTypeImpl)) {
-            ReferenceTypeImpl other = (ReferenceTypeImpl)obj;
+        if (obj instanceof ReferenceTypeImpl other) {
             return (ref() == other.ref()) &&
                 (vm.equals(other.virtualMachine()));
         } else {
@@ -150,8 +149,9 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
         }
     }
 
+    @Override
     public int hashCode() {
-        return(int)ref();
+        return Long.hashCode(ref());
     }
 
     public int compareTo(ReferenceType object) {
@@ -564,7 +564,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
         return list;
     }
 
-    abstract public List<Method> allMethods();
+    public abstract List<Method> allMethods();
 
     public List<Method> methodsByName(String name) {
         List<Method> methods = visibleMethods();

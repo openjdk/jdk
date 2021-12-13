@@ -65,23 +65,19 @@ import sun.reflect.annotation.TypeAnnotationParser;
  */
 public final
 class Field extends AccessibleObject implements Member {
-
-    @Stable
-    private Class<?>            clazz;
-    private int                 slot;
+    private final Class<?>            clazz;
+    private final int                 slot;
     // This is guaranteed to be interned by the VM in the 1.4
     // reflection implementation
-    private String              name;
-    @Stable
-    private Class<?>            type;
-    @Stable
-    private int                 modifiers;
-    private boolean             trustedFinal;
+    private final String              name;
+    private final Class<?>            type;
+    private final int                 modifiers;
+    private final boolean             trustedFinal;
     // Generics and annotations support
-    private transient String    signature;
+    private final transient String    signature;
     // generic info repository; lazily initialized
     private transient FieldRepository genericInfo;
-    private byte[]              annotations;
+    private final byte[]              annotations;
     // Cached field accessor created without override
     @Stable
     private FieldAccessor fieldAccessor;

@@ -147,6 +147,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
  *
  * @serial
  */
+    @SuppressWarnings("serial") // Array component type is not Serializable
     private Object[] params;
 
 /**

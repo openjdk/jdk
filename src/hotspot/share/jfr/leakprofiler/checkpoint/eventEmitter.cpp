@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -121,7 +121,7 @@ void EventEmitter::link_sample_with_edge(const ObjectSample* sample, EdgeStore* 
   assert(!sample->is_dead(), "invariant");
   assert(edge_store != NULL, "invariant");
   if (SafepointSynchronize::is_at_safepoint()) {
-    if (!sample->object()->mark().is_marked()) {
+    if (edge_store->has_leak_context(sample)) {
       // Associated with an edge (chain) already during heap traversal.
       return;
     }
@@ -138,21 +138,12 @@ void EventEmitter::write_event(const ObjectSample* sample, EdgeStore* edge_store
   assert(edge_store != NULL, "invariant");
   assert(_jfr_thread_local != NULL, "invariant");
 
-  traceid gc_root_id = 0;
-  const Edge* edge = NULL;
-  if (SafepointSynchronize::is_at_safepoint()) {
-    if (!sample->object()->mark().is_marked()) {
-      edge = (const Edge*)(sample->object())->mark().to_pointer();
-    }
-  }
-  if (edge == NULL) {
-    edge = edge_store->get(UnifiedOopRef::encode_in_native(sample->object_addr()));
-  } else {
-    gc_root_id = edge_store->gc_root_id(edge);
-  }
+  const StoredEdge* const edge = edge_store->get(sample);
   assert(edge != NULL, "invariant");
+  assert(edge->pointee() == sample->object(), "invariant");
   const traceid object_id = edge_store->get_id(edge);
   assert(object_id != 0, "invariant");
+  const traceid gc_root_id = edge->gc_root_id();
 
   Tickspan object_age = Ticks(_start_time.value()) - sample->allocation_time();
 

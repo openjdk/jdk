@@ -41,6 +41,12 @@
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
 
+inline bool G1STWIsAliveClosure::do_object_b(oop p) {
+  // An object is reachable if it is outside the collection set,
+  // or is inside and copied.
+  return !_g1h->is_in_cset(p) || p->is_forwarded();
+}
+
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
   return _policy->phase_times();
 }
@@ -184,8 +190,12 @@ void G1CollectedHeap::register_humongous_region_with_region_attr(uint index) {
   _region_attr.set_humongous(index, region_at(index)->rem_set()->is_tracked());
 }
 
+void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* r) {
+  _region_attr.set_new_survivor_region(r->hrm_index());
+}
+
 void G1CollectedHeap::register_region_with_region_attr(HeapRegion* r) {
-  _region_attr.set_has_remset(r->hrm_index(), r->rem_set()->is_tracked());
+  _region_attr.set_remset_is_tracked(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
 void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {

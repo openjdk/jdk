@@ -1004,12 +1004,12 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
     Handle comp_mirror;
 
     // Setup indirection from mirror->klass
-    java_lang_Class::set_klass(mirror(), k);
+    set_klass(mirror(), k);
 
     InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
     assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
 
-    java_lang_Class::set_static_oop_field_count(mirror(), mk->compute_static_oop_field_count(mirror()));
+    set_static_oop_field_count(mirror(), mk->compute_static_oop_field_count(mirror()));
 
     // It might also have a component mirror.  This mirror must already exist.
     if (k->is_array_klass()) {
@@ -1038,7 +1038,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
         // from the mirror so GC doesn't follow it after the klass has been deallocated.
         // This mirror looks like a primitive type, which logically it is because it
         // it represents no class.
-        java_lang_Class::set_klass(mirror(), NULL);
+        set_klass(mirror(), NULL);
         return;
       }
     }
@@ -1242,7 +1242,7 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
     oop archived_comp_mirror;
     if (k->is_typeArray_klass()) {
       // The primitive type mirrors are already archived. Get the archived mirror.
-      oop comp_mirror = java_lang_Class::component_mirror(mirror);
+      oop comp_mirror = component_mirror(mirror);
       archived_comp_mirror = HeapShared::find_archived_heap_object(comp_mirror);
       assert(archived_comp_mirror != NULL, "Must be");
     } else {
@@ -1254,14 +1254,14 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
         return NULL;
       }
     }
-    java_lang_Class::set_component_mirror(archived_mirror, archived_comp_mirror);
+    set_component_mirror(archived_mirror, archived_comp_mirror);
   } else {
     assert(k->is_instance_klass(), "Must be");
 
     // Reset local static fields in the mirror
     InstanceKlass::cast(k)->do_local_static_fields(&reset);
 
-    java_lang_Class:set_init_lock(archived_mirror, NULL);
+    set_init_lock(archived_mirror, NULL);
 
     set_protection_domain(archived_mirror, NULL);
     set_signers(archived_mirror, NULL);
@@ -1374,13 +1374,14 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
 void java_lang_Class::fixup_module_field(Klass* k, Handle module) {
   assert(_module_offset != 0, "must have been computed already");
-  java_lang_Class::set_module(k->java_mirror(), module());
+  set_module(k->java_mirror(), module());
 }
 
-void java_lang_Class::set_oop_size(HeapWord* java_class, int size) {
+void java_lang_Class::set_oop_size(HeapWord* java_class, size_t size) {
   assert(_oop_size_offset != 0, "must be set");
-  assert(size > 0, "Oop size must be greater than zero, not %d", size);
-  *(int*)(((char*)java_class) + _oop_size_offset) = size;
+  assert(size > 0, "Oop size must be greater than zero, not " SIZE_FORMAT, size);
+  assert(size <= INT_MAX, "Lossy conversion: " SIZE_FORMAT, size);
+  *(int*)(((char*)java_class) + _oop_size_offset) = (int)size;
 }
 
 int  java_lang_Class::static_oop_field_count(oop java_class) {
@@ -1462,7 +1463,7 @@ oop java_lang_Class::name(Handle java_class, TRAPS) {
   assert(_name_offset != 0, "must be set");
   oop o = java_class->obj_field(_name_offset);
   if (o == NULL) {
-    o = StringTable::intern(java_lang_Class::as_external_name(java_class()), THREAD);
+    o = StringTable::intern(as_external_name(java_class()), THREAD);
     java_class->obj_field_put(_name_offset, o);
   }
   return o;
@@ -1489,19 +1490,19 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
   }
 #ifdef ASSERT
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(vmClasses::Class_klass());
-  assert(java_lang_Class::static_oop_field_count(java_class) == 0, "should have been zeroed by allocation");
+  assert(static_oop_field_count(java_class) == 0, "should have been zeroed by allocation");
 #endif
   return java_class;
 }
 
 void java_lang_Class::set_klass(oop java_class, Klass* klass) {
-  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  assert(is_instance(java_class), "must be a Class object");
   java_class->metadata_field_put(_klass_offset, klass);
 }
 
 
 void java_lang_Class::print_signature(oop java_class, outputStream* st) {
-  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  assert(is_instance(java_class), "must be a Class object");
   Symbol* name = NULL;
   bool is_instance = false;
   if (is_primitive(java_class)) {
@@ -1521,7 +1522,7 @@ void java_lang_Class::print_signature(oop java_class, outputStream* st) {
 }
 
 Symbol* java_lang_Class::as_signature(oop java_class, bool intern_if_not_found) {
-  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  assert(is_instance(java_class), "must be a Class object");
   Symbol* name;
   if (is_primitive(java_class)) {
     name = vmSymbols::type_signature(primitive_type(java_class));
@@ -1552,7 +1553,7 @@ Symbol* java_lang_Class::as_signature(oop java_class, bool intern_if_not_found) 
 // See Klass::external_name().
 // For primitive type Java mirrors, its type name is returned.
 const char* java_lang_Class::as_external_name(oop java_class) {
-  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  assert(is_instance(java_class), "must be a Class object");
   const char* name = NULL;
   if (is_primitive(java_class)) {
     name = type2name(primitive_type(java_class));
@@ -1579,7 +1580,7 @@ void java_lang_Class::release_set_array_klass(oop java_class, Klass* klass) {
 
 
 BasicType java_lang_Class::primitive_type(oop java_class) {
-  assert(java_lang_Class::is_primitive(java_class), "just checking");
+  assert(is_primitive(java_class), "just checking");
   Klass* ak = ((Klass*)java_class->metadata_field(_array_klass_offset));
   BasicType type = T_VOID;
   if (ak != NULL) {
@@ -1593,7 +1594,7 @@ BasicType java_lang_Class::primitive_type(oop java_class) {
 }
 
 BasicType java_lang_Class::as_BasicType(oop java_class, Klass** reference_klass) {
-  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  assert(is_instance(java_class), "must be a Class object");
   if (is_primitive(java_class)) {
     if (reference_klass != NULL)
       (*reference_klass) = NULL;
@@ -1609,7 +1610,7 @@ BasicType java_lang_Class::as_BasicType(oop java_class, Klass** reference_klass)
 oop java_lang_Class::primitive_mirror(BasicType t) {
   oop mirror = Universe::java_mirror(t);
   assert(mirror != NULL && mirror->is_a(vmClasses::Class_klass()), "must be a Class");
-  assert(java_lang_Class::is_primitive(mirror), "must be primitive");
+  assert(is_primitive(mirror), "must be primitive");
   return mirror;
 }
 
@@ -4220,8 +4221,8 @@ void java_lang_invoke_MethodHandleNatives_CallSiteContext::serialize_offsets(Ser
 
 DependencyContext java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(oop call_site) {
   assert(java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(call_site), "");
-  nmethodBucket* volatile* vmdeps_addr = (nmethodBucket* volatile*)call_site->field_addr(_vmdependencies_offset);
-  volatile uint64_t* last_cleanup_addr = (volatile uint64_t*)call_site->field_addr(_last_cleanup_offset);
+  nmethodBucket* volatile* vmdeps_addr = call_site->field_addr<nmethodBucket* volatile>(_vmdependencies_offset);
+  volatile uint64_t* last_cleanup_addr = call_site->field_addr<volatile uint64_t>(_last_cleanup_offset);
   DependencyContext dep_ctx(vmdeps_addr, last_cleanup_addr);
   return dep_ctx;
 }
@@ -4279,19 +4280,19 @@ int  java_lang_ClassLoader::_parent_offset;
 ClassLoaderData* java_lang_ClassLoader::loader_data_acquire(oop loader) {
   assert(loader != NULL, "loader must not be NULL");
   assert(oopDesc::is_oop(loader), "loader must be oop");
-  return HeapAccess<MO_ACQUIRE>::load_at(loader, _loader_data_offset);
+  return Atomic::load_acquire(loader->field_addr<ClassLoaderData*>(_loader_data_offset));
 }
 
 ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
   assert(loader != NULL, "loader must not be NULL");
   assert(oopDesc::is_oop(loader), "loader must be oop");
-  return HeapAccess<>::load_at(loader, _loader_data_offset);
+  return *loader->field_addr<ClassLoaderData*>(_loader_data_offset);
 }
 
 void java_lang_ClassLoader::release_set_loader_data(oop loader, ClassLoaderData* new_data) {
   assert(loader != NULL, "loader must not be NULL");
   assert(oopDesc::is_oop(loader), "loader must be oop");
-  HeapAccess<MO_RELEASE>::store_at(loader, _loader_data_offset, new_data);
+  Atomic::release_store(loader->field_addr<ClassLoaderData*>(_loader_data_offset), new_data);
 }
 
 #define CLASSLOADER_FIELDS_DO(macro) \

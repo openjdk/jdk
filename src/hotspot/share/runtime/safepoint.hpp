@@ -128,15 +128,7 @@ class SafepointSynchronize : AllStatic {
 
   static bool is_a_block_safe_state(JavaThreadState state) {
     // Check that we have a valid thread_state before blocking for safepoints
-    switch(state) {
-      case _thread_in_vm:
-      case _thread_in_Java:        // From compiled code
-      case _thread_in_native_trans:
-      case _thread_blocked_trans:
-        return true;
-      default:
-        return false;
-    }
+    return state == _thread_in_vm || state == _thread_in_Java;
   }
   // Called when a thread voluntarily blocks
   static void block(JavaThread *thread);

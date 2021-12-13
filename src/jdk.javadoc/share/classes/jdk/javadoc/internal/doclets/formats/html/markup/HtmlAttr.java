@@ -47,6 +47,7 @@ public enum HtmlAttr {
     CLEAR,
     COLS,
     CONTENT,
+    DATA_COPIED("data-copied"), // custom HTML5 data attribute
     DISABLED,
     FOR,
     HREF,

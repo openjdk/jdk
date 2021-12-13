@@ -199,6 +199,7 @@ public final class ObjID implements Serializable {
      *
      * @return  the hash code value for this object identifier
      */
+    @Override
     public int hashCode() {
         return (int) objNum;
     }

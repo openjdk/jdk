@@ -722,8 +722,10 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
 #define LOG(...)
 
   // Invalid addresses
+  LOG("os::print_function_and_library_name(st, -1) expects FALSE.");
   address addr = (address)(intptr_t)-1;
   EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
+  LOG("os::print_function_and_library_name(st, NULL) expects FALSE.");
   addr = NULL;
   EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
 

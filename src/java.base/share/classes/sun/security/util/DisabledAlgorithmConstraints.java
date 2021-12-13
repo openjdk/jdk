@@ -192,9 +192,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     public final void permits(String algorithm, AlgorithmParameters ap,
-        ConstraintsParameters cp) throws CertPathValidatorException {
-
-        permits(algorithm, cp);
+            ConstraintsParameters cp, boolean checkKey)
+            throws CertPathValidatorException {
+        permits(algorithm, cp, checkKey);
         if (ap != null) {
             permits(ap, cp);
         }
@@ -219,13 +219,13 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             PSSParameterSpec pssParams =
                 ap.getParameterSpec(PSSParameterSpec.class);
             String digestAlg = pssParams.getDigestAlgorithm();
-            permits(digestAlg, cp);
+            permits(digestAlg, cp, false);
             AlgorithmParameterSpec mgfParams = pssParams.getMGFParameters();
             if (mgfParams instanceof MGF1ParameterSpec) {
                 String mgfDigestAlg =
                     ((MGF1ParameterSpec)mgfParams).getDigestAlgorithm();
                 if (!mgfDigestAlg.equalsIgnoreCase(digestAlg)) {
-                    permits(mgfDigestAlg, cp);
+                    permits(mgfDigestAlg, cp, false);
                 }
             }
         } catch (InvalidParameterSpecException ipse) {
@@ -233,22 +233,22 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    public final void permits(String algorithm, ConstraintsParameters cp)
-            throws CertPathValidatorException {
-
-        // Check if named curves in the key are disabled.
-        for (Key key : cp.getKeys()) {
-            for (String curve : getNamedCurveFromKey(key)) {
-                if (!checkAlgorithm(disabledAlgorithms, curve, decomposer)) {
-                    throw new CertPathValidatorException(
+    public final void permits(String algorithm, ConstraintsParameters cp,
+            boolean checkKey) throws CertPathValidatorException {
+        if (checkKey) {
+            // Check if named curves in the key are disabled.
+            for (Key key : cp.getKeys()) {
+                for (String curve : getNamedCurveFromKey(key)) {
+                    if (!checkAlgorithm(disabledAlgorithms, curve, decomposer)) {
+                        throw new CertPathValidatorException(
                             "Algorithm constraints check failed on disabled " +
                                     "algorithm: " + curve,
                             null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
+                    }
                 }
             }
         }
-
-        algorithmConstraints.permits(algorithm, cp);
+        algorithmConstraints.permits(algorithm, cp, checkKey);
     }
 
     private static List<String> getNamedCurveFromKey(Key key) {
@@ -304,10 +304,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     /**
      * Key and Certificate Constraints
      *
-     * The complete disabling of an algorithm is not handled by Constraints or
-     * Constraint classes.  That is addressed with
-     *   permit(Set<CryptoPrimitive>, String, AlgorithmParameters)
-     *
      * When passing a Key to permit(), the boolean return values follow the
      * same as the interface class AlgorithmConstraints.permit().  This is to
      * maintain compatibility:
@@ -318,7 +314,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * will be thrown on a failure to better identify why the operation was
      * disallowed.
      */
-
     private static class Constraints {
         private Map<String, List<Constraint>> constraintsMap = new HashMap<>();
 
@@ -341,9 +336,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // Check if constraint is a complete disabling of an
                 // algorithm or has conditions.
                 int space = constraintEntry.indexOf(' ');
-                String algorithm = AlgorithmDecomposer.hashName(
-                        ((space > 0 ? constraintEntry.substring(0, space) :
-                                constraintEntry)));
+                String algorithm = AlgorithmDecomposer.decomposeDigestName(
+                        space > 0 ? constraintEntry.substring(0, space) :
+                                constraintEntry);
                 List<Constraint> constraintList =
                         constraintsMap.getOrDefault(
                                 algorithm.toUpperCase(Locale.ENGLISH),
@@ -486,8 +481,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             return true;
         }
 
-        public void permits(String algorithm, ConstraintsParameters cp)
-                throws CertPathValidatorException {
+        public void permits(String algorithm, ConstraintsParameters cp,
+                boolean checkKey) throws CertPathValidatorException {
 
             if (debug != null) {
                 debug.println("Constraints.permits(): " + algorithm + ", "
@@ -497,12 +492,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             // Get all signature algorithms to check for constraints
             Set<String> algorithms = new HashSet<>();
             if (algorithm != null) {
-                algorithms.addAll(AlgorithmDecomposer.decomposeOneHash(algorithm));
+                algorithms.addAll(AlgorithmDecomposer.decomposeName(algorithm));
                 algorithms.add(algorithm);
             }
 
-            for (Key key : cp.getKeys()) {
-                algorithms.add(key.getAlgorithm());
+            if (checkKey) {
+                for (Key key : cp.getKeys()) {
+                    algorithms.add(key.getAlgorithm());
+                }
             }
 
             // Check all applicable constraints
@@ -512,6 +509,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     continue;
                 }
                 for (Constraint constraint : list) {
+                    if (!checkKey && constraint instanceof KeySizeConstraint) {
+                        continue;
+                    }
                     constraint.permits(cp);
                 }
             }

@@ -104,10 +104,6 @@ class ArrayKlass: public Klass {
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
 
-  // Iterators
-  void array_klasses_do(void f(Klass* k));
-  void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
-
   // Return a handle.
   static void     complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module, TRAPS);
 

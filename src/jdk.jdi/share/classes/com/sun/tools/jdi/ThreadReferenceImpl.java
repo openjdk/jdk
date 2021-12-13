@@ -407,7 +407,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
      * Private version of frames() allows "-1" to specify all
      * remaining frames.
      */
-    synchronized private List<StackFrame> privateFrames(int start, int length)
+    private synchronized List<StackFrame> privateFrames(int start, int length)
                               throws IncompatibleThreadStateException  {
 
         // Lock must be held while creating stack frames so if that two threads

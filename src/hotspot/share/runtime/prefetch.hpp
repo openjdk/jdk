@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ class Prefetch : AllStatic {
   };
 
   // Prefetch anticipating read; must not fault, semantically a no-op
-  static void read(void* loc, intx interval);
+  static void read(const void* loc, intx interval);
 
   // Prefetch anticipating write; must not fault, semantically a no-op
   static void write(void* loc, intx interval);

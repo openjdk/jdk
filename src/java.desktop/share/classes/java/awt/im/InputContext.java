@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.Locale;
 import java.awt.AWTEvent;
 import java.beans.Transient;
 import java.lang.Character.Subset;
-import sun.awt.im.InputMethodContext;
+import java.util.Objects;
 
 /**
  * Provides methods to control text input facilities such as input
@@ -144,6 +144,7 @@ public class InputContext {
      */
     public boolean selectInputMethod(Locale locale) {
         // real implementation is in sun.awt.im.InputContext
+        Objects.requireNonNull(locale);
         return false;
     }
 
@@ -215,6 +216,7 @@ public class InputContext {
      */
     public void setCompositionEnabled(boolean enable) {
         // real implementation is in sun.awt.im.InputContext
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -234,7 +236,7 @@ public class InputContext {
     @Transient
     public boolean isCompositionEnabled() {
         // real implementation is in sun.awt.im.InputContext
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -258,6 +260,7 @@ public class InputContext {
      */
     public void reconvert() {
         // real implementation is in sun.awt.im.InputContext
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -269,6 +272,7 @@ public class InputContext {
      */
     public void dispatchEvent(AWTEvent event) {
         // real implementation is in sun.awt.im.InputContext
+        Objects.requireNonNull(event);
     }
 
     /**
@@ -286,6 +290,7 @@ public class InputContext {
      */
     public void removeNotify(Component client) {
         // real implementation is in sun.awt.im.InputContext
+        Objects.requireNonNull(client);
     }
 
     /**
