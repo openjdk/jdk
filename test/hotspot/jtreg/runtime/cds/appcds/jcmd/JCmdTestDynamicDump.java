@@ -81,18 +81,11 @@ public class JCmdTestDynamicDump extends JCmdTestDumpBase {
         test(null, pid, noBoot, EXPECT_PASS, DYNAMIC_MESSAGES);
         app.stopApp();
 
-        // Test dynamic dump with flags -XX:+RecordDynamicDumpInfo -XX:-DynamicDumpSharedSpaces.
-        print2ln(test_count++ + " Test dynamic dump with flags -XX:+RecordDynamicDumpInfo -XX:-DynamicDumpSharedSpaces.");
-        app = createLingeredApp("-cp", allJars, "-XX:+RecordDynamicDumpInfo", "-XX:-DynamicDumpSharedSpaces");
+        // Test dynamic dump with flag -XX:+RecordDynamicDumpInfo
+        print2ln(test_count++ + " Test dynamic dump with flag -XX:+RecordDynamicDumpInfo.");
+        app = createLingeredApp("-cp", allJars, "-XX:+RecordDynamicDumpInfo");
         pid = app.getPid();
         test(null, pid, noBoot, EXPECT_PASS, DYNAMIC_MESSAGES);
-        app.stopApp();
-
-        // Test dynamic dump with flags -XX:-DynamicDumpSharedSpaces -XX:+RecordDynamicDumpInfo.
-        print2ln(test_count++ + " Test dynamic dump with flags -XX:-DynamicDumpSharedSpaces -XX:+RecordDynamicDumpInfo.");
-        app = createLingeredApp("-cp", allJars, "-XX:-DynamicDumpSharedSpaces", "-XX:+RecordDynamicDumpInfo");
-        pid = app.getPid();
-        test(null, pid, noBoot,  EXPECT_PASS, DYNAMIC_MESSAGES);
         app.stopApp();
 
         // Test dynamic with -Xbootclasspath/a:boot.jar
