@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8142968 8166568 8166286 8170618 8168149 8240910 8276764
+ * @bug 8142968 8166568 8166286 8170618 8168149 8240910 8276764 8276766
  * @summary Basic test for jmod
  * @library /test/lib
  * @modules jdk.compiler
@@ -183,13 +183,15 @@ public class JmodTest {
     @Test
     public void testList() throws IOException {
         String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
+        Path jmod = MODS_DIR.resolve("foo.jmod");
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
         jmod("create",
              "--class-path", cp,
-             MODS_DIR.resolve("foo.jmod").toString())
+             jmod.toString())
             .assertSuccess();
 
         jmod("list",
-             MODS_DIR.resolve("foo.jmod").toString())
+             jmod.toString())
             .assertSuccess()
             .resultChecker(r -> {
                 // asserts dependent on the exact contents of foo
@@ -208,6 +210,64 @@ public class JmodTest {
                 assertTrue(mod_info_i < foo_cls_i);
                 assertTrue(foo_cls_i < msg_i);
                 assertTrue(msg_i < res_i);
+            });
+    }
+
+    @Test
+    public void testSourceDateReproducible() throws IOException {
+        String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
+        Path jmod1 = MODS_DIR.resolve("foo1.jmod");
+        Path jmod2 = MODS_DIR.resolve("foo2.jmod");
+        Path jmod3 = MODS_DIR.resolve("foo3.jmod");
+        FileUtils.deleteFileIfExistsWithRetry(jmod1);
+        FileUtils.deleteFileIfExistsWithRetry(jmod2);
+        FileUtils.deleteFileIfExistsWithRetry(jmod3);
+
+        // Use source date of 15/03/2022
+        String sourceDate = "2022-03-15T00:00:00+00:00";
+
+        jmod("create",
+             "--class-path", cp,
+             "--date", sourceDate,
+             jmod1.toString())
+            .assertSuccess();
+
+        try {
+            // Sleep 5 seconds to ensure zip timestamps might be different if they could be
+            Thread.sleep(5000);
+        } catch(InterruptedException ex) {}
+
+        jmod("create",
+             "--class-path", cp,
+             "--date", sourceDate,
+             jmod2.toString())
+            .assertSuccess();
+
+        // Compare file byte content to see if they are identical
+        assertSameContent(jmod1, jmod2);
+
+        // Use a date before 1980 and assert failure error
+        sourceDate = "1976-03-15T00:00:00+00:00";
+
+        jmod("create",
+             "--class-path", cp,
+             "--date", sourceDate,
+             jmod3.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertContains(r.output, "is out of the valid range");
+            });
+
+        // Use a date after 2099 and assert failure error
+        sourceDate = "2100-03-15T00:00:00+00:00";
+
+        jmod("create",
+             "--class-path", cp,
+             "--date", sourceDate,
+             jmod3.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertContains(r.output, "is out of the valid range");
             });
     }
 

@@ -60,7 +60,7 @@ public class StreamFinalizer {
         this.stream = stream;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         try {
             stream.close();

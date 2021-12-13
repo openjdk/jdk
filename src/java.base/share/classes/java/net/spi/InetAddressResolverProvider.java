@@ -66,7 +66,8 @@ import java.util.ServiceLoader;
  *
  * <p> If instantiating a custom resolver from a provider discovered in
  * step 1 throws an error or exception, the system-wide resolver will not be
- * set and the error or exception will be propagated to the calling thread.
+ * set and the error or exception will be propagated to the caller of the method
+ * that triggered the lookup operation.
  * Otherwise, any lookup operation will be performed using the
  * <i>system-wide resolver</i>.
  *
@@ -85,7 +86,7 @@ public abstract class InetAddressResolverProvider {
      *
      * <p> Any error or exception thrown by this method is considered as
      * a failure of {@code InetAddressResolver} instantiation and will be propagated to
-     * the calling thread.
+     * the caller of the method that triggered the lookup operation.
      * @param configuration a {@link Configuration} instance containing platform built-in address
      *                     resolution configuration.
      * @return the resolver provided by this provider

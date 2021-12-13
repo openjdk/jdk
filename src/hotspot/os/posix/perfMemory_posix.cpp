@@ -1028,7 +1028,7 @@ static char* mmap_create_shared(size_t size) {
 //
 static void unmap_shared(char* addr, size_t bytes) {
   int res;
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     // Note: Tracker contains a ThreadCritical.
     Tracker tkr(Tracker::release);
     res = ::munmap(addr, bytes);

@@ -28,7 +28,7 @@ import java.util.Objects;
 
 /*
  * @test
- * @bug 8259609
+ * @bug 8259609 8276116
  * @summary C2: optimize long range checks in long counted loops
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestLongRangeChecks
@@ -41,8 +41,8 @@ public class TestLongRangeChecks {
 
 
     @Test
-    @IR(counts = { IRNode.LOOP, "1"})
-    @IR(failOn = { IRNode.COUNTEDLOOP})
+    @IR(counts = { IRNode.LOOP, "1" })
+    @IR(failOn = { IRNode.COUNTEDLOOP })
     public static void testStridePosScalePos(long start, long stop, long length, long offset) {
         final long scale = 1;
         final long stride = 1;
@@ -59,5 +59,41 @@ public class TestLongRangeChecks {
     @Run(test = "testStridePosScalePos")
     private void testStridePosScalePos_runner() {
         testStridePosScalePos(0, 100, 100, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOOP, "1" })
+    @IR(failOn = { IRNode.COUNTEDLOOP })
+    public static void testStridePosScalePosInIntLoop1(int start, int stop, long length, long offset) {
+        final long scale = 2;
+        final int stride = 1;
+
+        // Same but with int loop
+        for (int i = start; i < stop; i += stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStridePosScalePosInIntLoop1")
+    private void testStridePosScalePosInIntLoop1_runner() {
+        testStridePosScalePosInIntLoop1(0, 100, 200, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOOP, "1" })
+    @IR(failOn = { IRNode.COUNTEDLOOP })
+    public static void testStridePosScalePosInIntLoop2(int start, int stop, long length, long offset) {
+        final int scale = 2;
+        final int stride = 1;
+
+        // Same but with int loop
+        for (int i = start; i < stop; i += stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStridePosScalePosInIntLoop2")
+    private void testStridePosScalePosInIntLoop2_runner() {
+        testStridePosScalePosInIntLoop2(0, 100, 200, 0);
     }
 }

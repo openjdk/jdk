@@ -707,7 +707,7 @@ abstract class AbstractVector<E> extends Vector<E> {
             return v.convert0('C', rspi);
         }
         // extend in place, but remove unwanted sign extension
-        long mask = -1L >>> sizeChange;
+        long mask = -1L >>> -dsp.elementSize();
         return (AbstractVector<F>)
             v.convert0('C', rspi)
             .lanewise(AND, rspi.broadcast(mask));

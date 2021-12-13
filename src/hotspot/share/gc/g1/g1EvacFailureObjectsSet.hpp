@@ -33,7 +33,7 @@ class G1EvacFailureObjectsIterationHelper;
 
 // This class collects addresses of objects that failed evacuation in a specific
 // heap region.
-// Provides sorted iteration of these elements for processing during the remove
+// Provides sorted iteration of these objects for processing during the remove
 // self forwards phase.
 class G1EvacFailureObjectsSet {
   friend class G1EvacFailureObjectsIterationHelper;
@@ -45,13 +45,13 @@ public:
   typedef uint OffsetInRegion;
 
 private:
-  static const uint BufferLength = 256;
+  static const uint SegmentLength = 256;
   static const uint Alignment = 4;
 
   static const G1SegmentedArrayAllocOptions _alloc_options;
 
   // This free list is shared among evacuation failure process in all regions.
-  static G1SegmentedArrayBufferList<mtGC> _free_buffer_list;
+  static G1SegmentedArrayFreeList<mtGC> _free_segment_list;
 
   DEBUG_ONLY(const uint _region_idx;)
 

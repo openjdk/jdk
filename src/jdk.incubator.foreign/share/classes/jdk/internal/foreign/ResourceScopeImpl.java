@@ -217,6 +217,11 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Seg
         void addInternal(ResourceList.ResourceCleanup resource) {
             // do nothing
         }
+
+        @Override
+        public boolean isAlive() {
+            return true;
+        }
     }
 
     public static final ResourceScopeImpl GLOBAL = new GlobalScopeImpl(null);

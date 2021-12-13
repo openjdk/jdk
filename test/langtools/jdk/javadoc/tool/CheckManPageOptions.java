@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8274211
+ * @bug 8274211 8278538
  * @summary Test man page that options are documented
  * @modules jdk.javadoc/jdk.javadoc.internal.tool:+open
  * @run main CheckManPageOptions
@@ -60,15 +60,7 @@ public class CheckManPageOptions {
 
     static final PrintStream out = System.err;
 
-    // FIXME: JDK-8274295, JDK-8266666
-    List<String> MISSING_IN_MAN_PAGE = List.of(
-            "--add-script",
-            "--legal-notices",
-            "--link-platform-properties",
-            "--no-platform-links",
-            "--since",
-            "--since-label",
-            "--snippet-path");
+    List<String> MISSING_IN_MAN_PAGE = List.of();
 
     void run(String... args) throws Exception {
         var file = args.length == 0 ? findDefaultFile() : Path.of(args[0]);
