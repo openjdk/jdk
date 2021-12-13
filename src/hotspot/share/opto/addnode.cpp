@@ -282,16 +282,6 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     if (t_sub1->singleton() && t_2->singleton() && t_sub1 != Type::TOP && t_2 != Type::TOP) {
       return SubNode::make(phase->makecon(add_ring(t_sub1, t_2)), in1->in(2), bt);
     }
-    // Convert "(a-b)+(b-c)" into "(a-c)"
-    if (op2 == Op_Sub(bt) && in1->in(2) == in2->in(1)) {
-      assert(in1->in(1) != this && in2->in(2) != this,"dead loop in AddINode::Ideal/AddLNode::Ideal");
-      return SubNode::make(in1->in(1), in2->in(2), bt);
-    }
-    // Convert "(a-b)+(c-a)" into "(c-b)"
-    if (op2 == Op_Sub(bt) && in1->in(1) == in2->in(2)) {
-      assert(in1->in(2) != this && in2->in(1) != this,"dead loop in AddINode::Ideal/AddLNode::Ideal");
-      return SubNode::make(in2->in(1), in1->in(2), bt);
-    }
     // Convert "(a-b)+(c-d)" into "(a+c)-(b+d)"
     if (op2 == Op_Sub(bt)) {
       // Check for dead cycle: d = (a-b)+(c-d)
