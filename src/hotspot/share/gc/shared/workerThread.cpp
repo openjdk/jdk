@@ -104,6 +104,8 @@ WorkerThread* WorkerThreads::create_worker(uint which) {
     return NULL;
   }
 
+  on_create_worker(worker);
+
   os::start_thread(worker);
 
   return worker;

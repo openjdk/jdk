@@ -91,8 +91,10 @@ private:
   uint                 _active_workers;
   WorkerTaskDispatcher _dispatcher;
 
+  WorkerThread* create_worker(uint which);
+
 protected:
-  virtual WorkerThread* create_worker(uint which);
+  virtual void on_create_worker(WorkerThread* worker) {}
 
 public:
   WorkerThreads(const char* name, uint max_workers);
