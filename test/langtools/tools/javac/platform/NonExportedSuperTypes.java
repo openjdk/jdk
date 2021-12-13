@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 /*
  * @test
- * @summary The DynamicDumpShareSpaces flag is internal, setting it at the command line should have no effect.
- * @requires vm.cds
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @compile ../test-classes/Hello.java
- * @run driver DynamicFlag
+ * @bug 8277106
+ * @summary Verify no error is when compiling a class whose supertype is not exported.
+ * @modules jdk.compiler
+ *          jdk.jfr
+ * @compile --release 17 NonExportedSuperTypes.java
  */
 
-public class DynamicFlag {
-  public static void main(String[] args) throws Exception {
-      TestCommon.test(JarBuilder.getOrCreateHelloJar(),
-          TestCommon.list("Hello"), "-XX:+DynamicDumpSharedSpaces", "Hello");
-  }
+import jdk.jfr.Event;
+
+public class NonExportedSuperTypes {
+
+    public void evt(Event evt) {
+        evt.toString();
+    }
+
 }

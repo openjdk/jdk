@@ -890,11 +890,6 @@ void BlockList::iterate_backward(BlockClosure* closure) {
 }
 
 
-void BlockList::blocks_do(void f(BlockBegin*)) {
-  for (int i = length() - 1; i >= 0; i--) f(at(i));
-}
-
-
 void BlockList::values_do(ValueVisitor* f) {
   for (int i = length() - 1; i >= 0; i--) at(i)->block_values_do(f);
 }

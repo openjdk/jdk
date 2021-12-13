@@ -28,11 +28,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Programmatic entry point to start the jwebserver tool.
- *
- * <p><b> This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interface are subject to change or deletion
- * without notice.</b>
  */
 public class JWebServer {
 
@@ -51,16 +46,32 @@ public class JWebServer {
      * or an I/O error occurs, the server is not started and this method invokes
      * System::exit with an appropriate exit code.
      *
+     * <p> If the system property "sun.net.httpserver.maxReqTime" has not been
+     * set by the user, it is set to a value of 5 seconds. This is to prevent
+     * the server from hanging indefinitely, for example in the case of an HTTPS
+     * request.
+     *
      * @param args the command-line options
      * @throws NullPointerException if {@code args} is {@code null}, or if there
      *         are any {@code null} values in the {@code args} array
      */
     public static void main(String... args) {
+        setMaxReqTime();
+
         int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), "jwebserver", args);
         if (ec != 0) {
             System.exit(ec);
         }  // otherwise, the server has either been started successfully and
            // runs in another non-daemon thread, or -h or -version have been
            // passed and the main thread has exited normally.
+    }
+
+    public static final String MAXREQTIME_KEY = "sun.net.httpserver.maxReqTime";
+    public static final String MAXREQTIME_VAL = "5";
+
+    private static void setMaxReqTime() {
+        if (System.getProperty(MAXREQTIME_KEY) == null) {
+            System.setProperty(MAXREQTIME_KEY, MAXREQTIME_VAL);
+        }
     }
 }

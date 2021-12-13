@@ -741,7 +741,7 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicT
     return false;
   }
   const CmpNode *cmp = bol->in(1)->as_Cmp();
-  if (!(cmp->is_Cmp() && cmp->operates_on(bt, false))) {
+  if (cmp->Opcode() != Op_Cmp_unsigned(bt)) {
     return false;
   }
   range = cmp->in(2);

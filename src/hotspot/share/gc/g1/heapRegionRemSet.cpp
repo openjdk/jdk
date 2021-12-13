@@ -60,7 +60,7 @@ void HeapRegionRemSet::initialize(MemRegion reserved) {
     vm_exit_during_initialization("Can not represent all cards in a card region within uint.");
   }
 
-  _split_card_shift = CardBitsWithinCardRegion + CardTable::card_shift;
+  _split_card_shift = CardBitsWithinCardRegion + CardTable::card_shift();
   _split_card_mask = ((size_t)1 << _split_card_shift) - 1;
 
   // Check if the card region/region within cards combination can cover the heap.

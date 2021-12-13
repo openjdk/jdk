@@ -27,6 +27,20 @@
 # ##########################################################
 #
 class name jdk/incubator/vector/ByteVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Byte;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 method name fromBooleanArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZI)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;[ZI)Ljdk/incubator/vector/ByteVector; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name fromBooleanArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;[ZILjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name fromBooleanArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZI[II)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;[ZI[II)Ljdk/incubator/vector/ByteVector; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
@@ -36,7 +50,85 @@ method name intoBooleanArray descriptor ([ZILjdk/incubator/vector/VectorMask;)V 
 method name intoBooleanArray descriptor ([ZI[II)V flags 11 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name intoBooleanArray descriptor ([ZI[IILjdk/incubator/vector/VectorMask;)V flags 11 signature ([ZI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)V runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
+class name jdk/incubator/vector/DoubleVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Double;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name jdk/incubator/vector/FloatVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Float;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name jdk/incubator/vector/IntVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Integer;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name jdk/incubator/vector/LongVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Long;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
 class name jdk/incubator/vector/ShortVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Short;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 method name fromCharArray descriptor (Ljdk/incubator/vector/VectorSpecies;[CI)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;[CI)Ljdk/incubator/vector/ShortVector; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name fromCharArray descriptor (Ljdk/incubator/vector/VectorSpecies;[CILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;[CILjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name fromCharArray descriptor (Ljdk/incubator/vector/VectorSpecies;[CI[II)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;[CI[II)Ljdk/incubator/vector/ShortVector; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
