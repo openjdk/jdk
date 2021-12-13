@@ -44,7 +44,6 @@ public class TestIterativeEA {
 
     static class MyClass {
         int val;
-        
         public MyClass(int val) {
             this.val = val;
         }
@@ -52,7 +51,6 @@ public class TestIterativeEA {
 
     static class AbstractClass {
         final int unused;
-
         public AbstractClass() {
             unused = 42;
         }
@@ -60,7 +58,6 @@ public class TestIterativeEA {
 
     static class HolderWithSuper extends AbstractClass {
         final MyClass obj;
-
         public HolderWithSuper(MyClass obj) {
             this.obj = obj;
         }
@@ -68,7 +65,6 @@ public class TestIterativeEA {
 
     static class Holder {
         final MyClass obj;
-
         public Holder(MyClass obj) {
             this.obj = obj;
         }
@@ -76,7 +72,6 @@ public class TestIterativeEA {
 
     static class GenericHolder {
         final Object obj;
-
         public GenericHolder(Object obj) {
             this.obj = obj;
         }
