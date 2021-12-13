@@ -27,7 +27,7 @@
  * @summary failed reallocations of scalar replaced objects during deoptimization causes crash
  *
  * @requires !vm.graal.enabled
- * @run main/othervm -XX:-BackgroundCompilation -Xmx128M -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
+ * @run main/othervm -XX:-BackgroundCompilation -Xmx128M -XX:+UnlockDiagnosticVMOptions -XX:+VerifyStack
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::m9_1
  *      compiler.uncommontrap.TestDeoptOOM
