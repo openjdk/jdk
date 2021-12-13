@@ -149,7 +149,8 @@ inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWo
            "BOT not precise. Index for n: " SIZE_FORMAT " must be equal to the index for addr: " SIZE_FORMAT,
            _bot->index_for(n), _bot->index_for(addr));
     q = n;
-    assert(cast_to_oop(q)->klass_or_null() != nullptr, "must have non-null klass");
+    assert(cast_to_oop(q)->klass_or_null() != nullptr,
+        "start of block must be an initialized object");
     n += block_size(q);
   }
   assert(q <= n, "wrong order for q and addr");
