@@ -398,34 +398,33 @@ class Address {
   address   _target;
 
  public:
-  Address()
-    : _mode(no_mode) { }
-  Address(Register r)
-    : _mode(base_plus_offset), _base(r), _index(noreg), _offset(0), _extend(lsl(0)), _target(nullptr) {}
+  Address() : _mode(no_mode) {}
+
+  Address(Register r) : Address(r, 0) {}
 
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
-  Address(Register r, T o)
-    : _mode(base_plus_offset), _base(r), _index(noreg), _offset(0), _extend(lsl(0)), _target(nullptr) {}
+  Address(Register r, T o) : _mode(base_plus_offset),
+    _base(r), _index(noreg), _offset(o), _extend(lsl(0)), _target(nullptr) {}
 
-  Address(Register r, ByteSize disp)
-    : Address(r, in_bytes(disp)) { }
-  Address(Register r, Register r1, extend ext = lsl(0))
-    : _mode(base_plus_offset_reg), _base(r), _index(r1), _offset(0),
-      _extend(ext), _target(nullptr) { }
-  Address(Pre p)
-    : _mode(pre), _base(p.reg()), _index(noreg), _offset(p.offset()) { }
-  Address(Post p)
-    : _mode(p.is_postreg() ? post_reg : post), _base(p.reg()), _index(p.idx_reg()), _offset(p.offset()),
-      _extend(lsl(0)), _target(nullptr) { }
-  Address(address target, RelocationHolder const& rspec)
-    : _mode(addr_literal),
-      _rspec(rspec),
-      _is_lval(false),
-      _target(target)  { }
+  Address(Register r, ByteSize disp) : Address(r, in_bytes(disp)) {}
+
+  Address(Register r, Register r1, extend ext = lsl(0)) : _mode(base_plus_offset_reg),
+    _base(r), _index(r1), _offset(0), _extend(ext), _target(nullptr) {}
+
+  Address(Pre p) : _mode(pre),
+    _base(p.reg()), _index(noreg), _offset(p.offset()),
+    _extend(lsl(0)), _target(nullptr) {}
+  Address(Post p) : _mode(p.is_postreg() ? post_reg : post),
+    _base(p.reg()), _index(p.idx_reg()), _offset(p.offset()),
+    _extend(lsl(0)), _target(nullptr) {}
+
+  Address(address target, RelocationHolder const& rspec) : _mode(addr_literal),
+    _rspec(rspec), _is_lval(false), _target(target)  {}
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
+
   Address(Register base, RegisterOrConstant index, extend ext = lsl(0))
-    : _base(base), _index(noreg),
-      _offset(0), _extend(ext), _target(nullptr) {
+    : _base(base), _index(noreg), _offset(0), _extend(ext), _target(nullptr)
+  {
     if (index.is_register()) {
       _mode = base_plus_offset_reg;
       _index = index.as_register();
