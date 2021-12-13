@@ -90,7 +90,7 @@ public class TestHighUsage {
                                     "-Xms128M",
                                     "-Xmx128M",
                                     "-XX:ParallelGCThreads=1",
-                                    "-XX:ConcGCThreads=2",
+                                    "-XX:ConcGCThreads=1",
                                     "-Xlog:gc,gc+start",
                                     Test.class.getName())
                     .shouldNotContain("Allocation Stall")

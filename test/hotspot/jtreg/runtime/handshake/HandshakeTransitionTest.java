@@ -47,7 +47,7 @@ public class HandshakeTransitionTest {
                     "-XX:GuaranteedSafepointInterval=20",
                     "-Xlog:ergo*",
                     "-XX:ParallelGCThreads=1",
-                    "-XX:ConcGCThreads=2",
+                    "-XX:ConcGCThreads=1",
                     "-XX:CICompilerCount=2",
                     "HandshakeTransitionTest$Test");
 

@@ -98,5 +98,5 @@ uint ZHeuristics::nconcurrent_workers() {
   // a negative impact on the application throughput, while using too few
   // threads will prolong the GC cycle and we then risk being out-run by the
   // application.
-  return MAX2(nworkers(25.0), 2u);
+  return MAX2(nworkers(25.0), 1u);
 }

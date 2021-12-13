@@ -634,10 +634,10 @@ static void change_gc_decision(ZCollectorResizeInfo young_info, ZCollectorResize
 
   if (young_info._is_active && old_info._is_active) {
     // Need at least 1 thread for old collector
-    uint max_young_threads = ConcGCThreads - 1;
+    uint max_young_threads = MAX2(ConcGCThreads - 1, 1u);
     young_info._desired_nworkers = clamp(young_info._desired_nworkers, 0u, max_young_threads);
     // Adjust old threads so we don't have more than ConcGCThreads in total
-    uint max_old_threads = ConcGCThreads - MAX2(young_info._current_nworkers, young_info._desired_nworkers);
+    uint max_old_threads = MAX2(ConcGCThreads - MAX2(young_info._current_nworkers, young_info._desired_nworkers), 1u);
     old_info._desired_nworkers = clamp(old_info._desired_nworkers, 0u, max_old_threads);
   }
 
@@ -664,13 +664,20 @@ static void change_gc_decision() {
   change_gc_decision(wanted_young_nworkers(), wanted_old_nworkers());
 }
 
+static uint initial_old_workers() {
+  if (UseDynamicNumberOfGCThreads) {
+    return rule_major_allocation_rate_threads();
+  } else {
+    return MAX2(ConcGCThreads / 2, 1u);
+  }
+}
 
 static uint initial_young_workers() {
   if (UseDynamicNumberOfGCThreads) {
     uint wanted_nworkers = rule_minor_allocation_rate_dynamic(0.0, 0.0).young_nworkers();
     if (ZDriver::major()->is_busy()) {
       // Give at least 1 thread to old collector.
-      wanted_nworkers = clamp(wanted_nworkers, 1u, ConcGCThreads - 1);
+      wanted_nworkers = clamp(wanted_nworkers, 1u, MAX2(ConcGCThreads - 1, 1u));
 
       // Force old collector to yield threads if it has too many
       ZCollectorResizeInfo young_info = {_is_active: true, _current_nworkers: wanted_nworkers, _desired_nworkers: wanted_nworkers};
@@ -678,15 +685,7 @@ static uint initial_young_workers() {
     }
     return wanted_nworkers;
   } else {
-    return ConcGCThreads / 2;
-  }
-}
-
-static uint initial_old_workers() {
-  if (UseDynamicNumberOfGCThreads) {
-    return rule_major_allocation_rate_threads();
-  } else {
-    return ConcGCThreads / 2;
+    return MAX2(ConcGCThreads - initial_old_workers(), 1u);
   }
 }
 

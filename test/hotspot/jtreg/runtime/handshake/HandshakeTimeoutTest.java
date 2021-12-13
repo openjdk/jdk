@@ -49,7 +49,7 @@ public class HandshakeTimeoutTest {
                     "-XX:+HandshakeALot",
                     "-XX:GuaranteedSafepointInterval=10",
                     "-XX:ParallelGCThreads=1",
-                    "-XX:ConcGCThreads=2",
+                    "-XX:ConcGCThreads=1",
                     "-XX:CICompilerCount=2",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:HandshakeTimeout=50",
