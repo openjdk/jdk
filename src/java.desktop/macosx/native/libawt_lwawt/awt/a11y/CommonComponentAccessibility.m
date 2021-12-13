@@ -95,7 +95,11 @@ static jobject sAccessibilityClass = NULL;
         return NO;
     }
 
-    return isChildSelected(env, ((CommonComponentAccessibility *)[self parent])->fAccessible, fIndex, fComponent);
+    id parent = [self parent];
+    if ([parent isKindOfClass:[CommonComponentAccessibility class]]) {
+        return isChildSelected(env, ((CommonComponentAccessibility *)parent)->fAccessible, fIndex, fComponent);
+    }
+    return NO;
 }
 
 - (BOOL)isSelectable:(JNIEnv *)env

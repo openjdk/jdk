@@ -59,11 +59,14 @@
 - (jobject)tabGroup
 {
     if (fTabGroupAxContext == NULL) {
-        JNIEnv* env = [ThreadUtilities getJNIEnv];
-        jobject tabGroupAxContext = [(CommonComponentAccessibility *)[self parent] axContextWithEnv:env];
-        fTabGroupAxContext = (*env)->NewWeakGlobalRef(env, tabGroupAxContext);
-        CHECK_EXCEPTION();
-        (*env)->DeleteLocalRef(env, tabGroupAxContext);
+        id parent = [self parent];
+        if ([parent isKindOfClass:[CommonComponentAccessibility class]]) {
+            JNIEnv *env = [ThreadUtilities getJNIEnv];
+            jobject tabGroupAxContext = [(CommonComponentAccessibility *)parent axContextWithEnv:env];
+            fTabGroupAxContext = (*env)->NewWeakGlobalRef(env, tabGroupAxContext);
+            CHECK_EXCEPTION();
+            (*env)->DeleteLocalRef(env, tabGroupAxContext);
+        }
     }
     return fTabGroupAxContext;
 }
