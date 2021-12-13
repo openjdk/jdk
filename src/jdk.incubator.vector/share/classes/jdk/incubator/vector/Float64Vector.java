@@ -718,9 +718,9 @@ final class Float64Vector extends FloatVector {
         @ForceInline
         /*package-private*/
         static Float64Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Float64Mask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Float64Mask.class, int.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Float64Mask  TRUE_MASK = new Float64Mask(true);
         private static final Float64Mask FALSE_MASK = new Float64Mask(false);

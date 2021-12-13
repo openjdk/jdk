@@ -801,10 +801,10 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* mask_len = in(3)->in(1);
     const TypeLong* ty = phase->type(mask_len)->isa_long();
     if (ty && ty->is_con()) {
-      BasicType mask_bt = ((VectorMaskGenNode*)in(3))->get_elem_type();
-      uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
-      if ( load_sz == 32 || load_sz == 64) {
-        assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected load size");
+      BasicType mask_bt = Matcher::vector_element_basic_type(in(3));
+      int load_sz = type2aelembytes(mask_bt) * ty->get_con();
+      assert(load_sz <= MaxVectorSize, "Unexpected load size");
+      if (load_sz == MaxVectorSize) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
         Node* adr = in(MemNode::Address);
@@ -820,10 +820,10 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* mask_len = in(4)->in(1);
     const TypeLong* ty = phase->type(mask_len)->isa_long();
     if (ty && ty->is_con()) {
-      BasicType mask_bt = ((VectorMaskGenNode*)in(4))->get_elem_type();
-      uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
-      if ( load_sz == 32 || load_sz == 64) {
-        assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected store size");
+      BasicType mask_bt = Matcher::vector_element_basic_type(in(4));
+      int load_sz = type2aelembytes(mask_bt) * ty->get_con();
+      assert(load_sz <= MaxVectorSize, "Unexpected store size");
+      if (load_sz == MaxVectorSize) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
         Node* adr = in(MemNode::Address);
@@ -1425,6 +1425,12 @@ Node* ShiftVNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
+Node* VectorMaskGenNode::make(Node* length, BasicType mask_bt) {
+  int max_vector = Matcher::max_vector_size(mask_bt);
+  const TypeVectMask* t_vmask = TypeVectMask::make(mask_bt, max_vector);
+  return new VectorMaskGenNode(length, t_vmask);
+}
+
 Node* VectorMaskOpNode::make(Node* mask, const Type* ty, int mopc) {
   switch(mopc) {
     case Op_VectorMaskTrueCount:
@@ -1437,6 +1443,82 @@ Node* VectorMaskOpNode::make(Node* mask, const Type* ty, int mopc) {
       return new VectorMaskToLongNode(mask, ty);
     default:
       assert(false, "Unhandled operation");
+  }
+  return NULL;
+}
+
+Node* VectorMaskToLongNode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_VectorLongToMask) {
+    return in(1)->in(1);
+  }
+  return this;
+}
+
+
+Node* VectorMaskCastNode::makeCastNode(PhaseGVN* phase, Node* src, const TypeVect* dst_type) {
+  const TypeVect* src_type = src->bottom_type()->is_vect();
+  assert(src_type->length() == dst_type->length(), "");
+
+  int num_elem = src_type->length();
+  BasicType elem_bt_from = src_type->element_basic_type();
+  BasicType elem_bt_to = dst_type->element_basic_type();
+
+  if (dst_type->isa_vectmask() == NULL && src_type->isa_vectmask() == NULL &&
+      type2aelembytes(elem_bt_from) != type2aelembytes(elem_bt_to)) {
+
+    Node* op = src;
+    BasicType new_elem_bt_from = elem_bt_from;
+    BasicType new_elem_bt_to = elem_bt_to;
+    if (is_floating_point_type(elem_bt_from)) {
+      new_elem_bt_from =  elem_bt_from == T_FLOAT ? T_INT : T_LONG;
+    }
+    if (is_floating_point_type(elem_bt_to)) {
+      new_elem_bt_to = elem_bt_to == T_FLOAT ? T_INT : T_LONG;
+    }
+
+    // Special handling for casting operation involving floating point types.
+    // Case A) F -> X :=  F -> VectorMaskCast (F->I/L [NOP]) -> VectorCast[I/L]2X
+    // Case B) X -> F :=  X -> VectorCastX2[I/L] -> VectorMaskCast ([I/L]->F [NOP])
+    // Case C) F -> F :=  VectorMaskCast (F->I/L [NOP]) -> VectorCast[I/L]2[L/I] -> VectotMaskCast (L/I->F [NOP])
+
+    if (new_elem_bt_from != elem_bt_from) {
+      const TypeVect* new_src_type = TypeVect::makemask(new_elem_bt_from, num_elem);
+      op = phase->transform(new VectorMaskCastNode(op, new_src_type));
+    }
+
+    op = phase->transform(VectorCastNode::make(VectorCastNode::opcode(new_elem_bt_from), op, new_elem_bt_to, num_elem));
+
+    if (new_elem_bt_to != elem_bt_to) {
+      op = phase->transform(new VectorMaskCastNode(op, dst_type));
+    }
+    return op;
+  } else {
+    return new VectorMaskCastNode(src, dst_type);
+  }
+}
+
+Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeVect* dst_type = bottom_type()->is_vect();
+  if (in(1)->Opcode() == Op_AndL &&
+      in(1)->in(1)->Opcode() == Op_VectorMaskToLong &&
+      in(1)->in(2)->bottom_type()->isa_long() &&
+      in(1)->in(2)->bottom_type()->is_long()->is_con() &&
+      in(1)->in(2)->bottom_type()->is_long()->get_con() == ((1L << dst_type->length()) - 1)) {
+      // Different src/dst mask length represents a re-interpretation operation,
+      // we can however generate a mask casting operation if length matches.
+     Node* src = in(1)->in(1)->in(1);
+     if (dst_type->isa_vectmask() == NULL) {
+       if (src->Opcode() != Op_VectorStoreMask) {
+         return NULL;
+       }
+       src = src->in(1);
+     }
+     const TypeVect* src_type = src->bottom_type()->is_vect();
+     if (src_type->length() == dst_type->length() &&
+         ((src_type->isa_vectmask() == NULL && dst_type->isa_vectmask() == NULL) ||
+          (src_type->isa_vectmask() && dst_type->isa_vectmask()))) {
+       return VectorMaskCastNode::makeCastNode(phase, src, dst_type);
+     }
   }
   return NULL;
 }

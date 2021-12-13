@@ -469,6 +469,14 @@ void VM_Version::initialize() {
     }
   }
 
+  int inline_size = (UseSVE > 0 && MaxVectorSize >= 16) ? MaxVectorSize : 0;
+  if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
+    FLAG_SET_DEFAULT(ArrayOperationPartialInlineSize, inline_size);
+  } else if (ArrayOperationPartialInlineSize != 0 && ArrayOperationPartialInlineSize != inline_size) {
+    warning("Setting ArrayOperationPartialInlineSize to %d", inline_size);
+    ArrayOperationPartialInlineSize = inline_size;
+  }
+
   if (FLAG_IS_DEFAULT(OptoScheduling)) {
     OptoScheduling = true;
   }

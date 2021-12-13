@@ -711,15 +711,12 @@ public class ServerSocket implements java.io.Closeable {
     public void close() throws IOException {
         synchronized (stateLock) {
             if (!closed) {
-                try {
-                    // close underlying socket if created
-                    if (created) {
-                        impl.close();
-                    }
-                } finally {
-                    closed = true;
-                }
+                closed = true;
 
+                // close underlying socket if created
+                if (created) {
+                    impl.close();
+                }
             }
         }
     }

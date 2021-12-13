@@ -733,9 +733,9 @@ final class Short64Vector extends ShortVector {
         @ForceInline
         /*package-private*/
         static Short64Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Short64Mask.class, short.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Short64Mask.class, short.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Short64Mask  TRUE_MASK = new Short64Mask(true);
         private static final Short64Mask FALSE_MASK = new Short64Mask(false);

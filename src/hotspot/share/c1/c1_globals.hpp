@@ -242,9 +242,6 @@
   develop(bool, UseFastNewObjectArray, true,                                \
           "Use fast inlined object array allocation")                       \
                                                                             \
-  develop(bool, UseFastLocking, true,                                       \
-          "Use fast inlined locking code")                                  \
-                                                                            \
   develop(bool, UseSlowPath, false,                                         \
           "For debugging: test slow cases by always using them")            \
                                                                             \

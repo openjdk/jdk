@@ -13130,6 +13130,24 @@ instruct cmovLL_mem_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, eRegL dst, load_lo
   ins_pipe( pipe_cmov_reg_long );
 %}
 
+instruct cmovLL_reg_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, eRegL dst, eRegL src) %{
+  match(Set dst (CMoveL (Binary cmp flags) (Binary dst src)));
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  ins_cost(400);
+  expand %{
+    cmovLL_reg_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovLL_mem_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, eRegL dst, load_long_memory src) %{
+  match(Set dst (CMoveL (Binary cmp flags) (Binary dst (LoadL src))));
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  ins_cost(500);
+  expand %{
+    cmovLL_mem_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
 // Compare 2 longs and CMOVE ints.
 instruct cmovII_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, rRegI dst, rRegI src) %{
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
