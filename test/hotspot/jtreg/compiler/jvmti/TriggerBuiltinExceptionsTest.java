@@ -29,7 +29,6 @@
  * @library /test/lib /
  *
  * @build sun.hotspot.WhiteBox
- * @build compiler.jvmti.TriggerBuiltinExceptionsTest
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/native
