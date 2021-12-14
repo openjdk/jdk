@@ -720,8 +720,8 @@ public final class DateTimeFormatter {
 
     //-----------------------------------------------------------------------
     /**
-     * Creates a locale specific formatter using the specified Skeleton pattern for the default locale. Skeleton
-     * pattern is based on CLDR's
+     * Creates a locale specific formatter using the specified Skeleton for the default locale. Skeleton
+     * is based on CLDR's
      * <a href="http://cldr.unicode.org/translation/date-time-1/date-time-patterns#TOC-Additional-Date-Time-Formats">
      * Additional Date-Time Formats</a>.
      * For example, {@code yMMM} will format 2020-06-16 as 'Jun 2020' in US locale.
@@ -732,19 +732,19 @@ public final class DateTimeFormatter {
      * The returned formatter has no override zone.
      * It uses {@link ResolverStyle#SMART SMART} resolver style.
      *
-     * @param skeleton the skeleton pattern to use, not null
+     * @param skeleton the skeleton to use, not null
      * @return the formatter based on the pattern, not null
-     * @throws IllegalArgumentException if the skeleton pattern is invalid
+     * @throws IllegalArgumentException if the skeleton is invalid
      * @see #ofPattern(String)
-     * @since 18
+     * @since 19
      */
-    public static DateTimeFormatter ofLocalizedPattern(String skeleton) {
-        return ofLocalizedPattern(skeleton, Locale.getDefault(Locale.Category.FORMAT));
+    public static DateTimeFormatter ofSkeleton(String skeleton) {
+        return ofSkeleton(skeleton, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
-     * Creates a locale specific formatter using the specified Skeleton pattern and locale. Skeleton
-     * pattern is based on CLDR's
+     * Creates a locale specific formatter using the specified Skeleton and locale. Skeleton
+     * is based on CLDR's
      * <a href="http://cldr.unicode.org/translation/date-time-1/date-time-patterns#TOC-Additional-Date-Time-Formats">
      * Additional Date-Time Formats</a>.
      * For example, {@code yMMM} will format 2020-06-16 as 'Jun 2020' in US locale.
@@ -755,18 +755,18 @@ public final class DateTimeFormatter {
      * The returned formatter has no override zone.
      * It uses {@link ResolverStyle#SMART SMART} resolver style.
      *
-     * @param skeleton the skeleton pattern to use, not null
+     * @param skeleton the skeleton to use, not null
      * @param locale the locale to use, not null
      * @return the formatter based on the pattern, not null
-     * @throws IllegalArgumentException if the skeleton pattern is invalid
+     * @throws IllegalArgumentException if the skeleton is invalid
      * @see #ofPattern(String, Locale)
-     * @since 18
+     * @since 19
      */
-    public static DateTimeFormatter ofLocalizedPattern(String skeleton, Locale locale) {
+    public static DateTimeFormatter ofSkeleton(String skeleton, Locale locale) {
         Objects.requireNonNull(skeleton, "skeleton");
         Objects.requireNonNull(locale, "locale");
         Chronology chrono = Chronology.ofLocale(locale);
-        return new DateTimeFormatterBuilder().appendLocalizedPattern(skeleton, locale, chrono)
+        return new DateTimeFormatterBuilder().appendSkeleton(skeleton, locale, chrono)
                 .toFormatter(ResolverStyle.SMART, chrono)
                 .withLocale(locale);
     }

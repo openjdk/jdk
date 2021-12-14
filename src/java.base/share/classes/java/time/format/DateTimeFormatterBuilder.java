@@ -1425,20 +1425,20 @@ public final class DateTimeFormatterBuilder {
 
     //-----------------------------------------------------------------------
     /**
-     * Appends a localized pattern to the formatter using the specified skeleton
-     * pattern, locale, and chronology. Skeleton pattern is based on CLDR's
+     * Appends a localized pattern to the formatter using the specified skeleton,
+     * locale, and chronology. Skeleton is based on CLDR's
      * <a href="http://cldr.unicode.org/translation/date-time-1/date-time-patterns#TOC-Additional-Date-Time-Formats">
      * Additional Date-Time Formats</a>.
      * For example, {@code yMMM} will format 2011-12-03 as 'Dec 2011' in US locale.
-     * @param skeleton the skeleton pattern to use, not null
+     * @param skeleton the skeleton to use, not null
      * @param locale the locale to use, not null
      * @param chrono the chronology to use, not null
      * @return this, for chaining, not null
-     * @throws IllegalArgumentException if the skeleton pattern is invalid
+     * @throws IllegalArgumentException if the skeleton is invalid
      * @see #appendPattern(String)
-     * @since 18
+     * @since 19
      */
-    public DateTimeFormatterBuilder appendLocalizedPattern(String skeleton, Locale locale, Chronology chrono) {
+    public DateTimeFormatterBuilder appendSkeleton(String skeleton, Locale locale, Chronology chrono) {
         Objects.requireNonNull(skeleton, "skeleton");
         Objects.requireNonNull(locale, "locale");
         Objects.requireNonNull(chrono, "chrono");

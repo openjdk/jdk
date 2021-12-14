@@ -60,17 +60,17 @@ public abstract class JavaTimeDateTimePatternProvider extends LocaleServiceProvi
     public abstract String getJavaTimeDateTimePattern(int timeStyle, int dateStyle, String calType, Locale locale);
 
     /**
-     * Gets the formatting pattern for a skeleton pattern, calendarType, and locale.
+     * Gets the formatting pattern for a skeleton, calendarType, and locale.
      * Concrete implementation of this method will retrieve
      * a java.time specific pattern from selected Locale Provider.
      *
-     * @param skeleton Skeleton pattern defined in CLDR
+     * @param skeleton Skeleton defined in CLDR
      * @param calType a {@code String}, non-null representing CalendarType such as "japanese",
      * "iso8601"
      * @param locale {@code locale}, non-null
-     * @throws IllegalArgumentException if the skeleton pattern is invalid
+     * @throws IllegalArgumentException if the skeleton is invalid
      * @return  formatting pattern {@code String}
-     * @since 18
+     * @since 19
      */
     public abstract String getJavaTimeDateTimePattern(String skeleton, String calType, Locale locale);
 }
