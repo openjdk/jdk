@@ -79,16 +79,11 @@ ShenandoahThreadRoots::~ShenandoahThreadRoots() {
 }
 
 ShenandoahCodeCacheRoots::ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase) : _phase(phase) {
-  nmethod::oops_do_marking_prologue();
 }
 
 void ShenandoahCodeCacheRoots::code_blobs_do(CodeBlobClosure* blob_cl, uint worker_id) {
   ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
   _coderoots_iterator.possibly_parallel_blobs_do(blob_cl);
-}
-
-ShenandoahCodeCacheRoots::~ShenandoahCodeCacheRoots() {
-  nmethod::oops_do_marking_epilogue();
 }
 
 ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase phase) :
