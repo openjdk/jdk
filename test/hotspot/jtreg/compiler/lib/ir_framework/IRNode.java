@@ -141,6 +141,14 @@ public class IRNode {
     public static final String ADD_L = START + "AddL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;
 
+    public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;
+    public static final String VECTOR_CAST_S2X = START + "VectorCastS2X" + MID + END;
+    public static final String VECTOR_CAST_I2X = START + "VectorCastI2X" + MID + END;
+    public static final String VECTOR_CAST_L2X = START + "VectorCastL2X" + MID + END;
+    public static final String VECTOR_CAST_F2X = START + "VectorCastF2X" + MID + END;
+    public static final String VECTOR_CAST_D2X = START + "VectorCastD2X" + MID + END;
+    public static final String VECTOR_REINTERPRET = START + "VectorReinterpret" + MID + END;
+
     /**
      * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.
      */

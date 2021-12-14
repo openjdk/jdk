@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+
+package compiler.vectorapi.reshape;
+
+import compiler.vectorapi.reshape.tests.TestVectorCast;
+import compiler.vectorapi.reshape.utils.TestCastMethods;
+import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 
 /*
  * @test
- * @summary The DynamicDumpShareSpaces flag is internal, setting it at the command line should have no effect.
- * @requires vm.cds
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @compile ../test-classes/Hello.java
- * @run driver DynamicFlag
+ * @bug 8259610
+ * @modules jdk.incubator.vector
+ * @modules java.base/jdk.internal.misc
+ * @summary Test that vector cast intrinsics work as intended on neon.
+ * @requires vm.cpu.features ~= ".*simd.*"
+ * @library /test/lib /
+ * @run driver compiler.vectorapi.reshape.TestVectorCastNeon
  */
-
-public class DynamicFlag {
-  public static void main(String[] args) throws Exception {
-      TestCommon.test(JarBuilder.getOrCreateHelloJar(),
-          TestCommon.list("Hello"), "-XX:+DynamicDumpSharedSpaces", "Hello");
-  }
+public class TestVectorCastNeon {
+    public static void main(String[] args) {
+        VectorReshapeHelper.runMainHelper(
+                TestVectorCast.class,
+                TestCastMethods.NEON_CAST_TESTS.stream(),
+                "-XX:+UseNeon");
+    }
 }
+
+

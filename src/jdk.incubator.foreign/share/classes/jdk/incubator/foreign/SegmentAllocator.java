@@ -339,9 +339,9 @@ public interface SegmentAllocator {
     /**
      * Returns a native unbounded arena-based allocator, with predefined block size and maximum arena size,
      * associated with the provided scope. Equivalent to the following code:
-     * <blockquote><pre>{@code
-    SegmentAllocator.newNativeArena(Long.MAX_VALUE, predefinedBlockSize, scope);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * SegmentAllocator.newNativeArena(Long.MAX_VALUE, predefinedBlockSize, scope);
+     * }
      *
      * @param scope the scope associated with the segments returned by the arena-based allocator.
      * @return a new unbounded arena-based allocator
@@ -355,9 +355,9 @@ public interface SegmentAllocator {
     /**
      * Returns a native unbounded arena-based allocator, with block size set to the specified arena size, associated with
      * the provided scope, with given arena size. Equivalent to the following code:
-     * <blockquote><pre>{@code
-    SegmentAllocator.newNativeArena(arenaSize, arenaSize, scope);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * SegmentAllocator.newNativeArena(arenaSize, arenaSize, scope);
+     * }
      *
      * @param arenaSize the size (in bytes) of the allocation arena.
      * @param scope the scope associated with the segments returned by the arena-based allocator.
@@ -416,10 +416,10 @@ public interface SegmentAllocator {
      * each new allocation request will return a new slice starting at the segment offset {@code 0} (alignment
      * constraints are ignored by this allocator), hence the name <em>prefix allocator</em>.
      * Equivalent to (but likely more efficient than) the following code:
-     * <blockquote><pre>{@code
-    MemorySegment segment = ...
-    SegmentAllocator prefixAllocator = (size, align) -> segment.asSlice(0, size);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * MemorySegment segment = ...
+     * SegmentAllocator prefixAllocator = (size, align) -> segment.asSlice(0, size);
+     * }
      * <p>
      * This allocator can be useful to limit allocation requests in case a client
      * knows that they have fully processed the contents of the allocated segment before the subsequent allocation request
@@ -439,10 +439,10 @@ public interface SegmentAllocator {
     /**
      * Returns a native allocator, associated with the provided scope. Equivalent to (but likely more efficient than)
      * the following code:
-     * <blockquote><pre>{@code
-    ResourceScope scope = ...
-    SegmentAllocator nativeAllocator = (size, align) -> MemorySegment.allocateNative(size, align, scope);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * ResourceScope scope = ...
+     * SegmentAllocator nativeAllocator = (size, align) -> MemorySegment.allocateNative(size, align, scope);
+     * }
      *
      * @param scope the scope associated with the returned allocator.
      * @return a native allocator, associated with the provided scope.
@@ -455,10 +455,10 @@ public interface SegmentAllocator {
     /**
      * Returns a native allocator which allocates segments in independent {@linkplain ResourceScope#newImplicitScope() implicit scopes}.
      * Equivalent to (but likely more efficient than) the following code:
-     * <blockquote><pre>{@code
-    ResourceScope scope = ...
-    SegmentAllocator implicitAllocator = (size, align) -> MemorySegment.allocateNative(size, align, ResourceScope.newImplicitScope());
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * ResourceScope scope = ...
+     * SegmentAllocator implicitAllocator = (size, align) -> MemorySegment.allocateNative(size, align, ResourceScope.newImplicitScope());
+     * }
      *
      * @return a native allocator which allocates segments in independent {@linkplain ResourceScope#newImplicitScope() implicit scopes}.
      */
