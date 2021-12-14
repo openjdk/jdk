@@ -180,6 +180,15 @@ void CE_Eliminator::block_do(BlockBegin* block) {
     return;
   }
 
+#ifdef ASSERT
+  BlockList blocks_to_verify_later;
+  blocks_to_verify_later.append(block);
+  blocks_to_verify_later.append(t_block);
+  blocks_to_verify_later.append(f_block);
+  blocks_to_verify_later.append(sux);
+  _hir->expand_with_neighborhood(blocks_to_verify_later);
+#endif //ASSERT
+
   // 2) substitute conditional expression
   //    with an IfOp followed by a Goto
   // cut if_ away and get node before
@@ -249,14 +258,7 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   }
 
 #ifdef ASSERT
-  {
-    BlockList b;
-    b.append(block);
-    b.append(t_block);
-    b.append(f_block);
-    b.append(sux);
-    _hir->verify_local(b);
-  }
+  _hir->verify_local(blocks_to_verify_later);
 #endif // ASSERT
 }
 
@@ -406,6 +408,12 @@ class BlockMerger: public BlockClosure {
     }
 #endif // ASSERT
 
+#ifdef ASSERT
+    BlockList blocks_to_verify_later;
+    blocks_to_verify_later.append(block);
+    _hir->expand_with_neighborhood(blocks_to_verify_later);
+#endif //ASSERT
+
     // find instruction before end & append first instruction of sux block
     Instruction* prev = end->prev();
     Instruction* next = sux->next();
@@ -415,6 +423,9 @@ class BlockMerger: public BlockClosure {
 
     // disconnect this block from all other blocks
     disconnect_from_graph(sux);
+#ifdef ASSERT
+    blocks_to_verify_later.remove(sux); // Sux is not part of graph anymore
+#endif //ASSERT
     block->set_end(sux->end());
 
     // TODO Should this be done in set_end universally?
@@ -440,11 +451,7 @@ class BlockMerger: public BlockClosure {
     }
 
 #ifdef ASSERT
-    {
-      BlockList b;
-      b.append(block);
-      _hir->verify_local(b);
-    }
+    _hir->verify_local(blocks_to_verify_later);
 #endif // ASSERT
 
     If* if_ = block->end()->as_If();
@@ -496,13 +503,7 @@ class BlockMerger: public BlockClosure {
               }
 
 #ifdef ASSERT
-              {
-                BlockList b;
-                b.append(block);
-                b.append(tblock);
-                b.append(fblock);
-                _hir->verify_local(b);
-              }
+              _hir->verify_local(blocks_to_verify_later);
 #endif // ASSERT
             }
           }
