@@ -136,7 +136,7 @@ uint32_t ZCollectedHeap::hash_oop(oop obj) const {
 
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(requested_size));
-  const zaddress addr = _heap.young_generation()->alloc_tlab(size_in_bytes);
+  const zaddress addr = ZGeneration::young()->alloc_tlab(size_in_bytes);
 
   if (!is_null(addr)) {
     *actual_size = requested_size;
@@ -152,7 +152,7 @@ oop ZCollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool d
 
 HeapWord* ZCollectedHeap::mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(size));
-  return (HeapWord*)_heap.young_generation()->alloc_object(size_in_bytes);
+  return (HeapWord*)ZGeneration::young()->alloc_object(size_in_bytes);
 }
 
 MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,

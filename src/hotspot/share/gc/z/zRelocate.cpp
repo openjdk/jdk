@@ -232,8 +232,8 @@ static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_add
 
   ZPage* page = forwarding->page();
   ZGeneration* generation = forwarding->to_age() == ZPageAge::old ?
-                            (ZGeneration*)ZHeap::heap()->old_generation() :
-                            (ZGeneration*)ZHeap::heap()->young_generation();
+                            (ZGeneration*)ZGeneration::old() :
+                            (ZGeneration*)ZGeneration::young();
 
   bool promotion = forwarding->is_promotion();
 

@@ -29,8 +29,14 @@
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.hpp"
 
+class ZOldGeneration;
+class ZYoungGeneration;
+
 class ZGeneration {
 protected:
+  static ZYoungGeneration* _young;
+  static ZOldGeneration*   _old;
+
   const ZGenerationId _id;
   size_t              _used;
 
@@ -46,6 +52,10 @@ public:
 
   bool is_young() const;
   bool is_old() const;
+
+  static ZYoungGeneration* young();
+  static ZOldGeneration* old();
+  static ZGeneration* generation(ZGenerationId id);
 
   // Allocation
   virtual zaddress alloc_object_for_relocation(size_t size, bool promotion) = 0;

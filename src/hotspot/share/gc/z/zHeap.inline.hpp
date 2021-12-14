@@ -43,22 +43,6 @@ inline ZHeap* ZHeap::heap() {
   return _heap;
 }
 
-inline ZGeneration* ZHeap::generation(ZGenerationId id) {
-  if (id == ZGenerationId::young) {
-    return &_young_generation;
-  } else {
-    return &_old_generation;
-  }
-}
-
-inline ZYoungGeneration* ZHeap::young_generation() {
-  return &_young_generation;
-}
-
-inline ZOldGeneration* ZHeap::old_generation() {
-  return &_old_generation;
-}
-
 inline uint32_t ZHeap::hash_oop(zaddress addr) const {
   const zoffset offset = ZAddress::offset(addr);
   return ZHash::offset_to_uint32(offset);

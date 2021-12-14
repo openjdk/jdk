@@ -41,6 +41,22 @@ inline bool ZGeneration::is_old() const {
   return _id == ZGenerationId::old;
 }
 
+inline ZYoungGeneration* ZGeneration::young() {
+  return _young;
+}
+
+inline ZOldGeneration* ZGeneration::old() {
+  return _old;
+}
+
+inline ZGeneration* ZGeneration::generation(ZGenerationId id) {
+  if (id == ZGenerationId::young) {
+    return _young;
+  } else {
+    return _old;
+  }
+}
+
 inline zaddress ZYoungGeneration::alloc_tlab(size_t size) {
   guarantee(size <= ZHeap::heap()->max_tlab_size(), "TLAB too large");
   return _eden_allocator.alloc_object(size);

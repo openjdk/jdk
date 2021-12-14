@@ -25,6 +25,9 @@
 #include "gc/z/zGeneration.hpp"
 #include "gc/z/zHeap.inline.hpp"
 
+ZYoungGeneration* ZGeneration::_young;
+ZOldGeneration*   ZGeneration::_old;
+
 ZGeneration::ZGeneration(ZGenerationId id) :
     _id(id),
     _used(0) {
@@ -48,6 +51,7 @@ ZYoungGeneration::ZYoungGeneration() :
     ZGeneration(ZGenerationId::young),
     _eden_allocator(ZGenerationId::young, ZPageAge::eden),
     _survivor_allocator(ZGenerationId::young, ZPageAge::survivor) {
+  _young = this;
 }
 
 zaddress ZYoungGeneration::alloc_object_for_relocation(size_t size, bool promotion) {
@@ -75,6 +79,7 @@ size_t ZYoungGeneration::remaining() const {
 ZOldGeneration::ZOldGeneration() :
     ZGeneration(ZGenerationId::old),
     _old_allocator(ZGenerationId::old, ZPageAge::old) {
+  _old = this;
 }
 
 zaddress ZOldGeneration::alloc_object_for_relocation(size_t size, bool promotion) {

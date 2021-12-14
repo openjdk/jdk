@@ -65,11 +65,6 @@ public:
 
   void out_of_memory();
 
-  // Generations
-  ZGeneration* generation(ZGenerationId id);
-  ZYoungGeneration* young_generation();
-  ZOldGeneration* old_generation();
-
   // Heap metrics
   size_t initial_capacity() const;
   size_t min_capacity() const;

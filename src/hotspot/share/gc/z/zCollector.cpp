@@ -389,7 +389,7 @@ void ZYoungCollector::mark_start() {
   ZGlobalsPointers::flip_young_mark_start();
 
   // Retire allocating pages
-  ZHeap::heap()->young_generation()->retire_pages();
+  ZGeneration::young()->retire_pages();
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();
@@ -476,8 +476,8 @@ void ZYoungCollector::relocate() {
 void ZYoungCollector::flip_promote(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
-  ZHeap::heap()->young_generation()->decrease_used(from_page->size());
-  ZHeap::heap()->old_generation()->increase_used(from_page->size());
+  ZGeneration::young()->decrease_used(from_page->size());
+  ZGeneration::old()->increase_used(from_page->size());
 
   increase_freed(from_page->size());
   increase_promoted(from_page->live_bytes());
@@ -486,8 +486,8 @@ void ZYoungCollector::flip_promote(ZPage* from_page, ZPage* to_page) {
 void ZYoungCollector::in_place_relocate_promote(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
-  ZHeap::heap()->young_generation()->decrease_used(from_page->size());
-  ZHeap::heap()->old_generation()->increase_used(from_page->size());
+  ZGeneration::young()->decrease_used(from_page->size());
+  ZGeneration::old()->increase_used(from_page->size());
 }
 
 void ZYoungCollector::register_flip_promoted(const ZArray<ZPage*>& pages) {
@@ -526,7 +526,7 @@ void ZOldCollector::mark_start() {
   ZGlobalsPointers::flip_old_mark_start();
 
   // Retire allocating pages
-  ZHeap::heap()->old_generation()->retire_pages();
+  ZGeneration::old()->retire_pages();
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();

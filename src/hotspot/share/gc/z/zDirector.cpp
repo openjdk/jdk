@@ -357,9 +357,9 @@ static double calculate_extra_young_gc_time() {
   const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
   const size_t live_last_old_gc = old_collector->stat_heap()->live_at_mark_end();
   const size_t live_last_young_gc = young_collector->stat_heap()->live_at_mark_end();
-  const size_t old_used = ZHeap::heap()->old_generation()->used();
+  const size_t old_used = ZGeneration::old()->used();
   const size_t old_garbage = old_used - live_last_old_gc;
-  const size_t young_used = ZHeap::heap()->young_generation()->used();
+  const size_t young_used = ZGeneration::young()->used();
   const size_t young_available = young_used + free;
 
   // Calculate max serial/parallel times of a young GC cycle. The times are

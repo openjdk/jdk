@@ -318,7 +318,7 @@ size_t ZPageAllocator::unused() const {
 }
 
 ZPageAllocatorStats ZPageAllocator::stats(ZCollector* collector) const {
-  ZGeneration* generation = ZHeap::heap()->generation(collector->id());
+  ZGeneration* generation = ZGeneration::generation(collector->id());
   ZLocker<ZLock> locker(&_lock);
   return ZPageAllocatorStats(_min_capacity,
                              _max_capacity,
@@ -391,7 +391,7 @@ void ZPageAllocator::decrease_used(size_t size) {
 
 void ZPageAllocator::decrease_used(size_t size, ZGenerationId id) {
   decrease_used(size);
-  ZHeap::heap()->generation(id)->decrease_used(size);
+  ZGeneration::generation(id)->decrease_used(size);
 }
 
 bool ZPageAllocator::commit_page(ZPage* page) {
@@ -695,7 +695,7 @@ retry:
   // The generation's used is tracked here when the page is handed out
   // to the allocating thread. The overall heap "used" is tracked in
   // the lower-level allocation code.
-  ZHeap::heap()->generation(id)->increase_used(size);
+  ZGeneration::generation(id)->increase_used(size);
 
   // Reset page. This updates the page's sequence number and must
   // be done after we potentially blocked in a safepoint (stalled)

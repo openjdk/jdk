@@ -39,8 +39,8 @@ struct ZMemoryUsageInfo {
 
 static ZMemoryUsageInfo compute_memory_usage_info() {
   const size_t capacity = ZHeap::heap()->capacity();
-  const size_t old_used = ZHeap::heap()->old_generation()->used();
-  const size_t young_used = ZHeap::heap()->young_generation()->used();
+  const size_t old_used = ZGeneration::old()->used();
+  const size_t young_used = ZGeneration::young()->used();
 
   ZMemoryUsageInfo info;
   info._old_used = MIN2(old_used, capacity);
