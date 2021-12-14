@@ -1418,6 +1418,9 @@ void IR::verify() {
   EndNotNullValidator ennv;
   this->iterate_postorder(&ennv);
 
+  ValidateEdgeMutuality vem;
+  this->iterate_postorder(&vem);
+
   VerifyBlockBeginField verifier;
   this->iterate_postorder(&verifier);
 #endif // ASSERT
