@@ -82,14 +82,16 @@ public class TestJavaFileManagerBuilder {
      * The function should either return an exception to be thrown, or {@code null}
      * to indicate that no exception should be thrown.
      *
-     * It is an error for any function to return a checked exception that is not
+     * <p>It is an error for any function to return a checked exception that is not
      * declared by the method. This error will result in {@link UndeclaredThrowableException}
      * being thrown when the method is called.
      *
-     * @param handlers  a map giving the function to be called before a file manager method is invoked
+     * @param handlers a map giving the function to be called before a file manager method is invoked
      *
      * @return this object
-     * @throws IllegalArgumentException if any key in the map is a method that is not declared in {@code JavaFileManager}
+     *
+     * @throws IllegalArgumentException if any key in the map of handlers is a method that is not
+     *                                  declared in {@code JavaFileManager}
      */
     public TestJavaFileManagerBuilder handle(Map<Method, BiFunction<JavaFileManager, Object[], Throwable>> handlers) {
         handlers.forEach((m, h) -> {
@@ -108,11 +110,11 @@ public class TestJavaFileManagerBuilder {
      * The function should either return an exception to be thrown, or {@code null}
      * to indicate that no exception should be thrown.
      *
-     * It is an error for the function to return a checked exception that is not
+     * <p>It is an error for the function to return a checked exception that is not
      * declared by the method. This error will result in {@link UndeclaredThrowableException}
      * being thrown when the method is called.
      *
-     * When subsequently finding the handlers to be used for a particular file object, the various
+     * <p>When subsequently finding the handlers to be used for a particular file object, the various
      * predicates passed to this method will be tested in the order that they were registered.
      * The handlers associated with the first matching predicate will be used.
      *
@@ -124,12 +126,13 @@ public class TestJavaFileManagerBuilder {
      * <li>using {@code Path} operations on the file object's {@link StandardJavaFileManager#asPath(FileObject) path}.
      * </ul>
      *
-     * @param filter    the predicate used to identify file objects for which the handlers are applicable
-     * @param handlers  a map giving the function to be called before a file object method is invoked
+     * @param filter   the predicate used to identify file objects for which the handlers are applicable
+     * @param handlers a map giving the function to be called before a file object method is invoked
      *
      * @return this object
-     * @throws IllegalArgumentException if the method is not declared in a class that is assignable
-     *          to {@code FileObject}
+     *
+     * @throws IllegalArgumentException if any key in the map is a method that is not declared in a class
+     *                                  that is assignable to {@code FileObject}
      */
     public TestJavaFileManagerBuilder handle(Predicate<JavaFileObject> filter,
                                              Map<Method, BiFunction<JavaFileObject, Object[], Throwable>> handlers) {
