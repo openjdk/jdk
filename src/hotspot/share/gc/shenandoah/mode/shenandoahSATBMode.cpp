@@ -66,6 +66,6 @@ ShenandoahHeuristics* ShenandoahSATBMode::initialize_heuristics() const {
       vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
     }
   }
-  ShouldNotReachHere();
+  vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
   return NULL;
 }

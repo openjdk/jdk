@@ -28,6 +28,7 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/java.hpp"
 
 void ShenandoahPassiveMode::initialize_flags() const {
   // Do not allow concurrent cycles.
@@ -58,6 +59,6 @@ ShenandoahHeuristics* ShenandoahPassiveMode::initialize_heuristics() const {
   if (ShenandoahGCHeuristics != NULL) {
     return new ShenandoahPassiveHeuristics();
   }
-  ShouldNotReachHere();
+  vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
   return NULL;
 }
