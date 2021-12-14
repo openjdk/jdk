@@ -2045,6 +2045,8 @@ int VM_Version::avx3_threshold() {
           FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
+static bool _vm_version_initialized = false;
+
 void VM_Version::initialize() {
   ResourceMark rm;
   // Making this stub must be FIRST use of assembler
@@ -2067,6 +2069,7 @@ void VM_Version::initialize() {
   if (VM_Version::supports_hv()) { // Supports hypervisor
     check_virtualizations();
   }
+  _vm_version_initialized = true;
 }
 
 typedef enum {
@@ -2751,6 +2754,7 @@ int VM_Version::cpu_detailed_description(char* const buf, size_t buf_len) {
 
 // Fill in Abstract_VM_Version statics
 void VM_Version::initialize_cpu_information() {
+  assert(_vm_version_initialized, "should have initialized VM_Version long ago");
   assert(!_initialized, "shouldn't be initialized yet");
   resolve_cpu_information_details();
 
