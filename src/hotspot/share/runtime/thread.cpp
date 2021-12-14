@@ -3293,7 +3293,7 @@ void JavaThread::invoke_shutdown_hooks() {
   HandleMark hm(this);
 
   // We could get here with a pending exception, if so clear it now or
-  // it will cause MetaspaceShared::link_shared_classes to
+  // it will cause MetaspaceShared::find_and_update_eligible_classes to
   // fail for dynamic dump.
   if (this->has_pending_exception()) {
     this->clear_pending_exception();

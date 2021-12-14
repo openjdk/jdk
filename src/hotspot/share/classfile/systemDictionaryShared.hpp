@@ -159,6 +159,9 @@ private:
   static RunTimeSharedDictionary _dynamic_unregistered_dictionary;
   static LambdaProxyClassDictionary _dynamic_lambda_proxy_class_dictionary;
 
+  template<class ITER>
+  static void iterate_dumptime_table(ITER* iter);
+
   static InstanceKlass* load_shared_class_for_builtin_loader(
                                                Symbol* class_name,
                                                Handle class_loader,

@@ -120,7 +120,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
                                  // the CLDs lifecycle.  For example, a non-strong hidden class.
                                  // Arrays of these classes are also assigned
                                  // to these class loader datas.
-
+  bool _eligible_for_dumping;    // Was this CLD alive when CDS dumping started.
   // Remembered sets support for the oops in the class loader data.
   bool _modified_oops;     // Card Table Equivalent
 
@@ -172,6 +172,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
  public:
   void record_modified_oops()            { _modified_oops = true; }
   bool has_modified_oops()               { return _modified_oops; }
+  void set_eligible_for_dumping(bool b)  { _eligible_for_dumping = b;    }
+  bool eligible_for_dumping()            { return _eligible_for_dumping; }
 
   oop holder_no_keepalive() const;
   oop holder_phantom() const;
