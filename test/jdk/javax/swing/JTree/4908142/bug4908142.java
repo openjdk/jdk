@@ -37,6 +37,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.UIManager;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.util.concurrent.Callable;
@@ -50,6 +51,7 @@ public class bug4908142 {
 
         Robot robot = new Robot();
         robot.setAutoDelay(50);
+        UIManager.put("Tree.timeFactor", 5000L);
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -83,7 +85,6 @@ public class bug4908142 {
             robot.keyRelease(KeyEvent.VK_D);
             robot.waitForIdle();
 
-
             String sel = Util.invokeOnEDT(new Callable<String>() {
 
                 @Override
@@ -91,14 +92,23 @@ public class bug4908142 {
                     return tree.getLastSelectedPathComponent().toString();
                 }
             });
+            robot.delay(500);
 
             if (!"aad".equals(sel)) {
-                throw new Error("The selected index should be \"aad\", but not " + sel);
+                java.awt.Dimension screenSize =
+                    java.awt.Toolkit.getDefaultToolkit().getScreenSize();
+                java.awt.Rectangle screen =
+                    new java.awt.Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
+                java.awt.image.BufferedImage img = robot.createScreenCapture(screen);
+                javax.imageio.ImageIO.write(img, "png", new java.io.File("image.png"));
+                throw new RuntimeException("The selected index should be \"aad\", but not " + sel);
             }
         } finally {
-            if (fr != null) {
-                SwingUtilities.invokeAndWait(fr::dispose);
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (fr != null) {
+	            fr.dispose();
+                }
+            });
         }
     }
 
@@ -120,5 +130,7 @@ public class bug4908142 {
         fr.setLocationRelativeTo(null);
         fr.setSize(200, 200);
         fr.setVisible(true);
+        fr.toFront();
+        fr.setAlwaysOnTop(true);
     }
 }
