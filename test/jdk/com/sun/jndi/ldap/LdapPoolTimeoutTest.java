@@ -85,8 +85,7 @@ public class LdapPoolTimeoutTest {
         env.put("com.sun.jndi.ldap.read.timeout", String.valueOf(READ_MILLIS));
         env.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(CONNECT_MILLIS));
         env.put("com.sun.jndi.ldap.connect.pool", "true");
-
-        env.put(Context.PROVIDER_URL, "ldap://10.0.0.0");
+        env.put(Context.PROVIDER_URL, "ldap://example.com:1234");
 
         try {
             futures.add(executorService.submit(() -> { attemptConnect(env); return null; }));
@@ -114,16 +113,26 @@ public class LdapPoolTimeoutTest {
     }
 
     private static void attemptConnect(Hashtable<Object, Object> env) throws Exception {
-        Assert.ThrowingRunnable completion =
-                () -> LdapTimeoutTest.assertCompletion(CONNECT_MILLIS - 1000,
-                                       2 * CONNECT_MILLIS + TOLERANCE,
-                                       () -> new InitialDirContext(env));
-        NamingException e = expectThrows(NamingException.class, completion);
-        String msg = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
-        assertTrue(msg != null &&
-                (msg.contains("Timed out")
-                    || msg.contains("timed out")
-                    || msg.contains("Timeout")));
+        try {
+            LdapTimeoutTest.assertCompletion(CONNECT_MILLIS - 1000,
+                   2 * CONNECT_MILLIS + TOLERANCE,
+                   () -> new InitialDirContext(env));
+        } catch (RuntimeException e) {
+            String msg = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
+            System.err.println("MSG RTE: " + msg);
+            // assertCompletion may wrap a CommunicationException in an RTE
+            assertTrue(msg != null && msg.contains("Network is unreachable"));
+        } catch (NamingException ex) {
+            String msg = ex.getCause() == null ? ex.getMessage() : ex.getCause().getMessage();
+            System.err.println("MSG: " + msg);
+            assertTrue(msg != null &&
+                    (msg.contains("Network is unreachable")
+                        || msg.contains("Timed out waiting for lock")
+                        || msg.contains("Connect timed out")
+                        || msg.contains("Timeout exceeded while waiting for a connection")));
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
     }
 
 }
