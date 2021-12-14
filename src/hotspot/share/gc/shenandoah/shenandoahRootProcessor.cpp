@@ -245,29 +245,34 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
 }
 
 ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner(uint n_workers) :
-   ShenandoahRootProcessor(ShenandoahPhaseTimings::heap_iteration_roots),
-   _thread_roots(ShenandoahPhaseTimings::heap_iteration_roots, false /*is par*/),
-   _vm_roots(ShenandoahPhaseTimings::heap_iteration_roots),
-   _cld_roots(ShenandoahPhaseTimings::heap_iteration_roots, n_workers, true /*heap iteration*/),
-   _weak_roots(ShenandoahPhaseTimings::heap_iteration_roots),
-   _code_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
- }
+  ShenandoahRootProcessor(ShenandoahPhaseTimings::heap_iteration_roots),
+  _thread_roots(ShenandoahPhaseTimings::heap_iteration_roots, false /*is par*/),
+  _vm_roots(ShenandoahPhaseTimings::heap_iteration_roots),
+  _cld_roots(ShenandoahPhaseTimings::heap_iteration_roots, n_workers, true /*heap iteration*/),
+  _weak_roots(ShenandoahPhaseTimings::heap_iteration_roots),
+  _code_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
+  nmethod::oops_do_marking_prologue();
+}
 
- void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
-   // Must use _claim_other to avoid interfering with concurrent CLDG iteration
-   CLDToOopClosure clds(oops, ClassLoaderData::_claim_other);
-   MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);
-   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
-   AlwaysTrueClosure always_true;
+ShenandoahHeapIterationRootScanner::~ShenandoahHeapIterationRootScanner() {
+  nmethod::oops_do_marking_epilogue();
+}
 
-   ResourceMark rm;
+void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
+  // Must use _claim_other to avoid interfering with concurrent CLDG iteration
+  CLDToOopClosure clds(oops, ClassLoaderData::_claim_other);
+  MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);
+  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
+  AlwaysTrueClosure always_true;
 
-   // Process light-weight/limited parallel roots then
-   _vm_roots.oops_do(oops, 0);
-   _weak_roots.oops_do<OopClosure>(oops, 0);
-   _cld_roots.cld_do(&clds, 0);
+  ResourceMark rm;
 
-   // Process heavy-weight/fully parallel roots the last
-   _code_roots.code_blobs_do(&code, 0);
-   _thread_roots.threads_do(&tc_cl, 0);
- }
+  // Process light-weight/limited parallel roots then
+  _vm_roots.oops_do(oops, 0);
+  _weak_roots.oops_do<OopClosure>(oops, 0);
+  _cld_roots.cld_do(&clds, 0);
+
+  // Process heavy-weight/fully parallel roots the last
+  _code_roots.code_blobs_do(&code, 0);
+  _thread_roots.threads_do(&tc_cl, 0);
+}
