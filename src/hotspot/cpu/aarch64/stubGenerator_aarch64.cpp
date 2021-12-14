@@ -6403,9 +6403,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "spin_wait");
     address start = __ pc();
 
-    if (VM_Version::spin_wait_desc().inst() != SpinWait::NONE) {
-      __ spin_wait();
-    }
+    __ spin_wait();
     __ ret(lr);
 
     return start;
