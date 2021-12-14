@@ -1408,6 +1408,19 @@ class ValidateEdgeMutuality : public BlockClosure {
   }
 };
 
+void IR::verify_local(BlockList& blocks) {
+#ifdef ASSERT
+  EndNotNullValidator ennv;
+  blocks.iterate_forward(&ennv);
+
+  ValidateEdgeMutuality vem;
+  blocks.iterate_forward(&vem);
+
+  VerifyBlockBeginField verifier;
+  blocks.iterate_forward(&verifier);
+#endif // ASSERT
+}
+
 void IR::verify() {
 #ifdef ASSERT
   XentryFlagValidator xe;
