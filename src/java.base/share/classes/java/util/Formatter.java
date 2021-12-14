@@ -2034,7 +2034,7 @@ public final class Formatter implements Closeable, Flushable {
         }
     }
 
-    private static final Appendable nonNullAppendable(Appendable a) {
+    private static Appendable nonNullAppendable(Appendable a) {
         if (a == null)
             return new StringBuilder();
 
@@ -3847,7 +3847,7 @@ public final class Formatter implements Closeable, Flushable {
                 assert(sign == '+' || sign == '-');
                 sb.append(sign);
 
-                sb.append(localizedMagnitude(null, exp, 1, adaptedFlags, -1, l));
+                sb.append(localizedMagnitude(fmt, null, exp, 1, adaptedFlags, -1, l));
             } else if (c == Conversion.DECIMAL_FLOAT) {
                 // Create a new BigDecimal with the desired precision.
                 int prec = (precision == -1 ? 6 : precision);
