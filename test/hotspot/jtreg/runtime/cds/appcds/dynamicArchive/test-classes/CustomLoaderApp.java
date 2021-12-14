@@ -52,7 +52,7 @@ public class CustomLoaderApp {
             new URLClassLoader("HelloClassLoader", urls, null);
         Class c = Class.forName(className, init, urlClassLoader);
         if (keepAlive) {
-            keptC = c; 
+            keptC = c;
         }
 
         System.out.println(c);

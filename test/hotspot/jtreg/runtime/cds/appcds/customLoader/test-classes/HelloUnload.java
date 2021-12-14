@@ -73,7 +73,7 @@ public class HelloUnload {
             new URLClassLoader("HelloClassLoader", urls, null);
         Class c = Class.forName(className, true, urlClassLoader);
         if (keepAlive) {
-            keptC = c; 
+            keptC = c;
         }
         System.out.println(c);
         System.out.println(c.getClassLoader());

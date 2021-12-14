@@ -70,8 +70,8 @@ public class InstantiateHiddenClass {
         Class<?> c1 = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
         Class<?> c2 = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
         if (keepAlive) {
-            keptC1 = c1; 
-            keptC2 = c2; 
+            keptC1 = c1;
+            keptC2 = c2;
         }
         Object o1 = c1.newInstance();
         Object o2 = c2.newInstance();
