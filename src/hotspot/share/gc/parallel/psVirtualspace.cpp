@@ -66,11 +66,6 @@ PSVirtualSpace::~PSVirtualSpace() {
   release();
 }
 
-bool PSVirtualSpace::contains(void* p) const {
-  char* const cp = (char*)p;
-  return cp >= committed_low_addr() && cp < committed_high_addr();
-}
-
 void PSVirtualSpace::release() {
   DEBUG_ONLY(PSVirtualSpaceVerifier this_verifier(this));
   // This may not release memory it didn't reserve.

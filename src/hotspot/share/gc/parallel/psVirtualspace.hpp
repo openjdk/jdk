@@ -75,7 +75,13 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
   PSVirtualSpace();
   void initialize(ReservedSpace rs);
 
-  bool contains(void* p)      const;
+  bool is_in_committed(const void* p) const {
+    return (p >= committed_low_addr()) && (p < committed_high_addr());
+  }
+
+  bool is_in_reserved(const void* p) const {
+    return (p >= reserved_low_addr()) && (p < reserved_high_addr());
+  }
 
   // Accessors (all sizes are bytes).
   size_t alignment()          const { return _alignment; }
@@ -85,6 +91,7 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
   char* committed_high_addr() const { return _committed_high_addr; }
   bool  special()             const { return _special; }
 
+  // Return size in bytes
   inline size_t committed_size()   const;
   inline size_t reserved_size()    const;
   inline size_t uncommitted_size() const;
