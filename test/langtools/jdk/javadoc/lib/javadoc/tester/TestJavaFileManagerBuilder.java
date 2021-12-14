@@ -32,9 +32,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -67,45 +66,44 @@ import java.util.function.Predicate;
 public class TestJavaFileManagerBuilder {
     private final StandardJavaFileManager fm;
     private Map<Method, BiFunction<JavaFileManager, Object[], Throwable>> fileManagerHandlers;
-    private final Map<Predicate<JavaFileObject>, Map<Method, BiFunction<JavaFileObject, Object[], Throwable>>> fileObjectHandlers;
+
+    private record FileObjectHandlers(Predicate<JavaFileObject> filter,
+                                      Map<Method, BiFunction<JavaFileObject, Object[], Throwable>> handlers) { }
+    private final List<FileObjectHandlers> fileObjectHandlers;
 
     public TestJavaFileManagerBuilder(StandardJavaFileManager fm) {
         this.fm = fm;
-        fileManagerHandlers = new LinkedHashMap<>();
-        fileObjectHandlers = new LinkedHashMap<>();
+        fileManagerHandlers = Collections.emptyMap();
+        fileObjectHandlers = new ArrayList<>();
     }
 
     /**
-     * Provides a function to be called when a given file manager method is called.
+     * Provides functions to be called when given file manager methods are called.
      * The function should either return an exception to be thrown, or {@code null}
      * to indicate that no exception should be thrown.
      *
-     * It is an error for the function to return a checked exception that is not
+     * It is an error for any function to return a checked exception that is not
      * declared by the method. This error will result in {@link UndeclaredThrowableException}
      * being thrown when the method is called.
      *
-     * @param method  the method for which to invoke the handler
-     * @param handler the handler
+     * @param handlers  a map giving the function to be called before a file manager method is invoked
      *
      * @return this object
-     * @throws IllegalArgumentException if the method is not declared in {@code JavaFileManager}
-     * @throws IllegalStateException if a handler is already registered for this method
+     * @throws IllegalArgumentException if any key in the map is a method that is not declared in {@code JavaFileManager}
      */
-    public TestJavaFileManagerBuilder handle(Method method,
-                                             BiFunction<JavaFileManager, Object[], Throwable> handler) {
-        if (!JavaFileManager.class.isAssignableFrom(method.getDeclaringClass())) {
-            throw new IllegalArgumentException(("not a method on JavaFileManager: " + method));
-        }
+    public TestJavaFileManagerBuilder handle(Map<Method, BiFunction<JavaFileManager, Object[], Throwable>> handlers) {
+        handlers.forEach((m, h) -> {
+            if (!JavaFileManager.class.isAssignableFrom(m.getDeclaringClass())) {
+                throw new IllegalArgumentException(("not a method on JavaFileManager: " + m));
+            }
+        });
 
-        var prev = fileManagerHandlers.put(method, handler);
-        if (prev != null) {
-            throw new IllegalStateException("handler already registered for method " + method);
-        }
+        fileManagerHandlers = handlers;
         return this;
     }
 
     /**
-     * Provides a function to be called when a given file object method is called,
+     * Provides functions to be called when given file object methods are called,
      * for file objects that match a given predicate.
      * The function should either return an exception to be thrown, or {@code null}
      * to indicate that no exception should be thrown.
@@ -113,6 +111,10 @@ public class TestJavaFileManagerBuilder {
      * It is an error for the function to return a checked exception that is not
      * declared by the method. This error will result in {@link UndeclaredThrowableException}
      * being thrown when the method is called.
+     *
+     * When subsequently finding the handlers to be used for a particular file object, the various
+     * predicates passed to this method will be tested in the order that they were registered.
+     * The handlers associated with the first matching predicate will be used.
      *
      * @apiNote Examples of predicates include:
      * <ul>
@@ -122,27 +124,22 @@ public class TestJavaFileManagerBuilder {
      * <li>using {@code Path} operations on the file object's {@link StandardJavaFileManager#asPath(FileObject) path}.
      * </ul>
      *
-     * @param filter  the predicate used to identify file objects for this handler
-     * @param method  the method for which to invoke the handler
-     * @param handler the handler
+     * @param filter    the predicate used to identify file objects for which the handlers are applicable
+     * @param handlers  a map giving the function to be called before a file object method is invoked
      *
      * @return this object
      * @throws IllegalArgumentException if the method is not declared in a class that is assignable
      *          to {@code FileObject}
-     * @throws IllegalStateException if a handler is already registered for this predicate and method
      */
     public TestJavaFileManagerBuilder handle(Predicate<JavaFileObject> filter,
-                                             Method method,
-                                             BiFunction<JavaFileObject, Object[], Throwable> handler) {
-        if (!FileObject.class.isAssignableFrom(method.getDeclaringClass())) {
-            throw new IllegalArgumentException(("not a method on FileObject: " + method));
-        }
+                                             Map<Method, BiFunction<JavaFileObject, Object[], Throwable>> handlers) {
+        handlers.forEach((m, h) -> {
+            if (!FileObject.class.isAssignableFrom(m.getDeclaringClass())) {
+                throw new IllegalArgumentException(("not a method on FileObject: " + m));
+            }
+        });
 
-        var map = fileObjectHandlers.computeIfAbsent(filter, p_ -> new HashMap<>());
-        var prev = map.put(method, handler);
-        if (prev != null) {
-            throw new IllegalStateException("handler already registered for '" + filter + "' method " + method);
-        }
+        fileObjectHandlers.add(new FileObjectHandlers(filter, handlers));
         return this;
     }
 
@@ -201,10 +198,10 @@ public class TestJavaFileManagerBuilder {
          * @return the proxy file object
          */
         private JavaFileObject wrap(JavaFileObject jfo) {
-            return fileObjectHandlers.entrySet().stream()
-                    .filter(e -> e.getKey().test(jfo))
+            return fileObjectHandlers.stream()
+                    .filter(e -> e.filter().test(jfo))
                     .findFirst()
-                    .map(e -> cache.computeIfAbsent(jfo, jfo_ -> createProxyFileObject(jfo_, e.getValue())))
+                    .map(e -> cache.computeIfAbsent(jfo, jfo_ -> createProxyFileObject(jfo_, e.handlers())))
                     .orElse(jfo);
         }
 

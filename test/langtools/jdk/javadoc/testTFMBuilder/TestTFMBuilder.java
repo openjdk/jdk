@@ -43,6 +43,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import javadoc.tester.JavadocTester;
 import javadoc.tester.TestJavaFileManagerBuilder;
@@ -105,8 +106,8 @@ public class TestTFMBuilder extends JavadocTester {
             // build a file manager that throws an exception when someFileObject is read
             StandardJavaFileManager tfm = new TestJavaFileManagerBuilder(fm)
                     .handle(jfo -> jfo.equals(someFileObject),
-                            JavaFileObject.class.getMethod("getCharContent", boolean.class),
-                            (fo, args) -> new TestException(fo.getName()))
+                            Map.of(JavaFileObject.class.getMethod("getCharContent", boolean.class),
+                                (fo, args) -> new TestException(fo.getName())))
                     .build();
 
             // access the "same" file object via the test file manager
@@ -149,13 +150,13 @@ public class TestTFMBuilder extends JavadocTester {
             Method getFileForInput_method = JavaFileManager.class.getMethod("getFileForInput",
                     JavaFileManager.Location.class, String.class, String.class);
             StandardJavaFileManager tfm = new TestJavaFileManagerBuilder(fm)
-                    .handle(getFileForInput_method,
-                            (fm_, args) -> {
-                                var relativeName = (String) args[2];
-                                return (relativeName.endsWith("C.properties"))
-                                    ? new TestException("getFileForInput: " + Arrays.asList(args))
-                                    :  null;
-                            })
+                    .handle(Map.of(getFileForInput_method,
+                                (fm_, args) -> {
+                                    var relativeName = (String) args[2];
+                                    return (relativeName.endsWith("C.properties"))
+                                            ? new TestException("getFileForInput: " + Arrays.asList(args))
+                                            : null;
+                                }))
                     .build();
 
             try {
@@ -183,8 +184,8 @@ public class TestTFMBuilder extends JavadocTester {
             // build a file manager that throws an exception when any *.java is read
             StandardJavaFileManager tfm = new TestJavaFileManagerBuilder(fm)
                     .handle(jfo -> jfo.getName().endsWith(".java"),
-                            JavaFileObject.class.getMethod("getCharContent", boolean.class),
-                            (fo, args) -> new TestException(fo.getName()))
+                            Map.of(JavaFileObject.class.getMethod("getCharContent", boolean.class),
+                                (fo, args) -> new TestException(fo.getName())))
                     .build();
 
             try {
@@ -215,8 +216,8 @@ public class TestTFMBuilder extends JavadocTester {
             StandardJavaFileManager tfm = new TestJavaFileManagerBuilder(fm)
                     .handle(jfo -> fm.asPath(jfo).startsWith(outDir.toAbsolutePath())
                                     && jfo.getName().endsWith(".html"),
-                            JavaFileObject.class.getMethod("openOutputStream"),
-                            (fo, args) -> new TestException(fo.getName()))
+                            Map.of(JavaFileObject.class.getMethod("openOutputStream"),
+                                (fo, args) -> new TestException(fo.getName())))
                     .build();
 
             try {
