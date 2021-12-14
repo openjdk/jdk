@@ -596,7 +596,7 @@ public:
   void do_cld(ClassLoaderData* cld) {
     assert(cld->is_alive(), "must be");
     _loaded_cld.append(cld);
-    _loaded_cld_handles.append(OopHandle(Universe::vm_global(), cld->holder_phantom()));
+    _loaded_cld_handles.append(OopHandle(Universe::vm_global(), cld->holder()));
   }
 
   int nof_cld() const                { return _loaded_cld.length(); }
