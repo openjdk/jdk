@@ -32,13 +32,13 @@
 
 inline ZMemory::ZMemory(zoffset start, size_t size) :
     _start(start),
-    _end(start + size) {}
+    _end(to_zoffset_end(start, size)) {}
 
 inline zoffset ZMemory::start() const {
   return _start;
 }
 
-inline zoffset ZMemory::end() const {
+inline zoffset_end ZMemory::end() const {
   return _end;
 }
 

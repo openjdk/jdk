@@ -30,11 +30,11 @@
 
 inline ZVirtualMemory::ZVirtualMemory() :
     _start(zoffset(UINTPTR_MAX)),
-    _end(zoffset(UINTPTR_MAX)) {}
+    _end(zoffset_end(UINTPTR_MAX)) {}
 
 inline ZVirtualMemory::ZVirtualMemory(zoffset start, size_t size) :
     _start(start),
-    _end(start + size) {}
+    _end(to_zoffset_end(start, size)) {}
 
 inline bool ZVirtualMemory::is_null() const {
   return _start == zoffset(UINTPTR_MAX);
@@ -44,7 +44,7 @@ inline zoffset ZVirtualMemory::start() const {
   return _start;
 }
 
-inline zoffset ZVirtualMemory::end() const {
+inline zoffset_end ZVirtualMemory::end() const {
   return _end;
 }
 

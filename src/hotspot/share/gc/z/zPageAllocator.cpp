@@ -236,10 +236,10 @@ class ZPreTouchTask : public ZTask {
 private:
   const ZPhysicalMemoryManager* const _physical;
   volatile zoffset                    _start;
-  const zoffset                       _end;
+  const zoffset_end                   _end;
 
 public:
-  ZPreTouchTask(const ZPhysicalMemoryManager* physical, zoffset start, zoffset end) :
+  ZPreTouchTask(const ZPhysicalMemoryManager* physical, zoffset start, zoffset_end end) :
       ZTask("ZPreTouchTask"),
       _physical(physical),
       _start(start),

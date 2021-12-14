@@ -26,6 +26,8 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/java.hpp"
+#include "utilities/formatBuffer.hpp"
 
 size_t     ZAddressHeapBaseShift;
 size_t     ZAddressHeapBase;
@@ -91,6 +93,13 @@ void ZGlobalsPointers::initialize() {
   ZAddressOffsetBits = ZPlatformAddressOffsetBits();
   ZAddressOffsetMask = (((uintptr_t)1 << ZAddressOffsetBits) - 1) << ZAddressOffsetShift;
   ZAddressOffsetMax = (uintptr_t)1 << ZAddressOffsetBits;
+
+  // Check max supported heap size
+  if (MaxHeapSize > ZAddressOffsetMax) {
+    vm_exit_during_initialization(
+        err_msg("Java heap too large (max supported heap size is " SIZE_FORMAT "G)",
+                ZAddressOffsetMax / G));
+  }
 
   ZAddressHeapBaseShift = ZPlatformAddressHeapBaseShift();
   ZAddressHeapBase = (uintptr_t)1 << ZAddressHeapBaseShift;

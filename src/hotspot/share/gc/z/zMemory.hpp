@@ -34,14 +34,14 @@ class ZMemory : public CHeapObj<mtGC> {
 
 private:
   zoffset            _start;
-  zoffset            _end;
+  zoffset_end        _end;
   ZListNode<ZMemory> _node;
 
 public:
   ZMemory(zoffset start, size_t size);
 
   zoffset start() const;
-  zoffset end() const;
+  zoffset_end end() const;
   size_t size() const;
 
   void shrink_from_front(size_t size);

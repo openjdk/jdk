@@ -136,7 +136,7 @@ inline zoffset ZPage::start() const {
   return _virtual.start();
 }
 
-inline zoffset ZPage::end() const {
+inline zoffset_end ZPage::end() const {
   return _virtual.end();
 }
 

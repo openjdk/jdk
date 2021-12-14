@@ -163,7 +163,7 @@ zoffset ZMemoryManager::alloc_high_address(size_t size) {
       } else {
         // Larger than requested, shrink area
         shrink_from_back(area, size);
-        return area->end();
+        return to_zoffset(area->end());
       }
     }
   }
@@ -174,7 +174,7 @@ zoffset ZMemoryManager::alloc_high_address(size_t size) {
 
 void ZMemoryManager::free(zoffset start, size_t size) {
   assert(start != zoffset(UINTPTR_MAX), "Invalid address");
-  const zoffset end = start + size;
+  const zoffset_end end = to_zoffset_end(start, size);
 
   ZLocker<ZLock> locker(&_lock);
 

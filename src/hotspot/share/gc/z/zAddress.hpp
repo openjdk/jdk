@@ -225,6 +225,8 @@ const int         ZPointerStoreGoodMaskLowOrderBitsOffset = LITTLE_ENDIAN_ONLY(0
 // - Virtual address range offsets
 // - Physical memory offsets
 enum class zoffset         : uintptr_t {};
+// Offsets including end of offset range
+enum class zoffset_end     : uintptr_t {};
 
 // Colored oop
 enum class zpointer        : uintptr_t { null = 0 };

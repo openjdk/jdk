@@ -36,12 +36,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
     _reserved(0),
     _initialized(false) {
 
-  // Check max supported heap size
-  if (max_capacity > ZAddressOffsetMax) {
-    log_error_p(gc)("Java heap too large (max supported heap size is " SIZE_FORMAT "G)",
-                    ZAddressOffsetMax / G);
-    return;
-  }
+  assert(max_capacity <= ZAddressOffsetMax, "Too large max_capacity");
 
   // Initialize platform specific parts before reserving address space
   pd_initialize_before_reserve();
@@ -127,8 +122,8 @@ bool ZVirtualMemoryManager::reserve_contiguous(size_t size) {
   const size_t unused = ZAddressOffsetMax - size;
   const size_t increment = MAX2(align_up(unused / 8192, ZGranuleSize), ZGranuleSize);
 
-  for (zoffset start = zoffset(0); start + size <= zoffset(ZAddressOffsetMax); start += increment) {
-    if (reserve_contiguous(start, size)) {
+  for (uintptr_t start = 0; start + size <= ZAddressOffsetMax; start += increment) {
+    if (reserve_contiguous(to_zoffset(start), size)) {
       // Success
       return true;
     }

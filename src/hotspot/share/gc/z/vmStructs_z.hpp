@@ -97,7 +97,7 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   nonstatic_field(ZForwardingTable,             _map,                 ZGranuleMapForForwarding)      \
                                                                                                      \
   nonstatic_field(ZVirtualMemory,               _start,               const zoffset)                 \
-  nonstatic_field(ZVirtualMemory,               _end,                 const zoffset)                 \
+  nonstatic_field(ZVirtualMemory,               _end,                 const zoffset_end)             \
                                                                                                      \
   nonstatic_field(ZForwarding,                  _virtual,             const ZVirtualMemory)          \
   nonstatic_field(ZForwarding,                  _object_alignment_shift, const size_t)               \
@@ -124,6 +124,7 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
 
 #define VM_TYPES_ZGC(declare_type, declare_toplevel_type, declare_integer_type)                      \
   declare_toplevel_type(zoffset)                                                                     \
+  declare_toplevel_type(zoffset_end)                                                                 \
   declare_toplevel_type(ZGlobalsForVMStructs)                                                        \
   declare_type(ZCollectedHeap, CollectedHeap)                                                        \
   declare_toplevel_type(ZHeap)                                                                       \

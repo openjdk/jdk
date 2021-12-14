@@ -101,7 +101,7 @@ public:
   bool is_young() const;
   bool is_old() const;
   zoffset start() const;
-  zoffset end() const;
+  zoffset_end end() const;
   size_t size() const;
   zoffset top() const;
   size_t remaining() const;

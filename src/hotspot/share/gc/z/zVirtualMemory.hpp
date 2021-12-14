@@ -30,8 +30,8 @@ class ZVirtualMemory {
   friend class VMStructs;
 
 private:
-  zoffset _start;
-  zoffset _end;
+  zoffset     _start;
+  zoffset_end _end;
 
 public:
   ZVirtualMemory();
@@ -39,7 +39,7 @@ public:
 
   bool is_null() const;
   zoffset start() const;
-  zoffset end() const;
+  zoffset_end end() const;
   size_t size() const;
 
   ZVirtualMemory split(size_t size);
