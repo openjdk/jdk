@@ -58,6 +58,22 @@ inline bool ZCollector::is_old() const {
   return _id == ZGenerationId::old;
 }
 
+inline ZYoungCollector* ZCollector::young() {
+  return _young;
+}
+
+inline ZOldCollector* ZCollector::old() {
+  return _old;
+}
+
+inline ZCollector* ZCollector::collector(ZGenerationId id) {
+  if (id == ZGenerationId::young) {
+    return _young;
+  } else {
+    return _old;
+  }
+}
+
 inline ZForwarding* ZCollector::forwarding(zaddress_unsafe addr) const {
   return _forwarding_table.get(addr);
 }

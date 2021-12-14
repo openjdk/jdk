@@ -193,11 +193,11 @@ static ZCollectedHeap* collected_heap() {
 }
 
 static ZYoungCollector* young_collector() {
-  return ZHeap::heap()->young_collector();
+  return ZCollector::young();
 }
 
 static ZOldCollector* old_collector() {
-  return ZHeap::heap()->old_collector();
+  return ZCollector::old();
 }
 
 class VM_ZMarkStartYoung : public VM_ZOperation {

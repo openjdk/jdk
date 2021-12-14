@@ -321,15 +321,15 @@ VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
 }
 
 void ZCollectedHeap::safepoint_synchronize_begin() {
-  ZHeap::heap()->young_collector()->synchronize_relocation();
-  ZHeap::heap()->old_collector()->synchronize_relocation();
+  ZCollector::young()->synchronize_relocation();
+  ZCollector::old()->synchronize_relocation();
   SuspendibleThreadSet::synchronize();
 }
 
 void ZCollectedHeap::safepoint_synchronize_end() {
   SuspendibleThreadSet::desynchronize();
-  ZHeap::heap()->old_collector()->desynchronize_relocation();
-  ZHeap::heap()->young_collector()->desynchronize_relocation();
+  ZCollector::old()->desynchronize_relocation();
+  ZCollector::young()->desynchronize_relocation();
 }
 
 void ZCollectedHeap::prepare_for_verify() {
@@ -342,8 +342,8 @@ void ZCollectedHeap::print_on(outputStream* st) const {
 
 void ZCollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr("ZGC Globals:");
-  st->print_cr(" Young Collector Phase/SeqNum: %s/%u", ZHeap::heap()->young_collector()->phase_to_string(), ZHeap::heap()->young_collector()->seqnum());
-  st->print_cr(" Old Collector Phase/SeqNum: %s/%u", ZHeap::heap()->old_collector()->phase_to_string(), ZHeap::heap()->old_collector()->seqnum());
+  st->print_cr(" Young Collector Phase/SeqNum: %s/%u", ZCollector::young()->phase_to_string(), ZCollector::young()->seqnum());
+  st->print_cr(" Old Collector Phase/SeqNum: %s/%u", ZCollector::old()->phase_to_string(), ZCollector::old()->seqnum());
   st->print_cr(" Offset Max:         " SIZE_FORMAT "%s (" PTR_FORMAT ")",
                byte_size_in_exact_unit(ZAddressOffsetMax),
                exact_unit_for_byte_size(ZAddressOffsetMax),

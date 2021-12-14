@@ -70,11 +70,6 @@ public:
   ZYoungGeneration* young_generation();
   ZOldGeneration* old_generation();
 
-  // Collectors
-  ZCollector* collector(ZGenerationId id);
-  ZYoungCollector* young_collector();
-  ZOldCollector* old_collector();
-
   // Heap metrics
   size_t initial_capacity() const;
   size_t min_capacity() const;

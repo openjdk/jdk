@@ -183,9 +183,9 @@ public:
     const size_t object_size = 16;
     const zaddress object = page.alloc_object(object_size);
 
-    ZHeap::heap()->young_collector()->set_phase(ZCollector::Phase::Mark);
-    ZHeap::heap()->young_collector()->set_phase(ZCollector::Phase::MarkComplete);
-    ZHeap::heap()->young_collector()->set_phase(ZCollector::Phase::Relocate);
+    ZCollector::young()->set_phase(ZCollector::Phase::Mark);
+    ZCollector::young()->set_phase(ZCollector::Phase::MarkComplete);
+    ZCollector::young()->set_phase(ZCollector::Phase::Relocate);
 
     //page.mark_object(object, dummy, dummy);
     {

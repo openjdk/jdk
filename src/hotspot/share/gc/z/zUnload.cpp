@@ -147,7 +147,7 @@ void ZUnload::unlink() {
 
   {
     MutexLocker ml(ClassLoaderDataGraph_lock);
-    unloading_occurred = SystemDictionary::do_unloading(ZHeap::heap()->old_collector()->gc_timer());
+    unloading_occurred = SystemDictionary::do_unloading(ZCollector::old()->gc_timer());
   }
 
   Klass::clean_weak_klass_links(unloading_occurred);

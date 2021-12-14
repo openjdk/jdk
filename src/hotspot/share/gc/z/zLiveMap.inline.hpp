@@ -40,7 +40,7 @@ inline void ZLiveMap::reset() {
 }
 
 inline bool ZLiveMap::is_marked(ZGenerationId id) const {
-  return Atomic::load_acquire(&_seqnum) == ZHeap::heap()->collector(id)->seqnum();
+  return Atomic::load_acquire(&_seqnum) == ZCollector::collector(id)->seqnum();
 }
 
 inline uint32_t ZLiveMap::live_objects() const {

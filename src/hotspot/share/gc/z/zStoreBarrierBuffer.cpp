@@ -177,16 +177,16 @@ void ZStoreBarrierBuffer::on_new_phase_remember(int i) {
     // were supposed to be part of the remembered sets that the GC scans.
     // However, it is too late to add those entries at this point, so instead
     // we perform the GC remembered set scanning up-front here.
-    ZHeap::heap()->young_collector()->scan_remembered_field(p);
+    ZCollector::young()->scan_remembered_field(p);
   } else {
     // The remembered set wasn't flipped in this phase shift,
     // so just add the remembered set entry.
-    ZHeap::heap()->young_collector()->remember(p);
+    ZCollector::young()->remember(p);
   }
 }
 
 bool ZStoreBarrierBuffer::is_old_mark() const {
-  return ZHeap::heap()->old_collector()->is_phase_mark();
+  return ZCollector::old()->is_phase_mark();
 }
 
 bool ZStoreBarrierBuffer::stored_during_old_mark() const {

@@ -33,6 +33,8 @@
 #include "gc/z/zVirtualMemory.hpp"
 #include "memory/allocation.hpp"
 
+class ZCollector;
+
 enum class ZPageResetType {
   // Normal allocation path
   Allocation,
@@ -75,7 +77,10 @@ private:
   bool is_live_bit_set(zaddress addr) const;
   bool is_strong_bit_set(zaddress addr) const;
 
-  void reset_seqnum(ZGenerationId id);
+  ZCollector* collector();
+  const ZCollector* collector() const;
+
+  void reset_seqnum();
   void reset_remembered_set(ZPageAge prev_age, ZPageResetType type);
 
   ZPage* split_with_pmem(uint8_t type, const ZPhysicalMemory& pmem);

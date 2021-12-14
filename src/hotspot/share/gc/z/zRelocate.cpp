@@ -627,7 +627,7 @@ private:
     }
 
     zaddress_unsafe addr_unsafe = ZPointer::uncolor_unsafe(ptr);
-    ZForwarding* forwarding = ZHeap::heap()->young_collector()->forwarding(addr_unsafe);
+    ZForwarding* forwarding = ZCollector::young()->forwarding(addr_unsafe);
 
     if (forwarding == NULL) {
       // Object isn't being relocated
@@ -706,8 +706,8 @@ private:
 
     if (promotion) {
       // Register the the promotion
-      ZHeap::heap()->young_collector()->in_place_relocate_promote(prev_page, new_page);
-      ZHeap::heap()->young_collector()->register_in_place_relocate_promoted(prev_page);
+      ZCollector::young()->in_place_relocate_promote(prev_page, new_page);
+      ZCollector::young()->register_in_place_relocate_promoted(prev_page);
     }
 
     return new_page;
@@ -942,7 +942,7 @@ public:
       });
 
       SuspendibleThreadSet::yield();
-      if (ZHeap::heap()->young_collector()->should_worker_stop()) {
+      if (ZCollector::young()->should_worker_stop()) {
         return;
       }
     }
@@ -956,7 +956,7 @@ private:
 public:
   ZRelocateAddRemsetForNormalPromoted() :
       ZRestartableTask("ZRelocateAddRemsetForNormalPromoted"),
-      _iter(ZHeap::heap()->young_collector()->forwarding_table()) {}
+      _iter(ZCollector::young()->forwarding_table()) {}
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
@@ -965,7 +965,7 @@ public:
       forwarding->oops_do_in_forwarded_via_table(remap_and_maybe_add_remset);
 
       SuspendibleThreadSet::yield();
-      return !ZHeap::heap()->young_collector()->should_worker_stop();
+      return !ZCollector::young()->should_worker_stop();
     });
   }
 };
@@ -1041,7 +1041,7 @@ public:
       new_page->reset(to_generation_id, to_age, ZPageResetType::FlipAging);
 
       if (promotion) {
-        ZHeap::heap()->young_collector()->flip_promote(prev_page, new_page);
+        ZCollector::young()->flip_promote(prev_page, new_page);
         // Defer promoted page registration times the lock is taken
         promoted_pages.push(prev_page);
       }
@@ -1049,7 +1049,7 @@ public:
       SuspendibleThreadSet::yield();
     }
 
-    ZHeap::heap()->young_collector()->register_flip_promoted(promoted_pages);
+    ZCollector::young()->register_flip_promoted(promoted_pages);
   }
 };
 

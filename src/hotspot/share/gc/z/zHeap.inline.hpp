@@ -59,22 +59,6 @@ inline ZOldGeneration* ZHeap::old_generation() {
   return &_old_generation;
 }
 
-inline ZCollector* ZHeap::collector(ZGenerationId id) {
-  if (id == ZGenerationId::young) {
-    return &_young_collector;
-  } else {
-    return &_old_collector;
-  }
-}
-
-inline ZYoungCollector* ZHeap::young_collector() {
-  return &_young_collector;
-}
-
-inline ZOldCollector* ZHeap::old_collector() {
-  return &_old_collector;
-}
-
 inline uint32_t ZHeap::hash_oop(zaddress addr) const {
   const zoffset offset = ZAddress::offset(addr);
   return ZHash::offset_to_uint32(offset);

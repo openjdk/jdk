@@ -117,8 +117,8 @@ public:
       _type(type),
       _size(size),
       _flags(flags),
-      _young_seqnum(ZHeap::heap()->young_collector()->seqnum()),
-      _old_seqnum(ZHeap::heap()->old_collector()->seqnum()),
+      _young_seqnum(ZCollector::young()->seqnum()),
+      _old_seqnum(ZCollector::old()->seqnum()),
       _flushed(0),
       _committed(0),
       _pages(),
@@ -378,15 +378,15 @@ void ZPageAllocator::increase_used(size_t size) {
 
   // Update atomically since we have concurrent readers
   const size_t used = Atomic::add(&_used, size);
-  ZHeap::heap()->young_collector()->update_used(used);
-  ZHeap::heap()->old_collector()->update_used(used);
+  ZCollector::young()->update_used(used);
+  ZCollector::old()->update_used(used);
 }
 
 void ZPageAllocator::decrease_used(size_t size) {
   // Update atomically since we have concurrent readers
   const size_t used = Atomic::sub(&_used, size);
-  ZHeap::heap()->young_collector()->update_used(used);
-  ZHeap::heap()->old_collector()->update_used(used);
+  ZCollector::young()->update_used(used);
+  ZCollector::old()->update_used(used);
 }
 
 void ZPageAllocator::decrease_used(size_t size, ZGenerationId id) {
@@ -888,11 +888,11 @@ void ZPageAllocator::disable_safe_recycle() const {
 }
 
 static bool has_alloc_seen_young(const ZPageAllocation* allocation) {
-  return allocation->young_seqnum() != ZHeap::heap()->young_collector()->seqnum();
+  return allocation->young_seqnum() != ZCollector::young()->seqnum();
 }
 
 static bool has_alloc_seen_old(const ZPageAllocation* allocation) {
-  return allocation->old_seqnum() != ZHeap::heap()->old_collector()->seqnum();
+  return allocation->old_seqnum() != ZCollector::old()->seqnum();
 }
 
 bool ZPageAllocator::is_alloc_stalling_for_old() const {

@@ -34,11 +34,11 @@
 
 #ifdef ASSERT
 static bool during_young_mark() {
-  return ZHeap::heap()->young_collector()->is_phase_mark();
+  return ZCollector::young()->is_phase_mark();
 }
 
 static bool during_old_mark() {
-  return ZHeap::heap()->old_collector()->is_phase_mark();
+  return ZCollector::old()->is_phase_mark();
 }
 
 static bool during_any_mark() {

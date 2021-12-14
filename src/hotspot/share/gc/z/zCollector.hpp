@@ -40,16 +40,21 @@
 
 class ThreadClosure;
 class ZForwardingTable;
+class ZOldCollector;
 class ZPage;
 class ZPageAllocator;
 class ZPageTable;
 class ZRelocationSetSelector;
+class ZYoungCollector;
 
 class ZCollector {
   friend class ZForwardingTest;
   friend class ZLiveMapTest;
 
 protected:
+  static ZYoungCollector* _young;
+  static ZOldCollector*   _old;
+
   enum class Phase {
     Mark,
     MarkComplete,
@@ -105,6 +110,10 @@ public:
   ZGenerationId id() const;
   bool is_young() const;
   bool is_old() const;
+
+  static ZYoungCollector* young();
+  static ZOldCollector* old();
+  static ZCollector* collector(ZGenerationId id);
 
   // Statistics
   void reset_statistics();

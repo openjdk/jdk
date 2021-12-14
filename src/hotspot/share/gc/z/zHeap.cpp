@@ -249,8 +249,8 @@ size_t ZHeap::free_pages(const ZArray<ZPage*>* pages) {
 }
 
 void ZHeap::mark_flush_and_free(Thread* thread) {
-  young_collector()->mark_flush_and_free(thread);
-  old_collector()->mark_flush_and_free(thread);
+  _young_collector.mark_flush_and_free(thread);
+  _old_collector.mark_flush_and_free(thread);
 }
 
 void ZHeap::keep_alive(oop obj) {
@@ -350,7 +350,7 @@ void ZHeap::verify() {
   // Heap verification can only be done between mark end and
   // relocate start. This is the only window where all oop are
   // good and the whole heap is in a consistent state.
-  guarantee(ZHeap::heap()->old_collector()->is_phase_mark_complete(), "Invalid phase");
+  guarantee(_old_collector.is_phase_mark_complete(), "Invalid phase");
 
   ZVerify::after_weak_processing();
 }

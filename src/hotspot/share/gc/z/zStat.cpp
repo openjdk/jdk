@@ -700,7 +700,7 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  ZCollector* const collector = ZHeap::heap()->collector(_id);
+  ZCollector* const collector = ZCollector::collector(_id);
 
   ZStatLoad::print();
   ZStatMMU::print();
@@ -848,10 +848,10 @@ void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& sta
 }
 
 ZStatTimerYoung::ZStatTimerYoung(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->young_collector()->gc_timer()) {}
+    ZStatTimer(phase, ZCollector::young()->gc_timer()) {}
 
 ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->old_collector()->gc_timer()) {}
+    ZStatTimer(phase, ZCollector::old()->gc_timer()) {}
 
 ZStatTimerWorker::ZStatTimerWorker(const ZStatPhase& phase) :
     ZStatTimer(phase, NULL /* gc_timer */) {

@@ -60,6 +60,9 @@ static const ZStatSubPhase ZSubPhaseConcurrentOldMarkRoots("Concurrent Old Mark 
 static const ZStatSubPhase ZSubPhaseConcurrentOldMarkFollow("Concurrent Old Mark Follow");
 static const ZStatSubPhase ZSubPhaseConcurrentOldRemapRootUncolored("Concurrent Old Remap Root Uncolored");
 
+ZYoungCollector* ZCollector::_young;
+ZOldCollector*   ZCollector::_old;
+
 ZCollector::ZCollector(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator) :
     _id(id),
     _page_allocator(page_allocator),
@@ -361,13 +364,13 @@ const char* ZCollector::phase_to_string() const {
 }
 
 ZYoungTypeSetter::ZYoungTypeSetter(ZYoungType type) {
-  ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
+  ZYoungCollector* const young_collector = ZCollector::young();
   assert(young_collector->_active_type == ZYoungType::none, "Invalid type");
   young_collector->_active_type = type;
 }
 
 ZYoungTypeSetter::~ZYoungTypeSetter() {
-  ZYoungCollector* const young_collector = ZHeap::heap()->young_collector();
+  ZYoungCollector* const young_collector = ZCollector::young();
   assert(young_collector->_active_type != ZYoungType::none, "Invalid type");
   young_collector->_active_type = ZYoungType::none;
 }
@@ -375,7 +378,9 @@ ZYoungTypeSetter::~ZYoungTypeSetter() {
 ZYoungCollector::ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     ZCollector(ZGenerationId::young, page_table, page_allocator),
     _active_type(ZYoungType::none),
-    _remembered(page_table, page_allocator) {}
+    _remembered(page_table, page_allocator) {
+  ZCollector::_young = this;
+}
 
 void ZYoungCollector::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
@@ -507,7 +512,9 @@ ZOldCollector::ZOldCollector(ZPageTable* page_table, ZPageAllocator* page_alloca
   _reference_processor(&_workers),
   _weak_roots_processor(&_workers),
   _unload(&_workers),
-  _total_collections_at_end(0) {}
+  _total_collections_at_end(0) {
+  ZCollector::_old = this;
+}
 
 void ZOldCollector::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");

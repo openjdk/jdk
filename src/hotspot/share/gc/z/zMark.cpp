@@ -266,7 +266,7 @@ private:
 
   static ReferenceDiscoverer* discoverer() {
     if (!finalizable) {
-      return ZHeap::heap()->old_collector()->reference_discoverer();
+      return ZCollector::old()->reference_discoverer();
     } else {
       return NULL;
     }
@@ -274,7 +274,7 @@ private:
 
   static bool visit_metadata() {
     // Only visit metadata if we're marking through the old collector
-    return ZHeap::heap()->old_collector()->is_phase_mark();
+    return ZCollector::old()->is_phase_mark();
   }
 
   const bool _visit_metadata;
@@ -521,8 +521,8 @@ public:
     // Flush GC threads
     if (_gc_threads) {
       SuspendibleThreadSet::synchronize();
-      ZHeap::heap()->young_collector()->threads_do(_cl);
-      ZHeap::heap()->old_collector()->threads_do(_cl);
+      ZCollector::young()->threads_do(_cl);
+      ZCollector::old()->threads_do(_cl);
       SuspendibleThreadSet::desynchronize();
     }
     // Flush VM thread
@@ -879,7 +879,7 @@ void ZMark::mark_roots() {
     workers()->run(&task);
   } else {
     // Mark from old-to-young pointers
-    ZHeap::heap()->young_collector()->scan_remembered_sets();
+    ZCollector::young()->scan_remembered_sets();
 
     ZMarkYoungGenRootsTask task(this);
     workers()->run(&task);

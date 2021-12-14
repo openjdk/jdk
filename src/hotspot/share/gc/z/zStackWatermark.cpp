@@ -197,7 +197,7 @@ void ZStackWatermark::start_processing_impl(void* context) {
   ZThreadLocalData::set_nmethod_disarmed(_jt, ZPointerStoreGoodMask);
 
   // Retire TLAB
-  if (ZHeap::heap()->young_collector()->is_phase_mark() || ZHeap::heap()->old_collector()->is_phase_mark()) {
+  if (ZCollector::young()->is_phase_mark() || ZCollector::old()->is_phase_mark()) {
     ZThreadLocalAllocBuffer::retire(_jt, &_stats);
   } else {
     ZThreadLocalAllocBuffer::remap(_jt);
