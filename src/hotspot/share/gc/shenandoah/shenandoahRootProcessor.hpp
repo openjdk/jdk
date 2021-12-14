@@ -200,11 +200,9 @@ private:
   ShenandoahVMRoots<false /*concurrent*/>                  _vm_roots;
   ShenandoahClassLoaderDataRoots<false /*concurrent*/>     _cld_roots;
   ShenandoahVMWeakRoots<false /*concurrent*/>              _weak_roots;
-  ShenandoahCodeCacheRoots                                 _code_roots;
 
 public:
   ShenandoahHeapIterationRootScanner(uint n_workers);
-  ~ShenandoahHeapIterationRootScanner();
 
   void roots_do(OopClosure* cl);
 };

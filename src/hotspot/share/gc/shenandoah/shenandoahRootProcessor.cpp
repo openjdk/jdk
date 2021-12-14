@@ -249,21 +249,35 @@ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner(uint n_wo
   _thread_roots(ShenandoahPhaseTimings::heap_iteration_roots, false /*is par*/),
   _vm_roots(ShenandoahPhaseTimings::heap_iteration_roots),
   _cld_roots(ShenandoahPhaseTimings::heap_iteration_roots, n_workers, true /*heap iteration*/),
-  _weak_roots(ShenandoahPhaseTimings::heap_iteration_roots),
-  _code_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
-  nmethod::oops_do_marking_prologue();
+  _weak_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
 }
 
-ShenandoahHeapIterationRootScanner::~ShenandoahHeapIterationRootScanner() {
-  nmethod::oops_do_marking_epilogue();
-}
+class ShenandoahMarkCodeBlobClosure : public CodeBlobClosure {
+private:
+  OopClosure* const _oops;
+  BarrierSetNMethod* const _bs_nm;
+
+public:
+  ShenandoahMarkCodeBlobClosure(OopClosure* oops) :
+    _oops(oops),
+    _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
+
+  virtual void do_code_blob(CodeBlob* cb) {
+    nmethod* const nm = cb->as_nmethod_or_null();
+    if (nm != nullptr) {
+      // Make sure it only sees to-space objects
+      _bs_nm->nmethod_entry_barrier(nm);
+      ShenandoahNMethod* const snm = ShenandoahNMethod::for_nmethod(nm);
+      snm->oops_do(_oops, false /*fix_relocations*/);
+    }
+  }
+};
 
 void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
   // Must use _claim_other to avoid interfering with concurrent CLDG iteration
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_other);
-  MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);
+  ShenandoahMarkCodeBlobClosure code(oops);
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
-  AlwaysTrueClosure always_true;
 
   ResourceMark rm;
 
@@ -273,6 +287,5 @@ void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
   _cld_roots.cld_do(&clds, 0);
 
   // Process heavy-weight/fully parallel roots the last
-  _code_roots.code_blobs_do(&code, 0);
   _thread_roots.threads_do(&tc_cl, 0);
 }
