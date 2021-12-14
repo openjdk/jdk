@@ -1408,6 +1408,28 @@ class ValidateEdgeMutuality : public BlockClosure {
   }
 };
 
+void IR::expand_with_neighborhood(BlockList& blocks) {
+  int original_size = blocks.length();
+  for (int h = 0; h < original_size; h++) {
+    BlockBegin* block = blocks.at(h);
+
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      if (blocks.contains(block->end()->sux_at(i))) continue;
+      blocks.append(block->end()->sux_at(i));
+    }
+
+    for (int i = 0; i < block->number_of_preds(); i++) {
+      if (blocks.contains(block->pred_at(i))) continue;
+      blocks.append(block->pred_at(i));
+    }
+
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+      if (blocks.contains(block->exception_handler_at(i))) continue;
+      blocks.append(block->exception_handler_at(i));
+    }
+  }
+}
+
 void IR::verify_local(BlockList& blocks) {
 #ifdef ASSERT
   EndNotNullValidator ennv;
