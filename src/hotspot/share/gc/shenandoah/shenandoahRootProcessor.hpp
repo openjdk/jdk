@@ -143,20 +143,6 @@ public:
   ShenandoahHeap* heap() const { return _heap; }
 };
 
-class ShenandoahRootScanner : public ShenandoahRootProcessor {
-private:
-  ShenandoahThreadRoots                                     _thread_roots;
-
-public:
-  ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahRootScanner();
-
-  void roots_do(uint worker_id, OopClosure* cl);
-
-private:
-  void roots_do(uint worker_id, OopClosure* oops, CodeBlobClosure* code, ThreadClosure* tc = NULL);
-};
-
 // STW root scanner
 class ShenandoahSTWRootScanner : public ShenandoahRootProcessor {
 private:
