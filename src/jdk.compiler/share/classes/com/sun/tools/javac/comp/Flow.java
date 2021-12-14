@@ -207,7 +207,6 @@ public class Flow {
     private final JCDiagnostic.Factory diags;
     private Env<AttrContext> attrEnv;
     private       Lint lint;
-    private final DeferredCompletionFailureHandler dcfh;
     private final boolean allowEffectivelyFinalInInnerClasses;
 
     public static Flow instance(Context context) {
@@ -332,7 +331,6 @@ public class Flow {
         lint = Lint.instance(context);
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        dcfh = DeferredCompletionFailureHandler.instance(context);
         Source source = Source.instance(context);
         allowEffectivelyFinalInInnerClasses = Feature.EFFECTIVELY_FINAL_IN_INNER_CLASSES.allowedInSource(source);
     }
@@ -693,7 +691,7 @@ public class Flow {
             }
             if (!tree.hasTotalPattern && exhaustiveSwitch &&
                 !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) &&
-                (constants == null || !isExhaustive(tree.selector.type, constants))) {
+                (constants == null || !isExhaustive(tree.selector.pos(), tree.selector.type, constants))) {
                 log.error(tree, Errors.NotExhaustiveStatement);
             }
             if (!tree.hasTotalPattern) {
@@ -728,7 +726,7 @@ public class Flow {
                 }
             }
             if (!tree.hasTotalPattern && !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) &&
-                !isExhaustive(tree.selector.type, constants)) {
+                !isExhaustive(tree.selector.pos(), tree.selector.type, constants)) {
                 log.error(tree, Errors.NotExhaustive);
             }
             alive = prevAlive;
@@ -751,7 +749,7 @@ public class Flow {
             }
         }
 
-        private void transitiveCovers(Type seltype, Set<Symbol> covered) {
+        private void transitiveCovers(DiagnosticPosition pos, Type seltype, Set<Symbol> covered) {
             List<Symbol> todo = List.from(covered);
             while (todo.nonEmpty()) {
                 Symbol sym = todo.head;
@@ -773,7 +771,7 @@ public class Flow {
                     case TYP -> {
                         for (Type sup : types.directSupertypes(sym.type)) {
                             if (sup.tsym.kind == TYP) {
-                                if (isTransitivelyCovered(seltype, sup.tsym, covered) &&
+                                if (isTransitivelyCovered(pos, seltype, sup.tsym, covered) &&
                                     covered.add(sup.tsym)) {
                                     todo = todo.prepend(sup.tsym);
                                 }
@@ -784,9 +782,8 @@ public class Flow {
             }
         }
 
-        private boolean isTransitivelyCovered(Type seltype, Symbol sealed, Set<Symbol> covered) {
-            DeferredCompletionFailureHandler.Handler prevHandler =
-                    dcfh.setHandler(dcfh.speculativeCodeHandler);
+        private boolean isTransitivelyCovered(DiagnosticPosition pos, Type seltype,
+                                              Symbol sealed, Set<Symbol> covered) {
             try {
                 if (covered.stream().anyMatch(c -> sealed.isSubClass(c, types)))
                     return true;
@@ -796,30 +793,30 @@ public class Flow {
                                                  .filter(s -> {
                                                      return types.isCastable(seltype, s.type/*, types.noWarnings*/);
                                                  })
-                                                 .allMatch(s -> isTransitivelyCovered(seltype, s, covered));
+                                                 .allMatch(s -> isTransitivelyCovered(pos, seltype, s, covered));
                 }
                 return false;
             } catch (CompletionFailure cf) {
-                //safe to ignore, the symbol will be un-completed when the speculative handler is removed.
-                return false;
-            } finally {
-                dcfh.setHandler(prevHandler);
+                chk.completionError(pos, cf);
+                return true;
             }
         }
 
-        private boolean isExhaustive(Type seltype, Set<Symbol> covered) {
-            transitiveCovers(seltype, covered);
+        private boolean isExhaustive(DiagnosticPosition pos, Type seltype, Set<Symbol> covered) {
+            transitiveCovers(pos, seltype, covered);
             return switch (seltype.getTag()) {
                 case CLASS -> {
                     if (seltype.isCompound()) {
                         if (seltype.isIntersection()) {
-                            yield ((Type.IntersectionClassType) seltype).getComponents().stream().anyMatch(t -> isExhaustive(t, covered));
+                            yield ((Type.IntersectionClassType) seltype).getComponents()
+                                                                        .stream()
+                                                                        .anyMatch(t -> isExhaustive(pos, t, covered));
                         }
                         yield false;
                     }
                     yield covered.contains(seltype.tsym);
                 }
-                case TYPEVAR -> isExhaustive(((TypeVar) seltype).getUpperBound(), covered);
+                case TYPEVAR -> isExhaustive(pos, ((TypeVar) seltype).getUpperBound(), covered);
                 default -> false;
             };
         }

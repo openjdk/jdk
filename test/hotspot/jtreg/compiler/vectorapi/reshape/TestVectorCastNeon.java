@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,29 @@
  * questions.
  */
 
+package compiler.vectorapi.reshape;
+
+import compiler.vectorapi.reshape.tests.TestVectorCast;
+import compiler.vectorapi.reshape.utils.TestCastMethods;
+import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
+
 /*
  * @test
- * @bug 8059100
- * @summary Test that you can decrease NMT tracking level but not increase it.
+ * @bug 8259610
+ * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail ChangeTrackingLevel
+ * @summary Test that vector cast intrinsics work as intended on neon.
+ * @requires vm.cpu.features ~= ".*simd.*"
+ * @library /test/lib /
+ * @run driver compiler.vectorapi.reshape.TestVectorCastNeon
  */
-
-import sun.hotspot.WhiteBox;
-
-public class ChangeTrackingLevel {
-
-    public static WhiteBox wb = WhiteBox.getWhiteBox();
-    public static void main(String args[]) throws Exception {
-        boolean testChangeLevel = wb.NMTChangeTrackingLevel();
-        if (testChangeLevel) {
-            System.out.println("NMT level change test passed.");
-        } else {
-            // it also fails if the VM asserts.
-            throw new RuntimeException("NMT level change test failed");
-        }
+public class TestVectorCastNeon {
+    public static void main(String[] args) {
+        VectorReshapeHelper.runMainHelper(
+                TestVectorCast.class,
+                TestCastMethods.NEON_CAST_TESTS.stream(),
+                "-XX:+UseNeon");
     }
-};
+}
+
+

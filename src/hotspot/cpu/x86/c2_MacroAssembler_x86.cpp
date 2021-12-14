@@ -485,6 +485,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
+    assert(!UseHeavyMonitors, "+UseHeavyMonitors and +UseRTMForStackLocks are mutually exclusive");
     rtm_stack_locking(objReg, tmpReg, scrReg, cx2Reg,
                       stack_rtm_counters, method_data, profile_rtm,
                       DONE_LABEL, IsInflated);
@@ -495,20 +496,25 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral
   jccb(Assembler::notZero, IsInflated);
 
-  // Attempt stack-locking ...
-  orptr (tmpReg, markWord::unlocked_value);
-  movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
-  lock();
-  cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
-  jcc(Assembler::equal, DONE_LABEL);           // Success
+  if (!UseHeavyMonitors) {
+    // Attempt stack-locking ...
+    orptr (tmpReg, markWord::unlocked_value);
+    movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
+    lock();
+    cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
+    jcc(Assembler::equal, DONE_LABEL);           // Success
 
-  // Recursive locking.
-  // The object is stack-locked: markword contains stack pointer to BasicLock.
-  // Locked by current thread if difference with current SP is less than one page.
-  subptr(tmpReg, rsp);
-  // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
-  andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
-  movptr(Address(boxReg, 0), tmpReg);
+    // Recursive locking.
+    // The object is stack-locked: markword contains stack pointer to BasicLock.
+    // Locked by current thread if difference with current SP is less than one page.
+    subptr(tmpReg, rsp);
+    // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
+    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
+    movptr(Address(boxReg, 0), tmpReg);
+  } else {
+    // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
+    testptr(objReg, objReg);
+  }
   jmp(DONE_LABEL);
 
   bind(IsInflated);
@@ -638,6 +644,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
+    assert(!UseHeavyMonitors, "+UseHeavyMonitors and +UseRTMForStackLocks are mutually exclusive");
     Label L_regular_unlock;
     movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // fetch markword
     andptr(tmpReg, markWord::lock_mask_in_place);                     // look at 2 lock bits
@@ -649,11 +656,15 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   }
 #endif
 
-  cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD);                   // Examine the displaced header
-  jcc   (Assembler::zero, DONE_LABEL);                              // 0 indicates recursive stack-lock
+  if (!UseHeavyMonitors) {
+    cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD);                   // Examine the displaced header
+    jcc   (Assembler::zero, DONE_LABEL);                              // 0 indicates recursive stack-lock
+  }
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Examine the object's markword
-  testptr(tmpReg, markWord::monitor_value);                         // Inflated?
-  jccb  (Assembler::zero, Stacked);
+  if (!UseHeavyMonitors) {
+    testptr(tmpReg, markWord::monitor_value);                         // Inflated?
+    jccb  (Assembler::zero, Stacked);
+  }
 
   // It's inflated.
 #if INCLUDE_RTM_OPT
@@ -795,11 +806,12 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   testl (boxReg, 0);                      // set ICC.ZF=1 to indicate success
   jmpb  (DONE_LABEL);
 
-  bind  (Stacked);
-  movptr(tmpReg, Address (boxReg, 0));      // re-fetch
-  lock();
-  cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
-
+  if (!UseHeavyMonitors) {
+    bind  (Stacked);
+    movptr(tmpReg, Address (boxReg, 0));      // re-fetch
+    lock();
+    cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+  }
 #endif
   bind(DONE_LABEL);
 }
@@ -4141,6 +4153,45 @@ void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XM
 }
 
 #ifdef _LP64
+void C2_MacroAssembler::vector_long_to_maskvec(XMMRegister dst, Register src, Register rtmp1,
+                                               Register rtmp2, XMMRegister xtmp, int mask_len,
+                                               int vec_enc) {
+  int index = 0;
+  int vindex = 0;
+  mov64(rtmp1, 0x0101010101010101L);
+  pdep(rtmp1, src, rtmp1);
+  if (mask_len > 8) {
+    movq(rtmp2, src);
+    vpxor(xtmp, xtmp, xtmp, vec_enc);
+    movq(xtmp, rtmp1);
+  }
+  movq(dst, rtmp1);
+
+  mask_len -= 8;
+  while (mask_len > 0) {
+    assert ((mask_len & 0x7) == 0, "mask must be multiple of 8");
+    index++;
+    if ((index % 2) == 0) {
+      pxor(xtmp, xtmp);
+    }
+    mov64(rtmp1, 0x0101010101010101L);
+    shrq(rtmp2, 8);
+    pdep(rtmp1, rtmp2, rtmp1);
+    pinsrq(xtmp, rtmp1, index % 2);
+    vindex = index / 2;
+    if (vindex) {
+      // Write entire 16 byte vector when both 64 bit
+      // lanes are update to save redundant instructions.
+      if (index % 2) {
+        vinsertf128(dst, dst, xtmp, vindex);
+      }
+    } else {
+      vmovdqu(dst, xtmp);
+    }
+    mask_len -= 8;
+  }
+}
+
 void C2_MacroAssembler::vector_mask_operation_helper(int opc, Register dst, Register tmp, int masklen) {
   switch(opc) {
     case Op_VectorMaskTrueCount:

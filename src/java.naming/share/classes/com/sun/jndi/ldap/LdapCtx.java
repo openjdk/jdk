@@ -2639,7 +2639,7 @@ public final class LdapCtx extends ComponentDirContext
 
    // ----------------- Connection  ---------------------
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() {
         try {
             close();

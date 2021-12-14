@@ -1265,12 +1265,6 @@ public:
   uint        _del_tick;               // Bumped when a deletion happens..
   #endif
 #endif
-public:
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    Unimplemented();
-    return false;
-  }
 };
 
 inline bool not_a_node(const Node* n) {
@@ -1834,5 +1828,40 @@ public:
   virtual void dump_compact_spec(outputStream *st) const;
 #endif
 };
+
+#include "opto/opcodes.hpp"
+
+#define Op_IL(op) \
+  inline int Op_ ## op(BasicType bt) { \
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs"); \
+  if (bt == T_INT) { \
+    return Op_## op ## I; \
+  } \
+  return Op_## op ## L; \
+}
+
+Op_IL(Add)
+Op_IL(Sub)
+Op_IL(Mul)
+Op_IL(URShift)
+Op_IL(LShift)
+Op_IL(Xor)
+Op_IL(Cmp)
+
+inline int Op_Cmp_unsigned(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    return Op_CmpU;
+  }
+  return Op_CmpUL;
+}
+
+inline int Op_Cast(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    return Op_CastII;
+  }
+  return Op_CastLL;
+}
 
 #endif // SHARE_OPTO_NODE_HPP
