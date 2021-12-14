@@ -37,6 +37,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -89,18 +90,29 @@ public class HtmlLinkFactory extends LinkFactory {
         }
         Content label = classLinkInfo.getClassLinkLabel(configuration);
         Set<ElementFlag> flags;
-        Element target;
+        Element previewTarget;
         boolean showPreview = !classLinkInfo.skipPreview;
         if (!hasWhere && showPreview) {
             flags = utils.elementFlags(typeElement);
-            target = typeElement;
+            previewTarget = typeElement;
         } else if ((classLinkInfo.context == HtmlLinkInfo.Kind.SEE_TAG || classLinkInfo.context == HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW) &&
                    classLinkInfo.targetMember != null && showPreview) {
             flags = utils.elementFlags(classLinkInfo.targetMember);
-            target = classLinkInfo.targetMember;
+            TypeElement enclosing = utils.getEnclosingTypeElement(classLinkInfo.targetMember);
+            Set<ElementFlag> enclosingFlags = utils.elementFlags(enclosing);
+            if (flags.contains(ElementFlag.PREVIEW) && enclosingFlags.contains(ElementFlag.PREVIEW)) {
+                if (enclosing.equals(m_writer.getCurrentPageElement())) {
+                    //skip the PREVIEW tag:
+                    flags = EnumSet.copyOf(flags);
+                    flags.remove(ElementFlag.PREVIEW);
+                }
+                previewTarget = enclosing;
+            } else {
+                previewTarget = classLinkInfo.targetMember;
+            }
         } else {
             flags = EnumSet.noneOf(ElementFlag.class);
-            target = null;
+            previewTarget = null;
         }
 
         Content link = new ContentBuilder();
@@ -115,7 +127,7 @@ public class HtmlLinkFactory extends LinkFactory {
                                 title));
                         if (flags.contains(ElementFlag.PREVIEW)) {
                             link.add(HtmlTree.SUP(m_writer.links.createLink(
-                                    filename.fragment(m_writer.htmlIds.forPreviewSection(target).name()),
+                                    filename.fragment(m_writer.htmlIds.forPreviewSection(previewTarget).name()),
                                     m_writer.contents.previewMark)));
                         }
                         return link;
@@ -130,7 +142,7 @@ public class HtmlLinkFactory extends LinkFactory {
                 if (flags.contains(ElementFlag.PREVIEW)) {
                     link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
                         typeElement,
-                        m_writer.htmlIds.forPreviewSection(target).name(),
+                        m_writer.htmlIds.forPreviewSection(previewTarget).name(),
                         m_writer.contents.previewMark,
                         null, false)));
                 }
@@ -192,7 +204,7 @@ public class HtmlLinkFactory extends LinkFactory {
      */
     protected Content getTypeParameterLink(LinkInfo linkInfo, TypeMirror typeParam) {
         HtmlLinkInfo typeLinkInfo = new HtmlLinkInfo(m_writer.configuration,
-                ((HtmlLinkInfo) linkInfo).getContext(), typeParam).skipPreview(true);
+                ((HtmlLinkInfo) linkInfo).getContext(), typeParam);
         typeLinkInfo.excludeTypeBounds = linkInfo.excludeTypeBounds;
         typeLinkInfo.excludeTypeParameterLinks = linkInfo.excludeTypeParameterLinks;
         typeLinkInfo.linkToSelf = linkInfo.linkToSelf;
