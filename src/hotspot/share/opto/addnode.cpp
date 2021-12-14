@@ -377,12 +377,14 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
-  // Convert (~x+1) into -x. Note there isn't a bitwise not bytecode,
-  // "~x" would typically represented as "x^(-1)", so (~x+1) will
-  // be (x^(-1))+1.
-  if (op1 == Op_Xor(bt) && phase->type(in2) == TypeInteger::one(bt) &&
+  // Convert (~x+c) into (c-1)-x. Note there isn't a bitwise not
+  // bytecode, "~x" would typically represented as "x^(-1)", so (~x+c)
+  // will be (x^(-1))+c.
+  if (op1 == Op_Xor(bt) &&
+      (in2->Opcode() == Op_ConI || in2->Opcode() == Op_ConL)  &&
       phase->type(in1->in(2)) == TypeInteger::minus_1(bt)) {
-    return SubNode::make(phase->makecon(TypeInteger::zero(bt)), in1->in(1), bt);
+    jlong c = phase->type(in(2))->isa_integer(bt)->get_con_as_long(bt);
+    return SubNode::make(phase->integercon(java_subtract(c, 1L), bt), in1->in(1), bt);
   }
   return AddNode::Ideal(phase, can_reshape);
 }
