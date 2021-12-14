@@ -6763,86 +6763,92 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* gctr_object = argument(7);
   Node* ghash_object = argument(8);
 
-  // (1) in, ct and out are arrays.
-  const Type* in_type = in->Value(&_gvn);
-  const Type* ct_type = ct->Value(&_gvn);
-  const Type* out_type = out->Value(&_gvn);
-  const TypeAryPtr* top_in = in_type->isa_aryptr();
-  const TypeAryPtr* top_ct = ct_type->isa_aryptr();
-  const TypeAryPtr* top_out = out_type->isa_aryptr();
-  assert(top_in != NULL && top_in->klass() != NULL &&
-         top_ct != NULL && top_ct->klass() != NULL &&
-         top_out != NULL && top_out->klass() != NULL, "args are strange");
+  // Set the original stack and the reexecute bit for the interpreter to reexecute
+  // implGCMCrypt0 if deoptimization happens.
+  { PreserveReexecuteState preexecs(this);
+    jvms()->set_should_reexecute(true);
 
-  // checks are the responsibility of the caller
-  Node* in_start = in;
-  Node* ct_start = ct;
-  Node* out_start = out;
-  if (inOfs != NULL || ctOfs != NULL || outOfs != NULL) {
-    assert(inOfs != NULL && ctOfs != NULL && outOfs != NULL, "");
-    in_start = array_element_address(in, inOfs, T_BYTE);
-    ct_start = array_element_address(ct, ctOfs, T_BYTE);
-    out_start = array_element_address(out, outOfs, T_BYTE);
+    // (1) in, ct and out are arrays.
+    const Type* in_type = in->Value(&_gvn);
+    const Type* ct_type = ct->Value(&_gvn);
+    const Type* out_type = out->Value(&_gvn);
+    const TypeAryPtr* top_in = in_type->isa_aryptr();
+    const TypeAryPtr* top_ct = ct_type->isa_aryptr();
+    const TypeAryPtr* top_out = out_type->isa_aryptr();
+    assert(top_in != NULL && top_in->klass() != NULL &&
+           top_ct != NULL && top_ct->klass() != NULL &&
+           top_out != NULL && top_out->klass() != NULL, "args are strange");
+
+    // checks are the responsibility of the caller
+    Node* in_start = in;
+    Node* ct_start = ct;
+    Node* out_start = out;
+    if (inOfs != NULL || ctOfs != NULL || outOfs != NULL) {
+      assert(inOfs != NULL && ctOfs != NULL && outOfs != NULL, "");
+      in_start = array_element_address(in, inOfs, T_BYTE);
+      ct_start = array_element_address(ct, ctOfs, T_BYTE);
+      out_start = array_element_address(out, outOfs, T_BYTE);
+    }
+
+    // if we are in this set of code, we "know" the embeddedCipher is an AESCrypt object
+    // (because of the predicated logic executed earlier).
+    // so we cast it here safely.
+    // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
+    Node* embeddedCipherObj = load_field_from_object(gctr_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
+    Node* counter = load_field_from_object(gctr_object, "counter", "[B");
+    Node* subkeyHtbl = load_field_from_object(ghash_object, "subkeyHtbl", "[J");
+    Node* state = load_field_from_object(ghash_object, "state", "[J");
+
+    if (embeddedCipherObj == NULL || counter == NULL || subkeyHtbl == NULL || state == NULL) {
+        return false;
+    }
+    // cast it to what we know it will be at runtime
+    const TypeInstPtr* tinst = _gvn.type(gctr_object)->isa_instptr();
+    assert(tinst != NULL, "GCTR obj is null");
+    assert(tinst->klass()->is_loaded(), "GCTR obj is not loaded");
+    ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+    assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
+    ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
+    const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
+    const TypeOopPtr* xtype = aklass->as_instance_type();
+    Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
+    aescrypt_object = _gvn.transform(aescrypt_object);
+    // we need to get the start of the aescrypt_object's expanded key array
+    Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
+    if (k_start == NULL) return false;
+
+    // similarly, get the start address of the r vector
+    Node* cnt_start = array_element_address(counter, intcon(0), T_BYTE);
+    Node* state_start = array_element_address(state, intcon(0), T_LONG);
+    Node* subkeyHtbl_start = array_element_address(subkeyHtbl, intcon(0), T_LONG);
+
+    ciKlass* klass = ciTypeArrayKlass::make(T_LONG);
+    Node* klass_node = makecon(TypeKlassPtr::make(klass));
+
+    // Does this target support this intrinsic?
+    if (Matcher::htbl_entries == -1) return false;
+
+    Node* subkeyHtbl_48_entries_start;
+    if (Matcher::htbl_entries != 0) {
+      // new array to hold 48 computed htbl entries
+      Node* subkeyHtbl_48_entries = new_array(klass_node, intcon(Matcher::htbl_entries), 0);
+      if (subkeyHtbl_48_entries == NULL) return false;
+      subkeyHtbl_48_entries_start = array_element_address(subkeyHtbl_48_entries, intcon(0), T_LONG);
+    } else {
+      // This target doesn't need the extra-large Htbl.
+      subkeyHtbl_48_entries_start = ConvL2X(intcon(0));
+    }
+
+    // Call the stub, passing params
+    Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                 OptoRuntime::galoisCounterMode_aescrypt_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, subkeyHtbl_48_entries_start, cnt_start);
+
+    // return cipher length (int)
+    Node* retvalue = _gvn.transform(new ProjNode(gcmCrypt, TypeFunc::Parms));
+    set_result(retvalue);
   }
-
-  // if we are in this set of code, we "know" the embeddedCipher is an AESCrypt object
-  // (because of the predicated logic executed earlier).
-  // so we cast it here safely.
-  // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
-  Node* embeddedCipherObj = load_field_from_object(gctr_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
-  Node* counter = load_field_from_object(gctr_object, "counter", "[B");
-  Node* subkeyHtbl = load_field_from_object(ghash_object, "subkeyHtbl", "[J");
-  Node* state = load_field_from_object(ghash_object, "state", "[J");
-
-  if (embeddedCipherObj == NULL || counter == NULL || subkeyHtbl == NULL || state == NULL) {
-      return false;
-  }
-  // cast it to what we know it will be at runtime
-  const TypeInstPtr* tinst = _gvn.type(gctr_object)->isa_instptr();
-  assert(tinst != NULL, "GCTR obj is null");
-  assert(tinst->klass()->is_loaded(), "GCTR obj is not loaded");
-  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
-  assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
-  ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
-  const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
-  const TypeOopPtr* xtype = aklass->as_instance_type();
-  Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
-  aescrypt_object = _gvn.transform(aescrypt_object);
-  // we need to get the start of the aescrypt_object's expanded key array
-  Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
-  if (k_start == NULL) return false;
-
-  // similarly, get the start address of the r vector
-  Node* cnt_start = array_element_address(counter, intcon(0), T_BYTE);
-  Node* state_start = array_element_address(state, intcon(0), T_LONG);
-  Node* subkeyHtbl_start = array_element_address(subkeyHtbl, intcon(0), T_LONG);
-
-  ciKlass* klass = ciTypeArrayKlass::make(T_LONG);
-  Node* klass_node = makecon(TypeKlassPtr::make(klass));
-
-  // Does this target support this intrinsic?
-  if (Matcher::htbl_entries == -1) return false;
-
-  Node* subkeyHtbl_48_entries_start;
-  if (Matcher::htbl_entries != 0) {
-    // new array to hold 48 computed htbl entries
-    Node* subkeyHtbl_48_entries = new_array(klass_node, intcon(Matcher::htbl_entries), 0);
-    if (subkeyHtbl_48_entries == NULL) return false;
-    subkeyHtbl_48_entries_start = array_element_address(subkeyHtbl_48_entries, intcon(0), T_LONG);
-  } else {
-    // This target doesn't need the extra-large Htbl.
-    subkeyHtbl_48_entries_start = ConvL2X(intcon(0));
-  }
-
-  // Call the stub, passing params
-  Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
-                               OptoRuntime::galoisCounterMode_aescrypt_Type(),
-                               stubAddr, stubName, TypePtr::BOTTOM,
-                               in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, subkeyHtbl_48_entries_start, cnt_start);
-
-  // return cipher length (int)
-  Node* retvalue = _gvn.transform(new ProjNode(gcmCrypt, TypeFunc::Parms));
-  set_result(retvalue);
   return true;
 }
 
