@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,6 @@ class ValueMap: public CompilationResourceObj {
   void kill_memory();
   void kill_field(ciField* field, bool all_offsets);
   void kill_array(ValueType* type);
-  void kill_exception();
   void kill_map(ValueMap* map);
   void kill_all();
 

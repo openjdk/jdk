@@ -139,6 +139,8 @@
 
 #define JAVA_18_VERSION                   62
 
+#define JAVA_19_VERSION                   63
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -4527,7 +4529,6 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
   const bool is_enum       = (flags & JVM_ACC_ENUM)       != 0;
   const bool is_annotation = (flags & JVM_ACC_ANNOTATION) != 0;
   const bool major_gte_1_5 = _major_version >= JAVA_1_5_VERSION;
-  const bool major_gte_14  = _major_version >= JAVA_14_VERSION;
 
   if ((is_abstract && is_final) ||
       (is_interface && !is_abstract) ||
@@ -4783,7 +4784,7 @@ bool ClassFileParser::verify_unqualified_name(const char* name,
 
 // Take pointer to a UTF8 byte string (not NUL-terminated).
 // Skip over the longest part of the string that could
-// be taken as a fieldname. Allow '/' if slash_ok is true.
+// be taken as a fieldname. Allow non-trailing '/'s if slash_ok is true.
 // Return a pointer to just past the fieldname.
 // Return NULL if no fieldname at all was found, or in the case of slash_ok
 // being true, we saw consecutive slashes (meaning we were looking for a
@@ -4857,7 +4858,7 @@ static const char* skip_over_field_name(const char* const name,
     }
     return (not_first_ch) ? old_p : NULL;
   }
-  return (not_first_ch) ? p : NULL;
+  return (not_first_ch && !last_is_slash) ? p : NULL;
 }
 
 // Take pointer to a UTF8 byte string (not NUL-terminated).
