@@ -36,6 +36,9 @@ import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 public class InstantiateHiddenClass {
+    // Prevent the following classes from being GC'ed too soon.
+    static Class<?> keptC1 = null;
+    static Class<?> keptC2 = null;
 
     static byte klassbuf[] = InMemoryJavaCompiler.compile("TestClass",
         "public class TestClass { " +
@@ -44,12 +47,16 @@ public class InstantiateHiddenClass {
         " } } ");
 
     public static void main(String[] args) throws Throwable {
+        boolean keepAlive = false;
+        if (args.length == 1 && args[0].equals("keep-alive")) {
+            keepAlive = true;
+        }
 
         // Test that a hidden class cannot be found through its name.
         try {
             Lookup lookup = MethodHandles.lookup();
-            Class<?> cl = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
-            Class.forName(cl.getName()).newInstance();
+            Class<?> c0 = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
+            Class.forName(c0.getName()).newInstance();
             throw new RuntimeException("Expected ClassNotFoundException not thrown");
         } catch (ClassNotFoundException e ) {
             // Test passed
@@ -62,6 +69,10 @@ public class InstantiateHiddenClass {
         Lookup lookup = MethodHandles.lookup();
         Class<?> c1 = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
         Class<?> c2 = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
+        if (keepAlive) {
+            keptC1 = c1; 
+            keptC2 = c2; 
+        }
         Object o1 = c1.newInstance();
         Object o2 = c2.newInstance();
         if (o1 == o2) {

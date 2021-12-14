@@ -28,6 +28,8 @@ import java.net.URLClassLoader;
 
 public class CustomLoaderApp {
     private static String className = "LambHello";
+    // Prevent the class from being GC'ed too soon.
+    private static Class keptC = null;
 
     public static void main(String args[]) throws Exception {
         String path = args[0];
@@ -37,13 +39,22 @@ public class CustomLoaderApp {
         System.out.println(url);
 
         boolean init = false;
-        if (args.length ==2 && args[1].equals("init")) {
+        if (args.length >= 2 && args[1].equals("init")) {
             init = true;
+        }
+
+        boolean keepAlive = false;
+        if (args[args.length - 1].equals("keep-alive")) {
+            keepAlive = true;
         }
 
         URLClassLoader urlClassLoader =
             new URLClassLoader("HelloClassLoader", urls, null);
         Class c = Class.forName(className, init, urlClassLoader);
+        if (keepAlive) {
+            keptC = c; 
+        }
+
         System.out.println(c);
         System.out.println(c.getClassLoader());
         if (c.getClassLoader() != urlClassLoader) {
