@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -933,24 +933,21 @@ public class BasicTableUI extends TableUI
             // the table, seems to have no effect.
 
             Component editorComp = table.getEditorComponent();
-            if (table.isEditing() && editorComp != null) {
-                if (editorComp instanceof JComponent) {
-                    JComponent component = (JComponent)editorComp;
-                    map = component.getInputMap(JComponent.WHEN_FOCUSED);
-                    Object binding = (map != null) ? map.get(keyStroke) : null;
-                    if (binding == null) {
-                        map = component.getInputMap(JComponent.
-                                         WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-                        binding = (map != null) ? map.get(keyStroke) : null;
-                    }
-                    if (binding != null) {
-                        ActionMap am = component.getActionMap();
-                        Action action = (am != null) ? am.get(binding) : null;
-                        if (action != null && SwingUtilities.
+            if (table.isEditing() && editorComp instanceof JComponent component) {
+                map = component.getInputMap(JComponent.WHEN_FOCUSED);
+                Object binding = (map != null) ? map.get(keyStroke) : null;
+                if (binding == null) {
+                    map = component.getInputMap(JComponent.
+                            WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+                    binding = (map != null) ? map.get(keyStroke) : null;
+                }
+                if (binding != null) {
+                    ActionMap am = component.getActionMap();
+                    Action action = (am != null) ? am.get(binding) : null;
+                    if (action != null && SwingUtilities.
                             notifyAction(action, keyStroke, e, component,
-                                         e.getModifiers())) {
-                            e.consume();
-                        }
+                                    e.getModifiers())) {
+                        e.consume();
                     }
                 }
             }
@@ -1485,8 +1482,8 @@ public class BasicTableUI extends TableUI
         Container parent = SwingUtilities.getUnwrappedParent(table);  // should be viewport
         if (parent != null) {
             parent = parent.getParent();  // should be the scrollpane
-            if (parent != null && parent instanceof JScrollPane) {
-                LookAndFeel.installBorder((JScrollPane)parent, "Table.scrollPaneBorder");
+            if (parent instanceof JScrollPane scrollPane) {
+                LookAndFeel.installBorder(scrollPane, "Table.scrollPaneBorder");
             }
         }
 

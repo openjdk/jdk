@@ -520,7 +520,7 @@ public class SwingUtilities2 {
                  * it to fit in the screen width. This distributes the spacing
                  * more evenly than directly laying out to the screen advances.
                  */
-                String trimmedText = trimTrailingSpaces(text);
+                String trimmedText = text.stripTrailing();
                 if (!trimmedText.isEmpty()) {
                     float screenWidth = (float) g2d.getFont().getStringBounds
                             (trimmedText, getFontRenderContext(c)).getWidth();
@@ -866,7 +866,7 @@ public class SwingUtilities2 {
                     String text = new String(data, offset, length);
                     TextLayout layout = new TextLayout(text, g2d.getFont(),
                                     deviceFontRenderContext);
-                    String trimmedText = trimTrailingSpaces(text);
+                    String trimmedText = text.stripTrailing();
                     if (!trimmedText.isEmpty()) {
                         float screenWidth = (float)g2d.getFont().
                             getStringBounds(trimmedText, frc).getWidth();
@@ -1319,14 +1319,6 @@ public class SwingUtilities2 {
      */
     static boolean isPrinting(Graphics g) {
         return (g instanceof PrinterGraphics || g instanceof PrintGraphics);
-    }
-
-    private static String trimTrailingSpaces(String s) {
-        int i = s.length() - 1;
-        while(i >= 0 && Character.isWhitespace(s.charAt(i))) {
-            i--;
-        }
-        return s.substring(0, i + 1);
     }
 
     private static AttributedCharacterIterator getTrimmedTrailingSpacesIterator

@@ -38,6 +38,7 @@
 #define NUM_CDS_REGIONS 7 // this must be the same as MetaspaceShared::n_regions
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
+#define CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION 12
 #define CURRENT_CDS_ARCHIVE_VERSION 12
 
 typedef struct CDSFileMapRegion {
@@ -59,7 +60,8 @@ typedef struct CDSFileMapRegion {
   char*   _mapped_base;       // Actually mapped address (NULL if this region is not mapped).
 } CDSFileMapRegion;
 
-// This portion of the archive file header must remain unchanged for _version >= 12.
+// This portion of the archive file header must remain unchanged for
+// _version >= CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION (12).
 // This makes it possible to read important information from a CDS archive created by
 // a different version of HotSpot, so that we can automatically regenerate the archive as necessary.
 typedef struct GenericCDSFileMapHeader {
@@ -67,12 +69,12 @@ typedef struct GenericCDSFileMapHeader {
   int          _crc;                      // header crc checksum
   int          _version;                  // CURRENT_CDS_ARCHIVE_VERSION of the jdk that dumped the this archive
   unsigned int _header_size;              // total size of the header, in bytes
-  unsigned int _base_archive_path_offset; // offset where the base archive name is stored
+  unsigned int _base_archive_name_offset; // offset where the base archive name is stored
                                           //   static archive:  0
                                           //   dynamic archive:
                                           //     0 for default base archive
                                           //     non-zero for non-default base archive
-                                          //       (char*)this + _base_archive_path_offset
+                                          //       (char*)this + _base_archive_name_offset
                                           //       points to a 0-terminated string for the base archive name
   unsigned int _base_archive_name_size;   // size of base archive name including ending '\0'
                                           //   static:  0

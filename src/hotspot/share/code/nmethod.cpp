@@ -924,7 +924,7 @@ void nmethod::print_on(outputStream* st, const char* msg) const {
       CompileTask::print(st, this, msg, /*short_form:*/ true);
       st->print_cr(" (" INTPTR_FORMAT ")", p2i(this));
     } else {
-      CompileTask::print(st, this, msg, /*short_form:*/ false, /* cr */ true, /* timestamp */ false);
+      CompileTask::print(st, this, msg, /*short_form:*/ false);
     }
   }
 }

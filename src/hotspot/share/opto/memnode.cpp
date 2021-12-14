@@ -1136,7 +1136,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
         return NULL;
       }
       // LoadVector/StoreVector needs additional check to ensure the types match.
-      if (store_Opcode() == Op_StoreVector) {
+      if (st->is_StoreVector()) {
         const TypeVect*  in_vt = st->as_StoreVector()->vect_type();
         const TypeVect* out_vt = as_LoadVector()->vect_type();
         if (in_vt != out_vt) {
@@ -1627,14 +1627,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       the_clone = x;            // Remember for possible deletion.
       // Alter data node to use pre-phi inputs
       if (this->in(0) == region) {
-        if (mem->is_Phi() && (mem->in(0) == region) && mem->in(i)->in(0) != NULL &&
-            MemNode::all_controls_dominate(address, region)) {
-          // Enable other optimizations such as loop predication which does not work
-          // if we directly pin the node to node `in`
-          x->set_req(0, mem->in(i)->in(0)); // Use same control as memory
-        } else {
-          x->set_req(0, in);
-        }
+        x->set_req(0, in);
       } else {
         x->set_req(0, NULL);
       }

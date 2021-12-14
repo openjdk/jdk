@@ -41,6 +41,12 @@
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
 
+inline bool G1STWIsAliveClosure::do_object_b(oop p) {
+  // An object is reachable if it is outside the collection set,
+  // or is inside and copied.
+  return !_g1h->is_in_cset(p) || p->is_forwarded();
+}
+
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
   return _policy->phase_times();
 }

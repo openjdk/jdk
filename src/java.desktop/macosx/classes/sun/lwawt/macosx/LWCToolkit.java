@@ -426,8 +426,7 @@ public final class LWCToolkit extends LWToolkit {
         // TODO Auto-generated method stub
     }
 
-    class OSXPlatformFont extends sun.awt.PlatformFont
-    {
+    static class OSXPlatformFont extends sun.awt.PlatformFont {
         OSXPlatformFont(String name, int style)
         {
             super(name, style);

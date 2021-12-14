@@ -40,6 +40,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -528,6 +529,13 @@ static SpecialFlag const special_jvm_flags[] = {
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
   { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+  { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
+  { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
+  { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
+  { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
+#ifdef PRODUCT
+  { "UseHeavyMonitors",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+#endif
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -1439,6 +1447,8 @@ bool Arguments::check_unsupported_cds_runtime_properties() {
     if (get_property(unsupported_properties[i]) != NULL) {
       if (RequireSharedSpaces) {
         warning("CDS is disabled when the %s option is specified.", unsupported_options[i]);
+      } else {
+        log_info(cds)("CDS is disabled when the %s option is specified.", unsupported_options[i]);
       }
       return true;
     }
@@ -2011,6 +2021,20 @@ bool Arguments::check_vm_args_consistency() {
     warning("Reserved Stack Area not supported on this platform");
   }
 #endif
+
+#if !defined(X86) && !defined(AARCH64) && !defined(PPC64)
+  if (UseHeavyMonitors) {
+    warning("UseHeavyMonitors is not fully implemented on this architecture");
+  }
+#endif
+#if (defined(X86) || defined(PPC64)) && !defined(ZERO)
+  if (UseHeavyMonitors && UseRTMForStackLocks) {
+    fatal("-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+  }
+#endif
+  if (VerifyHeavyMonitors && !UseHeavyMonitors) {
+    fatal("-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+  }
 
   return status;
 }
@@ -2864,6 +2888,17 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (FLAG_SET_CMDLINE(ErrorFileToStdout, true) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
+    } else if (match_option(option, "--finalization=", &tail)) {
+      if (strcmp(tail, "enabled") == 0) {
+        InstanceKlass::set_finalization_enabled(true);
+      } else if (strcmp(tail, "disabled") == 0) {
+        InstanceKlass::set_finalization_enabled(false);
+      } else {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid finalization value '%s', must be 'disabled' or 'enabled'.\n",
+                    tail);
+        return JNI_EINVAL;
+      }
     } else if (match_option(option, "-XX:+ExtendedDTraceProbes")) {
 #if defined(DTRACE_ENABLED)
       if (FLAG_SET_CMDLINE(ExtendedDTraceProbes, true) != JVMFlag::SUCCESS) {
@@ -3117,17 +3152,11 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     // TODO: revisit the following for the static archive case.
     set_mode_flags(_int);
   }
-  if (DumpSharedSpaces || ArchiveClassesAtExit != NULL) {
-    // Always verify non-system classes during CDS dump
-    if (!BytecodeVerificationRemote) {
-      BytecodeVerificationRemote = true;
-      log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
-    }
-  }
 
   // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit
   if (ArchiveClassesAtExit != NULL && RecordDynamicDumpInfo) {
-    log_info(cds)("RecordDynamicDumpInfo is for jcmd only, could not set with -XX:ArchiveClassesAtExit.");
+    jio_fprintf(defaultStream::output_stream(),
+                "-XX:+RecordDynamicDumpInfo cannot be used with -XX:ArchiveClassesAtExit.\n");
     return JNI_ERR;
   }
 
@@ -3142,6 +3171,14 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
   if (UseSharedSpaces && !DumpSharedSpaces && check_unsupported_cds_runtime_properties()) {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
+  }
+
+  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+    // Always verify non-system classes during CDS dump
+    if (!BytecodeVerificationRemote) {
+      BytecodeVerificationRemote = true;
+      log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
+    }
   }
 #endif
 
@@ -3412,7 +3449,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
   return vm_args->set_args(&options);
 }
 
-jint Arguments::set_shared_spaces_flags_and_archive_paths() {
+void Arguments::set_shared_spaces_flags_and_archive_paths() {
   if (DumpSharedSpaces) {
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");
@@ -3422,11 +3459,12 @@ jint Arguments::set_shared_spaces_flags_and_archive_paths() {
 #if INCLUDE_CDS
   // Initialize shared archive paths which could include both base and dynamic archive paths
   // This must be after set_ergonomics_flags() called so flag UseCompressedOops is set properly.
-  if (!init_shared_archive_paths()) {
-    return JNI_ENOMEM;
+  //
+  // UseSharedSpaces may be disabled if -XX:SharedArchiveFile is invalid.
+  if (DumpSharedSpaces || UseSharedSpaces) {
+    init_shared_archive_paths();
   }
 #endif  // INCLUDE_CDS
-  return JNI_OK;
 }
 
 #if INCLUDE_CDS
@@ -3475,7 +3513,9 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   char* cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len);
   cur_path[len] = '\0';
-  FileMapInfo::check_archive((const char*)cur_path, true /*is_static*/);
+  if (!FileMapInfo::check_archive((const char*)cur_path, true /*is_static*/)) {
+    return;
+  }
   *base_archive_path = cur_path;
 
   begin_ptr = ++end_ptr;
@@ -3487,67 +3527,93 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   len = end_ptr - begin_ptr;
   cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len + 1);
-  //cur_path[len] = '\0';
-  FileMapInfo::check_archive((const char*)cur_path, false /*is_static*/);
+  if (!FileMapInfo::check_archive((const char*)cur_path, false /*is_static*/)) {
+    return;
+  }
   *top_archive_path = cur_path;
 }
 
-bool Arguments::init_shared_archive_paths() {
-  if (ArchiveClassesAtExit != NULL) {
+void Arguments::init_shared_archive_paths() {
+  if (ArchiveClassesAtExit != nullptr) {
+    assert(!RecordDynamicDumpInfo, "already checked");
     if (DumpSharedSpaces) {
       vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
     }
-    if (FLAG_SET_CMDLINE(DynamicDumpSharedSpaces, true) != JVMFlag::SUCCESS) {
-      return false;
-    }
     check_unsupported_dumping_properties();
-    SharedDynamicArchivePath = os::strdup_check_oom(ArchiveClassesAtExit, mtArguments);
-  } else {
-    if (SharedDynamicArchivePath != nullptr) {
-      os::free(SharedDynamicArchivePath);
-      SharedDynamicArchivePath = nullptr;
-    }
   }
-  if (SharedArchiveFile == NULL) {
+
+  if (SharedArchiveFile == nullptr) {
     SharedArchivePath = get_default_shared_archive_path();
   } else {
     int archives = num_archives(SharedArchiveFile);
-    if (is_dumping_archive()) {
-      if (archives > 1) {
-        vm_exit_during_initialization(
-          "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
-      }
-      if (DynamicDumpSharedSpaces) {
-        if (os::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
-          vm_exit_during_initialization(
-            "Cannot have the same archive file specified for -XX:SharedArchiveFile and -XX:ArchiveClassesAtExit",
-            SharedArchiveFile);
-        }
-      }
+    assert(archives > 0, "must be");
+
+    if (is_dumping_archive() && archives > 1) {
+      vm_exit_during_initialization(
+        "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
     }
-    if (!is_dumping_archive()){
+
+    if (DumpSharedSpaces) {
+      assert(archives == 1, "must be");
+      // Static dump is simple: only one archive is allowed in SharedArchiveFile. This file
+      // will be overwritten no matter regardless of its contents
+      SharedArchivePath = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+    } else {
+      // SharedArchiveFile may specify one or two files. In case (c), the path for base.jsa
+      // is read from top.jsa
+      //    (a) 1 file:  -XX:SharedArchiveFile=base.jsa
+      //    (b) 2 files: -XX:SharedArchiveFile=base.jsa:top.jsa
+      //    (c) 2 files: -XX:SharedArchiveFile=top.jsa
+      //
+      // However, if either RecordDynamicDumpInfo or ArchiveClassesAtExit is used, we do not
+      // allow cases (b) and (c). Case (b) is already checked above.
+
       if (archives > 2) {
         vm_exit_during_initialization(
           "Cannot have more than 2 archive files specified in the -XX:SharedArchiveFile option");
       }
       if (archives == 1) {
-        char* temp_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+        char* base_archive_path = NULL;
         bool success =
-          FileMapInfo::get_base_archive_name_from_header(temp_archive_path, &SharedArchivePath);
+          FileMapInfo::get_base_archive_name_from_header(SharedArchiveFile, &base_archive_path);
         if (!success) {
-          SharedArchivePath = temp_archive_path;
+          no_shared_spaces("invalid archive");
+        } else if (base_archive_path == NULL) {
+          // User has specified a single archive, which is a static archive.
+          SharedArchivePath = const_cast<char *>(SharedArchiveFile);
         } else {
-          SharedDynamicArchivePath = temp_archive_path;
+          // User has specified a single archive, which is a dynamic archive.
+          SharedDynamicArchivePath = const_cast<char *>(SharedArchiveFile);
+          SharedArchivePath = base_archive_path; // has been c-heap allocated.
         }
       } else {
         extract_shared_archive_paths((const char*)SharedArchiveFile,
                                       &SharedArchivePath, &SharedDynamicArchivePath);
+        if (SharedArchivePath == NULL) {
+          assert(SharedDynamicArchivePath == NULL, "must be");
+          no_shared_spaces("invalid archive");
+        }
       }
-    } else { // CDS dumping
-      SharedArchivePath = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+
+      if (SharedDynamicArchivePath != nullptr) {
+        // Check for case (c)
+        if (RecordDynamicDumpInfo) {
+          vm_exit_during_initialization("-XX:+RecordDynamicDumpInfo is unsupported when a dynamic CDS archive is specified in -XX:SharedArchiveFile",
+                                        SharedArchiveFile);
+        }
+        if (ArchiveClassesAtExit != nullptr) {
+          vm_exit_during_initialization("-XX:ArchiveClassesAtExit is unsupported when a dynamic CDS archive is specified in -XX:SharedArchiveFile",
+                                        SharedArchiveFile);
+        }
+      }
+
+      if (ArchiveClassesAtExit != nullptr && os::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
+          vm_exit_during_initialization(
+            "Cannot have the same archive file specified for -XX:SharedArchiveFile and -XX:ArchiveClassesAtExit",
+            SharedArchiveFile);
+      }
     }
   }
-  return (SharedArchivePath != NULL);
 }
 #endif // INCLUDE_CDS
 
@@ -3999,8 +4065,7 @@ jint Arguments::apply_ergo() {
 
   GCConfig::arguments()->initialize();
 
-  result = set_shared_spaces_flags_and_archive_paths();
-  if (result != JNI_OK) return result;
+  set_shared_spaces_flags_and_archive_paths();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();

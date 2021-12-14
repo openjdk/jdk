@@ -83,6 +83,19 @@ public class MetaspaceTestManyArenasManyThreads extends MetaspaceTestWithThreads
         // Stop all threads.
         stopAllThreads();
 
+        // At this point a large number of Arenas will have died (see above), but we probably still have
+        //  some live arenas left. The chunk freelist will be full of free chunks. Maybe a bit fragmented,
+        //  with a healthy mixture of larger and smaller chunks, since we still have live arenas.
+        // These chunks are all committed still, since we did nothing to reclaim the storage. We now purge
+        //  the context manually to uncommit those chunks, in order to get a realistic number for
+        //  committed words (see checkStatistics()).
+        // Note: In real metaspace, this happens as part of the same GC which removes class loaders and
+        //  frees their metaspace arenas. All within CLDG::purge(). But since this test isolates the metaspace
+        //  context and does test it separately, GC and CLDG are not involved here. We need to purge manually.
+        //
+        // Purging uncommits all free chunks >= 64K/16K (MetaspaceReclaimPolicy=standard/aggressive).
+        context.purge();
+
         context.updateTotals();
         System.out.println("  ## Finished: " + context);
 

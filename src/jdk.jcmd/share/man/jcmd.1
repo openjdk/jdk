@@ -1,4 +1,4 @@
-.\" Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -179,6 +179,15 @@ Impact: Medium
 Permission: \f[CB]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
+.B \f[CB]Compiler.perfmap\f[R] (Linux only)
+Write map file for Linux perf tool.
+.RS
+.PP
+Impact: Low
+.PP
+Permission: \f[CB]java.lang.management.ManagementPermission(monitor)\f[R]
+.RE
+.TP
 .B \f[CB]Compiler.queue\f[R]
 Prints methods queued for compilation.
 .RS
@@ -246,6 +255,14 @@ The \f[I]options\f[R] must be specified using either \f[I]key\f[R] or
 .IP \[bu] 2
 \f[CB]\-all\f[R]: (Optional) Inspects all objects, including unreachable
 objects (BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]\-parallel\f[R]: (Optional) Number of parallel threads to use for
+heap inspection.
+0 (the default) means let the VM determine the number of threads to use.
+1 means use one thread (disable parallelism).
+For any other value the VM will try to use the specified number of
+threads, but might use fewer.
+(INT, 0)
 .RE
 .TP
 .B \f[CB]GC.finalizer_info\f[R]
@@ -275,6 +292,14 @@ The following \f[I]options\f[R] must be specified using either
 .IP \[bu] 2
 \f[CB]\-all\f[R]: (Optional) Dump all objects, including unreachable
 objects (BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]\-gz\f[R]: (Optional) If specified, the heap dump is written in
+gzipped format using the given compression level.
+1 (recommended) is the fastest, 9 the strongest compression.
+(INT, 1)
+.IP \[bu] 2
+\f[CB]\-overwrite\f[R]: (Optional) If specified, the dump file will be
+overwritten if it exists (BOOLEAN, false)
 .PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
@@ -441,8 +466,6 @@ If no filename is given, a filename is generated from the PID and the
 current date.
 The filename may also be a directory in which case, the filename is
 generated from the PID and the current date in the specified directory.
-If \f[CB]%p\f[R] and/or \f[CB]%t\f[R] is specified in the filename, it
-expands to the JVM\[aq]s PID and the current timestamp, respectively.
 (STRING, no default value)
 .IP \[bu] 2
 \f[CB]maxage\f[R]: (Optional) Length of time for dumping the flight
@@ -511,8 +534,6 @@ current date and is placed in the directory where the process was
 started.
 The filename may also be a directory in which case, the filename is
 generated from the PID and the current date in the specified directory.
-If \f[CB]%p\f[R] and/or \f[CB]%t\f[R] is specified in the filename, it
-expands to the JVM\[aq]s PID and the current timestamp, respectively.
 (STRING, no default value)
 .IP \[bu] 2
 \f[CB]maxage\f[R]: (Optional) Maximum time to keep the recorded data on
@@ -604,8 +625,6 @@ If no parameters are entered, then no recording is stopped.
 .IP \[bu] 2
 \f[CB]filename\f[R]: (Optional) Name of the file to which the recording is
 written when the recording is stopped.
-If \f[CB]%p\f[R] and/or \f[CB]%t\f[R] is specified in the filename, it
-expands to the JVM\[aq]s PID and the current timestamp, respectively.
 If no path is provided, the data from the recording is discarded.
 (STRING, no default value)
 .IP \[bu] 2
@@ -751,6 +770,15 @@ Stops the remote management agent.
 Impact: Low \-\-\- no impact
 .RE
 .TP
+.B \f[CB]System.trim_native_heap\f[R] (Linux only)
+Attempts to free up memory by trimming the C\-heap.
+.RS
+.PP
+Impact: Low
+.PP
+Permission: \f[CB]java.lang.management.ManagementPermission(control)\f[R]
+.RE
+.TP
 .B \f[CB]Thread.print\f[R] [\f[I]options\f[R]]
 Prints all threads with stacktraces.
 .RS
@@ -766,8 +794,53 @@ The following \f[I]options\f[R] must be specified using either
 .PP
 \f[I]options\f[R]:
 .IP \[bu] 2
+\f[CB]\-e\f[R]: (Optional) Print extended thread information (BOOLEAN,
+false)
+.IP \[bu] 2
 \f[CB]\-l\f[R]: (Optional) Prints \f[CB]java.util.concurrent\f[R] locks
 (BOOLEAN, false)
+.RE
+.TP
+.B \f[CB]VM.cds\f[R] [\f[I]arguments\f[R]]
+Dump a static or dynamic shared archive including all shareable classes.
+.RS
+.PP
+Impact: Medium \-\-\- pause time depends on number of loaded classes
+.PP
+Permission: \f[CB]java.lang.management.ManagementPermission(monitor)\f[R]
+.PP
+\f[I]arguments\f[R]:
+.IP \[bu] 2
+\f[CB]subcmd\f[R]: \f[CB]static_dump\f[R] | \f[CB]dynamic_dump\f[R] (STRING,
+no default value)
+.IP \[bu] 2
+\f[CB]filename\f[R]: (Optional) Name of the shared archive to be dumped
+(STRING, no default value)
+.RE
+.TP
+.B \f[CB]VM.classloaders\f[R] [\f[I]options\f[R]]
+Prints classloader hierarchy.
+.RS
+.PP
+Impact: Medium \-\-\- Depends on number of class loaders and classes
+loaded.
+.PP
+Permission: \f[CB]java.lang.management.ManagementPermission(monitor)\f[R]
+.PP
+The following \f[I]options\f[R] must be specified using either
+\f[I]key\f[R] or \f[I]key\f[R]\f[CB]=\f[R]\f[I]value\f[R] syntax.
+.PP
+\f[I]options\f[R]:
+.IP \[bu] 2
+\f[CB]show\-classes\f[R]: (Optional) Print loaded classes.
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]verbose\f[R]: (Optional) Print detailed information.
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]fold\f[R]: (Optional) Show loaders of the same name and class as
+one.
+(BOOLEAN, true)
 .RE
 .TP
 .B \f[CB]VM.classloader_stats\f[R]
@@ -829,6 +902,31 @@ Prints the loaded dynamic libraries.
 Impact: Low
 .PP
 Permission: \f[CB]java.lang.management.ManagementPermission(monitor)\f[R]
+.RE
+.TP
+.B \f[CB]VM.events\f[R] [\f[I]options\f[R]]
+Print VM event logs
+.RS
+.PP
+Impact: Low \-\-\- Depends on event log size.
+.PP
+Permission: \f[CB]java.lang.management.ManagementPermission(monitor)\f[R]
+.PP
+\f[I]options\f[R]:
+.PP
+\f[B]Note:\f[R]
+.PP
+The following \f[I]options\f[R] must be specified using either
+\f[I]key\f[R] or \f[I]key\f[R]\f[CB]=\f[R]\f[I]value\f[R] syntax.
+.IP \[bu] 2
+\f[CB]log\f[R]: (Optional) Name of log to be printed.
+If omitted, all logs are printed.
+(STRING, no default value)
+.IP \[bu] 2
+\f[CB]max\f[R]: (Optional) Maximum number of events to be printed (newest
+first).
+If omitted, all events are printed.
+(STRING, no default value)
 .RE
 .TP
 .B \f[CB]VM.info\f[R]
@@ -898,6 +996,48 @@ The following \f[I]options\f[R] must be specified using either
 .IP \[bu] 2
 \f[CB]\-all\f[R]: (Optional) Prints all flags supported by the VM
 (BOOLEAN, false).
+.RE
+.TP
+.B \f[CB]VM.metaspace\f[R] [\f[I]options\f[R]]
+Prints the statistics for the metaspace
+.RS
+.PP
+Impact: Medium \-\-\- Depends on number of classes loaded.
+.PP
+Permission: \f[CB]java.lang.management.ManagementPermission(monitor)\f[R]
+.PP
+\f[B]Note:\f[R]
+.PP
+The following \f[I]options\f[R] must be specified using either
+\f[I]key\f[R] or \f[I]key\f[R]\f[CB]=\f[R]\f[I]value\f[R] syntax.
+.PP
+\f[I]options\f[R]:
+.IP \[bu] 2
+\f[CB]basic\f[R]: (Optional) Prints a basic summary (does not need a
+safepoint).
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]show\-loaders\f[R]: (Optional) Shows usage by class loader.
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]show\-classes\f[R]: (Optional) If show\-loaders is set, shows loaded
+classes for each loader.
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]by\-chunktype\f[R]: (Optional) Break down numbers by chunk type.
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]by\-spacetype\f[R]: (Optional) Break down numbers by loader type.
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]vslist\f[R]: (Optional) Shows details about the underlying virtual
+space.
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]scale\f[R]: (Optional) Memory usage in which to scale.
+Valid values are: 1, KB, MB or GB (fixed scale) or "dynamic" for a
+dynamically chosen scale.
+(STRING, dynamic)
 .RE
 .TP
 .B \f[CB]VM.native_memory\f[R] [\f[I]options\f[R]]

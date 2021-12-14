@@ -1033,13 +1033,6 @@ public class ModuleDescriptor
 
             while (i < n) {
                 c = v.charAt(i);
-                if (c >= '0' && c <= '9')
-                    i = takeNumber(v, i, pre);
-                else
-                    i = takeString(v, i, pre);
-                if (i >= n)
-                    break;
-                c = v.charAt(i);
                 if (c == '.' || c == '-') {
                     i++;
                     continue;
@@ -1048,6 +1041,10 @@ public class ModuleDescriptor
                     i++;
                     break;
                 }
+                if (c >= '0' && c <= '9')
+                    i = takeNumber(v, i, pre);
+                else
+                    i = takeString(v, i, pre);
             }
 
             if (c == '+' && i >= n)
@@ -1055,17 +1052,14 @@ public class ModuleDescriptor
 
             while (i < n) {
                 c = v.charAt(i);
-                if (c >= '0' && c <= '9')
-                    i = takeNumber(v, i, build);
-                else
-                    i = takeString(v, i, build);
-                if (i >= n)
-                    break;
-                c = v.charAt(i);
                 if (c == '.' || c == '-' || c == '+') {
                     i++;
                     continue;
                 }
+                if (c >= '0' && c <= '9')
+                    i = takeNumber(v, i, build);
+                else
+                    i = takeString(v, i, build);
             }
 
             this.version = v;

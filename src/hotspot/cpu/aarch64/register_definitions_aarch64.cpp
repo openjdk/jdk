@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -187,6 +187,8 @@ REGISTER_DEFINITION(FloatRegister, z28);
 REGISTER_DEFINITION(FloatRegister, z29);
 REGISTER_DEFINITION(FloatRegister, z30);
 REGISTER_DEFINITION(FloatRegister, z31);
+
+REGISTER_DEFINITION(PRegister, pnoreg);
 
 REGISTER_DEFINITION(PRegister, p0);
 REGISTER_DEFINITION(PRegister, p1);

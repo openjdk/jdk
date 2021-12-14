@@ -41,7 +41,7 @@ public class CDSTestUtils {
     public static final String MSG_RANGE_ALREADT_IN_USE =
         "Unable to allocate region, java heap range is already in use.";
     public static final String MSG_DYNAMIC_NOT_SUPPORTED =
-        "DynamicDumpSharedSpaces is unsupported when base CDS archive is not loaded";
+        "-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded";
     public static final boolean DYNAMIC_DUMP = Boolean.getBoolean("test.dynamic.cds.archive");
 
     public interface Checker {
@@ -326,9 +326,7 @@ public class CDSTestUtils {
         // Special case -- sometimes Xshare:on fails because it failed to map
         // at given address. This behavior is platform-specific, machine config-specific
         // and can be random (see ASLR).
-        if (isUnableToMap(output)) {
-            throw new SkippedException(UnableToMapMsg);
-        }
+        checkMappingFailure(output);
 
         if (e != null) {
             throw e;
@@ -351,19 +349,28 @@ public class CDSTestUtils {
     //    instead of utilizing multiple messages.
     // These are suggestions to improve testibility of the VM. However, implementing them
     // could also improve usability in the field.
-    public static boolean isUnableToMap(OutputAnalyzer output) {
+    private static String hasUnableToMapMessage(OutputAnalyzer output) {
         String outStr = output.getOutput();
-        if ((output.getExitValue() == 1) &&
-            (outStr.contains(MSG_RANGE_NOT_WITHIN_HEAP) || outStr.contains(MSG_DYNAMIC_NOT_SUPPORTED))) {
-            return true;
+        if ((output.getExitValue() == 1)) {
+            if (outStr.contains(MSG_RANGE_NOT_WITHIN_HEAP)) {
+                return MSG_RANGE_NOT_WITHIN_HEAP;
+            }
+            if (outStr.contains(MSG_DYNAMIC_NOT_SUPPORTED)) {
+                return MSG_DYNAMIC_NOT_SUPPORTED;
+            }
         }
 
-        return false;
+        return null;
+    }
+
+    public static boolean isUnableToMap(OutputAnalyzer output) {
+        return hasUnableToMapMessage(output) != null;
     }
 
     public static void checkMappingFailure(OutputAnalyzer out) throws SkippedException {
-        if (isUnableToMap(out)) {
-            throw new SkippedException(UnableToMapMsg);
+        String match = hasUnableToMapMessage(out);
+        if (match != null) {
+            throw new SkippedException(UnableToMapMsg + ": " + match);
         }
     }
 
@@ -472,10 +479,7 @@ public class CDSTestUtils {
     public static OutputAnalyzer checkExecExpectError(OutputAnalyzer output,
                                              int expectedExitValue,
                                              String... extraMatches) throws Exception {
-        if (isUnableToMap(output)) {
-            throw new SkippedException(UnableToMapMsg);
-        }
-
+        checkMappingFailure(output);
         output.shouldHaveExitValue(expectedExitValue);
         checkMatches(output, extraMatches);
         return output;

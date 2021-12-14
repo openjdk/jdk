@@ -55,7 +55,7 @@ abstract class CKey implements Key, Length {
             this.hCryptKey = hCryptKey;
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         protected void finalize() throws Throwable {
             try {
                 synchronized(this) {

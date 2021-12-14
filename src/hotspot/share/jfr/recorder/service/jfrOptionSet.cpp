@@ -163,6 +163,7 @@ bool JfrOptionSet::allow_event_retransforms() {
 
 // default options for the dcmd parser
 const char* const default_repository = NULL;
+const char* const default_dumppath = NULL;
 const char* const default_global_buffer_size = "512k";
 const char* const default_num_global_buffers = "20";
 const char* const default_memory_size = "10m";
@@ -181,6 +182,13 @@ static DCmdArgument<char*> _dcmd_repository(
   "STRING",
   false,
   default_repository);
+
+static DCmdArgument<char*> _dcmd_dumppath(
+  "dumppath",
+  "Path to emergency dump",
+  "STRING",
+  false,
+  default_dumppath);
 
 static DCmdArgument<MemorySizeArgument> _dcmd_threadbuffersize(
   "threadbuffersize",
@@ -258,6 +266,7 @@ static DCmdParser _parser;
 
 static void register_parser_options() {
   _parser.add_dcmd_option(&_dcmd_repository);
+  _parser.add_dcmd_option(&_dcmd_dumppath);
   _parser.add_dcmd_option(&_dcmd_threadbuffersize);
   _parser.add_dcmd_option(&_dcmd_memorysize);
   _parser.add_dcmd_option(&_dcmd_globalbuffersize);
@@ -346,6 +355,18 @@ bool JfrOptionSet::configure(TRAPS) {
     configure._repository_path.set_value(repo_copy);
   }
 
+  configure._dump_path.set_is_set(_dcmd_dumppath.is_set());
+  char* dumppath = _dcmd_dumppath.value();
+  if (dumppath != NULL) {
+    const size_t len = strlen(dumppath);
+    char* dumppath_copy = JfrCHeapObj::new_array<char>(len + 1);
+    if (NULL == dumppath_copy) {
+      return false;
+    }
+    strncpy(dumppath_copy, dumppath, len + 1);
+    configure._dump_path.set_value(dumppath_copy);
+  }
+
   configure._stack_depth.set_is_set(_dcmd_stackdepth.is_set());
   configure._stack_depth.set_value(_dcmd_stackdepth.value());
 
@@ -373,6 +394,7 @@ bool JfrOptionSet::configure(TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, tty);
     CLEAR_PENDING_EXCEPTION;
+    tty->cr(); // java_lang_Throwable::print will not print '\n'
     return false;
   }
   return true;

@@ -30,8 +30,9 @@ import jdk.incubator.foreign.GroupLayout;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.NativeSymbol;
+import jdk.incubator.foreign.ResourceScope;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
-import jdk.internal.foreign.abi.UpcallHandler;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
@@ -86,8 +87,6 @@ public class CallArranger {
     }
 
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
-        SharedUtils.checkFunctionTypes(mt, cDesc, SysVx64Linker.ADDRESS_SIZE);
-
         CallingSequenceBuilder csb = new CallingSequenceBuilder(forUpcall);
 
         BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
@@ -134,14 +133,14 @@ public class CallArranger {
         return handle;
     }
 
-    public static UpcallHandler arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc) {
+    public static NativeSymbol arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, ResourceScope scope) {
         Bindings bindings = getBindings(mt, cDesc, true);
 
         if (bindings.isInMemoryReturn) {
             target = SharedUtils.adaptUpcallForIMR(target, true /* drop return, since we don't have bindings for it */);
         }
 
-        return ProgrammableUpcallHandler.make(CSysV, target, bindings.callingSequence);
+        return ProgrammableUpcallHandler.make(CSysV, target, bindings.callingSequence, scope);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
@@ -239,7 +238,7 @@ public class CallArranger {
         }
     }
 
-    static abstract class BindingCalculator {
+    abstract static class BindingCalculator {
         protected final StorageCalculator storageCalculator;
 
         protected BindingCalculator(boolean forArguments) {
@@ -280,7 +279,7 @@ public class CallArranger {
                     break;
                 }
                 case POINTER: {
-                    bindings.unboxAddress();
+                    bindings.unboxAddress(carrier);
                     VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
                     bindings.vmStore(storage, long.class);
                     break;

@@ -236,8 +236,8 @@ final class Byte512Vector extends ByteVector {
 
     @ForceInline
     final @Override
-    byte rOp(byte v, FBinOp f) {
-        return super.rOpTemplate(v, f);  // specialize
+    byte rOp(byte v, VectorMask<Byte> m, FBinOp f) {
+        return super.rOpTemplate(v, m, f);  // specialize
     }
 
     @Override
@@ -275,8 +275,20 @@ final class Byte512Vector extends ByteVector {
 
     @Override
     @ForceInline
+    public Byte512Vector lanewise(Unary op, VectorMask<Byte> m) {
+        return (Byte512Vector) super.lanewiseTemplate(op, Byte512Mask.class, (Byte512Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Byte512Vector lanewise(Binary op, Vector<Byte> v) {
         return (Byte512Vector) super.lanewiseTemplate(op, v);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Byte512Vector lanewise(Binary op, Vector<Byte> v, VectorMask<Byte> m) {
+        return (Byte512Vector) super.lanewiseTemplate(op, Byte512Mask.class, v, (Byte512Mask) m);  // specialize
     }
 
     /*package-private*/
@@ -288,11 +300,26 @@ final class Byte512Vector extends ByteVector {
 
     /*package-private*/
     @Override
+    @ForceInline Byte512Vector
+    lanewiseShift(VectorOperators.Binary op, int e, VectorMask<Byte> m) {
+        return (Byte512Vector) super.lanewiseShiftTemplate(op, Byte512Mask.class, e, (Byte512Mask) m);  // specialize
+    }
+
+    /*package-private*/
+    @Override
     @ForceInline
     public final
     Byte512Vector
-    lanewise(VectorOperators.Ternary op, Vector<Byte> v1, Vector<Byte> v2) {
+    lanewise(Ternary op, Vector<Byte> v1, Vector<Byte> v2) {
         return (Byte512Vector) super.lanewiseTemplate(op, v1, v2);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final
+    Byte512Vector
+    lanewise(Ternary op, Vector<Byte> v1, Vector<Byte> v2, VectorMask<Byte> m) {
+        return (Byte512Vector) super.lanewiseTemplate(op, Byte512Mask.class, v1, v2, (Byte512Mask) m);  // specialize
     }
 
     @Override
@@ -314,7 +341,7 @@ final class Byte512Vector extends ByteVector {
     @ForceInline
     public final byte reduceLanes(VectorOperators.Associative op,
                                     VectorMask<Byte> m) {
-        return super.reduceLanesTemplate(op, m);  // specialized
+        return super.reduceLanesTemplate(op, Byte512Mask.class, (Byte512Mask) m);  // specialized
     }
 
     @Override
@@ -327,7 +354,7 @@ final class Byte512Vector extends ByteVector {
     @ForceInline
     public final long reduceLanesToLong(VectorOperators.Associative op,
                                         VectorMask<Byte> m) {
-        return (long) super.reduceLanesTemplate(op, m);  // specialized
+        return (long) super.reduceLanesTemplate(op, Byte512Mask.class, (Byte512Mask) m);  // specialized
     }
 
     @ForceInline
@@ -362,6 +389,13 @@ final class Byte512Vector extends ByteVector {
     public final Byte512Mask compare(Comparison op, long s) {
         return super.compareTemplate(Byte512Mask.class, op, s);  // specialize
     }
+
+    @Override
+    @ForceInline
+    public final Byte512Mask compare(Comparison op, Vector<Byte> v, VectorMask<Byte> m) {
+        return super.compareTemplate(Byte512Mask.class, op, v, (Byte512Mask) m);
+    }
+
 
     @Override
     @ForceInline
@@ -419,6 +453,7 @@ final class Byte512Vector extends ByteVector {
                                   VectorMask<Byte> m) {
         return (Byte512Vector)
             super.rearrangeTemplate(Byte512Shuffle.class,
+                                    Byte512Mask.class,
                                     (Byte512Shuffle) shuffle,
                                     (Byte512Mask) m);  // specialize
     }
@@ -708,16 +743,12 @@ final class Byte512Vector extends ByteVector {
             AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
-            if (VSIZE == species.vectorBitSize()) {
-                Class<?> dtype = species.elementType();
-                Class<?> dmtype = species.maskType();
-                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    this.getClass(), ETYPE, VLENGTH,
-                    dmtype, dtype, VLENGTH,
-                    this, species,
-                    Byte512Mask::defaultMaskCast);
-            }
-            return this.defaultMaskCast(species);
+
+            return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                this.getClass(), ETYPE, VLENGTH,
+                species.maskType(), species.elementType(), VLENGTH,
+                this, species,
+                (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
 
         @Override
@@ -743,9 +774,9 @@ final class Byte512Vector extends ByteVector {
         public Byte512Mask and(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte512Mask m = (Byte512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Byte512Mask.class, byte.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a & b));
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Byte512Mask.class, null, byte.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
 
         @Override
@@ -753,9 +784,9 @@ final class Byte512Vector extends ByteVector {
         public Byte512Mask or(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte512Mask m = (Byte512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Byte512Mask.class, byte.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a | b));
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Byte512Mask.class, null, byte.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
         @ForceInline
@@ -763,9 +794,9 @@ final class Byte512Vector extends ByteVector {
         Byte512Mask xor(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte512Mask m = (Byte512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Byte512Mask.class, byte.class, VLENGTH,
-                                          this, m,
-                                          (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Byte512Mask.class, null, byte.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
 
         // Mask Query operations
@@ -773,22 +804,32 @@ final class Byte512Vector extends ByteVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Byte512Mask.class, byte.class, VLENGTH, this,
-                                                      (m) -> trueCountHelper(((Byte512Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Byte512Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Byte512Mask.class, byte.class, VLENGTH, this,
-                                                      (m) -> firstTrueHelper(((Byte512Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Byte512Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Byte512Mask.class, byte.class, VLENGTH, this,
-                                                      (m) -> lastTrueHelper(((Byte512Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Byte512Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(m.getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public long toLong() {
+            if (length() > Long.SIZE) {
+                throw new UnsupportedOperationException("too many lanes for one long");
+            }
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Byte512Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> toLongHelper(m.getBits()));
         }
 
         // Reductions
@@ -899,12 +940,27 @@ final class Byte512Vector extends ByteVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        return super.fromArray0Template(Byte512Mask.class, a, offset, (Byte512Mask) m);  // specialize
+    }
+
+
 
     @ForceInline
     @Override
     final
     ByteVector fromBooleanArray0(boolean[] a, int offset) {
         return super.fromBooleanArray0Template(a, offset);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m) {
+        return super.fromBooleanArray0Template(Byte512Mask.class, a, offset, (Byte512Mask) m);  // specialize
     }
 
     @ForceInline
@@ -917,8 +973,22 @@ final class Byte512Vector extends ByteVector {
     @ForceInline
     @Override
     final
+    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        return super.fromByteArray0Template(Byte512Mask.class, a, offset, (Byte512Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
     ByteVector fromByteBuffer0(ByteBuffer bb, int offset) {
         return super.fromByteBuffer0Template(bb, offset);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m) {
+        return super.fromByteBuffer0Template(Byte512Mask.class, bb, offset, (Byte512Mask) m);  // specialize
     }
 
     @ForceInline
@@ -931,9 +1001,39 @@ final class Byte512Vector extends ByteVector {
     @ForceInline
     @Override
     final
+    void intoArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        super.intoArray0Template(Byte512Mask.class, a, offset, (Byte512Mask) m);
+    }
+
+
+    @ForceInline
+    @Override
+    final
+    void intoBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m) {
+        super.intoBooleanArray0Template(Byte512Mask.class, a, offset, (Byte512Mask) m);
+    }
+
+    @ForceInline
+    @Override
+    final
     void intoByteArray0(byte[] a, int offset) {
         super.intoByteArray0Template(a, offset);  // specialize
     }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        super.intoByteArray0Template(Byte512Mask.class, a, offset, (Byte512Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m) {
+        super.intoByteBuffer0Template(Byte512Mask.class, bb, offset, (Byte512Mask) m);
+    }
+
 
     // End of specialized low-level memory operations.
 

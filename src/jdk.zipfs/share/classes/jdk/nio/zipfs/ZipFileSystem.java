@@ -1219,7 +1219,7 @@ class ZipFileSystem extends FileSystem {
         return zc.toString(name);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws IOException {
         close();
     }

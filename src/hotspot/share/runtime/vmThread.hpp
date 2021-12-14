@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_VMTHREAD_HPP
 #define SHARE_RUNTIME_VMTHREAD_HPP
 
+#include "runtime/atomic.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
@@ -59,6 +60,8 @@ public:
 
 class VMThread: public NamedThread {
  private:
+  volatile bool _is_running;
+
   static ThreadPriority _current_priority;
 
   static bool _should_terminate;
@@ -84,6 +87,7 @@ class VMThread: public NamedThread {
     guarantee(false, "VMThread deletion must fix the race with VM termination");
   }
 
+  bool is_running() const { return Atomic::load(&_is_running); }
 
   // Tester
   bool is_VM_thread() const                      { return true; }

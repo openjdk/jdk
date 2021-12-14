@@ -122,7 +122,7 @@ static jobject sAccessibilityClass = NULL;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:46];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:51];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
@@ -152,6 +152,11 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"ListAccessibility" forKey:@"list"];
     [rolesMap setObject:@"OutlineAccessibility" forKey:@"tree"];
     [rolesMap setObject:@"TableAccessibility" forKey:@"table"];
+    [rolesMap setObject:@"MenuBarAccessibility" forKey:@"menubar"];
+    [rolesMap setObject:@"MenuAccessibility" forKey:@"menu"];
+    [rolesMap setObject:@"MenuItemAccessibility" forKey:@"menuitem"];
+    [rolesMap setObject:@"MenuAccessibility" forKey:@"popupmenu"];
+    [rolesMap setObject:@"ProgressIndicatorAccessibility" forKey:@"progressbar"];
 
     /*
      * All the components below should be ignored by the accessibility subsystem,
@@ -1248,6 +1253,54 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_selectedCellsChanged
 {
     JNI_COCOA_ENTER(env);
         [ThreadUtilities performOnMainThread:@selector(postSelectedCellsChanged)
+                         on:(CommonComponentAccessibility *)jlong_to_ptr(element)
+                         withObject:nil
+                         waitUntilDone:NO];
+    JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuOpened
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuOpened
+    (JNIEnv *env, jclass jklass, jlong element)
+{
+    JNI_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThread:@selector(postMenuOpened)
+                         on:(CommonComponentAccessibility *)jlong_to_ptr(element)
+                         withObject:nil
+                         waitUntilDone:NO];
+    JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuClosed
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuClosed
+    (JNIEnv *env, jclass jklass, jlong element)
+{
+    JNI_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThread:@selector(postMenuClosed)
+                         on:(CommonComponentAccessibility *)jlong_to_ptr(element)
+                         withObject:nil
+                         waitUntilDone:NO];
+    JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuItemSelected
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuItemSelected
+    (JNIEnv *env, jclass jklass, jlong element)
+{
+    JNI_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThread:@selector(postMenuItemSelected)
                          on:(CommonComponentAccessibility *)jlong_to_ptr(element)
                          withObject:nil
                          waitUntilDone:NO];

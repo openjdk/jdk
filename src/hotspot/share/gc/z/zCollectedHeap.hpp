@@ -95,7 +95,7 @@ public:
   virtual GrowableArray<MemoryPool*> memory_pools();
 
   virtual void object_iterate(ObjectClosure* cl);
-  virtual ParallelObjectIterator* parallel_object_iterator(uint nworkers);
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint nworkers);
 
   virtual void keep_alive(oop obj);
 

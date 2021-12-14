@@ -356,6 +356,14 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   fi
   AC_SUBST(IS_GNU_TIME)
 
+  # Check if it's GNU date
+  check_date=`$DATE --version 2>&1 | $GREP GNU`
+  if test "x$check_date" != x; then
+    IS_GNU_DATE=yes
+  else
+    IS_GNU_DATE=no
+  fi
+
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     UTIL_REQUIRE_PROGS(DSYMUTIL, dsymutil)
     UTIL_REQUIRE_PROGS(MIG, mig)

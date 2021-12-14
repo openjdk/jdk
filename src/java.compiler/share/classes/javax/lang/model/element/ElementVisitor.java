@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,8 @@ import javax.lang.model.util.*;
  *
  * <p>Methods to accommodate new language constructs are expected to
  * be added as default methods to provide strong source compatibility,
- * as done for {@link visitModule visitModule}. The implementations of
+ * as done for {@link visitModule visitModule} and {@link
+ * visitRecordComponent visitRecordComponent}. The implementations of
  * the default methods will in turn call {@link visitUnknown
  * visitUnknown}, behavior that will be overridden in concrete
  * visitors supporting the source version with the new language

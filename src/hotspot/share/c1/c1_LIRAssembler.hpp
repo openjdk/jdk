@@ -197,6 +197,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null);
   void emit_compare_and_swap(LIR_OpCompareAndSwap* op);
   void emit_lock(LIR_OpLock* op);
+  void emit_load_klass(LIR_OpLoadKlass* op);
   void emit_call(LIR_OpJavaCall* op);
   void emit_rtcall(LIR_OpRTCall* op);
   void emit_profile_call(LIR_OpProfileCall* op);

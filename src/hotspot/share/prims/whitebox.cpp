@@ -703,37 +703,6 @@ WB_ENTRY(void, WB_NMTReleaseMemory(JNIEnv* env, jobject o, jlong addr, jlong siz
   os::release_memory((char *)(uintptr_t)addr, size);
 WB_END
 
-WB_ENTRY(jboolean, WB_NMTChangeTrackingLevel(JNIEnv* env))
-  // Test that we can downgrade NMT levels but not upgrade them.
-  if (MemTracker::tracking_level() == NMT_off) {
-    MemTracker::transition_to(NMT_off);
-    return MemTracker::tracking_level() == NMT_off;
-  } else {
-    assert(MemTracker::tracking_level() == NMT_detail, "Should start out as detail tracking");
-    MemTracker::transition_to(NMT_summary);
-    assert(MemTracker::tracking_level() == NMT_summary, "Should be summary now");
-
-    // Can't go to detail once NMT is set to summary.
-    MemTracker::transition_to(NMT_detail);
-    assert(MemTracker::tracking_level() == NMT_summary, "Should still be summary now");
-
-    // Shutdown sets tracking level to minimal.
-    MemTracker::shutdown();
-    assert(MemTracker::tracking_level() == NMT_minimal, "Should be minimal now");
-
-    // Once the tracking level is minimal, we cannot increase to summary.
-    // The code ignores this request instead of asserting because if the malloc site
-    // table overflows in another thread, it tries to change the code to summary.
-    MemTracker::transition_to(NMT_summary);
-    assert(MemTracker::tracking_level() == NMT_minimal, "Should still be minimal now");
-
-    // Really can never go up to detail, verify that the code would never do this.
-    MemTracker::transition_to(NMT_detail);
-    assert(MemTracker::tracking_level() == NMT_minimal, "Should still be minimal now");
-    return MemTracker::tracking_level() == NMT_minimal;
-  }
-WB_END
-
 WB_ENTRY(jint, WB_NMTGetHashSize(JNIEnv* env, jobject o))
   int hash_size = MallocSiteTable::hash_buckets();
   assert(hash_size > 0, "NMT hash_size should be > 0");
@@ -953,6 +922,72 @@ WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method
   } else {
     mh->set_not_compilable("WhiteBox", comp_level);
   }
+WB_END
+
+WB_ENTRY(jint, WB_GetMethodDecompileCount(JNIEnv* env, jobject o, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION_(env, 0);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  uint cnt = 0;
+  MethodData* mdo = mh->method_data();
+  if (mdo != NULL) {
+    cnt = mdo->decompile_count();
+  }
+  return cnt;
+WB_END
+
+// Get the trap count of a method for a specific reason. If the trap count for
+// that reason did overflow, this includes the overflow trap count of the method.
+// If 'reason' is NULL, the sum of the traps for all reasons will be returned.
+// This number includes the overflow trap count if the trap count for any reason
+// did overflow.
+WB_ENTRY(jint, WB_GetMethodTrapCount(JNIEnv* env, jobject o, jobject method, jstring reason_obj))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION_(env, 0);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  uint cnt = 0;
+  MethodData* mdo = mh->method_data();
+  if (mdo != NULL) {
+    ResourceMark rm(THREAD);
+    char* reason_str = (reason_obj == NULL) ?
+      NULL : java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(reason_obj));
+    bool overflow = false;
+    for (uint reason = 0; reason < mdo->trap_reason_limit(); reason++) {
+      if (reason_str != NULL && !strcmp(reason_str, Deoptimization::trap_reason_name(reason))) {
+        cnt = mdo->trap_count(reason);
+        // Count in the overflow trap count on overflow
+        if (cnt == (uint)-1) {
+          cnt = mdo->trap_count_limit() + mdo->overflow_trap_count();
+        }
+        break;
+      } else if (reason_str == NULL) {
+        uint c = mdo->trap_count(reason);
+        if (c == (uint)-1) {
+          c = mdo->trap_count_limit();
+          if (!overflow) {
+            // Count overflow trap count just once
+            overflow = true;
+            c += mdo->overflow_trap_count();
+          }
+        }
+        cnt += c;
+      }
+    }
+  }
+  return cnt;
+WB_END
+
+WB_ENTRY(jint, WB_GetDeoptCount(JNIEnv* env, jobject o, jstring reason_obj, jstring action_obj))
+  if (reason_obj == NULL && action_obj == NULL) {
+    return Deoptimization::total_deoptimization_count();
+  }
+  ResourceMark rm(THREAD);
+  const char *reason_str = (reason_obj == NULL) ?
+    NULL : java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(reason_obj));
+  const char *action_str = (action_obj == NULL) ?
+    NULL : java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(action_obj));
+
+  return Deoptimization::deoptimization_count(reason_str, action_str);
 WB_END
 
 WB_ENTRY(jint, WB_GetMethodEntryBci(JNIEnv* env, jobject o, jobject method))
@@ -2070,10 +2105,13 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
   };
 
   ReadMonitorsClosure rmc;
-  oop thread_oop = JNIHandles::resolve(thread_handle);
-  if (thread_oop != NULL) {
-    JavaThread* target = java_lang_Thread::thread(thread_oop);
-    Handshake::execute(&rmc, target);
+  if (thread_handle != NULL) {
+    ThreadsListHandle tlh;
+    JavaThread* target = nullptr;
+    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, NULL);
+    if (is_alive) {
+      Handshake::execute(&rmc, &tlh, target);
+    }
   }
   return rmc.executed();
 WB_END
@@ -2101,11 +2139,12 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
 
   if (all_threads) {
     Handshake::execute(&tsc);
-  } else {
-    oop thread_oop = JNIHandles::resolve(thread_handle);
-    if (thread_oop != NULL) {
-      JavaThread* target = java_lang_Thread::thread(thread_oop);
-      Handshake::execute(&tsc, target);
+  } else if (thread_handle != NULL) {
+    ThreadsListHandle tlh;
+    JavaThread* target = nullptr;
+    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, NULL);
+    if (is_alive) {
+      Handshake::execute(&tsc, &tlh, target);
     }
   }
   return tsc.num_threads_completed();
@@ -2129,11 +2168,14 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
   public:
     TraceSelfClosure(JavaThread* self_target) : AsyncHandshakeClosure("WB_TraceSelf"), _self(self_target) {}
   };
-  oop thread_oop = JNIHandles::resolve(thread_handle);
-  if (thread_oop != NULL) {
-    JavaThread* target = java_lang_Thread::thread(thread_oop);
-    TraceSelfClosure* tsc = new TraceSelfClosure(target);
-    Handshake::execute(tsc, target);
+  if (thread_handle != NULL) {
+    ThreadsListHandle tlh;
+    JavaThread* target = nullptr;
+    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, NULL);
+    if (is_alive) {
+      TraceSelfClosure* tsc = new TraceSelfClosure(target);
+      Handshake::execute(tsc, target);
+    }
   }
 WB_END
 
@@ -2494,7 +2536,6 @@ static JNINativeMethod methods[] = {
   {CC"NMTCommitMemory",     CC"(JJ)V",                (void*)&WB_NMTCommitMemory    },
   {CC"NMTUncommitMemory",   CC"(JJ)V",                (void*)&WB_NMTUncommitMemory  },
   {CC"NMTReleaseMemory",    CC"(JJ)V",                (void*)&WB_NMTReleaseMemory   },
-  {CC"NMTChangeTrackingLevel", CC"()Z",               (void*)&WB_NMTChangeTrackingLevel},
   {CC"NMTGetHashSize",      CC"()I",                  (void*)&WB_NMTGetHashSize     },
   {CC"NMTNewArena",         CC"(J)J",                 (void*)&WB_NMTNewArena        },
   {CC"NMTFreeArena",        CC"(J)V",                 (void*)&WB_NMTFreeArena       },
@@ -2520,6 +2561,13 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/reflect/Executable;Z)Z",         (void*)&WB_TestSetDontInlineMethod},
   {CC"getMethodCompilationLevel0",
       CC"(Ljava/lang/reflect/Executable;Z)I",         (void*)&WB_GetMethodCompilationLevel},
+  {CC"getMethodDecompileCount0",
+      CC"(Ljava/lang/reflect/Executable;)I",          (void*)&WB_GetMethodDecompileCount},
+  {CC"getMethodTrapCount0",
+      CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)I",
+                                                      (void*)&WB_GetMethodTrapCount},
+  {CC"getDeoptCount0",
+      CC"(Ljava/lang/String;Ljava/lang/String;)I",    (void*)&WB_GetDeoptCount},
   {CC"getMethodEntryBci0",
       CC"(Ljava/lang/reflect/Executable;)I",          (void*)&WB_GetMethodEntryBci},
   {CC"getCompileQueueSize",

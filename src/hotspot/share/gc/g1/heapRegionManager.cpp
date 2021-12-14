@@ -593,10 +593,6 @@ void HeapRegionManager::par_iterate(HeapRegionClosure* blk, HeapRegionClaimer* h
     }
     HeapRegion* r = _regions.get_by_index(index);
     // We'll ignore regions already claimed.
-    // However, if the iteration is specified as concurrent, the values for
-    // is_starts_humongous and is_continues_humongous can not be trusted,
-    // and we should just blindly iterate over regions regardless of their
-    // humongous status.
     if (hrclaimer->is_region_claimed(index)) {
       continue;
     }

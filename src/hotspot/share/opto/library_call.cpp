@@ -662,8 +662,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_shuffle_to_vector();
   case vmIntrinsics::_VectorLoadOp:
     return inline_vector_mem_operation(/*is_store=*/false);
+  case vmIntrinsics::_VectorLoadMaskedOp:
+    return inline_vector_mem_masked_operation(/*is_store*/false);
   case vmIntrinsics::_VectorStoreOp:
     return inline_vector_mem_operation(/*is_store=*/true);
+  case vmIntrinsics::_VectorStoreMaskedOp:
+    return inline_vector_mem_masked_operation(/*is_store=*/true);
   case vmIntrinsics::_VectorGatherOp:
     return inline_vector_gather_scatter(/*is_scatter*/ false);
   case vmIntrinsics::_VectorScatterOp:
@@ -5423,7 +5427,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
         Node* obja_adr_mem = memory(C->get_alias_index(obja_adr_t));
         Node* objb_adr_mem = memory(C->get_alias_index(objb_adr_t));
 
-        Node* vmask      = _gvn.transform(new VectorMaskGenNode(ConvI2X(casted_length), TypeVect::VECTMASK, elem_bt));
+        Node* vmask      = _gvn.transform(VectorMaskGenNode::make(ConvI2X(casted_length), elem_bt));
         Node* vload_obja = _gvn.transform(new LoadVectorMaskedNode(control(), obja_adr_mem, obja_adr, obja_adr_t, vt, vmask));
         Node* vload_objb = _gvn.transform(new LoadVectorMaskedNode(control(), objb_adr_mem, objb_adr, objb_adr_t, vt, vmask));
         Node* result     = _gvn.transform(new VectorCmpMaskedNode(vload_obja, vload_objb, vmask, TypeInt::INT));

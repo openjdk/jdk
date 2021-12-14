@@ -626,7 +626,7 @@ class Feedback {
         }
 
         /**
-         * Set mode. Create, changed, or delete a feedback mode. For @{code /set
+         * Set mode. Create, changed, or delete a feedback mode. For {@code /set
          * mode <mode> [<old-mode>] [-command|-quiet|-delete|-retain]}.
          *
          * @return true if successful

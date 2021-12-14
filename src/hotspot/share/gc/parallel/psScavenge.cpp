@@ -799,7 +799,6 @@ void PSScavenge::initialize() {
   _ref_processor =
     new ReferenceProcessor(&_span_based_discoverer,
                            ParallelGCThreads,          // mt processing degree
-                           true,                       // mt discovery
                            ParallelGCThreads,          // mt discovery degree
                            false,                      // concurrent_discovery
                            NULL);                      // header provides liveness info

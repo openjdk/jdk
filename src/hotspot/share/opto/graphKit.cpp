@@ -580,11 +580,10 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
       ex_obj = env()->ArrayIndexOutOfBoundsException_instance();
       break;
     case Deoptimization::Reason_class_check:
-      if (java_bc() == Bytecodes::_aastore) {
-        ex_obj = env()->ArrayStoreException_instance();
-      } else {
-        ex_obj = env()->ClassCastException_instance();
-      }
+      ex_obj = env()->ClassCastException_instance();
+      break;
+    case Deoptimization::Reason_array_check:
+      ex_obj = env()->ArrayStoreException_instance();
       break;
     default:
       break;
@@ -3340,7 +3339,10 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
         // It needs a null check because a null will *pass* the cast check.
         // A non-null value will always produce an exception.
         if (!objtp->maybe_null()) {
-          builtin_throw(Deoptimization::Reason_class_check, makecon(TypeKlassPtr::make(objtp->klass())));
+          bool is_aastore = (java_bc() == Bytecodes::_aastore);
+          Deoptimization::DeoptReason reason = is_aastore ?
+            Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
+          builtin_throw(reason, makecon(TypeKlassPtr::make(objtp->klass())));
           return top();
         } else if (!too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
           return null_assert(obj);
@@ -3422,7 +3424,10 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
       if (not_subtype_ctrl != top()) { // If failure is possible
         PreserveJVMState pjvms(this);
         set_control(not_subtype_ctrl);
-        builtin_throw(Deoptimization::Reason_class_check, load_object_klass(not_null_obj));
+        bool is_aastore = (java_bc() == Bytecodes::_aastore);
+        Deoptimization::DeoptReason reason = is_aastore ?
+          Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
+        builtin_throw(reason, load_object_klass(not_null_obj));
       }
     } else {
       (*failure_control) = not_subtype_ctrl;

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
@@ -765,6 +766,7 @@ jint universe_init() {
   Universe::_do_stack_walk_cache = new LatestMethodCache();
 
 #if INCLUDE_CDS
+  DynamicArchive::check_for_dynamic_dump();
   if (UseSharedSpaces) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.).  After that, access to
