@@ -106,7 +106,6 @@ class PSOldPromotionLAB : public PSPromotionLAB {
 
  public:
   PSOldPromotionLAB() : _start_array(NULL) { }
-  PSOldPromotionLAB(ObjectStartArray* start_array) : _start_array(start_array) { }
 
   void set_start_array(ObjectStartArray* start_array) { _start_array = start_array; }
 
