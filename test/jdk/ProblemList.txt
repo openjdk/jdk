@@ -567,7 +567,6 @@ com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
-java/lang/management/ThreadMXBean/ThreadLists.java              8132785 generic-all
 
 sun/management/jdp/JdpDefaultsTest.java                         8241865 linux-aarch64,macosx-all
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
@@ -749,7 +748,7 @@ javax/swing/JMenu/4515762/bug4515762.java 8276074 macosx-all
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
-javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-aarch64
+javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 
 ############################################################################
 
