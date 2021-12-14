@@ -49,6 +49,18 @@ import org.testng.annotations.Test;
  * @run testng/othervm -XX:-TieredCompilation -XX:CompileThreshold=100 compiler.vectorapi.VectorMaskLoadStoreTest
  */
 
+/**
+ * @test
+ * @bug 8278584
+ * @library /test/lib
+ * @summary Test the codegen for C2's VectorLongToMaskNode
+ *          "-XX:DisableIntrinsic=_VectorMaskOp" is required to break "VectorMaskToLong (VectorLongToMask l) ==> l" opt.
+ *          This is because when _VectorMaskOp is disabled, VectorMaskToLong won't be generated.
+ * @modules jdk.incubator.vector
+ *
+ * @run testng/othervm -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+UnlockDiagnosticVMOptions
+ *                     -XX:DisableIntrinsic=_VectorMaskOp compiler.vectorapi.VectorMaskLoadStoreTest
+ */
 
 public class VectorMaskLoadStoreTest{
 
