@@ -143,13 +143,9 @@ void PSVirtualSpace::verify() const {
          "bad reserved addrs");
   assert(committed_low_addr() <= committed_high_addr(), "bad committed addrs");
 
-  if (grows_up()) {
-    assert(reserved_low_addr() == committed_low_addr(), "bad low addrs");
-    assert(reserved_high_addr() >= committed_high_addr(), "bad high addrs");
-  } else {
-    assert(reserved_high_addr() == committed_high_addr(), "bad high addrs");
-    assert(reserved_low_addr() <= committed_low_addr(), "bad low addrs");
-  }
+  // committed addr grows up
+  assert(reserved_low_addr() == committed_low_addr(), "bad low addrs");
+  assert(reserved_high_addr() >= committed_high_addr(), "bad high addrs");
 }
 
 #endif // #ifndef PRODUCT

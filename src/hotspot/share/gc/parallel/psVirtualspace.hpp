@@ -103,8 +103,6 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
           bool is_aligned(size_t val) const;
           bool is_aligned(char* val) const;
           void verify() const;
-  virtual bool grows_up() const   { return true; }
-          bool grows_down() const { return !grows_up(); }
 
   // Helper class to verify a space when entering/leaving a block.
   class PSVirtualSpaceVerifier: public StackObj {
