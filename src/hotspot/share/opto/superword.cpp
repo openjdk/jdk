@@ -108,20 +108,9 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 
   if (!cl->is_valid_counted_loop(T_INT)) return; // skip malformed counted loop
 
-  bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
-  if (post_loop_allowed) {
-    if (cl->is_reduction_loop()) return; // no predication mapping
-    Node *limit = cl->limit();
-    if (limit->is_Con()) return; // non constant limits only
-    // Now check the limit for expressions we do not handle
-    if (limit->is_Add()) {
-      Node *in2 = limit->in(2);
-      if (in2->is_Con()) {
-        int val = in2->get_int();
-        // should not try to program these cases
-        if (val < 0) return;
-      }
-    }
+  if (cl->is_rce_post_loop() && cl->is_reduction_loop()) {
+    // Post loop vectorization doesn't support reductions
+    return;
   }
 
   // skip any loop that has not been assigned max unroll by analysis
@@ -178,15 +167,22 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   if (do_optimization) {
     assert(_packset.length() == 0, "packset must be empty");
     SLP_extract();
-    if (PostLoopMultiversioning && Matcher::has_predicated_vectors()) {
+    if (PostLoopMultiversioning) {
       if (cl->is_vectorized_loop() && cl->is_main_loop() && !cl->is_reduction_loop()) {
-        IdealLoopTree *lpt_next = lpt->_next;
+        IdealLoopTree *lpt_next = cl->is_strip_mined() ? lpt->_parent->_next : lpt->_next;
         CountedLoopNode *cl_next = lpt_next->_head->as_CountedLoop();
         _phase->has_range_checks(lpt_next);
-        if (cl_next->is_post_loop() && !cl_next->range_checks_present()) {
+        // If a loop is manually unrolled, SLP works well in the main loop, but
+        // we cannot perform scalar to vector replacement with vector masks in
+        // the post loop. So post loop vectorization is only valid in range check
+        // eliminated loops with stride == 1 or -1.
+        if (cl_next->is_post_loop() && !cl_next->range_checks_present() &&
+            cl_next->stride_is_con() && abs(cl_next->stride_con()) == 1) {
           if (!cl_next->is_vectorized_loop()) {
-            int slp_max_unroll_factor = cl->slp_max_unroll();
-            cl_next->set_slp_max_unroll(slp_max_unroll_factor);
+            // Propagate some main loop attributes to its corresponding scalar
+            // rce'd post loop for vectorization with vector masks
+            cl_next->set_slp_max_unroll(cl->slp_max_unroll());
+            cl_next->set_slp_pack_count(cl->slp_pack_count());
           }
         }
       }
@@ -213,7 +209,6 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   }
 
   int max_vector = Matcher::max_vector_size(T_BYTE);
-  bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
 
   // Process the loop, some/all of the stack entries will not be in order, ergo
   // need to preprocess the ignored initial state before we process the loop
@@ -223,6 +218,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       n->is_reduction() ||
       n->is_AddP() ||
       n->is_Cmp() ||
+      n->is_Bool() ||
       n->is_IfTrue() ||
       n->is_CountedLoop() ||
       (n == cl_exit)) {
@@ -310,9 +306,29 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   }
 
   if (is_slp) {
+    // In the main loop, SLP works well if parts of the operations in the loop body
+    // are not vectorizable and those non-vectorizable parts will be unrolled only.
+    // But in post loops with vector masks, we create singleton packs directly from
+    // scalars so all operations should be vectorized together. This compares the
+    // number of packs in the post loop with the main loop and bail out if the post
+    // loop potentially has more packs.
+    if (cl->is_rce_post_loop()) {
+      for (uint i = 0; i < lpt()->_body.size(); i++) {
+        if (ignored_loop_nodes[i] == -1) {
+          _post_block.at_put_grow(rpo_idx++, lpt()->_body.at(i));
+        }
+      }
+      if (_post_block.length() > cl->slp_pack_count()) {
+        // Clear local_loop_unroll_factor and bail out directly from here
+        local_loop_unroll_factor = 0;
+        cl->mark_was_slp();
+        cl->set_slp_max_unroll(0);
+        return;
+      }
+    }
+
     // Now we try to find the maximum supported consistent vector which the machine
     // description can use
-    bool small_basic_type = false;
     bool flag_small_bt = false;
     for (uint i = 0; i < lpt()->_body.size(); i++) {
       if (ignored_loop_nodes[i] != -1) continue;
@@ -325,31 +341,9 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
         bt = n->bottom_type()->basic_type();
       }
 
-      if (post_loop_allowed) {
-        if (!small_basic_type) {
-          switch (bt) {
-          case T_CHAR:
-          case T_BYTE:
-          case T_SHORT:
-            small_basic_type = true;
-            break;
-
-          case T_LONG:
-            // TODO: Remove when support completed for mask context with LONG.
-            //       Support needs to be augmented for logical qword operations, currently we map to dword
-            //       buckets for vectors on logicals as these were legacy.
-            small_basic_type = true;
-            break;
-
-          default:
-            break;
-          }
-        }
-      }
-
       if (is_java_primitive(bt) == false) continue;
 
-         int cur_max_vector = Matcher::max_vector_size(bt);
+      int cur_max_vector = Matcher::max_vector_size(bt);
 
       // If a max vector exists which is not larger than _local_loop_unroll_factor
       // stop looking, we already have the max vector to map to.
@@ -394,11 +388,6 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
             }
           }
         }
-        // We only process post loops on predicated targets where we want to
-        // mask map the loop to a single iteration
-        if (post_loop_allowed) {
-          _post_block.at_put_grow(rpo_idx++, n);
-        }
       }
     }
     if (is_slp) {
@@ -406,14 +395,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       cl->mark_passed_slp();
     }
     cl->mark_was_slp();
-    if (cl->is_main_loop()) {
-      cl->set_slp_max_unroll(local_loop_unroll_factor);
-    } else if (post_loop_allowed) {
-      if (!small_basic_type) {
-        // avoid replication context for small basic types in programmable masked loops
-        cl->set_slp_max_unroll(local_loop_unroll_factor);
-      }
-    }
+    cl->set_slp_max_unroll(local_loop_unroll_factor);
   }
 }
 
@@ -476,7 +458,6 @@ void SuperWord::SLP_extract() {
   compute_max_depth();
 
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
   if (cl->is_main_loop()) {
     if (_do_vector_loop_experimental) {
       if (mark_generations() != -1) {
@@ -537,7 +518,13 @@ void SuperWord::SLP_extract() {
     filter_packs();
 
     schedule();
-  } else if (post_loop_allowed) {
+
+    // Record eventual count of vector packs for checks in post loop vectorization
+    if (PostLoopMultiversioning) {
+      cl->set_slp_pack_count(_packset.length());
+    }
+  } else {
+    assert(cl->is_rce_post_loop(), "Must be an rce'd post loop");
     int saved_mapped_unroll_factor = cl->slp_max_unroll();
     if (saved_mapped_unroll_factor) {
       int vector_mapped_unroll_factor = saved_mapped_unroll_factor;
@@ -2419,7 +2406,6 @@ void SuperWord::output() {
 
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
-  bool can_process_post_loop = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
 
   NOT_PRODUCT(if(is_trace_loop_reverse()) {tty->print_cr("SWPointer::output: print loop before create_reserve_version_of_loop"); print_loop(true);})
 
@@ -2432,6 +2418,15 @@ void SuperWord::output() {
     return;
   }
 
+  Node* vmask = NULL;
+  if (cl->is_rce_post_loop() && do_reserve_copy()) {
+    // Create a vector mask node for post loop, bail out if not created
+    vmask = create_post_loop_vmask();
+    if (vmask == NULL) {
+      return; // and reverse to backup IG
+    }
+  }
+
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
@@ -2441,7 +2436,7 @@ void SuperWord::output() {
       Node* vn = NULL;
       Node* low_adr = p->at(0);
       Node* first   = executed_first(p);
-      if (can_process_post_loop) {
+      if (cl->is_rce_post_loop()) {
         // override vlen with the main loops vector length
         vlen = cl->slp_max_unroll();
       }
@@ -2466,7 +2461,13 @@ void SuperWord::output() {
         }
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n), control_dependency(p));
+        if (cl->is_rce_post_loop()) {
+          assert(vmask != NULL, "vector mask should be generated");
+          const TypeVect* vt = TypeVect::make(velt_basic_type(n), vlen);
+          vn = new LoadVectorMaskedNode(ctl, mem, adr, atyp, vt, vmask);
+        } else {
+          vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n), control_dependency(p));
+        }
         vlen_in_bytes = vn->as_LoadVector()->memory_size();
       } else if (n->is_Store()) {
         // Promote value to be stored to vector
@@ -2483,7 +2484,13 @@ void SuperWord::output() {
         Node* mem = first->in(MemNode::Memory);
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
+        if (cl->is_rce_post_loop()) {
+          assert(vmask != NULL, "vector mask should be generated");
+          const TypeVect* vt = TypeVect::make(velt_basic_type(n), vlen);
+          vn = new StoreVectorMaskedNode(ctl, mem, adr, val, atyp, vmask);
+        } else {
+          vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
+        }
         vlen_in_bytes = vn->as_StoreVector()->memory_size();
       } else if (VectorNode::is_scalar_rotate(n)) {
         Node* in1 = low_adr->in(1);
@@ -2567,7 +2574,7 @@ void SuperWord::output() {
         vn = VectorCastNode::make(vopc, in, bt, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (is_cmov_pack(p)) {
-        if (can_process_post_loop) {
+        if (cl->is_rce_post_loop()) {
           // do not refactor of flow in post loop context
           return;
         }
@@ -2657,14 +2664,6 @@ void SuperWord::output() {
       }
       _igvn._worklist.push(vn);
 
-      if (can_process_post_loop) {
-        // first check if the vector size if the maximum vector which we can use on the machine,
-        // other vector size have reduced values for predicated data mapping.
-        if (vlen_in_bytes != (uint)MaxVectorSize) {
-          return;
-        }
-      }
-
       if (vlen > max_vlen) {
         max_vlen = vlen;
       }
@@ -2706,25 +2705,8 @@ void SuperWord::output() {
             cl->mark_do_unroll_only();
           }
         }
-
-        if (do_reserve_copy()) {
-          if (can_process_post_loop) {
-            // Now create the difference of trip and limit and use it as our mask index.
-            // Note: We limited the unroll of the vectorized loop so that
-            //       only vlen-1 size iterations can remain to be mask programmed.
-            Node *incr = cl->incr();
-            SubINode *index = new SubINode(cl->limit(), cl->init_trip());
-            _igvn.register_new_node_with_optimizer(index);
-            SetVectMaskINode  *mask = new SetVectMaskINode(_phase->get_ctrl(cl->init_trip()), index);
-            _igvn.register_new_node_with_optimizer(mask);
-            // make this a single iteration loop
-            AddINode *new_incr = new AddINode(incr->in(1), mask);
-            _igvn.register_new_node_with_optimizer(new_incr);
-            _phase->set_ctrl(new_incr, _phase->get_ctrl(incr));
-            _igvn.replace_node(incr, new_incr);
-            cl->mark_is_multiversioned();
-            cl->loopexit()->add_flag(Node::Flag_has_vector_mask_set);
-          }
+        if (cl->is_rce_post_loop() && do_reserve_copy()) {
+          cl->mark_is_multiversioned();
         }
       }
     }
@@ -2737,6 +2719,101 @@ void SuperWord::output() {
   return;
 }
 
+//-------------------------create_post_loop_vmask-------------------------
+// Check the post loop vectorizability and create a vector mask if yes.
+// Return NULL to bail out if post loop is not vectorizable.
+Node* SuperWord::create_post_loop_vmask() {
+  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
+  assert(cl->is_rce_post_loop(), "Must be an rce post loop");
+  assert(!cl->is_reduction_loop(), "no vector reduction in post loop");
+  assert(abs(cl->stride_con()) == 1, "post loop stride can only be +/-1");
+
+  // Collect vector element types of all post loop packs. Also collect
+  // superword pointers of each memory access operation if the address
+  // expression is supported. (Note that vectorizable post loop should
+  // only have positive scale in counting-up loop and negative scale in
+  // counting-down loop.) Collected SWPointer(s) are also used for data
+  // dependence check next.
+  VectorLaneSizeStats stats(_arena);
+  GrowableArray<SWPointer*> swptrs(_arena, _packset.length(), 0, NULL);
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p = _packset.at(i);
+    assert(p->size() == 1, "all post loop packs should be singleton");
+    Node* n = p->at(0);
+    BasicType bt = velt_basic_type(n);
+    if (n->is_Mem()) {
+      SWPointer* mem_p = new (_arena) SWPointer(n->as_Mem(), this, NULL, false);
+      // For each memory access, we check if the scale (in bytes) in its
+      // address expression is equal to the data size times loop stride.
+      // With this, Only positive scales exist in counting-up loops and
+      // negative scales exist in counting-down loops.
+      if (mem_p->scale_in_bytes() != type2aelembytes(bt) * cl->stride_con()) {
+        return NULL;
+      }
+      swptrs.append(mem_p);
+    }
+    assert(is_java_primitive(bt), "only primitive types are allowed in post loop");
+    stats.record_size(type2aelembytes(bt));
+  }
+
+  // Find the vector data type for generating vector masks. Currently we
+  // don't support post loops with mixed vector data sizes
+  int unique_size = stats.unique_size();
+  BasicType vmask_bt;
+  switch (unique_size) {
+    case 1:  vmask_bt = T_BYTE; break;
+    case 2:  vmask_bt = T_SHORT; break;
+    case 4:  vmask_bt = T_INT; break;
+    case 8:  vmask_bt = T_LONG; break;
+    default: return NULL;
+  }
+
+  // Vector size should be the MaxVectorSize we can use on this machine
+  int vlen = cl->slp_max_unroll();
+  if (unique_size * vlen != MaxVectorSize) {
+    return NULL;
+  }
+
+  // Bail out if target doesn't support mask generator or masked load/store
+  if (!Matcher::match_rule_supported_vector(Op_LoadVectorMasked, vlen, vmask_bt)  ||
+      !Matcher::match_rule_supported_vector(Op_StoreVectorMasked, vlen, vmask_bt) ||
+      !Matcher::match_rule_supported_vector(Op_VectorMaskGen, vlen, vmask_bt)) {
+    return NULL;
+  }
+
+  // Bail out if potential data dependence exists between memory accesses
+  if (SWPointer::has_potential_dependence(swptrs)) {
+    return NULL;
+  }
+
+  // Create vector mask with the post loop trip count. Note there's another
+  // vector drain loop which is cloned from main loop before super-unrolling
+  // so the scalar post loop runs at most vlen-1 trips. Hence, this version
+  // only runs at most 1 iteration after vector mask transformation.
+  Node* trip_cnt;
+  Node* new_incr;
+  if (cl->stride_con() > 0) {
+    trip_cnt = new SubINode(cl->limit(), cl->init_trip());
+    new_incr = new AddINode(cl->phi(), trip_cnt);
+  } else {
+    trip_cnt = new SubINode(cl->init_trip(), cl->limit());
+    new_incr = new SubINode(cl->phi(), trip_cnt);
+  }
+  _igvn.register_new_node_with_optimizer(trip_cnt);
+  _igvn.register_new_node_with_optimizer(new_incr);
+  _igvn.replace_node(cl->incr(), new_incr);
+  Node* offset = new ConvI2LNode(trip_cnt);
+  _igvn.register_new_node_with_optimizer(offset);
+  Node* vmask = VectorMaskGenNode::make(offset, vmask_bt);
+  _igvn.register_new_node_with_optimizer(vmask);
+
+  // Remove exit test to transform 1-iteration loop to straight-line code.
+  // This results in redundant cmp+branch instructions been eliminated.
+  Node *cl_exit = cl->loopexit();
+  _igvn.replace_input_of(cl_exit, 1, _igvn.intcon(0));
+  return vmask;
+}
+
 //------------------------------vector_opd---------------------------
 // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
 Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
@@ -2745,7 +2822,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   Node* opd = p0->in(opd_idx);
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
 
-  if (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop()) {
+  if (cl->is_rce_post_loop()) {
     // override vlen with the main loops vector length
     vlen = cl->slp_max_unroll();
   }
@@ -4013,6 +4090,34 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)
+  return false;
+}
+
+//-----------------has_potential_dependence-----------------
+// Check potential data dependence among all memory accesses.
+// We require every two accesses (with at least one store) of
+// the same element type has the same address expression.
+bool SWPointer::has_potential_dependence(GrowableArray<SWPointer*> swptrs) {
+  for (int i1 = 0; i1 < swptrs.length(); i1++) {
+    SWPointer* p1 = swptrs.at(i1);
+    MemNode* n1 = p1->mem();
+    BasicType bt1 = n1->memory_type();
+
+    // Iterate over remaining SWPointers
+    for (int i2 = i1 + 1; i2 < swptrs.length(); i2++) {
+      SWPointer* p2 = swptrs.at(i2);
+      MemNode* n2 = p2->mem();
+      BasicType bt2 = n2->memory_type();
+
+      // Data dependence exists between load-store, store-load
+      // or store-store with the same element type or subword
+      // size (subword load/store may have inaccurate type)
+      if ((n1->is_Store() || n2->is_Store()) &&
+          same_type_or_subword_size(bt1, bt2) && !p1->equal(*p2)) {
+        return true;
+      }
+    }
+  }
   return false;
 }
 

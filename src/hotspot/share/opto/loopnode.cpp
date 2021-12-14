@@ -4442,7 +4442,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
       if (lpt->is_counted()) {
         CountedLoopNode *cl = lpt->_head->as_CountedLoop();
 
-        if (PostLoopMultiversioning && cl->is_rce_post_loop() && !cl->is_vectorized_loop()) {
+        if (cl->is_rce_post_loop() && !cl->is_vectorized_loop()) {
           // Check that the rce'd post loop is encountered first, multiversion after all
           // major main loop optimization are concluded
           if (!C->major_progress()) {

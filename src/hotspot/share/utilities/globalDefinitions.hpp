@@ -813,6 +813,9 @@ extern int type2aelembytes(BasicType t, bool allow_address = false); // asserts
 inline int type2aelembytes(BasicType t, bool allow_address = false) { return _type2aelembytes[t]; }
 #endif
 
+inline bool same_type_or_subword_size(BasicType t1, BasicType t2) {
+  return (t1 == t2) || (is_subword_type(t1) && type2aelembytes(t1) == type2aelembytes(t2));
+}
 
 // JavaValue serves as a container for arbitrary Java values.
 
