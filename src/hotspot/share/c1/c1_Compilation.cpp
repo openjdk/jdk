@@ -180,6 +180,9 @@ void Compilation::build_hir() {
     _hir->optimize_blocks();
   }
 
+  // JANIUK _hir->optimize_blocks(); already runs verify lol
+  // Could argue for removing all in blockmerger
+  // Or this one probably
   _hir->verify();
 
   _hir->split_critical_edges();
