@@ -6261,6 +6261,9 @@ address generate_avx_ghash_processBlocks() {
       __ cmpl(length, 63);
       __ jcc(Assembler::lessEqual, L_finalBit);
 
+      __ mov64(rax, 0x0000ffffffffffff);
+      __ kmovql(k2, rax);
+
       __ align32();
       __ BIND(L_process64Loop);
 
@@ -6282,7 +6285,7 @@ address generate_avx_ghash_processBlocks() {
       __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
       __ vpermb(merged0, pack24bits, merged0, Assembler::AVX_512bit);
 
-      __ evmovdquq(Address(dest, dp), merged0, Assembler::AVX_512bit);
+      __ evmovdqub(Address(dest, dp), k2, merged0, true, Assembler::AVX_512bit);
 
       __ subl(length, 64);
       __ addptr(source, 64);
