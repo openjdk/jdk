@@ -106,7 +106,7 @@ public class bug4908142 {
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (fr != null) {
-	            fr.dispose();
+                    fr.dispose();
                 }
             });
         }
