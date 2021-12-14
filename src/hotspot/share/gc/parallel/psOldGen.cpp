@@ -400,12 +400,11 @@ void PSOldGen::verify() {
 }
 
 class VerifyObjectStartArrayClosure : public ObjectClosure {
-  PSOldGen* _old_gen;
   ObjectStartArray* _start_array;
 
  public:
-  VerifyObjectStartArrayClosure(PSOldGen* old_gen, ObjectStartArray* start_array) :
-    _old_gen(old_gen), _start_array(start_array) { }
+  VerifyObjectStartArrayClosure(ObjectStartArray* start_array) :
+    _start_array(start_array) { }
 
   virtual void do_object(oop obj) {
     HeapWord* test_addr = cast_from_oop<HeapWord*>(obj) + 1;
@@ -415,7 +414,7 @@ class VerifyObjectStartArrayClosure : public ObjectClosure {
 };
 
 void PSOldGen::verify_object_start_array() {
-  VerifyObjectStartArrayClosure check( this, &_start_array );
+  VerifyObjectStartArrayClosure check(&_start_array);
   object_iterate(&check);
 }
 
