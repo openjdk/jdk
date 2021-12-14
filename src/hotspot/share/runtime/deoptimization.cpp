@@ -2274,7 +2274,7 @@ Deoptimization::query_update_method_data(MethodData* trap_mdo,
     uint idx = reason;
 #if INCLUDE_JVMCI
     if (is_osr) {
-      idx += Reason_LIMIT;
+      idx += Reason_TRAP_HISTORY_LENGTH;
     }
 #endif
     uint prior_trap_count = trap_mdo->trap_count(idx);
