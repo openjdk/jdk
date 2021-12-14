@@ -31,12 +31,9 @@
 #include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
 
-// This loads the klass's holder as a phantom. This is useful when a weak Klass
-// pointer has been "peeked" and then must be kept alive before it may
-// be used safely.  All uses of klass_holder need to apply the appropriate barriers,
-// except during GC.
+// This loads and keeps the klass's loader alive.
 inline oop Klass::klass_holder() const {
-  return class_loader_data()->holder_phantom();
+  return class_loader_data()->holder();
 }
 
 inline bool Klass::is_non_strong_hidden() const {
