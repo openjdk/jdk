@@ -253,8 +253,7 @@ class InstanceKlass: public Klass {
     _misc_is_shared_boot_class                = 1 << 10, // defining class loader is boot class loader
     _misc_is_shared_platform_class            = 1 << 11, // defining class loader is platform class loader
     _misc_is_shared_app_class                 = 1 << 12, // defining class loader is app class loader
-    _misc_has_resolved_methods                = 1 << 13, // resolved methods table entries added for this class
-    _misc_has_contended_annotations           = 1 << 14  // has @Contended annotation
+    _misc_has_contended_annotations           = 1 << 13  // has @Contended annotation
   };
   u2 shared_loader_type_bits() const {
     return _misc_is_shared_boot_class|_misc_is_shared_platform_class|_misc_is_shared_app_class;
@@ -781,11 +780,11 @@ public:
   }
 
   bool has_resolved_methods() const {
-    return (_misc_flags & _misc_has_resolved_methods) != 0;
+    return _misc_flags.has_resolved_methods();
   }
 
   void set_has_resolved_methods() {
-    _misc_flags |= _misc_has_resolved_methods;
+    _misc_flags.set_has_resolved_methods();
   }
 private:
 
