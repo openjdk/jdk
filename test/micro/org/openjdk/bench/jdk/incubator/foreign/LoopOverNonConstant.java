@@ -125,8 +125,6 @@ public class LoopOverNonConstant {
         return sum;
     }
 
-    static long LONG_ELEM_SIZE = 1_000_000;
-
     @Benchmark
     public int segment_loop_instance() {
         int sum = 0;
