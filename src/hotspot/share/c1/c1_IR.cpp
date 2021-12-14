@@ -1373,7 +1373,9 @@ public:
 void IR::verify() {
 #ifdef ASSERT
   PredecessorValidator pv(this);
+
   EndNotNullValidator(this);
+
   VerifyBlockBeginField verifier;
   this->iterate_postorder(&verifier);
 #endif // ASSERT
