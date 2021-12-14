@@ -1261,14 +1261,14 @@ void IR::print(bool cfg_only, bool live_only) {
   }
 }
 
+inline void validate_end_not_null(BlockBegin* block) {
+  assert(block->end() != NULL, "Expect block end to exist.");
+}
+
 class EndNotNullValidator : public BlockClosure {
  public:
-  EndNotNullValidator(IR* hir) {
-    hir->start()->iterate_postorder(this);
-  }
-
-  void block_do(BlockBegin* block) {
-    assert(block->end() != NULL, "Expect block end to exist.");
+  virtual void block_do(BlockBegin* block) {
+    validate_end_not_null(block);
   }
 };
 
@@ -1374,7 +1374,8 @@ void IR::verify() {
 #ifdef ASSERT
   PredecessorValidator pv(this);
 
-  EndNotNullValidator(this);
+  EndNotNullValidator ennv;
+  this->iterate_postorder(&ennv);
 
   VerifyBlockBeginField verifier;
   this->iterate_postorder(&verifier);
