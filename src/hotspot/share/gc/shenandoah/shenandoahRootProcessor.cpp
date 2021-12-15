@@ -264,5 +264,6 @@ void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
   _cld_roots.cld_do(&clds, 0);
 
   // Process heavy-weight/fully parallel roots the last
+  _code_roots.code_blobs_do(&code, 0);
   _thread_roots.threads_do(&tc_cl, 0);
 }
