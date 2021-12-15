@@ -338,7 +338,6 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
   }
 
   // Add reference to discovered list
-  assert(worker_id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "need valid worker ID");
   ShenandoahRefProcThreadLocal& refproc_data = _ref_proc_thread_locals[worker_id];
   oop discovered_head = refproc_data.discovered_list_head<T>();
   if (discovered_head == NULL) {
