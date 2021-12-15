@@ -245,7 +245,8 @@ public:
     if (nm != nullptr) {
       // Make sure it only sees to-space objects
       _bs_nm->nmethod_entry_barrier(nm);
-      ShenandoahNMethod* const snm = ShenandoahNMethod::for_nmethod(nm);
+      ShenandoahNMethod* const snm = ShenandoahNMethod::gc_data(nm);
+      assert(snm != nullptr, "Sanity");
       snm->oops_do(_oops, false /*fix_relocations*/);
     }
   }
