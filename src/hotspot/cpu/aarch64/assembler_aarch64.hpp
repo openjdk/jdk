@@ -349,8 +349,8 @@ namespace ext
 // Addressing modes
 class Address {
  public:
-  enum mode { no_mode, addr_literal, pre, post, post_reg,
-              base_plus_offset, base_plus_offset_reg };
+  enum addr_mode { no_mode, addr_literal, pre, post, post_reg,
+                   base_plus_offset, base_plus_offset_reg };
 
   // Shift and extend for base reg + reg offset addressing
   class extend {
@@ -381,7 +381,7 @@ class Address {
   };
 
  private:
-  enum mode _mode;
+  addr_mode _mode;
   Register  _base;
   Register  _index;
   int64_t   _offset;
@@ -454,7 +454,7 @@ class Address {
     precond(_mode != no_mode && _mode != addr_literal);
     return _extend;
   }
-  mode getMode() const {
+  addr_mode mode() const {
     return _mode;
   }
   bool uses(Register reg) const {
@@ -1442,7 +1442,7 @@ public:
     // down into Address::encode) because the encoding of this
     // instruction is too different from all of the other forms to
     // make it worth sharing.
-    if (adr.getMode() == Address::addr_literal) {
+    if (adr.mode() == Address::addr_literal) {
       assert(size == 0b10 || size == 0b11, "bad operand size in ldr");
       assert(op == 0b01, "literal form can only be used with loads");
       f(size & 0b01, 31, 30), f(0b011, 29, 27), f(0b00, 25, 24);
@@ -2284,7 +2284,7 @@ public:
   }
 
   void ld_st(FloatRegister Vt, SIMD_Arrangement T, Address a, int op1, int op2, int regs) {
-    switch (a.getMode()) {
+    switch (a.mode()) {
     case Address::base_plus_offset:
       guarantee(a.offset() == 0, "no offset allowed here");
       ld_st(Vt, T, a.base(), op1, op2);
@@ -3206,7 +3206,7 @@ private:
   void sve_ld_st1(FloatRegister Zt, PRegister Pg,
               SIMD_RegVariant T, const Address &a,
               int op1, int type, int imm_op2, int scalar_op2) {
-    switch (a.getMode()) {
+    switch (a.mode()) {
     case Address::base_plus_offset:
       sve_ld_st1(Zt, a.base(), a.offset(), Pg, T, op1, type, imm_op2);
       break;

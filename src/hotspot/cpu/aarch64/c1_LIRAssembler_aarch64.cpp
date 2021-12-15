@@ -218,7 +218,7 @@ Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
 Address LIR_Assembler::stack_slot_address(int index, uint size, Register tmp, int adjust) {
   precond(size == 4 || size == 8);
   Address addr = frame_map()->address_for_slot(index, adjust);
-  precond(addr.getMode() == Address::base_plus_offset);
+  precond(addr.mode() == Address::base_plus_offset);
   precond(addr.base() == sp);
   precond(addr.offset() > 0);
   uint mask = size - 1;

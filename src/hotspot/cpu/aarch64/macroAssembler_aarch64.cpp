@@ -1658,7 +1658,7 @@ bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size
   } else {
     assert(size_in_bytes == 8 || size_in_bytes == 4, "only 8 bytes or 4 bytes load/store is supported.");
     const uint64_t mask = size_in_bytes - 1;
-    if (adr.getMode() == Address::base_plus_offset &&
+    if (adr.mode() == Address::base_plus_offset &&
         (adr.offset() & mask) == 0) { // only supports base_plus_offset.
       code()->set_last_insn(pc());
     }
@@ -1790,7 +1790,7 @@ void MacroAssembler::decrement(Register reg, int value)
 void MacroAssembler::decrementw(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid dst for address decrement");
-  if (dst.getMode() == Address::addr_literal) {
+  if (dst.mode() == Address::addr_literal) {
     assert(abs(value) < (1 << 12), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
@@ -1803,7 +1803,7 @@ void MacroAssembler::decrementw(Address dst, int value)
 void MacroAssembler::decrement(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid address for decrement");
-  if (dst.getMode() == Address::addr_literal) {
+  if (dst.mode() == Address::addr_literal) {
     assert(abs(value) < (1 << 12), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
@@ -1840,7 +1840,7 @@ void MacroAssembler::increment(Register reg, int value)
 void MacroAssembler::incrementw(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid dst for address increment");
-  if (dst.getMode() == Address::addr_literal) {
+  if (dst.mode() == Address::addr_literal) {
     assert(abs(value) < (1 << 12), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
@@ -1853,7 +1853,7 @@ void MacroAssembler::incrementw(Address dst, int value)
 void MacroAssembler::increment(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid dst for address increment");
-  if (dst.getMode() == Address::addr_literal) {
+  if (dst.mode() == Address::addr_literal) {
     assert(abs(value) < (1 << 12), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
@@ -2733,7 +2733,7 @@ bool MacroAssembler::ldst_can_merge(Register rt,
     return false;
   }
 
-  if (adr.getMode() != Address::base_plus_offset || prev != last) {
+  if (adr.mode() != Address::base_plus_offset || prev != last) {
     return false;
   }
 
@@ -3660,7 +3660,7 @@ SkipIfEqual::~SkipIfEqual() {
 
 void MacroAssembler::addptr(const Address &dst, int32_t src) {
   Address adr;
-  switch(dst.getMode()) {
+  switch(dst.mode()) {
   case Address::base_plus_offset:
     // This is the expected mode, although we allow all the other
     // forms below.
@@ -4269,7 +4269,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
   int64_t offset_high = dest_page - high_page;
 
   assert(is_valid_AArch64_address(dest.target()), "bad address");
-  assert(dest.getMode() == Address::addr_literal, "ADRP must be applied to a literal address");
+  assert(dest.mode() == Address::addr_literal, "ADRP must be applied to a literal address");
 
   InstructionMark im(this);
   code_section()->relocate(inst_mark(), dest.rspec());
@@ -5185,7 +5185,7 @@ void MacroAssembler::get_thread(Register dst) {
 }
 
 void MacroAssembler::cache_wb(Address line) {
-  assert(line.getMode() == Address::base_plus_offset, "mode should be base_plus_offset");
+  assert(line.mode() == Address::base_plus_offset, "mode should be base_plus_offset");
   assert(line.index() == noreg, "index should be noreg");
   assert(line.offset() == 0, "offset should be 0");
   // would like to assert this

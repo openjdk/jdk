@@ -2834,7 +2834,7 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
                         int size_in_memory)
   {
     Address addr = mem2address(opcode, base, index, scale, disp);
-    if (addr.getMode() == Address::base_plus_offset) {
+    if (addr.mode() == Address::base_plus_offset) {
       /* If we get an out-of-range offset it is a bug in the compiler,
          so we assert here. */
       assert(Address::offset_ok_for_immed(addr.offset(), exact_log2(size_in_memory)),
