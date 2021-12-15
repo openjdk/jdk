@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -239,10 +239,10 @@ AC_DEFUN([UTIL_GET_EPOCH_TIMESTAMP],
   timestamp=$($DATE --utc --date=$2 +"%s" 2> /dev/null)
   if test "x$timestamp" = x; then
     # GNU date format did not work, try BSD date options
-    timestamp=$($DATE -j -f "%F %T" "$2" "+%s" 2> /dev/null)
+    timestamp=$($DATE -u -j -f "%F %T" "$2" "+%s" 2> /dev/null)
     if test "x$timestamp" = x; then
       # Perhaps the time was missing
-      timestamp=$($DATE -j -f "%F %T" "$2 00:00:00" "+%s" 2> /dev/null)
+      timestamp=$($DATE -u -j -f "%F %T" "$2 00:00:00" "+%s" 2> /dev/null)
       # If this did not work, we give up and return the empty string
     fi
   fi
