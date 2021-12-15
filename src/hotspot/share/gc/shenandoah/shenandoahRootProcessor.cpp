@@ -243,8 +243,10 @@ public:
   virtual void do_code_blob(CodeBlob* cb) {
     nmethod* const nm = cb->as_nmethod_or_null();
     if (nm != nullptr) {
-      // Make sure it only sees to-space objects
-      _bs_nm->nmethod_entry_barrier(nm);
+      if (_bs_nm != nullptr) {
+        // Make sure it only sees to-space objects
+        _bs_nm->nmethod_entry_barrier(nm);
+      }
       ShenandoahNMethod* const snm = ShenandoahNMethod::gc_data(nm);
       assert(snm != nullptr, "Sanity");
       snm->oops_do(_oops, false /*fix_relocations*/);
