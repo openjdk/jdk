@@ -36,9 +36,6 @@
 #include "utilities/sizes.hpp"
 
 class ShenandoahThreadLocalData {
-public:
-  static const uint INVALID_WORKER_ID = uint(-1);
-
 private:
   char _gc_state;
   // Evacuation OOM state
