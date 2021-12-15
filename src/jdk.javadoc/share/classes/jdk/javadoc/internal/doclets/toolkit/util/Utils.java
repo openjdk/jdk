@@ -1974,9 +1974,6 @@ public class Utils {
             return oset;
         });
     }
-    public SortedSet<TypeElement> getAllClasses(Element pkg) {
-        return getAllClasses((PackageElement) pkg);
-    }
 
     /**
      * Returns a list of documented elements of a given type with a given kind.
