@@ -780,11 +780,11 @@ public:
   }
 
   bool has_resolved_methods() const {
-    return _misc_flags.has_resolved_methods();
+    return _access_flags.has_resolved_methods();
   }
 
   void set_has_resolved_methods() {
-    _misc_flags.set_has_resolved_methods();
+    _access_flags.set_has_resolved_methods();
   }
 private:
 
