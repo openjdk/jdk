@@ -733,7 +733,7 @@ public final class DateTimeFormatter {
      * It uses {@link ResolverStyle#SMART SMART} resolver style.
      *
      * @param skeleton the skeleton to use, not null
-     * @return the formatter based on the pattern, not null
+     * @return the formatter based on the skeleton, not null
      * @throws IllegalArgumentException if the skeleton is invalid
      * @see #ofPattern(String)
      * @since 19
@@ -757,7 +757,7 @@ public final class DateTimeFormatter {
      *
      * @param skeleton the skeleton to use, not null
      * @param locale the locale to use, not null
-     * @return the formatter based on the pattern, not null
+     * @return the formatter based on the skeleton, not null
      * @throws IllegalArgumentException if the skeleton is invalid
      * @see #ofPattern(String, Locale)
      * @since 19

@@ -26,6 +26,7 @@ package sun.util.locale.provider;
 
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 
@@ -73,14 +74,16 @@ public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider
     public String getJavaTimeDateTimePattern(String skeleton, String calType, Locale locale) {
         LocaleProviderAdapter lpa = LocaleProviderAdapter.getResourceBundleBased();
         // CLDR's 'u'/'U' are not supported in the JDK. Replace them with 'y' instead
-        final var modifiedSkeeleton = skeleton.replaceAll("[uU]", "y");
+        final var modifiedSkeleton = skeleton.replaceAll("[uU]", "y");
         return ((ResourceBundleBasedAdapter)lpa).getCandidateLocales("", locale).stream()
                 .map(lpa::getLocaleResources)
-                .map(lr -> lr.getSkeletonPattern(modifiedSkeeleton, calType))
+                .map(lr -> lr.getSkeletonPattern(modifiedSkeleton, calType))
                 .filter(Objects::nonNull)
                 .findFirst()
-//                .orElse(skeleton);
-                .orElse(calType.equals("generic") ? skeleton : getJavaTimeDateTimePattern(skeleton, "generic", locale));
+                .or(() -> calType.equals("generic") ? Optional.empty():
+                        Optional.of(getJavaTimeDateTimePattern(skeleton, "generic", locale)))
+                .orElseThrow(() -> new IllegalArgumentException("Skeleton pattern \"" + skeleton +
+                        "\" cannot be resolved in the locale \"" + locale + "\""));
     }
 
     @Override

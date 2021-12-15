@@ -28,6 +28,7 @@
 package sun.text.spi;
 
 import java.util.Locale;
+import java.util.Optional;
 import java.util.spi.LocaleServiceProvider;
 
 /**

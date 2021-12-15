@@ -715,27 +715,70 @@ System.out.println("requested: " + requestedSkeleton + ", locale: " + locale + "
     }
 
     private String adjustSkeletonLength(String requested, String matched) {
-        if (!requested.equals(matched)) {
-            // adjust the lengths
-            int monthsR = Math.max(requested.lastIndexOf('M') - requested.indexOf('M'),
-                                    requested.lastIndexOf('L') - requested.indexOf('L')) + 1;
-            int daysR = Math.max(requested.lastIndexOf('E') - requested.indexOf('E'),
-                    requested.lastIndexOf('c') - requested.indexOf('c')) + 1;
-            int monthsM = Math.max(matched.lastIndexOf('M') - matched.indexOf('M'),
-                    matched.lastIndexOf('L') - matched.indexOf('L')) + 1;
-            int daysM = Math.max(matched.lastIndexOf('E') - matched.indexOf('E'),
-                    matched.lastIndexOf('c') - matched.indexOf('c')) + 1;
-            // do not cross number/text boundary.
-            if (monthsR >= 3 && monthsM <= 2) {
-                monthsR = 2;
-            }
-            if (daysR >= 3 && daysM <= 2) {
-                daysR = 2;
-            }
-            matched = matched.replaceFirst("M+", "M".repeat(monthsR))
-                    .replaceFirst("L+", "L".repeat(monthsR))
-                    .replaceFirst("E+", "E".repeat(daysR))
-                    .replaceFirst("c+", "c".repeat(daysR != 2 ? daysR : 1)); // "cc" is not allowed in JDK
+        if (false) {
+//        if (!requested.equals(matched)) {
+//            // adjust the lengths
+//            int monthsR = Math.max(requested.lastIndexOf('M') - requested.indexOf('M'),
+//                                    requested.lastIndexOf('L') - requested.indexOf('L')) + 1;
+//            int daysR = Math.max(requested.lastIndexOf('E') - requested.indexOf('E'),
+//                    requested.lastIndexOf('c') - requested.indexOf('c')) + 1;
+//            int monthsM = Math.max(matched.lastIndexOf('M') - matched.indexOf('M'),
+//                    matched.lastIndexOf('L') - matched.indexOf('L')) + 1;
+//            int daysM = Math.max(matched.lastIndexOf('E') - matched.indexOf('E'),
+//                    matched.lastIndexOf('c') - matched.indexOf('c')) + 1;
+//            // do not cross number/text boundary.
+//            if (monthsR >= 3 && monthsM <= 2) {
+//                monthsR = 2;
+//            }
+//            if (daysR >= 3 && daysM <= 2) {
+//                daysR = 2;
+//            }
+//            matched = matched.replaceFirst("M+", "M".repeat(monthsR))
+//                    .replaceFirst("L+", "L".repeat(monthsR))
+//                    .replaceFirst("E+", "E".repeat(daysR))
+//                    .replaceFirst("c+", "c".repeat(daysR != 2 ? daysR : 1)); // "cc" is not allowed in JDK
+
+//            var inta = matched.codePoints()
+//                    .distinct()
+//                    .mapMulti((c, consumer) -> {
+//                        int first = requested.indexOf(c);
+//                        int last = requested.lastIndexOf(c);
+//                        if (first >= 0) {
+//                            int num = Math.max(last - first, matched.lastIndexOf(c) - matched.indexOf(c)) + 1;
+//                            while (num-- > 0) {
+//                                consumer.accept(c);
+//                            }
+//                        } else {
+//                            consumer.accept(c);
+//                        }
+//                    })
+//                    .toArray();
+
+// <dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+// If this is the best match for yMMMMd, pattern is automatically expanded to produce the pattern "d MMMM y" in response to the request.
+
+            var inta = matched.codePoints()
+                    .distinct()
+                    .mapMulti((c, consumer) -> {
+                        if (Character.isAlphabetic(c)) {
+                            int first = requested.lastIndexOf(c);
+                            int requestLen = requested.lastIndexOf(c) - first + 1;
+                            int matchedLen = matched.lastIndexOf(c) - matched.indexOf(c) + 1;
+                            if (first >= 0) {
+                                int num = Math.max(requestLen, matchedLen);
+                                while (num-- > 0) {
+                                    consumer.accept(c);
+                                }
+                            } else {
+                                consumer.accept(c);
+                            }
+                        } else {
+                            consumer.accept(c);
+                        }
+                    })
+                    .toArray();
+            var ret = new String(inta, 0, inta.length);
+            return ret;
         }
         return matched;
     }
