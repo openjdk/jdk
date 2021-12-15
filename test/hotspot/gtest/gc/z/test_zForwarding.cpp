@@ -178,7 +178,7 @@ public:
     const ZPhysicalMemory pmem(ZPhysicalMemorySegment(zoffset(0), ZPageSizeSmall, true));
     ZPage page(ZPageTypeSmall, vmem, pmem);
 
-    page.reset(ZGenerationId::young, ZPageAge::eden, ZPageResetType::Allocation);
+    page.reset(ZPageAge::eden, ZPageResetType::Allocation);
 
     const size_t object_size = 16;
     const zaddress object = page.alloc_object(object_size);

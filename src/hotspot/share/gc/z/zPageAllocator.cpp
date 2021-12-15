@@ -110,10 +110,9 @@ private:
   ZList<ZPage>               _pages;
   ZListNode<ZPageAllocation> _node;
   ZFuture<bool>              _stall_result;
-  ZGenerationId const        _generation_id;
 
 public:
-  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId id) :
+  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags) :
       _type(type),
       _size(size),
       _flags(flags),
@@ -123,8 +122,7 @@ public:
       _committed(0),
       _pages(),
       _node(),
-      _stall_result(),
-      _generation_id(id) {}
+      _stall_result() {}
 
   uint8_t type() const {
     return _type;
@@ -172,10 +170,6 @@ public:
 
   void satisfy(bool result) {
     _stall_result.set(result);
-  }
-
-  ZGenerationId generation_id() const {
-    return _generation_id;
   }
 
   bool gc_relocation() const {
@@ -266,7 +260,7 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   flags.set_non_blocking();
   flags.set_low_address();
 
-  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, ZGenerationId::young, ZPageAge::eden);
+  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, ZPageAge::eden);
   if (page == NULL) {
     return false;
   }
@@ -668,11 +662,11 @@ ZPage* ZPageAllocator::alloc_page_finalize(ZPageAllocation* allocation) {
   return NULL;
 }
 
-ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId id, ZPageAge age) {
+ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZPageAge age) {
   EventZPageAllocation event;
 
 retry:
-  ZPageAllocation allocation(type, size, flags, id);
+  ZPageAllocation allocation(type, size, flags);
 
   // Allocate one or more pages from the page cache. If the allocation
   // succeeds but the returned pages don't cover the complete allocation,
@@ -695,12 +689,12 @@ retry:
   // The generation's used is tracked here when the page is handed out
   // to the allocating thread. The overall heap "used" is tracked in
   // the lower-level allocation code.
-  ZGeneration::generation(id)->increase_used(size);
+  ZGeneration::generation(age)->increase_used(size);
 
   // Reset page. This updates the page's sequence number and must
   // be done after we potentially blocked in a safepoint (stalled)
   // where the global sequence number was updated.
-  page->reset(id, age, ZPageResetType::Allocation);
+  page->reset(age, ZPageResetType::Allocation);
 
   // Update allocation statistics. Exclude gc relocations to avoid
   // artificial inflation of the allocation rate during relocation.
@@ -795,7 +789,6 @@ void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
 
   ZListRemoveIterator<ZPage> allocation_pages_iter(allocation->pages());
   for (ZPage* page; allocation_pages_iter.next(&page);) {
-    assert(page->generation_id() == allocation->generation_id(), "Must be the same generation");
     to_recycle.push(_safe_recycle.register_and_clone_if_activated(page));
   }
 

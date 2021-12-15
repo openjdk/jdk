@@ -56,6 +56,7 @@ public:
   static ZYoungGeneration* young();
   static ZOldGeneration* old();
   static ZGeneration* generation(ZGenerationId id);
+  static ZGeneration* generation(ZPageAge age);
 
   // Allocation
   virtual zaddress alloc_object_for_relocation(size_t size, bool promotion) = 0;

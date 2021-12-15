@@ -126,7 +126,7 @@ public:
   uint64_t last_used() const;
   void set_last_used();
 
-  void reset(ZGenerationId id, ZPageAge age, ZPageResetType type);
+  void reset(ZPageAge age, ZPageResetType type);
 
   void finalize_reset_for_in_place_relocation();
 

@@ -34,7 +34,6 @@ class ZPageTable;
 
 class ZObjectAllocator {
 private:
-  ZGenerationId      _generation_id;
   ZPageAge           _age;
   const bool         _use_per_cpu_shared_small_pages;
   ZPerCPU<size_t>    _used;

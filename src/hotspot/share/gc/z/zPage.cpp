@@ -129,11 +129,14 @@ void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
   };
 }
 
-void ZPage::reset(ZGenerationId id, ZPageAge age, ZPageResetType type) {
+void ZPage::reset(ZPageAge age, ZPageResetType type) {
   ZPageAge prev_age = _age;
   _age = age;
   _last_used = 0;
-  _generation_id = id;
+
+  _generation_id = age == ZPageAge::old
+      ? ZGenerationId::old
+      : ZGenerationId::young;
 
   reset_seqnum();
 
@@ -177,7 +180,7 @@ ZPage* ZPage::split_with_pmem(uint8_t type, const ZPhysicalMemory& pmem) {
   const ZVirtualMemory vmem = _virtual.split(pmem.size());
 
   reset_type_and_size(type_from_size(_virtual.size()));
-  reset(_generation_id, _age, ZPageResetType::Splitting);
+  reset(_age, ZPageResetType::Splitting);
 
   assert(vmem.end() == _virtual.start(), "Should be consecutive");
 

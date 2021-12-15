@@ -50,10 +50,18 @@ inline ZOldGeneration* ZGeneration::old() {
 }
 
 inline ZGeneration* ZGeneration::generation(ZGenerationId id) {
-  if (id == ZGenerationId::young) {
-    return _young;
-  } else {
+  if (id == ZGenerationId::old) {
     return _old;
+  } else {
+    return _young;
+  }
+}
+
+inline ZGeneration* ZGeneration::generation(ZPageAge age) {
+  if (age == ZPageAge::old) {
+    return _old;
+  } else {
+    return _young;
   }
 }
 
