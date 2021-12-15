@@ -943,9 +943,13 @@ public class VM {
 
   public boolean isSharingEnabled() {
     if (sharingEnabled == null) {
-      Flag flag = getCommandLineFlag("UseSharedSpaces");
-      sharingEnabled = (flag == null)? Boolean.FALSE :
-          (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
+        Address address = VM.getVM().getDebugger().lookup(null, "UseSharedSpaces");
+        if (address == null && getOS().equals("win32")) {
+            // On Win32 symbols are prefixed with the dll name. So look for
+            // UseSharedSpaces as a symbol in jvm.dll.
+            address = VM.getVM().getDebugger().lookup(null, "jvm!UseSharedSpaces");
+        }
+        sharingEnabled = address.getJBooleanAt(0);
     }
     return sharingEnabled.booleanValue();
   }

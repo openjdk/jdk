@@ -618,9 +618,6 @@ public:
   // full GC.
   void verify(VerifyOption vo, bool *failures) const;
 
-  // Verify using the "prev" marking information
-  void verify() const;
-
   void verify_rem_set(VerifyOption vo, bool *failures) const;
   void verify_rem_set() const;
 };

@@ -425,7 +425,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
      * close this device if discarded by the garbage collector.
      */
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected final void finalize() {
         close();
     }

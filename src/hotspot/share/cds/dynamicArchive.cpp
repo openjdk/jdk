@@ -354,6 +354,9 @@ public:
 
     _builder.doit();
   }
+  ~VM_PopulateDynamicDumpSharedSpace() {
+    LambdaFormInvokers::cleanup_regenerated_classes();
+  }
 };
 
 void DynamicArchive::check_for_dynamic_dump() {
