@@ -1993,16 +1993,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         BigInteger v0, v1, v2, vm1, vinf, t1, t2, tm1, da1, db1;
 
-        var v0_task = RecursiveOp.multiply(a0, b0, parallel, depth + 1);
+        depth++;
+        var v0_task = RecursiveOp.multiply(a0, b0, parallel, depth);
         da1 = a2.add(a0);
         db1 = b2.add(b0);
-        var vm1_task = RecursiveOp.multiply(da1.subtract(a1), db1.subtract(b1), parallel, depth + 1);
+        var vm1_task = RecursiveOp.multiply(da1.subtract(a1), db1.subtract(b1), parallel, depth);
         da1 = da1.add(a1);
         db1 = db1.add(b1);
-        var v1_task = RecursiveOp.multiply(da1, db1, parallel, depth + 1);
+        var v1_task = RecursiveOp.multiply(da1, db1, parallel, depth);
         v2 = da1.add(a2).shiftLeft(1).subtract(a0).multiply(
-             db1.add(b2).shiftLeft(1).subtract(b0), true, parallel, depth + 1);
-        vinf = a2.multiply(b2, true, parallel, depth + 1);
+             db1.add(b2).shiftLeft(1).subtract(b0), true, parallel, depth);
+        vinf = a2.multiply(b2, true, parallel, depth);
         v0 = v0_task.join();
         vm1 = vm1_task.join();
         v1 = v1_task.join();
@@ -2354,13 +2355,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         a0 = getToomSlice(k, r, 2, len);
         BigInteger v0, v1, v2, vm1, vinf, t1, t2, tm1, da1;
 
-        var v0_fork = RecursiveOp.square(a0, parallel, depth + 1);
+        depth++;
+        var v0_fork = RecursiveOp.square(a0, parallel, depth);
         da1 = a2.add(a0);
-        var vm1_fork = RecursiveOp.square(da1.subtract(a1), parallel, depth + 1);
+        var vm1_fork = RecursiveOp.square(da1.subtract(a1), parallel, depth);
         da1 = da1.add(a1);
-        var v1_fork = RecursiveOp.square(da1, parallel, depth + 1);
-        vinf = a2.square(true, parallel, depth + 1);
-        v2 = da1.add(a2).shiftLeft(1).subtract(a0).square(true, parallel, depth + 1);
+        var v1_fork = RecursiveOp.square(da1, parallel, depth);
+        vinf = a2.square(true, parallel, depth);
+        v2 = da1.add(a2).shiftLeft(1).subtract(a0).square(true, parallel, depth);
         v0 = v0_fork.join();
         vm1 = vm1_fork.join();
         v1 = v1_fork.join();
