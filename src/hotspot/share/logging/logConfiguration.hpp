@@ -98,9 +98,6 @@ class LogConfiguration : public AllStatic {
   // Disable all logging, equivalent to -Xlog:disable.
   static void disable_logging();
 
-  // Get output index. Returns SIZE_MAX if output not found.
-  static size_t find_output(LogOutput* output);
-
   // Configures logging on stdout for the given tags and level combination.
   // Intended for mappings between -XX: flags and Unified Logging configuration.
   // If exact_match is true, only tagsets with precisely the specified tags will be configured

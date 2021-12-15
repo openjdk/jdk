@@ -25,6 +25,7 @@
 #define SHARE_LOGGING_LOGFILEOUTPUT_HPP
 
 #include "logging/logFileStreamOutput.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogDecorations;
@@ -59,6 +60,9 @@ class LogFileOutput : public LogFileStreamOutput {
   size_t  _rotate_size;
   size_t  _current_size;
 
+  // Semaphore used for synchronizing file rotations and writes
+  Semaphore _rotation_semaphore;
+
   void archive();
   void rotate();
   char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string);
@@ -73,15 +77,19 @@ class LogFileOutput : public LogFileStreamOutput {
       _current_file = 0;
     }
   }
+
  public:
   LogFileOutput(const char *name);
   virtual ~LogFileOutput();
-  virtual bool initialize(const char* options, outputStream* errstream) override;
-  virtual bool set_option(const char* key, const char* value, outputStream* errstream) override;
-  virtual bool flush(int written) override;
-  virtual void force_rotate() override;
-  virtual void describe(outputStream* out) override;
-  virtual const char* name() const override {
+  virtual bool initialize(const char* options, outputStream* errstream);
+  virtual bool set_option(const char* key, const char* value, outputStream* errstream);
+  int write(const LogDecorations& decorations, const char* msg) override;
+  int write(LogMessageBuffer::Iterator msg_iterator) override;
+  int write_blocking(const LogDecorations& decorations, const char* msg) override;
+  virtual void force_rotate();
+  virtual void describe(outputStream* out);
+
+  virtual const char* name() const {
     return _name;
   }
 

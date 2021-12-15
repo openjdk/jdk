@@ -25,6 +25,7 @@
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
+#include "logging/logFileStreamOutput.hpp"
 #include "logging/logHandle.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
@@ -138,26 +139,20 @@ void AsyncLogWriter::write() {
     char* msg = e->message();
 
     if (msg != nullptr) {
-      int sz = e->output()->write_blocking(e->decorations(), msg);
-      e->output()->flush(sz);
+      e->output()->write_blocking(e->decorations(), msg);
       os::free(msg);
     } else if (e->output() == nullptr) {
       // This is a flush token. Record that we found it and then
       // signal the flushing thread after the loop.
       req++;
-    } else {
-#ifdef ASSERT
-      // only LogFileOutput supports force_rotate();
-      size_t idx = LogConfiguration::find_output(e->output());
-      assert(idx != SIZE_MAX && idx > 1, "e->output() must be a valid LogFileOutput.");
-#endif
-      // This is a force_rotation token.
-      static_cast<LogFileOutput*>(e->output())->force_rotate();
     }
   }
 
   if (req > 0) {
     assert(req == 1, "AsyncLogWriter::flush() is NOT MT-safe!");
+    // LogFileOutput::write_block() has called fflush().
+    // stderr does not cache.
+    fflush(stdout);
     _flush_sem.signal(req);
   }
 }
@@ -220,22 +215,5 @@ void AsyncLogWriter::flush() {
     }
 
     _instance->_flush_sem.wait();
-  }
-}
-
-void AsyncLogWriter::force_rotate(LogOutput* output) {
-  if (_instance != nullptr) {
-    assert(output != NULL, "output can't be NULL");
-    {
-      using none = LogTagSetMapping<LogTag::__NO_TAG>;
-      AsyncLogLocker locker;
-      LogDecorations d(LogLevel::Off, none::tagset(), LogDecorators::None);
-      AsyncLogMessage token(static_cast<LogFileStreamOutput*>(output), d, nullptr);
-
-      // Push directly in-case we are at logical max capacity, as this must not get dropped.
-      _instance->_buffer.push_back(token);
-      _instance->_data_available = true;
-      _instance->_lock.notify();
-    }
   }
 }

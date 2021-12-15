@@ -46,7 +46,7 @@ LogFileOutput::LogFileOutput(const char* name)
     : LogFileStreamOutput(NULL), _name(os::strdup_check_oom(name, mtLogging)),
       _file_name(NULL), _archive_name(NULL), _current_file(0),
       _file_count(DefaultFileCount), _is_default_file_count(true), _archive_name_len(0),
-      _rotate_size(DefaultFileSize), _current_size(0) {
+      _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
   _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
 }
@@ -251,17 +251,78 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   return true;
 }
 
-bool LogFileOutput::flush(int written) {
-  bool result = LogFileStreamOutput::flush(written);
+class RotationLocker : public StackObj {
+  Semaphore& _sem;
 
-  if (result) {
+ public:
+  RotationLocker(Semaphore& sem) : _sem(sem) {
+    sem.wait();
+  }
+
+  ~RotationLocker() {
+    _sem.signal();
+  }
+};
+
+int LogFileOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
+  RotationLocker lock(_rotation_semaphore);
+  if (_stream == NULL) {
+    // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
+  int written = write_internal(decorations, msg);
+  // Need to flush to the filesystem before should_rotate()
+  written = flush() ? written : -1;
+  if (written > 0) {
     _current_size += written;
 
     if (should_rotate()) {
       rotate();
     }
   }
-  return result;
+
+  return written;
+}
+
+int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
+  if (_stream == NULL) {
+    // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, decorations, msg);
+    return 0;
+  }
+
+  return write_blocking(decorations, msg);
+}
+
+int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
+  if (_stream == NULL) {
+    // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, msg_iterator);
+    return 0;
+  }
+
+  RotationLocker lock(_rotation_semaphore);
+  int written = LogFileStreamOutput::write(msg_iterator);
+  if (written > 0) {
+    _current_size += written;
+
+    if (should_rotate()) {
+      rotate();
+    }
+  }
+
+  return written;
 }
 
 void LogFileOutput::archive() {
@@ -287,17 +348,11 @@ void LogFileOutput::force_rotate() {
     return;
   }
 
-  FileLocker lock(this);
+  RotationLocker lock(_rotation_semaphore);
   rotate();
 }
 
 void LogFileOutput::rotate() {
-  assert(LogConfiguration::is_async_mode() || current_thread_has_lock(),
-        "current thread must be holding _stream_lock!");
-
-  if (_stream == NULL)
-    return;
-
   if (fclose(_stream)) {
     jio_fprintf(defaultStream::error_stream(), "Error closing file '%s' during log rotation (%s).\n",
                 _file_name, os::strerror(errno));

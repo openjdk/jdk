@@ -23,8 +23,6 @@
  */
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "logging/logAsyncWriter.hpp"
-#include "logging/logConfiguration.hpp"
 #include "logging/logDecorators.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileStreamOutput.hpp"
@@ -94,26 +92,31 @@ int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   return total_written;
 }
 
-// if async-logging is on, this function is called by AsyncLog Thread sequentially.
-// if async-logging is off, this function is called from write(). Therefore, current thread
-// is holding _stream_lock
-bool LogFileStreamOutput::flush(int written) {
-  assert(LogConfiguration::is_async_mode() || current_thread_has_lock(),
-        "current thread must be holding _stream_lock!");
+class FileLocker : public StackObj {
+private:
+  FILE *_file;
 
-  bool result = written >= 0 ? true : false;
-  if (written > 0) {
-    if (fflush(_stream) != 0) {
-      if (!_write_error_is_shown) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Could not flush log: %s (%s (%d))\n", name(), os::strerror(errno), errno);
-        jio_fprintf(_stream, "\nERROR: Could not flush log (%d)\n", errno);
-        _write_error_is_shown = true;
-      }
-      result = false;
-    }
+public:
+  FileLocker(FILE *file) : _file(file) {
+    os::flockfile(_file);
   }
 
+  ~FileLocker() {
+    os::funlockfile(_file);
+  }
+};
+
+bool LogFileStreamOutput::flush() {
+  bool result = true;
+  if (fflush(_stream) != 0) {
+    if (!_write_error_is_shown) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Could not flush log: %s (%s (%d))\n", name(), os::strerror(errno), errno);
+      jio_fprintf(_stream, "\nERROR: Could not flush log (%d)\n", errno);
+      _write_error_is_shown = true;
+    }
+    result = false;
+  }
   return result;
 }
 
@@ -132,8 +135,15 @@ bool LogFileStreamOutput::flush(int written) {
   total += result;                                            \
 }
 
-int LogFileStreamOutput::write_internal(const char* msg) {
+int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
   int written = 0;
+  const bool use_decorations = !_decorators.is_empty();
+
+  if (use_decorations) {
+    WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
+  }
+
   if (!_fold_multilines) {
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
   } else {
@@ -157,60 +167,36 @@ int LogFileStreamOutput::write_internal(const char* msg) {
 }
 
 int LogFileStreamOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
-  if (_stream == nullptr) {
-    // An error has occurred with this output, avoid writing to it.
-    return 0;
-  }
-
-  const bool use_decorations = !_decorators.is_empty();
-
-  int written = 0;
-  if (use_decorations) {
-    WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
-  }
-  written += write_internal(msg);
-  return written;
+  return write_internal(decorations, msg);
 }
 
 int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
-  if (_stream == nullptr) {
-    // An error has occurred with this output, avoid writing to it.
-    return 0;
-  }
-
   AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
   if (aio_writer != nullptr) {
     aio_writer->enqueue(*this, decorations, msg);
     return 0;
   }
 
-  FileLocker flocker(this);
-  int written = write_blocking(decorations, msg);
-  return flush(written) ? written : -1;
+  FileLocker flocker(_stream);
+  int written = write_internal(decorations, msg);
+
+  return flush() ? written : -1;
 }
 
 int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
-  if (_stream == nullptr) {
-    // An error has occurred with this output, avoid writing to it.
-    return 0;
-  }
-
   AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
   if (aio_writer != nullptr) {
     aio_writer->enqueue(*this, msg_iterator);
     return 0;
   }
 
-  FileLocker flocker(this);
   int written = 0;
+  FileLocker flocker(_stream);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    int sz = write_blocking(msg_iterator.decorations(), msg_iterator.message());
-    if (sz < 0) return sz;
-    written += sz;
+    written += write_internal(msg_iterator.decorations(), msg_iterator.message());
   }
 
-  return flush(written) ? written : -1;
+  return flush() ? written : -1;
 }
 
 void LogFileStreamOutput::describe(outputStream *out) {
@@ -219,9 +205,3 @@ void LogFileStreamOutput::describe(outputStream *out) {
 
   out->print("foldmultilines=%s", _fold_multilines ? "true" : "false");
 }
-
-#ifdef ASSERT
-bool LogFileStreamOutput::current_thread_has_lock() {
-  return _locking_thread_id == os::current_thread_id();
-}
-#endif

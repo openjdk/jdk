@@ -173,16 +173,6 @@ size_t LogConfiguration::find_output(const char* name) {
   return SIZE_MAX;
 }
 
-size_t LogConfiguration::find_output(LogOutput* output) {
-  for (size_t i = 0; i < _n_outputs; i++) {
-    if (_outputs[i] == output) {
-      return i;
-    }
-  }
-
-  return SIZE_MAX;
-}
-
 LogOutput* LogConfiguration::new_output(const char* name,
                                         const char* options,
                                         outputStream* errstream) {
@@ -685,11 +675,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
 void LogConfiguration::rotate_all_outputs() {
   // Start from index 2 since neither stdout nor stderr can be rotated.
   for (size_t idx = 2; idx < _n_outputs; idx++) {
-    if (is_async_mode()) {
-      AsyncLogWriter::force_rotate(_outputs[idx]);
-    } else {
-      _outputs[idx]->force_rotate();
-    }
+    _outputs[idx]->force_rotate();
   }
 }
 

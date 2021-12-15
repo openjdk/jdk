@@ -24,10 +24,10 @@
 #ifndef SHARE_LOGGING_LOGFILESTREAMOUTPUT_HPP
 #define SHARE_LOGGING_LOGFILESTREAMOUTPUT_HPP
 
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logDecorators.hpp"
 #include "logging/logOutput.hpp"
 #include "runtime/os.hpp"
-#include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogDecorations;
@@ -46,51 +46,27 @@ class LogFileStreamOutput : public LogOutput {
   static const char* const FoldMultilinesOptionKey;
   bool                _fold_multilines;
   bool                _write_error_is_shown;
-  int write_internal(const char* msg);
+
  protected:
   FILE*               _stream;
-  // Semaphore used for synchronizing file rotations and writes
-  Semaphore           _stream_lock;
-  debug_only(intx     _locking_thread_id = -1;)
   size_t              _decorator_padding[LogDecorators::Count];
 
-  LogFileStreamOutput(FILE *stream) : _fold_multilines(false), _write_error_is_shown(false), _stream(stream), _stream_lock(1) {
+  LogFileStreamOutput(FILE *stream) : _fold_multilines(false), _write_error_is_shown(false), _stream(stream) {
     for (size_t i = 0; i < LogDecorators::Count; i++) {
       _decorator_padding[i] = 0;
     }
   }
 
   int write_decorations(const LogDecorations& decorations);
-
-  // sempahore-based mutex. Implementation of flockfile do not work with LogFileOuptut::rotate()
-  // because fclose() automatically unlocks FILE->_lock and nullifies FileLocker protection.
-  class FileLocker : public StackObj {
-    Semaphore& _sem;
-    debug_only(intx& _locking_thread_id;)
-
-   public:
-    FileLocker(LogFileStreamOutput* output) : _sem(output->_stream_lock)
-#ifdef ASSERT
-    , _locking_thread_id(output->_locking_thread_id)
-#endif
-     {
-      _sem.wait();
-      debug_only(_locking_thread_id = os::current_thread_id());
-    }
-
-    ~FileLocker() {
-      debug_only(_locking_thread_id = -1);
-      _sem.signal();
-    }
-  };
-  debug_only(bool current_thread_has_lock();)
+  int write_internal(const LogDecorations& decorations, const char* msg);
+  bool flush();
 
  public:
   virtual bool set_option(const char* key, const char* value, outputStream* errstream);
-  int write(const LogDecorations& decorations, const char* msg);
-  int write(LogMessageBuffer::Iterator msg_iterator);
-  int write_blocking(const LogDecorations& decorations, const char* msg);
-  virtual bool flush(int written);
+  virtual int write(const LogDecorations& decorations, const char* msg);
+  virtual int write(LogMessageBuffer::Iterator msg_iterator);
+  // Write API used by AsyncLogWriter
+  virtual int write_blocking(const LogDecorations& decorations, const char* msg);
   virtual void describe(outputStream* out);
 };
 

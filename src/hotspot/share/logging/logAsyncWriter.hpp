@@ -25,7 +25,6 @@
 #define SHARE_LOGGING_LOGASYNCWRITER_HPP
 #include "logging/log.hpp"
 #include "logging/logDecorations.hpp"
-#include "logging/logFileStreamOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -90,6 +89,9 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
     return this->_head;
   }
 };
+
+// Forward declaration
+class LogFileStreamOutput;
 
 class AsyncLogMessage {
   LogFileStreamOutput* _output;
@@ -175,7 +177,6 @@ class AsyncLogWriter : public NonJavaThread {
   static AsyncLogWriter* instance();
   static void initialize();
   static void flush();
-  static void force_rotate(LogOutput* output);
 };
 
 #endif // SHARE_LOGGING_LOGASYNCWRITER_HPP
