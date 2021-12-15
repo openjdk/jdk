@@ -1862,6 +1862,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
     }
 
+    @SuppressWarnings("serial")
     private abstract static sealed class RecursiveOp extends RecursiveTask<BigInteger> {
         /**
          * The threshold until when we should continue forking recursive ops
@@ -1873,9 +1874,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         private static final int PARALLEL_FORK_THRESHOLD = Integer.getInteger(
                 "java.math.BigInteger.parallelForkThreshold",
                 (int) Math.ceil(Math.log(Runtime.getRuntime().availableProcessors()) / Math.log(2)));
-
-        @Serial
-        private static final long serialVersionUID = 0L;
 
         private final boolean parallel;
         private final int depth;
@@ -1891,10 +1889,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return this;
         }
 
+        @SuppressWarnings("serial")
         private static final class RecursiveMultiply extends RecursiveOp {
-            @Serial
-            private static final long serialVersionUID = 0L;
-
             private final BigInteger a;
             private final BigInteger b;
 
@@ -1910,10 +1906,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             }
         }
 
+        @SuppressWarnings("serial")
         private static final class RecursiveSquare extends RecursiveOp {
-            @Serial
-            private static final long serialVersionUID = 0L;
-
             private final BigInteger a;
 
             public RecursiveSquare(BigInteger a, boolean parallel, int depth) {
