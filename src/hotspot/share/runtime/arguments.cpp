@@ -119,6 +119,9 @@ bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = NULL;
 
+// True if -Xshare:auto option was specified.
+static bool xshare_auto_cmd_line = false;
+
 bool PathString::set_value(const char *value) {
   if (_value != NULL) {
     FreeHeap(_value);
@@ -2712,6 +2715,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     } else if (match_option(option, "-Xshare:auto")) {
       UseSharedSpaces = true;
       RequireSharedSpaces = false;
+      xshare_auto_cmd_line = true;
     // -Xshare:off
     } else if (match_option(option, "-Xshare:off")) {
       UseSharedSpaces = false;
@@ -3992,7 +3996,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
       "DumpLoadedClassList is not supported in this VM\n");
     return JNI_ERR;
   }
-  if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) ||
+  if ((UseSharedSpaces && xshare_auto_cmd_line) ||
       log_is_enabled(Info, cds)) {
     warning("Shared spaces are not supported in this VM");
     UseSharedSpaces = false;

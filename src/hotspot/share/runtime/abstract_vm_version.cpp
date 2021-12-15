@@ -337,3 +337,46 @@ bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, o
   fclose(fp);
   return true;
 }
+
+// Abstract_VM_Version statics
+int   Abstract_VM_Version::_no_of_threads = 0;
+int   Abstract_VM_Version::_no_of_cores = 0;
+int   Abstract_VM_Version::_no_of_sockets = 0;
+bool  Abstract_VM_Version::_initialized = false;
+char  Abstract_VM_Version::_cpu_name[CPU_TYPE_DESC_BUF_SIZE] = {0};
+char  Abstract_VM_Version::_cpu_desc[CPU_DETAILED_DESC_BUF_SIZE] = {0};
+
+int Abstract_VM_Version::number_of_threads(void) {
+  assert(_initialized, "should be initialized");
+  return _no_of_threads;
+}
+
+int Abstract_VM_Version::number_of_cores(void) {
+  assert(_initialized, "should be initialized");
+  return _no_of_cores;
+}
+
+int Abstract_VM_Version::number_of_sockets(void) {
+  assert(_initialized, "should be initialized");
+  return _no_of_sockets;
+}
+
+const char* Abstract_VM_Version::cpu_name(void) {
+  assert(_initialized, "should be initialized");
+  char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_TYPE_DESC_BUF_SIZE, mtTracing);
+  if (NULL == tmp) {
+    return NULL;
+  }
+  strncpy(tmp, _cpu_name, CPU_TYPE_DESC_BUF_SIZE);
+  return tmp;
+}
+
+const char* Abstract_VM_Version::cpu_description(void) {
+  assert(_initialized, "should be initialized");
+  char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_DETAILED_DESC_BUF_SIZE, mtTracing);
+  if (NULL == tmp) {
+    return NULL;
+  }
+  strncpy(tmp, _cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
+  return tmp;
+}
