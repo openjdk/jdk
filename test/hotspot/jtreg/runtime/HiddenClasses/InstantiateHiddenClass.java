@@ -45,6 +45,9 @@ public class InstantiateHiddenClass {
         " } } ");
 
     public static void main(String[] args) throws Throwable {
+        // This class is also used by the appcds/dynamicArchive/RegularHiddenClass.java
+        // test which will pass the "keep-alive" argument during dynamic CDS dump
+        // for preventing from being GC'ed prior to the dumping operation.
         boolean keepAlive = false;
         if (args.length == 1 && args[0].equals("keep-alive")) {
             keepAlive = true;

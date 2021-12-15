@@ -43,6 +43,9 @@ public class CustomLoaderApp {
             init = true;
         }
 
+        // The dynamicArchive/LambdaCustomLoader.java test passes the keep-alive
+        // argument for preventing the class from being GC'ed prior to dumping of
+        // the dynamic CDS archive.
         boolean keepAlive = false;
         if (args[args.length - 1].equals("keep-alive")) {
             keepAlive = true;

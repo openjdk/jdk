@@ -47,6 +47,9 @@ public class OldClassApp {
             throw new RuntimeException("args[1] can only be either \"true\" or \"false\", actual " + args[1]);
         }
 
+        // The OldClassAndInf.java test under appcds/dynamicArchive passes the keep-alive
+        // argument for preventing the classes from being GC'ed prior to dumping of
+        // the dynamic CDS archive.
         int startIdx = 2;
         boolean keepAlive = false;
         if (args[2].equals("keep-alive")) {

@@ -64,6 +64,9 @@ public class HelloUnload {
             throw new RuntimeException("args[2] can only be either \"true\" or \"false\", actual " + args[1]);
         }
 
+        // The HelloDynamicCustom.java and PrintSharedArchiveAndExit.java tests
+        // under appcds/dynamicArchive pass the keep-alive argument for preventing
+        // the class from being GC'ed prior to dumping of the dynamic CDS archive.
         boolean keepAlive = false;
         if (args[args.length - 1].equals("keep-alive")) {
             keepAlive = true;
