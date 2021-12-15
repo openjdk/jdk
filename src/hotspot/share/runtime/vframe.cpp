@@ -608,11 +608,10 @@ javaVFrame* vframeStreamCommon::asJavaVFrame() {
   return result;
 }
 
-
+#ifndef PRODUCT
 void vframe::print() {
   if (WizardMode) _fr.print_value_on(tty,NULL);
 }
-#ifndef PRODUCT
 
 void vframe::print_value() const {
   ((vframe*)this)->print();

@@ -337,7 +337,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   if (PrintDeoptimizationDetails) {
     tty->print_cr("Expressions size: %d", expressions()->size());
   }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
 
 
   // Unpack expression stack
@@ -357,7 +357,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
         if (PrintDeoptimizationDetails) {
           tty->print_cr(" - Reconstructed expression %d (INT): %d", i, (int)(*addr));
         }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
         break;
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
@@ -372,7 +372,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
             tty->print_raw_cr(o->klass()->name()->as_C_string());
           }
         }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
         break;
       case T_CONFLICT:
         // A dead stack slot.  Initialize to null in case it is an oop.
@@ -387,7 +387,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   if (PrintDeoptimizationDetails) {
     tty->print_cr("Locals size: %d", locals()->size());
   }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
 
   // Unpack the locals
   for(i = 0; i < locals()->size(); i++) {
@@ -401,7 +401,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
         if (PrintDeoptimizationDetails) {
           tty->print_cr(" - Reconstructed local %d (INT): %d", i, (int)(*addr));
         }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
         break;
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
@@ -416,7 +416,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
             tty->print_raw_cr(o->klass()->name()->as_C_string());
           }
         }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
         break;
       case T_CONFLICT:
         // A dead location. If it is an oop then we need a NULL to prevent GC from following it
@@ -468,7 +468,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     if (WizardMode && Verbose) method()->print_codes();
     tty->cr();
   }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
 
   // The expression stack and locals are in the resource area don't leave
   // a dangling pointer in the vframeArray we leave around for debug
@@ -645,7 +645,7 @@ bool vframeArray::structural_compare(JavaThread* thread, GrowableArray<compiledV
   return true;
 }
 
-#endif /* !PRODUCT */
+#endif // !PRODUCT
 
 address vframeArray::register_location(int i) const {
   assert(0 <= i && i < RegisterMap::reg_count, "index out of bounds");
@@ -677,4 +677,4 @@ void vframeArray::print_value_on(outputStream* st) const {
 }
 
 
-#endif /* !PRODUCT */
+#endif // !PRODUCT

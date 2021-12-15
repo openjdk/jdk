@@ -99,10 +99,10 @@ class vframe: public ResourceObj {
   virtual bool is_interpreted_frame() const { return false; }
   virtual bool is_compiled_frame()    const { return false; }
 
-  virtual void print();
 #ifndef PRODUCT
   // printing operations
   virtual void print_value() const;
+  virtual void print();
 #endif
 };
 

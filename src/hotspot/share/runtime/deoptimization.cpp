@@ -278,7 +278,9 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
   assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, deoptee.id()), "must relock just once");
   assert(thread == Thread::current(), "should be");
   HandleMark hm(thread);
+#ifndef PRODUCT
   bool first = true;
+#endif // !PRODUCT
   for (int i = 0; i < chunk->length(); i++) {
     compiledVFrame* cvf = chunk->at(i);
     assert (cvf->scope() != NULL,"expect only compiled java frames");
@@ -315,7 +317,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
         }
         tty->print_raw(st.as_string());
       }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
     }
   }
 }
@@ -428,7 +430,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
     if (PrintDeoptimizationDetails) {
       tty->print_cr("Exception to be rethrown in the interpreter for method %s::%s at bci %d", trap_scope->method()->method_holder()->name()->as_C_string(), trap_scope->method()->name()->as_C_string(), trap_scope->bci());
     }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
 
     GrowableArray<ScopeValue*>* expressions = trap_scope->expressions();
     guarantee(expressions != NULL && expressions->length() > 0, "must have exception to throw");
@@ -878,7 +880,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
       is_top_frame = false;
     }
   }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
 
   return bt;
 JRT_END
@@ -1409,7 +1411,7 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     if (PrintDeoptimizationDetails) {
       tty->print_cr("reassign fields for object of type %s!", k->name()->as_C_string());
     }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
 
     if (obj.is_null()) {
       continue;
@@ -1433,7 +1435,7 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
             k->oop_print_on(obj(), tty);
           }
         }
-#endif /* !PRODUCT */
+#endif // !PRODUCT
         continue; // Such vector's value was already restored in VectorSupport::allocate_vector().
       }
       // Else fall-through to do assignment for scalar-replaced boxed vector representation
