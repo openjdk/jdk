@@ -31,11 +31,12 @@
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   -XX:LoopStripMiningIter=10
  *                   compiler.vectorization.runner.StripMinedLoopTest
  *
- * @requires vm.compiler2.enabled
+ * @requires vm.compiler2.enabled & vm.flagless
  */
 
 package compiler.vectorization.runner;

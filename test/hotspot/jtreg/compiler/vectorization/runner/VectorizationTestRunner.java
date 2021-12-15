@@ -55,6 +55,10 @@ public class VectorizationTestRunner {
     protected @interface Test {}
 
     protected void run() {
+        // Add extra VM options to enable post loop vectorization
+        WB.setBooleanVMFlag("UnlockExperimentalVMOptions", true);
+        WB.setBooleanVMFlag("PostLoopMultiversioning", true);
+
         // For each method annotated with @Test in the test method, this test runner
         // invokes it twice - first time in the interpreter and second time compiled
         // by C2. Then this runner compares the two return values. Hence we require
@@ -176,7 +180,7 @@ public class VectorizationTestRunner {
             fail("Invalid test file name " + testName);
         }
         testName = testName.substring(0, testName.length() - 5);
-        testName = testName.replace(File.separatorChar, '.');
+        testName = testName.replace('/', '.');
 
         VectorizationTestRunner instance = null;
         try {

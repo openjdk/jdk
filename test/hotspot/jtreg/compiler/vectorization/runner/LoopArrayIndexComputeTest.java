@@ -31,10 +31,11 @@
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.LoopArrayIndexComputeTest
  *
- * @requires vm.compiler2.enabled
+ * @requires vm.compiler2.enabled & vm.flagless
  */
 
 package compiler.vectorization.runner;
