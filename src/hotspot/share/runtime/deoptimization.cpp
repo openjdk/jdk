@@ -287,6 +287,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
       bool relocked = Deoptimization::relock_objects(thread, monitors, deoptee_thread, deoptee,
                                                      exec_mode, realloc_failures);
       deoptimized_objects = deoptimized_objects || relocked;
+#ifndef PRODUCT
       if (PrintDeoptimizationDetails) {
         ResourceMark rm;
         stringStream st;
@@ -314,6 +315,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
         }
         tty->print_raw(st.as_string());
       }
+#endif /* !PRODUCT */
     }
   }
 }
@@ -422,9 +424,12 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   ScopeDesc* trap_scope = chunk->at(0)->scope();
   Handle exceptionObject;
   if (trap_scope->rethrow_exception()) {
+#ifndef PRODUCT
     if (PrintDeoptimizationDetails) {
       tty->print_cr("Exception to be rethrown in the interpreter for method %s::%s at bci %d", trap_scope->method()->method_holder()->name()->as_C_string(), trap_scope->method()->name()->as_C_string(), trap_scope->bci());
     }
+#endif /* !PRODUCT */
+
     GrowableArray<ScopeValue*>* expressions = trap_scope->expressions();
     guarantee(expressions != NULL && expressions->length() > 0, "must have exception to throw");
     ScopeValue* topOfStack = expressions->top();
@@ -1400,9 +1405,12 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     Handle obj = sv->value();
     assert(obj.not_null() || realloc_failures, "reallocation was missed");
+#ifndef PRODUCT
     if (PrintDeoptimizationDetails) {
       tty->print_cr("reassign fields for object of type %s!", k->name()->as_C_string());
     }
+#endif /* !PRODUCT */
+
     if (obj.is_null()) {
       continue;
     }
@@ -1417,6 +1425,7 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       ScopeValue* payload = sv->field_at(0);
       if (payload->is_location() &&
           payload->as_LocationValue()->location().type() == Location::vector) {
+#ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print_cr("skip field reassignment for this vector - it should be assigned already");
           if (Verbose) {
@@ -1424,12 +1433,13 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
             k->oop_print_on(obj(), tty);
           }
         }
+#endif /* !PRODUCT */
         continue; // Such vector's value was already restored in VectorSupport::allocate_vector().
       }
       // Else fall-through to do assignment for scalar-replaced boxed vector representation
       // which could be restored after vector object allocation.
     }
-#endif
+#endif /* !COMPILER2 */
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), skip_internal);

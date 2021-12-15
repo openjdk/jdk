@@ -1288,7 +1288,7 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, TraceDeoptimization, false, DIAGNOSTIC,                     \
           "Trace deoptimization")                                           \
                                                                             \
-  product(bool, PrintDeoptimizationDetails, false, DIAGNOSTIC,              \
+  develop(bool, PrintDeoptimizationDetails, false,                          \
           "Print more information about deoptimization")                    \
                                                                             \
   develop(bool, DebugDeoptimization, false,                                 \
