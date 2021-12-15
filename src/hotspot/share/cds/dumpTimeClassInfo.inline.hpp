@@ -31,9 +31,12 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "runtime/safepoint.hpp"
 
-// For safety, do not iterate over a class if it loader
-// was not marked as eligble for dumpimg.
+// For safety, only iterate over a class if it loader is alive.
+// EligibleClassIterationHelper and DumpTimeSharedClassTable::iterate
+// must be used only inside a safepoint, where the return of
+// k->is_loader_alive() will not change.
 template<class ITER>
 class EligibleClassIterationHelper {
   ITER* _iter;
@@ -42,10 +45,13 @@ public:
     _iter = iter;
   }
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
+    assert(SafepointSynchronize::is_at_safepoint(), "invariant");
     assert_lock_strong(DumpTimeTable_lock);
-    if (k->class_loader_data()->eligible_for_dumping()) {
+    if (k->is_loader_alive()) {
       assert(k->is_loader_alive(), "must be");
-      return _iter->do_entry(k, info);
+      bool result = _iter->do_entry(k, info);
+      assert(k->is_loader_alive(), "must not change");
+      return result;
     } else {
       if (!SystemDictionaryShared::is_excluded_class(k)) {
         SystemDictionaryShared::warn_excluded(k, "Class loader not eligible");

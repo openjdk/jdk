@@ -384,7 +384,7 @@ void DynamicArchive::check_for_dynamic_dump() {
 void DynamicArchive::prepare_for_dump_at_exit() {
   EXCEPTION_MARK;
   ResourceMark rm(THREAD);
-  MetaspaceShared::find_and_update_eligible_classes(THREAD);
+  MetaspaceShared::link_shared_classes(THREAD);
   if (HAS_PENDING_EXCEPTION) {
     log_error(cds)("Dynamic dump has failed");
     log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
@@ -400,7 +400,7 @@ void DynamicArchive::dump_for_jcmd(const char* archive_name, TRAPS) {
   assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp");
   assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp");
   assert(DynamicDumpSharedSpaces, "already checked by check_for_dynamic_dump() during VM startup");
-  MetaspaceShared::find_and_update_eligible_classes(CHECK);
+  MetaspaceShared::link_shared_classes(CHECK);
   dump(archive_name, THREAD);
 }
 

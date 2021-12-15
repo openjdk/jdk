@@ -582,29 +582,25 @@ void VM_PopulateDumpSharedSpace::doit() {
   vm_direct_exit(0);
 }
 
-// If a CLD is alive at the start of the CDS dump, make sure it's alive
-// throughout the entire dump process.
-static GrowableArrayCHeap<ClassLoaderData*, mtClassShared>* _dumping_clds = NULL;
-static GrowableArrayCHeap<OopHandle, mtClassShared>* _dumping_loaders = NULL;
-
 class CollectCLDClosure : public CLDClosure {
+  GrowableArray<ClassLoaderData*> _loaded_cld;
+  GrowableArray<OopHandle> _loaded_cld_handles; // keep the CLDs alive
+  Thread* _current_thread;
 public:
-  CollectCLDClosure() {
-  }
+  CollectCLDClosure(Thread* thread) : _current_thread(thread) {}
   ~CollectCLDClosure() {
-    //for (int i = 0; i < _loaded_cld_handles.length(); i++) {
-    //  _loaded_cld_handles.at(i).release(Universe::vm_global());
-    //}
+    for (int i = 0; i < _loaded_cld_handles.length(); i++) {
+      _loaded_cld_handles.at(i).release(Universe::vm_global());
+    }
   }
   void do_cld(ClassLoaderData* cld) {
     assert(cld->is_alive(), "must be");
-    cld->set_eligible_for_dumping(true);
-    _dumping_clds->append(cld);
-    _dumping_loaders->append(OopHandle(Universe::vm_global(), cld->holder_phantom()));
+    _loaded_cld.append(cld);
+    _loaded_cld_handles.append(OopHandle(Universe::vm_global(), cld->holder_phantom()));
   }
 
-  int nof_cld() const                { return _dumping_clds->length();  }
-  ClassLoaderData* cld_at(int index) { return _dumping_clds->at(index); }
+  int nof_cld() const                { return _loaded_cld.length(); }
+  ClassLoaderData* cld_at(int index) { return _loaded_cld.at(index); }
 };
 
 // Check if we can eagerly link this class at dump time, so we can avoid the
@@ -644,38 +640,19 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   return res;
 }
 
-// Classes can be loaded and unloaded concurrently after CDS has started
-// dumping. For safety, a class is considered eligible for dumping only
-// if its CLD is discovered by CollectCLDClosure.
-//
-// Updates to the eligible classes
-// - We try to link them here to improve start-up time.
-// - Lambda-form invoker holder classes (loaded by the boot loader and thus
-//   always eligible) are regenerated to include all forms used by the
-//   application.
-void MetaspaceShared::find_and_update_eligible_classes(TRAPS) {
+void MetaspaceShared::link_shared_classes(TRAPS) {
   LambdaFormInvokers::regenerate_holder_classes(CHECK);
 
-  _dumping_clds = new GrowableArrayCHeap<ClassLoaderData*, mtClassShared>();
-  _dumping_loaders = new GrowableArrayCHeap<OopHandle, mtClassShared>();
-
   // Collect all loaded ClassLoaderData.
-  CollectCLDClosure collect_cld;
+  CollectCLDClosure collect_cld(THREAD);
   {
     // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.
-    // We cannot link the classes while holding this lock (or else we may run
-    // into deadlock).
+    // We cannot link the classes while holding this lock (or else we may run into deadlock).
+    // Therefore, we need to first collect all the CLDs, and then link their classes after
+    // releasing the lock.
     MutexLocker lock(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::loaded_cld_do(&collect_cld);
   }
-
-  // Rewrite and link classes
-  log_info(cds)("Rewriting and linking classes ...");
-
-  // Link any classes which got missed. This would happen if we have loaded classes that
-  // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
-  // fails verification, all other interfaces that were not specified in the classlist but
-  // are implemented by K are not verified.
 
   while (true) {
     bool has_linked = false;
@@ -788,12 +765,21 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   }
 
   HeapShared::init_for_dumping(CHECK);
-  find_and_update_eligible_classes(CHECK);
+
+  // Rewrite and link classes
+  log_info(cds)("Rewriting and linking classes ...");
+
+  // Link any classes which got missed. This would happen if we have loaded classes that
+  // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
+  // fails verification, all other interfaces that were not specified in the classlist but
+  // are implemented by K are not verified.
+  link_shared_classes(CHECK);
+  log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (use_full_module_graph()) {
-    HeapShared::reset_archived_object_states(CHECK);
-  }
+    if (use_full_module_graph()) {
+      HeapShared::reset_archived_object_states(CHECK);
+    }
 #endif
 
   VM_PopulateDumpSharedSpace op;
