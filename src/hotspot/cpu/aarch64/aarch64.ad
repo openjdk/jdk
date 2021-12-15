@@ -8565,10 +8565,10 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
     __ movw($src$$Register, $src$$Register); // ensure top 32 bits 0
-    __ mov($tmp$$FloatRegister, __ T1D, 0, $src$$Register);
+    __ mov($tmp$$FloatRegister, __ D, 0, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8590,7 +8590,7 @@ instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8608,10 +8608,10 @@ instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
             "addv   $tmp, $tmp\t# vector (8B)\n\t"
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
-    __ mov($tmp$$FloatRegister, __ T1D, 0, $src$$Register);
+    __ mov($tmp$$FloatRegister, __ D, 0, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8633,7 +8633,7 @@ instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
