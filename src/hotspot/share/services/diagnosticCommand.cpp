@@ -906,8 +906,9 @@ void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {
 ClassHierarchyDCmd::ClassHierarchyDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
   _print_interfaces("-i", "Inherited interfaces should be printed.", "BOOLEAN", false, "false"),
-  _print_subclasses("-s", "If a classname is specified, print its subclasses. "
-                    "Otherwise only its superclasses are printed.", "BOOLEAN", false, "false"),
+  _print_subclasses("-s", "If a classname is specified, print its subclasses "
+                    "in addition to its superclasses. Without this option only the "
+                    "superclasses will be printed.", "BOOLEAN", false, "false"),
   _classname("classname", "Name of class whose hierarchy should be printed. "
              "If not specified, all class hierarchies are printed.",
              "STRING", false) {
