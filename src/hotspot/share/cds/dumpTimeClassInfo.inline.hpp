@@ -33,6 +33,8 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/safepoint.hpp"
 
+#if INCLUDE_CDS
+
 // For safety, only iterate over a class if it loader is alive.
 // EligibleClassIterationHelper and DumpTimeSharedClassTable::iterate
 // must be used only inside a safepoint, where the return of
@@ -67,5 +69,7 @@ void DumpTimeSharedClassTable::iterate(ITER* iter) const {
   EligibleClassIterationHelper<ITER> helper(iter);
   DumpTimeSharedClassTableBaseType::iterate(&helper);
 }
+
+#endif // INCLUDE_CDS
 
 #endif // SHARED_CDS_DUMPTIMESHAREDCLASSINFO_INLINE_HPP
