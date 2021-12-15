@@ -1877,8 +1877,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return 32 - Integer.numberOfLeadingZeros(parallelism);
         }
 
-        private final boolean parallel;
-        private final int depth;
+        final boolean parallel;
+        final int depth;
 
         private RecursiveOp(boolean parallel, int depth) {
             this.parallel = parallel;
@@ -1913,7 +1913,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
             @Override
             public BigInteger compute() {
-                return a.multiply(b, true, super.parallel, super.depth);
+                return a.multiply(b, true, parallel, depth);
             }
         }
 
@@ -1928,7 +1928,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
             @Override
             public BigInteger compute() {
-                return a.square(true, super.parallel, super.depth);
+                return a.square(true, parallel, depth);
             }
         }
 
