@@ -226,7 +226,8 @@ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner(uint n_wo
   _thread_roots(ShenandoahPhaseTimings::heap_iteration_roots, false /*is par*/),
   _vm_roots(ShenandoahPhaseTimings::heap_iteration_roots),
   _cld_roots(ShenandoahPhaseTimings::heap_iteration_roots, n_workers, true /*heap iteration*/),
-  _weak_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
+  _weak_roots(ShenandoahPhaseTimings::heap_iteration_roots),
+  _code_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
 }
 
 class ShenandoahMarkCodeBlobClosure : public CodeBlobClosure {
