@@ -70,7 +70,7 @@ enum {
   JVM_ACC_IS_HIDDEN_CLASS         = 0x04000000,     // True if klass is hidden
   JVM_ACC_IS_VALUE_BASED_CLASS    = 0x08000000,     // True if klass is marked as a ValueBased class
   JVM_ACC_IS_BEING_REDEFINED      = 0x00100000,     // True if the klass is being redefined.
-  JVM_ACC_HAS_RESOLVED_METHODS    = 0x00200000,     // True if the klass is has resolved methods
+  JVM_ACC_HAS_RESOLVED_METHODS    = 0x00200000,     // True if the klass has resolved methods
 
   // Klass* and Method* flags
   JVM_ACC_HAS_LOCAL_VARIABLE_TABLE= 0x00400000,
