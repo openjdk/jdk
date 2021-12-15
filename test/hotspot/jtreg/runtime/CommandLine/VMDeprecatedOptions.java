@@ -54,19 +54,12 @@ public class VMDeprecatedOptions {
             {"InitialRAMFraction",        "64"},
             {"TLABStats",                 "false"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
-            {"UseSharedSpaces",           "false"},
-            {"RequireSharedSpaces",       "false"},
-            {"DumpSharedSpaces",          "false"},
-            {"DynamicDumpSharedSpaces",   "false"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"DefaultMaxRAMFraction", "4"},
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
-        if (!Platform.isDebugBuild()) {
-            deprecated.add(new String[]{"UseHeavyMonitors", "false"});
-        }
         DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
     };
 

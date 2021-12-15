@@ -82,7 +82,7 @@ import static javax.tools.JavaFileObject.Kind;
  * section&nbsp;3.3.  Informally, this should be true:
  *
  * {@snippet id="valid-relative-name" lang=java :
- *     // @link substring="create" target="URI#create" : @link substring=normalize target="URI#normalize" : @link substring=getPath target="URI#getPath" :
+ *     // @link substring="create" target="URI#create" @link substring=normalize target="URI#normalize" @link substring=getPath target="URI#getPath" :
  *     URI.create(relativeName).normalize().getPath().equals(relativeName)
  *     }
  *

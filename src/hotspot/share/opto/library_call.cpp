@@ -652,8 +652,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_nary_operation(2);
   case vmIntrinsics::_VectorTernaryOp:
     return inline_vector_nary_operation(3);
-  case vmIntrinsics::_VectorBroadcastCoerced:
-    return inline_vector_broadcast_coerced();
+  case vmIntrinsics::_VectorFromBitsCoerced:
+    return inline_vector_frombits_coerced();
   case vmIntrinsics::_VectorShuffleIota:
     return inline_vector_shuffle_iota();
   case vmIntrinsics::_VectorMaskOp:

@@ -455,8 +455,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
     @ForceInline
     public static IntVector zero(VectorSpecies<Integer> species) {
         IntSpecies vsp = (IntSpecies) species;
-        return VectorSupport.broadcastCoerced(vsp.vectorType(), int.class, species.length(),
-                                0, vsp,
+        return VectorSupport.fromBitsCoerced(vsp.vectorType(), int.class, species.length(),
+                                0, MODE_BROADCAST, vsp,
                                 ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
 
@@ -3874,9 +3874,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
         @ForceInline
         final IntVector broadcastBits(long bits) {
             return (IntVector)
-                VectorSupport.broadcastCoerced(
+                VectorSupport.fromBitsCoerced(
                     vectorType, int.class, laneCount,
-                    bits, this,
+                    bits, MODE_BROADCAST, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
 

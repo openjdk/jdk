@@ -748,7 +748,7 @@ javax/swing/JMenu/4515762/bug4515762.java 8276074 macosx-all
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
-javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-aarch64
+javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 
 ############################################################################
 
