@@ -26,6 +26,8 @@
  * @bug 8269574
  * @summary Verifies that exceptions are reported correctly to JVMTI in the compiled code
  * @requires vm.jvmti
+ * @requires vm.compMode != "Xint"
+ * @requires vm.compiler1.enabled | vm.compiler2.enabled
  * @library /test/lib /
  *
  * @build sun.hotspot.WhiteBox
