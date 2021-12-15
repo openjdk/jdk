@@ -528,25 +528,6 @@ public:
   }
 };
 
-// This class encapsulates various marks we need to deal with calling the
-// frame iteration code from arbitrary points in the runtime. It is mostly
-// due to problems that we might want to eventually clean up inside of the
-// frame iteration code, such as creating random handles even though there
-// is no safepoint to protect against, and fiddling around with exceptions.
-class StackWatermarkProcessingMark {
-  ResetNoHandleMark     _rnhm;
-  HandleMark            _hm;
-  PreserveExceptionMark _pem;
-  ResourceMark          _rm;
-
-public:
-  StackWatermarkProcessingMark(Thread* thread) :
-      _rnhm(),
-      _hm(thread),
-      _pem(thread),
-      _rm(thread) {}
-};
-
 void ZVerify::verify_frame_bad(const frame& fr, RegisterMap& register_map) {
   ZVerifyBadOopClosure verify_cl;
   fr.oops_do(&verify_cl, NULL, &register_map, DerivedPointerIterationMode::_ignore);
