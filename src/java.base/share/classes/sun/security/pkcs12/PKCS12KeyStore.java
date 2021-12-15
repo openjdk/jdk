@@ -1313,7 +1313,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             return super.engineGetAttributes(alias);
         }
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
-        return getAttributes(entry);
+        return Collections.unmodifiableSet(new HashSet<>(getAttributes(entry)));
     }
 
     /**
