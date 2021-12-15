@@ -622,6 +622,8 @@ public:
   // for all regions.
   void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
 
+  void clear_region_bitmap(HeapRegion* hr);
+
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 
   // This is called at the start of either a concurrent cycle or a Full
