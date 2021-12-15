@@ -33,10 +33,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
-import java.io.Serial;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -1866,14 +1867,15 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private abstract static sealed class RecursiveOp extends RecursiveTask<BigInteger> {
         /**
          * The threshold until when we should continue forking recursive ops
-         * if parallel is true. By default we use the Math.ceil() of
-         * log2(availableProcessors). Can be overridden with the system
-         * property -Djava.math.BigInteger.parallelForkThreshold=num. This
-         * threshold is only relevant for Toom Cook 3 multiply and square.
+         * if parallel is true. This threshold is only relevant for Toom Cook 3
+         * multiply and square.
          */
-        private static final int PARALLEL_FORK_THRESHOLD = Integer.getInteger(
-                "java.math.BigInteger.parallelForkThreshold",
-                (int) Math.ceil(Math.log(Runtime.getRuntime().availableProcessors()) / Math.log(2)));
+        private static final int PARALLEL_FORK_DEPTH_THRESHOLD =
+                calculateMaximumDepth(ForkJoinPool.getCommonPoolParallelism());
+
+        private static final int calculateMaximumDepth(int parallelism) {
+            return 32 - Integer.numberOfLeadingZeros(parallelism);
+        }
 
         private final boolean parallel;
         private final int depth;
@@ -1883,8 +1885,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             this.depth = depth;
         }
 
+        private static int getParallelForkDepthThreshold() {
+            if (Thread.currentThread() instanceof ForkJoinWorkerThread fjwt) {
+                return calculateMaximumDepth(fjwt.getPool().getParallelism());
+            }
+            else {
+                return PARALLEL_FORK_DEPTH_THRESHOLD;
+            }
+        }
+
         protected RecursiveTask<BigInteger> forkOrInvoke() {
-            if (parallel && depth <= PARALLEL_FORK_THRESHOLD) fork();
+            if (parallel && depth <= getParallelForkDepthThreshold()) fork();
             else invoke();
             return this;
         }
@@ -1919,12 +1930,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             public BigInteger compute() {
                 return a.square(true, super.parallel, super.depth);
             }
-        }
-
-        private static RecursiveTask<BigInteger> exec(RecursiveOp op) {
-            if (op.parallel && op.depth <= PARALLEL_FORK_THRESHOLD) op.fork();
-            else op.invoke();
-            return op;
         }
 
         private static RecursiveTask<BigInteger> multiply(BigInteger a, BigInteger b, boolean parallel, int depth) {
