@@ -238,6 +238,7 @@ static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_add
   bool promotion = forwarding->is_promotion();
 
   const zaddress to_addr = generation->alloc_object_for_relocation(size, promotion);
+
   if (is_null(to_addr)) {
     // Allocation failed
     return zaddress::null;

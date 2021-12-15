@@ -162,9 +162,6 @@ public:
 };
 
 void ZStackWatermark::process_head(void* context) {
-  // Verify the head (no_frames) of the thread is bad before fixing it.
-  //ZVerify::verify_thread_head_bad(_jt);
-
   const uintptr_t color = prev_head_color();
 
   ZStackWatermarkProcessOopClosure cl(context, color);
@@ -211,12 +208,9 @@ void ZStackWatermark::start_processing_impl(void* context) {
 }
 
 void ZStackWatermark::process(const frame& fr, RegisterMap& register_map, void* context) {
-  //ZVerify::verify_frame_bad(fr, register_map);
-
   const uintptr_t color = prev_frame_color(fr);
   ZStackWatermarkProcessOopClosure cl(context, color);
   ZOnStackCodeBlobClosure cb_cl;
 
   fr.oops_do(&cl, &cb_cl, &register_map, DerivedPointerIterationMode::_directly);
-
 }

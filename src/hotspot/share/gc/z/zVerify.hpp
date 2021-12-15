@@ -35,14 +35,12 @@ private:
   static void roots_weak();
 
   static void objects(bool verify_weaks);
+  static void threads_start_processing();
 
 public:
   static void before_zoperation();
   static void after_mark();
   static void after_weak_processing();
-
-  static void verify_thread_head_bad(JavaThread* thread) NOT_DEBUG_RETURN;
-  static void verify_frame_bad(const frame& fr, RegisterMap& register_map) NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_GC_Z_ZVERIFY_HPP

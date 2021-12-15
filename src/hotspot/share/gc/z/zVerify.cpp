@@ -67,9 +67,13 @@ static void z_verify_old_oop(zpointer* p) {
     } else {
       zaddress addr = ZPointer::uncolor(o);
       if (ZHeap::heap()->is_young(addr)) {
-        assert(ZHeap::heap()->is_remembered(p) || ZStoreBarrierBuffer::is_in(p), "Must be remembered");
+        // If young collection was aborted, the GC does not guarantee
+        // that all old-to-young pointers have remembered set entry.
+        guarantee(ZAbort::should_abort() ||
+                  ZHeap::heap()->is_remembered(p) ||
+                  ZStoreBarrierBuffer::is_in(p), "Must be remembered");
       } else {
-        assert(ZPointer::is_store_good(o) || (uintptr_t(o) & ZPointerRememberedMask) == ZPointerRememberedMask, "Must be remembered");
+        guarantee(ZPointer::is_store_good(o) || (uintptr_t(o) & ZPointerRememberedMask) == ZPointerRememberedMask, "Must be remembered");
       }
       guarantee(oopDesc::is_oop(to_oop(addr)), BAD_OOP_ARG(o, p));
     }
@@ -97,7 +101,6 @@ static void z_verify_root_oop(zpointer* p) {
   zpointer o = *p;
   if (!z_is_null_relaxed(o)) {
     guarantee(ZPointer::is_marked_old(o), BAD_OOP_ARG(o, p));
-    //z_verify_root_oop_object(ZPointer::uncolor(o), p);
     z_verify_root_oop_object(ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o), p);
   }
 }
@@ -420,21 +423,17 @@ private:
 
   zaddress           _visited_base;
   volatile zpointer* _visited_p;
-  zpointer           _visited_p_pre_loaded;
+  zpointer           _visited_ptr_pre_loaded;
 
 public:
   ZVerifyObjectClosure(bool verify_weaks) :
       _verify_weaks(verify_weaks),
       _visited_base(),
       _visited_p(),
-      _visited_p_pre_loaded() {}
+      _visited_ptr_pre_loaded() {}
 
-  bool check_object(zaddress addr) {
-    if (ZHeap::heap()->is_object_live(addr)) {
-      return true;
-    }
-
-    tty->print_cr("ZVerify found dead object: " PTR_FORMAT " at p: " PTR_FORMAT " ptr: " PTR_FORMAT, untype(addr), p2i((void*)_visited_p), untype(_visited_p_pre_loaded));
+  void log_dead_object(zaddress addr) {
+    tty->print_cr("ZVerify found dead object: " PTR_FORMAT " at p: " PTR_FORMAT " ptr: " PTR_FORMAT, untype(addr), p2i((void*)_visited_p), untype(_visited_ptr_pre_loaded));
     to_oop(addr)->print();
     tty->print_cr("--- From --- ");
     if (_visited_base != zaddress::null) {
@@ -445,34 +444,61 @@ public:
     if (zverify_broken_object == zaddress::null) {
       zverify_broken_object = addr;
     }
+  }
 
-    return false;
+  void verify_live_object(oop obj) {
+    // Verify that its pointers are sane
+    ZVerifyOldOopClosure cl(_verify_weaks);
+    ZIterator::oop_iterate_safe(obj, &cl);
   }
 
   virtual void do_object(oop obj) {
+    guarantee(oopDesc::is_oop_or_null(obj), "Must be");
+
     const zaddress addr = to_zaddress(obj);
     if (ZHeap::heap()->is_old(addr)) {
-      if (check_object(addr)) {
-        ZVerifyOldOopClosure cl(_verify_weaks);
-        ZIterator::oop_iterate_safe(obj, &cl);
+      if (ZHeap::heap()->is_object_live(addr)) {
+        verify_live_object(obj);
+      } else {
+        log_dead_object(addr);
       }
     } else {
-
+      // Young object - no verification
     }
   }
 
   virtual void do_field(oop base, oop* p) {
     _visited_base = to_zaddress(base);
     _visited_p = (volatile zpointer*)p;
-    _visited_p_pre_loaded = Atomic::load(_visited_p);
+    _visited_ptr_pre_loaded = Atomic::load(_visited_p);
   }
 };
+
+void ZVerify::threads_start_processing() {
+  class StartProcessingClosure : public ThreadClosure {
+  public:
+    void do_thread(Thread* thread) {
+      StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
+    }
+  };
+
+  ZJavaThreadsIterator threads_iterator;
+  StartProcessingClosure cl;
+  threads_iterator.apply(&cl);
+}
 
 void ZVerify::objects(bool verify_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(ZCollector::young()->is_phase_mark_complete() ||
          ZCollector::old()->is_phase_mark_complete(), "Invalid phase");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
+
+  // Note that object verification will fix the pointers and
+  // only verify that the resulting objects are sane.
+
+  // The verification VM_Operation doesn't start the thread processing.
+  // Do it here, after the roots have been verified.
+  threads_start_processing();
 
   ZVerifyObjectClosure object_cl(verify_weaks);
   ZHeap::heap()->object_and_field_iterate(&object_cl, &object_cl, verify_weaks);
@@ -512,30 +538,3 @@ void ZVerify::after_weak_processing() {
     objects(true /* verify_weaks */);
   }
 }
-
-#ifdef ASSERT
-
-class ZVerifyBadOopClosure : public OopClosure {
-public:
-  virtual void do_oop(oop* p) {
-    const oop o = *p;
-    // Can't verify much more than this
-    assert(is_valid(to_zaddress(o)), "Not a valid uncolored pointer");
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-void ZVerify::verify_frame_bad(const frame& fr, RegisterMap& register_map) {
-  ZVerifyBadOopClosure verify_cl;
-  fr.oops_do(&verify_cl, NULL, &register_map, DerivedPointerIterationMode::_ignore);
-}
-
-void ZVerify::verify_thread_head_bad(JavaThread* jt) {
-  ZVerifyBadOopClosure verify_cl;
-  jt->oops_do_no_frames(&verify_cl, NULL);
-}
-
-#endif // ASSERT

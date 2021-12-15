@@ -638,12 +638,7 @@ static void pause_verify_old() {
   // That lookup would otherwise race with installation of base pointers
   // into the store barrier buffer. We dodge that race by blocking out
   // young collections during this verification.
-  if (VerifyBeforeGC || VerifyDuringGC || VerifyAfterGC) {
-    // Full verification
-    ZDriverLocker locker;
-    VM_Verify op;
-    VMThread::execute(&op);
-  } else if (ZVerifyRoots || ZVerifyObjects) {
+  if (ZVerifyRoots || ZVerifyObjects) {
     // Limited verification
     ZDriverLocker locker;
     VM_ZVerifyOld op;
