@@ -31,7 +31,7 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/cdsProtectionDomain.hpp"
-#include "cds/dumpTimeClassInfo.hpp"
+#include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/classFileStream.hpp"
@@ -184,6 +184,11 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
 
 void SystemDictionaryShared::start_dumping() {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  _dump_in_progress = true;
+}
+
+void SystemDictionaryShared::stop_dumping() {
+  assert_lock_strong(DumpTimeTable_lock);
   _dump_in_progress = true;
 }
 
@@ -656,36 +661,6 @@ public:
   }
 };
 
-// For safety, do not iterate over a class if it loader
-// was not marked as eligble for dumpimg.
-template<class ITER>
-class EligibleClassIterationHelper {
-  ITER* _iter;
-public:
-  EligibleClassIterationHelper(ITER* iter) {
-    _iter = iter;
-  }
-  bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    assert_lock_strong(DumpTimeTable_lock);
-    if (k->class_loader_data()->eligible_for_dumping()) {
-      assert(k->is_loader_alive(), "must be");
-      return _iter->do_entry(k, info);
-    } else {
-      if (!SystemDictionaryShared::is_excluded_class(k)) {
-        SystemDictionaryShared::warn_excluded(k, "Class loader not eligible");
-        SystemDictionaryShared::set_excluded_locked(k);
-      }
-      return true;
-    }
-  }
-};
-
-template<class ITER>
-void SystemDictionaryShared::iterate_dumptime_table(ITER* iter) {
-  EligibleClassIterationHelper<ITER> helper(iter);
-  _dumptime_table->iterate(&helper);
-}
-
 void SystemDictionaryShared::check_excluded_classes() {
   assert(no_class_loading_should_happen(), "sanity");
   assert_lock_strong(DumpTimeTable_lock);
@@ -695,12 +670,12 @@ void SystemDictionaryShared::check_excluded_classes() {
     // all of its subclasses will also be excluded by ExcludeDumpTimeSharedClasses
     ResourceMark rm;
     UnregisteredClassesDuplicationChecker dup_checker;
-    iterate_dumptime_table(&dup_checker);
+    _dumptime_table->iterate(&dup_checker);
     dup_checker.mark_duplicated_classes();
   }
 
   ExcludeDumpTimeSharedClasses excl;
-  iterate_dumptime_table(&excl);
+  _dumptime_table->iterate(&excl);
   _dumptime_table->update_counts();
 
   cleanup_lambda_proxy_class_dictionary();
@@ -782,7 +757,7 @@ public:
 void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
   assert_lock_strong(DumpTimeTable_lock);
   IterateDumpTimeSharedClassTable iter(it);
-  iterate_dumptime_table(&iter);
+  _dumptime_table->iterate(&iter);
   if (_dumptime_lambda_proxy_class_dictionary != NULL) {
     IterateDumpTimeLambdaProxyClassDictionary iter_lambda(it);
     _dumptime_lambda_proxy_class_dictionary->iterate(&iter_lambda);
@@ -1212,7 +1187,7 @@ public:
 
 size_t SystemDictionaryShared::estimate_size_for_archive() {
   EstimateSizeForArchive est;
-  iterate_dumptime_table(&est);
+  _dumptime_table->iterate(&est);
   size_t total_size = est.total() +
     CompactHashtableWriter::estimate_size(_dumptime_table->count_of(true)) +
     CompactHashtableWriter::estimate_size(_dumptime_table->count_of(false));
@@ -1350,7 +1325,7 @@ void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionar
   CompactHashtableWriter writer(_dumptime_table->count_of(is_builtin), &stats);
   CopySharedClassInfoToArchive copy(&writer, is_builtin);
   assert_lock_strong(DumpTimeTable_lock);
-  iterate_dumptime_table(&copy);
+  _dumptime_table->iterate(&copy);
   writer.dump(dictionary, is_builtin ? "builtin dictionary" : "unregistered dictionary");
 }
 
@@ -1558,6 +1533,7 @@ void SystemDictionaryShared::print_table_statistics(outputStream* st) {
 }
 
 bool SystemDictionaryShared::is_dumptime_table_empty() {
+  assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_table == NULL) {
     return true;
   }
@@ -1615,7 +1591,7 @@ void SystemDictionaryShared::clone_dumptime_tables() {
     assert(_cloned_dumptime_table == NULL, "_cloned_dumptime_table must be cleaned");
     _cloned_dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
     CloneDumpTimeClassTable copy_classes(_dumptime_table, _cloned_dumptime_table);
-    iterate_dumptime_table(&copy_classes);
+    _dumptime_table->iterate(&copy_classes);
     _cloned_dumptime_table->update_counts();
   }
   if (_dumptime_lambda_proxy_class_dictionary != NULL) {
