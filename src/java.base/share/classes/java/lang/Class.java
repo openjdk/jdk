@@ -3821,12 +3821,12 @@ public final class Class<T> implements java.io.Serializable,
     @SuppressWarnings("removal")
     private static ReflectionFactory getReflectionFactory() {
         var factory = reflectionFactory;
-        if (factory == null) {
-            return reflectionFactory =
-                java.security.AccessController.doPrivileged
-                    (new ReflectionFactory.GetReflectionFactoryAction());
+        if (factory != null) {
+            return factory;
         }
-        return reflectionFactory;
+        return reflectionFactory =
+                java.security.AccessController.doPrivileged
+                        (new ReflectionFactory.GetReflectionFactoryAction());
     }
     private static ReflectionFactory reflectionFactory;
 
