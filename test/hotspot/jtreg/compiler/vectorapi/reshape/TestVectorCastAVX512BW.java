@@ -29,7 +29,7 @@ import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 
 /*
  * @test
- * @bug 8259610
+ * @bug 8278623
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @summary Test that vector cast intrinsics work as intended on avx512bw.
