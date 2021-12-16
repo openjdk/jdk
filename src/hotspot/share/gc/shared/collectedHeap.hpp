@@ -289,7 +289,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   }
 
   virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
-  static size_t min_dummy_object_size();
+  static constexpr size_t min_dummy_object_size() {
+    return oopDesc::header_size();
+  }
 
   size_t tlab_alloc_reserve() const;
 

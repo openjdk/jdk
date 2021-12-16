@@ -76,7 +76,7 @@ void PSPromotionLAB::flush() {
   // PLAB's never allocate the last aligned_header_size
   // so they can always fill with an array.
   HeapWord* tlab_end = end() + CollectedHeap::min_dummy_object_size();
-  CollectedHeap::fill_with_object(top(), tlab_end, DEBUG_ONLY(true) NOT_DEBUG(false));
+  CollectedHeap::fill_with_object(top(), tlab_end, trueInDebug);
 
   set_bottom(NULL);
   set_end(NULL);
