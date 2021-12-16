@@ -119,6 +119,9 @@ bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = NULL;
 
+// True if -Xshare:auto option was specified.
+static bool xshare_auto_cmd_line = false;
+
 bool PathString::set_value(const char *value) {
   if (_value != NULL) {
     FreeHeap(_value);
@@ -1514,7 +1517,7 @@ static void no_shared_spaces(const char* message) {
     vm_exit_during_initialization("Unable to use shared archive", message);
   } else {
     log_info(cds)("Unable to use shared archive: %s", message);
-    FLAG_SET_DEFAULT(UseSharedSpaces, false);
+    UseSharedSpaces = false;
   }
 }
 
@@ -2703,33 +2706,20 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           set_mode_flags(_comp);
     // -Xshare:dump
     } else if (match_option(option, "-Xshare:dump")) {
-      if (FLAG_SET_CMDLINE(DumpSharedSpaces, true) != JVMFlag::SUCCESS) {
-        return JNI_EINVAL;
-      }
+      DumpSharedSpaces = true;
     // -Xshare:on
     } else if (match_option(option, "-Xshare:on")) {
-      if (FLAG_SET_CMDLINE(UseSharedSpaces, true) != JVMFlag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(RequireSharedSpaces, true) != JVMFlag::SUCCESS) {
-        return JNI_EINVAL;
-      }
+      UseSharedSpaces = true;
+      RequireSharedSpaces = true;
     // -Xshare:auto || -XX:ArchiveClassesAtExit=<archive file>
     } else if (match_option(option, "-Xshare:auto")) {
-      if (FLAG_SET_CMDLINE(UseSharedSpaces, true) != JVMFlag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(RequireSharedSpaces, false) != JVMFlag::SUCCESS) {
-        return JNI_EINVAL;
-      }
+      UseSharedSpaces = true;
+      RequireSharedSpaces = false;
+      xshare_auto_cmd_line = true;
     // -Xshare:off
     } else if (match_option(option, "-Xshare:off")) {
-      if (FLAG_SET_CMDLINE(UseSharedSpaces, false) != JVMFlag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(RequireSharedSpaces, false) != JVMFlag::SUCCESS) {
-        return JNI_EINVAL;
-      }
+      UseSharedSpaces = false;
+      RequireSharedSpaces = false;
     // -Xverify
     } else if (match_option(option, "-Xverify", &tail)) {
       if (strcmp(tail, ":all") == 0 || strcmp(tail, "") == 0) {
@@ -2983,12 +2973,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
   //   -Xshare:on
   //   -Xlog:class+path=info
   if (PrintSharedArchiveAndExit) {
-    if (FLAG_SET_CMDLINE(UseSharedSpaces, true) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-    if (FLAG_SET_CMDLINE(RequireSharedSpaces, true) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
+    UseSharedSpaces = true;
+    RequireSharedSpaces = true;
     LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, path));
   }
 
@@ -3144,11 +3130,11 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
     // Compiler threads may concurrently update the class metadata (such as method entries), so it's
-    // unsafe with DumpSharedSpaces (which modifies the class metadata in place). Let's disable
+    // unsafe with -Xshare:dump (which modifies the class metadata in place). Let's disable
     // compiler just to be safe.
     //
-    // Note: this is not a concern for DynamicDumpSharedSpaces, which makes a copy of the class metadata
-    // instead of modifying them in place. The copy is inaccessible to the compiler.
+    // Note: this is not a concern for dynamically dumping shared spaces, which makes a copy of the
+    // class metadata instead of modifying them in place. The copy is inaccessible to the compiler.
     // TODO: revisit the following for the static archive case.
     set_mode_flags(_int);
   }
@@ -3161,16 +3147,16 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 
   if (ArchiveClassesAtExit == NULL && !RecordDynamicDumpInfo) {
-    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, false);
+    DynamicDumpSharedSpaces = false;
   } else {
-    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, true);
+    DynamicDumpSharedSpaces = true;
   }
 
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
   if (UseSharedSpaces && !DumpSharedSpaces && check_unsupported_cds_runtime_properties()) {
-    FLAG_SET_DEFAULT(UseSharedSpaces, false);
+    UseSharedSpaces = false;
   }
 
   if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
@@ -4010,10 +3996,10 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
       "DumpLoadedClassList is not supported in this VM\n");
     return JNI_ERR;
   }
-  if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) ||
+  if ((UseSharedSpaces && xshare_auto_cmd_line) ||
       log_is_enabled(Info, cds)) {
     warning("Shared spaces are not supported in this VM");
-    FLAG_SET_DEFAULT(UseSharedSpaces, false);
+    UseSharedSpaces = false;
     LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(cds));
   }
   no_shared_spaces("CDS Disabled");

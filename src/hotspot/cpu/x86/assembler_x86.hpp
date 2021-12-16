@@ -2184,6 +2184,9 @@ private:
   void shrxq(Register dst, Register src1, Register src2);
 
   void bzhiq(Register dst, Register src1, Register src2);
+  void pdep(Register dst, Register src1, Register src2);
+  void pext(Register dst, Register src1, Register src2);
+
 
   //====================VECTOR ARITHMETIC=====================================
   // Add Packed Floating-Point Values

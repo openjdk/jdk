@@ -77,8 +77,8 @@ protected:
          StripMined          = 1<<15,
          SubwordLoop         = 1<<16,
          ProfileTripFailed   = 1<<17,
-         TransformedLongInnerLoop = 1<<18,
-         TransformedLongOuterLoop = 1<<19};
+         LoopNestInnerLoop = 1 << 18,
+         LoopNestLongOuterLoop = 1 << 19};
   char _unswitch_count;
   enum { _unswitch_max=3 };
   char _postloop_flags;
@@ -103,8 +103,8 @@ public:
   bool is_strip_mined() const { return _loop_flags & StripMined; }
   bool is_profile_trip_failed() const { return _loop_flags & ProfileTripFailed; }
   bool is_subword_loop() const { return _loop_flags & SubwordLoop; }
-  bool is_transformed_long_inner_loop() const { return _loop_flags & TransformedLongInnerLoop; }
-  bool is_transformed_long_outer_loop() const { return _loop_flags & TransformedLongOuterLoop; }
+  bool is_loop_nest_inner_loop() const { return _loop_flags & LoopNestInnerLoop; }
+  bool is_loop_nest_outer_loop() const { return _loop_flags & LoopNestLongOuterLoop; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
@@ -119,8 +119,8 @@ public:
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
   void mark_subword_loop() { _loop_flags |= SubwordLoop; }
-  void mark_transformed_long_inner_loop() { _loop_flags |= TransformedLongInnerLoop; }
-  void mark_transformed_long_outer_loop() { _loop_flags |= TransformedLongOuterLoop; }
+  void mark_loop_nest_inner_loop() { _loop_flags |= LoopNestInnerLoop; }
+  void mark_loop_nest_outer_loop() { _loop_flags |= LoopNestLongOuterLoop; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -215,6 +215,8 @@ public:
   BaseCountedLoopEndNode* loopexit() const;
 
   virtual BasicType bt() const = 0;
+
+  jlong stride_con() const;
 
   static BaseCountedLoopNode* make(Node* entry, Node* backedge, BasicType bt);
 };
@@ -364,7 +366,6 @@ public:
 
   LongCountedLoopEndNode* loopexit_or_null() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit_or_null(); }
   LongCountedLoopEndNode* loopexit() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit(); }
-  jlong   stride_con() const;
 };
 
 
@@ -511,6 +512,12 @@ inline Node* BaseCountedLoopNode::phi() const {
   BaseCountedLoopEndNode* cle = loopexit_or_null();
   return cle != NULL ? cle->phi() : NULL;
 }
+
+inline jlong BaseCountedLoopNode::stride_con() const {
+  BaseCountedLoopEndNode* cle = loopexit_or_null();
+  return cle != NULL ? cle->stride_con() : 0;
+}
+
 
 //------------------------------LoopLimitNode-----------------------------
 // Counted Loop limit node which represents exact final iterator value:
@@ -710,7 +717,7 @@ public:
   // Return TRUE or FALSE if the loop should be range-check-eliminated.
   // Gather a list of IF tests that are dominated by iteration splitting;
   // also gather the end of the first split and the start of the 2nd split.
-  bool policy_range_check(PhaseIdealLoop* phase, bool provisional) const;
+  bool policy_range_check(PhaseIdealLoop* phase, bool provisional, BasicType bt) const;
 
   // Return TRUE if "iff" is a range check.
   bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const;
@@ -1146,8 +1153,8 @@ public:
 
   bool is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt);
 
-  Node* long_loop_replace_long_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head);
-  bool transform_long_counted_loop(IdealLoopTree* loop, Node_List &old_new);
+  Node* loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head, BasicType bt);
+  bool create_loop_nest(IdealLoopTree* loop, Node_List &old_new);
 #ifdef ASSERT
   bool convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* loop);
 #endif
@@ -1248,10 +1255,12 @@ public:
   void mark_reductions( IdealLoopTree *loop );
 
   // Return true if exp is a constant times an induction var
-  bool is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType bt);
+  bool is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType bt, bool* converted);
+
+  bool is_iv(Node* exp, Node* iv, BasicType bt);
 
   // Return true if exp is a scaled induction var plus (or minus) constant
-  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt, int depth = 0);
+  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt, bool* converted = NULL, int depth = 0);
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset) {
     jlong long_scale;
     if (is_scaled_iv_plus_offset(exp, iv, &long_scale, p_offset, T_INT)) {
@@ -1610,9 +1619,9 @@ public:
 
   void rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const;
 
-  void check_long_counted_loop(IdealLoopTree* loop, Node* x) NOT_DEBUG_RETURN;
+  void check_counted_loop_shape(IdealLoopTree* loop, Node* x, BasicType bt) NOT_DEBUG_RETURN;
 
-  LoopNode* create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head, LongCountedLoopEndNode* exit_test);
+  LoopNode* create_inner_head(IdealLoopTree* loop, BaseCountedLoopNode* head, IfNode* exit_test);
 
 
   int extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
@@ -1635,6 +1644,9 @@ public:
   Node* clamp(Node* R, Node* L, Node* H);
 
   bool safe_for_if_replacement(const Node* dom) const;
+
+  void strip_mined_nest_back_to_counted_loop(IdealLoopTree* loop, const BaseCountedLoopNode* head, Node* back_control,
+                                             IfNode*&exit_test, SafePointNode*&safepoint);
 };
 
 

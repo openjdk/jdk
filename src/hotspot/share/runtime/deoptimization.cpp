@@ -798,6 +798,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
       // at an uncommon trap for an invoke (where the compiler
       // generates debug info before the invoke has executed)
       Bytecodes::Code cur_code = str.next();
+      Bytecodes::Code next_code = Bytecodes::_shouldnotreachhere;
       if (Bytecodes::is_invoke(cur_code)) {
         Bytecode_invoke invoke(mh, iframe->interpreter_frame_bci());
         cur_invoke_parameter_size = invoke.size_of_parameters();
@@ -806,7 +807,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
         }
       }
       if (str.bci() < max_bci) {
-        Bytecodes::Code next_code = str.next();
+        next_code = str.next();
         if (next_code >= 0) {
           // The interpreter oop map generator reports results before
           // the current bytecode has executed except in the case of
@@ -854,6 +855,10 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
           // Print out some information that will help us debug the problem
           tty->print_cr("Wrong number of expression stack elements during deoptimization");
           tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", i, cur_array->frames() - 1);
+          tty->print_cr("  Current code %s", Bytecodes::name(cur_code));
+          if (try_next_mask) {
+            tty->print_cr("  Next code %s", Bytecodes::name(next_code));
+          }
           tty->print_cr("  Fabricated interpreter frame had %d expression stack elements",
                         iframe->interpreter_frame_expression_stack_size());
           tty->print_cr("  Interpreter oop map had %d expression stack elements", mask.expression_stack_size());

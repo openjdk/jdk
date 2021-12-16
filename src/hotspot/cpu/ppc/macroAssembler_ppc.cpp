@@ -233,7 +233,7 @@ address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop
   return inst1_addr;
 }
 
-// Get compressed oop or klass constant.
+// Get compressed oop constant.
 narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 

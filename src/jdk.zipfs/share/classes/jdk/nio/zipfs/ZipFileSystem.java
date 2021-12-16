@@ -1472,6 +1472,13 @@ class ZipFileSystem extends FileSystem {
     }
 
     /**
+     * Package-private accessor to entry alias map used by ZipPath.
+     */
+    byte[] lookupPath(byte[] resolvedPath) {
+        return entryLookup.apply(resolvedPath);
+    }
+
+    /**
      * Create a sorted version map of version -> inode, for inodes <= max version.
      *   9 -> META-INF/versions/9
      *  10 -> META-INF/versions/10
