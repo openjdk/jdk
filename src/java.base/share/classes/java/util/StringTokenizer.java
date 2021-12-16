@@ -176,8 +176,9 @@ public class StringTokenizer implements Enumeration<Object> {
      * the delimiter characters are also returned as tokens. Each
      * delimiter is returned as a string consisting of a single
      * <a href="../lang/Character.html#unicode">Unicode code point</a>
-     * of the delimiter. If the flag is {@code false}, the delimiter
-     * characters are skipped and only serve as separators between tokens.
+     * of the delimiter (which may be one or two {@code char}s). If the
+     * flag is {@code false}, the delimiter characters are skipped
+     * and only serve as separators between tokens.
      * <p>
      * Note that if {@code delim} is {@code null}, this constructor does
      * not throw an exception. However, trying to invoke other methods on the
