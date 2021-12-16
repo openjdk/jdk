@@ -529,6 +529,10 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     // zerobased: Attempt to allocate in the lower 32G.
     // But leave room for the compressed class pointers, which is allocated above
     // the heap.
+    // Note Lilliput: the advantages of this strategy were questionable before
+    //  (since CDS=off + Compressed oops + heap large enough to suffocate us out of lower 32g
+    //  is rare) and with Lilliput the encoding range drastically shrank. We may just do away
+    //  with this altogether.
     char *zerobased_max = (char *)OopEncodingHeapMax;
     const size_t class_space = align_up(CompressedClassSpaceSize, alignment);
     // For small heaps, save some space for compressed class pointer

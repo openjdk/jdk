@@ -79,6 +79,29 @@ class MacroAssembler: public Assembler {
   void restore_rax(Register tmp);
 
  public:
+
+  enum KlassDecodeMode {
+    KlassDecodeNone,
+    KlassDecodeZero,
+    KlassDecodeXor,
+    KlassDecodeAdd
+  };
+
+  // Return the current narrow Klass pointer decode mode. Initialized on first call.
+  static KlassDecodeMode klass_decode_mode();
+
+  // Given an arbitrary base address, return the KlassDecodeMode that would be used. Return KlassDecodeNone
+  // if base address is not valid for encoding.
+  static KlassDecodeMode klass_decode_mode_for_base(address base);
+
+  // Returns a static string
+  static const char* describe_klass_decode_mode(KlassDecodeMode mode);
+
+ private:
+
+  static KlassDecodeMode _klass_decode_mode;
+
+ public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
  // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.

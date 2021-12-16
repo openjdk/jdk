@@ -127,7 +127,9 @@ class TestUseCompressedOopsErgoTools {
     checkUseCompressedOops(join(gcflags, "-XX:ObjectAlignmentInBytes=16"), maxHeapForCompressedOops + 1, false);
 
     // use a different CompressedClassSpaceSize
-    String compressedClassSpaceSizeArg = "-XX:CompressedClassSpaceSize=" + 2 * getCompressedClassSpaceSize();
+    // Lilliput: do not assume a max. class space size, since that is subject to change. Instead, use a value slightly smaller
+    //  than what the parent VM runs with (which is the default size).
+    String compressedClassSpaceSizeArg = "-XX:CompressedClassSpaceSize=" + (getCompressedClassSpaceSize() - 1);
     maxHeapForCompressedOops = getMaxHeapForCompressedOops(join(gcflags, compressedClassSpaceSizeArg));
 
     checkUseCompressedOops(join(gcflags, compressedClassSpaceSizeArg), maxHeapForCompressedOops, true);

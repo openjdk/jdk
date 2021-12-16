@@ -34,9 +34,11 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -50,6 +52,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "crc32c.h"
 
@@ -4808,75 +4811,178 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
   }
 }
 
+MacroAssembler::KlassDecodeMode MacroAssembler::_klass_decode_mode = KlassDecodeNone;
+
+// Returns a static string
+const char* MacroAssembler::describe_klass_decode_mode(MacroAssembler::KlassDecodeMode mode) {
+  switch (mode) {
+  case KlassDecodeNone: return "none";
+  case KlassDecodeZero: return "zero";
+  case KlassDecodeXor:  return "xor";
+  case KlassDecodeAdd:  return "add";
+  default:
+    ShouldNotReachHere();
+  }
+  return NULL;
+}
+
+// Return the current narrow Klass pointer decode mode.
+MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
+  if (_klass_decode_mode == KlassDecodeNone) {
+    // First time initialization
+    assert(UseCompressedClassPointers, "not using compressed class pointers");
+    assert(Metaspace::initialized(), "metaspace not initialized yet");
+
+    _klass_decode_mode = klass_decode_mode_for_base(CompressedKlassPointers::base());
+    guarantee(_klass_decode_mode != KlassDecodeNone,
+              PTR_FORMAT " is not a valid encoding base on aarch64",
+              p2i(CompressedKlassPointers::base()));
+    log_info(metaspace)("klass decode mode initialized: %s", describe_klass_decode_mode(_klass_decode_mode));
+  }
+  return _klass_decode_mode;
+}
+
+// Given an arbitrary base address, return the KlassDecodeMode that would be used. Return KlassDecodeNone
+// if base address is not valid for encoding.
+MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode_for_base(address base) {
+  assert(CompressedKlassPointers::shift() != 0, "not lilliput?");
+
+  const uint64_t base_u64 = (uint64_t) base;
+
+  if (base_u64 == 0) {
+    return KlassDecodeZero;
+  }
+
+  if ((base_u64 & (KlassEncodingMetaspaceMax - 1)) == 0) {
+    return KlassDecodeXor;
+  }
+
+  // Note that there is no point in optimizing for shift=3 since lilliput
+  // will use larger shifts
+
+  // The add+shift mode for decode_and_move_klass_not_null() requires the base to be
+  //  shiftable-without-loss. So, this is the minimum restriction on x64 for a valid
+  //  encoding base. This does not matter in reality since the shift values we use for
+  //  Lilliput, while large, won't be larger than a page size. And the encoding base
+  //  will be quite likely page aligned since it usually falls to the beginning of
+  //  either CDS or CCS.
+  if ((base_u64 & (KlassAlignmentInBytes - 1)) == 0) {
+    return KlassDecodeAdd;
+  }
+
+  return KlassDecodeNone;
+}
+
 void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
   assert_different_registers(r, tmp);
-  if (CompressedKlassPointers::base() != NULL) {
+  switch (klass_decode_mode()) {
+  case KlassDecodeZero: {
+    shrq(r, CompressedKlassPointers::shift());
+    break;
+  }
+  case KlassDecodeXor: {
+    mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    xorq(r, tmp);
+    shrq(r, CompressedKlassPointers::shift());
+    break;
+  }
+  case KlassDecodeAdd: {
     mov64(tmp, (int64_t)CompressedKlassPointers::base());
     subq(r, tmp);
+    shrq(r, CompressedKlassPointers::shift());
+    break;
   }
-  if (CompressedKlassPointers::shift() != 0) {
-    assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shrq(r, LogKlassAlignmentInBytes);
+  default:
+    ShouldNotReachHere();
   }
 }
 
 void MacroAssembler::encode_and_move_klass_not_null(Register dst, Register src) {
   assert_different_registers(src, dst);
-  if (CompressedKlassPointers::base() != NULL) {
+  switch (klass_decode_mode()) {
+  case KlassDecodeZero: {
+    movptr(dst, src);
+    shrq(dst, CompressedKlassPointers::shift());
+    break;
+  }
+  case KlassDecodeXor: {
+    mov64(dst, (int64_t)CompressedKlassPointers::base());
+    xorq(dst, src);
+    shrq(dst, CompressedKlassPointers::shift());
+    break;
+  }
+  case KlassDecodeAdd: {
     mov64(dst, -(int64_t)CompressedKlassPointers::base());
     addq(dst, src);
-  } else {
-    movptr(dst, src);
+    shrq(dst, CompressedKlassPointers::shift());
+    break;
   }
-  if (CompressedKlassPointers::shift() != 0) {
-    assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shrq(dst, LogKlassAlignmentInBytes);
+  default:
+    ShouldNotReachHere();
   }
 }
 
 void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
   assert_different_registers(r, tmp);
-  // Note: it will change flags
-  assert(UseCompressedClassPointers, "should only be used for compressed headers");
-  // Cannot assert, unverified entry point counts instructions (see .ad file)
-  // vtableStubs also counts instructions in pd_code_size_limit.
-  // Also do not verify_oop as this is called by verify_oop.
-  if (CompressedKlassPointers::shift() != 0) {
-    assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shlq(r, LogKlassAlignmentInBytes);
+  const uint64_t base_u64 = (uint64_t)CompressedKlassPointers::base();
+  switch (klass_decode_mode()) {
+  case KlassDecodeZero: {
+    shlq(r, CompressedKlassPointers::shift());
+    break;
   }
-  if (CompressedKlassPointers::base() != NULL) {
-    mov64(tmp, (int64_t)CompressedKlassPointers::base());
+  case KlassDecodeXor: {
+    assert((base_u64 & (KlassEncodingMetaspaceMax - 1)) == 0,
+           "base " UINT64_FORMAT_X " invalid for xor mode", base_u64); // should have been handled at VM init.
+    shlq(r, CompressedKlassPointers::shift());
+    mov64(tmp, base_u64);
+    xorq(r, tmp);
+    break;
+  }
+  case KlassDecodeAdd: {
+    shlq(r, CompressedKlassPointers::shift());
+    mov64(tmp, base_u64);
     addq(r, tmp);
+    break;
+  }
+  default:
+    ShouldNotReachHere();
   }
 }
 
 void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src) {
   assert_different_registers(src, dst);
-  // Note: it will change flags
-  assert (UseCompressedClassPointers, "should only be used for compressed headers");
-  // Cannot assert, unverified entry point counts instructions (see .ad file)
+  // Note: Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
 
-  if (CompressedKlassPointers::base() == NULL &&
-      CompressedKlassPointers::shift() == 0) {
-    // The best case scenario is that there is no base or shift. Then it is already
-    // a pointer that needs nothing but a register rename.
-    movl(dst, src);
-  } else {
-    if (CompressedKlassPointers::base() != NULL) {
-      mov64(dst, (int64_t)CompressedKlassPointers::base());
-    } else {
-      xorq(dst, dst);
-    }
-    if (CompressedKlassPointers::shift() != 0) {
-      assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-      assert(LogKlassAlignmentInBytes == Address::times_8, "klass not aligned on 64bits?");
-      leaq(dst, Address(dst, src, Address::times_8, 0));
-    } else {
-      addq(dst, src);
-    }
+  const uint64_t base_u64 = (uint64_t)CompressedKlassPointers::base();
+
+  switch (klass_decode_mode()) {
+  case KlassDecodeZero: {
+    movq(dst, src);
+    shlq(dst, CompressedKlassPointers::shift());
+    break;
+  }
+  case KlassDecodeXor: {
+    assert((base_u64 & (KlassEncodingMetaspaceMax - 1)) == 0,
+           "base " UINT64_FORMAT_X " invalid for xor mode", base_u64); // should have been handled at VM init.
+    const uint64_t base_right_shifted = base_u64 >> CompressedKlassPointers::shift();
+    mov64(dst, base_right_shifted);
+    xorq(dst, src);
+    shlq(dst, CompressedKlassPointers::shift());
+    break;
+  }
+  case KlassDecodeAdd: {
+    assert((base_u64 & (KlassAlignmentInBytes - 1)) == 0,
+           "base " UINT64_FORMAT_X " invalid for add mode", base_u64); // should have been handled at VM init.
+    const uint64_t base_right_shifted = base_u64 >> CompressedKlassPointers::shift();
+    mov64(dst, base_right_shifted);
+    addq(dst, src);
+    shlq(dst, CompressedKlassPointers::shift());
+    break;
+  }
+  default:
+    ShouldNotReachHere();
   }
 }
 

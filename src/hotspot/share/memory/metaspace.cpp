@@ -36,6 +36,7 @@
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/internalStats.hpp"
+#include "memory/metaspace/metaspaceAlignment.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"
@@ -832,8 +833,8 @@ void Metaspace::global_initialize() {
   // We must prevent the very first address of the ccs from being used to store
   // metadata, since that address would translate to a narrow pointer of 0, and the
   // VM does not distinguish between "narrow 0 as in NULL" and "narrow 0 as in start
-  //  of ccs".
-  // Before Elastic Metaspace that did not happen due to the fact that every Metachunk
+  //  of ccs". See CompressedKlassPointers::decode().
+  // Before JEP 387 that did not happen due to the fact that every Metachunk
   // had a header and therefore could not allocate anything at offset 0.
 #ifdef _LP64
   if (using_class_space()) {
@@ -866,6 +867,20 @@ void Metaspace::post_initialize() {
 size_t Metaspace::max_allocation_word_size() {
   return metaspace::chunklevel::MAX_CHUNK_WORD_SIZE;
 }
+
+#ifdef _LP64
+// The largest allowed size for class space
+size_t Metaspace::max_class_space_size() {
+  // This is a bit fuzzy. Max value of class space size depends on narrow klass pointer
+  // encoding range size and CDS, since class space shares encoding range with CDS. CDS
+  // archives are usually pretty small though, so to keep matters simple, for now we
+  // just assume a reasonable default (this is hackish; improve!).
+  const size_t slice_for_cds = M * 128;
+  assert(KlassEncodingMetaspaceMax >= (slice_for_cds * 2), "rethink this");
+  const size_t max_class_space_size = KlassEncodingMetaspaceMax - slice_for_cds;
+  return max_class_space_size;
+}
+#endif // _LP64
 
 // This version of Metaspace::allocate does not throw OOM but simply returns NULL, and
 // is suitable for calling from non-Java threads.

@@ -28,6 +28,7 @@
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/metaspace/metaspaceAlignment.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/internalStats.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
@@ -36,7 +37,10 @@
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspaceTracer.hpp"
+#include "oops/compressedKlass.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 using metaspace::ChunkManager;
 using metaspace::MetaspaceArena;
@@ -56,24 +60,34 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
   ChunkManager* const non_class_cm =
           ChunkManager::chunkmanager_nonclass();
 
+  const int klass_alignment_words = KlassAlignmentInBytes / BytesPerWord;
+
   // Initialize non-class Arena
   _non_class_space_arena = new MetaspaceArena(
       non_class_cm,
       ArenaGrowthPolicy::policy_for_space_type(space_type, false),
+      metaspace::MetaspaceMinAlignmentWords,
       lock,
       RunningCounters::used_nonclass_counter(),
       "non-class sm");
 
   // If needed, initialize class arena
   if (Metaspace::using_class_space()) {
+    // Klass instances live in class space and must be aligned correctly.
     ChunkManager* const class_cm =
             ChunkManager::chunkmanager_class();
     _class_space_arena = new MetaspaceArena(
         class_cm,
         ArenaGrowthPolicy::policy_for_space_type(space_type, true),
+        klass_alignment_words,
         lock,
         RunningCounters::used_class_counter(),
         "class sm");
+  } else {
+    // note for lilliput, this path should be restricted to 32bit only. There, klass alignment
+    //  should be compatible with metaspace minimal alignment since we store Klass structures
+    //  in regular metaspace.
+    NOT_LP64(STATIC_ASSERT(metaspace::MetaspaceMinAlignmentBytes == KlassAlignmentInBytes));
   }
 
   UL2(debug, "born (nonclass arena: " PTR_FORMAT ", class arena: " PTR_FORMAT ".",

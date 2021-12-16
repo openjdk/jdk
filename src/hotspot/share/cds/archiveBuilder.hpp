@@ -28,6 +28,7 @@
 #include "cds/archiveUtils.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/metaspace/metaspaceAlignment.hpp"
 #include "oops/array.hpp"
 #include "oops/klass.hpp"
 #include "runtime/os.hpp"
@@ -43,9 +44,19 @@ class Klass;
 class MemRegion;
 class Symbol;
 
-// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
-// We enforce the same alignment rule in blocks allocated from the shared space.
-const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
+// CDS has three alignments to deal with:
+// - SharedSpaceObjectAlignment, always 8 bytes: used for placing arbitrary structures.
+//   These may contain 64-bit members (not larger, we know that much). Therefore we
+//   need to use 64-bit alignment on both 32-bit and 64-bit platforms. We reuse metaspace
+//   minimal alignment for this, which follows the same logic.
+// - With CompressedClassPointers=1, we need to store Klass structures with a large
+//   alignment (Lilliput specific narrow Klass pointer encoding) - KlassAlignmentInBytes.
+// - Header data and tags are squeezed in with word alignment, which happens to be 4 bytes
+//   on 32-bit. See ReadClosure::do_xxx() and DumpRegion::append_intptr().
+const int SharedSpaceObjectAlignment = metaspace::MetaspaceMinAlignmentBytes;
+
+// standard alignment should be sufficient for storing 64-bit values.
+STATIC_ASSERT(SharedSpaceObjectAlignment >= sizeof(uint64_t));
 
 // Overview of CDS archive creation (for both static and dynamic dump):
 //

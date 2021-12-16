@@ -58,6 +58,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -1408,8 +1409,12 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
 InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
   const RunTimeClassInfo* record = find_record(&_builtin_dictionary, &_dynamic_builtin_dictionary, name);
   if (record != NULL) {
+#ifdef ASSERT
+    if (UseCompressedClassPointers) {
+      CompressedKlassPointers::verify_klass_pointer(record->_klass);
+    }
+#endif
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
-    assert(check_alignment(record->_klass), "Address not aligned");
     return record->_klass;
   } else {
     return NULL;

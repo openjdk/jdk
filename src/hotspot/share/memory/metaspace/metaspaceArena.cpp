@@ -31,6 +31,7 @@
 #include "memory/metaspace/freeBlocks.hpp"
 #include "memory/metaspace/internalStats.hpp"
 #include "memory/metaspace/metachunk.hpp"
+#include "memory/metaspace/metaspaceAlignment.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
@@ -107,19 +108,21 @@ void MetaspaceArena::add_allocation_to_fbl(MetaWord* p, size_t word_size) {
   _fbl->add_block(p, word_size);
 }
 
-MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
+MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy, int alignment_words,
                                Mutex* lock, SizeAtomicCounter* total_used_words_counter,
                                const char* name) :
   _lock(lock),
   _chunk_manager(chunk_manager),
   _growth_policy(growth_policy),
   _chunks(),
+  _alignment_words(alignment_words),
   _fbl(NULL),
   _total_used_words_counter(total_used_words_counter),
   _name(name)
 #ifdef ASSERT
   , _first_fence(NULL)
 #endif
+
 {
   UL(debug, ": born.");
 
@@ -224,7 +227,7 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   UL2(trace, "requested " SIZE_FORMAT " words.", requested_word_size);
 
   MetaWord* p = NULL;
-  const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
+  const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size, _alignment_words);
 
   // Before bothering the arena proper, attempt to re-use a block from the free blocks list
   if (_fbl != NULL && !_fbl->is_empty()) {
@@ -268,7 +271,7 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
 
   assert_lock_strong(lock());
 
-  const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
+  const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size, _alignment_words);
   MetaWord* p = NULL;
   bool current_chunk_too_small = false;
   bool commit_failure = false;
@@ -368,7 +371,7 @@ void MetaspaceArena::deallocate_locked(MetaWord* p, size_t word_size) {
   UL2(trace, "deallocating " PTR_FORMAT ", word size: " SIZE_FORMAT ".",
       p2i(p), word_size);
 
-  size_t raw_word_size = get_raw_word_size_for_requested_word_size(word_size);
+  size_t raw_word_size = get_raw_word_size_for_requested_word_size(word_size, _alignment_words);
   add_allocation_to_fbl(p, raw_word_size);
 
   DEBUG_ONLY(verify_locked();)
@@ -482,8 +485,8 @@ void MetaspaceArena::print_on_locked(outputStream* st) const {
                _chunks.count(), _chunks.calc_word_size(), _chunks.calc_committed_word_size());
   _chunks.print_on(st);
   st->cr();
-  st->print_cr("growth-policy " PTR_FORMAT ", lock " PTR_FORMAT ", cm " PTR_FORMAT ", fbl " PTR_FORMAT,
-                p2i(_growth_policy), p2i(_lock), p2i(_chunk_manager), p2i(_fbl));
+  st->print_cr("growth-policy " PTR_FORMAT ", alignment %d, lock " PTR_FORMAT ", cm " PTR_FORMAT ", fbl " PTR_FORMAT,
+                p2i(_growth_policy), _alignment_words * BytesPerWord, p2i(_lock), p2i(_chunk_manager), p2i(_fbl));
 }
 
 } // namespace metaspace

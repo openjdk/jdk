@@ -48,7 +48,9 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
@@ -194,7 +196,9 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
 }
 
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
+  MetaWord* p = Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
+  assert(is_aligned(p, KlassAlignmentInBytes), "metaspace returned badly aligned memory.");
+  return p;
 }
 
 // "Normal" instantiation is preceeded by a MetaspaceObj allocation
@@ -769,6 +773,10 @@ void Klass::verify_on(outputStream* st) {
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
   assert(Metaspace::contains((address)this), "Should be");
+
+  if (UseCompressedClassPointers) {
+    assert(is_aligned(this, KlassAlignmentInBytes), "misaligned Klass structure");
+  }
 
   guarantee(this->is_klass(),"should be klass");
 

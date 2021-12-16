@@ -52,6 +52,11 @@ MetaWord* FreeBlocks::remove_block(size_t requested_word_size) {
   if (p != NULL) {
     // Blocks which are larger than a certain threshold are split and
     //  the remainder is handed back to the manager.
+    // Attention alignment: the resulting block must have the right alignment
+    //  for the enclosing arena. ATM this works, since the arena aligns allocated block
+    //  size. If we ever switch to a different model (e.g. aligning the start
+    //  address of allocated blocks instead of the request size) this should be
+    //  rewritten).
     const size_t waste = real_size - requested_word_size;
     if (waste > MinWordSize) {
       add_block(p + requested_word_size, waste);

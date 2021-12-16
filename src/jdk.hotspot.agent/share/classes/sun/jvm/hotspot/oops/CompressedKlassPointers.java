@@ -58,8 +58,8 @@ public class CompressedKlassPointers {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("CompressedKlassPointers");
 
-    baseField = type.getAddressField("_narrow_klass._base");
-    shiftField = type.getCIntegerField("_narrow_klass._shift");
+    baseField = type.getAddressField("_base");
+    shiftField = type.getCIntegerField("_shift_copy");
   }
 
   public CompressedKlassPointers() {
@@ -69,11 +69,14 @@ public class CompressedKlassPointers {
     if (baseField.getValue() == null) {
       return 0;
     } else {
+        System.out.println("base: " + baseField.getValue().minus(null));
       return baseField.getValue().minus(null);
     }
   }
 
   public static int getShift() {
-    return (int)shiftField.getValue();
+
+      System.out.println("shift: " + (int)shiftField.getValue());
+      return (int)shiftField.getValue();
   }
 }

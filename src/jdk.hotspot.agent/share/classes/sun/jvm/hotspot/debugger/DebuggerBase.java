@@ -475,6 +475,11 @@ public abstract class DebuggerBase implements Debugger {
   protected long readCompKlassAddressValue(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     long value = readCInteger(address, getKlassPtrSize(), true);
+    // Todo: Lilliput: this is a hack. The real problem is the assumption that size
+    //  of a narrow Klass pointer can be expressed in number of bytes (getKlassPtrSize).
+    //  That assumption is present in a number of files here. Better would be
+    //  to change this to getKlassPtrSizeInBits, or to do it some other way.
+    value &= (1 << 22) - 1; // narrow klass pointer size is 22 bits.
     if (value != 0) {
       value = (long)(narrowKlassBase + (long)(value << narrowKlassShift));
     }

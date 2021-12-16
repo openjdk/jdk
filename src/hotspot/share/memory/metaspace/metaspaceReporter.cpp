@@ -38,6 +38,7 @@
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "oops/compressedOops.hpp"
 #include "runtime/os.hpp"
 
 namespace metaspace {
@@ -105,10 +106,15 @@ static void print_settings(outputStream* out, size_t scale) {
   if (Metaspace::using_class_space()) {
     out->print("CompressedClassSpaceSize: ");
     print_human_readable_size(out, CompressedClassSpaceSize, scale);
+    out->cr();
+    out->print_cr("KlassAlignmentInBytes: %d", KlassAlignmentInBytes);
+    out->print("KlassEncodingMetaspaceMax: ");
+    print_human_readable_size(out, KlassEncodingMetaspaceMax, scale);
+    out->cr();
+    CompressedKlassPointers::print_mode(out);
   } else {
-    out->print("No class space");
+    out->print_cr("No class space");
   }
-  out->cr();
   out->print("Initial GC threshold: ");
   print_human_readable_size(out, MetaspaceSize, scale);
   out->cr();

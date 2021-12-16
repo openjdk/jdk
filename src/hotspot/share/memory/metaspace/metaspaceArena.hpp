@@ -94,6 +94,9 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   // List of chunks. Head of the list is the current chunk.
   MetachunkList _chunks;
 
+  // Alignment alignment, in words.
+  const int _alignment_words;
+
   // Structure to take care of leftover/deallocated space in used chunks.
   // Owned by the Arena. Gets allocated on demand only.
   FreeBlocks* _fbl;
@@ -164,7 +167,7 @@ class MetaspaceArena : public CHeapObj<mtClass> {
 
 public:
 
-  MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
+  MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy, int alignment_words,
                  Mutex* lock, SizeAtomicCounter* total_used_words_counter,
                  const char* name);
 

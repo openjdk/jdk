@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/metaspace/metaspaceAlignment.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
@@ -96,7 +97,8 @@ MetaspaceTestArena* MetaspaceTestContext::create_arena(Metaspace::MetaspaceType 
   MetaspaceArena* arena = NULL;
   {
     MutexLocker ml(lock,  Mutex::_no_safepoint_check_flag);
-    arena = new MetaspaceArena(_context->cm(), growth_policy, lock, &_used_words_counter, _name);
+    arena = new MetaspaceArena(_context->cm(), growth_policy, MetaspaceMinAlignmentWords,
+                               lock, &_used_words_counter, _name);
   }
   return new MetaspaceTestArena(lock, arena);
 }

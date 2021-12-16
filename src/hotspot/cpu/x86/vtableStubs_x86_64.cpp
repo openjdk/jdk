@@ -218,7 +218,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // We expect we need index_dependent_slop extra bytes. Reason:
   // The emitted code in lookup_interface_method changes when itable_index exceeds 15.
   // For linux, a very narrow estimate would be 112, but Solaris requires some more space (130).
-  const ptrdiff_t estimate = 226;
+  // Lilliput: expanded since load_klass is significantly and decode_klass somewhat larger.
+  const ptrdiff_t estimate = 230;
   const ptrdiff_t codesize = typecheckSize + lookupSize + index_dependent_slop;
   slop_delta  = (int)(estimate - codesize);
   slop_bytes += slop_delta;
