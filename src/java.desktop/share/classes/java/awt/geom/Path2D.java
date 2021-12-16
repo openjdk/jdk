@@ -2095,6 +2095,8 @@ public abstract class Path2D implements Shape, Cloneable {
      * This method provides a basic facility for implementors of the {@link Shape} interface to
      * implement support for the {@link Shape#getBounds2D()} method.
      * </p>
+     *
+     * @param pi the specified {@code PathIterator}
      * @return an instance of {@code Rectangle2D} that is a high-precision bounding box of the
      *         {@code PathIterator}.
      * @see Shape#getBounds2D()
