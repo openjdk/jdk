@@ -29,6 +29,7 @@
 #include "opto/memnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "prims/vectorSupport.hpp"
 
 //------------------------------VectorNode-------------------------------------
 // Vector Operation
@@ -977,6 +978,16 @@ class VectorMaskToLongNode : public VectorMaskOpNode {
     VectorMaskOpNode(mask, ty, Op_VectorMaskToLong) {}
   virtual int Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegL; }
+  virtual Node* Identity(PhaseGVN* phase);
+};
+
+class VectorLongToMaskNode : public VectorNode {
+ public:
+  VectorLongToMaskNode(Node* mask, const TypeVect* ty):
+    VectorNode(mask, ty) {
+  }
+  virtual int Opcode() const;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //-------------------------- Vector mask broadcast -----------------------------------
@@ -1401,7 +1412,7 @@ class VectorMaskCastNode : public VectorNode {
     const TypeVect* in_vt = in->bottom_type()->is_vect();
     assert(in_vt->length() == vt->length(), "vector length must match");
   }
-
+  static Node* makeCastNode(PhaseGVN* phase, Node* in1, const TypeVect * vt);
   virtual int Opcode() const;
 };
 

@@ -1111,7 +1111,7 @@ void JavaThread::interrupt() {
   debug_only(check_for_dangling_thread_pointer(this);)
 
   // For Windows _interrupt_event
-  osthread()->set_interrupted(true);
+  WINDOWS_ONLY(osthread()->set_interrupted(true);)
 
   // For Thread.sleep
   _SleepEvent->unpark();
@@ -1156,7 +1156,7 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
   if (interrupted && clear_interrupted) {
     assert(this == Thread::current(), "only the current thread can clear");
     java_lang_Thread::set_interrupted(threadObj(), false);
-    osthread()->set_interrupted(false);
+    WINDOWS_ONLY(osthread()->set_interrupted(false);)
   }
 
   return interrupted;
