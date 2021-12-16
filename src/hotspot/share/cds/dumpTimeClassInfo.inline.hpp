@@ -50,7 +50,6 @@ public:
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
     assert_lock_strong(DumpTimeTable_lock);
     if (k->is_loader_alive()) {
-      assert(k->is_loader_alive(), "must be");
       bool result = _iter->do_entry(k, info);
       assert(k->is_loader_alive(), "must not change");
       return result;

@@ -189,7 +189,7 @@ void SystemDictionaryShared::start_dumping() {
 
 void SystemDictionaryShared::stop_dumping() {
   assert_lock_strong(DumpTimeTable_lock);
-  _dump_in_progress = true;
+  _dump_in_progress = false;
 }
 
 DumpTimeClassInfo* SystemDictionaryShared::find_or_allocate_info_for(InstanceKlass* k) {
