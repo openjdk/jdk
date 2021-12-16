@@ -400,15 +400,6 @@ class BlockMerger: public BlockClosure {
 #endif
 
 #ifdef ASSERT
-    {
-      BlockList b;
-      b.append(block);
-      b.append(sux);
-      _hir->verify_local(b);
-    }
-#endif // ASSERT
-
-#ifdef ASSERT
     BlockList blocks_to_verify_later;
     blocks_to_verify_later.append(block);
     _hir->expand_with_neighborhood(blocks_to_verify_later);
