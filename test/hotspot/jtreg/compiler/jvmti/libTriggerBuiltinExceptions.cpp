@@ -40,43 +40,39 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     jvmtiEnv *jvmti = nullptr;
 
-    bool successful = true;
     jint result = JNI_OK;
-    do {
-        result = jvm->GetEnv((void **) (&jvmti), JVMTI_VERSION);
-        if (result != JNI_OK) {
-            printf("Agent_OnLoad: Error in GetEnv in obtaining jvmtiEnv: %d\n", result);
-            break;
-        }
+    result = jvm->GetEnv((void **) (&jvmti), JVMTI_VERSION);
+    if (result != JNI_OK) {
+        printf("Agent_OnLoad: Error in GetEnv in obtaining jvmtiEnv: %d\n", result);
+        return JNI_ERR;
+    }
 
-        jvmtiEventCallbacks callbacks;
-        memset(&callbacks, 0, sizeof(callbacks));
-        callbacks.Exception = &callbackException;
+    jvmtiEventCallbacks callbacks;
+    memset(&callbacks, 0, sizeof(callbacks));
+    callbacks.Exception = &callbackException;
 
-        result = jvmti->SetEventCallbacks(&callbacks, sizeof(jvmtiEventCallbacks));
-        if (result != JVMTI_ERROR_NONE) {
-            printf("Agent_OnLoad: Error in JVMTI SetEventCallbacks: %d\n", result);
-            break;
-        }
+    result = jvmti->SetEventCallbacks(&callbacks, sizeof(jvmtiEventCallbacks));
+    if (result != JVMTI_ERROR_NONE) {
+        printf("Agent_OnLoad: Error in JVMTI SetEventCallbacks: %d\n", result);
+        return JNI_ERR;
+    }
 
-        jvmtiCapabilities capabilities;
-        memset(&capabilities, 0, sizeof(capabilities));
-        capabilities.can_generate_exception_events = 1;
-        result = jvmti->AddCapabilities(&capabilities);
-        if (result != JVMTI_ERROR_NONE) {
-            printf("Agent_OnLoad: Error in JVMTI AddCapabilities: %d\n", result);
-            break;
-        }
+    jvmtiCapabilities capabilities;
+    memset(&capabilities, 0, sizeof(capabilities));
+    capabilities.can_generate_exception_events = 1;
+    result = jvmti->AddCapabilities(&capabilities);
+    if (result != JVMTI_ERROR_NONE) {
+        printf("Agent_OnLoad: Error in JVMTI AddCapabilities: %d\n", result);
+        return JNI_ERR;
+    }
 
-        result = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, (jthread)NULL);
-        if (result != JVMTI_ERROR_NONE) {
-            printf("Agent_OnLoad: Error in JVMTI SetEventNotificationMode: %d\n", result);
-            break;
-        }
+    result = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, (jthread)NULL);
+    if (result != JVMTI_ERROR_NONE) {
+        printf("Agent_OnLoad: Error in JVMTI SetEventNotificationMode: %d\n", result);
+        return JNI_ERR;
+    }
 
-    } while (false);
-
-    return (result == JNI_OK) || (result == JVMTI_ERROR_NONE) ? JNI_OK : JNI_ERR;
+    return JNI_OK;
 }
 
 JNIEXPORT jint JNICALL
