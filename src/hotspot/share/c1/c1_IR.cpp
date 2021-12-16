@@ -1261,40 +1261,32 @@ void IR::print(bool cfg_only, bool live_only) {
   }
 }
 
-inline void validate_end_not_null(BlockBegin* block) {
-  assert(block->end() != NULL, "Expect block end to exist.");
-}
-
 class EndNotNullValidator : public BlockClosure {
  public:
   virtual void block_do(BlockBegin* block) {
-    validate_end_not_null(block);
+    assert(block->end() != NULL, "Expect block end to exist.");
   }
 };
 
 typedef GrowableArray<BlockList*> BlockListList;
 
-void verify_successor_xentry_flag(const BlockBegin* block) {
-  for (int i = 0; i < block->end()->number_of_sux(); i++) {
-    assert(!block->end()->sux_at(i)->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
-  }
-  for (int i = 0; i < block->number_of_exception_handlers(); i++) {
-    assert(block->exception_handler_at(i)->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
-  }
-}
-
 class XentryFlagValidator : public BlockClosure {
  public:
   virtual void block_do(BlockBegin* block) {
-    verify_successor_xentry_flag(block);
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      assert(!block->end()->sux_at(i)->is_set(BlockBegin::exception_entry_flag), "must not be xhandler");
+    }
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+      assert(block->exception_handler_at(i)->is_set(BlockBegin::exception_entry_flag), "must be xhandler");
+    }
   }
 };
 
 // Validation goals:
-// * code() length == blocks length
-// * code() contents == blocks content
-// * Each block's computed predecessors match sux lists (length)
-// * Each block's computed predecessors match sux lists (set content)
+// - code() length == blocks length
+// - code() contents == blocks content
+// - Each block's computed predecessors match sux lists (length)
+// - Each block's computed predecessors match sux lists (set content)
 class PredecessorAndCodeValidator : public BlockClosure {
  private:
   BlockListList* _predecessors; // Each index i will hold predecessors of block with id i
@@ -1370,41 +1362,33 @@ class PredecessorAndCodeValidator : public BlockClosure {
   }
 };
 
-inline void verify_block_begin_field(BlockBegin* block) {
-  for ( Instruction *cur = block; cur != NULL; cur = cur->next()) {
-    assert(cur->block() == block, "Block begin is not correct");
-  }
-}
-
 class VerifyBlockBeginField : public BlockClosure {
 public:
   virtual void block_do(BlockBegin* block) {
-    verify_block_begin_field(block);
+    for (Instruction* cur = block; cur != NULL; cur = cur->next()) {
+      assert(cur->block() == block, "Block begin is not correct");
+    }
   }
 };
-
-void validate_edge_mutuality(BlockBegin* block) {
-  for (int i = 0; i < block->end()->number_of_sux(); i++) {
-    assert(block->end()->sux_at(i)->is_predecessor(block), "Block's successor should have it as predecessor");
-  }
-
-  for (int i = 0; i < block->number_of_exception_handlers(); i++) {
-    assert(block->exception_handler_at(i)->is_predecessor(block), "Block's exception handler should have it as predecessor");
-  }
-
-  for (int i = 0; i < block->number_of_preds(); i++) {
-    assert(block->pred_at(i) != NULL, "Predecessor must exist");
-    assert(block->pred_at(i)->end() != NULL, "Predecessor end must exist");
-    bool is_sux      = block->pred_at(i)->end()->is_sux(block);
-    bool is_xhandler = block->pred_at(i)->is_exception_handler(block);
-    assert(is_sux || is_xhandler, "Block's predecessor should have it as successor or xhandler");
-  }
-}
 
 class ValidateEdgeMutuality : public BlockClosure {
  public:
   virtual void block_do(BlockBegin* block) {
-    validate_edge_mutuality(block);
+    for (int i = 0; i < block->end()->number_of_sux(); i++) {
+      assert(block->end()->sux_at(i)->is_predecessor(block), "Block's successor should have it as predecessor");
+    }
+
+    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+      assert(block->exception_handler_at(i)->is_predecessor(block), "Block's exception handler should have it as predecessor");
+    }
+
+    for (int i = 0; i < block->number_of_preds(); i++) {
+      assert(block->pred_at(i) != NULL, "Predecessor must exist");
+      assert(block->pred_at(i)->end() != NULL, "Predecessor end must exist");
+      bool is_sux      = block->pred_at(i)->end()->is_sux(block);
+      bool is_xhandler = block->pred_at(i)->is_exception_handler(block);
+      assert(is_sux || is_xhandler, "Block's predecessor should have it as successor or xhandler");
+    }
   }
 };
 
@@ -1414,24 +1398,23 @@ void IR::expand_with_neighborhood(BlockList& blocks) {
     BlockBegin* block = blocks.at(h);
 
     for (int i = 0; i < block->end()->number_of_sux(); i++) {
-      if (blocks.contains(block->end()->sux_at(i))) continue;
+      if (blocks.contains(block->end()->sux_at(i))) { continue; }
       blocks.append(block->end()->sux_at(i));
     }
 
     for (int i = 0; i < block->number_of_preds(); i++) {
-      if (blocks.contains(block->pred_at(i))) continue;
+      if (blocks.contains(block->pred_at(i))) { continue; }
       blocks.append(block->pred_at(i));
     }
 
     for (int i = 0; i < block->number_of_exception_handlers(); i++) {
-      if (blocks.contains(block->exception_handler_at(i))) continue;
+      if (blocks.contains(block->exception_handler_at(i))) { continue; }
       blocks.append(block->exception_handler_at(i));
     }
   }
 }
 
 void IR::verify_local(BlockList& blocks) {
-#ifdef ASSERT
   EndNotNullValidator ennv;
   blocks.iterate_forward(&ennv);
 
@@ -1440,25 +1423,22 @@ void IR::verify_local(BlockList& blocks) {
 
   VerifyBlockBeginField verifier;
   blocks.iterate_forward(&verifier);
-#endif // ASSERT
 }
 
 void IR::verify() {
-#ifdef ASSERT
   XentryFlagValidator xe;
-  this->iterate_postorder(&xe);
+  iterate_postorder(&xe);
 
   PredecessorAndCodeValidator pv(this);
 
   EndNotNullValidator ennv;
-  this->iterate_postorder(&ennv);
+  iterate_postorder(&ennv);
 
   ValidateEdgeMutuality vem;
-  this->iterate_postorder(&vem);
+  iterate_postorder(&vem);
 
   VerifyBlockBeginField verifier;
-  this->iterate_postorder(&verifier);
-#endif // ASSERT
+  iterate_postorder(&verifier);
 }
 
 #endif // PRODUCT

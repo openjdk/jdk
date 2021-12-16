@@ -338,7 +338,7 @@ class IR: public CompilationResourceObj {
   // debugging
   static void print(BlockBegin* start, bool cfg_only, bool live_only = false) PRODUCT_RETURN;
   void print(bool cfg_only, bool live_only = false)                           PRODUCT_RETURN;
-  void expand_with_neighborhood(BlockList& blocks);
+  void expand_with_neighborhood(BlockList& blocks)                            PRODUCT_RETURN;
   void verify_local(BlockList&)                                               PRODUCT_RETURN;
   void verify()                                                               PRODUCT_RETURN;
 };
