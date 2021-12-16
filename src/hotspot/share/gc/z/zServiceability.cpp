@@ -39,8 +39,8 @@ struct ZMemoryUsageInfo {
 
 static ZMemoryUsageInfo compute_memory_usage_info() {
   const size_t capacity = ZHeap::heap()->capacity();
-  const size_t old_used = ZGeneration::old()->used();
-  const size_t young_used = ZGeneration::young()->used();
+  const size_t old_used = ZHeap::heap()->used_old();
+  const size_t young_used = ZHeap::heap()->used_young();
 
   ZMemoryUsageInfo info;
   info._old_used = MIN2(old_used, capacity);
@@ -140,21 +140,21 @@ void ZServiceabilityCounters::update_sizes() {
   }
 }
 
-  ZServiceabilityMemoryPool::ZServiceabilityMemoryPool(const char* name, const ZGeneration* generation, size_t min_capacity, size_t max_capacity) :
+ZServiceabilityMemoryPool::ZServiceabilityMemoryPool(const char* name, ZGenerationId id, size_t min_capacity, size_t max_capacity) :
     CollectedMemoryPool(name,
                         min_capacity,
                         max_capacity,
-                        generation->is_old() /* support_usage_threshold */),
-    _generation(generation) {}
+                        id == ZGenerationId::old /* support_usage_threshold */),
+    _generation_id(id) {}
 
 size_t ZServiceabilityMemoryPool::used_in_bytes() {
-  return _generation->used();
+  return ZHeap::heap()->used_generation(_generation_id);
 }
 
 MemoryUsage ZServiceabilityMemoryPool::get_memory_usage() {
   ZMemoryUsageInfo info = compute_memory_usage_info();
 
-  if (_generation->is_young()) {
+  if (_generation_id == ZGenerationId::young) {
     return MemoryUsage(initial_size(), info._young_used, info._young_capacity, max_size());
   } else {
     return MemoryUsage(initial_size(), info._old_used, info._old_capacity, max_size());
@@ -172,14 +172,12 @@ ZServiceabilityMemoryManager::ZServiceabilityMemoryManager(const char* name,
 
 ZServiceability::ZServiceability(size_t initial_capacity,
                                  size_t min_capacity,
-                                 size_t max_capacity,
-                                 const ZGeneration* young_generation,
-                                 const ZGeneration* old_generation) :
+                                 size_t max_capacity) :
     _initial_capacity(initial_capacity),
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
-    _young_memory_pool("ZGC Young Generation", young_generation, _min_capacity, _max_capacity),
-    _old_memory_pool("ZGC Old Generation", old_generation, 0, _max_capacity),
+    _young_memory_pool("ZGC Young Generation", ZGenerationId::young, _min_capacity, _max_capacity),
+    _old_memory_pool("ZGC Old Generation", ZGenerationId::old, 0, _max_capacity),
     _minor_cycle_memory_manager("ZGC Minor Cycles", "end of GC cycle", &_young_memory_pool, &_old_memory_pool),
     _major_cycle_memory_manager("ZGC Major Cycles", "end of GC cycle", &_young_memory_pool, &_old_memory_pool),
     _minor_pause_memory_manager("ZGC Minor Pauses", "end of GC pause", &_young_memory_pool, &_old_memory_pool),

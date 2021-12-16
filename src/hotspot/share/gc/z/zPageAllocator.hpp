@@ -74,6 +74,11 @@ private:
   volatile size_t            _capacity;
   volatile size_t            _claimed;
   volatile size_t            _used;
+  size_t                     _used_generations[2];
+  struct {
+    size_t                   _used_high;
+    size_t                   _used_low;
+  } _collection_stats[2];
   ZList<ZPageAllocation>     _stalled;
   ZUnmapper*                 _unmapper;
   ZUncommitter*              _uncommitter;
@@ -86,7 +91,9 @@ private:
 
   void increase_used(size_t size);
   void decrease_used(size_t size);
-  void decrease_used(size_t size, ZGenerationId id);
+
+  void increase_used_generation(ZGenerationId id, size_t size);
+  void decrease_used_generation(ZGenerationId id, size_t size);
 
   bool commit_page(ZPage* page);
   void uncommit_page(ZPage* page);
@@ -130,9 +137,14 @@ public:
   size_t soft_max_capacity() const;
   size_t capacity() const;
   size_t used() const;
+  size_t used_generation(ZGenerationId id) const;
   size_t unused() const;
 
+  void promote_used(size_t size);
+
   ZPageAllocatorStats stats(ZCollector* collector) const;
+
+  void reset_statistics(ZGenerationId id);
 
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZPageAge age);
   void recycle_page(ZPage* page);

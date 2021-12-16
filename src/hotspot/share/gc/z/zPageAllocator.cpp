@@ -191,6 +191,8 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
     _capacity(0),
     _claimed(0),
     _used(0),
+    _used_generations{0, 0},
+    _collection_stats{{0, 0}, {0, 0}},
     _stalled(),
     _unmapper(new ZUnmapper(this)),
     _uncommitter(new ZUncommitter(this)),
@@ -303,6 +305,10 @@ size_t ZPageAllocator::used() const {
   return Atomic::load(&_used);
 }
 
+size_t ZPageAllocator::used_generation(ZGenerationId id) const {
+  return Atomic::load(&_used_generations[(int)id]);
+}
+
 size_t ZPageAllocator::unused() const {
   const ssize_t capacity = (ssize_t)Atomic::load(&_capacity);
   const ssize_t used = (ssize_t)Atomic::load(&_used);
@@ -312,19 +318,24 @@ size_t ZPageAllocator::unused() const {
 }
 
 ZPageAllocatorStats ZPageAllocator::stats(ZCollector* collector) const {
-  ZGeneration* generation = ZGeneration::generation(collector->id());
   ZLocker<ZLock> locker(&_lock);
   return ZPageAllocatorStats(_min_capacity,
                              _max_capacity,
                              soft_max_capacity(),
                              _capacity,
                              _used,
-                             collector->used_high(),
-                             collector->used_low(),
-                             generation->used(),
+                             _collection_stats[(int)collector->id()]._used_high,
+                             _collection_stats[(int)collector->id()]._used_low,
+                             used_generation(collector->id()),
                              collector->freed(),
                              collector->promoted(),
                              collector->compacted());
+}
+
+void ZPageAllocator::reset_statistics(ZGenerationId id) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
+  _collection_stats[(int)id]._used_high = _used;
+  _collection_stats[(int)id]._used_low = _used;
 }
 
 size_t ZPageAllocator::increase_capacity(size_t size) {
@@ -372,20 +383,40 @@ void ZPageAllocator::increase_used(size_t size) {
 
   // Update atomically since we have concurrent readers
   const size_t used = Atomic::add(&_used, size);
-  ZCollector::young()->update_used(used);
-  ZCollector::old()->update_used(used);
+
+  // Update used high
+  for (auto& stats : _collection_stats) {
+    if (used > stats._used_high) {
+      stats._used_high = used;
+    }
+  }
 }
 
 void ZPageAllocator::decrease_used(size_t size) {
   // Update atomically since we have concurrent readers
   const size_t used = Atomic::sub(&_used, size);
-  ZCollector::young()->update_used(used);
-  ZCollector::old()->update_used(used);
+
+  // Update used low
+  for (auto& stats : _collection_stats) {
+    if (used < stats._used_low) {
+      stats._used_low = used;
+    }
+  }
 }
 
-void ZPageAllocator::decrease_used(size_t size, ZGenerationId id) {
-  decrease_used(size);
-  ZGeneration::generation(id)->decrease_used(size);
+void ZPageAllocator::increase_used_generation(ZGenerationId id, size_t size) {
+  // Update atomically since we have concurrent readers
+  Atomic::add(&_used_generations[(int)id], size, memory_order_relaxed);
+}
+
+void ZPageAllocator::decrease_used_generation(ZGenerationId id, size_t size) {
+  // Update atomically since we have concurrent readers
+  Atomic::sub(&_used_generations[(int)id], size, memory_order_relaxed);
+}
+
+void ZPageAllocator::promote_used(size_t size) {
+  decrease_used_generation(ZGenerationId::young, size);
+  increase_used_generation(ZGenerationId::old, size);
 }
 
 bool ZPageAllocator::commit_page(ZPage* page) {
@@ -689,7 +720,8 @@ retry:
   // The generation's used is tracked here when the page is handed out
   // to the allocating thread. The overall heap "used" is tracked in
   // the lower-level allocation code.
-  ZGeneration::generation(age)->increase_used(size);
+  const ZGenerationId id = age == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
+  increase_used_generation(id, size);
 
   // Reset page. This updates the page's sequence number and must
   // be done after we potentially blocked in a safepoint (stalled)
@@ -749,7 +781,9 @@ void ZPageAllocator::free_page(ZPage* page) {
   ZLocker<ZLock> locker(&_lock);
 
   // Update used statistics
-  decrease_used(to_recycle->size(), generation_id);
+  const size_t size = to_recycle->size();
+  decrease_used(size);
+  decrease_used_generation(generation_id, size);
 
   // Free page
   recycle_page(to_recycle);
@@ -761,18 +795,25 @@ void ZPageAllocator::free_page(ZPage* page) {
 void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
   ZArray<ZPage*> to_recycle;
 
-  size_t generation_used[2] = {0, 0};
+  size_t young_size = 0;
+  size_t old_size = 0;
 
   ZArrayIterator<ZPage*> pages_iter(pages);
   for (ZPage* page; pages_iter.next(&page);) {
-    generation_used[(int)page->generation_id()] += page->size();
+    if (page->is_young()) {
+      young_size += page->size();
+    } else {
+      old_size += page->size();
+    }
     to_recycle.push(_safe_recycle.register_and_clone_if_activated(page));
   }
 
   ZLocker<ZLock> locker(&_lock);
 
-  decrease_used(generation_used[(int)ZGenerationId::young], ZGenerationId::young);
-  decrease_used(generation_used[(int)ZGenerationId::old], ZGenerationId::old);
+  // Update used statistics
+  decrease_used(young_size + old_size);
+  decrease_used_generation(ZGenerationId::young, young_size);
+  decrease_used_generation(ZGenerationId::old, old_size);
 
   // Free pages
   ZArrayIterator<ZPage*> iter(&to_recycle);

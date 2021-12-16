@@ -38,17 +38,11 @@ protected:
   static ZOldGeneration*   _old;
 
   const ZGenerationId _id;
-  size_t              _used;
 
 public:
   ZGeneration(ZGenerationId id);
 
   ZGenerationId id() const;
-
-  void increase_used(size_t size);
-  void decrease_used(size_t size);
-
-  size_t used() const;
 
   bool is_young() const;
   bool is_old() const;

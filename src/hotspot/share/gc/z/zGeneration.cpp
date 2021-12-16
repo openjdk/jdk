@@ -29,23 +29,7 @@ ZYoungGeneration* ZGeneration::_young;
 ZOldGeneration*   ZGeneration::_old;
 
 ZGeneration::ZGeneration(ZGenerationId id) :
-    _id(id),
-    _used(0) {
-}
-
-void ZGeneration::increase_used(size_t size) {
-  // Update atomically since we have concurrent readers
-  Atomic::add(&_used, size, memory_order_relaxed);
-}
-
-void ZGeneration::decrease_used(size_t size) {
-  // Update atomically since we have concurrent readers
-  Atomic::sub(&_used, size, memory_order_relaxed);
-}
-
-size_t ZGeneration::used() const {
-  return Atomic::load(&_used);
-}
+    _id(id) {}
 
 ZYoungGeneration::ZYoungGeneration() :
     ZGeneration(ZGenerationId::young),

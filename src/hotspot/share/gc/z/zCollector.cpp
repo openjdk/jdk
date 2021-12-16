@@ -72,9 +72,9 @@ ZCollector::ZCollector(ZGenerationId id, ZPageTable* page_table, ZPageAllocator*
     _mark(this, page_table),
     _relocate(this),
     _relocation_set(this),
-    _used_high(),
-    _used_low(),
-    _freed(),
+    _freed(0),
+    _promoted(0),
+    _compacted(0),
     _phase(Phase::Relocate),
     _seqnum(1),
     _stat_heap(),
@@ -226,15 +226,7 @@ void ZCollector::reset_statistics() {
   _freed = 0;
   _promoted = 0;
   _compacted = 0;
-  _used_high = _used_low = _page_allocator->used();
-}
-
-size_t ZCollector::used_high() const {
-  return _used_high;
-}
-
-size_t ZCollector::used_low() const {
-  return _used_low;
+  _page_allocator->reset_statistics(_id);
 }
 
 ssize_t ZCollector::freed() const {
@@ -259,15 +251,6 @@ size_t ZCollector::compacted() const {
 
 void ZCollector::increase_compacted(size_t size) {
   Atomic::add(&_compacted, size, memory_order_relaxed);
-}
-
-void ZCollector::update_used(size_t used) {
-  if (used > _used_high) {
-    _used_high = used;
-  }
-  if (used < _used_low) {
-    _used_low = used;
-  }
 }
 
 ConcurrentGCTimer* ZCollector::gc_timer() const {
@@ -476,9 +459,8 @@ void ZYoungCollector::relocate() {
 void ZYoungCollector::flip_promote(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
-  ZGeneration::young()->decrease_used(from_page->size());
-  ZGeneration::old()->increase_used(from_page->size());
-
+  // Update statistics
+  _page_allocator->promote_used(from_page->size());
   increase_freed(from_page->size());
   increase_promoted(from_page->live_bytes());
 }
@@ -486,8 +468,8 @@ void ZYoungCollector::flip_promote(ZPage* from_page, ZPage* to_page) {
 void ZYoungCollector::in_place_relocate_promote(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
-  ZGeneration::young()->decrease_used(from_page->size());
-  ZGeneration::old()->increase_used(from_page->size());
+  // Update statistics
+  _page_allocator->promote_used(from_page->size());
 }
 
 void ZYoungCollector::register_flip_promoted(const ZArray<ZPage*>& pages) {

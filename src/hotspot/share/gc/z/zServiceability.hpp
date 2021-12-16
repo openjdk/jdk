@@ -26,6 +26,7 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "memory/allocation.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
@@ -36,10 +37,10 @@ class ZServiceabilityCounters;
 
 class ZServiceabilityMemoryPool : public CollectedMemoryPool {
 private:
-  const ZGeneration* const _generation;
+  const ZGenerationId _generation_id;
 
 public:
-  ZServiceabilityMemoryPool(const char* name, const ZGeneration* generation, size_t min_capacity, size_t max_capacity);
+  ZServiceabilityMemoryPool(const char* name, ZGenerationId id, size_t min_capacity, size_t max_capacity);
 
   virtual size_t used_in_bytes();
   virtual MemoryUsage get_memory_usage();
@@ -69,9 +70,7 @@ private:
 public:
   ZServiceability(size_t initial_capacity,
                   size_t min_capacity,
-                  size_t max_capacity,
-                  const ZGeneration* young_generation,
-                  const ZGeneration* old_generation);
+                  size_t max_capacity);
 
   void initialize();
 

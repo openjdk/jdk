@@ -57,7 +57,7 @@ ZHeap::ZHeap() :
     _page_table(),
     _young_generation(),
     _old_generation(),
-    _serviceability(initial_capacity(), min_capacity(), max_capacity(), &_young_generation, &_old_generation),
+    _serviceability(initial_capacity(), min_capacity(), max_capacity()),
     _young_collector(&_page_table, &_page_allocator),
     _old_collector(&_page_table, &_page_allocator),
     _initialized(false) {
@@ -110,6 +110,18 @@ size_t ZHeap::capacity() const {
 
 size_t ZHeap::used() const {
   return _page_allocator.used();
+}
+
+size_t ZHeap::used_generation(ZGenerationId id) const {
+  return _page_allocator.used_generation(id);
+}
+
+size_t ZHeap::used_young() const {
+  return _page_allocator.used_generation(ZGenerationId::young);
+}
+
+size_t ZHeap::used_old() const {
+  return _page_allocator.used_generation(ZGenerationId::old);
 }
 
 size_t ZHeap::unused() const {
