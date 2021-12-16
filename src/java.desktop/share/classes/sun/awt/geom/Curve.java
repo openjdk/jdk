@@ -791,7 +791,9 @@ public abstract class Curve {
      */
     public static void accumulateExtremaBoundsForCubic(double[] bounds, int boundsOffset, double x1, double ctrlX1, double ctrlX2, double x2, double[] coeff, double[] deriv_coeff) {
         if (ctrlX1 < bounds[boundsOffset] ||
-                ctrlX1 > bounds[boundsOffset + 1]) {
+                ctrlX1 > bounds[boundsOffset + 1] ||
+                ctrlX2 < bounds[boundsOffset] ||
+                ctrlX2 > bounds[boundsOffset + 1]) {
             final double dx32 = 3.0 * (ctrlX2 - ctrlX1);
             final double dx21 = 3.0 * (ctrlX1 - x1);
             coeff[3] = (x2 - x1) - dx32;  // A = P3 - P0 - 3 (P2 - P1) = (P3 - P0) + 3 (P1 - P2)
