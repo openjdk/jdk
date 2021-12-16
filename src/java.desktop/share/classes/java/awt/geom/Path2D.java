@@ -797,6 +797,14 @@ public abstract class Path2D implements Shape, Cloneable {
 
         /**
          * {@inheritDoc}
+         * @since 1.6
+         */
+        public final synchronized Rectangle2D getBounds2D() {
+            return getBounds2D(getPathIterator(null));
+        }
+
+        /**
+         * {@inheritDoc}
          * <p>
          * The iterator for this class is not multi-threaded safe,
          * which means that the {@code Path2D} class does not
@@ -1565,6 +1573,14 @@ public abstract class Path2D implements Shape, Cloneable {
 
         /**
          * {@inheritDoc}
+         * @since 1.6
+         */
+        public final synchronized Rectangle2D getBounds2D() {
+            return getBounds2D(getPathIterator(null));
+        }
+
+        /**
+         * {@inheritDoc}
          * <p>
          * The iterator for this class is not multi-threaded safe,
          * which means that the {@code Path2D} class does not
@@ -2079,14 +2095,6 @@ public abstract class Path2D implements Shape, Cloneable {
      */
     public final Rectangle getBounds() {
         return getBounds2D().getBounds();
-    }
-
-    /**
-     * {@inheritDoc}
-     * @since 1.6
-     */
-    public final synchronized Rectangle2D getBounds2D() {
-        return getBounds2D(getPathIterator(null));
     }
 
     /**
