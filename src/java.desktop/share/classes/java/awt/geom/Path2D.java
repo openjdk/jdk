@@ -2099,7 +2099,7 @@ public abstract class Path2D implements Shape, Cloneable {
      *         {@code PathIterator}.
      * @see Shape#getBounds2D()
      */
-    public static Rectangle2D getBounds2D(final PathIterator pi) {
+    static Rectangle2D getBounds2D(final PathIterator pi) {
         final double[] coeff = new double[4];
         final double[] deriv_coeff = new double[3];
 
