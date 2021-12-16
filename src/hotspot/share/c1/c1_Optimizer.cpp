@@ -257,9 +257,7 @@ void CE_Eliminator::block_do(BlockBegin* block) {
     tty->print_cr("%d. IfOp in B%d", ifop_count(), block->block_id());
   }
 
-#ifndef PRODUCT
-  _hir->verify_local(blocks_to_verify_later);
-#endif // PRODUCT
+  NOT_PRODUCT(_hir->verify_local(blocks_to_verify_later));
 }
 
 Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval) {
