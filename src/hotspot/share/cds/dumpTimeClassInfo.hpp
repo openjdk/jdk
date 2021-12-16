@@ -199,6 +199,8 @@ public:
 
   // Overrides ResourceHashtable<>::iterate(ITER*)
   template<class ITER> void iterate(ITER* iter) const;
+private:
+  template<class ITER> class IterationHelper;
 };
 
 #endif // SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP

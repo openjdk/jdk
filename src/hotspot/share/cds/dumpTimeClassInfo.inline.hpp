@@ -36,14 +36,14 @@
 #if INCLUDE_CDS
 
 // For safety, only iterate over a class if it loader is alive.
-// EligibleClassIterationHelper and DumpTimeSharedClassTable::iterate
-// must be used only inside a safepoint, where the return of
+// IterationHelper and DumpTimeSharedClassTable::iterate
+// must be used only inside a safepoint, where the value of
 // k->is_loader_alive() will not change.
 template<class ITER>
-class EligibleClassIterationHelper {
+class DumpTimeSharedClassTable::IterationHelper {
   ITER* _iter;
 public:
-  EligibleClassIterationHelper(ITER* iter) {
+  IterationHelper(ITER* iter) {
     _iter = iter;
   }
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
@@ -56,7 +56,7 @@ public:
       return result;
     } else {
       if (!SystemDictionaryShared::is_excluded_class(k)) {
-        SystemDictionaryShared::warn_excluded(k, "Class loader not eligible");
+        SystemDictionaryShared::warn_excluded(k, "Class loader not alive");
         SystemDictionaryShared::set_excluded_locked(k);
       }
       return true;
@@ -66,7 +66,7 @@ public:
 
 template<class ITER>
 void DumpTimeSharedClassTable::iterate(ITER* iter) const {
-  EligibleClassIterationHelper<ITER> helper(iter);
+  IterationHelper<ITER> helper(iter);
   DumpTimeSharedClassTableBaseType::iterate(&helper);
 }
 
