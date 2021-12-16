@@ -1878,11 +1878,15 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
 
         final boolean parallel;
-        final int depth;
+        /**
+         * The current recursing depth. Since it is a logarithmic algorithm,
+         * we do not need an int to hold the number.
+         */
+        final byte depth;
 
         private RecursiveOp(boolean parallel, int depth) {
             this.parallel = parallel;
-            this.depth = depth;
+            this.depth = (byte) depth;
         }
 
         private static int getParallelForkDepthThreshold() {
