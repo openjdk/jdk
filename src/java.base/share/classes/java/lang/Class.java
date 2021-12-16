@@ -3820,8 +3820,9 @@ public final class Class<T> implements java.io.Serializable,
     // Fetches the factory for reflective objects
     @SuppressWarnings("removal")
     private static ReflectionFactory getReflectionFactory() {
+        ReflectionFactory reflectionFactory = Class.reflectionFactory;
         if (reflectionFactory == null) {
-            reflectionFactory =
+            return Class.reflectionFactory =
                 java.security.AccessController.doPrivileged
                     (new ReflectionFactory.GetReflectionFactoryAction());
         }
