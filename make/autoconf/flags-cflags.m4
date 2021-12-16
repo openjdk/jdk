@@ -412,13 +412,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     DEBUG_CFLAGS_JDK="-DNDEBUG"
   else
     DEBUG_CFLAGS_JDK="-DDEBUG"
-
-    if test "x$TOOLCHAIN_TYPE" = xxlc; then
-      # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
-      # Hotspot now overflows its 64K TOC (currently only for debug),
-      # so for debug we build with '-qpic=large -bbigtoc'.
-      DEBUG_CFLAGS_JVM="-qpic=large"
-    fi
   fi
 
   if test "x$DEBUG_LEVEL" != xrelease; then
@@ -433,7 +426,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     ALWAYS_DEFINES_JVM="-D_GNU_SOURCE"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    ALWAYS_DEFINES_JVM="-D_REENTRANT"
+    ALWAYS_DEFINES_JVM="-D_REENTRANT -qpic=large"
     ALWAYS_DEFINES_JDK="-D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_DEPRECATE \
