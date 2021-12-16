@@ -2085,7 +2085,7 @@ public abstract class Path2D implements Shape, Cloneable {
      * {@inheritDoc}
      * @since 1.6
      */
-    public Rectangle2D getBounds2D() {
+    public final synchronized Rectangle2D getBounds2D() {
         return getBounds2D(getPathIterator(null));
     }
 
