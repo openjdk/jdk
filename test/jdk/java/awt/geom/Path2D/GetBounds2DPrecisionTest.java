@@ -9,6 +9,7 @@ import java.util.*;
  * @bug 8176501
  * @summary This tests thousands of shapes and makes sure a high-precision bounding box fits inside the
  * results of Path2D.getBounds(PathIterator)
+ * @run main GetBounds2DPrecisionTest
  */
 public class GetBounds2DPrecisionTest {
 
@@ -55,7 +56,7 @@ public class GetBounds2DPrecisionTest {
      * left & right edges matches or exceeds the horizontalEdges arguments.
      */
     private static boolean test(int trial, Shape shape, BigDecimal[] horizontalEdges) {
-        Rectangle2D bounds_doublePrecision = Path2D.getBounds2D(shape.getPathIterator(null));
+        Rectangle2D bounds_doublePrecision = shape.getBounds2D();
 
         Rectangle2D bounds_bigDecimalPrecision = new Rectangle2D.Double(
                 horizontalEdges[0].doubleValue(),
