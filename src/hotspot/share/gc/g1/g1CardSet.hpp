@@ -50,26 +50,26 @@ class G1CardSetConfiguration {
   // regions covered by this card set.
   uint _inline_ptr_bits_per_card;
 
-  uint _num_cards_in_array;
+  uint _max_cards_in_array;
   uint _num_buckets_in_howl;
   uint _max_cards_in_card_set;
   uint _cards_in_howl_threshold;
-  uint _num_cards_in_howl_bitmap;
+  uint _max_cards_in_howl_bitmap;
   uint _cards_in_howl_bitmap_threshold;
-  uint _log2_num_cards_in_howl_bitmap;
+  uint _log2_max_cards_in_howl_bitmap;
   size_t _bitmap_hash_mask;
-  uint _log2_card_region_per_heap_region;
+  uint _log2_card_regions_per_heap_region;
   uint _log2_cards_per_card_region;
 
   G1CardSetAllocOptions* _card_set_alloc_options;
 
   G1CardSetConfiguration(uint inline_ptr_bits_per_card,
-                         uint num_cards_in_array,
+                         uint max_cards_in_array,
                          double cards_in_bitmap_threshold_percent,
                          uint num_buckets_in_howl,
                          double cards_in_howl_threshold_percent,
                          uint max_cards_in_card_set,
-                         uint log2_card_region_per_heap_region);
+                         uint log2_card_regions_per_heap_region);
   void init_card_set_alloc_options();
 
   void log_configuration();
@@ -79,7 +79,7 @@ public:
   G1CardSetConfiguration();
   // Initialize card set configuration from parameters.
   // Testing only.
-  G1CardSetConfiguration(uint num_cards_in_array,
+  G1CardSetConfiguration(uint max_cards_in_array,
                          double cards_in_bitmap_threshold_percent,
                          uint max_buckets_in_howl,
                          double cards_in_howl_threshold_percent,
@@ -90,21 +90,19 @@ public:
 
   // Inline pointer configuration
   uint inline_ptr_bits_per_card() const { return _inline_ptr_bits_per_card; }
-  uint num_cards_in_inline_ptr() const;
-  static uint num_cards_in_inline_ptr(uint bits_per_card);
+  uint max_cards_in_inline_ptr() const;
+  static uint max_cards_in_inline_ptr(uint bits_per_card);
 
   // Array of Cards configuration
-  bool use_cards_in_array() const { return _num_cards_in_array != 0; } // Unused for now
-  // Number of cards in "Array of Cards" set; 0 to disable.
+  // Maximum number of cards in "Array of Cards" set; 0 to disable.
   // Always coarsen to next level if full, so no specific threshold.
-  uint num_cards_in_array() const { return _num_cards_in_array; }
+  uint max_cards_in_array() const { return _max_cards_in_array; }
 
   // Bitmap within Howl card set container configuration
-  bool use_cards_in_howl_bitmap() const { return _num_cards_in_howl_bitmap != 0; } // Unused for now
-  uint num_cards_in_howl_bitmap() const { return _num_cards_in_howl_bitmap; }
+  uint max_cards_in_howl_bitmap() const { return _max_cards_in_howl_bitmap; }
   // (Approximate) Number of cards in bitmap to coarsen Howl Bitmap to Howl Full.
   uint cards_in_howl_bitmap_threshold() const { return _cards_in_howl_bitmap_threshold; }
-  uint log2_num_cards_in_howl_bitmap() const {return _log2_num_cards_in_howl_bitmap;}
+  uint log2_max_cards_in_howl_bitmap() const {return _log2_max_cards_in_howl_bitmap;}
 
   // Howl card set container configuration
   uint num_buckets_in_howl() const { return _num_buckets_in_howl; }
@@ -112,7 +110,7 @@ public:
   uint cards_in_howl_threshold() const { return _cards_in_howl_threshold; }
   uint howl_bitmap_offset(uint card_idx) const { return card_idx & _bitmap_hash_mask; }
   // Given a card index, return the bucket in the array of card sets.
-  uint howl_bucket_index(uint card_idx) { return card_idx >> _log2_num_cards_in_howl_bitmap; }
+  uint howl_bucket_index(uint card_idx) { return card_idx >> _log2_max_cards_in_howl_bitmap; }
 
   // Full card configuration
   // Maximum number of cards in a non-full card set for a single region. Card sets
@@ -127,8 +125,8 @@ public:
   // The next two members give information about how many card regions are there
   // per area (heap region) and how many cards each card region has.
 
-  // The log2 of the amount of card regions per heap region configured.
-  uint log2_card_region_per_heap_region() const { return _log2_card_region_per_heap_region; }
+  // The log2 of the number of card regions per heap region configured.
+  uint log2_card_regions_per_heap_region() const { return _log2_card_regions_per_heap_region; }
   // The log2 of the number of cards per card region. This is calculated from max_cards_in_region()
   // and above.
   uint log2_cards_per_card_region() const { return _log2_cards_per_card_region; }

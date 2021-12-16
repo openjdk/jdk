@@ -128,7 +128,7 @@ class LogInputStream extends InputStream {
     /**
      * Closes the stream when garbage is collected.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws IOException {
         close();
     }

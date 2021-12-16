@@ -298,6 +298,15 @@ public class ObjectInputStream
                 .privilegedGetProperty("jdk.serialSetFilterAfterRead");
 
         /**
+         * Property to control {@link GetField#get(String, Object)} conversion of
+         * {@link ClassNotFoundException} to {@code null}. If set to {@code true}
+         * {@link GetField#get(String, Object)} returns null otherwise
+         * throwing {@link ClassNotFoundException}.
+         */
+        private static final boolean GETFIELD_CNFE_RETURNS_NULL = GetBooleanAction
+                .privilegedGetProperty("jdk.serialGetFieldCnfeReturnsNull");
+
+        /**
          * Property to override the implementation limit on the number
          * of interfaces allowed for Proxies. The property value is clamped to 0..65535.
          * The maximum number of interfaces allowed for a proxy is limited to 65535 by
@@ -1026,10 +1035,7 @@ public class ObjectInputStream
         if (buf == null) {
             throw new NullPointerException();
         }
-        int endoff = off + len;
-        if (off < 0 || len < 0 || endoff > buf.length || endoff < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, buf.length);
         return bin.read(buf, off, len, false);
     }
 
@@ -1198,10 +1204,7 @@ public class ObjectInputStream
      * @throws  IOException If other I/O error has occurred.
      */
     public void readFully(byte[] buf, int off, int len) throws IOException {
-        int endoff = off + len;
-        if (off < 0 || len < 0 || endoff > buf.length || endoff < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, buf.length);
         bin.readFully(buf, off, len, false);
     }
 
@@ -1596,12 +1599,13 @@ public class ObjectInputStream
          * @param  val the default value to use if {@code name} does not
          *         have a value
          * @return the value of the named {@code Object} field
+         * @throws ClassNotFoundException Class of a serialized object cannot be found.
          * @throws IOException if there are I/O errors while reading from the
          *         underlying {@code InputStream}
          * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
-        public abstract Object get(String name, Object val) throws IOException;
+        public abstract Object get(String name, Object val) throws IOException, ClassNotFoundException;
     }
 
     /**
@@ -2645,13 +2649,19 @@ public class ObjectInputStream
             return (off >= 0) ? Bits.getDouble(primValues, off) : val;
         }
 
-        public Object get(String name, Object val) {
+        public Object get(String name, Object val) throws ClassNotFoundException {
             int off = getFieldOffset(name, Object.class);
             if (off >= 0) {
                 int objHandle = objHandles[off];
                 handles.markDependency(passHandle, objHandle);
-                return (handles.lookupException(objHandle) == null) ?
-                    objValues[off] : null;
+                ClassNotFoundException ex = handles.lookupException(objHandle);
+                if (ex == null)
+                    return objValues[off];
+                if (Caches.GETFIELD_CNFE_RETURNS_NULL) {
+                    // Revert to the prior behavior; return null instead of CNFE
+                    return null;
+                }
+                throw ex;
             } else {
                 return val;
             }

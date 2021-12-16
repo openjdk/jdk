@@ -38,7 +38,6 @@
 #include "utilities/macros.hpp"
 
 class G1CardSetConfiguration;
-class G1CardSetMemoryManager;
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1Predictions;
@@ -618,9 +617,6 @@ public:
   // vo == UseFullMarking, which is to verify the marking during a
   // full GC.
   void verify(VerifyOption vo, bool *failures) const;
-
-  // Verify using the "prev" marking information
-  void verify() const;
 
   void verify_rem_set(VerifyOption vo, bool *failures) const;
   void verify_rem_set() const;

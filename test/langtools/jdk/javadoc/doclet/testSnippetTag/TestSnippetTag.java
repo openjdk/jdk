@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666 8275788
+ * @bug 8266666 8275788 8276964
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -278,7 +278,6 @@ public class TestSnippetTag extends SnippetTester {
         checkExit(Exit.OK);
         checkLinks();
         final var javaContent = """
-
                 System.out.println(msg);
                 """;
         final var propertiesContent = """
@@ -1081,6 +1080,12 @@ public class TestSnippetTag extends SnippetTester {
         checkOutput(Output.OUT, true,
                     """
                     A.java:4: error: File not found: %s""".formatted(fileName));
+        checkOutput("pkg/A.html", true, """
+                        <details class="invalid-tag">
+                        <summary>invalid @snippet</summary>
+                        <pre>File not found: text.txt</pre>
+                        </details>
+                        """);
         checkNoCrashes();
     }
 
@@ -1156,6 +1161,12 @@ public class TestSnippetTag extends SnippetTester {
         checkOutput(Output.OUT, true,
                     """
                     A.java:3: error: @snippet does not specify contents""");
+        checkOutput("pkg/A.html", true, """
+                        <details class="invalid-tag">
+                        <summary>invalid @snippet</summary>
+                        <pre>@snippet does not specify contents</pre>
+                        </details>
+                        """);
         checkNoCrashes();
     }
 
@@ -1212,6 +1223,12 @@ public class TestSnippetTag extends SnippetTester {
         checkOutput(Output.OUT, true,
                     """
                     A.java:3: error: @snippet specifies multiple external contents, which is ambiguous""");
+        checkOutput("pkg/A.html", true, """
+                        <details class="invalid-tag">
+                        <summary>invalid @snippet</summary>
+                        <pre>@snippet specifies multiple external contents, which is ambiguous</pre>
+                        </details>
+                        """);
         checkNoCrashes();
     }
 
@@ -1864,15 +1881,15 @@ public class TestSnippetTag extends SnippetTester {
         for (String attrName : List.of("class", "file", "id", "lang", "region")) {
             // special case: valueless region attribute
             TestCase t = new TestCase("""
-{@snippet %s:
-    First line
-      Second line
-}
-""".formatted(attrName),
-"""
-: error: missing value for attribute "%s"
-{@snippet %s:
-          ^""".formatted(attrName, attrName));
+                        {@snippet %s:
+                            First line
+                              Second line
+                        }
+                        """.formatted(attrName),
+                        """
+                        : error: missing value for attribute "%s"
+                        {@snippet %s:
+                                  ^""".formatted(attrName, attrName));
             testCases.add(t);
         }
 
@@ -1916,15 +1933,18 @@ public class TestSnippetTag extends SnippetTester {
       for (String quote : List.of("", "'", "\""))
           for (String value : List.of("", " ")) {
               var t = new TestCase("""
-{@snippet region=%s%s%s:
-    First line
-      Second line
-}
-""".formatted(quote, value, quote),
-                      """
-: error: illegal value for attribute "region": "%s"
-{@snippet region=%s%s%s:
-          ^""".formatted(quote.isEmpty() ? "" : value, quote, value, quote)); // unquoted whitespace translates to empty string
+                        {@snippet region=%s%s%s:
+                            First line
+                              Second line
+                        }
+                        """.formatted(quote, value, quote),
+                        """
+                        : error: illegal value for attribute "region": "%s"
+                        {@snippet region=%s%s%s:
+                                  ^
+                        """.formatted(
+                                quote.isEmpty() ? "" : value, // unquoted whitespace translates to empty string
+                                quote, value, quote));
               testCases.add(t);
           }
 
@@ -2016,6 +2036,17 @@ public class TestSnippetTag extends SnippetTester {
         checkOutput(Output.OUT, true,
                     """
                     A.java:4: error: contents mismatch""");
+        checkOutput("pkg/A.html", true, """
+                        <details class="invalid-tag">
+                        <summary>invalid @snippet</summary>
+                        <pre>contents mismatch:
+                        ----------------- inline -------------------
+                        Hello, Snippet!
+                        ----------------- external -----------------
+                        Hello, Snippet!...more
+                        </pre>
+                        </details>
+                        """);
         checkNoCrashes();
     }
 
@@ -2056,6 +2087,19 @@ public class TestSnippetTag extends SnippetTester {
         checkOutput(Output.OUT, true,
                     """
                     A.java:4: error: contents mismatch""");
+        checkOutput("pkg/A.html", true, """
+                        <details class="invalid-tag">
+                        <summary>invalid @snippet</summary>
+                        <pre>contents mismatch:
+                        ----------------- inline -------------------
+                        Hello, Snippet! ...more
+
+                        ----------------- external -----------------
+                        Hello, Snippet!
+
+                        </pre>
+                        </details>
+                        """);
         checkNoCrashes();
     }
 
@@ -2279,41 +2323,41 @@ public class TestSnippetTag extends SnippetTester {
 
         final var testCases = List.of(
                 new TestCase("""
-{@snippet :
-hello there //   @highlight   regex ="\t**"
-}""",
+                    {@snippet :
+                    hello there //   @highlight   regex ="\t**"
+                    }""",
                              """
-error: snippet markup: invalid regex
-hello there //   @highlight   regex ="\t**"
-                                      \t ^
-"""),
+                    error: snippet markup: invalid regex
+                    hello there //   @highlight   regex ="\t**"
+                                                          \t ^
+                    """),
                 new TestCase("""
-{@snippet :
-hello there //   @highlight   regex ="\\t**"
-}""",
+                    {@snippet :
+                    hello there //   @highlight   regex ="\\t**"
+                    }""",
                         """
-error: snippet markup: invalid regex
-hello there //   @highlight   regex ="\\t**"
-                                         ^
-"""),
+                    error: snippet markup: invalid regex
+                    hello there //   @highlight   regex ="\\t**"
+                                                             ^
+                    """),
                 new TestCase("""
-{@snippet :
-hello there // @highlight regex="\\.\\*\\+\\E"
-}""",
+                    {@snippet :
+                    hello there // @highlight regex="\\.\\*\\+\\E"
+                    }""",
                              """
-error: snippet markup: invalid regex
-hello there // @highlight regex="\\.\\*\\+\\E"
-                                 \s\s\s\s   ^
-"""), // use \s to counteract shift introduced by \\ so as to visually align ^ right below E
+                    error: snippet markup: invalid regex
+                    hello there // @highlight regex="\\.\\*\\+\\E"
+                                                     \s\s\s\s   ^
+                    """), // use \s to counteract shift introduced by \\ so as to visually align ^ right below E
                 new TestCase("""
-{@snippet :
-hello there //   @highlight  type="italics" regex ="  ["
-}""",
+                    {@snippet :
+                    hello there //   @highlight  type="italics" regex ="  ["
+                    }""",
                         """
-error: snippet markup: invalid regex
-hello there //   @highlight  type="italics" regex ="  ["
-                                                      ^
-""")
+                    error: snippet markup: invalid regex
+                    hello there //   @highlight  type="italics" regex ="  ["
+                                                                          ^
+                    """)
                 );
 
         List<String> inputs = testCases.stream().map(s -> s.input).toList();
@@ -2343,6 +2387,12 @@ hello there //   @highlight  type="italics" regex ="  ["
                 src.resolve("A.java").toString());
         checkExit(Exit.ERROR);
         checkOrder(Output.OUT, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
+        checkOutput("A.html", true, """
+                        <details class="invalid-tag">
+                        <summary>invalid @snippet</summary>
+                        <pre>invalid regex</pre>
+                        </details>
+                        """);
         checkNoCrashes();
     }
 
@@ -2353,117 +2403,118 @@ hello there //   @highlight  type="italics" regex ="  ["
 
         final var testCases = List.of(
                 new TestCase("""
-{@snippet :
-    hello // @link
-}""",
+                        {@snippet :
+                            hello // @link
+                        }""",
                              """
-error: snippet markup: missing attribute "target"
-    hello // @link
-              ^
+                        error: snippet markup: missing attribute "target"
+                            hello // @link
+                                      ^
                              """),
                 new TestCase("""
-{@snippet :
-    hello // @start
-}""",
+                        {@snippet :
+                            hello // @start
+                        }""",
                              """
-error: snippet markup: missing attribute "region"
-    hello // @start
-              ^
+                        error: snippet markup: missing attribute "region"
+                            hello // @start
+                                      ^
                              """),
                 new TestCase("""
-{@snippet :
-    hello // @replace
-}""",
+                        {@snippet :
+                            hello // @replace
+                        }""",
                              """
-error: snippet markup: missing attribute "replacement"
-    hello // @replace
-              ^
+                        error: snippet markup: missing attribute "replacement"
+                            hello // @replace
+                                      ^
                              """),
                 /* ---------------------- */
                 new TestCase("""
-{@snippet :
-    hello // @highlight regex=\\w+ substring=hello
-}""",
+                        {@snippet :
+                            hello // @highlight regex=\\w+ substring=hello
+                        }""",
                         """
-error: snippet markup: attributes "substring" and "regex" used simultaneously
-    hello // @highlight regex=\\w+ substring=hello
-                                  ^
+                        error: snippet markup: attributes "substring" and "regex" used simultaneously
+                            hello // @highlight regex=\\w+ substring=hello
+                                                          ^
                         """),
                 new TestCase("""
-{@snippet :
-    hello // @start region="x" name="here"
-}""",
+                        {@snippet :
+                            hello // @start region="x" name="here"
+                        }""",
                         """
-error: snippet markup: unexpected attribute
-    hello // @start region="x" name="here"
-                               ^
+                        error: snippet markup: unexpected attribute
+                            hello // @start region="x" name="here"
+                                                       ^
                         """),
                 new TestCase("""
-{@snippet :
-    hello // @start region=""
-}""",
+                        {@snippet :
+                            hello // @start region=""
+                        }""",
                         """
-error: snippet markup: invalid attribute value
-    hello // @start region=""
-                            ^
+                        error: snippet markup: invalid attribute value
+                            hello // @start region=""
+                                                    ^
                         """),
                 new TestCase("""
-{@snippet :
-    hello // @link target="Object#equals()" type=fluffy
-}""",
+                        {@snippet :
+                            hello // @link target="Object#equals()" type=fluffy
+                        }""",
                         """
-error: snippet markup: invalid attribute value
-    hello // @link target="Object#equals()" type=fluffy
-                                                 ^
+                        error: snippet markup: invalid attribute value
+                            hello // @link target="Object#equals()" type=fluffy
+                                                                         ^
                         """),
                 /* ---------------------- */
                 new TestCase("""
-{@snippet :
-    hello // @highlight substring="
-}""",
+                        {@snippet :
+                            hello
+                            there // @highlight substring="
+                        }""",
                              """
-error: snippet markup: unterminated attribute value
-    hello // @highlight substring="
-                                  ^
+                        error: snippet markup: unterminated attribute value
+                            there // @highlight substring="
+                                                          ^
                              """),
                 new TestCase("""
-{@snippet :
-    hello // @start region="this"
-    world // @start region="this"
-    !     // @end
-}""",
+                        {@snippet :
+                            hello // @start region="this"
+                            world // @start region="this"
+                            !     // @end
+                        }""",
                         """
-error: snippet markup: duplicated region
-    world // @start region="this"
-                            ^
+                        error: snippet markup: duplicated region
+                            world // @start region="this"
+                                                    ^
                         """),
                 new TestCase("""
-{@snippet :
-    hello // @end
-}""",
+                        {@snippet :
+                            hello // @end
+                        }""",
                         """
-error: snippet markup: no region to end
-    hello // @end
-              ^
+                        error: snippet markup: no region to end
+                            hello // @end
+                                      ^
                         """),
                 new TestCase("""
-{@snippet :
-    hello // @start region=this
-}""",
+                        {@snippet :
+                            hello // @start region=this
+                        }""",
                         """
-error: snippet markup: unpaired region
-    hello // @start region=this
-              ^
+                        error: snippet markup: unpaired region
+                            hello // @start region=this
+                                      ^
                         """),
                 new TestCase("""
-{@snippet :
-    hello // @highlight substring="hello" :
-}""",
+                        {@snippet :
+                            hello // @highlight substring="hello" :
+                        }""",
                              """
-error: snippet markup: tag refers to non-existent lines
-    hello // @highlight substring="hello" :
-              ^
-              """)
+                        error: snippet markup: tag refers to non-existent lines
+                            hello // @highlight substring="hello" :
+                                      ^
+                        """)
         );
         List<String> inputs = testCases.stream().map(s -> s.input).toList();
         StringBuilder methods = new StringBuilder();
@@ -2493,6 +2544,12 @@ error: snippet markup: tag refers to non-existent lines
         checkExit(Exit.ERROR);
         // use the facility from JDK-8273154 when it becomes available
         checkOutput(Output.OUT, true, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
+        checkOutput("A.html", true, """
+                        <details class="invalid-tag">
+                        <summary>invalid @snippet</summary>
+                        <pre>missing attribute "target"</pre>
+                        </details>
+                        """);
         checkNoCrashes();
     }
 }

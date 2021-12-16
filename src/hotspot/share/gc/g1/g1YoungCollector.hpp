@@ -33,7 +33,6 @@
 class WorkerTask;
 class G1Allocator;
 class G1BatchedTask;
-class G1CardSetMemoryStats;
 class G1CollectedHeap;
 class G1CollectionSet;
 class G1CollectorState;
@@ -49,6 +48,7 @@ class G1ParScanThreadStateSet;
 class G1Policy;
 class G1RedirtyCardsQueueSet;
 class G1RemSet;
+class G1SegmentedArrayMemoryStats;
 class G1SurvivorRegions;
 class G1YoungGCEvacFailureInjector;
 class STWGCTimer;

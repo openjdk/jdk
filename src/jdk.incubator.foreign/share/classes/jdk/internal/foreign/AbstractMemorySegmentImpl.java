@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,15 @@ import jdk.internal.vm.annotation.ForceInline;
 import sun.security.action.GetPropertyAction;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
 
 /**
  * This abstract class provides an immutable implementation for the {@code MemorySegment} interface. This class contains information
@@ -52,7 +55,7 @@ import java.util.stream.StreamSupport;
  * are defined for each memory segment kind, see {@link NativeMemorySegmentImpl}, {@link HeapMemorySegmentImpl} and
  * {@link MappedMemorySegmentImpl}.
  */
-public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegmentProxy implements MemorySegment {
+public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegmentProxy implements MemorySegment, SegmentAllocator, Scoped {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
@@ -140,24 +143,9 @@ public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegment
         return this;
     }
 
-    public void copyFrom(MemorySegment src) {
-        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(src);
-        long size = that.byteSize();
-        checkAccess(0, size, false);
-        that.checkAccess(0, size, true);
-        SCOPED_MEMORY_ACCESS.copyMemory(scope, that.scope,
-                that.base(), that.min(),
-                base(), min(), size);
-    }
-
-    public void copyFromSwap(MemorySegment src, long elemSize) {
-        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)src;
-        long size = that.byteSize();
-        checkAccess(0, size, false);
-        that.checkAccess(0, size, true);
-        SCOPED_MEMORY_ACCESS.copySwapMemory(scope, that.scope,
-                        that.base(), that.min(),
-                        base(), min(), size, elemSize);
+    @Override
+    public MemorySegment allocate(long bytesSize, long bytesAlignment) {
+        return asSlice(0, bytesSize);
     }
 
     @Override
@@ -175,7 +163,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegment
 
         long i = 0;
         if (length > 7) {
-            if (MemoryAccess.getByte(this) != MemoryAccess.getByte(that)) {
+            if (get(JAVA_BYTE, 0) != that.get(JAVA_BYTE, 0)) {
                 return 0;
             }
             i = vectorizedMismatchLargeForBytes(scope, that.scope,
@@ -190,7 +178,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegment
             i = length - remaining;
         }
         for (; i < length; i++) {
-            if (MemoryAccess.getByteAtOffset(this, i) != MemoryAccess.getByteAtOffset(that, i)) {
+            if (get(JAVA_BYTE, i) != that.get(JAVA_BYTE, i)) {
                 return i;
             }
         }
@@ -230,9 +218,8 @@ public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegment
     }
 
     @Override
-    @ForceInline
-    public final MemoryAddress address() {
-        return new MemoryAddressImpl(this, 0L);
+    public MemoryAddress address() {
+        throw new UnsupportedOperationException("Cannot obtain address of on-heap segment");
     }
 
     @Override
@@ -270,6 +257,33 @@ public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegment
     }
 
     @Override
+    public final MemorySegment asOverlappingSlice(MemorySegment other) {
+        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
+        if (base() == that.base()) {  // both either native or heap
+            final long thisStart = this.min();
+            final long thatStart = that.min();
+            final long thisEnd = thisStart + this.byteSize();
+            final long thatEnd = thatStart + that.byteSize();
+
+            if (thisStart < thatEnd && thisEnd > thatStart) {  //overlap occurs
+                long offsetToThat = this.segmentOffset(that);
+                long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
+                return asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat));
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public final long segmentOffset(MemorySegment other) {
+        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl) Objects.requireNonNull(other);
+        if (base() == that.base()) {
+            return that.min() - this.min();
+        }
+        throw new UnsupportedOperationException("Cannot compute offset from native to heap (or vice versa).");
+    }
+
+    @Override
     public void load() {
         throw new UnsupportedOperationException("Not a mapped segment");
     }
@@ -290,45 +304,45 @@ public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegment
     }
 
     @Override
-    public final byte[] toByteArray() {
-        return toArray(byte[].class, 1, byte[]::new, MemorySegment::ofArray);
+    public final byte[] toArray(ValueLayout.OfByte elementLayout) {
+        return toArray(byte[].class, elementLayout, byte[]::new, MemorySegment::ofArray);
     }
 
     @Override
-    public final short[] toShortArray() {
-        return toArray(short[].class, 2, short[]::new, MemorySegment::ofArray);
+    public final short[] toArray(ValueLayout.OfShort elementLayout) {
+        return toArray(short[].class, elementLayout, short[]::new, MemorySegment::ofArray);
     }
 
     @Override
-    public final char[] toCharArray() {
-        return toArray(char[].class, 2, char[]::new, MemorySegment::ofArray);
+    public final char[] toArray(ValueLayout.OfChar elementLayout) {
+        return toArray(char[].class, elementLayout, char[]::new, MemorySegment::ofArray);
     }
 
     @Override
-    public final int[] toIntArray() {
-        return toArray(int[].class, 4, int[]::new, MemorySegment::ofArray);
+    public final int[] toArray(ValueLayout.OfInt elementLayout) {
+        return toArray(int[].class, elementLayout, int[]::new, MemorySegment::ofArray);
     }
 
     @Override
-    public final float[] toFloatArray() {
-        return toArray(float[].class, 4, float[]::new, MemorySegment::ofArray);
+    public final float[] toArray(ValueLayout.OfFloat elementLayout) {
+        return toArray(float[].class, elementLayout, float[]::new, MemorySegment::ofArray);
     }
 
     @Override
-    public final long[] toLongArray() {
-        return toArray(long[].class, 8, long[]::new, MemorySegment::ofArray);
+    public final long[] toArray(ValueLayout.OfLong elementLayout) {
+        return toArray(long[].class, elementLayout, long[]::new, MemorySegment::ofArray);
     }
 
     @Override
-    public final double[] toDoubleArray() {
-        return toArray(double[].class, 8, double[]::new, MemorySegment::ofArray);
+    public final double[] toArray(ValueLayout.OfDouble elementLayout) {
+        return toArray(double[].class, elementLayout, double[]::new, MemorySegment::ofArray);
     }
 
-    private <Z> Z toArray(Class<Z> arrayClass, int elemSize, IntFunction<Z> arrayFactory, Function<Z, MemorySegment> segmentFactory) {
-        int size = checkArraySize(arrayClass.getSimpleName(), elemSize);
+    private <Z> Z toArray(Class<Z> arrayClass, ValueLayout elemLayout, IntFunction<Z> arrayFactory, Function<Z, MemorySegment> segmentFactory) {
+        int size = checkArraySize(arrayClass.getSimpleName(), (int)elemLayout.byteSize());
         Z arr = arrayFactory.apply(size);
         MemorySegment arrSegment = segmentFactory.apply(arr);
-        arrSegment.copyFrom(this);
+        MemorySegment.copy(this, elemLayout, 0, arrSegment, elemLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
         return arr;
     }
 
@@ -382,11 +396,12 @@ public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegment
 
     private void checkBounds(long offset, long length) {
         if (isSmall() &&
-                offset < Integer.MAX_VALUE && length < Integer.MAX_VALUE &&
-                offset > Integer.MIN_VALUE && length > Integer.MIN_VALUE) {
+                offset <= Integer.MAX_VALUE && length <= Integer.MAX_VALUE &&
+                offset >= Integer.MIN_VALUE && length >= Integer.MIN_VALUE) {
             checkBoundsSmall((int)offset, (int)length);
-        } else {
-            if (length < 0 ||
+        } else if (this != NativeMemorySegmentImpl.EVERYTHING) { // oob not possible for everything segment
+            if (
+                    length < 0 ||
                     offset < 0 ||
                     offset > this.length - length) { // careful of overflow
                 throw outOfBoundException(offset, length);

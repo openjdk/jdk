@@ -1219,7 +1219,7 @@ class ZipFileSystem extends FileSystem {
         return zc.toString(name);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws IOException {
         close();
     }
@@ -1469,6 +1469,13 @@ class ZipFileSystem extends FileSystem {
             byte[] entry = aliasMap.get(IndexNode.keyOf(path));
             return entry == null ? path : entry;
         };
+    }
+
+    /**
+     * Package-private accessor to entry alias map used by ZipPath.
+     */
+    byte[] lookupPath(byte[] resolvedPath) {
+        return entryLookup.apply(resolvedPath);
     }
 
     /**

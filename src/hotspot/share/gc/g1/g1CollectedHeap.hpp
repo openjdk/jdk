@@ -27,7 +27,6 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
-#include "gc/g1/g1CardSetFreeMemoryTask.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -35,12 +34,13 @@
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
+#include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
-#include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1NUMA.hpp"
+#include "gc/g1/g1SegmentedArrayFreeMemoryTask.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/g1/heapRegionManager.hpp"
@@ -143,7 +143,7 @@ class G1CollectedHeap : public CollectedHeap {
 private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
-  G1CardSetFreeMemoryTask* _free_card_set_memory_task;
+  G1SegmentedArrayFreeMemoryTask* _free_segmented_array_memory_task;
 
   WorkerThreads* _workers;
   G1CardTable* _card_table;
@@ -160,9 +160,9 @@ private:
   HeapRegionSet _humongous_set;
 
   // Young gen memory statistics before GC.
-  G1CardSetMemoryStats _young_gen_card_set_stats;
+  G1SegmentedArrayMemoryStats _young_gen_card_set_stats;
   // Collection set candidates memory statistics after GC.
-  G1CardSetMemoryStats _collection_set_candidates_card_set_stats;
+  G1SegmentedArrayMemoryStats _collection_set_candidates_card_set_stats;
 
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
@@ -259,8 +259,8 @@ public:
   void set_humongous_stats(uint num_humongous_total, uint num_humongous_candidates);
 
   bool should_sample_collection_set_candidates() const;
-  void set_collection_set_candidates_stats(G1CardSetMemoryStats& stats);
-  void set_young_gen_card_set_stats(const G1CardSetMemoryStats& stats);
+  void set_collection_set_candidates_stats(G1SegmentedArrayMemoryStats& stats);
+  void set_young_gen_card_set_stats(const G1SegmentedArrayMemoryStats& stats);
 
 private:
 

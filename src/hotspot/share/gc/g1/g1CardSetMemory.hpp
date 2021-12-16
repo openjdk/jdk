@@ -37,43 +37,43 @@ class G1CardSetConfiguration;
 class outputStream;
 
 // Collects G1CardSetAllocator options/heuristics. Called by G1CardSetAllocator
-// to determine the next size of the allocated G1CardSetBuffer.
+// to determine the next size of the allocated G1CardSetSegment.
 class G1CardSetAllocOptions : public G1SegmentedArrayAllocOptions {
-  static const uint MinimumBufferSize = 8;
-  static const uint MaximumBufferSize =  UINT_MAX / 2;
+  static const uint MinimumNumSlots = 8;
+  static const uint MaximumNumSlots = UINT_MAX / 2;
 
-  uint exponential_expand(uint prev_num_elems) const {
-    return clamp(prev_num_elems * 2, _initial_num_elems, _max_num_elems);
+  uint exponential_expand(uint prev_num_slots) const {
+    return clamp(prev_num_slots * 2, _initial_num_slots, _max_num_slots);
   }
 
 public:
-  static const uint BufferAlignment = 8;
+  static const uint SlotAlignment = 8;
 
-  G1CardSetAllocOptions(uint elem_size, uint initial_num_elems = MinimumBufferSize, uint max_num_elems = MaximumBufferSize) :
-    G1SegmentedArrayAllocOptions(align_up(elem_size, BufferAlignment), initial_num_elems, max_num_elems, BufferAlignment) {
+  G1CardSetAllocOptions(uint slot_size, uint initial_num_slots = MinimumNumSlots, uint max_num_slots = MaximumNumSlots) :
+    G1SegmentedArrayAllocOptions(align_up(slot_size, SlotAlignment), initial_num_slots, max_num_slots, SlotAlignment) {
   }
 
-  virtual uint next_num_elems(uint prev_num_elems) const override {
-    return exponential_expand(prev_num_elems);
+  virtual uint next_num_slots(uint prev_num_slots) const override {
+    return exponential_expand(prev_num_slots);
   }
 };
 
-typedef G1SegmentedArrayBuffer<mtGCCardSet> G1CardSetBuffer;
+typedef G1SegmentedArraySegment<mtGCCardSet> G1CardSetSegment;
 
-typedef G1SegmentedArrayBufferList<mtGCCardSet> G1CardSetBufferList;
+typedef G1SegmentedArrayFreeList<mtGCCardSet> G1CardSetFreeList;
 
-// Arena-like allocator for (card set) heap memory objects (Elem elements).
+// Arena-like allocator for (card set) heap memory objects (Slot slots).
 //
 // Allocation and deallocation in the first phase on G1CardSetContainer basis
 // may occur by multiple threads at once.
 //
 // Allocation occurs from an internal free list of G1CardSetContainers first,
-// only then trying to bump-allocate from the current G1CardSetBuffer. If there is
-// none, this class allocates a new G1CardSetBuffer (allocated from the C heap,
+// only then trying to bump-allocate from the current G1CardSetSegment. If there is
+// none, this class allocates a new G1CardSetSegment (allocated from the C heap,
 // asking the G1CardSetAllocOptions instance about sizes etc) and uses that one.
 //
-// The NodeStack free list is a linked list of G1CardSetContainers
-// within all G1CardSetBuffer instances allocated so far. It uses a separate
+// The SegmentStack free list is a linked list of G1CardSetContainers
+// within all G1CardSetSegment instances allocated so far. It uses a separate
 // pending list and global synchronization to avoid the ABA problem when the
 // user frees a memory object.
 //
@@ -84,57 +84,61 @@ typedef G1SegmentedArrayBufferList<mtGCCardSet> G1CardSetBufferList;
 // Since it is expected that every CardSet (and in extension each region) has its
 // own set of allocators, there is intentionally no padding between them to save
 // memory.
-template <class Elem>
+template <class Slot>
 class G1CardSetAllocator {
-  // G1CardSetBuffer management.
+  // G1CardSetSegment management.
 
-  typedef G1SegmentedArray<Elem, mtGCCardSet> SegmentedArray;
-  // G1CardSetContainer node management within the G1CardSetBuffers allocated
+  typedef G1SegmentedArray<Slot, mtGCCardSet> SegmentedArray;
+  // G1CardSetContainer slot management within the G1CardSetSegments allocated
   // by this allocator.
-  static G1CardSetContainer* volatile* next_ptr(G1CardSetContainer& node);
-  typedef LockFreeStack<G1CardSetContainer, &G1CardSetAllocator::next_ptr> NodeStack;
+  static G1CardSetContainer* volatile* next_ptr(G1CardSetContainer& slot);
+  typedef LockFreeStack<G1CardSetContainer, &G1CardSetAllocator::next_ptr> SlotStack;
 
   SegmentedArray _segmented_array;
   volatile bool _transfer_lock;
-  NodeStack _free_nodes_list;
-  NodeStack _pending_nodes_list;
+  SlotStack _free_slots_list;
+  SlotStack _pending_slots_list;
 
-  volatile uint _num_pending_nodes;   // Number of nodes in the pending list.
-  volatile uint _num_free_nodes;      // Number of nodes in the free list.
+  volatile uint _num_pending_slots;   // Number of slots in the pending list.
+  volatile uint _num_free_slots;      // Number of slots in the free list.
 
-  // Try to transfer nodes from _pending_nodes_list to _free_nodes_list, with a
-  // synchronization delay for any in-progress pops from the _free_nodes_list
+  // Try to transfer slots from _pending_slots_list to _free_slots_list, with a
+  // synchronization delay for any in-progress pops from the _free_slots_list
   // to solve ABA here.
   bool try_transfer_pending();
 
-  uint num_free_elems() const;
+  uint num_free_slots() const;
 
 public:
   G1CardSetAllocator(const char* name,
-                     const G1CardSetAllocOptions* buffer_options,
-                     G1CardSetBufferList* free_buffer_list);
+                     const G1CardSetAllocOptions* alloc_options,
+                     G1CardSetFreeList* free_segment_list);
   ~G1CardSetAllocator();
 
-  Elem* allocate();
-  void free(Elem* elem);
+  Slot* allocate();
+  void free(Slot* slot);
 
-  // Deallocate all buffers to the free buffer list and reset this allocator. Must
+  // Deallocate all segments to the free segment list and reset this allocator. Must
   // be called in a globally synchronized area.
   void drop_all();
 
   size_t mem_size() const {
     return sizeof(*this) +
-      _segmented_array.num_buffers() * sizeof(G1CardSetBuffer) + _segmented_array.num_available_nodes() * _segmented_array.elem_size();
+      _segmented_array.num_segments() * sizeof(G1CardSetSegment) + _segmented_array.num_available_slots() *
+                                                                   _segmented_array.slot_size();
   }
 
   size_t wasted_mem_size() const {
-    return (_segmented_array.num_available_nodes() - (_segmented_array.num_allocated_nodes() - _num_pending_nodes)) * _segmented_array.elem_size();
+    return (_segmented_array.num_available_slots() - (_segmented_array.num_allocated_slots() - _num_pending_slots)) *
+           _segmented_array.slot_size();
   }
 
-  inline uint num_buffers() { return _segmented_array.num_buffers(); }
+  inline uint num_segments() { return _segmented_array.num_segments(); }
 
   void print(outputStream* os);
 };
+
+typedef G1SegmentedArrayFreePool<mtGCCardSet> G1CardSetFreePool;
 
 class G1CardSetMemoryManager : public CHeapObj<mtGCCardSet> {
   G1CardSetConfiguration* _config;
@@ -163,7 +167,7 @@ public:
   size_t mem_size() const;
   size_t wasted_mem_size() const;
 
-  G1CardSetMemoryStats memory_stats() const;
+  G1SegmentedArrayMemoryStats memory_stats() const;
 };
 
 #endif // SHARE_GC_G1_G1CARDSETMEMORY_HPP

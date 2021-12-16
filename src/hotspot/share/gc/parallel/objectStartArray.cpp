@@ -31,26 +31,26 @@
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 
-uint ObjectStartArray::block_shift = 0;
-uint ObjectStartArray::block_size = 0;
-uint ObjectStartArray::block_size_in_words = 0;
+uint ObjectStartArray::_card_shift = 0;
+uint ObjectStartArray::_card_size = 0;
+uint ObjectStartArray::_card_size_in_words = 0;
 
 void ObjectStartArray::initialize_block_size(uint card_shift) {
-  block_shift = card_shift;
-  block_size = 1 << block_shift;
-  block_size_in_words = block_size / sizeof(HeapWord);
+  _card_shift = card_shift;
+  _card_size = 1 << _card_shift;
+  _card_size_in_words = _card_size / sizeof(HeapWord);
 }
 
 void ObjectStartArray::initialize(MemRegion reserved_region) {
   // We're based on the assumption that we use the same
   // size blocks as the card table.
-  assert((int)block_size == (int)CardTable::card_size, "Sanity");
-  assert(block_size <= MaxBlockSize, "block_size must be less than or equal to " UINT32_FORMAT, MaxBlockSize);
+  assert(_card_size == CardTable::card_size(), "Sanity");
+  assert(_card_size <= MaxBlockSize, "block_size must be less than or equal to " UINT32_FORMAT, MaxBlockSize);
 
   // Calculate how much space must be reserved
   _reserved_region = reserved_region;
 
-  size_t bytes_to_reserve = reserved_region.word_size() / block_size_in_words;
+  size_t bytes_to_reserve = reserved_region.word_size() / _card_size_in_words;
   assert(bytes_to_reserve > 0, "Sanity");
 
   bytes_to_reserve =
@@ -65,20 +65,12 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
   MemTracker::record_virtual_memory_type((address)backing_store.base(), mtGC);
 
   // We do not commit any memory initially
-  if (!_virtual_space.initialize(backing_store, 0)) {
-    vm_exit_during_initialization("Could not commit space for ObjectStartArray");
-  }
+  _virtual_space.initialize(backing_store);
 
   _raw_base = (jbyte*)_virtual_space.low_boundary();
+  assert(_raw_base != nullptr, "set from the backing_store");
 
-  if (_raw_base == NULL) {
-    vm_exit_during_initialization("Could not get raw_base address");
-  }
-
-  MemTracker::record_virtual_memory_type((address)_raw_base, mtGC);
-
-
-  _offset_base = _raw_base - (size_t(reserved_region.start()) >> block_shift);
+  _offset_base = _raw_base - (size_t(reserved_region.start()) >> _card_shift);
 
   _covered_region.set_start(reserved_region.start());
   _covered_region.set_word_size(0);
@@ -93,10 +85,10 @@ void ObjectStartArray::set_covered_region(MemRegion mr) {
 
   HeapWord* low_bound  = mr.start();
   HeapWord* high_bound = mr.end();
-  assert((uintptr_t(low_bound)  & (block_size - 1))  == 0, "heap must start at block boundary");
-  assert((uintptr_t(high_bound) & (block_size - 1))  == 0, "heap must end at block boundary");
+  assert((uintptr_t(low_bound)  & (_card_size - 1))  == 0, "heap must start at block boundary");
+  assert((uintptr_t(high_bound) & (_card_size - 1))  == 0, "heap must end at block boundary");
 
-  size_t requested_blocks_size_in_bytes = mr.word_size() / block_size_in_words;
+  size_t requested_blocks_size_in_bytes = mr.word_size() / _card_size_in_words;
 
   // Only commit memory in page sized chunks
   requested_blocks_size_in_bytes =

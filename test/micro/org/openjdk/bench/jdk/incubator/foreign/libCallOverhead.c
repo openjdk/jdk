@@ -34,16 +34,24 @@ EXPORT int identity(int x) {
 }
 
 typedef struct {
-    long long x;
-    long long y;
+    int x;
+    int y;
 } Point;
 
 EXPORT Point identity_struct(Point p) {
     return p;
 }
 
+EXPORT Point identity_struct_3(Point p1, Point p2, Point p3) {
+    return p1;
+}
+
 EXPORT void* identity_memory_address(void* p) {
     return p;
+}
+
+EXPORT void* identity_memory_address_3(void* p1, void* p2, void* p3) {
+    return p1;
 }
 
 EXPORT void args1(long long a0) {}
