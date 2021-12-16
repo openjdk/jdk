@@ -24,7 +24,6 @@
 #ifndef SHARE_LOGGING_LOGFILESTREAMOUTPUT_HPP
 #define SHARE_LOGGING_LOGFILESTREAMOUTPUT_HPP
 
-#include "logging/logAsyncWriter.hpp"
 #include "logging/logDecorators.hpp"
 #include "logging/logOutput.hpp"
 #include "runtime/os.hpp"

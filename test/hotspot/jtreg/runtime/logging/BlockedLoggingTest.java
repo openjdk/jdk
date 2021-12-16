@@ -71,7 +71,7 @@ public class BlockedLoggingTest {
             // If the control reaches here, we have demonstrated that the current process isn't
             // blocked by StdinBlocker because of -Xlog:async.
             //
-            // the reason we throw a RuntimeException because the normal exit of JVM still needs
+            // The reason we throw a RuntimeException because the normal exit of JVM still needs
             // to call AsyncLogWriter::flush(), stdout is still blocked. AbortVMOnException will
             // abort JVM and avoid the final flushing.
             throw new RuntimeException("we succeed if we each here.");
@@ -141,7 +141,7 @@ public class BlockedLoggingTest {
     public static void main(String[] args) throws Exception {
         // The simplest test is to use tty with software flow control. AsyncUL should not suspend JVM
         // with XOFF(Ctrl^s) to stdout. We can not assume tty is in use in the testing environments. It is also
-        // not portable. Therefore, the test uses pipe to simulate suspending stdout.
+        // not portable. Therefore, the test uses pipe to simulate the suspending stdout.
         ProcessBuilder[] builders = {
             // Process 0 has to carefully avoid any output to stdout except Unified Logging.
             // We expect to demonstrate that process 0 with -Xlog:async can still terminate even though its stdout

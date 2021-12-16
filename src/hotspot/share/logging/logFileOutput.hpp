@@ -83,9 +83,9 @@ class LogFileOutput : public LogFileStreamOutput {
   virtual ~LogFileOutput();
   virtual bool initialize(const char* options, outputStream* errstream);
   virtual bool set_option(const char* key, const char* value, outputStream* errstream);
-  int write(const LogDecorations& decorations, const char* msg) override;
-  int write(LogMessageBuffer::Iterator msg_iterator) override;
-  int write_blocking(const LogDecorations& decorations, const char* msg) override;
+  virtual int write(const LogDecorations& decorations, const char* msg);
+  virtual int write(LogMessageBuffer::Iterator msg_iterator);
+  virtual int write_blocking(const LogDecorations& decorations, const char* msg);
   virtual void force_rotate();
   virtual void describe(outputStream* out);
 
