@@ -546,19 +546,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
-  { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "InlineFrequencyCount",         JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "G1RSetRegionEntries",          JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "G1RSetSparseRegionEntries",    JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "PrintBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "BiasedLockingBulkRebiasThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "BiasedLockingBulkRevokeThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "BiasedLockingDecayTime",              JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "UseOptoBiasInlining",                 JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
