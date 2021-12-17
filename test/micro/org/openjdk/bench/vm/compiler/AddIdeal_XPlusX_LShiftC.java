@@ -39,15 +39,15 @@ import org.openjdk.jmh.infra.Blackhole;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Tests transformations in AddINode::Ideal.
+ * Tests transformation from "(x + x) << c" to "x << (c + 1)".
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 3 , jvmArgsAppend = {"-XX:-TieredCompilation", "-Xbatch", "-Xcomp"})
-public class AddIdealXPlusX {
+@Warmup(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3 , jvmArgsAppend = {"-XX:-TieredCompilation"})
+public class AddIdeal_XPlusX_LShiftC {
 
     private final int size = 100_000;
 
@@ -61,7 +61,7 @@ public class AddIdealXPlusX {
         longs_a = new long[size];
         for (int i = 0; i < size; i++) {
             ints_a[i] = i;
-            longs_a[i] = i * i;
+            longs_a[i] = i * i * i;
         }
     }
 
@@ -81,16 +81,18 @@ public class AddIdealXPlusX {
         }
     }
 
-    // Convert "x + x" into "x << 1" for int.
+    // Convert "(x + x) << 10" into "x << 11" for int.
+    // (x << 11) >>> 11 is then further converted into zero-extends.
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     private static int helper(int x) {
-        return x + x;
+        return ((x + x) << 10) >>> 11;
     }
 
-    // Convert "x + x" into "x << 1" for long.
+    // Convert "(x + x) << 40" into "x << 41" for long.
+    // (x << 41) >>> 41 is then further converted into zero-extends.
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     private static long helper(long x) {
-        return x + x;
+        return ((x + x) << 40) >>> 41;
     }
 
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
