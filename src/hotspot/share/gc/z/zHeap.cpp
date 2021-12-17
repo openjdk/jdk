@@ -55,8 +55,9 @@ ZHeap* ZHeap::_heap = NULL;
 ZHeap::ZHeap() :
     _page_allocator(MinHeapSize, InitialHeapSize, MaxHeapSize),
     _page_table(),
-    _young_generation(),
-    _old_generation(),
+    _allocator_eden(),
+    _allocator_survivor(),
+    _allocator_old(),
     _serviceability(initial_capacity(), min_capacity(), max_capacity()),
     _young_collector(&_page_table, &_page_allocator),
     _old_collector(&_page_table, &_page_allocator),
@@ -133,7 +134,7 @@ size_t ZHeap::tlab_capacity() const {
 }
 
 size_t ZHeap::tlab_used() const {
-  return _young_generation.tlab_used();
+  return _allocator_eden.tlab_used();
 }
 
 size_t ZHeap::max_tlab_size() const {
@@ -141,7 +142,7 @@ size_t ZHeap::max_tlab_size() const {
 }
 
 size_t ZHeap::unsafe_max_tlab_alloc() const {
-  size_t size = _young_generation.remaining();
+  size_t size = _allocator_eden.remaining();
 
   if (size < MinTLABSize) {
     // The remaining space in the allocator is not enough to

@@ -66,6 +66,10 @@ ZPage* ZObjectAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags 
   return page;
 }
 
+ZPage* ZObjectAllocator::alloc_page_for_relocation(uint8_t type, size_t size, ZAllocationFlags flags) {
+  return ZHeap::heap()->alloc_page(type, size, flags, _age);
+}
+
 void ZObjectAllocator::undo_alloc_page(ZPage* page) {
   // Increment undone bytes
   Atomic::add(_undone.addr(), page->size());
@@ -162,14 +166,14 @@ zaddress ZObjectAllocator::alloc_object(size_t size) {
   return alloc_object(size, flags);
 }
 
-zaddress ZObjectAllocator::alloc_object_for_relocation(size_t size, bool promotion) {
+zaddress ZObjectAllocator::alloc_object_for_relocation(size_t size) {
   ZAllocationFlags flags;
   flags.set_non_blocking();
 
   return alloc_object(size, flags);
 }
 
-void ZObjectAllocator::undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion) {
+void ZObjectAllocator::undo_alloc_object_for_relocation(zaddress addr, size_t size) {
   ZPage* const page = ZHeap::heap()->page(addr);
   const uint8_t type = page->type();
 
@@ -183,6 +187,10 @@ void ZObjectAllocator::undo_alloc_object_for_relocation(zaddress addr, size_t si
       ZStatInc(ZCounterUndoObjectAllocationFailed);
     }
   }
+}
+
+ZPageAge ZObjectAllocator::age() const {
+  return _age;
 }
 
 size_t ZObjectAllocator::used() const {

@@ -25,12 +25,12 @@
 #include "code/nmethod.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zForwarding.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
-#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zPageAllocator.hpp"
@@ -373,7 +373,8 @@ void ZYoungCollector::mark_start() {
   ZGlobalsPointers::flip_young_mark_start();
 
   // Retire allocating pages
-  ZGeneration::young()->retire_pages();
+  ZAllocator::eden()->retire_pages();
+  ZAllocator::survivor()->retire_pages();
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();
@@ -509,7 +510,7 @@ void ZOldCollector::mark_start() {
   ZGlobalsPointers::flip_old_mark_start();
 
   // Retire allocating pages
-  ZGeneration::old()->retire_pages();
+  ZAllocator::old()->retire_pages();
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();

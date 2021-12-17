@@ -24,60 +24,70 @@
 #ifndef SHARE_GC_Z_ZGENERATION_HPP
 #define SHARE_GC_Z_ZGENERATION_HPP
 
+#include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zObjectAllocator.hpp"
 
-class ZOldGeneration;
-class ZYoungGeneration;
+class ZAllocatorEden;
+class ZAllocatorSurvivor;
+class ZAllocatorOld;
+class ZPage;
 
-class ZGeneration {
+class ZAllocator {
+  friend class ZAllocatorEden;
+  friend class ZAllocatorSurvivor;
+  friend class ZAllocatorOld;
+
+private:
+  static ZAllocatorEden*     _eden;
+  static ZAllocatorSurvivor* _survivor;
+  static ZAllocatorOld*      _old;
+
 protected:
-  static ZYoungGeneration* _young;
-  static ZOldGeneration*   _old;
+  ZObjectAllocator _object_allocator;
 
 public:
-  static ZYoungGeneration* young();
-  static ZOldGeneration* old();
+  static ZAllocatorEden* eden();
+  static ZAllocatorSurvivor* survivor();
+  static ZAllocatorOld* old();
 
-  // Relocation
-  virtual zaddress alloc_object_for_relocation(size_t size, bool promotion) = 0;
-  virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion) = 0;
+  ZAllocator(ZPageAge age);
+
+  void retire_pages();
 };
 
-class ZYoungGeneration : public ZGeneration {
-private:
-  ZObjectAllocator _eden_allocator;
-  ZObjectAllocator _survivor_allocator;
-
+class ZAllocatorEden : public ZAllocator {
 public:
-  ZYoungGeneration();
-
-  // Relocation
-  virtual zaddress alloc_object_for_relocation(size_t size, bool promotion);
-  virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
+  ZAllocatorEden();
 
   // Mutator allocation
   zaddress alloc_tlab(size_t size);
   zaddress alloc_object(size_t size);
-
-  void retire_pages();
 
   // Statistics
   size_t tlab_used() const;
   size_t remaining() const;
 };
 
-class ZOldGeneration : public ZGeneration {
-private:
-  ZObjectAllocator _old_allocator;
-
+class ZAllocatorForRelocation : public ZAllocator {
 public:
-  ZOldGeneration();
+  ZAllocatorForRelocation(ZPageAge age);
 
   // Relocation
-  virtual zaddress alloc_object_for_relocation(size_t size, bool promotion);
-  virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
+  zaddress alloc_object(size_t size);
+  void undo_alloc_object(zaddress addr, size_t size);
 
-  void retire_pages();
+  ZPage* alloc_page_for_relocation(uint8_t type, size_t size, ZAllocationFlags flags);
+
+};
+
+class ZAllocatorSurvivor : public ZAllocatorForRelocation {
+public:
+  ZAllocatorSurvivor();
+};
+
+class ZAllocatorOld : public ZAllocatorForRelocation {
+public:
+  ZAllocatorOld();
 };
 
 #endif // SHARE_GC_Z_ZGENERATION_HPP

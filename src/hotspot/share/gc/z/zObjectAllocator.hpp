@@ -67,8 +67,12 @@ public:
   zaddress alloc_object(size_t size);
 
   // Relocation
-  zaddress alloc_object_for_relocation(size_t size, bool promotion);
-  void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
+  zaddress alloc_object_for_relocation(size_t size);
+  void undo_alloc_object_for_relocation(zaddress addr, size_t size);
+
+  ZPage* alloc_page_for_relocation(uint8_t type, size_t size, ZAllocationFlags flags);
+
+  ZPageAge age() const;
 
   size_t used() const;
   size_t remaining() const;

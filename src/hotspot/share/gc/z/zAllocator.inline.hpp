@@ -21,29 +21,32 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZGENERATION_INLINE_HPP
-#define SHARE_GC_Z_ZGENERATION_INLINE_HPP
+#ifndef SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
+#define SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
 
-#include "gc/z/zGeneration.hpp"
+#include "gc/z/zAllocator.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.hpp"
-#include "gc/z/zMark.inline.hpp"
-#include "gc/z/zPageTable.hpp"
 
-inline ZYoungGeneration* ZGeneration::young() {
-  return _young;
+inline ZAllocatorEden* ZAllocator::eden() {
+  return _eden;
 }
 
-inline ZOldGeneration* ZGeneration::old() {
+inline ZAllocatorSurvivor* ZAllocator::survivor() {
+  return _survivor;
+}
+
+inline ZAllocatorOld* ZAllocator::old() {
   return _old;
 }
 
-inline zaddress ZYoungGeneration::alloc_tlab(size_t size) {
+inline zaddress ZAllocatorEden::alloc_tlab(size_t size) {
   guarantee(size <= ZHeap::heap()->max_tlab_size(), "TLAB too large");
-  return _eden_allocator.alloc_object(size);
+  return _object_allocator.alloc_object(size);
 }
 
-inline zaddress ZYoungGeneration::alloc_object(size_t size) {
-  zaddress addr = _eden_allocator.alloc_object(size);
+inline zaddress ZAllocatorEden::alloc_object(size_t size) {
+  zaddress addr = _object_allocator.alloc_object(size);
 
   if (is_null(addr)) {
     ZHeap::heap()->out_of_memory();
@@ -52,4 +55,4 @@ inline zaddress ZYoungGeneration::alloc_object(size_t size) {
   return addr;
 }
 
-#endif // SHARE_GC_Z_ZGENERATION_INLINE_HPP
+#endif // SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
