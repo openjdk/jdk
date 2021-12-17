@@ -328,7 +328,7 @@ public class Spans {
                 result = 0;
             }
 
-            return result; 
+            return result;
         }
 
         public String toString() {
