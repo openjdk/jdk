@@ -87,7 +87,7 @@ import java.util.Objects;
  * For example, the Japanese, Minguo, Thai Buddhist and others.
  *
  * @implSpec
- * This class is immutable nad thread-safe.
+ * This class is immutable and thread-safe.
  *
  * @since 1.8
  */
