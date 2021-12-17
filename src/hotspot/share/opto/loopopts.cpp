@@ -1447,10 +1447,10 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 void PhaseIdealLoop::push_pinned_nodes_thru_region(IfNode* dom_if, Node* region) {
   for (DUIterator i = region->outs(); region->has_out(i); i++) {
     Node* u = region->out(i);
-    if (!has_ctrl(u) || u->is_Phi()) {
+    if (!has_ctrl(u) || u->is_Phi() || !u->depends_only_on_test() || !_igvn.no_dependent_zero_check(u)) {
       continue;
     }
-    assert(u->in(0) == region, "");
+    assert(u->in(0) == region, "not a control dependent node?");
     uint j = 1;
     for (; j < u->req(); ++j) {
       Node* in = u->in(j);
