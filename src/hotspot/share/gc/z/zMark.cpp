@@ -74,9 +74,6 @@ static const ZStatSubPhase ZSubPhaseConcurrentMarkRootUncoloredYoung("Concurrent
 static const ZStatSubPhase ZSubPhaseConcurrentMarkRootColoredYoung("Concurrent Mark Root Colored (Young)");
 static const ZStatSubPhase ZSubPhaseConcurrentMarkRootUncoloredOld("Concurrent Mark Root Uncolored (Old)");
 static const ZStatSubPhase ZSubPhaseConcurrentMarkRootColoredOld("Concurrent Mark Root Colored (Old)");
-static const ZStatSubPhase ZSubPhaseConcurrentMark("Concurrent Mark");
-static const ZStatSubPhase ZSubPhaseConcurrentMarkTryFlush("Concurrent Mark Try Flush");
-static const ZStatSubPhase ZSubPhaseConcurrentMarkTryTerminate("Concurrent Mark Try Terminate");
 
 ZMark::ZMark(ZCollector* collector, ZPageTable* page_table) :
     _collector(collector),
@@ -551,7 +548,6 @@ bool ZMark::try_terminate_flush() {
   Atomic::inc(&_work_nterminateflush);
   _terminate.set_resurrected(false);
 
-  ZStatTimer timer(ZSubPhaseConcurrentMarkTryFlush, _collector->gc_timer());
   return flush(true /* gc_threads */) ||
          _terminate.resurrected();
 }
@@ -569,13 +565,11 @@ bool ZMark::try_proactive_flush() {
 
   Atomic::inc(&_work_nproactiveflush);
 
-  ZStatTimerWorker timer(ZSubPhaseConcurrentMarkTryFlush);
   SuspendibleThreadSetLeaver sts;
   return flush(false /* gc_threads */);
 }
 
 bool ZMark::try_terminate() {
-  ZStatTimerWorker timer(ZSubPhaseConcurrentMarkTryTerminate);
   return _terminate.try_terminate();
 }
 
@@ -584,7 +578,6 @@ void ZMark::leave() {
 }
 
 void ZMark::work() {
-  ZStatTimerWorker timer(ZSubPhaseConcurrentMark);
   SuspendibleThreadSetJoiner sts;
   ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, ZThread::worker_id());
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _collector->id());
