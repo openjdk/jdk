@@ -435,6 +435,14 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( op1 == Op_AddL && op2 == Op_AddL && in1->in(2) == in2->in(2) )
     return new SubLNode( in1->in(1), in2->in(1) );
 
+  // Convert "(A+X) - (X+B)" into "A - B"
+  if( op1 == Op_AddL && op2 == Op_AddL && in1->in(2) == in2->in(1) )
+    return new SubLNode( in1->in(1), in2->in(2) );
+
+  // Convert "(X+A) - (B+X)" into "A - B"
+  if( op1 == Op_AddL && op2 == Op_AddL && in1->in(1) == in2->in(2) )
+    return new SubLNode( in1->in(2), in2->in(1) );
+
   // Convert "A-(B-C)" into (A+C)-B"
   if( op2 == Op_SubL && in2->outcnt() == 1) {
     Node *add1 = phase->transform( new AddLNode( in1, in2->in(2) ) );

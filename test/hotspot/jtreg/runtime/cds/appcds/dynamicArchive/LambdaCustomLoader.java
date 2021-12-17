@@ -49,7 +49,7 @@ public class LambdaCustomLoader extends DynamicArchiveTestBase {
         // 1. Host class loaded by a custom loader is initialized during dump time.
         dump(topArchiveName,
             "-Xlog:class+load,cds=debug,cds+dynamic",
-            "-cp", appJar, mainClass, appJar, "init")
+            "-cp", appJar, mainClass, appJar, "init", "keep-alive")
             .assertNormalExit(output -> {
                 output.shouldMatch("Skipping.LambHello[$][$]Lambda[$].*0x.*:.Hidden.class")
                       .shouldHaveExitValue(0);
@@ -67,7 +67,7 @@ public class LambdaCustomLoader extends DynamicArchiveTestBase {
         // 2. Host class loaded by a custom loader is NOT initialized during dump time.
         dump(topArchiveName,
             "-Xlog:class+load,cds=debug,cds+dynamic",
-            "-cp", appJar, mainClass, appJar)
+            "-cp", appJar, mainClass, appJar, "keep-alive")
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
             });
