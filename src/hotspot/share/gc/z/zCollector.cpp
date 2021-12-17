@@ -52,14 +52,14 @@
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRoots("Concurrent Young Mark Roots");
-static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkFollow("Concurrent Young Mark Follow");
-static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootRemset("Concurrent Young Mark Root Remset");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootsYoung("Concurrent Mark Roots (Young)");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkFollowYoung("Concurrent Mark Follow (Young)");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRememberedSetYoung("Concurrent Mark Remset (Young)");
 
-static const ZStatSubPhase ZSubPhaseConcurrentOldMarkRoots("Concurrent Old Mark Roots");
-static const ZStatSubPhase ZSubPhaseConcurrentOldMarkFollow("Concurrent Old Mark Follow");
-static const ZStatSubPhase ZSubPhaseConcurrentOldRemapRootColored("Concurrent Old Remap Root Colored");
-static const ZStatSubPhase ZSubPhaseConcurrentOldRemapRootUncolored("Concurrent Old Remap Root Uncolored");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootsOld("Concurrent Mark Roots (Old)");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkFollowOld("Concurrent Mark Follow (Old)");
+static const ZStatSubPhase ZSubPhaseConcurrentRemapRootsColoredOld("Concurrent Remap Roots Colored (Old)");
+static const ZStatSubPhase ZSubPhaseConcurrentRemapRootsUncoloredOld("Concurrent Remap Roots Uncolored (Old)");
 
 ZYoungCollector* ZCollector::_young;
 ZOldCollector*   ZCollector::_old;
@@ -392,12 +392,12 @@ void ZYoungCollector::mark_start() {
 }
 
 void ZYoungCollector::mark_roots() {
-  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRoots);
+  ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRootsYoung);
   _mark.mark_roots();
 }
 
 void ZYoungCollector::mark_follow() {
-  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkFollow);
+  ZStatTimerYoung timer(ZSubPhaseConcurrentMarkFollowYoung);
   _mark.mark_follow();
 }
 
@@ -482,7 +482,7 @@ void ZYoungCollector::register_in_place_relocate_promoted(ZPage* page) {
 }
 
 void ZYoungCollector::scan_remembered_sets() {
-  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootRemset);
+  ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRememberedSetYoung);
   _remembered.scan();
 }
 
@@ -528,12 +528,12 @@ void ZOldCollector::mark_start() {
 }
 
 void ZOldCollector::mark_roots() {
-  ZStatTimerOld timer(ZSubPhaseConcurrentOldMarkRoots);
+  ZStatTimerOld timer(ZSubPhaseConcurrentMarkRootsOld);
   _mark.mark_roots();
 }
 
 void ZOldCollector::mark_follow() {
-  ZStatTimerOld timer(ZSubPhaseConcurrentOldMarkFollow);
+  ZStatTimerOld timer(ZSubPhaseConcurrentMarkFollowOld);
   _mark.mark_follow();
 }
 
@@ -734,13 +734,13 @@ public:
 
   virtual void work() {
     {
-      ZStatTimerWorker timer(ZSubPhaseConcurrentOldRemapRootColored);
+      ZStatTimerWorker timer(ZSubPhaseConcurrentRemapRootsColoredOld);
       _roots_colored.apply(&_cl_colored,
                            &_cld_cl);
     }
 
     {
-      ZStatTimerWorker timer(ZSubPhaseConcurrentOldRemapRootUncolored);
+      ZStatTimerWorker timer(ZSubPhaseConcurrentRemapRootsUncoloredOld);
       _roots_uncolored.apply(&_thread_cl,
                              &_nm_cl);
     }

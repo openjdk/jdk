@@ -50,8 +50,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentYoungRelocateRemsetFlipPromotedPages("Concurrent Young Relocate Remset FPP");
-static const ZStatSubPhase ZSubPhaseConcurrentYoungRelocateRemsetNormalPromoted("Concurrent Young Relocate Remset NP");
+static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung("Concurrent Relocate Remset FP (Young)");
+static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung("Concurrent Relocate Remset NP (Young)");
 
 ZRelocateQueue::ZRelocateQueue() :
     _lock(),
@@ -981,13 +981,13 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   }
 
   if (relocation_set->collector()->is_young()) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentYoungRelocateRemsetFlipPromotedPages);
+    ZStatTimerYoung timer(ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung);
     ZRelocateAddRemsetForInPlacePromoted task(relocation_set->flip_promoted_pages());
     workers()->run(&task);
   }
 
   if (relocation_set->collector()->is_young() && ZRelocateRemsetStrategy == 2) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentYoungRelocateRemsetNormalPromoted);
+    ZStatTimerYoung timer(ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung);
     ZRelocateAddRemsetForNormalPromoted task;
     workers()->run(&task);
   }

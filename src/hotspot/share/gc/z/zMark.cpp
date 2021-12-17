@@ -70,8 +70,10 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/ticks.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootUncolored("Concurrent Young Mark Root Uncolored");
-static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootColored("Concurrent Young Mark Root Colored");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootUncoloredYoung("Concurrent Mark Root Uncolored (Young)");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootColoredYoung("Concurrent Mark Root Colored (Young)");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootUncoloredOld("Concurrent Mark Root Uncolored (Old)");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootColoredOld("Concurrent Mark Root Colored (Old)");
 static const ZStatSubPhase ZSubPhaseConcurrentMark("Concurrent Mark");
 static const ZStatSubPhase ZSubPhaseConcurrentMarkTryFlush("Concurrent Mark Try Flush");
 static const ZStatSubPhase ZSubPhaseConcurrentMarkTryTerminate("Concurrent Mark Try Terminate");
@@ -774,11 +776,17 @@ public:
   }
 
   virtual void work() {
-    _roots_colored.apply(&_cl_colored,
-                         &_cld_cl);
+    {
+      ZStatTimerWorker timer(ZSubPhaseConcurrentMarkRootColoredOld);
+      _roots_colored.apply(&_cl_colored,
+                           &_cld_cl);
+    }
 
-    _roots_uncolored.apply(&_thread_cl,
-                           &_nm_cl);
+    {
+      ZStatTimerWorker timer(ZSubPhaseConcurrentMarkRootUncoloredOld);
+      _roots_uncolored.apply(&_thread_cl,
+                             &_nm_cl);
+    }
 
     // Flush and free worker stacks. Needed here since
     // the set of workers executing during root scanning
@@ -822,16 +830,17 @@ public:
 
   virtual void work() {
     {
-      ZStatTimerWorker timer(ZSubPhaseConcurrentYoungMarkRootColored);
+      ZStatTimerWorker timer(ZSubPhaseConcurrentMarkRootColoredYoung);
       _roots_colored.apply(&_cl_colored,
                            &_cld_cl);
     }
 
     {
-      ZStatTimerWorker timer(ZSubPhaseConcurrentYoungMarkRootUncolored);
+      ZStatTimerWorker timer(ZSubPhaseConcurrentMarkRootUncoloredYoung);
       _roots_uncolored.apply(&_thread_cl,
                              &_nm_cl);
     }
+
     // Flush and free worker stacks. Needed here since
     // the set of workers executing during root scanning
     // can be different from the set of workers executing

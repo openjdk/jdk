@@ -69,7 +69,7 @@ static const ZStatPhaseConcurrent ZPhaseConcurrentMarkOld("Concurrent Mark (Old)
 static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinueOld("Concurrent Mark Continue (Old)");
 static const ZStatPhasePause      ZPhasePauseMarkEndOld("Pause Mark End (Old)");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMarkFreeOld("Concurrent Mark Free (Old)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentProcessNonStrongReferencesOld("Concurrent Process Non-Strong References (Old)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentProcessNonStrongOld("Concurrent Process Non-Strong (Old)");
 static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSetOld("Concurrent Reset Relocation Set (Old)");
 static const ZStatPhaseConcurrent ZPhaseConcurrentSelectRelocationSetOld("Concurrent Select Relocation Set (Old)");
 static const ZStatPhasePause      ZPhasePauseRelocateStartOld("Pause Relocate Start (Old)");
@@ -620,7 +620,7 @@ static void concurrent_mark_free_old() {
 }
 
 static void concurrent_process_non_strong_references_old() {
-  ZStatTimerOld timer(ZPhaseConcurrentProcessNonStrongReferencesOld);
+  ZStatTimerOld timer(ZPhaseConcurrentProcessNonStrongOld);
   ZBreakpoint::at_after_reference_processing_started();
   old_collector()->process_non_strong_references();
 }

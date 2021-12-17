@@ -34,8 +34,8 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootRemsetForwarding("Concurrent Young Mark Root Remset Forw");
-static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootRemsetPage("Concurrent Young Mark Root Remset Page");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootRemsetForwardingYoung("Concurrent Mark Root Remset Forw (Young)");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootRemsetPageYoung("Concurrent Mark Root Remset Page (Young)");
 
 ZRemembered::ZRemembered(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     _page_table(page_table),
@@ -218,12 +218,12 @@ public:
 
 void ZRemembered::scan() const {
   if (ZCollector::old()->is_phase_relocate()) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootRemsetForwarding);
+    ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRootRemsetForwardingYoung);
     ZRememberedScanForwardingTask task(*this);
     ZCollector::young()->workers()->run(&task);
   }
 
-  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootRemsetPage);
+  ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRootRemsetPageYoung);
   ZRememberedScanPageTask task(*this);
   ZCollector::young()->workers()->run(&task);
 }
