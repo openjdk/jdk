@@ -55,7 +55,7 @@ public class TestShiftAndMask {
             throw new RuntimeException("incorrect result: " + res);
         }
     }
-    
+
     @Test
     @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = { IRNode.AND_L, IRNode.LSHIFT_L })
@@ -338,4 +338,3 @@ public class TestShiftAndMask {
         }
     }
 }
-
