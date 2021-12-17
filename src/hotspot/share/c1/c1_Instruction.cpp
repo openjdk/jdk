@@ -801,6 +801,11 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
           existing_state->invalidate_local(index);
           TRACE_PHI(tty->print_cr("invalidating local %d because of type mismatch", index));
         }
+
+        if (existing_value != new_state->local_at(index) && existing_value->as_Phi() == NULL) {
+          TRACE_PHI(tty->print_cr("required phi for local %d is missing, irreducible loop?", index));
+          return false; // BAILOUT in caller
+        }
       }
 
 #ifdef ASSERT
