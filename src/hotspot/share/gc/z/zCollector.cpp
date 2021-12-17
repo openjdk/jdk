@@ -58,6 +58,7 @@ static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootRemset("Concurrent Yo
 
 static const ZStatSubPhase ZSubPhaseConcurrentOldMarkRoots("Concurrent Old Mark Roots");
 static const ZStatSubPhase ZSubPhaseConcurrentOldMarkFollow("Concurrent Old Mark Follow");
+static const ZStatSubPhase ZSubPhaseConcurrentOldRemapRootColored("Concurrent Old Remap Root Colored");
 static const ZStatSubPhase ZSubPhaseConcurrentOldRemapRootUncolored("Concurrent Old Remap Root Uncolored");
 
 ZYoungCollector* ZCollector::_young;
@@ -733,7 +734,7 @@ public:
 
   virtual void work() {
     {
-      ZStatTimerWorker timer(ZSubPhaseConcurrentOldRemapRootUncolored);
+      ZStatTimerWorker timer(ZSubPhaseConcurrentOldRemapRootColored);
       _roots_colored.apply(&_cl_colored,
                            &_cld_cl);
     }
