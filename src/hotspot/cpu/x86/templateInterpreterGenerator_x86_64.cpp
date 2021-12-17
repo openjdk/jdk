@@ -449,11 +449,9 @@ address TemplateInterpreterGenerator::generate_currentThread() {
 
   address entry_point = __ pc();
 
-  __ movptr(rscratch2, Address(r15_thread, JavaThread::threadObj_offset()));
+  __ movptr(rax, Address(r15_thread, JavaThread::threadObj_offset()));
 
-  // Only IN_HEAP loads require a thread_tmp register
-  __ access_load_at(T_OBJECT, IN_NATIVE, rax,
-                    Address(rscratch2, 0), rscratch1, noreg);
+  __ resolve_oop_handle(rax, rscratch1);
 
   __ pop(rcx);
   __ mov(rsp, r13);
