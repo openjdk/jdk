@@ -36,6 +36,7 @@
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -418,6 +419,11 @@ void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
 
 void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
   ResourceMark rm(THREAD);
+
+  if (!InstanceKlass::is_finalization_enabled()) {
+    output()->print_cr("Finalization is disabled");
+    return;
+  }
 
   Klass* k = SystemDictionary::resolve_or_fail(
     vmSymbols::finalizer_histogram_klass(), true, CHECK);
