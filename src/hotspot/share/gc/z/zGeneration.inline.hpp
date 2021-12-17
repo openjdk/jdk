@@ -29,40 +29,12 @@
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zPageTable.hpp"
 
-inline ZGenerationId ZGeneration::id() const {
-  return _id;
-}
-
-inline bool ZGeneration::is_young() const {
-  return _id == ZGenerationId::young;
-}
-
-inline bool ZGeneration::is_old() const {
-  return _id == ZGenerationId::old;
-}
-
 inline ZYoungGeneration* ZGeneration::young() {
   return _young;
 }
 
 inline ZOldGeneration* ZGeneration::old() {
   return _old;
-}
-
-inline ZGeneration* ZGeneration::generation(ZGenerationId id) {
-  if (id == ZGenerationId::old) {
-    return _old;
-  } else {
-    return _young;
-  }
-}
-
-inline ZGeneration* ZGeneration::generation(ZPageAge age) {
-  if (age == ZPageAge::old) {
-    return _old;
-  } else {
-    return _young;
-  }
 }
 
 inline zaddress ZYoungGeneration::alloc_tlab(size_t size) {

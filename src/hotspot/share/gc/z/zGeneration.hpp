@@ -24,10 +24,7 @@
 #ifndef SHARE_GC_Z_ZGENERATION_HPP
 #define SHARE_GC_Z_ZGENERATION_HPP
 
-#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zObjectAllocator.hpp"
-#include "gc/z/zPageAge.hpp"
-#include "gc/z/zPageAllocator.hpp"
 
 class ZOldGeneration;
 class ZYoungGeneration;
@@ -37,22 +34,11 @@ protected:
   static ZYoungGeneration* _young;
   static ZOldGeneration*   _old;
 
-  const ZGenerationId _id;
-
 public:
-  ZGeneration(ZGenerationId id);
-
-  ZGenerationId id() const;
-
-  bool is_young() const;
-  bool is_old() const;
-
   static ZYoungGeneration* young();
   static ZOldGeneration* old();
-  static ZGeneration* generation(ZGenerationId id);
-  static ZGeneration* generation(ZPageAge age);
 
-  // Allocation
+  // Relocation
   virtual zaddress alloc_object_for_relocation(size_t size, bool promotion) = 0;
   virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion) = 0;
 };
@@ -65,11 +51,14 @@ private:
 public:
   ZYoungGeneration();
 
-  // Allocation
-  zaddress alloc_tlab(size_t size);
-  zaddress alloc_object(size_t size);
+  // Relocation
   virtual zaddress alloc_object_for_relocation(size_t size, bool promotion);
   virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
+
+  // Mutator allocation
+  zaddress alloc_tlab(size_t size);
+  zaddress alloc_object(size_t size);
+
   void retire_pages();
 
   // Statistics
@@ -84,9 +73,10 @@ private:
 public:
   ZOldGeneration();
 
-  // Allocation
+  // Relocation
   virtual zaddress alloc_object_for_relocation(size_t size, bool promotion);
   virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
+
   void retire_pages();
 };
 

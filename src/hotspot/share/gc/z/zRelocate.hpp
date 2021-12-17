@@ -28,7 +28,6 @@
 #include "gc/z/zPageAge.hpp"
 
 class ZForwarding;
-class ZGeneration;
 class ZWorkers;
 
 class ZRelocateQueue {

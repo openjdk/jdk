@@ -40,7 +40,7 @@
 static const ZStatCounter ZCounterUndoObjectAllocationSucceeded("Memory", "Undo Object Allocation Succeeded", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Object Allocation Failed", ZStatUnitOpsPerSecond);
 
-ZObjectAllocator::ZObjectAllocator(ZGenerationId id, ZPageAge age) :
+ZObjectAllocator::ZObjectAllocator(ZPageAge age) :
     _age(age),
     _use_per_cpu_shared_small_pages(ZHeuristics::use_per_cpu_shared_small_pages()),
     _used(0),
@@ -169,7 +169,8 @@ zaddress ZObjectAllocator::alloc_object_for_relocation(size_t size, bool promoti
   return alloc_object(size, flags);
 }
 
-void ZObjectAllocator::undo_alloc_object_for_relocation(ZPage* page, zaddress addr, size_t size, bool promotion) {
+void ZObjectAllocator::undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion) {
+  ZPage* const page = ZHeap::heap()->page(addr);
   const uint8_t type = page->type();
 
   if (type == ZPageTypeLarge) {

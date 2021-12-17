@@ -23,18 +23,14 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zGeneration.hpp"
-#include "gc/z/zHeap.inline.hpp"
 
 ZYoungGeneration* ZGeneration::_young;
 ZOldGeneration*   ZGeneration::_old;
 
-ZGeneration::ZGeneration(ZGenerationId id) :
-    _id(id) {}
-
 ZYoungGeneration::ZYoungGeneration() :
-    ZGeneration(ZGenerationId::young),
-    _eden_allocator(ZGenerationId::young, ZPageAge::eden),
-    _survivor_allocator(ZGenerationId::young, ZPageAge::survivor) {
+    ZGeneration(),
+    _eden_allocator(ZPageAge::eden),
+    _survivor_allocator(ZPageAge::survivor) {
   _young = this;
 }
 
@@ -43,8 +39,7 @@ zaddress ZYoungGeneration::alloc_object_for_relocation(size_t size, bool promoti
 }
 
 void ZYoungGeneration::undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion) {
-  ZPage* const page = ZHeap::heap()->page(addr);
-  _survivor_allocator.undo_alloc_object_for_relocation(page, addr, size, promotion);
+  _survivor_allocator.undo_alloc_object_for_relocation(addr, size, promotion);
 }
 
 void ZYoungGeneration::retire_pages() {
@@ -61,8 +56,8 @@ size_t ZYoungGeneration::remaining() const {
 }
 
 ZOldGeneration::ZOldGeneration() :
-    ZGeneration(ZGenerationId::old),
-    _old_allocator(ZGenerationId::old, ZPageAge::old) {
+    ZGeneration(),
+    _old_allocator(ZPageAge::old) {
   _old = this;
 }
 
@@ -71,8 +66,7 @@ zaddress ZOldGeneration::alloc_object_for_relocation(size_t size, bool promotion
 }
 
 void ZOldGeneration::undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion) {
-  ZPage* const page = ZHeap::heap()->page(addr);
-  _old_allocator.undo_alloc_object_for_relocation(page, addr, size, promotion);
+  _old_allocator.undo_alloc_object_for_relocation(addr, size, promotion);
 }
 
 void ZOldGeneration::retire_pages() {

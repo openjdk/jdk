@@ -61,11 +61,14 @@ private:
   zaddress alloc_object(size_t size, ZAllocationFlags flags);
 
 public:
-  ZObjectAllocator(ZGenerationId id, ZPageAge age);
+  ZObjectAllocator(ZPageAge age);
 
+  // Mutator allocation
   zaddress alloc_object(size_t size);
+
+  // Relocation
   zaddress alloc_object_for_relocation(size_t size, bool promotion);
-  void undo_alloc_object_for_relocation(ZPage* page, zaddress addr, size_t size, bool promotion);
+  void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
 
   size_t used() const;
   size_t remaining() const;

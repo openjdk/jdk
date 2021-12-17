@@ -32,7 +32,6 @@
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
 
-class ZGeneration;
 class ZServiceabilityCounters;
 
 class ZServiceabilityMemoryPool : public CollectedMemoryPool {
