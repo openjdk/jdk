@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8224791
+ * @bug 8225093
  * @summary Check that JVMTI GetSystemProperty API returns the right values for
  *          property jdk.boot.class.path.append.
  * @requires vm.jvmti
@@ -37,16 +37,16 @@ public class GetBootClassPathAppendProp {
     private static native String getSystemProperty();
 
     public static void main(String[] args) throws Exception {
-        String vm_info_jvmti = getSystemProperty();
+        String path = getSystemProperty();
         if (args.length > 0) {
-            if (!vm_info_jvmti.equals("blah")) {
+            if (!path.equals("blah")) {
                 throw new RuntimeException("Wrong value returned for jdk.boot.class.path.append: " +
-                                           vm_info_jvmti);
+                                           path);
            }
         } else {
-            if (vm_info_jvmti != null) {
+            if (path != null) {
                 throw new RuntimeException("Null value expected for jdk.boot.class.path.append: " +
-                                           vm_info_jvmti);
+                                           path);
             }
         }
     }
