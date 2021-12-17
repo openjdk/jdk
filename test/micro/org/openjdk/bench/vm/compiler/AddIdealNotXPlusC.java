@@ -45,9 +45,9 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 3 , jvmArgsAppend = {"-XX:-TieredCompilation"})
+@Warmup(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 5 , jvmArgsAppend = {"-XX:-TieredCompilation"})
 public class AddIdealNotXPlusC {
 
     private static final int I_C = 1234567;
