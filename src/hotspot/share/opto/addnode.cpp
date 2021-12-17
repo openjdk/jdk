@@ -374,7 +374,6 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
       phase->type(in1->in(2)) == TypeInteger::minus_1(bt)) {
     return SubNode::make(phase->makecon(TypeInteger::zero(bt)), in1->in(1), bt);
   }
-
   return AddNode::Ideal(phase, can_reshape);
 }
 

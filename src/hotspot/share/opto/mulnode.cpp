@@ -770,18 +770,6 @@ static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, int nBits) {
   return 0;
 }
 
-LShiftNode* LShiftNode::make(Node* in1, Node* in2, BasicType bt) {
-  switch (bt) {
-    case T_INT:
-      return new LShiftINode(in1, in2);
-    case T_LONG:
-      return new LShiftLNode(in1, in2);
-    default:
-      fatal("Not implemented for %s", type2name(bt));
-  }
-  return NULL;
-}
-
 //------------------------------Identity---------------------------------------
 Node* LShiftINode::Identity(PhaseGVN* phase) {
   int count = 0;
