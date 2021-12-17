@@ -77,13 +77,8 @@ class DefinedAsHiddenKlass {
     // Make this slightly smaller than that.
     static byte[] array = new byte[2 * 1024 * 1024 - 8 * 1024];
     static String x;
-    static double d = 123;
-    static float f = 456;
     public DefinedAsHiddenKlass() {
         // This will generate some lambda forms hidden classes for string concat.
         x = "array size is "  + array.length + " bytes ";
-    }
-    public void doit(Runnable r) {
-        r.run();
     }
 }
