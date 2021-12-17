@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -315,19 +315,9 @@ public class Spans {
          * position. The end position is ignored
          * in this ranking.
          */
+        @Override
         public int compareTo(Span otherSpan) {
-            float otherStart = otherSpan.getStart();
-            int result;
-
-            if (mStart < otherStart) {
-                result = -1;
-            } else if (mStart > otherStart) {
-                result = 1;
-            } else {
-                result = 0;
-            }
-
-            return result;
+            return Float.compare(mStart, otherSpan.getStart());
         }
 
         public String toString() {

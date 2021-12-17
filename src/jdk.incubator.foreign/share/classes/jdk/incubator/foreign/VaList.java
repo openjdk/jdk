@@ -59,7 +59,8 @@ import java.util.function.Consumer;
 sealed public interface VaList extends Addressable permits WinVaList, SysVVaList, LinuxAArch64VaList, MacOsAArch64VaList, SharedUtils.EmptyVaList {
 
     /**
-     * Reads the next value as an {@code int} and advances this variable argument list's position.
+     * Reads the next value as an {@code int} and advances this variable argument list's position. The behavior of this
+     * method is equivalent to the C {@code va_arg} function.
      *
      * @param layout the layout of the value to be read.
      * @return the {@code int} value read from this variable argument list.
@@ -69,7 +70,8 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
     int nextVarg(ValueLayout.OfInt layout);
 
     /**
-     * Reads the next value as a {@code long} and advances this variable argument list's position.
+     * Reads the next value as a {@code long} and advances this variable argument list's position. The behavior of this
+     * method is equivalent to the C {@code va_arg} function.
      *
      * @param layout the layout of the value to be read.
      * @return the {@code long} value read from this variable argument list.
@@ -79,7 +81,8 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
     long nextVarg(ValueLayout.OfLong layout);
 
     /**
-     * Reads the next value as a {@code double} and advances this variable argument list's position.
+     * Reads the next value as a {@code double} and advances this variable argument list's position. The behavior of this
+     * method is equivalent to the C {@code va_arg} function.
      *
      * @param layout the layout of the value
      * @return the {@code double} value read from this variable argument list.
@@ -89,7 +92,8 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
     double nextVarg(ValueLayout.OfDouble layout);
 
     /**
-     * Reads the next value as a {@code MemoryAddress} and advances this variable argument list's position.
+     * Reads the next value as a {@code MemoryAddress} and advances this variable argument list's position. The behavior of this
+     * method is equivalent to the C {@code va_arg} function.
      *
      * @param layout the layout of the value to be read.
      * @return the {@code MemoryAddress} value read from this variable argument list.
@@ -99,7 +103,13 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
     MemoryAddress nextVarg(ValueLayout.OfAddress layout);
 
     /**
-     * Reads the next value as a {@code MemorySegment}, and advances this variable argument list's position.
+     * Reads the next value as a {@code MemorySegment}, and advances this variable argument list's position. The behavior of this
+     * method is equivalent to the C {@code va_arg} function. The provided group layout must correspond to a C struct or union
+     * type.
+     * <p>
+     * How the value is read in the returned segment is ABI-dependent: calling this method on a group layout
+     * with member layouts {@code L_1, L_2, ... L_n} is not guaranteed to be semantically equivalent to perform distinct
+     * calls to {@code nextVarg} for each of the layouts in {@code L_1, L_2, ... L_n}.
      * <p>
      * The memory segment returned by this method will be allocated using the given {@link SegmentAllocator}.
      *
@@ -129,9 +139,12 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
 
     /**
      * Copies this variable argument list at its current position into a new variable argument list associated
-     * with the same scope as this variable argument list. Copying is useful to
-     * traverse the variable argument list elements, starting from the current position, without affecting the state
-     * of the original variable argument list, essentially allowing the elements to be traversed multiple times.
+     * with the same scope as this variable argument list. The behavior of this method is equivalent to the C
+     * {@code va_copy} function.
+     * <p>
+     * Copying is useful to traverse the variable argument list elements, starting from the current position,
+     * without affecting the state of the original variable argument list, essentially allowing the elements to be
+     * traversed multiple times.
      *
      * @return a copy of this variable argument list.
      * @throws IllegalStateException if the scope associated with this variable argument list has been closed, or if access occurs from
@@ -187,8 +200,8 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
      *                of the underlying variable argument list.
      * @param scope scope the scope to be associated with the new variable arity list.
      * @return a new variable argument list.
-     * @throws IllegalStateException if the scope associated with {@code allocator} has been already closed,
-     * or if access occurs from a thread other than the thread owning that scope.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
     static VaList make(Consumer<Builder> actions, ResourceScope scope) {
         Objects.requireNonNull(actions);
