@@ -58,10 +58,16 @@ public:
   }
 };
 
+void G1FullGCCompactTask::G1CompactRegionClosure::clear_bitmap(oop obj) {
+  assert(_bitmap->is_marked(obj), "Should only compact marked objects");
+  _bitmap->clear(obj);
+}
+
 size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   size_t size = obj->size();
   if (!obj->is_forwarded()) {
     // Object not moving
+    clear_bitmap(obj);
     return size;
   }
 
@@ -74,6 +80,7 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   cast_to_oop(destination)->init_mark();
   assert(cast_to_oop(destination)->klass() != NULL, "should have a class");
 
+  clear_bitmap(obj);
   return size;
 }
 
@@ -82,12 +89,12 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
   assert(!hr->is_humongous(), "Should be no humongous regions in compaction queue");
 
   if (!collector()->is_free(hr->hrm_index())) {
-    G1CompactRegionClosure compact(collector()->mark_bitmap());
-    hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
-    // Clear the liveness information for this region. This is needed
+    // The compaction closure not only copies the object to the new
+    // location, but also clears the bitmap for it. This is needed
     // for bitmap verification as well as for being able to use the
     // prev_bitmap for evacuation failures.
-    collector()->mark_bitmap()->clear_region(hr);
+    G1CompactRegionClosure compact(collector()->mark_bitmap());
+    hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
   }
 
   hr->reset_compacted_after_full_gc();
