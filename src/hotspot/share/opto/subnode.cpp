@@ -1849,18 +1849,14 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
   case Type::Int: {
     const TypeInt* ti = t1->is_int();
     if (ti->is_con()) {
-      // Special case for min_jint: Math.abs(min_jint) = min_jint.
-      // Do not use C++ abs() for min_jint to avoid undefined behavior.
-      return (ti->is_con(min_jint)) ? TypeInt::MIN : TypeInt::make(abs(ti->get_con()));
+      return TypeInt::make(uabs(ti->get_con()));
     }
     break;
   }
   case Type::Long: {
     const TypeLong* tl = t1->is_long();
     if (tl->is_con()) {
-      // Special case for min_jlong: Math.abs(min_jlong) = min_jlong.
-      // Do not use C++ abs() for min_jlong to avoid undefined behavior.
-      return (tl->is_con(min_jlong)) ? TypeLong::MIN : TypeLong::make(abs(tl->get_con()));
+      return TypeLong::make(uabs(tl->get_con()));
     }
     break;
   }
