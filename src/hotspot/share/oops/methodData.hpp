@@ -1981,6 +1981,7 @@ public:
     uint _nof_overflow_traps;         // trap count, excluding _trap_hist
     union {
       intptr_t _align;
+      // JVMCI separates trap history for OSE compilations from normal compilations
       u1 _array[JVMCI_ONLY(2 *) MethodData::_trap_hist_limit];
     } _trap_hist;
 
@@ -1997,14 +1998,14 @@ public:
 
     // Return (uint)-1 for overflow.
     uint trap_count(int reason) const {
-      assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
+      assert((uint)reason < ARRAY_SIZE(_trap_hist._array), "oob");
       return (int)((_trap_hist._array[reason]+1) & _trap_hist_mask) - 1;
     }
 
     uint inc_trap_count(int reason) {
       // Count another trap, anywhere in this method.
       assert(reason >= 0, "must be single trap");
-      assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
+      assert((uint)reason < ARRAY_SIZE(_trap_hist._array), "oob");
       uint cnt1 = 1 + _trap_hist._array[reason];
       if ((cnt1 & _trap_hist_mask) != 0) {  // if no counter overflow...
         _trap_hist._array[reason] = cnt1;

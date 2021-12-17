@@ -2274,6 +2274,7 @@ Deoptimization::query_update_method_data(MethodData* trap_mdo,
     uint idx = reason;
 #if INCLUDE_JVMCI
     if (is_osr) {
+      // Upper half of history array used for traps in OSR compilations
       idx += Reason_TRAP_HISTORY_LENGTH;
     }
 #endif
