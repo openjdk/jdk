@@ -503,10 +503,6 @@
           "How far ahead to prefetch scan area (<= 0 means off)")           \
           range(-1, max_jint)                                               \
                                                                             \
-  product(intx, PrefetchFieldsAhead, -1,                                    \
-          "How many fields ahead to prefetch in oop scan (<= 0 means off)") \
-          range(-1, max_jint)                                               \
-                                                                            \
   product(bool, VerifyDuringStartup, false, DIAGNOSTIC,                     \
           "Verify memory system before executing any Java code "            \
           "during VM initialization")                                       \
