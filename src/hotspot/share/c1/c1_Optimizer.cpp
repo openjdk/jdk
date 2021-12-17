@@ -180,14 +180,14 @@ void CE_Eliminator::block_do(BlockBegin* block) {
     return;
   }
 
-#ifndef PRODUCT
+#ifdef ASSERT
   BlockList blocks_to_verify_later;
   blocks_to_verify_later.append(block);
   blocks_to_verify_later.append(t_block);
   blocks_to_verify_later.append(f_block);
   blocks_to_verify_later.append(sux);
   _hir->expand_with_neighborhood(blocks_to_verify_later);
-#endif // PRODUCT
+#endif // ASSERT
 
   // 2) substitute conditional expression
   //    with an IfOp followed by a Goto
@@ -257,7 +257,7 @@ void CE_Eliminator::block_do(BlockBegin* block) {
     tty->print_cr("%d. IfOp in B%d", ifop_count(), block->block_id());
   }
 
-  NOT_PRODUCT(_hir->verify_local(blocks_to_verify_later));
+  DEBUG_ONLY(_hir->verify_local(blocks_to_verify_later));
 }
 
 Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval) {
@@ -397,11 +397,11 @@ class BlockMerger: public BlockClosure {
     assert(sux_state->caller_state() == end_state->caller_state(), "caller not equal");
 #endif
 
-#ifndef PRODUCT
+#ifdef ASSERT
     BlockList blocks_to_verify_later;
     blocks_to_verify_later.append(block);
     _hir->expand_with_neighborhood(blocks_to_verify_later);
-#endif // PRODUCT
+#endif // ASSERT
 
     // find instruction before end & append first instruction of sux block
     Instruction* prev = end->prev();
@@ -412,7 +412,7 @@ class BlockMerger: public BlockClosure {
 
     // disconnect this block from all other blocks
     disconnect_from_graph(sux);
-    NOT_PRODUCT(blocks_to_verify_later.remove(sux)); // Sux is not part of graph anymore
+    DEBUG_ONLY(blocks_to_verify_later.remove(sux)); // Sux is not part of graph anymore
     block->set_end(sux->end());
 
     // TODO Should this be done in set_end universally?
@@ -437,9 +437,7 @@ class BlockMerger: public BlockClosure {
                     _merge_count, block->block_id(), sux->block_id(), sux->state()->stack_size());
     }
 
-#ifndef PRODUCT
-    _hir->verify_local(blocks_to_verify_later);
-#endif // PRODUCT
+    DEBUG_ONLY(_hir->verify_local(blocks_to_verify_later));
 
     If* if_ = block->end()->as_If();
     if (if_) {
@@ -489,7 +487,7 @@ class BlockMerger: public BlockClosure {
                 tty->print_cr("%d. replaced If and IfOp at end of B%d with single If", _merge_count, block->block_id());
               }
 
-              NOT_PRODUCT(_hir->verify_local(blocks_to_verify_later));
+              DEBUG_ONLY(_hir->verify_local(blocks_to_verify_later));
             }
           }
         }
