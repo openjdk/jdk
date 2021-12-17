@@ -1354,7 +1354,6 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
     IfNode* dom_if = idom(n_ctrl)->as_If();
     ProjNode* dom_proj_true = dom_if->proj_out(1);
     ProjNode* dom_proj_false = dom_if->proj_out(0);
-    ProjNode* proj_false = n->as_If()->proj_out(0);
 
     // Now split the IF
     Node* new_false;
