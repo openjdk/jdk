@@ -375,11 +375,6 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     return SubNode::make(phase->makecon(TypeInteger::zero(bt)), in1->in(1), bt);
   }
 
-  // Convert "x + x" into "x << 1"
-  if (in1 == in2) {
-    return LShiftNode::make(in1, phase->intcon(1), bt);
-  }
-
   return AddNode::Ideal(phase, can_reshape);
 }
 
