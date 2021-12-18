@@ -1981,7 +1981,7 @@ public:
     uint _nof_overflow_traps;         // trap count, excluding _trap_hist
     union {
       intptr_t _align;
-      // JVMCI separates trap history for OSE compilations from normal compilations
+      // JVMCI separates trap history for OSR compilations from normal compilations
       u1 _array[JVMCI_ONLY(2 *) MethodData::_trap_hist_limit];
     } _trap_hist;
 
