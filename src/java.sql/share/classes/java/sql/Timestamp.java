@@ -39,9 +39,9 @@ import java.time.LocalDateTime;
  *
  * <p>The precision of a Timestamp object is calculated to be either:
  * <ul>
- * <li>{@code 19 }, which is the number of characters in yyyy-mm-dd hh:mm:ss
+ * <li>{@code 19 }, which is the number of characters in yyyy-MM-dd hh:mm:ss
  * <li> {@code  20 + s }, which is the number
- * of characters in the yyyy-mm-dd hh:mm:ss.[fff...] and {@code s} represents  the scale of the given Timestamp,
+ * of characters in the yyyy-MM-dd hh:mm:ss.[fff...] and {@code s} represents  the scale of the given Timestamp,
  * its fractional seconds precision.
  *</ul>
  *
@@ -158,13 +158,13 @@ public class Timestamp extends java.util.Date {
      * Converts a {@code String} object in JDBC timestamp escape format to a
      * {@code Timestamp} value.
      *
-     * @param s timestamp in format {@code yyyy-[m]m-[d]d hh:mm:ss[.f...]}.  The
-     * fractional seconds may be omitted. The leading zero for {@code mm}
+     * @param s timestamp in format {@code yyyy-[M]M-[d]d hh:mm:ss[.f...]}.  The
+     * fractional seconds may be omitted. The leading zero for {@code MM}
      * and {@code dd} may also be omitted.
      *
      * @return corresponding {@code Timestamp} value
      * @throws java.lang.IllegalArgumentException if the given argument
-     * does not have the format {@code yyyy-[m]m-[d]d hh:mm:ss[.f...]}
+     * does not have the format {@code yyyy-[M]M-[d]d hh:mm:ss[.f...]}
      */
     public static Timestamp valueOf(String s) {
         final int YEAR_LENGTH = 4;
@@ -185,7 +185,7 @@ public class Timestamp extends java.util.Date {
         int firstColon;
         int secondColon;
         int period;
-        String formatError = "Timestamp format must be yyyy-mm-dd hh:mm:ss[.fffffffff]";
+        String formatError = "Timestamp format must be yyyy-MM-dd hh:mm:ss[.fffffffff]";
 
         if (s == null) throw new java.lang.IllegalArgumentException("null string");
 
@@ -256,11 +256,11 @@ public class Timestamp extends java.util.Date {
 
     /**
      * Formats a timestamp in JDBC timestamp escape format.
-     *         {@code yyyy-mm-dd hh:mm:ss.fffffffff},
+     *         {@code yyyy-MM-dd hh:mm:ss.fffffffff},
      * where {@code fffffffff} indicates nanoseconds.
      *
      * @return a {@code String} object in
-     *           {@code yyyy-mm-dd hh:mm:ss.fffffffff} format
+     *           {@code yyyy-MM-dd hh:mm:ss.fffffffff} format
      */
     @SuppressWarnings("deprecation")
     public String toString() {

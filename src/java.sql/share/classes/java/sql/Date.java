@@ -102,12 +102,12 @@ public class Date extends java.util.Date {
      * a {@code Date} value.
      *
      * @param s a {@code String} object representing a date in
-     *        in the format "yyyy-[m]m-[d]d". The leading zero for {@code mm}
+     *        in the format "yyyy-[M]M-[d]d". The leading zero for {@code MM}
      * and {@code dd} may also be omitted.
      * @return a {@code java.sql.Date} object representing the
      *         given date
      * @throws IllegalArgumentException if the date given is not in the
-     *         JDBC date escape format (yyyy-[m]m-[d]d)
+     *         JDBC date escape format (yyyy-[M]M-[d]d)
      */
     public static Date valueOf(String s) {
         if (s == null) {
@@ -147,9 +147,9 @@ public class Date extends java.util.Date {
 
 
     /**
-     * Formats a date in the date escape format yyyy-mm-dd.
+     * Formats a date in the date escape format yyyy-MM-dd.
      *
-     * @return a String in yyyy-mm-dd format
+     * @return a String in yyyy-MM-dd format
      */
     @SuppressWarnings("deprecation")
     public String toString () {
