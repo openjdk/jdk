@@ -77,7 +77,10 @@ public:
       _can_be_reused(false)
     {
       assert(is_java_primitive(type), "not applicable for %s", type2name(type));
-      _v._array = array;
+      _v._array = new GrowableArray<jvalue>(array->length());
+      for (jvalue ele : *array) {
+        _v._array->append(ele);
+      }
     }
 
     bool operator==(const Constant& other);

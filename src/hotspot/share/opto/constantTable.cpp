@@ -40,10 +40,10 @@ bool ConstantTable::Constant::operator==(const Constant& other) {
   }
   // For floating point values we compare the bit pattern.
   switch (type()) {
-  case T_INT:
-  case T_FLOAT:   return (_v._value.i == other._v._value.i);
-  case T_LONG:
-  case T_DOUBLE:  return (_v._value.j == other._v._value.j);
+  case T_INT:     return (_v._value.i == other._v._value.i);
+  case T_FLOAT:   return jint_cast(_v._value.f) == jint_cast(other._v._value.f);
+  case T_LONG:    return (_v._value.j == other._v._value.j);
+  case T_DOUBLE:  return jlong_cast(_v._value.d) == jlong_cast(other._v._value.d);
   case T_OBJECT:
   case T_ADDRESS: return (_v._value.l == other._v._value.l);
   case T_VOID:    return (_v._value.l == other._v._value.l);  // jump-table entries
