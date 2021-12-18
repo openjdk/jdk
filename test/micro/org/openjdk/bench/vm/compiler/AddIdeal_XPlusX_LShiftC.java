@@ -42,11 +42,11 @@ import java.util.concurrent.TimeUnit;
  * Tests transformation from "(x + x) << c" to "x << (c + 1)".
  */
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
 @Warmup(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 3 , jvmArgsAppend = {"-XX:-TieredCompilation"})
+@Fork(value = 3)
 public class AddIdeal_XPlusX_LShiftC {
 
     private final int size = 100_000;
@@ -65,7 +65,7 @@ public class AddIdeal_XPlusX_LShiftC {
         }
     }
 
-    @Benchmark
+    /* @Benchmark
     public void baseline() {
         for (int i = 0; i < size; i++) {
             sink(ints_a[i]);
@@ -79,6 +79,16 @@ public class AddIdeal_XPlusX_LShiftC {
             sink(helper(ints_a[i]));
             sink(helper(longs_a[i]));
         }
+    } */
+
+    @Benchmark
+    public int testInt() {
+        return helper(ints_a[4711]);
+    }
+
+    @Benchmark
+    public long testLong() {
+        return helper(longs_a[4711]);
     }
 
     // Convert "(x + x) << 10" into "x << 11" for int.
@@ -95,9 +105,9 @@ public class AddIdeal_XPlusX_LShiftC {
         return ((x + x) << 40) >>> 41;
     }
 
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    /* @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     private static void sink(int v) {}
 
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static void sink(long v) {}
+    private static void sink(long v) {} */
 }
