@@ -86,13 +86,7 @@ public class TestIRLShiftIdeal_XPlusX_LShiftC {
 
     @Run(test = "testInt0")
     public void checkTestInt0(RunInfo info) {
-        // Test VM allows C2 to work
-        Asserts.assertTrue(info.isC2CompilationEnabled());
-        if (!info.isWarmUp()) {
-            // C2 compilation happens
-            Asserts.assertTrue(info.isTestC2Compiled());
-        }
-        // Results are correct
+        assertC2Compiled(info);
         for (int i = 0; i < INT_IN.length; i++) {
             Asserts.assertEquals(INT_OUT[0][i], testInt0(INT_IN[i]));
         }
@@ -110,13 +104,7 @@ public class TestIRLShiftIdeal_XPlusX_LShiftC {
 
     @Run(test = "testInt1")
     public void checkTestInt1(RunInfo info) {
-        // Test VM allows C2 to work
-        Asserts.assertTrue(info.isC2CompilationEnabled());
-        if (!info.isWarmUp()) {
-            // C2 compilation happens
-            Asserts.assertTrue(info.isTestC2Compiled());
-        }
-        // Results are correct
+        assertC2Compiled(info);
         for (int i = 0; i < INT_IN.length; i++) {
             Asserts.assertEquals(INT_OUT[1][i], testInt1(INT_IN[i]));
         }
@@ -131,13 +119,7 @@ public class TestIRLShiftIdeal_XPlusX_LShiftC {
 
     @Run(test = "testLong0")
     public void checkTestLong0(RunInfo info) {
-        // Test VM allows C2 to work
-        Asserts.assertTrue(info.isC2CompilationEnabled());
-        if (!info.isWarmUp()) {
-            // C2 compilation happens
-            Asserts.assertTrue(info.isTestC2Compiled());
-        }
-        // Results are correct
+        assertC2Compiled(info);
         for (int i = 0; i < LONG_IN.length; i++) {
             Asserts.assertEquals(LONG_OUT[0][i], testLong0(LONG_IN[i]));
         }
@@ -152,15 +134,18 @@ public class TestIRLShiftIdeal_XPlusX_LShiftC {
 
     @Run(test = "testLong1")
     public void checkTestLong1(RunInfo info) {
+        assertC2Compiled(info);
+        for (int i = 0; i < LONG_IN.length; i++) {
+            Asserts.assertEquals(LONG_OUT[1][i], testLong1(LONG_IN[i]));
+        }
+    }
+
+    private void assertC2Compiled(RunInfo info) {
         // Test VM allows C2 to work
         Asserts.assertTrue(info.isC2CompilationEnabled());
         if (!info.isWarmUp()) {
             // C2 compilation happens
             Asserts.assertTrue(info.isTestC2Compiled());
-        }
-        // Results are correct
-        for (int i = 0; i < LONG_IN.length; i++) {
-            Asserts.assertEquals(LONG_OUT[1][i], testLong1(LONG_IN[i]));
         }
     }
 }
