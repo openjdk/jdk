@@ -49,46 +49,28 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class AddIdeal_XPlusX_LShiftC {
 
-    private final int size = 100_000;
+    private int iFld = 4711;
 
-    private int[] ints_a;
+    private long lFld = 4711 * 4711 * 4711;
 
-    private long[] longs_a;
-
-    @Setup
-    public void init() {
-        ints_a = new int[size];
-        longs_a = new long[size];
-        for (int i = 0; i < size; i++) {
-            ints_a[i] = i;
-            longs_a[i] = i * i * i;
-        }
-    }
-
-    /* @Benchmark
-    public void baseline() {
-        for (int i = 0; i < size; i++) {
-            sink(ints_a[i]);
-            sink(longs_a[i]);
-        }
+    @Benchmark
+    public int baselineInt() {
+        return iFld;
     }
 
     @Benchmark
-    public void test() {
-        for (int i = 0; i < size; i++) {
-            sink(helper(ints_a[i]));
-            sink(helper(longs_a[i]));
-        }
-    } */
+    public long baselineLong() {
+        return lFld;
+    }
 
     @Benchmark
     public int testInt() {
-        return helper(ints_a[4711]);
+        return helper(iFld);
     }
 
     @Benchmark
     public long testLong() {
-        return helper(longs_a[4711]);
+        return helper(lFld);
     }
 
     // Convert "(x + x) << 10" into "x << 11" for int.
@@ -104,10 +86,4 @@ public class AddIdeal_XPlusX_LShiftC {
     private static long helper(long x) {
         return ((x + x) << 40) >>> 41;
     }
-
-    /* @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static void sink(int v) {}
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static void sink(long v) {} */
 }
