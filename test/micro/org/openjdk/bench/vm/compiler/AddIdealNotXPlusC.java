@@ -43,64 +43,50 @@ import java.util.concurrent.TimeUnit;
  * AddNode::IdealIL.
  */
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
 @Warmup(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 5 , jvmArgsAppend = {"-XX:-TieredCompilation"})
+@Fork(value = 3)
 public class AddIdealNotXPlusC {
 
     private static final int I_C = 1234567;
 
     private static final long L_C = 123_456_789_123_456L;
 
-    private final int size = 100_000;
+    private int iFld = 4711;
 
-    private int[] ints_a;
+    private long lFld = 4711 * 4711 * 4711;
 
-    private long[] longs_a;
-
-    @Setup
-    public void init() {
-        ints_a = new int[size];
-        longs_a = new long[size];
-        for (int i = 0; i < size; i++) {
-            ints_a[i] = i;
-            longs_a[i] = i * i * i;
-        }
+    @Benchmark
+    public int baselineInt() {
+        return iFld;
     }
 
     @Benchmark
-    public void baseline() {
-        for (int i = 0; i < size; i++) {
-            sink(ints_a[i]);
-            sink(longs_a[i]);
-        }
+    public long baselineLong() {
+        return lFld;
     }
 
     @Benchmark
-    public void test() {
-        for (int i = 0; i < size; i++) {
-            sink(helper(ints_a[i]));
-            sink(helper(longs_a[i]));
-        }
+    public int testInt() {
+        return helper(iFld);
+    }
+
+    @Benchmark
+    public long testLong() {
+        return helper(lFld);
     }
 
     // Convert "~x + c" into "(c - 1) - x" for int.
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     private static int helper(int x) {
-        return ~x + I_C;
+        return ~x + I_C + x;
     }
 
     // Convert "~x + c" into "(c - 1) - x" for long.
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     private static long helper(long x) {
-        return ~x + L_C;
+        return ~x + L_C + x;
     }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static void sink(int v) {}
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static void sink(long v) {}
 }
