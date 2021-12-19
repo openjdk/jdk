@@ -40,6 +40,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Tests transformation from "(x + x) << c" to "x << (c + 1)".
+ * <p>
+ * This benchmark needs to be run with
+ * {@code JAVA_OPTIONS=-Djmh.blackhole.mode=COMPILER} to force using
+ * compiler mode blackhole.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -53,37 +57,37 @@ public class AddIdeal_XPlusX_LShiftC {
 
     private long lFld = 4711 * 4711 * 4711;
 
+    private final int SIZE = 10;
+
     @Benchmark
-    public int baselineInt() {
-        return iFld;
+    public void baselineInt(Blackhole bh) {
+        for (int i = 0; i < SIZE; i++) {
+            bh.consume(iFld);
+        }
     }
 
     @Benchmark
-    public long baselineLong() {
-        return lFld;
-    }
-
-    @Benchmark
-    public int testInt() {
-        return helper(iFld);
-    }
-
-    @Benchmark
-    public long testLong() {
-        return helper(lFld);
+    public void baselineLong(Blackhole bh) {
+        for (int i = 0; i < SIZE; i++) {
+            bh.consume(lFld);
+        }
     }
 
     // Convert "(x + x) << 10" into "x << 11" for int.
     // (x << 11) >>> 11 is then further converted into zero-extends.
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static int helper(int x) {
-        return ((x + x) << 10) >>> 11;
+    @Benchmark
+    public void testInt(Blackhole bh) {
+        for (int i = 0; i < SIZE; i++) {
+            bh.consume(((iFld + iFld) << 10) >>> 11);
+        }
     }
 
     // Convert "(x + x) << 40" into "x << 41" for long.
     // (x << 41) >>> 41 is then further converted into zero-extends.
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static long helper(long x) {
-        return ((x + x) << 40) >>> 41;
+    @Benchmark
+    public void testLong(Blackhole bh) {
+        for (int i = 0; i < SIZE; i++) {
+            bh.consume(((lFld + lFld) << 40) >>> 41);
+        }
     }
 }
