@@ -302,16 +302,6 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
       assert(in1->in(1) != this && in2->in(1) != this,"dead loop in AddINode::Ideal/AddLNode::Ideal");
       return AddNode::make(in1->in(1), in2->in(1), bt);
     }
-    // Convert "(a-b)+(b-c)" into "(a-c)"
-    if (op2 == Op_Sub(bt) && in1->in(2) == in2->in(1)) {
-      assert(in1->in(1) != this && in2->in(2) != this,"dead loop in AddINode::Ideal/AddLNode::Ideal");
-      return SubNode::make(in1->in(1), in2->in(2), bt);
-    }
-    // Convert "(a-b)+(c-a)" into "(c-b)"
-    if (op2 == Op_Sub(bt) && in1->in(1) == in2->in(2)) {
-      assert(in1->in(2) != this && in2->in(1) != this,"dead loop in AddINode::Ideal/AddLNode::Ideal");
-      return SubNode::make(in2->in(1), in1->in(2), bt);
-    }
   }
 
   // Convert "x+(0-y)" into "(x-y)"
