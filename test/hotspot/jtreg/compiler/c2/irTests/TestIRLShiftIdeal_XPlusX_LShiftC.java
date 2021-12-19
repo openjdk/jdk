@@ -31,9 +31,9 @@ import compiler.lib.ir_framework.*;
  * @bug 8278114
  * @summary Test that transformation from (x + x) >> c to x >> (c + 1) works as intended.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestIRAddIdeal_XPlusX_LShiftC
+ * @run driver compiler.c2.irTests.TestIRLShiftIdeal_XPlusX_LShiftC
  */
-public class TestIRAddIdeal_XPlusX_LShiftC {
+public class TestIRLShiftIdeal_XPlusX_LShiftC {
 
     private static final int[] INT_IN = {
         -10, -2, -1, 0, 1, 2, 10,

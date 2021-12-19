@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 20, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 3)
-public class AddIdeal_XPlusX_LShiftC {
+public class LShiftIdeal_XPlusX_LShiftC {
 
     private int iFld = 4711;
 
