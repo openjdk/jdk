@@ -43,6 +43,7 @@ import java.security.PrivilegedAction;
 import java.util.Properties;
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
@@ -690,6 +691,8 @@ public class ReflectionFactory {
         disableSerialConstructorChecks =
             "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
+        // ensure previous fields are visible before initted is
+        Unsafe.getUnsafe().storeStoreFence();
         initted = true;
     }
 
