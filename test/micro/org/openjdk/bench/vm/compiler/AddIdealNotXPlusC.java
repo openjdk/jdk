@@ -58,35 +58,37 @@ public class AddIdealNotXPlusC {
 
     private long lFld = 4711 * 4711 * 4711;
 
+    private final int SIZE = 10;
+
     @Benchmark
-    public int baselineInt() {
-        return iFld;
+    public void baselineInt(Blackhole bh) {
+        for (int i = 0; i < SIZE; i++) {
+            bh.consume(iFld);
+        }
     }
 
     @Benchmark
-    public long baselineLong() {
-        return lFld;
-    }
-
-    @Benchmark
-    public int testInt() {
-        return helper(iFld);
-    }
-
-    @Benchmark
-    public long testLong() {
-        return helper(lFld);
+    public void baselineLong(Blackhole bh) {
+        for (int i = 0; i < SIZE; i++) {
+            bh.consume(lFld);
+        }
     }
 
     // Convert "~x + c" into "(c - 1) - x" for int.
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static int helper(int x) {
-        return ~x + I_C + x;
+    // (c - 1) -x + x is then converted into c - 1.
+    @Benchmark
+    public void testInt(Blackhole bh) {
+        for (int i = 0; i < SIZE; i++) {
+            bh.consume(~iFld + I_C + iFld);
+        }
     }
 
     // Convert "~x + c" into "(c - 1) - x" for long.
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static long helper(long x) {
-        return ~x + L_C + x;
+     // (c - 1) -x + x is then converted into c - 1.
+    @Benchmark
+    public void testLong(Blackhole bh) {
+        for (int i = 0; i < SIZE; i++) {
+            bh.consume(~lFld + L_C + lFld);
+        }
     }
 }
