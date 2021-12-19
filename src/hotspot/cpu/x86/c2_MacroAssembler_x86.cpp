@@ -4152,6 +4152,26 @@ void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XM
   bind(done);
 }
 
+void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
+                                   bool merge, BasicType bt, int vlen_enc) {
+  if (bt == T_INT) {
+    evpternlogd(dst, func, mask, src2, src3, true, vlen_enc);
+  } else {
+    assert(bt == T_LONG, "");
+    evpternlogq(dst, func, mask, src2, src3, true, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, Address src3,
+                                   bool merge, BasicType bt, int vlen_enc) {
+  if (bt == T_INT) {
+    evpternlogd(dst, func, mask, src2, src3, true, vlen_enc);
+  } else {
+    assert(bt == T_LONG, "");
+    evpternlogq(dst, func, mask, src2, src3, true, vlen_enc);
+  }
+}
+
 #ifdef _LP64
 void C2_MacroAssembler::vector_long_to_maskvec(XMMRegister dst, Register src, Register rtmp1,
                                                Register rtmp2, XMMRegister xtmp, int mask_len,

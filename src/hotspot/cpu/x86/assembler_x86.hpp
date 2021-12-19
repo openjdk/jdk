@@ -2410,6 +2410,12 @@ private:
   void evprorvd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
   void evprorvq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
 
+  void evpternlogd(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, XMMRegister src3, bool merge, int vector_len);
+  void evpternlogd(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, Address src3, bool merge, int vector_len);
+  void evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, XMMRegister src3, bool merge, int vector_len);
+  void evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, Address src3, bool merge, int vector_len);
+
+
   // Sub packed integers
   void psubb(XMMRegister dst, XMMRegister src);
   void psubw(XMMRegister dst, XMMRegister src);

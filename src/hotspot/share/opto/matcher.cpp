@@ -2320,6 +2320,14 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->set_req(2, new BinaryNode(n->in(3), n->in(4)));
       n->del_req(4);
       n->del_req(3);
+    } else if (n->req() == 6) {
+      Node* b3 = new BinaryNode(n->in(4), n->in(5));
+      Node* b2 = new BinaryNode(n->in(3), b3);
+      Node* b1 = new BinaryNode(n->in(2), b2);
+      n->set_req(2, b1);
+      n->del_req(5);
+      n->del_req(4);
+      n->del_req(3);
     }
     return;
   }

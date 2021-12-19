@@ -9709,6 +9709,72 @@ void Assembler::evpmaxsq(XMMRegister dst, KRegister mask, XMMRegister nds, Addre
   emit_operand(dst, src);
 }
 
+void Assembler::evpternlogd(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, XMMRegister src3, bool merge, int vector_len) {
+  assert(VM_Version::supports_evex(), "requires EVEX support");
+  assert(vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl(), "requires VL support");
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  attributes.set_embedded_opmask_register_specifier(mask);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src3->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8(0x25);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8);
+}
+
+void Assembler::evpternlogd(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, Address src3, bool merge, int vector_len) {
+  assert(VM_Version::supports_evex(), "requires EVEX support");
+  assert(vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl(), "requires VL support");
+  assert(dst != xnoreg, "sanity");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  attributes.set_embedded_opmask_register_specifier(mask);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_64bit);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  vex_prefix(src3, src2->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8(0x25);
+  emit_operand(dst, src3);
+  emit_int8(imm8);
+}
+
+void Assembler::evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, XMMRegister src3, bool merge, int vector_len) {
+  assert(VM_Version::supports_evex(), "requires EVEX support");
+  assert(vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl(), "requires VL support");
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  attributes.set_embedded_opmask_register_specifier(mask);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src3->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8(0x25);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8);
+}
+
+void Assembler::evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, Address src3, bool merge, int vector_len) {
+  assert(VM_Version::supports_evex(), "requires EVEX support");
+  assert(vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl(), "requires VL support");
+  assert(dst != xnoreg, "sanity");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  attributes.set_embedded_opmask_register_specifier(mask);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_64bit);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  vex_prefix(src3, src2->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8(0x25);
+  emit_operand(dst, src3);
+  emit_int8(imm8);
+}
+
 // duplicate 4-byte integer data from src into programmed locations in dest : requires AVX512VL
 void Assembler::vpbroadcastd(XMMRegister dst, XMMRegister src, int vector_len) {
   assert(UseAVX >= 2, "");
