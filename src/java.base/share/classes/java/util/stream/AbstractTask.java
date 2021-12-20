@@ -180,7 +180,7 @@ abstract class AbstractTask<P_IN, P_OUT, R,
 
     /**
      * Computes the result associated with a leaf node.  Will be called by
-     * {@code compute()} and the result passed to @{code setLocalResult()}
+     * {@code compute()} and the result passed to {@code setLocalResult()}
      *
      * @return the computed result of a leaf node
      */

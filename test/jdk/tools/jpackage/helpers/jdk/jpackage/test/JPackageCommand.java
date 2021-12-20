@@ -768,6 +768,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     private JPackageCommand adjustArgumentsBeforeExecution() {
+        if (!isWithToolProvider()) {
+            // if jpackage is launched as a process then set the jlink.debug system property
+            // to allow the jlink process to print exception stacktraces on any failure
+            addArgument("-J-Djlink.debug=true");
+        }
         if (!hasArgument("--runtime-image") && !hasArgument("--app-image") && DEFAULT_RUNTIME_IMAGE != null && !ignoreDefaultRuntime) {
             addArguments("--runtime-image", DEFAULT_RUNTIME_IMAGE);
         }

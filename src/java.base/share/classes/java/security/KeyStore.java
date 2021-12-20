@@ -1021,6 +1021,34 @@ public class KeyStore {
     }
 
     /**
+     * Retrieves the attributes associated with the given alias.
+     *
+     * @param alias the alias name
+     * @return an unmodifiable {@code Set} of attributes. This set is
+     *      empty if the {@code KeyStoreSpi} implementation has not overridden
+     *      {@link KeyStoreSpi#engineGetAttributes(String)}, or the given
+     *      alias does not exist, or there are no attributes associated
+     *      with the alias. This set may also be empty for
+     *      {@code PrivateKeyEntry} or {@code SecretKeyEntry}
+     *      entries that contain protected attributes and are only available
+     *      through the {@link Entry#getAttributes} method after the entry
+     *      is extracted.
+     *
+     * @throws KeyStoreException if the keystore has not been initialized
+     * (loaded).
+     * @throws NullPointerException if {@code alias} is {@code null}
+     *
+     * @since 18
+     */
+    public final Set<Entry.Attribute> getAttributes(String alias)
+            throws KeyStoreException {
+        if (!initialized) {
+            throw new KeyStoreException("Uninitialized keystore");
+        }
+        return keyStoreSpi.engineGetAttributes(Objects.requireNonNull(alias));
+    }
+
+    /**
      * Returns the key associated with the given alias, using the given
      * password to recover it.  The key must have been associated with
      * the alias by a call to {@code setKeyEntry},

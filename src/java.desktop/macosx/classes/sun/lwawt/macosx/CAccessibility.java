@@ -627,8 +627,8 @@ class CAccessibility implements PropertyChangeListener {
         return invokeAndWait(new Callable<Accessible>() {
             public Accessible call() throws Exception {
                 Component c = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-                if (c == null || !(c instanceof Accessible)) return null;
-                return CAccessible.getCAccessible((Accessible)c);
+                if (!(c instanceof Accessible accessible)) return null;
+                return CAccessible.getCAccessible(accessible);
             }
         }, c);
     }

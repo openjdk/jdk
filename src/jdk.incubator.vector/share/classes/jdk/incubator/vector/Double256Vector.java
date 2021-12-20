@@ -722,9 +722,9 @@ final class Double256Vector extends DoubleVector {
         @ForceInline
         /*package-private*/
         static Double256Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Double256Mask.class, long.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Double256Mask.class, long.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Double256Mask  TRUE_MASK = new Double256Mask(true);
         private static final Double256Mask FALSE_MASK = new Double256Mask(false);

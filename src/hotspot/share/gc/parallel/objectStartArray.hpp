@@ -41,20 +41,21 @@ class ObjectStartArray : public CHeapObj<mtGC> {
  private:
   PSVirtualSpace  _virtual_space;
   MemRegion       _reserved_region;
+  // The committed (old-gen heap) virtual space this object-start-array covers.
   MemRegion       _covered_region;
   MemRegion       _blocks_region;
   jbyte*          _raw_base;
   jbyte*          _offset_base;
+
+  static uint _card_shift;
+  static uint _card_size;
+  static uint _card_size_in_words;
 
  public:
 
   enum BlockValueConstants {
     clean_block                  = -1
   };
-
-  static uint block_shift;
-  static uint block_size;
-  static uint block_size_in_words;
 
   // Maximum size an offset table entry can cover. This maximum is derived from that
   // we need an extra bit for possible offsets in the byte for backskip values, leaving 2^7 possible offsets.
@@ -64,13 +65,24 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   // Initialize block size based on card size
   static void initialize_block_size(uint card_shift);
 
+  static uint card_shift() {
+    return _card_shift;
+  }
+
+  static uint card_size() {
+    return _card_size;
+  }
+  static uint card_size_in_words() {
+    return _card_size_in_words;
+  }
+
  protected:
 
   // Mapping from address to object start array entry
   jbyte* block_for_addr(void* p) const {
     assert(_covered_region.contains(p),
            "out of bounds access to object start array");
-    jbyte* result = &_offset_base[uintptr_t(p) >> block_shift];
+    jbyte* result = &_offset_base[uintptr_t(p) >> _card_shift];
     assert(_blocks_region.contains(result),
            "out of bounds result in byte_for");
     return result;
@@ -81,7 +93,7 @@ class ObjectStartArray : public CHeapObj<mtGC> {
     assert(_blocks_region.contains(p),
            "out of bounds access to object start array");
     size_t delta = pointer_delta(p, _offset_base, sizeof(jbyte));
-    HeapWord* result = (HeapWord*) (delta << block_shift);
+    HeapWord* result = (HeapWord*) (delta << _card_shift);
     assert(_covered_region.contains(result),
            "out of bounds accessor from card marking array");
     return result;
@@ -104,7 +116,7 @@ class ObjectStartArray : public CHeapObj<mtGC> {
     }
 
     size_t delta = pointer_delta(p, _offset_base, sizeof(jbyte));
-    HeapWord* result = (HeapWord*) (delta << block_shift);
+    HeapWord* result = (HeapWord*) (delta << _card_shift);
     result += *p;
 
     assert(_covered_region.contains(result),

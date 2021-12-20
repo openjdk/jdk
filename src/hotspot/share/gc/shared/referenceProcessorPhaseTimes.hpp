@@ -85,6 +85,7 @@ public:
 
   void add_ref_cleared(ReferenceType ref_type, size_t count);
   void set_ref_discovered(ReferenceType ref_type, size_t count);
+  size_t ref_discovered(ReferenceType ref_type);
 
   void set_balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase, double time_ms);
 

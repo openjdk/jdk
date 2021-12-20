@@ -365,7 +365,8 @@ class ClassLoader: AllStatic {
   static int num_module_path_entries();
   static void  exit_with_path_failure(const char* error, const char* message);
   static char* skip_uri_protocol(char* source);
-  static void  record_result(JavaThread* current, InstanceKlass* ik, const ClassFileStream* stream);
+  static void  record_result(JavaThread* current, InstanceKlass* ik,
+                             const ClassFileStream* stream, bool redefined);
 #endif
 
   static char* lookup_vm_options();

@@ -371,7 +371,7 @@ protected:
 
   static const char* _features_names[];
 
-enum Extended_Family {
+  enum Extended_Family {
     // AMD
     CPU_FAMILY_AMD_11H       = 0x11,
     // ZX
@@ -911,6 +911,8 @@ public:
   static bool is_intel_skylake() { return is_intel_family_core() &&
                                           extended_cpu_model() == CPU_MODEL_SKYLAKE; }
 
+  static int avx3_threshold();
+
   static bool is_intel_tsc_synched_at_init()  {
     if (is_intel_family_core()) {
       uint32_t ext_model = extended_cpu_model();
@@ -1051,6 +1053,45 @@ public:
   // support functions for virtualization detection
  private:
   static void check_virtualizations();
+
+  static const char* cpu_family_description(void);
+  static const char* cpu_model_description(void);
+  static const char* cpu_brand(void);
+  static const char* cpu_brand_string(void);
+
+  static int cpu_type_description(char* const buf, size_t buf_len);
+  static int cpu_detailed_description(char* const buf, size_t buf_len);
+  static int cpu_extended_brand_string(char* const buf, size_t buf_len);
+
+  static bool cpu_is_em64t(void);
+  static bool is_netburst(void);
+
+  // Returns bytes written excluding termninating null byte.
+  static size_t cpu_write_support_string(char* const buf, size_t buf_len);
+  static void resolve_cpu_information_details(void);
+  static int64_t max_qualified_cpu_freq_from_brand_string(void);
+
+ public:
+  // Offsets for cpuid asm stub brand string
+  static ByteSize proc_name_0_offset() { return byte_offset_of(CpuidInfo, proc_name_0); }
+  static ByteSize proc_name_1_offset() { return byte_offset_of(CpuidInfo, proc_name_1); }
+  static ByteSize proc_name_2_offset() { return byte_offset_of(CpuidInfo, proc_name_2); }
+  static ByteSize proc_name_3_offset() { return byte_offset_of(CpuidInfo, proc_name_3); }
+  static ByteSize proc_name_4_offset() { return byte_offset_of(CpuidInfo, proc_name_4); }
+  static ByteSize proc_name_5_offset() { return byte_offset_of(CpuidInfo, proc_name_5); }
+  static ByteSize proc_name_6_offset() { return byte_offset_of(CpuidInfo, proc_name_6); }
+  static ByteSize proc_name_7_offset() { return byte_offset_of(CpuidInfo, proc_name_7); }
+  static ByteSize proc_name_8_offset() { return byte_offset_of(CpuidInfo, proc_name_8); }
+  static ByteSize proc_name_9_offset() { return byte_offset_of(CpuidInfo, proc_name_9); }
+  static ByteSize proc_name_10_offset() { return byte_offset_of(CpuidInfo, proc_name_10); }
+  static ByteSize proc_name_11_offset() { return byte_offset_of(CpuidInfo, proc_name_11); }
+
+  static int64_t maximum_qualified_cpu_frequency(void);
+
+  static bool supports_tscinv_ext(void);
+
+  static void initialize_tsc();
+  static void initialize_cpu_information(void);
 };
 
 #endif // CPU_X86_VM_VERSION_X86_HPP

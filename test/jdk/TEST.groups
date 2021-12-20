@@ -74,7 +74,9 @@ tier3 = \
     :build \
     :jdk_vector \
     :jdk_rmi \
-    :jdk_jfr_tier3
+    :jdk_svc \
+   -:jdk_svc_sanity \
+   -:svc_tools
 
 # Everything not in other tiers
 tier4 = \
@@ -283,9 +285,6 @@ jdk_tools = \
 jdk_jfr = \
     jdk/jfr
 
-jdk_jfr_tier3 = \
-    jdk/jfr/event/metadata/TestLookForUntestedEvents.java
-
 #
 # Catch-all for other areas with a small number of tests
 #
@@ -386,16 +385,33 @@ jdk_editpad = \
      jdk/editpad
 
 jdk_desktop = \
-    :jdk_awt \
-    :jdk_2d \
-    :jdk_beans \
+    :jdk_desktop_part1 \
+    :jdk_desktop_part2 \
+    :jdk_desktop_part3
+
+jdk_desktop_part1 = \
+    :jdk_client_sanity \
     :jdk_swing \
+    :jdk_2d \
     :jdk_sound \
     :jdk_imageio \
-    :jdk_accessibility \
+    :jdk_editpad \
     :jfc_demo \
-    :jdk_client_sanity \
-    :jdk_editpad
+    :jdk_accessibility \
+    :jdk_beans
+
+jdk_desktop_part2 = \
+    :jdk_awt \
+    -java/awt/Component \
+    -java/awt/Modal \
+    -java/awt/datatransfer \
+    -java/awt/Window
+
+jdk_desktop_part3 = \
+    java/awt/Component \
+    java/awt/Modal \
+    java/awt/datatransfer \
+    java/awt/Window
 
 # SwingSet3 tests.
 jdk_client_sanity = \
@@ -518,7 +534,23 @@ needs_g1gc = \
   jdk/jfr/event/gc/objectcount/TestObjectCountAfterGCEventWithG1FullCollection.java \
   jdk/jfr/event/gc/objectcount/TestObjectCountAfterGCEventWithG1ConcurrentMark.java \
   jdk/jfr/event/gc/heapsummary/TestHeapSummaryEventG1.java
-  
+
+#  This set of tests will be executed in an ipv6 only environment
+
+jdk_ipv6_only = \
+    :jdk_net \
+    :jdk_nio_networkchannel
+
+jdk_nio_networkchannel = \
+    java/nio/channels/AsyncCloseAndInterrupt.java \
+    java/nio/channels/AsynchronousServerSocketChannel \
+    java/nio/channels/AsynchronousSocketChannel \
+    java/nio/channels/DatagramChannel \
+    java/nio/channels/ServerSocketChannel \
+    java/nio/channels/SocketChannel \
+    java/nio/channels/Selector \
+    java/nio/channels/etc
+
 jdk_core_manual = \
     :jdk_core_manual_no_input \
     :jdk_core_manual_no_input_security \
@@ -567,3 +599,8 @@ jdk_core_manual_requires_human_input = \
     java/util/TimeZone/DefaultTimeZoneTest.java
 
 
+# Test sets for running inside container environment
+jdk_containers_extended = \
+    :jdk_io \
+    :jdk_nio \
+    :jdk_svc
