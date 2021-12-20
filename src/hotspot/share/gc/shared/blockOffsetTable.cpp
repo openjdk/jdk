@@ -33,16 +33,16 @@
 #include "runtime/java.hpp"
 #include "services/memTracker.hpp"
 
-uint BOTConstants::LogN = 0;
-uint BOTConstants::LogN_words = 0;
-uint BOTConstants::N_bytes = 0;
-uint BOTConstants::N_words = 0;
+uint BOTConstants::_log_card_size = 0;
+uint BOTConstants::_log_card_size_in_words = 0;
+uint BOTConstants::_card_size = 0;
+uint BOTConstants::_card_size_in_words = 0;
 
 void BOTConstants::initialize_bot_size(uint card_shift) {
-  LogN =  card_shift;
-  LogN_words = LogN - LogHeapWordSize;
-  N_bytes = 1 << LogN;
-  N_words = 1 << LogN_words;
+  _log_card_size =  card_shift;
+  _log_card_size_in_words = _log_card_size - LogHeapWordSize;
+  _card_size = 1 << _log_card_size;
+  _card_size_in_words = 1 << _log_card_size_in_words;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -99,7 +99,7 @@ void BlockOffsetSharedArray::resize(size_t new_word_size) {
 bool BlockOffsetSharedArray::is_card_boundary(HeapWord* p) const {
   assert(p >= _reserved.start(), "just checking");
   size_t delta = pointer_delta(p, _reserved.start());
-  return (delta & right_n_bits((int)BOTConstants::LogN_words)) == (size_t)NoBits;
+  return (delta & right_n_bits((int)BOTConstants::log_card_size_in_words())) == (size_t)NoBits;
 }
 
 
@@ -116,7 +116,7 @@ BlockOffsetArray::BlockOffsetArray(BlockOffsetSharedArray* array,
   set_init_to_zero(init_to_zero_);
   if (!init_to_zero_) {
     // initialize cards to point back to mr.start()
-    set_remainder_to_point_to_start(mr.start() + BOTConstants::N_words, mr.end());
+    set_remainder_to_point_to_start(mr.start() + BOTConstants::card_size_in_words(), mr.end());
     _array->set_offset_array(0, 0);  // set first card to 0
   }
 }
@@ -172,7 +172,7 @@ set_remainder_to_point_to_start(HeapWord* start, HeapWord* end, bool reducing) {
   size_t start_card = _array->index_for(start);
   size_t end_card = _array->index_for(end-1);
   assert(start ==_array->address_for_index(start_card), "Precondition");
-  assert(end ==_array->address_for_index(end_card)+BOTConstants::N_words, "Precondition");
+  assert(end ==_array->address_for_index(end_card)+BOTConstants::card_size_in_words(), "Precondition");
   set_remainder_to_point_to_start_incl(start_card, end_card, reducing); // closed interval
 }
 
@@ -188,7 +188,7 @@ BlockOffsetArray::set_remainder_to_point_to_start_incl(size_t start_card, size_t
     return;
   }
   assert(start_card > _array->index_for(_bottom), "Cannot be first card");
-  assert(_array->offset_array(start_card-1) <= BOTConstants::N_words,
+  assert(_array->offset_array(start_card-1) <= BOTConstants::card_size_in_words(),
     "Offset card has an unexpected value");
   size_t start_card_for_region = start_card;
   u_char offset = max_jubyte;
@@ -197,7 +197,7 @@ BlockOffsetArray::set_remainder_to_point_to_start_incl(size_t start_card, size_t
     // so that the reach ends in this region and not at the start
     // of the next.
     size_t reach = start_card - 1 + (BOTConstants::power_to_cards_back(i+1) - 1);
-    offset = BOTConstants::N_words + i;
+    offset = BOTConstants::card_size_in_words() + i;
     if (reach >= end_card) {
       _array->set_offset_array(start_card_for_region, end_card, offset, reducing);
       start_card_for_region = reach + 1;
@@ -218,13 +218,13 @@ void BlockOffsetArray::check_all_cards(size_t start_card, size_t end_card) const
   if (end_card < start_card) {
     return;
   }
-  guarantee(_array->offset_array(start_card) == BOTConstants::N_words, "Wrong value in second card");
-  u_char last_entry = BOTConstants::N_words;
+  guarantee(_array->offset_array(start_card) == BOTConstants::card_size_in_words(), "Wrong value in second card");
+  u_char last_entry = BOTConstants::card_size_in_words();
   for (size_t c = start_card + 1; c <= end_card; c++ /* yeah! */) {
     u_char entry = _array->offset_array(c);
     guarantee(entry >= last_entry, "Monotonicity");
     if (c - start_card > BOTConstants::power_to_cards_back(1)) {
-      guarantee(entry > BOTConstants::N_words, "Should be in logarithmic region");
+      guarantee(entry > BOTConstants::card_size_in_words(), "Should be in logarithmic region");
     }
     size_t backskip = BOTConstants::entry_to_cards_back(entry);
     size_t landing_card = c - backskip;
@@ -234,7 +234,7 @@ void BlockOffsetArray::check_all_cards(size_t start_card, size_t end_card) const
     } else {
       guarantee(landing_card == (start_card - 1), "Tautology");
       // Note that N_words is the maximum offset value
-      guarantee(_array->offset_array(landing_card) <= BOTConstants::N_words, "Offset value");
+      guarantee(_array->offset_array(landing_card) <= BOTConstants::card_size_in_words(), "Offset value");
     }
     last_entry = entry;  // remember for monotonicity test
   }
@@ -266,7 +266,7 @@ BlockOffsetArray::do_block_internal(HeapWord* blk_start,
   uintptr_t start_ui = (uintptr_t)blk_start;
   // Calculate the last card boundary preceding end of blk
   intptr_t boundary_before_end = (intptr_t)end_ui;
-  clear_bits(boundary_before_end, right_n_bits((int)BOTConstants::LogN));
+  clear_bits(boundary_before_end, right_n_bits((int)BOTConstants::log_card_size()));
   if (start_ui <= (uintptr_t)boundary_before_end) {
     // blk starts at or crosses a boundary
     // Calculate index of card on which blk begins
@@ -279,7 +279,7 @@ BlockOffsetArray::do_block_internal(HeapWord* blk_start,
     if (blk_start != boundary) {
       // blk starts strictly after boundary
       // adjust card boundary and start_index forward to next card
-      boundary += BOTConstants::N_words;
+      boundary += BOTConstants::card_size_in_words();
       start_index++;
     }
     assert(start_index <= end_index, "monotonicity of index_for()");
@@ -296,8 +296,8 @@ BlockOffsetArray::do_block_internal(HeapWord* blk_start,
         // We have finished marking the "offset card". We need to now
         // mark the subsequent cards that this blk spans.
         if (start_index < end_index) {
-          HeapWord* rem_st = _array->address_for_index(start_index) + BOTConstants::N_words;
-          HeapWord* rem_end = _array->address_for_index(end_index) + BOTConstants::N_words;
+          HeapWord* rem_st = _array->address_for_index(start_index) + BOTConstants::card_size_in_words();
+          HeapWord* rem_end = _array->address_for_index(end_index) + BOTConstants::card_size_in_words();
           set_remainder_to_point_to_start(rem_st, rem_end, reducing);
         }
         break;
@@ -380,22 +380,22 @@ HeapWord* BlockOffsetArrayContigSpace::block_start_unsafe(const void* addr) cons
   HeapWord* q = _array->address_for_index(index);
 
   uint offset = _array->offset_array(index);    // Extend u_char to uint.
-  while (offset > BOTConstants::N_words) {
+  while (offset > BOTConstants::card_size_in_words()) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.
     size_t n_cards_back = BOTConstants::entry_to_cards_back(offset);
-    q -= (BOTConstants::N_words * n_cards_back);
+    q -= (BOTConstants::card_size_in_words() * n_cards_back);
     assert(q >= _sp->bottom(), "Went below bottom!");
     index -= n_cards_back;
     offset = _array->offset_array(index);
   }
-  while (offset == BOTConstants::N_words) {
+  while (offset == BOTConstants::card_size_in_words()) {
     assert(q >= _sp->bottom(), "Went below bottom!");
-    q -= BOTConstants::N_words;
+    q -= BOTConstants::card_size_in_words();
     index--;
     offset = _array->offset_array(index);
   }
-  assert(offset < BOTConstants::N_words, "offset too large");
+  assert(offset < BOTConstants::card_size_in_words(), "offset too large");
   q -= offset;
   HeapWord* n = q;
 
@@ -428,14 +428,14 @@ void BlockOffsetArrayContigSpace::alloc_block_work(HeapWord* blk_start,
          "should be past threshold");
   assert(blk_start <= _next_offset_threshold,
          "blk_start should be at or before threshold");
-  assert(pointer_delta(_next_offset_threshold, blk_start) <= BOTConstants::N_words,
+  assert(pointer_delta(_next_offset_threshold, blk_start) <= BOTConstants::card_size_in_words(),
          "offset should be <= BlockOffsetSharedArray::N");
   assert(_sp->is_in_reserved(blk_start),
          "reference must be into the space");
   assert(_sp->is_in_reserved(blk_end-1),
          "limit must be within the space");
   assert(_next_offset_threshold ==
-         _array->_reserved.start() + _next_offset_index*BOTConstants::N_words,
+         _array->_reserved.start() + _next_offset_index*BOTConstants::card_size_in_words(),
          "index must agree with threshold");
 
   debug_only(size_t orig_next_offset_index = _next_offset_index;)
@@ -457,7 +457,7 @@ void BlockOffsetArrayContigSpace::alloc_block_work(HeapWord* blk_start,
     HeapWord* rem_st  = _array->address_for_index(_next_offset_index + 1);
     // Calculate rem_end this way because end_index
     // may be the last valid index in the covered region.
-    HeapWord* rem_end = _array->address_for_index(end_index) +  BOTConstants::N_words;
+    HeapWord* rem_end = _array->address_for_index(end_index) +  BOTConstants::card_size_in_words();
     set_remainder_to_point_to_start(rem_st, rem_end);
   }
 
@@ -465,7 +465,7 @@ void BlockOffsetArrayContigSpace::alloc_block_work(HeapWord* blk_start,
   _next_offset_index = end_index + 1;
   // Calculate _next_offset_threshold this way because end_index
   // may be the last valid index in the covered region.
-  _next_offset_threshold = _array->address_for_index(end_index) + BOTConstants::N_words;
+  _next_offset_threshold = _array->address_for_index(end_index) + BOTConstants::card_size_in_words();
   assert(_next_offset_threshold >= blk_end, "Incorrect offset threshold");
 
 #ifdef ASSERT
@@ -476,11 +476,11 @@ void BlockOffsetArrayContigSpace::alloc_block_work(HeapWord* blk_start,
   assert((_array->offset_array(orig_next_offset_index) == 0 &&
           blk_start == boundary) ||
           (_array->offset_array(orig_next_offset_index) > 0 &&
-         _array->offset_array(orig_next_offset_index) <= BOTConstants::N_words),
+         _array->offset_array(orig_next_offset_index) <= BOTConstants::card_size_in_words()),
          "offset array should have been set");
   for (size_t j = orig_next_offset_index + 1; j <= end_index; j++) {
     assert(_array->offset_array(j) > 0 &&
-           _array->offset_array(j) <= (u_char) (BOTConstants::N_words+BOTConstants::N_powers-1),
+           _array->offset_array(j) <= (u_char) (BOTConstants::card_size_in_words()+BOTConstants::N_powers-1),
            "offset array should have been set");
   }
 #endif

@@ -713,10 +713,10 @@
     __ stxpw(r6, zr, zr, sp);                          //       stxp    w6, wzr, wzr, [sp]
     __ dup(v0, __ T16B, zr);                           //       dup     v0.16b, wzr
     __ dup(v0, __ S, v1);                              //       dup     s0, v1.s[0]
-    __ mov(v1, __ T1D, 0, zr);                         //       mov     v1.d[0], xzr
-    __ mov(v1, __ T2S, 1, zr);                         //       mov     v1.s[1], wzr
-    __ mov(v1, __ T4H, 2, zr);                         //       mov     v1.h[2], wzr
-    __ mov(v1, __ T8B, 3, zr);                         //       mov     v1.b[3], wzr
+    __ mov(v1, __ D, 0, zr);                           //       mov     v1.d[0], xzr
+    __ mov(v1, __ S, 1, zr);                           //       mov     v1.s[1], wzr
+    __ mov(v1, __ H, 2, zr);                           //       mov     v1.h[2], wzr
+    __ mov(v1, __ B, 3, zr);                           //       mov     v1.b[3], wzr
     __ smov(r0, v1, __ S, 0);                          //       smov    x0, v1.s[0]
     __ smov(r0, v1, __ H, 1);                          //       smov    x0, v1.h[1]
     __ smov(r0, v1, __ B, 2);                          //       smov    x0, v1.b[2]

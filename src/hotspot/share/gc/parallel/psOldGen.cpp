@@ -50,10 +50,6 @@ void PSOldGen::initialize(ReservedSpace rs, size_t initial_size, size_t alignmen
   initialize_virtual_space(rs, initial_size, alignment);
   initialize_work(perf_data_name, level);
 
-  // The old gen can grow to max_gen_size().  _reserve reflects only
-  // the current maximum that can be committed.
-  assert(_reserved.byte_size() <= max_gen_size(), "Consistency check");
-
   initialize_performance_counters(perf_data_name, level);
 }
 
@@ -69,66 +65,51 @@ void PSOldGen::initialize_virtual_space(ReservedSpace rs,
 }
 
 void PSOldGen::initialize_work(const char* perf_data_name, int level) {
-  //
-  // Basic memory initialization
-  //
+  MemRegion const reserved_mr = reserved();
+  assert(reserved_mr.byte_size() == max_gen_size(), "invariant");
 
-  MemRegion limit_reserved((HeapWord*)virtual_space()->low_boundary(),
-                           heap_word_size(max_gen_size()));
-  assert(limit_reserved.byte_size() == max_gen_size(),
-    "word vs bytes confusion");
-  //
-  // Object start stuff
-  //
+  // Object start stuff: for all reserved memory
+  start_array()->initialize(reserved_mr);
 
-  start_array()->initialize(limit_reserved);
+  // Card table stuff: for all committed memory
+  MemRegion committed_mr((HeapWord*)virtual_space()->low(),
+                         (HeapWord*)virtual_space()->high());
 
-  _reserved = MemRegion((HeapWord*)virtual_space()->low_boundary(),
-                        (HeapWord*)virtual_space()->high_boundary());
-
-  //
-  // Card table stuff
-  //
-
-  MemRegion cmr((HeapWord*)virtual_space()->low(),
-                (HeapWord*)virtual_space()->high());
   if (ZapUnusedHeapArea) {
     // Mangle newly committed space immediately rather than
     // waiting for the initialization of the space even though
     // mangling is related to spaces.  Doing it here eliminates
     // the need to carry along information that a complete mangling
     // (bottom to end) needs to be done.
-    SpaceMangler::mangle_region(cmr);
+    SpaceMangler::mangle_region(committed_mr);
   }
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSCardTable* ct = heap->card_table();
-  ct->resize_covered_region(cmr);
+  ct->resize_covered_region(committed_mr);
 
   // Verify that the start and end of this generation is the start of a card.
   // If this wasn't true, a single card could span more than one generation,
   // which would cause problems when we commit/uncommit memory, and when we
   // clear and dirty cards.
-  guarantee(ct->is_card_aligned(_reserved.start()), "generation must be card aligned");
-  if (_reserved.end() != heap->reserved_region().end()) {
-    // Don't check at the very end of the heap as we'll assert that we're probing off
-    // the end if we try.
-    guarantee(ct->is_card_aligned(_reserved.end()), "generation must be card aligned");
-  }
+  guarantee(ct->is_card_aligned(reserved_mr.start()), "generation must be card aligned");
+  // Check the heap layout documented at `class ParallelScavengeHeap`.
+  assert(reserved_mr.end() != heap->reserved_region().end(), "invariant");
+  guarantee(ct->is_card_aligned(reserved_mr.end()), "generation must be card aligned");
 
   //
   // ObjectSpace stuff
   //
 
   _object_space = new MutableSpace(virtual_space()->alignment());
-  object_space()->initialize(cmr,
+  object_space()->initialize(committed_mr,
                              SpaceDecorator::Clear,
                              SpaceDecorator::Mangle,
                              MutableSpace::SetupPages,
                              &ParallelScavengeHeap::heap()->workers());
 
   // Update the start_array
-  start_array()->set_covered_region(cmr);
+  start_array()->set_covered_region(committed_mr);
 }
 
 void PSOldGen::initialize_performance_counters(const char* perf_data_name, int level) {
@@ -152,7 +133,7 @@ size_t PSOldGen::num_iterable_blocks() const {
 
 void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   size_t block_word_size = IterateBlockSize / HeapWordSize;
-  assert((block_word_size % (ObjectStartArray::block_size)) == 0,
+  assert((block_word_size % (ObjectStartArray::card_size())) == 0,
          "Block size not a multiple of start_array block");
 
   MutableSpace *space = object_space();
@@ -314,7 +295,6 @@ void PSOldGen::resize(size_t desired_free_space) {
   // Adjust according to our min and max
   new_size = clamp(new_size, min_gen_size(), max_gen_size());
 
-  assert(max_gen_size() >= reserved().byte_size(), "max new size problem?");
   new_size = align_up(new_size, alignment);
 
   const size_t current_size = capacity_in_bytes();
@@ -400,12 +380,11 @@ void PSOldGen::verify() {
 }
 
 class VerifyObjectStartArrayClosure : public ObjectClosure {
-  PSOldGen* _old_gen;
   ObjectStartArray* _start_array;
 
  public:
-  VerifyObjectStartArrayClosure(PSOldGen* old_gen, ObjectStartArray* start_array) :
-    _old_gen(old_gen), _start_array(start_array) { }
+  VerifyObjectStartArrayClosure(ObjectStartArray* start_array) :
+    _start_array(start_array) { }
 
   virtual void do_object(oop obj) {
     HeapWord* test_addr = cast_from_oop<HeapWord*>(obj) + 1;
@@ -415,7 +394,7 @@ class VerifyObjectStartArrayClosure : public ObjectClosure {
 };
 
 void PSOldGen::verify_object_start_array() {
-  VerifyObjectStartArrayClosure check( this, &_start_array );
+  VerifyObjectStartArrayClosure check(&_start_array);
   object_iterate(&check);
 }
 

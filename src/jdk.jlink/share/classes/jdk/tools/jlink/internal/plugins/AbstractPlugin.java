@@ -26,10 +26,16 @@
 package jdk.tools.jlink.internal.plugins;
 
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.internal.JlinkTask;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import jdk.internal.org.objectweb.asm.ClassReader;
 
 public abstract class AbstractPlugin implements Plugin {
 
@@ -61,6 +67,35 @@ public abstract class AbstractPlugin implements Plugin {
         this.name = name;
         this.pluginsBundle = bundle;
     }
+
+    private void dumpClassFile(String path, byte[] buf) {
+        try {
+            String fullPath = String.format("%d-%s%s%s",
+                 ProcessHandle.current().pid(),
+                 getName(), File.separator,
+                 path.replace('/', File.separatorChar));
+            System.err.printf("Dumping class file %s\n", fullPath);
+            new File(fullPath.substring(0, fullPath.lastIndexOf('/'))).mkdirs();
+            Files.write(Paths.get(fullPath), buf);
+        } catch (IOException ioExp) {
+            System.err.println("writing " + path + " failed");
+            ioExp.printStackTrace();
+        }
+    }
+
+    protected ClassReader newClassReader(String path, byte[] buf) {
+        try {
+            return new ClassReader(buf);
+        } catch (IllegalArgumentException iae) {
+            if (JlinkTask.DEBUG) {
+                System.err.printf("Failed to parse class file: %s\n", path);
+                iae.printStackTrace();
+                dumpClassFile(path, buf);
+            }
+            throw iae;
+        }
+    }
+
     @Override
     public String getName() {
         return name;

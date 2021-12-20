@@ -569,10 +569,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
                 if (cycleRoot != null) {
                     FocusTraversalPolicy policy =
                         cycleRoot.getFocusTraversalPolicy();
-                    if (policy != null && policy instanceof
-                            SortingFocusTraversalPolicy) {
-                        SortingFocusTraversalPolicy sPolicy =
-                            (SortingFocusTraversalPolicy)policy;
+                    if (policy instanceof SortingFocusTraversalPolicy sPolicy) {
                         boolean idc = sPolicy.getImplicitDownCycleTraversal();
                         try {
                             sPolicy.setImplicitDownCycleTraversal(false);

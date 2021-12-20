@@ -40,7 +40,6 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.SymbolLookup;
@@ -127,7 +126,7 @@ public class TestIntrinsics extends NativeTestHelper {
             for (int i = 0; i < args.length; i++) {
                 NativeSymbol ma = LOOKUP.lookup("invoke_high_arity" + i).get();
                 MethodType mt = baseMT.changeReturnType(baseMT.parameterType(i));
-                FunctionDescriptor fd = baseFD.withReturnLayout(baseFD.argumentLayouts().get(i));
+                FunctionDescriptor fd = baseFD.changeReturnLayout(baseFD.argumentLayouts().get(i));
                 Object expected = args[i];
                 tests.add(abi.downcallHandle(ma, fd), expected, args);
             }
