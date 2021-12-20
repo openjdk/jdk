@@ -124,8 +124,8 @@ import java.util.Set;
         // close the original socket impl and release its descriptor
         close();
 
-        // update the Sockets impl to the impl from the http Socket
-        SocketImpl si = httpSocket.impl;
+        // Change Socket to use httpSocket's SocketImpl
+        SocketImpl si = httpSocket.impl();
         socket.setImpl(si);
 
         // best effort is made to try and reset options previously set

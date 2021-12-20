@@ -211,7 +211,7 @@ public abstract class SocketImpl implements SocketOptions {
      * @since 1.3
      */
     protected void shutdownInput() throws IOException {
-      throw new IOException("Method not implemented!");
+        throw new IOException("Method not implemented!");
     }
 
     /**
@@ -231,7 +231,7 @@ public abstract class SocketImpl implements SocketOptions {
      * @since 1.3
      */
     protected void shutdownOutput() throws IOException {
-      throw new IOException("Method not implemented!");
+        throw new IOException("Method not implemented!");
     }
 
     /**

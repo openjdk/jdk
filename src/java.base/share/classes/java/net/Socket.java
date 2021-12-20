@@ -96,31 +96,11 @@ import java.util.Collections;
  * @since   1.0
  */
 public class Socket implements java.io.Closeable {
-    /**
-     * Various states of this socket.
-     */
-    private boolean created = false;
-    private boolean bound = false;
-    private boolean connected = false;
-    private boolean closed = false;
-    private Object closeLock = new Object();
-    private boolean shutIn = false;
-    private boolean shutOut = false;
-
-    /**
-     * The implementation of this Socket.
-     */
-    SocketImpl impl;
-
-    /**
-     * Socket input/output streams
-     */
-    private volatile InputStream in;
-    private volatile OutputStream out;
-    private static final VarHandle IN, OUT;
+    private static final VarHandle STATE, IN, OUT;
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
+            STATE = l.findVarHandle(Socket.class, "state", int.class);
             IN = l.findVarHandle(Socket.class, "in", InputStream.class);
             OUT = l.findVarHandle(Socket.class, "out", OutputStream.class);
         } catch (Exception e) {
@@ -128,6 +108,54 @@ public class Socket implements java.io.Closeable {
         }
     }
 
+    // the underlying SocketImpl, may be null, may be swapped when connecting
+    private volatile SocketImpl impl;
+
+    // state bits
+    private static final int SOCKET_CREATED = 1 << 0;   // impl.create(boolean) called
+    private static final int BOUND          = 1 << 1;
+    private static final int CONNECTED      = 1 << 2;
+    private static final int CLOSED         = 1 << 3;
+    private static final int SHUT_IN        = 1 << 9;
+    private static final int SHUT_OUT       = 1 << 10;
+    private volatile int state;
+
+    // used to coordinate creating and closing underlying socket
+    private final Object socketLock = new Object();
+
+    // input/output streams
+    private volatile InputStream in;
+    private volatile OutputStream out;
+
+    /**
+     * Atomically sets state to the result of a bitwise OR of the current value
+     * and the given mask.
+     * @return the previous state value
+     */
+    private int getAndBitwiseOrState(int mask) {
+        return (int) STATE.getAndBitwiseOr(this, mask);
+    }
+
+    private static boolean isBound(int s) {
+        return (s & BOUND) != 0;
+    }
+
+    private static boolean isConnected(int s) {
+        return (s & CONNECTED) != 0;
+    }
+
+    private static boolean isClosed(int s) {
+        return (s & CLOSED) != 0;
+    }
+
+    private static boolean isInputShutdown(int s) {
+        return (s & SHUT_IN) != 0;
+    }
+
+    private static boolean isOutputShutdown(int s) {
+        return (s & SHUT_OUT) != 0;
+    }
+    
     /**
      * Creates an unconnected Socket.
      * <p>
@@ -140,7 +168,7 @@ public class Socket implements java.io.Closeable {
      * @revised 1.4
      */
     public Socket() {
-        setImpl();
+        this.impl = newSocketImpl();
     }
 
     /**
@@ -230,18 +258,22 @@ public class Socket implements java.io.Closeable {
      * @since   1.1
      */
     protected Socket(SocketImpl impl) throws SocketException {
-        checkPermission(impl);
-        this.impl = impl;
+        this(checkPermission(impl), impl);
+    }
+
+    private Socket(Void unused, SocketImpl impl) {
+        if (impl != null) {
+            this.impl = impl;
+        }
     }
 
     private static Void checkPermission(SocketImpl impl) {
-        if (impl == null) {
-            return null;
-        }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SecurityConstants.SET_SOCKETIMPL_PERMISSION);
+        if (impl != null) {
+            @SuppressWarnings("removal")
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(SecurityConstants.SET_SOCKETIMPL_PERMISSION);
+            }
         }
         return null;
     }
@@ -492,16 +524,27 @@ public class Socket implements java.io.Closeable {
              new InetSocketAddress(0), stream);
     }
 
-    private Socket(SocketAddress address, SocketAddress localAddr,
-                   boolean stream) throws IOException {
-        setImpl();
+    /**
+     * Initialize a new Socket that is connected to the given remote address.
+     * The socket is optionally bound to a local address before connecting.
+     *
+     * @param address the remote address to connect to
+     * @param localAddr the local address to bind to, can be null
+     * @param stream true for a stream socket, false for a datagram socket
+     */
+    private Socket(SocketAddress address, SocketAddress localAddr, boolean stream)
+        throws IOException
+    {
+        Objects.requireNonNull(address);
 
-        // backward compatibility
-        if (address == null)
-            throw new NullPointerException();
+        // create the SocketImpl and the underlying socket
+        SocketImpl impl = newSocketImpl();
+        impl.create(stream);
+
+        this.impl = impl;
+        this.state = SOCKET_CREATED;
 
         try {
-            createImpl(stream);
             if (localAddr != null)
                 bind(localAddr);
             connect(address);
@@ -516,55 +559,91 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Creates the socket implementation.
-     *
-     * @param stream a {@code boolean} value : {@code true} for a TCP socket,
-     *               {@code false} for UDP.
-     * @throws SocketException if creation fails
-     * @since 1.4
+     * Create a SocketImpl for a connecting/client socket.
      */
-     void createImpl(boolean stream) throws SocketException {
-        if (impl == null)
-            setImpl();
-        try {
-            impl.create(stream);
-            created = true;
-        } catch (IOException e) {
-            throw new SocketException(e.getMessage());
-        }
-    }
-
-    void setImpl(SocketImpl si) {
-         impl = si;
-    }
-
-    /**
-     * Sets impl to the system-default type of SocketImpl.
-     * @since 1.4
-     */
-    void setImpl() {
+    private static SocketImpl newSocketImpl() {
         SocketImplFactory factory = Socket.factory;
         if (factory != null) {
-            impl = factory.createSocketImpl();
+            return factory.createSocketImpl();
         } else {
             // create a SOCKS SocketImpl that delegates to a platform SocketImpl
             SocketImpl delegate = SocketImpl.createPlatformSocketImpl(false);
-            impl = new SocksSocketImpl(delegate);
+            return new SocksSocketImpl(delegate);
         }
     }
 
     /**
-     * Get the {@code SocketImpl} attached to this socket, creating
-     * it if necessary.
-     *
-     * @return  the {@code SocketImpl} attached to that ServerSocket.
-     * @throws SocketException if creation fails
-     * @since 1.4
+     * Returns the {@code SocketImpl} for this Socket, creating it, and the
+     * underlying socket, if required.
+     * @throws SocketException if creating the underlying socket fails
      */
-    SocketImpl getImpl() throws SocketException {
-        if (!created)
-            createImpl(true);
+    private SocketImpl getImpl() throws SocketException {
+        if ((state & SOCKET_CREATED) == 0) {
+            synchronized (socketLock) {
+                int s = state;   // re-read state
+                if ((s & SOCKET_CREATED) == 0) {
+                    if (isClosed(s)) {
+                        throw new SocketException("Socket is closed");
+                    }
+                    SocketImpl impl = this.impl;
+                    if (impl == null) {
+                        this.impl = impl = newSocketImpl();
+                    }
+                    try {
+                        impl.create(true);
+                    } catch (SocketException e) {
+                        throw e;
+                    } catch (IOException e) {
+                        throw new SocketException(e.getMessage());
+                    }
+                    getAndBitwiseOrState(SOCKET_CREATED);
+                }
+            }
+        }
         return impl;
+    }
+
+    /**
+     * Returns the SocketImpl, may be null.
+     */
+    SocketImpl impl() {
+        return impl;
+    }
+
+    /**
+     * Sets the SocketImpl that is connected to a peer. If the Socket has
+     * an existing SocketImpl then it closed.
+     * @throws SocketException if the Socket is closed
+     * @apiNote For ServerSocket use when accepting connections
+     */
+    void setConnectedImpl(SocketImpl si) throws SocketException {
+        synchronized (socketLock) {
+            if ((state & CLOSED) != 0) {
+                throw new SocketException("Socket is closed");
+            }
+            SocketImpl previous = impl;
+            impl = si;
+            state = (SOCKET_CREATED | BOUND | CONNECTED);
+            if (previous != null) {
+                previous.closeQuietly();
+            }
+        }
+    }
+
+    /**
+     * Sets the SocketImpl.
+     * @apiNote For ServerSocket use when accepting connections with a custom SocketImpl
+     */
+    void setImpl(SocketImpl si) {
+        impl = si;
+    }
+
+    /**
+     * Sets to Socket state for a newly accepted connection.
+     * @apiNote For ServerSocket use when accepting connections with a custom SocketImpl
+     */
+    void setConnected() {
+        getAndBitwiseOrState(SOCKET_CREATED | BOUND | CONNECTED);
     }
 
     /**
@@ -605,18 +684,18 @@ public class Socket implements java.io.Closeable {
             throw new IllegalArgumentException("connect: The address can't be null");
 
         if (timeout < 0)
-          throw new IllegalArgumentException("connect: timeout can't be negative");
+            throw new IllegalArgumentException("connect: timeout can't be negative");
 
-        if (isClosed())
+        int s = state;
+        if (isClosed(s))
             throw new SocketException("Socket is closed");
-
-        if (isConnected())
+        if (isConnected(s))
             throw new SocketException("already connected");
 
         if (!(endpoint instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
 
-        InetAddress addr = epoint.getAddress ();
+        InetAddress addr = epoint.getAddress();
         int port = epoint.getPort();
         checkAddress(addr, "connect");
 
@@ -628,15 +707,11 @@ public class Socket implements java.io.Closeable {
             else
                 security.checkConnect(addr.getHostAddress(), port);
         }
-        if (!created)
-            createImpl(true);
-        impl.connect(epoint, timeout);
-        connected = true;
-        /*
-         * If the socket was not bound before the connect, it is now because
-         * the kernel will have picked an ephemeral port & a local address
-         */
-        bound = true;
+
+        getImpl().connect(epoint, timeout);
+
+        // connect will bind the socket if not previously bound
+        getAndBitwiseOrState(BOUND | CONNECTED);
     }
 
     /**
@@ -658,9 +733,10 @@ public class Socket implements java.io.Closeable {
      * @see #isBound
      */
     public void bind(SocketAddress bindpoint) throws IOException {
-        if (isClosed())
+        int s = state;
+        if (isClosed(s))
             throw new SocketException("Socket is closed");
-        if (isBound())
+        if (isBound(s))
             throw new SocketException("Already bound");
 
         if (bindpoint != null && (!(bindpoint instanceof InetSocketAddress)))
@@ -679,26 +755,17 @@ public class Socket implements java.io.Closeable {
         if (security != null) {
             security.checkListen(port);
         }
-        getImpl().bind (addr, port);
-        bound = true;
+        getImpl().bind(addr, port);
+        getAndBitwiseOrState(BOUND);
     }
 
-    private void checkAddress (InetAddress addr, String op) {
+    private void checkAddress(InetAddress addr, String op) {
         if (addr == null) {
             return;
         }
         if (!(addr instanceof Inet4Address || addr instanceof Inet6Address)) {
             throw new IllegalArgumentException(op + ": invalid address type");
         }
-    }
-
-    /**
-     * set the flags after an accept() call.
-     */
-    final void postAccept() {
-        connected = true;
-        created = true;
-        bound = true;
     }
 
     /**
@@ -923,11 +990,12 @@ public class Socket implements java.io.Closeable {
      * @revised 1.4
      */
     public InputStream getInputStream() throws IOException {
-        if (isClosed())
+        int s = state;
+        if (isClosed(s))
             throw new SocketException("Socket is closed");
-        if (!isConnected())
+        if (!isConnected(s))
             throw new SocketException("Socket is not connected");
-        if (isInputShutdown())
+        if (isInputShutdown(s))
             throw new SocketException("Socket input is shutdown");
         InputStream in = this.in;
         if (in == null) {
@@ -950,7 +1018,6 @@ public class Socket implements java.io.Closeable {
     private static class SocketInputStream extends InputStream {
         private final Socket parent;
         private final InputStream in;
-
         SocketInputStream(Socket parent, InputStream in) {
             this.parent = parent;
             this.in = in;
@@ -994,11 +1061,12 @@ public class Socket implements java.io.Closeable {
      * @revised 1.4
      */
     public OutputStream getOutputStream() throws IOException {
-        if (isClosed())
+        int s = state;
+        if (isClosed(s))
             throw new SocketException("Socket is closed");
-        if (!isConnected())
+        if (!isConnected(s))
             throw new SocketException("Socket is not connected");
-        if (isOutputShutdown())
+        if (isOutputShutdown(s))
             throw new SocketException("Socket output is shutdown");
         OutputStream out = this.out;
         if (out == null) {
@@ -1034,7 +1102,6 @@ public class Socket implements java.io.Closeable {
         public void write(byte[] b, int off, int len) throws IOException {
             out.write(b, off, len);
         }
-
         @Override
         public void close() throws IOException {
             parent.close();
@@ -1124,8 +1191,8 @@ public class Socket implements java.io.Closeable {
         if (isClosed())
             throw new SocketException("Socket is closed");
         Object o = getImpl().getOption(SocketOptions.SO_LINGER);
-        if (o instanceof Integer) {
-            return ((Integer) o).intValue();
+        if (o instanceof Integer i) {
+            return i.intValue();
         } else {
             return -1;
         }
@@ -1141,8 +1208,8 @@ public class Socket implements java.io.Closeable {
      *  sending the data.
      * @since 1.4
      */
-    public void sendUrgentData (int data) throws IOException  {
-        if (!getImpl().supportsUrgentData ()) {
+    public void sendUrgentData(int data) throws IOException  {
+        if (!getImpl().supportsUrgentData()) {
             throw new SocketException ("Urgent data not supported");
         }
         getImpl().sendUrgentData (data);
@@ -1213,12 +1280,11 @@ public class Socket implements java.io.Closeable {
      * @since   1.1
      * @see #getSoTimeout()
      */
-    public synchronized void setSoTimeout(int timeout) throws SocketException {
+    public void setSoTimeout(int timeout) throws SocketException {
         if (isClosed())
             throw new SocketException("Socket is closed");
         if (timeout < 0)
-          throw new IllegalArgumentException("timeout can't be negative");
-
+            throw new IllegalArgumentException("timeout can't be negative");
         getImpl().setOption(SocketOptions.SO_TIMEOUT, timeout);
     }
 
@@ -1233,13 +1299,13 @@ public class Socket implements java.io.Closeable {
      * @since   1.1
      * @see #setSoTimeout(int)
      */
-    public synchronized int getSoTimeout() throws SocketException {
+    public int getSoTimeout() throws SocketException {
         if (isClosed())
             throw new SocketException("Socket is closed");
         Object o = getImpl().getOption(SocketOptions.SO_TIMEOUT);
         /* extra type safety */
-        if (o instanceof Integer) {
-            return ((Integer) o).intValue();
+        if (o instanceof Integer i) {
+            return i.intValue();
         } else {
             return 0;
         }
@@ -1268,11 +1334,9 @@ public class Socket implements java.io.Closeable {
      * @see #getSendBufferSize()
      * @since 1.2
      */
-    public synchronized void setSendBufferSize(int size)
-    throws SocketException{
-        if (!(size > 0)) {
+    public void setSendBufferSize(int size) throws SocketException {
+        if (size <= 0)
             throw new IllegalArgumentException("negative send size");
-        }
         if (isClosed())
             throw new SocketException("Socket is closed");
         getImpl().setOption(SocketOptions.SO_SNDBUF, size);
@@ -1291,13 +1355,13 @@ public class Socket implements java.io.Closeable {
      * @see #setSendBufferSize(int)
      * @since 1.2
      */
-    public synchronized int getSendBufferSize() throws SocketException {
+    public int getSendBufferSize() throws SocketException {
         if (isClosed())
             throw new SocketException("Socket is closed");
         int result = 0;
         Object o = getImpl().getOption(SocketOptions.SO_SNDBUF);
-        if (o instanceof Integer) {
-            result = ((Integer)o).intValue();
+        if (o instanceof Integer i) {
+            result = i.intValue();
         }
         return result;
     }
@@ -1342,11 +1406,9 @@ public class Socket implements java.io.Closeable {
      * @see ServerSocket#setReceiveBufferSize(int)
      * @since 1.2
      */
-    public synchronized void setReceiveBufferSize(int size)
-    throws SocketException{
-        if (size <= 0) {
+    public void setReceiveBufferSize(int size) throws SocketException {
+        if (size <= 0)
             throw new IllegalArgumentException("invalid receive size");
-        }
         if (isClosed())
             throw new SocketException("Socket is closed");
         getImpl().setOption(SocketOptions.SO_RCVBUF, size);
@@ -1364,14 +1426,13 @@ public class Socket implements java.io.Closeable {
      * @see #setReceiveBufferSize(int)
      * @since 1.2
      */
-    public synchronized int getReceiveBufferSize()
-    throws SocketException{
+    public int getReceiveBufferSize() throws SocketException {
         if (isClosed())
             throw new SocketException("Socket is closed");
         int result = 0;
         Object o = getImpl().getOption(SocketOptions.SO_RCVBUF);
-        if (o instanceof Integer) {
-            result = ((Integer)o).intValue();
+        if (o instanceof Integer i) {
+            result = i.intValue();
         }
         return result;
     }
@@ -1456,17 +1517,9 @@ public class Socket implements java.io.Closeable {
     public void setTrafficClass(int tc) throws SocketException {
         if (tc < 0 || tc > 255)
             throw new IllegalArgumentException("tc is not in range 0 -- 255");
-
         if (isClosed())
             throw new SocketException("Socket is closed");
-        try {
-            getImpl().setOption(SocketOptions.IP_TOS, tc);
-        } catch (SocketException se) {
-            // not supported if socket already connected
-            // Solaris returns error in such cases
-            if(!isConnected())
-                throw se;
-        }
+        getImpl().setOption(SocketOptions.IP_TOS, tc);
     }
 
     /**
@@ -1567,13 +1620,15 @@ public class Socket implements java.io.Closeable {
      * @revised 1.4
      * @see #isClosed
      */
-    public synchronized void close() throws IOException {
-        synchronized(closeLock) {
-            if (isClosed())
-                return;
-            if (created)
-                impl.close();
-            closed = true;
+    public void close() throws IOException {
+        synchronized (socketLock) {
+            if ((state & CLOSED) == 0) {
+                int s = getAndBitwiseOrState(CLOSED);
+                if ((s & (SOCKET_CREATED | CLOSED)) == SOCKET_CREATED) {
+                    // close underlying socket if created
+                    impl.close();
+                }
+            }
         }
     }
 
@@ -1595,16 +1650,16 @@ public class Socket implements java.io.Closeable {
      * @see java.net.Socket#setSoLinger(boolean, int)
      * @see #isInputShutdown
      */
-    public void shutdownInput() throws IOException
-    {
-        if (isClosed())
+    public void shutdownInput() throws IOException {
+        int s = state;
+        if (isClosed(s))
             throw new SocketException("Socket is closed");
-        if (!isConnected())
+        if (!isConnected(s))
             throw new SocketException("Socket is not connected");
-        if (isInputShutdown())
+        if (isInputShutdown(s))
             throw new SocketException("Socket input is already shutdown");
         getImpl().shutdownInput();
-        shutIn = true;
+        getAndBitwiseOrState(SHUT_IN);
     }
 
     /**
@@ -1625,16 +1680,16 @@ public class Socket implements java.io.Closeable {
      * @see java.net.Socket#setSoLinger(boolean, int)
      * @see #isOutputShutdown
      */
-    public void shutdownOutput() throws IOException
-    {
-        if (isClosed())
+    public void shutdownOutput() throws IOException {
+        int s = state;
+        if (isClosed(s))
             throw new SocketException("Socket is closed");
-        if (!isConnected())
+        if (!isConnected(s))
             throw new SocketException("Socket is not connected");
-        if (isOutputShutdown())
+        if (isOutputShutdown(s))
             throw new SocketException("Socket output is already shutdown");
         getImpl().shutdownOutput();
-        shutOut = true;
+        getAndBitwiseOrState(SHUT_OUT);
     }
 
     /**
@@ -1665,7 +1720,7 @@ public class Socket implements java.io.Closeable {
      * @since 1.4
      */
     public boolean isConnected() {
-        return connected;
+        return isConnected(state);
     }
 
     /**
@@ -1681,7 +1736,7 @@ public class Socket implements java.io.Closeable {
      * @see #bind
      */
     public boolean isBound() {
-        return bound;
+        return isBound(state);
     }
 
     /**
@@ -1692,9 +1747,7 @@ public class Socket implements java.io.Closeable {
      * @see #close
      */
     public boolean isClosed() {
-        synchronized(closeLock) {
-            return closed;
-        }
+        return isClosed(state);
     }
 
     /**
@@ -1705,7 +1758,7 @@ public class Socket implements java.io.Closeable {
      * @see #shutdownInput
      */
     public boolean isInputShutdown() {
-        return shutIn;
+        return isInputShutdown(state);
     }
 
     /**
@@ -1716,7 +1769,7 @@ public class Socket implements java.io.Closeable {
      * @see #shutdownOutput
      */
     public boolean isOutputShutdown() {
-        return shutOut;
+        return isOutputShutdown(state);
     }
 
     /**
