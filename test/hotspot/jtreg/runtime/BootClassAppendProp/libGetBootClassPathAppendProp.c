@@ -49,7 +49,9 @@ Java_GetBootClassPathAppendProp_getSystemProperty(JNIEnv *env, jclass cls) {
     return NULL;
   }
   if (err != JVMTI_ERROR_NONE) {
-    return (*env)->NewStringUTF(env, "wrong error code");
+    char err_msg[50];
+    snprintf(err_msg, 50, "Wrong JVM TI error code: %d", err);
+    return (*env)->NewStringUTF(env, err_msg);
   }
 
   return (*env)->NewStringUTF(env, prop_value);
