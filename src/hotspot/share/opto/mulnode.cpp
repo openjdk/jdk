@@ -507,7 +507,7 @@ const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
 
 const Type* AndINode::Value(PhaseGVN* phase) const {
   // patterns similar to (v << 2) & 3
-  if (AndIL_shift_and_mask(phase, in(1), in(2), T_INT, true)) {
+  if (AndIL_shift_and_mask_is_always_zero(phase, in(1), in(2), T_INT, true)) {
     return TypeInt::ZERO;
   }
 
@@ -646,7 +646,7 @@ const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
 
 const Type* AndLNode::Value(PhaseGVN* phase) const {
   // patterns similar to (v << 2) & 3
-  if (AndIL_shift_and_mask(phase, in(1), in(2), T_LONG, true)) {
+  if (AndIL_shift_and_mask_is_always_zero(phase, in(1), in(2), T_LONG, true)) {
     return TypeLong::ZERO;
   }
 
@@ -1727,7 +1727,7 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
 // The M and N values must satisfy ((-1 << N) & M) == 0.
 // Because the optimization might work for a non-constant
 // mask M, we check the AndX for both operand orders.
-bool MulNode::AndIL_shift_and_mask(PhaseGVN* phase, Node* shift, Node* mask, BasicType bt, bool check_reverse) {
+bool MulNode::AndIL_shift_and_mask_is_always_zero(PhaseGVN* phase, Node* shift, Node* mask, BasicType bt, bool check_reverse) {
   if (mask == NULL || shift == NULL) {
     return false;
   }
@@ -1753,7 +1753,7 @@ bool MulNode::AndIL_shift_and_mask(PhaseGVN* phase, Node* shift, Node* mask, Bas
         (mask->Opcode() == Op_LShift(bt) ||
          (bt == T_LONG && mask->Opcode() == Op_ConvI2L))) {
       // try it the other way around
-      return AndIL_shift_and_mask(phase, mask, shift, bt, false);
+      return AndIL_shift_and_mask_is_always_zero(phase, mask, shift, bt, false);
     }
     return false;
   }
@@ -1806,10 +1806,10 @@ Node* MulNode::AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt) {
     Node* add1 = add->in(1);
     Node* add2 = add->in(2);
     if (add1 != NULL && add2 != NULL) {
-      if (AndIL_shift_and_mask(phase, add1, mask, bt, false)) {
+      if (AndIL_shift_and_mask_is_always_zero(phase, add1, mask, bt, false)) {
         set_req_X(addidx, add2, phase);
         return this;
-      } else if (AndIL_shift_and_mask(phase, add2, mask, bt, false)) {
+      } else if (AndIL_shift_and_mask_is_always_zero(phase, add2, mask, bt, false)) {
         set_req_X(addidx, add1, phase);
         return this;
       }
