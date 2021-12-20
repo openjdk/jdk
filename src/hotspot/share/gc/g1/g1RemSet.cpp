@@ -114,7 +114,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
     // values for region size.
     assert(log_region_size >= 20 && log_region_size <= 29,
            "expected value in [20,29], but got %u", log_region_size);
-    return 1u << (log_region_size / 2 - 7);
+    return 1u << (log_region_size / 2 - 4);
   }
 
   uint _scan_chunks_per_region;         // Number of chunks per region.
