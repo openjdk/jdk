@@ -66,9 +66,9 @@ typedef struct CDSFileMapRegion {
 // a different version of HotSpot, so that we can automatically regenerate the archive as necessary.
 typedef struct GenericCDSFileMapHeader {
   unsigned int _magic;                    // identification of file type
-  int          _crc;                      // header crc checksum
   int          _version;                  // CURRENT_CDS_ARCHIVE_VERSION of the jdk that dumped the this archive
   unsigned int _header_size;              // total size of the header, in bytes
+  int          _crc;                      // header crc checksum
   unsigned int _base_archive_name_offset; // offset where the base archive name is stored
                                           //   static archive:  0
                                           //   dynamic archive:
