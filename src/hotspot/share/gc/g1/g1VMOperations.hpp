@@ -97,23 +97,23 @@ protected:
   virtual void work() = 0;
 
 public:
-  virtual bool doit_prologue();
-  virtual void doit_epilogue();
-  virtual void doit();
+  bool doit_prologue() override;
+  void doit_epilogue() override;
+  void doit() override;
 };
 
 class VM_G1PauseRemark : public VM_G1PauseConcurrent {
 public:
   VM_G1PauseRemark() : VM_G1PauseConcurrent("Pause Remark") { }
-  virtual VMOp_Type type() const { return VMOp_G1PauseRemark; }
-  virtual void work();
+  VMOp_Type type() const override { return VMOp_G1PauseRemark; }
+  void work() override;
 };
 
 class VM_G1PauseCleanup : public VM_G1PauseConcurrent {
 public:
   VM_G1PauseCleanup() : VM_G1PauseConcurrent("Pause Cleanup") { }
-  virtual VMOp_Type type() const { return VMOp_G1PauseCleanup; }
-  virtual void work();
+  VMOp_Type type() const override { return VMOp_G1PauseCleanup; }
+  void work() override;
 };
 
 #endif // SHARE_GC_G1_G1VMOPERATIONS_HPP
