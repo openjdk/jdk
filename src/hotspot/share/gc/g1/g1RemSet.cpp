@@ -1263,6 +1263,12 @@ class G1MergeHeapRootsTask : public WorkerTask {
   // needed to be able to use the bitmap for evacuation failure handling.
   class G1ClearBitmapClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
+#ifdef ASSERT
+    void assert_bitmap_clear(HeapRegion* hr, const G1CMBitMap* bitmap) {
+      assert(bitmap->get_next_marked_addr(hr->bottom(), hr->end()) == hr->end(),
+             "Bitmap should have no mark for young regions");
+    }
+#endif
   public:
     G1ClearBitmapClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
 
@@ -1271,6 +1277,9 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // Young regions should always have cleared bitmaps, so only clear old.
       if (hr->is_old()) {
         _g1h->clear_region_bitmap(hr);
+      } else {
+        assert(hr->is_young(), "Should only be young and old regions in collection set");
+        assert_bitmap_clear(hr, _g1h->concurrent_mark()->prev_mark_bitmap());
       }
       return false;
     }
