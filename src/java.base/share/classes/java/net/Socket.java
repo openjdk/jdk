@@ -155,7 +155,7 @@ public class Socket implements java.io.Closeable {
     private static boolean isOutputShutdown(int s) {
         return (s & SHUT_OUT) != 0;
     }
-    
+
     /**
      * Creates an unconnected Socket.
      * <p>
