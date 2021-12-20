@@ -403,36 +403,6 @@ template void BytecodeInterpreter::run<false>(interpreterState istate);
 
 template<bool JVMTI_ENABLED>
 void BytecodeInterpreter::run(interpreterState istate) {
-
-  // In order to simplify some tests based on switches set at runtime
-  // we invoke the interpreter a single time after switches are enabled
-  // and set simpler to to test variables rather than method calls or complex
-  // boolean expressions.
-
-  static int initialized = 0;
-  static int checkit = 0;
-  static intptr_t* c_addr = NULL;
-  static intptr_t  c_value;
-
-  if (checkit && *c_addr != c_value) {
-    os::breakpoint();
-  }
-
-#ifdef ASSERT
-  if (istate->_msg != initialize) {
-    assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
-  }
-  // Verify linkages.
-  interpreterState l = istate;
-  do {
-    assert(l == l->_self_link, "bad link");
-    l = l->_prev_link;
-  } while (l != NULL);
-  // Screwups with stack management usually cause us to overwrite istate
-  // save a copy so we can verify it.
-  interpreterState orig = istate;
-#endif
-
   intptr_t*        topOfStack = (intptr_t *)istate->stack(); /* access with STACK macros */
   address          pc = istate->bcp();
   jubyte opcode;
@@ -443,6 +413,24 @@ void BytecodeInterpreter::run(interpreterState istate) {
 #else
 #undef THREAD
 #define THREAD istate->thread()
+#endif
+
+#ifdef ASSERT
+  assert(labs(istate->stack_base() - istate->stack_limit()) == (istate->method()->max_stack() + 1),
+         "Bad stack limit");
+  /* QQQ this should be a stack method so we don't know actual direction */
+  assert(topOfStack >= istate->stack_limit() && topOfStack < istate->stack_base(),
+         "Stack top out of range");
+
+  // Verify linkages.
+  interpreterState l = istate;
+  do {
+    assert(l == l->_self_link, "bad link");
+    l = l->_prev_link;
+  } while (l != NULL);
+  // Screwups with stack management usually cause us to overwrite istate
+  // save a copy so we can verify it.
+  interpreterState orig = istate;
 #endif
 
 #ifdef USELABELS
@@ -531,38 +519,13 @@ void BytecodeInterpreter::run(interpreterState istate) {
   uintptr_t *dispatch_table = (uintptr_t*)&opclabels_data[0];
 #endif /* USELABELS */
 
-#ifdef ASSERT
-  // this will trigger a VERIFY_OOP on entry
-  if (istate->msg() != initialize && ! METHOD->is_static()) {
-    oop rcvr = LOCALS_OBJECT(0);
-    VERIFY_OOP(rcvr);
-  }
-#endif
-
-  /* QQQ this should be a stack method so we don't know actual direction */
-  guarantee(istate->msg() == initialize ||
-         topOfStack >= istate->stack_limit() &&
-         topOfStack < istate->stack_base(),
-         "Stack top out of range");
-
-  assert(!UseCompiler, "Zero does not support compilers");
-  assert(!CountCompiledCalls, "Zero does not support counting compiled calls");
-
   switch (istate->msg()) {
     case initialize: {
-      if (initialized++) ShouldNotReachHere(); // Only one initialize call.
+      ShouldNotCallThis();
       return;
     }
-    break;
     case method_entry: {
       THREAD->set_do_not_unlock();
-      // count invocations
-      assert(initialized, "Interpreter not initialized");
-
-      if ((istate->_stack_base - istate->_stack_limit) != istate->method()->max_stack() + 1) {
-        // initialize
-        os::breakpoint();
-      }
 
       // Lock method if synchronized.
       if (METHOD->is_synchronized()) {

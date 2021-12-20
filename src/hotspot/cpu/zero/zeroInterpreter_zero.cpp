@@ -68,14 +68,6 @@ void ZeroInterpreter::initialize_code() {
     ZeroInterpreterGenerator g(_code);
     if (PrintInterpreter) print();
   }
-
-  // Allow c++ interpreter to do one initialization now that switches are set, etc.
-  BytecodeInterpreter start_msg(BytecodeInterpreter::initialize);
-  if (JvmtiExport::can_post_interpreter_events()) {
-    BytecodeInterpreter::run<true>(&start_msg);
-  } else {
-    BytecodeInterpreter::run<false>(&start_msg);
-  }
 }
 
 void ZeroInterpreter::invoke_method(Method* method, address entry_point, TRAPS) {
