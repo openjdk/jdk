@@ -266,6 +266,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
         new LogMessageWithLevel("Restore Preserved Marks", Level.DEBUG),
         new LogMessageWithLevel("Restore Retained Regions", Level.DEBUG),
+        new LogMessageWithLevel("Evacuation Failure Regions", Level.DEBUG),
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {
