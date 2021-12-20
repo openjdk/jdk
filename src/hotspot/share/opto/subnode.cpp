@@ -196,16 +196,23 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     }
   }
 
-
-  // Convert "x - (y+c0)" into "(x-y) - c0"
+  // Convert "x - (y+c0)" into "(x-y) - c0" AND
+  // Convert "c1 - (y+c0)" into "(c1-c0) - y"
   // Need the same check as in above optimization but reversed.
-  if (op2 == Op_AddI && ok_to_convert(in2, in1)) {
+  if (op2 == Op_AddI
+      && ok_to_convert(in2, in1)
+      && in2->in(2)->Opcode() == Op_ConI) {
+    jint c0 = phase->type(in2->in(2))->isa_int()->get_con();
     Node* in21 = in2->in(1);
-    Node* in22 = in2->in(2);
-    const TypeInt* tcon = phase->type(in22)->isa_int();
-    if (tcon != NULL && tcon->is_con()) {
-      Node* sub2 = phase->transform( new SubINode(in1, in21) );
-      Node* neg_c0 = phase->intcon(- tcon->get_con());
+    if (in1->Opcode() == Op_ConI) {
+      // Match c1
+      jint c1 = phase->type(in1)->isa_int()->get_con();
+      Node* sub2 = phase->intcon(java_subtract(c1, c0));
+      return new SubINode(sub2, in21);
+    } else {
+      // Match x
+      Node* sub2 = phase->transform(new SubINode(in1, in21));
+      Node* neg_c0 = phase->intcon(-c0);
       return new AddINode(sub2, neg_c0);
     }
   }
@@ -374,15 +381,22 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Convert "x - (y+c0)" into "(x-y) - c0"
+  // Convert "x - (y+c0)" into "(x-y) - c0" AND
+  // Convert "c1 - (y+c0)" into "(c1-c0) - y"
   // Need the same check as in above optimization but reversed.
-  if (op2 == Op_AddL && ok_to_convert(in2, in1)) {
+  if (op2 == Op_AddL
+      && ok_to_convert(in2, in1)
+      && in2->in(2)->Opcode() == Op_ConL) {
+    jlong c0 = phase->type(in2->in(2))->isa_long()->get_con();
     Node* in21 = in2->in(1);
-    Node* in22 = in2->in(2);
-    const TypeLong* tcon = phase->type(in22)->isa_long();
-    if (tcon != NULL && tcon->is_con()) {
-      Node* sub2 = phase->transform( new SubLNode(in1, in21) );
-      Node* neg_c0 = phase->longcon(- tcon->get_con());
+    if (in1->Opcode() == Op_ConL) {
+      // Match c1
+      jlong c1 = phase->type(in1)->isa_long()->get_con();
+      Node* sub2 = phase->longcon(java_subtract(c1, c0));
+      return new SubLNode(sub2, in21);
+    } else {
+      Node* sub2 = phase->transform(new SubLNode(in1, in21));
+      Node* neg_c0 = phase->longcon(-c0);
       return new AddLNode(sub2, neg_c0);
     }
   }
@@ -420,6 +434,14 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert "(A+X) - (B+X)" into "A - B"
   if( op1 == Op_AddL && op2 == Op_AddL && in1->in(2) == in2->in(2) )
     return new SubLNode( in1->in(1), in2->in(1) );
+
+  // Convert "(A+X) - (X+B)" into "A - B"
+  if( op1 == Op_AddL && op2 == Op_AddL && in1->in(2) == in2->in(1) )
+    return new SubLNode( in1->in(1), in2->in(2) );
+
+  // Convert "(X+A) - (B+X)" into "A - B"
+  if( op1 == Op_AddL && op2 == Op_AddL && in1->in(1) == in2->in(2) )
+    return new SubLNode( in1->in(2), in2->in(1) );
 
   // Convert "A-(B-C)" into (A+C)-B"
   if( op2 == Op_SubL && in2->outcnt() == 1) {

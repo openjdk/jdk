@@ -29,6 +29,7 @@
 #include "opto/memnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "prims/vectorSupport.hpp"
 
 //------------------------------VectorNode-------------------------------------
 // Vector Operation
@@ -919,23 +920,19 @@ class VectorCmpMaskedNode : public TypeNode {
   virtual int Opcode() const;
 };
 
+//------------------------------VectorMaskGenNode----------------------------------
 class VectorMaskGenNode : public TypeNode {
  public:
-  VectorMaskGenNode(Node* length, const Type* ty, BasicType ety): TypeNode(ty, 2), _elemType(ety) {
+  VectorMaskGenNode(Node* length, const Type* ty): TypeNode(ty, 2) {
     init_req(1, length);
   }
 
   virtual int Opcode() const;
-  BasicType get_elem_type()  { return _elemType;}
-  virtual  uint  size_of() const { return sizeof(VectorMaskGenNode); }
-  virtual uint  ideal_reg() const {
-    return Op_RegVectMask;
-  }
-
-  private:
-   BasicType _elemType;
+  virtual uint ideal_reg() const { return Op_RegVectMask; }
+  static Node* make(Node* length, BasicType vmask_bt);
 };
 
+//------------------------------VectorMaskOpNode-----------------------------------
 class VectorMaskOpNode : public TypeNode {
  public:
   VectorMaskOpNode(Node* mask, const Type* ty, int mopc):
@@ -981,6 +978,16 @@ class VectorMaskToLongNode : public VectorMaskOpNode {
     VectorMaskOpNode(mask, ty, Op_VectorMaskToLong) {}
   virtual int Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegL; }
+  virtual Node* Identity(PhaseGVN* phase);
+};
+
+class VectorLongToMaskNode : public VectorNode {
+ public:
+  VectorLongToMaskNode(Node* mask, const TypeVect* ty):
+    VectorNode(mask, ty) {
+  }
+  virtual int Opcode() const;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //-------------------------- Vector mask broadcast -----------------------------------
@@ -1405,7 +1412,7 @@ class VectorMaskCastNode : public VectorNode {
     const TypeVect* in_vt = in->bottom_type()->is_vect();
     assert(in_vt->length() == vt->length(), "vector length must match");
   }
-
+  static Node* makeCastNode(PhaseGVN* phase, Node* in1, const TypeVect * vt);
   virtual int Opcode() const;
 };
 

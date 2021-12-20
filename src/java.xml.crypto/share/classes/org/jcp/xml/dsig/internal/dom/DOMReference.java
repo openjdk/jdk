@@ -447,7 +447,7 @@ public final class DOMReference extends DOMStructure
         }
         Data data = dereferencedData;
         XMLSignatureInput xi = null;
-        try (OutputStream os = new UnsyncBufferedOutputStream(dos)) {
+        try (OutputStream os = new UnsyncBufferedOutputStream(dos)) { //NOPMD
             for (int i = 0, size = transforms.size(); i < size; i++) {
                 DOMTransform transform = (DOMTransform)transforms.get(i);
                 if (i < size - 1) {

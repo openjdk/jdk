@@ -35,7 +35,7 @@ inline void send_allocation_sample(const Klass* klass, int64_t allocated_bytes) 
   assert(allocated_bytes > 0, "invariant");
   EventObjectAllocationSample event;
   if (event.should_commit()) {
-    const size_t weight = allocated_bytes - _last_allocated_bytes;
+    const int64_t weight = allocated_bytes - _last_allocated_bytes;
     assert(weight > 0, "invariant");
     event.set_objectClass(klass);
     event.set_weight(weight);
@@ -48,7 +48,7 @@ inline bool send_allocation_sample_with_result(const Klass* klass, int64_t alloc
   assert(allocated_bytes > 0, "invariant");
   EventObjectAllocationSample event;
   if (event.should_commit()) {
-    const size_t weight = allocated_bytes - _last_allocated_bytes;
+    const int64_t weight = allocated_bytes - _last_allocated_bytes;
     assert(weight > 0, "invariant");
     event.set_objectClass(klass);
     event.set_weight(weight);
@@ -59,11 +59,11 @@ inline bool send_allocation_sample_with_result(const Klass* klass, int64_t alloc
   return false;
 }
 
-inline intptr_t estimate_tlab_size_bytes(Thread* thread) {
+inline int64_t estimate_tlab_size_bytes(Thread* thread) {
   const size_t desired_tlab_size_bytes = thread->tlab().desired_size() * HeapWordSize;
   const size_t alignment_reserve_bytes = thread->tlab().alignment_reserve_in_bytes();
   assert(desired_tlab_size_bytes > alignment_reserve_bytes, "invariant");
-  return static_cast<intptr_t>(desired_tlab_size_bytes - alignment_reserve_bytes);
+  return static_cast<int64_t>(desired_tlab_size_bytes - alignment_reserve_bytes);
 }
 
 inline int64_t load_allocated_bytes(Thread* thread) {
@@ -81,14 +81,14 @@ inline int64_t load_allocated_bytes(Thread* thread) {
 
 // To avoid large objects from being undersampled compared to the regular TLAB samples,
 // the data amount is normalized as if it was a TLAB, giving a number of TLAB sampling attempts to the large object.
-static void normalize_as_tlab_and_send_allocation_samples(const Klass* klass, intptr_t obj_alloc_size_bytes, Thread* thread) {
+static void normalize_as_tlab_and_send_allocation_samples(const Klass* klass, int64_t obj_alloc_size_bytes, Thread* thread) {
   const int64_t allocated_bytes = load_allocated_bytes(thread);
   assert(allocated_bytes > 0, "invariant"); // obj_alloc_size_bytes is already attributed to allocated_bytes at this point.
   if (!UseTLAB) {
     send_allocation_sample(klass, allocated_bytes);
     return;
   }
-  const intptr_t tlab_size_bytes = estimate_tlab_size_bytes(thread);
+  const int64_t tlab_size_bytes = estimate_tlab_size_bytes(thread);
   if (allocated_bytes - _last_allocated_bytes < tlab_size_bytes) {
     return;
   }
@@ -103,7 +103,7 @@ static void normalize_as_tlab_and_send_allocation_samples(const Klass* klass, in
 
 void JfrObjectAllocationSample::send_event(const Klass* klass, size_t alloc_size, bool outside_tlab, Thread* thread) {
   if (outside_tlab) {
-    normalize_as_tlab_and_send_allocation_samples(klass, static_cast<intptr_t>(alloc_size), thread);
+    normalize_as_tlab_and_send_allocation_samples(klass, static_cast<int64_t>(alloc_size), thread);
     return;
   }
   const int64_t allocated_bytes = load_allocated_bytes(thread);

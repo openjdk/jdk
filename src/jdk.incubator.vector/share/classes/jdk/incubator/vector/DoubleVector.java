@@ -444,8 +444,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @ForceInline
     public static DoubleVector zero(VectorSpecies<Double> species) {
         DoubleSpecies vsp = (DoubleSpecies) species;
-        return VectorSupport.broadcastCoerced(vsp.vectorType(), double.class, species.length(),
-                        toBits(0.0f), vsp,
+        return VectorSupport.fromBitsCoerced(vsp.vectorType(), double.class, species.length(),
+                        toBits(0.0f), MODE_BROADCAST, vsp,
                         ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
 
@@ -3754,9 +3754,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         @ForceInline
         final DoubleVector broadcastBits(long bits) {
             return (DoubleVector)
-                VectorSupport.broadcastCoerced(
+                VectorSupport.fromBitsCoerced(
                     vectorType, double.class, laneCount,
-                    bits, this,
+                    bits, MODE_BROADCAST, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
 
