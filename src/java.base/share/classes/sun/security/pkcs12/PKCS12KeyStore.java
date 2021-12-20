@@ -635,7 +635,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         }
                     }
                 } else {
-                    throw new KeyStoreException("Private key is not encoded" +
+                    throw new KeyStoreException("Private key is not encoded " +
                                 "as PKCS#8");
                 }
 
