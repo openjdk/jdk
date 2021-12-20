@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,16 @@ package jdk.incubator.foreign;
 import jdk.internal.foreign.MemoryAddressImpl;
 import jdk.internal.reflect.CallerSensitive;
 
+import java.lang.invoke.MethodHandle;
 import java.nio.ByteOrder;
 
 /**
- * A memory address models a reference into a memory location. Memory addresses are typically obtained in three ways:
+ * A memory address models a reference into a memory location. Memory addresses are typically obtained in one of the following ways:
  * <ul>
  *     <li>By calling {@link Addressable#address()} on an instance of type {@link Addressable} (e.g. a memory segment);</li>
  *     <li>By invoking a {@linkplain CLinker#downcallHandle(FunctionDescriptor) downcall method handle} which returns a pointer;</li>
  *     <li>By reading an address from memory, e.g. via {@link MemorySegment#get(ValueLayout.OfAddress, long)}.</li>
+ *     <li>By the invocation of an {@linkplain CLinker#upcallStub(MethodHandle, FunctionDescriptor, ResourceScope) upcall stub} which accepts a pointer.
  * </ul>
  * A memory address is backed by a raw machine pointer, expressed as a {@linkplain #toRawLongValue() long value}.
  *
@@ -46,17 +48,17 @@ import java.nio.ByteOrder;
  * Each dereference method takes a {@linkplain jdk.incubator.foreign.ValueLayout value layout}, which specifies the size,
  * alignment constraints, byte order as well as the Java type associated with the dereference operation, and an offset.
  * For instance, to read an int from a segment, using {@link ByteOrder#nativeOrder() default endianness}, the following code can be used:
- * <blockquote><pre>{@code
-MemoryAddress address = ...
-int value = address.get(ValueLayout.JAVA_INT, 0);
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemoryAddress address = ...
+ * int value = address.get(ValueLayout.JAVA_INT, 0);
+ * }
  *
  * If the value to be read is stored in memory using {@link ByteOrder#BIG_ENDIAN big-endian} encoding, the dereference operation
  * can be expressed as follows:
- * <blockquote><pre>{@code
-MemoryAddress address = ...
-int value = address.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemoryAddress address = ...
+ * int value = address.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
+ * }
  *
  * All the dereference methods in this class are <a href="package-summary.html#restricted"><em>restricted</em></a>: since
  * a memory address does not feature temporal nor spatial bounds, the runtime has no way to check the correctness

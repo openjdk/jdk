@@ -3176,6 +3176,23 @@ instruct vmask_lasttrue_partial(iRegINoSp dst, pReg src, pReg ptmp, rFlagsReg cr
   ins_pipe(pipe_slow);
 %}
 
+instruct vmask_tolong(iRegLNoSp dst, pReg src, vReg vtmp1, vReg vtmp2, pRegGov pgtmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 &&
+            n->in(1)->bottom_type()->is_vect()->length() <= 64);
+  match(Set dst (VectorMaskToLong src));
+  effect(TEMP vtmp1, TEMP vtmp2, TEMP pgtmp, KILL cr);
+  ins_cost(13 * SVE_COST);
+  format %{ "vmask_tolong $dst, $src\t# vector mask tolong (sve)" %}
+  ins_encode %{
+    __ sve_vmask_tolong(as_Register($dst$$reg), as_PRegister($src$$reg),
+                        Matcher::vector_element_basic_type(this, $src),
+                        Matcher::vector_length(this, $src),
+                        as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg),
+                        as_PRegister($pgtmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}dnl
+
 // ---------------------------- Vector mask generation ---------------------------
 instruct vmask_gen(pRegGov pg, iRegL len, rFlagsReg cr) %{
   predicate(UseSVE > 0);

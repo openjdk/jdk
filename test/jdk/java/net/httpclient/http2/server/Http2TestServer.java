@@ -124,6 +124,20 @@ public class Http2TestServer implements AutoCloseable {
         this(serverName, secure, port, exec, backlog, properties, context, false);
     }
 
+    public Http2TestServer(String serverName,
+                           boolean secure,
+                           int port,
+                           ExecutorService exec,
+                           int backlog,
+                           Properties properties,
+                           SSLContext context,
+                           boolean supportsHTTP11)
+        throws Exception
+    {
+        this(InetAddress.getLoopbackAddress(), serverName, secure, port, exec,
+                backlog, properties, context, supportsHTTP11);
+    }
+
     /**
      * Create a Http2Server listening on the given port. Currently needs
      * to know in advance whether incoming connections are plain TCP "h2c"
@@ -134,6 +148,7 @@ public class Http2TestServer implements AutoCloseable {
      *       "X-Magic", "HTTP/1.1 request received by HTTP/2 server",
      *       "X-Received-Body", <the request body>);
      *
+     * @param localAddr local address to bind to
      * @param serverName SNI servername
      * @param secure https or http
      * @param port listen port
@@ -146,7 +161,8 @@ public class Http2TestServer implements AutoCloseable {
      *        connection without the h2 ALPN. Otherwise, false to operate in
      *        HTTP/2 mode exclusively.
      */
-    public Http2TestServer(String serverName,
+    public Http2TestServer(InetAddress localAddr,
+                           String serverName,
                            boolean secure,
                            int port,
                            ExecutorService exec,
@@ -163,7 +179,7 @@ public class Http2TestServer implements AutoCloseable {
                this.sslContext = context;
            else
                this.sslContext = SSLContext.getDefault();
-            server = initSecure(port, backlog);
+            server = initSecure(localAddr, port, backlog);
         } else {
             this.sslContext = context;
             server = initPlaintext(port, backlog);
@@ -236,14 +252,14 @@ public class Http2TestServer implements AutoCloseable {
     }
 
 
-    final ServerSocket initSecure(int port, int backlog) throws Exception {
+    final ServerSocket initSecure(InetAddress localAddr, int port, int backlog) throws Exception {
         ServerSocketFactory fac;
         SSLParameters sslp = null;
         fac = sslContext.getServerSocketFactory();
         sslp = sslContext.getSupportedSSLParameters();
         SSLServerSocket se = (SSLServerSocket) fac.createServerSocket();
         se.setReuseAddress(false);
-        se.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), backlog);
+        se.bind(new InetSocketAddress(localAddr, 0), backlog);
         if (supportsHTTP11) {
             sslp.setApplicationProtocols(new String[]{"h2", "http/1.1"});
         } else {

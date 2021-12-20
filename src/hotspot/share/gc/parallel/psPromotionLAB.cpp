@@ -29,8 +29,6 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 
-size_t PSPromotionLAB::filler_header_size;
-
 // This is the shared initialization code. It sets up the basic pointers,
 // and allows enough extra space for a filler object. We call a virtual
 // method, "lab_is_valid()" to handle the different asserts the old/young
@@ -45,10 +43,6 @@ void PSPromotionLAB::initialize(MemRegion lab) {
   set_end(end);
   set_top(bottom);
 
-  // Initialize after VM starts up because header_size depends on compressed
-  // oops.
-  filler_header_size = align_object_size(typeArrayOopDesc::header_size(T_INT));
-
   // We can be initialized to a zero size!
   if (free() > 0) {
     if (ZapUnusedHeapArea) {
@@ -56,8 +50,8 @@ void PSPromotionLAB::initialize(MemRegion lab) {
     }
 
     // NOTE! We need to allow space for a filler object.
-    assert(lab.word_size() >= filler_header_size, "lab is too small");
-    end = end - filler_header_size;
+    assert(lab.word_size() >= CollectedHeap::min_dummy_object_size(), "lab is too small");
+    end = end - CollectedHeap::min_dummy_object_size();
     set_end(end);
 
     _state = needs_flush;
@@ -81,20 +75,8 @@ void PSPromotionLAB::flush() {
 
   // PLAB's never allocate the last aligned_header_size
   // so they can always fill with an array.
-  HeapWord* tlab_end = end() + filler_header_size;
-  typeArrayOop filler_oop = (typeArrayOop) cast_to_oop(top());
-  filler_oop->set_mark(markWord::prototype());
-  filler_oop->set_klass(Universe::intArrayKlassObj());
-  const size_t array_length =
-    pointer_delta(tlab_end, top()) - typeArrayOopDesc::header_size(T_INT);
-  assert( (array_length * (HeapWordSize/sizeof(jint))) < (size_t)max_jint, "array too big in PSPromotionLAB");
-  filler_oop->set_length((int)(array_length * (HeapWordSize/sizeof(jint))));
-
-#ifdef ASSERT
-  // Note that we actually DO NOT want to use the aligned header size!
-  HeapWord* elt_words = cast_from_oop<HeapWord*>(filler_oop) + typeArrayOopDesc::header_size(T_INT);
-  Copy::fill_to_words(elt_words, array_length, 0xDEAABABE);
-#endif
+  HeapWord* tlab_end = end() + CollectedHeap::min_dummy_object_size();
+  CollectedHeap::fill_with_object(top(), tlab_end, trueInDebug);
 
   set_bottom(NULL);
   set_end(NULL);

@@ -96,7 +96,7 @@ public abstract class JCmdTestDumpBase {
     }
 
     private static void checkCDSEnabled() throws Exception {
-        boolean cdsEnabled = WhiteBox.getWhiteBox().getBooleanVMFlag("UseSharedSpaces");
+        boolean cdsEnabled = WhiteBox.getWhiteBox().isSharingEnabled();
         if (!cdsEnabled) {
             throw new SkippedException("CDS is not available for this JDK.");
         }

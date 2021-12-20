@@ -4153,6 +4153,45 @@ void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XM
 }
 
 #ifdef _LP64
+void C2_MacroAssembler::vector_long_to_maskvec(XMMRegister dst, Register src, Register rtmp1,
+                                               Register rtmp2, XMMRegister xtmp, int mask_len,
+                                               int vec_enc) {
+  int index = 0;
+  int vindex = 0;
+  mov64(rtmp1, 0x0101010101010101L);
+  pdep(rtmp1, src, rtmp1);
+  if (mask_len > 8) {
+    movq(rtmp2, src);
+    vpxor(xtmp, xtmp, xtmp, vec_enc);
+    movq(xtmp, rtmp1);
+  }
+  movq(dst, rtmp1);
+
+  mask_len -= 8;
+  while (mask_len > 0) {
+    assert ((mask_len & 0x7) == 0, "mask must be multiple of 8");
+    index++;
+    if ((index % 2) == 0) {
+      pxor(xtmp, xtmp);
+    }
+    mov64(rtmp1, 0x0101010101010101L);
+    shrq(rtmp2, 8);
+    pdep(rtmp1, rtmp2, rtmp1);
+    pinsrq(xtmp, rtmp1, index % 2);
+    vindex = index / 2;
+    if (vindex) {
+      // Write entire 16 byte vector when both 64 bit
+      // lanes are update to save redundant instructions.
+      if (index % 2) {
+        vinsertf128(dst, dst, xtmp, vindex);
+      }
+    } else {
+      vmovdqu(dst, xtmp);
+    }
+    mask_len -= 8;
+  }
+}
+
 void C2_MacroAssembler::vector_mask_operation_helper(int opc, Register dst, Register tmp, int masklen) {
   switch(opc) {
     case Op_VectorMaskTrueCount:
