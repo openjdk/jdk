@@ -59,6 +59,7 @@ public class UNCFileChooserTest {
 
     private static void createInstructionUI() {
         SwingUtilities.invokeLater(() -> {
+            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             String instructions =
                     "1. Enter the non-canonical UNC path of the directory to test\n"
                     + "example: \\\\pc-name\\dir\\..\n"
@@ -102,7 +103,6 @@ public class UNCFileChooserTest {
         if (path == null) {
             throw new RuntimeException("Enter the directory path to test.");
         }
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         new JFileChooser(path).showOpenDialog(null);
     }
 
