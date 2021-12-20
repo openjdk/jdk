@@ -3094,8 +3094,7 @@ class StubGenerator: public StubCodeGenerator {
   // key = c_rarg4
   // state = c_rarg5 - GHASH.state
   // subkeyHtbl = c_rarg6 - powers of H
-  // subkeyHtbl_48_entries = c_rarg7 (not used)
-  // counter = [sp, #0] pointer to 16 bytes of CTR
+  // counter = c_rarg7 - 16 bytes of CTR
   // return - number of processed bytes
   address generate_galoisCounterMode_AESCrypt() {
     address ghash_polynomial = __ pc();
@@ -3121,10 +3120,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const Register subkeyHtbl = c_rarg6;
 
-    // Pointer to CTR is passed on the stack before the (fp, lr) pair.
-    const Address counter_mem(sp, 2 * wordSize);
     const Register counter = c_rarg7;
-    __ ldr(counter, counter_mem);
 
     const Register keylen = r10;
     // Save state before entering routine
