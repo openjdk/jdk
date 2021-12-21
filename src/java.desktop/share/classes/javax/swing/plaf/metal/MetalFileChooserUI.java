@@ -1142,8 +1142,8 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
 
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
-            if (value != null && value instanceof FileFilter) {
-                setText(((FileFilter)value).getDescription());
+            if (value instanceof FileFilter fileFilter) {
+                setText(fileFilter.getDescription());
             }
 
             return this;

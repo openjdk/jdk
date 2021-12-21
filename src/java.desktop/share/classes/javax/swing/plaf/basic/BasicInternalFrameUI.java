@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -578,9 +578,8 @@ public class BasicInternalFrameUI extends InternalFrameUI
      * @param c the new north pane
      */
     public void setNorthPane(JComponent c) {
-        if (northPane != null &&
-                northPane instanceof BasicInternalFrameTitlePane) {
-            ((BasicInternalFrameTitlePane)northPane).uninstallListeners();
+        if (northPane instanceof BasicInternalFrameTitlePane tp) {
+            tp.uninstallListeners();
         }
         replacePane(northPane, c);
         northPane = c;
@@ -1614,9 +1613,8 @@ public class BasicInternalFrameUI extends InternalFrameUI
             // account the title pane since you are allowed to resize
             // the frames to the point where just the title pane is visible.
             Dimension result = new Dimension();
-            if (getNorthPane() != null &&
-                getNorthPane() instanceof BasicInternalFrameTitlePane) {
-                  result = new Dimension(getNorthPane().getMinimumSize());
+            if (getNorthPane() instanceof BasicInternalFrameTitlePane tp) {
+                  result = new Dimension(tp.getMinimumSize());
             }
             Insets i = frame.getInsets();
             result.width += i.left + i.right;

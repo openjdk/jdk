@@ -60,7 +60,11 @@ TARGETS += $(GENDATA_CURDATA)
 
 ################################################################################
 
-GENDATA_CACERTS_SRC := $(TOPDIR)/make/data/cacerts/
+ifneq ($(CACERTS_SRC), )
+  GENDATA_CACERTS_SRC := $(CACERTS_SRC)
+else
+  GENDATA_CACERTS_SRC := $(TOPDIR)/make/data/cacerts/
+endif
 GENDATA_CACERTS := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/security/cacerts
 
 $(GENDATA_CACERTS): $(BUILD_TOOLS_JDK) $(wildcard $(GENDATA_CACERTS_SRC)/*)

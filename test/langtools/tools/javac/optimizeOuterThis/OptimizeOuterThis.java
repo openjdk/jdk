@@ -64,7 +64,7 @@ public class OptimizeOuterThis extends InnerClasses {
         checkInner(N0.N1.N2.N3.N4.N5.class, false);
 
         checkInner(SerializableCapture.class, true);
-        checkInner(SerializableWithSerialVersionUID.class, false);
+        checkInner(SerializableWithSerialVersionUID.class, true);
         checkInner(SerializableWithInvalidSerialVersionUIDType.class, true);
         checkInner(SerializableWithInvalidSerialVersionUIDNonFinal.class, true);
         checkInner(SerializableWithInvalidSerialVersionUIDNonStatic.class, true);

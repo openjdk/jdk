@@ -28,6 +28,7 @@ package java.util.zip;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.HashSet;
 import static java.util.zip.ZipConstants64.*;
@@ -333,9 +334,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         throws IOException
     {
         ensureOpen();
-        if (off < 0 || len < 0 || off > b.length - len) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0) {
             return;
         }
 

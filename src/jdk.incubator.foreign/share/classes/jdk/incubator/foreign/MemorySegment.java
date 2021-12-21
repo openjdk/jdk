@@ -119,17 +119,17 @@ import java.util.stream.Stream;
  * Each dereference method takes a {@linkplain jdk.incubator.foreign.ValueLayout value layout}, which specifies the size,
  * alignment constraints, byte order as well as the Java type associated with the dereference operation, and an offset.
  * For instance, to read an int from a segment, using {@link ByteOrder#nativeOrder() default endianness}, the following code can be used:
- * <blockquote><pre>{@code
-MemorySegment segment = ...
-int value = segment.get(ValueLayout.JAVA_INT, 0);
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemorySegment segment = ...
+ * int value = segment.get(ValueLayout.JAVA_INT, 0);
+ * }
  *
  * If the value to be read is stored in memory using {@link ByteOrder#BIG_ENDIAN big-endian} encoding, the dereference operation
  * can be expressed as follows:
- * <blockquote><pre>{@code
-MemorySegment segment = ...
-int value = segment.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemorySegment segment = ...
+ * int value = segment.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
+ * }
  *
  * For more complex dereference operations (e.g. structured memory access), clients can obtain a <em>memory access var handle</em>,
  * that is, a var handle that accepts a segment and, optionally, one or more additional {@code long} coordinates. Memory
@@ -145,13 +145,13 @@ int value = segment.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
  * the {@link #scope()} method. As for all resources associated with a resource scope, a segment cannot be
  * accessed after its corresponding scope has been closed. For instance, the following code will result in an
  * exception:
- * <blockquote><pre>{@code
-MemorySegment segment = null;
-try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-    segment = MemorySegment.allocateNative(8, scope);
-}
-segment.get(ValueLayout.JAVA_LONG, 0); // already closed!
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemorySegment segment = null;
+ * try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+ *     segment = MemorySegment.allocateNative(8, scope);
+ * }
+ * segment.get(ValueLayout.JAVA_LONG, 0); // already closed!
+ * }
  * Additionally, access to a memory segment is subject to the thread-confinement checks enforced by the owning scope; that is,
  * if the segment is associated with a shared scope, it can be accessed by multiple threads; if it is associated with a confined
  * scope, it can only be accessed by the thread which owns the scope.
@@ -162,10 +162,10 @@ segment.get(ValueLayout.JAVA_LONG, 0); // already closed!
  * <h2>Memory segment views</h2>
  *
  * Memory segments support <em>views</em>. For instance, it is possible to create an <em>immutable</em> view of a memory segment, as follows:
- * <blockquote><pre>{@code
-MemorySegment segment = ...
-MemorySegment roSegment = segment.asReadOnly();
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemorySegment segment = ...
+ * MemorySegment roSegment = segment.asReadOnly();
+ * }
  * It is also possible to create views whose spatial bounds are stricter than the ones of the original segment
  * (see {@link MemorySegment#asSlice(long, long)}).
  * <p>
@@ -184,15 +184,15 @@ MemorySegment roSegment = segment.asReadOnly();
  * (to do this, the segment has to be associated with a shared scope). The following code can be used to sum all int
  * values in a memory segment in parallel:
  *
- * <blockquote><pre>{@code
-try (ResourceScope scope = ResourceScope.newSharedScope()) {
-    SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
-    MemorySegment segment = MemorySegment.allocateNative(SEQUENCE_LAYOUT, scope);
-    int sum = segment.elements(ValueLayout.JAVA_INT).parallel()
-                           .mapToInt(s -> s.get(ValueLayout.JAVA_INT, 0))
-                           .sum();
-}
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * try (ResourceScope scope = ResourceScope.newSharedScope()) {
+ *     SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
+ *     MemorySegment segment = MemorySegment.allocateNative(SEQUENCE_LAYOUT, scope);
+ *     int sum = segment.elements(ValueLayout.JAVA_INT).parallel()
+ *                      .mapToInt(s -> s.get(ValueLayout.JAVA_INT, 0))
+ *                      .sum();
+ * }
+ * }
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -233,9 +233,9 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     /**
      * Returns a sequential {@code Stream} over disjoint slices (whose size matches that of the specified layout)
      * in this segment. Calling this method is equivalent to the following code:
-     * <blockquote><pre>{@code
-    StreamSupport.stream(segment.spliterator(elementLayout), false);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * StreamSupport.stream(segment.spliterator(elementLayout), false);
+     * }
      *
      * @param elementLayout the layout to be used for splitting.
      * @return a sequential {@code Stream} over disjoint slices in this segment.
@@ -274,9 +274,9 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * and whose new size is computed by subtracting the specified offset from this segment size.
      * <p>
      * Equivalent to the following code:
-     * <pre>{@code
-    asSlice(offset, byteSize() - offset);
-     * }</pre>
+     * {@snippet lang=java :
+     * asSlice(offset, byteSize() - offset);
+     * }
      *
      * @see #asSlice(long, long)
      *
@@ -343,9 +343,9 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * a negative or positive value. For instance, if both segments are native
      * segments, the resulting offset can be computed as follows:
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      * other.baseAddress().toRawLongValue() - segment.baseAddress().toRawLongValue()
-     * }</pre>
+     * }
      *
      * If the segments share the same base address, {@code 0} is returned. If
      * {@code other} is a slice of this segment, the offset is always
@@ -362,13 +362,13 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * More specifically, the given value is filled into each address of this
      * segment. Equivalent to (but likely more efficient than) the following code:
      *
-     * <pre>{@code
-byteHandle = MemoryLayout.ofSequence(ValueLayout.JAVA_BYTE)
-         .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
-for (long l = 0; l < segment.byteSize(); l++) {
-     byteHandle.set(segment.address(), l, value);
-}
-     * }</pre>
+     * {@snippet lang=java :
+     * byteHandle = MemoryLayout.ofSequence(ValueLayout.JAVA_BYTE)
+     *         .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
+     * for (long l = 0; l < segment.byteSize(); l++) {
+     *     byteHandle.set(segment.address(), l, value);
+     * }
+     * }
      *
      * without any regard or guarantees on the ordering of particular memory
      * elements being set.
@@ -389,9 +389,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * at offset {@code 0} through {@code src.byteSize() - 1}.
      * <p>
      * Calling this method is equivalent to the following code:
-     * <blockquote><pre>{@code
-    MemorySegment.copy(src, 0, this, 0, src.byteSize);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * MemorySegment.copy(src, 0, this, 0, src.byteSize);
+     * }
      * @param src the source segment.
      * @throws IndexOutOfBoundsException if {@code src.byteSize() > this.byteSize()}.
      * @throws IllegalStateException if either the scope associated with the source segment or the scope associated
@@ -651,6 +651,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      * @throws IllegalStateException if the size of the native string is greater than the size of this segment,
      * or if the scope associated with this segment has been closed, or if access occurs from a thread other than the thread owning that scope.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     default void setUtf8String(long offset, String str) {
         Utils.toCString(str.getBytes(StandardCharsets.UTF_8), SegmentAllocator.prefixAllocator(asSlice(offset)));
@@ -800,9 +801,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * when the segment is no longer in use. Failure to do so will result in off-heap memory leaks.
      * <p>
      * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-    allocateNative(layout.bytesSize(), layout.bytesAlignment(), scope);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * allocateNative(layout.bytesSize(), layout.bytesAlignment(), scope);
+     * }
      * <p>
      * The block of off-heap memory associated with the returned native memory segment is initialized to zero.
      *
@@ -825,9 +826,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * when the segment is no longer in use. Failure to do so will result in off-heap memory leaks.
      * <p>
      * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-    allocateNative(bytesSize, 1, scope);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * allocateNative(bytesSize, 1, scope);
+     * }
      * <p>
      * The block of off-heap memory associated with the returned native memory segment is initialized to zero.
      *
@@ -934,9 +935,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * For example, this may occur if the same file is {@linkplain MemorySegment#mapFile mapped} to two segments.
      * <p>
      * Calling this method is equivalent to the following code:
-     * <blockquote><pre>{@code
-    MemorySegment.copy(srcSegment, ValueLayout.JAVA_BYTE, srcOffset, dstSegment, ValueLayout.JAVA_BYTE, dstOffset, bytes);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * MemorySegment.copy(srcSegment, ValueLayout.JAVA_BYTE, srcOffset, dstSegment, ValueLayout.JAVA_BYTE, dstOffset, bytes);
+     * }
      * @param srcSegment the source segment.
      * @param srcOffset the starting offset, in bytes, of the source segment.
      * @param dstSegment the destination segment.
@@ -1051,6 +1052,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfByte layout, long offset, byte value) {
@@ -1084,6 +1087,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfBoolean layout, long offset, boolean value) {
@@ -1117,6 +1122,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfChar layout, long offset, char value) {
@@ -1150,6 +1157,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfShort layout, long offset, short value) {
@@ -1183,6 +1192,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfInt layout, long offset, int value) {
@@ -1216,6 +1227,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfFloat layout, long offset, float value) {
@@ -1249,6 +1262,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfLong layout, long offset, long value) {
@@ -1282,6 +1297,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfDouble layout, long offset, double value) {
@@ -1315,6 +1332,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfAddress layout, long offset, Addressable value) {
@@ -1348,6 +1367,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfChar layout, long index, char value) {
@@ -1381,6 +1402,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfShort layout, long index, short value) {
@@ -1414,6 +1437,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfInt layout, long index, int value) {
@@ -1447,6 +1472,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfFloat layout, long index, float value) {
@@ -1480,6 +1507,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfLong layout, long index, long value) {
@@ -1513,6 +1542,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfDouble layout, long index, double value) {
@@ -1546,6 +1577,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfAddress layout, long index, Addressable value) {

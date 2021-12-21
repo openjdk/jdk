@@ -1384,8 +1384,8 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
-
-    bool use64byteVector = MaxVectorSize > 32 && AVX3Threshold == 0;
+    int avx3threshold = VM_Version::avx3_threshold();
+    bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
     Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
     Label L_repmovs, L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
     const Register from        = rdi;  // source array address
@@ -1448,7 +1448,7 @@ class StubGenerator: public StubCodeGenerator {
       // PRE-MAIN-POST loop for aligned copy.
       __ BIND(L_entry);
 
-      if (AVX3Threshold != 0) {
+      if (avx3threshold != 0) {
         __ cmpq(count, threshold[shift]);
         if (MaxVectorSize == 64) {
           // Copy using 64 byte vectors.
@@ -1460,7 +1460,7 @@ class StubGenerator: public StubCodeGenerator {
         }
       }
 
-      if (MaxVectorSize < 64  || AVX3Threshold != 0) {
+      if ((MaxVectorSize < 64)  || (avx3threshold != 0)) {
         // Partial copy to make dst address 32 byte aligned.
         __ movq(temp2, to);
         __ andq(temp2, 31);
@@ -1603,7 +1603,8 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
 
-    bool use64byteVector = MaxVectorSize > 32 && AVX3Threshold == 0;
+    int avx3threshold = VM_Version::avx3_threshold();
+    bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
 
     Label L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
     Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
@@ -1668,12 +1669,12 @@ class StubGenerator: public StubCodeGenerator {
       // PRE-MAIN-POST loop for aligned copy.
       __ BIND(L_entry);
 
-      if (MaxVectorSize > 32 && AVX3Threshold != 0) {
+      if ((MaxVectorSize > 32) && (avx3threshold != 0)) {
         __ cmpq(temp1, threshold[shift]);
         __ jcc(Assembler::greaterEqual, L_pre_main_post_64);
       }
 
-      if (MaxVectorSize < 64  || AVX3Threshold != 0) {
+      if ((MaxVectorSize < 64)  || (avx3threshold != 0)) {
         // Partial copy to make dst address 32 byte aligned.
         __ leaq(temp2, Address(to, temp1, (Address::ScaleFactor)(shift), 0));
         __ andq(temp2, 31);
@@ -6260,6 +6261,9 @@ address generate_avx_ghash_processBlocks() {
       __ cmpl(length, 63);
       __ jcc(Assembler::lessEqual, L_finalBit);
 
+      __ mov64(rax, 0x0000ffffffffffff);
+      __ kmovql(k2, rax);
+
       __ align32();
       __ BIND(L_process64Loop);
 
@@ -6281,7 +6285,7 @@ address generate_avx_ghash_processBlocks() {
       __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
       __ vpermb(merged0, pack24bits, merged0, Assembler::AVX_512bit);
 
-      __ evmovdquq(Address(dest, dp), merged0, Assembler::AVX_512bit);
+      __ evmovdqub(Address(dest, dp), k2, merged0, true, Assembler::AVX_512bit);
 
       __ subl(length, 64);
       __ addptr(source, 64);
@@ -6528,7 +6532,13 @@ address generate_avx_ghash_processBlocks() {
     if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
         VM_Version::supports_avx512bw() &&
         VM_Version::supports_avx512vl()) {
+        // The constants used in the CRC32 algorithm requires the 1's compliment of the initial crc value.
+        // However, the constant table for CRC32-C assumes the original crc value.  Account for this
+        // difference before calling and after returning.
+      __ lea(table, ExternalAddress(StubRoutines::x86::crc_table_avx512_addr()));
+      __ notl(crc);
       __ kernel_crc32_avx512(crc, buf, len, table, tmp1, tmp2);
+      __ notl(crc);
     } else {
       __ kernel_crc32(crc, buf, len, table, tmp1);
     }
@@ -6580,20 +6590,27 @@ address generate_avx_ghash_processBlocks() {
 
       BLOCK_COMMENT("Entry:");
       __ enter(); // required for proper stackwalking of RuntimeStub frame
+      if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
+          VM_Version::supports_avx512bw() &&
+          VM_Version::supports_avx512vl()) {
+        __ lea(j, ExternalAddress(StubRoutines::x86::crc32c_table_avx512_addr()));
+        __ kernel_crc32_avx512(crc, buf, len, j, l, k);
+      } else {
 #ifdef _WIN64
-      __ push(y);
-      __ push(z);
+        __ push(y);
+        __ push(z);
 #endif
-      __ crc32c_ipl_alg2_alt2(crc, buf, len,
-                              a, j, k,
-                              l, y, z,
-                              c_farg0, c_farg1, c_farg2,
-                              is_pclmulqdq_supported);
+        __ crc32c_ipl_alg2_alt2(crc, buf, len,
+                                a, j, k,
+                                l, y, z,
+                                c_farg0, c_farg1, c_farg2,
+                                is_pclmulqdq_supported);
+#ifdef _WIN64
+        __ pop(z);
+        __ pop(y);
+#endif
+      }
       __ movl(rax, crc);
-#ifdef _WIN64
-      __ pop(z);
-      __ pop(y);
-#endif
       __ vzeroupper();
       __ leave(); // required for proper stackwalking of RuntimeStub frame
       __ ret(0);

@@ -1307,6 +1307,15 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         stream.flush();
     }
 
+    @Override
+    public Set<KeyStore.Entry.Attribute> engineGetAttributes(String alias) {
+        if (!engineContainsAlias(alias)) {
+            return super.engineGetAttributes(alias);
+        }
+        Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
+        return getAttributes(entry);
+    }
+
     /**
      * Gets a <code>KeyStore.Entry</code> for the specified alias
      * with the specified protection parameter.

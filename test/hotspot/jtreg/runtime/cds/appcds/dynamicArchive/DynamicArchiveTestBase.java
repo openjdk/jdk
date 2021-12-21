@@ -36,6 +36,7 @@ import sun.hotspot.WhiteBox;
  */
 class DynamicArchiveTestBase {
     private static boolean executedIn_run = false;
+    private static boolean autoMode = false;  // -Xshare:auto
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
@@ -47,6 +48,7 @@ class DynamicArchiveTestBase {
         public void run(String args[]) throws Exception;
     }
 
+    public static void setAutoMode(boolean val) { autoMode = val; }
 
     /*
      * Tests for dynamic archives should be written using this pattern:
@@ -183,7 +185,7 @@ class DynamicArchiveTestBase {
             (topArchiveName == null) ? baseArchiveName :
             baseArchiveName + File.pathSeparator + topArchiveName;
         String[] cmdLine = TestCommon.concat(
-            "-Xshare:on",
+            autoMode ? "-Xshare:auto" : "-Xshare:on",
             "-XX:SharedArchiveFile=" + archiveFiles);
         cmdLine = TestCommon.concat(cmdLine, cmdLineSuffix);
         return execProcess("exec", null, cmdLine);
@@ -202,7 +204,7 @@ class DynamicArchiveTestBase {
             (topArchiveName == null) ? baseArchiveName :
             baseArchiveName + File.pathSeparator + topArchiveName;
         String[] cmdLine = TestCommon.concat(
-            "-Xshare:on",
+            autoMode ? "-Xshare:auto" : "-Xshare:on",
             "-XX:SharedArchiveFile=" + archiveFiles);
         cmdLine = TestCommon.concat(cmdLine, cmdLineSuffix);
         return execProcess("exec", jarDir, cmdLine);
@@ -278,10 +280,10 @@ class DynamicArchiveTestBase {
     }
 
     /**
-     * Return true if the UseSharedSpaces flag has been disabled.
+     * Return true if sharing has been disabled.
      * By default, the VM will be started with -Xshare:auto.
-     * The UseSharedSpaces flag will be disabled by the VM if there's some
-     * problem in using the default CDS archive. It could happen under some
+     * Sharing will be disabled by the VM if there's some problem
+     * in using the default CDS archive. It could happen under some
      * situations such as follows:
      * - the default CDS archive wasn't generated during build time because
      *   the JDK was built via cross-compilation on a different platform;
@@ -292,6 +294,6 @@ class DynamicArchiveTestBase {
      *   enabled when the default CDS archive was built.
      */
     public static boolean isUseSharedSpacesDisabled() {
-        return (WB.getBooleanVMFlag("UseSharedSpaces") == false);
+        return !WB.isSharingEnabled();
     }
 }

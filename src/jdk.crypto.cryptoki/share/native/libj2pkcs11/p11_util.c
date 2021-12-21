@@ -136,6 +136,20 @@ CK_FUNCTION_LIST_PTR getFunctionList(JNIEnv *env, jobject pkcs11Implementation) 
     return ckpFunctions;
 }
 
+CK_FUNCTION_LIST_3_0_PTR getFunctionList30(JNIEnv *env, jobject
+        pkcs11Implementation) {
+    ModuleData *moduleData;
+    CK_FUNCTION_LIST_3_0_PTR ckpFunctions30;
+
+    moduleData = getModuleEntry(env, pkcs11Implementation);
+    if (moduleData == NULL) {
+        throwDisconnectedRuntimeException(env);
+        return NULL;
+    }
+    ckpFunctions30 = moduleData->ckFunctionList30Ptr;
+    return ckpFunctions30;
+}
+
 
 /*
  * Returns 1, if the given pkcs11Implementation is in the list.

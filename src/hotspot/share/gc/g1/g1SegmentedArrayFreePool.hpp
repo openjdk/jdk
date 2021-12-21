@@ -54,7 +54,7 @@ public:
   uint num_pools() const { return G1CardSetConfiguration::num_mem_object_types(); }
 };
 
-// A set of free lists holding memory buffers for use by G1SegmentedArray,
+// A set of free lists holding freed segments for use by G1SegmentedArray,
 // e.g. G1CardSetAllocators::SegmentedArray
 template<MEMFLAGS flag>
 class G1SegmentedArrayFreePool {
@@ -62,7 +62,7 @@ class G1SegmentedArrayFreePool {
   static G1SegmentedArrayFreePool _freelist_pool;
 
   const uint _num_free_lists;
-  G1SegmentedArrayBufferList<flag>* _free_lists;
+  G1SegmentedArrayFreeList<flag>* _free_lists;
 
 public:
   static G1SegmentedArrayFreePool* free_list_pool() { return &_freelist_pool; }
@@ -76,7 +76,7 @@ public:
   explicit G1SegmentedArrayFreePool(uint num_free_lists);
   ~G1SegmentedArrayFreePool();
 
-  G1SegmentedArrayBufferList<flag>* free_list(uint i) {
+  G1SegmentedArrayFreeList<flag>* free_list(uint i) {
     assert(i < _num_free_lists, "must be");
     return &_free_lists[i];
   }
@@ -90,13 +90,13 @@ public:
 };
 
 // Data structure containing current in-progress state for returning memory to the
-// operating system for a single G1SegmentedArrayBufferList.
+// operating system for a single G1SegmentedArrayFreeList.
 template<MEMFLAGS flag>
 class G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor : public CHeapObj<mtGC> {
-  G1SegmentedArrayBufferList<flag>* _source;
+  G1SegmentedArrayFreeList<flag>* _source;
   size_t _return_to_vm_size;
 
-  G1SegmentedArrayBuffer<flag>* _first;
+  G1SegmentedArraySegment<flag>* _first;
   size_t _unlinked_bytes;
   size_t _num_unlinked;
 
@@ -105,23 +105,23 @@ public:
     _source(nullptr), _return_to_vm_size(return_to_vm), _first(nullptr), _unlinked_bytes(0), _num_unlinked(0) {
   }
 
-  // Updates the instance members about the given segmented array buffer list for
+  // Updates the instance members about the given free list for
   // the purpose of giving back memory. Only necessary members are updated,
   // e.g. if there is nothing to return to the VM, do not set the source list.
-  void visit_free_list(G1SegmentedArrayBufferList<flag>* source);
+  void visit_free_list(G1SegmentedArrayFreeList<flag>* source);
 
   bool finished_return_to_vm() const { return _return_to_vm_size == 0; }
   bool finished_return_to_os() const { return _first == nullptr; }
 
   // Returns memory to the VM until the given deadline expires. Returns true if
-  // there is no more work. Guarantees forward progress, i.e. at least one buffer
+  // there is no more work. Guarantees forward progress, i.e. at least one segment
   // has been processed after returning.
-  // return_to_vm() re-adds buffers to the respective free list.
+  // return_to_vm() re-adds segments to the respective free list.
   bool return_to_vm(jlong deadline);
   // Returns memory to the VM until the given deadline expires. Returns true if
-  // there is no more work. Guarantees forward progress, i.e. at least one buffer
+  // there is no more work. Guarantees forward progress, i.e. at least one segment
   // has been processed after returning.
-  // return_to_os() gives back buffers to the OS.
+  // return_to_os() gives back segments to the OS.
   bool return_to_os(jlong deadline);
 };
 
