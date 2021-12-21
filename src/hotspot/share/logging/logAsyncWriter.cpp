@@ -151,7 +151,8 @@ void AsyncLogWriter::write() {
   if (req > 0) {
     assert(req == 1, "AsyncLogWriter::flush() is NOT MT-safe!");
     // LogFileOutput::write_block() has called fflush().
-    // stderr does not cache.
+    // Only LogFileStreamOutput instances need to flush here.
+    // stderr is unbuffered.
     fflush(stdout);
     _flush_sem.signal(req);
   }

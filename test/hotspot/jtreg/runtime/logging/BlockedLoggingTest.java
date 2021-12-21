@@ -55,7 +55,7 @@ public class BlockedLoggingTest {
             Thread[] threads = new Thread[ThreadNum];
             // The size of pipe buffer is indeterminate. It is presumably 64k on many Linux distros.
             // We just churn many gc-related logs in ChurnThread.Duration seconds.
-            for(int i = 0; i < ThreadNum; ++i) {
+            for (int i = 0; i < ThreadNum; ++i) {
                 threads[i] = new ChurnThread();
                 threads[i].start();
             }
