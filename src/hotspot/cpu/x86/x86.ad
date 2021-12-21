@@ -4580,7 +4580,8 @@ instruct insertF(vec dst, regF val, immU8 idx) %{
     assert(Matcher::vector_element_basic_type(this) == T_FLOAT, "sanity");
     assert($idx$$constant < (int)Matcher::vector_length(this), "out of bounds");
 
-    __ insertps($dst$$XMMRegister, $val$$XMMRegister, $idx$$constant);
+    uint x_idx = $idx$$constant & right_n_bits(2);
+    __ insertps($dst$$XMMRegister, $val$$XMMRegister, x_idx << 4);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4600,13 +4601,13 @@ instruct vinsertF(vec dst, vec src, regF val, immU8 idx, vec vtmp) %{
       uint y_idx = ($idx$$constant >> 2) & 1;
       int vlen_enc = Assembler::AVX_256bit;
       __ vextracti128($vtmp$$XMMRegister, $src$$XMMRegister, y_idx);
-      __ vinsertps($vtmp$$XMMRegister, $vtmp$$XMMRegister, $val$$XMMRegister, x_idx);
+      __ vinsertps($vtmp$$XMMRegister, $vtmp$$XMMRegister, $val$$XMMRegister, x_idx << 4);
       __ vinserti128($dst$$XMMRegister, $src$$XMMRegister, $vtmp$$XMMRegister, y_idx);
     } else {
       assert(vlen == 16, "sanity");
       uint y_idx = ($idx$$constant >> 2) & 3;
       __ vextracti32x4($vtmp$$XMMRegister, $src$$XMMRegister, y_idx);
-      __ vinsertps($vtmp$$XMMRegister, $vtmp$$XMMRegister, $val$$XMMRegister, x_idx);
+      __ vinsertps($vtmp$$XMMRegister, $vtmp$$XMMRegister, $val$$XMMRegister, x_idx << 4);
       __ vinserti32x4($dst$$XMMRegister, $src$$XMMRegister, $vtmp$$XMMRegister, y_idx);
     }
   %}
