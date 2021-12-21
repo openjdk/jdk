@@ -655,6 +655,8 @@ void HeapRegion::verify(VerifyOption vo,
   VerifyLiveClosure vl_cl(g1h, vo);
   VerifyRemSetClosure vr_cl(g1h, vo);
   bool is_region_humongous = is_humongous();
+  // We cast p to an oop, so region-bottom must be an obj-start.
+  assert(!is_region_humongous || is_starts_humongous(), "invariant");
   size_t object_num = 0;
   while (p < top()) {
     oop obj = cast_to_oop(p);

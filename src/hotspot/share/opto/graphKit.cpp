@@ -560,8 +560,7 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
   // let us handle the throw inline, with a preconstructed instance.
   // Note:   If the deopt count has blown up, the uncommon trap
   // runtime is going to flush this nmethod, not matter what.
-  if (treat_throw_as_hot
-      && (!StackTraceInThrowable || OmitStackTraceInFastThrow)) {
+  if (treat_throw_as_hot && method()->can_omit_stack_trace()) {
     // If the throw is local, we use a pre-existing instance and
     // punt on the backtrace.  This would lead to a missing backtrace
     // (a repeat of 4292742) if the backtrace object is ever asked
