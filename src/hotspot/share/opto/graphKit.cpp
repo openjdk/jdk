@@ -613,6 +613,13 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
       const TypeOopPtr* val_type = TypeOopPtr::make_from_klass(env()->String_klass());
       Node *store = access_store_at(ex_node, adr, adr_typ, null(), val_type, T_OBJECT, IN_HEAP);
 
+      if (!method()->has_exception_handlers()) {
+        // We don't need to preserve the stack if there's no handler as the entire frame is going to be popped anyway.
+        // This prevents issues with exception handling and late inlining.
+        set_sp(0);
+        clean_stack(0);
+      }
+
       add_exception_state(make_exception_state(ex_node));
       return;
     }
@@ -2487,8 +2494,7 @@ Node* GraphKit::make_runtime_call(int flags,
                                   Node* parm0, Node* parm1,
                                   Node* parm2, Node* parm3,
                                   Node* parm4, Node* parm5,
-                                  Node* parm6, Node* parm7,
-                                  Node* parm8) {
+                                  Node* parm6, Node* parm7) {
   assert(call_addr != NULL, "must not call NULL targets");
 
   // Slow-path call
@@ -2535,8 +2541,7 @@ Node* GraphKit::make_runtime_call(int flags,
   if (parm5 != NULL) { call->init_req(TypeFunc::Parms+5, parm5);
   if (parm6 != NULL) { call->init_req(TypeFunc::Parms+6, parm6);
   if (parm7 != NULL) { call->init_req(TypeFunc::Parms+7, parm7);
-  if (parm8 != NULL) { call->init_req(TypeFunc::Parms+8, parm8);
-  /* close each nested if ===> */  } } } } } } } } }
+  /* close each nested if ===> */  } } } } } } } }
   assert(call->in(call->req()-1) != NULL, "must initialize all parms");
 
   if (!is_leaf) {
@@ -2737,7 +2742,9 @@ void GraphKit::make_slow_call_ex(Node* call, ciInstanceKlass* ex_klass, bool sep
   // Make a catch node with just two handlers:  fall-through and catch-all
   Node* i_o  = _gvn.transform( new ProjNode(call, TypeFunc::I_O, separate_io_proj) );
   Node* catc = _gvn.transform( new CatchNode(control(), i_o, 2) );
-  Node* norm = _gvn.transform( new CatchProjNode(catc, CatchProjNode::fall_through_index, CatchProjNode::no_handler_bci) );
+  Node* norm = new CatchProjNode(catc, CatchProjNode::fall_through_index, CatchProjNode::no_handler_bci);
+  _gvn.set_type_bottom(norm);
+  C->record_for_igvn(norm);
   Node* excp = _gvn.transform( new CatchProjNode(catc, CatchProjNode::catch_all_index,    CatchProjNode::no_handler_bci) );
 
   { PreserveJVMState pjvms(this);
@@ -3978,20 +3985,28 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     initial_slow_test = initial_slow_test->as_Bool()->as_int_value(&_gvn);
   }
 
+  const TypeOopPtr* ary_type = _gvn.type(klass_node)->is_klassptr()->as_instance_type();
+  Node* valid_length_test = C->top();
+  if (ary_type->klass()->is_array_klass()) {
+    BasicType bt = ary_type->klass()->as_array_klass()->element_type()->basic_type();
+    jint max = TypeAryPtr::max_array_length(bt);
+    Node* valid_length_cmp  = _gvn.transform(new CmpUNode(length, intcon(max)));
+    valid_length_test = _gvn.transform(new BoolNode(valid_length_cmp, BoolTest::le));
+  }
+
   // Create the AllocateArrayNode and its result projections
   AllocateArrayNode* alloc
     = new AllocateArrayNode(C, AllocateArrayNode::alloc_type(TypeInt::INT),
                             control(), mem, i_o(),
                             size, klass_node,
                             initial_slow_test,
-                            length);
+                            length, valid_length_test);
 
   // Cast to correct type.  Note that the klass_node may be constant or not,
   // and in the latter case the actual array type will be inexact also.
   // (This happens via a non-constant argument to inline_native_newArray.)
   // In any case, the value of klass_node provides the desired array type.
   const TypeInt* length_type = _gvn.find_int_type(length);
-  const TypeOopPtr* ary_type = _gvn.type(klass_node)->is_klassptr()->as_instance_type();
   if (ary_type->isa_aryptr() && length_type != NULL) {
     // Try to get a better type than POS for the size
     ary_type = ary_type->is_aryptr()->cast_to_size(length_type);

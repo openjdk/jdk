@@ -226,10 +226,10 @@ public class Int64VectorTests extends AbstractVectorTest {
         }
     }
 
-    static void assertInsertArraysEquals(int[] r, int[] a, int element, int index) {
-        int i = 0;
+    static void assertInsertArraysEquals(int[] r, int[] a, int element, int index, int start, int end) {
+        int i = start;
         try {
-            for (; i < a.length; i += 1) {
+            for (; i < end; i += 1) {
                 if(i%SPECIES.length() == index) {
                     Assert.assertEquals(r[i], element);
                 } else {
@@ -3409,13 +3409,16 @@ public class Int64VectorTests extends AbstractVectorTest {
         int[] r = fr.apply(SPECIES.length());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
+            for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                av.withLane(0, (int)4).intoArray(r, i);
+                av.withLane((j++ & (SPECIES.length()-1)), (int)(65535+i)).intoArray(r, i);
             }
         }
 
-        assertInsertArraysEquals(r, a, (int)4, 0);
+
+        for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
+            assertInsertArraysEquals(r, a, (int)(65535+i), (j++ & (SPECIES.length()-1)), i , i + SPECIES.length());
+        }
     }
     static boolean testIS_DEFAULT(int a) {
         return bits(a)==0;

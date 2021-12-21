@@ -416,6 +416,11 @@ class LateInlineMHCallGenerator : public LateInlineCallGenerator {
 };
 
 bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms) {
+  // When inlining a virtual call, the null check at the call and the call itself can throw. These 2 paths have different
+  // expression stacks which causes late inlining to break. The MH invoker is not expected to be called from a method wih
+  // exception handlers. When there is no exception handler, GraphKit::builtin_throw() pops the stack which solves the issue
+  // of late inlining with exceptions.
+  assert(!jvms->method()->has_exception_handlers(), "no exception handler expected");
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
   bool input_not_const = true;
