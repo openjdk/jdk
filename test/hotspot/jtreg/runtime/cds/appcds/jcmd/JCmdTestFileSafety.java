@@ -64,6 +64,13 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         }
     }
 
+    private static void removeFile(String fileName) throws Exception {
+        File file = new File(fileName);
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
     static void test() throws Exception {
         buildJars();
 
@@ -78,11 +85,9 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         }
         outputDirFile.setWritable(true);
         String localFileName = subDir + File.separator + "MyStaticDump.jsa";
+        removeFile(localFileName);
+
         setIsStatic(true/*static*/);
-        File fileLocal = new File(localFileName);
-        if (fileLocal.exists()) {
-            fileLocal.delete();
-        }
         // Set target dir not writable, do static dump
         print2ln(test_count++ + " Set target dir not writable, do static dump");
         setKeepArchive(true);
@@ -97,11 +102,9 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         if (!ft2.equals(ft1)) {
             throw new RuntimeException("Archive file " + localFileName + " should not be updated");
         }
-
-        if (fileLocal.exists()) {
-            fileLocal.delete();
-        }
+        removeFile(localFileName);
         outputDirFile.setWritable(true);
+
         // Illegal character in file name
         localFileName = "mystatic:.jsa";
         OutputAnalyzer output = test(localFileName, pid, noBoot,  EXPECT_FAIL);
@@ -127,9 +130,7 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
             throw new RuntimeException("Archive file " + localFileName + " should not be updated");
         }
         app.stopApp();
-        if (fileLocal.exists()) {
-            fileLocal.delete();
-        }
+        removeFile(localFileName);
         outputDirFile.setWritable(true);
         outputDirFile.delete();
     }
