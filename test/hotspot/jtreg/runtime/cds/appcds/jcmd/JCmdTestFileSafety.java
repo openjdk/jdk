@@ -95,7 +95,7 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         test(localFileName, pid, noBoot,  EXPECT_FAIL);
         FileTime ft2 = Files.getLastModifiedTime(Paths.get(localFileName));
         if (!ft2.equals(ft1)) {
-            throw new RuntimeException("Archive file " + localFileName + " should be created");
+            throw new RuntimeException("Archive file " + localFileName + " should not be updated");
         }
 
         if (fileLocal.exists()) {
@@ -124,7 +124,7 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         test(localFileName, pid, noBoot,  EXPECT_FAIL);
         ft2 = Files.getLastModifiedTime(Paths.get(localFileName));
         if (!ft2.equals(ft1)) {
-            throw new RuntimeException("Archive file " + localFileName + " should be created");
+            throw new RuntimeException("Archive file " + localFileName + " should not be updated");
         }
         app.stopApp();
         if (fileLocal.exists()) {
