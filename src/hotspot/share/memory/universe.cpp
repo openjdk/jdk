@@ -110,6 +110,9 @@ OopHandle Universe::_delayed_stack_overflow_error_message;
 OopHandle Universe::_preallocated_out_of_memory_error_array;
 volatile jint Universe::_preallocated_out_of_memory_error_avail_count = 0;
 
+OopHandle Universe::_metaspace_string;
+OopHandle Universe::_class_metaspace_string;
+
 OopHandle Universe::_null_ptr_exception_instance;
 OopHandle Universe::_arithmetic_exception_instance;
 OopHandle Universe::_virtual_machine_error_instance;
@@ -640,6 +643,14 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
   }
 }
 
+bool Universe::is_out_of_memory_error_metaspace(oop exc) {
+  return java_lang_Throwable::message(exc) == _metaspace_string.resolve();
+}
+
+bool Universe::is_out_of_memory_error_class_metaspace(oop exc) {
+  return java_lang_Throwable::message(exc) == _class_metaspace_string.resolve();
+}
+
 // Setup preallocated OutOfMemoryError errors
 void Universe::create_preallocated_out_of_memory_errors(TRAPS) {
   InstanceKlass* ik = vmClasses::OutOfMemoryError_klass();
@@ -659,9 +670,11 @@ void Universe::create_preallocated_out_of_memory_errors(TRAPS) {
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_c_heap), msg());
 
   msg = java_lang_String::create_from_str("Metaspace", CHECK);
+  _metaspace_string = OopHandle(vm_global(), msg());
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_metaspace), msg());
 
   msg = java_lang_String::create_from_str("Compressed class space", CHECK);
+  _class_metaspace_string = OopHandle(vm_global(), msg());
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_class_metaspace), msg());
 
   msg = java_lang_String::create_from_str("Requested array size exceeds VM limit", CHECK);

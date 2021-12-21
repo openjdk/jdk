@@ -129,6 +129,9 @@ class Universe: AllStatic {
   // array of preallocated error objects with backtrace
   static OopHandle     _preallocated_out_of_memory_error_array;
 
+  static OopHandle     _metaspace_string;
+  static OopHandle     _class_metaspace_string;
+
   // number of preallocated error objects available for use
   static volatile jint _preallocated_out_of_memory_error_avail_count;
 
@@ -289,6 +292,9 @@ class Universe: AllStatic {
   static oop out_of_memory_error_array_size();
   static oop out_of_memory_error_gc_overhead_limit();
   static oop out_of_memory_error_realloc_objects();
+
+  static bool is_out_of_memory_error_metaspace(oop exc);
+  static bool is_out_of_memory_error_class_metaspace(oop exc);
 
   // Throw default _out_of_memory_error_retry object as it will never propagate out of the VM
   static oop out_of_memory_error_retry();

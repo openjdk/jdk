@@ -461,9 +461,9 @@ volatile int Exceptions::_out_of_memory_error_metaspace_errors = 0;
 volatile int Exceptions::_out_of_memory_error_class_metaspace_errors = 0;
 
 void Exceptions::count_out_of_memory_exceptions(Handle exception) {
-  if (exception() == Universe::out_of_memory_error_metaspace()) {
+  if (Universe::is_out_of_memory_error_metaspace(exception())) {
      Atomic::inc(&_out_of_memory_error_metaspace_errors, memory_order_relaxed);
-  } else if (exception() == Universe::out_of_memory_error_class_metaspace()) {
+  } else if (Universe::is_out_of_memory_error_metaspace(exception())) {
      Atomic::inc(&_out_of_memory_error_class_metaspace_errors, memory_order_relaxed);
   } else {
      // everything else reported as java heap OOM
