@@ -82,8 +82,8 @@ public class StringTableCleaningTest {
     private static final String g1Suffix = "Pause(?! Cleanup)";
 
     // Suffix for ZGC. Only major collections clean the string table.
-    private static final String zStartSuffix = "Garbage Collection \\(Major.*\\)$";
-    private static final String zEndSuffix = "Garbage Collection \\(Major.*\\) .*->.*$";
+    private static final String zStartSuffix = "Major Garbage Collection \\(.*\\)$";
+    private static final String zEndSuffix = "Major Garbage Collection \\(.*\\) .*->.*$";
 
     // Suffix for Shenandoah.
     private static final String shenSuffix = "Concurrent weak roots";
