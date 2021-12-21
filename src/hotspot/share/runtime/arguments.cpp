@@ -3514,6 +3514,11 @@ void Arguments::init_shared_archive_paths() {
       vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
     }
     check_unsupported_dumping_properties();
+
+    if (os::same_files((const char*)get_default_shared_archive_path(), ArchiveClassesAtExit)) {
+      vm_exit_during_initialization(
+        "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", get_default_shared_archive_path());
+    }
   }
 
   if (SharedArchiveFile == nullptr) {

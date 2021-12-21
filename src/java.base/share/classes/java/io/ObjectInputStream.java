@@ -385,6 +385,8 @@ public class ObjectInputStream
      * by invoking the serial filter factory returned from {@link Config#getSerialFilterFactory()}
      * with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
+     * If the serial filter or serial filter factory properties are invalid
+     * an {@link IllegalStateException} is thrown.
      * When the filter factory {@code apply} method is invoked it may throw a runtime exception
      * preventing the {@code ObjectInputStream} from being constructed.
      *
@@ -399,6 +401,8 @@ public class ObjectInputStream
      * @throws  IOException if an I/O error occurs while reading stream header
      * @throws  SecurityException if untrusted subclass illegally overrides
      *          security-sensitive methods
+     * @throws  IllegalStateException if the initialization of {@link ObjectInputFilter.Config}
+     *          fails due to invalid serial filter or serial filter factory properties.
      * @throws  NullPointerException if {@code in} is {@code null}
      * @see     ObjectInputStream#ObjectInputStream()
      * @see     ObjectInputStream#readFields()
@@ -425,6 +429,8 @@ public class ObjectInputStream
      * by invoking the serial filter factory returned from {@link Config#getSerialFilterFactory()}
      * with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
+     * If the serial filter or serial filter factory properties are invalid
+     * an {@link IllegalStateException} is thrown.
      * When the filter factory {@code apply} method is invoked it may throw a runtime exception
      * preventing the {@code ObjectInputStream} from being constructed.
      *
@@ -437,6 +443,8 @@ public class ObjectInputStream
      *          {@code checkPermission} method denies enabling
      *          subclassing.
      * @throws  IOException if an I/O error occurs while creating this stream
+     * @throws  IllegalStateException if the initialization of {@link ObjectInputFilter.Config}
+     *      fails due to invalid serial filter or serial filter factory properties.
      * @see SecurityManager#checkPermission
      * @see java.io.SerializablePermission
      */
