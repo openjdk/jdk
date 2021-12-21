@@ -1910,7 +1910,6 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
       // Number of dumper threads that only iterate heap.
       uint _heap_only_dumper_threads = _num_dumper_threads - 1 /* VMDumper thread */;
       _dumper_controller = new (std::nothrow) DumperController(_heap_only_dumper_threads);
-      _poi = Universe::heap()->parallel_object_iterator(_num_dumper_threads);
     }
   }
 
@@ -1998,10 +1997,6 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
         delete _stack_traces[i];
       }
       FREE_C_HEAP_ARRAY(ThreadStackTrace*, _stack_traces);
-    }
-    if (_poi != NULL) {
-      delete _poi;
-      _poi = NULL;
     }
     if (_dumper_controller != NULL) {
       delete _dumper_controller;
@@ -2252,7 +2247,14 @@ void VM_HeapDumper::doit() {
     work(0);
   } else {
     prepare_parallel_dump(workers->active_workers());
-    workers->run_task(this);
+    if (_num_dumper_threads > 1) {
+      ParallelObjectIterator poi(_num_dumper_threads);
+      _poi = &poi;
+      workers->run_task(this);
+      _poi = NULL;
+    } else {
+      workers->run_task(this);
+    }
     finish_parallel_dump();
   }
 

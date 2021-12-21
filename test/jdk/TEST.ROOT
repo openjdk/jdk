@@ -25,9 +25,7 @@ javax/management sun/awt sun/java2d javax/xml/jaxp/testng/validation java/lang/P
 # Tests that cannot run concurrently
 exclusiveAccess.dirs=java/math/BigInteger/largeMemory \
 java/rmi/Naming java/util/prefs sun/management/jmxremote \
-sun/tools/jstatd sun/tools/jcmd \
-sun/tools/jinfo sun/tools/jmap sun/tools/jps sun/tools/jstack sun/tools/jstat \
-com/sun/tools/attach sun/security/mscapi java/util/Arrays/largeMemory \
+sun/tools/jstatd sun/security/mscapi java/util/Arrays/largeMemory \
 java/util/BitSet/stream javax/rmi java/net/httpclient/websocket \
 com/sun/net/httpserver/simpleserver
 

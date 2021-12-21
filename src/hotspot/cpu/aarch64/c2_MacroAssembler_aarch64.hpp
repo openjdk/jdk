@@ -55,6 +55,15 @@
                                FloatRegister ztmp1, FloatRegister ztmp2,
                                PRegister pgtmp, PRegister ptmp, bool isL);
 
+  // Compress the least significant bit of each byte to the rightmost and clear
+  // the higher garbage bits.
+  void bytemask_compress(Register dst);
+
+  // Pack the lowest-numbered bit of each mask element in src into a long value
+  // in dst, at most the first 64 lane elements.
+  void sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
+                        FloatRegister vtmp1, FloatRegister vtmp2, PRegister pgtmp);
+
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
                     FloatRegister src2, int cond, bool isQ);

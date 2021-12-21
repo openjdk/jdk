@@ -113,10 +113,12 @@ void MetaspaceCriticalAllocation::remove(MetadataAllocationRequest* request) {
 }
 
 bool MetaspaceCriticalAllocation::try_allocate_critical(MetadataAllocationRequest* request) {
-  MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
-  if (_requests_head == request) {
-    // The first request can't opportunistically ride on a previous GC
-    return false;
+  {
+    MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
+    if (_requests_head == request) {
+      // The first request can't opportunistically ride on a previous GC
+      return false;
+    }
   }
   // Try to ride on a previous GC and hope for early satisfaction
   wait_for_purge(request);
@@ -124,8 +126,12 @@ bool MetaspaceCriticalAllocation::try_allocate_critical(MetadataAllocationReques
 }
 
 void MetaspaceCriticalAllocation::wait_for_purge(MetadataAllocationRequest* request) {
-  while (!request->has_result()) {
-    ThreadBlockInVM tbivm(JavaThread::current());
+  ThreadBlockInVM tbivm(JavaThread::current());
+  MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
+  for (;;) {
+    if (request->has_result()) {
+      break;
+    }
     MetaspaceCritical_lock->wait_without_safepoint_check();
   }
 }

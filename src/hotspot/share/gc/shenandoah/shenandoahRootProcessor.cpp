@@ -97,29 +97,6 @@ ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase p
   _worker_phase(phase) {
 }
 
-ShenandoahRootScanner::ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
-  ShenandoahRootProcessor(phase),
-  _thread_roots(phase, n_workers > 1) {
-  nmethod::oops_do_marking_prologue();
-}
-
-ShenandoahRootScanner::~ShenandoahRootScanner() {
-  nmethod::oops_do_marking_epilogue();
-}
-
-void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops) {
-  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
-  roots_do(worker_id, oops, &blobs_cl);
-}
-
-void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops, CodeBlobClosure* code, ThreadClosure *tc) {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-
-  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
-  ResourceMark rm;
-  _thread_roots.threads_do(&tc_cl, worker_id);
-}
-
 ShenandoahSTWRootScanner::ShenandoahSTWRootScanner(ShenandoahPhaseTimings::Phase phase) :
    ShenandoahRootProcessor(phase),
    _thread_roots(phase, ShenandoahHeap::heap()->workers()->active_workers() > 1),

@@ -115,6 +115,8 @@ public class MethodHandleAccessorsTest {
         public static final int STATIC_FINAL = 1;
         private final int i;
         private final String s;
+        private static String name = "name";
+        private byte b = 9;
 
         public Public() {
             this.i = 0;
@@ -129,6 +131,11 @@ public class MethodHandleAccessorsTest {
         public Public(String s) {
             this.i = 0;
             this.s = s;
+        }
+        public Public(byte b) {
+            this.b = b;
+            this.i = 0;
+            this.s = null;
         }
 
         public Public(int first, int... rest) {
@@ -162,6 +169,7 @@ public class MethodHandleAccessorsTest {
             return "Public{" +
                    "i=" + i +
                    ", s='" + s + '\'' +
+                   ", b=" + b +
                    '}';
         }
     }
@@ -385,11 +393,14 @@ public class MethodHandleAccessorsTest {
             new IllegalArgumentException("argument type mismatch"),
             new IllegalArgumentException("object is not an instance of declaring class"),
     };
-    private static final Throwable[] cannot_get_final_field = new Throwable[] {
-            new IllegalArgumentException("Can not get final")
+    private static final Throwable[] cannot_get_field = new Throwable[] {
+            new IllegalArgumentException("Can not get")
     };
-    private static final Throwable[] cannot_set_final_field = new Throwable[] {
-            new IllegalArgumentException("Can not set final")
+    private static final Throwable[] cannot_set_field = new Throwable[] {
+            new IllegalArgumentException("Can not set")
+    };
+    private static final Throwable[] mismatched_field_type = new Throwable[] {
+            new IllegalArgumentException("Can not set")
     };
     private static final Throwable[] wrong_argument_count_no_details = new Throwable[] {
             new IllegalArgumentException("wrong number of arguments")
@@ -592,23 +603,30 @@ public class MethodHandleAccessorsTest {
     @DataProvider(name = "readAccess")
     private Object[][] readAccess() {
         boolean newImpl = Boolean.getBoolean("jdk.reflect.useDirectMethodHandle");
+        String wrongInst = new String();
         return new Object[][]{
                 new Object[]{"i", new Public(100), 100, noException},
                 new Object[]{"s", new Public("test"), "test", noException},
-                new Object[]{"s", new Object(), "test",
-                             newImpl ? cannot_get_final_field : cannot_set_final_field},
                 new Object[]{"s", null, "test", null_target},
+                new Object[]{"s", wrongInst, "test",
+                        newImpl ? cannot_get_field : cannot_set_field},
+                new Object[]{"b", wrongInst, 0,
+                        newImpl ? cannot_get_field : cannot_set_field},
         };
     }
     @DataProvider(name = "writeAccess")
     private Object[][] writeAccess() {
+        Object o = new Object();
+        byte b = 1;
         return new Object[][]{
                 new Object[]{"i", new Public(100), 100, 200, noException},
+                new Object[]{"i", new Public(100), 100, Integer.valueOf(10), noException},
                 new Object[]{"s", new Public("test"), "test", "newValue", noException},
-                // ## no exception thrown
-                // new Object[]{"i", new Public(100), 100, new Object(), cannot_set_final_field},
-                new Object[]{"s", new Object(), "test", "dummy", cannot_set_final_field},
                 new Object[]{"s", null, "test", "dummy", null_target},
+                new Object[]{"b", new Public(b), b, null, mismatched_field_type},
+                new Object[]{"b", new Public(b), b, Long.valueOf(10), mismatched_field_type},
+                new Object[]{"name", null, "name", o, mismatched_field_type},
+                new Object[]{"i", new Public(100), 100, o, mismatched_field_type},
         };
     }
 

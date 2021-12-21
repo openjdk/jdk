@@ -1018,8 +1018,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         @SuppressWarnings("rawtypes")
         Dictionary labelTable = getLabelTable();
 
-        if (labelTable != null && (labelTable instanceof PropertyChangeListener)) {
-            removePropertyChangeListener((PropertyChangeListener) labelTable);
+        if (labelTable instanceof PropertyChangeListener listener) {
+            removePropertyChangeListener(listener);
         }
 
         addPropertyChangeListener( table );

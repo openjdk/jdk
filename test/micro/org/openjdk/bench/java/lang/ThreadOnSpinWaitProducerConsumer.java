@@ -193,6 +193,7 @@ public class ThreadOnSpinWaitProducerConsumer {
             }
         }
         threadConsumer.interrupt();
+        threadConsumer.join();
 
         if (producedDataCount != maxNum) {
             throw new RuntimeException("Produced: " + producedDataCount + ". Expected: " + maxNum);

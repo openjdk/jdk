@@ -31,12 +31,15 @@ SwitchErrors.java:160:18: compiler.err.pattern.dominated
 SwitchErrors.java:172:18: compiler.err.pattern.expected
 SwitchErrors.java:178:76: compiler.err.cant.resolve.location: kindname.variable, n, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
 SwitchErrors.java:184:71: compiler.err.cant.resolve.location: kindname.variable, n, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
-SwitchErrors.java:191:42: compiler.err.flows.through.from.pattern
-SwitchErrors.java:200:24: compiler.err.flows.through.to.pattern
-SwitchErrors.java:209:29: compiler.err.total.pattern.and.default
-SwitchErrors.java:216:42: compiler.err.flows.through.from.pattern
-SwitchErrors.java:216:45: compiler.err.flows.through.from.pattern
-SwitchErrors.java:228:18: compiler.err.duplicate.total.pattern
+SwitchErrors.java:191:21: compiler.err.flows.through.to.pattern
+SwitchErrors.java:200:42: compiler.err.pattern.dominated
+SwitchErrors.java:209:24: compiler.err.flows.through.to.pattern
+SwitchErrors.java:218:29: compiler.err.total.pattern.and.default
+SwitchErrors.java:225:21: compiler.err.flows.through.to.pattern
+SwitchErrors.java:225:45: compiler.err.flows.through.from.pattern
+SwitchErrors.java:232:42: compiler.err.pattern.dominated
+SwitchErrors.java:232:45: compiler.err.flows.through.from.pattern
+SwitchErrors.java:244:18: compiler.err.duplicate.total.pattern
 SwitchErrors.java:9:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:15:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:21:9: compiler.err.not.exhaustive.statement
@@ -48,7 +51,7 @@ SwitchErrors.java:91:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:97:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:104:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:164:9: compiler.err.not.exhaustive.statement
-SwitchErrors.java:221:9: compiler.err.not.exhaustive.statement
+SwitchErrors.java:237:9: compiler.err.not.exhaustive.statement
 - compiler.note.preview.filename: SwitchErrors.java, DEFAULT
 - compiler.note.preview.recompile
-51 errors
+54 errors

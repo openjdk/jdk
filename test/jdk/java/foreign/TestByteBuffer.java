@@ -28,8 +28,6 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestByteBuffer
  */
 
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
@@ -82,6 +80,13 @@ import org.testng.SkipException;
 import org.testng.annotations.*;
 import sun.nio.ch.DirectBuffer;
 
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
+import static jdk.incubator.foreign.ValueLayout.JAVA_CHAR;
+import static jdk.incubator.foreign.ValueLayout.JAVA_DOUBLE;
+import static jdk.incubator.foreign.ValueLayout.JAVA_FLOAT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_LONG;
+import static jdk.incubator.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
 public class TestByteBuffer {
@@ -102,40 +107,40 @@ public class TestByteBuffer {
 
     static SequenceLayout tuples = MemoryLayout.sequenceLayout(500,
             MemoryLayout.structLayout(
-                    MemoryLayouts.BITS_32_BE.withName("index"),
-                    MemoryLayouts.BITS_32_BE.withName("value")
+                    JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("index"),
+                    JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
             ));
 
     static SequenceLayout bytes = MemoryLayout.sequenceLayout(100,
-            MemoryLayouts.BITS_8_BE
+            JAVA_BYTE
     );
 
     static SequenceLayout chars = MemoryLayout.sequenceLayout(100,
-            MemoryLayouts.BITS_16_BE
+            JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN)
     );
 
     static SequenceLayout shorts = MemoryLayout.sequenceLayout(100,
-            MemoryLayouts.BITS_16_BE
+            JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN)
     );
 
     static SequenceLayout ints = MemoryLayout.sequenceLayout(100,
-            MemoryLayouts.BITS_32_BE
+            JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN)
     );
 
     static SequenceLayout floats = MemoryLayout.sequenceLayout(100,
-            MemoryLayouts.BITS_32_BE
+            JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN)
     );
 
     static SequenceLayout longs = MemoryLayout.sequenceLayout(100,
-            MemoryLayouts.BITS_64_BE
+            JAVA_LONG.withOrder(ByteOrder.BIG_ENDIAN)
     );
 
     static SequenceLayout doubles = MemoryLayout.sequenceLayout(100,
-            MemoryLayouts.BITS_64_BE
+            JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN)
     );
 
-    static VarHandle indexHandle = tuples.varHandle(int.class, PathElement.sequenceElement(), PathElement.groupElement("index"));
-    static VarHandle valueHandle = tuples.varHandle(float.class, PathElement.sequenceElement(), PathElement.groupElement("value"));
+    static VarHandle indexHandle = tuples.varHandle(PathElement.sequenceElement(), PathElement.groupElement("index"));
+    static VarHandle valueHandle = tuples.varHandle(PathElement.sequenceElement(), PathElement.groupElement("value"));
 
     static void initTuples(MemorySegment base, long count) {
         for (long i = 0; i < count ; i++) {
@@ -263,7 +268,7 @@ public class TestByteBuffer {
         }
     }
 
-    @Test(dataProvider = "mappedOps", expectedExceptions = UnsupportedOperationException.class)
+    @Test(dataProvider = "mappedOps", expectedExceptions = IllegalStateException.class)
     public void testMappedSegmentOperations(MappedSegmentOp mappedBufferOp) throws Throwable {
         File f = new File("test3.out");
         f.createNewFile();
@@ -324,6 +329,9 @@ public class TestByteBuffer {
             segment.isLoaded();
             segment.unload();
             segment.isLoaded();
+        } catch(IOException e) {
+            if (e.getMessage().equals("Function not implemented"))
+                throw new SkipException(e.getMessage(), e);
         }
     }
 
@@ -480,7 +488,7 @@ public class TestByteBuffer {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void testTooBigForByteBuffer() {
-        MemorySegment segment = MemoryAddress.NULL.asSegment(Integer.MAX_VALUE + 10L, ResourceScope.globalScope());
+        MemorySegment segment = MemorySegment.ofAddress(MemoryAddress.NULL, Integer.MAX_VALUE + 10L, ResourceScope.newImplicitScope());
         segment.asByteBuffer();
     }
 
@@ -511,7 +519,7 @@ public class TestByteBuffer {
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
             MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0, SIZE, FileChannel.MapMode.READ_WRITE, scope);
             for (byte offset = 0; offset < SIZE; offset++) {
-                MemoryAccess.setByteAtOffset(segment, offset, offset);
+                segment.set(JAVA_BYTE, offset, offset);
             }
             segment.force();
         }
@@ -519,7 +527,7 @@ public class TestByteBuffer {
         for (int offset = 0 ; offset < SIZE ; offset++) {
             try (ResourceScope scope = ResourceScope.newConfinedScope()) {
                 MemorySegment segment = MemorySegment.mapFile(f.toPath(), offset, SIZE - offset, FileChannel.MapMode.READ_ONLY, scope);
-                assertEquals(MemoryAccess.getByte(segment), offset);
+                assertEquals(segment.get(JAVA_BYTE, 0), offset);
             }
         }
     }
@@ -636,13 +644,13 @@ public class TestByteBuffer {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void testDeadAccessOnClosedBufferSegment() {
-        MemorySegment s1 = MemorySegment.allocateNative(MemoryLayouts.JAVA_INT, ResourceScope.newConfinedScope());
+        MemorySegment s1 = MemorySegment.allocateNative(JAVA_INT, ResourceScope.newConfinedScope());
         MemorySegment s2 = MemorySegment.ofByteBuffer(s1.asByteBuffer());
 
         // memory freed
         s1.scope().close();
 
-        MemoryAccess.setInt(s2, 10); // Dead access!
+        s2.set(JAVA_INT, 0, 10); // Dead access!
     }
 
     @Test(dataProvider = "allScopes")
@@ -654,7 +662,7 @@ public class TestByteBuffer {
              ResourceScope scp = closeableScopeOrNull(scope = scopeSupplier.get())) {
             MemorySegment segment = MemorySegment.allocateNative(10, 1, scope);
             for (int i = 0; i < 10; i++) {
-                MemoryAccess.setByteAtOffset(segment, i, (byte) i);
+                segment.set(JAVA_BYTE, i, (byte) i);
             }
             ByteBuffer bb = segment.asByteBuffer();
             assertEquals(channel.write(bb), 10);
@@ -674,7 +682,7 @@ public class TestByteBuffer {
         try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             MemorySegment segment = MemorySegment.allocateNative(10, scopeSupplier.get());
             for (int i = 0; i < 10; i++) {
-                MemoryAccess.setByteAtOffset(segment, i, (byte) i);
+                segment.set(JAVA_BYTE, i, (byte) i);
             }
             ByteBuffer bb = segment.asByteBuffer();
             segment.scope().close();
@@ -694,7 +702,7 @@ public class TestByteBuffer {
             int newSize = 8;
             var slice = segment.asSlice(4, newSize);
 
-            var bytes = slice.toByteArray();
+            var bytes = slice.toArray(JAVA_BYTE);
             assertEquals(newSize, bytes.length);
 
             var buffer = slice.asByteBuffer();
@@ -719,6 +727,7 @@ public class TestByteBuffer {
     public static Object[][] segments() throws Throwable {
         return new Object[][] {
                 { (Supplier<MemorySegment>) () -> MemorySegment.allocateNative(16, ResourceScope.newImplicitScope()) },
+                { (Supplier<MemorySegment>) () -> MemorySegment.allocateNative(16, ResourceScope.newConfinedScope()) },
                 { (Supplier<MemorySegment>) () -> MemorySegment.ofArray(new byte[16]) }
         };
     }
@@ -729,27 +738,20 @@ public class TestByteBuffer {
                 { (Supplier<ResourceScope>) () -> ResourceScope.newSharedScope()   },
                 { (Supplier<ResourceScope>) () -> ResourceScope.newConfinedScope() },
                 { (Supplier<ResourceScope>) () -> ResourceScope.newSharedScope(Cleaner.create())   },
-                { (Supplier<ResourceScope>) () -> ResourceScope.newConfinedScope(Cleaner.create()) }
-        };
-    }
-
-    @DataProvider(name = "implicitScopes")
-    public static Object[][] implicitScopes() {
-        return new Object[][] {
-                { (Supplier<ResourceScope>) ResourceScope::newImplicitScope },
-                { (Supplier<ResourceScope>) ResourceScope::globalScope      },
+                { (Supplier<ResourceScope>) () -> ResourceScope.newConfinedScope(Cleaner.create()) },
+                { (Supplier<ResourceScope>) () -> ResourceScope.newImplicitScope() }
         };
     }
 
     @DataProvider(name = "allScopes")
     public static Object[][] allScopes() {
-        return Stream.of(implicitScopes(), closeableScopes())
+        return Stream.of(new Object[][] { { (Supplier<ResourceScope>)ResourceScope::globalScope } }, closeableScopes())
                 .flatMap(Arrays::stream)
                 .toArray(Object[][]::new);
     }
 
     static ResourceScope closeableScopeOrNull(ResourceScope scope) {
-        if (scope.isImplicit())
+        if (scope == ResourceScope.globalScope())
             return null;
         return scope;
     }
@@ -812,34 +814,34 @@ public class TestByteBuffer {
     @DataProvider(name = "resizeOps")
     public Object[][] resizeOps() {
         Consumer<MemorySegment> byteInitializer =
-                (base) -> initBytes(base, bytes, (addr, pos) -> MemoryAccess.setByteAtOffset(addr, pos, (byte)(long)pos));
+                (base) -> initBytes(base, bytes, (addr, pos) -> addr.set(JAVA_BYTE, pos, (byte)(long)pos));
         Consumer<MemorySegment> charInitializer =
-                (base) -> initBytes(base, chars, (addr, pos) -> MemoryAccess.setCharAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (char)(long)pos));
+                (base) -> initBytes(base, chars, (addr, pos) -> addr.setAtIndex(JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN), pos, (char)(long)pos));
         Consumer<MemorySegment> shortInitializer =
-                (base) -> initBytes(base, shorts, (addr, pos) -> MemoryAccess.setShortAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (short)(long)pos));
+                (base) -> initBytes(base, shorts, (addr, pos) -> addr.setAtIndex(JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN), pos, (short)(long)pos));
         Consumer<MemorySegment> intInitializer =
-                (base) -> initBytes(base, ints, (addr, pos) -> MemoryAccess.setIntAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (int)(long)pos));
+                (base) -> initBytes(base, ints, (addr, pos) -> addr.setAtIndex(JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN), pos, (int)(long)pos));
         Consumer<MemorySegment> floatInitializer =
-                (base) -> initBytes(base, floats, (addr, pos) -> MemoryAccess.setFloatAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (float)(long)pos));
+                (base) -> initBytes(base, floats, (addr, pos) -> addr.setAtIndex(JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN), pos, (float)(long)pos));
         Consumer<MemorySegment> longInitializer =
-                (base) -> initBytes(base, longs, (addr, pos) -> MemoryAccess.setLongAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (long)pos));
+                (base) -> initBytes(base, longs, (addr, pos) -> addr.setAtIndex(JAVA_LONG.withOrder(ByteOrder.BIG_ENDIAN), pos, (long)pos));
         Consumer<MemorySegment> doubleInitializer =
-                (base) -> initBytes(base, doubles, (addr, pos) -> MemoryAccess.setDoubleAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (double)(long)pos));
+                (base) -> initBytes(base, doubles, (addr, pos) -> addr.setAtIndex(JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN), pos, (double)(long)pos));
 
         Consumer<MemorySegment> byteChecker =
-                (base) -> checkBytes(base, bytes, Function.identity(), (addr, pos) -> MemoryAccess.getByteAtOffset(addr, pos), ByteBuffer::get);
+                (base) -> checkBytes(base, bytes, Function.identity(), (addr, pos) -> addr.get(JAVA_BYTE, pos), ByteBuffer::get);
         Consumer<MemorySegment> charChecker =
-                (base) -> checkBytes(base, chars, ByteBuffer::asCharBuffer, (addr, pos) -> MemoryAccess.getCharAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), CharBuffer::get);
+                (base) -> checkBytes(base, chars, ByteBuffer::asCharBuffer, (addr, pos) -> addr.getAtIndex(JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN), pos), CharBuffer::get);
         Consumer<MemorySegment> shortChecker =
-                (base) -> checkBytes(base, shorts, ByteBuffer::asShortBuffer, (addr, pos) -> MemoryAccess.getShortAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), ShortBuffer::get);
+                (base) -> checkBytes(base, shorts, ByteBuffer::asShortBuffer, (addr, pos) -> addr.getAtIndex(JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN), pos), ShortBuffer::get);
         Consumer<MemorySegment> intChecker =
-                (base) -> checkBytes(base, ints, ByteBuffer::asIntBuffer, (addr, pos) -> MemoryAccess.getIntAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), IntBuffer::get);
+                (base) -> checkBytes(base, ints, ByteBuffer::asIntBuffer, (addr, pos) -> addr.getAtIndex(JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN), pos), IntBuffer::get);
         Consumer<MemorySegment> floatChecker =
-                (base) -> checkBytes(base, floats, ByteBuffer::asFloatBuffer, (addr, pos) -> MemoryAccess.getFloatAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), FloatBuffer::get);
+                (base) -> checkBytes(base, floats, ByteBuffer::asFloatBuffer, (addr, pos) -> addr.getAtIndex(JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN), pos), FloatBuffer::get);
         Consumer<MemorySegment> longChecker =
-                (base) -> checkBytes(base, longs, ByteBuffer::asLongBuffer, (addr, pos) -> MemoryAccess.getLongAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), LongBuffer::get);
+                (base) -> checkBytes(base, longs, ByteBuffer::asLongBuffer, (addr, pos) -> addr.getAtIndex(JAVA_LONG.withOrder(ByteOrder.BIG_ENDIAN), pos), LongBuffer::get);
         Consumer<MemorySegment> doubleChecker =
-                (base) -> checkBytes(base, doubles, ByteBuffer::asDoubleBuffer, (addr, pos) -> MemoryAccess.getDoubleAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), DoubleBuffer::get);
+                (base) -> checkBytes(base, doubles, ByteBuffer::asDoubleBuffer, (addr, pos) -> addr.getAtIndex(JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN), pos), DoubleBuffer::get);
 
         return new Object[][]{
                 {byteChecker, byteInitializer, bytes},

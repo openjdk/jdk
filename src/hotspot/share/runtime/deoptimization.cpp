@@ -585,7 +585,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // QQQ I'd rather see this pushed down into last_frame_adjust
   // and have it take the sender (aka caller).
 
-  if (deopt_sender.is_compiled_frame() || caller_was_method_handle) {
+  if (deopt_sender.is_compiled_caller() || caller_was_method_handle) {
     caller_adjustment = last_frame_adjust(0, callee_locals);
   } else if (callee_locals > callee_parameters) {
     // The caller frame may need extending to accommodate
@@ -798,6 +798,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
       // at an uncommon trap for an invoke (where the compiler
       // generates debug info before the invoke has executed)
       Bytecodes::Code cur_code = str.next();
+      Bytecodes::Code next_code = Bytecodes::_shouldnotreachhere;
       if (Bytecodes::is_invoke(cur_code)) {
         Bytecode_invoke invoke(mh, iframe->interpreter_frame_bci());
         cur_invoke_parameter_size = invoke.size_of_parameters();
@@ -806,7 +807,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
         }
       }
       if (str.bci() < max_bci) {
-        Bytecodes::Code next_code = str.next();
+        next_code = str.next();
         if (next_code >= 0) {
           // The interpreter oop map generator reports results before
           // the current bytecode has executed except in the case of
@@ -854,6 +855,10 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
           // Print out some information that will help us debug the problem
           tty->print_cr("Wrong number of expression stack elements during deoptimization");
           tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", i, cur_array->frames() - 1);
+          tty->print_cr("  Current code %s", Bytecodes::name(cur_code));
+          if (try_next_mask) {
+            tty->print_cr("  Next code %s", Bytecodes::name(next_code));
+          }
           tty->print_cr("  Fabricated interpreter frame had %d expression stack elements",
                         iframe->interpreter_frame_expression_stack_size());
           tty->print_cr("  Interpreter oop map had %d expression stack elements", mask.expression_stack_size());
@@ -2274,7 +2279,8 @@ Deoptimization::query_update_method_data(MethodData* trap_mdo,
     uint idx = reason;
 #if INCLUDE_JVMCI
     if (is_osr) {
-      idx += Reason_LIMIT;
+      // Upper half of history array used for traps in OSR compilations
+      idx += Reason_TRAP_HISTORY_LENGTH;
     }
 #endif
     uint prior_trap_count = trap_mdo->trap_count(idx);
@@ -2608,6 +2614,30 @@ jint Deoptimization::total_deoptimization_count() {
   return _deoptimization_hist[Reason_none][0][0];
 }
 
+// Get the deopt count for a specific reason and a specific action. If either
+// one of 'reason' or 'action' is null, the method returns the sum of all
+// deoptimizations with the specific 'action' or 'reason' respectively.
+// If both arguments are null, the method returns the total deopt count.
+jint Deoptimization::deoptimization_count(const char *reason_str, const char *action_str) {
+  if (reason_str == NULL && action_str == NULL) {
+    return total_deoptimization_count();
+  }
+  juint counter = 0;
+  for (int reason = 0; reason < Reason_LIMIT; reason++) {
+    if (reason_str == NULL || !strcmp(reason_str, trap_reason_name(reason))) {
+      for (int action = 0; action < Action_LIMIT; action++) {
+        if (action_str == NULL || !strcmp(action_str, trap_action_name(action))) {
+          juint* cases = _deoptimization_hist[reason][1+action];
+          for (int bc_case = 0; bc_case < BC_CASE_LIMIT; bc_case++) {
+            counter += cases[bc_case] >> LSB_BITS;
+          }
+        }
+      }
+    }
+  }
+  return counter;
+}
+
 void Deoptimization::print_statistics() {
   juint total = total_deoptimization_count();
   juint account = total;
@@ -2659,6 +2689,14 @@ bool Deoptimization::trap_state_is_recompiled(int trap_state) {
 
 const char* Deoptimization::trap_reason_name(int reason) {
   return "unknown";
+}
+
+jint Deoptimization::total_deoptimization_count() {
+  return 0;
+}
+
+jint Deoptimization::deoptimization_count(const char *reason_str, const char *action_str) {
+  return 0;
 }
 
 void Deoptimization::print_statistics() {

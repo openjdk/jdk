@@ -853,9 +853,9 @@ final class Byte512Vector extends ByteVector {
         @ForceInline
         /*package-private*/
         static Byte512Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Byte512Mask.class, byte.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Byte512Mask.class, byte.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Byte512Mask  TRUE_MASK = new Byte512Mask(true);
         private static final Byte512Mask FALSE_MASK = new Byte512Mask(false);

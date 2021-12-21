@@ -137,7 +137,6 @@ class BlockList: public GrowableArray<BlockBegin*> {
 
   void iterate_forward(BlockClosure* closure);
   void iterate_backward(BlockClosure* closure);
-  void blocks_do(void f(BlockBegin*));
   void values_do(ValueVisitor* f);
   void print(bool cfg_only = false, bool live_only = false) PRODUCT_RETURN;
 };
@@ -1595,7 +1594,6 @@ LEAF(BlockBegin, StateSplit)
   ResourceBitMap _stores_to_locals;              // bit is set when a local variable is stored in the block
 
   // SSA specific fields: (factor out later)
-  BlockList   _successors;                       // the successors of this block
   BlockList   _predecessors;                     // the predecessors of this block
   BlockList   _dominates;                        // list of blocks that are dominated by this block
   BlockBegin* _dominator;                        // the dominator of this block
@@ -1649,7 +1647,6 @@ LEAF(BlockBegin, StateSplit)
   , _flags(0)
   , _total_preds(0)
   , _stores_to_locals()
-  , _successors(2)
   , _predecessors(2)
   , _dominates(2)
   , _dominator(NULL)
@@ -1676,7 +1673,6 @@ LEAF(BlockBegin, StateSplit)
   // accessors
   int block_id() const                           { return _block_id; }
   int bci() const                                { return _bci; }
-  BlockList* successors()                        { return &_successors; }
   BlockList* dominates()                         { return &_dominates; }
   BlockBegin* dominator() const                  { return _dominator; }
   int loop_depth() const                         { return _loop_depth; }
@@ -1704,9 +1700,7 @@ LEAF(BlockBegin, StateSplit)
   void set_dominator_depth(int d)                { _dominator_depth = d; }
   void set_depth_first_number(int dfn)           { _depth_first_number = dfn; }
   void set_linear_scan_number(int lsn)           { _linear_scan_number = lsn; }
-  void set_end(BlockEnd* end);
-  void clear_end();
-  void disconnect_from_graph();
+  void set_end(BlockEnd* new_end);
   static void disconnect_edge(BlockBegin* from, BlockBegin* to);
   BlockBegin* insert_block_between(BlockBegin* sux);
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);
@@ -1729,10 +1723,6 @@ LEAF(BlockBegin, StateSplit)
   // successors and predecessors
   int number_of_sux() const;
   BlockBegin* sux_at(int i) const;
-  void add_successor(BlockBegin* sux);
-  void remove_successor(BlockBegin* pred);
-  bool is_successor(BlockBegin* sux) const       { return _successors.contains(sux); }
-
   void add_predecessor(BlockBegin* pred);
   void remove_predecessor(BlockBegin* pred);
   bool is_predecessor(BlockBegin* pred) const    { return _predecessors.contains(pred); }
@@ -1792,6 +1782,7 @@ LEAF(BlockBegin, StateSplit)
   // debugging
   void print_block()                             PRODUCT_RETURN;
   void print_block(InstructionPrinter& ip, bool live_only = false) PRODUCT_RETURN;
+
 };
 
 
@@ -1825,14 +1816,13 @@ BASE(BlockEnd, StateSplit)
   BlockBegin* begin() const                      { return _block; }
 
   // manipulation
-  void set_begin(BlockBegin* begin);
+  inline void remove_sux_at(int i) { _sux->remove_at(i);}
+  inline int find_sux(BlockBegin* sux) {return _sux->find(sux);}
 
   // successors
   int number_of_sux() const                      { return _sux != NULL ? _sux->length() : 0; }
   BlockBegin* sux_at(int i) const                { return _sux->at(i); }
   BlockBegin* default_sux() const                { return sux_at(number_of_sux() - 1); }
-  BlockBegin** addr_sux_at(int i) const          { return _sux->adr_at(i); }
-  int sux_index(BlockBegin* sux) const           { return _sux->find(sux); }
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);
 };
 
@@ -1996,14 +1986,6 @@ LEAF(If, BlockEnd)
   void swap_operands() {
     Value t = _x; _x = _y; _y = t;
     _cond = mirror(_cond);
-  }
-
-  void swap_sux() {
-    assert(number_of_sux() == 2, "wrong number of successors");
-    BlockList* s = sux();
-    BlockBegin* t = s->at(0); s->at_put(0, s->at(1)); s->at_put(1, t);
-    _cond = negate(_cond);
-    set_flag(UnorderedIsTrueFlag, !check_flag(UnorderedIsTrueFlag));
   }
 
   void set_should_profile(bool value)             { set_flag(ProfileMDOFlag, value); }
@@ -2447,9 +2429,8 @@ class BlockPair: public CompilationResourceObj {
 
 typedef GrowableArray<BlockPair*> BlockPairList;
 
-inline int         BlockBegin::number_of_sux() const            { assert(_end == NULL || _end->number_of_sux() == _successors.length(), "mismatch"); return _successors.length(); }
-inline BlockBegin* BlockBegin::sux_at(int i) const              { assert(_end == NULL || _end->sux_at(i) == _successors.at(i), "mismatch");          return _successors.at(i); }
-inline void        BlockBegin::add_successor(BlockBegin* sux)   { assert(_end == NULL, "Would create mismatch with successors of BlockEnd");         _successors.append(sux); }
+inline int         BlockBegin::number_of_sux() const            { assert(_end != NULL, "need end"); return _end->number_of_sux(); }
+inline BlockBegin* BlockBegin::sux_at(int i) const              { assert(_end != NULL , "need end"); return _end->sux_at(i); }
 
 #undef ASSERT_VALUES
 

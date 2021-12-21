@@ -219,13 +219,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
 
           HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
           if(lab_base != NULL) {
-#ifdef ASSERT
-            // Delay the initialization of the promotion lab (plab).
-            // This exposes uninitialized plabs to card table processing.
-            if (GCWorkerDelayMillis > 0) {
-              os::naked_sleep(GCWorkerDelayMillis);
-            }
-#endif
             _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
             // Try the old lab allocation again.
             new_obj = cast_to_oop(_old_lab.allocate(new_obj_size));

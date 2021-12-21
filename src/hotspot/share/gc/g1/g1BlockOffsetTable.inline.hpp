@@ -41,7 +41,7 @@ inline HeapWord* G1BlockOffsetTablePart::threshold_for_addr(const void* addr) {
   }
 
   // Calculate next threshold.
-  HeapWord* threshold = card_boundary + BOTConstants::N_words;
+  HeapWord* threshold = card_boundary + BOTConstants::card_size_in_words();
   return threshold;
 }
 
@@ -84,7 +84,7 @@ void G1BlockOffsetTable::set_offset_array(size_t left, size_t right, u_char offs
 
 // Variant of index_for that does not check the index for validity.
 inline size_t G1BlockOffsetTable::index_for_raw(const void* p) const {
-  return pointer_delta((char*)p, _reserved.start(), sizeof(char)) >> BOTConstants::LogN;
+  return pointer_delta((char*)p, _reserved.start(), sizeof(char)) >> BOTConstants::log_card_size();
 }
 
 inline size_t G1BlockOffsetTable::index_for(const void* p) const {
@@ -113,26 +113,29 @@ inline size_t G1BlockOffsetTablePart::block_size(const HeapWord* p) const {
 }
 
 inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr) const {
-  assert(_object_can_span || _bot->offset_array(_bot->index_for(_hr->bottom())) == 0,
-         "Object crossed region boundary, found offset %u instead of 0",
-         (uint) _bot->offset_array(_bot->index_for(_hr->bottom())));
+#ifdef ASSERT
+  if (!_hr->is_continues_humongous()) {
+    // For non-ContinuesHumongous regions, the first obj always starts from bottom.
+    u_char offset = _bot->offset_array(_bot->index_for(_hr->bottom()));
+    assert(offset == 0, "Found offset %u instead of 0 for region %u %s",
+           offset, _hr->hrm_index(), _hr->get_short_type_str());
+  }
+#endif
 
   size_t index = _bot->index_for(addr);
 
-  HeapWord* q = _bot->address_for_index(index);
-
   uint offset = _bot->offset_array(index);  // Extend u_char to uint.
-  while (offset >= BOTConstants::N_words) {
+  while (offset >= BOTConstants::card_size_in_words()) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.
     size_t n_cards_back = BOTConstants::entry_to_cards_back(offset);
-    q -= (BOTConstants::N_words * n_cards_back);
     index -= n_cards_back;
     offset = _bot->offset_array(index);
   }
-  assert(offset < BOTConstants::N_words, "offset too large");
-  q -= offset;
-  return q;
+  assert(offset < BOTConstants::card_size_in_words(), "offset too large");
+
+  HeapWord* q = _bot->address_for_index(index);
+  return q - offset;
 }
 
 inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
@@ -146,10 +149,8 @@ inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWo
            "BOT not precise. Index for n: " SIZE_FORMAT " must be equal to the index for addr: " SIZE_FORMAT,
            _bot->index_for(n), _bot->index_for(addr));
     q = n;
-    oop obj = cast_to_oop(q);
-    if (obj->klass_or_null_acquire() == NULL) {
-      return q;
-    }
+    assert(cast_to_oop(q)->klass_or_null() != nullptr,
+        "start of block must be an initialized object");
     n += block_size(q);
   }
   assert(q <= n, "wrong order for q and addr");

@@ -40,7 +40,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
-import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -54,7 +54,7 @@ public class VarHandleExact {
     static final VarHandle generic;
 
     static {
-        generic = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
+        generic = MemoryHandles.varHandle(JAVA_INT);
         exact = generic.withInvokeExactBehavior();
     }
 
