@@ -467,6 +467,7 @@ public class CommandProcessor {
                     AddressRange addressRange = parseAddressRange(arg, formatSize);
                     if (addressRange == null) {
                         usage();
+                        return;
                     }
                     Address start = addressRange.getStart();
                     Address end = addressRange.getEnd();
@@ -528,6 +529,7 @@ public class CommandProcessor {
                 AddressRange addressRange = parseAddressRange(arg, formatSize);
                 if (addressRange == null) {
                     usage();
+                    return;
                 }
                 Address start = addressRange.getStart();
                 Address end = addressRange.getEnd();
