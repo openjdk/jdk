@@ -71,11 +71,9 @@ ShenandoahPushWorkerScope::~ShenandoahPushWorkerScope() {
   assert(nworkers == _old_workers, "Must be able to restore");
 }
 
-WorkerThread* ShenandoahWorkerThreads::create_worker(uint id) {
-  WorkerThread* worker = WorkerThreads::create_worker(id);
+void ShenandoahWorkerThreads::on_create_worker(WorkerThread* worker) {
   ShenandoahThreadLocalData::create(worker);
   if (_initialize_gclab) {
     ShenandoahThreadLocalData::initialize_gclab(worker);
   }
-  return worker;
 }

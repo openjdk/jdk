@@ -81,7 +81,7 @@ public class VectorReshapeHelper {
         var test = new TestFramework(testClass);
         test.setDefaultWarmup(1);
         test.addHelperClasses(VectorReshapeHelper.class);
-        test.addFlags("--add-modules=jdk.incubator.vector");
+        test.addFlags("--add-modules=jdk.incubator.vector", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         test.addFlags(flags);
         String testMethodNames = testMethods
                 .filter(p -> p.isp().length() <= VectorSpecies.ofLargestShape(p.isp().elementType()).length())
@@ -94,10 +94,10 @@ public class VectorReshapeHelper {
 
     @ForceInline
     public static <T, U> void vectorCast(VectorOperators.Conversion<T, U> cop,
-                                         VectorSpecies<T> isp, VectorSpecies<U> osp, byte[] input, byte[] output) {
-        isp.fromByteArray(input, 0, ByteOrder.nativeOrder())
-                .convertShape(cop, osp, 0)
-                .intoByteArray(output, 0, ByteOrder.nativeOrder());
+                                         VectorSpecies<T> isp, VectorSpecies<U> osp, Object input, Object output) {
+        var outputVector = readVector(isp, input)
+                .convertShape(cop, osp, 0);
+        writeVector(osp, outputVector, output);
     }
 
     public static <T, U> void runCastHelper(VectorOperators.Conversion<T, U> castOp,
@@ -107,32 +107,35 @@ public class VectorReshapeHelper {
         String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,
-                testMethodName,
-                MethodType.methodType(void.class, byte.class.arrayType(), byte.class.arrayType()));
-        byte[] input = new byte[isp.vectorByteSize()];
-        byte[] output = new byte[osp.vectorByteSize()];
+                    testMethodName,
+                    MethodType.methodType(void.class, isp.elementType().arrayType(), osp.elementType().arrayType()))
+                .asType(MethodType.methodType(void.class, Object.class, Object.class));
+        Object input = Array.newInstance(isp.elementType(), isp.length());
+        Object output = Array.newInstance(osp.elementType(), osp.length());
+        long ibase = UnsafeUtils.arrayBase(isp.elementType());
+        long obase = UnsafeUtils.arrayBase(osp.elementType());
         for (int iter = 0; iter < INVOCATIONS; iter++) {
             // We need to generate arrays with NaN or very large values occasionally
             boolean normalArray = random.nextBoolean();
             var abnormalValue = List.of(Double.NaN, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, -1e30, 1e30);
             for (int i = 0; i < isp.length(); i++) {
                 switch (isp.elementType().getName()) {
-                    case "byte"   -> setByte(input, i, (byte)random.nextInt());
-                    case "short"  -> setShort(input, i, (short)random.nextInt());
-                    case "int"    -> setInt(input, i, random.nextInt());
-                    case "long"   -> setLong(input, i, random.nextLong());
+                    case "byte"   -> UnsafeUtils.putByte(input, ibase, i, (byte)random.nextInt());
+                    case "short"  -> UnsafeUtils.putShort(input, ibase, i, (short)random.nextInt());
+                    case "int"    -> UnsafeUtils.putInt(input, ibase, i, random.nextInt());
+                    case "long"   -> UnsafeUtils.putLong(input, ibase, i, random.nextLong());
                     case "float"  -> {
                         if (normalArray || random.nextBoolean()) {
-                            setFloat(input, i, random.nextFloat(Byte.MIN_VALUE, Byte.MAX_VALUE));
+                            UnsafeUtils.putFloat(input, ibase, i, random.nextFloat(Byte.MIN_VALUE, Byte.MAX_VALUE));
                         } else {
-                            setFloat(input, i, abnormalValue.get(random.nextInt(abnormalValue.size())).floatValue());
+                            UnsafeUtils.putFloat(input, ibase, i, abnormalValue.get(random.nextInt(abnormalValue.size())).floatValue());
                         }
                     }
                     case "double" -> {
                         if (normalArray || random.nextBoolean()) {
-                            setDouble(input, i, random.nextDouble(Byte.MIN_VALUE, Byte.MAX_VALUE));
+                            UnsafeUtils.putDouble(input, ibase, i, random.nextDouble(Byte.MIN_VALUE, Byte.MAX_VALUE));
                         } else {
-                            setDouble(input, i, abnormalValue.get(random.nextInt(abnormalValue.size())));
+                            UnsafeUtils.putDouble(input, ibase, i, abnormalValue.get(random.nextInt(abnormalValue.size())));
                         }
                     }
                     default -> throw new AssertionError();
@@ -145,12 +148,12 @@ public class VectorReshapeHelper {
                 Number expected, actual;
                 if (i < isp.length()) {
                     Number initial = switch (isp.elementType().getName()) {
-                        case "byte"   -> getByte(input, i);
-                        case "short"  -> getShort(input, i);
-                        case "int"    -> getInt(input, i);
-                        case "long"   -> getLong(input, i);
-                        case "float"  -> getFloat(input, i);
-                        case "double" -> getDouble(input, i);
+                        case "byte"   -> UnsafeUtils.getByte(input, ibase, i);
+                        case "short"  -> UnsafeUtils.getShort(input, ibase, i);
+                        case "int"    -> UnsafeUtils.getInt(input, ibase, i);
+                        case "long"   -> UnsafeUtils.getLong(input, ibase, i);
+                        case "float"  -> UnsafeUtils.getFloat(input, ibase, i);
+                        case "double" -> UnsafeUtils.getDouble(input, ibase, i);
                         default -> throw new AssertionError();
                     };
                     expected = switch (osp.elementType().getName()) {
@@ -192,12 +195,12 @@ public class VectorReshapeHelper {
                     };
                 }
                 actual = switch (osp.elementType().getName()) {
-                    case "byte"   -> getByte(output, i);
-                    case "short"  -> getShort(output, i);
-                    case "int"    -> getInt(output, i);
-                    case "long"   -> getLong(output, i);
-                    case "float"  -> getFloat(output, i);
-                    case "double" -> getDouble(output, i);
+                    case "byte"   -> UnsafeUtils.getByte(output, obase, i);
+                    case "short"  -> UnsafeUtils.getShort(output, obase, i);
+                    case "int"    -> UnsafeUtils.getInt(output, obase, i);
+                    case "long"   -> UnsafeUtils.getLong(output, obase, i);
+                    case "float"  -> UnsafeUtils.getFloat(output, obase, i);
+                    case "double" -> UnsafeUtils.getDouble(output, obase, i);
                     default -> throw new AssertionError();
                 };
                 Asserts.assertEquals(expected, actual);
@@ -206,13 +209,13 @@ public class VectorReshapeHelper {
     }
 
     @ForceInline
-    public static <T, U> void vectorExpandShrink(VectorSpecies<T> isp, VectorSpecies<U> osp, byte[] input, byte[] output) {
+    public static void vectorExpandShrink(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp, byte[] input, byte[] output) {
         isp.fromByteArray(input, 0, ByteOrder.nativeOrder())
                 .reinterpretShape(osp, 0)
                 .intoByteArray(output, 0, ByteOrder.nativeOrder());
     }
 
-    public static <T, U> void runExpandShrinkHelper(VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
+    public static void runExpandShrinkHelper(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp) throws Throwable {
         var random = RandomGenerator.getDefault();
         String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
@@ -235,14 +238,14 @@ public class VectorReshapeHelper {
     }
 
     @ForceInline
-    public static <T, U> void vectorDoubleExpandShrink(VectorSpecies<T> isp, VectorSpecies<U> osp, byte[] input, byte[] output) {
+    public static void vectorDoubleExpandShrink(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp, byte[] input, byte[] output) {
         isp.fromByteArray(input, 0, ByteOrder.nativeOrder())
                 .reinterpretShape(osp, 0)
                 .reinterpretShape(isp, 0)
                 .intoByteArray(output, 0, ByteOrder.nativeOrder());
     }
 
-    public static <T, U> void runDoubleExpandShrinkHelper(VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
+    public static void runDoubleExpandShrinkHelper(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp) throws Throwable {
         var random = RandomGenerator.getDefault();
         String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
@@ -264,28 +267,11 @@ public class VectorReshapeHelper {
         }
     }
 
-    // All this complication is due to the fact that vector load and store with respect to byte array introduce
-    // additional ReinterpretNodes, several ReinterpretNodes back to back being optimized make the number of
-    // nodes remaining in the IR becomes unpredictable.
     @ForceInline
     public static <T, U> void vectorRebracket(VectorSpecies<T> isp, VectorSpecies<U> osp, Object input, Object output) {
-        var outputVector = isp.fromArray(input, 0).reinterpretShape(osp, 0);
-        var otype = osp.elementType();
-        if (otype == byte.class) {
-            ((ByteVector)outputVector).intoArray((byte[])output, 0);
-        } else if (otype == short.class) {
-            ((ShortVector)outputVector).intoArray((short[])output, 0);
-        } else if (otype == int.class) {
-            ((IntVector)outputVector).intoArray((int[])output, 0);
-        } else if (otype == long.class) {
-            ((LongVector)outputVector).intoArray((long[])output, 0);
-        } else if (otype == float.class) {
-            ((FloatVector)outputVector).intoArray((float[])output, 0);
-        } else if (otype == double.class) {
-            ((DoubleVector)outputVector).intoArray((double[])output, 0);
-        } else {
-            throw new AssertionError();
-        }
+        var outputVector = readVector(isp, input)
+                .reinterpretShape(osp, 0);
+        writeVector(osp, outputVector, output);
     }
 
     public static <T, U> void runRebracketHelper(VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
@@ -302,7 +288,7 @@ public class VectorReshapeHelper {
         long obase = UnsafeUtils.arrayBase(osp.elementType());
         for (int iter = 0; iter < INVOCATIONS; iter++) {
             for (int i = 0; i < isp.vectorByteSize(); i++) {
-                UnsafeUtils.putByte(input, ibase, i, random.nextInt());
+                UnsafeUtils.putByte(input, ibase, i, (byte)random.nextInt());
             }
 
             testMethod.invokeExact(input, output);
@@ -315,58 +301,28 @@ public class VectorReshapeHelper {
         }
     }
 
-    public static byte getByte(byte[] array, int index) {
-        return (byte)BYTE_ACCESS.get(array, index * Byte.BYTES);
+    @ForceInline
+    private static <T> Vector<T> readVector(VectorSpecies<T> isp, Object input) {
+        return isp.fromArray(input, 0);
     }
 
-    public static short getShort(byte[] array, int index) {
-        return (short)SHORT_ACCESS.get(array, index * Short.BYTES);
+    @ForceInline
+    private static <U> void writeVector(VectorSpecies<U> osp, Vector<U> vector, Object output) {
+        var otype = osp.elementType();
+        if (otype == byte.class) {
+            ((ByteVector)vector).intoArray((byte[])output, 0);
+        } else if (otype == short.class) {
+            ((ShortVector)vector).intoArray((short[])output, 0);
+        } else if (otype == int.class) {
+            ((IntVector)vector).intoArray((int[])output, 0);
+        } else if (otype == long.class) {
+            ((LongVector)vector).intoArray((long[])output, 0);
+        } else if (otype == float.class) {
+            ((FloatVector)vector).intoArray((float[])output, 0);
+        } else if (otype == double.class) {
+            ((DoubleVector)vector).intoArray((double[])output, 0);
+        } else {
+            throw new AssertionError();
+        }
     }
-
-    public static int getInt(byte[] array, int index) {
-        return (int)INT_ACCESS.get(array, index * Integer.BYTES);
-    }
-
-    public static long getLong(byte[] array, int index) {
-        return (long)LONG_ACCESS.get(array, index * Long.BYTES);
-    }
-
-    public static float getFloat(byte[] array, int index) {
-        return (float)FLOAT_ACCESS.get(array, index * Float.BYTES);
-    }
-
-    public static double getDouble(byte[] array, int index) {
-        return (double)DOUBLE_ACCESS.get(array, index * Double.BYTES);
-    }
-
-    public static void setByte(byte[] array, int index, byte value) {
-        BYTE_ACCESS.set(array, index * Byte.BYTES, value);
-    }
-
-    public static void setShort(byte[] array, int index, short value) {
-        SHORT_ACCESS.set(array, index * Short.BYTES, value);
-    }
-
-    public static void setInt(byte[] array, int index, int value) {
-        INT_ACCESS.set(array, index * Integer.BYTES, value);
-    }
-
-    public static void setLong(byte[] array, int index, long value) {
-        LONG_ACCESS.set(array, index * Long.BYTES, value);
-    }
-
-    public static void setFloat(byte[] array, int index, float value) {
-        FLOAT_ACCESS.set(array, index * Float.BYTES, value);
-    }
-
-    public static void setDouble(byte[] array, int index, double value) {
-        DOUBLE_ACCESS.set(array, index * Double.BYTES, value);
-    }
-
-    private static final VarHandle BYTE_ACCESS   = MethodHandles.arrayElementVarHandle(byte.class.arrayType());
-    private static final VarHandle SHORT_ACCESS  = MethodHandles.byteArrayViewVarHandle(short.class.arrayType(),  ByteOrder.nativeOrder());
-    private static final VarHandle INT_ACCESS    = MethodHandles.byteArrayViewVarHandle(int.class.arrayType(),    ByteOrder.nativeOrder());
-    private static final VarHandle LONG_ACCESS   = MethodHandles.byteArrayViewVarHandle(long.class.arrayType(),   ByteOrder.nativeOrder());
-    private static final VarHandle FLOAT_ACCESS  = MethodHandles.byteArrayViewVarHandle(float.class.arrayType(),  ByteOrder.nativeOrder());
-    private static final VarHandle DOUBLE_ACCESS = MethodHandles.byteArrayViewVarHandle(double.class.arrayType(), ByteOrder.nativeOrder());
 }

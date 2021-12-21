@@ -139,6 +139,8 @@ public class IRNode {
     public static final String LSHIFT_L = START + "LShiftL" + MID + END;
     public static final String ADD_I = START + "AddI" + MID + END;
     public static final String ADD_L = START + "AddL" + MID + END;
+    public static final String SUB_I = START + "SubI" + MID + END;
+    public static final String SUB_L = START + "SubL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;
 
     public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;

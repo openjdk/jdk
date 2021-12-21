@@ -41,7 +41,7 @@ import java.util.OptionalLong;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
- * (either signed or unsigned) and <em>floating-point</em> types. Each value layout has a size, a {@linkplain ByteOrder byte order})
+ * (either signed or unsigned) and <em>floating-point</em> types. Each value layout has a size, an alignment, a {@linkplain ByteOrder byte order})
  * and a <em>carrier</em>, that is, the Java type that should be used when {@linkplain MemorySegment#get(OfInt, long) accessing}
  * a memory region using the value layout.
  * <p>
