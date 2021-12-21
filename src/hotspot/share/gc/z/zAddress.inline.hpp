@@ -26,6 +26,7 @@
 
 #include "gc/z/zAddress.hpp"
 
+#include "gc/shared/gc_globals.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
@@ -134,6 +135,10 @@ inline zoffset_end& operator+=(zoffset_end& offset, size_t size) {
 #define report_is_valid_failure(str) assert(!assert_on_failure, "%s: " PTR_FORMAT, str, value);
 
 inline bool is_valid(zpointer ptr, bool assert_on_failure = false) {
+  if (assert_on_failure && !ZVerifyOops) {
+    return true;
+  }
+
   const uintptr_t value = static_cast<uintptr_t>(ptr);
 
   if (value == 0) {
@@ -244,6 +249,10 @@ inline bool is_null(zaddress addr) {
 }
 
 inline bool is_valid(zaddress addr, bool assert_on_failure = false) {
+  if (assert_on_failure && !ZVerifyOops) {
+    return true;
+  }
+
   if (is_null(addr)) {
     // Null is valid
     return true;
@@ -278,7 +287,7 @@ inline void assert_is_valid(zaddress addr) {
 }
 
 inline uintptr_t untype(zaddress addr) {
-  assert(is_valid(addr), "Broken oop");
+  assert_is_valid(addr);
   return static_cast<uintptr_t>(addr);
 }
 
@@ -291,7 +300,7 @@ inline void dereferenceable_test(zaddress addr) {
 #endif
 
 inline zaddress to_zaddress(uintptr_t value) {
-  assert(is_valid(zaddress(value)), "Broken zaddress: " PTR_FORMAT, value);
+  assert_is_valid(zaddress(value));
   zaddress addr = zaddress(value);
   DEBUG_ONLY(dereferenceable_test(addr));
   return addr;
@@ -337,7 +346,7 @@ inline void assert_is_valid(zaddress_unsafe addr) {
 
 
 inline uintptr_t untype(zaddress_unsafe addr) {
-  assert(is_valid(addr), "Broken oop");
+  assert_is_valid(addr);
   return static_cast<uintptr_t>(addr);
 }
 
@@ -365,7 +374,7 @@ inline zaddress safe(zaddress_unsafe addr) {
 }
 
 inline zaddress_unsafe to_zaddress_unsafe(uintptr_t value) {
-  assert(is_valid(zaddress_unsafe(value)), "Broken oop");
+  assert_is_valid(zaddress_unsafe(value));
   return zaddress_unsafe(value);
 }
 

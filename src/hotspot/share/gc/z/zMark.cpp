@@ -313,7 +313,8 @@ void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
     }
   }
 
-  assert(is_valid(to_zaddress(obj)), "Should be converitble to colorless oop");
+  // Should be convertible to colorless oop
+  assert_is_valid(to_zaddress(obj));
 
   // FIXME: Don't use uintptr_t
   const uintptr_t addr = (uintptr_t)obj->base();

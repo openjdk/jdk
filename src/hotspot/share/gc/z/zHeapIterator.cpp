@@ -147,7 +147,7 @@ private:
 
   oop load_oop(oop* p) {
     const oop o = Atomic::load(p);
-    assert(is_valid(to_zaddress(o)), "Must be valid");
+    assert_is_valid(to_zaddress(o));
     return RawAccess<>::oop_load(p);
   }
 
