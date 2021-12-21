@@ -420,9 +420,9 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   if (is_strong) {
     if (is_narrow) {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), arg0, arg1);
+      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), arg0, arg1);
     } else {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), arg0, arg1);
+      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), arg0, arg1);
     }
   } else if (is_weak) {
     if (is_narrow) {
@@ -433,7 +433,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   } else {
     assert(is_phantom, "only remaining strength");
     assert(!is_narrow, "phantom access cannot be narrow");
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), arg0, arg1);
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), arg0, arg1);
   }
 
 #ifdef _LP64
