@@ -2265,11 +2265,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 /* Update existing KeyEntry in entries table */
                 if (chain.size() > 0) {
                     entry.chain = chain.toArray(new Certificate[chain.size()]);
-                } else {
-                    // Remove private key entries where there is no associated
-                    // certs. Most likely the keystore is loaded with a null
-                    // password.
-                    entries.remove(entry);
                 }
             }
         }
