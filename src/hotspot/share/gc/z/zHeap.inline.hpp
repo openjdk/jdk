@@ -267,7 +267,7 @@ inline bool ZHeap::is_object_strongly_live(zaddress addr) const {
 
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
 inline void ZHeap::mark_object(zaddress addr) {
-  assert(oopDesc::is_oop(to_oop(addr), false), "must be oop");
+  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (is_old(addr)) {
     if (_old_collector.is_phase_mark()) {
@@ -283,7 +283,7 @@ inline void ZHeap::mark_object(zaddress addr) {
 template <bool follow, bool publish>
 inline void ZHeap::mark_young_object(zaddress addr) {
   assert(_young_collector.is_phase_mark(), "Wrong phase");
-  assert(oopDesc::is_oop(to_oop(addr), false), "must be oop");
+  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (is_young(addr)) {
     _young_collector.mark_object<ZMark::DontResurrect, ZMark::GCThread, follow, ZMark::Strong, publish>(addr);
