@@ -217,9 +217,9 @@ public class HtmlConfiguration extends BaseConfiguration {
 
         // See https://reproducible-builds.org/docs/source-date-epoch/
         String sourceDateEpoch = System.getenv(("SOURCE_DATE_EPOCH"));
-        buildDate = sourceDateEpoch == null ? new Date() :
-                new Date(1000 * Long.parseLong(System.getenv("SOURCE_DATE_EPOCH")));
-
+        buildDate = (sourceDateEpoch != null && sourceDateEpoch.matches("[0-9]+"))
+                ? new Date(Long.parseLong(sourceDateEpoch) * 1000)
+                : new Date();
     }
     protected void initConfiguration(DocletEnvironment docEnv,
                                      Function<String, String> resourceKeyMapper) {
