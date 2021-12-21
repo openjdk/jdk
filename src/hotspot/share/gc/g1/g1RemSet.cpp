@@ -1274,7 +1274,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       assert(_g1h->is_in_cset(hr), "Should only be used iterating the collection set");
       // Young regions should always have cleared bitmaps, so only clear old.
       if (hr->is_old()) {
-        _g1h->clear_region_bitmap(hr);
+        _g1h->clear_region_in_prev_bitmap(hr);
       } else {
         assert(hr->is_young(), "Should only be young and old regions in collection set");
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->prev_mark_bitmap());

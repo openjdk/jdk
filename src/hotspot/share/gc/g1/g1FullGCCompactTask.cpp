@@ -66,7 +66,7 @@ void G1FullGCCompactTask::G1CompactRegionClosure::clear_bitmap(oop obj) {
 size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   size_t size = obj->size();
   if (!obj->is_forwarded()) {
-    // Object not moving
+    // Object not moving, but clear the mark to allow reuse of the bitmap.
     clear_bitmap(obj);
     return size;
   }
@@ -80,6 +80,8 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   cast_to_oop(destination)->init_mark();
   assert(cast_to_oop(destination)->klass() != NULL, "should have a class");
 
+  // Clear the mark for the compacted object to allow reuse of the
+  // bitmap without an additional clearing step.
   clear_bitmap(obj);
   return size;
 }
@@ -92,7 +94,10 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
     // The compaction closure not only copies the object to the new
     // location, but also clears the bitmap for it. This is needed
     // for bitmap verification as well as for being able to use the
-    // prev_bitmap for evacuation failures.
+    // prev_bitmap for evacuation failures. Testing showed that it
+    // was better overall to clear bit by bit, compared to clearing
+    // the whole region at the end. This difference was clearly seen
+    // for regions with few marks.
     G1CompactRegionClosure compact(collector()->mark_bitmap());
     hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
   }

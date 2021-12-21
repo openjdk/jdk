@@ -622,7 +622,7 @@ public:
   // for all regions.
   void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
 
-  void clear_region_bitmap(HeapRegion* hr);
+  void clear_region_in_prev_bitmap(HeapRegion* hr);
 
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 
@@ -1254,7 +1254,7 @@ public:
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;
   inline bool is_obj_dead_full(const oop obj) const;
 
-  // Mark the live object that failed evacuation in the correct bitmap(s).
+  // Mark the live object that failed evacuation in the prev bitmap.
   inline void mark_evac_failure_object(const oop obj, uint worker_id) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
