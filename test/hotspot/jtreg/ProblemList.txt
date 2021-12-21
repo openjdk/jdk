@@ -123,10 +123,10 @@ serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 serviceability/sa/ClhsdbCDSCore.java 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/ClhsdbFindPC.java#xcomp-core 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8269982,8267433 macosx-aarch64,macosx-x64
-serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
+serviceability/sa/ClhsdbPmap.java#core 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8269982,8267433 macosx-aarch64,macosx-x64
-serviceability/sa/TestJmapCore.java 8267433 macosx-x64
-serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
+serviceability/sa/TestJmapCore.java 8269982,8267433 macosx-aarch64,macosx-x64
+serviceability/sa/TestJmapCoreMetaspace.java 8269982,8267433 macosx-aarch64,macosx-x64
 
 #############################################################################
 
