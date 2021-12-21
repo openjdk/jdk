@@ -36,8 +36,8 @@
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zResurrection.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zThread.inline.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
+#include "gc/z/zUtils.hpp"
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "logging/log.hpp"
@@ -233,7 +233,7 @@ void ZHeap::undo_alloc_page(ZPage* page) {
 
   ZStatInc(ZCounterUndoPageAllocation);
   log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: " SIZE_FORMAT,
-                ZThread::id(), ZThread::name(), p2i(page), page->size());
+                p2i(Thread::current()), ZUtils::thread_name(), p2i(page), page->size());
 
   free_page(page);
 }

@@ -29,7 +29,6 @@
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
-#include "gc/z/zThread.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "runtime/java.hpp"
 
@@ -47,9 +46,6 @@ public:
       _lock() {}
 
   virtual void work(uint /* worker_id */) {
-    // Register as worker
-    ZThread::set_worker();
-
     // Wait for all threads to start
     ZLocker<ZConditionLock> locker(&_lock);
     if (++_started == _nworkers) {

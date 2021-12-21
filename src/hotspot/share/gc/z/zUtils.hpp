@@ -29,6 +29,9 @@
 
 class ZUtils : public AllStatic {
 public:
+  // Thread
+  static const char* thread_name();
+
   // Allocation
   static uintptr_t alloc_aligned(size_t alignment, size_t size);
 

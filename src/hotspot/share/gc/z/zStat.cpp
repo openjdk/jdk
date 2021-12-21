@@ -38,6 +38,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -781,13 +782,13 @@ ZStatSubPhase::ZStatSubPhase(const char* name) :
     ZStatPhase("Subphase", name) {}
 
 void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
-  assert(timer != NULL || ZThread::is_worker(), "Incorrect timer value");
+  assert(timer != NULL || Thread::current()->is_Worker_thread(), "Incorrect timer value");
 
-  if (timer != NULL && !ZThread::is_worker()) {
+  if (timer != NULL && !Thread::current()->is_Worker_thread()) {
     timer->register_gc_phase_start(name(), start);
   }
 
-  if (ZThread::is_worker()) {
+  if (Thread::current()->is_Worker_thread()) {
     LogTarget(Debug, gc, phases, thread, start) log;
     log_start(log, true /* thread */);
   } else {
@@ -801,7 +802,7 @@ void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, c
     return;
   }
 
-  if (timer != NULL && !ZThread::is_worker()) {
+  if (timer != NULL && !Thread::current()->is_Worker_thread()) {
     timer->register_gc_phase_end(end);
   }
 
@@ -810,7 +811,7 @@ void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, c
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  if (ZThread::is_worker()) {
+  if (Thread::current()->is_Worker_thread()) {
     LogTarget(Debug, gc, phases, thread) log;
     log_end(log, duration, true /* thread */);
   } else {
@@ -855,7 +856,7 @@ ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase) :
 
 ZStatTimerWorker::ZStatTimerWorker(const ZStatPhase& phase) :
     ZStatTimer(phase, NULL /* gc_timer */) {
-  assert(ZThread::is_worker(), "Should only be called by worker thread");
+  assert(Thread::current()->is_Worker_thread(), "Should only be called by worker thread");
 }
 
 //

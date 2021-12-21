@@ -29,7 +29,6 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zResurrection.inline.hpp"
-#include "gc/z/zThread.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 

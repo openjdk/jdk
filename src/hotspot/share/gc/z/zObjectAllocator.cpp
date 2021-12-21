@@ -29,11 +29,11 @@
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zThread.inline.hpp"
 #include "gc/z/zValue.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -211,7 +211,7 @@ size_t ZObjectAllocator::used() const {
 }
 
 size_t ZObjectAllocator::remaining() const {
-  assert(ZThread::is_java(), "Should be a Java thread");
+  assert(Thread::current()->is_Java_thread(), "Should be a Java thread");
 
   const ZPage* const page = Atomic::load_acquire(shared_small_page_addr());
   if (page != NULL) {

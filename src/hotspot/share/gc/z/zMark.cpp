@@ -29,6 +29,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
@@ -47,7 +48,6 @@
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
-#include "gc/z/zThread.inline.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
@@ -554,7 +554,7 @@ bool ZMark::try_terminate_flush() {
 
 bool ZMark::try_proactive_flush() {
   // Only do proactive flushes from worker 0
-  if (ZThread::worker_id() != 0) {
+  if (WorkerThread::worker_id() != 0) {
     return false;
   }
 
@@ -579,7 +579,7 @@ void ZMark::leave() {
 
 void ZMark::work() {
   SuspendibleThreadSetJoiner sts;
-  ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, ZThread::worker_id());
+  ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, WorkerThread::worker_id());
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _collector->id());
   ZMarkContext context(ZMarkStripesMax, stripe, stacks);
 

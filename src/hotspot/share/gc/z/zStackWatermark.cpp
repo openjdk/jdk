@@ -26,7 +26,6 @@
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zStoreBarrierBuffer.hpp"
-#include "gc/z/zThread.inline.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
@@ -34,6 +33,7 @@
 #include "memory/resourceArea.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/stackWatermark.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/preserveException.hpp"
 
 ZOnStackCodeBlobClosure::ZOnStackCodeBlobClosure() :
@@ -148,7 +148,7 @@ private:
       return ZUncoloredRoot::process;
     }
 
-    assert(ZThread::is_worker(), "Unexpected thread passing in context: " PTR_FORMAT, p2i(context));
+    assert(Thread::current()->is_Worker_thread(), "Unexpected thread passing in context: " PTR_FORMAT, p2i(context));
     return reinterpret_cast<ZUncoloredRoot::RootFunction>(context);
   }
 

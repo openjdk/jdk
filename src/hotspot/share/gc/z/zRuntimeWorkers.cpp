@@ -27,7 +27,6 @@
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zRuntimeWorkers.hpp"
 #include "gc/z/zTask.hpp"
-#include "gc/z/zThread.hpp"
 #include "runtime/java.hpp"
 
 class ZRuntimeWorkersInitializeTask : public WorkerTask {

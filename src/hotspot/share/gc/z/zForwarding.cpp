@@ -27,7 +27,6 @@
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zThread.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
