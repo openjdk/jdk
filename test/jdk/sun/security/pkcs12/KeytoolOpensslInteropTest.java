@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8076190 8242151 8153005 8266182
+ * @bug 8076190 8242151 8153005 8266182 8279066
  * @summary This is java keytool <-> openssl interop test. This test generates
  *          some openssl keystores on the fly, java operates on it and
  *          vice versa.
@@ -153,13 +153,13 @@ public class KeytoolOpensslInteropTest {
         check("os4", "a", "changeit", "changeit", true, true, true);
         check("os4", "a", "wrongpass", "-", IOException.class, "-", "-");
         // no storepass no cert
-        check("os4", "a", null, "changeit", true, false, true);
+        check("os4", "a", null, "changeit", true, false, false);
 
         // os5. strong non default algs
         check("os5", "a", "changeit", "changeit", true, true, true);
         check("os5", "a", "wrongpass", "-", IOException.class, "-", "-");
         // no storepass no cert
-        check("os5", "a", null, "changeit", true, false, true);
+        check("os5", "a", null, "changeit", true, false, false);
 
         // keytool
 
@@ -175,7 +175,7 @@ public class KeytoolOpensslInteropTest {
         checkAlg(data, "110c10", ENCRYPTED_DATA_OID);
         checkAlg(data, "110c110110", PBES2); // cert alg
         check("ksnormal", "a", "changeit", "changeit", true, true, true);
-        check("ksnormal", "a", null, "changeit", true, false, true);
+        check("ksnormal", "a", null, "changeit", true, false, false);
         check("ksnormal", "a", "wrongpass", "-", IOException.class, "-", "-");
 
         // Import it into a new keystore with legacy algorithms
@@ -204,7 +204,7 @@ public class KeytoolOpensslInteropTest {
         checkInt(data, "110c010c11001011", 10000); // new key ic
         checkAlg(data, "110c10", ENCRYPTED_DATA_OID);
         checkAlg(data, "110c110110", PBES2); // cert alg
-        check("ksnormal", "b", null, "changeit", true, false, true);
+        check("ksnormal", "b", null, "changeit", true, false, false);
         check("ksnormal", "b", "changeit", "changeit", true, true, true);
 
         // Different keypbe alg, no cert pbe and no mac
@@ -321,7 +321,7 @@ public class KeytoolOpensslInteropTest {
 
         keytool("-list -keystore ksnormal")
                 .shouldContain("WARNING WARNING WARNING")
-                .shouldContain("Certificate chain length: 0");
+                .shouldContain("Your keystore contains 0 entries");
 
         SecurityTools.setResponse("changeit");
         keytool("-list -keystore ksnormal")

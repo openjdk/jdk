@@ -2269,7 +2269,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     // Remove private key entries where there is no associated
                     // certs. Most likely the keystore is loaded with a null
                     // password.
-                    entries.remove(entry);
+                    entries.remove(entry.alias.toLowerCase(Locale.ENGLISH));
                 }
             }
         }
