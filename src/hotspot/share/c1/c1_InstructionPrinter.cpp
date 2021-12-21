@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -624,62 +624,44 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
     return;
   }
 
-  // print phi functions
-  bool has_phis_in_locals = false;
-  bool has_phis_on_stack = false;
-
-  if (x->end() && x->end()->state()) {
-    ValueStack* state = x->state();
-
-    int i = 0;
-    while (!has_phis_on_stack && i < state->stack_size()) {
-      Value v = state->stack_at_inc(i);
-      has_phis_on_stack = is_phi_of_block(v, x);
-    }
-
-    do {
-      for (i = 0; !has_phis_in_locals && i < state->locals_size();) {
-        Value v = state->local_at(i);
-        has_phis_in_locals = is_phi_of_block(v, x);
-        // also ignore illegal HiWords
-        if (v && !v->type()->is_illegal()) i += v->type()->size(); else i ++;
-      }
-      state = state->caller_state();
-    } while (state != NULL);
-
+  if (!x->end() || !x->end()->state()) {
+    return;
   }
 
   // print values in locals
-  if (has_phis_in_locals) {
-    output()->cr(); output()->print_cr("Locals:");
-
-    ValueStack* state = x->state();
-    do {
-      for (int i = 0; i < state->locals_size();) {
-        Value v = state->local_at(i);
-        if (v) {
-          print_phi(i, v, x); output()->cr();
-          // also ignore illegal HiWords
-          i += (v->type()->is_illegal() ? 1 : v->type()->size());
-        } else {
-          i ++;
+  ValueStack* state = x->state();
+  bool printed_phis_in_locals_header = false;
+  do {
+    for (int i = 0; i < state->locals_size();) {
+      Value v = state->local_at(i);
+      if (v && is_phi_of_block(v, x)) {
+        if (!printed_phis_in_locals_header) {
+          output()->cr(); output()->print("Locals:");
+          printed_phis_in_locals_header = true;
         }
+        output()->cr(); print_phi(i, v, x);
+        // also ignore illegal HiWords
+        i += (v->type()->is_illegal() ? 1 : v->type()->size());
+      } else {
+        i ++;
       }
-      output()->cr();
-      state = state->caller_state();
-    } while (state != NULL);
-  }
+    }
+    state = state->caller_state();
+  } while (state != NULL);
 
   // print values on stack
-  if (has_phis_on_stack) {
-    output()->print_cr("Stack:");
-    int i = 0;
-    while (i < x->state()->stack_size()) {
-      int o = i;
-      Value v = x->state()->stack_at_inc(i);
-      if (v) {
-        print_phi(o, v, x); output()->cr();
+  state = x->state();
+  bool printed_phis_in_stack_header = false;
+  int i = 0;
+  while (i < state->stack_size()) {
+    int o = i;
+    Value v = state->stack_at_inc(i);
+    if (v && is_phi_of_block(v, x)) {
+      if (!printed_phis_in_stack_header) {
+        output()->cr(); output()->print("Stack:");
+        printed_phis_in_stack_header = true;
       }
+      output()->cr(); print_phi(o, v, x);
     }
   }
 }
