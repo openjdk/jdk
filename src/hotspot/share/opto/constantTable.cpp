@@ -126,7 +126,9 @@ bool ConstantTable::emit(CodeBuffer& cb) const {
   for (int i = 0; i < _constants.length(); i++) {
     Constant con = _constants.at(i);
     address constant_addr = NULL;
-    if (!con.is_array()) {
+    if (con.is_array()) {
+      constant_addr = _masm.array_constant(con.type(), con.get_array());
+    } else {
       switch (con.type()) {
       case T_INT:    constant_addr = _masm.int_constant(   con.get_jint()   ); break;
       case T_LONG:   constant_addr = _masm.long_constant(  con.get_jlong()  ); break;
@@ -184,8 +186,6 @@ bool ConstantTable::emit(CodeBuffer& cb) const {
       }
       default: ShouldNotReachHere();
       }
-    } else {
-      constant_addr = _masm.array_constant(con.type(), con.get_array());
     }
 
     if (constant_addr == NULL) {

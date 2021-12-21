@@ -440,6 +440,7 @@ class AbstractAssembler : public ResourceObj  {
         switch(bt) {
           case T_BOOLEAN: emit_int8(e.z);   break;
           case T_BYTE:    emit_int8(e.b);   break;
+          case T_CHAR:    emit_int16(e.c);  break;
           case T_SHORT:   emit_int16(e.s);  break;
           case T_INT:     emit_int32(e.i);  break;
           case T_LONG:    emit_int64(e.j);  break;
