@@ -821,7 +821,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   if (_discovery_is_mt) {
     // During a multi-threaded discovery phase,
     // each thread saves to its "own" list.
-    id = WorkerThread::current()->id();
+    id = WorkerThread::worker_id();
   } else {
     // single-threaded discovery, we save in round-robin
     // fashion to each of the lists.

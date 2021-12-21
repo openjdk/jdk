@@ -615,8 +615,9 @@ Dictionary* ClassLoaderData::create_dictionary() {
   return new Dictionary(this, size, resizable);
 }
 
-// Tell the GC to keep this klass alive while iterating ClassLoaderDataGraph
-oop ClassLoaderData::holder_phantom() const {
+// Tell the GC to keep this klass alive. Needed while iterating ClassLoaderDataGraph,
+// and any runtime code that uses klasses.
+oop ClassLoaderData::holder() const {
   // A klass that was previously considered dead can be looked up in the
   // CLD/SD, and its _java_mirror or _class_loader can be stored in a root
   // or a reachable object making it alive again. The SATB part of G1 needs

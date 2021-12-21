@@ -384,6 +384,8 @@ public class ObjectInputStream
      * <p>The constructor initializes the deserialization filter to the filter returned
      * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
+     * If the serial filter or serial filter factory properties are invalid
+     * an {@link IllegalStateException} is thrown.
      *
      * <p>If a security manager is installed, this constructor will check for
      * the "enableSubclassImplementation" SerializablePermission when invoked
@@ -396,6 +398,8 @@ public class ObjectInputStream
      * @throws  IOException if an I/O error occurs while reading stream header
      * @throws  SecurityException if untrusted subclass illegally overrides
      *          security-sensitive methods
+     * @throws  IllegalStateException if the initialization of {@link ObjectInputFilter.Config}
+     *          fails due to invalid serial filter or serial filter factory properties.
      * @throws  NullPointerException if {@code in} is {@code null}
      * @see     ObjectInputStream#ObjectInputStream()
      * @see     ObjectInputStream#readFields()
@@ -421,6 +425,8 @@ public class ObjectInputStream
      * <p>The constructor initializes the deserialization filter to the filter returned
      * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
+     * If the serial filter or serial filter factory properties are invalid
+     * an {@link IllegalStateException} is thrown.
      *
      * <p>If there is a security manager installed, this method first calls the
      * security manager's {@code checkPermission} method with the
@@ -431,6 +437,8 @@ public class ObjectInputStream
      *          {@code checkPermission} method denies enabling
      *          subclassing.
      * @throws  IOException if an I/O error occurs while creating this stream
+     * @throws  IllegalStateException if the initialization of {@link ObjectInputFilter.Config}
+     *      fails due to invalid serial filter or serial filter factory properties.
      * @see SecurityManager#checkPermission
      * @see java.io.SerializablePermission
      */

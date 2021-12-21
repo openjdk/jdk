@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP
-#define SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP
+package compiler.vectorapi.reshape;
 
-#include "gc/g1/g1EvacFailureObjectsSet.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1SegmentedArray.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+import compiler.vectorapi.reshape.tests.TestVectorCast;
+import compiler.vectorapi.reshape.utils.TestCastMethods;
+import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 
-void G1EvacFailureObjectsSet::record(oop obj) {
-  assert(obj != NULL, "must be");
-  assert(_region_idx == G1CollectedHeap::heap()->heap_region_containing(obj)->hrm_index(), "must be");
-  OffsetInRegion* e = _offsets.allocate();
-  *e = to_offset(obj);
+/*
+ * @test
+ * @bug 8278623
+ * @modules jdk.incubator.vector
+ * @modules java.base/jdk.internal.misc
+ * @summary Test that vector cast intrinsics work as intended on avx512bw.
+ * @requires vm.cpu.features ~= ".*avx512bw.*"
+ * @library /test/lib /
+ * @run driver compiler.vectorapi.reshape.TestVectorCastAVX512BW
+ */
+public class TestVectorCastAVX512BW {
+    public static void main(String[] args) {
+        VectorReshapeHelper.runMainHelper(
+                TestVectorCast.class,
+                TestCastMethods.AVX512BW_CAST_TESTS.stream(),
+                "-XX:UseAVX=3");
+    }
 }
 
-#endif //SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP

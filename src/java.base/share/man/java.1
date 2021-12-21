@@ -4039,6 +4039,14 @@ This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
 \f[B]JEP 403\f[R] [https://openjdk.java.net/jeps/403].
 .RS
 .RE
+.SH REMOVED JAVA OPTIONS
+.PP
+These \f[CB]java\f[R] options have been removed in JDK 19 and using them
+results in an error of:
+.RS
+.PP
+\f[CB]Unrecognized\ VM\ option\f[R] \f[I]option\-name\f[R]
+.RE
 .TP
 .B \f[CB]\-XX:+UseBiasedLocking\f[R]
 Enables the use of biased locking.
@@ -4046,15 +4054,13 @@ Some applications with significant amounts of uncontended
 synchronization may attain significant speedups with this flag enabled,
 but applications with certain patterns of locking may see slowdowns.
 .RS
-.PP
-By default, this option is disabled.
 .RE
-.SH REMOVED JAVA OPTIONS
-.PP
-No documented \f[CB]java\f[R] options have been removed in JDK 18.
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:
+.IP \[bu] 2
+\f[B]The \f[BC]java\f[B] Command, Release 18\f[R]
+[https://docs.oracle.com/en/java/javase/18/docs/specs/man/java.html]
 .IP \[bu] 2
 \f[B]The \f[BC]java\f[B] Command, Release 17\f[R]
 [https://docs.oracle.com/en/java/javase/17/docs/specs/man/java.html]

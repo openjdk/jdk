@@ -1041,9 +1041,9 @@ void PSParallelCompact::post_compact()
   PSCardTable* ct = heap->card_table();
   MemRegion old_mr = heap->old_gen()->reserved();
   if (young_gen_empty) {
-    ct->clear(MemRegion(old_mr.start(), old_mr.end()));
+    ct->clear(old_mr);
   } else {
-    ct->invalidate(MemRegion(old_mr.start(), old_mr.end()));
+    ct->invalidate(old_mr);
   }
 
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph

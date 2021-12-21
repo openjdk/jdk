@@ -6397,6 +6397,18 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Support for spin waits.
+  address generate_spin_wait() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "spin_wait");
+    address start = __ pc();
+
+    __ spin_wait();
+    __ ret(lr);
+
+    return start;
+  }
+
 #ifdef LINUX
 
   // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
@@ -7714,6 +7726,8 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
+
+    StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
 #ifdef LINUX
 

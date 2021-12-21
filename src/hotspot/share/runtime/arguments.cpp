@@ -119,6 +119,9 @@ bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = NULL;
 
+// True if -Xshare:auto option was specified.
+static bool xshare_auto_cmd_line = false;
+
 bool PathString::set_value(const char *value) {
   if (_value != NULL) {
     FreeHeap(_value);
@@ -527,7 +530,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
   { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
   { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
@@ -543,19 +545,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
-  { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "InlineFrequencyCount",         JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "G1RSetRegionEntries",          JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "G1RSetSparseRegionEntries",    JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "PrintBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "BiasedLockingBulkRebiasThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "BiasedLockingBulkRevokeThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "BiasedLockingDecayTime",              JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "UseOptoBiasInlining",                 JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-  { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+
+  { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -2712,6 +2703,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     } else if (match_option(option, "-Xshare:auto")) {
       UseSharedSpaces = true;
       RequireSharedSpaces = false;
+      xshare_auto_cmd_line = true;
     // -Xshare:off
     } else if (match_option(option, "-Xshare:off")) {
       UseSharedSpaces = false;
@@ -3522,6 +3514,11 @@ void Arguments::init_shared_archive_paths() {
       vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
     }
     check_unsupported_dumping_properties();
+
+    if (os::same_files((const char*)get_default_shared_archive_path(), ArchiveClassesAtExit)) {
+      vm_exit_during_initialization(
+        "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", get_default_shared_archive_path());
+    }
   }
 
   if (SharedArchiveFile == nullptr) {
@@ -3992,7 +3989,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
       "DumpLoadedClassList is not supported in this VM\n");
     return JNI_ERR;
   }
-  if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) ||
+  if ((UseSharedSpaces && xshare_auto_cmd_line) ||
       log_is_enabled(Info, cds)) {
     warning("Shared spaces are not supported in this VM");
     UseSharedSpaces = false;
