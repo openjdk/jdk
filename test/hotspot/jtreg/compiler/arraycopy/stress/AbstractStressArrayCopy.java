@@ -77,11 +77,31 @@ public abstract class AbstractStressArrayCopy {
 
     protected abstract void testWith(int size, int l, int r, int len);
 
+    private void checkBounds(int size, int l, int r, int len) {
+        if (l >= size)      throw new IllegalStateException("l is out of bounds");
+        if (l + len > size) throw new IllegalStateException("l+len is out of bounds");
+        if (r >= size)      throw new IllegalStateException("r is out of bounds");
+        if (r + len > size) throw new IllegalStateException("r+len is out of bounds: " + l + " " + r + " " + len + " " + size);
+    }
+
+    private void checkDisjoint(int size, int l, int r, int len) {
+        if (l == r)               throw new IllegalStateException("Not disjoint: l == r");
+        if (l < r && l + len > r) throw new IllegalStateException("Not disjoint");
+        if (l > r && r + len > l) throw new IllegalStateException("Not disjoint");
+    }
+
+    private void checkConjoint(int size, int l, int r, int len) {
+        if (l == r) return; // Definitely conjoint, even with zero len
+        if (l < r && l + len < r) throw new IllegalStateException("Not conjoint");
+        if (l > r && r + len < l) throw new IllegalStateException("Not conjoint");
+    }
+
     public void exhaustiveWith(int size) {
         for (int l = 0; l < size; l++) {
             for (int r = 0; r < size; r++) {
                 int maxLen = Math.min(size - l, size - r);
                 for (int len = 0; len <= maxLen; len++) {
+                    checkBounds(size, l, r, len);
                     testWith(size, l, r, len);
                 }
             }
@@ -97,13 +117,10 @@ public abstract class AbstractStressArrayCopy {
         for (int c = 0; c < FUZZ_COUNT; c++) {
             int l = rand.nextInt(size / 2);
             int len = rand.nextInt((size - l) / 2);
-            int r = (l + len) + rand.nextInt(size - 2*len - l);
+            int r = (l + len + 1) + rand.nextInt(size - 2*len - l - 1);
 
-            if (l >= size)      throw new IllegalStateException("l is out of bounds");
-            if (l + len > size) throw new IllegalStateException("l+len is out of bounds");
-            if (r >= size)      throw new IllegalStateException("r is out of bounds");
-            if (r + len > size) throw new IllegalStateException("r+len is out of bounds: " + l + " " + r + " " + len + " " + size);
-            if (l + len > r)    throw new IllegalStateException("Not disjoint");
+            checkBounds(size, l, r, len);
+            checkDisjoint(size, l, r, len);
 
             testWith(size, l, r, len);
             testWith(size, r, l, len);
@@ -115,11 +132,8 @@ public abstract class AbstractStressArrayCopy {
             int len = rand.nextInt(size - l);
             int r = Math.min(l + (len > 0 ? rand.nextInt(len) : 0), size - len);
 
-            if (l >= size)      throw new IllegalStateException("l is out of bounds");
-            if (l + len > size) throw new IllegalStateException("l+len is out of bounds");
-            if (r >= size)      throw new IllegalStateException("r is out of bounds");
-            if (r + len > size) throw new IllegalStateException("r+len is out of bounds: " + l + " " + r + " " + len + " " + size);
-            if (l + len < r)    throw new IllegalStateException("Not conjoint");
+            checkBounds(size, l, r, len);
+            checkConjoint(size, l, r, len);
 
             testWith(size, l, r, len);
             testWith(size, r, l, len);
