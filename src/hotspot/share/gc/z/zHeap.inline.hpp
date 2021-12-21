@@ -48,8 +48,7 @@ inline uint32_t ZHeap::hash_oop(zaddress addr) const {
 }
 
 inline bool ZHeap::is_young(zaddress addr) const {
-  ZPage* const page = ZHeap::heap()->page(addr);
-  return page->is_young();
+  return page(addr)->is_young();;
 }
 
 inline bool ZHeap::is_old(zaddress addr) const {
@@ -57,8 +56,7 @@ inline bool ZHeap::is_old(zaddress addr) const {
 }
 
 inline bool ZHeap::is_young(volatile zpointer* ptr) const {
-  ZPage* const page = ZHeap::heap()->page(ptr);
-  return page->is_young();
+  return page(ptr)->is_young();
 }
 
 inline bool ZHeap::is_old(volatile zpointer* ptr) const {
