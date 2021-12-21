@@ -31,6 +31,7 @@
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zPageTable.hpp"
+#include "gc/z/zPageType.hpp"
 #include "gc/z/zServiceability.hpp"
 
 class OopFieldClosure;
@@ -114,7 +115,7 @@ public:
   void remember_fields(zaddress addr);
 
   // Page allocation
-  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZPageAge age);
+  ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
   void undo_alloc_page(ZPage* page);
   void free_page(ZPage* page);
   size_t free_pages(const ZArray<ZPage*>* pages);

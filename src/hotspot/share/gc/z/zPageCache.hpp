@@ -26,6 +26,7 @@
 
 #include "gc/z/zList.hpp"
 #include "gc/z/zPage.hpp"
+#include "gc/z/zPageType.hpp"
 #include "gc/z/zValue.hpp"
 
 class ZPageCacheFlushClosure;
@@ -53,7 +54,7 @@ private:
 public:
   ZPageCache();
 
-  ZPage* alloc_page(uint8_t type, size_t size);
+  ZPage* alloc_page(ZPageType type, size_t size);
   void free_page(ZPage* page);
 
   void flush_for_allocation(size_t requested, ZList<ZPage>* to);

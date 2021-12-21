@@ -30,6 +30,7 @@
 #include "gc/z/zGranuleMap.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zPageAllocator.hpp"
+#include "gc/z/zPageType.hpp"
 #include "utilities/macros.hpp"
 
 // Expose some ZGC globals to the SA agent.
@@ -80,7 +81,7 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   nonstatic_field(ZHeap,                        _page_allocator,      ZPageAllocator)                \
   nonstatic_field(ZHeap,                        _page_table,          ZPageTable)                    \
                                                                                                      \
-  nonstatic_field(ZPage,                        _type,                const uint8_t)                 \
+  nonstatic_field(ZPage,                        _type,                const ZPageType)               \
   volatile_nonstatic_field(ZPage,               _seqnum,              uint32_t)                      \
   nonstatic_field(ZPage,                        _virtual,             const ZVirtualMemory)          \
   volatile_nonstatic_field(ZPage,               _top,                 zoffset)                       \
@@ -107,9 +108,9 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   nonstatic_field(ZAttachedArrayForForwarding,  _length,              const size_t)
 
 #define VM_INT_CONSTANTS_ZGC(declare_constant, declare_constant_with_value)                          \
-  declare_constant(ZPageTypeSmall)                                                                   \
-  declare_constant(ZPageTypeMedium)                                                                  \
-  declare_constant(ZPageTypeLarge)                                                                   \
+  declare_constant(ZPageType::small)                                                                 \
+  declare_constant(ZPageType::medium)                                                                \
+  declare_constant(ZPageType::large)                                                                 \
   declare_constant(ZObjectAlignmentMediumShift)                                                      \
   declare_constant(ZObjectAlignmentLargeShift)
 
@@ -130,6 +131,7 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   declare_toplevel_type(ZHeap)                                                                       \
   declare_toplevel_type(ZRelocate)                                                                   \
   declare_toplevel_type(ZPage)                                                                       \
+  declare_integer_type(Bytecodes::Code)                                                              \
   declare_toplevel_type(ZPageAllocator)                                                              \
   declare_toplevel_type(ZPageTable)                                                                  \
   declare_toplevel_type(ZAttachedArrayForForwarding)                                                 \

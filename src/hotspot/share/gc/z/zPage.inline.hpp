@@ -40,33 +40,36 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
-inline uint8_t ZPage::type_from_size(size_t size) const {
+inline ZPageType ZPage::type_from_size(size_t size) const {
   if (size == ZPageSizeSmall) {
-    return ZPageTypeSmall;
+    return ZPageType::small;
   } else if (size == ZPageSizeMedium) {
-    return ZPageTypeMedium;
+    return ZPageType::medium;
   } else {
-    return ZPageTypeLarge;
+    return ZPageType::large;
   }
 }
 
 inline const char* ZPage::type_to_string() const {
   switch (type()) {
-  case ZPageTypeSmall:
+  case ZPageType::small:
     return "Small";
 
-  case ZPageTypeMedium:
+  case ZPageType::medium:
     return "Medium";
 
-  default:
-    assert(type() == ZPageTypeLarge, "Invalid page type");
+  case ZPageType::large:
     return "Large";
+
+  default:
+    fatal("Unexpected page type");
+    return 0;
   }
 }
 
 inline uint32_t ZPage::object_max_count() const {
   switch (type()) {
-  case ZPageTypeLarge:
+  case ZPageType::large:
     // A large page can only contain a single
     // object aligned to the start of the page.
     return 1;
@@ -78,46 +81,52 @@ inline uint32_t ZPage::object_max_count() const {
 
 inline size_t ZPage::object_alignment_shift() const {
   switch (type()) {
-  case ZPageTypeSmall:
+  case ZPageType::small:
     return ZObjectAlignmentSmallShift;
 
-  case ZPageTypeMedium:
+  case ZPageType::medium:
     return ZObjectAlignmentMediumShift;
 
-  default:
-    assert(type() == ZPageTypeLarge, "Invalid page type");
+  case ZPageType::large:
     return ZObjectAlignmentLargeShift;
+
+  default:
+    fatal("Unexpected page type");
+    return 0;
   }
 }
 
 inline size_t ZPage::object_alignment() const {
   switch (type()) {
-  case ZPageTypeSmall:
+  case ZPageType::small:
     return ZObjectAlignmentSmall;
 
-  case ZPageTypeMedium:
+  case ZPageType::medium:
     return ZObjectAlignmentMedium;
 
-  default:
-    assert(type() == ZPageTypeLarge, "Invalid page type");
+  case ZPageType::large:
     return ZObjectAlignmentLarge;
+
+  default:
+    fatal("Unexpected page type");
+    return 0;
   }
 }
 
-inline uint8_t ZPage::type() const {
+inline ZPageType ZPage::type() const {
   return _type;
 }
 
 inline bool ZPage::is_small() const {
-  return _type == ZPageTypeSmall;
+  return _type == ZPageType::small;
 }
 
 inline bool ZPage::is_medium() const {
-  return _type == ZPageTypeMedium;
+  return _type == ZPageType::medium;
 }
 
 inline bool ZPage::is_large() const {
-  return _type == ZPageTypeLarge;
+  return _type == ZPageType::large;
 }
 
 inline ZGenerationId ZPage::generation_id() const {
@@ -369,7 +378,7 @@ inline bool ZPage::is_remembered(volatile zpointer* p) {
 inline zaddress_unsafe ZPage::find_base(volatile zpointer* p) {
   assert_zpage_mark_state();
 
-  if (type() == ZPageTypeLarge) {
+  if (is_large()) {
     return ZOffset::address_unsafe(start());
   }
 

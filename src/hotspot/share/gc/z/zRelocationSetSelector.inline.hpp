@@ -62,13 +62,13 @@ inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorStats::larg
 }
 
 inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
-  const uint8_t type = page->type();
+  const ZPageType type = page->type();
   const size_t size = page->size();
   const size_t live = page->live_bytes();
   const size_t garbage = size - live;
 
   // check against fragmentation limit
-  if (type != ZPageTypeLarge && garbage > _fragmentation_limit) {
+  if (!page->is_large() && garbage > _fragmentation_limit) {
     _live_pages.append(page);
   } else if (page->is_young()) {
     _not_selected_pages.append(page);
@@ -106,11 +106,11 @@ inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorGroup::stat
 inline void ZRelocationSetSelector::register_live_page(ZPage* page) {
   page->log_msg(" (relocation candidate)");
 
-  const uint8_t type = page->type();
+  const ZPageType type = page->type();
 
-  if (type == ZPageTypeSmall) {
+  if (type == ZPageType::small) {
     _small.register_live_page(page);
-  } else if (type == ZPageTypeMedium) {
+  } else if (type == ZPageType::medium) {
     _medium.register_live_page(page);
   } else {
     _large.register_live_page(page);
@@ -120,11 +120,11 @@ inline void ZRelocationSetSelector::register_live_page(ZPage* page) {
 inline void ZRelocationSetSelector::register_empty_page(ZPage* page) {
   page->log_msg(" (relocation empty)");
 
-  const uint8_t type = page->type();
+  const ZPageType type = page->type();
 
-  if (type == ZPageTypeSmall) {
+  if (type == ZPageType::small) {
     _small.register_empty_page(page);
-  } else if (type == ZPageTypeMedium) {
+  } else if (type == ZPageType::medium) {
     _medium.register_empty_page(page);
   } else {
     _large.register_empty_page(page);

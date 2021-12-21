@@ -73,7 +73,7 @@ inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries) :
     _in_place_top_at_start(),
     _in_place_thread(NULL) {}
 
-inline uint8_t ZForwarding::type() const {
+inline ZPageType ZForwarding::type() const {
   return _page->type();
 }
 

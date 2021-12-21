@@ -38,11 +38,6 @@ const size_t      ZGranuleSize                  = (size_t)1 << ZGranuleSizeShift
 // Virtual memory to physical memory ratio
 const size_t      ZVirtualToPhysicalRatio       = 16; // 16:1
 
-// Page types
-const uint8_t     ZPageTypeSmall                = 0;
-const uint8_t     ZPageTypeMedium               = 1;
-const uint8_t     ZPageTypeLarge                = 2;
-
 // Page size shifts
 const size_t      ZPageSizeSmallShift           = ZGranuleSizeShift;
 extern size_t     ZPageSizeMediumShift;

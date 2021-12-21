@@ -26,6 +26,7 @@
 
 #include "gc/z/zArray.hpp"
 #include "gc/z/zGenerationId.hpp"
+#include "gc/z/zPageType.hpp"
 #include "memory/allocation.hpp"
 
 class ZPage;
@@ -67,7 +68,7 @@ public:
 class ZRelocationSetSelectorGroup {
 private:
   const char* const                _name;
-  const uint8_t                    _page_type;
+  const ZPageType                  _page_type;
   const size_t                     _page_size;
   const size_t                     _object_size_limit;
   const size_t                     _fragmentation_limit;
@@ -83,7 +84,7 @@ private:
 
 public:
   ZRelocationSetSelectorGroup(const char* name,
-                              uint8_t page_type,
+                              ZPageType page_type,
                               size_t page_size,
                               size_t object_size_limit);
 

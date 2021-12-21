@@ -32,6 +32,7 @@
 #include "gc/z/zPageCache.hpp"
 #include "gc/z/zPhysicalMemory.hpp"
 #include "gc/z/zSafeDelete.hpp"
+#include "gc/z/zPageType.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 
 class ThreadClosure;
@@ -105,7 +106,7 @@ private:
 
   bool is_alloc_allowed(size_t size) const;
 
-  bool alloc_page_common_inner(uint8_t type, size_t size, ZList<ZPage>* pages);
+  bool alloc_page_common_inner(ZPageType type, size_t size, ZList<ZPage>* pages);
   bool alloc_page_common(ZPageAllocation* allocation);
   bool alloc_page_stall(ZPageAllocation* allocation);
   bool alloc_page_or_stall(ZPageAllocation* allocation);
@@ -146,7 +147,7 @@ public:
 
   void reset_statistics(ZGenerationId id);
 
-  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZPageAge age);
+  ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
   void recycle_page(ZPage* page);
   void safe_destroy_page(ZPage* page);
   void free_page(ZPage* page);

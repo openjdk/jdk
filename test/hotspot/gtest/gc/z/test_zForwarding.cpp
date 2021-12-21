@@ -176,7 +176,7 @@ public:
     // Create page
     const ZVirtualMemory vmem(zoffset(0), ZPageSizeSmall);
     const ZPhysicalMemory pmem(ZPhysicalMemorySegment(zoffset(0), ZPageSizeSmall, true));
-    ZPage page(ZPageTypeSmall, vmem, pmem);
+    ZPage page(ZPageType::small, vmem, pmem);
 
     page.reset(ZPageAge::eden, ZPageResetType::Allocation);
 

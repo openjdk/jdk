@@ -56,7 +56,7 @@ ZPage* const* ZObjectAllocator::shared_small_page_addr() const {
   return _use_per_cpu_shared_small_pages ? _shared_small_page.addr() : _shared_small_page.addr(0);
 }
 
-ZPage* ZObjectAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags) {
+ZPage* ZObjectAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags) {
   ZPage* const page = ZHeap::heap()->alloc_page(type, size, flags, _age);
   if (page != NULL) {
     // Increment used bytes
@@ -66,7 +66,7 @@ ZPage* ZObjectAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags 
   return page;
 }
 
-ZPage* ZObjectAllocator::alloc_page_for_relocation(uint8_t type, size_t size, ZAllocationFlags flags) {
+ZPage* ZObjectAllocator::alloc_page_for_relocation(ZPageType type, size_t size, ZAllocationFlags flags) {
   return ZHeap::heap()->alloc_page(type, size, flags, _age);
 }
 
@@ -78,7 +78,7 @@ void ZObjectAllocator::undo_alloc_page(ZPage* page) {
 }
 
 zaddress ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
-                                                       uint8_t page_type,
+                                                       ZPageType page_type,
                                                        size_t page_size,
                                                        size_t size,
                                                        ZAllocationFlags flags) {
@@ -131,7 +131,7 @@ zaddress ZObjectAllocator::alloc_large_object(size_t size, ZAllocationFlags flag
 
   // Allocate new large page
   const size_t page_size = align_up(size, ZGranuleSize);
-  ZPage* const page = alloc_page(ZPageTypeLarge, page_size, flags);
+  ZPage* const page = alloc_page(ZPageType::large, page_size, flags);
   if (page != NULL) {
     // Allocate the object
     addr = page->alloc_object(size);
@@ -141,11 +141,11 @@ zaddress ZObjectAllocator::alloc_large_object(size_t size, ZAllocationFlags flag
 }
 
 zaddress ZObjectAllocator::alloc_medium_object(size_t size, ZAllocationFlags flags) {
-  return alloc_object_in_shared_page(_shared_medium_page.addr(), ZPageTypeMedium, ZPageSizeMedium, size, flags);
+  return alloc_object_in_shared_page(_shared_medium_page.addr(), ZPageType::medium, ZPageSizeMedium, size, flags);
 }
 
 zaddress ZObjectAllocator::alloc_small_object(size_t size, ZAllocationFlags flags) {
-  return alloc_object_in_shared_page(shared_small_page_addr(), ZPageTypeSmall, ZPageSizeSmall, size, flags);
+  return alloc_object_in_shared_page(shared_small_page_addr(), ZPageType::small, ZPageSizeSmall, size, flags);
 }
 
 zaddress ZObjectAllocator::alloc_object(size_t size, ZAllocationFlags flags) {
@@ -175,9 +175,9 @@ zaddress ZObjectAllocator::alloc_object_for_relocation(size_t size) {
 
 void ZObjectAllocator::undo_alloc_object_for_relocation(zaddress addr, size_t size) {
   ZPage* const page = ZHeap::heap()->page(addr);
-  const uint8_t type = page->type();
+  const ZPageType type = page->type();
 
-  if (type == ZPageTypeLarge) {
+  if (page->is_large()) {
     undo_alloc_page(page);
     ZStatInc(ZCounterUndoObjectAllocationSucceeded);
   } else {

@@ -151,13 +151,13 @@ ZPage* ZPageCache::alloc_oversized_page(size_t size) {
   return page;
 }
 
-ZPage* ZPageCache::alloc_page(uint8_t type, size_t size) {
+ZPage* ZPageCache::alloc_page(ZPageType type, size_t size) {
   ZPage* page;
 
   // Try allocate exact page
-  if (type == ZPageTypeSmall) {
+  if (type == ZPageType::small) {
     page = alloc_small_page();
-  } else if (type == ZPageTypeMedium) {
+  } else if (type == ZPageType::medium) {
     page = alloc_medium_page();
   } else {
     page = alloc_large_page(size);
@@ -188,10 +188,10 @@ ZPage* ZPageCache::alloc_page(uint8_t type, size_t size) {
 }
 
 void ZPageCache::free_page(ZPage* page) {
-  const uint8_t type = page->type();
-  if (type == ZPageTypeSmall) {
+  const ZPageType type = page->type();
+  if (type == ZPageType::small) {
     _small.get(page->numa_id()).insert_first(page);
-  } else if (type == ZPageTypeMedium) {
+  } else if (type == ZPageType::medium) {
     _medium.insert_first(page);
   } else {
     _large.insert_first(page);

@@ -41,7 +41,7 @@ ZRelocationSetSelectorGroupStats::ZRelocationSetSelectorGroupStats() :
     _relocate(0) {}
 
 ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
-                                                         uint8_t page_type,
+                                                         ZPageType page_type,
                                                          size_t page_size,
                                                          size_t object_size_limit) :
     _name(name),
@@ -56,12 +56,12 @@ ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
 
 bool ZRelocationSetSelectorGroup::is_disabled() {
   // Medium pages are disabled when their page size is zero
-  return _page_type == ZPageTypeMedium && _page_size == 0;
+  return _page_type == ZPageType::medium && _page_size == 0;
 }
 
 bool ZRelocationSetSelectorGroup::is_selectable() {
   // Large pages are not selectable
-  return _page_type != ZPageTypeLarge;
+  return _page_type != ZPageType::large;
 }
 
 void ZRelocationSetSelectorGroup::semi_sort() {
@@ -188,13 +188,13 @@ void ZRelocationSetSelectorGroup::select() {
   }
 
   // Send event
-  event.commit(_page_type, _stats.npages(), _stats.total(), _stats.empty(), _stats.relocate());
+  event.commit((u8)_page_type, _stats.npages(), _stats.total(), _stats.empty(), _stats.relocate());
 }
 
 ZRelocationSetSelector::ZRelocationSetSelector(bool promote_all) :
-    _small("Small", ZPageTypeSmall, ZPageSizeSmall, ZObjectSizeLimitSmall),
-    _medium("Medium", ZPageTypeMedium, ZPageSizeMedium, ZObjectSizeLimitMedium),
-    _large("Large", ZPageTypeLarge, 0 /* page_size */, 0 /* object_size_limit */),
+    _small("Small", ZPageType::small, ZPageSizeSmall, ZObjectSizeLimitSmall),
+    _medium("Medium", ZPageType::medium, ZPageSizeMedium, ZObjectSizeLimitMedium),
+    _large("Large", ZPageType::large, 0 /* page_size */, 0 /* object_size_limit */),
     _empty_pages(),
     _promote_all(promote_all) {}
 

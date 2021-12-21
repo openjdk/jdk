@@ -29,6 +29,7 @@
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zLock.hpp"
 #include "gc/z/zPageAge.hpp"
+#include "gc/z/zPageType.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 
 class ObjectClosure;
@@ -80,7 +81,7 @@ public:
   static uint32_t nentries(const ZPage* page);
   static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page, ZPageAge to_age);
 
-  uint8_t type() const;
+  ZPageType type() const;
   ZPageAge from_age() const;
   ZPageAge to_age() const;
   zoffset start() const;

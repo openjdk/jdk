@@ -28,6 +28,7 @@
 #include "gc/z/zList.hpp"
 #include "gc/z/zLiveMap.hpp"
 #include "gc/z/zPageAge.hpp"
+#include "gc/z/zPageType.hpp"
 #include "gc/z/zPhysicalMemory.hpp"
 #include "gc/z/zRememberedSet.hpp"
 #include "gc/z/zVirtualMemory.hpp"
@@ -53,7 +54,7 @@ class ZPage : public CHeapObj<mtGC> {
   friend class ZForwardingTest;
 
 private:
-  uint8_t          _type;
+  ZPageType        _type;
   ZGenerationId    _generation_id;
   ZPageAge         _age;
   uint8_t          _numa_id;
@@ -67,7 +68,7 @@ private:
   ZPhysicalMemory  _physical;
   ZListNode<ZPage> _node;
 
-  uint8_t type_from_size(size_t size) const;
+  ZPageType type_from_size(size_t size) const;
   const char* type_to_string() const;
 
   size_t bit_index(zaddress addr) const;
@@ -83,10 +84,10 @@ private:
   void reset_seqnum();
   void reset_remembered_set(ZPageAge prev_age, ZPageResetType type);
 
-  ZPage* split_with_pmem(uint8_t type, const ZPhysicalMemory& pmem);
+  ZPage* split_with_pmem(ZPageType type, const ZPhysicalMemory& pmem);
 
 public:
-  ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem);
+  ZPage(ZPageType type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem);
   ~ZPage();
 
   ZPage* clone_limited() const;
@@ -96,7 +97,7 @@ public:
   size_t object_alignment_shift() const;
   size_t object_alignment() const;
 
-  uint8_t type() const;
+  ZPageType type() const;
 
   bool is_small() const;
   bool is_medium() const;
@@ -130,11 +131,11 @@ public:
 
   void finalize_reset_for_in_place_relocation();
 
-  void reset_type_and_size(uint8_t type);
+  void reset_type_and_size(ZPageType type);
 
-  ZPage* retype(uint8_t type);
+  ZPage* retype(ZPageType type);
   ZPage* split(size_t split_of_size);
-  ZPage* split(uint8_t type, size_t split_of_size);
+  ZPage* split(ZPageType type, size_t split_of_size);
   ZPage* split_committed();
 
   bool is_in(zoffset offset) const;

@@ -100,7 +100,7 @@ class ZPageAllocation : public StackObj {
   friend class ZList<ZPageAllocation>;
 
 private:
-  const uint8_t              _type;
+  const ZPageType            _type;
   const size_t               _size;
   const ZAllocationFlags     _flags;
   const uint32_t             _young_seqnum;
@@ -112,7 +112,7 @@ private:
   ZFuture<bool>              _stall_result;
 
 public:
-  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags) :
+  ZPageAllocation(ZPageType type, size_t size, ZAllocationFlags flags) :
       _type(type),
       _size(size),
       _flags(flags),
@@ -124,7 +124,7 @@ public:
       _node(),
       _stall_result() {}
 
-  uint8_t type() const {
+  ZPageType type() const {
     return _type;
   }
 
@@ -262,7 +262,7 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   flags.set_non_blocking();
   flags.set_low_address();
 
-  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, ZPageAge::eden);
+  ZPage* const page = alloc_page(ZPageType::large, size, flags, ZPageAge::eden);
   if (page == NULL) {
     return false;
   }
@@ -464,7 +464,7 @@ bool ZPageAllocator::is_alloc_allowed(size_t size) const {
   return available >= size;
 }
 
-bool ZPageAllocator::alloc_page_common_inner(uint8_t type, size_t size, ZList<ZPage>* pages) {
+bool ZPageAllocator::alloc_page_common_inner(ZPageType type, size_t size, ZList<ZPage>* pages) {
   if (!is_alloc_allowed(size)) {
     // Out of memory
     return false;
@@ -492,7 +492,7 @@ bool ZPageAllocator::alloc_page_common_inner(uint8_t type, size_t size, ZList<ZP
 }
 
 bool ZPageAllocator::alloc_page_common(ZPageAllocation* allocation) {
-  const uint8_t type = allocation->type();
+  const ZPageType type = allocation->type();
   const size_t size = allocation->size();
   const ZAllocationFlags flags = allocation->flags();
   ZList<ZPage>* const pages = allocation->pages();
@@ -541,7 +541,7 @@ bool ZPageAllocator::alloc_page_stall(ZPageAllocation* allocation) {
   }
 
   // Send event
-  event.commit(allocation->type(), allocation->size());
+  event.commit((u8)allocation->type(), allocation->size());
 
   return result;
 }
@@ -625,7 +625,7 @@ bool ZPageAllocator::should_defragment(const ZPage* page) const {
   // if we've split a larger page or we have a constrained address space. To help
   // fight address space fragmentation we remap such pages to a lower address, if
   // a lower address is available.
-  return page->type() == ZPageTypeSmall &&
+  return page->type() == ZPageType::small &&
          page->start() >= to_zoffset(_virtual.reserved() / 2) &&
          page->start() > _virtual.lowest_available_address();
 }
@@ -693,7 +693,7 @@ ZPage* ZPageAllocator::alloc_page_finalize(ZPageAllocation* allocation) {
   return NULL;
 }
 
-ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZPageAge age) {
+ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age) {
   EventZPageAllocation event;
 
 retry:
@@ -739,7 +739,7 @@ retry:
   }
 
   // Send event
-  event.commit(type, size, allocation.flushed(), allocation.committed(),
+  event.commit((u8)type, size, allocation.flushed(), allocation.committed(),
                page->physical_memory().nsegments(), flags.non_blocking());
 
   return page;

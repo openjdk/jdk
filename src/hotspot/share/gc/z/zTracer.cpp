@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zPageType.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -40,11 +41,11 @@ class ZPageTypeConstant : public JfrSerializer {
 public:
   virtual void serialize(JfrCheckpointWriter& writer) {
     writer.write_count(3);
-    writer.write_key(ZPageTypeSmall);
+    writer.write_key((u8)ZPageType::small);
     writer.write("Small");
-    writer.write_key(ZPageTypeMedium);
+    writer.write_key((u8)ZPageType::medium);
     writer.write("Medium");
-    writer.write_key(ZPageTypeLarge);
+    writer.write_key((u8)ZPageType::large);
     writer.write("Large");
   }
 };

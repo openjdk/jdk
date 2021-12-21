@@ -33,7 +33,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 
-ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
+ZPage::ZPage(ZPageType type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
     _type(type),
     _generation_id(ZGenerationId::young),
     _age(ZPageAge::eden),
@@ -50,9 +50,9 @@ ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pm
   assert(!_virtual.is_null(), "Should not be null");
   assert(!_physical.is_null(), "Should not be null");
   assert(_virtual.size() == _physical.size(), "Virtual/Physical size mismatch");
-  assert((_type == ZPageTypeSmall && size() == ZPageSizeSmall) ||
-         (_type == ZPageTypeMedium && size() == ZPageSizeMedium) ||
-         (_type == ZPageTypeLarge && is_aligned(size(), ZGranuleSize)),
+  assert((_type == ZPageType::small && size() == ZPageSizeSmall) ||
+         (_type == ZPageType::medium && size() == ZPageSizeMedium) ||
+         (_type == ZPageType::large && is_aligned(size(), ZGranuleSize)),
          "Page type/size mismatch");
 }
 
@@ -159,13 +159,13 @@ void ZPage::finalize_reset_for_in_place_relocation() {
   _livemap.reset();
 }
 
-void ZPage::reset_type_and_size(uint8_t type) {
+void ZPage::reset_type_and_size(ZPageType type) {
   _type = type;
   _livemap.resize(object_max_count());
   _remembered_set.resize(size());
 }
 
-ZPage* ZPage::retype(uint8_t type) {
+ZPage* ZPage::retype(ZPageType type) {
   assert(_type != type, "Invalid retype");
   reset_type_and_size(type);
   return this;
@@ -175,7 +175,7 @@ ZPage* ZPage::split(size_t split_of_size) {
   return split(type_from_size(split_of_size), split_of_size);
 }
 
-ZPage* ZPage::split_with_pmem(uint8_t type, const ZPhysicalMemory& pmem) {
+ZPage* ZPage::split_with_pmem(ZPageType type, const ZPhysicalMemory& pmem) {
   // Resize this page
   const ZVirtualMemory vmem = _virtual.split(pmem.size());
 
@@ -193,7 +193,7 @@ ZPage* ZPage::split_with_pmem(uint8_t type, const ZPhysicalMemory& pmem) {
   return new ZPage(type, vmem, pmem);
 }
 
-ZPage* ZPage::split(uint8_t type, size_t split_of_size) {
+ZPage* ZPage::split(ZPageType type, size_t split_of_size) {
   assert(_virtual.size() > split_of_size, "Invalid split");
 
   const ZPhysicalMemory pmem = _physical.split(split_of_size);

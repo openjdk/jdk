@@ -304,7 +304,7 @@ zaddress ZRelocate::forward_object(ZForwarding* forwarding, zaddress_unsafe from
   return to_addr;
 }
 
-static ZPage* alloc_page(ZAllocatorForRelocation* allocator, uint8_t type, size_t size) {
+static ZPage* alloc_page(ZAllocatorForRelocation* allocator, ZPageType type, size_t size) {
   if (ZStressRelocateInPlace) {
     // Simulate failure to allocate a new page. This will
     // cause the page being relocated to be relocated in-place.
@@ -822,10 +822,6 @@ private:
   ZRelocateSmallAllocator        _old_small_allocator;
   ZRelocateMediumAllocator       _old_medium_allocator;
 
-  static bool is_small(ZForwarding* forwarding) {
-    return forwarding->type() == ZPageTypeSmall;
-  }
-
 public:
   ZRelocateTask(ZRelocationSet* relocation_set, ZRelocateQueue* queue) :
       ZRestartableTask("ZRelocateTask"),
@@ -854,7 +850,7 @@ public:
       if (forwarding->claim()) {
         ZPage* page = forwarding->page();
         ZPageAge to_age = forwarding->to_age();
-        if (is_small(forwarding)) {
+        if (page->is_small()) {
           ZRelocateWork<ZRelocateSmallAllocator>* small = to_age == ZPageAge::old ? &old_small : &survivor_small;
           small->do_forwarding(forwarding);
         } else {

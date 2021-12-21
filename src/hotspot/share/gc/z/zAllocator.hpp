@@ -26,6 +26,7 @@
 
 #include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zObjectAllocator.hpp"
+#include "gc/z/zPageType.hpp"
 
 class ZAllocatorEden;
 class ZAllocatorSurvivor;
@@ -76,7 +77,7 @@ public:
   zaddress alloc_object(size_t size);
   void undo_alloc_object(zaddress addr, size_t size);
 
-  ZPage* alloc_page_for_relocation(uint8_t type, size_t size, ZAllocationFlags flags);
+  ZPage* alloc_page_for_relocation(ZPageType type, size_t size, ZAllocationFlags flags);
 
 };
 
