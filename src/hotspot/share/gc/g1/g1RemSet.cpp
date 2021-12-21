@@ -1259,8 +1259,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
     G1MergeCardSetStats stats() const { return _stats; }
   };
 
-  // Closure to clear the prev bitmap for any old region in the CSet. This is
-  // needed to be able to use the bitmap for evacuation failure handling.
+  // Closure to clear the prev bitmap for any old region in the collection set.
+  // This is needed to be able to use the bitmap for evacuation failure handling.
   class G1ClearBitmapClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
     void assert_bitmap_clear(HeapRegion* hr, const G1CMBitMap* bitmap) {
@@ -1274,7 +1274,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       assert(_g1h->is_in_cset(hr), "Should only be used iterating the collection set");
       // Young regions should always have cleared bitmaps, so only clear old.
       if (hr->is_old()) {
-        _g1h->clear_region_in_prev_bitmap(hr);
+        _g1h->clear_prev_bitmap_for_region(hr);
       } else {
         assert(hr->is_young(), "Should only be young and old regions in collection set");
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->prev_mark_bitmap());
@@ -1283,7 +1283,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
   };
 
-  // Helper to allow multiple closure to be applied when
+  // Helper to allow two closure to be applied when
   // iterating through the collection set.
   class G1CombinedClosure : public HeapRegionClosure {
     HeapRegionClosure* _closure1;

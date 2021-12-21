@@ -2957,7 +2957,7 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
                                                create_g1_evac_summary(&_old_evac_stats));
 }
 
-void G1CollectedHeap::clear_region_in_prev_bitmap(HeapRegion* hr) {
+void G1CollectedHeap::clear_prev_bitmap_for_region(HeapRegion* hr) {
   MemRegion mr(hr->bottom(), hr->end());
   concurrent_mark()->clear_range_in_prev_bitmap(mr);
 }
@@ -2968,7 +2968,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
   assert(_hrm.is_available(hr->hrm_index()), "region should be committed");
 
   if (G1VerifyBitmaps) {
-    clear_region_in_prev_bitmap(hr);
+    clear_prev_bitmap_for_region(hr);
   }
 
   // Clear the card counts for this region.

@@ -617,8 +617,8 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
-    // Objects failing evacuation will turn in to old objects since the regions
-    // is relabeled as such. We mark the failing objects in the prev bitmap and
+    // Objects failing evacuation will turn into old objects since the regions
+    // are relabeled as such. We mark the failing objects in the prev bitmap and
     // later use it to handle all failed objects.
     _g1h->mark_evac_failure_object(old, _worker_id);
 
