@@ -388,8 +388,8 @@ public class CommandProcessor {
 
     // Parses either address[/count] or address,address into address start/end values
     AddressRange parseAddressRange(String arg, int formatSize) {
-        Pattern args1 = Pattern.compile("^(0x[0-9a-f]+)(/([0-9]*)([a-z]*))?$");
-        Pattern args2 = Pattern.compile("^(0x[0-9a-f]+),(0x[0-9a-f]+)(/[a-z]*)?$");
+        Pattern args1 = Pattern.compile("^(0x[0-9a-f]+)(/([0-9]*))?$");
+        Pattern args2 = Pattern.compile("^(0x[0-9a-f]+),(0x[0-9a-f]+)$");
         Matcher m1 = args1.matcher(arg);
         Matcher m2 = args2.matcher(arg);
         Address start = null;
