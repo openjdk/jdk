@@ -46,7 +46,7 @@ class ZWorkers {
 private:
   WorkerThreads       _workers;
   const char*         _generation_name;
-  ZConditionLock      _thread_resize_lock;
+  ZLock               _thread_resize_lock;
   volatile uint       _resize_workers_request;
   ZStatWorkers* const _stats;
   bool                _is_active;

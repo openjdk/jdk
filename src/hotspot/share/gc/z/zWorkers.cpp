@@ -61,18 +61,18 @@ uint ZWorkers::active_workers() const {
 
 void ZWorkers::set_active_workers(uint nworkers) {
   log_info(gc, task)("Using %u workers for %s generation", nworkers, _generation_name);
-  ZLocker<ZConditionLock> locker(&_thread_resize_lock);
+  ZLocker<ZLock> locker(&_thread_resize_lock);
   _workers.set_active_workers(nworkers);
 }
 
 void ZWorkers::set_active() {
-  ZLocker<ZConditionLock> locker(&_thread_resize_lock);
+  ZLocker<ZLock> locker(&_thread_resize_lock);
   _is_active = true;
   _resize_workers_request = 0;
 }
 
 void ZWorkers::set_inactive() {
-  ZLocker<ZConditionLock> locker(&_thread_resize_lock);
+  ZLocker<ZLock> locker(&_thread_resize_lock);
   _is_active = false;
 }
 
@@ -80,12 +80,12 @@ void ZWorkers::run(ZTask* task) {
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), active_workers());
 
   {
-    ZLocker<ZConditionLock> locker(&_thread_resize_lock);
+    ZLocker<ZLock> locker(&_thread_resize_lock);
     _stats->at_start(active_workers());
   }
   _workers.run_task(task->worker_task());
   {
-    ZLocker<ZConditionLock> locker(&_thread_resize_lock);
+    ZLocker<ZLock> locker(&_thread_resize_lock);
     _stats->at_end();
   }
 }
@@ -114,7 +114,7 @@ void ZWorkers::threads_do(ThreadClosure* tc) const {
 }
 
 ZWorkerResizeStats ZWorkers::resize_stats(ZStatCycle* stat_cycle) {
-  ZLocker<ZConditionLock> locker(&_thread_resize_lock);
+  ZLocker<ZLock> locker(&_thread_resize_lock);
 
   if (!_is_active) {
     // If the workers are not active, it isn't safe to read stats
@@ -145,7 +145,7 @@ ZWorkerResizeStats ZWorkers::resize_stats(ZStatCycle* stat_cycle) {
 }
 
 void ZWorkers::request_resize_workers(uint nworkers) {
-  ZLocker<ZConditionLock> locker(&_thread_resize_lock);
+  ZLocker<ZLock> locker(&_thread_resize_lock);
   if (_resize_workers_request == nworkers) {
     // Already requested
     return;
@@ -153,11 +153,10 @@ void ZWorkers::request_resize_workers(uint nworkers) {
   log_info(gc, director)("Request worker resize for %s generation to: %d",
                          _generation_name, nworkers);
   _resize_workers_request = nworkers;
-  _thread_resize_lock.notify_all();
 }
 
 bool ZWorkers::try_resize_workers(ZRestartableTask* task, ZWorkers* workers) {
-  ZLocker<ZConditionLock> locker(&_thread_resize_lock);
+  ZLocker<ZLock> locker(&_thread_resize_lock);
   uint requested_nworkers = _resize_workers_request;
   _resize_workers_request = 0;
   if (requested_nworkers != 0) {
