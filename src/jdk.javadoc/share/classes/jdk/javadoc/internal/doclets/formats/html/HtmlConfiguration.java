@@ -214,6 +214,12 @@ public class HtmlConfiguration extends BaseConfiguration {
         docletVersion = v;
 
         conditionalPages = EnumSet.noneOf(ConditionalPage.class);
+
+        // See https://reproducible-builds.org/docs/source-date-epoch/
+        String sourceDateEpoch = System.getenv(("SOURCE_DATE_EPOCH"));
+        buildDate = sourceDateEpoch == null ? new Date() :
+                new Date(1000 * Long.parseLong(System.getenv("SOURCE_DATE_EPOCH")));
+
     }
     protected void initConfiguration(DocletEnvironment docEnv,
                                      Function<String, String> resourceKeyMapper) {
@@ -223,7 +229,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     }
 
     private final Runtime.Version docletVersion;
-    public final Date startTime = new Date();
+    public final Date buildDate;
 
     @Override
     public Runtime.Version getDocletVersion() {

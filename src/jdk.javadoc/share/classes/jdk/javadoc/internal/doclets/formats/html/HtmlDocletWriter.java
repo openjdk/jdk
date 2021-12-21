@@ -452,7 +452,7 @@ public class HtmlDocletWriter {
             throws DocFileIOException {
         List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
         additionalStylesheets.addAll(localStylesheets);
-        Head head = new Head(path, configuration.getDocletVersion(), configuration.startTime)
+        Head head = new Head(path, configuration.getDocletVersion(), configuration.buildDate)
                 .setTimestamp(!options.noTimestamp())
                 .setDescription(description)
                 .setGenerator(getGenerator(getClass()))

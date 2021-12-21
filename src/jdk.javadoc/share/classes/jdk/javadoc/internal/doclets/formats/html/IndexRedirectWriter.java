@@ -74,7 +74,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem generating the file
      */
     private void generateIndexFile() throws DocFileIOException {
-        Head head = new Head(path, configuration.getDocletVersion(), configuration.startTime)
+        Head head = new Head(path, configuration.getDocletVersion(), configuration.buildDate)
                 .setTimestamp(!options.noTimestamp())
                 .setDescription("index redirect")
                 .setGenerator(getGenerator(getClass()))
