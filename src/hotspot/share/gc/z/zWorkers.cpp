@@ -32,33 +32,6 @@
 #include "gc/z/zWorkers.hpp"
 #include "runtime/java.hpp"
 
-class ZWorkersInitializeTask : public WorkerTask {
-private:
-  const uint     _nworkers;
-  uint           _started;
-  ZConditionLock _lock;
-
-public:
-  ZWorkersInitializeTask(uint nworkers) :
-      WorkerTask("ZWorkersInitializeTask"),
-      _nworkers(nworkers),
-      _started(0),
-      _lock() {}
-
-  virtual void work(uint /* worker_id */) {
-    // Wait for all threads to start
-    ZLocker<ZConditionLock> locker(&_lock);
-    if (++_started == _nworkers) {
-      // All threads started
-      _lock.notify_all();
-    } else {
-      while (_started != _nworkers) {
-        _lock.wait();
-      }
-    }
-  }
-};
-
 ZWorkers::ZWorkers(ZGenerationId id, ZStatWorkers* stats) :
     _workers(id == ZGenerationId::young ? "ZWorkerYoung" : "ZWorkerOld",
              UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads)),
@@ -80,10 +53,6 @@ ZWorkers::ZWorkers(ZGenerationId id, ZStatWorkers* stats) :
   if (_workers.active_workers() != _workers.max_workers()) {
     vm_exit_during_initialization("Failed to create ZWorkers");
   }
-
-  // Execute task to register threads as workers
-  ZWorkersInitializeTask task(_workers.max_workers());
-  _workers.run_task(&task);
 }
 
 uint ZWorkers::active_workers() const {
