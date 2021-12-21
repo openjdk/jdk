@@ -27,15 +27,11 @@
 
 ZTask::Task::Task(ZTask* task, const char* name) :
     WorkerTask(name),
-    _task(task),
-    DEBUG_ONLY(_coordinator_is_suspendible_thread(Thread::current()->is_suspendible_thread()))
-    NOT_DEBUG(_coordinator_is_suspendible_thread(false)) {}
+    _task(task) {}
 
 void ZTask::Task::work(uint worker_id) {
   ZThread::set_worker_id(worker_id);
-  ZThread::set_coordinator_is_suspendible_thread(_coordinator_is_suspendible_thread);
   _task->work();
-  ZThread::set_coordinator_is_suspendible_thread(false);
   ZThread::clear_worker_id();
 }
 

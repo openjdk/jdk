@@ -32,7 +32,6 @@ private:
   class Task : public WorkerTask {
   private:
     ZTask* const _task;
-    const bool   _coordinator_is_suspendible_thread;
 
   public:
     Task(ZTask* task, const char* name);
