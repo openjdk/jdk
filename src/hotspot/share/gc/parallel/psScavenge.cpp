@@ -703,9 +703,6 @@ void PSScavenge::clean_up_failed_promotion() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
 
-  RemoveForwardedPointerClosure remove_fwd_ptr_closure;
-  young_gen->object_iterate(&remove_fwd_ptr_closure);
-
   PSPromotionManager::restore_preserved_marks();
 
   // Reset the PromotionFailureALot counters.
