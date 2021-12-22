@@ -160,13 +160,11 @@ bool ZWorkers::try_resize_workers(ZRestartableTask* task, ZWorkers* workers) {
   uint requested_nworkers = _resize_workers_request;
   _resize_workers_request = 0;
   if (requested_nworkers != 0) {
-    _stats->at_end();
     // The task has gotten a request to restart with a different thread count
     log_info(gc, task)("Resizing to %u workers for %s generation",
                        requested_nworkers, _generation_name);
     _workers.set_active_workers(requested_nworkers);
     task->resize_workers(active_workers());
-    _stats->at_start(active_workers());
     return true;
   }
   return false;
