@@ -227,7 +227,7 @@ define SetupJarArchiveBody
   endif
   ifneq (,$$($1_CHECK_COMPRESS_JAR))
     ifneq ($(COMPRESS_JARS), true)
-      $1_JAR_OPTIONS += --no-compress 
+      $1_JAR_OPTIONS += --no-compress
     endif
   endif
 
