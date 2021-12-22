@@ -314,9 +314,13 @@ else # $(HAS_SPEC)=true
     endif
     export SOURCE_DATE_EPOCH := $$(SOURCE_DATE)
     ifeq ($$(IS_GNU_DATE), yes)
-      export SOURCE_DATE_ISO_8601 := $$(shell $$(DATE) --utc --date="@$$(SOURCE_DATE_EPOCH)" +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
+      export SOURCE_DATE_ISO_8601 := $$(shell $$(DATE) --utc \
+                                                       --date="@$$(SOURCE_DATE_EPOCH)" \
+                                                       +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
     else
-      export SOURCE_DATE_ISO_8601 := $$(shell $$(DATE) -u -j -f "%s" "$$(SOURCE_DATE_EPOCH)" +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
+      export SOURCE_DATE_ISO_8601 := $$(shell $$(DATE) -u \
+                                                       -j -f "%s" "$$(SOURCE_DATE_EPOCH)" \
+                                                       +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
     endif
   endef
 
