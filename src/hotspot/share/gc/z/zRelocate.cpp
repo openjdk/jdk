@@ -913,13 +913,15 @@ static void remap_and_maybe_add_remset(volatile zpointer* p) {
   ZRelocate::add_remset(p);
 }
 
-class ZRelocateAddRemsetForInPlacePromoted : public ZRestartableTask {
+class ZRelocateAddRemsetForFlipPromoted : public ZRestartableTask {
 private:
+  ZStatTimerYoung                _timer;
   ZArrayParallelIterator<ZPage*> _iter;
 
 public:
-  ZRelocateAddRemsetForInPlacePromoted(ZArray<ZPage*>* pages) :
-      ZRestartableTask("ZRelocateAddRemsetForInPlacePromoted"),
+  ZRelocateAddRemsetForFlipPromoted(ZArray<ZPage*>* pages) :
+      ZRestartableTask("ZRelocateAddRemsetForFlipPromoted"),
+      _timer(ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung),
       _iter(pages) {}
 
   virtual void work() {
@@ -940,11 +942,13 @@ public:
 
 class ZRelocateAddRemsetForNormalPromoted : public ZRestartableTask {
 private:
+  ZStatTimerYoung                  _timer;
   ZForwardingTableParallelIterator _iter;
 
 public:
   ZRelocateAddRemsetForNormalPromoted() :
       ZRestartableTask("ZRelocateAddRemsetForNormalPromoted"),
+      _timer(ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung),
       _iter(ZCollector::young()->forwarding_table()) {}
 
   virtual void work() {
@@ -974,13 +978,11 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   }
 
   if (relocation_set->collector()->is_young()) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung);
-    ZRelocateAddRemsetForInPlacePromoted task(relocation_set->flip_promoted_pages());
+    ZRelocateAddRemsetForFlipPromoted task(relocation_set->flip_promoted_pages());
     workers()->run(&task);
   }
 
   if (relocation_set->collector()->is_young() && ZRelocateRemsetStrategy == 2) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung);
     ZRelocateAddRemsetForNormalPromoted task;
     workers()->run(&task);
   }
